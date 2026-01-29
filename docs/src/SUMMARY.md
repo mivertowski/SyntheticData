@@ -113,6 +113,15 @@
 # Roadmap
 
 - [Enterprise Simulation & ML Ground Truth](roadmap/README.md)
+- [Research: System Improvements](roadmap/research/README.md)
+  - [Realism: Names & Metadata](roadmap/research/01-realism-names-metadata.md)
+  - [Statistical Distributions](roadmap/research/02-statistical-distributions.md)
+  - [Temporal Patterns](roadmap/research/03-temporal-patterns.md)
+  - [Interconnectivity](roadmap/research/04-interconnectivity.md)
+  - [Pattern & Process Drift](roadmap/research/05-pattern-drift.md)
+  - [Anomaly Patterns](roadmap/research/06-anomaly-patterns.md)
+  - [Fraud Patterns](roadmap/research/07-fraud-patterns.md)
+  - [Domain-Specific Enhancements](roadmap/research/08-domain-specific.md)
 
 ---
 
