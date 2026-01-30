@@ -55,8 +55,19 @@ impl UserIdGenerator {
             admin_prefixes: vec!["admin_", "ADMIN_", "adm_", "root_"],
             interface_prefixes: vec!["INT_", "IF_", "INTF_", "API_", "EDI_"],
             system_suffixes: vec![
-                "BATCH", "PROCESS", "RECON", "IMPORT", "EXPORT", "SYNC", "SCHEDULER",
-                "MONITOR", "BACKUP", "ARCHIVE", "CLEANUP", "POSTING", "INTERFACE",
+                "BATCH",
+                "PROCESS",
+                "RECON",
+                "IMPORT",
+                "EXPORT",
+                "SYNC",
+                "SCHEDULER",
+                "MONITOR",
+                "BACKUP",
+                "ARCHIVE",
+                "CLEANUP",
+                "POSTING",
+                "INTERFACE",
             ],
         }
     }
@@ -235,8 +246,20 @@ impl UserIdGenerator {
     fn interface_account(&self, rng: &mut impl Rng) -> String {
         let prefix = self.interface_prefixes.choose(rng).unwrap_or(&"INT_");
         let systems = [
-            "SAP", "ORACLE", "SALESFORCE", "WORKDAY", "NETSUITE", "DYNAMICS", "SAGE", "QUICKBOOKS",
-            "CONCUR", "COUPA", "ARIBA", "BLACKLINE", "HYPERION", "ANAPLAN",
+            "SAP",
+            "ORACLE",
+            "SALESFORCE",
+            "WORKDAY",
+            "NETSUITE",
+            "DYNAMICS",
+            "SAGE",
+            "QUICKBOOKS",
+            "CONCUR",
+            "COUPA",
+            "ARIBA",
+            "BLACKLINE",
+            "HYPERION",
+            "ANAPLAN",
         ];
         let system = systems.choose(rng).unwrap_or(&"SAP");
         format!("{}{}", prefix, system)
@@ -289,7 +312,10 @@ impl EmailGenerator {
 
     /// Generate an email address.
     pub fn generate(&self, first_name: &str, last_name: &str, rng: &mut impl Rng) -> String {
-        let pattern = self.patterns.choose(rng).unwrap_or(&EmailPattern::FirstDotLast);
+        let pattern = self
+            .patterns
+            .choose(rng)
+            .unwrap_or(&EmailPattern::FirstDotLast);
         self.generate_with_pattern(first_name, last_name, *pattern)
     }
 
@@ -341,22 +367,12 @@ mod tests {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let gen = UserIdGenerator::new();
 
-        let id = gen.generate_with_pattern(
-            "John",
-            "Smith",
-            0,
-            UserIdPattern::InitialLastName,
-            &mut rng,
-        );
+        let id =
+            gen.generate_with_pattern("John", "Smith", 0, UserIdPattern::InitialLastName, &mut rng);
         assert_eq!(id, "JSMITH");
 
-        let id2 = gen.generate_with_pattern(
-            "John",
-            "Smith",
-            5,
-            UserIdPattern::InitialLastName,
-            &mut rng,
-        );
+        let id2 =
+            gen.generate_with_pattern("John", "Smith", 5, UserIdPattern::InitialLastName, &mut rng);
         assert_eq!(id2, "JSMITH5");
     }
 
@@ -365,22 +381,12 @@ mod tests {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let gen = UserIdGenerator::new();
 
-        let id = gen.generate_with_pattern(
-            "John",
-            "Smith",
-            0,
-            UserIdPattern::DotSeparated,
-            &mut rng,
-        );
+        let id =
+            gen.generate_with_pattern("John", "Smith", 0, UserIdPattern::DotSeparated, &mut rng);
         assert_eq!(id, "john.smith");
 
-        let id2 = gen.generate_with_pattern(
-            "John",
-            "Smith",
-            3,
-            UserIdPattern::DotSeparated,
-            &mut rng,
-        );
+        let id2 =
+            gen.generate_with_pattern("John", "Smith", 3, UserIdPattern::DotSeparated, &mut rng);
         assert_eq!(id2, "john.smith3");
     }
 

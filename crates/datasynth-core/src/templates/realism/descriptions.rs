@@ -543,8 +543,9 @@ mod tests {
         let varied = variator.apply(original, &mut rng);
 
         // Case should be different
-        let case_changed =
-            varied == original.to_uppercase() || varied == original.to_lowercase() || varied != original;
+        let case_changed = varied == original.to_uppercase()
+            || varied == original.to_lowercase()
+            || varied != original;
         assert!(case_changed);
     }
 

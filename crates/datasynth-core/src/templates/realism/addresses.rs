@@ -182,7 +182,11 @@ impl AddressGenerator {
         } else {
             None
         };
-        let (city, state, country) = self.data.cities.choose(rng).unwrap_or(&("City", "ST", "US"));
+        let (city, state, country) = self
+            .data
+            .cities
+            .choose(rng)
+            .unwrap_or(&("City", "ST", "US"));
         let postal_code = self.generate_postal_code(state, rng);
 
         Address {
@@ -288,12 +292,46 @@ impl AddressGenerator {
     fn north_america_data() -> RegionalData {
         RegionalData {
             street_names: vec![
-                "Main", "Oak", "Maple", "Cedar", "Pine", "Elm", "Washington", "Lincoln",
-                "Jefferson", "Madison", "Franklin", "Adams", "Jackson", "Park", "Lake",
-                "River", "Hill", "Valley", "Forest", "Meadow", "Spring", "Sunset", "Highland",
-                "Fairview", "Central", "Broadway", "Market", "Church", "School", "Mill",
-                "Industrial", "Commerce", "Corporate", "Executive", "Business", "Technology",
-                "Innovation", "Enterprise", "Professional", "Financial",
+                "Main",
+                "Oak",
+                "Maple",
+                "Cedar",
+                "Pine",
+                "Elm",
+                "Washington",
+                "Lincoln",
+                "Jefferson",
+                "Madison",
+                "Franklin",
+                "Adams",
+                "Jackson",
+                "Park",
+                "Lake",
+                "River",
+                "Hill",
+                "Valley",
+                "Forest",
+                "Meadow",
+                "Spring",
+                "Sunset",
+                "Highland",
+                "Fairview",
+                "Central",
+                "Broadway",
+                "Market",
+                "Church",
+                "School",
+                "Mill",
+                "Industrial",
+                "Commerce",
+                "Corporate",
+                "Executive",
+                "Business",
+                "Technology",
+                "Innovation",
+                "Enterprise",
+                "Professional",
+                "Financial",
             ],
             street_types: vec![
                 ("Street", 0.25),
@@ -341,10 +379,31 @@ impl AddressGenerator {
     fn europe_data() -> RegionalData {
         RegionalData {
             street_names: vec![
-                "High", "King", "Queen", "Market", "Church", "Station", "Park", "Victoria",
-                "George", "Oxford", "Regent", "Bond", "Baker", "Fleet", "Lombard", "Strand",
-                "Hauptstraße", "Bahnhofstraße", "Schillerstraße", "Goethestraße", "Lindenstraße",
-                "Rue de la Paix", "Avenue des Champs", "Boulevard Saint", "Rue du Commerce",
+                "High",
+                "King",
+                "Queen",
+                "Market",
+                "Church",
+                "Station",
+                "Park",
+                "Victoria",
+                "George",
+                "Oxford",
+                "Regent",
+                "Bond",
+                "Baker",
+                "Fleet",
+                "Lombard",
+                "Strand",
+                "Hauptstraße",
+                "Bahnhofstraße",
+                "Schillerstraße",
+                "Goethestraße",
+                "Lindenstraße",
+                "Rue de la Paix",
+                "Avenue des Champs",
+                "Boulevard Saint",
+                "Rue du Commerce",
             ],
             street_types: vec![
                 ("Street", 0.30),
@@ -385,9 +444,25 @@ impl AddressGenerator {
     fn asia_pacific_data() -> RegionalData {
         RegionalData {
             street_names: vec![
-                "Orchard", "Marina", "Raffles", "Shenton", "Robinson", "Cecil", "Collyer",
-                "Victoria", "Queen", "King", "George", "Elizabeth", "Bourke", "Collins",
-                "Flinders", "Swanston", "Spring", "Exhibition", "Lonsdale",
+                "Orchard",
+                "Marina",
+                "Raffles",
+                "Shenton",
+                "Robinson",
+                "Cecil",
+                "Collyer",
+                "Victoria",
+                "Queen",
+                "King",
+                "George",
+                "Elizabeth",
+                "Bourke",
+                "Collins",
+                "Flinders",
+                "Swanston",
+                "Spring",
+                "Exhibition",
+                "Lonsdale",
             ],
             street_types: vec![
                 ("Road", 0.30),
@@ -420,9 +495,22 @@ impl AddressGenerator {
     fn latin_america_data() -> RegionalData {
         RegionalData {
             street_names: vec![
-                "Reforma", "Insurgentes", "Juárez", "Madero", "Hidalgo", "Morelos",
-                "Independencia", "Revolución", "Constitución", "Victoria", "Libertad",
-                "Paulista", "Faria Lima", "Berrini", "Brigadeiro", "Augusta",
+                "Reforma",
+                "Insurgentes",
+                "Juárez",
+                "Madero",
+                "Hidalgo",
+                "Morelos",
+                "Independencia",
+                "Revolución",
+                "Constitución",
+                "Victoria",
+                "Libertad",
+                "Paulista",
+                "Faria Lima",
+                "Berrini",
+                "Brigadeiro",
+                "Augusta",
             ],
             street_types: vec![
                 ("Avenida", 0.35),
@@ -563,8 +651,7 @@ mod tests {
             let addr = gen.generate(&mut rng);
             // US ZIP codes should be 5 digits or Canadian format
             assert!(
-                addr.postal_code.len() == 5
-                    || addr.postal_code.len() == 7, // Canadian with space
+                addr.postal_code.len() == 5 || addr.postal_code.len() == 7, // Canadian with space
                 "Unexpected postal code format: {}",
                 addr.postal_code
             );

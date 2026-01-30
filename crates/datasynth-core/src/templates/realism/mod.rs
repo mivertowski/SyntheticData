@@ -246,6 +246,10 @@ mod tests {
         let gen = RealismGenerator::with_config(config);
         let varied = gen.vary_description("Invoice for Purchase Order", &mut rng);
         // Should contain abbreviation
-        assert!(varied.contains("Inv") || varied.contains("PO") || varied == "Invoice for Purchase Order");
+        assert!(
+            varied.contains("Inv")
+                || varied.contains("PO")
+                || varied == "Invoice for Purchase Order"
+        );
     }
 }
