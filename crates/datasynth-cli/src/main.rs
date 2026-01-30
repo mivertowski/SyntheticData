@@ -1218,6 +1218,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         accounting_standards: datasynth_config::schema::AccountingStandardsConfig::default(),
         audit_standards: datasynth_config::schema::AuditStandardsConfig::default(),
         distributions: datasynth_config::schema::AdvancedDistributionConfig::default(),
+        temporal_patterns: datasynth_config::schema::TemporalPatternsConfig::default(),
     }
 }
 

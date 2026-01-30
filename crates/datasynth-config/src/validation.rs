@@ -22,6 +22,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_accounting_standards(config)?;
     validate_audit_standards(config)?;
     validate_distributions(config)?;
+    validate_temporal_patterns(config)?;
     Ok(())
 }
 
@@ -1081,6 +1082,347 @@ fn validate_statistical_validation(
     Ok(())
 }
 
+/// Validate temporal patterns configuration.
+fn validate_temporal_patterns(config: &GeneratorConfig) -> SynthResult<()> {
+    let temporal = &config.temporal_patterns;
+
+    if !temporal.enabled {
+        return Ok(());
+    }
+
+    // Validate business day configuration
+    validate_business_day_config(&temporal.business_days)?;
+
+    // Validate period-end configuration
+    validate_period_end_config(&temporal.period_end)?;
+
+    // Validate processing lag configuration
+    validate_processing_lag_config(&temporal.processing_lags)?;
+
+    // Validate calendar regions
+    validate_calendar_config(&temporal.calendars)?;
+
+    Ok(())
+}
+
+/// Validate business day configuration.
+fn validate_business_day_config(
+    config: &crate::schema::BusinessDaySchemaConfig,
+) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate half-day policy
+    let valid_policies = ["full_day", "half_day", "non_business_day"];
+    if !valid_policies.contains(&config.half_day_policy.as_str()) {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.business_days.half_day_policy must be one of {:?}, got '{}'",
+            valid_policies, config.half_day_policy
+        )));
+    }
+
+    // Validate month-end convention
+    let valid_conventions = [
+        "modified_following",
+        "preceding",
+        "following",
+        "end_of_month",
+    ];
+    if !valid_conventions.contains(&config.month_end_convention.as_str()) {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.business_days.month_end_convention must be one of {:?}, got '{}'",
+            valid_conventions, config.month_end_convention
+        )));
+    }
+
+    // Validate settlement rules
+    let rules = &config.settlement_rules;
+    if rules.equity_days < 0 {
+        return Err(SynthError::validation(
+            "temporal_patterns.business_days.settlement_rules.equity_days must be non-negative",
+        ));
+    }
+    if rules.government_bonds_days < 0 {
+        return Err(SynthError::validation(
+            "temporal_patterns.business_days.settlement_rules.government_bonds_days must be non-negative",
+        ));
+    }
+    if rules.fx_spot_days < 0 {
+        return Err(SynthError::validation(
+            "temporal_patterns.business_days.settlement_rules.fx_spot_days must be non-negative",
+        ));
+    }
+
+    // Validate wire cutoff time format (HH:MM)
+    if !rules.wire_cutoff_time.contains(':') {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.business_days.settlement_rules.wire_cutoff_time must be in HH:MM format, got '{}'",
+            rules.wire_cutoff_time
+        )));
+    }
+
+    // Validate weekend days if provided
+    if let Some(ref weekend_days) = config.weekend_days {
+        let valid_days = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ];
+        for day in weekend_days {
+            if !valid_days.contains(&day.to_lowercase().as_str()) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.business_days.weekend_days contains invalid day '{}', must be one of {:?}",
+                    day, valid_days
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate period-end configuration.
+fn validate_period_end_config(config: &crate::schema::PeriodEndSchemaConfig) -> SynthResult<()> {
+    // Validate model type if specified
+    if let Some(ref model) = config.model {
+        let valid_models = ["flat", "exponential", "extended_crunch", "daily_profile"];
+        if !valid_models.contains(&model.as_str()) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.model must be one of {:?}, got '{}'",
+                valid_models, model
+            )));
+        }
+    }
+
+    // Validate month-end config if present
+    if let Some(ref month_end) = config.month_end {
+        validate_period_end_model_config(month_end, "month_end")?;
+    }
+
+    // Validate quarter-end config if present
+    if let Some(ref quarter_end) = config.quarter_end {
+        validate_period_end_model_config(quarter_end, "quarter_end")?;
+    }
+
+    // Validate year-end config if present
+    if let Some(ref year_end) = config.year_end {
+        validate_period_end_model_config(year_end, "year_end")?;
+    }
+
+    Ok(())
+}
+
+/// Validate a period-end model configuration.
+fn validate_period_end_model_config(
+    config: &crate::schema::PeriodEndModelSchemaConfig,
+    name: &str,
+) -> SynthResult<()> {
+    // Validate multipliers are positive
+    if let Some(mult) = config.additional_multiplier {
+        if mult <= 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.additional_multiplier must be positive, got {}",
+                name, mult
+            )));
+        }
+    }
+
+    if let Some(mult) = config.base_multiplier {
+        if mult <= 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.base_multiplier must be positive, got {}",
+                name, mult
+            )));
+        }
+    }
+
+    if let Some(mult) = config.peak_multiplier {
+        if mult <= 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.peak_multiplier must be positive, got {}",
+                name, mult
+            )));
+        }
+    }
+
+    // Validate decay_rate is in valid range (0, 1] for exponential model
+    if let Some(rate) = config.decay_rate {
+        if rate <= 0.0 || rate > 1.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.decay_rate must be in (0, 1], got {}",
+                name, rate
+            )));
+        }
+    }
+
+    // Validate start_day is negative or zero
+    if let Some(day) = config.start_day {
+        if day > 0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.start_day must be <= 0 (days before period end), got {}",
+                name, day
+            )));
+        }
+    }
+
+    // Validate sustained_high_days is positive
+    if let Some(days) = config.sustained_high_days {
+        if days <= 0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.period_end.{}.sustained_high_days must be positive, got {}",
+                name, days
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate processing lag configuration.
+fn validate_processing_lag_config(
+    config: &crate::schema::ProcessingLagSchemaConfig,
+) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate lag distributions
+    let lag_configs = [
+        (&config.sales_order_lag, "sales_order_lag"),
+        (&config.purchase_order_lag, "purchase_order_lag"),
+        (&config.goods_receipt_lag, "goods_receipt_lag"),
+        (&config.invoice_receipt_lag, "invoice_receipt_lag"),
+        (&config.invoice_issue_lag, "invoice_issue_lag"),
+        (&config.payment_lag, "payment_lag"),
+        (&config.journal_entry_lag, "journal_entry_lag"),
+    ];
+
+    for (lag_opt, name) in lag_configs {
+        if let Some(lag) = lag_opt {
+            validate_lag_distribution(lag, name)?;
+        }
+    }
+
+    // Validate cross-day posting config
+    if let Some(ref cross_day) = config.cross_day_posting {
+        for (hour, prob) in &cross_day.probability_by_hour {
+            if *hour > 23 {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour contains invalid hour {}, must be 0-23",
+                    hour
+                )));
+            }
+            if !(*prob >= 0.0 && *prob <= 1.0) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour[{}] must be in [0, 1], got {}",
+                    hour, prob
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate a lag distribution configuration.
+fn validate_lag_distribution(
+    config: &crate::schema::LagDistributionSchemaConfig,
+    name: &str,
+) -> SynthResult<()> {
+    // Sigma must be positive for log-normal
+    if config.sigma <= 0.0 {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.processing_lags.{}.sigma must be positive, got {}",
+            name, config.sigma
+        )));
+    }
+
+    // Min/max hours must be non-negative and ordered correctly
+    if let Some(min) = config.min_hours {
+        if min < 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.processing_lags.{}.min_hours must be non-negative, got {}",
+                name, min
+            )));
+        }
+    }
+
+    if let Some(max) = config.max_hours {
+        if max < 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.processing_lags.{}.max_hours must be non-negative, got {}",
+                name, max
+            )));
+        }
+
+        if let Some(min) = config.min_hours {
+            if max < min {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.processing_lags.{}.max_hours ({}) must be >= min_hours ({})",
+                    name, max, min
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate calendar configuration.
+fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> SynthResult<()> {
+    // Validate region codes
+    let valid_regions = [
+        "US", "DE", "GB", "CN", "JP", "IN", "BR", "MX", "AU", "SG", "KR",
+    ];
+    for region in &config.regions {
+        let region_upper = region.to_uppercase();
+        if !valid_regions.contains(&region_upper.as_str()) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.calendars.regions contains invalid region '{}', must be one of {:?}",
+                region, valid_regions
+            )));
+        }
+    }
+
+    // Validate custom holidays
+    for (i, holiday) in config.custom_holidays.iter().enumerate() {
+        if holiday.name.is_empty() {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.calendars.custom_holidays[{}].name cannot be empty",
+                i
+            )));
+        }
+
+        if holiday.month < 1 || holiday.month > 12 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.calendars.custom_holidays[{}].month must be 1-12, got {}",
+                i, holiday.month
+            )));
+        }
+
+        if holiday.day < 1 || holiday.day > 31 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.calendars.custom_holidays[{}].day must be 1-31, got {}",
+                i, holiday.day
+            )));
+        }
+
+        if holiday.activity_multiplier < 0.0 || holiday.activity_multiplier > 1.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.calendars.custom_holidays[{}].activity_multiplier must be in [0, 1], got {}",
+                i, holiday.activity_multiplier
+            )));
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1144,6 +1486,7 @@ mod tests {
             accounting_standards: AccountingStandardsConfig::default(),
             audit_standards: AuditStandardsConfig::default(),
             distributions: AdvancedDistributionConfig::default(),
+            temporal_patterns: TemporalPatternsConfig::default(),
         }
     }
 

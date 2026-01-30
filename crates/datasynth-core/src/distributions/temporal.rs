@@ -9,6 +9,7 @@ use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 
 use super::holidays::HolidayCalendar;
+use super::period_end::PeriodEndDynamics;
 use super::seasonality::IndustrySeasonality;
 
 /// Configuration for seasonality patterns.
@@ -111,6 +112,10 @@ pub struct TemporalSampler {
     industry_seasonality: Option<IndustrySeasonality>,
     /// Regional holiday calendar (optional).
     holiday_calendar: Option<HolidayCalendar>,
+    /// Period-end dynamics for decay curves (optional).
+    period_end_dynamics: Option<PeriodEndDynamics>,
+    /// Whether to use period-end dynamics instead of legacy flat multipliers.
+    use_period_end_dynamics: bool,
 }
 
 impl TemporalSampler {
@@ -138,6 +143,8 @@ impl TemporalSampler {
             holidays,
             industry_seasonality: None,
             holiday_calendar: None,
+            period_end_dynamics: None,
+            use_period_end_dynamics: false,
         }
     }
 
@@ -158,6 +165,31 @@ impl TemporalSampler {
             holidays,
             industry_seasonality,
             holiday_calendar,
+            period_end_dynamics: None,
+            use_period_end_dynamics: false,
+        }
+    }
+
+    /// Create a temporal sampler with period-end dynamics.
+    #[allow(clippy::too_many_arguments)]
+    pub fn with_period_end_dynamics(
+        seed: u64,
+        seasonality_config: SeasonalityConfig,
+        working_hours_config: WorkingHoursConfig,
+        holidays: Vec<NaiveDate>,
+        industry_seasonality: Option<IndustrySeasonality>,
+        holiday_calendar: Option<HolidayCalendar>,
+        period_end_dynamics: PeriodEndDynamics,
+    ) -> Self {
+        Self {
+            rng: ChaCha8Rng::seed_from_u64(seed),
+            seasonality_config,
+            working_hours_config,
+            holidays,
+            industry_seasonality,
+            holiday_calendar,
+            period_end_dynamics: Some(period_end_dynamics),
+            use_period_end_dynamics: true,
         }
     }
 
@@ -181,6 +213,29 @@ impl TemporalSampler {
     /// Set holiday calendar (mutable reference version).
     pub fn set_holiday_calendar(&mut self, calendar: HolidayCalendar) {
         self.holiday_calendar = Some(calendar);
+    }
+
+    /// Set period-end dynamics.
+    pub fn with_period_end(mut self, dynamics: PeriodEndDynamics) -> Self {
+        self.period_end_dynamics = Some(dynamics);
+        self.use_period_end_dynamics = true;
+        self
+    }
+
+    /// Set period-end dynamics (mutable reference version).
+    pub fn set_period_end_dynamics(&mut self, dynamics: PeriodEndDynamics) {
+        self.period_end_dynamics = Some(dynamics);
+        self.use_period_end_dynamics = true;
+    }
+
+    /// Get the period-end dynamics if set.
+    pub fn period_end_dynamics(&self) -> Option<&PeriodEndDynamics> {
+        self.period_end_dynamics.as_ref()
+    }
+
+    /// Enable or disable period-end dynamics usage.
+    pub fn set_use_period_end_dynamics(&mut self, enabled: bool) {
+        self.use_period_end_dynamics = enabled;
     }
 
     /// Get the industry seasonality if set.
@@ -316,6 +371,7 @@ impl TemporalSampler {
     /// - Weekend activity reduction
     /// - Holiday activity reduction (from calendar or legacy list)
     /// - Industry-specific seasonality (if configured)
+    /// - Period-end dynamics (if configured, replaces legacy flat multipliers)
     pub fn get_date_multiplier(&self, date: NaiveDate) -> f64 {
         let mut multiplier = 1.0;
 
@@ -333,13 +389,21 @@ impl TemporalSampler {
             multiplier *= holiday_mult;
         }
 
-        // Period-end spikes (take the highest applicable)
-        if self.seasonality_config.year_end_spike && self.is_year_end(date) {
-            multiplier *= self.seasonality_config.year_end_multiplier;
-        } else if self.seasonality_config.quarter_end_spike && self.is_quarter_end(date) {
-            multiplier *= self.seasonality_config.quarter_end_multiplier;
-        } else if self.seasonality_config.month_end_spike && self.is_month_end(date) {
-            multiplier *= self.seasonality_config.month_end_multiplier;
+        // Period-end spikes - use dynamics if available, otherwise legacy flat multipliers
+        if self.use_period_end_dynamics {
+            if let Some(ref dynamics) = self.period_end_dynamics {
+                let period_mult = dynamics.get_multiplier_for_date(date);
+                multiplier *= period_mult;
+            }
+        } else {
+            // Legacy flat multipliers (take the highest applicable)
+            if self.seasonality_config.year_end_spike && self.is_year_end(date) {
+                multiplier *= self.seasonality_config.year_end_multiplier;
+            } else if self.seasonality_config.quarter_end_spike && self.is_quarter_end(date) {
+                multiplier *= self.seasonality_config.quarter_end_multiplier;
+            } else if self.seasonality_config.month_end_spike && self.is_month_end(date) {
+                multiplier *= self.seasonality_config.month_end_multiplier;
+            }
         }
 
         // Industry-specific seasonality
@@ -351,6 +415,29 @@ impl TemporalSampler {
         }
 
         multiplier
+    }
+
+    /// Get the period-end multiplier for a date.
+    ///
+    /// Returns the period-end component of the date multiplier,
+    /// using dynamics if available, otherwise legacy flat multipliers.
+    pub fn get_period_end_multiplier(&self, date: NaiveDate) -> f64 {
+        if self.use_period_end_dynamics {
+            if let Some(ref dynamics) = self.period_end_dynamics {
+                return dynamics.get_multiplier_for_date(date);
+            }
+        }
+
+        // Legacy flat multipliers
+        if self.seasonality_config.year_end_spike && self.is_year_end(date) {
+            self.seasonality_config.year_end_multiplier
+        } else if self.seasonality_config.quarter_end_spike && self.is_quarter_end(date) {
+            self.seasonality_config.quarter_end_multiplier
+        } else if self.seasonality_config.month_end_spike && self.is_month_end(date) {
+            self.seasonality_config.month_end_multiplier
+        } else {
+            1.0
+        }
     }
 
     /// Get the base multiplier without industry seasonality.
@@ -369,12 +456,21 @@ impl TemporalSampler {
             multiplier *= holiday_mult;
         }
 
-        if self.seasonality_config.year_end_spike && self.is_year_end(date) {
-            multiplier *= self.seasonality_config.year_end_multiplier;
-        } else if self.seasonality_config.quarter_end_spike && self.is_quarter_end(date) {
-            multiplier *= self.seasonality_config.quarter_end_multiplier;
-        } else if self.seasonality_config.month_end_spike && self.is_month_end(date) {
-            multiplier *= self.seasonality_config.month_end_multiplier;
+        // Period-end spikes - use dynamics if available
+        if self.use_period_end_dynamics {
+            if let Some(ref dynamics) = self.period_end_dynamics {
+                let period_mult = dynamics.get_multiplier_for_date(date);
+                multiplier *= period_mult;
+            }
+        } else {
+            // Legacy flat multipliers
+            if self.seasonality_config.year_end_spike && self.is_year_end(date) {
+                multiplier *= self.seasonality_config.year_end_multiplier;
+            } else if self.seasonality_config.quarter_end_spike && self.is_quarter_end(date) {
+                multiplier *= self.seasonality_config.quarter_end_multiplier;
+            } else if self.seasonality_config.month_end_spike && self.is_month_end(date) {
+                multiplier *= self.seasonality_config.month_end_multiplier;
+            }
         }
 
         multiplier

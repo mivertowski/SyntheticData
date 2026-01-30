@@ -849,6 +849,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         accounting_standards: Default::default(),
         audit_standards: Default::default(),
         distributions: Default::default(),
+        temporal_patterns: Default::default(),
     }
 }
 

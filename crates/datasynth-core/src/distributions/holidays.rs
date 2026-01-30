@@ -22,6 +22,16 @@ pub enum Region {
     JP,
     /// India
     IN,
+    /// Brazil
+    BR,
+    /// Mexico
+    MX,
+    /// Australia
+    AU,
+    /// Singapore
+    SG,
+    /// South Korea
+    KR,
 }
 
 impl std::fmt::Display for Region {
@@ -33,6 +43,11 @@ impl std::fmt::Display for Region {
             Region::CN => write!(f, "China"),
             Region::JP => write!(f, "Japan"),
             Region::IN => write!(f, "India"),
+            Region::BR => write!(f, "Brazil"),
+            Region::MX => write!(f, "Mexico"),
+            Region::AU => write!(f, "Australia"),
+            Region::SG => write!(f, "Singapore"),
+            Region::KR => write!(f, "South Korea"),
         }
     }
 }
@@ -98,6 +113,11 @@ impl HolidayCalendar {
             Region::CN => Self::cn_holidays(year),
             Region::JP => Self::jp_holidays(year),
             Region::IN => Self::in_holidays(year),
+            Region::BR => Self::br_holidays(year),
+            Region::MX => Self::mx_holidays(year),
+            Region::AU => Self::au_holidays(year),
+            Region::SG => Self::sg_holidays(year),
+            Region::KR => Self::kr_holidays(year),
         }
     }
 
@@ -610,6 +630,394 @@ impl HolidayCalendar {
         cal
     }
 
+    /// Brazilian holidays (national holidays).
+    fn br_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::BR, year);
+
+        // Confraternização Universal - January 1
+        cal.add_holiday(Holiday::new(
+            "Confraternização Universal",
+            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            0.02,
+        ));
+
+        // Carnaval - Tuesday before Ash Wednesday (47 days before Easter)
+        let easter = Self::easter_date(year);
+        let carnival_tuesday = easter - Duration::days(47);
+        let carnival_monday = carnival_tuesday - Duration::days(1);
+        cal.add_holiday(Holiday::new("Carnaval (Segunda)", carnival_monday, 0.02));
+        cal.add_holiday(Holiday::new("Carnaval (Terça)", carnival_tuesday, 0.02));
+
+        // Sexta-feira Santa - Good Friday
+        cal.add_holiday(Holiday::new(
+            "Sexta-feira Santa",
+            easter - Duration::days(2),
+            0.02,
+        ));
+
+        // Tiradentes - April 21
+        cal.add_holiday(Holiday::new(
+            "Tiradentes",
+            NaiveDate::from_ymd_opt(year, 4, 21).unwrap(),
+            0.02,
+        ));
+
+        // Dia do Trabalho - May 1
+        cal.add_holiday(Holiday::new(
+            "Dia do Trabalho",
+            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            0.02,
+        ));
+
+        // Corpus Christi - 60 days after Easter
+        cal.add_holiday(Holiday::new(
+            "Corpus Christi",
+            easter + Duration::days(60),
+            0.05,
+        ));
+
+        // Independência do Brasil - September 7
+        cal.add_holiday(Holiday::new(
+            "Independência do Brasil",
+            NaiveDate::from_ymd_opt(year, 9, 7).unwrap(),
+            0.02,
+        ));
+
+        // Nossa Senhora Aparecida - October 12
+        cal.add_holiday(Holiday::new(
+            "Nossa Senhora Aparecida",
+            NaiveDate::from_ymd_opt(year, 10, 12).unwrap(),
+            0.02,
+        ));
+
+        // Finados - November 2
+        cal.add_holiday(Holiday::new(
+            "Finados",
+            NaiveDate::from_ymd_opt(year, 11, 2).unwrap(),
+            0.02,
+        ));
+
+        // Proclamação da República - November 15
+        cal.add_holiday(Holiday::new(
+            "Proclamação da República",
+            NaiveDate::from_ymd_opt(year, 11, 15).unwrap(),
+            0.02,
+        ));
+
+        // Natal - December 25
+        cal.add_holiday(Holiday::new(
+            "Natal",
+            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Mexican holidays (national holidays).
+    fn mx_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::MX, year);
+
+        // Año Nuevo - January 1
+        cal.add_holiday(Holiday::new(
+            "Año Nuevo",
+            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            0.02,
+        ));
+
+        // Día de la Constitución - First Monday of February
+        let constitution = Self::nth_weekday_of_month(year, 2, Weekday::Mon, 1);
+        cal.add_holiday(Holiday::new("Día de la Constitución", constitution, 0.02));
+
+        // Natalicio de Benito Juárez - Third Monday of March
+        let juarez = Self::nth_weekday_of_month(year, 3, Weekday::Mon, 3);
+        cal.add_holiday(Holiday::new("Natalicio de Benito Juárez", juarez, 0.02));
+
+        // Semana Santa - Holy Thursday and Good Friday
+        let easter = Self::easter_date(year);
+        cal.add_holiday(Holiday::new(
+            "Jueves Santo",
+            easter - Duration::days(3),
+            0.05,
+        ));
+        cal.add_holiday(Holiday::new(
+            "Viernes Santo",
+            easter - Duration::days(2),
+            0.02,
+        ));
+
+        // Día del Trabajo - May 1
+        cal.add_holiday(Holiday::new(
+            "Día del Trabajo",
+            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            0.02,
+        ));
+
+        // Día de la Independencia - September 16
+        cal.add_holiday(Holiday::new(
+            "Día de la Independencia",
+            NaiveDate::from_ymd_opt(year, 9, 16).unwrap(),
+            0.02,
+        ));
+
+        // Día de la Revolución - Third Monday of November
+        let revolution = Self::nth_weekday_of_month(year, 11, Weekday::Mon, 3);
+        cal.add_holiday(Holiday::new("Día de la Revolución", revolution, 0.02));
+
+        // Día de Muertos - November 1-2 (not official but widely observed)
+        cal.add_holiday(Holiday::new(
+            "Día de Muertos",
+            NaiveDate::from_ymd_opt(year, 11, 1).unwrap(),
+            0.1,
+        ));
+        cal.add_holiday(Holiday::new(
+            "Día de Muertos",
+            NaiveDate::from_ymd_opt(year, 11, 2).unwrap(),
+            0.1,
+        ));
+
+        // Navidad - December 25
+        cal.add_holiday(Holiday::new(
+            "Navidad",
+            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Australian holidays (national holidays).
+    fn au_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::AU, year);
+
+        // New Year's Day - January 1
+        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
+        cal.add_holiday(Holiday::new(
+            "New Year's Day",
+            Self::observe_weekend(new_years),
+            0.02,
+        ));
+
+        // Australia Day - January 26 (observed)
+        let australia_day = NaiveDate::from_ymd_opt(year, 1, 26).unwrap();
+        cal.add_holiday(Holiday::new(
+            "Australia Day",
+            Self::observe_weekend(australia_day),
+            0.02,
+        ));
+
+        // Good Friday
+        let easter = Self::easter_date(year);
+        cal.add_holiday(Holiday::new(
+            "Good Friday",
+            easter - Duration::days(2),
+            0.02,
+        ));
+
+        // Easter Saturday
+        cal.add_holiday(Holiday::new(
+            "Easter Saturday",
+            easter - Duration::days(1),
+            0.02,
+        ));
+
+        // Easter Monday
+        cal.add_holiday(Holiday::new(
+            "Easter Monday",
+            easter + Duration::days(1),
+            0.02,
+        ));
+
+        // ANZAC Day - April 25
+        let anzac = NaiveDate::from_ymd_opt(year, 4, 25).unwrap();
+        cal.add_holiday(Holiday::new("ANZAC Day", anzac, 0.02));
+
+        // Queen's Birthday - Second Monday of June (varies by state, using NSW)
+        let queens_birthday = Self::nth_weekday_of_month(year, 6, Weekday::Mon, 2);
+        cal.add_holiday(Holiday::new("Queen's Birthday", queens_birthday, 0.02));
+
+        // Christmas Day
+        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).unwrap();
+        cal.add_holiday(Holiday::new(
+            "Christmas Day",
+            Self::observe_weekend(christmas),
+            0.02,
+        ));
+
+        // Boxing Day - December 26
+        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).unwrap();
+        cal.add_holiday(Holiday::new(
+            "Boxing Day",
+            Self::observe_weekend(boxing),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Singaporean holidays (national holidays).
+    fn sg_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::SG, year);
+
+        // New Year's Day - January 1
+        cal.add_holiday(Holiday::new(
+            "New Year's Day",
+            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            0.02,
+        ));
+
+        // Chinese New Year (2 days) - approximate
+        let cny = Self::approximate_chinese_new_year(year);
+        cal.add_holiday(Holiday::new("Chinese New Year", cny, 0.02));
+        cal.add_holiday(Holiday::new(
+            "Chinese New Year (Day 2)",
+            cny + Duration::days(1),
+            0.02,
+        ));
+
+        // Good Friday
+        let easter = Self::easter_date(year);
+        cal.add_holiday(Holiday::new(
+            "Good Friday",
+            easter - Duration::days(2),
+            0.02,
+        ));
+
+        // Labour Day - May 1
+        cal.add_holiday(Holiday::new(
+            "Labour Day",
+            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            0.02,
+        ));
+
+        // Vesak Day - approximate (full moon in May)
+        let vesak = Self::approximate_vesak(year);
+        cal.add_holiday(Holiday::new("Vesak Day", vesak, 0.02));
+
+        // Hari Raya Puasa - approximate (end of Ramadan)
+        let hari_raya_puasa = Self::approximate_hari_raya_puasa(year);
+        cal.add_holiday(Holiday::new("Hari Raya Puasa", hari_raya_puasa, 0.02));
+
+        // Hari Raya Haji - approximate (Festival of Sacrifice)
+        let hari_raya_haji = Self::approximate_hari_raya_haji(year);
+        cal.add_holiday(Holiday::new("Hari Raya Haji", hari_raya_haji, 0.02));
+
+        // National Day - August 9
+        cal.add_holiday(Holiday::new(
+            "National Day",
+            NaiveDate::from_ymd_opt(year, 8, 9).unwrap(),
+            0.02,
+        ));
+
+        // Deepavali - approximate (October/November)
+        let deepavali = Self::approximate_deepavali(year);
+        cal.add_holiday(Holiday::new("Deepavali", deepavali, 0.02));
+
+        // Christmas Day
+        cal.add_holiday(Holiday::new(
+            "Christmas Day",
+            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// South Korean holidays (national holidays).
+    fn kr_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::KR, year);
+
+        // New Year's Day - January 1
+        cal.add_holiday(Holiday::new(
+            "Sinjeong",
+            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            0.02,
+        ));
+
+        // Seollal (Korean New Year) - 3 days around lunar new year
+        let seollal = Self::approximate_korean_new_year(year);
+        cal.add_holiday(Holiday::new(
+            "Seollal (Eve)",
+            seollal - Duration::days(1),
+            0.02,
+        ));
+        cal.add_holiday(Holiday::new("Seollal", seollal, 0.02));
+        cal.add_holiday(Holiday::new(
+            "Seollal (Day 2)",
+            seollal + Duration::days(1),
+            0.02,
+        ));
+
+        // Independence Movement Day - March 1
+        cal.add_holiday(Holiday::new(
+            "Samiljeol",
+            NaiveDate::from_ymd_opt(year, 3, 1).unwrap(),
+            0.02,
+        ));
+
+        // Children's Day - May 5
+        cal.add_holiday(Holiday::new(
+            "Eorininal",
+            NaiveDate::from_ymd_opt(year, 5, 5).unwrap(),
+            0.02,
+        ));
+
+        // Buddha's Birthday - approximate (8th day of 4th lunar month)
+        let buddha_birthday = Self::approximate_korean_buddha_birthday(year);
+        cal.add_holiday(Holiday::new("Seokgatansinil", buddha_birthday, 0.02));
+
+        // Memorial Day - June 6
+        cal.add_holiday(Holiday::new(
+            "Hyeonchungil",
+            NaiveDate::from_ymd_opt(year, 6, 6).unwrap(),
+            0.02,
+        ));
+
+        // Liberation Day - August 15
+        cal.add_holiday(Holiday::new(
+            "Gwangbokjeol",
+            NaiveDate::from_ymd_opt(year, 8, 15).unwrap(),
+            0.02,
+        ));
+
+        // Chuseok (Korean Thanksgiving) - 3 days around harvest moon
+        let chuseok = Self::approximate_chuseok(year);
+        cal.add_holiday(Holiday::new(
+            "Chuseok (Eve)",
+            chuseok - Duration::days(1),
+            0.02,
+        ));
+        cal.add_holiday(Holiday::new("Chuseok", chuseok, 0.02));
+        cal.add_holiday(Holiday::new(
+            "Chuseok (Day 2)",
+            chuseok + Duration::days(1),
+            0.02,
+        ));
+
+        // National Foundation Day - October 3
+        cal.add_holiday(Holiday::new(
+            "Gaecheonjeol",
+            NaiveDate::from_ymd_opt(year, 10, 3).unwrap(),
+            0.02,
+        ));
+
+        // Hangul Day - October 9
+        cal.add_holiday(Holiday::new(
+            "Hangullal",
+            NaiveDate::from_ymd_opt(year, 10, 9).unwrap(),
+            0.02,
+        ));
+
+        // Christmas - December 25
+        cal.add_holiday(Holiday::new(
+            "Seongtanjeol",
+            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            0.02,
+        ));
+
+        cal
+    }
+
     /// Calculate Easter date using the anonymous Gregorian algorithm.
     fn easter_date(year: i32) -> NaiveDate {
         let a = year % 19;
@@ -708,6 +1116,130 @@ impl HolidayCalendar {
             1 => NaiveDate::from_ymd_opt(year, 10, 24).unwrap(),
             2 => NaiveDate::from_ymd_opt(year, 11, 12).unwrap(),
             _ => NaiveDate::from_ymd_opt(year, 11, 4).unwrap(),
+        }
+    }
+
+    /// Approximate Vesak Day (Buddha's Birthday in Theravada tradition).
+    /// Falls on the full moon of the 4th lunar month (usually May).
+    fn approximate_vesak(year: i32) -> NaiveDate {
+        // Vesak is typically in May
+        // Using approximate lunar cycle calculation
+        let base = match year % 19 {
+            0 => 18,
+            1 => 7,
+            2 => 26,
+            3 => 15,
+            4 => 5,
+            5 => 24,
+            6 => 13,
+            7 => 2,
+            8 => 22,
+            9 => 11,
+            10 => 30,
+            11 => 19,
+            12 => 8,
+            13 => 27,
+            14 => 17,
+            15 => 6,
+            16 => 25,
+            17 => 14,
+            _ => 3,
+        };
+        let month = if base > 20 { 4 } else { 5 };
+        let day = if base > 20 { base - 10 } else { base };
+        NaiveDate::from_ymd_opt(year, month, day.clamp(1, 28) as u32).unwrap()
+    }
+
+    /// Approximate Hari Raya Puasa (Eid al-Fitr).
+    /// Based on Islamic lunar calendar (moves ~11 days earlier each year).
+    fn approximate_hari_raya_puasa(year: i32) -> NaiveDate {
+        // Islamic calendar moves about 11 days earlier each year
+        // Base: 2024 Eid al-Fitr was approximately April 10
+        let base_year = 2024;
+        let base_date = NaiveDate::from_ymd_opt(2024, 4, 10).unwrap();
+        let years_diff = year - base_year;
+        let days_shift = (years_diff as f64 * -10.63) as i64;
+        let mut result = base_date + Duration::days(days_shift);
+
+        // Wrap around to stay in valid range
+        while result.year() != year {
+            if result.year() > year {
+                result -= Duration::days(354); // Islamic lunar year
+            } else {
+                result += Duration::days(354);
+            }
+        }
+        result
+    }
+
+    /// Approximate Hari Raya Haji (Eid al-Adha).
+    /// Approximately 70 days after Hari Raya Puasa.
+    fn approximate_hari_raya_haji(year: i32) -> NaiveDate {
+        Self::approximate_hari_raya_puasa(year) + Duration::days(70)
+    }
+
+    /// Approximate Deepavali date (same as Diwali).
+    fn approximate_deepavali(year: i32) -> NaiveDate {
+        Self::approximate_diwali(year)
+    }
+
+    /// Approximate Korean New Year (Seollal).
+    /// Similar to Chinese New Year but may differ by a day.
+    fn approximate_korean_new_year(year: i32) -> NaiveDate {
+        Self::approximate_chinese_new_year(year)
+    }
+
+    /// Approximate Korean Buddha's Birthday.
+    /// 8th day of the 4th lunar month.
+    fn approximate_korean_buddha_birthday(year: i32) -> NaiveDate {
+        // Typically falls in late April to late May
+        match year % 19 {
+            0 => NaiveDate::from_ymd_opt(year, 5, 15).unwrap(),
+            1 => NaiveDate::from_ymd_opt(year, 5, 4).unwrap(),
+            2 => NaiveDate::from_ymd_opt(year, 5, 23).unwrap(),
+            3 => NaiveDate::from_ymd_opt(year, 5, 12).unwrap(),
+            4 => NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            5 => NaiveDate::from_ymd_opt(year, 5, 20).unwrap(),
+            6 => NaiveDate::from_ymd_opt(year, 5, 10).unwrap(),
+            7 => NaiveDate::from_ymd_opt(year, 4, 29).unwrap(),
+            8 => NaiveDate::from_ymd_opt(year, 5, 18).unwrap(),
+            9 => NaiveDate::from_ymd_opt(year, 5, 7).unwrap(),
+            10 => NaiveDate::from_ymd_opt(year, 5, 26).unwrap(),
+            11 => NaiveDate::from_ymd_opt(year, 5, 15).unwrap(),
+            12 => NaiveDate::from_ymd_opt(year, 5, 4).unwrap(),
+            13 => NaiveDate::from_ymd_opt(year, 5, 24).unwrap(),
+            14 => NaiveDate::from_ymd_opt(year, 5, 13).unwrap(),
+            15 => NaiveDate::from_ymd_opt(year, 5, 2).unwrap(),
+            16 => NaiveDate::from_ymd_opt(year, 5, 21).unwrap(),
+            17 => NaiveDate::from_ymd_opt(year, 5, 10).unwrap(),
+            _ => NaiveDate::from_ymd_opt(year, 4, 30).unwrap(),
+        }
+    }
+
+    /// Approximate Chuseok (Korean Thanksgiving).
+    /// 15th day of the 8th lunar month (harvest moon).
+    fn approximate_chuseok(year: i32) -> NaiveDate {
+        // Chuseok typically falls in September or early October
+        match year % 19 {
+            0 => NaiveDate::from_ymd_opt(year, 9, 17).unwrap(),
+            1 => NaiveDate::from_ymd_opt(year, 10, 6).unwrap(),
+            2 => NaiveDate::from_ymd_opt(year, 9, 25).unwrap(),
+            3 => NaiveDate::from_ymd_opt(year, 9, 14).unwrap(),
+            4 => NaiveDate::from_ymd_opt(year, 10, 3).unwrap(),
+            5 => NaiveDate::from_ymd_opt(year, 9, 22).unwrap(),
+            6 => NaiveDate::from_ymd_opt(year, 9, 11).unwrap(),
+            7 => NaiveDate::from_ymd_opt(year, 9, 30).unwrap(),
+            8 => NaiveDate::from_ymd_opt(year, 9, 19).unwrap(),
+            9 => NaiveDate::from_ymd_opt(year, 10, 9).unwrap(),
+            10 => NaiveDate::from_ymd_opt(year, 9, 28).unwrap(),
+            11 => NaiveDate::from_ymd_opt(year, 9, 17).unwrap(),
+            12 => NaiveDate::from_ymd_opt(year, 10, 6).unwrap(),
+            13 => NaiveDate::from_ymd_opt(year, 9, 25).unwrap(),
+            14 => NaiveDate::from_ymd_opt(year, 9, 14).unwrap(),
+            15 => NaiveDate::from_ymd_opt(year, 10, 4).unwrap(),
+            16 => NaiveDate::from_ymd_opt(year, 9, 22).unwrap(),
+            17 => NaiveDate::from_ymd_opt(year, 9, 12).unwrap(),
+            _ => NaiveDate::from_ymd_opt(year, 10, 1).unwrap(),
         }
     }
 }
@@ -820,6 +1352,11 @@ mod tests {
             Region::CN,
             Region::JP,
             Region::IN,
+            Region::BR,
+            Region::MX,
+            Region::AU,
+            Region::SG,
+            Region::KR,
         ];
 
         for region in regions {
@@ -830,6 +1367,63 @@ mod tests {
                 region
             );
         }
+    }
+
+    #[test]
+    fn test_brazilian_holidays() {
+        let cal = HolidayCalendar::for_region(Region::BR, 2024);
+
+        // Independência do Brasil - September 7
+        let independence = NaiveDate::from_ymd_opt(2024, 9, 7).unwrap();
+        assert!(cal.is_holiday(independence));
+
+        // Tiradentes - April 21
+        let tiradentes = NaiveDate::from_ymd_opt(2024, 4, 21).unwrap();
+        assert!(cal.is_holiday(tiradentes));
+    }
+
+    #[test]
+    fn test_mexican_holidays() {
+        let cal = HolidayCalendar::for_region(Region::MX, 2024);
+
+        // Día de la Independencia - September 16
+        let independence = NaiveDate::from_ymd_opt(2024, 9, 16).unwrap();
+        assert!(cal.is_holiday(independence));
+    }
+
+    #[test]
+    fn test_australian_holidays() {
+        let cal = HolidayCalendar::for_region(Region::AU, 2024);
+
+        // ANZAC Day - April 25
+        let anzac = NaiveDate::from_ymd_opt(2024, 4, 25).unwrap();
+        assert!(cal.is_holiday(anzac));
+
+        // Australia Day - January 26
+        let australia_day = NaiveDate::from_ymd_opt(2024, 1, 26).unwrap();
+        assert!(cal.is_holiday(australia_day));
+    }
+
+    #[test]
+    fn test_singapore_holidays() {
+        let cal = HolidayCalendar::for_region(Region::SG, 2024);
+
+        // National Day - August 9
+        let national = NaiveDate::from_ymd_opt(2024, 8, 9).unwrap();
+        assert!(cal.is_holiday(national));
+    }
+
+    #[test]
+    fn test_korean_holidays() {
+        let cal = HolidayCalendar::for_region(Region::KR, 2024);
+
+        // Liberation Day - August 15
+        let liberation = NaiveDate::from_ymd_opt(2024, 8, 15).unwrap();
+        assert!(cal.is_holiday(liberation));
+
+        // Hangul Day - October 9
+        let hangul = NaiveDate::from_ymd_opt(2024, 10, 9).unwrap();
+        assert!(cal.is_holiday(hangul));
     }
 
     #[test]

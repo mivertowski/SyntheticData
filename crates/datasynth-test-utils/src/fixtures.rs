@@ -74,6 +74,7 @@ pub fn minimal_config() -> GeneratorConfig {
         accounting_standards: AccountingStandardsConfig::default(),
         audit_standards: AuditStandardsConfig::default(),
         distributions: Default::default(),
+        temporal_patterns: Default::default(),
     }
 }
 

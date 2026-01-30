@@ -59,6 +59,7 @@ pub fn create_preset(
         accounting_standards: AccountingStandardsConfig::default(),
         audit_standards: AuditStandardsConfig::default(),
         distributions: AdvancedDistributionConfig::default(),
+        temporal_patterns: TemporalPatternsConfig::default(),
     }
 }
 

@@ -97,6 +97,9 @@ pub struct GeneratorConfig {
     /// Advanced distribution configuration (mixture models, correlations, regime changes)
     #[serde(default)]
     pub distributions: AdvancedDistributionConfig,
+    /// Temporal patterns configuration (business days, period-end dynamics, processing lags)
+    #[serde(default)]
+    pub temporal_patterns: TemporalPatternsConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -5471,6 +5474,325 @@ pub enum ValidationReportFormat {
     Yaml,
     /// HTML report
     Html,
+}
+
+// =============================================================================
+// Temporal Patterns Configuration
+// =============================================================================
+
+/// Temporal patterns configuration for business days, period-end dynamics, and processing lags.
+///
+/// This section enables sophisticated temporal modeling including:
+/// - Business day calculations and settlement dates
+/// - Regional holiday calendars
+/// - Period-end decay curves (non-flat volume spikes)
+/// - Processing lag modeling (event-to-posting delays)
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TemporalPatternsConfig {
+    /// Enable temporal patterns features.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Business day calculation configuration.
+    #[serde(default)]
+    pub business_days: BusinessDaySchemaConfig,
+
+    /// Regional calendar configuration.
+    #[serde(default)]
+    pub calendars: CalendarSchemaConfig,
+
+    /// Period-end dynamics configuration.
+    #[serde(default)]
+    pub period_end: PeriodEndSchemaConfig,
+
+    /// Processing lag configuration.
+    #[serde(default)]
+    pub processing_lags: ProcessingLagSchemaConfig,
+}
+
+/// Business day calculation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BusinessDaySchemaConfig {
+    /// Enable business day calculations.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Half-day policy: "full_day", "half_day", "non_business_day".
+    #[serde(default = "default_half_day_policy")]
+    pub half_day_policy: String,
+
+    /// Settlement rules configuration.
+    #[serde(default)]
+    pub settlement_rules: SettlementRulesSchemaConfig,
+
+    /// Month-end convention: "modified_following", "preceding", "following", "end_of_month".
+    #[serde(default = "default_month_end_convention")]
+    pub month_end_convention: String,
+
+    /// Weekend days (e.g., ["saturday", "sunday"] or ["friday", "saturday"] for Middle East).
+    #[serde(default)]
+    pub weekend_days: Option<Vec<String>>,
+}
+
+fn default_half_day_policy() -> String {
+    "half_day".to_string()
+}
+
+fn default_month_end_convention() -> String {
+    "modified_following".to_string()
+}
+
+impl Default for BusinessDaySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            half_day_policy: "half_day".to_string(),
+            settlement_rules: SettlementRulesSchemaConfig::default(),
+            month_end_convention: "modified_following".to_string(),
+            weekend_days: None,
+        }
+    }
+}
+
+/// Settlement rules configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettlementRulesSchemaConfig {
+    /// Equity settlement days (T+N).
+    #[serde(default = "default_settlement_2")]
+    pub equity_days: i32,
+
+    /// Government bonds settlement days.
+    #[serde(default = "default_settlement_1")]
+    pub government_bonds_days: i32,
+
+    /// FX spot settlement days.
+    #[serde(default = "default_settlement_2")]
+    pub fx_spot_days: i32,
+
+    /// Corporate bonds settlement days.
+    #[serde(default = "default_settlement_2")]
+    pub corporate_bonds_days: i32,
+
+    /// Wire transfer cutoff time (HH:MM format).
+    #[serde(default = "default_wire_cutoff")]
+    pub wire_cutoff_time: String,
+
+    /// International wire settlement days.
+    #[serde(default = "default_settlement_1")]
+    pub wire_international_days: i32,
+
+    /// ACH settlement days.
+    #[serde(default = "default_settlement_1")]
+    pub ach_days: i32,
+}
+
+fn default_settlement_1() -> i32 {
+    1
+}
+
+fn default_settlement_2() -> i32 {
+    2
+}
+
+fn default_wire_cutoff() -> String {
+    "14:00".to_string()
+}
+
+impl Default for SettlementRulesSchemaConfig {
+    fn default() -> Self {
+        Self {
+            equity_days: 2,
+            government_bonds_days: 1,
+            fx_spot_days: 2,
+            corporate_bonds_days: 2,
+            wire_cutoff_time: "14:00".to_string(),
+            wire_international_days: 1,
+            ach_days: 1,
+        }
+    }
+}
+
+/// Regional calendar configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CalendarSchemaConfig {
+    /// List of regions to include (e.g., ["US", "DE", "BR", "SG", "KR"]).
+    #[serde(default)]
+    pub regions: Vec<String>,
+
+    /// Custom holidays (in addition to regional calendars).
+    #[serde(default)]
+    pub custom_holidays: Vec<CustomHolidaySchemaConfig>,
+}
+
+/// Custom holiday configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomHolidaySchemaConfig {
+    /// Holiday name.
+    pub name: String,
+    /// Month (1-12).
+    pub month: u8,
+    /// Day of month.
+    pub day: u8,
+    /// Activity multiplier (0.0-1.0, default 0.05).
+    #[serde(default = "default_holiday_multiplier")]
+    pub activity_multiplier: f64,
+}
+
+fn default_holiday_multiplier() -> f64 {
+    0.05
+}
+
+/// Period-end dynamics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PeriodEndSchemaConfig {
+    /// Model type: "flat", "exponential", "extended_crunch", "daily_profile".
+    #[serde(default)]
+    pub model: Option<String>,
+
+    /// Month-end configuration.
+    #[serde(default)]
+    pub month_end: Option<PeriodEndModelSchemaConfig>,
+
+    /// Quarter-end configuration.
+    #[serde(default)]
+    pub quarter_end: Option<PeriodEndModelSchemaConfig>,
+
+    /// Year-end configuration.
+    #[serde(default)]
+    pub year_end: Option<PeriodEndModelSchemaConfig>,
+}
+
+/// Period-end model configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PeriodEndModelSchemaConfig {
+    /// Inherit configuration from another period (e.g., "month_end").
+    #[serde(default)]
+    pub inherit_from: Option<String>,
+
+    /// Additional multiplier on top of inherited/base model.
+    #[serde(default)]
+    pub additional_multiplier: Option<f64>,
+
+    /// Days before period end to start acceleration (negative, e.g., -10).
+    #[serde(default)]
+    pub start_day: Option<i32>,
+
+    /// Base multiplier at start of acceleration.
+    #[serde(default)]
+    pub base_multiplier: Option<f64>,
+
+    /// Peak multiplier on last day.
+    #[serde(default)]
+    pub peak_multiplier: Option<f64>,
+
+    /// Decay rate for exponential model (0.1-0.5 typical).
+    #[serde(default)]
+    pub decay_rate: Option<f64>,
+
+    /// Sustained high days for crunch model.
+    #[serde(default)]
+    pub sustained_high_days: Option<i32>,
+}
+
+/// Processing lag configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessingLagSchemaConfig {
+    /// Enable processing lag calculations.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Sales order lag configuration (log-normal mu, sigma).
+    #[serde(default)]
+    pub sales_order_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Purchase order lag configuration.
+    #[serde(default)]
+    pub purchase_order_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Goods receipt lag configuration.
+    #[serde(default)]
+    pub goods_receipt_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Invoice receipt lag configuration.
+    #[serde(default)]
+    pub invoice_receipt_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Invoice issue lag configuration.
+    #[serde(default)]
+    pub invoice_issue_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Payment lag configuration.
+    #[serde(default)]
+    pub payment_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Journal entry lag configuration.
+    #[serde(default)]
+    pub journal_entry_lag: Option<LagDistributionSchemaConfig>,
+
+    /// Cross-day posting configuration.
+    #[serde(default)]
+    pub cross_day_posting: Option<CrossDayPostingSchemaConfig>,
+}
+
+impl Default for ProcessingLagSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            sales_order_lag: None,
+            purchase_order_lag: None,
+            goods_receipt_lag: None,
+            invoice_receipt_lag: None,
+            invoice_issue_lag: None,
+            payment_lag: None,
+            journal_entry_lag: None,
+            cross_day_posting: None,
+        }
+    }
+}
+
+/// Lag distribution configuration (log-normal parameters).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LagDistributionSchemaConfig {
+    /// Log-scale mean (mu for log-normal).
+    pub mu: f64,
+    /// Log-scale standard deviation (sigma for log-normal).
+    pub sigma: f64,
+    /// Minimum lag in hours.
+    #[serde(default)]
+    pub min_hours: Option<f64>,
+    /// Maximum lag in hours.
+    #[serde(default)]
+    pub max_hours: Option<f64>,
+}
+
+/// Cross-day posting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrossDayPostingSchemaConfig {
+    /// Enable cross-day posting logic.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Probability of next-day posting by hour (map of hour -> probability).
+    /// E.g., { 17: 0.7, 19: 0.9, 21: 0.99 }
+    #[serde(default)]
+    pub probability_by_hour: std::collections::HashMap<u8, f64>,
+}
+
+impl Default for CrossDayPostingSchemaConfig {
+    fn default() -> Self {
+        let mut probability_by_hour = std::collections::HashMap::new();
+        probability_by_hour.insert(17, 0.3);
+        probability_by_hour.insert(18, 0.6);
+        probability_by_hour.insert(19, 0.8);
+        probability_by_hour.insert(20, 0.9);
+        probability_by_hour.insert(21, 0.95);
+        probability_by_hour.insert(22, 0.99);
+
+        Self {
+            enabled: true,
+            probability_by_hour,
+        }
+    }
 }
 
 #[cfg(test)]

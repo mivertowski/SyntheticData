@@ -7,8 +7,14 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use std::sync::Arc;
 
-use datasynth_config::schema::{FraudConfig, GeneratorConfig, TemplateConfig, TransactionConfig};
-use datasynth_core::distributions::{DriftAdjustments, DriftConfig, DriftController, *};
+use datasynth_config::schema::{
+    FraudConfig, GeneratorConfig, TemplateConfig, TemporalPatternsConfig, TransactionConfig,
+};
+use datasynth_core::distributions::{
+    BusinessDayCalculator, CrossDayConfig, DriftAdjustments, DriftConfig, DriftController,
+    EventType, LagDistribution, PeriodEndConfig, PeriodEndDynamics, PeriodEndModel,
+    ProcessingLagCalculator, ProcessingLagConfig, *,
+};
 use datasynth_core::models::*;
 use datasynth_core::templates::{
     descriptions::DescriptionContext, DescriptionGenerator, ReferenceGenerator, ReferenceType,
@@ -56,6 +62,10 @@ pub struct JournalEntryGenerator {
     batch_state: Option<BatchState>,
     // Temporal drift controller for simulating distribution changes over time
     drift_controller: Option<DriftController>,
+    // Temporal patterns components
+    business_day_calculator: Option<BusinessDayCalculator>,
+    processing_lag_calculator: Option<ProcessingLagCalculator>,
+    temporal_patterns_config: Option<TemporalPatternsConfig>,
 }
 
 /// State for tracking batch processing behavior.
@@ -212,6 +222,9 @@ impl JournalEntryGenerator {
             approval_threshold: rust_decimal::Decimal::new(10000, 0), // $10,000 default threshold
             batch_state: None,
             drift_controller: None,
+            business_day_calculator: None,
+            processing_lag_calculator: None,
+            temporal_patterns_config: None,
         }
     }
 
@@ -252,7 +265,200 @@ impl JournalEntryGenerator {
         // Set fraud config
         generator.fraud_config = full_config.fraud.clone();
 
+        // Configure temporal patterns if enabled
+        let temporal_config = &full_config.temporal_patterns;
+        if temporal_config.enabled {
+            generator = generator.with_temporal_patterns(temporal_config.clone(), seed);
+        }
+
         generator
+    }
+
+    /// Configure temporal patterns including business day calculations and processing lags.
+    ///
+    /// This enables realistic temporal behavior including:
+    /// - Business day awareness (no postings on weekends/holidays)
+    /// - Processing lag modeling (event-to-posting delays)
+    /// - Period-end dynamics (volume spikes at month/quarter/year end)
+    pub fn with_temporal_patterns(mut self, config: TemporalPatternsConfig, seed: u64) -> Self {
+        // Create business day calculator if enabled
+        if config.business_days.enabled {
+            let region = config
+                .calendars
+                .regions
+                .first()
+                .map(|r| Self::parse_region(r))
+                .unwrap_or(Region::US);
+
+            let calendar = HolidayCalendar::new(region, self.start_date.year());
+            self.business_day_calculator = Some(BusinessDayCalculator::new(calendar));
+        }
+
+        // Create processing lag calculator if enabled
+        if config.processing_lags.enabled {
+            let lag_config = Self::convert_processing_lag_config(&config.processing_lags);
+            self.processing_lag_calculator =
+                Some(ProcessingLagCalculator::with_config(seed, lag_config));
+        }
+
+        // Create period-end dynamics if configured
+        let model = config.period_end.model.as_deref().unwrap_or("flat");
+        if model != "flat"
+            || config
+                .period_end
+                .month_end
+                .as_ref()
+                .is_some_and(|m| m.peak_multiplier.unwrap_or(1.0) != 1.0)
+        {
+            let dynamics = Self::convert_period_end_config(&config.period_end);
+            self.temporal_sampler.set_period_end_dynamics(dynamics);
+        }
+
+        self.temporal_patterns_config = Some(config);
+        self
+    }
+
+    /// Convert schema processing lag config to core config.
+    fn convert_processing_lag_config(
+        schema: &datasynth_config::schema::ProcessingLagSchemaConfig,
+    ) -> ProcessingLagConfig {
+        let mut config = ProcessingLagConfig {
+            enabled: schema.enabled,
+            ..Default::default()
+        };
+
+        // Helper to convert lag schema to distribution
+        let convert_lag = |lag: &datasynth_config::schema::LagDistributionSchemaConfig| {
+            let mut dist = LagDistribution::log_normal(lag.mu, lag.sigma);
+            if let Some(min) = lag.min_hours {
+                dist.min_lag_hours = min;
+            }
+            if let Some(max) = lag.max_hours {
+                dist.max_lag_hours = max;
+            }
+            dist
+        };
+
+        // Apply event-specific lags
+        if let Some(ref lag) = schema.sales_order_lag {
+            config
+                .event_lags
+                .insert(EventType::SalesOrder, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.purchase_order_lag {
+            config
+                .event_lags
+                .insert(EventType::PurchaseOrder, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.goods_receipt_lag {
+            config
+                .event_lags
+                .insert(EventType::GoodsReceipt, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.invoice_receipt_lag {
+            config
+                .event_lags
+                .insert(EventType::InvoiceReceipt, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.invoice_issue_lag {
+            config
+                .event_lags
+                .insert(EventType::InvoiceIssue, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.payment_lag {
+            config
+                .event_lags
+                .insert(EventType::Payment, convert_lag(lag));
+        }
+        if let Some(ref lag) = schema.journal_entry_lag {
+            config
+                .event_lags
+                .insert(EventType::JournalEntry, convert_lag(lag));
+        }
+
+        // Apply cross-day posting config
+        if let Some(ref cross_day) = schema.cross_day_posting {
+            config.cross_day = CrossDayConfig {
+                enabled: cross_day.enabled,
+                probability_by_hour: cross_day.probability_by_hour.clone(),
+                ..Default::default()
+            };
+        }
+
+        config
+    }
+
+    /// Convert schema period-end config to core PeriodEndDynamics.
+    fn convert_period_end_config(
+        schema: &datasynth_config::schema::PeriodEndSchemaConfig,
+    ) -> PeriodEndDynamics {
+        let model_type = schema.model.as_deref().unwrap_or("exponential");
+
+        // Helper to convert period config
+        let convert_period =
+            |period: Option<&datasynth_config::schema::PeriodEndModelSchemaConfig>,
+             default_peak: f64|
+             -> PeriodEndConfig {
+                if let Some(p) = period {
+                    let model = match model_type {
+                        "flat" => PeriodEndModel::FlatMultiplier {
+                            multiplier: p.peak_multiplier.unwrap_or(default_peak),
+                        },
+                        "extended_crunch" => PeriodEndModel::ExtendedCrunch {
+                            start_day: p.start_day.unwrap_or(-10),
+                            sustained_high_days: p.sustained_high_days.unwrap_or(3),
+                            peak_multiplier: p.peak_multiplier.unwrap_or(default_peak),
+                            ramp_up_days: 3, // Default ramp-up period
+                        },
+                        _ => PeriodEndModel::ExponentialAcceleration {
+                            start_day: p.start_day.unwrap_or(-10),
+                            base_multiplier: p.base_multiplier.unwrap_or(1.0),
+                            peak_multiplier: p.peak_multiplier.unwrap_or(default_peak),
+                            decay_rate: p.decay_rate.unwrap_or(0.3),
+                        },
+                    };
+                    PeriodEndConfig {
+                        enabled: true,
+                        model,
+                        additional_multiplier: p.additional_multiplier.unwrap_or(1.0),
+                    }
+                } else {
+                    PeriodEndConfig {
+                        enabled: true,
+                        model: PeriodEndModel::ExponentialAcceleration {
+                            start_day: -10,
+                            base_multiplier: 1.0,
+                            peak_multiplier: default_peak,
+                            decay_rate: 0.3,
+                        },
+                        additional_multiplier: 1.0,
+                    }
+                }
+            };
+
+        PeriodEndDynamics::new(
+            convert_period(schema.month_end.as_ref(), 2.0),
+            convert_period(schema.quarter_end.as_ref(), 3.5),
+            convert_period(schema.year_end.as_ref(), 5.0),
+        )
+    }
+
+    /// Parse a region string into a Region enum.
+    fn parse_region(region_str: &str) -> Region {
+        match region_str.to_uppercase().as_str() {
+            "US" => Region::US,
+            "DE" => Region::DE,
+            "GB" => Region::GB,
+            "CN" => Region::CN,
+            "JP" => Region::JP,
+            "IN" => Region::IN,
+            "BR" => Region::BR,
+            "MX" => Region::MX,
+            "AU" => Region::AU,
+            "SG" => Region::SG,
+            "KR" => Region::KR,
+            _ => Region::US,
+        }
     }
 
     /// Set a custom company selector.
@@ -466,9 +672,21 @@ impl JournalEntryGenerator {
         let document_id = self.generate_deterministic_uuid();
 
         // Sample posting date
-        let posting_date = self
+        let mut posting_date = self
             .temporal_sampler
             .sample_date(self.start_date, self.end_date);
+
+        // Adjust posting date to be a business day if business day calculator is configured
+        if let Some(ref calc) = self.business_day_calculator {
+            if !calc.is_business_day(posting_date) {
+                // Move to next business day
+                posting_date = calc.next_business_day(posting_date, false);
+                // Ensure we don't exceed end_date
+                if posting_date > self.end_date {
+                    posting_date = calc.prev_business_day(self.end_date, true);
+                }
+            }
+        }
 
         // Select company using weighted selector
         let company_code = self.company_selector.select(&mut self.rng).to_string();
@@ -1857,5 +2075,53 @@ mod tests {
             dates_with_multiple > 0,
             "With batching, should see some dates with multiple entries"
         );
+    }
+
+    #[test]
+    fn test_temporal_patterns_business_days() {
+        use datasynth_config::schema::{
+            BusinessDaySchemaConfig, CalendarSchemaConfig, TemporalPatternsConfig,
+        };
+
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        // Create temporal patterns config with business days enabled
+        let temporal_config = TemporalPatternsConfig {
+            enabled: true,
+            business_days: BusinessDaySchemaConfig {
+                enabled: true,
+                ..Default::default()
+            },
+            calendars: CalendarSchemaConfig {
+                regions: vec!["US".to_string()],
+                custom_holidays: vec![],
+            },
+            ..Default::default()
+        };
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 3, 31).unwrap(), // Q1 2024
+            42,
+        )
+        .with_temporal_patterns(temporal_config, 42)
+        .with_persona_errors(false);
+
+        // Generate entries and verify none fall on weekends
+        let entries: Vec<JournalEntry> = (0..100).map(|_| je_gen.generate()).collect();
+
+        for entry in &entries {
+            let weekday = entry.header.posting_date.weekday();
+            assert!(
+                weekday != chrono::Weekday::Sat && weekday != chrono::Weekday::Sun,
+                "Posting date {:?} should not be a weekend",
+                entry.header.posting_date
+            );
+        }
     }
 }

@@ -20,10 +20,14 @@
 //! - **holidays**: Holiday calendar handling
 //! - **seasonality**: Seasonal patterns
 //! - **temporal**: Temporal sampling
+//! - **business_day**: Business day calculations and settlement dates
+//! - **period_end**: Period-end decay curves and dynamics
+//! - **processing_lag**: Event-to-posting lag modeling
 
 mod amount;
 mod benford;
 mod beta;
+mod business_day;
 mod conditional;
 mod copula;
 mod correlation;
@@ -33,6 +37,8 @@ mod industry_profiles;
 mod line_item;
 mod mixture;
 mod pareto;
+mod period_end;
+mod processing_lag;
 mod seasonality;
 mod temporal;
 mod weibull;
@@ -41,6 +47,7 @@ mod zero_inflated;
 pub use amount::*;
 pub use benford::*;
 pub use beta::*;
+pub use business_day::*;
 pub use conditional::*;
 pub use copula::*;
 pub use correlation::*;
@@ -50,6 +57,8 @@ pub use industry_profiles::*;
 pub use line_item::*;
 pub use mixture::*;
 pub use pareto::*;
+pub use period_end::*;
+pub use processing_lag::*;
 pub use seasonality::*;
 pub use temporal::*;
 pub use weibull::*;
