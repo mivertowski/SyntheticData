@@ -421,6 +421,167 @@ class RelationshipSettings:
 
 
 # ============================================================================
+# Temporal Patterns Configuration
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class SettlementRulesConfig:
+    """Settlement rules configuration for different instrument types."""
+
+    equity_days: int = 2
+    government_bonds_days: int = 1
+    fx_spot_days: int = 2
+    wire_cutoff_time: str = "14:00"
+
+
+@dataclass(frozen=True)
+class BusinessDaySchemaConfig:
+    """Business day calculation configuration."""
+
+    enabled: bool = False
+    half_day_policy: str = "full_day"  # full_day, half_day, non_business_day
+    settlement_rules: Optional[SettlementRulesConfig] = None
+
+
+@dataclass(frozen=True)
+class CalendarSchemaConfig:
+    """Regional calendar configuration."""
+
+    regions: Optional[List[str]] = None  # US, DE, GB, CN, JP, IN, BR, MX, AU, SG, KR
+    custom_holidays: Optional[List[str]] = None  # ISO date strings
+
+
+@dataclass(frozen=True)
+class PeriodEndModelConfig:
+    """Period-end decay model configuration."""
+
+    start_day: int = -10
+    base_multiplier: float = 1.0
+    peak_multiplier: float = 3.5
+    decay_rate: float = 0.3
+    sustained_high_days: Optional[int] = None  # For extended_crunch model
+
+
+@dataclass(frozen=True)
+class PeriodEndSchemaConfig:
+    """Period-end dynamics configuration."""
+
+    enabled: bool = False
+    model: str = "flat"  # flat, exponential, daily_profile, extended_crunch
+    month_end: Optional[PeriodEndModelConfig] = None
+    quarter_end: Optional[PeriodEndModelConfig] = None
+    year_end: Optional[PeriodEndModelConfig] = None
+
+
+@dataclass(frozen=True)
+class LagDistributionConfig:
+    """Lag distribution parameters (log-normal)."""
+
+    mu: float = 0.5
+    sigma: float = 0.8
+    min_lag_hours: float = 0.0
+    max_lag_hours: float = 48.0
+
+
+@dataclass(frozen=True)
+class CrossDayPostingConfig:
+    """Cross-day posting configuration."""
+
+    enabled: bool = False
+    probability_by_hour: Optional[Dict[int, float]] = None  # hour -> probability
+
+
+@dataclass(frozen=True)
+class ProcessingLagSchemaConfig:
+    """Processing lag modeling configuration."""
+
+    enabled: bool = False
+    sales_order_lag: Optional[LagDistributionConfig] = None
+    goods_receipt_lag: Optional[LagDistributionConfig] = None
+    invoice_receipt_lag: Optional[LagDistributionConfig] = None
+    payment_lag: Optional[LagDistributionConfig] = None
+    journal_entry_lag: Optional[LagDistributionConfig] = None
+    cross_day_posting: Optional[CrossDayPostingConfig] = None
+
+
+@dataclass(frozen=True)
+class FourFourFiveSchemaConfig:
+    """4-4-5 retail calendar configuration."""
+
+    anchor: str = "last_saturday_of"  # first_sunday_of, last_saturday_of
+    anchor_month: int = 1  # 1-12
+    week_pattern: str = "four_four_five"  # four_four_five, four_five_four, five_four_four
+    leap_week_placement: str = "q4_period3"  # q4_period3, q1_period1
+
+
+@dataclass(frozen=True)
+class FiscalCalendarSchemaConfig:
+    """Fiscal calendar configuration."""
+
+    enabled: bool = False
+    calendar_type: str = "calendar_year"  # calendar_year, custom, four_four_five, thirteen_period
+    year_start_month: Optional[int] = None  # 1-12 for custom
+    year_start_day: Optional[int] = None  # 1-31 for custom
+    four_four_five: Optional[FourFourFiveSchemaConfig] = None
+
+
+@dataclass(frozen=True)
+class IntraDaySegmentConfig:
+    """Intra-day time segment configuration."""
+
+    name: str
+    start: str  # HH:MM format
+    end: str  # HH:MM format
+    multiplier: float = 1.0
+    posting_type: str = "both"  # human, system, both
+
+
+@dataclass(frozen=True)
+class IntraDaySchemaConfig:
+    """Intra-day patterns configuration."""
+
+    enabled: bool = False
+    segments: Optional[List[IntraDaySegmentConfig]] = None
+
+
+@dataclass(frozen=True)
+class EntityTimezoneMappingConfig:
+    """Entity-to-timezone mapping configuration."""
+
+    pattern: str  # e.g., "EU_*", "*_APAC", "1000"
+    timezone: str  # IANA timezone name
+
+
+@dataclass(frozen=True)
+class TimezoneSchemaConfig:
+    """Timezone handling configuration."""
+
+    enabled: bool = False
+    default_timezone: str = "America/New_York"
+    consolidation_timezone: str = "UTC"
+    entity_mappings: Optional[List[EntityTimezoneMappingConfig]] = None
+
+
+@dataclass(frozen=True)
+class TemporalPatternsConfig:
+    """Comprehensive temporal patterns configuration.
+
+    Controls business day calculations, regional calendars, period-end dynamics,
+    processing lags, fiscal calendars, intra-day patterns, and timezone handling.
+    """
+
+    enabled: bool = False
+    business_days: Optional[BusinessDaySchemaConfig] = None
+    calendars: Optional[CalendarSchemaConfig] = None
+    period_end: Optional[PeriodEndSchemaConfig] = None
+    processing_lags: Optional[ProcessingLagSchemaConfig] = None
+    fiscal_calendar: Optional[FiscalCalendarSchemaConfig] = None
+    intraday: Optional[IntraDaySchemaConfig] = None
+    timezones: Optional[TimezoneSchemaConfig] = None
+
+
+# ============================================================================
 # Accounting Standards Configuration (ASC 606, ASC 842, ASC 820, ASC 360)
 # ============================================================================
 
@@ -617,6 +778,7 @@ class Config:
     audit_standards: Optional[AuditStandardsConfig] = None
     distributions: Optional[AdvancedDistributionSettings] = None
     templates: Optional[TemplateSettings] = None
+    temporal_patterns: Optional[TemporalPatternsConfig] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -876,6 +1038,100 @@ class Config:
             if self.templates.references is not None:
                 tmpl_dict["references"] = _strip_none(self.templates.references.__dict__)
             payload["templates"] = tmpl_dict
+
+        if self.temporal_patterns is not None:
+            tp_dict: Dict[str, Any] = {"enabled": self.temporal_patterns.enabled}
+            if self.temporal_patterns.business_days is not None:
+                bd_dict: Dict[str, Any] = {
+                    "enabled": self.temporal_patterns.business_days.enabled,
+                    "half_day_policy": self.temporal_patterns.business_days.half_day_policy,
+                }
+                if self.temporal_patterns.business_days.settlement_rules is not None:
+                    bd_dict["settlement_rules"] = _strip_none(
+                        self.temporal_patterns.business_days.settlement_rules.__dict__
+                    )
+                tp_dict["business_days"] = bd_dict
+            if self.temporal_patterns.calendars is not None:
+                tp_dict["calendars"] = _strip_none(self.temporal_patterns.calendars.__dict__)
+            if self.temporal_patterns.period_end is not None:
+                pe_dict: Dict[str, Any] = {
+                    "enabled": self.temporal_patterns.period_end.enabled,
+                    "model": self.temporal_patterns.period_end.model,
+                }
+                if self.temporal_patterns.period_end.month_end is not None:
+                    pe_dict["month_end"] = _strip_none(
+                        self.temporal_patterns.period_end.month_end.__dict__
+                    )
+                if self.temporal_patterns.period_end.quarter_end is not None:
+                    pe_dict["quarter_end"] = _strip_none(
+                        self.temporal_patterns.period_end.quarter_end.__dict__
+                    )
+                if self.temporal_patterns.period_end.year_end is not None:
+                    pe_dict["year_end"] = _strip_none(
+                        self.temporal_patterns.period_end.year_end.__dict__
+                    )
+                tp_dict["period_end"] = pe_dict
+            if self.temporal_patterns.processing_lags is not None:
+                pl_dict: Dict[str, Any] = {"enabled": self.temporal_patterns.processing_lags.enabled}
+                if self.temporal_patterns.processing_lags.sales_order_lag is not None:
+                    pl_dict["sales_order_lag"] = _strip_none(
+                        self.temporal_patterns.processing_lags.sales_order_lag.__dict__
+                    )
+                if self.temporal_patterns.processing_lags.goods_receipt_lag is not None:
+                    pl_dict["goods_receipt_lag"] = _strip_none(
+                        self.temporal_patterns.processing_lags.goods_receipt_lag.__dict__
+                    )
+                if self.temporal_patterns.processing_lags.invoice_receipt_lag is not None:
+                    pl_dict["invoice_receipt_lag"] = _strip_none(
+                        self.temporal_patterns.processing_lags.invoice_receipt_lag.__dict__
+                    )
+                if self.temporal_patterns.processing_lags.payment_lag is not None:
+                    pl_dict["payment_lag"] = _strip_none(
+                        self.temporal_patterns.processing_lags.payment_lag.__dict__
+                    )
+                if self.temporal_patterns.processing_lags.journal_entry_lag is not None:
+                    pl_dict["journal_entry_lag"] = _strip_none(
+                        self.temporal_patterns.processing_lags.journal_entry_lag.__dict__
+                    )
+                if self.temporal_patterns.processing_lags.cross_day_posting is not None:
+                    tp_dict["cross_day_posting"] = _strip_none(
+                        self.temporal_patterns.processing_lags.cross_day_posting.__dict__
+                    )
+                tp_dict["processing_lags"] = pl_dict
+            if self.temporal_patterns.fiscal_calendar is not None:
+                fc_dict: Dict[str, Any] = {
+                    "enabled": self.temporal_patterns.fiscal_calendar.enabled,
+                    "calendar_type": self.temporal_patterns.fiscal_calendar.calendar_type,
+                }
+                if self.temporal_patterns.fiscal_calendar.year_start_month is not None:
+                    fc_dict["year_start_month"] = self.temporal_patterns.fiscal_calendar.year_start_month
+                if self.temporal_patterns.fiscal_calendar.year_start_day is not None:
+                    fc_dict["year_start_day"] = self.temporal_patterns.fiscal_calendar.year_start_day
+                if self.temporal_patterns.fiscal_calendar.four_four_five is not None:
+                    fc_dict["four_four_five"] = _strip_none(
+                        self.temporal_patterns.fiscal_calendar.four_four_five.__dict__
+                    )
+                tp_dict["fiscal_calendar"] = fc_dict
+            if self.temporal_patterns.intraday is not None:
+                intra_dict: Dict[str, Any] = {"enabled": self.temporal_patterns.intraday.enabled}
+                if self.temporal_patterns.intraday.segments is not None:
+                    intra_dict["segments"] = [
+                        _strip_none(s.__dict__) for s in self.temporal_patterns.intraday.segments
+                    ]
+                tp_dict["intraday"] = intra_dict
+            if self.temporal_patterns.timezones is not None:
+                tz_dict: Dict[str, Any] = {
+                    "enabled": self.temporal_patterns.timezones.enabled,
+                    "default_timezone": self.temporal_patterns.timezones.default_timezone,
+                    "consolidation_timezone": self.temporal_patterns.timezones.consolidation_timezone,
+                }
+                if self.temporal_patterns.timezones.entity_mappings is not None:
+                    tz_dict["entity_mappings"] = [
+                        {"pattern": m.pattern, "timezone": m.timezone}
+                        for m in self.temporal_patterns.timezones.entity_mappings
+                    ]
+                tp_dict["timezones"] = tz_dict
+            payload["temporal_patterns"] = tp_dict
 
         # Merge extra fields
         payload.update(self.extra)
@@ -1148,11 +1404,105 @@ class Config:
                 references=references,
             )
 
+        # Build temporal_patterns with nested structures
+        temporal_patterns = None
+        tp_data = data.get("temporal_patterns")
+        if tp_data is not None:
+            business_days = None
+            if tp_data.get("business_days"):
+                bd_data = tp_data["business_days"]
+                settlement_rules = _build_dataclass(
+                    SettlementRulesConfig, bd_data.get("settlement_rules")
+                )
+                business_days = BusinessDaySchemaConfig(
+                    enabled=bd_data.get("enabled", False),
+                    half_day_policy=bd_data.get("half_day_policy", "full_day"),
+                    settlement_rules=settlement_rules,
+                )
+            calendars = _build_dataclass(CalendarSchemaConfig, tp_data.get("calendars"))
+            period_end = None
+            if tp_data.get("period_end"):
+                pe_data = tp_data["period_end"]
+                period_end = PeriodEndSchemaConfig(
+                    enabled=pe_data.get("enabled", False),
+                    model=pe_data.get("model", "flat"),
+                    month_end=_build_dataclass(PeriodEndModelConfig, pe_data.get("month_end")),
+                    quarter_end=_build_dataclass(PeriodEndModelConfig, pe_data.get("quarter_end")),
+                    year_end=_build_dataclass(PeriodEndModelConfig, pe_data.get("year_end")),
+                )
+            processing_lags = None
+            if tp_data.get("processing_lags"):
+                pl_data = tp_data["processing_lags"]
+                cross_day = None
+                if pl_data.get("cross_day_posting"):
+                    cd_data = pl_data["cross_day_posting"]
+                    cross_day = CrossDayPostingConfig(
+                        enabled=cd_data.get("enabled", False),
+                        probability_by_hour=cd_data.get("probability_by_hour"),
+                    )
+                processing_lags = ProcessingLagSchemaConfig(
+                    enabled=pl_data.get("enabled", False),
+                    sales_order_lag=_build_dataclass(LagDistributionConfig, pl_data.get("sales_order_lag")),
+                    goods_receipt_lag=_build_dataclass(LagDistributionConfig, pl_data.get("goods_receipt_lag")),
+                    invoice_receipt_lag=_build_dataclass(LagDistributionConfig, pl_data.get("invoice_receipt_lag")),
+                    payment_lag=_build_dataclass(LagDistributionConfig, pl_data.get("payment_lag")),
+                    journal_entry_lag=_build_dataclass(LagDistributionConfig, pl_data.get("journal_entry_lag")),
+                    cross_day_posting=cross_day,
+                )
+            fiscal_calendar = None
+            if tp_data.get("fiscal_calendar"):
+                fc_data = tp_data["fiscal_calendar"]
+                four_four_five = _build_dataclass(
+                    FourFourFiveSchemaConfig, fc_data.get("four_four_five")
+                )
+                fiscal_calendar = FiscalCalendarSchemaConfig(
+                    enabled=fc_data.get("enabled", False),
+                    calendar_type=fc_data.get("calendar_type", "calendar_year"),
+                    year_start_month=fc_data.get("year_start_month"),
+                    year_start_day=fc_data.get("year_start_day"),
+                    four_four_five=four_four_five,
+                )
+            intraday = None
+            if tp_data.get("intraday"):
+                intra_data = tp_data["intraday"]
+                segments = None
+                if intra_data.get("segments"):
+                    segments = [IntraDaySegmentConfig(**s) for s in intra_data["segments"]]
+                intraday = IntraDaySchemaConfig(
+                    enabled=intra_data.get("enabled", False),
+                    segments=segments,
+                )
+            timezones = None
+            if tp_data.get("timezones"):
+                tz_data = tp_data["timezones"]
+                entity_mappings = None
+                if tz_data.get("entity_mappings"):
+                    entity_mappings = [
+                        EntityTimezoneMappingConfig(**m) for m in tz_data["entity_mappings"]
+                    ]
+                timezones = TimezoneSchemaConfig(
+                    enabled=tz_data.get("enabled", False),
+                    default_timezone=tz_data.get("default_timezone", "America/New_York"),
+                    consolidation_timezone=tz_data.get("consolidation_timezone", "UTC"),
+                    entity_mappings=entity_mappings,
+                )
+            temporal_patterns = TemporalPatternsConfig(
+                enabled=tp_data.get("enabled", False),
+                business_days=business_days,
+                calendars=calendars,
+                period_end=period_end,
+                processing_lags=processing_lags,
+                fiscal_calendar=fiscal_calendar,
+                intraday=intraday,
+                timezones=timezones,
+            )
+
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
             "fraud", "banking", "scenario", "temporal", "data_quality", "graph_export",
             "audit", "streaming", "rate_limit", "temporal_attributes", "relationships",
-            "accounting_standards", "audit_standards", "distributions", "templates"
+            "accounting_standards", "audit_standards", "distributions", "templates",
+            "temporal_patterns"
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -1177,6 +1527,7 @@ class Config:
             audit_standards=audit_standards,
             distributions=distributions,
             templates=templates,
+            temporal_patterns=temporal_patterns,
             extra=extra,
         )
 

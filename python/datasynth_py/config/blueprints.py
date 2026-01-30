@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from datasynth_py.config.models import (
     AdvancedDistributionSettings,
     AuditSettings,
     BankingSettings,
+    BusinessDaySchemaConfig,
+    CalendarSchemaConfig,
     ChartOfAccountsSettings,
     CompanyConfig,
     Config,
@@ -17,18 +19,28 @@ from datasynth_py.config.models import (
     DataQualitySettings,
     DescriptionTemplateConfig,
     EconomicCycleConfig,
+    EntityTimezoneMappingConfig,
     FraudSettings,
     GlobalSettings,
     GraphExportSettings,
+    IntraDaySchemaConfig,
+    IntraDaySegmentConfig,
     MixtureComponentConfig,
     MixtureDistributionConfig,
     NameTemplateConfig,
+    PeriodEndModelConfig,
+    PeriodEndSchemaConfig,
+    ProcessingLagSchemaConfig,
+    LagDistributionConfig,
     ReferenceTemplateConfig,
     RegimeChangeConfig,
     ScenarioSettings,
+    SettlementRulesConfig,
     StatisticalTestConfig,
     StatisticalValidationConfig,
     TemplateSettings,
+    TemporalPatternsConfig,
+    TimezoneSchemaConfig,
 )
 
 BlueprintFactory = Callable[..., Config]
@@ -447,6 +459,225 @@ def with_templates(
     )
 
     return base_config.override(templates=template_settings.__dict__)
+
+
+def with_temporal_patterns(
+    base_config: Config,
+    regions: Optional[List[str]] = None,
+    with_business_days: bool = True,
+    with_period_end_curves: bool = True,
+    with_processing_lags: bool = False,
+    with_intraday_patterns: bool = False,
+    with_timezones: bool = False,
+    default_timezone: str = "America/New_York",
+) -> Config:
+    """Add temporal pattern configuration for realistic time-based behavior.
+
+    Enables business day calculations, regional holiday calendars, period-end
+    volume spikes, processing lag modeling, and timezone handling.
+
+    Args:
+        base_config: Base configuration to extend.
+        regions: Holiday calendar regions (US, DE, GB, CN, JP, IN, BR, MX, AU, SG, KR).
+        with_business_days: Enable business day calculations and settlement rules.
+        with_period_end_curves: Enable exponential period-end volume curves.
+        with_processing_lags: Enable event-to-posting lag modeling.
+        with_intraday_patterns: Enable intra-day time segment patterns.
+        with_timezones: Enable multi-region timezone handling.
+        default_timezone: Default IANA timezone name.
+
+    Returns:
+        New Config with temporal patterns enabled.
+    """
+    if regions is None:
+        regions = ["US"]
+
+    business_days = None
+    if with_business_days:
+        business_days = BusinessDaySchemaConfig(
+            enabled=True,
+            half_day_policy="full_day",
+            settlement_rules=SettlementRulesConfig(
+                equity_days=2,
+                government_bonds_days=1,
+                fx_spot_days=2,
+                wire_cutoff_time="14:00",
+            ),
+        )
+
+    calendars = CalendarSchemaConfig(regions=regions)
+
+    period_end = None
+    if with_period_end_curves:
+        period_end = PeriodEndSchemaConfig(
+            enabled=True,
+            model="exponential",
+            month_end=PeriodEndModelConfig(
+                start_day=-10,
+                base_multiplier=1.0,
+                peak_multiplier=3.5,
+                decay_rate=0.3,
+            ),
+            quarter_end=PeriodEndModelConfig(
+                start_day=-10,
+                base_multiplier=1.0,
+                peak_multiplier=5.0,
+                decay_rate=0.25,
+            ),
+            year_end=PeriodEndModelConfig(
+                start_day=-15,
+                base_multiplier=1.0,
+                peak_multiplier=6.0,
+                decay_rate=0.2,
+            ),
+        )
+
+    processing_lags = None
+    if with_processing_lags:
+        processing_lags = ProcessingLagSchemaConfig(
+            enabled=True,
+            sales_order_lag=LagDistributionConfig(mu=0.5, sigma=0.8),
+            goods_receipt_lag=LagDistributionConfig(mu=1.5, sigma=0.5),
+            invoice_receipt_lag=LagDistributionConfig(mu=2.0, sigma=0.6),
+        )
+
+    intraday = None
+    if with_intraday_patterns:
+        intraday = IntraDaySchemaConfig(
+            enabled=True,
+            segments=[
+                IntraDaySegmentConfig(
+                    name="morning_spike",
+                    start="08:30",
+                    end="10:00",
+                    multiplier=1.8,
+                    posting_type="both",
+                ),
+                IntraDaySegmentConfig(
+                    name="lunch_dip",
+                    start="12:00",
+                    end="13:30",
+                    multiplier=0.4,
+                    posting_type="human",
+                ),
+                IntraDaySegmentConfig(
+                    name="eod_rush",
+                    start="16:00",
+                    end="17:30",
+                    multiplier=1.5,
+                    posting_type="both",
+                ),
+            ],
+        )
+
+    timezones = None
+    if with_timezones:
+        timezones = TimezoneSchemaConfig(
+            enabled=True,
+            default_timezone=default_timezone,
+            consolidation_timezone="UTC",
+            entity_mappings=[
+                EntityTimezoneMappingConfig(pattern="EU_*", timezone="Europe/London"),
+                EntityTimezoneMappingConfig(pattern="APAC_*", timezone="Asia/Singapore"),
+            ],
+        )
+
+    # Build the temporal patterns dict manually to ensure proper nesting
+    tp_dict: Dict[str, Any] = {"enabled": True}
+
+    if business_days is not None:
+        bd_dict: Dict[str, Any] = {
+            "enabled": business_days.enabled,
+            "half_day_policy": business_days.half_day_policy,
+        }
+        if business_days.settlement_rules is not None:
+            bd_dict["settlement_rules"] = {
+                "equity_days": business_days.settlement_rules.equity_days,
+                "government_bonds_days": business_days.settlement_rules.government_bonds_days,
+                "fx_spot_days": business_days.settlement_rules.fx_spot_days,
+                "wire_cutoff_time": business_days.settlement_rules.wire_cutoff_time,
+            }
+        tp_dict["business_days"] = bd_dict
+
+    if calendars is not None:
+        tp_dict["calendars"] = {"regions": calendars.regions}
+
+    if period_end is not None:
+        pe_dict: Dict[str, Any] = {
+            "enabled": period_end.enabled,
+            "model": period_end.model,
+        }
+        if period_end.month_end is not None:
+            pe_dict["month_end"] = {
+                "start_day": period_end.month_end.start_day,
+                "base_multiplier": period_end.month_end.base_multiplier,
+                "peak_multiplier": period_end.month_end.peak_multiplier,
+                "decay_rate": period_end.month_end.decay_rate,
+            }
+        if period_end.quarter_end is not None:
+            pe_dict["quarter_end"] = {
+                "start_day": period_end.quarter_end.start_day,
+                "base_multiplier": period_end.quarter_end.base_multiplier,
+                "peak_multiplier": period_end.quarter_end.peak_multiplier,
+                "decay_rate": period_end.quarter_end.decay_rate,
+            }
+        if period_end.year_end is not None:
+            pe_dict["year_end"] = {
+                "start_day": period_end.year_end.start_day,
+                "base_multiplier": period_end.year_end.base_multiplier,
+                "peak_multiplier": period_end.year_end.peak_multiplier,
+                "decay_rate": period_end.year_end.decay_rate,
+            }
+        tp_dict["period_end"] = pe_dict
+
+    if processing_lags is not None:
+        pl_dict: Dict[str, Any] = {"enabled": processing_lags.enabled}
+        if processing_lags.sales_order_lag is not None:
+            pl_dict["sales_order_lag"] = {
+                "mu": processing_lags.sales_order_lag.mu,
+                "sigma": processing_lags.sales_order_lag.sigma,
+            }
+        if processing_lags.goods_receipt_lag is not None:
+            pl_dict["goods_receipt_lag"] = {
+                "mu": processing_lags.goods_receipt_lag.mu,
+                "sigma": processing_lags.goods_receipt_lag.sigma,
+            }
+        if processing_lags.invoice_receipt_lag is not None:
+            pl_dict["invoice_receipt_lag"] = {
+                "mu": processing_lags.invoice_receipt_lag.mu,
+                "sigma": processing_lags.invoice_receipt_lag.sigma,
+            }
+        tp_dict["processing_lags"] = pl_dict
+
+    if intraday is not None:
+        intra_dict: Dict[str, Any] = {"enabled": intraday.enabled}
+        if intraday.segments is not None:
+            intra_dict["segments"] = [
+                {
+                    "name": s.name,
+                    "start": s.start,
+                    "end": s.end,
+                    "multiplier": s.multiplier,
+                    "posting_type": s.posting_type,
+                }
+                for s in intraday.segments
+            ]
+        tp_dict["intraday"] = intra_dict
+
+    if timezones is not None:
+        tz_dict: Dict[str, Any] = {
+            "enabled": timezones.enabled,
+            "default_timezone": timezones.default_timezone,
+            "consolidation_timezone": timezones.consolidation_timezone,
+        }
+        if timezones.entity_mappings is not None:
+            tz_dict["entity_mappings"] = [
+                {"pattern": m.pattern, "timezone": m.timezone}
+                for m in timezones.entity_mappings
+            ]
+        tp_dict["timezones"] = tz_dict
+
+    return base_config.override(temporal_patterns=tp_dict)
 
 
 def statistical_validation(
