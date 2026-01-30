@@ -100,6 +100,24 @@ pub enum EntityType {
     Project,
     /// Internal Order
     InternalOrder,
+    /// Company/legal entity
+    Company,
+    /// Department
+    Department,
+    /// Contract
+    Contract,
+    /// Asset (general)
+    Asset,
+    /// Bank account
+    BankAccount,
+    /// Purchase order
+    PurchaseOrder,
+    /// Sales order
+    SalesOrder,
+    /// Invoice
+    Invoice,
+    /// Payment
+    Payment,
 }
 
 impl std::fmt::Display for EntityType {
@@ -117,6 +135,15 @@ impl std::fmt::Display for EntityType {
             Self::BusinessPartner => "BUSINESS_PARTNER",
             Self::Project => "PROJECT",
             Self::InternalOrder => "INTERNAL_ORDER",
+            Self::Company => "COMPANY",
+            Self::Department => "DEPARTMENT",
+            Self::Contract => "CONTRACT",
+            Self::Asset => "ASSET",
+            Self::BankAccount => "BANK_ACCOUNT",
+            Self::PurchaseOrder => "PURCHASE_ORDER",
+            Self::SalesOrder => "SALES_ORDER",
+            Self::Invoice => "INVOICE",
+            Self::Payment => "PAYMENT",
         };
         write!(f, "{}", name)
     }

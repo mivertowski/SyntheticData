@@ -55,14 +55,15 @@ pub use statistical::{
 
 pub use coherence::{
     AuditTrailEvaluation, AuditTrailGap, BalanceSheetEvaluation, BalanceSheetEvaluator,
-    CoherenceEvaluation, DocumentChainEvaluation, DocumentChainEvaluator, FairValueEvaluation,
-    FrameworkViolation, ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation,
-    IsaComplianceEvaluation, LeaseAccountingEvaluation, LeaseAccountingEvaluator, LeaseEvaluation,
-    PcaobComplianceEvaluation, PerformanceObligation, ReferentialIntegrityEvaluation,
-    ReferentialIntegrityEvaluator, RevenueContract, RevenueRecognitionEvaluation,
-    RevenueRecognitionEvaluator, SoxComplianceEvaluation, StandardsComplianceEvaluation,
-    StandardsThresholds, SubledgerEvaluator, SubledgerReconciliationEvaluation,
-    VariableConsideration, ViolationSeverity,
+    CoherenceEvaluation, ConcentrationMetrics, DocumentChainEvaluation, DocumentChainEvaluator,
+    FairValueEvaluation, FrameworkViolation, ICMatchingEvaluation, ICMatchingEvaluator,
+    ImpairmentEvaluation, IsaComplianceEvaluation, LeaseAccountingEvaluation,
+    LeaseAccountingEvaluator, LeaseEvaluation, NetworkEdge, NetworkEvaluation, NetworkEvaluator,
+    NetworkNode, NetworkThresholds, PcaobComplianceEvaluation, PerformanceObligation,
+    ReferentialIntegrityEvaluation, ReferentialIntegrityEvaluator, RevenueContract,
+    RevenueRecognitionEvaluation, RevenueRecognitionEvaluator, SoxComplianceEvaluation,
+    StandardsComplianceEvaluation, StandardsThresholds, StrengthStats, SubledgerEvaluator,
+    SubledgerReconciliationEvaluation, VariableConsideration, ViolationSeverity,
 };
 
 pub use quality::{

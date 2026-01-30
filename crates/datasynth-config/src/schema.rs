@@ -100,6 +100,18 @@ pub struct GeneratorConfig {
     /// Temporal patterns configuration (business days, period-end dynamics, processing lags)
     #[serde(default)]
     pub temporal_patterns: TemporalPatternsConfig,
+    /// Vendor network configuration (multi-tier supply chain modeling)
+    #[serde(default)]
+    pub vendor_network: VendorNetworkSchemaConfig,
+    /// Customer segmentation configuration (value segments, lifecycle stages)
+    #[serde(default)]
+    pub customer_segmentation: CustomerSegmentationSchemaConfig,
+    /// Relationship strength calculation configuration
+    #[serde(default)]
+    pub relationship_strength: RelationshipStrengthSchemaConfig,
+    /// Cross-process link configuration (P2P ↔ O2C via inventory)
+    #[serde(default)]
+    pub cross_process_links: CrossProcessLinksSchemaConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -5978,6 +5990,591 @@ pub struct EntityTimezoneMapping {
 
     /// Timezone (IANA format, e.g., "Europe/London").
     pub timezone: String,
+}
+
+// =============================================================================
+// Vendor Network Configuration
+// =============================================================================
+
+/// Configuration for multi-tier vendor network generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VendorNetworkSchemaConfig {
+    /// Enable vendor network generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Maximum depth of supply chain tiers (1-3).
+    #[serde(default = "default_vendor_tier_depth")]
+    pub depth: u8,
+
+    /// Tier 1 vendor count configuration.
+    #[serde(default)]
+    pub tier1: TierCountSchemaConfig,
+
+    /// Tier 2 vendors per Tier 1 parent.
+    #[serde(default)]
+    pub tier2_per_parent: TierCountSchemaConfig,
+
+    /// Tier 3 vendors per Tier 2 parent.
+    #[serde(default)]
+    pub tier3_per_parent: TierCountSchemaConfig,
+
+    /// Vendor cluster distribution.
+    #[serde(default)]
+    pub clusters: VendorClusterSchemaConfig,
+
+    /// Concentration limits.
+    #[serde(default)]
+    pub dependencies: DependencySchemaConfig,
+}
+
+fn default_vendor_tier_depth() -> u8 {
+    3
+}
+
+impl Default for VendorNetworkSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            depth: 3,
+            tier1: TierCountSchemaConfig { min: 50, max: 100 },
+            tier2_per_parent: TierCountSchemaConfig { min: 4, max: 10 },
+            tier3_per_parent: TierCountSchemaConfig { min: 2, max: 5 },
+            clusters: VendorClusterSchemaConfig::default(),
+            dependencies: DependencySchemaConfig::default(),
+        }
+    }
+}
+
+/// Tier count configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TierCountSchemaConfig {
+    /// Minimum count.
+    #[serde(default = "default_tier_min")]
+    pub min: usize,
+
+    /// Maximum count.
+    #[serde(default = "default_tier_max")]
+    pub max: usize,
+}
+
+fn default_tier_min() -> usize {
+    5
+}
+
+fn default_tier_max() -> usize {
+    20
+}
+
+impl Default for TierCountSchemaConfig {
+    fn default() -> Self {
+        Self {
+            min: default_tier_min(),
+            max: default_tier_max(),
+        }
+    }
+}
+
+/// Vendor cluster distribution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VendorClusterSchemaConfig {
+    /// Reliable strategic vendors percentage (default: 0.20).
+    #[serde(default = "default_reliable_strategic")]
+    pub reliable_strategic: f64,
+
+    /// Standard operational vendors percentage (default: 0.50).
+    #[serde(default = "default_standard_operational")]
+    pub standard_operational: f64,
+
+    /// Transactional vendors percentage (default: 0.25).
+    #[serde(default = "default_transactional")]
+    pub transactional: f64,
+
+    /// Problematic vendors percentage (default: 0.05).
+    #[serde(default = "default_problematic")]
+    pub problematic: f64,
+}
+
+fn default_reliable_strategic() -> f64 {
+    0.20
+}
+
+fn default_standard_operational() -> f64 {
+    0.50
+}
+
+fn default_transactional() -> f64 {
+    0.25
+}
+
+fn default_problematic() -> f64 {
+    0.05
+}
+
+impl Default for VendorClusterSchemaConfig {
+    fn default() -> Self {
+        Self {
+            reliable_strategic: 0.20,
+            standard_operational: 0.50,
+            transactional: 0.25,
+            problematic: 0.05,
+        }
+    }
+}
+
+/// Dependency and concentration limits configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DependencySchemaConfig {
+    /// Maximum concentration for a single vendor (default: 0.15).
+    #[serde(default = "default_max_single_vendor")]
+    pub max_single_vendor_concentration: f64,
+
+    /// Maximum concentration for top 5 vendors (default: 0.45).
+    #[serde(default = "default_max_top5")]
+    pub top_5_concentration: f64,
+
+    /// Percentage of single-source vendors (default: 0.05).
+    #[serde(default = "default_single_source_percent")]
+    pub single_source_percent: f64,
+}
+
+fn default_max_single_vendor() -> f64 {
+    0.15
+}
+
+fn default_max_top5() -> f64 {
+    0.45
+}
+
+fn default_single_source_percent() -> f64 {
+    0.05
+}
+
+impl Default for DependencySchemaConfig {
+    fn default() -> Self {
+        Self {
+            max_single_vendor_concentration: 0.15,
+            top_5_concentration: 0.45,
+            single_source_percent: 0.05,
+        }
+    }
+}
+
+// =============================================================================
+// Customer Segmentation Configuration
+// =============================================================================
+
+/// Configuration for customer segmentation generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomerSegmentationSchemaConfig {
+    /// Enable customer segmentation generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Value segment distribution.
+    #[serde(default)]
+    pub value_segments: ValueSegmentsSchemaConfig,
+
+    /// Lifecycle stage configuration.
+    #[serde(default)]
+    pub lifecycle: LifecycleSchemaConfig,
+
+    /// Network (referrals, hierarchies) configuration.
+    #[serde(default)]
+    pub networks: CustomerNetworksSchemaConfig,
+}
+
+impl Default for CustomerSegmentationSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            value_segments: ValueSegmentsSchemaConfig::default(),
+            lifecycle: LifecycleSchemaConfig::default(),
+            networks: CustomerNetworksSchemaConfig::default(),
+        }
+    }
+}
+
+/// Customer value segments distribution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValueSegmentsSchemaConfig {
+    /// Enterprise segment configuration.
+    #[serde(default)]
+    pub enterprise: SegmentDetailSchemaConfig,
+
+    /// Mid-market segment configuration.
+    #[serde(default)]
+    pub mid_market: SegmentDetailSchemaConfig,
+
+    /// SMB segment configuration.
+    #[serde(default)]
+    pub smb: SegmentDetailSchemaConfig,
+
+    /// Consumer segment configuration.
+    #[serde(default)]
+    pub consumer: SegmentDetailSchemaConfig,
+}
+
+impl Default for ValueSegmentsSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enterprise: SegmentDetailSchemaConfig {
+                revenue_share: 0.40,
+                customer_share: 0.05,
+                avg_order_value_range: "50000+".to_string(),
+            },
+            mid_market: SegmentDetailSchemaConfig {
+                revenue_share: 0.35,
+                customer_share: 0.20,
+                avg_order_value_range: "5000-50000".to_string(),
+            },
+            smb: SegmentDetailSchemaConfig {
+                revenue_share: 0.20,
+                customer_share: 0.50,
+                avg_order_value_range: "500-5000".to_string(),
+            },
+            consumer: SegmentDetailSchemaConfig {
+                revenue_share: 0.05,
+                customer_share: 0.25,
+                avg_order_value_range: "50-500".to_string(),
+            },
+        }
+    }
+}
+
+/// Individual segment detail configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SegmentDetailSchemaConfig {
+    /// Revenue share for this segment.
+    #[serde(default)]
+    pub revenue_share: f64,
+
+    /// Customer share for this segment.
+    #[serde(default)]
+    pub customer_share: f64,
+
+    /// Average order value range (e.g., "5000-50000" or "50000+").
+    #[serde(default)]
+    pub avg_order_value_range: String,
+}
+
+impl Default for SegmentDetailSchemaConfig {
+    fn default() -> Self {
+        Self {
+            revenue_share: 0.25,
+            customer_share: 0.25,
+            avg_order_value_range: "1000-10000".to_string(),
+        }
+    }
+}
+
+/// Customer lifecycle stage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LifecycleSchemaConfig {
+    /// Prospect stage rate.
+    #[serde(default)]
+    pub prospect_rate: f64,
+
+    /// New customer stage rate.
+    #[serde(default = "default_new_rate")]
+    pub new_rate: f64,
+
+    /// Growth stage rate.
+    #[serde(default = "default_growth_rate")]
+    pub growth_rate: f64,
+
+    /// Mature stage rate.
+    #[serde(default = "default_mature_rate")]
+    pub mature_rate: f64,
+
+    /// At-risk stage rate.
+    #[serde(default = "default_at_risk_rate")]
+    pub at_risk_rate: f64,
+
+    /// Churned stage rate.
+    #[serde(default = "default_churned_rate")]
+    pub churned_rate: f64,
+}
+
+fn default_new_rate() -> f64 {
+    0.10
+}
+
+fn default_growth_rate() -> f64 {
+    0.15
+}
+
+fn default_mature_rate() -> f64 {
+    0.60
+}
+
+fn default_at_risk_rate() -> f64 {
+    0.10
+}
+
+fn default_churned_rate() -> f64 {
+    0.05
+}
+
+impl Default for LifecycleSchemaConfig {
+    fn default() -> Self {
+        Self {
+            prospect_rate: 0.0,
+            new_rate: 0.10,
+            growth_rate: 0.15,
+            mature_rate: 0.60,
+            at_risk_rate: 0.10,
+            churned_rate: 0.05,
+        }
+    }
+}
+
+/// Customer networks configuration (referrals, hierarchies).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomerNetworksSchemaConfig {
+    /// Referral network configuration.
+    #[serde(default)]
+    pub referrals: ReferralSchemaConfig,
+
+    /// Corporate hierarchy configuration.
+    #[serde(default)]
+    pub corporate_hierarchies: HierarchySchemaConfig,
+}
+
+impl Default for CustomerNetworksSchemaConfig {
+    fn default() -> Self {
+        Self {
+            referrals: ReferralSchemaConfig::default(),
+            corporate_hierarchies: HierarchySchemaConfig::default(),
+        }
+    }
+}
+
+/// Referral network configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReferralSchemaConfig {
+    /// Enable referral generation.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Rate of customers acquired via referral.
+    #[serde(default = "default_referral_rate")]
+    pub referral_rate: f64,
+}
+
+fn default_referral_rate() -> f64 {
+    0.15
+}
+
+impl Default for ReferralSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            referral_rate: 0.15,
+        }
+    }
+}
+
+/// Corporate hierarchy configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HierarchySchemaConfig {
+    /// Enable corporate hierarchy generation.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Rate of customers in hierarchies.
+    #[serde(default = "default_hierarchy_rate")]
+    pub probability: f64,
+}
+
+fn default_hierarchy_rate() -> f64 {
+    0.30
+}
+
+impl Default for HierarchySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            probability: 0.30,
+        }
+    }
+}
+
+// =============================================================================
+// Relationship Strength Configuration
+// =============================================================================
+
+/// Configuration for relationship strength calculation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RelationshipStrengthSchemaConfig {
+    /// Enable relationship strength calculation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Calculation weights.
+    #[serde(default)]
+    pub calculation: StrengthCalculationSchemaConfig,
+
+    /// Strength thresholds for classification.
+    #[serde(default)]
+    pub thresholds: StrengthThresholdsSchemaConfig,
+}
+
+impl Default for RelationshipStrengthSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            calculation: StrengthCalculationSchemaConfig::default(),
+            thresholds: StrengthThresholdsSchemaConfig::default(),
+        }
+    }
+}
+
+/// Strength calculation weights configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrengthCalculationSchemaConfig {
+    /// Weight for transaction volume (default: 0.30).
+    #[serde(default = "default_volume_weight")]
+    pub transaction_volume_weight: f64,
+
+    /// Weight for transaction count (default: 0.25).
+    #[serde(default = "default_count_weight")]
+    pub transaction_count_weight: f64,
+
+    /// Weight for relationship duration (default: 0.20).
+    #[serde(default = "default_duration_weight")]
+    pub relationship_duration_weight: f64,
+
+    /// Weight for recency (default: 0.15).
+    #[serde(default = "default_recency_weight")]
+    pub recency_weight: f64,
+
+    /// Weight for mutual connections (default: 0.10).
+    #[serde(default = "default_mutual_weight")]
+    pub mutual_connections_weight: f64,
+
+    /// Recency half-life in days (default: 90).
+    #[serde(default = "default_recency_half_life")]
+    pub recency_half_life_days: u32,
+}
+
+fn default_volume_weight() -> f64 {
+    0.30
+}
+
+fn default_count_weight() -> f64 {
+    0.25
+}
+
+fn default_duration_weight() -> f64 {
+    0.20
+}
+
+fn default_recency_weight() -> f64 {
+    0.15
+}
+
+fn default_mutual_weight() -> f64 {
+    0.10
+}
+
+fn default_recency_half_life() -> u32 {
+    90
+}
+
+impl Default for StrengthCalculationSchemaConfig {
+    fn default() -> Self {
+        Self {
+            transaction_volume_weight: 0.30,
+            transaction_count_weight: 0.25,
+            relationship_duration_weight: 0.20,
+            recency_weight: 0.15,
+            mutual_connections_weight: 0.10,
+            recency_half_life_days: 90,
+        }
+    }
+}
+
+/// Strength thresholds for relationship classification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrengthThresholdsSchemaConfig {
+    /// Threshold for strong relationships (default: 0.7).
+    #[serde(default = "default_strong_threshold")]
+    pub strong: f64,
+
+    /// Threshold for moderate relationships (default: 0.4).
+    #[serde(default = "default_moderate_threshold")]
+    pub moderate: f64,
+
+    /// Threshold for weak relationships (default: 0.1).
+    #[serde(default = "default_weak_threshold")]
+    pub weak: f64,
+}
+
+fn default_strong_threshold() -> f64 {
+    0.7
+}
+
+fn default_moderate_threshold() -> f64 {
+    0.4
+}
+
+fn default_weak_threshold() -> f64 {
+    0.1
+}
+
+impl Default for StrengthThresholdsSchemaConfig {
+    fn default() -> Self {
+        Self {
+            strong: 0.7,
+            moderate: 0.4,
+            weak: 0.1,
+        }
+    }
+}
+
+// =============================================================================
+// Cross-Process Links Configuration
+// =============================================================================
+
+/// Configuration for cross-process linkages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrossProcessLinksSchemaConfig {
+    /// Enable cross-process link generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Enable inventory links between P2P and O2C.
+    #[serde(default = "default_true")]
+    pub inventory_p2p_o2c: bool,
+
+    /// Enable payment to bank reconciliation links.
+    #[serde(default = "default_true")]
+    pub payment_bank_reconciliation: bool,
+
+    /// Enable intercompany bilateral matching.
+    #[serde(default = "default_true")]
+    pub intercompany_bilateral: bool,
+
+    /// Percentage of GR/Deliveries to link via inventory (0.0 - 1.0).
+    #[serde(default = "default_inventory_link_rate")]
+    pub inventory_link_rate: f64,
+}
+
+fn default_inventory_link_rate() -> f64 {
+    0.30
+}
+
+impl Default for CrossProcessLinksSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            inventory_p2p_o2c: true,
+            payment_bank_reconciliation: true,
+            intercompany_bilateral: true,
+            inventory_link_rate: 0.30,
+        }
+    }
 }
 
 #[cfg(test)]

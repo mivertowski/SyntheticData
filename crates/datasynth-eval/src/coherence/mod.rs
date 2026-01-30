@@ -7,6 +7,7 @@ mod balance;
 mod document_chain;
 mod intercompany;
 mod multi_table;
+mod network;
 mod referential;
 mod standards;
 mod subledger;
@@ -19,6 +20,10 @@ pub use multi_table::{
     CascadePath, ConsistencyViolation, MultiTableConsistencyEvaluator, MultiTableData,
     MultiTableEvaluation, TableConsistencyResult, TableRecord, TableRelationship,
     TableRelationshipDef, ViolationType,
+};
+pub use network::{
+    ConcentrationMetrics, NetworkEdge, NetworkEvaluation, NetworkEvaluator, NetworkNode,
+    NetworkThresholds, StrengthStats,
 };
 pub use referential::{ReferentialIntegrityEvaluation, ReferentialIntegrityEvaluator};
 pub use standards::{
@@ -50,6 +55,8 @@ pub struct CoherenceEvaluation {
     pub multi_table: Option<MultiTableEvaluation>,
     /// Accounting and audit standards compliance results.
     pub standards: Option<StandardsComplianceEvaluation>,
+    /// Network/interconnectivity evaluation results.
+    pub network: Option<NetworkEvaluation>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -67,6 +74,7 @@ impl CoherenceEvaluation {
             referential: None,
             multi_table: None,
             standards: None,
+            network: None,
             passes: true,
             failures: Vec::new(),
         }
@@ -145,6 +153,13 @@ impl CoherenceEvaluation {
             let standards_thresholds = StandardsThresholds::default();
             standards_eval.check_thresholds(&standards_thresholds);
             self.failures.extend(standards_eval.failures.clone());
+        }
+
+        if let Some(ref network_eval) = self.network {
+            // Add any network evaluation issues
+            if !network_eval.passes {
+                self.failures.extend(network_eval.issues.clone());
+            }
         }
 
         self.passes = self.failures.is_empty();

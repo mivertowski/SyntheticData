@@ -60,6 +60,10 @@ pub fn create_preset(
         audit_standards: AuditStandardsConfig::default(),
         distributions: AdvancedDistributionConfig::default(),
         temporal_patterns: TemporalPatternsConfig::default(),
+        vendor_network: VendorNetworkSchemaConfig::default(),
+        customer_segmentation: CustomerSegmentationSchemaConfig::default(),
+        relationship_strength: RelationshipStrengthSchemaConfig::default(),
+        cross_process_links: CrossProcessLinksSchemaConfig::default(),
     }
 }
 

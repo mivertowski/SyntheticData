@@ -1,8 +1,16 @@
 //! Enhanced customer generator with credit management and payment behavior.
+//!
+//! Also supports customer segmentation with:
+//! - Value segments (Enterprise, Mid-Market, SMB, Consumer)
+//! - Customer lifecycle stages
+//! - Referral networks and corporate hierarchies
+//! - Engagement metrics and churn analysis
 
 use chrono::NaiveDate;
 use datasynth_core::models::{
-    CreditRating, Customer, CustomerPaymentBehavior, CustomerPool, PaymentTerms,
+    ChurnReason, CreditRating, Customer, CustomerEngagement, CustomerLifecycleStage,
+    CustomerPaymentBehavior, CustomerPool, CustomerValueSegment, PaymentTerms, RiskTrigger,
+    SegmentedCustomer, SegmentedCustomerPool,
 };
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -95,6 +103,194 @@ impl Default for CustomerGeneratorConfig {
                 ),
                 (CreditRating::D, Decimal::from(0), Decimal::from(10_000)),
             ],
+        }
+    }
+}
+
+/// Configuration for customer segmentation.
+#[derive(Debug, Clone)]
+pub struct CustomerSegmentationConfig {
+    /// Enable customer segmentation
+    pub enabled: bool,
+    /// Value segment distribution
+    pub segment_distribution: SegmentDistribution,
+    /// Lifecycle stage distribution
+    pub lifecycle_distribution: LifecycleDistribution,
+    /// Referral network configuration
+    pub referral_config: ReferralConfig,
+    /// Corporate hierarchy configuration
+    pub hierarchy_config: HierarchyConfig,
+    /// Industry distribution
+    pub industry_distribution: Vec<(String, f64)>,
+}
+
+impl Default for CustomerSegmentationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            segment_distribution: SegmentDistribution::default(),
+            lifecycle_distribution: LifecycleDistribution::default(),
+            referral_config: ReferralConfig::default(),
+            hierarchy_config: HierarchyConfig::default(),
+            industry_distribution: vec![
+                ("Technology".to_string(), 0.20),
+                ("Manufacturing".to_string(), 0.15),
+                ("Retail".to_string(), 0.15),
+                ("Healthcare".to_string(), 0.12),
+                ("Financial".to_string(), 0.12),
+                ("Energy".to_string(), 0.08),
+                ("Transportation".to_string(), 0.08),
+                ("Construction".to_string(), 0.10),
+            ],
+        }
+    }
+}
+
+/// Distribution of customer value segments.
+#[derive(Debug, Clone)]
+pub struct SegmentDistribution {
+    /// Enterprise segment (customer share)
+    pub enterprise: f64,
+    /// Mid-market segment (customer share)
+    pub mid_market: f64,
+    /// SMB segment (customer share)
+    pub smb: f64,
+    /// Consumer segment (customer share)
+    pub consumer: f64,
+}
+
+impl Default for SegmentDistribution {
+    fn default() -> Self {
+        Self {
+            enterprise: 0.05,
+            mid_market: 0.20,
+            smb: 0.50,
+            consumer: 0.25,
+        }
+    }
+}
+
+impl SegmentDistribution {
+    /// Validate that distribution sums to 1.0.
+    pub fn validate(&self) -> Result<(), String> {
+        let sum = self.enterprise + self.mid_market + self.smb + self.consumer;
+        if (sum - 1.0).abs() > 0.01 {
+            Err(format!("Segment distribution must sum to 1.0, got {}", sum))
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Select a segment based on the distribution.
+    pub fn select(&self, roll: f64) -> CustomerValueSegment {
+        let mut cumulative = 0.0;
+
+        cumulative += self.enterprise;
+        if roll < cumulative {
+            return CustomerValueSegment::Enterprise;
+        }
+
+        cumulative += self.mid_market;
+        if roll < cumulative {
+            return CustomerValueSegment::MidMarket;
+        }
+
+        cumulative += self.smb;
+        if roll < cumulative {
+            return CustomerValueSegment::Smb;
+        }
+
+        CustomerValueSegment::Consumer
+    }
+}
+
+/// Distribution of lifecycle stages.
+#[derive(Debug, Clone)]
+pub struct LifecycleDistribution {
+    /// Prospect rate
+    pub prospect: f64,
+    /// New customer rate
+    pub new: f64,
+    /// Growth stage rate
+    pub growth: f64,
+    /// Mature stage rate
+    pub mature: f64,
+    /// At-risk rate
+    pub at_risk: f64,
+    /// Churned rate
+    pub churned: f64,
+}
+
+impl Default for LifecycleDistribution {
+    fn default() -> Self {
+        Self {
+            prospect: 0.0, // Prospects not typically in active pool
+            new: 0.10,
+            growth: 0.15,
+            mature: 0.60,
+            at_risk: 0.10,
+            churned: 0.05,
+        }
+    }
+}
+
+impl LifecycleDistribution {
+    /// Validate that distribution sums to 1.0.
+    pub fn validate(&self) -> Result<(), String> {
+        let sum =
+            self.prospect + self.new + self.growth + self.mature + self.at_risk + self.churned;
+        if (sum - 1.0).abs() > 0.01 {
+            Err(format!(
+                "Lifecycle distribution must sum to 1.0, got {}",
+                sum
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+/// Configuration for referral networks.
+#[derive(Debug, Clone)]
+pub struct ReferralConfig {
+    /// Enable referral generation
+    pub enabled: bool,
+    /// Rate of customers acquired via referral
+    pub referral_rate: f64,
+    /// Maximum referrals per customer
+    pub max_referrals_per_customer: usize,
+}
+
+impl Default for ReferralConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            referral_rate: 0.15,
+            max_referrals_per_customer: 5,
+        }
+    }
+}
+
+/// Configuration for corporate hierarchies.
+#[derive(Debug, Clone)]
+pub struct HierarchyConfig {
+    /// Enable corporate hierarchy generation
+    pub enabled: bool,
+    /// Rate of customers in hierarchies
+    pub hierarchy_rate: f64,
+    /// Maximum hierarchy depth
+    pub max_depth: usize,
+    /// Rate of billing consolidation
+    pub billing_consolidation_rate: f64,
+}
+
+impl Default for HierarchyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            hierarchy_rate: 0.30,
+            max_depth: 3,
+            billing_consolidation_rate: 0.50,
         }
     }
 }
@@ -213,6 +409,8 @@ pub struct CustomerGenerator {
     seed: u64,
     config: CustomerGeneratorConfig,
     customer_counter: usize,
+    /// Segmentation configuration
+    segmentation_config: CustomerSegmentationConfig,
 }
 
 impl CustomerGenerator {
@@ -228,7 +426,28 @@ impl CustomerGenerator {
             seed,
             config,
             customer_counter: 0,
+            segmentation_config: CustomerSegmentationConfig::default(),
         }
+    }
+
+    /// Create a new customer generator with segmentation configuration.
+    pub fn with_segmentation_config(
+        seed: u64,
+        config: CustomerGeneratorConfig,
+        segmentation_config: CustomerSegmentationConfig,
+    ) -> Self {
+        Self {
+            rng: ChaCha8Rng::seed_from_u64(seed),
+            seed,
+            config,
+            customer_counter: 0,
+            segmentation_config,
+        }
+    }
+
+    /// Set segmentation configuration.
+    pub fn set_segmentation_config(&mut self, segmentation_config: CustomerSegmentationConfig) {
+        self.segmentation_config = segmentation_config;
     }
 
     /// Generate a single customer.
@@ -540,6 +759,472 @@ impl CustomerGenerator {
         self.rng = ChaCha8Rng::seed_from_u64(self.seed);
         self.customer_counter = 0;
     }
+
+    // ===== Customer Segmentation Generation =====
+
+    /// Generate a segmented customer pool with value segments, lifecycle stages, and networks.
+    pub fn generate_segmented_pool(
+        &mut self,
+        count: usize,
+        company_code: &str,
+        effective_date: NaiveDate,
+        total_annual_revenue: Decimal,
+    ) -> SegmentedCustomerPool {
+        let mut pool = SegmentedCustomerPool::new();
+
+        if !self.segmentation_config.enabled {
+            return pool;
+        }
+
+        // Calculate counts by segment
+        let segment_counts = self.calculate_segment_counts(count);
+
+        // Generate customers by segment
+        let mut all_customer_ids: Vec<String> = Vec::new();
+        let mut parent_candidates: Vec<String> = Vec::new();
+
+        for (segment, segment_count) in segment_counts {
+            for _ in 0..segment_count {
+                let customer = self.generate_customer(company_code, effective_date);
+                let customer_id = customer.customer_id.clone();
+
+                let mut segmented =
+                    self.create_segmented_customer(&customer, segment, effective_date);
+
+                // Assign industry
+                segmented.industry = Some(self.select_industry());
+
+                // Assign annual contract value based on segment
+                segmented.annual_contract_value =
+                    self.generate_acv(segment, total_annual_revenue, count);
+
+                // Enterprise customers are candidates for parent relationships
+                if segment == CustomerValueSegment::Enterprise {
+                    parent_candidates.push(customer_id.clone());
+                }
+
+                all_customer_ids.push(customer_id);
+                pool.add_customer(segmented);
+            }
+        }
+
+        // Build referral networks
+        if self.segmentation_config.referral_config.enabled {
+            self.build_referral_networks(&mut pool, &all_customer_ids);
+        }
+
+        // Build corporate hierarchies
+        if self.segmentation_config.hierarchy_config.enabled {
+            self.build_corporate_hierarchies(&mut pool, &all_customer_ids, &parent_candidates);
+        }
+
+        // Calculate engagement metrics and churn risk
+        self.populate_engagement_metrics(&mut pool, effective_date);
+
+        // Calculate statistics
+        pool.calculate_statistics();
+
+        pool
+    }
+
+    /// Calculate customer counts by segment.
+    fn calculate_segment_counts(
+        &mut self,
+        total_count: usize,
+    ) -> Vec<(CustomerValueSegment, usize)> {
+        let dist = &self.segmentation_config.segment_distribution;
+        vec![
+            (
+                CustomerValueSegment::Enterprise,
+                (total_count as f64 * dist.enterprise) as usize,
+            ),
+            (
+                CustomerValueSegment::MidMarket,
+                (total_count as f64 * dist.mid_market) as usize,
+            ),
+            (
+                CustomerValueSegment::Smb,
+                (total_count as f64 * dist.smb) as usize,
+            ),
+            (
+                CustomerValueSegment::Consumer,
+                (total_count as f64 * dist.consumer) as usize,
+            ),
+        ]
+    }
+
+    /// Create a segmented customer from a base customer.
+    fn create_segmented_customer(
+        &mut self,
+        customer: &Customer,
+        segment: CustomerValueSegment,
+        effective_date: NaiveDate,
+    ) -> SegmentedCustomer {
+        let lifecycle_stage = self.generate_lifecycle_stage(effective_date);
+
+        SegmentedCustomer::new(
+            &customer.customer_id,
+            &customer.name,
+            segment,
+            effective_date,
+        )
+        .with_lifecycle_stage(lifecycle_stage)
+    }
+
+    /// Generate lifecycle stage based on distribution.
+    fn generate_lifecycle_stage(&mut self, effective_date: NaiveDate) -> CustomerLifecycleStage {
+        let dist = &self.segmentation_config.lifecycle_distribution;
+        let roll: f64 = self.rng.gen();
+        let mut cumulative = 0.0;
+
+        cumulative += dist.prospect;
+        if roll < cumulative {
+            return CustomerLifecycleStage::Prospect {
+                conversion_probability: self.rng.gen_range(0.1..0.4),
+                source: Some("Marketing".to_string()),
+                first_contact_date: effective_date
+                    - chrono::Duration::days(self.rng.gen_range(1..90)),
+            };
+        }
+
+        cumulative += dist.new;
+        if roll < cumulative {
+            return CustomerLifecycleStage::New {
+                first_order_date: effective_date
+                    - chrono::Duration::days(self.rng.gen_range(1..90)),
+                onboarding_complete: self.rng.gen::<f64>() > 0.3,
+            };
+        }
+
+        cumulative += dist.growth;
+        if roll < cumulative {
+            return CustomerLifecycleStage::Growth {
+                since: effective_date - chrono::Duration::days(self.rng.gen_range(90..365)),
+                growth_rate: self.rng.gen_range(0.10..0.50),
+            };
+        }
+
+        cumulative += dist.mature;
+        if roll < cumulative {
+            return CustomerLifecycleStage::Mature {
+                stable_since: effective_date
+                    - chrono::Duration::days(self.rng.gen_range(365..1825)),
+                avg_annual_spend: Decimal::from(self.rng.gen_range(10000..500000)),
+            };
+        }
+
+        cumulative += dist.at_risk;
+        if roll < cumulative {
+            let triggers = self.generate_risk_triggers();
+            return CustomerLifecycleStage::AtRisk {
+                triggers,
+                flagged_date: effective_date - chrono::Duration::days(self.rng.gen_range(7..60)),
+                churn_probability: self.rng.gen_range(0.3..0.8),
+            };
+        }
+
+        // Churned
+        CustomerLifecycleStage::Churned {
+            last_activity: effective_date - chrono::Duration::days(self.rng.gen_range(90..365)),
+            win_back_probability: self.rng.gen_range(0.05..0.25),
+            reason: Some(self.generate_churn_reason()),
+        }
+    }
+
+    /// Generate risk triggers for at-risk customers.
+    fn generate_risk_triggers(&mut self) -> Vec<RiskTrigger> {
+        let all_triggers = [
+            RiskTrigger::DecliningOrderFrequency,
+            RiskTrigger::DecliningOrderValue,
+            RiskTrigger::PaymentIssues,
+            RiskTrigger::Complaints,
+            RiskTrigger::ReducedEngagement,
+            RiskTrigger::ContractExpiring,
+        ];
+
+        let count = self.rng.gen_range(1..=3);
+        let mut triggers = Vec::new();
+
+        for _ in 0..count {
+            let idx = self.rng.gen_range(0..all_triggers.len());
+            triggers.push(all_triggers[idx].clone());
+        }
+
+        triggers
+    }
+
+    /// Generate churn reason.
+    fn generate_churn_reason(&mut self) -> ChurnReason {
+        let roll: f64 = self.rng.gen();
+        if roll < 0.30 {
+            ChurnReason::Competitor
+        } else if roll < 0.50 {
+            ChurnReason::Price
+        } else if roll < 0.65 {
+            ChurnReason::ServiceQuality
+        } else if roll < 0.75 {
+            ChurnReason::BudgetConstraints
+        } else if roll < 0.85 {
+            ChurnReason::ProductFit
+        } else if roll < 0.92 {
+            ChurnReason::Consolidation
+        } else {
+            ChurnReason::Unknown
+        }
+    }
+
+    /// Select an industry based on distribution.
+    fn select_industry(&mut self) -> String {
+        let roll: f64 = self.rng.gen();
+        let mut cumulative = 0.0;
+
+        for (industry, prob) in &self.segmentation_config.industry_distribution {
+            cumulative += prob;
+            if roll < cumulative {
+                return industry.clone();
+            }
+        }
+
+        "Other".to_string()
+    }
+
+    /// Generate annual contract value based on segment.
+    fn generate_acv(
+        &mut self,
+        segment: CustomerValueSegment,
+        total_revenue: Decimal,
+        total_customers: usize,
+    ) -> Decimal {
+        // Calculate expected revenue per customer in this segment
+        let segment_revenue_share = segment.revenue_share();
+        let segment_customer_share = segment.customer_share();
+        let expected_customers_in_segment =
+            (total_customers as f64 * segment_customer_share) as usize;
+        let segment_total_revenue = total_revenue
+            * Decimal::from_f64_retain(segment_revenue_share).unwrap_or(Decimal::ZERO);
+
+        let avg_acv = if expected_customers_in_segment > 0 {
+            segment_total_revenue / Decimal::from(expected_customers_in_segment)
+        } else {
+            Decimal::from(10000)
+        };
+
+        // Add variance (±50%)
+        let variance = self.rng.gen_range(0.5..1.5);
+        avg_acv * Decimal::from_f64_retain(variance).unwrap_or(Decimal::ONE)
+    }
+
+    /// Build referral networks among customers.
+    fn build_referral_networks(
+        &mut self,
+        pool: &mut SegmentedCustomerPool,
+        customer_ids: &[String],
+    ) {
+        let referral_rate = self.segmentation_config.referral_config.referral_rate;
+        let max_referrals = self
+            .segmentation_config
+            .referral_config
+            .max_referrals_per_customer;
+
+        // Track referral counts per customer
+        let mut referral_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
+
+        // Create customer ID to index mapping
+        let id_to_idx: std::collections::HashMap<String, usize> = customer_ids
+            .iter()
+            .enumerate()
+            .map(|(idx, id)| (id.clone(), idx))
+            .collect();
+
+        for i in 0..pool.customers.len() {
+            if self.rng.gen::<f64>() < referral_rate {
+                // This customer was referred - find a referrer
+                let potential_referrers: Vec<usize> = customer_ids
+                    .iter()
+                    .enumerate()
+                    .filter(|(j, id)| {
+                        *j != i && referral_counts.get(*id).copied().unwrap_or(0) < max_referrals
+                    })
+                    .map(|(j, _)| j)
+                    .collect();
+
+                if !potential_referrers.is_empty() {
+                    let referrer_idx =
+                        potential_referrers[self.rng.gen_range(0..potential_referrers.len())];
+                    let referrer_id = customer_ids[referrer_idx].clone();
+                    let customer_id = pool.customers[i].customer_id.clone();
+
+                    // Update the referred customer
+                    pool.customers[i].network_position.referred_by = Some(referrer_id.clone());
+
+                    // Update the referrer's referral list
+                    if let Some(&ref_idx) = id_to_idx.get(&referrer_id) {
+                        pool.customers[ref_idx]
+                            .network_position
+                            .referrals_made
+                            .push(customer_id.clone());
+                    }
+
+                    *referral_counts.entry(referrer_id).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+
+    /// Build corporate hierarchies among customers.
+    fn build_corporate_hierarchies(
+        &mut self,
+        pool: &mut SegmentedCustomerPool,
+        customer_ids: &[String],
+        parent_candidates: &[String],
+    ) {
+        let hierarchy_rate = self.segmentation_config.hierarchy_config.hierarchy_rate;
+        let billing_consolidation_rate = self
+            .segmentation_config
+            .hierarchy_config
+            .billing_consolidation_rate;
+
+        // Create customer ID to index mapping
+        let id_to_idx: std::collections::HashMap<String, usize> = customer_ids
+            .iter()
+            .enumerate()
+            .map(|(idx, id)| (id.clone(), idx))
+            .collect();
+
+        for i in 0..pool.customers.len() {
+            // Skip enterprise customers (they are parents) and already-hierarchied customers
+            if pool.customers[i].segment == CustomerValueSegment::Enterprise
+                || pool.customers[i].network_position.parent_customer.is_some()
+            {
+                continue;
+            }
+
+            if self.rng.gen::<f64>() < hierarchy_rate && !parent_candidates.is_empty() {
+                // Assign a parent
+                let parent_idx = self.rng.gen_range(0..parent_candidates.len());
+                let parent_id = parent_candidates[parent_idx].clone();
+                let customer_id = pool.customers[i].customer_id.clone();
+
+                // Update the child
+                pool.customers[i].network_position.parent_customer = Some(parent_id.clone());
+                pool.customers[i].network_position.billing_consolidation =
+                    self.rng.gen::<f64>() < billing_consolidation_rate;
+
+                // Update the parent's child list
+                if let Some(&parent_idx) = id_to_idx.get(&parent_id) {
+                    pool.customers[parent_idx]
+                        .network_position
+                        .child_customers
+                        .push(customer_id);
+                }
+            }
+        }
+    }
+
+    /// Populate engagement metrics for customers.
+    fn populate_engagement_metrics(
+        &mut self,
+        pool: &mut SegmentedCustomerPool,
+        effective_date: NaiveDate,
+    ) {
+        for customer in &mut pool.customers {
+            // Generate engagement based on lifecycle stage and segment
+            let (base_orders, base_revenue) = match customer.lifecycle_stage {
+                CustomerLifecycleStage::Mature {
+                    avg_annual_spend, ..
+                } => {
+                    let orders = self.rng.gen_range(12..48);
+                    (orders, avg_annual_spend)
+                }
+                CustomerLifecycleStage::Growth { growth_rate, .. } => {
+                    let orders = self.rng.gen_range(6..24);
+                    let rev = Decimal::from(orders * self.rng.gen_range(5000..20000));
+                    (
+                        orders,
+                        rev * Decimal::from_f64_retain(1.0 + growth_rate).unwrap_or(Decimal::ONE),
+                    )
+                }
+                CustomerLifecycleStage::New { .. } => {
+                    let orders = self.rng.gen_range(1..6);
+                    (
+                        orders,
+                        Decimal::from(orders * self.rng.gen_range(2000..10000)),
+                    )
+                }
+                CustomerLifecycleStage::AtRisk { .. } => {
+                    let orders = self.rng.gen_range(2..12);
+                    (
+                        orders,
+                        Decimal::from(orders * self.rng.gen_range(3000..15000)),
+                    )
+                }
+                CustomerLifecycleStage::Churned { .. } => (0, Decimal::ZERO),
+                _ => (0, Decimal::ZERO),
+            };
+
+            customer.engagement = CustomerEngagement {
+                total_orders: base_orders as u32,
+                orders_last_12_months: (base_orders as f64 * 0.5) as u32,
+                lifetime_revenue: base_revenue,
+                revenue_last_12_months: base_revenue
+                    * Decimal::from_f64_retain(0.5).unwrap_or(Decimal::ZERO),
+                average_order_value: if base_orders > 0 {
+                    base_revenue / Decimal::from(base_orders)
+                } else {
+                    Decimal::ZERO
+                },
+                days_since_last_order: match &customer.lifecycle_stage {
+                    CustomerLifecycleStage::Churned { last_activity, .. } => {
+                        (effective_date - *last_activity).num_days().max(0) as u32
+                    }
+                    CustomerLifecycleStage::AtRisk { .. } => self.rng.gen_range(30..120),
+                    _ => self.rng.gen_range(1..30),
+                },
+                last_order_date: Some(
+                    effective_date - chrono::Duration::days(self.rng.gen_range(1..90)),
+                ),
+                first_order_date: Some(
+                    effective_date - chrono::Duration::days(self.rng.gen_range(180..1825)),
+                ),
+                products_purchased: base_orders as u32 * self.rng.gen_range(1..5),
+                support_tickets: self.rng.gen_range(0..10),
+                nps_score: Some(self.rng.gen_range(-20..80) as i8),
+            };
+
+            // Calculate churn risk
+            customer.calculate_churn_risk();
+
+            // Calculate upsell potential based on segment and engagement
+            customer.upsell_potential = match customer.segment {
+                CustomerValueSegment::Enterprise => 0.3 + self.rng.gen_range(0.0..0.2),
+                CustomerValueSegment::MidMarket => 0.4 + self.rng.gen_range(0.0..0.3),
+                CustomerValueSegment::Smb => 0.5 + self.rng.gen_range(0.0..0.3),
+                CustomerValueSegment::Consumer => 0.2 + self.rng.gen_range(0.0..0.3),
+            };
+        }
+    }
+
+    /// Generate a combined output of CustomerPool and SegmentedCustomerPool.
+    pub fn generate_pool_with_segmentation(
+        &mut self,
+        count: usize,
+        company_code: &str,
+        effective_date: NaiveDate,
+        total_annual_revenue: Decimal,
+    ) -> (CustomerPool, SegmentedCustomerPool) {
+        let segmented_pool =
+            self.generate_segmented_pool(count, company_code, effective_date, total_annual_revenue);
+
+        // Create a regular CustomerPool from the segmented customers
+        let mut pool = CustomerPool::new();
+        for _segmented in &segmented_pool.customers {
+            let customer = self.generate_customer(company_code, effective_date);
+            pool.add_customer(customer);
+        }
+
+        (pool, segmented_pool)
+    }
 }
 
 #[cfg(test)]
@@ -629,5 +1314,295 @@ mod tests {
         assert_eq!(customer.credit_rating, CreditRating::D);
         assert_eq!(customer.credit_limit, Decimal::from(5000));
         assert_eq!(customer.payment_behavior, CustomerPaymentBehavior::HighRisk);
+    }
+
+    // ===== Customer Segmentation Tests =====
+
+    #[test]
+    fn test_segmented_pool_generation() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            100,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(10_000_000),
+        );
+
+        assert_eq!(pool.customers.len(), 100);
+        assert!(!pool.customers.is_empty());
+    }
+
+    #[test]
+    fn test_segment_distribution() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            segment_distribution: SegmentDistribution {
+                enterprise: 0.05,
+                mid_market: 0.20,
+                smb: 0.50,
+                consumer: 0.25,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            200,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(10_000_000),
+        );
+
+        // Count by segment
+        let enterprise_count = pool
+            .customers
+            .iter()
+            .filter(|c| c.segment == CustomerValueSegment::Enterprise)
+            .count();
+        let smb_count = pool
+            .customers
+            .iter()
+            .filter(|c| c.segment == CustomerValueSegment::Smb)
+            .count();
+
+        // Enterprise should be ~5% (10 of 200)
+        assert!(enterprise_count >= 5 && enterprise_count <= 20);
+        // SMB should be ~50% (100 of 200)
+        assert!(smb_count >= 80 && smb_count <= 120);
+    }
+
+    #[test]
+    fn test_referral_network() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            referral_config: ReferralConfig {
+                enabled: true,
+                referral_rate: 0.30, // Higher rate for testing
+                max_referrals_per_customer: 5,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            50,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(5_000_000),
+        );
+
+        // Count customers who were referred
+        let referred_count = pool
+            .customers
+            .iter()
+            .filter(|c| c.network_position.was_referred())
+            .count();
+
+        // Should have some referred customers
+        assert!(referred_count > 0);
+    }
+
+    #[test]
+    fn test_corporate_hierarchy() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            segment_distribution: SegmentDistribution {
+                enterprise: 0.10, // More enterprise for testing
+                mid_market: 0.30,
+                smb: 0.40,
+                consumer: 0.20,
+            },
+            hierarchy_config: HierarchyConfig {
+                enabled: true,
+                hierarchy_rate: 0.50, // Higher rate for testing
+                max_depth: 3,
+                billing_consolidation_rate: 0.50,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            50,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(5_000_000),
+        );
+
+        // Count customers in hierarchies (have a parent)
+        let in_hierarchy_count = pool
+            .customers
+            .iter()
+            .filter(|c| c.network_position.parent_customer.is_some())
+            .count();
+
+        // Should have some customers in hierarchies
+        assert!(in_hierarchy_count > 0);
+
+        // Count enterprise customers with children
+        let parents_with_children = pool
+            .customers
+            .iter()
+            .filter(|c| {
+                c.segment == CustomerValueSegment::Enterprise
+                    && !c.network_position.child_customers.is_empty()
+            })
+            .count();
+
+        assert!(parents_with_children > 0);
+    }
+
+    #[test]
+    fn test_lifecycle_stages() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            lifecycle_distribution: LifecycleDistribution {
+                prospect: 0.0,
+                new: 0.20,
+                growth: 0.20,
+                mature: 0.40,
+                at_risk: 0.15,
+                churned: 0.05,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            100,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(10_000_000),
+        );
+
+        // Count at-risk customers
+        let at_risk_count = pool
+            .customers
+            .iter()
+            .filter(|c| matches!(c.lifecycle_stage, CustomerLifecycleStage::AtRisk { .. }))
+            .count();
+
+        // Should be roughly 15%
+        assert!(at_risk_count >= 5 && at_risk_count <= 30);
+
+        // Count mature customers
+        let mature_count = pool
+            .customers
+            .iter()
+            .filter(|c| matches!(c.lifecycle_stage, CustomerLifecycleStage::Mature { .. }))
+            .count();
+
+        // Should be roughly 40%
+        assert!(mature_count >= 25 && mature_count <= 55);
+    }
+
+    #[test]
+    fn test_engagement_metrics() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: true,
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            20,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(2_000_000),
+        );
+
+        // All customers should have engagement data populated
+        for customer in &pool.customers {
+            // Churned customers may have 0 orders
+            if !matches!(
+                customer.lifecycle_stage,
+                CustomerLifecycleStage::Churned { .. }
+            ) {
+                // Active customers should have some orders
+                assert!(
+                    customer.engagement.total_orders > 0
+                        || matches!(
+                            customer.lifecycle_stage,
+                            CustomerLifecycleStage::Prospect { .. }
+                        )
+                );
+            }
+
+            // Churn risk should be calculated
+            assert!(customer.churn_risk_score >= 0.0 && customer.churn_risk_score <= 1.0);
+        }
+    }
+
+    #[test]
+    fn test_segment_distribution_validation() {
+        let valid = SegmentDistribution::default();
+        assert!(valid.validate().is_ok());
+
+        let invalid = SegmentDistribution {
+            enterprise: 0.5,
+            mid_market: 0.5,
+            smb: 0.5,
+            consumer: 0.5,
+        };
+        assert!(invalid.validate().is_err());
+    }
+
+    #[test]
+    fn test_segmentation_disabled() {
+        let segmentation_config = CustomerSegmentationConfig {
+            enabled: false,
+            ..Default::default()
+        };
+
+        let mut gen = CustomerGenerator::with_segmentation_config(
+            42,
+            CustomerGeneratorConfig::default(),
+            segmentation_config,
+        );
+
+        let pool = gen.generate_segmented_pool(
+            20,
+            "1000",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            Decimal::from(2_000_000),
+        );
+
+        // Should return empty pool when disabled
+        assert!(pool.customers.is_empty());
     }
 }

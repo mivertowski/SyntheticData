@@ -41,6 +41,10 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_audit_standards(config)?;
     validate_distributions(config)?;
     validate_temporal_patterns(config)?;
+    validate_vendor_network(config)?;
+    validate_customer_segmentation(config)?;
+    validate_relationship_strength(config)?;
+    validate_cross_process_links(config)?;
     Ok(())
 }
 
@@ -1662,6 +1666,281 @@ fn is_valid_iana_timezone(tz: &str) -> bool {
     false
 }
 
+/// Validate vendor network configuration.
+fn validate_vendor_network(config: &GeneratorConfig) -> SynthResult<()> {
+    let vn = &config.vendor_network;
+
+    if !vn.enabled {
+        return Ok(());
+    }
+
+    // Validate tier depth is 1-3
+    if vn.depth == 0 || vn.depth > 3 {
+        return Err(SynthError::validation(format!(
+            "vendor_network.depth must be between 1 and 3, got {}",
+            vn.depth
+        )));
+    }
+
+    // Validate tier1 count
+    if vn.tier1.min > vn.tier1.max {
+        return Err(SynthError::validation(format!(
+            "vendor_network.tier1.min ({}) must be <= max ({})",
+            vn.tier1.min, vn.tier1.max
+        )));
+    }
+
+    // Validate tier2_per_parent count
+    if vn.tier2_per_parent.min > vn.tier2_per_parent.max {
+        return Err(SynthError::validation(format!(
+            "vendor_network.tier2_per_parent.min ({}) must be <= max ({})",
+            vn.tier2_per_parent.min, vn.tier2_per_parent.max
+        )));
+    }
+
+    // Validate tier3_per_parent count
+    if vn.tier3_per_parent.min > vn.tier3_per_parent.max {
+        return Err(SynthError::validation(format!(
+            "vendor_network.tier3_per_parent.min ({}) must be <= max ({})",
+            vn.tier3_per_parent.min, vn.tier3_per_parent.max
+        )));
+    }
+
+    // Validate cluster distribution sums to ~1.0
+    let clusters = &vn.clusters;
+    let cluster_sum = clusters.reliable_strategic
+        + clusters.standard_operational
+        + clusters.transactional
+        + clusters.problematic;
+    if (cluster_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "vendor_network.clusters distribution must sum to 1.0, got {}",
+            cluster_sum
+        )));
+    }
+
+    // Validate concentration limits are in valid range
+    let deps = &vn.dependencies;
+    validate_rate(
+        "vendor_network.dependencies.max_single_vendor_concentration",
+        deps.max_single_vendor_concentration,
+    )?;
+    validate_rate(
+        "vendor_network.dependencies.top_5_concentration",
+        deps.top_5_concentration,
+    )?;
+    validate_rate(
+        "vendor_network.dependencies.single_source_percent",
+        deps.single_source_percent,
+    )?;
+
+    // Max single vendor should be less than top 5 (logical constraint)
+    if deps.max_single_vendor_concentration > deps.top_5_concentration {
+        return Err(SynthError::validation(format!(
+            "vendor_network.dependencies.max_single_vendor_concentration ({}) should be <= top_5_concentration ({})",
+            deps.max_single_vendor_concentration, deps.top_5_concentration
+        )));
+    }
+
+    Ok(())
+}
+
+/// Validate customer segmentation configuration.
+fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
+    let cs = &config.customer_segmentation;
+
+    if !cs.enabled {
+        return Ok(());
+    }
+
+    // Validate value segments
+    let segments = &cs.value_segments;
+
+    // Validate revenue shares sum to ~1.0
+    let revenue_sum = segments.enterprise.revenue_share
+        + segments.mid_market.revenue_share
+        + segments.smb.revenue_share
+        + segments.consumer.revenue_share;
+    if (revenue_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "customer_segmentation.value_segments revenue_share must sum to 1.0, got {}",
+            revenue_sum
+        )));
+    }
+
+    // Validate customer shares sum to ~1.0
+    let customer_sum = segments.enterprise.customer_share
+        + segments.mid_market.customer_share
+        + segments.smb.customer_share
+        + segments.consumer.customer_share;
+    if (customer_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "customer_segmentation.value_segments customer_share must sum to 1.0, got {}",
+            customer_sum
+        )));
+    }
+
+    // Validate each segment's shares are in valid range
+    for (name, seg) in [
+        ("enterprise", &segments.enterprise),
+        ("mid_market", &segments.mid_market),
+        ("smb", &segments.smb),
+        ("consumer", &segments.consumer),
+    ] {
+        validate_rate(
+            &format!(
+                "customer_segmentation.value_segments.{}.revenue_share",
+                name
+            ),
+            seg.revenue_share,
+        )?;
+        validate_rate(
+            &format!(
+                "customer_segmentation.value_segments.{}.customer_share",
+                name
+            ),
+            seg.customer_share,
+        )?;
+    }
+
+    // Validate lifecycle distribution sums to ~1.0
+    let lifecycle = &cs.lifecycle;
+    let lifecycle_sum = lifecycle.prospect_rate
+        + lifecycle.new_rate
+        + lifecycle.growth_rate
+        + lifecycle.mature_rate
+        + lifecycle.at_risk_rate
+        + lifecycle.churned_rate;
+    if (lifecycle_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "customer_segmentation.lifecycle distribution must sum to 1.0, got {}",
+            lifecycle_sum
+        )));
+    }
+
+    // Validate network config
+    let networks = &cs.networks;
+    validate_rate(
+        "customer_segmentation.networks.referrals.referral_rate",
+        networks.referrals.referral_rate,
+    )?;
+    validate_rate(
+        "customer_segmentation.networks.corporate_hierarchies.probability",
+        networks.corporate_hierarchies.probability,
+    )?;
+
+    Ok(())
+}
+
+/// Validate relationship strength configuration.
+fn validate_relationship_strength(config: &GeneratorConfig) -> SynthResult<()> {
+    let rs = &config.relationship_strength;
+
+    if !rs.enabled {
+        return Ok(());
+    }
+
+    // Validate calculation weights sum to ~1.0
+    let calc = &rs.calculation;
+    let weight_sum = calc.transaction_volume_weight
+        + calc.transaction_count_weight
+        + calc.relationship_duration_weight
+        + calc.recency_weight
+        + calc.mutual_connections_weight;
+    if (weight_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "relationship_strength.calculation weights must sum to 1.0, got {}",
+            weight_sum
+        )));
+    }
+
+    // Validate individual weights are in valid range
+    validate_rate(
+        "relationship_strength.calculation.transaction_volume_weight",
+        calc.transaction_volume_weight,
+    )?;
+    validate_rate(
+        "relationship_strength.calculation.transaction_count_weight",
+        calc.transaction_count_weight,
+    )?;
+    validate_rate(
+        "relationship_strength.calculation.relationship_duration_weight",
+        calc.relationship_duration_weight,
+    )?;
+    validate_rate(
+        "relationship_strength.calculation.recency_weight",
+        calc.recency_weight,
+    )?;
+    validate_rate(
+        "relationship_strength.calculation.mutual_connections_weight",
+        calc.mutual_connections_weight,
+    )?;
+
+    // Validate recency half-life is positive
+    if calc.recency_half_life_days == 0 {
+        return Err(SynthError::validation(
+            "relationship_strength.calculation.recency_half_life_days must be positive",
+        ));
+    }
+
+    // Validate thresholds are in valid range and descending order
+    let thresh = &rs.thresholds;
+    validate_rate("relationship_strength.thresholds.strong", thresh.strong)?;
+    validate_rate("relationship_strength.thresholds.moderate", thresh.moderate)?;
+    validate_rate("relationship_strength.thresholds.weak", thresh.weak)?;
+
+    // Thresholds should be in descending order: strong > moderate > weak
+    if thresh.strong <= thresh.moderate {
+        return Err(SynthError::validation(format!(
+            "relationship_strength.thresholds.strong ({}) must be > moderate ({})",
+            thresh.strong, thresh.moderate
+        )));
+    }
+    if thresh.moderate <= thresh.weak {
+        return Err(SynthError::validation(format!(
+            "relationship_strength.thresholds.moderate ({}) must be > weak ({})",
+            thresh.moderate, thresh.weak
+        )));
+    }
+
+    Ok(())
+}
+
+/// Validate cross-process links configuration.
+fn validate_cross_process_links(config: &GeneratorConfig) -> SynthResult<()> {
+    let cpl = &config.cross_process_links;
+
+    if !cpl.enabled {
+        return Ok(());
+    }
+
+    // Cross-process links are boolean flags, so there's not much to validate
+    // beyond ensuring they're consistent with other config settings
+
+    // If inventory P2P-O2C links are enabled, ensure both document flows are enabled
+    if cpl.inventory_p2p_o2c {
+        if !config.document_flows.p2p.enabled {
+            return Err(SynthError::validation(
+                "cross_process_links.inventory_p2p_o2c requires document_flows.p2p to be enabled",
+            ));
+        }
+        if !config.document_flows.o2c.enabled {
+            return Err(SynthError::validation(
+                "cross_process_links.inventory_p2p_o2c requires document_flows.o2c to be enabled",
+            ));
+        }
+    }
+
+    // If intercompany bilateral links are enabled, ensure intercompany is enabled
+    if cpl.intercompany_bilateral && !config.intercompany.enabled {
+        return Err(SynthError::validation(
+            "cross_process_links.intercompany_bilateral requires intercompany to be enabled",
+        ));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1726,6 +2005,10 @@ mod tests {
             audit_standards: AuditStandardsConfig::default(),
             distributions: AdvancedDistributionConfig::default(),
             temporal_patterns: TemporalPatternsConfig::default(),
+            vendor_network: VendorNetworkSchemaConfig::default(),
+            customer_segmentation: CustomerSegmentationSchemaConfig::default(),
+            relationship_strength: RelationshipStrengthSchemaConfig::default(),
+            cross_process_links: CrossProcessLinksSchemaConfig::default(),
         }
     }
 
@@ -2539,12 +2822,13 @@ mod tests {
         let mut config = minimal_valid_config();
         config.temporal_patterns.enabled = true;
         config.temporal_patterns.processing_lags.enabled = true;
-        config.temporal_patterns.processing_lags.sales_order_lag = Some(LagDistributionSchemaConfig {
-            mu: -1.0, // Valid: log-normal mu can be negative
-            sigma: 0.8,
-            min_hours: None,
-            max_hours: None,
-        });
+        config.temporal_patterns.processing_lags.sales_order_lag =
+            Some(LagDistributionSchemaConfig {
+                mu: -1.0, // Valid: log-normal mu can be negative
+                sigma: 0.8,
+                min_hours: None,
+                max_hours: None,
+            });
         assert!(validate_config(&config).is_ok());
     }
 
@@ -2553,12 +2837,13 @@ mod tests {
         let mut config = minimal_valid_config();
         config.temporal_patterns.enabled = true;
         config.temporal_patterns.processing_lags.enabled = true;
-        config.temporal_patterns.processing_lags.goods_receipt_lag = Some(LagDistributionSchemaConfig {
-            mu: 1.5,
-            sigma: -0.5, // Invalid: negative
-            min_hours: None,
-            max_hours: None,
-        });
+        config.temporal_patterns.processing_lags.goods_receipt_lag =
+            Some(LagDistributionSchemaConfig {
+                mu: 1.5,
+                sigma: -0.5, // Invalid: negative
+                min_hours: None,
+                max_hours: None,
+            });
         let result = validate_config(&config);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("sigma"));
@@ -2573,10 +2858,7 @@ mod tests {
         config.temporal_patterns.fiscal_calendar.year_start_month = Some(13); // Invalid
         let result = validate_config(&config);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("year_start_month"));
+        assert!(result.unwrap_err().to_string().contains("year_start_month"));
     }
 
     #[test]
