@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-30
+
+### Added
+
+- **Statistical Distribution Enhancement** (`datasynth-core`): Advanced statistical distribution framework for realistic data generation
+  - **Mixture Models**: Gaussian and Log-Normal mixture distributions with weighted components
+    - `GaussianMixtureSampler` and `LogNormalMixtureSampler` for multi-modal distributions
+    - Component labeling (e.g., "routine", "significant", "major" transactions)
+    - Pre-computed cumulative weights for O(log n) component selection
+    - Configurable weight validation ensuring sum to 1.0
+  - **Copula-Based Correlation Engine**: Cross-field dependency modeling
+    - Gaussian, Clayton, Gumbel, Frank, and Student-t copula support
+    - Cholesky decomposition for correlation matrix sampling
+    - `CorrelationEngine` for generating correlated field values
+    - Configurable correlation matrices with symmetric validation
+  - **New Distribution Types**:
+    - Pareto distribution for heavy-tailed data (capital expenses)
+    - Weibull distribution for time-to-event modeling (days-to-payment)
+    - Beta distribution for proportions (discount percentages)
+    - Zero-inflated distributions for excess zeros (credits/returns)
+  - **Enhanced Benford's Law**: Second-digit compliance and anomaly injection
+    - `BenfordDeviationSampler` for round number bias and threshold clustering
+  - **Regime Changes**: Structural breaks in time series
+    - Economic cycle modeling with configurable period and amplitude
+    - Acquisition/divestiture effects on transaction volumes
+    - Recession probability and depth parameters
+  - **Industry Profiles**: Pre-configured distribution profiles
+    - Retail, Manufacturing, Financial Services profiles
+    - Industry-specific transaction amount mixtures
+
+- **Statistical Validation Framework** (`datasynth-eval`): Comprehensive validation tests
+  - Benford's Law first-digit test with MAD threshold
+  - Anderson-Darling goodness-of-fit test
+  - Chi-squared distribution test
+  - Correlation matrix verification
+  - Configurable significance levels and fail-on-violation option
+
+- **Advanced Distribution Configuration** (`datasynth-config`): New configuration schema
+  - `AdvancedDistributionConfig` with mixture, correlation, regime change settings
+  - `MixtureDistributionConfig` for component weights, mu, sigma, labels
+  - `CorrelationConfig` for copula type, fields, and correlation matrix
+  - `RegimeChangeConfig` for economic cycles and structural breaks
+  - `StatisticalValidationConfig` for test selection and thresholds
+  - Validation rules for matrix symmetry, weight sums, and parameter bounds
+
+- **Realistic Name Generation** (`datasynth-core`): Enhanced name/metadata module
+  - Culture-aware name generation with distribution controls
+  - `NameTemplateConfig` for email domain and name generation settings
+  - `CultureDistributionConfig` for cultural name patterns
+
+- **Python Distribution Configuration** (`python/datasynth_py`): Full Python API
+  - `MixtureComponentConfig`, `MixtureDistributionConfig` dataclasses
+  - `CorrelationConfig`, `CorrelationFieldConfig` for dependency modeling
+  - `RegimeChangeConfig`, `EconomicCycleConfig` for time series breaks
+  - `StatisticalValidationConfig`, `StatisticalTestConfig` for validation
+  - New blueprints: `statistical_validation()`, `with_distributions()`, `with_regime_changes()`
+  - Updated `ml_training()` and `retail_small()` with distribution support
+
+- **Desktop UI Distribution Page** (`datasynth-ui`): Visual configuration
+  - Distribution settings panel with industry profile selection
+  - Mixture model editor with component weight normalization
+  - Correlation matrix editor with copula type selector
+  - Regime change configuration with economic cycle parameters
+  - Statistical validation test selection interface
+
+### Changed
+
+- `GeneratorConfig` now includes `distributions` field for advanced distribution settings
+- All presets, fixtures, and config initializers updated with distributions support
+- Python wrapper version bumped to 0.3.0 with distribution dataclasses
+
 ## [0.2.3] - 2026-01-28
 
 ### Added

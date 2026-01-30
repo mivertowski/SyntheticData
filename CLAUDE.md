@@ -201,7 +201,66 @@ audit_standards:
 
 ### Distributions (datasynth-core/src/distributions/)
 
-LineItemSampler, AmountSampler (log-normal + Benford), TemporalSampler (seasonality), BenfordSampler, FraudAmountGenerator, IndustrySeasonality, HolidayCalendar
+| File | Purpose |
+|------|---------|
+| amount.rs | AmountSampler (log-normal + Benford compliance) |
+| benford.rs | BenfordSampler, EnhancedBenfordSampler, BenfordDeviationSampler |
+| mixture.rs | GaussianMixtureSampler, LogNormalMixtureSampler (weighted components) |
+| copula.rs | Gaussian, Clayton, Gumbel, Frank, StudentT copulas |
+| correlation.rs | CorrelationEngine (cross-field dependency modeling) |
+| pareto.rs | ParetoSampler (heavy-tailed distributions) |
+| weibull.rs | WeibullSampler (time-to-event modeling) |
+| beta.rs | BetaSampler (proportions, percentages) |
+| zero_inflated.rs | ZeroInflatedSampler (excess zeros) |
+| conditional.rs | ConditionalDistribution (breakpoint-based generation) |
+| drift.rs | DriftConfig, RegimeChange, EconomicCycle parameters |
+| industry_profiles.rs | Pre-configured profiles for Retail, Manufacturing, Financial Services |
+| temporal.rs | TemporalSampler (seasonality), HolidayCalendar |
+| fraud.rs | FraudAmountGenerator |
+
+### Distributions Configuration
+
+```yaml
+distributions:
+  enabled: true
+  industry_profile: retail        # retail, manufacturing, financial_services
+  amounts:
+    enabled: true
+    distribution_type: lognormal
+    components:
+      - { weight: 0.60, mu: 6.0, sigma: 1.5, label: "routine" }
+      - { weight: 0.30, mu: 8.5, sigma: 1.0, label: "significant" }
+      - { weight: 0.10, mu: 11.0, sigma: 0.8, label: "major" }
+    benford_compliance: true
+  correlations:
+    enabled: true
+    copula_type: gaussian         # gaussian, clayton, gumbel, frank, student_t
+    fields:
+      - { name: amount, distribution_type: lognormal }
+      - { name: line_items, distribution_type: normal, min_value: 1, max_value: 20 }
+      - { name: approval_level, distribution_type: normal, min_value: 1, max_value: 5 }
+    matrix:
+      - [1.00, 0.65, 0.72]
+      - [0.65, 1.00, 0.55]
+      - [0.72, 0.55, 1.00]
+  regime_changes:
+    enabled: true
+    economic_cycle:
+      enabled: true
+      cycle_period_months: 48
+      amplitude: 0.15
+      recession_probability: 0.1
+      recession_depth: 0.25
+  validation:
+    enabled: true
+    tests:
+      - { type: benford_first_digit, threshold_mad: 0.015 }
+      - { type: distribution_fit, target: lognormal, significance: 0.05 }
+      - { type: correlation_check, significance: 0.05 }
+      - { type: chi_squared, significance: 0.05 }
+      - { type: anderson_darling, significance: 0.05 }
+    fail_on_violation: false
+```
 
 ## Key Design Decisions
 
@@ -217,7 +276,7 @@ LineItemSampler, AmountSampler (log-normal + Benford), TemporalSampler (seasonal
 
 ## Configuration
 
-YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `accounting_standards`, `audit_standards`
+YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `accounting_standards`, `audit_standards`
 
 Presets: manufacturing, retail, financial_services, healthcare, technology
 Complexity: small (~100 accounts), medium (~400), large (~2500)
@@ -295,4 +354,4 @@ config = Config(
 result = DataSynth().generate(config=config, output={"format": "csv", "sink": "temp_dir"})
 ```
 
-Blueprints: `blueprints.retail_small()`, `blueprints.banking_medium()`, `blueprints.manufacturing_large()`
+Blueprints: `blueprints.retail_small()`, `blueprints.banking_medium()`, `blueprints.manufacturing_large()`, `blueprints.ml_training()`, `blueprints.statistical_validation()`, `blueprints.with_distributions()`

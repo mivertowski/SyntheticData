@@ -60,6 +60,95 @@ synth = DataSynth()
 result = synth.generate(config=config, output={"format": "parquet", "sink": "path", "path": "./output"})
 ```
 
+## Statistical Distributions (v0.3.0+)
+
+```python
+from datasynth_py.config.models import (
+    Config,
+    AdvancedDistributionSettings,
+    MixtureDistributionConfig,
+    MixtureComponentConfig,
+    CorrelationConfig,
+    CorrelationFieldConfig,
+    RegimeChangeConfig,
+    EconomicCycleConfig,
+    StatisticalValidationConfig,
+    StatisticalTestConfig,
+)
+
+config = Config(
+    # ... other settings ...
+
+    # Advanced statistical distributions
+    distributions=AdvancedDistributionSettings(
+        enabled=True,
+        industry_profile="retail",
+
+        # Mixture model for transaction amounts
+        amounts=MixtureDistributionConfig(
+            enabled=True,
+            distribution_type="lognormal",
+            components=[
+                MixtureComponentConfig(weight=0.60, mu=6.0, sigma=1.5, label="routine"),
+                MixtureComponentConfig(weight=0.30, mu=8.5, sigma=1.0, label="significant"),
+                MixtureComponentConfig(weight=0.10, mu=11.0, sigma=0.8, label="major"),
+            ],
+            benford_compliance=True,
+        ),
+
+        # Cross-field correlations via copulas
+        correlations=CorrelationConfig(
+            enabled=True,
+            copula_type="gaussian",  # gaussian, clayton, gumbel, frank, student_t
+            fields=[
+                CorrelationFieldConfig(name="amount", distribution_type="lognormal"),
+                CorrelationFieldConfig(name="line_items", distribution_type="normal", min_value=1, max_value=20),
+            ],
+            matrix=[[1.0, 0.65], [0.65, 1.0]],
+        ),
+
+        # Economic regime changes
+        regime_changes=RegimeChangeConfig(
+            enabled=True,
+            economic_cycle=EconomicCycleConfig(
+                enabled=True,
+                cycle_period_months=48,
+                amplitude=0.15,
+                recession_probability=0.1,
+            ),
+        ),
+
+        # Statistical validation tests
+        validation=StatisticalValidationConfig(
+            enabled=True,
+            tests=[
+                StatisticalTestConfig(test_type="benford_first_digit", threshold_mad=0.015),
+                StatisticalTestConfig(test_type="distribution_fit", target_distribution="lognormal", significance=0.05),
+            ],
+            fail_on_violation=False,
+        ),
+    ),
+)
+```
+
+### Distribution Blueprints
+
+```python
+from datasynth_py.config import blueprints
+
+# ML training with realistic distributions
+config = blueprints.ml_training(with_distributions=True)
+
+# Statistical validation preset
+config = blueprints.statistical_validation()
+
+# Add distributions to any config
+config = blueprints.with_distributions(base_config)
+
+# Retail with realistic names
+config = blueprints.retail_small(realistic_names=True)
+```
+
 ## Integration Features (v0.2.2+)
 
 ```python

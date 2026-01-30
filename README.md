@@ -63,7 +63,10 @@ The generator produces statistically accurate data based on empirical research f
 | Feature | Description |
 |---------|-------------|
 | **Statistical Distributions** | Line item counts, amounts, and patterns based on empirical GL research |
-| **Benford's Law Compliance** | First-digit distribution following Benford's Law with configurable fraud patterns |
+| **Mixture Models** | Gaussian and Log-Normal mixture distributions with weighted components |
+| **Copula Correlations** | Cross-field dependencies via Gaussian, Clayton, Gumbel, Frank, Student-t copulas |
+| **Benford's Law Compliance** | First and second-digit distribution following Benford's Law with anomaly injection |
+| **Regime Changes** | Economic cycles, acquisition effects, and structural breaks in time series |
 | **Industry Presets** | Manufacturing, Retail, Financial Services, Healthcare, Technology, and more |
 | **Chart of Accounts** | Small (~100), Medium (~400), Large (~2500) account structures |
 | **Temporal Patterns** | Month-end, quarter-end, year-end volume spikes with working hour modeling |
@@ -267,6 +270,39 @@ rate_limit:
   enabled: true
   entities_per_second: 10000
   burst_size: 100
+
+distributions:
+  enabled: true
+  industry_profile: retail        # retail, manufacturing, financial_services
+  amounts:
+    enabled: true
+    distribution_type: lognormal
+    components:
+      - { weight: 0.60, mu: 6.0, sigma: 1.5, label: "routine" }
+      - { weight: 0.30, mu: 8.5, sigma: 1.0, label: "significant" }
+      - { weight: 0.10, mu: 11.0, sigma: 0.8, label: "major" }
+    benford_compliance: true
+  correlations:
+    enabled: true
+    copula_type: gaussian         # gaussian, clayton, gumbel, frank, student_t
+    fields: [amount, line_items, approval_level]
+    matrix:
+      - [1.00, 0.65, 0.72]
+      - [0.65, 1.00, 0.55]
+      - [0.72, 0.55, 1.00]
+  regime_changes:
+    enabled: true
+    economic_cycle:
+      enabled: true
+      cycle_period_months: 48
+      amplitude: 0.15
+      recession_probability: 0.1
+  validation:
+    enabled: true
+    tests:
+      - { type: benford_first_digit, threshold_mad: 0.015 }
+      - { type: distribution_fit, target: lognormal, significance: 0.05 }
+      - { type: correlation_check, significance: 0.05 }
 
 accounting_standards:
   enabled: true
