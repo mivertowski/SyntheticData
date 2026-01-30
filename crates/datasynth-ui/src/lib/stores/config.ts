@@ -682,6 +682,132 @@ export interface AdvancedDistributionConfig {
   validation: StatisticalValidationConfig;
 }
 
+// =============================================================================
+// Temporal Patterns Configuration (Business Days, Period-End, Processing Lags)
+// =============================================================================
+
+export interface SettlementRulesConfig {
+  equity_days: number;
+  government_bonds_days: number;
+  fx_spot_days: number;
+  corporate_bonds_days: number;
+  wire_cutoff_time: string;
+  wire_international_days: number;
+  ach_days: number;
+}
+
+export interface BusinessDayConfig {
+  enabled: boolean;
+  half_day_policy: string;
+  settlement_rules: SettlementRulesConfig;
+  month_end_convention: string;
+  weekend_days: string[] | null;
+}
+
+export interface CustomHolidayConfig {
+  name: string;
+  month: number;
+  day: number;
+  activity_multiplier: number;
+}
+
+export interface CalendarConfig {
+  regions: string[];
+  custom_holidays: CustomHolidayConfig[];
+}
+
+export interface PeriodEndModelConfig {
+  inherit_from: string | null;
+  additional_multiplier: number | null;
+  start_day: number | null;
+  base_multiplier: number | null;
+  peak_multiplier: number | null;
+  decay_rate: number | null;
+  sustained_high_days: number | null;
+}
+
+export interface PeriodEndConfig {
+  model: string | null;
+  month_end: PeriodEndModelConfig | null;
+  quarter_end: PeriodEndModelConfig | null;
+  year_end: PeriodEndModelConfig | null;
+}
+
+export interface LagDistributionConfig {
+  mu: number;
+  sigma: number;
+  min_hours: number | null;
+  max_hours: number | null;
+}
+
+export interface CrossDayPostingConfig {
+  enabled: boolean;
+  probability_by_hour: Record<number, number>;
+}
+
+export interface ProcessingLagConfig {
+  enabled: boolean;
+  sales_order_lag: LagDistributionConfig | null;
+  purchase_order_lag: LagDistributionConfig | null;
+  goods_receipt_lag: LagDistributionConfig | null;
+  invoice_receipt_lag: LagDistributionConfig | null;
+  invoice_issue_lag: LagDistributionConfig | null;
+  payment_lag: LagDistributionConfig | null;
+  journal_entry_lag: LagDistributionConfig | null;
+  cross_day_posting: CrossDayPostingConfig | null;
+}
+
+export interface FourFourFiveConfig {
+  pattern: string;
+  anchor_type: string;
+  anchor_month: number;
+  leap_week_placement: string;
+}
+
+export interface FiscalCalendarConfig {
+  enabled: boolean;
+  calendar_type: string;
+  year_start_month: number | null;
+  year_start_day: number | null;
+  four_four_five: FourFourFiveConfig | null;
+}
+
+export interface IntraDaySegmentConfig {
+  name: string;
+  start: string;
+  end: string;
+  multiplier: number;
+  posting_type: string;
+}
+
+export interface IntraDayConfig {
+  enabled: boolean;
+  segments: IntraDaySegmentConfig[];
+}
+
+export interface EntityTimezoneMapping {
+  pattern: string;
+  timezone: string;
+}
+
+export interface TimezoneConfig {
+  enabled: boolean;
+  default_timezone: string;
+  consolidation_timezone: string;
+  entity_mappings: EntityTimezoneMapping[];
+}
+
+export interface TemporalPatternsConfig {
+  enabled: boolean;
+  business_days: BusinessDayConfig;
+  calendars: CalendarConfig;
+  period_end: PeriodEndConfig;
+  processing_lags: ProcessingLagConfig;
+  fiscal_calendar: FiscalCalendarConfig;
+  intraday: IntraDayConfig;
+  timezones: TimezoneConfig;
+}
+
 // Full generator config
 export interface GeneratorConfig {
   global: GlobalConfig;
@@ -708,6 +834,7 @@ export interface GeneratorConfig {
   banking: BankingConfig;
   fingerprint: FingerprintConfig;
   distributions: AdvancedDistributionConfig;
+  temporal_patterns: TemporalPatternsConfig;
 }
 
 // Default configuration
@@ -1217,6 +1344,62 @@ export function createDefaultConfig(): GeneratorConfig {
         fail_on_violation: false,
       },
     },
+    temporal_patterns: {
+      enabled: false,
+      business_days: {
+        enabled: true,
+        half_day_policy: 'half_day',
+        settlement_rules: {
+          equity_days: 2,
+          government_bonds_days: 1,
+          fx_spot_days: 2,
+          corporate_bonds_days: 2,
+          wire_cutoff_time: '14:00',
+          wire_international_days: 1,
+          ach_days: 1,
+        },
+        month_end_convention: 'modified_following',
+        weekend_days: null,
+      },
+      calendars: {
+        regions: ['US'],
+        custom_holidays: [],
+      },
+      period_end: {
+        model: null,
+        month_end: null,
+        quarter_end: null,
+        year_end: null,
+      },
+      processing_lags: {
+        enabled: true,
+        sales_order_lag: null,
+        purchase_order_lag: null,
+        goods_receipt_lag: null,
+        invoice_receipt_lag: null,
+        invoice_issue_lag: null,
+        payment_lag: null,
+        journal_entry_lag: null,
+        cross_day_posting: null,
+      },
+      fiscal_calendar: {
+        enabled: false,
+        calendar_type: 'calendar_year',
+        year_start_month: null,
+        year_start_day: null,
+        four_four_five: null,
+      },
+      intraday: {
+        enabled: false,
+        segments: [],
+      },
+      timezones: {
+        enabled: false,
+        default_timezone: 'America/New_York',
+        consolidation_timezone: 'UTC',
+        entity_mappings: [],
+      },
+    },
   };
 }
 
@@ -1694,4 +1877,103 @@ export const STATISTICAL_TEST_TYPES = [
   { value: 'correlation_check', label: 'Correlation Check', description: 'Verify expected field correlations' },
   { value: 'chi_squared', label: 'Chi-Squared', description: 'Categorical/binned distribution test' },
   { value: 'anderson_darling', label: 'Anderson-Darling', description: 'Goodness-of-fit with tail sensitivity' },
+];
+
+// =============================================================================
+// Temporal Patterns Constants
+// =============================================================================
+
+// Holiday calendar regions
+export const CALENDAR_REGIONS = [
+  { value: 'US', label: 'United States', description: 'US federal holidays' },
+  { value: 'DE', label: 'Germany', description: 'German national holidays' },
+  { value: 'GB', label: 'United Kingdom', description: 'UK bank holidays' },
+  { value: 'CN', label: 'China', description: 'Chinese public holidays (incl. lunar)' },
+  { value: 'JP', label: 'Japan', description: 'Japanese national holidays' },
+  { value: 'IN', label: 'India', description: 'Indian national holidays' },
+  { value: 'BR', label: 'Brazil', description: 'Brazilian national holidays' },
+  { value: 'MX', label: 'Mexico', description: 'Mexican national holidays' },
+  { value: 'AU', label: 'Australia', description: 'Australian national holidays' },
+  { value: 'SG', label: 'Singapore', description: 'Singapore public holidays' },
+  { value: 'KR', label: 'South Korea', description: 'Korean national holidays' },
+];
+
+// Half-day policies
+export const HALF_DAY_POLICIES = [
+  { value: 'full_day', label: 'Full Day', description: 'Half-days treated as full business days' },
+  { value: 'half_day', label: 'Half Day', description: 'Half-days have 50% activity (default)' },
+  { value: 'non_business_day', label: 'Non-Business Day', description: 'Half-days treated as non-business days' },
+];
+
+// Month-end conventions
+export const MONTH_END_CONVENTIONS = [
+  { value: 'modified_following', label: 'Modified Following', description: 'Move to next business day unless it changes month, then previous (default)' },
+  { value: 'following', label: 'Following', description: 'Always move to next business day' },
+  { value: 'preceding', label: 'Preceding', description: 'Always move to previous business day' },
+  { value: 'end_of_month', label: 'End of Month', description: 'Always use last business day of month' },
+];
+
+// Period-end models
+export const PERIOD_END_MODELS = [
+  { value: 'flat', label: 'Flat Multiplier', description: 'Constant spike on period-end days' },
+  { value: 'exponential', label: 'Exponential', description: 'Gradually increasing activity (realistic)' },
+  { value: 'extended_crunch', label: 'Extended Crunch', description: 'Sustained high activity for several days' },
+  { value: 'daily_profile', label: 'Daily Profile', description: 'Custom multiplier per day-to-close' },
+];
+
+// Fiscal calendar types
+export const FISCAL_CALENDAR_TYPES = [
+  { value: 'calendar_year', label: 'Calendar Year', description: 'Standard January-December fiscal year' },
+  { value: 'custom', label: 'Custom Year Start', description: 'Choose fiscal year start month/day' },
+  { value: 'four_four_five', label: '4-4-5 Calendar', description: 'Retail calendar with 4-4-5 week pattern' },
+  { value: 'thirteen_period', label: '13-Period', description: '13 four-week periods per year' },
+];
+
+// 4-4-5 week patterns
+export const FOUR_FOUR_FIVE_PATTERNS = [
+  { value: 'four_four_five', label: '4-4-5', description: 'Standard pattern (Walmart, Target)' },
+  { value: 'four_five_four', label: '4-5-4', description: 'Alternative pattern' },
+  { value: 'five_four_four', label: '5-4-4', description: 'Alternative pattern' },
+];
+
+// 4-4-5 anchor types
+export const FOUR_FOUR_FIVE_ANCHORS = [
+  { value: 'last_saturday', label: 'Last Saturday', description: 'Year ends on last Saturday of anchor month' },
+  { value: 'first_sunday', label: 'First Sunday', description: 'Year starts on first Sunday of anchor month' },
+  { value: 'nearest_saturday', label: 'Nearest Saturday', description: 'Year ends on Saturday nearest month end' },
+];
+
+// Common timezones
+export const COMMON_TIMEZONES = [
+  { value: 'America/New_York', label: 'Eastern (US)', offset: 'UTC-5/-4' },
+  { value: 'America/Chicago', label: 'Central (US)', offset: 'UTC-6/-5' },
+  { value: 'America/Denver', label: 'Mountain (US)', offset: 'UTC-7/-6' },
+  { value: 'America/Los_Angeles', label: 'Pacific (US)', offset: 'UTC-8/-7' },
+  { value: 'Europe/London', label: 'London', offset: 'UTC+0/+1' },
+  { value: 'Europe/Berlin', label: 'Berlin', offset: 'UTC+1/+2' },
+  { value: 'Europe/Paris', label: 'Paris', offset: 'UTC+1/+2' },
+  { value: 'Europe/Zurich', label: 'Zurich', offset: 'UTC+1/+2' },
+  { value: 'Asia/Tokyo', label: 'Tokyo', offset: 'UTC+9' },
+  { value: 'Asia/Shanghai', label: 'Shanghai', offset: 'UTC+8' },
+  { value: 'Asia/Singapore', label: 'Singapore', offset: 'UTC+8' },
+  { value: 'Asia/Kolkata', label: 'Kolkata', offset: 'UTC+5:30' },
+  { value: 'Australia/Sydney', label: 'Sydney', offset: 'UTC+10/+11' },
+  { value: 'UTC', label: 'UTC', offset: 'UTC+0' },
+];
+
+// Intra-day posting types
+export const POSTING_TYPES = [
+  { value: 'both', label: 'Both', description: 'Both human and system postings' },
+  { value: 'human', label: 'Human Only', description: 'Only human-initiated postings' },
+  { value: 'system', label: 'System Only', description: 'Only system-initiated postings' },
+];
+
+// Default intra-day segments
+export const DEFAULT_INTRADAY_SEGMENTS = [
+  { name: 'morning_spike', start: '08:30', end: '10:00', multiplier: 1.8, posting_type: 'both' },
+  { name: 'mid_morning', start: '10:00', end: '12:00', multiplier: 1.0, posting_type: 'both' },
+  { name: 'lunch_dip', start: '12:00', end: '13:30', multiplier: 0.4, posting_type: 'human' },
+  { name: 'afternoon', start: '13:30', end: '16:00', multiplier: 1.0, posting_type: 'both' },
+  { name: 'eod_rush', start: '16:00', end: '17:30', multiplier: 1.5, posting_type: 'human' },
+  { name: 'after_hours', start: '17:30', end: '23:59', multiplier: 0.3, posting_type: 'system' },
 ];
