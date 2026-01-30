@@ -1,7 +1,13 @@
 //! Enhanced vendor generator with realistic payment behavior and bank accounts.
+//!
+//! Now integrates with the realism module for sophisticated vendor naming
+//! based on spend categories, industry patterns, and well-known brands.
 
 use chrono::NaiveDate;
 use datasynth_core::models::{BankAccount, PaymentTerms, Vendor, VendorBehavior, VendorPool};
+use datasynth_core::templates::{
+    AddressGenerator, AddressRegion, SpendCategory, VendorNameGenerator,
+};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -22,6 +28,12 @@ pub struct VendorGeneratorConfig {
     pub generate_bank_accounts: bool,
     /// Probability of vendor having multiple bank accounts
     pub multiple_bank_account_rate: f64,
+    /// Distribution of spend categories (category, probability)
+    pub spend_category_distribution: Vec<(SpendCategory, f64)>,
+    /// Primary region for address generation
+    pub primary_region: AddressRegion,
+    /// Use enhanced realistic naming (via realism module)
+    pub use_enhanced_naming: bool,
 }
 
 impl Default for VendorGeneratorConfig {
@@ -45,12 +57,29 @@ impl Default for VendorGeneratorConfig {
             default_currency: "USD".to_string(),
             generate_bank_accounts: true,
             multiple_bank_account_rate: 0.20,
+            spend_category_distribution: vec![
+                (SpendCategory::OfficeSupplies, 0.15),
+                (SpendCategory::ITServices, 0.12),
+                (SpendCategory::ProfessionalServices, 0.12),
+                (SpendCategory::Telecommunications, 0.08),
+                (SpendCategory::Utilities, 0.08),
+                (SpendCategory::RawMaterials, 0.10),
+                (SpendCategory::Logistics, 0.10),
+                (SpendCategory::Marketing, 0.08),
+                (SpendCategory::Facilities, 0.07),
+                (SpendCategory::Staffing, 0.05),
+                (SpendCategory::Travel, 0.05),
+            ],
+            primary_region: AddressRegion::NorthAmerica,
+            use_enhanced_naming: true,
         }
     }
 }
 
-/// Vendor name templates by category.
-const VENDOR_NAME_TEMPLATES: &[(&str, &[&str])] = &[
+/// Legacy vendor name templates by category (kept for backward compatibility).
+/// New code should use VendorNameGenerator from the realism module.
+#[allow(dead_code)]
+const VENDOR_NAME_TEMPLATES_LEGACY: &[(&str, &[&str])] = &[
     (
         "Manufacturing",
         &[
@@ -58,10 +87,6 @@ const VENDOR_NAME_TEMPLATES: &[(&str, &[&str])] = &[
             "Precision Parts Inc.",
             "Industrial Components Ltd.",
             "Advanced Materials Corp.",
-            "Quality Fabrication Services",
-            "Metalworks International",
-            "Polymer Technologies",
-            "Assembly Dynamics",
         ],
     ),
     (
@@ -71,10 +96,6 @@ const VENDOR_NAME_TEMPLATES: &[(&str, &[&str])] = &[
             "Consulting Partners LLC",
             "Business Solutions Inc.",
             "Technical Services Corp.",
-            "Support Systems International",
-            "Managed Services Ltd.",
-            "Advisory Group Partners",
-            "Strategic Consulting Co.",
         ],
     ),
     (
@@ -84,49 +105,6 @@ const VENDOR_NAME_TEMPLATES: &[(&str, &[&str])] = &[
             "Digital Systems Corp.",
             "Software Innovations LLC",
             "Cloud Services Partners",
-            "IT Infrastructure Group",
-            "Data Systems International",
-            "Network Solutions Ltd.",
-            "Cyber Systems Corp.",
-        ],
-    ),
-    (
-        "Logistics",
-        &[
-            "Global Logistics Partners",
-            "Freight Solutions Inc.",
-            "Supply Chain Services",
-            "Distribution Networks LLC",
-            "Warehouse Solutions Corp.",
-            "Transportation Partners",
-            "Shipping Dynamics Ltd.",
-            "Fulfillment Services Inc.",
-        ],
-    ),
-    (
-        "Office",
-        &[
-            "Office Supplies Direct",
-            "Business Products Inc.",
-            "Stationery Solutions",
-            "Equipment Suppliers Ltd.",
-            "Furniture Systems Corp.",
-            "Workplace Supplies LLC",
-            "Office Essentials Inc.",
-            "Business Equipment Co.",
-        ],
-    ),
-    (
-        "Utilities",
-        &[
-            "Power Solutions Inc.",
-            "Energy Services Corp.",
-            "Utility Management LLC",
-            "Water Services Group",
-            "Telecom Solutions Ltd.",
-            "Communications Partners",
-            "Internet Services Inc.",
-            "Utility Systems Corp.",
         ],
     ),
 ];
@@ -151,6 +129,10 @@ pub struct VendorGenerator {
     seed: u64,
     config: VendorGeneratorConfig,
     vendor_counter: usize,
+    /// Enhanced vendor name generator from realism module
+    vendor_name_gen: VendorNameGenerator,
+    /// Address generator for vendor addresses
+    address_gen: AddressGenerator,
 }
 
 impl VendorGenerator {
@@ -164,6 +146,8 @@ impl VendorGenerator {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             seed,
+            vendor_name_gen: VendorNameGenerator::new(),
+            address_gen: AddressGenerator::for_region(config.primary_region),
             config,
             vendor_counter: 0,
         }
@@ -174,12 +158,16 @@ impl VendorGenerator {
         self.vendor_counter += 1;
 
         let vendor_id = format!("V-{:06}", self.vendor_counter);
-        let (_category, name) = self.select_vendor_name();
+        let (category, name) = self.select_vendor_name();
         let tax_id = self.generate_tax_id();
+        let _address = self.address_gen.generate_commercial(&mut self.rng);
+
+        // Store the spend category for potential future use
+        let _spend_category = category;
 
         let mut vendor = Vendor::new(
             &vendor_id,
-            name,
+            &name,
             datasynth_core::models::VendorType::Supplier,
         );
         vendor.tax_id = Some(tax_id);
@@ -271,12 +259,34 @@ impl VendorGenerator {
         pool
     }
 
-    /// Select a vendor name from templates.
-    fn select_vendor_name(&mut self) -> (&'static str, &'static str) {
-        let category_idx = self.rng.gen_range(0..VENDOR_NAME_TEMPLATES.len());
-        let (category, names) = VENDOR_NAME_TEMPLATES[category_idx];
-        let name_idx = self.rng.gen_range(0..names.len());
-        (category, names[name_idx])
+    /// Select a spend category based on distribution.
+    fn select_spend_category(&mut self) -> SpendCategory {
+        let roll: f64 = self.rng.gen();
+        let mut cumulative = 0.0;
+
+        for (category, prob) in &self.config.spend_category_distribution {
+            cumulative += prob;
+            if roll < cumulative {
+                return *category;
+            }
+        }
+
+        SpendCategory::OfficeSupplies
+    }
+
+    /// Select a vendor name using the enhanced realism module or legacy templates.
+    fn select_vendor_name(&mut self) -> (SpendCategory, String) {
+        let category = self.select_spend_category();
+
+        if self.config.use_enhanced_naming {
+            // Use the enhanced VendorNameGenerator from the realism module
+            let name = self.vendor_name_gen.generate(category, &mut self.rng);
+            (category, name)
+        } else {
+            // Fallback to simple category-based names
+            let name = format!("{:?} Vendor {}", category, self.vendor_counter);
+            (category, name)
+        }
     }
 
     /// Select payment terms based on distribution.
@@ -336,39 +346,20 @@ impl VendorGenerator {
         }
     }
 
-    /// Generate an address.
+    /// Generate an address using the enhanced address generator.
+    #[allow(dead_code)]
     fn generate_address(&mut self) -> String {
-        let street_num = self.rng.gen_range(100..9999);
-        let streets = [
-            "Main St",
-            "Oak Ave",
-            "Industrial Blvd",
-            "Commerce Dr",
-            "Business Park Way",
-        ];
-        let cities = [
-            "Chicago",
-            "Houston",
-            "Phoenix",
-            "Philadelphia",
-            "San Antonio",
-            "Dallas",
-        ];
-        let states = ["IL", "TX", "AZ", "PA", "TX", "TX"];
-
-        let idx = self.rng.gen_range(0..streets.len());
-        let zip = self.rng.gen_range(10000..99999);
-
-        format!(
-            "{} {}, {}, {} {}",
-            street_num, streets[idx], cities[idx], states[idx], zip
-        )
+        use datasynth_core::templates::AddressStyle;
+        let address = self.address_gen.generate_commercial(&mut self.rng);
+        address.format(AddressStyle::SingleLine)
     }
 
     /// Reset the generator.
     pub fn reset(&mut self) {
         self.rng = ChaCha8Rng::seed_from_u64(self.seed);
         self.vendor_counter = 0;
+        self.vendor_name_gen = VendorNameGenerator::new();
+        self.address_gen = AddressGenerator::for_region(self.config.primary_region);
     }
 }
 
@@ -423,7 +414,12 @@ mod tests {
 
     #[test]
     fn test_vendor_pool_with_ic() {
-        let mut gen = VendorGenerator::new(42);
+        // Use config with 0 intercompany_rate to test explicit IC vendors only
+        let config = VendorGeneratorConfig {
+            intercompany_rate: 0.0,
+            ..Default::default()
+        };
+        let mut gen = VendorGenerator::with_config(42, config);
         let pool = gen.generate_vendor_pool_with_ic(
             10,
             "1000",
@@ -435,5 +431,16 @@ mod tests {
 
         let ic_vendors: Vec<_> = pool.vendors.iter().filter(|v| v.is_intercompany).collect();
         assert_eq!(ic_vendors.len(), 2);
+    }
+
+    #[test]
+    fn test_enhanced_vendor_names() {
+        let mut gen = VendorGenerator::new(42);
+        let vendor = gen.generate_vendor("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        // Enhanced naming should produce more varied, realistic names
+        assert!(!vendor.name.is_empty());
+        // Should not be a simple generic name format
+        assert!(!vendor.name.starts_with("Vendor "));
     }
 }
