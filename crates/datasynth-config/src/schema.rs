@@ -5508,6 +5508,14 @@ pub struct TemporalPatternsConfig {
     /// Processing lag configuration.
     #[serde(default)]
     pub processing_lags: ProcessingLagSchemaConfig,
+
+    /// Fiscal calendar configuration (custom year start, 4-4-5, 13-period).
+    #[serde(default)]
+    pub fiscal_calendar: FiscalCalendarSchemaConfig,
+
+    /// Intra-day patterns configuration (morning spike, lunch dip, EOD rush).
+    #[serde(default)]
+    pub intraday: IntraDaySchemaConfig,
 }
 
 /// Business day calculation configuration.
@@ -5793,6 +5801,136 @@ impl Default for CrossDayPostingSchemaConfig {
             probability_by_hour,
         }
     }
+}
+
+// =============================================================================
+// Fiscal Calendar Configuration (P2)
+// =============================================================================
+
+/// Fiscal calendar configuration.
+///
+/// Supports calendar year, custom year start, 4-4-5 retail calendar,
+/// and 13-period calendars.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct FiscalCalendarSchemaConfig {
+    /// Enable non-standard fiscal calendar.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Fiscal calendar type: "calendar_year", "custom", "four_four_five", "thirteen_period".
+    #[serde(default = "default_fiscal_calendar_type")]
+    pub calendar_type: String,
+
+    /// Month the fiscal year starts (1-12). Used for custom year start.
+    #[serde(default)]
+    pub year_start_month: Option<u8>,
+
+    /// Day the fiscal year starts (1-31). Used for custom year start.
+    #[serde(default)]
+    pub year_start_day: Option<u8>,
+
+    /// 4-4-5 calendar configuration (if calendar_type is "four_four_five").
+    #[serde(default)]
+    pub four_four_five: Option<FourFourFiveSchemaConfig>,
+}
+
+fn default_fiscal_calendar_type() -> String {
+    "calendar_year".to_string()
+}
+
+/// 4-4-5 retail calendar configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FourFourFiveSchemaConfig {
+    /// Week pattern: "four_four_five", "four_five_four", "five_four_four".
+    #[serde(default = "default_week_pattern")]
+    pub pattern: String,
+
+    /// Anchor type: "first_sunday", "last_saturday", "nearest_saturday".
+    #[serde(default = "default_anchor_type")]
+    pub anchor_type: String,
+
+    /// Anchor month (1-12).
+    #[serde(default = "default_anchor_month")]
+    pub anchor_month: u8,
+
+    /// Where to place leap week: "q4_period3" or "q1_period1".
+    #[serde(default = "default_leap_week_placement")]
+    pub leap_week_placement: String,
+}
+
+fn default_week_pattern() -> String {
+    "four_four_five".to_string()
+}
+
+fn default_anchor_type() -> String {
+    "last_saturday".to_string()
+}
+
+fn default_anchor_month() -> u8 {
+    1 // January
+}
+
+fn default_leap_week_placement() -> String {
+    "q4_period3".to_string()
+}
+
+impl Default for FourFourFiveSchemaConfig {
+    fn default() -> Self {
+        Self {
+            pattern: "four_four_five".to_string(),
+            anchor_type: "last_saturday".to_string(),
+            anchor_month: 1,
+            leap_week_placement: "q4_period3".to_string(),
+        }
+    }
+}
+
+// =============================================================================
+// Intra-Day Patterns Configuration (P2)
+// =============================================================================
+
+/// Intra-day patterns configuration.
+///
+/// Defines time-of-day segments with different activity multipliers
+/// for realistic modeling of morning spikes, lunch dips, and end-of-day rushes.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct IntraDaySchemaConfig {
+    /// Enable intra-day patterns.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Custom intra-day segments.
+    #[serde(default)]
+    pub segments: Vec<IntraDaySegmentSchemaConfig>,
+}
+
+/// Intra-day segment configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntraDaySegmentSchemaConfig {
+    /// Name of the segment (e.g., "morning_spike", "lunch_dip").
+    pub name: String,
+
+    /// Start time (HH:MM format).
+    pub start: String,
+
+    /// End time (HH:MM format).
+    pub end: String,
+
+    /// Activity multiplier (1.0 = normal).
+    #[serde(default = "default_multiplier")]
+    pub multiplier: f64,
+
+    /// Posting type: "human", "system", "both".
+    #[serde(default = "default_posting_type")]
+    pub posting_type: String,
+}
+
+fn default_multiplier() -> f64 {
+    1.0
+}
+
+fn default_posting_type() -> String {
+    "both".to_string()
 }
 
 #[cfg(test)]

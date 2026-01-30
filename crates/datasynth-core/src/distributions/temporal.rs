@@ -101,6 +101,131 @@ impl Default for WorkingHoursConfig {
     }
 }
 
+/// Configuration for intra-day posting patterns.
+///
+/// Defines segments of the business day with different activity multipliers,
+/// allowing for realistic modeling of morning spikes, lunch dips, and end-of-day rushes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntraDayPatterns {
+    /// Whether intra-day patterns are enabled.
+    pub enabled: bool,
+    /// Time segments with activity multipliers.
+    pub segments: Vec<IntraDaySegment>,
+}
+
+impl Default for IntraDayPatterns {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            segments: vec![
+                IntraDaySegment {
+                    name: "morning_spike".to_string(),
+                    start: NaiveTime::from_hms_opt(8, 30, 0).unwrap(),
+                    end: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
+                    multiplier: 1.8,
+                    posting_type: PostingType::Both,
+                },
+                IntraDaySegment {
+                    name: "mid_morning".to_string(),
+                    start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
+                    end: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
+                    multiplier: 1.2,
+                    posting_type: PostingType::Both,
+                },
+                IntraDaySegment {
+                    name: "lunch_dip".to_string(),
+                    start: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
+                    end: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
+                    multiplier: 0.4,
+                    posting_type: PostingType::Human,
+                },
+                IntraDaySegment {
+                    name: "afternoon".to_string(),
+                    start: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
+                    end: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
+                    multiplier: 1.1,
+                    posting_type: PostingType::Both,
+                },
+                IntraDaySegment {
+                    name: "eod_rush".to_string(),
+                    start: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
+                    end: NaiveTime::from_hms_opt(17, 30, 0).unwrap(),
+                    multiplier: 1.5,
+                    posting_type: PostingType::Both,
+                },
+            ],
+        }
+    }
+}
+
+impl IntraDayPatterns {
+    /// Creates intra-day patterns with no segments (disabled).
+    pub fn disabled() -> Self {
+        Self {
+            enabled: false,
+            segments: Vec::new(),
+        }
+    }
+
+    /// Creates patterns with custom segments.
+    pub fn with_segments(segments: Vec<IntraDaySegment>) -> Self {
+        Self {
+            enabled: true,
+            segments,
+        }
+    }
+
+    /// Gets the multiplier for a given time based on posting type.
+    pub fn get_multiplier(&self, time: NaiveTime, is_human: bool) -> f64 {
+        if !self.enabled {
+            return 1.0;
+        }
+
+        for segment in &self.segments {
+            if time >= segment.start && time < segment.end {
+                // Check if this segment applies to the posting type
+                let applies = match segment.posting_type {
+                    PostingType::Human => is_human,
+                    PostingType::System => !is_human,
+                    PostingType::Both => true,
+                };
+                if applies {
+                    return segment.multiplier;
+                }
+            }
+        }
+
+        1.0 // Default multiplier if no segment matches
+    }
+}
+
+/// A segment of the business day with specific activity patterns.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IntraDaySegment {
+    /// Name of the segment (e.g., "morning_spike", "lunch_dip").
+    pub name: String,
+    /// Start time of the segment.
+    pub start: NaiveTime,
+    /// End time of the segment.
+    pub end: NaiveTime,
+    /// Activity multiplier for this segment (1.0 = normal).
+    pub multiplier: f64,
+    /// Type of postings this segment applies to.
+    pub posting_type: PostingType,
+}
+
+/// Type of posting for intra-day pattern matching.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PostingType {
+    /// Human/manual postings only.
+    Human,
+    /// System/automated postings only.
+    System,
+    /// Both human and system postings.
+    Both,
+}
+
 /// Sampler for temporal patterns in transaction generation.
 pub struct TemporalSampler {
     rng: ChaCha8Rng,
@@ -116,6 +241,8 @@ pub struct TemporalSampler {
     period_end_dynamics: Option<PeriodEndDynamics>,
     /// Whether to use period-end dynamics instead of legacy flat multipliers.
     use_period_end_dynamics: bool,
+    /// Intra-day patterns for time-of-day activity variation.
+    intra_day_patterns: Option<IntraDayPatterns>,
 }
 
 impl TemporalSampler {
@@ -145,6 +272,7 @@ impl TemporalSampler {
             holiday_calendar: None,
             period_end_dynamics: None,
             use_period_end_dynamics: false,
+            intra_day_patterns: None,
         }
     }
 
@@ -167,6 +295,7 @@ impl TemporalSampler {
             holiday_calendar,
             period_end_dynamics: None,
             use_period_end_dynamics: false,
+            intra_day_patterns: None,
         }
     }
 
@@ -190,7 +319,21 @@ impl TemporalSampler {
             holiday_calendar,
             period_end_dynamics: Some(period_end_dynamics),
             use_period_end_dynamics: true,
+            intra_day_patterns: None,
         }
+    }
+
+    /// Sets the intra-day patterns for time-of-day activity variation.
+    pub fn set_intra_day_patterns(&mut self, patterns: IntraDayPatterns) {
+        self.intra_day_patterns = Some(patterns);
+    }
+
+    /// Gets the intra-day multiplier for a given time.
+    pub fn get_intra_day_multiplier(&self, time: NaiveTime, is_human: bool) -> f64 {
+        self.intra_day_patterns
+            .as_ref()
+            .map(|p| p.get_multiplier(time, is_human))
+            .unwrap_or(1.0)
     }
 
     /// Set industry-specific seasonality.

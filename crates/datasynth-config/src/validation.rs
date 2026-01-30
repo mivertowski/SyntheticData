@@ -6,6 +6,24 @@ use datasynth_core::error::{SynthError, SynthResult};
 /// Maximum allowed period in months (10 years).
 const MAX_PERIOD_MONTHS: u32 = 120;
 
+/// Check if a string is in valid HH:MM time format.
+fn is_valid_time_format(s: &str) -> bool {
+    if s.len() != 5 {
+        return false;
+    }
+    let chars: Vec<char> = s.chars().collect();
+    if chars[2] != ':' {
+        return false;
+    }
+    // Check hours (00-23)
+    let hours: Option<u8> = s[0..2].parse().ok();
+    let minutes: Option<u8> = s[3..5].parse().ok();
+    match (hours, minutes) {
+        (Some(h), Some(m)) => h <= 23 && m <= 59,
+        _ => false,
+    }
+}
+
 /// Validate a generator configuration.
 pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_global_settings(config)?;
@@ -1102,6 +1120,12 @@ fn validate_temporal_patterns(config: &GeneratorConfig) -> SynthResult<()> {
     // Validate calendar regions
     validate_calendar_config(&temporal.calendars)?;
 
+    // Validate fiscal calendar configuration (P2)
+    validate_fiscal_calendar_config(&temporal.fiscal_calendar)?;
+
+    // Validate intra-day patterns configuration (P2)
+    validate_intraday_config(&temporal.intraday)?;
+
     Ok(())
 }
 
@@ -1416,6 +1440,143 @@ fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> Syn
             return Err(SynthError::validation(format!(
                 "temporal_patterns.calendars.custom_holidays[{}].activity_multiplier must be in [0, 1], got {}",
                 i, holiday.activity_multiplier
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate fiscal calendar configuration.
+fn validate_fiscal_calendar_config(
+    config: &crate::schema::FiscalCalendarSchemaConfig,
+) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate calendar type
+    let valid_types = [
+        "calendar_year",
+        "custom",
+        "four_four_five",
+        "thirteen_period",
+    ];
+    if !valid_types.contains(&config.calendar_type.as_str()) {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.fiscal_calendar.calendar_type must be one of {:?}, got '{}'",
+            valid_types, config.calendar_type
+        )));
+    }
+
+    // Validate custom year start
+    if config.calendar_type == "custom" {
+        if let Some(month) = config.year_start_month {
+            if !(1..=12).contains(&month) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.year_start_month must be 1-12, got {}",
+                    month
+                )));
+            }
+        } else {
+            return Err(SynthError::validation(
+                "temporal_patterns.fiscal_calendar.year_start_month is required for custom calendar type",
+            ));
+        }
+
+        if let Some(day) = config.year_start_day {
+            if !(1..=31).contains(&day) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.year_start_day must be 1-31, got {}",
+                    day
+                )));
+            }
+        }
+    }
+
+    // Validate 4-4-5 configuration
+    if config.calendar_type == "four_four_five" {
+        if let Some(ref cfg) = config.four_four_five {
+            let valid_patterns = ["four_four_five", "four_five_four", "five_four_four"];
+            if !valid_patterns.contains(&cfg.pattern.as_str()) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.four_four_five.pattern must be one of {:?}, got '{}'",
+                    valid_patterns, cfg.pattern
+                )));
+            }
+
+            let valid_anchors = ["first_sunday", "last_saturday", "nearest_saturday"];
+            if !valid_anchors.contains(&cfg.anchor_type.as_str()) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.four_four_five.anchor_type must be one of {:?}, got '{}'",
+                    valid_anchors, cfg.anchor_type
+                )));
+            }
+
+            if !(1..=12).contains(&cfg.anchor_month) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.four_four_five.anchor_month must be 1-12, got {}",
+                    cfg.anchor_month
+                )));
+            }
+
+            let valid_placements = ["q4_period3", "q1_period1"];
+            if !valid_placements.contains(&cfg.leap_week_placement.as_str()) {
+                return Err(SynthError::validation(format!(
+                    "temporal_patterns.fiscal_calendar.four_four_five.leap_week_placement must be one of {:?}, got '{}'",
+                    valid_placements, cfg.leap_week_placement
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate intra-day patterns configuration.
+fn validate_intraday_config(config: &crate::schema::IntraDaySchemaConfig) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate each segment
+    for (i, segment) in config.segments.iter().enumerate() {
+        // Validate segment name is not empty
+        if segment.name.is_empty() {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.intraday.segments[{}].name cannot be empty",
+                i
+            )));
+        }
+
+        // Validate time format (HH:MM) - simple check without regex
+        if !is_valid_time_format(&segment.start) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.intraday.segments[{}].start must be in HH:MM format, got '{}'",
+                i, segment.start
+            )));
+        }
+        if !is_valid_time_format(&segment.end) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.intraday.segments[{}].end must be in HH:MM format, got '{}'",
+                i, segment.end
+            )));
+        }
+
+        // Validate multiplier is positive
+        if segment.multiplier < 0.0 {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.intraday.segments[{}].multiplier must be non-negative, got {}",
+                i, segment.multiplier
+            )));
+        }
+
+        // Validate posting type
+        let valid_posting_types = ["human", "system", "both"];
+        if !valid_posting_types.contains(&segment.posting_type.as_str()) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.intraday.segments[{}].posting_type must be one of {:?}, got '{}'",
+                i, valid_posting_types, segment.posting_type
             )));
         }
     }

@@ -3,13 +3,254 @@
 //! This module provides models for fiscal period management and
 //! period-end close processes including:
 //! - Fiscal period definitions
+//! - Fiscal calendar types (calendar year, custom year start, 4-4-5, 13-period)
 //! - Close tasks and workflows
 //! - Accrual definitions and schedules
 //! - Year-end closing entries
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::{Deserialize, Serialize};
+
+/// Type of fiscal calendar used by the organization.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum FiscalCalendarType {
+    /// Standard calendar year (Jan 1 - Dec 31).
+    #[default]
+    CalendarYear,
+    /// Custom year start (e.g., July 1 for government fiscal years).
+    CustomYearStart {
+        /// Month the fiscal year starts (1-12).
+        start_month: u8,
+        /// Day the fiscal year starts (1-31).
+        start_day: u8,
+    },
+    /// 4-4-5 retail calendar (52/53 week years with 4-4-5, 4-5-4, or 5-4-4 pattern).
+    FourFourFive(FourFourFiveConfig),
+    /// 13-period calendar (13 equal 4-week periods).
+    ThirteenPeriod(ThirteenPeriodConfig),
+}
+
+/// Configuration for 4-4-5 retail calendar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FourFourFiveConfig {
+    /// Week pattern for each quarter.
+    pub pattern: WeekPattern,
+    /// Anchor point for determining fiscal year start.
+    pub anchor: FourFourFiveAnchor,
+    /// Where to place the leap week in 53-week years.
+    pub leap_week_placement: LeapWeekPlacement,
+}
+
+impl Default for FourFourFiveConfig {
+    fn default() -> Self {
+        Self {
+            pattern: WeekPattern::FourFourFive,
+            anchor: FourFourFiveAnchor::LastSaturdayOf(1), // Last Saturday of January
+            leap_week_placement: LeapWeekPlacement::Q4Period3,
+        }
+    }
+}
+
+/// Week pattern for 4-4-5 calendar quarters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WeekPattern {
+    /// 4 weeks, 4 weeks, 5 weeks per quarter.
+    FourFourFive,
+    /// 4 weeks, 5 weeks, 4 weeks per quarter.
+    FourFiveFour,
+    /// 5 weeks, 4 weeks, 4 weeks per quarter.
+    FiveFourFour,
+}
+
+impl WeekPattern {
+    /// Returns the number of weeks in each period of a quarter.
+    pub fn weeks_per_period(&self) -> [u8; 3] {
+        match self {
+            WeekPattern::FourFourFive => [4, 4, 5],
+            WeekPattern::FourFiveFour => [4, 5, 4],
+            WeekPattern::FiveFourFour => [5, 4, 4],
+        }
+    }
+}
+
+/// Anchor point for 4-4-5 fiscal year start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "month", rename_all = "snake_case")]
+pub enum FourFourFiveAnchor {
+    /// Fiscal year starts on the first Sunday of a month.
+    FirstSundayOf(u8),
+    /// Fiscal year starts on the last Saturday of a month.
+    LastSaturdayOf(u8),
+    /// Fiscal year ends on the Saturday nearest to a month end.
+    NearestSaturdayTo(u8),
+}
+
+/// Where to place the leap week in 53-week years.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LeapWeekPlacement {
+    /// Add leap week to Q4 Period 3 (most common).
+    Q4Period3,
+    /// Add leap week to Q1 Period 1.
+    Q1Period1,
+}
+
+/// Configuration for 13-period calendar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ThirteenPeriodConfig {
+    /// First day of fiscal year (day of year, 1-366).
+    pub year_start_day: u16,
+    /// Month containing year start (for display purposes).
+    pub year_start_month: u8,
+}
+
+impl Default for ThirteenPeriodConfig {
+    fn default() -> Self {
+        Self {
+            year_start_day: 1,   // January 1
+            year_start_month: 1, // January
+        }
+    }
+}
+
+/// Fiscal calendar definition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FiscalCalendar {
+    /// Type of fiscal calendar.
+    pub calendar_type: FiscalCalendarType,
+    /// Name of the fiscal calendar (e.g., "US Federal", "Retail 445").
+    pub name: String,
+}
+
+impl Default for FiscalCalendar {
+    fn default() -> Self {
+        Self {
+            calendar_type: FiscalCalendarType::CalendarYear,
+            name: "Calendar Year".to_string(),
+        }
+    }
+}
+
+impl FiscalCalendar {
+    /// Creates a standard calendar year fiscal calendar.
+    pub fn calendar_year() -> Self {
+        Self::default()
+    }
+
+    /// Creates a fiscal calendar with custom year start.
+    pub fn custom_year_start(start_month: u8, start_day: u8) -> Self {
+        Self {
+            calendar_type: FiscalCalendarType::CustomYearStart {
+                start_month,
+                start_day,
+            },
+            name: format!("Fiscal Year ({})", month_name(start_month)),
+        }
+    }
+
+    /// Creates a 4-4-5 retail calendar.
+    pub fn four_four_five(config: FourFourFiveConfig) -> Self {
+        Self {
+            calendar_type: FiscalCalendarType::FourFourFive(config),
+            name: "Retail 4-4-5".to_string(),
+        }
+    }
+
+    /// Creates a 13-period calendar.
+    pub fn thirteen_period(config: ThirteenPeriodConfig) -> Self {
+        Self {
+            calendar_type: FiscalCalendarType::ThirteenPeriod(config),
+            name: "13-Period".to_string(),
+        }
+    }
+
+    /// Returns the fiscal year for a given date.
+    pub fn fiscal_year(&self, date: NaiveDate) -> i32 {
+        match &self.calendar_type {
+            FiscalCalendarType::CalendarYear => date.year(),
+            FiscalCalendarType::CustomYearStart {
+                start_month,
+                start_day,
+            } => {
+                let year_start =
+                    NaiveDate::from_ymd_opt(date.year(), *start_month as u32, *start_day as u32)
+                        .unwrap_or_else(|| {
+                            NaiveDate::from_ymd_opt(date.year(), *start_month as u32, 1).unwrap()
+                        });
+                if date >= year_start {
+                    date.year()
+                } else {
+                    date.year() - 1
+                }
+            }
+            FiscalCalendarType::FourFourFive(_) | FiscalCalendarType::ThirteenPeriod(_) => {
+                // Simplified - would need more complex calculation
+                date.year()
+            }
+        }
+    }
+
+    /// Returns the fiscal period number for a given date.
+    pub fn fiscal_period(&self, date: NaiveDate) -> u8 {
+        match &self.calendar_type {
+            FiscalCalendarType::CalendarYear => date.month() as u8,
+            FiscalCalendarType::CustomYearStart {
+                start_month,
+                start_day: _,
+            } => {
+                let month = date.month() as u8;
+                if month >= *start_month {
+                    month - start_month + 1
+                } else {
+                    12 - start_month + month + 1
+                }
+            }
+            FiscalCalendarType::ThirteenPeriod(_) => {
+                // Simplified: 28 days per period
+                let day_of_year = date.ordinal();
+                ((day_of_year - 1) / 28 + 1).min(13) as u8
+            }
+            FiscalCalendarType::FourFourFive(config) => {
+                // Simplified 4-4-5 period calculation
+                let weeks = config.pattern.weeks_per_period();
+                let week_of_year = (date.ordinal() as u8 - 1) / 7 + 1;
+                let mut cumulative = 0u8;
+                for (quarter, _) in (0..4).enumerate() {
+                    for (period_in_q, &period_weeks) in weeks.iter().enumerate() {
+                        cumulative += period_weeks;
+                        if week_of_year <= cumulative {
+                            return (quarter * 3 + period_in_q + 1) as u8;
+                        }
+                    }
+                }
+                12 // Default to period 12
+            }
+        }
+    }
+}
+
+/// Helper function to get month name.
+fn month_name(month: u8) -> &'static str {
+    match month {
+        1 => "January",
+        2 => "February",
+        3 => "March",
+        4 => "April",
+        5 => "May",
+        6 => "June",
+        7 => "July",
+        8 => "August",
+        9 => "September",
+        10 => "October",
+        11 => "November",
+        12 => "December",
+        _ => "Unknown",
+    }
+}
 
 /// Fiscal period representation.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -100,6 +341,131 @@ impl FiscalPeriod {
     pub fn contains(&self, date: NaiveDate) -> bool {
         date >= self.start_date && date <= self.end_date
     }
+
+    /// Creates a fiscal period from a calendar and date.
+    ///
+    /// This method determines the correct fiscal period for a given date
+    /// based on the fiscal calendar configuration.
+    pub fn from_calendar(calendar: &FiscalCalendar, date: NaiveDate) -> Self {
+        let fiscal_year = calendar.fiscal_year(date);
+        let period_num = calendar.fiscal_period(date);
+
+        match &calendar.calendar_type {
+            FiscalCalendarType::CalendarYear => Self::monthly(fiscal_year, period_num),
+            FiscalCalendarType::CustomYearStart {
+                start_month,
+                start_day,
+            } => {
+                // Calculate the actual start and end dates for the period
+                let period_start_month = if *start_month + period_num - 1 > 12 {
+                    start_month + period_num - 1 - 12
+                } else {
+                    start_month + period_num - 1
+                };
+                let period_year = if *start_month + period_num - 1 > 12 {
+                    fiscal_year + 1
+                } else {
+                    fiscal_year
+                };
+
+                let start_date = if period_num == 1 {
+                    NaiveDate::from_ymd_opt(fiscal_year, *start_month as u32, *start_day as u32)
+                        .unwrap_or_else(|| {
+                            NaiveDate::from_ymd_opt(fiscal_year, *start_month as u32, 1).unwrap()
+                        })
+                } else {
+                    NaiveDate::from_ymd_opt(period_year, period_start_month as u32, 1).unwrap()
+                };
+
+                let end_date = if period_num == 12 {
+                    // Last period ends day before fiscal year start
+                    NaiveDate::from_ymd_opt(fiscal_year + 1, *start_month as u32, *start_day as u32)
+                        .unwrap_or_else(|| {
+                            NaiveDate::from_ymd_opt(fiscal_year + 1, *start_month as u32, 1)
+                                .unwrap()
+                        })
+                        .pred_opt()
+                        .unwrap()
+                } else {
+                    let next_month = if period_start_month == 12 {
+                        1
+                    } else {
+                        period_start_month + 1
+                    };
+                    let next_year = if period_start_month == 12 {
+                        period_year + 1
+                    } else {
+                        period_year
+                    };
+                    NaiveDate::from_ymd_opt(next_year, next_month as u32, 1)
+                        .unwrap()
+                        .pred_opt()
+                        .unwrap()
+                };
+
+                Self {
+                    year: fiscal_year,
+                    period: period_num,
+                    start_date,
+                    end_date,
+                    period_type: FiscalPeriodType::Monthly,
+                    is_year_end: period_num == 12,
+                    status: PeriodStatus::Open,
+                }
+            }
+            FiscalCalendarType::FourFourFive(config) => {
+                // 4-4-5 calendar: 12 periods of 4 or 5 weeks each
+                let weeks = config.pattern.weeks_per_period();
+                let quarter = (period_num - 1) / 3;
+                let period_in_quarter = (period_num - 1) % 3;
+                let period_weeks = weeks[period_in_quarter as usize];
+
+                // Calculate start of fiscal year (simplified)
+                let year_start = NaiveDate::from_ymd_opt(fiscal_year, 1, 1).unwrap();
+
+                // Calculate period start by summing previous period weeks
+                let mut weeks_before = 0u32;
+                for _ in 0..quarter {
+                    for &w in &weeks {
+                        weeks_before += w as u32;
+                    }
+                }
+                for p in 0..period_in_quarter {
+                    weeks_before += weeks[p as usize] as u32;
+                }
+
+                let start_date = year_start + chrono::Duration::weeks(weeks_before as i64);
+                let end_date = start_date + chrono::Duration::weeks(period_weeks as i64)
+                    - chrono::Duration::days(1);
+
+                Self {
+                    year: fiscal_year,
+                    period: period_num,
+                    start_date,
+                    end_date,
+                    period_type: FiscalPeriodType::FourWeek,
+                    is_year_end: period_num == 12,
+                    status: PeriodStatus::Open,
+                }
+            }
+            FiscalCalendarType::ThirteenPeriod(_) => {
+                // 13 periods of 28 days each (4 weeks)
+                let year_start = NaiveDate::from_ymd_opt(fiscal_year, 1, 1).unwrap();
+                let start_date = year_start + chrono::Duration::days((period_num as i64 - 1) * 28);
+                let end_date = start_date + chrono::Duration::days(27);
+
+                Self {
+                    year: fiscal_year,
+                    period: period_num,
+                    start_date,
+                    end_date,
+                    period_type: FiscalPeriodType::FourWeek,
+                    is_year_end: period_num == 13,
+                    status: PeriodStatus::Open,
+                }
+            }
+        }
+    }
 }
 
 /// Type of fiscal period.
@@ -109,6 +475,8 @@ pub enum FiscalPeriodType {
     Monthly,
     /// Quarterly period.
     Quarterly,
+    /// Four-week period (used in 4-4-5 and 13-period calendars).
+    FourWeek,
     /// Special period (13th period, adjustments).
     Special,
 }
