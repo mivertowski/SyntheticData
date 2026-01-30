@@ -2410,4 +2410,286 @@ mod tests {
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("batch_size"));
     }
+
+    // ==========================================================================
+    // Temporal Patterns Validation Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_temporal_patterns_disabled_passes() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = false;
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_temporal_patterns_enabled_with_defaults_passes() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_business_day_invalid_half_day_policy() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.business_days.enabled = true;
+        config.temporal_patterns.business_days.half_day_policy = "invalid_policy".to_string();
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("half_day_policy"));
+    }
+
+    #[test]
+    fn test_business_day_valid_half_day_policies() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.business_days.enabled = true;
+
+        for policy in ["full_day", "half_day", "non_business_day"] {
+            config.temporal_patterns.business_days.half_day_policy = policy.to_string();
+            assert!(
+                validate_config(&config).is_ok(),
+                "Expected '{}' to be valid",
+                policy
+            );
+        }
+    }
+
+    #[test]
+    fn test_business_day_invalid_month_end_convention() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.business_days.enabled = true;
+        config.temporal_patterns.business_days.month_end_convention = "invalid".to_string();
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("month_end_convention"));
+    }
+
+    #[test]
+    fn test_period_end_invalid_model() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.period_end.model = Some("invalid_model".to_string());
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("model"));
+    }
+
+    #[test]
+    fn test_period_end_valid_models() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+
+        for model in ["flat", "exponential", "daily_profile", "extended_crunch"] {
+            config.temporal_patterns.period_end.model = Some(model.to_string());
+            assert!(
+                validate_config(&config).is_ok(),
+                "Expected model '{}' to be valid",
+                model
+            );
+        }
+    }
+
+    #[test]
+    fn test_period_end_invalid_decay_rate() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.period_end.model = Some("exponential".to_string());
+        config.temporal_patterns.period_end.month_end = Some(PeriodEndModelSchemaConfig {
+            inherit_from: None,
+            additional_multiplier: None,
+            start_day: Some(-10),
+            base_multiplier: Some(1.0),
+            peak_multiplier: Some(3.5),
+            decay_rate: Some(1.5), // Invalid: > 1.0
+            sustained_high_days: None,
+        });
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("decay_rate"));
+    }
+
+    #[test]
+    fn test_period_end_negative_multiplier() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.period_end.month_end = Some(PeriodEndModelSchemaConfig {
+            inherit_from: None,
+            additional_multiplier: None,
+            start_day: Some(-10),
+            base_multiplier: Some(1.0),
+            peak_multiplier: Some(-1.0), // Invalid: negative
+            decay_rate: Some(0.3),
+            sustained_high_days: None,
+        });
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("multiplier"));
+    }
+
+    #[test]
+    fn test_processing_lag_negative_mu_allowed() {
+        // Note: For log-normal distributions, mu (log-scale mean) can be any real number
+        // including negative values. This test verifies that negative mu is allowed.
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.processing_lags.enabled = true;
+        config.temporal_patterns.processing_lags.sales_order_lag = Some(LagDistributionSchemaConfig {
+            mu: -1.0, // Valid: log-normal mu can be negative
+            sigma: 0.8,
+            min_hours: None,
+            max_hours: None,
+        });
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_processing_lag_negative_sigma() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.processing_lags.enabled = true;
+        config.temporal_patterns.processing_lags.goods_receipt_lag = Some(LagDistributionSchemaConfig {
+            mu: 1.5,
+            sigma: -0.5, // Invalid: negative
+            min_hours: None,
+            max_hours: None,
+        });
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("sigma"));
+    }
+
+    #[test]
+    fn test_fiscal_calendar_invalid_year_start_month() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.fiscal_calendar.enabled = true;
+        config.temporal_patterns.fiscal_calendar.calendar_type = "custom".to_string();
+        config.temporal_patterns.fiscal_calendar.year_start_month = Some(13); // Invalid
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("year_start_month"));
+    }
+
+    #[test]
+    fn test_fiscal_calendar_invalid_year_start_day() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.fiscal_calendar.enabled = true;
+        config.temporal_patterns.fiscal_calendar.calendar_type = "custom".to_string();
+        config.temporal_patterns.fiscal_calendar.year_start_month = Some(2);
+        config.temporal_patterns.fiscal_calendar.year_start_day = Some(32); // Invalid
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("year_start_day"));
+    }
+
+    #[test]
+    fn test_intraday_invalid_time_format() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.intraday.enabled = true;
+        config.temporal_patterns.intraday.segments = vec![IntraDaySegmentSchemaConfig {
+            name: "test".to_string(),
+            start: "25:00".to_string(), // Invalid hour
+            end: "10:00".to_string(),
+            multiplier: 1.5,
+            posting_type: "both".to_string(),
+        }];
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("HH:MM format"));
+    }
+
+    #[test]
+    fn test_intraday_invalid_posting_type() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.intraday.enabled = true;
+        config.temporal_patterns.intraday.segments = vec![IntraDaySegmentSchemaConfig {
+            name: "test".to_string(),
+            start: "08:00".to_string(),
+            end: "10:00".to_string(),
+            multiplier: 1.5,
+            posting_type: "invalid".to_string(),
+        }];
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("posting_type"));
+    }
+
+    #[test]
+    fn test_intraday_negative_multiplier() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.intraday.enabled = true;
+        config.temporal_patterns.intraday.segments = vec![IntraDaySegmentSchemaConfig {
+            name: "test".to_string(),
+            start: "08:00".to_string(),
+            end: "10:00".to_string(),
+            multiplier: -1.0, // Invalid
+            posting_type: "both".to_string(),
+        }];
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("multiplier"));
+    }
+
+    #[test]
+    fn test_timezone_invalid_default() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.timezones.enabled = true;
+        config.temporal_patterns.timezones.default_timezone = "Invalid/Timezone".to_string();
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("timezone"));
+    }
+
+    #[test]
+    fn test_timezone_valid_iana_names() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.timezones.enabled = true;
+        config.temporal_patterns.timezones.consolidation_timezone = "UTC".to_string();
+
+        for tz in [
+            "America/New_York",
+            "Europe/London",
+            "Asia/Tokyo",
+            "UTC",
+            "Pacific/Auckland",
+        ] {
+            config.temporal_patterns.timezones.default_timezone = tz.to_string();
+            let result = validate_config(&config);
+            assert!(
+                result.is_ok(),
+                "Expected timezone '{}' to be valid, got error: {:?}",
+                tz,
+                result.err()
+            );
+        }
+    }
+
+    #[test]
+    fn test_timezone_invalid_entity_mapping() {
+        let mut config = minimal_valid_config();
+        config.temporal_patterns.enabled = true;
+        config.temporal_patterns.timezones.enabled = true;
+        config.temporal_patterns.timezones.entity_mappings = vec![EntityTimezoneMapping {
+            pattern: "EU_*".to_string(),
+            timezone: "Invalid/TZ".to_string(),
+        }];
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("timezone"));
+    }
 }
