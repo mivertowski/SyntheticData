@@ -601,6 +601,87 @@ export interface FingerprintConfig {
   output_path: string;
 }
 
+// =============================================================================
+// Advanced Distributions Configuration
+// =============================================================================
+
+export interface MixtureComponentConfig {
+  weight: number;
+  mu: number;
+  sigma: number;
+  label: string | null;
+}
+
+export interface MixtureDistributionConfig {
+  enabled: boolean;
+  distribution_type: string;
+  components: MixtureComponentConfig[];
+  benford_compliance: boolean;
+}
+
+export interface CorrelationFieldConfig {
+  name: string;
+  distribution_type: string;
+  min_value: number | null;
+  max_value: number | null;
+}
+
+export type CopulaType = 'gaussian' | 'clayton' | 'gumbel' | 'frank' | 'student_t';
+
+export interface CorrelationConfig {
+  enabled: boolean;
+  copula_type: CopulaType;
+  fields: CorrelationFieldConfig[];
+  matrix: number[][];
+}
+
+export interface RegimeChangeEventConfig {
+  date: string;
+  change_type: string;
+  description: string | null;
+  volume_multiplier: number;
+  amount_mean_shift: number;
+  amount_variance_shift: number;
+}
+
+export interface EconomicCycleConfig {
+  enabled: boolean;
+  cycle_period_months: number;
+  amplitude: number;
+  recession_probability: number;
+  recession_depth: number;
+}
+
+export interface RegimeChangeConfig {
+  enabled: boolean;
+  changes: RegimeChangeEventConfig[];
+  economic_cycle: EconomicCycleConfig;
+}
+
+export interface StatisticalTestConfig {
+  test_type: string;
+  significance: number;
+  threshold_mad: number | null;
+  target_distribution: string | null;
+}
+
+export interface StatisticalValidationConfig {
+  enabled: boolean;
+  tests: StatisticalTestConfig[];
+  fail_on_violation: boolean;
+}
+
+export type IndustryProfileType = 'retail' | 'manufacturing' | 'financial_services' | 'healthcare' | 'technology';
+
+export interface AdvancedDistributionConfig {
+  enabled: boolean;
+  amounts: MixtureDistributionConfig;
+  correlations: CorrelationConfig;
+  regime_changes: RegimeChangeConfig;
+  industry_profile: IndustryProfileType | null;
+  validation: StatisticalValidationConfig;
+}
+
 // Full generator config
 export interface GeneratorConfig {
   global: GlobalConfig;
@@ -626,6 +707,7 @@ export interface GeneratorConfig {
   audit: AuditGenerationConfig;
   banking: BankingConfig;
   fingerprint: FingerprintConfig;
+  distributions: AdvancedDistributionConfig;
 }
 
 // Default configuration
@@ -1090,6 +1172,51 @@ export function createDefaultConfig(): GeneratorConfig {
       input_path: '',
       output_path: '',
     },
+    distributions: {
+      enabled: false,
+      amounts: {
+        enabled: false,
+        distribution_type: 'lognormal',
+        components: [
+          { weight: 0.60, mu: 6.0, sigma: 1.5, label: 'routine' },
+          { weight: 0.30, mu: 8.5, sigma: 1.0, label: 'significant' },
+          { weight: 0.10, mu: 11.0, sigma: 0.8, label: 'major' },
+        ],
+        benford_compliance: true,
+      },
+      correlations: {
+        enabled: false,
+        copula_type: 'gaussian',
+        fields: [
+          { name: 'amount', distribution_type: 'lognormal', min_value: null, max_value: null },
+          { name: 'line_items', distribution_type: 'normal', min_value: 1, max_value: 20 },
+        ],
+        matrix: [
+          [1.0, 0.65],
+          [0.65, 1.0],
+        ],
+      },
+      regime_changes: {
+        enabled: false,
+        changes: [],
+        economic_cycle: {
+          enabled: false,
+          cycle_period_months: 48,
+          amplitude: 0.15,
+          recession_probability: 0.1,
+          recession_depth: 0.25,
+        },
+      },
+      industry_profile: null,
+      validation: {
+        enabled: false,
+        tests: [
+          { test_type: 'benford_first_digit', significance: 0.05, threshold_mad: 0.015, target_distribution: null },
+          { test_type: 'distribution_fit', significance: 0.05, threshold_mad: null, target_distribution: 'lognormal' },
+        ],
+        fail_on_violation: false,
+      },
+    },
   };
 }
 
@@ -1374,6 +1501,58 @@ function validateConfig(config: GeneratorConfig): ValidationError[] {
     }
   }
 
+  // Distributions validation
+  if (config.distributions?.enabled) {
+    // Validate mixture component weights sum to 1.0
+    if (config.distributions.amounts?.enabled && config.distributions.amounts.components.length > 0) {
+      const weightSum = config.distributions.amounts.components.reduce((sum, c) => sum + c.weight, 0);
+      if (Math.abs(weightSum - 1.0) > 0.01) {
+        errors.push({ field: 'distributions.amounts.components', message: 'Mixture component weights must sum to 1.0' });
+      }
+      // Validate sigma values are positive
+      for (const comp of config.distributions.amounts.components) {
+        if (comp.sigma <= 0) {
+          errors.push({ field: 'distributions.amounts.components', message: 'Sigma values must be positive' });
+          break;
+        }
+      }
+    }
+    // Validate correlation matrix
+    if (config.distributions.correlations?.enabled && config.distributions.correlations.matrix.length > 0) {
+      const n = config.distributions.correlations.fields.length;
+      if (config.distributions.correlations.matrix.length !== n) {
+        errors.push({ field: 'distributions.correlations.matrix', message: 'Correlation matrix dimensions must match number of fields' });
+      }
+      // Check diagonal is 1.0 and values are in [-1, 1]
+      for (let i = 0; i < config.distributions.correlations.matrix.length; i++) {
+        const row = config.distributions.correlations.matrix[i];
+        if (row.length !== n) {
+          errors.push({ field: 'distributions.correlations.matrix', message: 'Correlation matrix must be square' });
+          break;
+        }
+        if (Math.abs(row[i] - 1.0) > 0.001) {
+          errors.push({ field: 'distributions.correlations.matrix', message: 'Diagonal elements must be 1.0' });
+          break;
+        }
+        for (const val of row) {
+          if (val < -1 || val > 1) {
+            errors.push({ field: 'distributions.correlations.matrix', message: 'Correlation values must be between -1 and 1' });
+            break;
+          }
+        }
+      }
+    }
+    // Validate economic cycle parameters
+    if (config.distributions.regime_changes?.economic_cycle?.enabled) {
+      if (config.distributions.regime_changes.economic_cycle.amplitude < 0 || config.distributions.regime_changes.economic_cycle.amplitude > 1) {
+        errors.push({ field: 'distributions.regime_changes.economic_cycle.amplitude', message: 'Amplitude must be between 0 and 1' });
+      }
+      if (config.distributions.regime_changes.economic_cycle.recession_probability < 0 || config.distributions.regime_changes.economic_cycle.recession_probability > 1) {
+        errors.push({ field: 'distributions.regime_changes.economic_cycle.recession_probability', message: 'Recession probability must be between 0 and 1' });
+      }
+    }
+  }
+
   return errors;
 }
 
@@ -1473,4 +1652,46 @@ export const BUSINESS_PERSONAS = [
   { value: 'cash_intensive', label: 'Cash Intensive' },
   { value: 'import_export', label: 'Import/Export' },
   { value: 'professional_services', label: 'Professional Services' },
+];
+
+// Distribution types for mixture models
+export const DISTRIBUTION_TYPES = [
+  { value: 'lognormal', label: 'Log-Normal', description: 'Positive values with right skew (amounts, prices)' },
+  { value: 'gaussian', label: 'Gaussian', description: 'Symmetric bell curve (errors, variations)' },
+];
+
+// Copula types for correlation modeling
+export const COPULA_TYPES = [
+  { value: 'gaussian', label: 'Gaussian', description: 'Symmetric, no tail dependence (general use)' },
+  { value: 'clayton', label: 'Clayton', description: 'Lower tail dependence (risk modeling)' },
+  { value: 'gumbel', label: 'Gumbel', description: 'Upper tail dependence (extreme events)' },
+  { value: 'frank', label: 'Frank', description: 'Symmetric, no tail dependence (alternative)' },
+  { value: 'student_t', label: 'Student-t', description: 'Both tail dependencies (heavy tails)' },
+];
+
+// Industry profiles for distribution settings
+export const INDUSTRY_PROFILES = [
+  { value: 'retail', label: 'Retail', description: 'High volume, lower amounts, seasonal patterns' },
+  { value: 'manufacturing', label: 'Manufacturing', description: 'Moderate volume, varied amounts, equipment purchases' },
+  { value: 'financial_services', label: 'Financial Services', description: 'Mixed volumes, wide amount range, regulatory patterns' },
+  { value: 'healthcare', label: 'Healthcare', description: 'Billing cycles, insurance patterns' },
+  { value: 'technology', label: 'Technology', description: 'Subscription revenue, capital expenses' },
+];
+
+// Regime change types
+export const REGIME_CHANGE_TYPES = [
+  { value: 'acquisition', label: 'Acquisition', description: 'Volume and amount increase from M&A' },
+  { value: 'divestiture', label: 'Divestiture', description: 'Volume decrease from asset sale' },
+  { value: 'policy_change', label: 'Policy Change', description: 'Threshold or process changes' },
+  { value: 'price_increase', label: 'Price Increase', description: 'Amount mean shift' },
+  { value: 'restructuring', label: 'Restructuring', description: 'Pattern changes from reorganization' },
+];
+
+// Statistical test types
+export const STATISTICAL_TEST_TYPES = [
+  { value: 'benford_first_digit', label: "Benford's Law (1st Digit)", description: 'Test first digit distribution' },
+  { value: 'distribution_fit', label: 'Distribution Fit', description: 'K-S test against target distribution' },
+  { value: 'correlation_check', label: 'Correlation Check', description: 'Verify expected field correlations' },
+  { value: 'chi_squared', label: 'Chi-Squared', description: 'Categorical/binned distribution test' },
+  { value: 'anderson_darling', label: 'Anderson-Darling', description: 'Goodness-of-fit with tail sensitivity' },
 ];

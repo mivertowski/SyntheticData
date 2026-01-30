@@ -94,6 +94,9 @@ pub struct GeneratorConfig {
     /// Audit standards framework configuration (ISA, PCAOB)
     #[serde(default)]
     pub audit_standards: AuditStandardsConfig,
+    /// Advanced distribution configuration (mixture models, correlations, regime changes)
+    #[serde(default)]
+    pub distributions: AdvancedDistributionConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -354,6 +357,9 @@ impl TemporalDriftConfig {
                 DriftType::Recurring => datasynth_core::distributions::DriftType::Recurring,
                 DriftType::Mixed => datasynth_core::distributions::DriftType::Mixed,
             },
+            regime_changes: Vec::new(),
+            economic_cycle: Default::default(),
+            parameter_drifts: Vec::new(),
         }
     }
 }
@@ -4767,6 +4773,704 @@ impl Default for PcaobConfig {
             generate_standard_mappings: false,
         }
     }
+}
+
+// =============================================================================
+// Advanced Distribution Configuration
+// =============================================================================
+
+/// Advanced distribution configuration for realistic data generation.
+///
+/// This section enables sophisticated distribution models including:
+/// - Mixture models (multi-modal distributions)
+/// - Cross-field correlations
+/// - Conditional distributions
+/// - Regime changes and economic cycles
+/// - Statistical validation
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AdvancedDistributionConfig {
+    /// Enable advanced distribution features.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Mixture model configuration for amounts.
+    #[serde(default)]
+    pub amounts: MixtureDistributionSchemaConfig,
+
+    /// Cross-field correlation configuration.
+    #[serde(default)]
+    pub correlations: CorrelationSchemaConfig,
+
+    /// Conditional distribution configurations.
+    #[serde(default)]
+    pub conditional: Vec<ConditionalDistributionSchemaConfig>,
+
+    /// Regime change configuration.
+    #[serde(default)]
+    pub regime_changes: RegimeChangeSchemaConfig,
+
+    /// Industry-specific distribution profile.
+    #[serde(default)]
+    pub industry_profile: Option<IndustryProfileType>,
+
+    /// Statistical validation configuration.
+    #[serde(default)]
+    pub validation: StatisticalValidationSchemaConfig,
+}
+
+/// Industry profile types for pre-configured distribution settings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum IndustryProfileType {
+    /// Retail industry profile (POS sales, inventory, seasonal)
+    Retail,
+    /// Manufacturing industry profile (raw materials, maintenance, capital)
+    Manufacturing,
+    /// Financial services profile (wire transfers, ACH, fee income)
+    FinancialServices,
+    /// Healthcare profile (claims, procedures, supplies)
+    Healthcare,
+    /// Technology profile (subscriptions, services, R&D)
+    Technology,
+}
+
+/// Mixture model distribution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MixtureDistributionSchemaConfig {
+    /// Enable mixture model for amount generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Distribution type: "gaussian" or "lognormal".
+    #[serde(default = "default_mixture_type")]
+    pub distribution_type: MixtureDistributionType,
+
+    /// Mixture components with weights.
+    #[serde(default)]
+    pub components: Vec<MixtureComponentConfig>,
+
+    /// Minimum value constraint.
+    #[serde(default = "default_min_amount")]
+    pub min_value: f64,
+
+    /// Maximum value constraint (optional).
+    #[serde(default)]
+    pub max_value: Option<f64>,
+
+    /// Decimal places for rounding.
+    #[serde(default = "default_decimal_places")]
+    pub decimal_places: u8,
+}
+
+fn default_mixture_type() -> MixtureDistributionType {
+    MixtureDistributionType::LogNormal
+}
+
+fn default_min_amount() -> f64 {
+    0.01
+}
+
+fn default_decimal_places() -> u8 {
+    2
+}
+
+impl Default for MixtureDistributionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            distribution_type: MixtureDistributionType::LogNormal,
+            components: Vec::new(),
+            min_value: 0.01,
+            max_value: None,
+            decimal_places: 2,
+        }
+    }
+}
+
+/// Mixture distribution type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum MixtureDistributionType {
+    /// Gaussian (normal) mixture
+    Gaussian,
+    /// Log-normal mixture (for positive amounts)
+    #[default]
+    LogNormal,
+}
+
+/// Configuration for a single mixture component.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MixtureComponentConfig {
+    /// Weight of this component (must sum to 1.0 across all components).
+    pub weight: f64,
+
+    /// Location parameter (mean for Gaussian, mu for log-normal).
+    pub mu: f64,
+
+    /// Scale parameter (std dev for Gaussian, sigma for log-normal).
+    pub sigma: f64,
+
+    /// Optional label for this component (e.g., "routine", "significant", "major").
+    #[serde(default)]
+    pub label: Option<String>,
+}
+
+/// Cross-field correlation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrelationSchemaConfig {
+    /// Enable correlation modeling.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Copula type for dependency modeling.
+    #[serde(default)]
+    pub copula_type: CopulaSchemaType,
+
+    /// Field definitions for correlation.
+    #[serde(default)]
+    pub fields: Vec<CorrelatedFieldConfig>,
+
+    /// Correlation matrix (upper triangular, row-major).
+    /// For n fields, this should have n*(n-1)/2 values.
+    #[serde(default)]
+    pub matrix: Vec<f64>,
+
+    /// Expected correlations for validation.
+    #[serde(default)]
+    pub expected_correlations: Vec<ExpectedCorrelationConfig>,
+}
+
+impl Default for CorrelationSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            copula_type: CopulaSchemaType::Gaussian,
+            fields: Vec::new(),
+            matrix: Vec::new(),
+            expected_correlations: Vec::new(),
+        }
+    }
+}
+
+/// Copula type for dependency modeling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CopulaSchemaType {
+    /// Gaussian copula (symmetric, no tail dependence)
+    #[default]
+    Gaussian,
+    /// Clayton copula (lower tail dependence)
+    Clayton,
+    /// Gumbel copula (upper tail dependence)
+    Gumbel,
+    /// Frank copula (symmetric, no tail dependence)
+    Frank,
+    /// Student-t copula (both tail dependencies)
+    StudentT,
+}
+
+/// Configuration for a correlated field.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrelatedFieldConfig {
+    /// Field name.
+    pub name: String,
+
+    /// Marginal distribution type.
+    #[serde(default)]
+    pub distribution: MarginalDistributionConfig,
+}
+
+/// Marginal distribution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum MarginalDistributionConfig {
+    /// Normal distribution.
+    Normal {
+        /// Mean
+        mu: f64,
+        /// Standard deviation
+        sigma: f64,
+    },
+    /// Log-normal distribution.
+    LogNormal {
+        /// Location parameter
+        mu: f64,
+        /// Scale parameter
+        sigma: f64,
+    },
+    /// Uniform distribution.
+    Uniform {
+        /// Minimum value
+        min: f64,
+        /// Maximum value
+        max: f64,
+    },
+    /// Discrete uniform distribution.
+    DiscreteUniform {
+        /// Minimum integer value
+        min: i32,
+        /// Maximum integer value
+        max: i32,
+    },
+}
+
+impl Default for MarginalDistributionConfig {
+    fn default() -> Self {
+        Self::Normal {
+            mu: 0.0,
+            sigma: 1.0,
+        }
+    }
+}
+
+/// Expected correlation for validation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExpectedCorrelationConfig {
+    /// First field name.
+    pub field1: String,
+    /// Second field name.
+    pub field2: String,
+    /// Expected correlation coefficient.
+    pub expected_r: f64,
+    /// Acceptable tolerance.
+    #[serde(default = "default_correlation_tolerance")]
+    pub tolerance: f64,
+}
+
+fn default_correlation_tolerance() -> f64 {
+    0.10
+}
+
+/// Conditional distribution configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConditionalDistributionSchemaConfig {
+    /// Output field name to generate.
+    pub output_field: String,
+
+    /// Input field name that conditions the distribution.
+    pub input_field: String,
+
+    /// Breakpoints defining distribution changes.
+    #[serde(default)]
+    pub breakpoints: Vec<ConditionalBreakpointConfig>,
+
+    /// Default distribution when below all breakpoints.
+    #[serde(default)]
+    pub default_distribution: ConditionalDistributionParamsConfig,
+
+    /// Minimum output value constraint.
+    #[serde(default)]
+    pub min_value: Option<f64>,
+
+    /// Maximum output value constraint.
+    #[serde(default)]
+    pub max_value: Option<f64>,
+
+    /// Decimal places for output rounding.
+    #[serde(default = "default_decimal_places")]
+    pub decimal_places: u8,
+}
+
+/// Breakpoint for conditional distribution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConditionalBreakpointConfig {
+    /// Input value threshold.
+    pub threshold: f64,
+
+    /// Distribution to use when input >= threshold.
+    pub distribution: ConditionalDistributionParamsConfig,
+}
+
+/// Distribution parameters for conditional distributions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ConditionalDistributionParamsConfig {
+    /// Fixed value.
+    Fixed {
+        /// The fixed value
+        value: f64,
+    },
+    /// Normal distribution.
+    Normal {
+        /// Mean
+        mu: f64,
+        /// Standard deviation
+        sigma: f64,
+    },
+    /// Log-normal distribution.
+    LogNormal {
+        /// Location parameter
+        mu: f64,
+        /// Scale parameter
+        sigma: f64,
+    },
+    /// Uniform distribution.
+    Uniform {
+        /// Minimum
+        min: f64,
+        /// Maximum
+        max: f64,
+    },
+    /// Beta distribution (scaled).
+    Beta {
+        /// Alpha parameter
+        alpha: f64,
+        /// Beta parameter
+        beta: f64,
+        /// Minimum output value
+        min: f64,
+        /// Maximum output value
+        max: f64,
+    },
+    /// Discrete values with weights.
+    Discrete {
+        /// Possible values
+        values: Vec<f64>,
+        /// Weights (should sum to 1.0)
+        weights: Vec<f64>,
+    },
+}
+
+impl Default for ConditionalDistributionParamsConfig {
+    fn default() -> Self {
+        Self::Normal {
+            mu: 0.0,
+            sigma: 1.0,
+        }
+    }
+}
+
+/// Regime change configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RegimeChangeSchemaConfig {
+    /// Enable regime change modeling.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// List of regime changes.
+    #[serde(default)]
+    pub changes: Vec<RegimeChangeEventConfig>,
+
+    /// Economic cycle configuration.
+    #[serde(default)]
+    pub economic_cycle: Option<EconomicCycleSchemaConfig>,
+
+    /// Parameter drift configurations.
+    #[serde(default)]
+    pub parameter_drifts: Vec<ParameterDriftSchemaConfig>,
+}
+
+/// A single regime change event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegimeChangeEventConfig {
+    /// Date when the change occurs (ISO 8601 format).
+    pub date: String,
+
+    /// Type of regime change.
+    pub change_type: RegimeChangeTypeConfig,
+
+    /// Description of the change.
+    #[serde(default)]
+    pub description: Option<String>,
+
+    /// Effects of this regime change.
+    #[serde(default)]
+    pub effects: Vec<RegimeEffectConfig>,
+}
+
+/// Type of regime change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RegimeChangeTypeConfig {
+    /// Acquisition - sudden volume and amount increase
+    Acquisition,
+    /// Divestiture - sudden volume and amount decrease
+    Divestiture,
+    /// Price increase - amounts increase
+    PriceIncrease,
+    /// Price decrease - amounts decrease
+    PriceDecrease,
+    /// New product launch - volume ramp-up
+    ProductLaunch,
+    /// Product discontinuation - volume ramp-down
+    ProductDiscontinuation,
+    /// Policy change - affects patterns
+    PolicyChange,
+    /// Competitor entry - market disruption
+    CompetitorEntry,
+    /// Custom effect
+    Custom,
+}
+
+/// Effect of a regime change on a specific field.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegimeEffectConfig {
+    /// Field being affected.
+    pub field: String,
+
+    /// Multiplier to apply (1.0 = no change, 1.5 = 50% increase).
+    pub multiplier: f64,
+}
+
+/// Economic cycle configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EconomicCycleSchemaConfig {
+    /// Enable economic cycle modeling.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Cycle period in months (e.g., 48 for 4-year business cycle).
+    #[serde(default = "default_cycle_period")]
+    pub period_months: u32,
+
+    /// Amplitude of cycle effect (0.0-1.0).
+    #[serde(default = "default_cycle_amplitude")]
+    pub amplitude: f64,
+
+    /// Phase offset in months.
+    #[serde(default)]
+    pub phase_offset: u32,
+
+    /// Recession periods (start_month, duration_months).
+    #[serde(default)]
+    pub recessions: Vec<RecessionPeriodConfig>,
+}
+
+fn default_cycle_period() -> u32 {
+    48
+}
+
+fn default_cycle_amplitude() -> f64 {
+    0.15
+}
+
+impl Default for EconomicCycleSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            period_months: 48,
+            amplitude: 0.15,
+            phase_offset: 0,
+            recessions: Vec::new(),
+        }
+    }
+}
+
+/// Recession period configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecessionPeriodConfig {
+    /// Start month (0-indexed from generation start).
+    pub start_month: u32,
+
+    /// Duration in months.
+    pub duration_months: u32,
+
+    /// Severity (0.0-1.0, affects volume reduction).
+    #[serde(default = "default_recession_severity")]
+    pub severity: f64,
+}
+
+fn default_recession_severity() -> f64 {
+    0.20
+}
+
+/// Parameter drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParameterDriftSchemaConfig {
+    /// Parameter being drifted.
+    pub parameter: String,
+
+    /// Drift type.
+    pub drift_type: ParameterDriftTypeConfig,
+
+    /// Start value.
+    pub start_value: f64,
+
+    /// End value.
+    pub end_value: f64,
+
+    /// Start period (month, 0-indexed).
+    #[serde(default)]
+    pub start_period: u32,
+
+    /// End period (month, optional - defaults to end of generation).
+    #[serde(default)]
+    pub end_period: Option<u32>,
+}
+
+/// Parameter drift type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ParameterDriftTypeConfig {
+    /// Linear interpolation
+    #[default]
+    Linear,
+    /// Exponential growth/decay
+    Exponential,
+    /// S-curve (logistic)
+    Logistic,
+    /// Step function
+    Step,
+}
+
+/// Statistical validation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct StatisticalValidationSchemaConfig {
+    /// Enable statistical validation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Statistical tests to run.
+    #[serde(default)]
+    pub tests: Vec<StatisticalTestConfig>,
+
+    /// Validation reporting configuration.
+    #[serde(default)]
+    pub reporting: ValidationReportingConfig,
+}
+
+/// Statistical test configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum StatisticalTestConfig {
+    /// Benford's Law first digit test.
+    BenfordFirstDigit {
+        /// Threshold MAD for failure.
+        #[serde(default = "default_benford_threshold")]
+        threshold_mad: f64,
+        /// Warning MAD threshold.
+        #[serde(default = "default_benford_warning")]
+        warning_mad: f64,
+    },
+    /// Distribution fit test.
+    DistributionFit {
+        /// Target distribution to test.
+        target: TargetDistributionConfig,
+        /// K-S test significance level.
+        #[serde(default = "default_ks_significance")]
+        ks_significance: f64,
+        /// Test method (ks, anderson_darling, chi_squared).
+        #[serde(default)]
+        method: DistributionFitMethod,
+    },
+    /// Correlation check.
+    CorrelationCheck {
+        /// Expected correlations to validate.
+        expected_correlations: Vec<ExpectedCorrelationConfig>,
+    },
+    /// Chi-squared test.
+    ChiSquared {
+        /// Number of bins.
+        #[serde(default = "default_chi_squared_bins")]
+        bins: usize,
+        /// Significance level.
+        #[serde(default = "default_chi_squared_significance")]
+        significance: f64,
+    },
+    /// Anderson-Darling test.
+    AndersonDarling {
+        /// Target distribution.
+        target: TargetDistributionConfig,
+        /// Significance level.
+        #[serde(default = "default_ad_significance")]
+        significance: f64,
+    },
+}
+
+fn default_benford_threshold() -> f64 {
+    0.015
+}
+
+fn default_benford_warning() -> f64 {
+    0.010
+}
+
+fn default_ks_significance() -> f64 {
+    0.05
+}
+
+fn default_chi_squared_bins() -> usize {
+    10
+}
+
+fn default_chi_squared_significance() -> f64 {
+    0.05
+}
+
+fn default_ad_significance() -> f64 {
+    0.05
+}
+
+/// Target distribution for fit tests.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TargetDistributionConfig {
+    /// Normal distribution
+    Normal,
+    /// Log-normal distribution
+    #[default]
+    LogNormal,
+    /// Exponential distribution
+    Exponential,
+    /// Uniform distribution
+    Uniform,
+}
+
+/// Distribution fit test method.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DistributionFitMethod {
+    /// Kolmogorov-Smirnov test
+    #[default]
+    KolmogorovSmirnov,
+    /// Anderson-Darling test
+    AndersonDarling,
+    /// Chi-squared test
+    ChiSquared,
+}
+
+/// Validation reporting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationReportingConfig {
+    /// Output validation report to file.
+    #[serde(default)]
+    pub output_report: bool,
+
+    /// Report format.
+    #[serde(default)]
+    pub format: ValidationReportFormat,
+
+    /// Fail generation if validation fails.
+    #[serde(default)]
+    pub fail_on_error: bool,
+
+    /// Include detailed statistics in report.
+    #[serde(default = "default_true")]
+    pub include_details: bool,
+}
+
+impl Default for ValidationReportingConfig {
+    fn default() -> Self {
+        Self {
+            output_report: false,
+            format: ValidationReportFormat::Json,
+            fail_on_error: false,
+            include_details: true,
+        }
+    }
+}
+
+/// Validation report format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ValidationReportFormat {
+    /// JSON format
+    #[default]
+    Json,
+    /// YAML format
+    Yaml,
+    /// HTML report
+    Html,
 }
 
 #[cfg(test)]

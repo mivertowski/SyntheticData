@@ -21,6 +21,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_balance(config)?;
     validate_accounting_standards(config)?;
     validate_audit_standards(config)?;
+    validate_distributions(config)?;
     Ok(())
 }
 
@@ -736,6 +737,350 @@ fn validate_audit_standards(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate advanced distribution configuration.
+fn validate_distributions(config: &GeneratorConfig) -> SynthResult<()> {
+    let dist = &config.distributions;
+
+    if !dist.enabled {
+        return Ok(());
+    }
+
+    // Validate mixture model configuration
+    validate_mixture_config(&dist.amounts)?;
+
+    // Validate correlation configuration
+    validate_correlation_config(&dist.correlations)?;
+
+    // Validate conditional distributions
+    for (i, cond) in dist.conditional.iter().enumerate() {
+        validate_conditional_config(cond, i)?;
+    }
+
+    // Validate regime changes
+    validate_regime_changes(&dist.regime_changes)?;
+
+    // Validate statistical validation settings
+    validate_statistical_validation(&dist.validation)?;
+
+    Ok(())
+}
+
+/// Validate mixture model configuration.
+fn validate_mixture_config(
+    config: &crate::schema::MixtureDistributionSchemaConfig,
+) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    if config.components.is_empty() {
+        return Err(SynthError::validation(
+            "distributions.amounts.components cannot be empty when enabled",
+        ));
+    }
+
+    // Validate weights sum to 1.0
+    let weight_sum: f64 = config.components.iter().map(|c| c.weight).sum();
+    if (weight_sum - 1.0).abs() > 0.01 {
+        return Err(SynthError::validation(format!(
+            "distributions.amounts.components weights must sum to 1.0, got {}",
+            weight_sum
+        )));
+    }
+
+    // Validate individual components
+    for (i, comp) in config.components.iter().enumerate() {
+        if comp.weight < 0.0 || comp.weight > 1.0 {
+            return Err(SynthError::validation(format!(
+                "distributions.amounts.components[{}].weight must be between 0.0 and 1.0, got {}",
+                i, comp.weight
+            )));
+        }
+
+        if comp.sigma <= 0.0 {
+            return Err(SynthError::validation(format!(
+                "distributions.amounts.components[{}].sigma must be positive, got {}",
+                i, comp.sigma
+            )));
+        }
+    }
+
+    // Validate min/max values
+    if config.min_value < 0.0 {
+        return Err(SynthError::validation(
+            "distributions.amounts.min_value must be non-negative",
+        ));
+    }
+
+    if let Some(max) = config.max_value {
+        if max <= config.min_value {
+            return Err(SynthError::validation(format!(
+                "distributions.amounts.max_value ({}) must be greater than min_value ({})",
+                max, config.min_value
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate correlation configuration.
+fn validate_correlation_config(config: &crate::schema::CorrelationSchemaConfig) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    let n = config.fields.len();
+    if n < 2 {
+        return Err(SynthError::validation(
+            "distributions.correlations.fields must have at least 2 fields",
+        ));
+    }
+
+    // Check matrix size
+    let expected_matrix_size = n * (n - 1) / 2;
+    if config.matrix.len() != expected_matrix_size {
+        return Err(SynthError::validation(format!(
+            "distributions.correlations.matrix must have {} elements for {} fields, got {}",
+            expected_matrix_size,
+            n,
+            config.matrix.len()
+        )));
+    }
+
+    // Validate correlation values are in [-1, 1]
+    for (i, &r) in config.matrix.iter().enumerate() {
+        if !(-1.0..=1.0).contains(&r) {
+            return Err(SynthError::validation(format!(
+                "distributions.correlations.matrix[{}] must be in [-1, 1], got {}",
+                i, r
+            )));
+        }
+    }
+
+    // Validate expected correlations
+    for expected in &config.expected_correlations {
+        if !(-1.0..=1.0).contains(&expected.expected_r) {
+            return Err(SynthError::validation(format!(
+                "expected_correlation for ({}, {}): expected_r must be in [-1, 1], got {}",
+                expected.field1, expected.field2, expected.expected_r
+            )));
+        }
+        if expected.tolerance <= 0.0 || expected.tolerance > 1.0 {
+            return Err(SynthError::validation(format!(
+                "expected_correlation for ({}, {}): tolerance must be in (0, 1], got {}",
+                expected.field1, expected.field2, expected.tolerance
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate conditional distribution configuration.
+fn validate_conditional_config(
+    config: &crate::schema::ConditionalDistributionSchemaConfig,
+    index: usize,
+) -> SynthResult<()> {
+    if config.output_field.is_empty() {
+        return Err(SynthError::validation(format!(
+            "distributions.conditional[{}].output_field cannot be empty",
+            index
+        )));
+    }
+
+    if config.input_field.is_empty() {
+        return Err(SynthError::validation(format!(
+            "distributions.conditional[{}].input_field cannot be empty",
+            index
+        )));
+    }
+
+    // Validate breakpoints are in ascending order
+    for i in 1..config.breakpoints.len() {
+        if config.breakpoints[i].threshold <= config.breakpoints[i - 1].threshold {
+            return Err(SynthError::validation(format!(
+                "distributions.conditional[{}].breakpoints must be in ascending order: {} is not greater than {}",
+                index, config.breakpoints[i].threshold, config.breakpoints[i - 1].threshold
+            )));
+        }
+    }
+
+    // Validate min/max constraints
+    if let (Some(min), Some(max)) = (config.min_value, config.max_value) {
+        if max <= min {
+            return Err(SynthError::validation(format!(
+                "distributions.conditional[{}].max_value ({}) must be greater than min_value ({})",
+                index, max, min
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate regime change configuration.
+fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate regime change events
+    for (i, change) in config.changes.iter().enumerate() {
+        // Validate date format (basic check)
+        if change.date.is_empty() {
+            return Err(SynthError::validation(format!(
+                "distributions.regime_changes.changes[{}].date cannot be empty",
+                i
+            )));
+        }
+
+        // Validate effects have positive multipliers
+        for (j, effect) in change.effects.iter().enumerate() {
+            if effect.multiplier < 0.0 {
+                return Err(SynthError::validation(format!(
+                    "distributions.regime_changes.changes[{}].effects[{}].multiplier must be non-negative, got {}",
+                    i, j, effect.multiplier
+                )));
+            }
+        }
+    }
+
+    // Validate economic cycle if present
+    if let Some(ref cycle) = config.economic_cycle {
+        if cycle.enabled {
+            if cycle.period_months == 0 {
+                return Err(SynthError::validation(
+                    "distributions.regime_changes.economic_cycle.period_months must be > 0",
+                ));
+            }
+
+            if cycle.amplitude < 0.0 || cycle.amplitude > 1.0 {
+                return Err(SynthError::validation(format!(
+                    "distributions.regime_changes.economic_cycle.amplitude must be in [0, 1], got {}",
+                    cycle.amplitude
+                )));
+            }
+
+            // Validate recession periods
+            for (i, recession) in cycle.recessions.iter().enumerate() {
+                if recession.duration_months == 0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.regime_changes.economic_cycle.recessions[{}].duration_months must be > 0",
+                        i
+                    )));
+                }
+
+                if recession.severity < 0.0 || recession.severity > 1.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.regime_changes.economic_cycle.recessions[{}].severity must be in [0, 1], got {}",
+                        i, recession.severity
+                    )));
+                }
+            }
+        }
+    }
+
+    // Validate parameter drifts
+    for (i, drift) in config.parameter_drifts.iter().enumerate() {
+        if drift.parameter.is_empty() {
+            return Err(SynthError::validation(format!(
+                "distributions.regime_changes.parameter_drifts[{}].parameter cannot be empty",
+                i
+            )));
+        }
+
+        if let Some(end) = drift.end_period {
+            if end <= drift.start_period {
+                return Err(SynthError::validation(format!(
+                    "distributions.regime_changes.parameter_drifts[{}].end_period ({}) must be > start_period ({})",
+                    i, end, drift.start_period
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate statistical validation configuration.
+fn validate_statistical_validation(
+    config: &crate::schema::StatisticalValidationSchemaConfig,
+) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate test configurations
+    for (i, test) in config.tests.iter().enumerate() {
+        match test {
+            crate::schema::StatisticalTestConfig::BenfordFirstDigit {
+                threshold_mad,
+                warning_mad,
+            } => {
+                if *threshold_mad <= 0.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].threshold_mad must be positive",
+                        i
+                    )));
+                }
+                if *warning_mad <= 0.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].warning_mad must be positive",
+                        i
+                    )));
+                }
+            }
+            crate::schema::StatisticalTestConfig::DistributionFit {
+                ks_significance, ..
+            } => {
+                if *ks_significance <= 0.0 || *ks_significance >= 1.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].ks_significance must be in (0, 1), got {}",
+                        i, ks_significance
+                    )));
+                }
+            }
+            crate::schema::StatisticalTestConfig::ChiSquared { bins, significance } => {
+                if *bins < 2 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].bins must be >= 2, got {}",
+                        i, bins
+                    )));
+                }
+                if *significance <= 0.0 || *significance >= 1.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].significance must be in (0, 1), got {}",
+                        i, significance
+                    )));
+                }
+            }
+            crate::schema::StatisticalTestConfig::AndersonDarling { significance, .. } => {
+                if *significance <= 0.0 || *significance >= 1.0 {
+                    return Err(SynthError::validation(format!(
+                        "distributions.validation.tests[{}].significance must be in (0, 1), got {}",
+                        i, significance
+                    )));
+                }
+            }
+            crate::schema::StatisticalTestConfig::CorrelationCheck {
+                expected_correlations,
+            } => {
+                for expected in expected_correlations {
+                    if !(-1.0..=1.0).contains(&expected.expected_r) {
+                        return Err(SynthError::validation(format!(
+                            "distributions.validation.tests[{}]: expected_r must be in [-1, 1]",
+                            i
+                        )));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -798,6 +1143,7 @@ mod tests {
             relationships: RelationshipSchemaConfig::default(),
             accounting_standards: AccountingStandardsConfig::default(),
             audit_standards: AuditStandardsConfig::default(),
+            distributions: AdvancedDistributionConfig::default(),
         }
     }
 

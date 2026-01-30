@@ -168,6 +168,197 @@ class RateLimitSettings:
     backpressure: str = "block"  # block, drop, buffer
 
 
+# ============================================================================
+# Advanced Distribution Configuration
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class MixtureComponentConfig:
+    """Single component of a mixture distribution."""
+
+    weight: float = 1.0
+    mu: float = 6.0  # Log-normal mean (log scale)
+    sigma: float = 1.5  # Log-normal std dev
+    label: Optional[str] = None  # Optional label (e.g., "routine", "major")
+
+
+@dataclass(frozen=True)
+class MixtureDistributionConfig:
+    """Mixture distribution configuration for amount generation."""
+
+    enabled: bool = False
+    distribution_type: str = "lognormal"  # lognormal, gaussian
+    components: Optional[List[MixtureComponentConfig]] = None
+    benford_compliance: bool = True
+
+
+@dataclass(frozen=True)
+class CorrelationFieldConfig:
+    """Configuration for a single correlated field."""
+
+    name: str
+    distribution_type: str = "normal"  # normal, lognormal, uniform
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+
+
+@dataclass(frozen=True)
+class CorrelationConfig:
+    """Cross-field correlation configuration."""
+
+    enabled: bool = False
+    copula_type: str = "gaussian"  # gaussian, clayton, gumbel, frank, student_t
+    fields: Optional[List[CorrelationFieldConfig]] = None
+    matrix: Optional[List[List[float]]] = None  # Correlation matrix
+
+
+@dataclass(frozen=True)
+class ConditionalBreakpoint:
+    """Breakpoint for conditional distributions."""
+
+    threshold: float
+    distribution_type: str = "lognormal"
+    mu: float = 6.0
+    sigma: float = 1.5
+
+
+@dataclass(frozen=True)
+class ConditionalDistributionConfig:
+    """Conditional distribution configuration."""
+
+    dependent_field: str
+    condition_field: str
+    breakpoints: Optional[List[ConditionalBreakpoint]] = None
+
+
+@dataclass(frozen=True)
+class RegimeChangeEventConfig:
+    """Single regime change event configuration."""
+
+    date: str  # ISO date string
+    change_type: str  # acquisition, divestiture, policy_change, price_increase, restructuring
+    description: Optional[str] = None
+    volume_multiplier: float = 1.0
+    amount_mean_shift: float = 0.0
+    amount_variance_shift: float = 0.0
+
+
+@dataclass(frozen=True)
+class EconomicCycleConfig:
+    """Economic cycle configuration for regime changes."""
+
+    enabled: bool = False
+    cycle_period_months: int = 48
+    amplitude: float = 0.15
+    recession_probability: float = 0.1
+    recession_depth: float = 0.25
+
+
+@dataclass(frozen=True)
+class RegimeChangeConfig:
+    """Regime change configuration for temporal distribution shifts."""
+
+    enabled: bool = False
+    changes: Optional[List[RegimeChangeEventConfig]] = None
+    economic_cycle: Optional[EconomicCycleConfig] = None
+
+
+@dataclass(frozen=True)
+class StatisticalTestConfig:
+    """Configuration for a single statistical validation test."""
+
+    test_type: str  # benford_first_digit, distribution_fit, correlation_check, chi_squared, anderson_darling
+    significance: float = 0.05
+    threshold_mad: Optional[float] = None  # For Benford tests
+    target_distribution: Optional[str] = None  # For distribution fit tests
+
+
+@dataclass(frozen=True)
+class StatisticalValidationConfig:
+    """Statistical validation configuration."""
+
+    enabled: bool = False
+    tests: Optional[List[StatisticalTestConfig]] = None
+    report_path: Optional[str] = None
+    fail_on_violation: bool = False
+
+
+@dataclass(frozen=True)
+class AdvancedDistributionSettings:
+    """Advanced statistical distribution configuration.
+
+    Supports mixture models, cross-field correlations, conditional distributions,
+    regime changes, and statistical validation.
+    """
+
+    enabled: bool = False
+    amounts: Optional[MixtureDistributionConfig] = None
+    correlations: Optional[CorrelationConfig] = None
+    conditional: Optional[List[ConditionalDistributionConfig]] = None
+    regime_changes: Optional[RegimeChangeConfig] = None
+    industry_profile: Optional[str] = None  # retail, manufacturing, financial_services
+    validation: Optional[StatisticalValidationConfig] = None
+
+
+# ============================================================================
+# Template/Realism Configuration
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class CultureDistributionConfig:
+    """Distribution of name cultures for realistic generation."""
+
+    western_us: float = 0.40
+    hispanic: float = 0.20
+    german: float = 0.10
+    french: float = 0.05
+    chinese: float = 0.10
+    japanese: float = 0.05
+    indian: float = 0.10
+
+
+@dataclass(frozen=True)
+class NameTemplateConfig:
+    """Name generation template configuration."""
+
+    culture_distribution: Optional[CultureDistributionConfig] = None
+    email_domain: str = "company.com"
+    generate_realistic_names: bool = True
+
+
+@dataclass(frozen=True)
+class DescriptionTemplateConfig:
+    """Description generation template configuration."""
+
+    generate_header_text: bool = True
+    generate_line_text: bool = True
+
+
+@dataclass(frozen=True)
+class ReferenceTemplateConfig:
+    """Reference number template configuration."""
+
+    generate_references: bool = True
+    invoice_prefix: str = "INV"
+    po_prefix: str = "PO"
+    so_prefix: str = "SO"
+
+
+@dataclass(frozen=True)
+class TemplateSettings:
+    """Template configuration for realistic data generation.
+
+    Controls name generation, description text, and reference number formats
+    with support for cultural diversity and industry-specific patterns.
+    """
+
+    names: Optional[NameTemplateConfig] = None
+    descriptions: Optional[DescriptionTemplateConfig] = None
+    references: Optional[ReferenceTemplateConfig] = None
+
+
 @dataclass(frozen=True)
 class ValidTimeSettings:
     """Valid time configuration for temporal attributes."""
@@ -424,6 +615,8 @@ class Config:
     relationships: Optional[RelationshipSettings] = None
     accounting_standards: Optional[AccountingStandardsConfig] = None
     audit_standards: Optional[AuditStandardsConfig] = None
+    distributions: Optional[AdvancedDistributionSettings] = None
+    templates: Optional[TemplateSettings] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -607,6 +800,83 @@ class Config:
                 audit_std_dict["pcaob"] = _strip_none(self.audit_standards.pcaob.__dict__)
             payload["audit_standards"] = audit_std_dict
 
+        if self.distributions is not None:
+            dist_dict: Dict[str, Any] = {"enabled": self.distributions.enabled}
+            if self.distributions.amounts is not None:
+                amounts_dict: Dict[str, Any] = {
+                    "enabled": self.distributions.amounts.enabled,
+                    "distribution_type": self.distributions.amounts.distribution_type,
+                    "benford_compliance": self.distributions.amounts.benford_compliance,
+                }
+                if self.distributions.amounts.components is not None:
+                    amounts_dict["components"] = [
+                        _strip_none(c.__dict__) for c in self.distributions.amounts.components
+                    ]
+                dist_dict["amounts"] = amounts_dict
+            if self.distributions.correlations is not None:
+                corr_dict: Dict[str, Any] = {
+                    "enabled": self.distributions.correlations.enabled,
+                    "copula_type": self.distributions.correlations.copula_type,
+                }
+                if self.distributions.correlations.fields is not None:
+                    corr_dict["fields"] = [
+                        _strip_none(f.__dict__) for f in self.distributions.correlations.fields
+                    ]
+                if self.distributions.correlations.matrix is not None:
+                    corr_dict["matrix"] = self.distributions.correlations.matrix
+                dist_dict["correlations"] = corr_dict
+            if self.distributions.conditional is not None:
+                dist_dict["conditional"] = [
+                    {
+                        "dependent_field": c.dependent_field,
+                        "condition_field": c.condition_field,
+                        **({"breakpoints": [_strip_none(b.__dict__) for b in c.breakpoints]} if c.breakpoints else {}),
+                    }
+                    for c in self.distributions.conditional
+                ]
+            if self.distributions.regime_changes is not None:
+                regime_dict: Dict[str, Any] = {"enabled": self.distributions.regime_changes.enabled}
+                if self.distributions.regime_changes.changes is not None:
+                    regime_dict["changes"] = [
+                        _strip_none(c.__dict__) for c in self.distributions.regime_changes.changes
+                    ]
+                if self.distributions.regime_changes.economic_cycle is not None:
+                    regime_dict["economic_cycle"] = _strip_none(
+                        self.distributions.regime_changes.economic_cycle.__dict__
+                    )
+                dist_dict["regime_changes"] = regime_dict
+            if self.distributions.industry_profile is not None:
+                dist_dict["industry_profile"] = self.distributions.industry_profile
+            if self.distributions.validation is not None:
+                val_dict: Dict[str, Any] = {
+                    "enabled": self.distributions.validation.enabled,
+                    "fail_on_violation": self.distributions.validation.fail_on_violation,
+                }
+                if self.distributions.validation.tests is not None:
+                    val_dict["tests"] = [_strip_none(t.__dict__) for t in self.distributions.validation.tests]
+                if self.distributions.validation.report_path is not None:
+                    val_dict["report_path"] = self.distributions.validation.report_path
+                dist_dict["validation"] = val_dict
+            payload["distributions"] = dist_dict
+
+        if self.templates is not None:
+            tmpl_dict: Dict[str, Any] = {}
+            if self.templates.names is not None:
+                names_dict: Dict[str, Any] = {
+                    "email_domain": self.templates.names.email_domain,
+                    "generate_realistic_names": self.templates.names.generate_realistic_names,
+                }
+                if self.templates.names.culture_distribution is not None:
+                    names_dict["culture_distribution"] = _strip_none(
+                        self.templates.names.culture_distribution.__dict__
+                    )
+                tmpl_dict["names"] = names_dict
+            if self.templates.descriptions is not None:
+                tmpl_dict["descriptions"] = _strip_none(self.templates.descriptions.__dict__)
+            if self.templates.references is not None:
+                tmpl_dict["references"] = _strip_none(self.templates.references.__dict__)
+            payload["templates"] = tmpl_dict
+
         # Merge extra fields
         payload.update(self.extra)
         return payload
@@ -777,11 +1047,112 @@ class Config:
                 pcaob=_build_dataclass(PcaobConfig, audit_std_data.get("pcaob")),
             )
 
+        # Build distributions with nested structures
+        distributions = None
+        dist_data = data.get("distributions")
+        if dist_data is not None:
+            amounts = None
+            if dist_data.get("amounts"):
+                amounts_data = dist_data["amounts"]
+                components = None
+                if amounts_data.get("components"):
+                    components = [
+                        MixtureComponentConfig(**c) for c in amounts_data["components"]
+                    ]
+                amounts = MixtureDistributionConfig(
+                    enabled=amounts_data.get("enabled", False),
+                    distribution_type=amounts_data.get("distribution_type", "lognormal"),
+                    components=components,
+                    benford_compliance=amounts_data.get("benford_compliance", True),
+                )
+            correlations = None
+            if dist_data.get("correlations"):
+                corr_data = dist_data["correlations"]
+                fields = None
+                if corr_data.get("fields"):
+                    fields = [CorrelationFieldConfig(**f) for f in corr_data["fields"]]
+                correlations = CorrelationConfig(
+                    enabled=corr_data.get("enabled", False),
+                    copula_type=corr_data.get("copula_type", "gaussian"),
+                    fields=fields,
+                    matrix=corr_data.get("matrix"),
+                )
+            conditional = None
+            if dist_data.get("conditional"):
+                conditional = []
+                for c in dist_data["conditional"]:
+                    breakpoints = None
+                    if c.get("breakpoints"):
+                        breakpoints = [ConditionalBreakpoint(**b) for b in c["breakpoints"]]
+                    conditional.append(
+                        ConditionalDistributionConfig(
+                            dependent_field=c["dependent_field"],
+                            condition_field=c["condition_field"],
+                            breakpoints=breakpoints,
+                        )
+                    )
+            regime_changes = None
+            if dist_data.get("regime_changes"):
+                regime_data = dist_data["regime_changes"]
+                changes = None
+                if regime_data.get("changes"):
+                    changes = [RegimeChangeEventConfig(**c) for c in regime_data["changes"]]
+                economic_cycle = _build_dataclass(EconomicCycleConfig, regime_data.get("economic_cycle"))
+                regime_changes = RegimeChangeConfig(
+                    enabled=regime_data.get("enabled", False),
+                    changes=changes,
+                    economic_cycle=economic_cycle,
+                )
+            validation = None
+            if dist_data.get("validation"):
+                val_data = dist_data["validation"]
+                tests = None
+                if val_data.get("tests"):
+                    tests = [StatisticalTestConfig(**t) for t in val_data["tests"]]
+                validation = StatisticalValidationConfig(
+                    enabled=val_data.get("enabled", False),
+                    tests=tests,
+                    report_path=val_data.get("report_path"),
+                    fail_on_violation=val_data.get("fail_on_violation", False),
+                )
+            distributions = AdvancedDistributionSettings(
+                enabled=dist_data.get("enabled", False),
+                amounts=amounts,
+                correlations=correlations,
+                conditional=conditional,
+                regime_changes=regime_changes,
+                industry_profile=dist_data.get("industry_profile"),
+                validation=validation,
+            )
+
+        # Build templates with nested structures
+        templates = None
+        tmpl_data = data.get("templates")
+        if tmpl_data is not None:
+            names = None
+            if tmpl_data.get("names"):
+                names_data = tmpl_data["names"]
+                culture_dist = _build_dataclass(
+                    CultureDistributionConfig, names_data.get("culture_distribution")
+                )
+                names = NameTemplateConfig(
+                    culture_distribution=culture_dist,
+                    email_domain=names_data.get("email_domain", "company.com"),
+                    generate_realistic_names=names_data.get("generate_realistic_names", True),
+                )
+            descriptions = _build_dataclass(DescriptionTemplateConfig, tmpl_data.get("descriptions"))
+            references = _build_dataclass(ReferenceTemplateConfig, tmpl_data.get("references"))
+            templates = TemplateSettings(
+                names=names,
+                descriptions=descriptions,
+                references=references,
+            )
+
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
             "fraud", "banking", "scenario", "temporal", "data_quality", "graph_export",
             "audit", "streaming", "rate_limit", "temporal_attributes", "relationships",
-            "accounting_standards", "audit_standards"
+            "accounting_standards", "audit_standards", "distributions", "templates"
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -804,6 +1175,8 @@ class Config:
             relationships=relationships,
             accounting_standards=accounting_standards,
             audit_standards=audit_standards,
+            distributions=distributions,
+            templates=templates,
             extra=extra,
         )
 

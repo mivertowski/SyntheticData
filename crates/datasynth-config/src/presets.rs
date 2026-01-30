@@ -58,6 +58,7 @@ pub fn create_preset(
         relationships: RelationshipSchemaConfig::default(),
         accounting_standards: AccountingStandardsConfig::default(),
         audit_standards: AuditStandardsConfig::default(),
+        distributions: AdvancedDistributionConfig::default(),
     }
 }
 

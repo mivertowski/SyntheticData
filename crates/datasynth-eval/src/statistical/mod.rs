@@ -2,14 +2,38 @@
 //!
 //! Provides statistical tests and analyses for validating that generated
 //! synthetic data follows expected distributions.
+//!
+//! # Modules
+//!
+//! - **amount_distribution**: Log-normal amount distribution analysis
+//! - **benford**: Benford's Law compliance testing
+//! - **line_item**: Line item distribution analysis
+//! - **temporal**: Temporal pattern analysis
+//! - **correlation**: Cross-field correlation analysis
+//! - **anderson_darling**: Anderson-Darling goodness-of-fit test
+//! - **chi_squared**: Chi-squared goodness-of-fit test
 
 mod amount_distribution;
+mod anderson_darling;
 mod benford;
+mod chi_squared;
+mod correlation;
 mod line_item;
 mod temporal;
 
 pub use amount_distribution::{AmountDistributionAnalysis, AmountDistributionAnalyzer};
+pub use anderson_darling::{
+    AndersonDarlingAnalysis, AndersonDarlingAnalyzer, CriticalValues, FittedParameters,
+    TargetDistribution,
+};
 pub use benford::{BenfordAnalysis, BenfordAnalyzer, BenfordConformity};
+pub use chi_squared::{
+    BinFrequency, BinningStrategy, ChiSquaredAnalysis, ChiSquaredAnalyzer, ExpectedDistribution,
+};
+pub use correlation::{
+    pearson_correlation, spearman_correlation, CorrelationAnalysis, CorrelationAnalyzer,
+    CorrelationCheckResult, ExpectedCorrelation,
+};
 pub use line_item::{LineItemAnalysis, LineItemAnalyzer, LineItemEntry};
 pub use temporal::{TemporalAnalysis, TemporalAnalyzer, TemporalEntry};
 
@@ -26,6 +50,12 @@ pub struct StatisticalEvaluation {
     pub line_item: Option<LineItemAnalysis>,
     /// Temporal pattern analysis results.
     pub temporal: Option<TemporalAnalysis>,
+    /// Correlation analysis results.
+    pub correlation: Option<CorrelationAnalysis>,
+    /// Anderson-Darling goodness-of-fit test results.
+    pub anderson_darling: Option<AndersonDarlingAnalysis>,
+    /// Chi-squared goodness-of-fit test results.
+    pub chi_squared: Option<ChiSquaredAnalysis>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -44,6 +74,9 @@ impl StatisticalEvaluation {
             amount_distribution: None,
             line_item: None,
             temporal: None,
+            correlation: None,
+            anderson_darling: None,
+            chi_squared: None,
             passes: true,
             failures: Vec::new(),
             issues: Vec::new(),
@@ -96,6 +129,42 @@ impl StatisticalEvaluation {
                 ));
             }
             scores.push(temporal.pattern_correlation);
+        }
+
+        // Check correlation analysis
+        if let Some(ref correlation) = self.correlation {
+            if !correlation.passes {
+                for issue in &correlation.issues {
+                    self.failures.push(format!("Correlation: {}", issue));
+                }
+            }
+            // Score based on pass rate
+            let total_checks = correlation.checks_passed + correlation.checks_failed;
+            if total_checks > 0 {
+                scores.push(correlation.checks_passed as f64 / total_checks as f64);
+            }
+        }
+
+        // Check Anderson-Darling test
+        if let Some(ref ad) = self.anderson_darling {
+            if !ad.passes {
+                for issue in &ad.issues {
+                    self.failures.push(format!("Anderson-Darling: {}", issue));
+                }
+            }
+            // Score based on p-value (higher is better for goodness-of-fit)
+            scores.push((ad.p_value / 0.5).min(1.0));
+        }
+
+        // Check Chi-squared test
+        if let Some(ref chi_sq) = self.chi_squared {
+            if !chi_sq.passes {
+                for issue in &chi_sq.issues {
+                    self.failures.push(format!("Chi-squared: {}", issue));
+                }
+            }
+            // Score based on p-value (higher is better for goodness-of-fit)
+            scores.push((chi_sq.p_value / 0.5).min(1.0));
         }
 
         // Sync issues with failures

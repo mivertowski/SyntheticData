@@ -5,29 +5,58 @@ from __future__ import annotations
 from typing import Callable, Dict, List, Optional
 
 from datasynth_py.config.models import (
+    AdvancedDistributionSettings,
     AuditSettings,
     BankingSettings,
     ChartOfAccountsSettings,
     CompanyConfig,
     Config,
+    CorrelationConfig,
+    CorrelationFieldConfig,
+    CultureDistributionConfig,
     DataQualitySettings,
+    DescriptionTemplateConfig,
+    EconomicCycleConfig,
     FraudSettings,
     GlobalSettings,
     GraphExportSettings,
+    MixtureComponentConfig,
+    MixtureDistributionConfig,
+    NameTemplateConfig,
+    ReferenceTemplateConfig,
+    RegimeChangeConfig,
     ScenarioSettings,
+    StatisticalTestConfig,
+    StatisticalValidationConfig,
+    TemplateSettings,
 )
 
 BlueprintFactory = Callable[..., Config]
 
 
-def retail_small(companies: int = 3, transactions: int = 5000) -> Config:
+def retail_small(
+    companies: int = 3,
+    transactions: int = 5000,
+    realistic_names: bool = True,
+) -> Config:
     """Create a small retail configuration.
 
     Args:
         companies: Number of companies to generate.
         transactions: Transaction volume hint (maps to volume preset).
+        realistic_names: Enable realistic name generation with cultural diversity.
     """
     volume = _transactions_to_volume(transactions)
+    templates = None
+    if realistic_names:
+        templates = TemplateSettings(
+            names=NameTemplateConfig(
+                culture_distribution=CultureDistributionConfig(),
+                generate_realistic_names=True,
+            ),
+            descriptions=DescriptionTemplateConfig(),
+            references=ReferenceTemplateConfig(),
+        )
     return Config(
         global_settings=GlobalSettings(
             industry="retail",
@@ -45,6 +74,7 @@ def retail_small(companies: int = 3, transactions: int = 5000) -> Config:
             for i in range(companies)
         ],
         chart_of_accounts=ChartOfAccountsSettings(complexity="small"),
+        templates=templates,
     )
 
 
@@ -149,6 +179,7 @@ def ml_training(
     industry: str = "manufacturing",
     anomaly_ratio: float = 0.05,
     with_data_quality: bool = True,
+    with_distributions: bool = True,
 ) -> Config:
     """Create a configuration optimized for ML training datasets.
 
@@ -159,7 +190,32 @@ def ml_training(
         industry: Industry sector for the data.
         anomaly_ratio: Target ratio of anomalous transactions (0.0-1.0).
         with_data_quality: Whether to inject data quality variations.
+        with_distributions: Enable advanced mixture distributions for realistic amounts.
     """
+    distributions = None
+    if with_distributions:
+        # Multi-modal amount distribution for realistic training data
+        distributions = AdvancedDistributionSettings(
+            enabled=True,
+            amounts=MixtureDistributionConfig(
+                enabled=True,
+                distribution_type="lognormal",
+                components=[
+                    MixtureComponentConfig(weight=0.60, mu=6.0, sigma=1.5, label="routine"),
+                    MixtureComponentConfig(weight=0.30, mu=8.5, sigma=1.0, label="significant"),
+                    MixtureComponentConfig(weight=0.10, mu=11.0, sigma=0.8, label="major"),
+                ],
+                benford_compliance=True,
+            ),
+            industry_profile=industry,
+            validation=StatisticalValidationConfig(
+                enabled=True,
+                tests=[
+                    StatisticalTestConfig(test_type="benford_first_digit", threshold_mad=0.015),
+                    StatisticalTestConfig(test_type="distribution_fit", target_distribution="lognormal"),
+                ],
+            ),
+        )
     return Config(
         global_settings=GlobalSettings(
             industry=industry,
@@ -185,6 +241,7 @@ def ml_training(
             missing_rate=0.03,
             typo_rate=0.02,
         ) if with_data_quality else None,
+        distributions=distributions,
         scenario=ScenarioSettings(
             tags=["ml_training", "labeled_data"],
             ml_training=True,
@@ -193,6 +250,9 @@ def ml_training(
         graph_export=GraphExportSettings(
             enabled=True,
             formats=["pytorch_geometric"],
+        ),
+        templates=TemplateSettings(
+            names=NameTemplateConfig(generate_realistic_names=True),
         ),
     )
 
@@ -262,6 +322,214 @@ def audit_engagement(
     )
 
 
+def with_distributions(
+    base_config: Config,
+    industry_profile: Optional[str] = None,
+    with_correlations: bool = False,
+) -> Config:
+    """Add advanced distribution settings to an existing configuration.
+
+    Args:
+        base_config: Base configuration to extend.
+        industry_profile: Industry profile for distributions (retail, manufacturing, financial_services).
+        with_correlations: Enable cross-field correlation modeling.
+
+    Returns:
+        New Config with advanced distributions enabled.
+    """
+    correlations = None
+    if with_correlations:
+        correlations = CorrelationConfig(
+            enabled=True,
+            copula_type="gaussian",
+            fields=[
+                CorrelationFieldConfig(name="amount", distribution_type="lognormal"),
+                CorrelationFieldConfig(name="line_items", distribution_type="normal", min_value=1, max_value=20),
+            ],
+            matrix=[[1.0, 0.65], [0.65, 1.0]],
+        )
+
+    dist_settings = AdvancedDistributionSettings(
+        enabled=True,
+        amounts=MixtureDistributionConfig(
+            enabled=True,
+            distribution_type="lognormal",
+            components=[
+                MixtureComponentConfig(weight=0.60, mu=6.0, sigma=1.5, label="routine"),
+                MixtureComponentConfig(weight=0.30, mu=8.5, sigma=1.0, label="significant"),
+                MixtureComponentConfig(weight=0.10, mu=11.0, sigma=0.8, label="major"),
+            ],
+            benford_compliance=True,
+        ),
+        correlations=correlations,
+        industry_profile=industry_profile,
+    )
+
+    return base_config.override(distributions=dist_settings.__dict__)
+
+
+def with_regime_changes(
+    base_config: Config,
+    with_economic_cycle: bool = True,
+) -> Config:
+    """Add regime change configuration for temporal distribution shifts.
+
+    Simulates realistic business events like acquisitions, restructuring,
+    and economic cycles that affect transaction patterns over time.
+
+    Args:
+        base_config: Base configuration to extend.
+        with_economic_cycle: Enable economic cycle modeling.
+
+    Returns:
+        New Config with regime changes enabled.
+    """
+    economic_cycle = None
+    if with_economic_cycle:
+        economic_cycle = EconomicCycleConfig(
+            enabled=True,
+            cycle_period_months=48,
+            amplitude=0.15,
+            recession_probability=0.1,
+            recession_depth=0.25,
+        )
+
+    # Ensure distributions are enabled
+    existing_dist = base_config.distributions
+    if existing_dist is None:
+        existing_dist = AdvancedDistributionSettings(enabled=True)
+
+    regime_config = RegimeChangeConfig(
+        enabled=True,
+        economic_cycle=economic_cycle,
+    )
+
+    return base_config.override(
+        distributions={
+            **existing_dist.__dict__,
+            "regime_changes": regime_config.__dict__,
+        }
+    )
+
+
+def with_templates(
+    base_config: Config,
+    email_domain: str = "company.com",
+    invoice_prefix: str = "INV",
+    po_prefix: str = "PO",
+) -> Config:
+    """Add realistic template settings for names and references.
+
+    Args:
+        base_config: Base configuration to extend.
+        email_domain: Email domain for generated users.
+        invoice_prefix: Prefix for invoice reference numbers.
+        po_prefix: Prefix for purchase order reference numbers.
+
+    Returns:
+        New Config with template settings enabled.
+    """
+    template_settings = TemplateSettings(
+        names=NameTemplateConfig(
+            culture_distribution=CultureDistributionConfig(),
+            email_domain=email_domain,
+            generate_realistic_names=True,
+        ),
+        descriptions=DescriptionTemplateConfig(
+            generate_header_text=True,
+            generate_line_text=True,
+        ),
+        references=ReferenceTemplateConfig(
+            generate_references=True,
+            invoice_prefix=invoice_prefix,
+            po_prefix=po_prefix,
+        ),
+    )
+
+    return base_config.override(templates=template_settings.__dict__)
+
+
+def statistical_validation(
+    industry: str = "manufacturing",
+    transactions: int = 100000,
+) -> Config:
+    """Create a configuration focused on statistical validation.
+
+    Generates data with comprehensive statistical tests enabled to verify
+    distribution compliance (Benford's Law, mixture distributions, correlations).
+
+    Args:
+        industry: Industry sector for the data.
+        transactions: Transaction volume hint.
+
+    Returns:
+        Config with statistical validation enabled.
+    """
+    volume = _transactions_to_volume(transactions)
+    return Config(
+        global_settings=GlobalSettings(
+            industry=industry,
+            start_date="2024-01-01",
+            period_months=12,
+        ),
+        companies=[
+            CompanyConfig(
+                code="STAT001",
+                name="Statistical Validation Corp",
+                currency="USD",
+                country="US",
+                annual_transaction_volume=volume,
+            ),
+        ],
+        chart_of_accounts=ChartOfAccountsSettings(complexity="medium"),
+        distributions=AdvancedDistributionSettings(
+            enabled=True,
+            amounts=MixtureDistributionConfig(
+                enabled=True,
+                distribution_type="lognormal",
+                components=[
+                    MixtureComponentConfig(weight=0.60, mu=6.0, sigma=1.5, label="routine"),
+                    MixtureComponentConfig(weight=0.30, mu=8.5, sigma=1.0, label="significant"),
+                    MixtureComponentConfig(weight=0.10, mu=11.0, sigma=0.8, label="major"),
+                ],
+                benford_compliance=True,
+            ),
+            correlations=CorrelationConfig(
+                enabled=True,
+                copula_type="gaussian",
+                fields=[
+                    CorrelationFieldConfig(name="amount", distribution_type="lognormal"),
+                    CorrelationFieldConfig(name="line_items", distribution_type="normal", min_value=1, max_value=20),
+                    CorrelationFieldConfig(name="approval_level", distribution_type="normal", min_value=1, max_value=5),
+                ],
+                matrix=[
+                    [1.00, 0.65, 0.72],
+                    [0.65, 1.00, 0.55],
+                    [0.72, 0.55, 1.00],
+                ],
+            ),
+            industry_profile=industry,
+            validation=StatisticalValidationConfig(
+                enabled=True,
+                tests=[
+                    StatisticalTestConfig(test_type="benford_first_digit", threshold_mad=0.015),
+                    StatisticalTestConfig(test_type="distribution_fit", target_distribution="lognormal", significance=0.05),
+                    StatisticalTestConfig(test_type="chi_squared", significance=0.05),
+                    StatisticalTestConfig(test_type="anderson_darling", significance=0.05),
+                    StatisticalTestConfig(test_type="correlation_check", significance=0.05),
+                ],
+                fail_on_violation=False,
+            ),
+        ),
+        templates=TemplateSettings(
+            names=NameTemplateConfig(generate_realistic_names=True),
+        ),
+        scenario=ScenarioSettings(
+            tags=["statistical_validation", "quality_assurance"],
+        ),
+    )
+
+
 def _transactions_to_volume(count: int) -> str:
     """Map transaction count to volume preset."""
     if count <= 10_000:
@@ -283,6 +551,7 @@ _REGISTRY: Dict[str, BlueprintFactory] = {
     "banking_aml": banking_aml,
     "ml_training": ml_training,
     "audit_engagement": audit_engagement,
+    "statistical_validation": statistical_validation,
 }
 
 
