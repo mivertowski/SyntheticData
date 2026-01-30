@@ -4,7 +4,7 @@
  * This file runs before each test file and sets up the testing environment.
  */
 import '@testing-library/svelte/vitest';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // Mock the Tauri API globally
 vi.mock('@tauri-apps/api/core', () => ({

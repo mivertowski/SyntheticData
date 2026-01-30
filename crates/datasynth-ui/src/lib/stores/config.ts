@@ -10,8 +10,7 @@ import { invoke } from '@tauri-apps/api/core';
 function isTauriContext(): boolean {
   if (typeof window === 'undefined') return false;
   // Check for Tauri's IPC mechanism
-  const w = window as Record<string, unknown>;
-  return '__TAURI_INTERNALS__' in w && '__TAURI_IPC__' in w;
+  return '__TAURI_INTERNALS__' in window && '__TAURI_IPC__' in window;
 }
 
 // Wrap invoke with timeout and Tauri context check

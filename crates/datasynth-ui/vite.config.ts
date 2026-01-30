@@ -1,10 +1,22 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-import type { UserConfig as ViteUserConfig } from 'vite';
-import type { InlineConfig } from 'vitest/node';
+import { defineConfig, type UserConfig } from 'vite';
 
-interface UserConfig extends ViteUserConfig {
-  test?: InlineConfig;
+// Vitest configuration type (inline to avoid version conflicts)
+interface VitestConfig {
+  include?: string[];
+  exclude?: string[];
+  environment?: string;
+  globals?: boolean;
+  setupFiles?: string[];
+  server?: {
+    deps?: {
+      inline?: (string | RegExp)[];
+    };
+  };
+}
+
+interface ConfigWithVitest extends UserConfig {
+  test?: VitestConfig;
 }
 
 export default defineConfig({
@@ -23,26 +35,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/lib/test-utils/vitest-setup.ts'],
-    // Ensure browser version of Svelte is used
     server: {
       deps: {
         inline: [/svelte/],
       },
     },
-    // Use browser conditions to resolve Svelte correctly
-    alias: [
-      {
-        find: /^svelte\/?/,
-        replacement: (id: string) => id.replace('svelte', 'svelte'),
-        customResolver: {
-          resolveId(source) {
-            return null; // Let Vite handle it with browser conditions
-          },
-        },
-      },
-    ],
   },
   resolve: {
     conditions: ['browser'],
   },
-} as UserConfig);
+} as ConfigWithVitest);
