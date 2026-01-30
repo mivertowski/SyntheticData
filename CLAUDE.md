@@ -216,6 +216,11 @@ audit_standards:
 | drift.rs | DriftConfig, RegimeChange, EconomicCycle parameters |
 | industry_profiles.rs | Pre-configured profiles for Retail, Manufacturing, Financial Services |
 | temporal.rs | TemporalSampler (seasonality), HolidayCalendar |
+| business_day.rs | BusinessDayCalculator (T+N settlement, month-end conventions) |
+| period_end.rs | PeriodEndDynamics (decay curves: exponential, extended_crunch) |
+| processing_lag.rs | ProcessingLagCalculator (event-to-posting lag modeling) |
+| timezone.rs | TimezoneHandler (multi-region timezone handling) |
+| holidays.rs | HolidayCalendar (11 regions: US, DE, GB, CN, JP, IN, BR, MX, AU, SG, KR) |
 | fraud.rs | FraudAmountGenerator |
 
 ### Distributions Configuration
@@ -262,6 +267,69 @@ distributions:
     fail_on_violation: false
 ```
 
+### Temporal Patterns Configuration
+
+```yaml
+temporal_patterns:
+  enabled: true
+
+  business_days:
+    enabled: true
+    half_day_policy: half_day       # full_day, half_day, non_business_day
+    month_end_convention: modified_following  # modified_following, preceding, following, end_of_month
+    settlement_rules:
+      equity_days: 2                # T+2
+      government_bonds_days: 1      # T+1
+      fx_spot_days: 2
+      wire_cutoff_time: "14:00"
+
+  calendars:
+    regions: [US, DE, BR, SG, KR]   # 11 regions available
+
+  period_end:
+    model: exponential              # flat, exponential, extended_crunch, daily_profile
+    month_end:
+      start_day: -10
+      base_multiplier: 1.0
+      peak_multiplier: 3.5
+      decay_rate: 0.3
+    quarter_end:
+      inherit_from: month_end
+      additional_multiplier: 1.5
+    year_end:
+      start_day: -15
+      peak_multiplier: 6.0
+
+  processing_lags:
+    enabled: true
+    sales_order_lag: { mu: 0.5, sigma: 0.8 }
+    goods_receipt_lag: { mu: 1.5, sigma: 0.5 }
+    invoice_receipt_lag: { mu: 2.0, sigma: 0.6 }
+    cross_day_posting:
+      enabled: true
+      probability_by_hour: { 17: 0.7, 19: 0.9, 21: 0.99 }
+
+  fiscal_calendar:
+    calendar_type: custom           # calendar, custom, four_four_five
+    year_start_month: 7
+    year_start_day: 1
+
+  timezones:
+    enabled: true
+    default_timezone: "America/New_York"
+    consolidation_timezone: "UTC"
+    entity_timezones:
+      "EU_*": "Europe/London"
+      "APAC_*": "Asia/Singapore"
+
+  intraday:
+    enabled: true
+    segments:
+      - { name: morning_spike, start: "08:30", end: "10:00", multiplier: 1.8 }
+      - { name: lunch_dip, start: "12:00", end: "13:30", multiplier: 0.4 }
+      - { name: eod_rush, start: "16:00", end: "17:30", multiplier: 1.5 }
+```
+
 ## Key Design Decisions
 
 1. **Deterministic RNG**: ChaCha8 with configurable seed
@@ -276,7 +344,7 @@ distributions:
 
 ## Configuration
 
-YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `accounting_standards`, `audit_standards`
+YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `temporal_patterns`, `accounting_standards`, `audit_standards`
 
 Presets: manufacturing, retail, financial_services, healthcare, technology
 Complexity: small (~100 accounts), medium (~400), large (~2500)
