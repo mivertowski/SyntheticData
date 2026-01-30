@@ -5516,6 +5516,10 @@ pub struct TemporalPatternsConfig {
     /// Intra-day patterns configuration (morning spike, lunch dip, EOD rush).
     #[serde(default)]
     pub intraday: IntraDaySchemaConfig,
+
+    /// Timezone handling configuration.
+    #[serde(default)]
+    pub timezones: TimezoneSchemaConfig,
 }
 
 /// Business day calculation configuration.
@@ -5931,6 +5935,49 @@ fn default_multiplier() -> f64 {
 
 fn default_posting_type() -> String {
     "both".to_string()
+}
+
+// =============================================================================
+// Timezone Configuration
+// =============================================================================
+
+/// Timezone handling configuration for multi-region entities.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TimezoneSchemaConfig {
+    /// Enable timezone handling.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Default timezone (IANA format, e.g., "America/New_York").
+    #[serde(default = "default_timezone")]
+    pub default_timezone: String,
+
+    /// Consolidation timezone for group reporting (IANA format).
+    #[serde(default = "default_consolidation_timezone")]
+    pub consolidation_timezone: String,
+
+    /// Entity-to-timezone mappings.
+    /// Supports patterns like "EU_*" -> "Europe/London".
+    #[serde(default)]
+    pub entity_mappings: Vec<EntityTimezoneMapping>,
+}
+
+fn default_timezone() -> String {
+    "America/New_York".to_string()
+}
+
+fn default_consolidation_timezone() -> String {
+    "UTC".to_string()
+}
+
+/// Mapping from entity pattern to timezone.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EntityTimezoneMapping {
+    /// Entity code pattern (e.g., "EU_*", "*_APAC", "1000").
+    pub pattern: String,
+
+    /// Timezone (IANA format, e.g., "Europe/London").
+    pub timezone: String,
 }
 
 #[cfg(test)]

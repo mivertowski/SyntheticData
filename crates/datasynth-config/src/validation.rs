@@ -1126,6 +1126,9 @@ fn validate_temporal_patterns(config: &GeneratorConfig) -> SynthResult<()> {
     // Validate intra-day patterns configuration (P2)
     validate_intraday_config(&temporal.intraday)?;
 
+    // Validate timezone configuration (P2)
+    validate_timezone_config(&temporal.timezones)?;
+
     Ok(())
 }
 
@@ -1582,6 +1585,81 @@ fn validate_intraday_config(config: &crate::schema::IntraDaySchemaConfig) -> Syn
     }
 
     Ok(())
+}
+
+/// Validate timezone configuration.
+fn validate_timezone_config(config: &crate::schema::TimezoneSchemaConfig) -> SynthResult<()> {
+    if !config.enabled {
+        return Ok(());
+    }
+
+    // Validate default timezone is a valid IANA timezone name
+    if !is_valid_iana_timezone(&config.default_timezone) {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.timezones.default_timezone '{}' is not a valid IANA timezone name",
+            config.default_timezone
+        )));
+    }
+
+    // Validate consolidation timezone
+    if !is_valid_iana_timezone(&config.consolidation_timezone) {
+        return Err(SynthError::validation(format!(
+            "temporal_patterns.timezones.consolidation_timezone '{}' is not a valid IANA timezone name",
+            config.consolidation_timezone
+        )));
+    }
+
+    // Validate entity mappings
+    for (i, mapping) in config.entity_mappings.iter().enumerate() {
+        if mapping.pattern.is_empty() {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.timezones.entity_mappings[{}].pattern cannot be empty",
+                i
+            )));
+        }
+
+        if !is_valid_iana_timezone(&mapping.timezone) {
+            return Err(SynthError::validation(format!(
+                "temporal_patterns.timezones.entity_mappings[{}].timezone '{}' is not a valid IANA timezone name",
+                i, mapping.timezone
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Check if a string is a valid IANA timezone name.
+/// This is a simplified check that validates common timezone patterns.
+fn is_valid_iana_timezone(tz: &str) -> bool {
+    // Common valid timezones - check against a set of patterns
+    // IANA timezones are typically in format "Continent/City" or "Etc/GMT+N"
+    if tz == "UTC" || tz == "GMT" {
+        return true;
+    }
+
+    // Check for Continent/City format
+    let parts: Vec<&str> = tz.split('/').collect();
+    if parts.len() >= 2 {
+        let valid_continents = [
+            "Africa",
+            "America",
+            "Antarctica",
+            "Arctic",
+            "Asia",
+            "Atlantic",
+            "Australia",
+            "Europe",
+            "Indian",
+            "Pacific",
+            "Etc",
+        ];
+        if valid_continents.contains(&parts[0]) {
+            return true;
+        }
+    }
+
+    false
 }
 
 #[cfg(test)]

@@ -23,6 +23,7 @@
 //! - **business_day**: Business day calculations and settlement dates
 //! - **period_end**: Period-end decay curves and dynamics
 //! - **processing_lag**: Event-to-posting lag modeling
+//! - **timezone**: Multi-region timezone handling
 
 mod amount;
 mod benford;
@@ -41,6 +42,7 @@ mod period_end;
 mod processing_lag;
 mod seasonality;
 mod temporal;
+mod timezone;
 mod weibull;
 mod zero_inflated;
 
@@ -61,5 +63,6 @@ pub use period_end::*;
 pub use processing_lag::*;
 pub use seasonality::*;
 pub use temporal::*;
+pub use timezone::*;
 pub use weibull::*;
 pub use zero_inflated::*;
