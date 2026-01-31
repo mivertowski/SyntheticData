@@ -81,6 +81,7 @@
 - [Data Quality Variations](advanced/data-quality.md)
 - [Graph Export](advanced/graph-export.md)
 - [Intercompany Processing](advanced/intercompany.md)
+- [Interconnectivity & Relationships](advanced/interconnectivity.md)
 - [Period Close Engine](advanced/period-close.md)
 - [Fingerprinting](advanced/fingerprinting.md)
 - [Accounting & Audit Standards](advanced/accounting-standards.md)

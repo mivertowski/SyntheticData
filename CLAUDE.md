@@ -67,6 +67,9 @@ datasynth-test-utils   → Test utilities
 | Anomalies | AnomalyType, LabeledAnomaly, QualityIssue |
 | Controls | InternalControl, ControlMapping, SoD |
 | COSO Framework | CosoComponent, CosoPrinciple, ControlScope, CosoMaturityLevel |
+| Vendor Network | VendorNetwork, VendorRelationship, VendorCluster, VendorLifecycleStage, VendorQualityScore, VendorDependency, SupplyChainTier |
+| Customer Segment | SegmentedCustomer, CustomerValueSegment, CustomerLifecycleStage, CustomerNetworkPosition, CustomerEngagement, SegmentedCustomerPool |
+| Relationships | EntityGraph, GraphEntityType, GraphEntityId, RelationshipEdge, RelationshipType, RelationshipStrengthCalculator, CrossProcessLink |
 
 ### Core Infrastructure (datasynth-core/src/)
 
@@ -94,6 +97,7 @@ datasynth-test-utils   → Test utilities
 | anomaly/ | injector, types, strategies, patterns |
 | data_quality/ | missing_values, format_variations, duplicates, typos, labels |
 | audit/ | engagement, workpaper, evidence, risk, finding, judgment generators |
+| relationships/ | entity_graph_generator for cross-process links and relationship strength |
 
 ### Server (datasynth-server/src/)
 
@@ -344,7 +348,7 @@ temporal_patterns:
 
 ## Configuration
 
-YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `temporal_patterns`, `accounting_standards`, `audit_standards`
+YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `temporal_patterns`, `accounting_standards`, `audit_standards`, `vendor_network`, `customer_segmentation`, `relationship_strength`, `cross_process_links`
 
 Presets: manufacturing, retail, financial_services, healthcare, technology
 Complexity: small (~100 accounts), medium (~400), large (~2500)
@@ -359,6 +363,65 @@ internal_controls:
   target_maturity_level: "managed"      # ad_hoc|repeatable|defined|managed|optimized|mixed
   exception_rate: 0.02
   sod_violation_rate: 0.01
+```
+
+### Interconnectivity Config
+
+```yaml
+vendor_network:
+  enabled: true
+  depth: 3                              # Tier1/Tier2/Tier3 supply chain
+  tiers:
+    tier1: { count_min: 50, count_max: 100 }
+    tier2: { count_per_parent_min: 4, count_per_parent_max: 10 }
+    tier3: { count_per_parent_min: 2, count_per_parent_max: 5 }
+  clusters:
+    reliable_strategic: 0.20
+    standard_operational: 0.50
+    transactional: 0.25
+    problematic: 0.05
+  dependencies:
+    max_single_vendor_concentration: 0.15
+    top_5_concentration: 0.45
+
+customer_segmentation:
+  enabled: true
+  value_segments:
+    enterprise: { revenue_share: 0.40, customer_share: 0.05, avg_order_min: 50000.0 }
+    mid_market: { revenue_share: 0.35, customer_share: 0.20, avg_order_min: 5000.0, avg_order_max: 50000.0 }
+    smb: { revenue_share: 0.20, customer_share: 0.50, avg_order_min: 500.0, avg_order_max: 5000.0 }
+    consumer: { revenue_share: 0.05, customer_share: 0.25, avg_order_min: 50.0, avg_order_max: 500.0 }
+  lifecycle:
+    prospect_rate: 0.10
+    new_rate: 0.15
+    growth_rate: 0.20
+    mature_rate: 0.35
+    at_risk_rate: 0.10
+    churned_rate: 0.08
+    won_back_rate: 0.02
+  networks:
+    referrals: { enabled: true, referral_rate: 0.15 }
+    corporate_hierarchies: { enabled: true, hierarchy_probability: 0.30 }
+
+relationship_strength:
+  enabled: true
+  calculation:
+    transaction_volume_weight: 0.30     # Log scale
+    transaction_count_weight: 0.25      # Sqrt scale
+    relationship_duration_weight: 0.20
+    recency_weight: 0.15               # Exp decay, 90d half-life
+    mutual_connections_weight: 0.10    # Jaccard index
+    recency_half_life_days: 90
+  thresholds:
+    strong: 0.7
+    moderate: 0.4
+    weak: 0.1
+
+cross_process_links:
+  enabled: true
+  inventory_p2p_o2c: true              # GoodsReceipt → Delivery links
+  payment_bank_reconciliation: true
+  intercompany_bilateral: true
 ```
 
 ### Validation Rules

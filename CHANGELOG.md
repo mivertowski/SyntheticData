@@ -5,9 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-01-30
+## [0.3.0] - 2026-01-31
 
 ### Added
+
+- **Interconnectivity Enhancements** (`datasynth-core`, `datasynth-generators`): Comprehensive relationship modeling for realistic enterprise networks
+  - **Multi-Tier Vendor Networks**:
+    - `VendorNetwork` with supply chain tiers (Tier1/Tier2/Tier3)
+    - `VendorCluster` types: ReliableStrategic (20%), StandardOperational (50%), Transactional (25%), Problematic (5%)
+    - `VendorLifecycleStage`: Onboarding, RampUp, SteadyState, Decline, Terminated
+    - `VendorQualityScore`: Delivery, quality, invoice accuracy, responsiveness metrics
+    - `VendorDependency`: Concentration analysis, single-source tracking, substitutability
+    - `PaymentHistory`: On-time, early, late payment tracking with averages
+  - **Customer Value Segmentation**:
+    - `CustomerValueSegment`: Enterprise (40% rev/5% cust), MidMarket (35%/20%), SMB (20%/50%), Consumer (5%/25%)
+    - `CustomerLifecycleStage`: Prospect, New, Growth, Mature, AtRisk, Churned, WonBack
+    - `CustomerNetworkPosition`: Referral networks, parent/child hierarchies, industry clusters
+    - `CustomerEngagement`: Order frequency, recency, NPS scores, engagement scoring
+    - `SegmentedCustomerPool`: Index by segment and lifecycle stage
+  - **Entity Relationship Graph**:
+    - `GraphEntityType`: 16 entity types (Company, Vendor, Customer, Employee, etc.)
+    - `RelationshipType`: 26 relationship types (BuysFrom, SellsTo, ReportsTo, etc.)
+    - `RelationshipStrengthCalculator`: Composite strength from volume, count, duration, recency, connections
+    - `CrossProcessLink`: P2P↔O2C linkage via inventory (GoodsReceipt→Delivery)
+    - `EntityGraph` with node/edge management and graph metrics
+  - **Generator Extensions**:
+    - `VendorGenerator.generate_vendor_network()`: Multi-tier hierarchy with cluster assignment
+    - `CustomerGenerator.generate_segmented_pool()`: Segment distribution, referral networks, corporate hierarchies
+    - `EntityGraphGenerator`: Entity graph construction with cross-process links and strength calculation
+
+- **Interconnectivity Configuration** (`datasynth-config`): New configuration sections for network modeling
+  - `VendorNetworkSchemaConfig`: Tier depth, count ranges, cluster distribution, concentration limits
+  - `CustomerSegmentationSchemaConfig`: Value segments, lifecycle distribution, referral/hierarchy config
+  - `RelationshipStrengthSchemaConfig`: Weight configuration (volume 30%, count 25%, duration 20%, recency 15%, connections 10%)
+  - `CrossProcessLinksSchemaConfig`: Enable inventory P2P-O2C links, IC bilateral links
+  - Comprehensive validation rules for all interconnectivity settings
+
+- **Network Evaluation** (`datasynth-eval`): New network metrics evaluation module
+  - `NetworkEvaluator`: Graph analysis with connectivity, degree distribution, clustering
+  - `ConcentrationMetrics`: Top-1, Top-5 concentration, HHI calculation
+  - `StrengthStats`: Relationship strength distribution analysis
+  - Power law alpha estimation for degree distribution
+  - Clustering coefficient calculation
+  - Cross-process link coverage validation
 
 - **Statistical Distribution Enhancement** (`datasynth-core`): Advanced statistical distribution framework for realistic data generation
   - **Mixture Models**: Gaussian and Log-Normal mixture distributions with weighted components

@@ -88,6 +88,16 @@ The generator produces statistically accurate data based on empirical research f
 - **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
 - **Audit Standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance with deficiency classification
 
+### Interconnectivity & Relationships
+
+- **Multi-Tier Vendor Networks**: Tier1/Tier2/Tier3 supply chain modeling with parent-child hierarchies
+- **Vendor Clusters**: ReliableStrategic, StandardOperational, Transactional, Problematic behavioral segmentation
+- **Customer Value Segmentation**: Enterprise/MidMarket/SMB/Consumer with Pareto-like revenue distribution
+- **Customer Lifecycle**: Prospect, New, Growth, Mature, AtRisk, Churned, WonBack stages
+- **Relationship Strength**: Composite scoring from volume, count, duration, recency, and mutual connections
+- **Cross-Process Links**: P2P↔O2C linkage via inventory (GoodsReceipt connects to Delivery)
+- **Entity Graphs**: 16 entity types, 26 relationship types with graph metrics (connectivity, clustering, power law)
+
 ### Machine Learning & Analytics
 
 - **Graph Export**: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits
@@ -323,6 +333,35 @@ audit_standards:
   sox:
     enabled: true
     materiality_threshold: 10000.0
+
+vendor_network:
+  enabled: true
+  depth: 3                          # Tier1/Tier2/Tier3
+  clusters:
+    reliable_strategic: 0.20
+    standard_operational: 0.50
+    transactional: 0.25
+    problematic: 0.05
+  dependencies:
+    max_single_vendor_concentration: 0.15
+    top_5_concentration: 0.45
+
+customer_segmentation:
+  enabled: true
+  value_segments:
+    enterprise: { revenue_share: 0.40, customer_share: 0.05 }
+    mid_market: { revenue_share: 0.35, customer_share: 0.20 }
+    smb: { revenue_share: 0.20, customer_share: 0.50 }
+    consumer: { revenue_share: 0.05, customer_share: 0.25 }
+
+relationship_strength:
+  enabled: true
+  calculation:
+    transaction_volume_weight: 0.30
+    transaction_count_weight: 0.25
+    relationship_duration_weight: 0.20
+    recency_weight: 0.15
+    mutual_connections_weight: 0.10
 
 output:
   format: csv
