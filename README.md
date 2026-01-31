@@ -98,6 +98,16 @@ The generator produces statistically accurate data based on empirical research f
 - **Cross-Process Links**: P2P↔O2C linkage via inventory (GoodsReceipt connects to Delivery)
 - **Entity Graphs**: 16 entity types, 26 relationship types with graph metrics (connectivity, clustering, power law)
 
+### Pattern & Process Drift
+
+- **Organizational Events**: Acquisitions (volume multipliers, integration errors), divestitures, mergers, reorganizations
+- **Process Evolution**: S-curve automation rollout, workflow changes, policy updates, control enhancements
+- **Technology Transitions**: ERP migrations with phased rollout (parallel run, cutover, stabilization, hypercare)
+- **Behavioral Drift**: Vendor payment term extensions, customer payment delays, employee learning curves
+- **Market Drift**: Economic cycles (sinusoidal, asymmetric, mean-reverting), commodity price shocks, recession modeling
+- **Regulatory Events**: Accounting standard adoptions, tax rate changes, compliance requirement impacts
+- **Drift Detection Ground Truth**: Labeled drift events with magnitude and detection difficulty for ML training
+
 ### Machine Learning & Analytics
 
 - **Graph Export**: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits

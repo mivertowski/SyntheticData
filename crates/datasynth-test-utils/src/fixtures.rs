@@ -5,10 +5,14 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use datasynth_config::schema::{
-    AccountingStandardsConfig, AuditGenerationConfig, AuditStandardsConfig, ChartOfAccountsConfig,
-    CompanyConfig, DataQualitySchemaConfig, FraudConfig, GeneratorConfig, GlobalConfig,
-    GraphExportConfig, OcpmConfig, OutputConfig, RateLimitSchemaConfig, RelationshipSchemaConfig,
+    AccountingStandardsConfig, AuditGenerationConfig, AuditStandardsConfig,
+    BehavioralDriftSchemaConfig, ChartOfAccountsConfig, CompanyConfig,
+    CrossProcessLinksSchemaConfig, CustomerSegmentationSchemaConfig, DataQualitySchemaConfig,
+    DriftLabelingSchemaConfig, FraudConfig, GeneratorConfig, GlobalConfig, GraphExportConfig,
+    MarketDriftSchemaConfig, OcpmConfig, OrganizationalEventsSchemaConfig, OutputConfig,
+    RateLimitSchemaConfig, RelationshipSchemaConfig, RelationshipStrengthSchemaConfig,
     ScenarioConfig, StreamingSchemaConfig, TemporalAttributeSchemaConfig, TransactionVolume,
+    VendorNetworkSchemaConfig,
 };
 use datasynth_core::models::{
     AccountSubType, AccountType, BusinessProcess, CoAComplexity, GLAccount, IndustrySector,
@@ -75,6 +79,14 @@ pub fn minimal_config() -> GeneratorConfig {
         audit_standards: AuditStandardsConfig::default(),
         distributions: Default::default(),
         temporal_patterns: Default::default(),
+        vendor_network: VendorNetworkSchemaConfig::default(),
+        customer_segmentation: CustomerSegmentationSchemaConfig::default(),
+        relationship_strength: RelationshipStrengthSchemaConfig::default(),
+        cross_process_links: CrossProcessLinksSchemaConfig::default(),
+        organizational_events: OrganizationalEventsSchemaConfig::default(),
+        behavioral_drift: BehavioralDriftSchemaConfig::default(),
+        market_drift: MarketDriftSchemaConfig::default(),
+        drift_labeling: DriftLabelingSchemaConfig::default(),
     }
 }
 

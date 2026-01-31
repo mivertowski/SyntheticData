@@ -36,6 +36,13 @@ mod temporal;
 mod user;
 mod vendor_network;
 
+// Pattern drift models (Phase: Pattern and Process Drift Over Time)
+pub mod drift_events;
+pub mod organizational_event;
+pub mod process_evolution;
+pub mod regulatory_events;
+pub mod technology_transition;
+
 // Document models (Phase 2)
 pub mod documents;
 
@@ -77,3 +84,10 @@ pub use sod::*;
 pub use temporal::*;
 pub use user::*;
 pub use vendor_network::*;
+
+// Pattern drift exports
+pub use drift_events::*;
+pub use organizational_event::*;
+pub use process_evolution::*;
+pub use regulatory_events::*;
+pub use technology_transition::*;

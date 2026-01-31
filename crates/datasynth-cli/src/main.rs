@@ -1219,6 +1219,17 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         audit_standards: datasynth_config::schema::AuditStandardsConfig::default(),
         distributions: datasynth_config::schema::AdvancedDistributionConfig::default(),
         temporal_patterns: datasynth_config::schema::TemporalPatternsConfig::default(),
+        vendor_network: datasynth_config::schema::VendorNetworkSchemaConfig::default(),
+        customer_segmentation: datasynth_config::schema::CustomerSegmentationSchemaConfig::default(
+        ),
+        relationship_strength: datasynth_config::schema::RelationshipStrengthSchemaConfig::default(
+        ),
+        cross_process_links: datasynth_config::schema::CrossProcessLinksSchemaConfig::default(),
+        organizational_events: datasynth_config::schema::OrganizationalEventsSchemaConfig::default(
+        ),
+        behavioral_drift: datasynth_config::schema::BehavioralDriftSchemaConfig::default(),
+        market_drift: datasynth_config::schema::MarketDriftSchemaConfig::default(),
+        drift_labeling: datasynth_config::schema::DriftLabelingSchemaConfig::default(),
     }
 }
 

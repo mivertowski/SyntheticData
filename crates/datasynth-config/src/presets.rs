@@ -64,6 +64,10 @@ pub fn create_preset(
         customer_segmentation: CustomerSegmentationSchemaConfig::default(),
         relationship_strength: RelationshipStrengthSchemaConfig::default(),
         cross_process_links: CrossProcessLinksSchemaConfig::default(),
+        organizational_events: OrganizationalEventsSchemaConfig::default(),
+        behavioral_drift: BehavioralDriftSchemaConfig::default(),
+        market_drift: MarketDriftSchemaConfig::default(),
+        drift_labeling: DriftLabelingSchemaConfig::default(),
     }
 }
 

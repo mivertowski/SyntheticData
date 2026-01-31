@@ -960,6 +960,7 @@ pub enum CrossProcessLinkType {
 
 impl CrossProcessLink {
     /// Create a new cross-process link.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         material_id: impl Into<String>,
         source_process: impl Into<String>,

@@ -850,6 +850,14 @@ pub fn default_generator_config() -> GeneratorConfig {
         audit_standards: Default::default(),
         distributions: Default::default(),
         temporal_patterns: Default::default(),
+        vendor_network: Default::default(),
+        customer_segmentation: Default::default(),
+        relationship_strength: Default::default(),
+        cross_process_links: Default::default(),
+        organizational_events: Default::default(),
+        behavioral_drift: Default::default(),
+        market_drift: Default::default(),
+        drift_labeling: Default::default(),
     }
 }
 

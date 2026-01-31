@@ -41,6 +41,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `CrossProcessLinksSchemaConfig`: Enable inventory P2P-O2C links, IC bilateral links
   - Comprehensive validation rules for all interconnectivity settings
 
+- **Pattern and Process Drift** (`datasynth-core`): Comprehensive drift modeling for realistic temporal evolution
+  - **Organizational Events**:
+    - `OrganizationalEventType`: Acquisition, Divestiture, Reorganization, LeadershipChange, WorkforceReduction, Merger
+    - `AcquisitionConfig`: Volume multiplier (1.35x), integration error rate (5%), parallel posting periods
+    - `IntegrationPhaseConfig`: Parallel run, cutover, stabilization, and hypercare phases
+    - Effect blending modes: Multiplicative, Additive, Maximum, Minimum
+  - **Process Evolution**:
+    - `ProcessEvolutionType`: ApprovalWorkflowChange, ProcessAutomation, PolicyChange, ControlEnhancement
+    - `ProcessAutomationConfig`: S-curve automation rollout with configurable steepness and midpoint
+    - `WorkflowType`: Manual, SemiAutomated, FullyAutomated with transition modeling
+  - **Technology Transitions**:
+    - `TechnologyTransitionType`: ErpMigration, ModuleImplementation, IntegrationUpgrade
+    - `ErpMigrationConfig`: Migration phases with error rate and processing time multipliers
+    - `MigrationIssueConfig`: Duplicate rate, missing data rate, format mismatch rate
+  - **Behavioral Drift**:
+    - `VendorBehavioralDrift`: Payment terms extension, quality drift, pricing behavior
+    - `CustomerBehavioralDrift`: Payment delays during downturns, order pattern shifts
+    - `EmployeeBehavioralDrift`: Approval pattern changes, learning curve, fatigue effects
+    - `CollectiveBehavioralDrift`: Year-end intensity, automation adoption (S-curve), remote work impact
+  - **Market Drift**:
+    - `MarketDriftModel`: Economic cycles, industry-specific cycles, commodity drift
+    - `EconomicCycleModel`: Sinusoidal, Asymmetric, MeanReverting cycle types
+    - `RecessionConfig`: Probability, onset type (Gradual/Sudden), duration, severity
+    - `PriceShockEvent`: Supply disruption, demand surge modeling
+  - **Regulatory Events**:
+    - `RegulatoryDriftEvent`: Accounting standard adoption, tax rate changes, compliance requirements
+    - `AuditFocusEvent`: Risk-based shifts, industry trend responses, prior year finding follow-ups
+    - `RegulatoryCalendar`: Preset calendars for US GAAP 2024, IFRS 2024
+  - **Event Timeline Controller**:
+    - `EventTimeline`: Orchestrates organizational, process, and technology events
+    - `TimelineEffects`: Volume/amount multipliers, error rate deltas, entity changes, account remapping
+  - **Drift Detection Ground Truth**:
+    - `DriftEventType`: StatisticalShift, CategoricalShift, TemporalShift, RegulatoryChange
+    - `LabeledDriftEvent`: Event metadata with magnitude and detection difficulty
+    - `DriftLabelRecorder`: Ground truth label recording with CSV/JSON export
+    - `DetectionDifficulty`: Easy, Medium, Hard classification for ML training
+
+- **Drift Detection Evaluation** (`datasynth-eval`): Evaluation framework for drift detection
+  - `DriftDetectionAnalyzer`: Statistical drift detection with rolling window analysis
+  - `DriftDetectionMetrics`: Precision, recall, F1 score, mean detection delay
+  - Hellinger distance calculation for distribution comparison
+  - Population Stability Index (PSI) for drift magnitude measurement
+  - `LabeledEventAnalysis`: Ground truth event quality assessment
+  - Configurable thresholds for drift detection quality
+
+- **Drift Configuration** (`datasynth-config`): New configuration sections for drift modeling
+  - `OrganizationalEventsSchemaConfig`: Event types, dates, integration phases
+  - `BehavioralDriftSchemaConfig`: Vendor, customer, employee, collective behavior settings
+  - `MarketDriftSchemaConfig`: Economic cycles, industry cycles, commodities, price shocks
+  - `DriftLabelingSchemaConfig`: Ground truth labeling configuration
+
 - **Network Evaluation** (`datasynth-eval`): New network metrics evaluation module
   - `NetworkEvaluator`: Graph analysis with connectivity, degree distribution, clustering
   - `ConcentrationMetrics`: Top-1, Top-5 concentration, HHI calculation

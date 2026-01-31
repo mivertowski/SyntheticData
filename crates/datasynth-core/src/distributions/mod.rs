@@ -24,8 +24,13 @@
 //! - **period_end**: Period-end decay curves and dynamics
 //! - **processing_lag**: Event-to-posting lag modeling
 //! - **timezone**: Multi-region timezone handling
+//! - **behavioral_drift**: Vendor/customer/employee behavioral drift
+//! - **market_drift**: Economic cycles, commodities, price shocks
+//! - **event_timeline**: Event timeline orchestrator
+//! - **drift_recorder**: Ground truth drift label recorder
 
 mod amount;
+mod behavioral_drift;
 mod benford;
 mod beta;
 mod business_day;
@@ -33,9 +38,12 @@ mod conditional;
 mod copula;
 mod correlation;
 mod drift;
+mod drift_recorder;
+mod event_timeline;
 mod holidays;
 mod industry_profiles;
 mod line_item;
+mod market_drift;
 mod mixture;
 mod pareto;
 mod period_end;
@@ -47,6 +55,7 @@ mod weibull;
 mod zero_inflated;
 
 pub use amount::*;
+pub use behavioral_drift::*;
 pub use benford::*;
 pub use beta::*;
 pub use business_day::*;
@@ -54,9 +63,12 @@ pub use conditional::*;
 pub use copula::*;
 pub use correlation::*;
 pub use drift::*;
+pub use drift_recorder::*;
+pub use event_timeline::*;
 pub use holidays::*;
 pub use industry_profiles::*;
 pub use line_item::*;
+pub use market_drift::*;
 pub use mixture::*;
 pub use pareto::*;
 pub use period_end::*;

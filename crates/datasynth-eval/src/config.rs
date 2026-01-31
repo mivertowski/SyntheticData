@@ -31,10 +31,14 @@ pub struct StatisticalConfig {
     pub line_item_enabled: bool,
     /// Enable temporal pattern analysis.
     pub temporal_enabled: bool,
+    /// Enable drift detection analysis.
+    pub drift_detection_enabled: bool,
     /// Significance level for statistical tests (default: 0.05).
     pub significance_level: f64,
     /// Minimum sample size for statistical tests.
     pub min_sample_size: usize,
+    /// Window size for drift detection rolling statistics.
+    pub drift_window_size: usize,
 }
 
 impl Default for StatisticalConfig {
@@ -44,8 +48,10 @@ impl Default for StatisticalConfig {
             amount_distribution_enabled: true,
             line_item_enabled: true,
             temporal_enabled: true,
+            drift_detection_enabled: true,
             significance_level: 0.05,
             min_sample_size: 100,
+            drift_window_size: 10,
         }
     }
 }
@@ -168,6 +174,16 @@ pub struct EvaluationThresholds {
     /// Minimum correlation for temporal patterns.
     pub temporal_correlation_min: f64,
 
+    // Drift detection thresholds
+    /// Minimum drift magnitude to consider significant.
+    pub drift_magnitude_min: f64,
+    /// Maximum Hellinger distance threshold.
+    pub drift_hellinger_max: f64,
+    /// Maximum Population Stability Index (PSI) threshold.
+    pub drift_psi_max: f64,
+    /// Minimum F1 score for drift detection quality.
+    pub drift_f1_score_min: f64,
+
     // Coherence thresholds
     /// Maximum balance sheet imbalance.
     pub balance_tolerance: Decimal,
@@ -210,6 +226,12 @@ impl Default for EvaluationThresholds {
             amount_ks_p_value_min: 0.05,
             temporal_correlation_min: 0.80,
 
+            // Drift detection
+            drift_magnitude_min: 0.05,
+            drift_hellinger_max: 0.30,
+            drift_psi_max: 0.25,
+            drift_f1_score_min: 0.50,
+
             // Coherence
             balance_tolerance: Decimal::new(1, 2), // 0.01
             subledger_reconciliation_rate_min: 0.99,
@@ -240,6 +262,10 @@ impl EvaluationThresholds {
             benford_mad_max: 0.010,
             amount_ks_p_value_min: 0.10,
             temporal_correlation_min: 0.90,
+            drift_magnitude_min: 0.03,
+            drift_hellinger_max: 0.20,
+            drift_psi_max: 0.15,
+            drift_f1_score_min: 0.70,
             balance_tolerance: Decimal::new(1, 4), // 0.0001
             subledger_reconciliation_rate_min: 0.999,
             document_chain_completion_min: 0.95,
@@ -263,6 +289,10 @@ impl EvaluationThresholds {
             benford_mad_max: 0.025,
             amount_ks_p_value_min: 0.01,
             temporal_correlation_min: 0.60,
+            drift_magnitude_min: 0.10,
+            drift_hellinger_max: 0.50,
+            drift_psi_max: 0.40,
+            drift_f1_score_min: 0.30,
             balance_tolerance: Decimal::new(1, 1), // 0.1
             subledger_reconciliation_rate_min: 0.90,
             document_chain_completion_min: 0.80,

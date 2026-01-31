@@ -112,6 +112,18 @@ pub struct GeneratorConfig {
     /// Cross-process link configuration (P2P ↔ O2C via inventory)
     #[serde(default)]
     pub cross_process_links: CrossProcessLinksSchemaConfig,
+    /// Organizational events configuration (acquisitions, divestitures, etc.)
+    #[serde(default)]
+    pub organizational_events: OrganizationalEventsSchemaConfig,
+    /// Behavioral drift configuration (vendor, customer, employee behavior)
+    #[serde(default)]
+    pub behavioral_drift: BehavioralDriftSchemaConfig,
+    /// Market drift configuration (economic cycles, commodities, price shocks)
+    #[serde(default)]
+    pub market_drift: MarketDriftSchemaConfig,
+    /// Drift labeling configuration for ground truth generation
+    #[serde(default)]
+    pub drift_labeling: DriftLabelingSchemaConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -6165,7 +6177,7 @@ impl Default for DependencySchemaConfig {
 // =============================================================================
 
 /// Configuration for customer segmentation generation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CustomerSegmentationSchemaConfig {
     /// Enable customer segmentation generation.
     #[serde(default)]
@@ -6182,17 +6194,6 @@ pub struct CustomerSegmentationSchemaConfig {
     /// Network (referrals, hierarchies) configuration.
     #[serde(default)]
     pub networks: CustomerNetworksSchemaConfig,
-}
-
-impl Default for CustomerSegmentationSchemaConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            value_segments: ValueSegmentsSchemaConfig::default(),
-            lifecycle: LifecycleSchemaConfig::default(),
-            networks: CustomerNetworksSchemaConfig::default(),
-        }
-    }
 }
 
 /// Customer value segments distribution configuration.
@@ -6330,7 +6331,7 @@ impl Default for LifecycleSchemaConfig {
 }
 
 /// Customer networks configuration (referrals, hierarchies).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CustomerNetworksSchemaConfig {
     /// Referral network configuration.
     #[serde(default)]
@@ -6339,15 +6340,6 @@ pub struct CustomerNetworksSchemaConfig {
     /// Corporate hierarchy configuration.
     #[serde(default)]
     pub corporate_hierarchies: HierarchySchemaConfig,
-}
-
-impl Default for CustomerNetworksSchemaConfig {
-    fn default() -> Self {
-        Self {
-            referrals: ReferralSchemaConfig::default(),
-            corporate_hierarchies: HierarchySchemaConfig::default(),
-        }
-    }
 }
 
 /// Referral network configuration.
@@ -6405,7 +6397,7 @@ impl Default for HierarchySchemaConfig {
 // =============================================================================
 
 /// Configuration for relationship strength calculation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RelationshipStrengthSchemaConfig {
     /// Enable relationship strength calculation.
     #[serde(default)]
@@ -6418,16 +6410,6 @@ pub struct RelationshipStrengthSchemaConfig {
     /// Strength thresholds for classification.
     #[serde(default)]
     pub thresholds: StrengthThresholdsSchemaConfig,
-}
-
-impl Default for RelationshipStrengthSchemaConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            calculation: StrengthCalculationSchemaConfig::default(),
-            thresholds: StrengthThresholdsSchemaConfig::default(),
-        }
-    }
 }
 
 /// Strength calculation weights configuration.
@@ -6574,6 +6556,831 @@ impl Default for CrossProcessLinksSchemaConfig {
             intercompany_bilateral: true,
             inventory_link_rate: 0.30,
         }
+    }
+}
+
+// =============================================================================
+// Organizational Events Configuration
+// =============================================================================
+
+/// Configuration for organizational events (acquisitions, divestitures, etc.).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct OrganizationalEventsSchemaConfig {
+    /// Enable organizational events.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Effect blending mode (multiplicative, additive, maximum, minimum).
+    #[serde(default)]
+    pub effect_blending: EffectBlendingModeConfig,
+
+    /// Organizational events (acquisitions, divestitures, reorganizations, etc.).
+    #[serde(default)]
+    pub events: Vec<OrganizationalEventSchemaConfig>,
+
+    /// Process evolution events.
+    #[serde(default)]
+    pub process_evolution: Vec<ProcessEvolutionSchemaConfig>,
+
+    /// Technology transition events.
+    #[serde(default)]
+    pub technology_transitions: Vec<TechnologyTransitionSchemaConfig>,
+}
+
+/// Effect blending mode for combining multiple event effects.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EffectBlendingModeConfig {
+    /// Multiply effects together.
+    #[default]
+    Multiplicative,
+    /// Add effects together.
+    Additive,
+    /// Take the maximum effect.
+    Maximum,
+    /// Take the minimum effect.
+    Minimum,
+}
+
+/// Configuration for a single organizational event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrganizationalEventSchemaConfig {
+    /// Event ID.
+    pub id: String,
+
+    /// Event type and configuration.
+    pub event_type: OrganizationalEventTypeSchemaConfig,
+
+    /// Effective date.
+    pub effective_date: String,
+
+    /// Transition duration in months.
+    #[serde(default = "default_org_transition_months")]
+    pub transition_months: u32,
+
+    /// Description.
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+fn default_org_transition_months() -> u32 {
+    6
+}
+
+/// Organizational event type configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum OrganizationalEventTypeSchemaConfig {
+    /// Acquisition event.
+    Acquisition {
+        /// Acquired entity code.
+        acquired_entity: String,
+        /// Volume increase multiplier.
+        #[serde(default = "default_acquisition_volume")]
+        volume_increase: f64,
+        /// Integration error rate.
+        #[serde(default = "default_acquisition_error")]
+        integration_error_rate: f64,
+        /// Parallel posting days.
+        #[serde(default = "default_parallel_days")]
+        parallel_posting_days: u32,
+    },
+    /// Divestiture event.
+    Divestiture {
+        /// Divested entity code.
+        divested_entity: String,
+        /// Volume reduction factor.
+        #[serde(default = "default_divestiture_volume")]
+        volume_reduction: f64,
+        /// Remove entity from generation.
+        #[serde(default = "default_true_val")]
+        remove_entity: bool,
+    },
+    /// Reorganization event.
+    Reorganization {
+        /// Cost center remapping.
+        #[serde(default)]
+        cost_center_remapping: std::collections::HashMap<String, String>,
+        /// Transition error rate.
+        #[serde(default = "default_reorg_error")]
+        transition_error_rate: f64,
+    },
+    /// Leadership change event.
+    LeadershipChange {
+        /// Role that changed.
+        role: String,
+        /// Policy changes.
+        #[serde(default)]
+        policy_changes: Vec<String>,
+    },
+    /// Workforce reduction event.
+    WorkforceReduction {
+        /// Reduction percentage.
+        #[serde(default = "default_workforce_reduction")]
+        reduction_percent: f64,
+        /// Error rate increase.
+        #[serde(default = "default_workforce_error")]
+        error_rate_increase: f64,
+    },
+    /// Merger event.
+    Merger {
+        /// Merged entity code.
+        merged_entity: String,
+        /// Volume increase multiplier.
+        #[serde(default = "default_merger_volume")]
+        volume_increase: f64,
+    },
+}
+
+fn default_acquisition_volume() -> f64 {
+    1.35
+}
+
+fn default_acquisition_error() -> f64 {
+    0.05
+}
+
+fn default_parallel_days() -> u32 {
+    30
+}
+
+fn default_divestiture_volume() -> f64 {
+    0.70
+}
+
+fn default_true_val() -> bool {
+    true
+}
+
+fn default_reorg_error() -> f64 {
+    0.04
+}
+
+fn default_workforce_reduction() -> f64 {
+    0.10
+}
+
+fn default_workforce_error() -> f64 {
+    0.05
+}
+
+fn default_merger_volume() -> f64 {
+    1.80
+}
+
+/// Configuration for a process evolution event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessEvolutionSchemaConfig {
+    /// Event ID.
+    pub id: String,
+
+    /// Event type.
+    pub event_type: ProcessEvolutionTypeSchemaConfig,
+
+    /// Effective date.
+    pub effective_date: String,
+
+    /// Description.
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// Process evolution type configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ProcessEvolutionTypeSchemaConfig {
+    /// Process automation.
+    ProcessAutomation {
+        /// Process name.
+        process_name: String,
+        /// Manual rate before.
+        #[serde(default = "default_manual_before")]
+        manual_rate_before: f64,
+        /// Manual rate after.
+        #[serde(default = "default_manual_after")]
+        manual_rate_after: f64,
+    },
+    /// Approval workflow change.
+    ApprovalWorkflowChange {
+        /// Description.
+        description: String,
+    },
+    /// Control enhancement.
+    ControlEnhancement {
+        /// Control ID.
+        control_id: String,
+        /// Error reduction.
+        #[serde(default = "default_error_reduction")]
+        error_reduction: f64,
+    },
+}
+
+fn default_manual_before() -> f64 {
+    0.80
+}
+
+fn default_manual_after() -> f64 {
+    0.15
+}
+
+fn default_error_reduction() -> f64 {
+    0.02
+}
+
+/// Configuration for a technology transition event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TechnologyTransitionSchemaConfig {
+    /// Event ID.
+    pub id: String,
+
+    /// Event type.
+    pub event_type: TechnologyTransitionTypeSchemaConfig,
+
+    /// Description.
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// Technology transition type configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TechnologyTransitionTypeSchemaConfig {
+    /// ERP migration.
+    ErpMigration {
+        /// Source system.
+        source_system: String,
+        /// Target system.
+        target_system: String,
+        /// Cutover date.
+        cutover_date: String,
+        /// Stabilization end date.
+        stabilization_end: String,
+        /// Duplicate rate during migration.
+        #[serde(default = "default_erp_duplicate_rate")]
+        duplicate_rate: f64,
+        /// Format mismatch rate.
+        #[serde(default = "default_format_mismatch")]
+        format_mismatch_rate: f64,
+    },
+    /// Module implementation.
+    ModuleImplementation {
+        /// Module name.
+        module_name: String,
+        /// Go-live date.
+        go_live_date: String,
+    },
+}
+
+fn default_erp_duplicate_rate() -> f64 {
+    0.02
+}
+
+fn default_format_mismatch() -> f64 {
+    0.03
+}
+
+// =============================================================================
+// Behavioral Drift Configuration
+// =============================================================================
+
+/// Configuration for behavioral drift (vendor, customer, employee behavior).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BehavioralDriftSchemaConfig {
+    /// Enable behavioral drift.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Vendor behavior drift.
+    #[serde(default)]
+    pub vendor_behavior: VendorBehaviorSchemaConfig,
+
+    /// Customer behavior drift.
+    #[serde(default)]
+    pub customer_behavior: CustomerBehaviorSchemaConfig,
+
+    /// Employee behavior drift.
+    #[serde(default)]
+    pub employee_behavior: EmployeeBehaviorSchemaConfig,
+
+    /// Collective behavior drift.
+    #[serde(default)]
+    pub collective: CollectiveBehaviorSchemaConfig,
+}
+
+/// Vendor behavior drift configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct VendorBehaviorSchemaConfig {
+    /// Payment terms drift.
+    #[serde(default)]
+    pub payment_terms_drift: PaymentTermsDriftSchemaConfig,
+
+    /// Quality drift.
+    #[serde(default)]
+    pub quality_drift: QualityDriftSchemaConfig,
+}
+
+/// Payment terms drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentTermsDriftSchemaConfig {
+    /// Extension rate per year (days).
+    #[serde(default = "default_extension_rate")]
+    pub extension_rate_per_year: f64,
+
+    /// Economic sensitivity.
+    #[serde(default = "default_economic_sensitivity")]
+    pub economic_sensitivity: f64,
+}
+
+fn default_extension_rate() -> f64 {
+    2.5
+}
+
+fn default_economic_sensitivity() -> f64 {
+    1.0
+}
+
+impl Default for PaymentTermsDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            extension_rate_per_year: 2.5,
+            economic_sensitivity: 1.0,
+        }
+    }
+}
+
+/// Quality drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityDriftSchemaConfig {
+    /// New vendor improvement rate (per year).
+    #[serde(default = "default_improvement_rate")]
+    pub new_vendor_improvement_rate: f64,
+
+    /// Complacency decline rate (per year after first year).
+    #[serde(default = "default_decline_rate")]
+    pub complacency_decline_rate: f64,
+}
+
+fn default_improvement_rate() -> f64 {
+    0.02
+}
+
+fn default_decline_rate() -> f64 {
+    0.01
+}
+
+impl Default for QualityDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            new_vendor_improvement_rate: 0.02,
+            complacency_decline_rate: 0.01,
+        }
+    }
+}
+
+/// Customer behavior drift configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CustomerBehaviorSchemaConfig {
+    /// Payment drift.
+    #[serde(default)]
+    pub payment_drift: CustomerPaymentDriftSchemaConfig,
+
+    /// Order drift.
+    #[serde(default)]
+    pub order_drift: OrderDriftSchemaConfig,
+}
+
+/// Customer payment drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomerPaymentDriftSchemaConfig {
+    /// Days extension during downturn (min, max).
+    #[serde(default = "default_downturn_extension")]
+    pub downturn_days_extension: (u32, u32),
+
+    /// Bad debt increase during downturn.
+    #[serde(default = "default_bad_debt_increase")]
+    pub downturn_bad_debt_increase: f64,
+}
+
+fn default_downturn_extension() -> (u32, u32) {
+    (5, 15)
+}
+
+fn default_bad_debt_increase() -> f64 {
+    0.02
+}
+
+impl Default for CustomerPaymentDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            downturn_days_extension: (5, 15),
+            downturn_bad_debt_increase: 0.02,
+        }
+    }
+}
+
+/// Order drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OrderDriftSchemaConfig {
+    /// Digital shift rate (per year).
+    #[serde(default = "default_digital_shift")]
+    pub digital_shift_rate: f64,
+}
+
+fn default_digital_shift() -> f64 {
+    0.05
+}
+
+impl Default for OrderDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            digital_shift_rate: 0.05,
+        }
+    }
+}
+
+/// Employee behavior drift configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EmployeeBehaviorSchemaConfig {
+    /// Approval drift.
+    #[serde(default)]
+    pub approval_drift: ApprovalDriftSchemaConfig,
+
+    /// Error drift.
+    #[serde(default)]
+    pub error_drift: ErrorDriftSchemaConfig,
+}
+
+/// Approval drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApprovalDriftSchemaConfig {
+    /// EOM intensity increase per year.
+    #[serde(default = "default_eom_intensity")]
+    pub eom_intensity_increase_per_year: f64,
+
+    /// Rubber stamp volume threshold.
+    #[serde(default = "default_rubber_stamp")]
+    pub rubber_stamp_volume_threshold: u32,
+}
+
+fn default_eom_intensity() -> f64 {
+    0.05
+}
+
+fn default_rubber_stamp() -> u32 {
+    50
+}
+
+impl Default for ApprovalDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            eom_intensity_increase_per_year: 0.05,
+            rubber_stamp_volume_threshold: 50,
+        }
+    }
+}
+
+/// Error drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ErrorDriftSchemaConfig {
+    /// New employee error rate.
+    #[serde(default = "default_new_error")]
+    pub new_employee_error_rate: f64,
+
+    /// Learning curve months.
+    #[serde(default = "default_learning_months")]
+    pub learning_curve_months: u32,
+}
+
+fn default_new_error() -> f64 {
+    0.08
+}
+
+fn default_learning_months() -> u32 {
+    6
+}
+
+impl Default for ErrorDriftSchemaConfig {
+    fn default() -> Self {
+        Self {
+            new_employee_error_rate: 0.08,
+            learning_curve_months: 6,
+        }
+    }
+}
+
+/// Collective behavior drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CollectiveBehaviorSchemaConfig {
+    /// Automation adoption configuration.
+    #[serde(default)]
+    pub automation_adoption: AutomationAdoptionSchemaConfig,
+}
+
+/// Automation adoption configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutomationAdoptionSchemaConfig {
+    /// Enable S-curve adoption model.
+    #[serde(default)]
+    pub s_curve_enabled: bool,
+
+    /// Adoption midpoint in months.
+    #[serde(default = "default_midpoint")]
+    pub adoption_midpoint_months: u32,
+
+    /// Steepness of adoption curve.
+    #[serde(default = "default_steepness")]
+    pub steepness: f64,
+}
+
+fn default_midpoint() -> u32 {
+    24
+}
+
+fn default_steepness() -> f64 {
+    0.15
+}
+
+impl Default for AutomationAdoptionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            s_curve_enabled: false,
+            adoption_midpoint_months: 24,
+            steepness: 0.15,
+        }
+    }
+}
+
+// =============================================================================
+// Market Drift Configuration
+// =============================================================================
+
+/// Configuration for market drift (economic cycles, commodities, price shocks).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MarketDriftSchemaConfig {
+    /// Enable market drift.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Economic cycle configuration.
+    #[serde(default)]
+    pub economic_cycle: MarketEconomicCycleSchemaConfig,
+
+    /// Industry-specific cycles.
+    #[serde(default)]
+    pub industry_cycles: std::collections::HashMap<String, IndustryCycleSchemaConfig>,
+
+    /// Commodity drift configuration.
+    #[serde(default)]
+    pub commodities: CommoditiesSchemaConfig,
+}
+
+/// Market economic cycle configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketEconomicCycleSchemaConfig {
+    /// Enable economic cycle.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Cycle type.
+    #[serde(default)]
+    pub cycle_type: CycleTypeSchemaConfig,
+
+    /// Cycle period in months.
+    #[serde(default = "default_market_cycle_period")]
+    pub period_months: u32,
+
+    /// Amplitude.
+    #[serde(default = "default_market_amplitude")]
+    pub amplitude: f64,
+
+    /// Recession configuration.
+    #[serde(default)]
+    pub recession: RecessionSchemaConfig,
+}
+
+fn default_market_cycle_period() -> u32 {
+    48
+}
+
+fn default_market_amplitude() -> f64 {
+    0.15
+}
+
+impl Default for MarketEconomicCycleSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cycle_type: CycleTypeSchemaConfig::Sinusoidal,
+            period_months: 48,
+            amplitude: 0.15,
+            recession: RecessionSchemaConfig::default(),
+        }
+    }
+}
+
+/// Cycle type configuration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CycleTypeSchemaConfig {
+    /// Sinusoidal cycle.
+    #[default]
+    Sinusoidal,
+    /// Asymmetric cycle.
+    Asymmetric,
+    /// Mean-reverting cycle.
+    MeanReverting,
+}
+
+/// Recession configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecessionSchemaConfig {
+    /// Enable recession simulation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Probability per year.
+    #[serde(default = "default_recession_prob")]
+    pub probability_per_year: f64,
+
+    /// Severity.
+    #[serde(default)]
+    pub severity: RecessionSeveritySchemaConfig,
+
+    /// Specific recession periods.
+    #[serde(default)]
+    pub recession_periods: Vec<RecessionPeriodSchemaConfig>,
+}
+
+fn default_recession_prob() -> f64 {
+    0.10
+}
+
+impl Default for RecessionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            probability_per_year: 0.10,
+            severity: RecessionSeveritySchemaConfig::Moderate,
+            recession_periods: Vec::new(),
+        }
+    }
+}
+
+/// Recession severity configuration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum RecessionSeveritySchemaConfig {
+    /// Mild recession.
+    Mild,
+    /// Moderate recession.
+    #[default]
+    Moderate,
+    /// Severe recession.
+    Severe,
+}
+
+/// Recession period configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecessionPeriodSchemaConfig {
+    /// Start month.
+    pub start_month: u32,
+    /// Duration in months.
+    pub duration_months: u32,
+}
+
+/// Industry cycle configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndustryCycleSchemaConfig {
+    /// Period in months.
+    #[serde(default = "default_industry_period")]
+    pub period_months: u32,
+
+    /// Amplitude.
+    #[serde(default = "default_industry_amp")]
+    pub amplitude: f64,
+}
+
+fn default_industry_period() -> u32 {
+    36
+}
+
+fn default_industry_amp() -> f64 {
+    0.20
+}
+
+/// Commodities drift configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CommoditiesSchemaConfig {
+    /// Enable commodity drift.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Commodity items.
+    #[serde(default)]
+    pub items: Vec<CommodityItemSchemaConfig>,
+}
+
+/// Commodity item configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommodityItemSchemaConfig {
+    /// Commodity name.
+    pub name: String,
+
+    /// Volatility.
+    #[serde(default = "default_volatility")]
+    pub volatility: f64,
+
+    /// COGS pass-through.
+    #[serde(default)]
+    pub cogs_pass_through: f64,
+
+    /// Overhead pass-through.
+    #[serde(default)]
+    pub overhead_pass_through: f64,
+}
+
+fn default_volatility() -> f64 {
+    0.20
+}
+
+// =============================================================================
+// Drift Labeling Configuration
+// =============================================================================
+
+/// Configuration for drift ground truth labeling.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DriftLabelingSchemaConfig {
+    /// Enable drift labeling.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Statistical drift labeling.
+    #[serde(default)]
+    pub statistical: StatisticalDriftLabelingSchemaConfig,
+
+    /// Categorical drift labeling.
+    #[serde(default)]
+    pub categorical: CategoricalDriftLabelingSchemaConfig,
+
+    /// Temporal drift labeling.
+    #[serde(default)]
+    pub temporal: TemporalDriftLabelingSchemaConfig,
+
+    /// Regulatory calendar preset.
+    #[serde(default)]
+    pub regulatory_calendar_preset: Option<String>,
+}
+
+/// Statistical drift labeling configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StatisticalDriftLabelingSchemaConfig {
+    /// Enable statistical drift labeling.
+    #[serde(default = "default_true_val")]
+    pub enabled: bool,
+
+    /// Minimum magnitude threshold.
+    #[serde(default = "default_min_magnitude")]
+    pub min_magnitude_threshold: f64,
+}
+
+fn default_min_magnitude() -> f64 {
+    0.05
+}
+
+impl Default for StatisticalDriftLabelingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            min_magnitude_threshold: 0.05,
+        }
+    }
+}
+
+/// Categorical drift labeling configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CategoricalDriftLabelingSchemaConfig {
+    /// Enable categorical drift labeling.
+    #[serde(default = "default_true_val")]
+    pub enabled: bool,
+}
+
+impl Default for CategoricalDriftLabelingSchemaConfig {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
+}
+
+/// Temporal drift labeling configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemporalDriftLabelingSchemaConfig {
+    /// Enable temporal drift labeling.
+    #[serde(default = "default_true_val")]
+    pub enabled: bool,
+}
+
+impl Default for TemporalDriftLabelingSchemaConfig {
+    fn default() -> Self {
+        Self { enabled: true }
     }
 }
 

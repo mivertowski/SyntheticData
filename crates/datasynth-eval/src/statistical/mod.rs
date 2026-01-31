@@ -12,12 +12,14 @@
 //! - **correlation**: Cross-field correlation analysis
 //! - **anderson_darling**: Anderson-Darling goodness-of-fit test
 //! - **chi_squared**: Chi-squared goodness-of-fit test
+//! - **drift_detection**: Drift detection evaluation and ground truth validation
 
 mod amount_distribution;
 mod anderson_darling;
 mod benford;
 mod chi_squared;
 mod correlation;
+mod drift_detection;
 mod line_item;
 mod temporal;
 
@@ -33,6 +35,10 @@ pub use chi_squared::{
 pub use correlation::{
     pearson_correlation, spearman_correlation, CorrelationAnalysis, CorrelationAnalyzer,
     CorrelationCheckResult, ExpectedCorrelation,
+};
+pub use drift_detection::{
+    DetectionDifficulty, DriftDetectionAnalysis, DriftDetectionAnalyzer, DriftDetectionEntry,
+    DriftDetectionMetrics, DriftEventCategory, LabeledDriftEvent, LabeledEventAnalysis,
 };
 pub use line_item::{LineItemAnalysis, LineItemAnalyzer, LineItemEntry};
 pub use temporal::{TemporalAnalysis, TemporalAnalyzer, TemporalEntry};
@@ -56,6 +62,10 @@ pub struct StatisticalEvaluation {
     pub anderson_darling: Option<AndersonDarlingAnalysis>,
     /// Chi-squared goodness-of-fit test results.
     pub chi_squared: Option<ChiSquaredAnalysis>,
+    /// Drift detection analysis results.
+    pub drift_detection: Option<DriftDetectionAnalysis>,
+    /// Labeled drift event analysis results.
+    pub drift_events: Option<LabeledEventAnalysis>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -77,6 +87,8 @@ impl StatisticalEvaluation {
             correlation: None,
             anderson_darling: None,
             chi_squared: None,
+            drift_detection: None,
+            drift_events: None,
             passes: true,
             failures: Vec::new(),
             issues: Vec::new(),
@@ -165,6 +177,51 @@ impl StatisticalEvaluation {
             }
             // Score based on p-value (higher is better for goodness-of-fit)
             scores.push((chi_sq.p_value / 0.5).min(1.0));
+        }
+
+        // Check drift detection
+        if let Some(ref drift) = self.drift_detection {
+            if !drift.passes {
+                for issue in &drift.issues {
+                    self.failures.push(format!("Drift detection: {}", issue));
+                }
+            }
+            // Score based on F1 score if drift was significant
+            if drift.drift_magnitude >= thresholds.drift_magnitude_min {
+                scores.push(drift.detection_metrics.f1_score);
+            }
+            // Check Hellinger distance threshold
+            if let Some(hellinger) = drift.hellinger_distance {
+                if hellinger > thresholds.drift_hellinger_max {
+                    self.failures.push(format!(
+                        "Drift Hellinger distance {} > {} (threshold)",
+                        hellinger, thresholds.drift_hellinger_max
+                    ));
+                }
+            }
+            // Check PSI threshold
+            if let Some(psi) = drift.psi {
+                if psi > thresholds.drift_psi_max {
+                    self.failures.push(format!(
+                        "Drift PSI {} > {} (threshold)",
+                        psi, thresholds.drift_psi_max
+                    ));
+                }
+            }
+        }
+
+        // Check labeled drift events
+        if let Some(ref events) = self.drift_events {
+            if !events.passes {
+                for issue in &events.issues {
+                    self.failures.push(format!("Drift events: {}", issue));
+                }
+            }
+            // Score based on event coverage
+            if events.total_events > 0 {
+                let difficulty_score = 1.0 - events.avg_difficulty;
+                scores.push(difficulty_score);
+            }
         }
 
         // Sync issues with failures

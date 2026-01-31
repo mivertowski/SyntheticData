@@ -49,7 +49,9 @@ pub use error::{EvalError, EvalResult};
 
 pub use statistical::{
     AmountDistributionAnalysis, AmountDistributionAnalyzer, BenfordAnalysis, BenfordAnalyzer,
-    BenfordConformity, LineItemAnalysis, LineItemAnalyzer, LineItemEntry, StatisticalEvaluation,
+    BenfordConformity, DetectionDifficulty, DriftDetectionAnalysis, DriftDetectionAnalyzer,
+    DriftDetectionEntry, DriftDetectionMetrics, DriftEventCategory, LabeledDriftEvent,
+    LabeledEventAnalysis, LineItemAnalysis, LineItemAnalyzer, LineItemEntry, StatisticalEvaluation,
     TemporalAnalysis, TemporalAnalyzer, TemporalEntry,
 };
 
