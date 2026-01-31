@@ -2416,6 +2416,7 @@ mod tests {
             behavioral_drift: BehavioralDriftSchemaConfig::default(),
             market_drift: MarketDriftSchemaConfig::default(),
             drift_labeling: DriftLabelingSchemaConfig::default(),
+            anomaly_injection: Default::default(),
         }
     }
 

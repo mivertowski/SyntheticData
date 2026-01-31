@@ -45,6 +45,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_customer_segmentation(config)?;
     validate_relationship_strength(config)?;
     validate_cross_process_links(config)?;
+    validate_anomaly_injection(config)?;
     Ok(())
 }
 
@@ -1941,6 +1942,155 @@ fn validate_cross_process_links(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate enhanced anomaly injection configuration.
+fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
+    let ai = &config.anomaly_injection;
+
+    if !ai.enabled {
+        return Ok(());
+    }
+
+    // Validate rates are within bounds
+    if ai.rates.total_rate < 0.0 || ai.rates.total_rate > 1.0 {
+        return Err(SynthError::validation(
+            "anomaly_injection.rates.total_rate must be between 0.0 and 1.0",
+        ));
+    }
+    if ai.rates.fraud_rate < 0.0 || ai.rates.fraud_rate > 1.0 {
+        return Err(SynthError::validation(
+            "anomaly_injection.rates.fraud_rate must be between 0.0 and 1.0",
+        ));
+    }
+    if ai.rates.error_rate < 0.0 || ai.rates.error_rate > 1.0 {
+        return Err(SynthError::validation(
+            "anomaly_injection.rates.error_rate must be between 0.0 and 1.0",
+        ));
+    }
+    if ai.rates.process_rate < 0.0 || ai.rates.process_rate > 1.0 {
+        return Err(SynthError::validation(
+            "anomaly_injection.rates.process_rate must be between 0.0 and 1.0",
+        ));
+    }
+
+    // Validate sub-rates don't exceed total rate
+    let sub_rate_sum = ai.rates.fraud_rate + ai.rates.error_rate + ai.rates.process_rate;
+    if sub_rate_sum > ai.rates.total_rate + 0.001 {
+        return Err(SynthError::validation(format!(
+            "anomaly_injection sub-rates sum ({}) exceeds total_rate ({})",
+            sub_rate_sum, ai.rates.total_rate
+        )));
+    }
+
+    // Validate multi-stage scheme probabilities
+    if ai.multi_stage_schemes.enabled {
+        let emb = &ai.multi_stage_schemes.embezzlement;
+        if emb.probability < 0.0 || emb.probability > 1.0 {
+            return Err(SynthError::validation(
+                "embezzlement.probability must be between 0.0 and 1.0",
+            ));
+        }
+
+        let rev = &ai.multi_stage_schemes.revenue_manipulation;
+        if rev.probability < 0.0 || rev.probability > 1.0 {
+            return Err(SynthError::validation(
+                "revenue_manipulation.probability must be between 0.0 and 1.0",
+            ));
+        }
+
+        let kick = &ai.multi_stage_schemes.kickback;
+        if kick.probability < 0.0 || kick.probability > 1.0 {
+            return Err(SynthError::validation(
+                "kickback.probability must be between 0.0 and 1.0",
+            ));
+        }
+        if kick.inflation_min > kick.inflation_max {
+            return Err(SynthError::validation(
+                "kickback.inflation_min must be less than or equal to inflation_max",
+            ));
+        }
+    }
+
+    // Validate near-miss configuration
+    if ai.near_miss.enabled {
+        if ai.near_miss.proportion < 0.0 || ai.near_miss.proportion > 1.0 {
+            return Err(SynthError::validation(
+                "near_miss.proportion must be between 0.0 and 1.0",
+            ));
+        }
+        if ai.near_miss.near_duplicate_days.min > ai.near_miss.near_duplicate_days.max {
+            return Err(SynthError::validation(
+                "near_miss.near_duplicate_days.min must be less than or equal to max",
+            ));
+        }
+        if ai.near_miss.threshold_proximity_range.min > ai.near_miss.threshold_proximity_range.max {
+            return Err(SynthError::validation(
+                "near_miss.threshold_proximity_range.min must be less than or equal to max",
+            ));
+        }
+        if ai.near_miss.corrected_error_lag.min > ai.near_miss.corrected_error_lag.max {
+            return Err(SynthError::validation(
+                "near_miss.corrected_error_lag.min must be less than or equal to max",
+            ));
+        }
+    }
+
+    // Validate difficulty distribution sums to ~1.0
+    if ai.difficulty_classification.enabled {
+        let dist = &ai.difficulty_classification.target_distribution;
+        let dist_sum = dist.trivial + dist.easy + dist.moderate + dist.hard + dist.expert;
+        if (dist_sum - 1.0).abs() > 0.01 {
+            return Err(SynthError::validation(format!(
+                "difficulty_classification.target_distribution must sum to 1.0, got {}",
+                dist_sum
+            )));
+        }
+    }
+
+    // Validate context-aware configuration
+    if ai.context_aware.enabled {
+        let vendor = &ai.context_aware.vendor_rules;
+        if vendor.new_vendor_error_multiplier < 1.0 {
+            return Err(SynthError::validation(
+                "vendor_rules.new_vendor_error_multiplier must be >= 1.0",
+            ));
+        }
+
+        let emp = &ai.context_aware.employee_rules;
+        if emp.new_employee_error_rate < 0.0 || emp.new_employee_error_rate > 1.0 {
+            return Err(SynthError::validation(
+                "employee_rules.new_employee_error_rate must be between 0.0 and 1.0",
+            ));
+        }
+
+        let baseline = &ai.context_aware.behavioral_baseline;
+        if baseline.enabled && baseline.deviation_threshold_std <= 0.0 {
+            return Err(SynthError::validation(
+                "behavioral_baseline.deviation_threshold_std must be positive",
+            ));
+        }
+    }
+
+    // Validate materiality thresholds are ascending
+    let mat = &ai.labeling.materiality_thresholds;
+    if mat.trivial >= mat.immaterial {
+        return Err(SynthError::validation(
+            "materiality_thresholds.trivial must be less than immaterial",
+        ));
+    }
+    if mat.immaterial >= mat.material {
+        return Err(SynthError::validation(
+            "materiality_thresholds.immaterial must be less than material",
+        ));
+    }
+    if mat.material >= mat.highly_material {
+        return Err(SynthError::validation(
+            "materiality_thresholds.material must be less than highly_material",
+        ));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2013,6 +2163,7 @@ mod tests {
             behavioral_drift: BehavioralDriftSchemaConfig::default(),
             market_drift: MarketDriftSchemaConfig::default(),
             drift_labeling: DriftLabelingSchemaConfig::default(),
+            anomaly_injection: EnhancedAnomalyConfig::default(),
         }
     }
 

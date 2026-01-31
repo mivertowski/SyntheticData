@@ -124,6 +124,9 @@ pub struct GeneratorConfig {
     /// Drift labeling configuration for ground truth generation
     #[serde(default)]
     pub drift_labeling: DriftLabelingSchemaConfig,
+    /// Enhanced anomaly injection configuration (multi-stage schemes, correlated injection, near-miss)
+    #[serde(default)]
+    pub anomaly_injection: EnhancedAnomalyConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -7381,6 +7384,994 @@ pub struct TemporalDriftLabelingSchemaConfig {
 impl Default for TemporalDriftLabelingSchemaConfig {
     fn default() -> Self {
         Self { enabled: true }
+    }
+}
+
+// =============================================================================
+// Enhanced Anomaly Injection Configuration
+// =============================================================================
+
+/// Enhanced anomaly injection configuration.
+///
+/// Provides comprehensive anomaly injection capabilities including:
+/// - Multi-stage fraud schemes (embezzlement, revenue manipulation, kickbacks)
+/// - Correlated anomaly injection (co-occurrence patterns, error cascades)
+/// - Near-miss generation for false positive reduction
+/// - Detection difficulty classification
+/// - Context-aware injection based on entity behavior
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedAnomalyConfig {
+    /// Enable enhanced anomaly injection.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Base anomaly rates.
+    #[serde(default)]
+    pub rates: AnomalyRateConfig,
+
+    /// Multi-stage fraud scheme configuration.
+    #[serde(default)]
+    pub multi_stage_schemes: MultiStageSchemeConfig,
+
+    /// Correlated anomaly injection configuration.
+    #[serde(default)]
+    pub correlated_injection: CorrelatedInjectionConfig,
+
+    /// Near-miss generation configuration.
+    #[serde(default)]
+    pub near_miss: NearMissConfig,
+
+    /// Detection difficulty classification configuration.
+    #[serde(default)]
+    pub difficulty_classification: DifficultyClassificationConfig,
+
+    /// Context-aware injection configuration.
+    #[serde(default)]
+    pub context_aware: ContextAwareConfig,
+
+    /// Enhanced labeling configuration.
+    #[serde(default)]
+    pub labeling: EnhancedLabelingConfig,
+}
+
+impl Default for EnhancedAnomalyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            rates: AnomalyRateConfig::default(),
+            multi_stage_schemes: MultiStageSchemeConfig::default(),
+            correlated_injection: CorrelatedInjectionConfig::default(),
+            near_miss: NearMissConfig::default(),
+            difficulty_classification: DifficultyClassificationConfig::default(),
+            context_aware: ContextAwareConfig::default(),
+            labeling: EnhancedLabelingConfig::default(),
+        }
+    }
+}
+
+/// Base anomaly rate configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnomalyRateConfig {
+    /// Total anomaly rate (0.0 to 1.0).
+    #[serde(default = "default_total_anomaly_rate")]
+    pub total_rate: f64,
+
+    /// Fraud anomaly rate.
+    #[serde(default = "default_fraud_anomaly_rate")]
+    pub fraud_rate: f64,
+
+    /// Error anomaly rate.
+    #[serde(default = "default_error_anomaly_rate")]
+    pub error_rate: f64,
+
+    /// Process issue rate.
+    #[serde(default = "default_process_anomaly_rate")]
+    pub process_rate: f64,
+}
+
+fn default_total_anomaly_rate() -> f64 {
+    0.03
+}
+fn default_fraud_anomaly_rate() -> f64 {
+    0.01
+}
+fn default_error_anomaly_rate() -> f64 {
+    0.015
+}
+fn default_process_anomaly_rate() -> f64 {
+    0.005
+}
+
+impl Default for AnomalyRateConfig {
+    fn default() -> Self {
+        Self {
+            total_rate: default_total_anomaly_rate(),
+            fraud_rate: default_fraud_anomaly_rate(),
+            error_rate: default_error_anomaly_rate(),
+            process_rate: default_process_anomaly_rate(),
+        }
+    }
+}
+
+/// Multi-stage fraud scheme configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiStageSchemeConfig {
+    /// Enable multi-stage fraud schemes.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Embezzlement scheme configuration.
+    #[serde(default)]
+    pub embezzlement: EmbezzlementSchemeConfig,
+
+    /// Revenue manipulation scheme configuration.
+    #[serde(default)]
+    pub revenue_manipulation: RevenueManipulationSchemeConfig,
+
+    /// Vendor kickback scheme configuration.
+    #[serde(default)]
+    pub kickback: KickbackSchemeConfig,
+}
+
+impl Default for MultiStageSchemeConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            embezzlement: EmbezzlementSchemeConfig::default(),
+            revenue_manipulation: RevenueManipulationSchemeConfig::default(),
+            kickback: KickbackSchemeConfig::default(),
+        }
+    }
+}
+
+/// Embezzlement scheme configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmbezzlementSchemeConfig {
+    /// Probability of starting an embezzlement scheme per perpetrator per year.
+    #[serde(default = "default_embezzlement_probability")]
+    pub probability: f64,
+
+    /// Testing stage configuration.
+    #[serde(default)]
+    pub testing_stage: SchemeStageConfig,
+
+    /// Escalation stage configuration.
+    #[serde(default)]
+    pub escalation_stage: SchemeStageConfig,
+
+    /// Acceleration stage configuration.
+    #[serde(default)]
+    pub acceleration_stage: SchemeStageConfig,
+
+    /// Desperation stage configuration.
+    #[serde(default)]
+    pub desperation_stage: SchemeStageConfig,
+}
+
+fn default_embezzlement_probability() -> f64 {
+    0.02
+}
+
+impl Default for EmbezzlementSchemeConfig {
+    fn default() -> Self {
+        Self {
+            probability: default_embezzlement_probability(),
+            testing_stage: SchemeStageConfig {
+                duration_months: 2,
+                amount_min: 100.0,
+                amount_max: 500.0,
+                transaction_count_min: 2,
+                transaction_count_max: 5,
+                difficulty: "hard".to_string(),
+            },
+            escalation_stage: SchemeStageConfig {
+                duration_months: 6,
+                amount_min: 500.0,
+                amount_max: 2000.0,
+                transaction_count_min: 3,
+                transaction_count_max: 8,
+                difficulty: "moderate".to_string(),
+            },
+            acceleration_stage: SchemeStageConfig {
+                duration_months: 3,
+                amount_min: 2000.0,
+                amount_max: 10000.0,
+                transaction_count_min: 5,
+                transaction_count_max: 12,
+                difficulty: "easy".to_string(),
+            },
+            desperation_stage: SchemeStageConfig {
+                duration_months: 1,
+                amount_min: 10000.0,
+                amount_max: 50000.0,
+                transaction_count_min: 3,
+                transaction_count_max: 6,
+                difficulty: "trivial".to_string(),
+            },
+        }
+    }
+}
+
+/// Revenue manipulation scheme configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RevenueManipulationSchemeConfig {
+    /// Probability of starting a revenue manipulation scheme per period.
+    #[serde(default = "default_revenue_manipulation_probability")]
+    pub probability: f64,
+
+    /// Early revenue recognition inflation target (Q4).
+    #[serde(default = "default_early_recognition_target")]
+    pub early_recognition_target: f64,
+
+    /// Expense deferral inflation target (Q1).
+    #[serde(default = "default_expense_deferral_target")]
+    pub expense_deferral_target: f64,
+
+    /// Reserve release inflation target (Q2).
+    #[serde(default = "default_reserve_release_target")]
+    pub reserve_release_target: f64,
+
+    /// Channel stuffing inflation target (Q4).
+    #[serde(default = "default_channel_stuffing_target")]
+    pub channel_stuffing_target: f64,
+}
+
+fn default_revenue_manipulation_probability() -> f64 {
+    0.01
+}
+fn default_early_recognition_target() -> f64 {
+    0.02
+}
+fn default_expense_deferral_target() -> f64 {
+    0.03
+}
+fn default_reserve_release_target() -> f64 {
+    0.02
+}
+fn default_channel_stuffing_target() -> f64 {
+    0.05
+}
+
+impl Default for RevenueManipulationSchemeConfig {
+    fn default() -> Self {
+        Self {
+            probability: default_revenue_manipulation_probability(),
+            early_recognition_target: default_early_recognition_target(),
+            expense_deferral_target: default_expense_deferral_target(),
+            reserve_release_target: default_reserve_release_target(),
+            channel_stuffing_target: default_channel_stuffing_target(),
+        }
+    }
+}
+
+/// Vendor kickback scheme configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KickbackSchemeConfig {
+    /// Probability of starting a kickback scheme.
+    #[serde(default = "default_kickback_probability")]
+    pub probability: f64,
+
+    /// Minimum price inflation percentage.
+    #[serde(default = "default_kickback_inflation_min")]
+    pub inflation_min: f64,
+
+    /// Maximum price inflation percentage.
+    #[serde(default = "default_kickback_inflation_max")]
+    pub inflation_max: f64,
+
+    /// Kickback percentage (of inflation).
+    #[serde(default = "default_kickback_percent")]
+    pub kickback_percent: f64,
+
+    /// Setup duration in months.
+    #[serde(default = "default_kickback_setup_months")]
+    pub setup_months: u32,
+
+    /// Main operation duration in months.
+    #[serde(default = "default_kickback_operation_months")]
+    pub operation_months: u32,
+}
+
+fn default_kickback_probability() -> f64 {
+    0.01
+}
+fn default_kickback_inflation_min() -> f64 {
+    0.10
+}
+fn default_kickback_inflation_max() -> f64 {
+    0.25
+}
+fn default_kickback_percent() -> f64 {
+    0.50
+}
+fn default_kickback_setup_months() -> u32 {
+    3
+}
+fn default_kickback_operation_months() -> u32 {
+    12
+}
+
+impl Default for KickbackSchemeConfig {
+    fn default() -> Self {
+        Self {
+            probability: default_kickback_probability(),
+            inflation_min: default_kickback_inflation_min(),
+            inflation_max: default_kickback_inflation_max(),
+            kickback_percent: default_kickback_percent(),
+            setup_months: default_kickback_setup_months(),
+            operation_months: default_kickback_operation_months(),
+        }
+    }
+}
+
+/// Individual scheme stage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemeStageConfig {
+    /// Duration in months.
+    pub duration_months: u32,
+
+    /// Minimum transaction amount.
+    pub amount_min: f64,
+
+    /// Maximum transaction amount.
+    pub amount_max: f64,
+
+    /// Minimum number of transactions.
+    pub transaction_count_min: u32,
+
+    /// Maximum number of transactions.
+    pub transaction_count_max: u32,
+
+    /// Detection difficulty level (trivial, easy, moderate, hard, expert).
+    pub difficulty: String,
+}
+
+impl Default for SchemeStageConfig {
+    fn default() -> Self {
+        Self {
+            duration_months: 3,
+            amount_min: 100.0,
+            amount_max: 1000.0,
+            transaction_count_min: 2,
+            transaction_count_max: 10,
+            difficulty: "moderate".to_string(),
+        }
+    }
+}
+
+/// Correlated anomaly injection configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrelatedInjectionConfig {
+    /// Enable correlated anomaly injection.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Enable fraud concealment co-occurrence patterns.
+    #[serde(default = "default_true_val")]
+    pub fraud_concealment: bool,
+
+    /// Enable error cascade patterns.
+    #[serde(default = "default_true_val")]
+    pub error_cascade: bool,
+
+    /// Enable temporal clustering (period-end spikes).
+    #[serde(default = "default_true_val")]
+    pub temporal_clustering: bool,
+
+    /// Temporal clustering configuration.
+    #[serde(default)]
+    pub temporal_clustering_config: TemporalClusteringConfig,
+
+    /// Co-occurrence patterns.
+    #[serde(default)]
+    pub co_occurrence_patterns: Vec<CoOccurrencePatternConfig>,
+}
+
+impl Default for CorrelatedInjectionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            fraud_concealment: true,
+            error_cascade: true,
+            temporal_clustering: true,
+            temporal_clustering_config: TemporalClusteringConfig::default(),
+            co_occurrence_patterns: Vec::new(),
+        }
+    }
+}
+
+/// Temporal clustering configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemporalClusteringConfig {
+    /// Period-end error multiplier.
+    #[serde(default = "default_period_end_multiplier")]
+    pub period_end_multiplier: f64,
+
+    /// Number of business days before period end to apply multiplier.
+    #[serde(default = "default_period_end_days")]
+    pub period_end_days: u32,
+
+    /// Quarter-end additional multiplier.
+    #[serde(default = "default_quarter_end_multiplier")]
+    pub quarter_end_multiplier: f64,
+
+    /// Year-end additional multiplier.
+    #[serde(default = "default_year_end_multiplier")]
+    pub year_end_multiplier: f64,
+}
+
+fn default_period_end_multiplier() -> f64 {
+    2.5
+}
+fn default_period_end_days() -> u32 {
+    5
+}
+fn default_quarter_end_multiplier() -> f64 {
+    1.5
+}
+fn default_year_end_multiplier() -> f64 {
+    2.0
+}
+
+impl Default for TemporalClusteringConfig {
+    fn default() -> Self {
+        Self {
+            period_end_multiplier: default_period_end_multiplier(),
+            period_end_days: default_period_end_days(),
+            quarter_end_multiplier: default_quarter_end_multiplier(),
+            year_end_multiplier: default_year_end_multiplier(),
+        }
+    }
+}
+
+/// Co-occurrence pattern configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoOccurrencePatternConfig {
+    /// Pattern name.
+    pub name: String,
+
+    /// Primary anomaly type that triggers the pattern.
+    pub primary_type: String,
+
+    /// Correlated anomalies.
+    pub correlated: Vec<CorrelatedAnomalyConfig>,
+}
+
+/// Correlated anomaly configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrelatedAnomalyConfig {
+    /// Anomaly type.
+    pub anomaly_type: String,
+
+    /// Probability of occurrence (0.0 to 1.0).
+    pub probability: f64,
+
+    /// Minimum lag in days.
+    pub lag_days_min: i32,
+
+    /// Maximum lag in days.
+    pub lag_days_max: i32,
+}
+
+/// Near-miss generation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NearMissConfig {
+    /// Enable near-miss generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Proportion of "anomalies" that are actually near-misses (0.0 to 1.0).
+    #[serde(default = "default_near_miss_proportion")]
+    pub proportion: f64,
+
+    /// Enable near-duplicate pattern.
+    #[serde(default = "default_true_val")]
+    pub near_duplicate: bool,
+
+    /// Near-duplicate date difference range in days.
+    #[serde(default)]
+    pub near_duplicate_days: NearDuplicateDaysConfig,
+
+    /// Enable threshold proximity pattern.
+    #[serde(default = "default_true_val")]
+    pub threshold_proximity: bool,
+
+    /// Threshold proximity range (e.g., 0.90-0.99 of threshold).
+    #[serde(default)]
+    pub threshold_proximity_range: ThresholdProximityRangeConfig,
+
+    /// Enable unusual but legitimate patterns.
+    #[serde(default = "default_true_val")]
+    pub unusual_legitimate: bool,
+
+    /// Types of unusual legitimate patterns to generate.
+    #[serde(default = "default_unusual_legitimate_types")]
+    pub unusual_legitimate_types: Vec<String>,
+
+    /// Enable corrected error patterns.
+    #[serde(default = "default_true_val")]
+    pub corrected_errors: bool,
+
+    /// Corrected error correction lag range in days.
+    #[serde(default)]
+    pub corrected_error_lag: CorrectedErrorLagConfig,
+}
+
+fn default_near_miss_proportion() -> f64 {
+    0.30
+}
+
+fn default_unusual_legitimate_types() -> Vec<String> {
+    vec![
+        "year_end_bonus".to_string(),
+        "contract_prepayment".to_string(),
+        "insurance_claim".to_string(),
+        "settlement_payment".to_string(),
+    ]
+}
+
+impl Default for NearMissConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            proportion: default_near_miss_proportion(),
+            near_duplicate: true,
+            near_duplicate_days: NearDuplicateDaysConfig::default(),
+            threshold_proximity: true,
+            threshold_proximity_range: ThresholdProximityRangeConfig::default(),
+            unusual_legitimate: true,
+            unusual_legitimate_types: default_unusual_legitimate_types(),
+            corrected_errors: true,
+            corrected_error_lag: CorrectedErrorLagConfig::default(),
+        }
+    }
+}
+
+/// Near-duplicate days configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NearDuplicateDaysConfig {
+    /// Minimum days apart.
+    #[serde(default = "default_near_duplicate_min")]
+    pub min: u32,
+
+    /// Maximum days apart.
+    #[serde(default = "default_near_duplicate_max")]
+    pub max: u32,
+}
+
+fn default_near_duplicate_min() -> u32 {
+    1
+}
+fn default_near_duplicate_max() -> u32 {
+    3
+}
+
+impl Default for NearDuplicateDaysConfig {
+    fn default() -> Self {
+        Self {
+            min: default_near_duplicate_min(),
+            max: default_near_duplicate_max(),
+        }
+    }
+}
+
+/// Threshold proximity range configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThresholdProximityRangeConfig {
+    /// Minimum proximity (e.g., 0.90 = 90% of threshold).
+    #[serde(default = "default_threshold_proximity_min")]
+    pub min: f64,
+
+    /// Maximum proximity (e.g., 0.99 = 99% of threshold).
+    #[serde(default = "default_threshold_proximity_max")]
+    pub max: f64,
+}
+
+fn default_threshold_proximity_min() -> f64 {
+    0.90
+}
+fn default_threshold_proximity_max() -> f64 {
+    0.99
+}
+
+impl Default for ThresholdProximityRangeConfig {
+    fn default() -> Self {
+        Self {
+            min: default_threshold_proximity_min(),
+            max: default_threshold_proximity_max(),
+        }
+    }
+}
+
+/// Corrected error lag configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrectedErrorLagConfig {
+    /// Minimum correction lag in days.
+    #[serde(default = "default_corrected_error_lag_min")]
+    pub min: u32,
+
+    /// Maximum correction lag in days.
+    #[serde(default = "default_corrected_error_lag_max")]
+    pub max: u32,
+}
+
+fn default_corrected_error_lag_min() -> u32 {
+    1
+}
+fn default_corrected_error_lag_max() -> u32 {
+    5
+}
+
+impl Default for CorrectedErrorLagConfig {
+    fn default() -> Self {
+        Self {
+            min: default_corrected_error_lag_min(),
+            max: default_corrected_error_lag_max(),
+        }
+    }
+}
+
+/// Detection difficulty classification configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DifficultyClassificationConfig {
+    /// Enable detection difficulty classification.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Target distribution of difficulty levels.
+    #[serde(default)]
+    pub target_distribution: DifficultyDistributionConfig,
+}
+
+impl Default for DifficultyClassificationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            target_distribution: DifficultyDistributionConfig::default(),
+        }
+    }
+}
+
+/// Target distribution of detection difficulty levels.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DifficultyDistributionConfig {
+    /// Proportion of trivial anomalies (expected 99% detection).
+    #[serde(default = "default_difficulty_trivial")]
+    pub trivial: f64,
+
+    /// Proportion of easy anomalies (expected 90% detection).
+    #[serde(default = "default_difficulty_easy")]
+    pub easy: f64,
+
+    /// Proportion of moderate anomalies (expected 70% detection).
+    #[serde(default = "default_difficulty_moderate")]
+    pub moderate: f64,
+
+    /// Proportion of hard anomalies (expected 40% detection).
+    #[serde(default = "default_difficulty_hard")]
+    pub hard: f64,
+
+    /// Proportion of expert anomalies (expected 15% detection).
+    #[serde(default = "default_difficulty_expert")]
+    pub expert: f64,
+}
+
+fn default_difficulty_trivial() -> f64 {
+    0.15
+}
+fn default_difficulty_easy() -> f64 {
+    0.25
+}
+fn default_difficulty_moderate() -> f64 {
+    0.30
+}
+fn default_difficulty_hard() -> f64 {
+    0.20
+}
+fn default_difficulty_expert() -> f64 {
+    0.10
+}
+
+impl Default for DifficultyDistributionConfig {
+    fn default() -> Self {
+        Self {
+            trivial: default_difficulty_trivial(),
+            easy: default_difficulty_easy(),
+            moderate: default_difficulty_moderate(),
+            hard: default_difficulty_hard(),
+            expert: default_difficulty_expert(),
+        }
+    }
+}
+
+/// Context-aware injection configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContextAwareConfig {
+    /// Enable context-aware injection.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Vendor-specific anomaly rules.
+    #[serde(default)]
+    pub vendor_rules: VendorAnomalyRulesConfig,
+
+    /// Employee-specific anomaly rules.
+    #[serde(default)]
+    pub employee_rules: EmployeeAnomalyRulesConfig,
+
+    /// Account-specific anomaly rules.
+    #[serde(default)]
+    pub account_rules: AccountAnomalyRulesConfig,
+
+    /// Behavioral baseline configuration.
+    #[serde(default)]
+    pub behavioral_baseline: BehavioralBaselineConfig,
+}
+
+impl Default for ContextAwareConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            vendor_rules: VendorAnomalyRulesConfig::default(),
+            employee_rules: EmployeeAnomalyRulesConfig::default(),
+            account_rules: AccountAnomalyRulesConfig::default(),
+            behavioral_baseline: BehavioralBaselineConfig::default(),
+        }
+    }
+}
+
+/// Vendor-specific anomaly rules configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VendorAnomalyRulesConfig {
+    /// Error rate multiplier for new vendors (< threshold days).
+    #[serde(default = "default_new_vendor_multiplier")]
+    pub new_vendor_error_multiplier: f64,
+
+    /// Days threshold for "new" vendor classification.
+    #[serde(default = "default_new_vendor_threshold")]
+    pub new_vendor_threshold_days: u32,
+
+    /// Error rate multiplier for international vendors.
+    #[serde(default = "default_international_multiplier")]
+    pub international_error_multiplier: f64,
+
+    /// Strategic vendor anomaly types (may differ from general vendors).
+    #[serde(default = "default_strategic_vendor_types")]
+    pub strategic_vendor_anomaly_types: Vec<String>,
+}
+
+fn default_new_vendor_multiplier() -> f64 {
+    2.5
+}
+fn default_new_vendor_threshold() -> u32 {
+    90
+}
+fn default_international_multiplier() -> f64 {
+    1.5
+}
+fn default_strategic_vendor_types() -> Vec<String> {
+    vec!["pricing_dispute".to_string(), "contract_violation".to_string()]
+}
+
+impl Default for VendorAnomalyRulesConfig {
+    fn default() -> Self {
+        Self {
+            new_vendor_error_multiplier: default_new_vendor_multiplier(),
+            new_vendor_threshold_days: default_new_vendor_threshold(),
+            international_error_multiplier: default_international_multiplier(),
+            strategic_vendor_anomaly_types: default_strategic_vendor_types(),
+        }
+    }
+}
+
+/// Employee-specific anomaly rules configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmployeeAnomalyRulesConfig {
+    /// Error rate for new employees (< threshold days).
+    #[serde(default = "default_new_employee_rate")]
+    pub new_employee_error_rate: f64,
+
+    /// Days threshold for "new" employee classification.
+    #[serde(default = "default_new_employee_threshold")]
+    pub new_employee_threshold_days: u32,
+
+    /// Transaction volume threshold for fatigue errors.
+    #[serde(default = "default_volume_fatigue_threshold")]
+    pub volume_fatigue_threshold: u32,
+
+    /// Error rate multiplier when primary approver is absent.
+    #[serde(default = "default_coverage_multiplier")]
+    pub coverage_error_multiplier: f64,
+}
+
+fn default_new_employee_rate() -> f64 {
+    0.05
+}
+fn default_new_employee_threshold() -> u32 {
+    180
+}
+fn default_volume_fatigue_threshold() -> u32 {
+    50
+}
+fn default_coverage_multiplier() -> f64 {
+    1.8
+}
+
+impl Default for EmployeeAnomalyRulesConfig {
+    fn default() -> Self {
+        Self {
+            new_employee_error_rate: default_new_employee_rate(),
+            new_employee_threshold_days: default_new_employee_threshold(),
+            volume_fatigue_threshold: default_volume_fatigue_threshold(),
+            coverage_error_multiplier: default_coverage_multiplier(),
+        }
+    }
+}
+
+/// Account-specific anomaly rules configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountAnomalyRulesConfig {
+    /// Error rate multiplier for high-risk accounts.
+    #[serde(default = "default_high_risk_multiplier")]
+    pub high_risk_account_multiplier: f64,
+
+    /// Account codes considered high-risk.
+    #[serde(default = "default_high_risk_accounts")]
+    pub high_risk_accounts: Vec<String>,
+
+    /// Error rate multiplier for suspense accounts.
+    #[serde(default = "default_suspense_multiplier")]
+    pub suspense_account_multiplier: f64,
+
+    /// Account codes considered suspense accounts.
+    #[serde(default = "default_suspense_accounts")]
+    pub suspense_accounts: Vec<String>,
+
+    /// Error rate multiplier for intercompany accounts.
+    #[serde(default = "default_intercompany_multiplier")]
+    pub intercompany_account_multiplier: f64,
+}
+
+fn default_high_risk_multiplier() -> f64 {
+    2.0
+}
+fn default_high_risk_accounts() -> Vec<String> {
+    vec![
+        "1100".to_string(), // AR Control
+        "2000".to_string(), // AP Control
+        "3000".to_string(), // Cash
+    ]
+}
+fn default_suspense_multiplier() -> f64 {
+    3.0
+}
+fn default_suspense_accounts() -> Vec<String> {
+    vec!["9999".to_string(), "9998".to_string()]
+}
+fn default_intercompany_multiplier() -> f64 {
+    1.5
+}
+
+impl Default for AccountAnomalyRulesConfig {
+    fn default() -> Self {
+        Self {
+            high_risk_account_multiplier: default_high_risk_multiplier(),
+            high_risk_accounts: default_high_risk_accounts(),
+            suspense_account_multiplier: default_suspense_multiplier(),
+            suspense_accounts: default_suspense_accounts(),
+            intercompany_account_multiplier: default_intercompany_multiplier(),
+        }
+    }
+}
+
+/// Behavioral baseline configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BehavioralBaselineConfig {
+    /// Enable behavioral baseline tracking.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Number of days to build baseline from.
+    #[serde(default = "default_baseline_period")]
+    pub baseline_period_days: u32,
+
+    /// Standard deviation threshold for amount anomalies.
+    #[serde(default = "default_deviation_threshold")]
+    pub deviation_threshold_std: f64,
+
+    /// Standard deviation threshold for frequency anomalies.
+    #[serde(default = "default_frequency_deviation")]
+    pub frequency_deviation_threshold: f64,
+}
+
+fn default_baseline_period() -> u32 {
+    90
+}
+fn default_deviation_threshold() -> f64 {
+    3.0
+}
+fn default_frequency_deviation() -> f64 {
+    2.0
+}
+
+impl Default for BehavioralBaselineConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            baseline_period_days: default_baseline_period(),
+            deviation_threshold_std: default_deviation_threshold(),
+            frequency_deviation_threshold: default_frequency_deviation(),
+        }
+    }
+}
+
+/// Enhanced labeling configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnhancedLabelingConfig {
+    /// Enable severity scoring.
+    #[serde(default = "default_true_val")]
+    pub severity_scoring: bool,
+
+    /// Enable difficulty classification.
+    #[serde(default = "default_true_val")]
+    pub difficulty_classification: bool,
+
+    /// Materiality thresholds for severity classification.
+    #[serde(default)]
+    pub materiality_thresholds: MaterialityThresholdsConfig,
+}
+
+impl Default for EnhancedLabelingConfig {
+    fn default() -> Self {
+        Self {
+            severity_scoring: true,
+            difficulty_classification: true,
+            materiality_thresholds: MaterialityThresholdsConfig::default(),
+        }
+    }
+}
+
+/// Materiality thresholds configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaterialityThresholdsConfig {
+    /// Threshold for trivial impact (as percentage of total).
+    #[serde(default = "default_materiality_trivial")]
+    pub trivial: f64,
+
+    /// Threshold for immaterial impact.
+    #[serde(default = "default_materiality_immaterial")]
+    pub immaterial: f64,
+
+    /// Threshold for material impact.
+    #[serde(default = "default_materiality_material")]
+    pub material: f64,
+
+    /// Threshold for highly material impact.
+    #[serde(default = "default_materiality_highly_material")]
+    pub highly_material: f64,
+}
+
+fn default_materiality_trivial() -> f64 {
+    0.001
+}
+fn default_materiality_immaterial() -> f64 {
+    0.01
+}
+fn default_materiality_material() -> f64 {
+    0.05
+}
+fn default_materiality_highly_material() -> f64 {
+    0.10
+}
+
+impl Default for MaterialityThresholdsConfig {
+    fn default() -> Self {
+        Self {
+            trivial: default_materiality_trivial(),
+            immaterial: default_materiality_immaterial(),
+            material: default_materiality_material(),
+            highly_material: default_materiality_highly_material(),
+        }
     }
 }
 

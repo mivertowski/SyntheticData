@@ -1557,6 +1557,738 @@ impl EnhancedAnomalyLabel {
     }
 }
 
+// ============================================================================
+// MULTI-DIMENSIONAL LABELING (Anomaly Pattern Enhancements)
+// ============================================================================
+
+/// Severity level classification for anomalies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SeverityLevel {
+    /// Minor issue, low impact.
+    Low,
+    /// Moderate issue, noticeable impact.
+    Medium,
+    /// Significant issue, substantial impact.
+    High,
+    /// Critical issue, severe impact requiring immediate attention.
+    Critical,
+}
+
+impl SeverityLevel {
+    /// Returns the numeric value (1-4) for the severity level.
+    pub fn numeric(&self) -> u8 {
+        match self {
+            SeverityLevel::Low => 1,
+            SeverityLevel::Medium => 2,
+            SeverityLevel::High => 3,
+            SeverityLevel::Critical => 4,
+        }
+    }
+
+    /// Creates a severity level from a numeric value.
+    pub fn from_numeric(value: u8) -> Self {
+        match value {
+            1 => SeverityLevel::Low,
+            2 => SeverityLevel::Medium,
+            3 => SeverityLevel::High,
+            _ => SeverityLevel::Critical,
+        }
+    }
+
+    /// Creates a severity level from a normalized score (0.0-1.0).
+    pub fn from_score(score: f64) -> Self {
+        match score {
+            s if s < 0.25 => SeverityLevel::Low,
+            s if s < 0.50 => SeverityLevel::Medium,
+            s if s < 0.75 => SeverityLevel::High,
+            _ => SeverityLevel::Critical,
+        }
+    }
+
+    /// Returns a normalized score (0.0-1.0) for this severity level.
+    pub fn to_score(&self) -> f64 {
+        match self {
+            SeverityLevel::Low => 0.125,
+            SeverityLevel::Medium => 0.375,
+            SeverityLevel::High => 0.625,
+            SeverityLevel::Critical => 0.875,
+        }
+    }
+}
+
+impl Default for SeverityLevel {
+    fn default() -> Self {
+        SeverityLevel::Medium
+    }
+}
+
+/// Structured severity scoring for anomalies.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnomalySeverity {
+    /// Severity level classification.
+    pub level: SeverityLevel,
+    /// Continuous severity score (0.0-1.0).
+    pub score: f64,
+    /// Absolute financial impact amount.
+    pub financial_impact: Decimal,
+    /// Whether this exceeds materiality threshold.
+    pub is_material: bool,
+    /// Materiality threshold used for determination.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub materiality_threshold: Option<Decimal>,
+}
+
+impl AnomalySeverity {
+    /// Creates a new severity assessment.
+    pub fn new(level: SeverityLevel, financial_impact: Decimal) -> Self {
+        Self {
+            level,
+            score: level.to_score(),
+            financial_impact,
+            is_material: false,
+            materiality_threshold: None,
+        }
+    }
+
+    /// Creates severity from a score, auto-determining level.
+    pub fn from_score(score: f64, financial_impact: Decimal) -> Self {
+        Self {
+            level: SeverityLevel::from_score(score),
+            score: score.clamp(0.0, 1.0),
+            financial_impact,
+            is_material: false,
+            materiality_threshold: None,
+        }
+    }
+
+    /// Sets the materiality assessment.
+    pub fn with_materiality(mut self, threshold: Decimal) -> Self {
+        self.materiality_threshold = Some(threshold);
+        self.is_material = self.financial_impact.abs() >= threshold;
+        self
+    }
+}
+
+impl Default for AnomalySeverity {
+    fn default() -> Self {
+        Self {
+            level: SeverityLevel::Medium,
+            score: 0.5,
+            financial_impact: Decimal::ZERO,
+            is_material: false,
+            materiality_threshold: None,
+        }
+    }
+}
+
+/// Detection difficulty classification for anomalies.
+///
+/// Categorizes how difficult an anomaly is to detect, which is useful
+/// for ML model benchmarking and audit procedure selection.
+///
+/// Note: This is distinct from `drift_events::AnomalyDetectionDifficulty` which
+/// is used for drift event classification and has different variants.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AnomalyDetectionDifficulty {
+    /// Obvious anomaly, easily caught by basic rules (expected detection rate: 99%).
+    Trivial,
+    /// Relatively easy to detect with standard procedures (expected detection rate: 90%).
+    Easy,
+    /// Requires moderate effort or specialized analysis (expected detection rate: 70%).
+    Moderate,
+    /// Difficult to detect, requires advanced techniques (expected detection rate: 40%).
+    Hard,
+    /// Expert-level difficulty, requires forensic analysis (expected detection rate: 15%).
+    Expert,
+}
+
+impl AnomalyDetectionDifficulty {
+    /// Returns the expected detection rate for this difficulty level.
+    pub fn expected_detection_rate(&self) -> f64 {
+        match self {
+            AnomalyDetectionDifficulty::Trivial => 0.99,
+            AnomalyDetectionDifficulty::Easy => 0.90,
+            AnomalyDetectionDifficulty::Moderate => 0.70,
+            AnomalyDetectionDifficulty::Hard => 0.40,
+            AnomalyDetectionDifficulty::Expert => 0.15,
+        }
+    }
+
+    /// Returns a numeric difficulty score (0.0-1.0).
+    pub fn difficulty_score(&self) -> f64 {
+        match self {
+            AnomalyDetectionDifficulty::Trivial => 0.05,
+            AnomalyDetectionDifficulty::Easy => 0.25,
+            AnomalyDetectionDifficulty::Moderate => 0.50,
+            AnomalyDetectionDifficulty::Hard => 0.75,
+            AnomalyDetectionDifficulty::Expert => 0.95,
+        }
+    }
+
+    /// Creates a difficulty level from a score (0.0-1.0).
+    pub fn from_score(score: f64) -> Self {
+        match score {
+            s if s < 0.15 => AnomalyDetectionDifficulty::Trivial,
+            s if s < 0.35 => AnomalyDetectionDifficulty::Easy,
+            s if s < 0.55 => AnomalyDetectionDifficulty::Moderate,
+            s if s < 0.75 => AnomalyDetectionDifficulty::Hard,
+            _ => AnomalyDetectionDifficulty::Expert,
+        }
+    }
+
+    /// Returns the name of this difficulty level.
+    pub fn name(&self) -> &'static str {
+        match self {
+            AnomalyDetectionDifficulty::Trivial => "trivial",
+            AnomalyDetectionDifficulty::Easy => "easy",
+            AnomalyDetectionDifficulty::Moderate => "moderate",
+            AnomalyDetectionDifficulty::Hard => "hard",
+            AnomalyDetectionDifficulty::Expert => "expert",
+        }
+    }
+}
+
+impl Default for AnomalyDetectionDifficulty {
+    fn default() -> Self {
+        AnomalyDetectionDifficulty::Moderate
+    }
+}
+
+/// Ground truth certainty level for anomaly labels.
+///
+/// Indicates how certain we are that the label is correct.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum GroundTruthCertainty {
+    /// Definitively known (injected anomaly with full provenance).
+    Definite,
+    /// Highly probable based on strong evidence.
+    Probable,
+    /// Possibly an anomaly based on indirect evidence.
+    Possible,
+}
+
+impl GroundTruthCertainty {
+    /// Returns a certainty score (0.0-1.0).
+    pub fn certainty_score(&self) -> f64 {
+        match self {
+            GroundTruthCertainty::Definite => 1.0,
+            GroundTruthCertainty::Probable => 0.8,
+            GroundTruthCertainty::Possible => 0.5,
+        }
+    }
+
+    /// Returns the name of this certainty level.
+    pub fn name(&self) -> &'static str {
+        match self {
+            GroundTruthCertainty::Definite => "definite",
+            GroundTruthCertainty::Probable => "probable",
+            GroundTruthCertainty::Possible => "possible",
+        }
+    }
+}
+
+impl Default for GroundTruthCertainty {
+    fn default() -> Self {
+        GroundTruthCertainty::Definite
+    }
+}
+
+/// Detection method classification.
+///
+/// Indicates which detection methods are recommended or effective for an anomaly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum DetectionMethod {
+    /// Simple rule-based detection (thresholds, filters).
+    RuleBased,
+    /// Statistical analysis (distributions, outlier detection).
+    Statistical,
+    /// Machine learning models (classification, anomaly detection).
+    MachineLearning,
+    /// Graph-based analysis (network patterns, relationships).
+    GraphBased,
+    /// Manual forensic audit procedures.
+    ForensicAudit,
+    /// Combination of multiple methods.
+    Hybrid,
+}
+
+impl DetectionMethod {
+    /// Returns the name of this detection method.
+    pub fn name(&self) -> &'static str {
+        match self {
+            DetectionMethod::RuleBased => "rule_based",
+            DetectionMethod::Statistical => "statistical",
+            DetectionMethod::MachineLearning => "machine_learning",
+            DetectionMethod::GraphBased => "graph_based",
+            DetectionMethod::ForensicAudit => "forensic_audit",
+            DetectionMethod::Hybrid => "hybrid",
+        }
+    }
+
+    /// Returns a description of this detection method.
+    pub fn description(&self) -> &'static str {
+        match self {
+            DetectionMethod::RuleBased => "Simple threshold and filter rules",
+            DetectionMethod::Statistical => "Statistical distribution analysis",
+            DetectionMethod::MachineLearning => "ML classification models",
+            DetectionMethod::GraphBased => "Network and relationship analysis",
+            DetectionMethod::ForensicAudit => "Manual forensic procedures",
+            DetectionMethod::Hybrid => "Combined multi-method approach",
+        }
+    }
+}
+
+/// Extended anomaly label with comprehensive multi-dimensional classification.
+///
+/// This extends the base `EnhancedAnomalyLabel` with additional fields for
+/// severity scoring, detection difficulty, recommended methods, and ground truth.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtendedAnomalyLabel {
+    /// Base labeled anomaly.
+    pub base: LabeledAnomaly,
+    /// Enhanced category classification.
+    pub category: AnomalyCategory,
+    /// Structured severity assessment.
+    pub severity: AnomalySeverity,
+    /// Detection difficulty classification.
+    pub detection_difficulty: AnomalyDetectionDifficulty,
+    /// Recommended detection methods for this anomaly.
+    pub recommended_methods: Vec<DetectionMethod>,
+    /// Key indicators that should trigger detection.
+    pub key_indicators: Vec<String>,
+    /// Ground truth certainty level.
+    pub ground_truth_certainty: GroundTruthCertainty,
+    /// Contributing factors to confidence/severity.
+    pub contributing_factors: Vec<ContributingFactor>,
+    /// Related entity IDs (vendors, customers, employees, etc.).
+    pub related_entity_ids: Vec<String>,
+    /// Secondary categories for multi-label classification.
+    pub secondary_categories: Vec<AnomalyCategory>,
+    /// Scheme ID if part of a multi-stage fraud scheme.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scheme_id: Option<String>,
+    /// Stage number within a scheme (1-indexed).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scheme_stage: Option<u32>,
+    /// Whether this is a near-miss (suspicious but legitimate).
+    #[serde(default)]
+    pub is_near_miss: bool,
+    /// Explanation if this is a near-miss.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub near_miss_explanation: Option<String>,
+}
+
+impl ExtendedAnomalyLabel {
+    /// Creates an extended label from a base labeled anomaly.
+    pub fn from_base(base: LabeledAnomaly) -> Self {
+        let category = AnomalyCategory::from_anomaly_type(&base.anomaly_type);
+        let severity = AnomalySeverity {
+            level: SeverityLevel::from_numeric(base.severity),
+            score: base.severity as f64 / 5.0,
+            financial_impact: base.monetary_impact.unwrap_or(Decimal::ZERO),
+            is_material: false,
+            materiality_threshold: None,
+        };
+
+        Self {
+            base,
+            category,
+            severity,
+            detection_difficulty: AnomalyDetectionDifficulty::Moderate,
+            recommended_methods: vec![DetectionMethod::RuleBased],
+            key_indicators: Vec::new(),
+            ground_truth_certainty: GroundTruthCertainty::Definite,
+            contributing_factors: Vec::new(),
+            related_entity_ids: Vec::new(),
+            secondary_categories: Vec::new(),
+            scheme_id: None,
+            scheme_stage: None,
+            is_near_miss: false,
+            near_miss_explanation: None,
+        }
+    }
+
+    /// Sets the severity assessment.
+    pub fn with_severity(mut self, severity: AnomalySeverity) -> Self {
+        self.severity = severity;
+        self
+    }
+
+    /// Sets the detection difficulty.
+    pub fn with_difficulty(mut self, difficulty: AnomalyDetectionDifficulty) -> Self {
+        self.detection_difficulty = difficulty;
+        self
+    }
+
+    /// Adds a recommended detection method.
+    pub fn with_method(mut self, method: DetectionMethod) -> Self {
+        if !self.recommended_methods.contains(&method) {
+            self.recommended_methods.push(method);
+        }
+        self
+    }
+
+    /// Sets the recommended detection methods.
+    pub fn with_methods(mut self, methods: Vec<DetectionMethod>) -> Self {
+        self.recommended_methods = methods;
+        self
+    }
+
+    /// Adds a key indicator.
+    pub fn with_indicator(mut self, indicator: impl Into<String>) -> Self {
+        self.key_indicators.push(indicator.into());
+        self
+    }
+
+    /// Sets the ground truth certainty.
+    pub fn with_certainty(mut self, certainty: GroundTruthCertainty) -> Self {
+        self.ground_truth_certainty = certainty;
+        self
+    }
+
+    /// Adds a contributing factor.
+    pub fn with_factor(mut self, factor: ContributingFactor) -> Self {
+        self.contributing_factors.push(factor);
+        self
+    }
+
+    /// Adds a related entity ID.
+    pub fn with_entity(mut self, entity_id: impl Into<String>) -> Self {
+        self.related_entity_ids.push(entity_id.into());
+        self
+    }
+
+    /// Adds a secondary category.
+    pub fn with_secondary_category(mut self, category: AnomalyCategory) -> Self {
+        if category != self.category && !self.secondary_categories.contains(&category) {
+            self.secondary_categories.push(category);
+        }
+        self
+    }
+
+    /// Sets scheme information.
+    pub fn with_scheme(mut self, scheme_id: impl Into<String>, stage: u32) -> Self {
+        self.scheme_id = Some(scheme_id.into());
+        self.scheme_stage = Some(stage);
+        self
+    }
+
+    /// Marks this as a near-miss with explanation.
+    pub fn as_near_miss(mut self, explanation: impl Into<String>) -> Self {
+        self.is_near_miss = true;
+        self.near_miss_explanation = Some(explanation.into());
+        self
+    }
+
+    /// Converts to an extended feature vector for ML.
+    ///
+    /// Returns base features (15) + extended features (15) = 30 features.
+    pub fn to_features(&self) -> Vec<f64> {
+        let mut features = self.base.to_features();
+
+        // Extended features
+        features.push(self.severity.score);
+        features.push(self.severity.level.to_score());
+        features.push(if self.severity.is_material { 1.0 } else { 0.0 });
+        features.push(self.detection_difficulty.difficulty_score());
+        features.push(self.detection_difficulty.expected_detection_rate());
+        features.push(self.ground_truth_certainty.certainty_score());
+        features.push(self.category.ordinal() as f64 / AnomalyCategory::category_count() as f64);
+        features.push(self.secondary_categories.len() as f64);
+        features.push(self.contributing_factors.len() as f64);
+        features.push(self.key_indicators.len() as f64);
+        features.push(self.recommended_methods.len() as f64);
+        features.push(self.related_entity_ids.len() as f64);
+        features.push(if self.scheme_id.is_some() { 1.0 } else { 0.0 });
+        features.push(self.scheme_stage.unwrap_or(0) as f64);
+        features.push(if self.is_near_miss { 1.0 } else { 0.0 });
+
+        features
+    }
+
+    /// Returns the number of features in the extended feature vector.
+    pub fn feature_count() -> usize {
+        30 // 15 base + 15 extended
+    }
+
+    /// Returns feature names for the extended feature vector.
+    pub fn feature_names() -> Vec<&'static str> {
+        let mut names = LabeledAnomaly::feature_names();
+        names.extend(vec![
+            "severity_score",
+            "severity_level_score",
+            "is_material",
+            "difficulty_score",
+            "expected_detection_rate",
+            "ground_truth_certainty",
+            "category_ordinal",
+            "secondary_category_count",
+            "contributing_factor_count",
+            "key_indicator_count",
+            "recommended_method_count",
+            "related_entity_count",
+            "is_part_of_scheme",
+            "scheme_stage",
+            "is_near_miss",
+        ]);
+        names
+    }
+}
+
+// ============================================================================
+// MULTI-STAGE FRAUD SCHEME TYPES
+// ============================================================================
+
+/// Type of multi-stage fraud scheme.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SchemeType {
+    /// Gradual embezzlement over time.
+    GradualEmbezzlement,
+    /// Revenue manipulation across periods.
+    RevenueManipulation,
+    /// Vendor kickback scheme.
+    VendorKickback,
+    /// Round-tripping funds through multiple entities.
+    RoundTripping,
+    /// Ghost employee scheme.
+    GhostEmployee,
+    /// Expense reimbursement fraud.
+    ExpenseReimbursement,
+    /// Inventory theft scheme.
+    InventoryTheft,
+    /// Custom scheme type.
+    Custom,
+}
+
+impl SchemeType {
+    /// Returns the name of this scheme type.
+    pub fn name(&self) -> &'static str {
+        match self {
+            SchemeType::GradualEmbezzlement => "gradual_embezzlement",
+            SchemeType::RevenueManipulation => "revenue_manipulation",
+            SchemeType::VendorKickback => "vendor_kickback",
+            SchemeType::RoundTripping => "round_tripping",
+            SchemeType::GhostEmployee => "ghost_employee",
+            SchemeType::ExpenseReimbursement => "expense_reimbursement",
+            SchemeType::InventoryTheft => "inventory_theft",
+            SchemeType::Custom => "custom",
+        }
+    }
+
+    /// Returns the typical number of stages for this scheme type.
+    pub fn typical_stages(&self) -> u32 {
+        match self {
+            SchemeType::GradualEmbezzlement => 4, // testing, escalation, acceleration, desperation
+            SchemeType::RevenueManipulation => 4, // Q4->Q1->Q2->Q4
+            SchemeType::VendorKickback => 4,      // setup, inflation, kickback, concealment
+            SchemeType::RoundTripping => 3,       // setup, execution, reversal
+            SchemeType::GhostEmployee => 3,       // creation, payroll, concealment
+            SchemeType::ExpenseReimbursement => 3, // submission, approval, payment
+            SchemeType::InventoryTheft => 3,      // access, theft, cover-up
+            SchemeType::Custom => 4,
+        }
+    }
+}
+
+/// Status of detection for a fraud scheme.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SchemeDetectionStatus {
+    /// Scheme is undetected.
+    Undetected,
+    /// Under investigation but not confirmed.
+    UnderInvestigation,
+    /// Partially detected (some transactions flagged).
+    PartiallyDetected,
+    /// Fully detected and confirmed.
+    FullyDetected,
+}
+
+impl Default for SchemeDetectionStatus {
+    fn default() -> Self {
+        SchemeDetectionStatus::Undetected
+    }
+}
+
+/// Reference to a transaction within a scheme.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SchemeTransactionRef {
+    /// Document ID of the transaction.
+    pub document_id: String,
+    /// Transaction date.
+    pub date: chrono::NaiveDate,
+    /// Transaction amount.
+    pub amount: Decimal,
+    /// Stage this transaction belongs to.
+    pub stage: u32,
+    /// Anomaly ID if labeled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anomaly_id: Option<String>,
+}
+
+/// Concealment technique used in fraud.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ConcealmentTechnique {
+    /// Document manipulation or forgery.
+    DocumentManipulation,
+    /// Circumventing approval processes.
+    ApprovalCircumvention,
+    /// Exploiting timing (period-end, holidays).
+    TimingExploitation,
+    /// Transaction splitting to avoid thresholds.
+    TransactionSplitting,
+    /// Account misclassification.
+    AccountMisclassification,
+    /// Collusion with other employees.
+    Collusion,
+    /// Data alteration or deletion.
+    DataAlteration,
+    /// Creating false documentation.
+    FalseDocumentation,
+}
+
+impl ConcealmentTechnique {
+    /// Returns the difficulty bonus this technique adds.
+    pub fn difficulty_bonus(&self) -> f64 {
+        match self {
+            ConcealmentTechnique::DocumentManipulation => 0.20,
+            ConcealmentTechnique::ApprovalCircumvention => 0.15,
+            ConcealmentTechnique::TimingExploitation => 0.10,
+            ConcealmentTechnique::TransactionSplitting => 0.15,
+            ConcealmentTechnique::AccountMisclassification => 0.10,
+            ConcealmentTechnique::Collusion => 0.25,
+            ConcealmentTechnique::DataAlteration => 0.20,
+            ConcealmentTechnique::FalseDocumentation => 0.15,
+        }
+    }
+}
+
+// ============================================================================
+// NEAR-MISS TYPES
+// ============================================================================
+
+/// Type of near-miss pattern (suspicious but legitimate).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NearMissPattern {
+    /// Transaction very similar to another (possible duplicate but legitimate).
+    NearDuplicate {
+        /// Date difference from similar transaction.
+        date_difference_days: u32,
+        /// Original transaction ID.
+        similar_transaction_id: String,
+    },
+    /// Amount just below approval threshold (but legitimate).
+    ThresholdProximity {
+        /// The threshold being approached.
+        threshold: Decimal,
+        /// Percentage of threshold (0.0-1.0).
+        proximity: f64,
+    },
+    /// Unusual but legitimate business pattern.
+    UnusualLegitimate {
+        /// Type of legitimate pattern.
+        pattern_type: LegitimatePatternType,
+        /// Business justification.
+        justification: String,
+    },
+    /// Error that was caught and corrected.
+    CorrectedError {
+        /// Days until correction.
+        correction_lag_days: u32,
+        /// Correction document ID.
+        correction_document_id: String,
+    },
+}
+
+/// Types of unusual but legitimate business patterns.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum LegitimatePatternType {
+    /// Year-end bonus payment.
+    YearEndBonus,
+    /// Contract prepayment.
+    ContractPrepayment,
+    /// Settlement payment.
+    SettlementPayment,
+    /// Insurance claim.
+    InsuranceClaim,
+    /// One-time vendor payment.
+    OneTimePayment,
+    /// Asset disposal.
+    AssetDisposal,
+    /// Seasonal inventory buildup.
+    SeasonalInventory,
+    /// Promotional spending.
+    PromotionalSpending,
+}
+
+impl LegitimatePatternType {
+    /// Returns a description of this pattern type.
+    pub fn description(&self) -> &'static str {
+        match self {
+            LegitimatePatternType::YearEndBonus => "Year-end bonus payment",
+            LegitimatePatternType::ContractPrepayment => "Contract prepayment per terms",
+            LegitimatePatternType::SettlementPayment => "Legal settlement payment",
+            LegitimatePatternType::InsuranceClaim => "Insurance claim reimbursement",
+            LegitimatePatternType::OneTimePayment => "One-time vendor payment",
+            LegitimatePatternType::AssetDisposal => "Fixed asset disposal",
+            LegitimatePatternType::SeasonalInventory => "Seasonal inventory buildup",
+            LegitimatePatternType::PromotionalSpending => "Promotional campaign spending",
+        }
+    }
+}
+
+/// What might trigger a false positive for this near-miss.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum FalsePositiveTrigger {
+    /// Amount is near threshold.
+    AmountNearThreshold,
+    /// Timing is unusual.
+    UnusualTiming,
+    /// Similar to existing transaction.
+    SimilarTransaction,
+    /// New counterparty.
+    NewCounterparty,
+    /// Account combination unusual.
+    UnusualAccountCombination,
+    /// Volume spike.
+    VolumeSpike,
+    /// Round amount.
+    RoundAmount,
+}
+
+/// Label for a near-miss case.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NearMissLabel {
+    /// Document ID.
+    pub document_id: String,
+    /// The near-miss pattern.
+    pub pattern: NearMissPattern,
+    /// How suspicious it appears (0.0-1.0).
+    pub suspicion_score: f64,
+    /// What would trigger a false positive.
+    pub false_positive_trigger: FalsePositiveTrigger,
+    /// Why this is actually legitimate.
+    pub explanation: String,
+}
+
+impl NearMissLabel {
+    /// Creates a new near-miss label.
+    pub fn new(
+        document_id: impl Into<String>,
+        pattern: NearMissPattern,
+        suspicion_score: f64,
+        trigger: FalsePositiveTrigger,
+        explanation: impl Into<String>,
+    ) -> Self {
+        Self {
+            document_id: document_id.into(),
+            pattern,
+            suspicion_score: suspicion_score.clamp(0.0, 1.0),
+            false_positive_trigger: trigger,
+            explanation: explanation.into(),
+        }
+    }
+}
+
 /// Configuration for anomaly rates.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnomalyRateConfig {
@@ -2290,5 +3022,186 @@ mod tests {
             anomaly.metadata.get("standard"),
             Some(&"ASC 606".to_string())
         );
+    }
+
+    // ==========================================================================
+    // Multi-Dimensional Labeling Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_severity_level() {
+        assert_eq!(SeverityLevel::Low.numeric(), 1);
+        assert_eq!(SeverityLevel::Critical.numeric(), 4);
+
+        assert_eq!(SeverityLevel::from_numeric(1), SeverityLevel::Low);
+        assert_eq!(SeverityLevel::from_numeric(4), SeverityLevel::Critical);
+
+        assert_eq!(SeverityLevel::from_score(0.1), SeverityLevel::Low);
+        assert_eq!(SeverityLevel::from_score(0.9), SeverityLevel::Critical);
+
+        assert!((SeverityLevel::Medium.to_score() - 0.375).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_anomaly_severity() {
+        let severity = AnomalySeverity::new(SeverityLevel::High, dec!(50000))
+            .with_materiality(dec!(10000));
+
+        assert_eq!(severity.level, SeverityLevel::High);
+        assert!(severity.is_material);
+        assert_eq!(severity.materiality_threshold, Some(dec!(10000)));
+
+        // Not material
+        let low_severity = AnomalySeverity::new(SeverityLevel::Low, dec!(5000))
+            .with_materiality(dec!(10000));
+        assert!(!low_severity.is_material);
+    }
+
+    #[test]
+    fn test_detection_difficulty() {
+        assert!((AnomalyDetectionDifficulty::Trivial.expected_detection_rate() - 0.99).abs() < 0.01);
+        assert!((AnomalyDetectionDifficulty::Expert.expected_detection_rate() - 0.15).abs() < 0.01);
+
+        assert_eq!(AnomalyDetectionDifficulty::from_score(0.05), AnomalyDetectionDifficulty::Trivial);
+        assert_eq!(AnomalyDetectionDifficulty::from_score(0.90), AnomalyDetectionDifficulty::Expert);
+
+        assert_eq!(AnomalyDetectionDifficulty::Moderate.name(), "moderate");
+    }
+
+    #[test]
+    fn test_ground_truth_certainty() {
+        assert_eq!(GroundTruthCertainty::Definite.certainty_score(), 1.0);
+        assert_eq!(GroundTruthCertainty::Probable.certainty_score(), 0.8);
+        assert_eq!(GroundTruthCertainty::Possible.certainty_score(), 0.5);
+    }
+
+    #[test]
+    fn test_detection_method() {
+        assert_eq!(DetectionMethod::RuleBased.name(), "rule_based");
+        assert_eq!(DetectionMethod::MachineLearning.name(), "machine_learning");
+    }
+
+    #[test]
+    fn test_extended_anomaly_label() {
+        let base = LabeledAnomaly::new(
+            "ANO001".to_string(),
+            AnomalyType::Fraud(FraudType::FictitiousVendor),
+            "JE001".to_string(),
+            "JE".to_string(),
+            "1000".to_string(),
+            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+        )
+        .with_monetary_impact(dec!(100000));
+
+        let extended = ExtendedAnomalyLabel::from_base(base)
+            .with_severity(AnomalySeverity::new(SeverityLevel::Critical, dec!(100000)))
+            .with_difficulty(AnomalyDetectionDifficulty::Hard)
+            .with_method(DetectionMethod::GraphBased)
+            .with_method(DetectionMethod::ForensicAudit)
+            .with_indicator("New vendor with no history")
+            .with_indicator("Large first transaction")
+            .with_certainty(GroundTruthCertainty::Definite)
+            .with_entity("V001")
+            .with_secondary_category(AnomalyCategory::BehavioralAnomaly)
+            .with_scheme("SCHEME001", 2);
+
+        assert_eq!(extended.severity.level, SeverityLevel::Critical);
+        assert_eq!(extended.detection_difficulty, AnomalyDetectionDifficulty::Hard);
+        // from_base adds RuleBased, then we add 2 more (GraphBased, ForensicAudit)
+        assert_eq!(extended.recommended_methods.len(), 3);
+        assert_eq!(extended.key_indicators.len(), 2);
+        assert_eq!(extended.scheme_id, Some("SCHEME001".to_string()));
+        assert_eq!(extended.scheme_stage, Some(2));
+    }
+
+    #[test]
+    fn test_extended_anomaly_label_features() {
+        let base = LabeledAnomaly::new(
+            "ANO001".to_string(),
+            AnomalyType::Fraud(FraudType::SelfApproval),
+            "JE001".to_string(),
+            "JE".to_string(),
+            "1000".to_string(),
+            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+        );
+
+        let extended = ExtendedAnomalyLabel::from_base(base)
+            .with_difficulty(AnomalyDetectionDifficulty::Hard);
+
+        let features = extended.to_features();
+        assert_eq!(features.len(), ExtendedAnomalyLabel::feature_count());
+        assert_eq!(features.len(), 30);
+
+        // Check difficulty score is in features
+        let difficulty_idx = 18; // Position of difficulty_score
+        assert!((features[difficulty_idx] - 0.75).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_extended_label_near_miss() {
+        let base = LabeledAnomaly::new(
+            "ANO001".to_string(),
+            AnomalyType::Statistical(StatisticalAnomalyType::UnusuallyHighAmount),
+            "JE001".to_string(),
+            "JE".to_string(),
+            "1000".to_string(),
+            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+        );
+
+        let extended = ExtendedAnomalyLabel::from_base(base)
+            .as_near_miss("Year-end bonus payment, legitimately high");
+
+        assert!(extended.is_near_miss);
+        assert!(extended.near_miss_explanation.is_some());
+    }
+
+    #[test]
+    fn test_scheme_type() {
+        assert_eq!(SchemeType::GradualEmbezzlement.name(), "gradual_embezzlement");
+        assert_eq!(SchemeType::GradualEmbezzlement.typical_stages(), 4);
+        assert_eq!(SchemeType::VendorKickback.typical_stages(), 4);
+    }
+
+    #[test]
+    fn test_concealment_technique() {
+        assert!(ConcealmentTechnique::Collusion.difficulty_bonus() > 0.0);
+        assert!(ConcealmentTechnique::Collusion.difficulty_bonus() > ConcealmentTechnique::TimingExploitation.difficulty_bonus());
+    }
+
+    #[test]
+    fn test_near_miss_label() {
+        let near_miss = NearMissLabel::new(
+            "JE001",
+            NearMissPattern::ThresholdProximity {
+                threshold: dec!(10000),
+                proximity: 0.95,
+            },
+            0.7,
+            FalsePositiveTrigger::AmountNearThreshold,
+            "Transaction is 95% of threshold but business justified",
+        );
+
+        assert_eq!(near_miss.document_id, "JE001");
+        assert_eq!(near_miss.suspicion_score, 0.7);
+        assert_eq!(near_miss.false_positive_trigger, FalsePositiveTrigger::AmountNearThreshold);
+    }
+
+    #[test]
+    fn test_legitimate_pattern_type() {
+        assert_eq!(LegitimatePatternType::YearEndBonus.description(), "Year-end bonus payment");
+        assert_eq!(LegitimatePatternType::InsuranceClaim.description(), "Insurance claim reimbursement");
+    }
+
+    #[test]
+    fn test_severity_detection_difficulty_serialization() {
+        let severity = AnomalySeverity::new(SeverityLevel::High, dec!(50000));
+        let json = serde_json::to_string(&severity).expect("Failed to serialize");
+        let deserialized: AnomalySeverity = serde_json::from_str(&json).expect("Failed to deserialize");
+        assert_eq!(severity.level, deserialized.level);
+
+        let difficulty = AnomalyDetectionDifficulty::Hard;
+        let json = serde_json::to_string(&difficulty).expect("Failed to serialize");
+        let deserialized: AnomalyDetectionDifficulty = serde_json::from_str(&json).expect("Failed to deserialize");
+        assert_eq!(difficulty, deserialized);
     }
 }

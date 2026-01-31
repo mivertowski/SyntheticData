@@ -2,6 +2,14 @@
 //!
 //! The injector coordinates anomaly generation across all data types,
 //! managing rates, patterns, clustering, and label generation.
+//!
+//! ## Enhanced Features (v0.3.0+)
+//!
+//! - **Multi-stage fraud schemes**: Embezzlement, revenue manipulation, kickbacks
+//! - **Correlated injection**: Co-occurrence patterns and error cascades
+//! - **Near-miss generation**: Suspicious but legitimate transactions
+//! - **Detection difficulty classification**: Trivial to expert levels
+//! - **Context-aware injection**: Entity-specific anomaly patterns
 
 use chrono::NaiveDate;
 use rand::Rng;
@@ -11,14 +19,21 @@ use rust_decimal::Decimal;
 use std::collections::HashMap;
 
 use datasynth_core::models::{
-    AnomalyCausalReason, AnomalyRateConfig, AnomalySummary, AnomalyType, ErrorType, FraudType,
-    JournalEntry, LabeledAnomaly, RelationalAnomalyType,
+    AnomalyCausalReason, AnomalyDetectionDifficulty, AnomalyRateConfig, AnomalySummary,
+    AnomalyType, ErrorType, FraudType, JournalEntry, LabeledAnomaly, NearMissLabel,
+    RelationalAnomalyType,
 };
 
+use super::context::{BehavioralBaseline, BehavioralBaselineConfig, EntityAwareInjector};
+use super::correlation::{AnomalyCoOccurrence, TemporalClusterGenerator};
+use super::difficulty::DifficultyCalculator;
+use super::near_miss::{NearMissConfig, NearMissGenerator};
 use super::patterns::{
     should_inject_anomaly, AnomalyPatternConfig, ClusterManager, EntityTargetingManager,
     TemporalPattern,
 };
+use super::scheme_advancer::{SchemeAdvancer, SchemeAdvancerConfig};
+use super::schemes::{FraudScheme, SchemeAction, SchemeContext};
 use super::strategies::{DuplicationStrategy, StrategyCollection};
 use super::types::AnomalyTypeSelector;
 
@@ -41,6 +56,35 @@ pub struct AnomalyInjectorConfig {
     pub target_companies: Vec<String>,
     /// Date range for injection.
     pub date_range: Option<(NaiveDate, NaiveDate)>,
+    /// Enhanced features configuration.
+    pub enhanced: EnhancedInjectionConfig,
+}
+
+/// Enhanced injection configuration for v0.3.0+ features.
+#[derive(Debug, Clone, Default)]
+pub struct EnhancedInjectionConfig {
+    /// Enable multi-stage fraud scheme generation.
+    pub multi_stage_schemes_enabled: bool,
+    /// Probability of starting a new scheme per perpetrator per year.
+    pub scheme_probability: f64,
+    /// Enable correlated anomaly injection.
+    pub correlated_injection_enabled: bool,
+    /// Enable temporal clustering (period-end spikes).
+    pub temporal_clustering_enabled: bool,
+    /// Period-end anomaly rate multiplier.
+    pub period_end_multiplier: f64,
+    /// Enable near-miss generation.
+    pub near_miss_enabled: bool,
+    /// Proportion of anomalies that are near-misses.
+    pub near_miss_proportion: f64,
+    /// Approval thresholds for threshold-proximity near-misses.
+    pub approval_thresholds: Vec<Decimal>,
+    /// Enable detection difficulty classification.
+    pub difficulty_classification_enabled: bool,
+    /// Enable context-aware injection.
+    pub context_aware_enabled: bool,
+    /// Behavioral baseline configuration.
+    pub behavioral_baseline_config: BehavioralBaselineConfig,
 }
 
 impl Default for AnomalyInjectorConfig {
@@ -54,6 +98,7 @@ impl Default for AnomalyInjectorConfig {
             max_anomalies_per_document: 2,
             target_companies: Vec::new(),
             date_range: None,
+            enhanced: EnhancedInjectionConfig::default(),
         }
     }
 }
@@ -73,6 +118,12 @@ pub struct InjectionBatchResult {
     pub summary: AnomalySummary,
     /// Entries that were modified (document numbers).
     pub modified_documents: Vec<String>,
+    /// Near-miss labels (suspicious but legitimate transactions).
+    pub near_miss_labels: Vec<NearMissLabel>,
+    /// Multi-stage scheme actions generated.
+    pub scheme_actions: Vec<SchemeAction>,
+    /// Difficulty distribution summary.
+    pub difficulty_distribution: HashMap<AnomalyDetectionDifficulty, usize>,
 }
 
 /// Main anomaly injection engine.
@@ -90,6 +141,27 @@ pub struct AnomalyInjector {
     labels: Vec<LabeledAnomaly>,
     /// Statistics.
     stats: InjectorStats,
+    // Enhanced components (v0.3.0+)
+    /// Multi-stage fraud scheme advancer.
+    scheme_advancer: Option<SchemeAdvancer>,
+    /// Near-miss generator.
+    near_miss_generator: Option<NearMissGenerator>,
+    /// Near-miss labels generated.
+    near_miss_labels: Vec<NearMissLabel>,
+    /// Co-occurrence pattern handler.
+    co_occurrence_handler: Option<AnomalyCoOccurrence>,
+    /// Temporal cluster generator.
+    temporal_cluster_generator: Option<TemporalClusterGenerator>,
+    /// Difficulty calculator.
+    difficulty_calculator: Option<DifficultyCalculator>,
+    /// Entity-aware injector.
+    entity_aware_injector: Option<EntityAwareInjector>,
+    /// Behavioral baseline tracker.
+    behavioral_baseline: Option<BehavioralBaseline>,
+    /// Scheme actions generated.
+    scheme_actions: Vec<SchemeAction>,
+    /// Difficulty distribution.
+    difficulty_distribution: HashMap<AnomalyDetectionDifficulty, usize>,
 }
 
 /// Internal statistics tracking.
@@ -110,10 +182,69 @@ pub struct InjectorStats {
 impl AnomalyInjector {
     /// Creates a new anomaly injector.
     pub fn new(config: AnomalyInjectorConfig) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let mut rng = ChaCha8Rng::seed_from_u64(config.seed);
         let cluster_manager = ClusterManager::new(config.patterns.clustering.clone());
         let entity_targeting =
             EntityTargetingManager::new(config.patterns.entity_targeting.clone());
+
+        // Initialize enhanced components based on configuration
+        let scheme_advancer = if config.enhanced.multi_stage_schemes_enabled {
+            let scheme_config = SchemeAdvancerConfig {
+                embezzlement_probability: config.enhanced.scheme_probability,
+                revenue_manipulation_probability: config.enhanced.scheme_probability * 0.5,
+                kickback_probability: config.enhanced.scheme_probability * 0.5,
+                seed: rng.gen(),
+                ..Default::default()
+            };
+            Some(SchemeAdvancer::new(scheme_config))
+        } else {
+            None
+        };
+
+        let near_miss_generator = if config.enhanced.near_miss_enabled {
+            let near_miss_config = NearMissConfig {
+                proportion: config.enhanced.near_miss_proportion,
+                seed: rng.gen(),
+                ..Default::default()
+            };
+            Some(NearMissGenerator::new(near_miss_config))
+        } else {
+            None
+        };
+
+        let co_occurrence_handler = if config.enhanced.correlated_injection_enabled {
+            Some(AnomalyCoOccurrence::new())
+        } else {
+            None
+        };
+
+        let temporal_cluster_generator = if config.enhanced.temporal_clustering_enabled {
+            Some(TemporalClusterGenerator::new())
+        } else {
+            None
+        };
+
+        let difficulty_calculator = if config.enhanced.difficulty_classification_enabled {
+            Some(DifficultyCalculator::new())
+        } else {
+            None
+        };
+
+        let entity_aware_injector = if config.enhanced.context_aware_enabled {
+            Some(EntityAwareInjector::default())
+        } else {
+            None
+        };
+
+        let behavioral_baseline = if config.enhanced.context_aware_enabled
+            && config.enhanced.behavioral_baseline_config.enabled
+        {
+            Some(BehavioralBaseline::new(
+                config.enhanced.behavioral_baseline_config.clone(),
+            ))
+        } else {
+            None
+        };
 
         Self {
             config,
@@ -125,6 +256,16 @@ impl AnomalyInjector {
             document_anomaly_counts: HashMap::new(),
             labels: Vec::new(),
             stats: InjectorStats::default(),
+            scheme_advancer,
+            near_miss_generator,
+            near_miss_labels: Vec::new(),
+            co_occurrence_handler,
+            temporal_cluster_generator,
+            difficulty_calculator,
+            entity_aware_injector,
+            behavioral_baseline,
+            scheme_actions: Vec::new(),
+            difficulty_distribution: HashMap::new(),
         }
     }
 
@@ -136,23 +277,85 @@ impl AnomalyInjector {
         for entry in entries.iter_mut() {
             self.stats.total_processed += 1;
 
+            // Update behavioral baseline if enabled
+            if let Some(ref mut baseline) = self.behavioral_baseline {
+                use super::context::Observation;
+                // Record the observation for baseline building
+                let entity_id = entry.header.created_by.clone();
+                let observation = Observation::new(entry.posting_date())
+                    .with_amount(entry.total_debit());
+                baseline.record_observation(&entity_id, observation);
+            }
+
             // Check if we should process this entry
             if !self.should_process(entry) {
                 continue;
             }
 
+            // Calculate effective rate (temporal clustering is applied later per-type)
+            let effective_rate = self.config.rates.total_rate;
+
+            // Calculate entity-aware rate adjustment
+            if let Some(ref injector) = self.entity_aware_injector {
+                // TODO: Would need entity context to adjust rate here
+                // For now, use default rate
+                let _ = injector;
+            }
+
             // Determine if we inject an anomaly
             if should_inject_anomaly(
-                self.config.rates.total_rate,
+                effective_rate,
                 entry.posting_date(),
                 &self.config.patterns.temporal_pattern,
                 &mut self.rng,
             ) {
+                // Check if this should be a near-miss instead
+                if let Some(ref mut near_miss_gen) = self.near_miss_generator {
+                    // Record the transaction for near-duplicate detection
+                    let account = entry
+                        .lines
+                        .first()
+                        .map(|l| l.gl_account.clone())
+                        .unwrap_or_default();
+                    near_miss_gen.record_transaction(
+                        entry.document_number().clone(),
+                        entry.posting_date(),
+                        entry.total_debit(),
+                        &account,
+                        None,
+                    );
+
+                    // Check if this could be a near-miss
+                    if let Some(near_miss_label) = near_miss_gen.check_near_miss(
+                        entry.document_number().clone(),
+                        entry.posting_date(),
+                        entry.total_debit(),
+                        &account,
+                        None,
+                        &self.config.enhanced.approval_thresholds,
+                    ) {
+                        self.near_miss_labels.push(near_miss_label);
+                        continue; // Skip actual anomaly injection
+                    }
+                }
+
                 // Select anomaly category based on rates
                 let anomaly_type = self.select_anomaly_category();
 
                 // Apply the anomaly
-                if let Some(label) = self.inject_anomaly(entry, anomaly_type) {
+                if let Some(mut label) = self.inject_anomaly(entry, anomaly_type) {
+                    // Calculate detection difficulty if enabled
+                    if let Some(ref calculator) = self.difficulty_calculator {
+                        let difficulty = calculator.calculate(&label);
+
+                        // Store difficulty in metadata
+                        label = label.with_metadata("detection_difficulty", &format!("{:?}", difficulty));
+                        label = label.with_metadata("difficulty_score", &difficulty.difficulty_score().to_string());
+
+                        // Update difficulty distribution
+                        *self.difficulty_distribution.entry(difficulty).or_insert(0) += 1;
+                    }
+
                     modified_documents.push(entry.document_number().clone());
                     self.labels.push(label);
                     self.stats.total_injected += 1;
@@ -186,6 +389,9 @@ impl AnomalyInjector {
             labels: self.labels.clone(),
             summary,
             modified_documents,
+            near_miss_labels: self.near_miss_labels.clone(),
+            scheme_actions: self.scheme_actions.clone(),
+            difficulty_distribution: self.difficulty_distribution.clone(),
         }
     }
 
@@ -510,11 +716,121 @@ impl AnomalyInjector {
         self.document_anomaly_counts.clear();
         self.stats = InjectorStats::default();
         self.cluster_manager = ClusterManager::new(self.config.patterns.clustering.clone());
+
+        // Reset enhanced components
+        self.near_miss_labels.clear();
+        self.scheme_actions.clear();
+        self.difficulty_distribution.clear();
+
+        if let Some(ref mut baseline) = self.behavioral_baseline {
+            *baseline = BehavioralBaseline::new(self.config.enhanced.behavioral_baseline_config.clone());
+        }
     }
 
     /// Returns the number of clusters created.
     pub fn cluster_count(&self) -> usize {
         self.cluster_manager.cluster_count()
+    }
+
+    // =========================================================================
+    // Enhanced Features API (v0.3.0+)
+    // =========================================================================
+
+    /// Advances all active fraud schemes by one time step.
+    ///
+    /// Call this method once per simulated day to generate scheme actions.
+    /// Returns the scheme actions generated for this date.
+    pub fn advance_schemes(&mut self, date: NaiveDate, company_code: &str) -> Vec<SchemeAction> {
+        if let Some(ref mut advancer) = self.scheme_advancer {
+            let context = SchemeContext::new(date, company_code);
+            let actions = advancer.advance_all(&context);
+            self.scheme_actions.extend(actions.clone());
+            actions
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Potentially starts a new fraud scheme based on probabilities.
+    ///
+    /// Call this method periodically (e.g., once per period) to allow new
+    /// schemes to start based on configured probabilities.
+    /// Returns the scheme ID if a scheme was started.
+    pub fn maybe_start_scheme(
+        &mut self,
+        date: NaiveDate,
+        company_code: &str,
+        available_users: Vec<String>,
+        available_accounts: Vec<String>,
+        available_counterparties: Vec<String>,
+    ) -> Option<uuid::Uuid> {
+        if let Some(ref mut advancer) = self.scheme_advancer {
+            let mut context = SchemeContext::new(date, company_code);
+            context.available_users = available_users;
+            context.available_accounts = available_accounts;
+            context.available_counterparties = available_counterparties;
+
+            advancer.maybe_start_scheme(&context)
+        } else {
+            None
+        }
+    }
+
+    /// Returns all near-miss labels generated.
+    pub fn get_near_miss_labels(&self) -> &[NearMissLabel] {
+        &self.near_miss_labels
+    }
+
+    /// Returns all scheme actions generated.
+    pub fn get_scheme_actions(&self) -> &[SchemeAction] {
+        &self.scheme_actions
+    }
+
+    /// Returns the detection difficulty distribution.
+    pub fn get_difficulty_distribution(&self) -> &HashMap<AnomalyDetectionDifficulty, usize> {
+        &self.difficulty_distribution
+    }
+
+    /// Checks for behavioral deviations for an entity with an observation.
+    pub fn check_behavioral_deviations(
+        &self,
+        entity_id: &str,
+        observation: &super::context::Observation,
+    ) -> Vec<super::context::BehavioralDeviation> {
+        if let Some(ref baseline) = self.behavioral_baseline {
+            baseline.check_deviation(entity_id, observation)
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Gets the baseline for an entity.
+    pub fn get_entity_baseline(
+        &self,
+        entity_id: &str,
+    ) -> Option<&super::context::EntityBaseline> {
+        if let Some(ref baseline) = self.behavioral_baseline {
+            baseline.get_baseline(entity_id)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the number of active schemes.
+    pub fn active_scheme_count(&self) -> usize {
+        if let Some(ref advancer) = self.scheme_advancer {
+            advancer.active_scheme_count()
+        } else {
+            0
+        }
+    }
+
+    /// Returns whether enhanced features are enabled.
+    pub fn has_enhanced_features(&self) -> bool {
+        self.scheme_advancer.is_some()
+            || self.near_miss_generator.is_some()
+            || self.difficulty_calculator.is_some()
+            || self.entity_aware_injector.is_some()
     }
 }
 
@@ -576,6 +892,76 @@ impl AnomalyInjectorConfigBuilder {
     /// Sets the date range.
     pub fn with_date_range(mut self, start: NaiveDate, end: NaiveDate) -> Self {
         self.config.date_range = Some((start, end));
+        self
+    }
+
+    // =========================================================================
+    // Enhanced Features Configuration (v0.3.0+)
+    // =========================================================================
+
+    /// Enables multi-stage fraud scheme generation.
+    pub fn with_multi_stage_schemes(mut self, enabled: bool, probability: f64) -> Self {
+        self.config.enhanced.multi_stage_schemes_enabled = enabled;
+        self.config.enhanced.scheme_probability = probability;
+        self
+    }
+
+    /// Enables near-miss generation.
+    pub fn with_near_misses(mut self, enabled: bool, proportion: f64) -> Self {
+        self.config.enhanced.near_miss_enabled = enabled;
+        self.config.enhanced.near_miss_proportion = proportion;
+        self
+    }
+
+    /// Sets approval thresholds for threshold-proximity near-misses.
+    pub fn with_approval_thresholds(mut self, thresholds: Vec<Decimal>) -> Self {
+        self.config.enhanced.approval_thresholds = thresholds;
+        self
+    }
+
+    /// Enables correlated anomaly injection.
+    pub fn with_correlated_injection(mut self, enabled: bool) -> Self {
+        self.config.enhanced.correlated_injection_enabled = enabled;
+        self
+    }
+
+    /// Enables temporal clustering (period-end spikes).
+    pub fn with_temporal_clustering(mut self, enabled: bool, multiplier: f64) -> Self {
+        self.config.enhanced.temporal_clustering_enabled = enabled;
+        self.config.enhanced.period_end_multiplier = multiplier;
+        self
+    }
+
+    /// Enables detection difficulty classification.
+    pub fn with_difficulty_classification(mut self, enabled: bool) -> Self {
+        self.config.enhanced.difficulty_classification_enabled = enabled;
+        self
+    }
+
+    /// Enables context-aware injection.
+    pub fn with_context_aware_injection(mut self, enabled: bool) -> Self {
+        self.config.enhanced.context_aware_enabled = enabled;
+        self
+    }
+
+    /// Sets behavioral baseline configuration.
+    pub fn with_behavioral_baseline(mut self, config: BehavioralBaselineConfig) -> Self {
+        self.config.enhanced.behavioral_baseline_config = config;
+        self
+    }
+
+    /// Enables all enhanced features with default settings.
+    pub fn with_all_enhanced_features(mut self) -> Self {
+        self.config.enhanced.multi_stage_schemes_enabled = true;
+        self.config.enhanced.scheme_probability = 0.02;
+        self.config.enhanced.correlated_injection_enabled = true;
+        self.config.enhanced.temporal_clustering_enabled = true;
+        self.config.enhanced.period_end_multiplier = 2.5;
+        self.config.enhanced.near_miss_enabled = true;
+        self.config.enhanced.near_miss_proportion = 0.30;
+        self.config.enhanced.difficulty_classification_enabled = true;
+        self.config.enhanced.context_aware_enabled = true;
+        self.config.enhanced.behavioral_baseline_config.enabled = true;
         self
     }
 

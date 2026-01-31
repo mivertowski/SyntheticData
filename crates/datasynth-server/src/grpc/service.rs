@@ -858,6 +858,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         behavioral_drift: Default::default(),
         market_drift: Default::default(),
         drift_labeling: Default::default(),
+        anomaly_injection: Default::default(),
     }
 }
 
