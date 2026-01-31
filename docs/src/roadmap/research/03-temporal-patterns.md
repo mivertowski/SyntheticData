@@ -1,5 +1,24 @@
 # Research: Temporal Patterns and Distributions
 
+> **Implementation Status**: Core temporal patterns implemented in v0.3.0. See [CLAUDE.md](../../../../CLAUDE.md) for configuration examples.
+
+## Implementation Summary (v0.3.0)
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| Business day calculator | ✅ Implemented | `datasynth-core/src/distributions/business_day.rs` |
+| Holiday calendars (11 regions) | ✅ Implemented | `datasynth-core/src/distributions/holidays.rs` |
+| Period-end dynamics (decay curves) | ✅ Implemented | `datasynth-core/src/distributions/period_end.rs` |
+| Processing lag modeling | ✅ Implemented | `datasynth-core/src/distributions/processing_lag.rs` |
+| Timezone handling | ✅ Implemented | `datasynth-core/src/distributions/timezone.rs` |
+| Fiscal calendar (custom, 4-4-5) | ✅ Implemented | Config: `fiscal_calendar` |
+| Intraday segments | ✅ Implemented | Config: `intraday` |
+| Settlement rules (T+N) | ✅ Implemented | `business_day.rs` |
+| Half-day policies | ✅ Implemented | `business_day.rs` |
+| Lunar calendars | 🔄 Planned | Approximate via fixed dates |
+
+---
+
 ## Current State Analysis
 
 ### Existing Temporal Infrastructure
@@ -736,18 +755,18 @@ late_postings:
 
 ### 8. Implementation Priority
 
-| Enhancement | Complexity | Impact | Priority |
-|-------------|------------|--------|----------|
-| Business day calculator | Medium | Critical | P1 |
-| Additional regional calendars | Medium | High | P1 |
-| Decay curves for period-end | Low | High | P1 |
-| Non-calendar fiscal years | Medium | Medium | P2 |
-| 4-4-5 calendar support | High | Medium | P2 |
-| Timezone handling | Medium | Medium | P2 |
-| Lunar calendar accuracy | High | Medium | P3 |
-| Weather seasonality | Medium | Low | P3 |
-| Intra-day patterns | Low | Medium | P2 |
-| Processing lag modeling | Medium | High | P1 |
+| Enhancement | Complexity | Impact | Priority | Status |
+|-------------|------------|--------|----------|--------|
+| Business day calculator | Medium | Critical | P1 | ✅ v0.3.0 |
+| Additional regional calendars | Medium | High | P1 | ✅ v0.3.0 (11 regions) |
+| Decay curves for period-end | Low | High | P1 | ✅ v0.3.0 |
+| Non-calendar fiscal years | Medium | Medium | P2 | ✅ v0.3.0 |
+| 4-4-5 calendar support | High | Medium | P2 | ✅ v0.3.0 |
+| Timezone handling | Medium | Medium | P2 | ✅ v0.3.0 |
+| Lunar calendar accuracy | High | Medium | P3 | 🔄 Planned |
+| Weather seasonality | Medium | Low | P3 | 🔄 Planned |
+| Intra-day patterns | Low | Medium | P2 | ✅ v0.3.0 |
+| Processing lag modeling | Medium | High | P1 | ✅ v0.3.0 |
 
 ---
 
