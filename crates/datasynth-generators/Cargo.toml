@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
 description = "Data generators for journal entries, chart of accounts, and ACDOCA event logs"
 
 [dependencies]
