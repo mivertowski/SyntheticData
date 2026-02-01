@@ -447,7 +447,7 @@ fn test_reference_sequential() {
     // Verify sequential - extract numbers and check they're increasing
     let numbers: Vec<u64> = refs
         .iter()
-        .map(|r| r.split('-').last().unwrap().parse::<u64>().unwrap())
+        .map(|r| r.split('-').next_back().unwrap().parse::<u64>().unwrap())
         .collect();
 
     for i in 1..numbers.len() {

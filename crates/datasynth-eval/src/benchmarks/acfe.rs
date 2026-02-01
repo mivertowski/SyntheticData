@@ -230,13 +230,13 @@ impl AcfeAlignment {
             0.0
         };
 
-        let duration_score = if duration_ratio >= 0.5 && duration_ratio <= 2.0 {
+        let duration_score = if (0.5..=2.0).contains(&duration_ratio) {
             1.0 - ((duration_ratio - 1.0).abs() * 0.5)
         } else {
             0.2
         };
         score_components.push(duration_score);
-        if duration_ratio < 0.5 || duration_ratio > 2.0 {
+        if !(0.5..=2.0).contains(&duration_ratio) {
             alignment.issues.push(format!(
                 "Median duration {}mo differs from ACFE benchmark of {}mo",
                 observed_median_duration, calibration.median_duration_months

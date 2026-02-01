@@ -444,8 +444,14 @@ impl NetworkEvaluator {
         let std_dev = variance.sqrt();
 
         let strong_count = strengths.iter().filter(|&&s| s >= 0.7).count();
-        let moderate_count = strengths.iter().filter(|&&s| s >= 0.4 && s < 0.7).count();
-        let weak_count = strengths.iter().filter(|&&s| s >= 0.1 && s < 0.4).count();
+        let moderate_count = strengths
+            .iter()
+            .filter(|&&s| (0.4..0.7).contains(&s))
+            .count();
+        let weak_count = strengths
+            .iter()
+            .filter(|&&s| (0.1..0.4).contains(&s))
+            .count();
         let dormant_count = strengths.iter().filter(|&&s| s < 0.1).count();
 
         StrengthStats {

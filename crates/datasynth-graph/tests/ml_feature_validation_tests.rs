@@ -208,11 +208,7 @@ fn test_temporal_window_features() {
             "Window size should be one of configured values"
         );
 
-        // Window features should be valid
-        assert!(
-            window_features.event_count >= 0,
-            "Event count should be non-negative"
-        );
+        // Window features should be valid (event_count is usize, always >= 0)
         assert!(
             window_features.total_amount >= 0.0,
             "Total amount should be non-negative"
@@ -292,7 +288,7 @@ fn test_star_pattern_validity() {
 
         // Star should have at least min_spokes + 1 nodes (hub + spokes)
         assert!(
-            star.nodes.len() >= config.min_star_spokes + 1,
+            star.nodes.len() > config.min_star_spokes,
             "Star should have at least {} nodes (hub + spokes): {}",
             config.min_star_spokes + 1,
             star.nodes.len()
@@ -370,17 +366,9 @@ fn test_node_motif_participation() {
 
     let result = detect_motifs(&graph, &config);
 
-    // Nodes in cycles should have positive participation
-    for (node_id, motif_counts) in &result.node_motif_counts {
-        for (motif_type, count) in motif_counts {
-            assert!(
-                *count >= 0,
-                "Node {} motif {:?} count should be non-negative",
-                node_id,
-                motif_type
-            );
-        }
-    }
+    // Validate node motif counts structure exists
+    // Note: counts are usize type, inherently non-negative
+    let _ = &result.node_motif_counts;
 }
 
 // =============================================================================
@@ -396,12 +384,7 @@ fn test_relationship_features_bounds() {
     for node_id in 1..=5 {
         let features = compute_relationship_features(node_id, &graph, &config);
 
-        // Counterparty count should be non-negative
-        assert!(
-            features.unique_counterparties >= 0,
-            "Node {}: unique_counterparties should be non-negative",
-            node_id
-        );
+        // unique_counterparties is usize, inherently non-negative
 
         // Ratios should be in [0, 1]
         assert!(
@@ -604,12 +587,7 @@ fn test_counterparty_risk_bounds() {
             risk.risk_concentration
         );
 
-        // Counts should be non-negative
-        assert!(
-            risk.anomalous_counterparty_count >= 0,
-            "Node {}: anomalous_counterparty_count should be non-negative",
-            node_id
-        );
+        // anomalous_counterparty_count is usize, inherently non-negative
         assert!(
             risk.high_risk_exposure >= 0.0,
             "Node {}: high_risk_exposure should be non-negative",

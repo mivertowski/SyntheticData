@@ -7,9 +7,10 @@ use crate::error::{EvalError, EvalResult};
 use serde::{Deserialize, Serialize};
 
 /// Target distribution types for Anderson-Darling test.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TargetDistribution {
     /// Normal (Gaussian) distribution
+    #[default]
     Normal,
     /// Log-normal distribution (for positive amounts)
     LogNormal,
@@ -17,12 +18,6 @@ pub enum TargetDistribution {
     Exponential,
     /// Uniform distribution
     Uniform,
-}
-
-impl Default for TargetDistribution {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 /// Fitted distribution parameters.
@@ -421,7 +416,7 @@ impl AndersonDarlingAnalyzer {
             _ => {
                 // Generic approximation
                 if a2 < 2.0 {
-                    (-1.0 * a2 + 0.5).exp().min(1.0).max(0.0)
+                    (-a2 + 0.5).exp().clamp(0.0, 1.0)
                 } else {
                     0.0
                 }

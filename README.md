@@ -82,7 +82,11 @@ The generator produces statistically accurate data based on empirical research f
 - **Currency & FX**: Realistic exchange rates, currency translation, CTA generation
 - **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
 - **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
-- **Process Mining**: OCEL 2.0 event logs with object-centric relationships
+- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships
+  - OCEL 2.0 JSON/XML export for object-centric process mining
+  - XES 2.0 XML export for ProM, Celonis, Disco, pm4py compatibility
+  - Reference process models (P2P, O2C, R2R) for conformance checking
+  - 36 activity types across P2P, O2C, R2R, and A2R processes
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
 - **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
 - **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
@@ -175,7 +179,7 @@ datasynth-runtime      Orchestration layer (parallel execution, resource guards)
     │
 datasynth-generators   Data generators (JE, documents, subledgers, anomalies, audit)
 datasynth-banking      KYC/AML banking transaction generator
-datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0)
+datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, reference models)
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards    Accounting/audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
     │
@@ -186,7 +190,7 @@ datasynth-config       Configuration schema, validation, industry presets
     │
 datasynth-core         Domain models, traits, distributions, resource guards
     │
-datasynth-output       Output sinks (CSV, JSON, Parquet, streaming)
+datasynth-output       Output sinks (CSV, JSON, NDJSON, Parquet) with streaming support
 datasynth-test-utils   Test utilities, fixtures, mocks
 ```
 
@@ -399,6 +403,18 @@ relationship_strength:
     recency_weight: 0.15
     mutual_connections_weight: 0.10
 
+ocpm:
+  enabled: true
+  generate_lifecycle_events: true
+  compute_variants: true
+  output:
+    ocel_json: true               # OCEL 2.0 JSON format
+    ocel_xml: false               # OCEL 2.0 XML format
+    xes: true                     # XES 2.0 for ProM/Celonis/Disco
+    xes_include_lifecycle: true   # Include start/complete transitions
+    xes_include_resources: true   # Include resource attributes
+    export_reference_models: true # Export P2P/O2C/R2R reference models
+
 output:
   format: csv
   compression: none
@@ -419,7 +435,11 @@ output/
 ├── consolidation/        Eliminations, currency translation
 ├── fx/                   Exchange rates, CTA adjustments
 ├── banking/              KYC profiles, bank transactions, AML typology labels
-├── process_mining/       OCEL 2.0 event logs, process variants
+├── process_mining/       Event logs and process models
+│   ├── event_log.json    OCEL 2.0 JSON format
+│   ├── event_log.xes     XES 2.0 XML format (for ProM, Celonis, Disco)
+│   ├── process_variants/ Discovered process variants
+│   └── reference_models/ Canonical P2P, O2C, R2R process models
 ├── audit/                Engagements, workpapers, findings, risk assessments
 ├── graphs/               PyTorch Geometric, Neo4j, DGL, RustGraph exports
 ├── labels/               Anomaly, fraud, and data quality labels for ML
@@ -439,7 +459,8 @@ output/
 | **Graph Neural Networks** | Entity relationship graphs for anomaly detection |
 | **AML/KYC Testing** | Banking transaction data with structuring, layering, mule patterns |
 | **Audit Analytics** | Test audit procedures with known control exceptions |
-| **Process Mining** | OCEL 2.0 event logs for process discovery |
+| **Process Mining** | OCEL 2.0 and XES 2.0 event logs for process discovery and conformance checking |
+| **Conformance Checking** | Reference process models (P2P, O2C, R2R) for process validation |
 | **ERP Testing** | Load testing with realistic transaction volumes |
 | **SOX Compliance** | Test internal control monitoring systems |
 | **COSO Framework** | COSO 2013 control mapping with 5 components, 17 principles, maturity levels |

@@ -319,7 +319,7 @@ mod tests {
 
         let (confidence, factors) = calculator.calculate(&anomaly_type, &context);
 
-        assert!(confidence >= 0.0 && confidence <= 1.0);
+        assert!((0.0..=1.0).contains(&confidence));
         assert!(!factors.is_empty());
     }
 

@@ -452,7 +452,7 @@ mod tests {
         assert_eq!(bench.id, "healthcare-fraud-5k");
         assert!(bench.dataset.class_distribution.contains_key("upcoding"));
         assert!(bench.dataset.class_distribution.contains_key("unbundling"));
-        assert!(bench.metadata.get("regulatory_framework").is_some());
+        assert!(bench.metadata.contains_key("regulatory_framework"));
     }
 
     #[test]

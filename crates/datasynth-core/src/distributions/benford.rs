@@ -879,7 +879,7 @@ mod tests {
 
         // Verify we have some distribution of second digits (not all the same)
         let max_count = *digit_counts.iter().max().unwrap();
-        let min_count = *digit_counts.iter().min().unwrap();
+        let _min_count = *digit_counts.iter().min().unwrap();
         assert!(
             max_count < total_valid / 2,
             "Second digits should have some variety, max count: {}",

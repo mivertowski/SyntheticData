@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OCPM Integration Enhancement** (`datasynth-ocpm`): Enhanced Object-Centric Process Mining support
+  - **Deterministic UUID Generation**: `OcpmUuidFactory` using FNV-1a hashing with type discriminators
+    - `OcpmUuidType` enum: Case (0xC0), Event (0xE0), Object (0xB0) discriminators
+    - Reproducible event logs with seeded UUID generation
+    - Counter-based sequencing for collision-free IDs
+  - **XES 2.0 Export**: `XesExporter` for IEEE standard event log format
+    - Compatible with ProM, Celonis, Disco, and pm4py
+    - Configurable lifecycle transitions and resource attributes
+    - Custom attribute export support
+    - Pretty-print XML output
+  - **Extended Activity Types**: 17 new R2R and A2R activities
+    - GL Activities: `post_journal_entry()`, `review_journal_entry()`, `approve_journal_entry()`, `reverse_journal_entry()`
+    - FX Activities: `fx_revaluation()`, `currency_translation()`
+    - Period Close: `post_accruals()`, `reverse_accruals()`, `run_ic_elimination()`, `close_period()`, `reopen_period()`
+    - Trial Balance: `generate_trial_balance()`, `review_trial_balance()`, `approve_trial_balance()`, `run_consolidation()`
+    - Fixed Assets: `run_depreciation()`, `asset_impairment_test()`
+    - Helper methods: `r2r_activities()`, `a2r_activities()`, `all_activities()`
+  - **Reference Process Models**: Canonical process definitions for conformance checking
+    - `ReferenceProcessModel` with activities, transitions, and variants
+    - `ReferenceActivity`: Required/optional flags, start/end markers, duration estimates
+    - `ReferenceTransition`: Standard path indicators, probabilities, conditions
+    - `ReferenceVariant`: Activity sequences with expected frequencies
+    - Standard models: `p2p_standard()` (9 activities, 3 variants), `o2c_standard()` (10 activities, 2 variants), `r2r_standard()` (11 activities, 4 variants)
+    - `ReferenceModelExporter` for JSON export
+
+- **Streaming Output Sinks** (`datasynth-output`): Complete streaming sink implementations
+  - `CsvStreamingSink<T>`: CSV output with header auto-generation and field mapping
+  - `JsonStreamingSink<T>`: JSON array format with pretty-print option
+  - `NdjsonStreamingSink<T>`: Newline-delimited JSON for streaming consumption
+  - `ParquetStreamingSink<T>`: Apache Parquet output with configurable row groups
+    - `ToParquetBatch` trait for custom type serialization
+    - `GenericParquetRecord` for dynamic schemas
+    - Lazy writer initialization for schema inference
+    - SNAPPY compression support
+
+- **Complete Streaming Orchestrator** (`datasynth-runtime`): Full document flow generation
+  - New `GeneratedItem` variants: `PurchaseOrder`, `GoodsReceipt`, `VendorInvoice`, `Payment`, `SalesOrder`, `Delivery`, `CustomerInvoice`
+  - `GenerationPhase::OcpmEvents` for event log generation
+  - `generate_document_flows_phase()` implementation
+  - `StreamingOrchestratorConfig::with_all_phases()` helper
+
+- **Process Family Edge Metadata** (`datasynth-graph`): Transaction graph enhancement
+  - `TransactionEdge.business_process` field now populated from journal entry headers
+  - Business process tracking for P2P, O2C, R2R, and other process families
+  - Enables process-aware graph analytics and filtering
+
+- **OCPM Configuration Updates** (`datasynth-config`): Extended output options
+  - `OcpmOutputConfig.xes`: Enable XES 2.0 export
+  - `OcpmOutputConfig.xes_include_lifecycle`: Include lifecycle transitions
+  - `OcpmOutputConfig.xes_include_resources`: Include resource attributes
+  - `OcpmOutputConfig.export_reference_models`: Export canonical process models
+
 - **ACFE-Aligned Fraud Taxonomy** (`datasynth-core`, `datasynth-generators`): Comprehensive fraud classification based on ACFE Report to the Nations
   - `AcfeFraudCategory`: Asset Misappropriation (86% of cases), Corruption (33%), Financial Statement Fraud (10%)
   - `CashFraudScheme`: 20 cash-based fraud schemes (skimming, larceny, shell company, ghost employee, etc.)

@@ -312,7 +312,7 @@ mod tests {
         let samples = sampler.sample_n_days(1000);
 
         // All should be at least 1 day and at most 120 days
-        assert!(samples.iter().all(|&x| x >= 1 && x <= 120));
+        assert!(samples.iter().all(|&x| (1..=120).contains(&x)));
 
         // Most should be around the characteristic time (35 days)
         let median_approx = samples.iter().copied().sum::<u32>() as f64 / 1000.0;

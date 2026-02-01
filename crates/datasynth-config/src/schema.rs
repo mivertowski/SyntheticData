@@ -3264,6 +3264,18 @@ pub struct OcpmOutputConfig {
     #[serde(default)]
     pub ocel_xml: bool,
 
+    /// Export XES 2.0 XML format (IEEE standard for process mining tools)
+    #[serde(default)]
+    pub xes: bool,
+
+    /// Include lifecycle transitions in XES output (start/complete pairs)
+    #[serde(default = "default_true")]
+    pub xes_include_lifecycle: bool,
+
+    /// Include resource attributes in XES output
+    #[serde(default = "default_true")]
+    pub xes_include_resources: bool,
+
     /// Export flattened CSV for each object type
     #[serde(default = "default_true")]
     pub flattened_csv: bool,
@@ -3279,6 +3291,10 @@ pub struct OcpmOutputConfig {
     /// Export process variants summary
     #[serde(default = "default_true")]
     pub variants_csv: bool,
+
+    /// Export reference process models (canonical P2P, O2C, R2R)
+    #[serde(default)]
+    pub export_reference_models: bool,
 }
 
 impl Default for OcpmOutputConfig {
@@ -3286,10 +3302,14 @@ impl Default for OcpmOutputConfig {
         Self {
             ocel_json: true,
             ocel_xml: false,
+            xes: false,
+            xes_include_lifecycle: true,
+            xes_include_resources: true,
             flattened_csv: true,
             event_object_csv: true,
             object_relationship_csv: true,
             variants_csv: true,
+            export_reference_models: false,
         }
     }
 }

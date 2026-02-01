@@ -633,9 +633,12 @@ mod tests {
         let txn = create_test_transaction(&account);
 
         let mut builder = BankingGraphBuilder::new(BankingGraphConfig::default());
-        builder.add_customers(&[customer.clone()]);
-        builder.add_accounts(&[account], &[customer]);
-        builder.add_transactions(&[txn]);
+        builder.add_customers(std::slice::from_ref(&customer));
+        builder.add_accounts(
+            std::slice::from_ref(&account),
+            std::slice::from_ref(&customer),
+        );
+        builder.add_transactions(std::slice::from_ref(&txn));
 
         let graph = builder.build();
 
@@ -655,9 +658,12 @@ mod tests {
         txn = txn.mark_suspicious(AmlTypology::Structuring, "CASE-001");
 
         let mut builder = BankingGraphBuilder::new(BankingGraphConfig::default());
-        builder.add_customers(&[customer.clone()]);
-        builder.add_accounts(&[account], &[customer]);
-        builder.add_transactions(&[txn]);
+        builder.add_customers(std::slice::from_ref(&customer));
+        builder.add_accounts(
+            std::slice::from_ref(&account),
+            std::slice::from_ref(&customer),
+        );
+        builder.add_transactions(std::slice::from_ref(&txn));
 
         let graph = builder.build();
 

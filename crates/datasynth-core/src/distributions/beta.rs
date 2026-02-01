@@ -302,7 +302,7 @@ mod tests {
         assert_eq!(samples.len(), 1000);
 
         // All samples should be in [0, 1]
-        assert!(samples.iter().all(|&x| x >= 0.0 && x <= 1.0));
+        assert!(samples.iter().all(|&x| (0.0..=1.0).contains(&x)));
     }
 
     #[test]
@@ -329,7 +329,7 @@ mod tests {
         let mut sampler = BetaSampler::new(42, config).unwrap();
 
         let samples = sampler.sample_n(1000);
-        assert!(samples.iter().all(|&x| x >= 0.02 && x <= 0.15));
+        assert!(samples.iter().all(|&x| (0.02..=0.15).contains(&x)));
     }
 
     #[test]
@@ -388,7 +388,7 @@ mod tests {
         let samples = sampler.sample_n(1000);
 
         // All samples should be in [2%, 15%]
-        assert!(samples.iter().all(|&x| x >= 0.02 && x <= 0.15));
+        assert!(samples.iter().all(|&x| (0.02..=0.15).contains(&x)));
 
         // Mean should be around the expected value
         let mean: f64 = samples.iter().sum::<f64>() / samples.len() as f64;
@@ -402,6 +402,6 @@ mod tests {
         let mut sampler = BetaSampler::new(42, config).unwrap();
 
         let samples = sampler.sample_n(1000);
-        assert!(samples.iter().all(|&x| x >= 0.0 && x <= 100.0));
+        assert!(samples.iter().all(|&x| (0.0..=100.0).contains(&x)));
     }
 }

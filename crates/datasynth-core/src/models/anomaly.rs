@@ -4378,8 +4378,10 @@ mod tests {
         assert_eq!(custom_cal.median_duration_months, 18);
 
         // Test validation failure
-        let mut bad_cal = AcfeCalibration::default();
-        bad_cal.collusion_rate = 1.5;
+        let bad_cal = AcfeCalibration {
+            collusion_rate: 1.5,
+            ..Default::default()
+        };
         assert!(bad_cal.validate().is_err());
     }
 
@@ -4396,7 +4398,7 @@ mod tests {
 
         // Risk score should be between 0 and 1
         let risk = triangle.risk_score();
-        assert!(risk >= 0.0 && risk <= 1.0);
+        assert!((0.0..=1.0).contains(&risk));
         // Should be relatively high given the components
         assert!(risk > 0.5);
     }

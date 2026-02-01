@@ -805,7 +805,7 @@ mod tests {
         let graph = create_test_graph();
         let members = vec![1, 2, 3]; // The triangle
 
-        let (internal, external, cohesion) = calculate_group_metrics(&graph, &members);
+        let (internal, _external, cohesion) = calculate_group_metrics(&graph, &members);
 
         assert!(internal > 0.0);
         assert!(cohesion > 0.0);

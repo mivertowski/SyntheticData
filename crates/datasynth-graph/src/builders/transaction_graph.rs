@@ -135,6 +135,11 @@ impl TransactionGraphBuilder {
                     );
                     tx_edge.company_code = entry.company_code().to_string();
                     tx_edge.cost_center = debit.cost_center.clone();
+                    tx_edge.business_process = entry
+                        .header
+                        .business_process
+                        .as_ref()
+                        .map(|bp| format!("{:?}", bp));
                     tx_edge.compute_features();
 
                     // Propagate anomaly flag from journal entry to graph edge
@@ -183,6 +188,11 @@ impl TransactionGraphBuilder {
             );
             tx_edge.company_code = entry.company_code().to_string();
             tx_edge.cost_center = line.cost_center.clone();
+            tx_edge.business_process = entry
+                .header
+                .business_process
+                .as_ref()
+                .map(|bp| format!("{:?}", bp));
             tx_edge.compute_features();
 
             // Propagate anomaly flag from journal entry to graph edge
@@ -358,7 +368,7 @@ struct AggregatedEdge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use datasynth_core::models::JournalEntryLine;
+    use datasynth_core::models::{BusinessProcess, JournalEntryLine};
     use rust_decimal_macros::dec;
 
     fn create_test_entry() -> JournalEntry {
@@ -388,6 +398,12 @@ mod tests {
         entry
     }
 
+    fn create_test_entry_with_business_process(bp: BusinessProcess) -> JournalEntry {
+        let mut entry = create_test_entry();
+        entry.header.business_process = Some(bp);
+        entry
+    }
+
     #[test]
     fn test_build_transaction_graph() {
         let mut builder = TransactionGraphBuilder::new(TransactionGraphConfig::default());
@@ -414,5 +430,38 @@ mod tests {
 
         assert_eq!(graph.node_count(), 3); // Document + Cash + Revenue
         assert_eq!(graph.edge_count(), 2); // Document to each account
+    }
+
+    #[test]
+    fn test_business_process_edge_metadata() {
+        let mut builder = TransactionGraphBuilder::new(TransactionGraphConfig::default());
+        let entry = create_test_entry_with_business_process(BusinessProcess::P2P);
+        builder.add_journal_entry(&entry);
+
+        let graph = builder.build();
+
+        // All edges should have the document_number property set
+        for edge in graph.edges.values() {
+            assert!(edge.properties.contains_key("document_number"));
+        }
+        assert_eq!(graph.edge_count(), 1);
+    }
+
+    #[test]
+    fn test_business_process_with_document_nodes() {
+        let config = TransactionGraphConfig {
+            include_document_nodes: true,
+            create_debit_credit_edges: false,
+            ..Default::default()
+        };
+
+        let mut builder = TransactionGraphBuilder::new(config);
+        let entry = create_test_entry_with_business_process(BusinessProcess::O2C);
+        builder.add_journal_entry(&entry);
+
+        let graph = builder.build();
+
+        assert_eq!(graph.node_count(), 3);
+        assert_eq!(graph.edge_count(), 2);
     }
 }

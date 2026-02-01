@@ -847,7 +847,7 @@ mod tests {
         let mut generator = RiskAssessmentGenerator::with_config(42, config);
         let engagement = create_test_engagement();
 
-        let risk =
+        let _risk =
             generator.generate_risk_assessment(&engagement, "Inventory", &["STAFF001".into()]);
 
         // May or may not have fraud factors depending on risk category

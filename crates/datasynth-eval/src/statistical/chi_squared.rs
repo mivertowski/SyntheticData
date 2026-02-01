@@ -7,7 +7,7 @@ use crate::error::{EvalError, EvalResult};
 use serde::{Deserialize, Serialize};
 
 /// Binning strategy for continuous data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum BinningStrategy {
     /// Fixed number of equal-width bins
     EqualWidth { num_bins: usize },
@@ -16,13 +16,8 @@ pub enum BinningStrategy {
     /// Custom bin edges
     Custom { edges: Vec<f64> },
     /// Automatic binning using Sturges' rule
+    #[default]
     Auto,
-}
-
-impl Default for BinningStrategy {
-    fn default() -> Self {
-        Self::Auto
-    }
 }
 
 /// Bin frequency information.
@@ -70,9 +65,10 @@ pub struct ChiSquaredAnalysis {
 }
 
 /// Expected distribution type for comparison.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum ExpectedDistribution {
     /// Uniform distribution (equal probability per bin)
+    #[default]
     Uniform,
     /// Custom expected frequencies (must sum to sample size)
     Custom(Vec<f64>),
@@ -80,12 +76,6 @@ pub enum ExpectedDistribution {
     Proportions(Vec<f64>),
     /// Compare against another observed distribution
     Observed(Vec<usize>),
-}
-
-impl Default for ExpectedDistribution {
-    fn default() -> Self {
-        Self::Uniform
-    }
 }
 
 /// Analyzer for chi-squared goodness-of-fit tests.
@@ -725,9 +715,9 @@ mod tests {
         let p2 = chi_squared_p_value(5.0, 5);
         let p3 = chi_squared_p_value(50.0, 5);
 
-        assert!(p1 >= 0.0 && p1 <= 1.0);
-        assert!(p2 >= 0.0 && p2 <= 1.0);
-        assert!(p3 >= 0.0 && p3 <= 1.0);
+        assert!((0.0..=1.0).contains(&p1));
+        assert!((0.0..=1.0).contains(&p2));
+        assert!((0.0..=1.0).contains(&p3));
 
         // Higher chi-squared should have lower p-value
         assert!(p1 > p2);

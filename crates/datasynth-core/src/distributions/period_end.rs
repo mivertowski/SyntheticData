@@ -630,7 +630,7 @@ mod tests {
 
         // At start (day -10), should be near base
         let at_start = model.get_multiplier(-10);
-        assert!(at_start >= 1.0 && at_start < 1.3);
+        assert!((1.0..1.3).contains(&at_start));
 
         // At peak (day 0), should be at peak
         let at_peak = model.get_multiplier(0);
@@ -681,7 +681,7 @@ mod tests {
 
         // At start, beginning ramp-up
         let at_start = model.get_multiplier(-10);
-        assert!(at_start >= 1.0 && at_start < 2.0);
+        assert!((1.0..2.0).contains(&at_start));
 
         // After ramp-up, in sustained phase
         let in_sustained = model.get_multiplier(-5);

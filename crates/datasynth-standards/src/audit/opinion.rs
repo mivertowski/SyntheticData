@@ -597,10 +597,12 @@ mod tests {
 
     #[test]
     fn test_going_concern() {
-        let mut gc = GoingConcernConclusion::default();
-        gc.conclusion = GoingConcernAssessment::MaterialUncertaintyAdequatelyDisclosed;
-        gc.material_uncertainty_exists = true;
-        gc.adequately_disclosed = true;
+        let gc = GoingConcernConclusion {
+            conclusion: GoingConcernAssessment::MaterialUncertaintyAdequatelyDisclosed,
+            material_uncertainty_exists: true,
+            adequately_disclosed: true,
+            ..Default::default()
+        };
 
         assert!(gc.material_uncertainty_exists);
         assert!(gc.adequately_disclosed);

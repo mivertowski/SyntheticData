@@ -1381,9 +1381,9 @@ mod tests {
             .count();
 
         // Enterprise should be ~5% (10 of 200)
-        assert!(enterprise_count >= 5 && enterprise_count <= 20);
+        assert!((5..=20).contains(&enterprise_count));
         // SMB should be ~50% (100 of 200)
-        assert!(smb_count >= 80 && smb_count <= 120);
+        assert!((80..=120).contains(&smb_count));
     }
 
     #[test]
@@ -1513,7 +1513,7 @@ mod tests {
             .count();
 
         // Should be roughly 15%
-        assert!(at_risk_count >= 5 && at_risk_count <= 30);
+        assert!((5..=30).contains(&at_risk_count));
 
         // Count mature customers
         let mature_count = pool
@@ -1523,7 +1523,7 @@ mod tests {
             .count();
 
         // Should be roughly 40%
-        assert!(mature_count >= 25 && mature_count <= 55);
+        assert!((25..=55).contains(&mature_count));
     }
 
     #[test]

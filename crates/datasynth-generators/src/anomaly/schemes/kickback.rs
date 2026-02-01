@@ -548,7 +548,8 @@ mod tests {
             total_actions += actions.len();
         }
 
-        assert!(total_actions >= 0); // May or may not have actions depending on RNG
+        // total_actions is usize, inherently non-negative
+        let _ = total_actions; // May or may not have actions depending on RNG
         assert_eq!(scheme.status, SchemeStatus::Active);
     }
 }

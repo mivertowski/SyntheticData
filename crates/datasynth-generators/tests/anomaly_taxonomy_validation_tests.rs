@@ -38,7 +38,7 @@ fn test_confidence_bounds_all_anomaly_types() {
         let minimal_context = ConfidenceContext::default();
         let (confidence, _) = calculator.calculate(anomaly_type, &minimal_context);
         assert!(
-            confidence >= 0.0 && confidence <= 1.0,
+            (0.0..=1.0).contains(&confidence),
             "Confidence for {:?} with minimal context should be in [0,1]: {}",
             anomaly_type,
             confidence
@@ -57,7 +57,7 @@ fn test_confidence_bounds_all_anomaly_types() {
         };
         let (confidence, _) = calculator.calculate(anomaly_type, &maximal_context);
         assert!(
-            confidence >= 0.0 && confidence <= 1.0,
+            (0.0..=1.0).contains(&confidence),
             "Confidence for {:?} with maximal context should be in [0,1]: {}",
             anomaly_type,
             confidence
@@ -179,7 +179,7 @@ fn test_severity_bounds_all_anomaly_types() {
         let minimal_context = SeverityContext::default();
         let (severity, _) = calculator.calculate(anomaly_type, &minimal_context);
         assert!(
-            severity >= 0.0 && severity <= 1.0,
+            (0.0..=1.0).contains(&severity),
             "Severity for {:?} with minimal context should be in [0,1]: {}",
             anomaly_type,
             severity
@@ -199,7 +199,7 @@ fn test_severity_bounds_all_anomaly_types() {
         };
         let (severity, _) = calculator.calculate(anomaly_type, &maximal_context);
         assert!(
-            severity >= 0.0 && severity <= 1.0,
+            (0.0..=1.0).contains(&severity),
             "Severity for {:?} with maximal context should be in [0,1]: {}",
             anomaly_type,
             severity
@@ -474,14 +474,12 @@ fn test_combined_factors_completeness() {
         .collect();
 
     // Should have at least some confidence factors
-    let has_pattern_match = factor_types.iter().any(|t| *t == FactorType::PatternMatch);
+    let has_pattern_match = factor_types.contains(&FactorType::PatternMatch);
     assert!(has_pattern_match, "Should have pattern match factor");
 
     // Should have at least some severity factors
-    let has_amount_deviation = factor_types
-        .iter()
-        .any(|t| *t == FactorType::AmountDeviation);
-    let has_timing = factor_types.iter().any(|t| *t == FactorType::TimingAnomaly);
+    let has_amount_deviation = factor_types.contains(&FactorType::AmountDeviation);
+    let has_timing = factor_types.contains(&FactorType::TimingAnomaly);
     assert!(
         has_amount_deviation || has_timing,
         "Should have severity-related factors"
@@ -771,7 +769,7 @@ fn test_zero_inputs() {
 
     let (confidence, _) = conf_calculator.calculate(&anomaly_type, &zero_conf_context);
     assert!(
-        confidence >= 0.0 && confidence <= 1.0,
+        (0.0..=1.0).contains(&confidence),
         "Confidence with zero inputs should still be valid: {}",
         confidence
     );
@@ -785,7 +783,7 @@ fn test_zero_inputs() {
 
     let (severity, _) = sev_calculator.calculate(&anomaly_type, &zero_sev_context);
     assert!(
-        severity >= 0.0 && severity <= 1.0,
+        (0.0..=1.0).contains(&severity),
         "Severity with zero inputs should still be valid: {}",
         severity
     );
@@ -806,7 +804,7 @@ fn test_negative_monetary_impact() {
 
     // Should handle negative by taking absolute value
     assert!(
-        severity >= 0.0 && severity <= 1.0,
+        (0.0..=1.0).contains(&severity),
         "Severity with negative impact should still be valid: {}",
         severity
     );

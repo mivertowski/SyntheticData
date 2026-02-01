@@ -418,7 +418,7 @@ mod tests {
         };
         let mut generator = TemporalAttributeGenerator::new(config, 42, base_date);
 
-        let valid_from = NaiveDateTime::from_timestamp_opt(1704067200, 0).unwrap();
+        let valid_from = DateTime::from_timestamp(1704067200, 0).unwrap().naive_utc();
         let transaction_time = generator.generate_transaction_time(valid_from);
 
         // Transaction time should be >= valid_from when backdating is disabled
@@ -441,7 +441,7 @@ mod tests {
 
         assert!(!chain.all_versions().is_empty());
         // Should have at least 1 version
-        assert!(chain.all_versions().len() >= 1);
+        assert!(!chain.all_versions().is_empty());
     }
 
     #[test]

@@ -302,7 +302,7 @@ mod tests {
         // Transaction should have been modified
         // Amount should no longer be exactly 9999
         let amount: f64 = txn.amount.try_into().unwrap();
-        assert!(amount != 9999.0 || amount != 9999.0); // Either changed or has cents
+        assert!(amount != 9999.0); // Either changed or has cents
     }
 
     #[test]

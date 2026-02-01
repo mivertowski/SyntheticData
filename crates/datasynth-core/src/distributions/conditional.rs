@@ -560,7 +560,7 @@ mod tests {
             max: 1.0,
         };
         let samples: Vec<f64> = (0..1000).map(|_| beta.sample(&mut rng)).collect();
-        assert!(samples.iter().all(|&x| x >= 0.0 && x <= 1.0));
+        assert!(samples.iter().all(|&x| (0.0..=1.0).contains(&x)));
 
         // Test Discrete
         let discrete = ConditionalDistributionParams::Discrete {

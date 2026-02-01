@@ -589,7 +589,7 @@ mod tests {
         assert!(median > 1.0 && median < 3.0);
 
         // All values should be within bounds
-        assert!(samples.iter().all(|&x| x >= 0.0 && x <= 72.0));
+        assert!(samples.iter().all(|&x| (0.0..=72.0).contains(&x)));
     }
 
     #[test]

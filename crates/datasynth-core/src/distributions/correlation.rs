@@ -509,7 +509,7 @@ mod tests {
         assert!(amounts.iter().all(|&a| a > 0.0));
 
         // Check that line items are in valid range
-        assert!(line_items.iter().all(|&l| l >= 2.0 && l <= 20.0));
+        assert!(line_items.iter().all(|&l| (2.0..=20.0).contains(&l)));
 
         // Compute Pearson correlation coefficient
         let mean_a = amounts.iter().sum::<f64>() / n;
@@ -583,7 +583,7 @@ mod tests {
         // Discrete uniform
         let discrete = MarginalDistribution::DiscreteUniform { min: 1, max: 10 };
         let value = discrete.inverse_cdf(0.5);
-        assert!(value >= 1.0 && value <= 10.0);
+        assert!((1.0..=10.0).contains(&value));
     }
 
     #[test]

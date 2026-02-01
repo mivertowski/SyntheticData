@@ -12,7 +12,12 @@ use tracing::{debug, info, warn};
 
 use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::SynthResult;
-use datasynth_core::models::{ChartOfAccounts, Customer, Employee, JournalEntry, Material, Vendor};
+use datasynth_core::models::{
+    documents::{
+        CustomerInvoice, Delivery, GoodsReceipt, Payment, PurchaseOrder, SalesOrder, VendorInvoice,
+    },
+    ChartOfAccounts, Customer, Employee, JournalEntry, Material, Vendor,
+};
 use datasynth_core::streaming::{stream_channel, StreamReceiver, StreamSender};
 use datasynth_core::traits::{
     BackpressureStrategy, StreamConfig, StreamControl, StreamEvent, StreamProgress, StreamSummary,
@@ -33,6 +38,20 @@ pub enum GeneratedItem {
     Employee(Box<Employee>),
     /// A journal entry.
     JournalEntry(Box<JournalEntry>),
+    /// A purchase order (P2P).
+    PurchaseOrder(Box<PurchaseOrder>),
+    /// A goods receipt (P2P).
+    GoodsReceipt(Box<GoodsReceipt>),
+    /// A vendor invoice (P2P).
+    VendorInvoice(Box<VendorInvoice>),
+    /// A payment (P2P/O2C).
+    Payment(Box<Payment>),
+    /// A sales order (O2C).
+    SalesOrder(Box<SalesOrder>),
+    /// A delivery (O2C).
+    Delivery(Box<Delivery>),
+    /// A customer invoice (O2C).
+    CustomerInvoice(Box<CustomerInvoice>),
     /// Progress update.
     Progress(StreamProgress),
     /// Phase completion marker.
@@ -49,6 +68,13 @@ impl GeneratedItem {
             GeneratedItem::Material(_) => "material",
             GeneratedItem::Employee(_) => "employee",
             GeneratedItem::JournalEntry(_) => "journal_entry",
+            GeneratedItem::PurchaseOrder(_) => "purchase_order",
+            GeneratedItem::GoodsReceipt(_) => "goods_receipt",
+            GeneratedItem::VendorInvoice(_) => "vendor_invoice",
+            GeneratedItem::Payment(_) => "payment",
+            GeneratedItem::SalesOrder(_) => "sales_order",
+            GeneratedItem::Delivery(_) => "delivery",
+            GeneratedItem::CustomerInvoice(_) => "customer_invoice",
             GeneratedItem::Progress(_) => "progress",
             GeneratedItem::PhaseComplete(_) => "phase_complete",
         }
@@ -64,6 +90,8 @@ pub enum GenerationPhase {
     MasterData,
     /// Document flow generation (P2P, O2C).
     DocumentFlows,
+    /// OCPM event log generation.
+    OcpmEvents,
     /// Journal entry generation.
     JournalEntries,
     /// Anomaly injection.
@@ -83,6 +111,7 @@ impl GenerationPhase {
             GenerationPhase::ChartOfAccounts => "chart_of_accounts",
             GenerationPhase::MasterData => "master_data",
             GenerationPhase::DocumentFlows => "document_flows",
+            GenerationPhase::OcpmEvents => "ocpm_events",
             GenerationPhase::JournalEntries => "journal_entries",
             GenerationPhase::AnomalyInjection => "anomaly_injection",
             GenerationPhase::BalanceValidation => "balance_validation",
@@ -112,7 +141,25 @@ impl StreamingOrchestratorConfig {
             phases: vec![
                 GenerationPhase::ChartOfAccounts,
                 GenerationPhase::MasterData,
+                GenerationPhase::DocumentFlows,
                 GenerationPhase::JournalEntries,
+            ],
+        }
+    }
+
+    /// Creates a configuration with all phases enabled including OCPM.
+    pub fn with_all_phases(generator_config: GeneratorConfig) -> Self {
+        Self {
+            generator_config,
+            stream_config: StreamConfig::default(),
+            phases: vec![
+                GenerationPhase::ChartOfAccounts,
+                GenerationPhase::MasterData,
+                GenerationPhase::DocumentFlows,
+                GenerationPhase::OcpmEvents,
+                GenerationPhase::JournalEntries,
+                GenerationPhase::AnomalyInjection,
+                GenerationPhase::DataQuality,
             ],
         }
     }
@@ -219,6 +266,20 @@ impl StreamingOrchestrator {
                     )?;
                     items_generated += result;
                 }
+                GenerationPhase::DocumentFlows => {
+                    let result = Self::generate_document_flows_phase(
+                        &config.generator_config,
+                        &sender,
+                        &control,
+                        progress_interval,
+                        &mut progress,
+                    )?;
+                    items_generated += result;
+                }
+                GenerationPhase::OcpmEvents => {
+                    // OCPM event generation is optional and requires document flows
+                    debug!("OCPM events phase - skipping (documents should be generated via P2P/O2C generators)");
+                }
                 GenerationPhase::JournalEntries => {
                     let result = Self::generate_journal_entries_phase(
                         &config.generator_config,
@@ -229,12 +290,16 @@ impl StreamingOrchestrator {
                     )?;
                     items_generated += result;
                 }
-                _ => {
-                    // Other phases can be added incrementally
+                GenerationPhase::AnomalyInjection | GenerationPhase::DataQuality => {
+                    // These phases modify existing data; not directly generating new items
                     debug!(
-                        "Skipping phase {:?} (not yet implemented for streaming)",
+                        "Phase {:?} operates on existing data (not streaming new items)",
                         phase
                     );
+                }
+                GenerationPhase::BalanceValidation | GenerationPhase::Complete => {
+                    // Validation and completion phases don't generate items
+                    debug!("Phase {:?} is a validation/completion phase", phase);
                 }
             }
 
@@ -462,6 +527,202 @@ impl StreamingOrchestrator {
                 progress.items_generated = count;
                 progress.items_remaining = Some(total_entries as u64 - count);
                 sender.send(StreamEvent::Progress(progress.clone()))?;
+            }
+        }
+
+        Ok(count)
+    }
+
+    /// Generates document flows phase (P2P and O2C).
+    ///
+    /// Creates complete document chains:
+    /// - P2P: PurchaseOrder → GoodsReceipt → VendorInvoice → Payment
+    /// - O2C: SalesOrder → Delivery → CustomerInvoice
+    fn generate_document_flows_phase(
+        config: &GeneratorConfig,
+        sender: &StreamSender<GeneratedItem>,
+        control: &Arc<StreamControl>,
+        progress_interval: u64,
+        progress: &mut StreamProgress,
+    ) -> SynthResult<u64> {
+        use chrono::Datelike;
+        use datasynth_generators::{
+            CustomerGenerator, MaterialGenerator, O2CGenerator, P2PGenerator, VendorGenerator,
+        };
+
+        let mut count: u64 = 0;
+        let seed = config.global.seed.unwrap_or(42);
+        let df_config = &config.document_flows;
+        let md_config = &config.master_data;
+
+        // Parse dates
+        let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
+            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        let company_code = config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        // Use master data config counts for generating reference data
+        let vendor_count = md_config.vendors.count.min(100);
+        let customer_count = md_config.customers.count.min(100);
+        let material_count = md_config.materials.count.min(50);
+
+        // Generate some master data for document flows
+        let mut vendor_gen = VendorGenerator::new(seed);
+        let mut customer_gen = CustomerGenerator::new(seed + 1);
+        let mut material_gen = MaterialGenerator::new(seed + 2);
+
+        let vendors: Vec<_> = (0..vendor_count)
+            .map(|_| vendor_gen.generate_vendor(company_code, start_date))
+            .collect();
+
+        let customers: Vec<_> = (0..customer_count)
+            .map(|_| customer_gen.generate_customer(company_code, start_date))
+            .collect();
+
+        let materials: Vec<_> = (0..material_count)
+            .map(|_| material_gen.generate_material(company_code, start_date))
+            .collect();
+
+        // Determine number of chains based on transaction volume
+        // Use period months as a multiplier for document chains
+        let base_chains = (config.global.period_months as usize * 50).max(100);
+
+        // P2P Generation
+        if df_config.p2p.enabled && !vendors.is_empty() && !materials.is_empty() {
+            info!("Generating P2P document flows");
+            let mut p2p_gen = P2PGenerator::new(seed + 100);
+
+            let chains_to_generate = base_chains.min(1000);
+            progress.items_remaining = Some(chains_to_generate as u64);
+
+            for i in 0..chains_to_generate {
+                if control.is_cancelled() {
+                    break;
+                }
+
+                // Handle pause
+                while control.is_paused() {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    if control.is_cancelled() {
+                        break;
+                    }
+                }
+
+                let vendor = &vendors[i % vendors.len()];
+                let material_refs: Vec<&datasynth_core::models::Material> =
+                    vec![&materials[i % materials.len()]];
+
+                // Calculate posting date within the period
+                let days_offset = (i as i64 % (config.global.period_months as i64 * 30)).max(0);
+                let po_date = start_date + chrono::Duration::days(days_offset);
+                let fiscal_year = po_date.year() as u16;
+                let fiscal_period = po_date.month() as u8;
+
+                let chain = p2p_gen.generate_chain(
+                    company_code,
+                    vendor,
+                    &material_refs,
+                    po_date,
+                    fiscal_year,
+                    fiscal_period,
+                    "SYSTEM",
+                );
+
+                // Send each document in the chain
+                sender.send(StreamEvent::Data(GeneratedItem::PurchaseOrder(Box::new(
+                    chain.purchase_order,
+                ))))?;
+                count += 1;
+
+                for gr in chain.goods_receipts {
+                    sender.send(StreamEvent::Data(GeneratedItem::GoodsReceipt(Box::new(gr))))?;
+                    count += 1;
+                }
+
+                if let Some(vi) = chain.vendor_invoice {
+                    sender.send(StreamEvent::Data(GeneratedItem::VendorInvoice(Box::new(
+                        vi,
+                    ))))?;
+                    count += 1;
+                }
+
+                if let Some(payment) = chain.payment {
+                    sender.send(StreamEvent::Data(GeneratedItem::Payment(Box::new(payment))))?;
+                    count += 1;
+                }
+
+                if count % progress_interval == 0 {
+                    progress.items_generated = count;
+                    sender.send(StreamEvent::Progress(progress.clone()))?;
+                }
+            }
+        }
+
+        // O2C Generation
+        if df_config.o2c.enabled && !customers.is_empty() && !materials.is_empty() {
+            info!("Generating O2C document flows");
+            let mut o2c_gen = O2CGenerator::new(seed + 200);
+
+            let chains_to_generate = base_chains.min(1000);
+
+            for i in 0..chains_to_generate {
+                if control.is_cancelled() {
+                    break;
+                }
+
+                while control.is_paused() {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    if control.is_cancelled() {
+                        break;
+                    }
+                }
+
+                let customer = &customers[i % customers.len()];
+                let material_refs: Vec<&datasynth_core::models::Material> =
+                    vec![&materials[i % materials.len()]];
+
+                let days_offset = (i as i64 % (config.global.period_months as i64 * 30)).max(0);
+                let so_date = start_date + chrono::Duration::days(days_offset);
+                let fiscal_year = so_date.year() as u16;
+                let fiscal_period = so_date.month() as u8;
+
+                let chain = o2c_gen.generate_chain(
+                    company_code,
+                    customer,
+                    &material_refs,
+                    so_date,
+                    fiscal_year,
+                    fiscal_period,
+                    "SYSTEM",
+                );
+
+                sender.send(StreamEvent::Data(GeneratedItem::SalesOrder(Box::new(
+                    chain.sales_order,
+                ))))?;
+                count += 1;
+
+                for delivery in chain.deliveries {
+                    sender.send(StreamEvent::Data(GeneratedItem::Delivery(Box::new(
+                        delivery,
+                    ))))?;
+                    count += 1;
+                }
+
+                if let Some(ci) = chain.customer_invoice {
+                    sender.send(StreamEvent::Data(GeneratedItem::CustomerInvoice(Box::new(
+                        ci,
+                    ))))?;
+                    count += 1;
+                }
+
+                if count % progress_interval == 0 {
+                    progress.items_generated = count;
+                    sender.send(StreamEvent::Progress(progress.clone()))?;
+                }
             }
         }
 

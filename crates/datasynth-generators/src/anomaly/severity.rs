@@ -442,7 +442,7 @@ mod tests {
 
         let (severity, factors) = calculator.calculate(&anomaly_type, &context);
 
-        assert!(severity >= 0.0 && severity <= 1.0);
+        assert!((0.0..=1.0).contains(&severity));
         assert!(!factors.is_empty());
     }
 
