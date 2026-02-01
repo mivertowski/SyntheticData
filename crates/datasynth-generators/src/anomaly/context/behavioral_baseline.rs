@@ -5,7 +5,6 @@
 
 use chrono::{NaiveDate, NaiveTime, Timelike};
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -66,10 +65,7 @@ impl BehavioralBaseline {
     /// Records an observation for an entity.
     pub fn record_observation(&mut self, entity_id: impl Into<String>, observation: Observation) {
         let id = entity_id.into();
-        let baseline = self
-            .entity_baselines
-            .entry(id)
-            .or_insert_with(EntityBaseline::new);
+        let baseline = self.entity_baselines.entry(id).or_default();
         baseline.add_observation(observation);
     }
 
@@ -107,11 +103,15 @@ impl BehavioralBaseline {
                         std_deviations: z_score.abs(),
                         expected_value: baseline.avg_transaction_amount,
                         actual_value: amount_f64,
-                        label: AnomalyType::Statistical(StatisticalAnomalyType::UnusuallyHighAmount),
+                        label: AnomalyType::Statistical(
+                            StatisticalAnomalyType::UnusuallyHighAmount,
+                        ),
                         severity: Self::severity_from_std_dev(z_score.abs()),
                         description: format!(
                             "Amount ${:.2} is {:.1} std devs from mean ${:.2}",
-                            amount_f64, z_score.abs(), baseline.avg_transaction_amount
+                            amount_f64,
+                            z_score.abs(),
+                            baseline.avg_transaction_amount
                         ),
                     });
                 }
@@ -168,10 +168,7 @@ impl BehavioralBaseline {
                     actual_value: 0.0,
                     label: AnomalyType::Statistical(StatisticalAnomalyType::StatisticalOutlier),
                     severity: SeverityLevel::Low,
-                    description: format!(
-                        "Account '{}' not typically used by this entity",
-                        account
-                    ),
+                    description: format!("Account '{}' not typically used by this entity", account),
                 });
             }
         }
@@ -472,7 +469,11 @@ impl EntityBaseline {
     fn update_common_counterparties(&mut self) {
         let mut sorted: Vec<_> = self.counterparty_freq.iter().collect();
         sorted.sort_by(|a, b| b.1.cmp(a.1));
-        self.common_counterparties = sorted.into_iter().take(10).map(|(k, _)| k.clone()).collect();
+        self.common_counterparties = sorted
+            .into_iter()
+            .take(10)
+            .map(|(k, _)| k.clone())
+            .collect();
     }
 
     /// Updates usual accounts (top 5).
@@ -531,6 +532,7 @@ pub struct BehavioralDeviation {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_entity_baseline_creation() {
@@ -573,8 +575,8 @@ mod tests {
         // Build baseline with consistent amounts (with some variance)
         // Using amounts from 900-1100 to establish a baseline with std dev
         let amounts = [
-            900, 950, 1000, 1050, 1100, 920, 980, 1020, 1080, 950,
-            960, 1000, 1040, 990, 970, 1010, 1030, 1000, 980, 1020,
+            900, 950, 1000, 1050, 1100, 920, 980, 1020, 1080, 950, 960, 1000, 1040, 990, 970, 1010,
+            1030, 1000, 980, 1020,
         ];
         for (i, &amount) in amounts.iter().enumerate() {
             let obs = Observation::new(
@@ -657,8 +659,10 @@ mod tests {
         let mut baseline_mgr = BehavioralBaseline::default();
 
         // Build baseline with variable transactions per day (1-3) for variance
-        let daily_counts = [2, 1, 3, 2, 2, 1, 3, 2, 1, 2, 3, 2, 1, 2, 2, 3, 1, 2, 2, 3,
-                           2, 1, 2, 3, 2, 1, 2, 2, 3, 2];
+        let daily_counts = [
+            2, 1, 3, 2, 2, 1, 3, 2, 1, 2, 3, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 1, 2, 3, 2, 1, 2, 2, 3,
+            2,
+        ];
         for (day, &count) in daily_counts.iter().enumerate() {
             for _ in 0..count {
                 let obs = Observation::new(

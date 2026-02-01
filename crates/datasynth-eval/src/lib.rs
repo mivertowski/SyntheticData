@@ -96,10 +96,42 @@ pub use enhancement::{
 };
 
 pub use benchmarks::{
-    all_benchmarks, anomaly_bench_1k, data_quality_100k, entity_match_5k, fraud_detect_10k,
-    get_benchmark, graph_fraud_10k, BaselineModelType, BaselineResult, BenchmarkBuilder,
-    BenchmarkSuite, BenchmarkTaskType, CostMatrix, DatasetSpec, EvaluationSpec, FeatureSet,
-    LeaderboardEntry, MetricType, SplitRatios,
+    // ACFE-calibrated benchmarks
+    acfe_calibrated_1k,
+    acfe_collusion_5k,
+    acfe_management_override_2k,
+    all_acfe_benchmarks,
+    all_benchmarks,
+    // Industry-specific benchmarks
+    all_industry_benchmarks,
+    anomaly_bench_1k,
+    data_quality_100k,
+    entity_match_5k,
+    financial_services_fraud_5k,
+    fraud_detect_10k,
+    get_benchmark,
+    get_industry_benchmark,
+    graph_fraud_10k,
+    healthcare_fraud_5k,
+    manufacturing_fraud_5k,
+    retail_fraud_10k,
+    technology_fraud_3k,
+    AcfeAlignment,
+    AcfeCalibration,
+    AcfeCategoryDistribution,
+    BaselineModelType,
+    BaselineResult,
+    BenchmarkBuilder,
+    BenchmarkSuite,
+    BenchmarkTaskType,
+    CostMatrix,
+    DatasetSpec,
+    EvaluationSpec,
+    FeatureSet,
+    IndustryBenchmarkAnalysis,
+    LeaderboardEntry,
+    MetricType,
+    SplitRatios,
 };
 
 use serde::{Deserialize, Serialize};

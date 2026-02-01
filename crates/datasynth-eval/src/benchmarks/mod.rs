@@ -5,6 +5,8 @@
 //! - Fraud detection (FraudDetect-10K)
 //! - Data quality detection (DataQuality-100K)
 //! - Entity matching (EntityMatch-5K)
+//! - ACFE-calibrated fraud detection (ACFE-Calibrated-1K, ACFE-Collusion-5K)
+//! - Industry-specific fraud detection (Manufacturing, Retail, Healthcare, Technology, Financial Services)
 //!
 //! Each benchmark defines:
 //! - Dataset size and composition
@@ -12,8 +14,21 @@
 //! - Evaluation metrics
 //! - Expected baseline performance
 
+pub mod acfe;
+pub mod industry;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+pub use acfe::{
+    acfe_calibrated_1k, acfe_collusion_5k, acfe_management_override_2k, all_acfe_benchmarks,
+    AcfeAlignment, AcfeCalibration, AcfeCategoryDistribution,
+};
+pub use industry::{
+    all_industry_benchmarks, financial_services_fraud_5k, get_industry_benchmark,
+    healthcare_fraud_5k, manufacturing_fraud_5k, retail_fraud_10k, technology_fraud_3k,
+    IndustryBenchmarkAnalysis,
+};
 
 /// A benchmark suite definition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -736,13 +751,21 @@ pub fn graph_fraud_10k() -> BenchmarkSuite {
 
 /// Get all available benchmark suites.
 pub fn all_benchmarks() -> Vec<BenchmarkSuite> {
-    vec![
+    let mut benchmarks = vec![
         anomaly_bench_1k(),
         fraud_detect_10k(),
         data_quality_100k(),
         entity_match_5k(),
         graph_fraud_10k(),
-    ]
+    ];
+
+    // Add ACFE-calibrated benchmarks
+    benchmarks.extend(all_acfe_benchmarks());
+
+    // Add industry-specific benchmarks
+    benchmarks.extend(all_industry_benchmarks());
+
+    benchmarks
 }
 
 /// Get a benchmark by ID.
@@ -782,7 +805,8 @@ mod tests {
     #[test]
     fn test_all_benchmarks() {
         let benchmarks = all_benchmarks();
-        assert_eq!(benchmarks.len(), 5);
+        // 5 original + 3 ACFE + 5 industry = 13
+        assert_eq!(benchmarks.len(), 13);
 
         // Verify all have baselines
         for bench in &benchmarks {

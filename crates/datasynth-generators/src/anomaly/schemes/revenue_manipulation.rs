@@ -169,10 +169,18 @@ impl RevenueManipulationScheme {
         let base_prob = 0.1;
 
         // Higher detection during audit season (Q1)
-        let audit_factor = if self.current_stage_index == 1 { 0.15 } else { 0.0 };
+        let audit_factor = if self.current_stage_index == 1 {
+            0.15
+        } else {
+            0.0
+        };
 
         // Channel stuffing is more visible
-        let channel_factor = if self.current_stage_index == 3 { 0.2 } else { 0.0 };
+        let channel_factor = if self.current_stage_index == 3 {
+            0.2
+        } else {
+            0.0
+        };
 
         // Larger manipulation = higher detection
         let amount_factor = if self.total_impact > dec!(5000000) {
@@ -217,7 +225,11 @@ impl FraudScheme for RevenueManipulationScheme {
         self.detection_status
     }
 
-    fn advance(&mut self, context: &SchemeContext, rng: &mut dyn rand::RngCore) -> Vec<SchemeAction> {
+    fn advance(
+        &mut self,
+        context: &SchemeContext,
+        rng: &mut dyn rand::RngCore,
+    ) -> Vec<SchemeAction> {
         let mut actions = Vec::new();
 
         // Start if not started

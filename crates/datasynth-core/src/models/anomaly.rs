@@ -1562,11 +1562,12 @@ impl EnhancedAnomalyLabel {
 // ============================================================================
 
 /// Severity level classification for anomalies.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum SeverityLevel {
     /// Minor issue, low impact.
     Low,
     /// Moderate issue, noticeable impact.
+    #[default]
     Medium,
     /// Significant issue, substantial impact.
     High,
@@ -1613,12 +1614,6 @@ impl SeverityLevel {
             SeverityLevel::High => 0.625,
             SeverityLevel::Critical => 0.875,
         }
-    }
-}
-
-impl Default for SeverityLevel {
-    fn default() -> Self {
-        SeverityLevel::Medium
     }
 }
 
@@ -1688,13 +1683,14 @@ impl Default for AnomalySeverity {
 ///
 /// Note: This is distinct from `drift_events::AnomalyDetectionDifficulty` which
 /// is used for drift event classification and has different variants.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum AnomalyDetectionDifficulty {
     /// Obvious anomaly, easily caught by basic rules (expected detection rate: 99%).
     Trivial,
     /// Relatively easy to detect with standard procedures (expected detection rate: 90%).
     Easy,
     /// Requires moderate effort or specialized analysis (expected detection rate: 70%).
+    #[default]
     Moderate,
     /// Difficult to detect, requires advanced techniques (expected detection rate: 40%).
     Hard,
@@ -1748,18 +1744,13 @@ impl AnomalyDetectionDifficulty {
     }
 }
 
-impl Default for AnomalyDetectionDifficulty {
-    fn default() -> Self {
-        AnomalyDetectionDifficulty::Moderate
-    }
-}
-
 /// Ground truth certainty level for anomaly labels.
 ///
 /// Indicates how certain we are that the label is correct.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum GroundTruthCertainty {
     /// Definitively known (injected anomaly with full provenance).
+    #[default]
     Definite,
     /// Highly probable based on strong evidence.
     Probable,
@@ -1784,12 +1775,6 @@ impl GroundTruthCertainty {
             GroundTruthCertainty::Probable => "probable",
             GroundTruthCertainty::Possible => "possible",
         }
-    }
-}
-
-impl Default for GroundTruthCertainty {
-    fn default() -> Self {
-        GroundTruthCertainty::Definite
     }
 }
 
@@ -2091,9 +2076,10 @@ impl SchemeType {
 }
 
 /// Status of detection for a fraud scheme.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum SchemeDetectionStatus {
     /// Scheme is undetected.
+    #[default]
     Undetected,
     /// Under investigation but not confirmed.
     UnderInvestigation,
@@ -2101,12 +2087,6 @@ pub enum SchemeDetectionStatus {
     PartiallyDetected,
     /// Fully detected and confirmed.
     FullyDetected,
-}
-
-impl Default for SchemeDetectionStatus {
-    fn default() -> Self {
-        SchemeDetectionStatus::Undetected
-    }
 }
 
 /// Reference to a transaction within a scheme.
@@ -2158,6 +2138,1002 @@ impl ConcealmentTechnique {
             ConcealmentTechnique::Collusion => 0.25,
             ConcealmentTechnique::DataAlteration => 0.20,
             ConcealmentTechnique::FalseDocumentation => 0.15,
+        }
+    }
+}
+
+// ============================================================================
+// ACFE-ALIGNED FRAUD TAXONOMY
+// ============================================================================
+//
+// Based on the Association of Certified Fraud Examiners (ACFE) Report to the
+// Nations: Occupational Fraud Classification System. This taxonomy provides
+// ACFE-aligned categories, schemes, and calibration data.
+
+/// ACFE-aligned fraud categories based on the Occupational Fraud Tree.
+///
+/// ACFE Report to the Nations statistics (typical):
+/// - Asset Misappropriation: 86% of cases, $100k median loss
+/// - Corruption: 33% of cases, $150k median loss
+/// - Financial Statement Fraud: 10% of cases, $954k median loss
+///
+/// Note: Percentages sum to >100% because some schemes fall into multiple categories.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum AcfeFraudCategory {
+    /// Theft of organizational assets (cash, inventory, equipment).
+    /// Most common (86% of cases) but typically lowest median loss ($100k).
+    #[default]
+    AssetMisappropriation,
+    /// Abuse of position for personal gain through bribery, kickbacks, conflicts of interest.
+    /// Medium frequency (33% of cases), medium median loss ($150k).
+    Corruption,
+    /// Intentional misstatement of financial statements.
+    /// Least common (10% of cases) but highest median loss ($954k).
+    FinancialStatementFraud,
+}
+
+impl AcfeFraudCategory {
+    /// Returns the name of this category.
+    pub fn name(&self) -> &'static str {
+        match self {
+            AcfeFraudCategory::AssetMisappropriation => "asset_misappropriation",
+            AcfeFraudCategory::Corruption => "corruption",
+            AcfeFraudCategory::FinancialStatementFraud => "financial_statement_fraud",
+        }
+    }
+
+    /// Returns the typical percentage of occupational fraud cases (from ACFE reports).
+    pub fn typical_occurrence_rate(&self) -> f64 {
+        match self {
+            AcfeFraudCategory::AssetMisappropriation => 0.86,
+            AcfeFraudCategory::Corruption => 0.33,
+            AcfeFraudCategory::FinancialStatementFraud => 0.10,
+        }
+    }
+
+    /// Returns the typical median loss amount (from ACFE reports).
+    pub fn typical_median_loss(&self) -> Decimal {
+        match self {
+            AcfeFraudCategory::AssetMisappropriation => Decimal::new(100_000, 0),
+            AcfeFraudCategory::Corruption => Decimal::new(150_000, 0),
+            AcfeFraudCategory::FinancialStatementFraud => Decimal::new(954_000, 0),
+        }
+    }
+
+    /// Returns the typical detection time in months (from ACFE reports).
+    pub fn typical_detection_months(&self) -> u32 {
+        match self {
+            AcfeFraudCategory::AssetMisappropriation => 12,
+            AcfeFraudCategory::Corruption => 18,
+            AcfeFraudCategory::FinancialStatementFraud => 24,
+        }
+    }
+}
+
+/// Cash-based fraud schemes under Asset Misappropriation.
+///
+/// Organized according to the ACFE Fraud Tree:
+/// - Theft of Cash on Hand
+/// - Theft of Cash Receipts
+/// - Fraudulent Disbursements
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CashFraudScheme {
+    // ========== Theft of Cash on Hand ==========
+    /// Stealing cash from cash drawers or safes after it has been recorded.
+    Larceny,
+    /// Stealing cash before it is recorded in the books (intercepts receipts).
+    Skimming,
+
+    // ========== Theft of Cash Receipts ==========
+    /// Skimming from sales transactions before recording.
+    SalesSkimming,
+    /// Intercepting customer payments on accounts receivable.
+    ReceivablesSkimming,
+    /// Creating false refunds to pocket the difference.
+    RefundSchemes,
+
+    // ========== Fraudulent Disbursements - Billing Schemes ==========
+    /// Creating fictitious vendors to invoice and pay.
+    ShellCompany,
+    /// Manipulating payments to legitimate vendors for personal gain.
+    NonAccompliceVendor,
+    /// Using company funds for personal purchases.
+    PersonalPurchases,
+
+    // ========== Fraudulent Disbursements - Payroll Schemes ==========
+    /// Creating fake employees to collect wages.
+    GhostEmployee,
+    /// Falsifying hours worked, sales commissions, or salary rates.
+    FalsifiedWages,
+    /// Manipulating commission calculations.
+    CommissionSchemes,
+
+    // ========== Fraudulent Disbursements - Expense Reimbursement ==========
+    /// Claiming non-business expenses as business expenses.
+    MischaracterizedExpenses,
+    /// Inflating legitimate expense amounts.
+    OverstatedExpenses,
+    /// Creating completely fictitious expenses.
+    FictitiousExpenses,
+
+    // ========== Fraudulent Disbursements - Check/Payment Tampering ==========
+    /// Forging the signature of an authorized check signer.
+    ForgedMaker,
+    /// Intercepting and altering the endorsement on legitimate checks.
+    ForgedEndorsement,
+    /// Altering the payee on a legitimate check.
+    AlteredPayee,
+    /// Authorized signer writing checks for personal benefit.
+    AuthorizedMaker,
+
+    // ========== Fraudulent Disbursements - Register/POS Schemes ==========
+    /// Creating false voided transactions.
+    FalseVoids,
+    /// Processing fictitious refunds.
+    FalseRefunds,
+}
+
+impl CashFraudScheme {
+    /// Returns the ACFE category this scheme belongs to.
+    pub fn category(&self) -> AcfeFraudCategory {
+        AcfeFraudCategory::AssetMisappropriation
+    }
+
+    /// Returns the subcategory within the ACFE Fraud Tree.
+    pub fn subcategory(&self) -> &'static str {
+        match self {
+            CashFraudScheme::Larceny | CashFraudScheme::Skimming => "theft_of_cash_on_hand",
+            CashFraudScheme::SalesSkimming
+            | CashFraudScheme::ReceivablesSkimming
+            | CashFraudScheme::RefundSchemes => "theft_of_cash_receipts",
+            CashFraudScheme::ShellCompany
+            | CashFraudScheme::NonAccompliceVendor
+            | CashFraudScheme::PersonalPurchases => "billing_schemes",
+            CashFraudScheme::GhostEmployee
+            | CashFraudScheme::FalsifiedWages
+            | CashFraudScheme::CommissionSchemes => "payroll_schemes",
+            CashFraudScheme::MischaracterizedExpenses
+            | CashFraudScheme::OverstatedExpenses
+            | CashFraudScheme::FictitiousExpenses => "expense_reimbursement",
+            CashFraudScheme::ForgedMaker
+            | CashFraudScheme::ForgedEndorsement
+            | CashFraudScheme::AlteredPayee
+            | CashFraudScheme::AuthorizedMaker => "check_tampering",
+            CashFraudScheme::FalseVoids | CashFraudScheme::FalseRefunds => "register_schemes",
+        }
+    }
+
+    /// Returns the typical severity (1-5) for this scheme.
+    pub fn severity(&self) -> u8 {
+        match self {
+            // Lower severity - often small amounts, easier to detect
+            CashFraudScheme::FalseVoids
+            | CashFraudScheme::FalseRefunds
+            | CashFraudScheme::MischaracterizedExpenses => 3,
+            // Medium severity
+            CashFraudScheme::OverstatedExpenses
+            | CashFraudScheme::Skimming
+            | CashFraudScheme::Larceny
+            | CashFraudScheme::PersonalPurchases
+            | CashFraudScheme::FalsifiedWages => 4,
+            // Higher severity - larger amounts, harder to detect
+            CashFraudScheme::ShellCompany
+            | CashFraudScheme::GhostEmployee
+            | CashFraudScheme::FictitiousExpenses
+            | CashFraudScheme::ForgedMaker
+            | CashFraudScheme::AuthorizedMaker => 5,
+            _ => 4,
+        }
+    }
+
+    /// Returns the typical detection difficulty.
+    pub fn detection_difficulty(&self) -> AnomalyDetectionDifficulty {
+        match self {
+            // Easy to detect with basic controls
+            CashFraudScheme::FalseVoids | CashFraudScheme::FalseRefunds => {
+                AnomalyDetectionDifficulty::Easy
+            }
+            // Moderate - requires reconciliation
+            CashFraudScheme::Larceny | CashFraudScheme::OverstatedExpenses => {
+                AnomalyDetectionDifficulty::Moderate
+            }
+            // Hard - requires sophisticated analysis
+            CashFraudScheme::Skimming
+            | CashFraudScheme::ShellCompany
+            | CashFraudScheme::GhostEmployee => AnomalyDetectionDifficulty::Hard,
+            // Expert level
+            CashFraudScheme::SalesSkimming | CashFraudScheme::ReceivablesSkimming => {
+                AnomalyDetectionDifficulty::Expert
+            }
+            _ => AnomalyDetectionDifficulty::Moderate,
+        }
+    }
+
+    /// Returns all variants for iteration.
+    pub fn all_variants() -> &'static [CashFraudScheme] {
+        &[
+            CashFraudScheme::Larceny,
+            CashFraudScheme::Skimming,
+            CashFraudScheme::SalesSkimming,
+            CashFraudScheme::ReceivablesSkimming,
+            CashFraudScheme::RefundSchemes,
+            CashFraudScheme::ShellCompany,
+            CashFraudScheme::NonAccompliceVendor,
+            CashFraudScheme::PersonalPurchases,
+            CashFraudScheme::GhostEmployee,
+            CashFraudScheme::FalsifiedWages,
+            CashFraudScheme::CommissionSchemes,
+            CashFraudScheme::MischaracterizedExpenses,
+            CashFraudScheme::OverstatedExpenses,
+            CashFraudScheme::FictitiousExpenses,
+            CashFraudScheme::ForgedMaker,
+            CashFraudScheme::ForgedEndorsement,
+            CashFraudScheme::AlteredPayee,
+            CashFraudScheme::AuthorizedMaker,
+            CashFraudScheme::FalseVoids,
+            CashFraudScheme::FalseRefunds,
+        ]
+    }
+}
+
+/// Inventory and Other Asset fraud schemes under Asset Misappropriation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AssetFraudScheme {
+    // ========== Inventory Schemes ==========
+    /// Misusing or converting inventory for personal benefit.
+    InventoryMisuse,
+    /// Stealing physical inventory items.
+    InventoryTheft,
+    /// Manipulating purchasing to facilitate theft.
+    InventoryPurchasingScheme,
+    /// Manipulating receiving/shipping to steal inventory.
+    InventoryReceivingScheme,
+
+    // ========== Other Asset Schemes ==========
+    /// Misusing company equipment or vehicles.
+    EquipmentMisuse,
+    /// Theft of company equipment, tools, or supplies.
+    EquipmentTheft,
+    /// Unauthorized access to or theft of intellectual property.
+    IntellectualPropertyTheft,
+    /// Using company time/resources for personal business.
+    TimeTheft,
+}
+
+impl AssetFraudScheme {
+    /// Returns the ACFE category this scheme belongs to.
+    pub fn category(&self) -> AcfeFraudCategory {
+        AcfeFraudCategory::AssetMisappropriation
+    }
+
+    /// Returns the subcategory within the ACFE Fraud Tree.
+    pub fn subcategory(&self) -> &'static str {
+        match self {
+            AssetFraudScheme::InventoryMisuse
+            | AssetFraudScheme::InventoryTheft
+            | AssetFraudScheme::InventoryPurchasingScheme
+            | AssetFraudScheme::InventoryReceivingScheme => "inventory",
+            _ => "other_assets",
+        }
+    }
+
+    /// Returns the typical severity (1-5) for this scheme.
+    pub fn severity(&self) -> u8 {
+        match self {
+            AssetFraudScheme::TimeTheft | AssetFraudScheme::EquipmentMisuse => 2,
+            AssetFraudScheme::InventoryMisuse | AssetFraudScheme::EquipmentTheft => 3,
+            AssetFraudScheme::InventoryTheft
+            | AssetFraudScheme::InventoryPurchasingScheme
+            | AssetFraudScheme::InventoryReceivingScheme => 4,
+            AssetFraudScheme::IntellectualPropertyTheft => 5,
+        }
+    }
+}
+
+/// Corruption schemes under the ACFE Fraud Tree.
+///
+/// Corruption schemes involve the wrongful use of influence in a business
+/// transaction to procure personal benefit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CorruptionScheme {
+    // ========== Conflicts of Interest ==========
+    /// Employee has undisclosed financial interest in purchasing decisions.
+    PurchasingConflict,
+    /// Employee has undisclosed relationship with customer/vendor.
+    SalesConflict,
+    /// Employee owns or has interest in competing business.
+    OutsideBusinessInterest,
+    /// Employee makes decisions benefiting family members.
+    NepotismConflict,
+
+    // ========== Bribery ==========
+    /// Kickback payments from vendors for favorable treatment.
+    InvoiceKickback,
+    /// Collusion among vendors to inflate prices.
+    BidRigging,
+    /// Other cash payments for favorable decisions.
+    CashBribery,
+    /// Bribery of government officials.
+    PublicOfficial,
+
+    // ========== Illegal Gratuities ==========
+    /// Gifts given after favorable decisions (not agreed in advance).
+    IllegalGratuity,
+
+    // ========== Economic Extortion ==========
+    /// Demanding payment under threat of adverse action.
+    EconomicExtortion,
+}
+
+impl CorruptionScheme {
+    /// Returns the ACFE category this scheme belongs to.
+    pub fn category(&self) -> AcfeFraudCategory {
+        AcfeFraudCategory::Corruption
+    }
+
+    /// Returns the subcategory within the ACFE Fraud Tree.
+    pub fn subcategory(&self) -> &'static str {
+        match self {
+            CorruptionScheme::PurchasingConflict
+            | CorruptionScheme::SalesConflict
+            | CorruptionScheme::OutsideBusinessInterest
+            | CorruptionScheme::NepotismConflict => "conflicts_of_interest",
+            CorruptionScheme::InvoiceKickback
+            | CorruptionScheme::BidRigging
+            | CorruptionScheme::CashBribery
+            | CorruptionScheme::PublicOfficial => "bribery",
+            CorruptionScheme::IllegalGratuity => "illegal_gratuities",
+            CorruptionScheme::EconomicExtortion => "economic_extortion",
+        }
+    }
+
+    /// Returns the typical severity (1-5) for this scheme.
+    pub fn severity(&self) -> u8 {
+        match self {
+            // Lower severity conflicts of interest
+            CorruptionScheme::NepotismConflict => 3,
+            // Medium severity
+            CorruptionScheme::PurchasingConflict
+            | CorruptionScheme::SalesConflict
+            | CorruptionScheme::OutsideBusinessInterest
+            | CorruptionScheme::IllegalGratuity => 4,
+            // High severity - active corruption
+            CorruptionScheme::InvoiceKickback
+            | CorruptionScheme::BidRigging
+            | CorruptionScheme::CashBribery
+            | CorruptionScheme::EconomicExtortion => 5,
+            // Highest severity - involves public officials
+            CorruptionScheme::PublicOfficial => 5,
+        }
+    }
+
+    /// Returns the typical detection difficulty.
+    pub fn detection_difficulty(&self) -> AnomalyDetectionDifficulty {
+        match self {
+            // Easier to detect with proper disclosure requirements
+            CorruptionScheme::NepotismConflict | CorruptionScheme::OutsideBusinessInterest => {
+                AnomalyDetectionDifficulty::Moderate
+            }
+            // Hard - requires transaction pattern analysis
+            CorruptionScheme::PurchasingConflict
+            | CorruptionScheme::SalesConflict
+            | CorruptionScheme::BidRigging => AnomalyDetectionDifficulty::Hard,
+            // Expert level - deliberate concealment
+            CorruptionScheme::InvoiceKickback
+            | CorruptionScheme::CashBribery
+            | CorruptionScheme::PublicOfficial
+            | CorruptionScheme::IllegalGratuity
+            | CorruptionScheme::EconomicExtortion => AnomalyDetectionDifficulty::Expert,
+        }
+    }
+
+    /// Returns all variants for iteration.
+    pub fn all_variants() -> &'static [CorruptionScheme] {
+        &[
+            CorruptionScheme::PurchasingConflict,
+            CorruptionScheme::SalesConflict,
+            CorruptionScheme::OutsideBusinessInterest,
+            CorruptionScheme::NepotismConflict,
+            CorruptionScheme::InvoiceKickback,
+            CorruptionScheme::BidRigging,
+            CorruptionScheme::CashBribery,
+            CorruptionScheme::PublicOfficial,
+            CorruptionScheme::IllegalGratuity,
+            CorruptionScheme::EconomicExtortion,
+        ]
+    }
+}
+
+/// Financial Statement Fraud schemes under the ACFE Fraud Tree.
+///
+/// Financial statement fraud involves the intentional misstatement or omission
+/// of material information in financial reports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum FinancialStatementScheme {
+    // ========== Asset/Revenue Overstatement ==========
+    /// Recording revenue before it is earned.
+    PrematureRevenue,
+    /// Deferring expenses to future periods.
+    DelayedExpenses,
+    /// Recording revenue for transactions that never occurred.
+    FictitiousRevenues,
+    /// Failing to record known liabilities.
+    ConcealedLiabilities,
+    /// Overstating the value of assets.
+    ImproperAssetValuations,
+    /// Omitting or misstating required disclosures.
+    ImproperDisclosures,
+    /// Manipulating timing of revenue recognition (channel stuffing).
+    ChannelStuffing,
+    /// Recognizing bill-and-hold revenue improperly.
+    BillAndHold,
+    /// Capitalizing expenses that should be expensed.
+    ImproperCapitalization,
+
+    // ========== Asset/Revenue Understatement ==========
+    /// Understating revenue (often for tax purposes).
+    UnderstatedRevenues,
+    /// Recording excessive expenses.
+    OverstatedExpenses,
+    /// Recording excessive liabilities or reserves.
+    OverstatedLiabilities,
+    /// Undervaluing assets for writedowns/reserves.
+    ImproperAssetWritedowns,
+}
+
+impl FinancialStatementScheme {
+    /// Returns the ACFE category this scheme belongs to.
+    pub fn category(&self) -> AcfeFraudCategory {
+        AcfeFraudCategory::FinancialStatementFraud
+    }
+
+    /// Returns the subcategory within the ACFE Fraud Tree.
+    pub fn subcategory(&self) -> &'static str {
+        match self {
+            FinancialStatementScheme::UnderstatedRevenues
+            | FinancialStatementScheme::OverstatedExpenses
+            | FinancialStatementScheme::OverstatedLiabilities
+            | FinancialStatementScheme::ImproperAssetWritedowns => "understatement",
+            _ => "overstatement",
+        }
+    }
+
+    /// Returns the typical severity (1-5) for this scheme.
+    pub fn severity(&self) -> u8 {
+        // All financial statement fraud is high severity
+        5
+    }
+
+    /// Returns the typical detection difficulty.
+    pub fn detection_difficulty(&self) -> AnomalyDetectionDifficulty {
+        match self {
+            // Easier to detect with good analytics
+            FinancialStatementScheme::ChannelStuffing
+            | FinancialStatementScheme::DelayedExpenses => AnomalyDetectionDifficulty::Moderate,
+            // Hard - requires deep analysis
+            FinancialStatementScheme::PrematureRevenue
+            | FinancialStatementScheme::ImproperCapitalization
+            | FinancialStatementScheme::ImproperAssetWritedowns => AnomalyDetectionDifficulty::Hard,
+            // Expert level
+            FinancialStatementScheme::FictitiousRevenues
+            | FinancialStatementScheme::ConcealedLiabilities
+            | FinancialStatementScheme::ImproperAssetValuations
+            | FinancialStatementScheme::ImproperDisclosures
+            | FinancialStatementScheme::BillAndHold => AnomalyDetectionDifficulty::Expert,
+            _ => AnomalyDetectionDifficulty::Hard,
+        }
+    }
+
+    /// Returns all variants for iteration.
+    pub fn all_variants() -> &'static [FinancialStatementScheme] {
+        &[
+            FinancialStatementScheme::PrematureRevenue,
+            FinancialStatementScheme::DelayedExpenses,
+            FinancialStatementScheme::FictitiousRevenues,
+            FinancialStatementScheme::ConcealedLiabilities,
+            FinancialStatementScheme::ImproperAssetValuations,
+            FinancialStatementScheme::ImproperDisclosures,
+            FinancialStatementScheme::ChannelStuffing,
+            FinancialStatementScheme::BillAndHold,
+            FinancialStatementScheme::ImproperCapitalization,
+            FinancialStatementScheme::UnderstatedRevenues,
+            FinancialStatementScheme::OverstatedExpenses,
+            FinancialStatementScheme::OverstatedLiabilities,
+            FinancialStatementScheme::ImproperAssetWritedowns,
+        ]
+    }
+}
+
+/// Unified ACFE scheme type that encompasses all fraud schemes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AcfeScheme {
+    /// Cash-based fraud schemes.
+    Cash(CashFraudScheme),
+    /// Inventory and other asset fraud schemes.
+    Asset(AssetFraudScheme),
+    /// Corruption schemes.
+    Corruption(CorruptionScheme),
+    /// Financial statement fraud schemes.
+    FinancialStatement(FinancialStatementScheme),
+}
+
+impl AcfeScheme {
+    /// Returns the ACFE category this scheme belongs to.
+    pub fn category(&self) -> AcfeFraudCategory {
+        match self {
+            AcfeScheme::Cash(s) => s.category(),
+            AcfeScheme::Asset(s) => s.category(),
+            AcfeScheme::Corruption(s) => s.category(),
+            AcfeScheme::FinancialStatement(s) => s.category(),
+        }
+    }
+
+    /// Returns the severity (1-5) for this scheme.
+    pub fn severity(&self) -> u8 {
+        match self {
+            AcfeScheme::Cash(s) => s.severity(),
+            AcfeScheme::Asset(s) => s.severity(),
+            AcfeScheme::Corruption(s) => s.severity(),
+            AcfeScheme::FinancialStatement(s) => s.severity(),
+        }
+    }
+
+    /// Returns the detection difficulty for this scheme.
+    pub fn detection_difficulty(&self) -> AnomalyDetectionDifficulty {
+        match self {
+            AcfeScheme::Cash(s) => s.detection_difficulty(),
+            AcfeScheme::Asset(_) => AnomalyDetectionDifficulty::Moderate,
+            AcfeScheme::Corruption(s) => s.detection_difficulty(),
+            AcfeScheme::FinancialStatement(s) => s.detection_difficulty(),
+        }
+    }
+}
+
+/// How a fraud was detected (from ACFE statistics).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AcfeDetectionMethod {
+    /// Tip from employee, customer, vendor, or anonymous source.
+    Tip,
+    /// Internal audit procedures.
+    InternalAudit,
+    /// Management review and oversight.
+    ManagementReview,
+    /// External audit procedures.
+    ExternalAudit,
+    /// Account reconciliation discrepancies.
+    AccountReconciliation,
+    /// Document examination.
+    DocumentExamination,
+    /// Discovered by accident.
+    ByAccident,
+    /// Automated monitoring/IT controls.
+    ItControls,
+    /// Surveillance or investigation.
+    Surveillance,
+    /// Confession by perpetrator.
+    Confession,
+    /// Law enforcement notification.
+    LawEnforcement,
+    /// Other detection method.
+    Other,
+}
+
+impl AcfeDetectionMethod {
+    /// Returns the typical percentage of frauds detected by this method (from ACFE reports).
+    pub fn typical_detection_rate(&self) -> f64 {
+        match self {
+            AcfeDetectionMethod::Tip => 0.42,
+            AcfeDetectionMethod::InternalAudit => 0.16,
+            AcfeDetectionMethod::ManagementReview => 0.12,
+            AcfeDetectionMethod::ExternalAudit => 0.04,
+            AcfeDetectionMethod::AccountReconciliation => 0.05,
+            AcfeDetectionMethod::DocumentExamination => 0.04,
+            AcfeDetectionMethod::ByAccident => 0.06,
+            AcfeDetectionMethod::ItControls => 0.03,
+            AcfeDetectionMethod::Surveillance => 0.02,
+            AcfeDetectionMethod::Confession => 0.02,
+            AcfeDetectionMethod::LawEnforcement => 0.01,
+            AcfeDetectionMethod::Other => 0.03,
+        }
+    }
+
+    /// Returns all variants for iteration.
+    pub fn all_variants() -> &'static [AcfeDetectionMethod] {
+        &[
+            AcfeDetectionMethod::Tip,
+            AcfeDetectionMethod::InternalAudit,
+            AcfeDetectionMethod::ManagementReview,
+            AcfeDetectionMethod::ExternalAudit,
+            AcfeDetectionMethod::AccountReconciliation,
+            AcfeDetectionMethod::DocumentExamination,
+            AcfeDetectionMethod::ByAccident,
+            AcfeDetectionMethod::ItControls,
+            AcfeDetectionMethod::Surveillance,
+            AcfeDetectionMethod::Confession,
+            AcfeDetectionMethod::LawEnforcement,
+            AcfeDetectionMethod::Other,
+        ]
+    }
+}
+
+/// Department/position of perpetrator (from ACFE statistics).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum PerpetratorDepartment {
+    /// Accounting, finance, or bookkeeping.
+    Accounting,
+    /// Operations or manufacturing.
+    Operations,
+    /// Executive/upper management.
+    Executive,
+    /// Sales.
+    Sales,
+    /// Customer service.
+    CustomerService,
+    /// Purchasing/procurement.
+    Purchasing,
+    /// Information technology.
+    It,
+    /// Human resources.
+    HumanResources,
+    /// Administrative/clerical.
+    Administrative,
+    /// Warehouse/inventory.
+    Warehouse,
+    /// Board of directors.
+    BoardOfDirectors,
+    /// Other department.
+    Other,
+}
+
+impl PerpetratorDepartment {
+    /// Returns the typical percentage of frauds by department (from ACFE reports).
+    pub fn typical_occurrence_rate(&self) -> f64 {
+        match self {
+            PerpetratorDepartment::Accounting => 0.21,
+            PerpetratorDepartment::Operations => 0.17,
+            PerpetratorDepartment::Executive => 0.12,
+            PerpetratorDepartment::Sales => 0.11,
+            PerpetratorDepartment::CustomerService => 0.07,
+            PerpetratorDepartment::Purchasing => 0.06,
+            PerpetratorDepartment::It => 0.05,
+            PerpetratorDepartment::HumanResources => 0.04,
+            PerpetratorDepartment::Administrative => 0.04,
+            PerpetratorDepartment::Warehouse => 0.03,
+            PerpetratorDepartment::BoardOfDirectors => 0.02,
+            PerpetratorDepartment::Other => 0.08,
+        }
+    }
+
+    /// Returns the typical median loss by perpetrator department.
+    pub fn typical_median_loss(&self) -> Decimal {
+        match self {
+            PerpetratorDepartment::Executive => Decimal::new(600_000, 0),
+            PerpetratorDepartment::BoardOfDirectors => Decimal::new(500_000, 0),
+            PerpetratorDepartment::Sales => Decimal::new(150_000, 0),
+            PerpetratorDepartment::Accounting => Decimal::new(130_000, 0),
+            PerpetratorDepartment::Purchasing => Decimal::new(120_000, 0),
+            PerpetratorDepartment::Operations => Decimal::new(100_000, 0),
+            PerpetratorDepartment::It => Decimal::new(100_000, 0),
+            _ => Decimal::new(80_000, 0),
+        }
+    }
+}
+
+/// Perpetrator position level (from ACFE statistics).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum PerpetratorLevel {
+    /// Entry-level employee.
+    Employee,
+    /// Manager or supervisor.
+    Manager,
+    /// Owner, executive, or C-level.
+    OwnerExecutive,
+}
+
+impl PerpetratorLevel {
+    /// Returns the typical percentage of frauds by position level.
+    pub fn typical_occurrence_rate(&self) -> f64 {
+        match self {
+            PerpetratorLevel::Employee => 0.42,
+            PerpetratorLevel::Manager => 0.36,
+            PerpetratorLevel::OwnerExecutive => 0.22,
+        }
+    }
+
+    /// Returns the typical median loss by position level.
+    pub fn typical_median_loss(&self) -> Decimal {
+        match self {
+            PerpetratorLevel::Employee => Decimal::new(50_000, 0),
+            PerpetratorLevel::Manager => Decimal::new(125_000, 0),
+            PerpetratorLevel::OwnerExecutive => Decimal::new(337_000, 0),
+        }
+    }
+}
+
+/// ACFE Calibration data for fraud generation.
+///
+/// Contains statistical parameters based on ACFE Report to the Nations
+/// for realistic fraud pattern generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AcfeCalibration {
+    /// Overall median loss for occupational fraud ($117,000 typical).
+    pub median_loss: Decimal,
+    /// Median duration in months before detection (12 months typical).
+    pub median_duration_months: u32,
+    /// Distribution of fraud by category.
+    pub category_distribution: HashMap<String, f64>,
+    /// Distribution of detection methods.
+    pub detection_method_distribution: HashMap<String, f64>,
+    /// Distribution by perpetrator department.
+    pub department_distribution: HashMap<String, f64>,
+    /// Distribution by perpetrator level.
+    pub level_distribution: HashMap<String, f64>,
+    /// Average number of red flags per fraud case.
+    pub avg_red_flags_per_case: f64,
+    /// Percentage of frauds involving collusion.
+    pub collusion_rate: f64,
+}
+
+impl Default for AcfeCalibration {
+    fn default() -> Self {
+        let mut category_distribution = HashMap::new();
+        category_distribution.insert("asset_misappropriation".to_string(), 0.86);
+        category_distribution.insert("corruption".to_string(), 0.33);
+        category_distribution.insert("financial_statement_fraud".to_string(), 0.10);
+
+        let mut detection_method_distribution = HashMap::new();
+        for method in AcfeDetectionMethod::all_variants() {
+            detection_method_distribution.insert(
+                format!("{:?}", method).to_lowercase(),
+                method.typical_detection_rate(),
+            );
+        }
+
+        let mut department_distribution = HashMap::new();
+        department_distribution.insert("accounting".to_string(), 0.21);
+        department_distribution.insert("operations".to_string(), 0.17);
+        department_distribution.insert("executive".to_string(), 0.12);
+        department_distribution.insert("sales".to_string(), 0.11);
+        department_distribution.insert("customer_service".to_string(), 0.07);
+        department_distribution.insert("purchasing".to_string(), 0.06);
+        department_distribution.insert("other".to_string(), 0.26);
+
+        let mut level_distribution = HashMap::new();
+        level_distribution.insert("employee".to_string(), 0.42);
+        level_distribution.insert("manager".to_string(), 0.36);
+        level_distribution.insert("owner_executive".to_string(), 0.22);
+
+        Self {
+            median_loss: Decimal::new(117_000, 0),
+            median_duration_months: 12,
+            category_distribution,
+            detection_method_distribution,
+            department_distribution,
+            level_distribution,
+            avg_red_flags_per_case: 2.8,
+            collusion_rate: 0.50,
+        }
+    }
+}
+
+impl AcfeCalibration {
+    /// Creates a new ACFE calibration with the given parameters.
+    pub fn new(median_loss: Decimal, median_duration_months: u32) -> Self {
+        Self {
+            median_loss,
+            median_duration_months,
+            ..Self::default()
+        }
+    }
+
+    /// Returns the median loss for a specific category.
+    pub fn median_loss_for_category(&self, category: AcfeFraudCategory) -> Decimal {
+        category.typical_median_loss()
+    }
+
+    /// Returns the median duration for a specific category.
+    pub fn median_duration_for_category(&self, category: AcfeFraudCategory) -> u32 {
+        category.typical_detection_months()
+    }
+
+    /// Validates the calibration data.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.median_loss <= Decimal::ZERO {
+            return Err("Median loss must be positive".to_string());
+        }
+        if self.median_duration_months == 0 {
+            return Err("Median duration must be at least 1 month".to_string());
+        }
+        if self.collusion_rate < 0.0 || self.collusion_rate > 1.0 {
+            return Err("Collusion rate must be between 0.0 and 1.0".to_string());
+        }
+        Ok(())
+    }
+}
+
+/// Fraud Triangle components (Pressure, Opportunity, Rationalization).
+///
+/// The fraud triangle is a model for explaining the factors that cause
+/// someone to commit occupational fraud.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FraudTriangle {
+    /// Pressure or incentive to commit fraud.
+    pub pressure: PressureType,
+    /// Opportunity factors that enable fraud.
+    pub opportunities: Vec<OpportunityFactor>,
+    /// Rationalization used to justify the fraud.
+    pub rationalization: Rationalization,
+}
+
+impl FraudTriangle {
+    /// Creates a new fraud triangle.
+    pub fn new(
+        pressure: PressureType,
+        opportunities: Vec<OpportunityFactor>,
+        rationalization: Rationalization,
+    ) -> Self {
+        Self {
+            pressure,
+            opportunities,
+            rationalization,
+        }
+    }
+
+    /// Returns a risk score based on the fraud triangle components.
+    pub fn risk_score(&self) -> f64 {
+        let pressure_score = self.pressure.risk_weight();
+        let opportunity_score: f64 = self
+            .opportunities
+            .iter()
+            .map(|o| o.risk_weight())
+            .sum::<f64>()
+            / self.opportunities.len().max(1) as f64;
+        let rationalization_score = self.rationalization.risk_weight();
+
+        (pressure_score + opportunity_score + rationalization_score) / 3.0
+    }
+}
+
+/// Types of pressure/incentive that can lead to fraud.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum PressureType {
+    // Financial Pressures
+    /// Personal financial difficulties (debt, lifestyle beyond means).
+    PersonalFinancialDifficulties,
+    /// Pressure to meet financial targets/earnings expectations.
+    FinancialTargets,
+    /// Market or analyst expectations.
+    MarketExpectations,
+    /// Debt covenant compliance requirements.
+    CovenantCompliance,
+    /// Credit rating maintenance.
+    CreditRatingMaintenance,
+    /// Acquisition/merger valuation pressure.
+    AcquisitionValuation,
+
+    // Non-Financial Pressures
+    /// Fear of job loss.
+    JobSecurity,
+    /// Pressure to maintain status or image.
+    StatusMaintenance,
+    /// Gambling addiction.
+    GamblingAddiction,
+    /// Substance abuse issues.
+    SubstanceAbuse,
+    /// Family pressure or obligations.
+    FamilyPressure,
+    /// Greed or desire for more.
+    Greed,
+}
+
+impl PressureType {
+    /// Returns the risk weight (0.0-1.0) for this pressure type.
+    pub fn risk_weight(&self) -> f64 {
+        match self {
+            PressureType::PersonalFinancialDifficulties => 0.80,
+            PressureType::FinancialTargets => 0.75,
+            PressureType::MarketExpectations => 0.70,
+            PressureType::CovenantCompliance => 0.85,
+            PressureType::CreditRatingMaintenance => 0.70,
+            PressureType::AcquisitionValuation => 0.75,
+            PressureType::JobSecurity => 0.65,
+            PressureType::StatusMaintenance => 0.55,
+            PressureType::GamblingAddiction => 0.90,
+            PressureType::SubstanceAbuse => 0.85,
+            PressureType::FamilyPressure => 0.60,
+            PressureType::Greed => 0.70,
+        }
+    }
+}
+
+/// Opportunity factors that enable fraud.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum OpportunityFactor {
+    /// Weak internal controls.
+    WeakInternalControls,
+    /// Lack of segregation of duties.
+    LackOfSegregation,
+    /// Override capability.
+    ManagementOverride,
+    /// Complex or unusual transactions.
+    ComplexTransactions,
+    /// Related party transactions.
+    RelatedPartyTransactions,
+    /// Poor tone at the top.
+    PoorToneAtTop,
+    /// Inadequate supervision.
+    InadequateSupervision,
+    /// Access to assets without accountability.
+    AssetAccess,
+    /// Inadequate record keeping.
+    PoorRecordKeeping,
+    /// Failure to discipline fraud perpetrators.
+    LackOfDiscipline,
+    /// Lack of independent checks.
+    LackOfIndependentChecks,
+}
+
+impl OpportunityFactor {
+    /// Returns the risk weight (0.0-1.0) for this opportunity factor.
+    pub fn risk_weight(&self) -> f64 {
+        match self {
+            OpportunityFactor::WeakInternalControls => 0.85,
+            OpportunityFactor::LackOfSegregation => 0.80,
+            OpportunityFactor::ManagementOverride => 0.90,
+            OpportunityFactor::ComplexTransactions => 0.70,
+            OpportunityFactor::RelatedPartyTransactions => 0.75,
+            OpportunityFactor::PoorToneAtTop => 0.85,
+            OpportunityFactor::InadequateSupervision => 0.75,
+            OpportunityFactor::AssetAccess => 0.70,
+            OpportunityFactor::PoorRecordKeeping => 0.65,
+            OpportunityFactor::LackOfDiscipline => 0.60,
+            OpportunityFactor::LackOfIndependentChecks => 0.75,
+        }
+    }
+}
+
+/// Rationalizations used by fraud perpetrators.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Rationalization {
+    /// "I'm just borrowing; I'll pay it back."
+    TemporaryBorrowing,
+    /// "Everyone does it."
+    EveryoneDoesIt,
+    /// "It's for the good of the company."
+    ForTheCompanyGood,
+    /// "I deserve this; the company owes me."
+    Entitlement,
+    /// "I was just following orders."
+    FollowingOrders,
+    /// "They won't miss it; they have plenty."
+    TheyWontMissIt,
+    /// "I need it more than they do."
+    NeedItMore,
+    /// "It's not really stealing."
+    NotReallyStealing,
+    /// "I'm underpaid for what I do."
+    Underpaid,
+    /// "It's a victimless crime."
+    VictimlessCrime,
+}
+
+impl Rationalization {
+    /// Returns the risk weight (0.0-1.0) for this rationalization.
+    pub fn risk_weight(&self) -> f64 {
+        match self {
+            // More dangerous rationalizations
+            Rationalization::Entitlement => 0.85,
+            Rationalization::EveryoneDoesIt => 0.80,
+            Rationalization::NotReallyStealing => 0.80,
+            Rationalization::TheyWontMissIt => 0.75,
+            // Medium risk
+            Rationalization::Underpaid => 0.70,
+            Rationalization::ForTheCompanyGood => 0.65,
+            Rationalization::NeedItMore => 0.65,
+            // Lower risk (still indicates fraud)
+            Rationalization::TemporaryBorrowing => 0.60,
+            Rationalization::FollowingOrders => 0.55,
+            Rationalization::VictimlessCrime => 0.60,
         }
     }
 }
@@ -3044,26 +4020,34 @@ mod tests {
 
     #[test]
     fn test_anomaly_severity() {
-        let severity = AnomalySeverity::new(SeverityLevel::High, dec!(50000))
-            .with_materiality(dec!(10000));
+        let severity =
+            AnomalySeverity::new(SeverityLevel::High, dec!(50000)).with_materiality(dec!(10000));
 
         assert_eq!(severity.level, SeverityLevel::High);
         assert!(severity.is_material);
         assert_eq!(severity.materiality_threshold, Some(dec!(10000)));
 
         // Not material
-        let low_severity = AnomalySeverity::new(SeverityLevel::Low, dec!(5000))
-            .with_materiality(dec!(10000));
+        let low_severity =
+            AnomalySeverity::new(SeverityLevel::Low, dec!(5000)).with_materiality(dec!(10000));
         assert!(!low_severity.is_material);
     }
 
     #[test]
     fn test_detection_difficulty() {
-        assert!((AnomalyDetectionDifficulty::Trivial.expected_detection_rate() - 0.99).abs() < 0.01);
+        assert!(
+            (AnomalyDetectionDifficulty::Trivial.expected_detection_rate() - 0.99).abs() < 0.01
+        );
         assert!((AnomalyDetectionDifficulty::Expert.expected_detection_rate() - 0.15).abs() < 0.01);
 
-        assert_eq!(AnomalyDetectionDifficulty::from_score(0.05), AnomalyDetectionDifficulty::Trivial);
-        assert_eq!(AnomalyDetectionDifficulty::from_score(0.90), AnomalyDetectionDifficulty::Expert);
+        assert_eq!(
+            AnomalyDetectionDifficulty::from_score(0.05),
+            AnomalyDetectionDifficulty::Trivial
+        );
+        assert_eq!(
+            AnomalyDetectionDifficulty::from_score(0.90),
+            AnomalyDetectionDifficulty::Expert
+        );
 
         assert_eq!(AnomalyDetectionDifficulty::Moderate.name(), "moderate");
     }
@@ -3106,7 +4090,10 @@ mod tests {
             .with_scheme("SCHEME001", 2);
 
         assert_eq!(extended.severity.level, SeverityLevel::Critical);
-        assert_eq!(extended.detection_difficulty, AnomalyDetectionDifficulty::Hard);
+        assert_eq!(
+            extended.detection_difficulty,
+            AnomalyDetectionDifficulty::Hard
+        );
         // from_base adds RuleBased, then we add 2 more (GraphBased, ForensicAudit)
         assert_eq!(extended.recommended_methods.len(), 3);
         assert_eq!(extended.key_indicators.len(), 2);
@@ -3125,8 +4112,8 @@ mod tests {
             NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
         );
 
-        let extended = ExtendedAnomalyLabel::from_base(base)
-            .with_difficulty(AnomalyDetectionDifficulty::Hard);
+        let extended =
+            ExtendedAnomalyLabel::from_base(base).with_difficulty(AnomalyDetectionDifficulty::Hard);
 
         let features = extended.to_features();
         assert_eq!(features.len(), ExtendedAnomalyLabel::feature_count());
@@ -3157,7 +4144,10 @@ mod tests {
 
     #[test]
     fn test_scheme_type() {
-        assert_eq!(SchemeType::GradualEmbezzlement.name(), "gradual_embezzlement");
+        assert_eq!(
+            SchemeType::GradualEmbezzlement.name(),
+            "gradual_embezzlement"
+        );
         assert_eq!(SchemeType::GradualEmbezzlement.typical_stages(), 4);
         assert_eq!(SchemeType::VendorKickback.typical_stages(), 4);
     }
@@ -3165,7 +4155,10 @@ mod tests {
     #[test]
     fn test_concealment_technique() {
         assert!(ConcealmentTechnique::Collusion.difficulty_bonus() > 0.0);
-        assert!(ConcealmentTechnique::Collusion.difficulty_bonus() > ConcealmentTechnique::TimingExploitation.difficulty_bonus());
+        assert!(
+            ConcealmentTechnique::Collusion.difficulty_bonus()
+                > ConcealmentTechnique::TimingExploitation.difficulty_bonus()
+        );
     }
 
     #[test]
@@ -3183,25 +4176,269 @@ mod tests {
 
         assert_eq!(near_miss.document_id, "JE001");
         assert_eq!(near_miss.suspicion_score, 0.7);
-        assert_eq!(near_miss.false_positive_trigger, FalsePositiveTrigger::AmountNearThreshold);
+        assert_eq!(
+            near_miss.false_positive_trigger,
+            FalsePositiveTrigger::AmountNearThreshold
+        );
     }
 
     #[test]
     fn test_legitimate_pattern_type() {
-        assert_eq!(LegitimatePatternType::YearEndBonus.description(), "Year-end bonus payment");
-        assert_eq!(LegitimatePatternType::InsuranceClaim.description(), "Insurance claim reimbursement");
+        assert_eq!(
+            LegitimatePatternType::YearEndBonus.description(),
+            "Year-end bonus payment"
+        );
+        assert_eq!(
+            LegitimatePatternType::InsuranceClaim.description(),
+            "Insurance claim reimbursement"
+        );
     }
 
     #[test]
     fn test_severity_detection_difficulty_serialization() {
         let severity = AnomalySeverity::new(SeverityLevel::High, dec!(50000));
         let json = serde_json::to_string(&severity).expect("Failed to serialize");
-        let deserialized: AnomalySeverity = serde_json::from_str(&json).expect("Failed to deserialize");
+        let deserialized: AnomalySeverity =
+            serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(severity.level, deserialized.level);
 
         let difficulty = AnomalyDetectionDifficulty::Hard;
         let json = serde_json::to_string(&difficulty).expect("Failed to serialize");
-        let deserialized: AnomalyDetectionDifficulty = serde_json::from_str(&json).expect("Failed to deserialize");
+        let deserialized: AnomalyDetectionDifficulty =
+            serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(difficulty, deserialized);
+    }
+
+    // ========================================
+    // ACFE Taxonomy Tests
+    // ========================================
+
+    #[test]
+    fn test_acfe_fraud_category() {
+        let asset = AcfeFraudCategory::AssetMisappropriation;
+        assert_eq!(asset.name(), "asset_misappropriation");
+        assert!((asset.typical_occurrence_rate() - 0.86).abs() < 0.01);
+        assert_eq!(asset.typical_median_loss(), Decimal::new(100_000, 0));
+        assert_eq!(asset.typical_detection_months(), 12);
+
+        let corruption = AcfeFraudCategory::Corruption;
+        assert_eq!(corruption.name(), "corruption");
+        assert!((corruption.typical_occurrence_rate() - 0.33).abs() < 0.01);
+
+        let fs_fraud = AcfeFraudCategory::FinancialStatementFraud;
+        assert_eq!(fs_fraud.typical_median_loss(), Decimal::new(954_000, 0));
+        assert_eq!(fs_fraud.typical_detection_months(), 24);
+    }
+
+    #[test]
+    fn test_cash_fraud_scheme() {
+        let shell = CashFraudScheme::ShellCompany;
+        assert_eq!(shell.category(), AcfeFraudCategory::AssetMisappropriation);
+        assert_eq!(shell.subcategory(), "billing_schemes");
+        assert_eq!(shell.severity(), 5);
+        assert_eq!(
+            shell.detection_difficulty(),
+            AnomalyDetectionDifficulty::Hard
+        );
+
+        let ghost = CashFraudScheme::GhostEmployee;
+        assert_eq!(ghost.subcategory(), "payroll_schemes");
+        assert_eq!(ghost.severity(), 5);
+
+        // Test all variants exist
+        assert_eq!(CashFraudScheme::all_variants().len(), 20);
+    }
+
+    #[test]
+    fn test_asset_fraud_scheme() {
+        let ip_theft = AssetFraudScheme::IntellectualPropertyTheft;
+        assert_eq!(
+            ip_theft.category(),
+            AcfeFraudCategory::AssetMisappropriation
+        );
+        assert_eq!(ip_theft.subcategory(), "other_assets");
+        assert_eq!(ip_theft.severity(), 5);
+
+        let inv_theft = AssetFraudScheme::InventoryTheft;
+        assert_eq!(inv_theft.subcategory(), "inventory");
+        assert_eq!(inv_theft.severity(), 4);
+    }
+
+    #[test]
+    fn test_corruption_scheme() {
+        let kickback = CorruptionScheme::InvoiceKickback;
+        assert_eq!(kickback.category(), AcfeFraudCategory::Corruption);
+        assert_eq!(kickback.subcategory(), "bribery");
+        assert_eq!(kickback.severity(), 5);
+        assert_eq!(
+            kickback.detection_difficulty(),
+            AnomalyDetectionDifficulty::Expert
+        );
+
+        let bid_rigging = CorruptionScheme::BidRigging;
+        assert_eq!(bid_rigging.subcategory(), "bribery");
+        assert_eq!(
+            bid_rigging.detection_difficulty(),
+            AnomalyDetectionDifficulty::Hard
+        );
+
+        let purchasing = CorruptionScheme::PurchasingConflict;
+        assert_eq!(purchasing.subcategory(), "conflicts_of_interest");
+
+        // Test all variants exist
+        assert_eq!(CorruptionScheme::all_variants().len(), 10);
+    }
+
+    #[test]
+    fn test_financial_statement_scheme() {
+        let fictitious = FinancialStatementScheme::FictitiousRevenues;
+        assert_eq!(
+            fictitious.category(),
+            AcfeFraudCategory::FinancialStatementFraud
+        );
+        assert_eq!(fictitious.subcategory(), "overstatement");
+        assert_eq!(fictitious.severity(), 5);
+        assert_eq!(
+            fictitious.detection_difficulty(),
+            AnomalyDetectionDifficulty::Expert
+        );
+
+        let understated = FinancialStatementScheme::UnderstatedRevenues;
+        assert_eq!(understated.subcategory(), "understatement");
+
+        // Test all variants exist
+        assert_eq!(FinancialStatementScheme::all_variants().len(), 13);
+    }
+
+    #[test]
+    fn test_acfe_scheme_unified() {
+        let cash_scheme = AcfeScheme::Cash(CashFraudScheme::ShellCompany);
+        assert_eq!(
+            cash_scheme.category(),
+            AcfeFraudCategory::AssetMisappropriation
+        );
+        assert_eq!(cash_scheme.severity(), 5);
+
+        let corruption_scheme = AcfeScheme::Corruption(CorruptionScheme::BidRigging);
+        assert_eq!(corruption_scheme.category(), AcfeFraudCategory::Corruption);
+
+        let fs_scheme = AcfeScheme::FinancialStatement(FinancialStatementScheme::PrematureRevenue);
+        assert_eq!(
+            fs_scheme.category(),
+            AcfeFraudCategory::FinancialStatementFraud
+        );
+    }
+
+    #[test]
+    fn test_acfe_detection_method() {
+        let tip = AcfeDetectionMethod::Tip;
+        assert!((tip.typical_detection_rate() - 0.42).abs() < 0.01);
+
+        let internal_audit = AcfeDetectionMethod::InternalAudit;
+        assert!((internal_audit.typical_detection_rate() - 0.16).abs() < 0.01);
+
+        let external_audit = AcfeDetectionMethod::ExternalAudit;
+        assert!((external_audit.typical_detection_rate() - 0.04).abs() < 0.01);
+
+        // Test all variants exist
+        assert_eq!(AcfeDetectionMethod::all_variants().len(), 12);
+    }
+
+    #[test]
+    fn test_perpetrator_department() {
+        let accounting = PerpetratorDepartment::Accounting;
+        assert!((accounting.typical_occurrence_rate() - 0.21).abs() < 0.01);
+        assert_eq!(accounting.typical_median_loss(), Decimal::new(130_000, 0));
+
+        let executive = PerpetratorDepartment::Executive;
+        assert_eq!(executive.typical_median_loss(), Decimal::new(600_000, 0));
+    }
+
+    #[test]
+    fn test_perpetrator_level() {
+        let employee = PerpetratorLevel::Employee;
+        assert!((employee.typical_occurrence_rate() - 0.42).abs() < 0.01);
+        assert_eq!(employee.typical_median_loss(), Decimal::new(50_000, 0));
+
+        let exec = PerpetratorLevel::OwnerExecutive;
+        assert_eq!(exec.typical_median_loss(), Decimal::new(337_000, 0));
+    }
+
+    #[test]
+    fn test_acfe_calibration() {
+        let cal = AcfeCalibration::default();
+        assert_eq!(cal.median_loss, Decimal::new(117_000, 0));
+        assert_eq!(cal.median_duration_months, 12);
+        assert!((cal.collusion_rate - 0.50).abs() < 0.01);
+        assert!(cal.validate().is_ok());
+
+        // Test custom calibration
+        let custom_cal = AcfeCalibration::new(Decimal::new(200_000, 0), 18);
+        assert_eq!(custom_cal.median_loss, Decimal::new(200_000, 0));
+        assert_eq!(custom_cal.median_duration_months, 18);
+
+        // Test validation failure
+        let mut bad_cal = AcfeCalibration::default();
+        bad_cal.collusion_rate = 1.5;
+        assert!(bad_cal.validate().is_err());
+    }
+
+    #[test]
+    fn test_fraud_triangle() {
+        let triangle = FraudTriangle::new(
+            PressureType::FinancialTargets,
+            vec![
+                OpportunityFactor::WeakInternalControls,
+                OpportunityFactor::ManagementOverride,
+            ],
+            Rationalization::ForTheCompanyGood,
+        );
+
+        // Risk score should be between 0 and 1
+        let risk = triangle.risk_score();
+        assert!(risk >= 0.0 && risk <= 1.0);
+        // Should be relatively high given the components
+        assert!(risk > 0.5);
+    }
+
+    #[test]
+    fn test_pressure_types() {
+        let financial = PressureType::FinancialTargets;
+        assert!(financial.risk_weight() > 0.5);
+
+        let gambling = PressureType::GamblingAddiction;
+        assert_eq!(gambling.risk_weight(), 0.90);
+    }
+
+    #[test]
+    fn test_opportunity_factors() {
+        let override_factor = OpportunityFactor::ManagementOverride;
+        assert_eq!(override_factor.risk_weight(), 0.90);
+
+        let weak_controls = OpportunityFactor::WeakInternalControls;
+        assert!(weak_controls.risk_weight() > 0.8);
+    }
+
+    #[test]
+    fn test_rationalizations() {
+        let entitlement = Rationalization::Entitlement;
+        assert!(entitlement.risk_weight() > 0.8);
+
+        let borrowing = Rationalization::TemporaryBorrowing;
+        assert!(borrowing.risk_weight() < entitlement.risk_weight());
+    }
+
+    #[test]
+    fn test_acfe_scheme_serialization() {
+        let scheme = AcfeScheme::Corruption(CorruptionScheme::BidRigging);
+        let json = serde_json::to_string(&scheme).expect("Failed to serialize");
+        let deserialized: AcfeScheme = serde_json::from_str(&json).expect("Failed to deserialize");
+        assert_eq!(scheme, deserialized);
+
+        let calibration = AcfeCalibration::default();
+        let json = serde_json::to_string(&calibration).expect("Failed to serialize");
+        let deserialized: AcfeCalibration =
+            serde_json::from_str(&json).expect("Failed to deserialize");
+        assert_eq!(calibration.median_loss, deserialized.median_loss);
     }
 }

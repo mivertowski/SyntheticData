@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -22,7 +22,9 @@ SyntheticData is a configurable synthetic data generator that produces realistic
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
 
-**New in v0.2.0:** Privacy-preserving fingerprint extraction from real data with differential privacy guarantees.
+**New in v0.3.0:** ACFE-aligned fraud taxonomy, collusion modeling, industry-specific transactions (Manufacturing, Retail, Healthcare), and ML benchmarks.
+
+**v0.2.x:** Privacy-preserving fingerprinting, accounting/audit standards (US GAAP, IFRS, ISA, SOX), streaming output API.
 
 ## Quick Links
 
@@ -62,12 +64,23 @@ The generator produces statistically accurate data based on empirical research f
 - **Process Mining**: OCEL 2.0 event logs with object-centric relationships
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments, professional judgments
 
+### Fraud Patterns & Industry-Specific Features
+
+- **ACFE-Aligned Fraud Taxonomy**: Asset Misappropriation, Corruption, Financial Statement Fraud calibrated to ACFE statistics
+- **Collusion & Conspiracy Modeling**: Multi-party fraud networks with 9 ring types and role-based conspirators
+- **Management Override**: Senior-level fraud with fraud triangle modeling (Pressure, Opportunity, Rationalization)
+- **Red Flag Generation**: 40+ probabilistic fraud indicators with Bayesian probabilities
+- **Industry-Specific Transactions**: Manufacturing (BOM, WIP), Retail (POS, shrinkage), Healthcare (ICD-10, claims)
+- **Industry-Specific Anomalies**: Authentic fraud patterns per industry (upcoding, sweethearting, yield manipulation)
+
 ### Machine Learning & Analytics
 
-- **Graph Export**: PyTorch Geometric, Neo4j, and DGL formats with train/val/test splits
-- **Anomaly Injection**: 20+ fraud types, errors, process issues with full labeling
+- **Graph Export**: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits
+- **Anomaly Injection**: 60+ fraud types, errors, process issues with full labeling
 - **Data Quality Variations**: Missing values (MCAR, MAR, MNAR), format variations, duplicates, typos
 - **Evaluation Framework**: Auto-tuning with configuration recommendations based on metric gaps
+- **ACFE Benchmarks**: ML benchmarks calibrated to ACFE fraud statistics
+- **Industry Benchmarks**: Pre-configured benchmarks for fraud detection by industry
 
 ### Privacy-Preserving Fingerprinting
 

@@ -11,6 +11,6 @@ pub use behavioral_baseline::{
     EntityBaseline, Observation,
 };
 pub use entity_aware::{
-    AccountAnomalyRules, AccountContext, EmployeeAnomalyRules, EmployeeContext,
-    EntityAwareConfig, EntityAwareInjector, VendorAnomalyRules, VendorContext,
+    AccountAnomalyRules, AccountContext, EmployeeAnomalyRules, EmployeeContext, EntityAwareConfig,
+    EntityAwareInjector, VendorAnomalyRules, VendorContext,
 };

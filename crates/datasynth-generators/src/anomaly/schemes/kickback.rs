@@ -64,10 +64,7 @@ pub struct VendorKickbackScheme {
 
 impl VendorKickbackScheme {
     /// Creates a new vendor kickback scheme.
-    pub fn new(
-        perpetrator_id: impl Into<String>,
-        vendor_id: impl Into<String>,
-    ) -> Self {
+    pub fn new(perpetrator_id: impl Into<String>, vendor_id: impl Into<String>) -> Self {
         let stages = vec![
             // Stage 1: Setup (3 months)
             SchemeStage::new(
@@ -186,15 +183,14 @@ impl VendorKickbackScheme {
 
     /// Calculates the inflation amount for a base invoice amount.
     pub fn calculate_inflation(&self, base_amount: Decimal) -> Decimal {
-        let inflation_factor = Decimal::from_f64_retain(self.inflation_percent)
-            .unwrap_or(dec!(0.15));
+        let inflation_factor =
+            Decimal::from_f64_retain(self.inflation_percent).unwrap_or(dec!(0.15));
         base_amount * inflation_factor
     }
 
     /// Calculates the kickback amount from an inflated amount.
     pub fn calculate_kickback(&self, inflated_amount: Decimal) -> Decimal {
-        let kickback_factor = Decimal::from_f64_retain(self.kickback_percent)
-            .unwrap_or(dec!(0.50));
+        let kickback_factor = Decimal::from_f64_retain(self.kickback_percent).unwrap_or(dec!(0.50));
         inflated_amount * kickback_factor
     }
 
@@ -230,9 +226,14 @@ impl VendorKickbackScheme {
         };
 
         // Kickback stage is riskier
-        let stage_factor = if self.current_stage_index == 2 { 0.15 } else { 0.0 };
+        let stage_factor = if self.current_stage_index == 2 {
+            0.15
+        } else {
+            0.0
+        };
 
-        let prob: f64 = base_prob + concentration_factor + inflation_factor + amount_factor + stage_factor;
+        let prob: f64 =
+            base_prob + concentration_factor + inflation_factor + amount_factor + stage_factor;
         self.detection_probability = prob.min(0.85);
     }
 }
@@ -266,7 +267,11 @@ impl FraudScheme for VendorKickbackScheme {
         self.detection_status
     }
 
-    fn advance(&mut self, context: &SchemeContext, rng: &mut dyn rand::RngCore) -> Vec<SchemeAction> {
+    fn advance(
+        &mut self,
+        context: &SchemeContext,
+        rng: &mut dyn rand::RngCore,
+    ) -> Vec<SchemeAction> {
         let mut actions = Vec::new();
 
         // Start if not started
@@ -357,7 +362,11 @@ impl FraudScheme for VendorKickbackScheme {
                 if self.total_impact > Decimal::ZERO && rng.gen::<f64>() < 0.15 {
                     // Calculate kickback based on accumulated inflation
                     let kickback_amount = if self.total_kickbacks < self.total_impact * dec!(0.5) {
-                        let max_kickback = self.total_impact * Decimal::from_f64_retain(self.kickback_percent * self.inflation_percent).unwrap_or(dec!(0.075));
+                        let max_kickback = self.total_impact
+                            * Decimal::from_f64_retain(
+                                self.kickback_percent * self.inflation_percent,
+                            )
+                            .unwrap_or(dec!(0.075));
                         let remaining = max_kickback - self.total_kickbacks;
                         stage.random_amount(rng).min(remaining).max(dec!(500))
                     } else {
@@ -437,12 +446,12 @@ impl FraudScheme for VendorKickbackScheme {
             return true;
         }
 
-        if self.detection_status != SchemeDetectionStatus::Undetected {
-            if self.detection_status == SchemeDetectionStatus::FullyDetected {
-                return true;
-            }
-            // Under investigation - might continue if they think they can beat it
+        if self.detection_status != SchemeDetectionStatus::Undetected
+            && self.detection_status == SchemeDetectionStatus::FullyDetected
+        {
+            return true;
         }
+        // Under investigation - might continue if they think they can beat it
 
         false
     }
@@ -495,8 +504,7 @@ mod tests {
 
     #[test]
     fn test_inflation_calculation() {
-        let scheme = VendorKickbackScheme::new("EMP001", "VENDOR001")
-            .with_inflation_percent(0.20);
+        let scheme = VendorKickbackScheme::new("EMP001", "VENDOR001").with_inflation_percent(0.20);
 
         let base = dec!(10000);
         let inflation = scheme.calculate_inflation(base);
@@ -504,13 +512,17 @@ mod tests {
         // Use approximate comparison due to floating point conversion
         let expected = dec!(2000);
         let diff = (inflation - expected).abs();
-        assert!(diff < dec!(0.01), "Expected ~{}, got {}", expected, inflation);
+        assert!(
+            diff < dec!(0.01),
+            "Expected ~{}, got {}",
+            expected,
+            inflation
+        );
     }
 
     #[test]
     fn test_kickback_calculation() {
-        let scheme = VendorKickbackScheme::new("EMP001", "VENDOR001")
-            .with_kickback_percent(0.50);
+        let scheme = VendorKickbackScheme::new("EMP001", "VENDOR001").with_kickback_percent(0.50);
 
         let inflated = dec!(2000);
         let kickback = scheme.calculate_kickback(inflated);
@@ -528,8 +540,7 @@ mod tests {
         // Advance multiple times
         let mut total_actions = 0;
         for day in 0..100 {
-            let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
-                + chrono::Duration::days(day);
+            let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap() + chrono::Duration::days(day);
             let mut ctx = context.clone();
             ctx.current_date = date;
 

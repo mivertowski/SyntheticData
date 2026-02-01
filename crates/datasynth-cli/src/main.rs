@@ -1231,6 +1231,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         market_drift: datasynth_config::schema::MarketDriftSchemaConfig::default(),
         drift_labeling: datasynth_config::schema::DriftLabelingSchemaConfig::default(),
         anomaly_injection: Default::default(),
+        industry_specific: Default::default(),
     }
 }
 

@@ -702,8 +702,7 @@ mod tests {
             ..Default::default()
         };
 
-        let multiplier =
-            injector.get_rate_multiplier(Some(&vendor_ctx), Some(&employee_ctx), None);
+        let multiplier = injector.get_rate_multiplier(Some(&vendor_ctx), Some(&employee_ctx), None);
 
         // Should be new_vendor_multiplier * volume_fatigue_multiplier
         // 2.5 * 1.5 = 3.75

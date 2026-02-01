@@ -3,7 +3,7 @@
 //! Models a classic embezzlement pattern where a perpetrator starts with small
 //! test amounts and gradually escalates over time.
 
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use rand::Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -194,7 +194,11 @@ impl GradualEmbezzlementScheme {
     }
 
     /// Selects an account for the transaction.
-    fn select_account<R: Rng + ?Sized>(&self, context: &SchemeContext, rng: &mut R) -> Option<String> {
+    fn select_account<R: Rng + ?Sized>(
+        &self,
+        context: &SchemeContext,
+        rng: &mut R,
+    ) -> Option<String> {
         // Prefer established accounts
         if !self.preferred_accounts.is_empty() && rng.gen::<f64>() < 0.8 {
             let idx = rng.gen_range(0..self.preferred_accounts.len());
@@ -240,7 +244,11 @@ impl FraudScheme for GradualEmbezzlementScheme {
         self.detection_status
     }
 
-    fn advance(&mut self, context: &SchemeContext, rng: &mut dyn rand::RngCore) -> Vec<SchemeAction> {
+    fn advance(
+        &mut self,
+        context: &SchemeContext,
+        rng: &mut dyn rand::RngCore,
+    ) -> Vec<SchemeAction> {
         let mut actions = Vec::new();
 
         // Start scheme if not started
@@ -400,16 +408,22 @@ mod tests {
         // Check stage progression
         assert_eq!(scheme.stages[0].name, "testing");
         assert_eq!(scheme.stages[0].duration_months, 2);
-        assert_eq!(scheme.stages[0].detection_difficulty, AnomalyDetectionDifficulty::Hard);
+        assert_eq!(
+            scheme.stages[0].detection_difficulty,
+            AnomalyDetectionDifficulty::Hard
+        );
 
         assert_eq!(scheme.stages[3].name, "desperation");
-        assert_eq!(scheme.stages[3].detection_difficulty, AnomalyDetectionDifficulty::Trivial);
+        assert_eq!(
+            scheme.stages[3].detection_difficulty,
+            AnomalyDetectionDifficulty::Trivial
+        );
     }
 
     #[test]
     fn test_embezzlement_scheme_advance() {
-        let mut scheme = GradualEmbezzlementScheme::new("USER001")
-            .with_accounts(vec!["5000".to_string()]);
+        let mut scheme =
+            GradualEmbezzlementScheme::new("USER001").with_accounts(vec!["5000".to_string()]);
 
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let context = SchemeContext::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "1000")
@@ -419,8 +433,7 @@ mod tests {
         // Advance multiple times
         let mut total_actions = 0;
         for day in 0..30 {
-            let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()
-                + chrono::Duration::days(day);
+            let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap() + chrono::Duration::days(day);
             let mut ctx = context.clone();
             ctx.current_date = date;
 

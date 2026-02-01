@@ -28,11 +28,7 @@ pub struct CorrelatedAnomaly {
 
 impl CorrelatedAnomaly {
     /// Creates a new correlated anomaly.
-    pub fn new(
-        anomaly_type: AnomalyType,
-        probability: f64,
-        lag_range: (i32, i32),
-    ) -> Self {
+    pub fn new(anomaly_type: AnomalyType, probability: f64, lag_range: (i32, i32)) -> Self {
         Self {
             anomaly_type,
             probability: probability.clamp(0.0, 1.0),

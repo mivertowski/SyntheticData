@@ -8,5 +8,5 @@ mod co_occurrence;
 mod temporal_clustering;
 
 pub use cascade::{CascadeConfig, CascadeGenerator, CascadeStep};
-pub use co_occurrence::{AnomalyCoOccurrence, CorrelatedAnomaly, CoOccurrencePattern};
+pub use co_occurrence::{AnomalyCoOccurrence, CoOccurrencePattern, CorrelatedAnomaly};
 pub use temporal_clustering::{TemporalAnomalyCluster, TemporalClusterGenerator, TemporalWindow};

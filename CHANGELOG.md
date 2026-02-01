@@ -5,9 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2026-01-31
+## [0.3.0] - 2026-02-01
 
 ### Added
+
+- **ACFE-Aligned Fraud Taxonomy** (`datasynth-core`, `datasynth-generators`): Comprehensive fraud classification based on ACFE Report to the Nations
+  - `AcfeFraudCategory`: Asset Misappropriation (86% of cases), Corruption (33%), Financial Statement Fraud (10%)
+  - `CashFraudScheme`: 20 cash-based fraud schemes (skimming, larceny, shell company, ghost employee, etc.)
+  - `CorruptionScheme`: Conflicts of interest, bribery, kickbacks, bid rigging, economic extortion
+  - `FinancialStatementScheme`: Revenue manipulation, expense timing, concealed liabilities, improper disclosures
+  - `AcfeCalibration`: Statistics calibration ($117k median loss, 12-month median duration)
+  - Detection method distribution aligned with ACFE findings (42% tips, 16% internal audit, 12% management review)
+
+- **Collusion & Conspiracy Modeling** (`datasynth-generators`): Multi-party fraud network simulation
+  - `CollusionRing`: Network of conspirators executing coordinated fraud schemes
+  - `CollusionRingType`: 9 ring types (EmployeePair, DepartmentRing, EmployeeVendor, VendorRing, etc.)
+  - `Conspirator`: Individual participant with role, loyalty, risk tolerance, and share of proceeds
+  - `ConspiratorRole`: 6 roles (Initiator, Executor, Approver, Concealer, Lookout, Beneficiary)
+  - `RingStatus`: Lifecycle tracking (Forming, Active, Escalating, Dormant, Dissolving, Detected)
+  - Defection modeling based on detection risk, pressure, and loyalty
+  - Coordinated transaction generation requiring multiple conspirators
+
+- **Management Override Patterns** (`datasynth-generators`): Senior-level fraud modeling
+  - `ManagementOverrideScheme`: Executive-level fraud with override techniques
+  - `ManagementLevel`: SeniorManager, CFO, CEO, COO, ControllerCAO, BoardMember
+  - `OverrideType`: Revenue, Expense, Asset, Liability, Disclosure overrides
+  - `PressureSource`: Financial targets, market expectations, covenant compliance, personal issues
+  - `FraudTriangle`: Pressure, Opportunity, Rationalization modeling
+  - `ManagementConcealment`: False documentation, subordinate intimidation, auditor deception
+
+- **Red Flag Generation** (`datasynth-generators`): Probabilistic fraud indicator injection
+  - `RedFlagPattern`: Configurable red flag patterns with Bayesian probabilities
+  - `RedFlagStrength`: Strong (P(fraud|flag) > 0.5), Moderate (0.2-0.5), Weak (< 0.2)
+  - `RedFlagCategory`: Vendor, Transaction, Timing, Approval, Document, Behavioral categories
+  - P(flag|fraud) and P(flag|not fraud) calibration for realistic false positive rates
+  - 40+ pre-configured red flag patterns based on audit literature
+  - `RedFlagStatistics`: Statistics tracking for generated flags
+
+- **Industry-Specific Transactions** (`datasynth-generators`): Authentic industry transaction modeling
+  - **Manufacturing**:
+    - `ManufacturingTransaction`: 14 transaction types (WorkOrderIssuance, MaterialRequisition, LaborBooking, etc.)
+    - `BillOfMaterials`: Multi-level BOM with components, yield rates, scrap factors
+    - `Routing`: Production routings with operations, work centers, labor/machine rates
+    - `WorkCenter`: Capacity, efficiency, cost center allocation
+    - `ManufacturingSettings`: BOM depth, JIT, quality framework, supplier tiers
+  - **Retail**:
+    - `RetailTransaction`: 12 transaction types (PosSale, ReturnRefund, InventoryReceipt, etc.)
+    - `StoreType`: Flagship, Standard, Express, Outlet, Warehouse, PopUp, Digital
+    - `RetailSettings`: Shrinkage rate, return rate, markdown patterns
+    - Loss prevention configuration with camera coverage and EAS
+  - **Healthcare**:
+    - `HealthcareTransaction`: 15 transaction types (PatientRegistration, ChargeCapture, ClaimSubmission, etc.)
+    - `PayerType`: Medicare, Medicaid, Commercial, SelfPay with configurable payer mix
+    - `CodingSystem`: ICD-10, CPT, DRG, HCPCS support
+    - `FacilityType`: Hospital, PhysicianPractice, AmbulatorySurgery, SkilledNursing, HomeHealth
+    - HIPAA, Stark Law, Anti-Kickback compliance configuration
+
+- **Industry-Specific Anomalies** (`datasynth-generators`): Authentic industry fraud patterns
+  - **Manufacturing**: Yield manipulation, labor misallocation, phantom production, obsolete inventory concealment
+  - **Retail**: Sweethearting, skimming, refund fraud, receiving fraud, coupon fraud, employee discount abuse
+  - **Healthcare**: Upcoding, unbundling, phantom billing, duplicate billing, physician kickbacks, HIPAA violations
+
+- **Industry-Specific Configuration** (`datasynth-config`): New configuration schema
+  - `IndustrySpecificConfig`: Root configuration for industry-specific generation
+  - `ManufacturingConfig`: BOM depth, JIT, supplier tiers, quality framework, anomaly rates
+  - `RetailConfig`: Store types, shrinkage rate, loss prevention, markdown patterns
+  - `HealthcareConfig`: Facility type, payer mix, coding systems, compliance frameworks
+  - `TechnologyConfig`: Revenue model, R&D capitalization, deferred revenue
+  - `FinancialServicesConfig`: Institution type, regulatory framework, loan loss provisions
+  - `ProfessionalServicesConfig`: Billing model, trust accounting, engagement types
+  - Industry-specific anomaly rate configuration for each sector
+
+- **ACFE-Calibrated Benchmarks** (`datasynth-eval`): ML evaluation benchmarks aligned with ACFE statistics
+  - `acfe_calibrated_1k()`: General fraud detection benchmark with ACFE category distribution
+  - `acfe_collusion_5k()`: Collusion-focused benchmark emphasizing network analysis
+  - `acfe_management_override_2k()`: Management override detection with journal entry features
+  - `AcfeAlignment`: Metrics for ACFE alignment (category distribution MAD, median loss ratio, duration KS)
+  - Cost-sensitive evaluation with asymmetric cost matrices
+
+- **Industry-Specific Benchmarks** (`datasynth-eval`): Fraud detection benchmarks by industry
+  - `manufacturing_fraud_5k()`: Inventory, production order, and cost allocation fraud
+  - `retail_fraud_10k()`: POS, shrinkage, and return fraud detection
+  - `healthcare_fraud_5k()`: Revenue cycle fraud (upcoding, unbundling, phantom billing)
+  - `technology_fraud_3k()`: Revenue recognition and capitalization fraud
+  - `financial_services_fraud_5k()`: Loan, trading, and account fraud
+  - `IndustryBenchmarkAnalysis`: Industry-specific performance metrics
+  - `get_industry_benchmark()`: Factory function for benchmark retrieval
 
 - **Interconnectivity Enhancements** (`datasynth-core`, `datasynth-generators`): Comprehensive relationship modeling for realistic enterprise networks
   - **Multi-Tier Vendor Networks**:
@@ -163,8 +246,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `GeneratorConfig` now includes `industry_specific` field for industry-specific settings
 - `GeneratorConfig` now includes `distributions` field for advanced distribution settings
-- All presets, fixtures, and config initializers updated with distributions support
+- All presets, fixtures, and config initializers updated with industry-specific and distributions support
+- `FraudType` enum extended with ACFE-aligned fraud categories and industry-specific schemes
+- `datasynth-generators/src/lib.rs` now exports `fraud` and `industry` modules
+- `datasynth-eval` benchmarks module extended with ACFE and industry benchmarks
 - Python wrapper version bumped to 0.3.0 with distribution dataclasses
 
 ## [0.2.3] - 2026-01-28

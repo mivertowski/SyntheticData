@@ -9,10 +9,10 @@ use datasynth_config::schema::{
     BehavioralDriftSchemaConfig, ChartOfAccountsConfig, CompanyConfig,
     CrossProcessLinksSchemaConfig, CustomerSegmentationSchemaConfig, DataQualitySchemaConfig,
     DriftLabelingSchemaConfig, FraudConfig, GeneratorConfig, GlobalConfig, GraphExportConfig,
-    MarketDriftSchemaConfig, OcpmConfig, OrganizationalEventsSchemaConfig, OutputConfig,
-    RateLimitSchemaConfig, RelationshipSchemaConfig, RelationshipStrengthSchemaConfig,
-    ScenarioConfig, StreamingSchemaConfig, TemporalAttributeSchemaConfig, TransactionVolume,
-    VendorNetworkSchemaConfig,
+    IndustrySpecificConfig, MarketDriftSchemaConfig, OcpmConfig, OrganizationalEventsSchemaConfig,
+    OutputConfig, RateLimitSchemaConfig, RelationshipSchemaConfig,
+    RelationshipStrengthSchemaConfig, ScenarioConfig, StreamingSchemaConfig,
+    TemporalAttributeSchemaConfig, TransactionVolume, VendorNetworkSchemaConfig,
 };
 use datasynth_core::models::{
     AccountSubType, AccountType, BusinessProcess, CoAComplexity, GLAccount, IndustrySector,
@@ -88,6 +88,7 @@ pub fn minimal_config() -> GeneratorConfig {
         market_drift: MarketDriftSchemaConfig::default(),
         drift_labeling: DriftLabelingSchemaConfig::default(),
         anomaly_injection: Default::default(),
+        industry_specific: IndustrySpecificConfig::default(),
     }
 }
 

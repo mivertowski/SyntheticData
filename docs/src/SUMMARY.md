@@ -77,6 +77,8 @@
 # Advanced Topics
 
 - [Overview](advanced/README.md)
+- [Fraud Patterns & ACFE Taxonomy](advanced/fraud-patterns.md)
+- [Industry-Specific Features](advanced/industry-specific.md)
 - [Anomaly Injection](advanced/anomaly-injection.md)
 - [Data Quality Variations](advanced/data-quality.md)
 - [Graph Export](advanced/graph-export.md)

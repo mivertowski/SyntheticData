@@ -22,8 +22,8 @@ mod document_flow_anomalies;
 mod injector;
 mod near_miss;
 mod patterns;
-pub mod schemes;
 mod scheme_advancer;
+pub mod schemes;
 pub mod severity;
 mod strategies;
 mod types;
@@ -31,9 +31,8 @@ mod types;
 pub use confidence::{ConfidenceCalculator, ConfidenceConfig, ConfidenceContext};
 pub use context::{
     AccountAnomalyRules, AccountContext, BehavioralBaseline, BehavioralBaselineConfig,
-    BehavioralDeviation, DeviationType, EmployeeAnomalyRules, EmployeeContext,
-    EntityAwareConfig, EntityAwareInjector, EntityBaseline, Observation, VendorAnomalyRules,
-    VendorContext,
+    BehavioralDeviation, DeviationType, EmployeeAnomalyRules, EmployeeContext, EntityAwareConfig,
+    EntityAwareInjector, EntityBaseline, Observation, VendorAnomalyRules, VendorContext,
 };
 pub use correlation::{
     AnomalyCoOccurrence, CascadeConfig, CascadeGenerator, CascadeStep, CoOccurrencePattern,

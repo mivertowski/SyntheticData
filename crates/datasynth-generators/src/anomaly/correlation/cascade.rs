@@ -75,11 +75,7 @@ impl CascadeStep {
     }
 
     /// Marks step as executed.
-    pub fn mark_executed(
-        &mut self,
-        document_id: impl Into<String>,
-        anomaly_id: impl Into<String>,
-    ) {
+    pub fn mark_executed(&mut self, document_id: impl Into<String>, anomaly_id: impl Into<String>) {
         self.executed = true;
         self.document_id = Some(document_id.into());
         self.anomaly_id = Some(anomaly_id.into());
@@ -301,14 +297,12 @@ impl CascadeGenerator {
             // Duplicate entry cascade
             CascadeTemplate {
                 trigger: AnomalyType::Error(ErrorType::DuplicateEntry),
-                steps: vec![
-                    CascadeStepTemplate::new(
-                        AnomalyType::Error(ErrorType::ReversedAmount),
-                        0.70,
-                        (1, 5),
-                        "Reversal of duplicate",
-                    ),
-                ],
+                steps: vec![CascadeStepTemplate::new(
+                    AnomalyType::Error(ErrorType::ReversedAmount),
+                    0.70,
+                    (1, 5),
+                    "Reversal of duplicate",
+                )],
             },
         ]
     }
@@ -408,13 +402,7 @@ impl CascadeGenerator {
         let completed: Vec<_> = self
             .active_cascades
             .drain(..)
-            .filter(|c| {
-                if c.is_complete() {
-                    false
-                } else {
-                    true
-                }
-            })
+            .filter(|c| !c.is_complete())
             .collect();
 
         let newly_completed: Vec<_> = self
@@ -453,12 +441,8 @@ mod tests {
 
     #[test]
     fn test_cascade_step() {
-        let step = CascadeStep::new(
-            1,
-            AnomalyType::Error(ErrorType::DuplicateEntry),
-            5,
-        )
-        .with_reason("Test reason");
+        let step = CascadeStep::new(1, AnomalyType::Error(ErrorType::DuplicateEntry), 5)
+            .with_reason("Test reason");
 
         assert_eq!(step.step, 1);
         assert_eq!(step.lag_days, 5);

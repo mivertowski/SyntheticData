@@ -11,11 +11,11 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use datasynth_core::models::{ExtendedAnomalyLabel, SchemeDetectionStatus, SchemeType};
+use datasynth_core::models::{SchemeDetectionStatus, SchemeType};
 
 use super::schemes::{
-    FraudScheme, GradualEmbezzlementScheme, RevenueManipulationScheme, SchemeAction,
-    SchemeContext, SchemeStatus, VendorKickbackScheme,
+    FraudScheme, GradualEmbezzlementScheme, RevenueManipulationScheme, SchemeAction, SchemeContext,
+    SchemeStatus, VendorKickbackScheme,
 };
 
 /// Configuration for scheme generation.
@@ -196,8 +196,8 @@ impl SchemeAdvancer {
             let vendor = available_vendors[vendor_idx].clone();
 
             let inflation = 0.10 + self.rng.gen::<f64>() * 0.15; // 10-25%
-            let scheme = VendorKickbackScheme::new(&perpetrator, &vendor)
-                .with_inflation_percent(inflation);
+            let scheme =
+                VendorKickbackScheme::new(&perpetrator, &vendor).with_inflation_percent(inflation);
 
             self.active_vendors.push(vendor);
             Box::new(scheme)
@@ -218,7 +218,9 @@ impl SchemeAdvancer {
         for (idx, scheme) in self.active_schemes.iter_mut().enumerate() {
             // Create a local RNG for each scheme to ensure determinism
             let mut scheme_rng = ChaCha8Rng::seed_from_u64(
-                self.config.seed.wrapping_add(scheme.scheme_id().as_u128() as u64),
+                self.config
+                    .seed
+                    .wrapping_add(scheme.scheme_id().as_u128() as u64),
             );
 
             let actions = scheme.advance(context, &mut scheme_rng);
@@ -458,8 +460,7 @@ mod tests {
 
         // Advance for several days
         for day in 0..30 {
-            let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()
-                + chrono::Duration::days(day);
+            let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap() + chrono::Duration::days(day);
             let mut ctx = context.clone();
             ctx.current_date = date;
 

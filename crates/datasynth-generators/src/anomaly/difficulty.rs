@@ -8,7 +8,6 @@ use datasynth_core::models::{
     AnomalyDetectionDifficulty, AnomalyType, ConcealmentTechnique, DetectionMethod, FraudType,
     LabeledAnomaly,
 };
-use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// Factors that affect concealment of anomalies.
@@ -531,7 +530,10 @@ impl DifficultyCalculator {
     }
 
     /// Returns recommended detection methods for a difficulty level.
-    pub fn recommended_methods(&self, difficulty: AnomalyDetectionDifficulty) -> Vec<DetectionMethod> {
+    pub fn recommended_methods(
+        &self,
+        difficulty: AnomalyDetectionDifficulty,
+    ) -> Vec<DetectionMethod> {
         match difficulty {
             AnomalyDetectionDifficulty::Trivial => vec![DetectionMethod::RuleBased],
             AnomalyDetectionDifficulty::Easy => {
@@ -706,7 +708,9 @@ mod tests {
 
     #[test]
     fn test_collusion_factors() {
-        let factors = CollusionFactors::new().with_participants(3).with_management();
+        let factors = CollusionFactors::new()
+            .with_participants(3)
+            .with_management();
 
         let contribution = factors.difficulty_contribution();
         assert!(contribution > 0.3);
@@ -717,8 +721,7 @@ mod tests {
         let calculator = DifficultyCalculator::new();
 
         // Easy to detect error
-        let error_anomaly =
-            create_test_anomaly(AnomalyType::Error(ErrorType::DuplicateEntry));
+        let error_anomaly = create_test_anomaly(AnomalyType::Error(ErrorType::DuplicateEntry));
         let difficulty = calculator.calculate(&error_anomaly);
         assert!(matches!(
             difficulty,
@@ -727,8 +730,7 @@ mod tests {
 
         // Fraud without concealment factors - base difficulty gets scaled down
         // Base difficulty of 0.50 * 0.4 = 0.20, which maps to Easy
-        let fraud_anomaly =
-            create_test_anomaly(AnomalyType::Fraud(FraudType::KickbackScheme));
+        let fraud_anomaly = create_test_anomaly(AnomalyType::Fraud(FraudType::KickbackScheme));
         let difficulty = calculator.calculate(&fraud_anomaly);
         assert!(matches!(
             difficulty,
@@ -751,7 +753,11 @@ mod tests {
                     .with_document_manipulation()
                     .with_technique(ConcealmentTechnique::Collusion),
             )
-            .with_collusion(CollusionFactors::new().with_participants(2).with_management());
+            .with_collusion(
+                CollusionFactors::new()
+                    .with_participants(2)
+                    .with_management(),
+            );
 
         let enhanced_difficulty = calculator.calculate_with_factors(&anomaly, &factors);
 
@@ -789,7 +795,10 @@ mod tests {
             AnomalyDetectionDifficulty::Hard,
             0.72,
             DifficultyFactors::default(),
-            vec![DetectionMethod::GraphBased, DetectionMethod::MachineLearning],
+            vec![
+                DetectionMethod::GraphBased,
+                DetectionMethod::MachineLearning,
+            ],
         )
         .with_indicator("Complex vendor network")
         .with_indicator("Cross-entity payments");

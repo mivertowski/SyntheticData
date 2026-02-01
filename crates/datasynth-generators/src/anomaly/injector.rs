@@ -33,7 +33,7 @@ use super::patterns::{
     TemporalPattern,
 };
 use super::scheme_advancer::{SchemeAdvancer, SchemeAdvancerConfig};
-use super::schemes::{FraudScheme, SchemeAction, SchemeContext};
+use super::schemes::{SchemeAction, SchemeContext};
 use super::strategies::{DuplicationStrategy, StrategyCollection};
 use super::types::AnomalyTypeSelector;
 
@@ -282,8 +282,8 @@ impl AnomalyInjector {
                 use super::context::Observation;
                 // Record the observation for baseline building
                 let entity_id = entry.header.created_by.clone();
-                let observation = Observation::new(entry.posting_date())
-                    .with_amount(entry.total_debit());
+                let observation =
+                    Observation::new(entry.posting_date()).with_amount(entry.total_debit());
                 baseline.record_observation(&entity_id, observation);
             }
 
@@ -349,8 +349,12 @@ impl AnomalyInjector {
                         let difficulty = calculator.calculate(&label);
 
                         // Store difficulty in metadata
-                        label = label.with_metadata("detection_difficulty", &format!("{:?}", difficulty));
-                        label = label.with_metadata("difficulty_score", &difficulty.difficulty_score().to_string());
+                        label = label
+                            .with_metadata("detection_difficulty", &format!("{:?}", difficulty));
+                        label = label.with_metadata(
+                            "difficulty_score",
+                            &difficulty.difficulty_score().to_string(),
+                        );
 
                         // Update difficulty distribution
                         *self.difficulty_distribution.entry(difficulty).or_insert(0) += 1;
@@ -723,7 +727,8 @@ impl AnomalyInjector {
         self.difficulty_distribution.clear();
 
         if let Some(ref mut baseline) = self.behavioral_baseline {
-            *baseline = BehavioralBaseline::new(self.config.enhanced.behavioral_baseline_config.clone());
+            *baseline =
+                BehavioralBaseline::new(self.config.enhanced.behavioral_baseline_config.clone());
         }
     }
 
@@ -805,10 +810,7 @@ impl AnomalyInjector {
     }
 
     /// Gets the baseline for an entity.
-    pub fn get_entity_baseline(
-        &self,
-        entity_id: &str,
-    ) -> Option<&super::context::EntityBaseline> {
+    pub fn get_entity_baseline(&self, entity_id: &str) -> Option<&super::context::EntityBaseline> {
         if let Some(ref baseline) = self.behavioral_baseline {
             baseline.get_baseline(entity_id)
         } else {

@@ -170,7 +170,8 @@ impl NearMissGenerator {
 
         // Check for near-duplicate
         if self.config.near_duplicate_enabled {
-            if let Some(similar) = self.find_similar_transaction(date, amount, account, counterparty)
+            if let Some(similar) =
+                self.find_similar_transaction(date, amount, account, counterparty)
             {
                 let days_diff = (date - similar.date).num_days().unsigned_abs() as u32;
                 if days_diff >= self.config.near_duplicate_days.0
@@ -257,8 +258,8 @@ impl NearMissGenerator {
 
             // Check date range (not same day, but within range)
             let days_diff = (date - tx.date).num_days().abs();
-            let date_in_range = days_diff > 0
-                && days_diff <= self.config.near_duplicate_days.1 as i64;
+            let date_in_range =
+                days_diff > 0 && days_diff <= self.config.near_duplicate_days.1 as i64;
 
             amount_similar && account_match && counterparty_match && date_in_range
         })
@@ -306,7 +307,11 @@ impl NearMissGenerator {
         }
 
         // Seasonal inventory (Q3-Q4)
-        if date.month() >= 8 && date.month() <= 11 && amount >= dec!(50000) && self.rng.gen::<f64>() < 0.15 {
+        if date.month() >= 8
+            && date.month() <= 11
+            && amount >= dec!(50000)
+            && self.rng.gen::<f64>() < 0.15
+        {
             return Some((
                 LegitimatePatternType::SeasonalInventory,
                 "Seasonal inventory buildup for holiday sales".to_string(),
@@ -341,7 +346,10 @@ impl NearMissGenerator {
             pattern,
             0.60,
             FalsePositiveTrigger::SimilarTransaction,
-            format!("Error caught and corrected within {} days", correction_lag_days),
+            format!(
+                "Error caught and corrected within {} days",
+                correction_lag_days
+            ),
         );
 
         self.labels.push(label.clone());
@@ -472,7 +480,10 @@ mod tests {
         if let Some(label) = label {
             // If threshold proximity was selected
             if matches!(label.pattern, NearMissPattern::ThresholdProximity { .. }) {
-                assert_eq!(label.false_positive_trigger, FalsePositiveTrigger::AmountNearThreshold);
+                assert_eq!(
+                    label.false_positive_trigger,
+                    FalsePositiveTrigger::AmountNearThreshold
+                );
             }
         }
     }
@@ -483,7 +494,13 @@ mod tests {
 
         let label = generator.create_corrected_error("JE002", "JE001", 3);
 
-        assert!(matches!(label.pattern, NearMissPattern::CorrectedError { correction_lag_days: 3, .. }));
+        assert!(matches!(
+            label.pattern,
+            NearMissPattern::CorrectedError {
+                correction_lag_days: 3,
+                ..
+            }
+        ));
         assert_eq!(generator.labels.len(), 1);
     }
 

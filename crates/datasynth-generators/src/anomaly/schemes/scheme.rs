@@ -92,9 +92,10 @@ impl SchemeStage {
 }
 
 /// Current status of a fraud scheme.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum SchemeStatus {
     /// Scheme has not started yet.
+    #[default]
     NotStarted,
     /// Scheme is actively ongoing.
     Active,
@@ -106,12 +107,6 @@ pub enum SchemeStatus {
     Detected,
     /// Scheme has completed its full lifecycle.
     Completed,
-}
-
-impl Default for SchemeStatus {
-    fn default() -> Self {
-        SchemeStatus::NotStarted
-    }
 }
 
 /// Context provided to a scheme for decision-making.
@@ -333,7 +328,11 @@ pub trait FraudScheme: Send + Sync {
     fn detection_status(&self) -> SchemeDetectionStatus;
 
     /// Advances the scheme and returns actions to execute.
-    fn advance(&mut self, context: &SchemeContext, rng: &mut dyn rand::RngCore) -> Vec<SchemeAction>;
+    fn advance(
+        &mut self,
+        context: &SchemeContext,
+        rng: &mut dyn rand::RngCore,
+    ) -> Vec<SchemeAction>;
 
     /// Returns the cumulative detection probability.
     fn detection_probability(&self) -> f64;
@@ -376,7 +375,12 @@ pub struct SchemeTransactionRef {
 
 impl SchemeTransactionRef {
     /// Creates a new transaction reference.
-    pub fn new(document_id: impl Into<String>, date: NaiveDate, amount: Decimal, stage: u32) -> Self {
+    pub fn new(
+        document_id: impl Into<String>,
+        date: NaiveDate,
+        amount: Decimal,
+        stage: u32,
+    ) -> Self {
         Self {
             document_id: document_id.into(),
             date,
@@ -480,8 +484,13 @@ mod tests {
 
     #[test]
     fn test_scheme_transaction_ref() {
-        let tx_ref = SchemeTransactionRef::new("JE001", NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(), dec!(1000), 1)
-            .with_anomaly("ANO001");
+        let tx_ref = SchemeTransactionRef::new(
+            "JE001",
+            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+            dec!(1000),
+            1,
+        )
+        .with_anomaly("ANO001");
 
         assert_eq!(tx_ref.document_id, "JE001");
         assert_eq!(tx_ref.anomaly_id, Some("ANO001".to_string()));

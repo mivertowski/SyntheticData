@@ -2417,6 +2417,7 @@ mod tests {
             market_drift: MarketDriftSchemaConfig::default(),
             drift_labeling: DriftLabelingSchemaConfig::default(),
             anomaly_injection: Default::default(),
+            industry_specific: Default::default(),
         }
     }
 

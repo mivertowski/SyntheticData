@@ -65,9 +65,7 @@ impl TemporalWindow {
                 is_quarter_end_month && date.day() > last_day - 7
             }
             TemporalWindow::December => date.month() == 12,
-            TemporalWindow::LastDaysOfYear(n) => {
-                date.month() == 12 && date.day() > 31 - *n
-            }
+            TemporalWindow::LastDaysOfYear(n) => date.month() == 12 && date.day() > 31 - *n,
             TemporalWindow::FirstDaysOfMonth(n) => date.day() <= *n,
             TemporalWindow::Custom {
                 start_day,
@@ -132,11 +130,7 @@ pub struct TemporalAnomalyCluster {
 
 impl TemporalAnomalyCluster {
     /// Creates a new temporal anomaly cluster.
-    pub fn new(
-        name: impl Into<String>,
-        window: TemporalWindow,
-        rate_multiplier: f64,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, window: TemporalWindow, rate_multiplier: f64) -> Self {
         Self {
             name: name.into(),
             description: String::new(),
@@ -226,7 +220,6 @@ impl TemporalClusterGenerator {
                 AnomalyType::ProcessIssue(ProcessIssueType::LatePosting),
                 AnomalyType::ProcessIssue(ProcessIssueType::RushedPeriodEnd),
             ]),
-
             // Quarter-end pressure
             TemporalAnomalyCluster::new(
                 "quarter_end_pressure",
@@ -240,27 +233,21 @@ impl TemporalClusterGenerator {
                 AnomalyType::ProcessIssue(ProcessIssueType::SkippedApproval),
                 AnomalyType::ProcessIssue(ProcessIssueType::ManualOverride),
             ]),
-
             // Year-end spike
-            TemporalAnomalyCluster::new(
-                "year_end_spike",
-                TemporalWindow::LastDaysOfYear(10),
-                3.0,
-            )
-            .with_description("All anomalies spike at year end")
-            .with_anomaly_types(vec![
-                // Revenue manipulation
-                AnomalyType::Fraud(FraudType::RevenueManipulation),
-                AnomalyType::Fraud(FraudType::PrematureRevenue),
-                AnomalyType::Fraud(FraudType::ChannelStuffing),
-                // Expense manipulation
-                AnomalyType::Fraud(FraudType::ImproperCapitalization),
-                AnomalyType::Fraud(FraudType::ReserveManipulation),
-                // Timing errors
-                AnomalyType::Error(ErrorType::WrongPeriod),
-                AnomalyType::Error(ErrorType::CutoffError),
-            ]),
-
+            TemporalAnomalyCluster::new("year_end_spike", TemporalWindow::LastDaysOfYear(10), 3.0)
+                .with_description("All anomalies spike at year end")
+                .with_anomaly_types(vec![
+                    // Revenue manipulation
+                    AnomalyType::Fraud(FraudType::RevenueManipulation),
+                    AnomalyType::Fraud(FraudType::PrematureRevenue),
+                    AnomalyType::Fraud(FraudType::ChannelStuffing),
+                    // Expense manipulation
+                    AnomalyType::Fraud(FraudType::ImproperCapitalization),
+                    AnomalyType::Fraud(FraudType::ReserveManipulation),
+                    // Timing errors
+                    AnomalyType::Error(ErrorType::WrongPeriod),
+                    AnomalyType::Error(ErrorType::CutoffError),
+                ]),
             // Post-holiday errors
             TemporalAnomalyCluster::new(
                 "post_holiday_errors",
@@ -273,7 +260,6 @@ impl TemporalClusterGenerator {
                 AnomalyType::Error(ErrorType::MissingField),
                 AnomalyType::ProcessIssue(ProcessIssueType::LatePosting),
             ]),
-
             // Month-start reconciliation
             TemporalAnomalyCluster::new(
                 "month_start_reconciliation",
@@ -304,7 +290,10 @@ impl TemporalClusterGenerator {
 
     /// Gets active clusters for a date.
     pub fn get_active_clusters(&self, date: NaiveDate) -> Vec<&TemporalAnomalyCluster> {
-        self.clusters.iter().filter(|c| c.applies_to(date)).collect()
+        self.clusters
+            .iter()
+            .filter(|c| c.applies_to(date))
+            .collect()
     }
 
     /// Returns all clusters.
@@ -386,12 +375,9 @@ mod tests {
 
     #[test]
     fn test_temporal_anomaly_cluster() {
-        let cluster = TemporalAnomalyCluster::new(
-            "test_cluster",
-            TemporalWindow::LastBusinessDays(5),
-            2.5,
-        )
-        .with_anomaly_type(AnomalyType::Error(ErrorType::WrongPeriod));
+        let cluster =
+            TemporalAnomalyCluster::new("test_cluster", TemporalWindow::LastBusinessDays(5), 2.5)
+                .with_anomaly_type(AnomalyType::Error(ErrorType::WrongPeriod));
 
         assert_eq!(cluster.name, "test_cluster");
         assert!((cluster.rate_multiplier - 2.5).abs() < 0.01);

@@ -108,12 +108,38 @@ The generator produces statistically accurate data based on empirical research f
 - **Regulatory Events**: Accounting standard adoptions, tax rate changes, compliance requirement impacts
 - **Drift Detection Ground Truth**: Labeled drift events with magnitude and detection difficulty for ML training
 
+### Fraud Patterns & Industry-Specific Features
+
+- **ACFE-Aligned Fraud Taxonomy**: Fraud classification based on ACFE Report to the Nations statistics
+  - Asset Misappropriation (86% of cases): Cash fraud, billing schemes, expense reimbursement, payroll fraud
+  - Corruption (33% of cases): Conflicts of interest, bribery, kickbacks, bid rigging
+  - Financial Statement Fraud (10% of cases): Revenue manipulation, expense timing, improper disclosures
+- **Collusion & Conspiracy Modeling**: Multi-party fraud networks with coordinated schemes
+  - 9 ring types (EmployeePair, DepartmentRing, EmployeeVendor, VendorRing, etc.)
+  - Role-based conspirators (Initiator, Executor, Approver, Concealer, Lookout, Beneficiary)
+  - Defection and escalation modeling based on detection risk
+- **Management Override Patterns**: Senior-level fraud with override techniques and fraud triangle modeling
+- **Red Flag Generation**: 40+ probabilistic fraud indicators with calibrated Bayesian probabilities
+- **Industry-Specific Transactions**: Authentic transaction modeling per industry
+  - Manufacturing: Work orders, BOM, routings, production variances, WIP tracking
+  - Retail: POS sales, returns, inventory, promotions, shrinkage tracking
+  - Healthcare: Revenue cycle, charge capture, claims, ICD-10/CPT/DRG coding
+  - Technology: License revenue, subscription billing, R&D capitalization
+  - Financial Services: Loan origination, trading, customer deposits
+  - Professional Services: Time & billing, engagement management, trust accounts
+- **Industry-Specific Anomalies**: Authentic fraud patterns per industry
+  - Manufacturing: Yield manipulation, phantom production, obsolete inventory concealment
+  - Retail: Sweethearting, skimming, refund fraud, receiving fraud
+  - Healthcare: Upcoding, unbundling, phantom billing, physician kickbacks
+- **ACFE-Calibrated Benchmarks**: ML evaluation benchmarks aligned with ACFE statistics
+
 ### Machine Learning & Analytics
 
 - **Graph Export**: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits
-- **Anomaly Injection**: 20+ fraud types, errors, process issues with full labeling
+- **Anomaly Injection**: 60+ fraud types, errors, process issues with full labeling
 - **Data Quality Variations**: Missing values, format variations, duplicates, typos
 - **Relationship Generation**: Configurable entity relationships with cardinality rules
+- **Industry Benchmarks**: Pre-configured benchmarks for fraud detection by industry
 
 ### Privacy-Preserving Fingerprinting
 

@@ -127,6 +127,9 @@ pub struct GeneratorConfig {
     /// Enhanced anomaly injection configuration (multi-stage schemes, correlated injection, near-miss)
     #[serde(default)]
     pub anomaly_injection: EnhancedAnomalyConfig,
+    /// Industry-specific transaction and anomaly generation configuration
+    #[serde(default)]
+    pub industry_specific: IndustrySpecificConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -7399,7 +7402,7 @@ impl Default for TemporalDriftLabelingSchemaConfig {
 /// - Near-miss generation for false positive reduction
 /// - Detection difficulty classification
 /// - Context-aware injection based on entity behavior
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EnhancedAnomalyConfig {
     /// Enable enhanced anomaly injection.
     #[serde(default)]
@@ -7432,21 +7435,6 @@ pub struct EnhancedAnomalyConfig {
     /// Enhanced labeling configuration.
     #[serde(default)]
     pub labeling: EnhancedLabelingConfig,
-}
-
-impl Default for EnhancedAnomalyConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            rates: AnomalyRateConfig::default(),
-            multi_stage_schemes: MultiStageSchemeConfig::default(),
-            correlated_injection: CorrelatedInjectionConfig::default(),
-            near_miss: NearMissConfig::default(),
-            difficulty_classification: DifficultyClassificationConfig::default(),
-            context_aware: ContextAwareConfig::default(),
-            labeling: EnhancedLabelingConfig::default(),
-        }
-    }
 }
 
 /// Base anomaly rate configuration.
@@ -7494,7 +7482,7 @@ impl Default for AnomalyRateConfig {
 }
 
 /// Multi-stage fraud scheme configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MultiStageSchemeConfig {
     /// Enable multi-stage fraud schemes.
     #[serde(default)]
@@ -7511,17 +7499,6 @@ pub struct MultiStageSchemeConfig {
     /// Vendor kickback scheme configuration.
     #[serde(default)]
     pub kickback: KickbackSchemeConfig,
-}
-
-impl Default for MultiStageSchemeConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            embezzlement: EmbezzlementSchemeConfig::default(),
-            revenue_manipulation: RevenueManipulationSchemeConfig::default(),
-            kickback: KickbackSchemeConfig::default(),
-        }
-    }
 }
 
 /// Embezzlement scheme configuration.
@@ -8085,7 +8062,7 @@ impl Default for DifficultyDistributionConfig {
 }
 
 /// Context-aware injection configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ContextAwareConfig {
     /// Enable context-aware injection.
     #[serde(default)]
@@ -8106,18 +8083,6 @@ pub struct ContextAwareConfig {
     /// Behavioral baseline configuration.
     #[serde(default)]
     pub behavioral_baseline: BehavioralBaselineConfig,
-}
-
-impl Default for ContextAwareConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            vendor_rules: VendorAnomalyRulesConfig::default(),
-            employee_rules: EmployeeAnomalyRulesConfig::default(),
-            account_rules: AccountAnomalyRulesConfig::default(),
-            behavioral_baseline: BehavioralBaselineConfig::default(),
-        }
-    }
 }
 
 /// Vendor-specific anomaly rules configuration.
@@ -8150,7 +8115,10 @@ fn default_international_multiplier() -> f64 {
     1.5
 }
 fn default_strategic_vendor_types() -> Vec<String> {
-    vec!["pricing_dispute".to_string(), "contract_violation".to_string()]
+    vec![
+        "pricing_dispute".to_string(),
+        "contract_violation".to_string(),
+    ]
 }
 
 impl Default for VendorAnomalyRulesConfig {
@@ -8371,6 +8339,969 @@ impl Default for MaterialityThresholdsConfig {
             immaterial: default_materiality_immaterial(),
             material: default_materiality_material(),
             highly_material: default_materiality_highly_material(),
+        }
+    }
+}
+
+// =============================================================================
+// Industry-Specific Configuration
+// =============================================================================
+
+/// Industry-specific transaction and anomaly generation configuration.
+///
+/// This configuration enables generation of industry-authentic:
+/// - Transaction types with appropriate terminology
+/// - Master data (BOM, routings, clinical codes, etc.)
+/// - Industry-specific anomaly patterns
+/// - Regulatory framework compliance
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct IndustrySpecificConfig {
+    /// Enable industry-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Manufacturing industry settings.
+    #[serde(default)]
+    pub manufacturing: ManufacturingConfig,
+
+    /// Retail industry settings.
+    #[serde(default)]
+    pub retail: RetailConfig,
+
+    /// Healthcare industry settings.
+    #[serde(default)]
+    pub healthcare: HealthcareConfig,
+
+    /// Technology industry settings.
+    #[serde(default)]
+    pub technology: TechnologyConfig,
+
+    /// Financial services industry settings.
+    #[serde(default)]
+    pub financial_services: FinancialServicesConfig,
+
+    /// Professional services industry settings.
+    #[serde(default)]
+    pub professional_services: ProfessionalServicesConfig,
+}
+
+/// Manufacturing industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManufacturingConfig {
+    /// Enable manufacturing-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Bill of Materials depth (typical: 3-7).
+    #[serde(default = "default_bom_depth")]
+    pub bom_depth: u32,
+
+    /// Whether to use just-in-time inventory.
+    #[serde(default)]
+    pub just_in_time: bool,
+
+    /// Production order types to generate.
+    #[serde(default = "default_production_order_types")]
+    pub production_order_types: Vec<String>,
+
+    /// Quality framework (ISO_9001, Six_Sigma, etc.).
+    #[serde(default)]
+    pub quality_framework: Option<String>,
+
+    /// Number of supplier tiers to model (1-3).
+    #[serde(default = "default_supplier_tiers")]
+    pub supplier_tiers: u32,
+
+    /// Standard cost update frequency.
+    #[serde(default = "default_cost_frequency")]
+    pub standard_cost_frequency: String,
+
+    /// Target yield rate (0.95-0.99 typical).
+    #[serde(default = "default_yield_rate")]
+    pub target_yield_rate: f64,
+
+    /// Scrap percentage threshold for alerts.
+    #[serde(default = "default_scrap_threshold")]
+    pub scrap_alert_threshold: f64,
+
+    /// Manufacturing anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: ManufacturingAnomalyRates,
+}
+
+fn default_bom_depth() -> u32 {
+    4
+}
+
+fn default_production_order_types() -> Vec<String> {
+    vec![
+        "standard".to_string(),
+        "rework".to_string(),
+        "prototype".to_string(),
+    ]
+}
+
+fn default_supplier_tiers() -> u32 {
+    2
+}
+
+fn default_cost_frequency() -> String {
+    "quarterly".to_string()
+}
+
+fn default_yield_rate() -> f64 {
+    0.97
+}
+
+fn default_scrap_threshold() -> f64 {
+    0.03
+}
+
+impl Default for ManufacturingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bom_depth: default_bom_depth(),
+            just_in_time: false,
+            production_order_types: default_production_order_types(),
+            quality_framework: Some("ISO_9001".to_string()),
+            supplier_tiers: default_supplier_tiers(),
+            standard_cost_frequency: default_cost_frequency(),
+            target_yield_rate: default_yield_rate(),
+            scrap_alert_threshold: default_scrap_threshold(),
+            anomaly_rates: ManufacturingAnomalyRates::default(),
+        }
+    }
+}
+
+/// Manufacturing anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManufacturingAnomalyRates {
+    /// Yield manipulation rate.
+    #[serde(default = "default_mfg_yield_rate")]
+    pub yield_manipulation: f64,
+
+    /// Labor misallocation rate.
+    #[serde(default = "default_mfg_labor_rate")]
+    pub labor_misallocation: f64,
+
+    /// Phantom production rate.
+    #[serde(default = "default_mfg_phantom_rate")]
+    pub phantom_production: f64,
+
+    /// Standard cost manipulation rate.
+    #[serde(default = "default_mfg_cost_rate")]
+    pub standard_cost_manipulation: f64,
+
+    /// Inventory fraud rate.
+    #[serde(default = "default_mfg_inventory_rate")]
+    pub inventory_fraud: f64,
+}
+
+fn default_mfg_yield_rate() -> f64 {
+    0.015
+}
+
+fn default_mfg_labor_rate() -> f64 {
+    0.02
+}
+
+fn default_mfg_phantom_rate() -> f64 {
+    0.005
+}
+
+fn default_mfg_cost_rate() -> f64 {
+    0.01
+}
+
+fn default_mfg_inventory_rate() -> f64 {
+    0.008
+}
+
+impl Default for ManufacturingAnomalyRates {
+    fn default() -> Self {
+        Self {
+            yield_manipulation: default_mfg_yield_rate(),
+            labor_misallocation: default_mfg_labor_rate(),
+            phantom_production: default_mfg_phantom_rate(),
+            standard_cost_manipulation: default_mfg_cost_rate(),
+            inventory_fraud: default_mfg_inventory_rate(),
+        }
+    }
+}
+
+/// Retail industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetailConfig {
+    /// Enable retail-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Store type distribution.
+    #[serde(default)]
+    pub store_types: RetailStoreTypeConfig,
+
+    /// Average daily transactions per store.
+    #[serde(default = "default_retail_daily_txns")]
+    pub avg_daily_transactions: u32,
+
+    /// Enable loss prevention tracking.
+    #[serde(default = "default_true")]
+    pub loss_prevention: bool,
+
+    /// Shrinkage rate (0.01-0.03 typical).
+    #[serde(default = "default_shrinkage_rate")]
+    pub shrinkage_rate: f64,
+
+    /// Retail anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: RetailAnomalyRates,
+}
+
+fn default_retail_daily_txns() -> u32 {
+    500
+}
+
+fn default_shrinkage_rate() -> f64 {
+    0.015
+}
+
+impl Default for RetailConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            store_types: RetailStoreTypeConfig::default(),
+            avg_daily_transactions: default_retail_daily_txns(),
+            loss_prevention: true,
+            shrinkage_rate: default_shrinkage_rate(),
+            anomaly_rates: RetailAnomalyRates::default(),
+        }
+    }
+}
+
+/// Retail store type distribution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetailStoreTypeConfig {
+    /// Percentage of flagship stores.
+    #[serde(default = "default_flagship_pct")]
+    pub flagship: f64,
+
+    /// Percentage of regional stores.
+    #[serde(default = "default_regional_pct")]
+    pub regional: f64,
+
+    /// Percentage of outlet stores.
+    #[serde(default = "default_outlet_pct")]
+    pub outlet: f64,
+
+    /// Percentage of e-commerce.
+    #[serde(default = "default_ecommerce_pct")]
+    pub ecommerce: f64,
+}
+
+fn default_flagship_pct() -> f64 {
+    0.10
+}
+
+fn default_regional_pct() -> f64 {
+    0.50
+}
+
+fn default_outlet_pct() -> f64 {
+    0.25
+}
+
+fn default_ecommerce_pct() -> f64 {
+    0.15
+}
+
+impl Default for RetailStoreTypeConfig {
+    fn default() -> Self {
+        Self {
+            flagship: default_flagship_pct(),
+            regional: default_regional_pct(),
+            outlet: default_outlet_pct(),
+            ecommerce: default_ecommerce_pct(),
+        }
+    }
+}
+
+/// Retail anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetailAnomalyRates {
+    /// Sweethearting rate.
+    #[serde(default = "default_sweethearting_rate")]
+    pub sweethearting: f64,
+
+    /// Skimming rate.
+    #[serde(default = "default_skimming_rate")]
+    pub skimming: f64,
+
+    /// Refund fraud rate.
+    #[serde(default = "default_refund_fraud_rate")]
+    pub refund_fraud: f64,
+
+    /// Void abuse rate.
+    #[serde(default = "default_void_abuse_rate")]
+    pub void_abuse: f64,
+
+    /// Gift card fraud rate.
+    #[serde(default = "default_gift_card_rate")]
+    pub gift_card_fraud: f64,
+
+    /// Vendor kickback rate.
+    #[serde(default = "default_retail_kickback_rate")]
+    pub vendor_kickback: f64,
+}
+
+fn default_sweethearting_rate() -> f64 {
+    0.02
+}
+
+fn default_skimming_rate() -> f64 {
+    0.005
+}
+
+fn default_refund_fraud_rate() -> f64 {
+    0.015
+}
+
+fn default_void_abuse_rate() -> f64 {
+    0.01
+}
+
+fn default_gift_card_rate() -> f64 {
+    0.008
+}
+
+fn default_retail_kickback_rate() -> f64 {
+    0.003
+}
+
+impl Default for RetailAnomalyRates {
+    fn default() -> Self {
+        Self {
+            sweethearting: default_sweethearting_rate(),
+            skimming: default_skimming_rate(),
+            refund_fraud: default_refund_fraud_rate(),
+            void_abuse: default_void_abuse_rate(),
+            gift_card_fraud: default_gift_card_rate(),
+            vendor_kickback: default_retail_kickback_rate(),
+        }
+    }
+}
+
+/// Healthcare industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthcareConfig {
+    /// Enable healthcare-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Healthcare facility type.
+    #[serde(default = "default_facility_type")]
+    pub facility_type: String,
+
+    /// Payer mix distribution.
+    #[serde(default)]
+    pub payer_mix: HealthcarePayerMix,
+
+    /// Coding systems enabled.
+    #[serde(default)]
+    pub coding_systems: HealthcareCodingSystems,
+
+    /// Healthcare compliance settings.
+    #[serde(default)]
+    pub compliance: HealthcareComplianceConfig,
+
+    /// Average daily encounters.
+    #[serde(default = "default_daily_encounters")]
+    pub avg_daily_encounters: u32,
+
+    /// Average charges per encounter.
+    #[serde(default = "default_charges_per_encounter")]
+    pub avg_charges_per_encounter: u32,
+
+    /// Denial rate (0.0-1.0).
+    #[serde(default = "default_hc_denial_rate")]
+    pub denial_rate: f64,
+
+    /// Bad debt rate (0.0-1.0).
+    #[serde(default = "default_hc_bad_debt_rate")]
+    pub bad_debt_rate: f64,
+
+    /// Charity care rate (0.0-1.0).
+    #[serde(default = "default_hc_charity_care_rate")]
+    pub charity_care_rate: f64,
+
+    /// Healthcare anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: HealthcareAnomalyRates,
+}
+
+fn default_facility_type() -> String {
+    "hospital".to_string()
+}
+
+fn default_daily_encounters() -> u32 {
+    150
+}
+
+fn default_charges_per_encounter() -> u32 {
+    8
+}
+
+fn default_hc_denial_rate() -> f64 {
+    0.05
+}
+
+fn default_hc_bad_debt_rate() -> f64 {
+    0.03
+}
+
+fn default_hc_charity_care_rate() -> f64 {
+    0.02
+}
+
+impl Default for HealthcareConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            facility_type: default_facility_type(),
+            payer_mix: HealthcarePayerMix::default(),
+            coding_systems: HealthcareCodingSystems::default(),
+            compliance: HealthcareComplianceConfig::default(),
+            avg_daily_encounters: default_daily_encounters(),
+            avg_charges_per_encounter: default_charges_per_encounter(),
+            denial_rate: default_hc_denial_rate(),
+            bad_debt_rate: default_hc_bad_debt_rate(),
+            charity_care_rate: default_hc_charity_care_rate(),
+            anomaly_rates: HealthcareAnomalyRates::default(),
+        }
+    }
+}
+
+/// Healthcare payer mix distribution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthcarePayerMix {
+    /// Medicare percentage.
+    #[serde(default = "default_medicare_pct")]
+    pub medicare: f64,
+
+    /// Medicaid percentage.
+    #[serde(default = "default_medicaid_pct")]
+    pub medicaid: f64,
+
+    /// Commercial insurance percentage.
+    #[serde(default = "default_commercial_pct")]
+    pub commercial: f64,
+
+    /// Self-pay percentage.
+    #[serde(default = "default_self_pay_pct")]
+    pub self_pay: f64,
+}
+
+fn default_medicare_pct() -> f64 {
+    0.40
+}
+
+fn default_medicaid_pct() -> f64 {
+    0.20
+}
+
+fn default_commercial_pct() -> f64 {
+    0.30
+}
+
+fn default_self_pay_pct() -> f64 {
+    0.10
+}
+
+impl Default for HealthcarePayerMix {
+    fn default() -> Self {
+        Self {
+            medicare: default_medicare_pct(),
+            medicaid: default_medicaid_pct(),
+            commercial: default_commercial_pct(),
+            self_pay: default_self_pay_pct(),
+        }
+    }
+}
+
+/// Healthcare coding systems configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthcareCodingSystems {
+    /// Enable ICD-10 diagnosis coding.
+    #[serde(default = "default_true")]
+    pub icd10: bool,
+
+    /// Enable CPT procedure coding.
+    #[serde(default = "default_true")]
+    pub cpt: bool,
+
+    /// Enable DRG grouping.
+    #[serde(default = "default_true")]
+    pub drg: bool,
+
+    /// Enable HCPCS Level II coding.
+    #[serde(default = "default_true")]
+    pub hcpcs: bool,
+
+    /// Enable revenue codes.
+    #[serde(default = "default_true")]
+    pub revenue_codes: bool,
+}
+
+impl Default for HealthcareCodingSystems {
+    fn default() -> Self {
+        Self {
+            icd10: true,
+            cpt: true,
+            drg: true,
+            hcpcs: true,
+            revenue_codes: true,
+        }
+    }
+}
+
+/// Healthcare compliance configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthcareComplianceConfig {
+    /// Enable HIPAA compliance.
+    #[serde(default = "default_true")]
+    pub hipaa: bool,
+
+    /// Enable Stark Law compliance.
+    #[serde(default = "default_true")]
+    pub stark_law: bool,
+
+    /// Enable Anti-Kickback Statute compliance.
+    #[serde(default = "default_true")]
+    pub anti_kickback: bool,
+
+    /// Enable False Claims Act compliance.
+    #[serde(default = "default_true")]
+    pub false_claims_act: bool,
+
+    /// Enable EMTALA compliance (for hospitals).
+    #[serde(default = "default_true")]
+    pub emtala: bool,
+}
+
+impl Default for HealthcareComplianceConfig {
+    fn default() -> Self {
+        Self {
+            hipaa: true,
+            stark_law: true,
+            anti_kickback: true,
+            false_claims_act: true,
+            emtala: true,
+        }
+    }
+}
+
+/// Healthcare anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HealthcareAnomalyRates {
+    /// Upcoding rate.
+    #[serde(default = "default_upcoding_rate")]
+    pub upcoding: f64,
+
+    /// Unbundling rate.
+    #[serde(default = "default_unbundling_rate")]
+    pub unbundling: f64,
+
+    /// Phantom billing rate.
+    #[serde(default = "default_phantom_billing_rate")]
+    pub phantom_billing: f64,
+
+    /// Kickback rate.
+    #[serde(default = "default_healthcare_kickback_rate")]
+    pub kickbacks: f64,
+
+    /// Duplicate billing rate.
+    #[serde(default = "default_duplicate_billing_rate")]
+    pub duplicate_billing: f64,
+
+    /// Medical necessity abuse rate.
+    #[serde(default = "default_med_necessity_rate")]
+    pub medical_necessity_abuse: f64,
+}
+
+fn default_upcoding_rate() -> f64 {
+    0.02
+}
+
+fn default_unbundling_rate() -> f64 {
+    0.015
+}
+
+fn default_phantom_billing_rate() -> f64 {
+    0.005
+}
+
+fn default_healthcare_kickback_rate() -> f64 {
+    0.003
+}
+
+fn default_duplicate_billing_rate() -> f64 {
+    0.008
+}
+
+fn default_med_necessity_rate() -> f64 {
+    0.01
+}
+
+impl Default for HealthcareAnomalyRates {
+    fn default() -> Self {
+        Self {
+            upcoding: default_upcoding_rate(),
+            unbundling: default_unbundling_rate(),
+            phantom_billing: default_phantom_billing_rate(),
+            kickbacks: default_healthcare_kickback_rate(),
+            duplicate_billing: default_duplicate_billing_rate(),
+            medical_necessity_abuse: default_med_necessity_rate(),
+        }
+    }
+}
+
+/// Technology industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TechnologyConfig {
+    /// Enable technology-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Revenue model type.
+    #[serde(default = "default_revenue_model")]
+    pub revenue_model: String,
+
+    /// Subscription revenue percentage (for SaaS).
+    #[serde(default = "default_subscription_pct")]
+    pub subscription_revenue_pct: f64,
+
+    /// License revenue percentage.
+    #[serde(default = "default_license_pct")]
+    pub license_revenue_pct: f64,
+
+    /// Services revenue percentage.
+    #[serde(default = "default_services_pct")]
+    pub services_revenue_pct: f64,
+
+    /// R&D capitalization settings.
+    #[serde(default)]
+    pub rd_capitalization: RdCapitalizationConfig,
+
+    /// Technology anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: TechnologyAnomalyRates,
+}
+
+fn default_revenue_model() -> String {
+    "saas".to_string()
+}
+
+fn default_subscription_pct() -> f64 {
+    0.60
+}
+
+fn default_license_pct() -> f64 {
+    0.25
+}
+
+fn default_services_pct() -> f64 {
+    0.15
+}
+
+impl Default for TechnologyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            revenue_model: default_revenue_model(),
+            subscription_revenue_pct: default_subscription_pct(),
+            license_revenue_pct: default_license_pct(),
+            services_revenue_pct: default_services_pct(),
+            rd_capitalization: RdCapitalizationConfig::default(),
+            anomaly_rates: TechnologyAnomalyRates::default(),
+        }
+    }
+}
+
+/// R&D capitalization configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RdCapitalizationConfig {
+    /// Enable R&D capitalization.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+
+    /// Capitalization rate (0.0-1.0).
+    #[serde(default = "default_cap_rate")]
+    pub capitalization_rate: f64,
+
+    /// Useful life in years.
+    #[serde(default = "default_useful_life")]
+    pub useful_life_years: u32,
+}
+
+fn default_cap_rate() -> f64 {
+    0.30
+}
+
+fn default_useful_life() -> u32 {
+    3
+}
+
+impl Default for RdCapitalizationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            capitalization_rate: default_cap_rate(),
+            useful_life_years: default_useful_life(),
+        }
+    }
+}
+
+/// Technology anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TechnologyAnomalyRates {
+    /// Premature revenue recognition rate.
+    #[serde(default = "default_premature_rev_rate")]
+    pub premature_revenue: f64,
+
+    /// Side letter abuse rate.
+    #[serde(default = "default_side_letter_rate")]
+    pub side_letter_abuse: f64,
+
+    /// Channel stuffing rate.
+    #[serde(default = "default_channel_stuffing_rate")]
+    pub channel_stuffing: f64,
+
+    /// Improper capitalization rate.
+    #[serde(default = "default_improper_cap_rate")]
+    pub improper_capitalization: f64,
+}
+
+fn default_premature_rev_rate() -> f64 {
+    0.015
+}
+
+fn default_side_letter_rate() -> f64 {
+    0.008
+}
+
+fn default_channel_stuffing_rate() -> f64 {
+    0.01
+}
+
+fn default_improper_cap_rate() -> f64 {
+    0.012
+}
+
+impl Default for TechnologyAnomalyRates {
+    fn default() -> Self {
+        Self {
+            premature_revenue: default_premature_rev_rate(),
+            side_letter_abuse: default_side_letter_rate(),
+            channel_stuffing: default_channel_stuffing_rate(),
+            improper_capitalization: default_improper_cap_rate(),
+        }
+    }
+}
+
+/// Financial services industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FinancialServicesConfig {
+    /// Enable financial services-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Financial institution type.
+    #[serde(default = "default_fi_type")]
+    pub institution_type: String,
+
+    /// Regulatory framework.
+    #[serde(default = "default_fi_regulatory")]
+    pub regulatory_framework: String,
+
+    /// Financial services anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: FinancialServicesAnomalyRates,
+}
+
+fn default_fi_type() -> String {
+    "commercial_bank".to_string()
+}
+
+fn default_fi_regulatory() -> String {
+    "us_banking".to_string()
+}
+
+impl Default for FinancialServicesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            institution_type: default_fi_type(),
+            regulatory_framework: default_fi_regulatory(),
+            anomaly_rates: FinancialServicesAnomalyRates::default(),
+        }
+    }
+}
+
+/// Financial services anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FinancialServicesAnomalyRates {
+    /// Loan fraud rate.
+    #[serde(default = "default_loan_fraud_rate")]
+    pub loan_fraud: f64,
+
+    /// Trading fraud rate.
+    #[serde(default = "default_trading_fraud_rate")]
+    pub trading_fraud: f64,
+
+    /// Insurance fraud rate.
+    #[serde(default = "default_insurance_fraud_rate")]
+    pub insurance_fraud: f64,
+
+    /// Account manipulation rate.
+    #[serde(default = "default_account_manip_rate")]
+    pub account_manipulation: f64,
+}
+
+fn default_loan_fraud_rate() -> f64 {
+    0.01
+}
+
+fn default_trading_fraud_rate() -> f64 {
+    0.008
+}
+
+fn default_insurance_fraud_rate() -> f64 {
+    0.012
+}
+
+fn default_account_manip_rate() -> f64 {
+    0.005
+}
+
+impl Default for FinancialServicesAnomalyRates {
+    fn default() -> Self {
+        Self {
+            loan_fraud: default_loan_fraud_rate(),
+            trading_fraud: default_trading_fraud_rate(),
+            insurance_fraud: default_insurance_fraud_rate(),
+            account_manipulation: default_account_manip_rate(),
+        }
+    }
+}
+
+/// Professional services industry configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfessionalServicesConfig {
+    /// Enable professional services-specific generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Firm type.
+    #[serde(default = "default_firm_type")]
+    pub firm_type: String,
+
+    /// Billing model.
+    #[serde(default = "default_billing_model")]
+    pub billing_model: String,
+
+    /// Average hourly rate.
+    #[serde(default = "default_hourly_rate")]
+    pub avg_hourly_rate: f64,
+
+    /// Trust account settings (for law firms).
+    #[serde(default)]
+    pub trust_accounting: TrustAccountingConfig,
+
+    /// Professional services anomaly injection rates.
+    #[serde(default)]
+    pub anomaly_rates: ProfessionalServicesAnomalyRates,
+}
+
+fn default_firm_type() -> String {
+    "consulting".to_string()
+}
+
+fn default_billing_model() -> String {
+    "time_and_materials".to_string()
+}
+
+fn default_hourly_rate() -> f64 {
+    250.0
+}
+
+impl Default for ProfessionalServicesConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            firm_type: default_firm_type(),
+            billing_model: default_billing_model(),
+            avg_hourly_rate: default_hourly_rate(),
+            trust_accounting: TrustAccountingConfig::default(),
+            anomaly_rates: ProfessionalServicesAnomalyRates::default(),
+        }
+    }
+}
+
+/// Trust accounting configuration for law firms.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrustAccountingConfig {
+    /// Enable trust accounting.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Require three-way reconciliation.
+    #[serde(default = "default_true")]
+    pub require_three_way_reconciliation: bool,
+}
+
+impl Default for TrustAccountingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            require_three_way_reconciliation: true,
+        }
+    }
+}
+
+/// Professional services anomaly injection rates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfessionalServicesAnomalyRates {
+    /// Time billing fraud rate.
+    #[serde(default = "default_time_fraud_rate")]
+    pub time_billing_fraud: f64,
+
+    /// Expense report fraud rate.
+    #[serde(default = "default_expense_fraud_rate")]
+    pub expense_fraud: f64,
+
+    /// Trust misappropriation rate.
+    #[serde(default = "default_trust_misappropriation_rate")]
+    pub trust_misappropriation: f64,
+}
+
+fn default_time_fraud_rate() -> f64 {
+    0.02
+}
+
+fn default_expense_fraud_rate() -> f64 {
+    0.015
+}
+
+fn default_trust_misappropriation_rate() -> f64 {
+    0.003
+}
+
+impl Default for ProfessionalServicesAnomalyRates {
+    fn default() -> Self {
+        Self {
+            time_billing_fraud: default_time_fraud_rate(),
+            expense_fraud: default_expense_fraud_rate(),
+            trust_misappropriation: default_trust_misappropriation_rate(),
         }
     }
 }
@@ -9046,5 +9977,168 @@ mod tests {
         assert!(config.audit_standards.enabled);
         assert!(config.audit_standards.isa_compliance.enabled);
         assert!(config.audit_standards.sox.enabled);
+    }
+
+    // ==========================================================================
+    // Industry-Specific Config Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_industry_specific_config_defaults() {
+        let config = IndustrySpecificConfig::default();
+        assert!(!config.enabled);
+        assert!(!config.manufacturing.enabled);
+        assert!(!config.retail.enabled);
+        assert!(!config.healthcare.enabled);
+        assert!(!config.technology.enabled);
+        assert!(!config.financial_services.enabled);
+        assert!(!config.professional_services.enabled);
+    }
+
+    #[test]
+    fn test_manufacturing_config_defaults() {
+        let config = ManufacturingConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.bom_depth, 4);
+        assert!(!config.just_in_time);
+        assert_eq!(config.supplier_tiers, 2);
+        assert_eq!(config.target_yield_rate, 0.97);
+        assert_eq!(config.scrap_alert_threshold, 0.03);
+    }
+
+    #[test]
+    fn test_retail_config_defaults() {
+        let config = RetailConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.avg_daily_transactions, 500);
+        assert!(config.loss_prevention);
+        assert_eq!(config.shrinkage_rate, 0.015);
+    }
+
+    #[test]
+    fn test_healthcare_config_defaults() {
+        let config = HealthcareConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.facility_type, "hospital");
+        assert_eq!(config.avg_daily_encounters, 150);
+        assert!(config.compliance.hipaa);
+        assert!(config.compliance.stark_law);
+        assert!(config.coding_systems.icd10);
+        assert!(config.coding_systems.cpt);
+    }
+
+    #[test]
+    fn test_technology_config_defaults() {
+        let config = TechnologyConfig::default();
+        assert!(!config.enabled);
+        assert_eq!(config.revenue_model, "saas");
+        assert_eq!(config.subscription_revenue_pct, 0.60);
+        assert!(config.rd_capitalization.enabled);
+    }
+
+    #[test]
+    fn test_config_with_industry_specific() {
+        let yaml = r#"
+            global:
+              industry: healthcare
+              start_date: "2024-01-01"
+              period_months: 12
+            companies:
+              - code: "HOSP"
+                name: "Test Hospital"
+                currency: "USD"
+                country: "US"
+                annual_transaction_volume: hundred_k
+            chart_of_accounts:
+              complexity: medium
+            output:
+              output_directory: "./output"
+            industry_specific:
+              enabled: true
+              healthcare:
+                enabled: true
+                facility_type: hospital
+                payer_mix:
+                  medicare: 0.45
+                  medicaid: 0.15
+                  commercial: 0.35
+                  self_pay: 0.05
+                coding_systems:
+                  icd10: true
+                  cpt: true
+                  drg: true
+                compliance:
+                  hipaa: true
+                  stark_law: true
+                anomaly_rates:
+                  upcoding: 0.03
+                  unbundling: 0.02
+        "#;
+
+        let config: GeneratorConfig = serde_yaml::from_str(yaml).expect("Failed to parse");
+        assert!(config.industry_specific.enabled);
+        assert!(config.industry_specific.healthcare.enabled);
+        assert_eq!(
+            config.industry_specific.healthcare.facility_type,
+            "hospital"
+        );
+        assert_eq!(config.industry_specific.healthcare.payer_mix.medicare, 0.45);
+        assert_eq!(config.industry_specific.healthcare.payer_mix.self_pay, 0.05);
+        assert!(config.industry_specific.healthcare.coding_systems.icd10);
+        assert!(config.industry_specific.healthcare.compliance.hipaa);
+        assert_eq!(
+            config.industry_specific.healthcare.anomaly_rates.upcoding,
+            0.03
+        );
+    }
+
+    #[test]
+    fn test_config_with_manufacturing_specific() {
+        let yaml = r#"
+            global:
+              industry: manufacturing
+              start_date: "2024-01-01"
+              period_months: 12
+            companies:
+              - code: "MFG"
+                name: "Test Manufacturing"
+                currency: "USD"
+                country: "US"
+                annual_transaction_volume: hundred_k
+            chart_of_accounts:
+              complexity: medium
+            output:
+              output_directory: "./output"
+            industry_specific:
+              enabled: true
+              manufacturing:
+                enabled: true
+                bom_depth: 5
+                just_in_time: true
+                supplier_tiers: 3
+                target_yield_rate: 0.98
+                anomaly_rates:
+                  yield_manipulation: 0.02
+                  phantom_production: 0.01
+        "#;
+
+        let config: GeneratorConfig = serde_yaml::from_str(yaml).expect("Failed to parse");
+        assert!(config.industry_specific.enabled);
+        assert!(config.industry_specific.manufacturing.enabled);
+        assert_eq!(config.industry_specific.manufacturing.bom_depth, 5);
+        assert!(config.industry_specific.manufacturing.just_in_time);
+        assert_eq!(config.industry_specific.manufacturing.supplier_tiers, 3);
+        assert_eq!(
+            config.industry_specific.manufacturing.target_yield_rate,
+            0.98
+        );
+        assert_eq!(
+            config
+                .industry_specific
+                .manufacturing
+                .anomaly_rates
+                .yield_manipulation,
+            0.02
+        );
     }
 }
