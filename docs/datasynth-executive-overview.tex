@@ -50,7 +50,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.2.3}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.3.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.2.3}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.3.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -174,8 +174,8 @@ real-world enterprise resource planning (ERP) systems.
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{20+}}\\[3pt]
-  {\small labeled fraud typologies}
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{50+}}\\[3pt]
+  {\small ACFE-aligned fraud schemes}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
@@ -190,8 +190,8 @@ real-world enterprise resource planning (ERP) systems.
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{14}}\\[3pt]
-  {\small phases fully completed}
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{40+}}\\[3pt]
+  {\small red flag patterns}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
@@ -312,41 +312,54 @@ Regulatory &
 Supports dual reporting mode (US GAAP + IFRS) with automatic framework
 difference reconciliation.
 
-\subsection{Process Mining (OCEL 2.0)}
+\subsection{Process Mining (OCEL 2.0 \& XES 2.0)}
 
 Object-Centric Event Logs track many-to-many relationships between business
 objects (orders, invoices, payments) and activities --- enabling conformance
 checking and process variant analysis.
 
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{OCEL 2.0}: JSON and XML export with objects, events, and object relationships.
+  \item \textbf{XES 2.0}: IEEE standard format for ProM, Celonis, Disco, and pm4py.
+  \item \textbf{Reference Models}: Canonical P2P (9 activities), O2C (10 activities), and R2R (11 activities) process models for conformance checking.
+  \item \textbf{17 R2R/A2R Activities}: GL posting, FX revaluation, period close, depreciation, consolidation.
+  \item \textbf{Deterministic UUIDs}: FNV-1a hash-based IDs with type discriminators for reproducible event logs.
+\end{itemize}
+
 % ══════════════════════════════════════════════════════════════════════════════
 \newpage
 \section{Machine Learning \& Analytics}
 
-\subsection{Anomaly Injection Framework}
+\subsection{ACFE-Aligned Fraud Taxonomy}
 
-DataSynth injects labeled anomalies across five categories, each with
-configurable rates and temporal patterns:
+DataSynth implements the ACFE (Association of Certified Fraud Examiners)
+``Report to the Nations'' taxonomy with calibrated statistics:
 
 \begin{table}[h!]
 \centering
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l c X}
 \toprule
-\textbf{Category} & \textbf{Types} & \textbf{Examples} \\
+\textbf{ACFE Category} & \textbf{Prevalence} & \textbf{Scheme Types} \\
 \midrule
-Fraud         & 20+ & Fictitious transactions, revenue manipulation,
-                       ghost employees, kickback schemes \\
-Error         & 7   & Duplicate entries, reversed amounts, wrong period,
-                       misclassification \\
-Process       & 5   & Skipped approvals, threshold manipulation,
-                       out-of-sequence postings \\
-Statistical   & 4   & Unusual amounts, trend breaks, Benford violations,
-                       outlier values \\
-Relational    & 3   & Circular transactions, dormant account activity,
-                       unusual counterparties \\
+Asset Misappropriation & 86\% & 20+ cash schemes: skimming, larceny, shell company, ghost employee, billing fraud, expense reimbursement \\
+Corruption            & 33\% & Conflicts of interest, bribery, kickbacks, bid rigging, economic extortion \\
+Financial Statement   & 10\% & Revenue manipulation, expense timing, concealed liabilities, improper disclosures \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\noindent
+\textbf{Calibration}: \$117k median loss, 12-month median duration, detection method distribution (42\% tips, 16\% internal audit, 12\% management review).
+
+\subsection{Advanced Fraud Modeling}
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Collusion \& Conspiracy}: 9 ring types (EmployeePair, DepartmentRing, EmployeeVendor, VendorRing), 6 conspirator roles, defection modeling based on detection risk.
+  \item \textbf{Management Override}: Executive-level fraud with override techniques, Fraud Triangle modeling (Pressure, Opportunity, Rationalization), concealment strategies.
+  \item \textbf{Red Flag Patterns}: 40+ patterns with Bayesian probabilities, 6 categories (Vendor, Transaction, Timing, Approval, Document, Behavioral), realistic false positive rates.
+  \item \textbf{Industry-Specific}: Manufacturing (yield manipulation, phantom production), Retail (sweethearting, refund fraud), Healthcare (upcoding, unbundling, phantom billing).
+\end{itemize}
 
 Every injected anomaly carries a \texttt{LabeledAnomaly} record with full
 metadata, enabling supervised and semi-supervised learning pipelines without
@@ -363,6 +376,30 @@ Realistic data imperfections for training data-quality ML models:
   \item \textbf{Duplicates}: Exact, near, and fuzzy duplicates.
   \item \textbf{Typos}: Keyboard-aware substitution, OCR errors, homophones.
   \item \textbf{Encoding issues}: Mojibake, BOM artifacts, HTML entity corruption.
+\end{itemize}
+
+\subsection{Enterprise Interconnectivity}
+
+Realistic enterprise network modeling with configurable relationships:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Multi-Tier Vendor Networks}: 3-tier supply chain (Tier1/Tier2/Tier3), vendor clusters (ReliableStrategic 20\%, StandardOperational 50\%, Transactional 25\%, Problematic 5\%), lifecycle stages, quality scores, dependency analysis.
+  \item \textbf{Customer Value Segmentation}: Enterprise (40\% revenue/5\% customers), MidMarket (35\%/20\%), SMB (20\%/50\%), Consumer (5\%/25\%), lifecycle stages, referral networks, corporate hierarchies.
+  \item \textbf{Entity Relationship Graph}: 16 entity types, 26 relationship types, composite strength calculation from volume, count, duration, recency, and mutual connections.
+  \item \textbf{Cross-Process Links}: P2P$\leftrightarrow$O2C linkage via inventory (GoodsReceipt$\to$Delivery), intercompany bilateral links.
+\end{itemize}
+
+\subsection{Pattern \& Process Drift}
+
+Comprehensive drift modeling for realistic temporal evolution:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Organizational Events}: Acquisition (1.35x volume, 5\% integration errors), divestiture, reorganization, leadership change, workforce reduction, merger.
+  \item \textbf{Process Evolution}: Approval workflow changes, S-curve automation rollout, policy changes, control enhancements.
+  \item \textbf{Technology Transitions}: ERP migration phases with error rate and processing time multipliers, duplicate/missing/format issues.
+  \item \textbf{Behavioral Drift}: Vendor payment term extensions, customer delays during downturns, employee learning curves, year-end intensity.
+  \item \textbf{Market Drift}: Economic cycles (sinusoidal, asymmetric, mean-reverting), industry-specific cycles, commodity drift, price shocks.
+  \item \textbf{Ground Truth}: \texttt{LabeledDriftEvent} with event type, magnitude, and detection difficulty (Easy/Medium/Hard) for drift detection ML.
 \end{itemize}
 
 \subsection{Graph \& Network Export}
@@ -531,6 +568,9 @@ Resource Guards &
 Collision-Free IDs &
   FNV-1a hash-based UUID factory with generator-type discriminators prevents
   document ID collisions across parallel generators. \\
+Streaming Output &
+  CSV, JSON, NDJSON, and Parquet streaming sinks with backpressure strategies
+  (Block, DropOldest, DropNewest, Buffer). \\
 API Layer &
   REST + gRPC + WebSocket with API-key authentication, sliding-window rate
   limiting, and configurable timeouts. \\
@@ -559,17 +599,17 @@ regional multi-company setups.
 \toprule
 \textbf{Industry} & \textbf{Key Weight} & \textbf{Characteristics} \\
 \midrule
-Manufacturing       & 40\% P2P & Heavy procurement, BOM-driven materials,
-                                  multi-plant operations. \\
-Retail              & 50\% O2C & High-volume sales, inventory-intensive,
-                                  multi-currency. \\
+Manufacturing       & 40\% P2P & 14 transaction types, multi-level BOM, production routings,
+                                  work centers, JIT, quality framework. \\
+Retail              & 50\% O2C & 12 transaction types, 7 store types, shrinkage modeling,
+                                  loss prevention, markdown patterns. \\
+Healthcare          & 15\% H2R & 15 transaction types, payer mix (Medicare/Medicaid/Commercial),
+                                  ICD-10/CPT/DRG coding, HIPAA/Stark compliance. \\
 Financial Services  & 40\% R2R & Report-heavy, regulatory compliance,
-                                  intercompany structures. \\
-Healthcare          & 15\% H2R & Labour-intensive, complex billing,
-                                  compliance-driven. \\
-Technology          & 15\% H2R & Knowledge workers, SaaS revenue recognition,
-                                  R\&D capitalization. \\
-Professional Svcs.  & --- & Time-based billing, project accounting. \\
+                                  intercompany structures, loan loss provisions. \\
+Technology          & 15\% H2R & SaaS revenue recognition, R\&D capitalization,
+                                  deferred revenue. \\
+Professional Svcs.  & --- & Time-based billing, project accounting, trust accounting. \\
 Energy              & --- & Capital-intensive, long-lived assets. \\
 Transportation      & --- & Fleet management, route-based costing. \\
 Real Estate         & --- & Property portfolios, lease accounting. \\
@@ -582,6 +622,39 @@ Each preset supports three complexity tiers:
 \textbf{Small} ($\sim$100 GL accounts),
 \textbf{Medium} ($\sim$400 accounts), and
 \textbf{Large} ($\sim$2\,500 accounts).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Statistical Distribution Framework}
+
+DataSynth includes an advanced statistical distribution framework for generating
+empirically grounded synthetic data:
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
+\toprule
+\textbf{Capability} & \textbf{Details} \\
+\midrule
+Mixture Models &
+  Gaussian and Log-Normal mixtures with weighted components (``routine'', ``significant'', ``major'' transactions). \\
+Copula Correlation &
+  Gaussian, Clayton, Gumbel, Frank, Student-t copulas for cross-field dependencies. \\
+Distribution Types &
+  Pareto (heavy-tailed), Weibull (time-to-event), Beta (proportions), Zero-inflated (excess zeros). \\
+Benford's Law &
+  First and second-digit compliance, round number bias, threshold clustering. \\
+Regime Changes &
+  Economic cycles, acquisition/divestiture effects, recession modeling. \\
+Industry Profiles &
+  Pre-configured profiles for Retail, Manufacturing, Financial Services. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+All distributions include validation tests: Benford's Law MAD, Anderson-Darling
+goodness-of-fit, chi-squared, and correlation matrix verification.
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Use Cases}
@@ -624,6 +697,14 @@ Each preset supports three complexity tiers:
   \item[$\blacktriangleright$] \textbf{Data Quality ML} ---
     Labeled missing values, typos, duplicates, and format variations for
     training data-cleansing models.
+
+  \item[$\blacktriangleright$] \textbf{Drift Detection ML} ---
+    Labeled drift events (organizational, process, technology, market, regulatory)
+    with magnitude and detection difficulty for drift detection model training.
+
+  \item[$\blacktriangleright$] \textbf{Network Analytics} ---
+    Multi-tier vendor networks and customer segmentation graphs with
+    relationship strength metrics for supply chain and customer analytics.
 \end{description}
 \end{tcolorbox}
 
@@ -635,15 +716,28 @@ data quality across four dimensions:
 
 \begin{enumerate}[leftmargin=1.4em, itemsep=3pt]
   \item \textbf{Statistical Fidelity} --- KS statistic, Wasserstein distance,
-        Benford's Law MAD, amount distribution fit.
+        Benford's Law MAD, Anderson-Darling goodness-of-fit.
   \item \textbf{Coherence} --- Balance-sheet validation, intercompany matching,
-        document chain integrity, subledger reconciliation.
+        document chain integrity, standards compliance.
   \item \textbf{Data Quality} --- Completeness, consistency, duplicate rates,
         format correctness, uniqueness.
   \item \textbf{ML Readiness} --- Feature distributions, label quality, graph
         structure, train/val/test split balance.
+  \item \textbf{Drift Detection} --- Hellinger distance, Population Stability Index (PSI),
+        rolling window analysis, detection delay metrics.
 \end{enumerate}
 
+\subsection{ML Benchmarks}
+
+Pre-configured benchmarks aligned with ACFE statistics and industry verticals:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{ACFE-Calibrated}: General fraud (1k), collusion-focused (5k), management override (2k).
+  \item \textbf{Industry-Specific}: Manufacturing fraud (5k), retail fraud (10k), healthcare fraud (5k), technology fraud (3k), financial services fraud (5k).
+  \item \textbf{Cost-Sensitive}: Asymmetric cost matrices for realistic fraud detection evaluation.
+\end{itemize}
+
+\noindent
 An \textbf{auto-tuning engine} analyses evaluation results and produces
 prioritized configuration patches with expected improvement estimates ---
 closing the loop between generation and validation.
@@ -705,7 +799,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.2.3 \textbullet{}
+  DataSynth v0.3.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
