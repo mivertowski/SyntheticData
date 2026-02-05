@@ -23,77 +23,29 @@ use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
-
+use crate::exporters::common::{CommonExportConfig, CommonGraphMetadata};
 use crate::models::Graph;
 
 /// Configuration for PyTorch Geometric export.
 #[derive(Debug, Clone)]
 pub struct PyGExportConfig {
-    /// Export node features.
-    pub export_node_features: bool,
-    /// Export edge features.
-    pub export_edge_features: bool,
-    /// Export node labels (anomaly flags).
-    pub export_node_labels: bool,
-    /// Export edge labels (anomaly flags).
-    pub export_edge_labels: bool,
+    /// Common export settings (features, labels, masks, splits, seed).
+    pub common: CommonExportConfig,
     /// Export categorical features as one-hot.
     pub one_hot_categoricals: bool,
-    /// Export train/val/test masks.
-    pub export_masks: bool,
-    /// Train split ratio.
-    pub train_ratio: f64,
-    /// Validation split ratio.
-    pub val_ratio: f64,
-    /// Random seed for splits.
-    pub seed: u64,
 }
 
 impl Default for PyGExportConfig {
     fn default() -> Self {
         Self {
-            export_node_features: true,
-            export_edge_features: true,
-            export_node_labels: true,
-            export_edge_labels: true,
+            common: CommonExportConfig::default(),
             one_hot_categoricals: false,
-            export_masks: true,
-            train_ratio: 0.7,
-            val_ratio: 0.15,
-            seed: 42,
         }
     }
 }
 
 /// Metadata about the exported PyG data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PyGMetadata {
-    /// Graph name.
-    pub name: String,
-    /// Number of nodes.
-    pub num_nodes: usize,
-    /// Number of edges.
-    pub num_edges: usize,
-    /// Node feature dimension.
-    pub node_feature_dim: usize,
-    /// Edge feature dimension.
-    pub edge_feature_dim: usize,
-    /// Number of node classes (for classification).
-    pub num_node_classes: usize,
-    /// Number of edge classes (for classification).
-    pub num_edge_classes: usize,
-    /// Node type mapping.
-    pub node_types: HashMap<String, usize>,
-    /// Edge type mapping.
-    pub edge_types: HashMap<String, usize>,
-    /// Whether graph is directed.
-    pub is_directed: bool,
-    /// Files included in export.
-    pub files: Vec<String>,
-    /// Additional statistics.
-    pub statistics: HashMap<String, f64>,
-}
+pub type PyGMetadata = CommonGraphMetadata;
 
 /// PyTorch Geometric exporter.
 pub struct PyGExporter {
@@ -118,33 +70,33 @@ impl PyGExporter {
         files.push("edge_index.npy".to_string());
 
         // Export node features
-        if self.config.export_node_features {
+        if self.config.common.export_node_features {
             let dim = self.export_node_features(graph, output_dir)?;
             files.push("node_features.npy".to_string());
             statistics.insert("node_feature_dim".to_string(), dim as f64);
         }
 
         // Export edge features
-        if self.config.export_edge_features {
+        if self.config.common.export_edge_features {
             let dim = self.export_edge_features(graph, output_dir)?;
             files.push("edge_features.npy".to_string());
             statistics.insert("edge_feature_dim".to_string(), dim as f64);
         }
 
         // Export node labels
-        if self.config.export_node_labels {
+        if self.config.common.export_node_labels {
             self.export_node_labels(graph, output_dir)?;
             files.push("node_labels.npy".to_string());
         }
 
         // Export edge labels
-        if self.config.export_edge_labels {
+        if self.config.common.export_edge_labels {
             self.export_edge_labels(graph, output_dir)?;
             files.push("edge_labels.npy".to_string());
         }
 
         // Export masks
-        if self.config.export_masks {
+        if self.config.common.export_masks {
             self.export_masks(graph, output_dir)?;
             files.push("train_mask.npy".to_string());
             files.push("val_mask.npy".to_string());
@@ -287,10 +239,10 @@ impl PyGExporter {
     /// Exports train/val/test masks.
     fn export_masks(&self, graph: &Graph, output_dir: &Path) -> std::io::Result<()> {
         let n = graph.node_count();
-        let mut rng = SimpleRng::new(self.config.seed);
+        let mut rng = SimpleRng::new(self.config.common.seed);
 
-        let train_size = (n as f64 * self.config.train_ratio) as usize;
-        let val_size = (n as f64 * self.config.val_ratio) as usize;
+        let train_size = (n as f64 * self.config.common.train_ratio) as usize;
+        let val_size = (n as f64 * self.config.common.val_ratio) as usize;
 
         // Create shuffled indices
         let mut indices: Vec<usize> = (0..n).collect();

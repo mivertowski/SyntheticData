@@ -28,27 +28,14 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::exporters::common::{CommonExportConfig, CommonGraphMetadata};
 use crate::models::Graph;
 
 /// Configuration for DGL export.
 #[derive(Debug, Clone)]
 pub struct DGLExportConfig {
-    /// Export node features.
-    pub export_node_features: bool,
-    /// Export edge features.
-    pub export_edge_features: bool,
-    /// Export node labels (anomaly flags).
-    pub export_node_labels: bool,
-    /// Export edge labels (anomaly flags).
-    pub export_edge_labels: bool,
-    /// Export train/val/test masks.
-    pub export_masks: bool,
-    /// Train split ratio.
-    pub train_ratio: f64,
-    /// Validation split ratio.
-    pub val_ratio: f64,
-    /// Random seed for splits.
-    pub seed: u64,
+    /// Common export settings (features, labels, masks, splits, seed).
+    pub common: CommonExportConfig,
     /// Export as heterogeneous graph (separate files per type).
     pub heterogeneous: bool,
     /// Include Python pickle helper script.
@@ -58,14 +45,7 @@ pub struct DGLExportConfig {
 impl Default for DGLExportConfig {
     fn default() -> Self {
         Self {
-            export_node_features: true,
-            export_edge_features: true,
-            export_node_labels: true,
-            export_edge_labels: true,
-            export_masks: true,
-            train_ratio: 0.7,
-            val_ratio: 0.15,
-            seed: 42,
+            common: CommonExportConfig::default(),
             heterogeneous: false,
             include_pickle_script: true,
         }
@@ -75,34 +55,13 @@ impl Default for DGLExportConfig {
 /// Metadata about the exported DGL data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DGLMetadata {
-    /// Graph name.
-    pub name: String,
-    /// Number of nodes.
-    pub num_nodes: usize,
-    /// Number of edges.
-    pub num_edges: usize,
-    /// Node feature dimension.
-    pub node_feature_dim: usize,
-    /// Edge feature dimension.
-    pub edge_feature_dim: usize,
-    /// Number of node classes (for classification).
-    pub num_node_classes: usize,
-    /// Number of edge classes (for classification).
-    pub num_edge_classes: usize,
-    /// Node type mapping (type name -> count).
-    pub node_types: HashMap<String, usize>,
-    /// Edge type mapping (type name -> count).
-    pub edge_types: HashMap<String, usize>,
-    /// Whether graph is directed.
-    pub is_directed: bool,
+    /// Common graph metadata fields.
+    #[serde(flatten)]
+    pub common: CommonGraphMetadata,
     /// Whether export is heterogeneous.
     pub is_heterogeneous: bool,
     /// Edge index format (COO).
     pub edge_format: String,
-    /// Files included in export.
-    pub files: Vec<String>,
-    /// Additional statistics.
-    pub statistics: HashMap<String, f64>,
 }
 
 /// DGL graph exporter.
@@ -128,33 +87,33 @@ impl DGLExporter {
         files.push("edge_index.npy".to_string());
 
         // Export node features
-        if self.config.export_node_features {
+        if self.config.common.export_node_features {
             let dim = self.export_node_features(graph, output_dir)?;
             files.push("node_features.npy".to_string());
             statistics.insert("node_feature_dim".to_string(), dim as f64);
         }
 
         // Export edge features
-        if self.config.export_edge_features {
+        if self.config.common.export_edge_features {
             let dim = self.export_edge_features(graph, output_dir)?;
             files.push("edge_features.npy".to_string());
             statistics.insert("edge_feature_dim".to_string(), dim as f64);
         }
 
         // Export node labels
-        if self.config.export_node_labels {
+        if self.config.common.export_node_labels {
             self.export_node_labels(graph, output_dir)?;
             files.push("node_labels.npy".to_string());
         }
 
         // Export edge labels
-        if self.config.export_edge_labels {
+        if self.config.common.export_edge_labels {
             self.export_edge_labels(graph, output_dir)?;
             files.push("edge_labels.npy".to_string());
         }
 
         // Export masks
-        if self.config.export_masks {
+        if self.config.common.export_masks {
             self.export_masks(graph, output_dir)?;
             files.push("train_mask.npy".to_string());
             files.push("val_mask.npy".to_string());
@@ -195,20 +154,22 @@ impl DGLExporter {
 
         // Create metadata
         let metadata = DGLMetadata {
-            name: graph.name.clone(),
-            num_nodes: graph.node_count(),
-            num_edges: graph.edge_count(),
-            node_feature_dim: graph.metadata.node_feature_dim,
-            edge_feature_dim: graph.metadata.edge_feature_dim,
-            num_node_classes: 2, // Normal/Anomaly
-            num_edge_classes: 2,
-            node_types,
-            edge_types,
-            is_directed: true,
+            common: CommonGraphMetadata {
+                name: graph.name.clone(),
+                num_nodes: graph.node_count(),
+                num_edges: graph.edge_count(),
+                node_feature_dim: graph.metadata.node_feature_dim,
+                edge_feature_dim: graph.metadata.edge_feature_dim,
+                num_node_classes: 2, // Normal/Anomaly
+                num_edge_classes: 2,
+                node_types,
+                edge_types,
+                is_directed: true,
+                files,
+                statistics,
+            },
             is_heterogeneous: self.config.heterogeneous,
             edge_format: "COO".to_string(),
-            files,
-            statistics,
         };
 
         // Write metadata
@@ -310,10 +271,10 @@ impl DGLExporter {
     /// Exports train/val/test masks.
     fn export_masks(&self, graph: &Graph, output_dir: &Path) -> std::io::Result<()> {
         let n = graph.node_count();
-        let mut rng = SimpleRng::new(self.config.seed);
+        let mut rng = SimpleRng::new(self.config.common.seed);
 
-        let train_size = (n as f64 * self.config.train_ratio) as usize;
-        let val_size = (n as f64 * self.config.val_ratio) as usize;
+        let train_size = (n as f64 * self.config.common.train_ratio) as usize;
+        let val_size = (n as f64 * self.config.common.val_ratio) as usize;
 
         // Create shuffled indices
         let mut indices: Vec<usize> = (0..n).collect();
@@ -970,8 +931,8 @@ mod tests {
         let exporter = DGLExporter::new(DGLExportConfig::default());
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
-        assert_eq!(metadata.num_nodes, 3);
-        assert_eq!(metadata.num_edges, 2);
+        assert_eq!(metadata.common.num_nodes, 3);
+        assert_eq!(metadata.common.num_edges, 2);
         assert_eq!(metadata.edge_format, "COO");
         assert!(dir.path().join("edge_index.npy").exists());
         assert!(dir.path().join("node_features.npy").exists());
@@ -1006,9 +967,9 @@ mod tests {
         let exporter = DGLExporter::new(DGLExportConfig::default());
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
-        assert!(metadata.files.contains(&"train_mask.npy".to_string()));
-        assert!(metadata.files.contains(&"val_mask.npy".to_string()));
-        assert!(metadata.files.contains(&"test_mask.npy".to_string()));
+        assert!(metadata.common.files.contains(&"train_mask.npy".to_string()));
+        assert!(metadata.common.files.contains(&"val_mask.npy".to_string()));
+        assert!(metadata.common.files.contains(&"test_mask.npy".to_string()));
         assert!(dir.path().join("train_mask.npy").exists());
         assert!(dir.path().join("val_mask.npy").exists());
         assert!(dir.path().join("test_mask.npy").exists());
@@ -1040,13 +1001,16 @@ mod tests {
         let dir = tempdir().unwrap();
 
         let config = DGLExportConfig {
-            export_masks: false,
+            common: CommonExportConfig {
+                export_masks: false,
+                ..Default::default()
+            },
             ..Default::default()
         };
         let exporter = DGLExporter::new(config);
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
-        assert!(!metadata.files.contains(&"train_mask.npy".to_string()));
+        assert!(!metadata.common.files.contains(&"train_mask.npy".to_string()));
         assert!(!dir.path().join("train_mask.npy").exists());
     }
 
@@ -1056,11 +1020,14 @@ mod tests {
         let dir = tempdir().unwrap();
 
         let config = DGLExportConfig {
-            export_node_features: false,
-            export_edge_features: false,
-            export_node_labels: false,
-            export_edge_labels: false,
-            export_masks: false,
+            common: CommonExportConfig {
+                export_node_features: false,
+                export_edge_features: false,
+                export_node_labels: false,
+                export_edge_labels: false,
+                export_masks: false,
+                ..Default::default()
+            },
             include_pickle_script: false,
             ..Default::default()
         };
@@ -1068,7 +1035,7 @@ mod tests {
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
         // Only edge_index and loader script should exist
-        assert_eq!(metadata.files.len(), 1); // Only edge_index.npy
+        assert_eq!(metadata.common.files.len(), 1); // Only edge_index.npy
         assert!(dir.path().join("edge_index.npy").exists());
         assert!(dir.path().join("load_graph.py").exists()); // Loader always generated
         assert!(dir.path().join("metadata.json").exists());
@@ -1084,12 +1051,12 @@ mod tests {
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
         // Should have density and anomaly ratios
-        assert!(metadata.statistics.contains_key("density"));
-        assert!(metadata.statistics.contains_key("anomalous_node_ratio"));
-        assert!(metadata.statistics.contains_key("anomalous_edge_ratio"));
+        assert!(metadata.common.statistics.contains_key("density"));
+        assert!(metadata.common.statistics.contains_key("anomalous_node_ratio"));
+        assert!(metadata.common.statistics.contains_key("anomalous_edge_ratio"));
 
         // One of three nodes is anomalous
-        let node_ratio = metadata.statistics.get("anomalous_node_ratio").unwrap();
+        let node_ratio = metadata.common.statistics.get("anomalous_node_ratio").unwrap();
         assert!((*node_ratio - 1.0 / 3.0).abs() < 0.01);
     }
 }
