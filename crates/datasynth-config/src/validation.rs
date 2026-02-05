@@ -103,38 +103,30 @@ fn validate_transactions(config: &GeneratorConfig) -> SynthResult<()> {
     }
 
     // Validate source distribution sums to ~1.0
-    let source_sum = config.transactions.source_distribution.manual
-        + config.transactions.source_distribution.automated
-        + config.transactions.source_distribution.recurring
-        + config.transactions.source_distribution.adjustment;
-    if (source_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "Source distribution must sum to 1.0, got {}",
-            source_sum
-        )));
-    }
+    validate_sum_to_one(
+        "Source distribution",
+        &[
+            config.transactions.source_distribution.manual,
+            config.transactions.source_distribution.automated,
+            config.transactions.source_distribution.recurring,
+            config.transactions.source_distribution.adjustment,
+        ],
+    )?;
 
     // Validate business process weights
-    let bp_sum = config.business_processes.o2c_weight
-        + config.business_processes.p2p_weight
-        + config.business_processes.r2r_weight
-        + config.business_processes.h2r_weight
-        + config.business_processes.a2r_weight;
-    if (bp_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "Business process weights must sum to 1.0, got {}",
-            bp_sum
-        )));
-    }
+    validate_sum_to_one(
+        "Business process weights",
+        &[
+            config.business_processes.o2c_weight,
+            config.business_processes.p2p_weight,
+            config.business_processes.r2r_weight,
+            config.business_processes.h2r_weight,
+            config.business_processes.a2r_weight,
+        ],
+    )?;
 
     // Validate Benford tolerance
-    let tolerance = config.transactions.benford.tolerance;
-    if !(0.0..=1.0).contains(&tolerance) {
-        return Err(SynthError::validation(format!(
-            "benford.tolerance must be between 0.0 and 1.0, got {}",
-            tolerance
-        )));
-    }
+    validate_rate("benford.tolerance", config.transactions.benford.tolerance)?;
 
     Ok(())
 }
@@ -162,11 +154,7 @@ fn validate_fraud(config: &GeneratorConfig) -> SynthResult<()> {
         return Ok(());
     }
 
-    if config.fraud.fraud_rate < 0.0 || config.fraud.fraud_rate > 1.0 {
-        return Err(SynthError::validation(
-            "fraud_rate must be between 0.0 and 1.0",
-        ));
-    }
+    validate_rate("fraud_rate", config.fraud.fraud_rate)?;
 
     if config.fraud.clustering_factor < 0.0 {
         return Err(SynthError::validation(
@@ -175,32 +163,26 @@ fn validate_fraud(config: &GeneratorConfig) -> SynthResult<()> {
     }
 
     // Validate approval thresholds are in ascending order
-    let thresholds = &config.fraud.approval_thresholds;
-    for i in 1..thresholds.len() {
-        if thresholds[i] <= thresholds[i - 1] {
-            return Err(SynthError::validation(format!(
-                "fraud.approval_thresholds must be in strictly ascending order: {} is not greater than {}",
-                thresholds[i], thresholds[i - 1]
-            )));
-        }
-    }
+    validate_ascending(
+        "fraud.approval_thresholds",
+        &config.fraud.approval_thresholds,
+    )?;
 
     // Validate fraud type distribution sums to ~1.0
     let dist = &config.fraud.fraud_type_distribution;
-    let sum = dist.suspense_account_abuse
-        + dist.fictitious_transaction
-        + dist.revenue_manipulation
-        + dist.expense_capitalization
-        + dist.split_transaction
-        + dist.timing_anomaly
-        + dist.unauthorized_access
-        + dist.duplicate_payment;
-    if (sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "fraud_type_distribution must sum to 1.0, got {}",
-            sum
-        )));
-    }
+    validate_sum_to_one(
+        "fraud_type_distribution",
+        &[
+            dist.suspense_account_abuse,
+            dist.fictitious_transaction,
+            dist.revenue_manipulation,
+            dist.expense_capitalization,
+            dist.split_transaction,
+            dist.timing_anomaly,
+            dist.unauthorized_access,
+            dist.duplicate_payment,
+        ],
+    )?;
 
     Ok(())
 }
@@ -211,21 +193,12 @@ fn validate_internal_controls(config: &GeneratorConfig) -> SynthResult<()> {
         return Ok(());
     }
 
-    let exception_rate = config.internal_controls.exception_rate;
-    if !(0.0..=1.0).contains(&exception_rate) {
-        return Err(SynthError::validation(format!(
-            "exception_rate must be between 0.0 and 1.0, got {}",
-            exception_rate
-        )));
-    }
+    validate_rate("exception_rate", config.internal_controls.exception_rate)?;
 
-    let sod_rate = config.internal_controls.sod_violation_rate;
-    if !(0.0..=1.0).contains(&sod_rate) {
-        return Err(SynthError::validation(format!(
-            "sod_violation_rate must be between 0.0 and 1.0, got {}",
-            sod_rate
-        )));
-    }
+    validate_rate(
+        "sod_violation_rate",
+        config.internal_controls.sod_violation_rate,
+    )?;
 
     if config.internal_controls.sox_materiality_threshold < 0.0 {
         return Err(SynthError::validation(
@@ -249,20 +222,10 @@ fn validate_approval(config: &GeneratorConfig) -> SynthResult<()> {
     }
 
     let rejection_rate = config.approval.rejection_rate;
-    if !(0.0..=1.0).contains(&rejection_rate) {
-        return Err(SynthError::validation(format!(
-            "rejection_rate must be between 0.0 and 1.0, got {}",
-            rejection_rate
-        )));
-    }
+    validate_rate("rejection_rate", rejection_rate)?;
 
     let revision_rate = config.approval.revision_rate;
-    if !(0.0..=1.0).contains(&revision_rate) {
-        return Err(SynthError::validation(format!(
-            "revision_rate must be between 0.0 and 1.0, got {}",
-            revision_rate
-        )));
-    }
+    validate_rate("revision_rate", revision_rate)?;
 
     // rejection + revision should not exceed 1.0
     if rejection_rate + revision_rate > 1.0 {
@@ -273,15 +236,13 @@ fn validate_approval(config: &GeneratorConfig) -> SynthResult<()> {
     }
 
     // Validate approval thresholds are in ascending order by amount
-    let thresholds = &config.approval.thresholds;
-    for i in 1..thresholds.len() {
-        if thresholds[i].amount <= thresholds[i - 1].amount {
-            return Err(SynthError::validation(format!(
-                "approval.thresholds must have strictly ascending amounts: {} is not greater than {}",
-                thresholds[i].amount, thresholds[i - 1].amount
-            )));
-        }
-    }
+    let threshold_amounts: Vec<f64> = config
+        .approval
+        .thresholds
+        .iter()
+        .map(|t| t.amount)
+        .collect();
+    validate_ascending("approval.thresholds", &threshold_amounts)?;
 
     Ok(())
 }
@@ -289,40 +250,28 @@ fn validate_approval(config: &GeneratorConfig) -> SynthResult<()> {
 /// Validate master data configuration.
 fn validate_master_data(config: &GeneratorConfig) -> SynthResult<()> {
     // Vendor config
-    let vendor_ic = config.master_data.vendors.intercompany_percent;
-    if !(0.0..=1.0).contains(&vendor_ic) {
-        return Err(SynthError::validation(format!(
-            "vendors.intercompany_percent must be between 0.0 and 1.0, got {}",
-            vendor_ic
-        )));
-    }
+    validate_rate(
+        "vendors.intercompany_percent",
+        config.master_data.vendors.intercompany_percent,
+    )?;
 
     // Customer config
-    let customer_ic = config.master_data.customers.intercompany_percent;
-    if !(0.0..=1.0).contains(&customer_ic) {
-        return Err(SynthError::validation(format!(
-            "customers.intercompany_percent must be between 0.0 and 1.0, got {}",
-            customer_ic
-        )));
-    }
+    validate_rate(
+        "customers.intercompany_percent",
+        config.master_data.customers.intercompany_percent,
+    )?;
 
     // Material config
-    let bom_percent = config.master_data.materials.bom_percent;
-    if !(0.0..=1.0).contains(&bom_percent) {
-        return Err(SynthError::validation(format!(
-            "materials.bom_percent must be between 0.0 and 1.0, got {}",
-            bom_percent
-        )));
-    }
+    validate_rate(
+        "materials.bom_percent",
+        config.master_data.materials.bom_percent,
+    )?;
 
     // Fixed asset config
-    let fully_dep = config.master_data.fixed_assets.fully_depreciated_percent;
-    if !(0.0..=1.0).contains(&fully_dep) {
-        return Err(SynthError::validation(format!(
-            "fixed_assets.fully_depreciated_percent must be between 0.0 and 1.0, got {}",
-            fully_dep
-        )));
-    }
+    validate_rate(
+        "fixed_assets.fully_depreciated_percent",
+        config.master_data.fixed_assets.fully_depreciated_percent,
+    )?;
 
     Ok(())
 }
@@ -395,17 +344,16 @@ fn validate_p2p_payment_behavior(
 
     // Validate late payment days distribution sums to ~1.0
     let late_dist = &config.late_payment_days_distribution;
-    let late_sum = late_dist.slightly_late_1_to_7
-        + late_dist.late_8_to_14
-        + late_dist.very_late_15_to_30
-        + late_dist.severely_late_31_to_60
-        + late_dist.extremely_late_over_60;
-    if (late_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "p2p.payment_behavior.late_payment_days_distribution must sum to 1.0, got {}",
-            late_sum
-        )));
-    }
+    validate_sum_to_one(
+        "p2p.payment_behavior.late_payment_days_distribution",
+        &[
+            late_dist.slightly_late_1_to_7,
+            late_dist.late_8_to_14,
+            late_dist.very_late_15_to_30,
+            late_dist.severely_late_31_to_60,
+            late_dist.extremely_late_over_60,
+        ],
+    )?;
 
     Ok(())
 }
@@ -441,33 +389,31 @@ fn validate_o2c_payment_behavior(
 
         // Validate dunning payment rates sum to ~1.0
         let rates = &dunning.payment_after_dunning_rates;
-        let rates_sum = rates.after_level_1
-            + rates.after_level_2
-            + rates.after_level_3
-            + rates.during_collection
-            + rates.never_pay;
-        if (rates_sum - 1.0).abs() > 0.01 {
-            return Err(SynthError::validation(format!(
-                "dunning.payment_after_dunning_rates must sum to 1.0, got {}",
-                rates_sum
-            )));
-        }
+        validate_sum_to_one(
+            "dunning.payment_after_dunning_rates",
+            &[
+                rates.after_level_1,
+                rates.after_level_2,
+                rates.after_level_3,
+                rates.during_collection,
+                rates.never_pay,
+            ],
+        )?;
     }
 
     // Validate partial payments config
     let partial = &config.partial_payments;
     validate_rate("o2c.payment_behavior.partial_payments.rate", partial.rate)?;
     let partial_dist = &partial.percentage_distribution;
-    let partial_sum = partial_dist.pay_25_percent
-        + partial_dist.pay_50_percent
-        + partial_dist.pay_75_percent
-        + partial_dist.pay_random_percent;
-    if (partial_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "partial_payments.percentage_distribution must sum to 1.0, got {}",
-            partial_sum
-        )));
-    }
+    validate_sum_to_one(
+        "partial_payments.percentage_distribution",
+        &[
+            partial_dist.pay_25_percent,
+            partial_dist.pay_50_percent,
+            partial_dist.pay_75_percent,
+            partial_dist.pay_random_percent,
+        ],
+    )?;
 
     // Validate short payments config
     let short = &config.short_payments;
@@ -477,17 +423,16 @@ fn validate_o2c_payment_behavior(
         short.max_short_percent,
     )?;
     let short_dist = &short.reason_distribution;
-    let short_sum = short_dist.pricing_dispute
-        + short_dist.quality_issue
-        + short_dist.quantity_discrepancy
-        + short_dist.unauthorized_deduction
-        + short_dist.incorrect_discount;
-    if (short_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "short_payments.reason_distribution must sum to 1.0, got {}",
-            short_sum
-        )));
-    }
+    validate_sum_to_one(
+        "short_payments.reason_distribution",
+        &[
+            short_dist.pricing_dispute,
+            short_dist.quality_issue,
+            short_dist.quantity_discrepancy,
+            short_dist.unauthorized_deduction,
+            short_dist.incorrect_discount,
+        ],
+    )?;
 
     // Validate on-account payments config
     validate_rate(
@@ -502,17 +447,16 @@ fn validate_o2c_payment_behavior(
         corrections.rate,
     )?;
     let corr_dist = &corrections.type_distribution;
-    let corr_sum = corr_dist.nsf
-        + corr_dist.chargeback
-        + corr_dist.wrong_amount
-        + corr_dist.wrong_customer
-        + corr_dist.duplicate_payment;
-    if (corr_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "payment_corrections.type_distribution must sum to 1.0, got {}",
-            corr_sum
-        )));
-    }
+    validate_sum_to_one(
+        "payment_corrections.type_distribution",
+        &[
+            corr_dist.nsf,
+            corr_dist.chargeback,
+            corr_dist.wrong_amount,
+            corr_dist.wrong_customer,
+            corr_dist.duplicate_payment,
+        ],
+    )?;
 
     Ok(())
 }
@@ -536,19 +480,18 @@ fn validate_intercompany(config: &GeneratorConfig) -> SynthResult<()> {
 
     // Validate IC transaction type distribution sums to ~1.0
     let dist = &config.intercompany.transaction_type_distribution;
-    let sum = dist.goods_sale
-        + dist.service_provided
-        + dist.loan
-        + dist.dividend
-        + dist.management_fee
-        + dist.royalty
-        + dist.cost_sharing;
-    if (sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "intercompany.transaction_type_distribution must sum to 1.0, got {}",
-            sum
-        )));
-    }
+    validate_sum_to_one(
+        "intercompany.transaction_type_distribution",
+        &[
+            dist.goods_sale,
+            dist.service_provided,
+            dist.loan,
+            dist.dividend,
+            dist.management_fee,
+            dist.royalty,
+            dist.cost_sharing,
+        ],
+    )?;
 
     Ok(())
 }
@@ -557,12 +500,7 @@ fn validate_intercompany(config: &GeneratorConfig) -> SynthResult<()> {
 fn validate_balance(config: &GeneratorConfig) -> SynthResult<()> {
     let balance = &config.balance;
 
-    if balance.target_gross_margin < 0.0 || balance.target_gross_margin > 1.0 {
-        return Err(SynthError::validation(format!(
-            "target_gross_margin must be between 0.0 and 1.0, got {}",
-            balance.target_gross_margin
-        )));
-    }
+    validate_rate("target_gross_margin", balance.target_gross_margin)?;
 
     if balance.target_current_ratio < 0.0 {
         return Err(SynthError::validation(
@@ -579,15 +517,56 @@ fn validate_balance(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
-/// Helper to validate a rate field is between 0.0 and 1.0.
-fn validate_rate(field_name: &str, value: f64) -> SynthResult<()> {
-    if !(0.0..=1.0).contains(&value) {
+/// Helper to validate that a slice of f64 values sums to approximately 1.0 (within 0.01 tolerance).
+fn validate_sum_to_one(name: &str, values: &[f64]) -> SynthResult<()> {
+    let sum: f64 = values.iter().sum();
+    if (sum - 1.0).abs() > 0.01 {
         return Err(SynthError::validation(format!(
-            "{} must be between 0.0 and 1.0, got {}",
-            field_name, value
+            "{} must sum to 1.0, got {}",
+            name, sum
         )));
     }
     Ok(())
+}
+
+/// Helper to validate that a f64 value is within a given range [min, max].
+fn validate_range_f64(name: &str, value: f64, min: f64, max: f64) -> SynthResult<()> {
+    if value < min || value > max {
+        return Err(SynthError::validation(format!(
+            "{} must be between {} and {}, got {}",
+            name, min, max, value
+        )));
+    }
+    Ok(())
+}
+
+/// Helper to validate that a slice of f64 values is in strictly ascending order.
+fn validate_ascending(name: &str, values: &[f64]) -> SynthResult<()> {
+    for i in 1..values.len() {
+        if values[i] <= values[i - 1] {
+            return Err(SynthError::validation(format!(
+                "{} must be in ascending order",
+                name
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Helper to validate that a f64 value is strictly positive (> 0.0).
+fn validate_positive(name: &str, value: f64) -> SynthResult<()> {
+    if value <= 0.0 {
+        return Err(SynthError::validation(format!(
+            "{} must be positive, got {}",
+            name, value
+        )));
+    }
+    Ok(())
+}
+
+/// Helper to validate a rate field is between 0.0 and 1.0.
+fn validate_rate(field_name: &str, value: f64) -> SynthResult<()> {
+    validate_range_f64(field_name, value, 0.0, 1.0)
 }
 
 /// Validate accounting standards configuration (IFRS, US GAAP).
@@ -638,13 +617,10 @@ fn validate_accounting_standards(config: &GeneratorConfig) -> SynthResult<()> {
         let fv = &standards.fair_value;
 
         // Level distributions should sum to approximately 1.0
-        let level_sum = fv.level1_percent + fv.level2_percent + fv.level3_percent;
-        if (level_sum - 1.0).abs() > 0.01 {
-            return Err(SynthError::validation(format!(
-                "fair_value level percentages must sum to 1.0, got {}",
-                level_sum
-            )));
-        }
+        validate_sum_to_one(
+            "fair_value level percentages",
+            &[fv.level1_percent, fv.level2_percent, fv.level3_percent],
+        )?;
 
         validate_rate("fair_value.level1_percent", fv.level1_percent)?;
         validate_rate("fair_value.level2_percent", fv.level2_percent)?;
@@ -805,29 +781,20 @@ fn validate_mixture_config(
     }
 
     // Validate weights sum to 1.0
-    let weight_sum: f64 = config.components.iter().map(|c| c.weight).sum();
-    if (weight_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "distributions.amounts.components weights must sum to 1.0, got {}",
-            weight_sum
-        )));
-    }
+    let weights: Vec<f64> = config.components.iter().map(|c| c.weight).collect();
+    validate_sum_to_one("distributions.amounts.components weights", &weights)?;
 
     // Validate individual components
     for (i, comp) in config.components.iter().enumerate() {
-        if comp.weight < 0.0 || comp.weight > 1.0 {
-            return Err(SynthError::validation(format!(
-                "distributions.amounts.components[{}].weight must be between 0.0 and 1.0, got {}",
-                i, comp.weight
-            )));
-        }
+        validate_rate(
+            &format!("distributions.amounts.components[{}].weight", i),
+            comp.weight,
+        )?;
 
-        if comp.sigma <= 0.0 {
-            return Err(SynthError::validation(format!(
-                "distributions.amounts.components[{}].sigma must be positive, got {}",
-                i, comp.sigma
-            )));
-        }
+        validate_positive(
+            &format!("distributions.amounts.components[{}].sigma", i),
+            comp.sigma,
+        )?;
     }
 
     // Validate min/max values
@@ -922,14 +889,11 @@ fn validate_conditional_config(
     }
 
     // Validate breakpoints are in ascending order
-    for i in 1..config.breakpoints.len() {
-        if config.breakpoints[i].threshold <= config.breakpoints[i - 1].threshold {
-            return Err(SynthError::validation(format!(
-                "distributions.conditional[{}].breakpoints must be in ascending order: {} is not greater than {}",
-                index, config.breakpoints[i].threshold, config.breakpoints[i - 1].threshold
-            )));
-        }
-    }
+    let thresholds: Vec<f64> = config.breakpoints.iter().map(|b| b.threshold).collect();
+    validate_ascending(
+        &format!("distributions.conditional[{}].breakpoints", index),
+        &thresholds,
+    )?;
 
     // Validate min/max constraints
     if let (Some(min), Some(max)) = (config.min_value, config.max_value) {
@@ -980,12 +944,10 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
                 ));
             }
 
-            if cycle.amplitude < 0.0 || cycle.amplitude > 1.0 {
-                return Err(SynthError::validation(format!(
-                    "distributions.regime_changes.economic_cycle.amplitude must be in [0, 1], got {}",
-                    cycle.amplitude
-                )));
-            }
+            validate_rate(
+                "distributions.regime_changes.economic_cycle.amplitude",
+                cycle.amplitude,
+            )?;
 
             // Validate recession periods
             for (i, recession) in cycle.recessions.iter().enumerate() {
@@ -996,12 +958,13 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
                     )));
                 }
 
-                if recession.severity < 0.0 || recession.severity > 1.0 {
-                    return Err(SynthError::validation(format!(
-                        "distributions.regime_changes.economic_cycle.recessions[{}].severity must be in [0, 1], got {}",
-                        i, recession.severity
-                    )));
-                }
+                validate_rate(
+                    &format!(
+                        "distributions.regime_changes.economic_cycle.recessions[{}].severity",
+                        i
+                    ),
+                    recession.severity,
+                )?;
             }
         }
     }
@@ -1043,18 +1006,14 @@ fn validate_statistical_validation(
                 threshold_mad,
                 warning_mad,
             } => {
-                if *threshold_mad <= 0.0 {
-                    return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].threshold_mad must be positive",
-                        i
-                    )));
-                }
-                if *warning_mad <= 0.0 {
-                    return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].warning_mad must be positive",
-                        i
-                    )));
-                }
+                validate_positive(
+                    &format!("distributions.validation.tests[{}].threshold_mad", i),
+                    *threshold_mad,
+                )?;
+                validate_positive(
+                    &format!("distributions.validation.tests[{}].warning_mad", i),
+                    *warning_mad,
+                )?;
             }
             crate::schema::StatisticalTestConfig::DistributionFit {
                 ks_significance, ..
@@ -1257,30 +1216,27 @@ fn validate_period_end_model_config(
 ) -> SynthResult<()> {
     // Validate multipliers are positive
     if let Some(mult) = config.additional_multiplier {
-        if mult <= 0.0 {
-            return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.additional_multiplier must be positive, got {}",
-                name, mult
-            )));
-        }
+        validate_positive(
+            &format!(
+                "temporal_patterns.period_end.{}.additional_multiplier",
+                name
+            ),
+            mult,
+        )?;
     }
 
     if let Some(mult) = config.base_multiplier {
-        if mult <= 0.0 {
-            return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.base_multiplier must be positive, got {}",
-                name, mult
-            )));
-        }
+        validate_positive(
+            &format!("temporal_patterns.period_end.{}.base_multiplier", name),
+            mult,
+        )?;
     }
 
     if let Some(mult) = config.peak_multiplier {
-        if mult <= 0.0 {
-            return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.peak_multiplier must be positive, got {}",
-                name, mult
-            )));
-        }
+        validate_positive(
+            &format!("temporal_patterns.period_end.{}.peak_multiplier", name),
+            mult,
+        )?;
     }
 
     // Validate decay_rate is in valid range (0, 1] for exponential model
@@ -1350,12 +1306,13 @@ fn validate_processing_lag_config(
                     hour
                 )));
             }
-            if !(*prob >= 0.0 && *prob <= 1.0) {
-                return Err(SynthError::validation(format!(
-                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour[{}] must be in [0, 1], got {}",
-                    hour, prob
-                )));
-            }
+            validate_rate(
+                &format!(
+                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour[{}]",
+                    hour
+                ),
+                *prob,
+            )?;
         }
     }
 
@@ -1368,12 +1325,10 @@ fn validate_lag_distribution(
     name: &str,
 ) -> SynthResult<()> {
     // Sigma must be positive for log-normal
-    if config.sigma <= 0.0 {
-        return Err(SynthError::validation(format!(
-            "temporal_patterns.processing_lags.{}.sigma must be positive, got {}",
-            name, config.sigma
-        )));
-    }
+    validate_positive(
+        &format!("temporal_patterns.processing_lags.{}.sigma", name),
+        config.sigma,
+    )?;
 
     // Min/max hours must be non-negative and ordered correctly
     if let Some(min) = config.min_hours {
@@ -1445,12 +1400,13 @@ fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> Syn
             )));
         }
 
-        if holiday.activity_multiplier < 0.0 || holiday.activity_multiplier > 1.0 {
-            return Err(SynthError::validation(format!(
-                "temporal_patterns.calendars.custom_holidays[{}].activity_multiplier must be in [0, 1], got {}",
-                i, holiday.activity_multiplier
-            )));
-        }
+        validate_rate(
+            &format!(
+                "temporal_patterns.calendars.custom_holidays[{}].activity_multiplier",
+                i
+            ),
+            holiday.activity_multiplier,
+        )?;
     }
 
     Ok(())
@@ -1710,16 +1666,15 @@ fn validate_vendor_network(config: &GeneratorConfig) -> SynthResult<()> {
 
     // Validate cluster distribution sums to ~1.0
     let clusters = &vn.clusters;
-    let cluster_sum = clusters.reliable_strategic
-        + clusters.standard_operational
-        + clusters.transactional
-        + clusters.problematic;
-    if (cluster_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "vendor_network.clusters distribution must sum to 1.0, got {}",
-            cluster_sum
-        )));
-    }
+    validate_sum_to_one(
+        "vendor_network.clusters distribution",
+        &[
+            clusters.reliable_strategic,
+            clusters.standard_operational,
+            clusters.transactional,
+            clusters.problematic,
+        ],
+    )?;
 
     // Validate concentration limits are in valid range
     let deps = &vn.dependencies;
@@ -1759,28 +1714,26 @@ fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
     let segments = &cs.value_segments;
 
     // Validate revenue shares sum to ~1.0
-    let revenue_sum = segments.enterprise.revenue_share
-        + segments.mid_market.revenue_share
-        + segments.smb.revenue_share
-        + segments.consumer.revenue_share;
-    if (revenue_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "customer_segmentation.value_segments revenue_share must sum to 1.0, got {}",
-            revenue_sum
-        )));
-    }
+    validate_sum_to_one(
+        "customer_segmentation.value_segments revenue_share",
+        &[
+            segments.enterprise.revenue_share,
+            segments.mid_market.revenue_share,
+            segments.smb.revenue_share,
+            segments.consumer.revenue_share,
+        ],
+    )?;
 
     // Validate customer shares sum to ~1.0
-    let customer_sum = segments.enterprise.customer_share
-        + segments.mid_market.customer_share
-        + segments.smb.customer_share
-        + segments.consumer.customer_share;
-    if (customer_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "customer_segmentation.value_segments customer_share must sum to 1.0, got {}",
-            customer_sum
-        )));
-    }
+    validate_sum_to_one(
+        "customer_segmentation.value_segments customer_share",
+        &[
+            segments.enterprise.customer_share,
+            segments.mid_market.customer_share,
+            segments.smb.customer_share,
+            segments.consumer.customer_share,
+        ],
+    )?;
 
     // Validate each segment's shares are in valid range
     for (name, seg) in [
@@ -1807,18 +1760,17 @@ fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
 
     // Validate lifecycle distribution sums to ~1.0
     let lifecycle = &cs.lifecycle;
-    let lifecycle_sum = lifecycle.prospect_rate
-        + lifecycle.new_rate
-        + lifecycle.growth_rate
-        + lifecycle.mature_rate
-        + lifecycle.at_risk_rate
-        + lifecycle.churned_rate;
-    if (lifecycle_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "customer_segmentation.lifecycle distribution must sum to 1.0, got {}",
-            lifecycle_sum
-        )));
-    }
+    validate_sum_to_one(
+        "customer_segmentation.lifecycle distribution",
+        &[
+            lifecycle.prospect_rate,
+            lifecycle.new_rate,
+            lifecycle.growth_rate,
+            lifecycle.mature_rate,
+            lifecycle.at_risk_rate,
+            lifecycle.churned_rate,
+        ],
+    )?;
 
     // Validate network config
     let networks = &cs.networks;
@@ -1844,17 +1796,16 @@ fn validate_relationship_strength(config: &GeneratorConfig) -> SynthResult<()> {
 
     // Validate calculation weights sum to ~1.0
     let calc = &rs.calculation;
-    let weight_sum = calc.transaction_volume_weight
-        + calc.transaction_count_weight
-        + calc.relationship_duration_weight
-        + calc.recency_weight
-        + calc.mutual_connections_weight;
-    if (weight_sum - 1.0).abs() > 0.01 {
-        return Err(SynthError::validation(format!(
-            "relationship_strength.calculation weights must sum to 1.0, got {}",
-            weight_sum
-        )));
-    }
+    validate_sum_to_one(
+        "relationship_strength.calculation weights",
+        &[
+            calc.transaction_volume_weight,
+            calc.transaction_count_weight,
+            calc.relationship_duration_weight,
+            calc.recency_weight,
+            calc.mutual_connections_weight,
+        ],
+    )?;
 
     // Validate individual weights are in valid range
     validate_rate(
@@ -1952,26 +1903,13 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
     }
 
     // Validate rates are within bounds
-    if ai.rates.total_rate < 0.0 || ai.rates.total_rate > 1.0 {
-        return Err(SynthError::validation(
-            "anomaly_injection.rates.total_rate must be between 0.0 and 1.0",
-        ));
-    }
-    if ai.rates.fraud_rate < 0.0 || ai.rates.fraud_rate > 1.0 {
-        return Err(SynthError::validation(
-            "anomaly_injection.rates.fraud_rate must be between 0.0 and 1.0",
-        ));
-    }
-    if ai.rates.error_rate < 0.0 || ai.rates.error_rate > 1.0 {
-        return Err(SynthError::validation(
-            "anomaly_injection.rates.error_rate must be between 0.0 and 1.0",
-        ));
-    }
-    if ai.rates.process_rate < 0.0 || ai.rates.process_rate > 1.0 {
-        return Err(SynthError::validation(
-            "anomaly_injection.rates.process_rate must be between 0.0 and 1.0",
-        ));
-    }
+    validate_rate("anomaly_injection.rates.total_rate", ai.rates.total_rate)?;
+    validate_rate("anomaly_injection.rates.fraud_rate", ai.rates.fraud_rate)?;
+    validate_rate("anomaly_injection.rates.error_rate", ai.rates.error_rate)?;
+    validate_rate(
+        "anomaly_injection.rates.process_rate",
+        ai.rates.process_rate,
+    )?;
 
     // Validate sub-rates don't exceed total rate
     let sub_rate_sum = ai.rates.fraud_rate + ai.rates.error_rate + ai.rates.process_rate;
@@ -1985,25 +1923,13 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
     // Validate multi-stage scheme probabilities
     if ai.multi_stage_schemes.enabled {
         let emb = &ai.multi_stage_schemes.embezzlement;
-        if emb.probability < 0.0 || emb.probability > 1.0 {
-            return Err(SynthError::validation(
-                "embezzlement.probability must be between 0.0 and 1.0",
-            ));
-        }
+        validate_rate("embezzlement.probability", emb.probability)?;
 
         let rev = &ai.multi_stage_schemes.revenue_manipulation;
-        if rev.probability < 0.0 || rev.probability > 1.0 {
-            return Err(SynthError::validation(
-                "revenue_manipulation.probability must be between 0.0 and 1.0",
-            ));
-        }
+        validate_rate("revenue_manipulation.probability", rev.probability)?;
 
         let kick = &ai.multi_stage_schemes.kickback;
-        if kick.probability < 0.0 || kick.probability > 1.0 {
-            return Err(SynthError::validation(
-                "kickback.probability must be between 0.0 and 1.0",
-            ));
-        }
+        validate_rate("kickback.probability", kick.probability)?;
         if kick.inflation_min > kick.inflation_max {
             return Err(SynthError::validation(
                 "kickback.inflation_min must be less than or equal to inflation_max",
@@ -2013,11 +1939,7 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
 
     // Validate near-miss configuration
     if ai.near_miss.enabled {
-        if ai.near_miss.proportion < 0.0 || ai.near_miss.proportion > 1.0 {
-            return Err(SynthError::validation(
-                "near_miss.proportion must be between 0.0 and 1.0",
-            ));
-        }
+        validate_rate("near_miss.proportion", ai.near_miss.proportion)?;
         if ai.near_miss.near_duplicate_days.min > ai.near_miss.near_duplicate_days.max {
             return Err(SynthError::validation(
                 "near_miss.near_duplicate_days.min must be less than or equal to max",
@@ -2038,13 +1960,16 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
     // Validate difficulty distribution sums to ~1.0
     if ai.difficulty_classification.enabled {
         let dist = &ai.difficulty_classification.target_distribution;
-        let dist_sum = dist.trivial + dist.easy + dist.moderate + dist.hard + dist.expert;
-        if (dist_sum - 1.0).abs() > 0.01 {
-            return Err(SynthError::validation(format!(
-                "difficulty_classification.target_distribution must sum to 1.0, got {}",
-                dist_sum
-            )));
-        }
+        validate_sum_to_one(
+            "difficulty_classification.target_distribution",
+            &[
+                dist.trivial,
+                dist.easy,
+                dist.moderate,
+                dist.hard,
+                dist.expert,
+            ],
+        )?;
     }
 
     // Validate context-aware configuration
@@ -2057,37 +1982,31 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
         }
 
         let emp = &ai.context_aware.employee_rules;
-        if emp.new_employee_error_rate < 0.0 || emp.new_employee_error_rate > 1.0 {
-            return Err(SynthError::validation(
-                "employee_rules.new_employee_error_rate must be between 0.0 and 1.0",
-            ));
-        }
+        validate_rate(
+            "employee_rules.new_employee_error_rate",
+            emp.new_employee_error_rate,
+        )?;
 
         let baseline = &ai.context_aware.behavioral_baseline;
-        if baseline.enabled && baseline.deviation_threshold_std <= 0.0 {
-            return Err(SynthError::validation(
-                "behavioral_baseline.deviation_threshold_std must be positive",
-            ));
+        if baseline.enabled {
+            validate_positive(
+                "behavioral_baseline.deviation_threshold_std",
+                baseline.deviation_threshold_std,
+            )?;
         }
     }
 
     // Validate materiality thresholds are ascending
     let mat = &ai.labeling.materiality_thresholds;
-    if mat.trivial >= mat.immaterial {
-        return Err(SynthError::validation(
-            "materiality_thresholds.trivial must be less than immaterial",
-        ));
-    }
-    if mat.immaterial >= mat.material {
-        return Err(SynthError::validation(
-            "materiality_thresholds.immaterial must be less than material",
-        ));
-    }
-    if mat.material >= mat.highly_material {
-        return Err(SynthError::validation(
-            "materiality_thresholds.material must be less than highly_material",
-        ));
-    }
+    validate_ascending(
+        "materiality_thresholds",
+        &[
+            mat.trivial,
+            mat.immaterial,
+            mat.material,
+            mat.highly_material,
+        ],
+    )?;
 
     Ok(())
 }
