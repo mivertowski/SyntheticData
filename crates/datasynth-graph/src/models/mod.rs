@@ -7,4 +7,5 @@ mod nodes;
 
 pub use edges::*;
 pub use graph::*;
+pub use hypergraph::*;
 pub use nodes::*;

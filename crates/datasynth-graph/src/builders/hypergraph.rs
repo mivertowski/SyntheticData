@@ -23,6 +23,15 @@ use crate::models::hypergraph::{
     HypergraphLayer, HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport,
 };
 
+/// Day-of-month threshold for considering a date as "month-end" in features.
+const MONTH_END_DAY_THRESHOLD: u32 = 28;
+/// Normalizer for weekday feature (0=Monday..6=Sunday).
+const WEEKDAY_NORMALIZER: f64 = 6.0;
+/// Normalizer for day-of-month feature.
+const DAY_OF_MONTH_NORMALIZER: f64 = 31.0;
+/// Normalizer for month feature.
+const MONTH_NORMALIZER: f64 = 12.0;
+
 /// RustGraph entity type codes for Layer 1 governance nodes.
 #[allow(dead_code)]
 mod type_codes {
@@ -1251,10 +1260,14 @@ fn compute_je_features(entry: &JournalEntry) -> Vec<f64> {
 
     let line_count = entry.lines.len() as f64;
     let posting_date = entry.header.posting_date;
-    let weekday = posting_date.weekday().num_days_from_monday() as f64 / 6.0;
-    let day = posting_date.day() as f64 / 31.0;
-    let month = posting_date.month() as f64 / 12.0;
-    let is_month_end = if posting_date.day() >= 28 { 1.0 } else { 0.0 };
+    let weekday = posting_date.weekday().num_days_from_monday() as f64 / WEEKDAY_NORMALIZER;
+    let day = posting_date.day() as f64 / DAY_OF_MONTH_NORMALIZER;
+    let month = posting_date.month() as f64 / MONTH_NORMALIZER;
+    let is_month_end = if posting_date.day() >= MONTH_END_DAY_THRESHOLD {
+        1.0
+    } else {
+        0.0
+    };
 
     vec![
         (total_debit.abs() + 1.0).ln(), // log amount

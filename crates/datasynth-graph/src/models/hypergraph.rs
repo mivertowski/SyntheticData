@@ -155,6 +155,11 @@ pub struct CrossLayerEdge {
     pub properties: HashMap<String, Value>,
 }
 
+/// Fraction of total budget for Layer 1 (Governance): 1/5 = 20%.
+const DEFAULT_L1_BUDGET_DIVISOR: usize = 5;
+/// Fraction of total budget for Layer 3 (Accounting): 1/10 = 10%.
+const DEFAULT_L3_BUDGET_DIVISOR: usize = 10;
+
 /// Per-layer node budget allocation and tracking.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NodeBudget {
@@ -176,8 +181,8 @@ impl NodeBudget {
     /// Create a budget with the given total max nodes.
     /// Default allocation: L1 gets 20%, L3 gets 10%, L2 gets remainder (70%).
     pub fn new(max_nodes: usize) -> Self {
-        let l1 = max_nodes / 5; // 20%
-        let l3 = max_nodes / 10; // 10%
+        let l1 = max_nodes / DEFAULT_L1_BUDGET_DIVISOR;
+        let l3 = max_nodes / DEFAULT_L3_BUDGET_DIVISOR;
         let l2 = max_nodes - l1 - l3; // 70%
         Self {
             layer1_max: l1,
@@ -294,7 +299,7 @@ pub struct HypergraphMetadata {
 }
 
 /// The complete built hypergraph with all components.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hypergraph {
     /// All nodes across all layers.
     pub nodes: Vec<HypergraphNode>,

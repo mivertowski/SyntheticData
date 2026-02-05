@@ -15,6 +15,7 @@ mod pytorch_geometric;
 mod rustgraph;
 
 pub use dgl::*;
+pub use hypergraph::*;
 pub use neo4j::*;
 pub use pytorch_geometric::*;
 pub use rustgraph::*;
