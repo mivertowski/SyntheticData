@@ -264,6 +264,19 @@ pub struct MasterDataSnapshot {
     pub employees: Vec<Employee>,
 }
 
+/// Info about a completed hypergraph export.
+#[derive(Debug, Clone)]
+pub struct HypergraphExportInfo {
+    /// Number of nodes exported.
+    pub node_count: usize,
+    /// Number of pairwise edges exported.
+    pub edge_count: usize,
+    /// Number of hyperedges exported.
+    pub hyperedge_count: usize,
+    /// Output directory path.
+    pub output_path: PathBuf,
+}
+
 /// Document flow snapshot containing all generated document chains.
 #[derive(Debug, Clone, Default)]
 pub struct DocumentFlowSnapshot {
@@ -1091,6 +1104,24 @@ impl EnhancedOrchestrator {
             debug!("Phase 10: Skipped (graph export disabled or no entries)");
             GraphExportSnapshot::default()
         };
+
+        // Phase 10b: Multi-Layer Hypergraph Export
+        if self.config.graph_export.hypergraph.enabled && !entries.is_empty() {
+            info!("Phase 10b: Exporting Multi-Layer Hypergraph");
+            match self.export_hypergraph(&coa, &entries, &document_flows, &mut stats) {
+                Ok(info) => {
+                    info!(
+                        "Hypergraph export complete: {} nodes, {} edges, {} hyperedges",
+                        info.node_count, info.edge_count, info.hyperedge_count
+                    );
+                }
+                Err(e) => {
+                    warn!("Phase 10b: Hypergraph export failed: {}", e);
+                }
+            }
+        } else {
+            debug!("Phase 10b: Skipped (hypergraph export disabled or no entries)");
+        }
 
         // Log final resource statistics
         let resource_stats = self.resource_guard.stats();
@@ -2228,6 +2259,10 @@ impl EnhancedOrchestrator {
                             }
                         }
                     }
+                    datasynth_config::schema::GraphExportFormat::RustGraphHypergraph => {
+                        // Hypergraph export is handled separately in Phase 10b
+                        debug!("RustGraphHypergraph format is handled in Phase 10b (hypergraph export)");
+                    }
                 }
             }
 
@@ -2247,6 +2282,118 @@ impl EnhancedOrchestrator {
         }
 
         Ok(snapshot)
+    }
+
+    /// Export a multi-layer hypergraph for RustGraph integration.
+    ///
+    /// Builds a 3-layer hypergraph:
+    /// - Layer 1: Governance & Controls (COSO, internal controls, master data)
+    /// - Layer 2: Process Events (P2P/O2C document flows)
+    /// - Layer 3: Accounting Network (GL accounts, journal entries as hyperedges)
+    fn export_hypergraph(
+        &self,
+        coa: &Arc<ChartOfAccounts>,
+        entries: &[JournalEntry],
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<HypergraphExportInfo> {
+        use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
+        use datasynth_graph::exporters::hypergraph::{HypergraphExportConfig, HypergraphExporter};
+        use datasynth_graph::models::hypergraph::AggregationStrategy;
+
+        let hg_settings = &self.config.graph_export.hypergraph;
+
+        // Parse aggregation strategy from config string
+        let aggregation_strategy = match hg_settings.aggregation_strategy.as_str() {
+            "truncate" => AggregationStrategy::Truncate,
+            "pool_by_counterparty" => AggregationStrategy::PoolByCounterparty,
+            "pool_by_time_period" => AggregationStrategy::PoolByTimePeriod,
+            "importance_sample" => AggregationStrategy::ImportanceSample,
+            _ => AggregationStrategy::PoolByCounterparty,
+        };
+
+        let builder_config = HypergraphConfig {
+            max_nodes: hg_settings.max_nodes,
+            aggregation_strategy,
+            include_coso: hg_settings.governance_layer.include_coso,
+            include_controls: hg_settings.governance_layer.include_controls,
+            include_sox: hg_settings.governance_layer.include_sox,
+            include_vendors: hg_settings.governance_layer.include_vendors,
+            include_customers: hg_settings.governance_layer.include_customers,
+            include_employees: hg_settings.governance_layer.include_employees,
+            include_p2p: hg_settings.process_layer.include_p2p,
+            include_o2c: hg_settings.process_layer.include_o2c,
+            events_as_hyperedges: hg_settings.process_layer.events_as_hyperedges,
+            docs_per_counterparty_threshold: hg_settings
+                .process_layer
+                .docs_per_counterparty_threshold,
+            include_accounts: hg_settings.accounting_layer.include_accounts,
+            je_as_hyperedges: hg_settings.accounting_layer.je_as_hyperedges,
+            include_cross_layer_edges: hg_settings.cross_layer.enabled,
+        };
+
+        let mut builder = HypergraphBuilder::new(builder_config);
+
+        // Layer 1: Governance & Controls
+        builder.add_coso_framework();
+
+        // Add controls if available (generated during JE generation)
+        // Controls are generated per-company; we use the standard set
+        if hg_settings.governance_layer.include_controls && self.config.internal_controls.enabled {
+            let controls = InternalControl::standard_controls();
+            builder.add_controls(&controls);
+        }
+
+        // Add master data
+        builder.add_vendors(&self.master_data.vendors);
+        builder.add_customers(&self.master_data.customers);
+        builder.add_employees(&self.master_data.employees);
+
+        // Layer 2: Process Events (P2P/O2C documents)
+        builder.add_p2p_documents(
+            &document_flows.purchase_orders,
+            &document_flows.goods_receipts,
+            &document_flows.vendor_invoices,
+            &document_flows.payments,
+        );
+        builder.add_o2c_documents(
+            &document_flows.sales_orders,
+            &document_flows.deliveries,
+            &document_flows.customer_invoices,
+        );
+
+        // Layer 3: Accounting Network
+        builder.add_accounts(coa);
+        builder.add_journal_entries_as_hyperedges(entries);
+
+        // Build the hypergraph
+        let hypergraph = builder.build();
+
+        // Export
+        let output_dir = self
+            .output_path
+            .clone()
+            .unwrap_or_else(|| PathBuf::from(&self.config.output.output_directory));
+        let hg_dir = output_dir
+            .join(&self.config.graph_export.output_subdirectory)
+            .join(&hg_settings.output_subdirectory);
+
+        let exporter = HypergraphExporter::new(HypergraphExportConfig::default());
+        let metadata = exporter
+            .export(&hypergraph, &hg_dir)
+            .map_err(|e| SynthError::generation(format!("Hypergraph export failed: {}", e)))?;
+
+        // Update stats
+        stats.graph_node_count += metadata.num_nodes;
+        stats.graph_edge_count += metadata.num_edges;
+        stats.graph_export_count += 1;
+
+        Ok(HypergraphExportInfo {
+            node_count: metadata.num_nodes,
+            edge_count: metadata.num_edges,
+            hyperedge_count: metadata.num_hyperedges,
+            output_path: hg_dir,
+        })
     }
 
     /// Generate banking KYC/AML data.
@@ -2344,6 +2491,7 @@ fn format_name(format: datasynth_config::schema::GraphExportFormat) -> &'static 
         datasynth_config::schema::GraphExportFormat::Neo4j => "neo4j",
         datasynth_config::schema::GraphExportFormat::Dgl => "dgl",
         datasynth_config::schema::GraphExportFormat::RustGraph => "rustgraph",
+        datasynth_config::schema::GraphExportFormat::RustGraphHypergraph => "rustgraph_hypergraph",
     }
 }
 

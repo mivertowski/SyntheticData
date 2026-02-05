@@ -46,6 +46,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_relationship_strength(config)?;
     validate_cross_process_links(config)?;
     validate_anomaly_injection(config)?;
+    validate_hypergraph(config)?;
     Ok(())
 }
 
@@ -2085,6 +2086,42 @@ fn validate_anomaly_injection(config: &GeneratorConfig) -> SynthResult<()> {
     if mat.material >= mat.highly_material {
         return Err(SynthError::validation(
             "materiality_thresholds.material must be less than highly_material",
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validate hypergraph export configuration.
+fn validate_hypergraph(config: &GeneratorConfig) -> SynthResult<()> {
+    let hg = &config.graph_export.hypergraph;
+
+    if !hg.enabled {
+        return Ok(());
+    }
+
+    if hg.max_nodes == 0 || hg.max_nodes > 150_000 {
+        return Err(SynthError::validation(
+            "hypergraph.max_nodes must be between 1 and 150000",
+        ));
+    }
+
+    let valid_strategies = [
+        "truncate",
+        "pool_by_counterparty",
+        "pool_by_time_period",
+        "importance_sample",
+    ];
+    if !valid_strategies.contains(&hg.aggregation_strategy.as_str()) {
+        return Err(SynthError::validation(format!(
+            "hypergraph.aggregation_strategy must be one of: {}",
+            valid_strategies.join(", ")
+        )));
+    }
+
+    if hg.process_layer.docs_per_counterparty_threshold == 0 {
+        return Err(SynthError::validation(
+            "hypergraph.process_layer.docs_per_counterparty_threshold must be >= 1",
         ));
     }
 

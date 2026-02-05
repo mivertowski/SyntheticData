@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-02-05
+
+### Added
+
+- **Multi-Layer Hypergraph Export** (`datasynth-graph`): New 3-layer hypergraph builder and exporter for RustGraph integration
+  - **HypergraphBuilder**: Constructs a 3-layer hypergraph from enterprise data
+    - Layer 1 (Governance & Controls): COSO 2013 framework (5 components, 17 principles), internal controls with SOX assertions, vendors, customers, employees
+    - Layer 2 (Process Events): P2P document chains (POs, goods receipts, invoices, payments) and O2C document chains (sales orders, deliveries, customer invoices) with counterparty-based pool aggregation when budget exceeded
+    - Layer 3 (Accounting Network): GL accounts as nodes, journal entries as hyperedges connecting multiple debit/credit accounts simultaneously
+  - **Node Budget System**: Per-layer allocation (L1: 20%, L2: 70%, L3: 10%) with automatic rebalancing and pool aggregation for overflow
+    - `AggregationStrategy`: Truncate, PoolByCounterparty (default), PoolByTimePeriod, ImportanceSample
+    - Pool nodes carry summary features: count, total amount, avg amount, date range, anomaly rate
+  - **Cross-Layer Edges**: Automatic edge generation linking governance controls to accounts, vendors to POs, customers to sales orders, employees to approvals
+  - **RustGraph Entity Type Codes**: Pre-assigned codes (100-510) for 20+ entity types and edge types (40-55) for seamless RustGraph import
+  - **Hyperedge Support**: Journal entries modeled as hyperedges with debit/credit participants, weights, timestamps, and anomaly flags
+  - **JSONL Export**: `HypergraphExporter` writes `nodes.jsonl`, `edges.jsonl`, `hyperedges.jsonl`, and `metadata.json` for RustGraph file import
+
+- **Hypergraph Configuration** (`datasynth-config`): New `RustGraphHypergraph` export format and configuration
+  - `HypergraphExportSettings`: max_nodes (default 50,000), aggregation strategy, per-layer toggles
+  - `GovernanceLayerSettings`: Toggle COSO, controls, SOX, vendors, customers, employees
+  - `ProcessLayerSettings`: Toggle P2P/O2C, events-as-hyperedges, counterparty threshold
+  - `AccountingLayerSettings`: Toggle accounts, journal-entries-as-hyperedges
+  - `CrossLayerSettings`: Toggle cross-layer edge generation
+  - Validation: max_nodes 1-150,000, aggregation strategy validation, threshold bounds
+
+- **Orchestrator Phase 10b** (`datasynth-runtime`): Hypergraph export integrated into the generation pipeline
+  - Automatic hypergraph generation after Phase 10 graph export when enabled
+  - Feeds all available data: CoA, journal entries, master data, document flows, COSO controls
+  - Output to `graphs/hypergraph/` subdirectory
+
+### Changed
+
+- `GraphExportFormat` enum extended with `RustGraphHypergraph` variant
+- Bumped all Rust crate versions to 0.3.1
+- Python wrapper version bumped to 0.3.1
+
 ## [0.3.0] - 2026-02-01
 
 ### Added

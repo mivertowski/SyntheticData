@@ -139,7 +139,7 @@ The generator produces statistically accurate data based on empirical research f
 
 ### Machine Learning & Analytics
 
-- **Graph Export**: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits
+- **Graph Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats with train/val/test splits
 - **Anomaly Injection**: 60+ fraud types, errors, process issues with full labeling
 - **Data Quality Variations**: Missing values, format variations, duplicates, typos
 - **Relationship Generation**: Configurable entity relationships with cardinality rules
@@ -183,7 +183,7 @@ datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, referen
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards    Accounting/audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
     │
-datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL)
+datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL, RustGraph Hypergraph)
 datasynth-eval         Evaluation framework with auto-tuning
     │
 datasynth-config       Configuration schema, validation, industry presets
@@ -310,6 +310,11 @@ graph_export:
     - pytorch_geometric
     - neo4j
     - rustgraph               # RustGraph/RustAssureTwin compatible JSON
+    - rustgraph_hypergraph    # 3-layer hypergraph JSONL for RustGraph
+  hypergraph:
+    enabled: true
+    max_nodes: 50000
+    aggregation_strategy: pool_by_counterparty
 
 streaming:
   enabled: true
@@ -442,6 +447,7 @@ output/
 │   └── reference_models/ Canonical P2P, O2C, R2R process models
 ├── audit/                Engagements, workpapers, findings, risk assessments
 ├── graphs/               PyTorch Geometric, Neo4j, DGL, RustGraph exports
+│   └── hypergraph/       Multi-layer hypergraph (nodes.jsonl, edges.jsonl, hyperedges.jsonl)
 ├── labels/               Anomaly, fraud, and data quality labels for ML
 ├── controls/             Internal controls, COSO mappings, SoD rules
 └── standards/            Accounting & audit standards outputs
@@ -468,6 +474,7 @@ output/
 | **Audit Standards** | ISA/PCAOB procedure mapping, analytical procedures, confirmations, audit opinions |
 | **Data Quality ML** | Train models to detect missing values, typos, duplicates |
 | **RustGraph Integration** | Stream data directly to RustAssureTwin knowledge graphs |
+| **Hypergraph Analytics** | 3-layer hypergraph export (Governance, Process, Accounting) for multi-relational GNN models |
 
 ---
 

@@ -3,6 +3,7 @@
 mod approval_graph;
 mod banking_graph;
 mod entity_graph;
+pub mod hypergraph;
 mod transaction_graph;
 
 pub use approval_graph::*;

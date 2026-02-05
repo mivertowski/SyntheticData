@@ -167,6 +167,10 @@ pub struct GraphExportConfig {
     /// Output subdirectory for graph exports (relative to output directory).
     #[serde(default = "default_graph_subdir")]
     pub output_subdirectory: String,
+
+    /// Multi-layer hypergraph export settings for RustGraph integration.
+    #[serde(default)]
+    pub hypergraph: HypergraphExportSettings,
 }
 
 fn default_graph_types() -> Vec<GraphTypeConfig> {
@@ -199,7 +203,178 @@ impl Default for GraphExportConfig {
             validation_ratio: 0.15,
             split_seed: None,
             output_subdirectory: "graphs".to_string(),
+            hypergraph: HypergraphExportSettings::default(),
         }
+    }
+}
+
+/// Settings for the multi-layer hypergraph export (RustGraph integration).
+///
+/// Produces a 3-layer hypergraph:
+/// - Layer 1: Governance & Controls (COSO, SOX, internal controls, organizational)
+/// - Layer 2: Process Events (P2P/O2C document flows, OCPM events)
+/// - Layer 3: Accounting Network (GL accounts, journal entries as hyperedges)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HypergraphExportSettings {
+    /// Enable hypergraph export.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Maximum total nodes across all layers (default 50000).
+    #[serde(default = "default_hypergraph_max_nodes")]
+    pub max_nodes: usize,
+
+    /// Aggregation strategy when node budget is exceeded.
+    #[serde(default = "default_aggregation_strategy")]
+    pub aggregation_strategy: String,
+
+    /// Layer 1 (Governance & Controls) settings.
+    #[serde(default)]
+    pub governance_layer: GovernanceLayerSettings,
+
+    /// Layer 2 (Process Events) settings.
+    #[serde(default)]
+    pub process_layer: ProcessLayerSettings,
+
+    /// Layer 3 (Accounting Network) settings.
+    #[serde(default)]
+    pub accounting_layer: AccountingLayerSettings,
+
+    /// Cross-layer edge generation settings.
+    #[serde(default)]
+    pub cross_layer: CrossLayerSettings,
+
+    /// Output subdirectory for hypergraph files (relative to graph output directory).
+    #[serde(default = "default_hypergraph_subdir")]
+    pub output_subdirectory: String,
+}
+
+fn default_hypergraph_max_nodes() -> usize {
+    50_000
+}
+
+fn default_aggregation_strategy() -> String {
+    "pool_by_counterparty".to_string()
+}
+
+fn default_hypergraph_subdir() -> String {
+    "hypergraph".to_string()
+}
+
+impl Default for HypergraphExportSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            max_nodes: 50_000,
+            aggregation_strategy: "pool_by_counterparty".to_string(),
+            governance_layer: GovernanceLayerSettings::default(),
+            process_layer: ProcessLayerSettings::default(),
+            accounting_layer: AccountingLayerSettings::default(),
+            cross_layer: CrossLayerSettings::default(),
+            output_subdirectory: "hypergraph".to_string(),
+        }
+    }
+}
+
+/// Layer 1: Governance & Controls layer settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GovernanceLayerSettings {
+    /// Include COSO framework nodes (5 components + 17 principles).
+    #[serde(default = "default_true")]
+    pub include_coso: bool,
+    /// Include internal control nodes.
+    #[serde(default = "default_true")]
+    pub include_controls: bool,
+    /// Include SOX assertion nodes.
+    #[serde(default = "default_true")]
+    pub include_sox: bool,
+    /// Include vendor master data nodes.
+    #[serde(default = "default_true")]
+    pub include_vendors: bool,
+    /// Include customer master data nodes.
+    #[serde(default = "default_true")]
+    pub include_customers: bool,
+    /// Include employee/organizational nodes.
+    #[serde(default = "default_true")]
+    pub include_employees: bool,
+}
+
+impl Default for GovernanceLayerSettings {
+    fn default() -> Self {
+        Self {
+            include_coso: true,
+            include_controls: true,
+            include_sox: true,
+            include_vendors: true,
+            include_customers: true,
+            include_employees: true,
+        }
+    }
+}
+
+/// Layer 2: Process Events layer settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessLayerSettings {
+    /// Include P2P (Procure-to-Pay) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_p2p: bool,
+    /// Include O2C (Order-to-Cash) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_o2c: bool,
+    /// Export OCPM events as hyperedges.
+    #[serde(default = "default_true")]
+    pub events_as_hyperedges: bool,
+    /// Threshold: if a counterparty has more documents than this, aggregate into pool nodes.
+    #[serde(default = "default_docs_per_counterparty_threshold")]
+    pub docs_per_counterparty_threshold: usize,
+}
+
+fn default_docs_per_counterparty_threshold() -> usize {
+    20
+}
+
+impl Default for ProcessLayerSettings {
+    fn default() -> Self {
+        Self {
+            include_p2p: true,
+            include_o2c: true,
+            events_as_hyperedges: true,
+            docs_per_counterparty_threshold: 20,
+        }
+    }
+}
+
+/// Layer 3: Accounting Network layer settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountingLayerSettings {
+    /// Include GL account nodes.
+    #[serde(default = "default_true")]
+    pub include_accounts: bool,
+    /// Export journal entries as hyperedges (debit+credit accounts as participants).
+    #[serde(default = "default_true")]
+    pub je_as_hyperedges: bool,
+}
+
+impl Default for AccountingLayerSettings {
+    fn default() -> Self {
+        Self {
+            include_accounts: true,
+            je_as_hyperedges: true,
+        }
+    }
+}
+
+/// Cross-layer edge generation settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrossLayerSettings {
+    /// Generate cross-layer edges (Control→Account, Vendor→PO, etc.).
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+}
+
+impl Default for CrossLayerSettings {
+    fn default() -> Self {
+        Self { enabled: true }
     }
 }
 
@@ -250,6 +425,8 @@ pub enum GraphExportFormat {
     Dgl,
     /// RustGraph/RustAssureTwin JSON format.
     RustGraph,
+    /// RustGraph multi-layer hypergraph format (nodes.jsonl + edges.jsonl + hyperedges.jsonl).
+    RustGraphHypergraph,
 }
 
 /// Scenario configuration for metadata, tagging, and ML training setup.

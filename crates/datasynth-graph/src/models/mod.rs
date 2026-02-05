@@ -2,6 +2,7 @@
 
 mod edges;
 mod graph;
+pub mod hypergraph;
 mod nodes;
 
 pub use edges::*;

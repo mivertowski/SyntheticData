@@ -9,6 +9,7 @@
 //! - **RustGraph**: JSON/JSONL format for RustGraph/RustAssureTwin integration
 
 mod dgl;
+pub mod hypergraph;
 mod neo4j;
 mod pytorch_geometric;
 mod rustgraph;
