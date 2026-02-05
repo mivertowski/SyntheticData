@@ -8,9 +8,6 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
-#[cfg(test)]
-use chrono::NaiveDate;
-
 use datasynth_core::models::audit::{
     Assertion, AuditEngagement, AuditFinding, FindingSeverity, FindingStatus, FindingType,
     MilestoneStatus, RemediationPlan, RemediationStatus, Workpaper,
@@ -710,32 +707,7 @@ impl FindingGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use datasynth_core::models::audit::EngagementType;
-
-    fn create_test_engagement() -> AuditEngagement {
-        AuditEngagement::new(
-            "ENTITY001",
-            "Test Company Inc.",
-            EngagementType::AnnualAudit,
-            2025,
-            NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
-        )
-        .with_materiality(
-            Decimal::new(1_000_000, 0),
-            0.75,
-            0.05,
-            "Total Revenue",
-            0.005,
-        )
-        .with_timeline(
-            NaiveDate::from_ymd_opt(2025, 10, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2025, 10, 31).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 1, 5).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 2, 15).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 2, 16).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 3, 15).unwrap(),
-        )
-    }
+    use crate::audit::test_helpers::create_test_engagement;
 
     #[test]
     fn test_finding_generation() {

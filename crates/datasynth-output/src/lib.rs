@@ -21,3 +21,6 @@ pub use parquet_sink::*;
 pub use streaming::{
     CsvStreamingSink, JsonStreamingSink, NdjsonStreamingSink, ParquetStreamingSink,
 };
+
+#[cfg(test)]
+mod test_helpers;

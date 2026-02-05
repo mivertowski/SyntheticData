@@ -15,6 +15,9 @@ mod judgment_generator;
 mod risk_generator;
 mod workpaper_generator;
 
+#[cfg(test)]
+pub(crate) mod test_helpers;
+
 pub use engagement_generator::*;
 pub use evidence_generator::*;
 pub use finding_generator::*;

@@ -882,50 +882,12 @@ impl SimpleRng {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{EdgeType, GraphEdge, GraphNode, GraphType, NodeType};
+    use crate::test_helpers::create_test_graph_with_company;
     use tempfile::tempdir;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test_dgl", GraphType::Transaction);
-
-        let n1 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "1000".to_string(), "Cash".to_string())
-                .with_feature(0.5),
-        );
-        let n2 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "2000".to_string(), "AP".to_string())
-                .with_feature(0.8),
-        );
-        let n3 = graph.add_node(
-            GraphNode::new(
-                0,
-                NodeType::Company,
-                "ACME".to_string(),
-                "ACME Corp".to_string(),
-            )
-            .with_feature(0.3)
-            .as_anomaly("fraud"),
-        );
-
-        graph.add_edge(
-            GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(1000.0)
-                .with_feature(6.9),
-        );
-
-        graph.add_edge(
-            GraphEdge::new(0, n2, n3, EdgeType::Ownership)
-                .with_weight(100.0)
-                .with_feature(4.6),
-        );
-
-        graph.compute_statistics();
-        graph
-    }
 
     #[test]
     fn test_dgl_export_basic() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let exporter = DGLExporter::new(DGLExportConfig::default());
@@ -944,7 +906,7 @@ mod tests {
 
     #[test]
     fn test_dgl_export_heterogeneous() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let config = DGLExportConfig {
@@ -961,7 +923,7 @@ mod tests {
 
     #[test]
     fn test_dgl_export_masks() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let exporter = DGLExporter::new(DGLExportConfig::default());
@@ -980,7 +942,7 @@ mod tests {
 
     #[test]
     fn test_dgl_coo_format() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let exporter = DGLExporter::new(DGLExportConfig::default());
@@ -1000,7 +962,7 @@ mod tests {
 
     #[test]
     fn test_dgl_export_no_masks() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let config = DGLExportConfig {
@@ -1022,7 +984,7 @@ mod tests {
 
     #[test]
     fn test_dgl_export_minimal() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let config = DGLExportConfig {
@@ -1050,7 +1012,7 @@ mod tests {
 
     #[test]
     fn test_dgl_statistics() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_company();
         let dir = tempdir().unwrap();
 
         let exporter = DGLExporter::new(DGLExportConfig::default());

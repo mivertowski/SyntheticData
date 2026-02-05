@@ -642,53 +642,13 @@ fn edge_property_to_json(prop: &EdgeProperty) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{EdgeType, GraphType, NodeType};
+    use crate::models::{EdgeType, NodeType};
+    use crate::test_helpers::create_test_graph_with_vendor;
     use tempfile::tempdir;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test_graph", GraphType::Transaction);
-
-        let n1 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "1000".to_string(), "Cash".to_string())
-                .with_feature(0.5)
-                .with_feature(0.3)
-                .with_categorical("account_type", "Asset"),
-        );
-        let n2 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "2000".to_string(), "AP".to_string())
-                .with_feature(0.8)
-                .with_feature(0.2)
-                .as_anomaly("unusual_balance"),
-        );
-        let n3 = graph.add_node(
-            GraphNode::new(
-                0,
-                NodeType::Vendor,
-                "V001".to_string(),
-                "Acme Corp".to_string(),
-            )
-            .with_feature(1.0),
-        );
-
-        graph.add_edge(
-            GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(1000.0)
-                .with_feature(6.9)
-                .with_timestamp(chrono::NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()),
-        );
-        graph.add_edge(
-            GraphEdge::new(0, n2, n3, EdgeType::Transaction)
-                .with_weight(500.0)
-                .as_anomaly("split_transaction"),
-        );
-
-        graph.compute_statistics();
-        graph
-    }
 
     #[test]
     fn test_rustgraph_export_jsonl() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_vendor();
         let dir = tempdir().unwrap();
 
         let config = RustGraphExportConfig {
@@ -709,7 +669,7 @@ mod tests {
 
     #[test]
     fn test_rustgraph_export_json_array() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_vendor();
         let dir = tempdir().unwrap();
 
         let config = RustGraphExportConfig {
@@ -783,7 +743,7 @@ mod tests {
 
     #[test]
     fn test_export_to_writer() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_vendor();
         let mut buffer = Vec::new();
 
         let config = RustGraphExportConfig {
@@ -804,7 +764,7 @@ mod tests {
 
     #[test]
     fn test_node_type_counts() {
-        let graph = create_test_graph();
+        let graph = create_test_graph_with_vendor();
         let dir = tempdir().unwrap();
 
         let exporter = RustGraphExporter::new(RustGraphExportConfig::default());

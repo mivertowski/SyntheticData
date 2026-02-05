@@ -584,33 +584,8 @@ fn escape_csv_field(field: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
-    use datasynth_core::models::{JournalEntryHeader, JournalEntryLine};
-    use rust_decimal::Decimal;
+    use crate::test_helpers::create_test_je;
     use tempfile::TempDir;
-
-    fn create_test_je() -> JournalEntry {
-        let header = JournalEntryHeader::new(
-            "1000".to_string(),
-            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
-        );
-        let mut je = JournalEntry::new(header);
-
-        je.add_line(JournalEntryLine::debit(
-            je.header.document_id,
-            1,
-            "100000".to_string(),
-            Decimal::from(5000),
-        ));
-        je.add_line(JournalEntryLine::credit(
-            je.header.document_id,
-            2,
-            "200000".to_string(),
-            Decimal::from(5000),
-        ));
-
-        je
-    }
 
     #[test]
     fn test_posting_period_generation() {

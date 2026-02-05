@@ -504,30 +504,8 @@ impl Default for CypherQueryBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{EdgeType, GraphEdge, GraphNode, GraphType, NodeType};
+    use crate::test_helpers::create_test_graph;
     use tempfile::tempdir;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        let n1 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "1000".to_string(), "Cash".to_string())
-                .with_feature(0.5),
-        );
-        let n2 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "2000".to_string(), "AP".to_string())
-                .with_feature(0.8),
-        );
-
-        graph.add_edge(
-            GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(1000.0)
-                .with_feature(6.9),
-        );
-
-        graph.compute_statistics();
-        graph
-    }
 
     #[test]
     fn test_neo4j_export() {

@@ -487,57 +487,11 @@ fn compute_window_features(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{GraphEdge, GraphNode, GraphType, NodeType};
-    use crate::EdgeType;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        // Add nodes
-        let n1 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "1000".to_string(),
-            "Cash".to_string(),
-        ));
-        let n2 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "2000".to_string(),
-            "AP".to_string(),
-        ));
-        let n3 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "3000".to_string(),
-            "Revenue".to_string(),
-        ));
-
-        // Add edges with timestamps spanning several days
-        for i in 0..10 {
-            let date = NaiveDate::from_ymd_opt(2024, 1, 1 + i).unwrap();
-            let amount = 100.0 + (i as f64 * 10.0); // Increasing trend
-
-            let edge = GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(amount)
-                .with_timestamp(date);
-            graph.add_edge(edge);
-
-            // Add some edges to n3 for variety
-            if i % 2 == 0 {
-                let edge = GraphEdge::new(0, n1, n3, EdgeType::Transaction)
-                    .with_weight(amount * 2.0)
-                    .with_timestamp(date);
-                graph.add_edge(edge);
-            }
-        }
-
-        graph
-    }
+    use crate::test_helpers::create_temporal_test_graph;
 
     #[test]
     fn test_temporal_index_build() {
-        let graph = create_test_graph();
+        let graph = create_temporal_test_graph();
         let index = TemporalIndex::build(&graph);
 
         assert!(index.min_date.is_some());
@@ -554,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_edges_in_range() {
-        let graph = create_test_graph();
+        let graph = create_temporal_test_graph();
         let index = TemporalIndex::build(&graph);
 
         // Node 1 should have many edges
@@ -569,7 +523,7 @@ mod tests {
 
     #[test]
     fn test_compute_temporal_features() {
-        let graph = create_test_graph();
+        let graph = create_temporal_test_graph();
         let index = TemporalIndex::build(&graph);
         let config = TemporalConfig::default();
 
@@ -632,7 +586,7 @@ mod tests {
 
     #[test]
     fn test_compute_all_temporal_features() {
-        let graph = create_test_graph();
+        let graph = create_temporal_test_graph();
         let config = TemporalConfig::default();
 
         let all_features = compute_all_temporal_features(&graph, &config);

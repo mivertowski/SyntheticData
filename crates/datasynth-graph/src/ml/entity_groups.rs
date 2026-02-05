@@ -692,64 +692,11 @@ fn find_hub_node(graph: &Graph, members: &[NodeId]) -> NodeId {
 mod tests {
     use super::*;
     use crate::models::{GraphEdge, GraphNode, GraphType, NodeType};
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        // Create two connected components
-        // Component 1: n1 - n2 - n3 (triangle)
-        let n1 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "A".to_string(),
-            "A".to_string(),
-        ));
-        let n2 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "B".to_string(),
-            "B".to_string(),
-        ));
-        let n3 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "C".to_string(),
-            "C".to_string(),
-        ));
-
-        graph.add_edge(GraphEdge::new(0, n1, n2, EdgeType::Transaction).with_weight(100.0));
-        graph.add_edge(GraphEdge::new(0, n2, n3, EdgeType::Transaction).with_weight(100.0));
-        graph.add_edge(GraphEdge::new(0, n3, n1, EdgeType::Transaction).with_weight(100.0));
-
-        // Component 2: n4 - n5 - n6 (chain)
-        let n4 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "D".to_string(),
-            "D".to_string(),
-        ));
-        let n5 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "E".to_string(),
-            "E".to_string(),
-        ));
-        let n6 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "F".to_string(),
-            "F".to_string(),
-        ));
-
-        graph.add_edge(GraphEdge::new(0, n4, n5, EdgeType::Transaction).with_weight(200.0));
-        graph.add_edge(GraphEdge::new(0, n5, n6, EdgeType::Transaction).with_weight(200.0));
-
-        graph
-    }
+    use crate::test_helpers::create_entity_group_test_graph;
 
     #[test]
     fn test_connected_components() {
-        let graph = create_test_graph();
+        let graph = create_entity_group_test_graph();
         let config = GroupDetectionConfig::default();
 
         let result = detect_entity_groups(&graph, &config);
@@ -760,7 +707,7 @@ mod tests {
 
     #[test]
     fn test_label_propagation() {
-        let graph = create_test_graph();
+        let graph = create_entity_group_test_graph();
         let config = GroupDetectionConfig {
             algorithms: vec![GroupDetectionAlgorithm::LabelPropagation],
             ..Default::default()
@@ -774,7 +721,7 @@ mod tests {
 
     #[test]
     fn test_clique_detection() {
-        let graph = create_test_graph();
+        let graph = create_entity_group_test_graph();
         let config = GroupDetectionConfig {
             algorithms: vec![GroupDetectionAlgorithm::CliqueDetection],
             min_cohesion: 0.1, // Lower threshold to accept directed graph cohesion
@@ -791,7 +738,7 @@ mod tests {
 
     #[test]
     fn test_node_features() {
-        let graph = create_test_graph();
+        let graph = create_entity_group_test_graph();
         let config = GroupDetectionConfig::default();
 
         let result = detect_entity_groups(&graph, &config);
@@ -802,7 +749,7 @@ mod tests {
 
     #[test]
     fn test_group_metrics() {
-        let graph = create_test_graph();
+        let graph = create_entity_group_test_graph();
         let members = vec![1, 2, 3]; // The triangle
 
         let (internal, _external, cohesion) = calculate_group_metrics(&graph, &members);

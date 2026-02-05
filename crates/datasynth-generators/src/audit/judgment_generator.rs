@@ -848,40 +848,7 @@ impl JudgmentGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use datasynth_core::models::audit::EngagementType;
-    use rust_decimal::Decimal;
-
-    fn create_test_engagement() -> AuditEngagement {
-        AuditEngagement::new(
-            "ENTITY001",
-            "Test Company Inc.",
-            EngagementType::AnnualAudit,
-            2025,
-            NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
-        )
-        .with_materiality(
-            Decimal::new(1_000_000, 0),
-            0.75,
-            0.05,
-            "Total Revenue",
-            0.005,
-        )
-        .with_timeline(
-            NaiveDate::from_ymd_opt(2025, 10, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2025, 10, 31).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 1, 5).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 2, 15).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 2, 16).unwrap(),
-            NaiveDate::from_ymd_opt(2026, 3, 15).unwrap(),
-        )
-        .with_team(
-            "PARTNER001",
-            "John Partner",
-            "MANAGER001",
-            "Jane Manager",
-            vec!["SENIOR001".into(), "STAFF001".into()],
-        )
-    }
+    use crate::audit::test_helpers::create_test_engagement;
 
     #[test]
     fn test_judgment_generation() {

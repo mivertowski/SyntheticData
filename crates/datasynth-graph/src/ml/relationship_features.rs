@@ -518,78 +518,11 @@ pub fn compute_all_combined_features(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{GraphEdge, GraphNode, GraphType, NodeType};
-    use crate::EdgeType;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        // Create nodes
-        let n1 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "A".to_string(),
-            "A".to_string(),
-        ));
-        let n2 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "B".to_string(),
-            "B".to_string(),
-        ));
-        let n3 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "C".to_string(),
-            "C".to_string(),
-        ));
-        let n4 = graph.add_node(GraphNode::new(
-            0,
-            NodeType::Account,
-            "D".to_string(),
-            "D".to_string(),
-        ));
-
-        // Create edges with timestamps
-        // N1 -> N2 (2 transactions)
-        graph.add_edge(
-            GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(1000.0)
-                .with_timestamp(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
-        );
-        graph.add_edge(
-            GraphEdge::new(0, n1, n2, EdgeType::Transaction)
-                .with_weight(2000.0)
-                .with_timestamp(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()),
-        );
-
-        // N1 -> N3 (1 transaction)
-        graph.add_edge(
-            GraphEdge::new(0, n1, n3, EdgeType::Transaction)
-                .with_weight(500.0)
-                .with_timestamp(NaiveDate::from_ymd_opt(2024, 3, 1).unwrap()),
-        );
-
-        // N2 -> N1 (bidirectional relationship)
-        graph.add_edge(
-            GraphEdge::new(0, n2, n1, EdgeType::Transaction)
-                .with_weight(1500.0)
-                .with_timestamp(NaiveDate::from_ymd_opt(2024, 4, 1).unwrap()),
-        );
-
-        // N1 -> N4 (recent new relationship)
-        graph.add_edge(
-            GraphEdge::new(0, n1, n4, EdgeType::Transaction)
-                .with_weight(300.0)
-                .with_timestamp(NaiveDate::from_ymd_opt(2024, 12, 15).unwrap()),
-        );
-
-        graph
-    }
+    use crate::test_helpers::create_relationship_test_graph;
 
     #[test]
     fn test_relationship_features() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let features = compute_relationship_features(1, &graph, &config);
@@ -602,7 +535,7 @@ mod tests {
 
     #[test]
     fn test_herfindahl_index() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let features = compute_relationship_features(1, &graph, &config);
@@ -617,7 +550,7 @@ mod tests {
 
     #[test]
     fn test_reciprocity() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let features = compute_relationship_features(1, &graph, &config);
@@ -629,7 +562,7 @@ mod tests {
 
     #[test]
     fn test_counterparty_risk_basic() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let risk = compute_counterparty_risk(1, &graph, &config);
@@ -641,7 +574,7 @@ mod tests {
 
     #[test]
     fn test_counterparty_risk_with_anomalies() {
-        let mut graph = create_test_graph();
+        let mut graph = create_relationship_test_graph();
 
         // Mark an edge as anomalous
         if let Some(edge) = graph.get_edge_mut(1) {
@@ -673,7 +606,7 @@ mod tests {
 
     #[test]
     fn test_all_relationship_features() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let all_features = compute_all_relationship_features(&graph, &config);
@@ -683,7 +616,7 @@ mod tests {
 
     #[test]
     fn test_combined_features() {
-        let graph = create_test_graph();
+        let graph = create_relationship_test_graph();
         let config = RelationshipFeatureConfig::default();
 
         let combined = compute_all_combined_features(&graph, &config);

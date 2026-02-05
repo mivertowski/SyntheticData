@@ -27,6 +27,9 @@ pub mod exporters;
 pub mod ml;
 pub mod models;
 
+#[cfg(test)]
+pub(crate) mod test_helpers;
+
 pub use builders::*;
 pub use exporters::*;
 pub use ml::*;

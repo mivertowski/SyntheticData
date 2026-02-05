@@ -556,37 +556,11 @@ pub fn sample_negative_edges(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{EdgeType, GraphEdge, GraphNode, GraphType, NodeType};
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        for i in 0..10 {
-            let mut node = GraphNode::new(
-                0,
-                NodeType::Account,
-                format!("{}", i),
-                format!("Account {}", i),
-            );
-            if i == 5 {
-                node.is_anomaly = true;
-            }
-            graph.add_node(node);
-        }
-
-        for i in 0..9 {
-            let edge = GraphEdge::new(0, i + 1, i + 2, EdgeType::Transaction)
-                .with_timestamp(chrono::NaiveDate::from_ymd_opt(2024, 1, i as u32 + 1).unwrap());
-            graph.add_edge(edge);
-        }
-
-        graph.compute_statistics();
-        graph
-    }
+    use crate::test_helpers::create_splits_test_graph;
 
     #[test]
     fn test_random_split() {
-        let graph = create_test_graph();
+        let graph = create_splits_test_graph();
         let splitter = DataSplitter::new(SplitConfig::default());
         let split = splitter.split(&graph);
 
@@ -598,7 +572,7 @@ mod tests {
 
     #[test]
     fn test_temporal_split() {
-        let graph = create_test_graph();
+        let graph = create_splits_test_graph();
         let config = SplitConfig {
             strategy: SplitStrategy::Temporal {
                 train_cutoff: chrono::NaiveDate::from_ymd_opt(2024, 1, 4).unwrap(),
@@ -615,7 +589,7 @@ mod tests {
 
     #[test]
     fn test_stratified_split() {
-        let graph = create_test_graph();
+        let graph = create_splits_test_graph();
         let config = SplitConfig {
             strategy: SplitStrategy::Stratified,
             ..Default::default()
@@ -628,7 +602,7 @@ mod tests {
 
     #[test]
     fn test_negative_sampling() {
-        let graph = create_test_graph();
+        let graph = create_splits_test_graph();
         let negatives = sample_negative_edges(&graph, 5, 42);
 
         assert!(negatives.len() <= 5);

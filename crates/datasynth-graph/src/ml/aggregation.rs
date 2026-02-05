@@ -337,31 +337,7 @@ pub fn aggregate_node_features(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{GraphEdge, GraphNode, GraphType, NodeType};
-    use crate::EdgeType;
-
-    fn create_test_graph() -> Graph {
-        let mut graph = Graph::new("test", GraphType::Transaction);
-
-        let n1 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "A".to_string(), "A".to_string())
-                .with_features(vec![1.0, 2.0, 3.0]),
-        );
-        let n2 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "B".to_string(), "B".to_string())
-                .with_features(vec![4.0, 5.0, 6.0]),
-        );
-        let n3 = graph.add_node(
-            GraphNode::new(0, NodeType::Account, "C".to_string(), "C".to_string())
-                .with_features(vec![7.0, 8.0, 9.0]),
-        );
-
-        graph.add_edge(GraphEdge::new(0, n1, n2, EdgeType::Transaction).with_weight(100.0));
-        graph.add_edge(GraphEdge::new(0, n2, n3, EdgeType::Transaction).with_weight(200.0));
-        graph.add_edge(GraphEdge::new(0, n1, n3, EdgeType::Transaction).with_weight(150.0));
-
-        graph
-    }
+    use crate::test_helpers::create_aggregation_test_graph;
 
     #[test]
     fn test_aggregate_values_sum() {
@@ -411,7 +387,7 @@ mod tests {
 
     #[test]
     fn test_aggregate_features() {
-        let graph = create_test_graph();
+        let graph = create_aggregation_test_graph();
         let group = EntityGroup::new(
             1,
             vec![1, 2, 3],
@@ -426,7 +402,7 @@ mod tests {
 
     #[test]
     fn test_aggregate_node_features() {
-        let graph = create_test_graph();
+        let graph = create_aggregation_test_graph();
         let result = aggregate_node_features(&[1, 2, 3], &graph, AggregationType::Mean);
 
         assert_eq!(result.features.len(), 3);
