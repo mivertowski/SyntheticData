@@ -843,7 +843,6 @@ impl EnhancedOrchestrator {
     }
 
     /// Run the complete generation workflow.
-    #[allow(clippy::field_reassign_with_default)]
     pub fn generate(&mut self) -> SynthResult<EnhancedGenerationResult> {
         info!("Starting enhanced generation workflow");
         info!(
@@ -861,11 +860,87 @@ impl EnhancedOrchestrator {
             ));
         }
 
-        let mut stats = EnhancedGenerationStatistics::default();
-        stats.companies_count = self.config.companies.len();
-        stats.period_months = self.config.global.period_months;
+        let mut stats = EnhancedGenerationStatistics {
+            companies_count: self.config.companies.len(),
+            period_months: self.config.global.period_months,
+            ..Default::default()
+        };
 
-        // Phase 1: Generate Chart of Accounts
+        // Phase 1: Chart of Accounts
+        let coa = self.phase_chart_of_accounts(&mut stats)?;
+
+        // Phase 2: Master Data
+        self.phase_master_data(&mut stats)?;
+
+        // Phase 3: Document Flows + Subledger Linking
+        let (document_flows, subledger) = self.phase_document_flows(&mut stats)?;
+
+        // Phase 3c: OCPM Events
+        let ocpm = self.phase_ocpm_events(&document_flows, &mut stats)?;
+
+        // Phase 4: Journal Entries
+        let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
+
+        // Get current degradation actions for optional phases
+        let actions = self.get_degradation_actions();
+
+        // Phase 5: Anomaly Injection
+        let anomaly_labels = self.phase_anomaly_injection(&mut entries, &actions, &mut stats)?;
+
+        // Phase 6: Balance Validation
+        let balance_validation = self.phase_balance_validation(&entries)?;
+
+        // Phase 7: Data Quality Injection
+        let data_quality_stats =
+            self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
+
+        // Phase 8: Audit Data
+        let audit = self.phase_audit_data(&entries, &mut stats)?;
+
+        // Phase 9: Banking KYC/AML Data
+        let banking = self.phase_banking_data(&mut stats)?;
+
+        // Phase 10: Graph Export
+        let graph_export = self.phase_graph_export(&entries, &coa, &mut stats)?;
+
+        // Phase 10b: Hypergraph Export
+        self.phase_hypergraph_export(&coa, &entries, &document_flows, &mut stats)?;
+
+        // Log final resource statistics
+        let resource_stats = self.resource_guard.stats();
+        info!(
+            "Generation workflow complete. Resource stats: memory_peak={}MB, disk_written={}bytes, degradation_level={}",
+            resource_stats.memory.peak_resident_bytes / (1024 * 1024),
+            resource_stats.disk.estimated_bytes_written,
+            resource_stats.degradation_level
+        );
+
+        Ok(EnhancedGenerationResult {
+            chart_of_accounts: (*coa).clone(),
+            master_data: self.master_data.clone(),
+            document_flows,
+            subledger,
+            ocpm,
+            audit,
+            banking,
+            graph_export,
+            journal_entries: entries,
+            anomaly_labels,
+            balance_validation,
+            data_quality_stats,
+            statistics: stats,
+        })
+    }
+
+    // ========================================================================
+    // Generation Phase Methods
+    // ========================================================================
+
+    /// Phase 1: Generate Chart of Accounts and update statistics.
+    fn phase_chart_of_accounts(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Arc<ChartOfAccounts>> {
         info!("Phase 1: Generating Chart of Accounts");
         let coa = self.generate_coa()?;
         stats.accounts_count = coa.account_count();
@@ -873,11 +948,12 @@ impl EnhancedOrchestrator {
             "Chart of Accounts generated: {} accounts",
             stats.accounts_count
         );
-
-        // Check resources after CoA generation
         self.check_resources_with_log("post-coa")?;
+        Ok(coa)
+    }
 
-        // Phase 2: Generate Master Data
+    /// Phase 2: Generate master data (vendors, customers, materials, assets, employees).
+    fn phase_master_data(&mut self, stats: &mut EnhancedGenerationStatistics) -> SynthResult<()> {
         if self.phase_config.generate_master_data {
             info!("Phase 2: Generating Master Data");
             self.generate_master_data()?;
@@ -891,16 +967,21 @@ impl EnhancedOrchestrator {
                 stats.vendor_count, stats.customer_count, stats.material_count,
                 stats.asset_count, stats.employee_count
             );
-
-            // Check resources after master data generation
             self.check_resources_with_log("post-master-data")?;
         } else {
             debug!("Phase 2: Skipped (master data generation disabled)");
         }
+        Ok(())
+    }
 
-        // Phase 3: Generate Document Flows
+    /// Phase 3: Generate document flows (P2P and O2C) and link to subledgers.
+    fn phase_document_flows(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<(DocumentFlowSnapshot, SubledgerSnapshot)> {
         let mut document_flows = DocumentFlowSnapshot::default();
         let mut subledger = SubledgerSnapshot::default();
+
         if self.phase_config.generate_document_flows && !self.master_data.vendors.is_empty() {
             info!("Phase 3: Generating Document Flows");
             self.generate_document_flows(&mut document_flows)?;
@@ -921,17 +1002,23 @@ impl EnhancedOrchestrator {
                 stats.ap_invoice_count, stats.ar_invoice_count
             );
 
-            // Check resources after document flow generation
             self.check_resources_with_log("post-document-flows")?;
         } else {
             debug!("Phase 3: Skipped (document flow generation disabled or no master data)");
         }
 
-        // Phase 3c: Generate OCPM events from document flows
-        let mut ocpm_snapshot = OcpmSnapshot::default();
+        Ok((document_flows, subledger))
+    }
+
+    /// Phase 3c: Generate OCPM events from document flows.
+    fn phase_ocpm_events(
+        &mut self,
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<OcpmSnapshot> {
         if self.phase_config.generate_ocpm_events && !document_flows.p2p_chains.is_empty() {
             info!("Phase 3c: Generating OCPM Events");
-            ocpm_snapshot = self.generate_ocpm_events(&document_flows)?;
+            let ocpm_snapshot = self.generate_ocpm_events(document_flows)?;
             stats.ocpm_event_count = ocpm_snapshot.event_count;
             stats.ocpm_object_count = ocpm_snapshot.object_count;
             stats.ocpm_case_count = ocpm_snapshot.case_count;
@@ -939,20 +1026,27 @@ impl EnhancedOrchestrator {
                 "OCPM events generated: {} events, {} objects, {} cases",
                 stats.ocpm_event_count, stats.ocpm_object_count, stats.ocpm_case_count
             );
-
-            // Check resources after OCPM generation
             self.check_resources_with_log("post-ocpm")?;
+            Ok(ocpm_snapshot)
         } else {
             debug!("Phase 3c: Skipped (OCPM generation disabled or no document flows)");
+            Ok(OcpmSnapshot::default())
         }
+    }
 
-        // Phase 4: Generate Journal Entries
+    /// Phase 4: Generate journal entries from document flows and standalone generation.
+    fn phase_journal_entries(
+        &mut self,
+        coa: &Arc<ChartOfAccounts>,
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<JournalEntry>> {
         let mut entries = Vec::new();
 
         // Phase 4a: Generate JEs from document flows (for data coherence)
         if self.phase_config.generate_document_flows && !document_flows.p2p_chains.is_empty() {
             debug!("Phase 4a: Generating JEs from document flows");
-            let flow_entries = self.generate_jes_from_document_flows(&document_flows)?;
+            let flow_entries = self.generate_jes_from_document_flows(document_flows)?;
             debug!("Generated {} JEs from document flows", flow_entries.len());
             entries.extend(flow_entries);
         }
@@ -960,7 +1054,7 @@ impl EnhancedOrchestrator {
         // Phase 4b: Generate standalone journal entries
         if self.phase_config.generate_journal_entries {
             info!("Phase 4: Generating Journal Entries");
-            let je_entries = self.generate_journal_entries(&coa)?;
+            let je_entries = self.generate_journal_entries(coa)?;
             info!("Generated {} standalone journal entries", je_entries.len());
             entries.extend(je_entries);
         } else {
@@ -974,39 +1068,46 @@ impl EnhancedOrchestrator {
                 "Total entries: {}, total line items: {}",
                 stats.total_entries, stats.total_line_items
             );
-
-            // Check resources after JE generation (high-volume phase)
             self.check_resources_with_log("post-journal-entries")?;
         }
 
-        // Get current degradation actions for optional phases
-        let actions = self.get_degradation_actions();
+        Ok(entries)
+    }
 
-        // Phase 5: Inject Anomalies (skip if degradation dictates)
-        let mut anomaly_labels = AnomalyLabels::default();
+    /// Phase 5: Inject anomalies into journal entries.
+    fn phase_anomaly_injection(
+        &mut self,
+        entries: &mut [JournalEntry],
+        actions: &DegradationActions,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<AnomalyLabels> {
         if self.phase_config.inject_anomalies
             && !entries.is_empty()
             && !actions.skip_anomaly_injection
         {
             info!("Phase 5: Injecting Anomalies");
-            let result = self.inject_anomalies(&mut entries)?;
+            let result = self.inject_anomalies(entries)?;
             stats.anomalies_injected = result.labels.len();
-            anomaly_labels = result;
             info!("Injected {} anomalies", stats.anomalies_injected);
-
-            // Check resources after anomaly injection
             self.check_resources_with_log("post-anomaly-injection")?;
+            Ok(result)
         } else if actions.skip_anomaly_injection {
             warn!("Phase 5: Skipped due to resource degradation");
+            Ok(AnomalyLabels::default())
         } else {
             debug!("Phase 5: Skipped (anomaly injection disabled or no entries)");
+            Ok(AnomalyLabels::default())
         }
+    }
 
-        // Phase 6: Validate Balances
-        let mut balance_validation = BalanceValidationResult::default();
+    /// Phase 6: Validate balance sheet equation on journal entries.
+    fn phase_balance_validation(
+        &mut self,
+        entries: &[JournalEntry],
+    ) -> SynthResult<BalanceValidationResult> {
         if self.phase_config.validate_balances && !entries.is_empty() {
             debug!("Phase 6: Validating Balances");
-            balance_validation = self.validate_journal_entries(&entries)?;
+            let balance_validation = self.validate_journal_entries(entries)?;
             if balance_validation.is_balanced {
                 debug!("Balance validation passed");
             } else {
@@ -1015,32 +1116,47 @@ impl EnhancedOrchestrator {
                     balance_validation.validation_errors.len()
                 );
             }
+            Ok(balance_validation)
+        } else {
+            Ok(BalanceValidationResult::default())
         }
+    }
 
-        // Phase 7: Inject Data Quality Variations (skip if degradation dictates)
-        let mut data_quality_stats = DataQualityStats::default();
+    /// Phase 7: Inject data quality variations (typos, missing values, format issues).
+    fn phase_data_quality_injection(
+        &mut self,
+        entries: &mut [JournalEntry],
+        actions: &DegradationActions,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<DataQualityStats> {
         if self.phase_config.inject_data_quality
             && !entries.is_empty()
             && !actions.skip_data_quality
         {
             info!("Phase 7: Injecting Data Quality Variations");
-            data_quality_stats = self.inject_data_quality(&mut entries)?;
-            stats.data_quality_issues = data_quality_stats.records_with_issues;
+            let dq_stats = self.inject_data_quality(entries)?;
+            stats.data_quality_issues = dq_stats.records_with_issues;
             info!("Injected {} data quality issues", stats.data_quality_issues);
-
-            // Check resources after data quality injection
             self.check_resources_with_log("post-data-quality")?;
+            Ok(dq_stats)
         } else if actions.skip_data_quality {
             warn!("Phase 7: Skipped due to resource degradation");
+            Ok(DataQualityStats::default())
         } else {
             debug!("Phase 7: Skipped (data quality injection disabled or no entries)");
+            Ok(DataQualityStats::default())
         }
+    }
 
-        // Phase 8: Generate Audit Data
-        let mut audit_snapshot = AuditSnapshot::default();
+    /// Phase 8: Generate audit data (engagements, workpapers, evidence, risks, findings).
+    fn phase_audit_data(
+        &mut self,
+        entries: &[JournalEntry],
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<AuditSnapshot> {
         if self.phase_config.generate_audit {
             info!("Phase 8: Generating Audit Data");
-            audit_snapshot = self.generate_audit_data(&entries)?;
+            let audit_snapshot = self.generate_audit_data(entries)?;
             stats.audit_engagement_count = audit_snapshot.engagements.len();
             stats.audit_workpaper_count = audit_snapshot.workpapers.len();
             stats.audit_evidence_count = audit_snapshot.evidence.len();
@@ -1053,18 +1169,22 @@ impl EnhancedOrchestrator {
                 stats.audit_evidence_count, stats.audit_risk_count,
                 stats.audit_finding_count, stats.audit_judgment_count
             );
-
-            // Check resources after audit generation
             self.check_resources_with_log("post-audit")?;
+            Ok(audit_snapshot)
         } else {
             debug!("Phase 8: Skipped (audit generation disabled)");
+            Ok(AuditSnapshot::default())
         }
+    }
 
-        // Phase 9: Generate Banking KYC/AML Data
-        let mut banking_snapshot = BankingSnapshot::default();
+    /// Phase 9: Generate banking KYC/AML data.
+    fn phase_banking_data(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<BankingSnapshot> {
         if self.phase_config.generate_banking && self.config.banking.enabled {
             info!("Phase 9: Generating Banking KYC/AML Data");
-            banking_snapshot = self.generate_banking_data()?;
+            let banking_snapshot = self.generate_banking_data()?;
             stats.banking_customer_count = banking_snapshot.customers.len();
             stats.banking_account_count = banking_snapshot.accounts.len();
             stats.banking_transaction_count = banking_snapshot.transactions.len();
@@ -1074,41 +1194,55 @@ impl EnhancedOrchestrator {
                 stats.banking_customer_count, stats.banking_account_count,
                 stats.banking_transaction_count, stats.banking_suspicious_count
             );
-
-            // Check resources after banking generation
             self.check_resources_with_log("post-banking")?;
+            Ok(banking_snapshot)
         } else {
             debug!("Phase 9: Skipped (banking generation disabled)");
+            Ok(BankingSnapshot::default())
         }
+    }
 
-        // Phase 10: Export Graphs
-        let graph_export_snapshot = if (self.phase_config.generate_graph_export
-            || self.config.graph_export.enabled)
+    /// Phase 10: Export accounting network graphs for ML training.
+    fn phase_graph_export(
+        &mut self,
+        entries: &[JournalEntry],
+        coa: &Arc<ChartOfAccounts>,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<GraphExportSnapshot> {
+        if (self.phase_config.generate_graph_export || self.config.graph_export.enabled)
             && !entries.is_empty()
         {
             info!("Phase 10: Exporting Accounting Network Graphs");
-            match self.export_graphs(&entries, &coa, &mut stats) {
+            match self.export_graphs(entries, coa, stats) {
                 Ok(snapshot) => {
                     info!(
                         "Graph export complete: {} graphs ({} nodes, {} edges)",
                         snapshot.graph_count, stats.graph_node_count, stats.graph_edge_count
                     );
-                    snapshot
+                    Ok(snapshot)
                 }
                 Err(e) => {
                     warn!("Phase 10: Graph export failed: {}", e);
-                    GraphExportSnapshot::default()
+                    Ok(GraphExportSnapshot::default())
                 }
             }
         } else {
             debug!("Phase 10: Skipped (graph export disabled or no entries)");
-            GraphExportSnapshot::default()
-        };
+            Ok(GraphExportSnapshot::default())
+        }
+    }
 
-        // Phase 10b: Multi-Layer Hypergraph Export
+    /// Phase 10b: Export multi-layer hypergraph for RustGraph integration.
+    fn phase_hypergraph_export(
+        &self,
+        coa: &Arc<ChartOfAccounts>,
+        entries: &[JournalEntry],
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<()> {
         if self.config.graph_export.hypergraph.enabled && !entries.is_empty() {
             info!("Phase 10b: Exporting Multi-Layer Hypergraph");
-            match self.export_hypergraph(&coa, &entries, &document_flows, &mut stats) {
+            match self.export_hypergraph(coa, entries, document_flows, stats) {
                 Ok(info) => {
                     info!(
                         "Hypergraph export complete: {} nodes, {} edges, {} hyperedges",
@@ -1122,31 +1256,7 @@ impl EnhancedOrchestrator {
         } else {
             debug!("Phase 10b: Skipped (hypergraph export disabled or no entries)");
         }
-
-        // Log final resource statistics
-        let resource_stats = self.resource_guard.stats();
-        info!(
-            "Generation workflow complete. Resource stats: memory_peak={}MB, disk_written={}bytes, degradation_level={}",
-            resource_stats.memory.peak_resident_bytes / (1024 * 1024),
-            resource_stats.disk.estimated_bytes_written,
-            resource_stats.degradation_level
-        );
-
-        Ok(EnhancedGenerationResult {
-            chart_of_accounts: (*coa).clone(),
-            master_data: self.master_data.clone(),
-            document_flows,
-            subledger,
-            ocpm: ocpm_snapshot,
-            audit: audit_snapshot,
-            banking: banking_snapshot,
-            graph_export: graph_export_snapshot,
-            journal_entries: entries,
-            anomaly_labels,
-            balance_validation,
-            data_quality_stats,
-            statistics: stats,
-        })
+        Ok(())
     }
 
     /// Generate the chart of accounts.
