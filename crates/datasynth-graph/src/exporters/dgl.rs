@@ -967,7 +967,10 @@ mod tests {
         let exporter = DGLExporter::new(DGLExportConfig::default());
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
-        assert!(metadata.common.files.contains(&"train_mask.npy".to_string()));
+        assert!(metadata
+            .common
+            .files
+            .contains(&"train_mask.npy".to_string()));
         assert!(metadata.common.files.contains(&"val_mask.npy".to_string()));
         assert!(metadata.common.files.contains(&"test_mask.npy".to_string()));
         assert!(dir.path().join("train_mask.npy").exists());
@@ -1010,7 +1013,10 @@ mod tests {
         let exporter = DGLExporter::new(config);
         let metadata = exporter.export(&graph, dir.path()).unwrap();
 
-        assert!(!metadata.common.files.contains(&"train_mask.npy".to_string()));
+        assert!(!metadata
+            .common
+            .files
+            .contains(&"train_mask.npy".to_string()));
         assert!(!dir.path().join("train_mask.npy").exists());
     }
 
@@ -1052,11 +1058,21 @@ mod tests {
 
         // Should have density and anomaly ratios
         assert!(metadata.common.statistics.contains_key("density"));
-        assert!(metadata.common.statistics.contains_key("anomalous_node_ratio"));
-        assert!(metadata.common.statistics.contains_key("anomalous_edge_ratio"));
+        assert!(metadata
+            .common
+            .statistics
+            .contains_key("anomalous_node_ratio"));
+        assert!(metadata
+            .common
+            .statistics
+            .contains_key("anomalous_edge_ratio"));
 
         // One of three nodes is anomalous
-        let node_ratio = metadata.common.statistics.get("anomalous_node_ratio").unwrap();
+        let node_ratio = metadata
+            .common
+            .statistics
+            .get("anomalous_node_ratio")
+            .unwrap();
         assert!((*node_ratio - 1.0 / 3.0).abs() < 0.01);
     }
 }

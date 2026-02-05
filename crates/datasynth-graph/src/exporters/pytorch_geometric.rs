@@ -27,21 +27,12 @@ use crate::exporters::common::{CommonExportConfig, CommonGraphMetadata};
 use crate::models::Graph;
 
 /// Configuration for PyTorch Geometric export.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct PyGExportConfig {
     /// Common export settings (features, labels, masks, splits, seed).
     pub common: CommonExportConfig,
     /// Export categorical features as one-hot.
     pub one_hot_categoricals: bool,
-}
-
-impl Default for PyGExportConfig {
-    fn default() -> Self {
-        Self {
-            common: CommonExportConfig::default(),
-            one_hot_categoricals: false,
-        }
-    }
 }
 
 /// Metadata about the exported PyG data.

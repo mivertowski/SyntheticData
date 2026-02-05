@@ -2183,15 +2183,17 @@ impl EnhancedOrchestrator {
                 match format {
                     datasynth_config::schema::GraphExportFormat::PytorchGeometric => {
                         let pyg_config = PyGExportConfig {
-                            export_node_features: true,
-                            export_edge_features: true,
-                            export_node_labels: true,
-                            export_edge_labels: true,
+                            common: datasynth_graph::CommonExportConfig {
+                                export_node_features: true,
+                                export_edge_features: true,
+                                export_node_labels: true,
+                                export_edge_labels: true,
+                                export_masks: true,
+                                train_ratio: self.config.graph_export.train_ratio,
+                                val_ratio: self.config.graph_export.validation_ratio,
+                                seed: self.config.graph_export.split_seed.unwrap_or(self.seed),
+                            },
                             one_hot_categoricals: false,
-                            export_masks: true,
-                            train_ratio: self.config.graph_export.train_ratio,
-                            val_ratio: self.config.graph_export.validation_ratio,
-                            seed: self.config.graph_export.split_seed.unwrap_or(self.seed),
                         };
 
                         let exporter = PyGExporter::new(pyg_config);
