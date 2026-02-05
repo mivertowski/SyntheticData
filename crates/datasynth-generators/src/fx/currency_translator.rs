@@ -59,15 +59,93 @@ impl Default for CurrencyTranslatorConfig {
     }
 }
 
+/// Classifies whether an account is monetary based on its account code prefix.
+///
+/// Monetary items include cash, receivables, payables, and other items that
+/// are settled in fixed currency amounts. Non-monetary items include inventory,
+/// PP&E, intangibles, equity, and other items whose value fluctuates.
+///
+/// Classification by 2-digit prefix ranges:
+/// - 10xx (Cash & Cash Equivalents): Monetary
+/// - 11xx (Accounts Receivable): Monetary
+/// - 12xx (Short-term Investments): Monetary
+/// - 13xx (Notes Receivable): Monetary
+/// - 14xx (Prepaid Expenses): Non-monetary (future economic benefit)
+/// - 15xx (Inventory): Non-monetary
+/// - 16xx (Property, Plant & Equipment): Non-monetary
+/// - 17xx (Intangible Assets): Non-monetary
+/// - 18xx (Long-term Investments): Non-monetary
+/// - 19xx (Other Non-current Assets): Non-monetary
+/// - 20xx-29xx (Liabilities): Monetary (obligations settled in cash)
+/// - 30xx-39xx (Equity): Non-monetary
+/// - 40xx-49xx (Revenue): Treated as monetary for temporal method
+/// - 50xx-69xx (Expenses): Treated as monetary for temporal method
+pub fn is_monetary(account_code: &str) -> bool {
+    if account_code.len() < 2 {
+        // Default to monetary for very short codes
+        return true;
+    }
+
+    let prefix2 = &account_code[..2];
+
+    match prefix2 {
+        // Cash and cash equivalents - monetary
+        "10" => true,
+        // Accounts receivable - monetary
+        "11" => true,
+        // Short-term investments / marketable securities - monetary
+        "12" => true,
+        // Notes receivable - monetary
+        "13" => true,
+        // Prepaid expenses - non-monetary (future benefit, not cash settlement)
+        "14" => false,
+        // Inventory - non-monetary
+        "15" => false,
+        // Property, plant & equipment - non-monetary
+        "16" => false,
+        // Intangible assets - non-monetary
+        "17" => false,
+        // Long-term investments - non-monetary
+        "18" => false,
+        // Other non-current assets - non-monetary
+        "19" => false,
+        // All liabilities (20xx-29xx) - monetary (obligations to pay cash)
+        "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" => true,
+        // All equity accounts (30xx-39xx) - non-monetary
+        "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" => false,
+        // Revenue (40xx-49xx) - income statement items use average rate
+        "40" | "41" | "42" | "43" | "44" | "45" | "46" | "47" | "48" | "49" => true,
+        // Expenses (50xx-69xx) - income statement items use average rate
+        "50" | "51" | "52" | "53" | "54" | "55" | "56" | "57" | "58" | "59" => true,
+        "60" | "61" | "62" | "63" | "64" | "65" | "66" | "67" | "68" | "69" => true,
+        // Default: treat as monetary (conservative approach)
+        _ => true,
+    }
+}
+
 /// Currency translator for financial statements.
 pub struct CurrencyTranslator {
     config: CurrencyTranslatorConfig,
+    /// Historical equity rates keyed by account code.
+    historical_equity_rates: HashMap<String, Decimal>,
 }
 
 impl CurrencyTranslator {
     /// Creates a new currency translator.
     pub fn new(config: CurrencyTranslatorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            historical_equity_rates: HashMap::new(),
+        }
+    }
+
+    /// Sets historical equity rates for specific accounts.
+    ///
+    /// These rates are used when translating equity accounts under the
+    /// Temporal or MonetaryNonMonetary methods. The rates represent
+    /// the exchange rate at the time equity transactions originally occurred.
+    pub fn set_historical_equity_rates(&mut self, rates: HashMap<String, Decimal>) {
+        self.historical_equity_rates = rates;
     }
 
     /// Translates a trial balance from local to group currency.
@@ -152,38 +230,102 @@ impl CurrencyTranslator {
     }
 
     /// Translates a single amount.
+    ///
+    /// For equity accounts, this method will use historical equity rates set
+    /// via [`set_historical_equity_rates`] if available, falling back to
+    /// `Decimal::ONE` when no historical rate is found.
     pub fn translate_amount(
         &self,
         amount: Decimal,
         local_currency: &str,
+        account_code: &str,
         account_type: &TranslationAccountType,
         rate_table: &FxRateTable,
         date: NaiveDate,
     ) -> TranslatedAmount {
-        let (rate, rate_type) = match account_type {
-            TranslationAccountType::Asset | TranslationAccountType::Liability => {
-                let rate = rate_table
-                    .get_closing_rate(local_currency, &self.config.group_currency, date)
-                    .map(|r| r.rate)
-                    .unwrap_or(Decimal::ONE);
-                (rate, RateType::Closing)
-            }
-            TranslationAccountType::Revenue | TranslationAccountType::Expense => {
-                let rate = rate_table
-                    .get_average_rate(local_currency, &self.config.group_currency, date)
-                    .map(|r| r.rate)
-                    .unwrap_or(Decimal::ONE);
-                (rate, RateType::Average)
-            }
-            TranslationAccountType::Equity
-            | TranslationAccountType::CommonStock
-            | TranslationAccountType::AdditionalPaidInCapital => {
-                (Decimal::ONE, RateType::Historical) // Would need actual historical rate
-            }
-            TranslationAccountType::RetainedEarnings => {
-                // Retained earnings is a plug figure
-                (Decimal::ONE, RateType::Historical)
-            }
+        let closing_rate = rate_table
+            .get_closing_rate(local_currency, &self.config.group_currency, date)
+            .map(|r| r.rate)
+            .unwrap_or(Decimal::ONE);
+
+        let average_rate = rate_table
+            .get_average_rate(local_currency, &self.config.group_currency, date)
+            .map(|r| r.rate)
+            .unwrap_or(closing_rate);
+
+        let (rate, rate_type) = match &self.config.method {
+            TranslationMethod::CurrentRate => match account_type {
+                TranslationAccountType::Asset | TranslationAccountType::Liability => {
+                    (closing_rate, RateType::Closing)
+                }
+                TranslationAccountType::Revenue | TranslationAccountType::Expense => {
+                    (average_rate, RateType::Average)
+                }
+                TranslationAccountType::Equity
+                | TranslationAccountType::CommonStock
+                | TranslationAccountType::AdditionalPaidInCapital
+                | TranslationAccountType::RetainedEarnings => {
+                    let hist_rate = self
+                        .historical_equity_rates
+                        .get(account_code)
+                        .copied()
+                        .unwrap_or(Decimal::ONE);
+                    (hist_rate, RateType::Historical)
+                }
+            },
+            TranslationMethod::Temporal => match account_type {
+                TranslationAccountType::Revenue | TranslationAccountType::Expense => {
+                    (average_rate, RateType::Average)
+                }
+                TranslationAccountType::CommonStock
+                | TranslationAccountType::AdditionalPaidInCapital
+                | TranslationAccountType::RetainedEarnings
+                | TranslationAccountType::Equity => {
+                    let hist_rate = self
+                        .historical_equity_rates
+                        .get(account_code)
+                        .copied()
+                        .unwrap_or(Decimal::ONE);
+                    (hist_rate, RateType::Historical)
+                }
+                TranslationAccountType::Asset | TranslationAccountType::Liability => {
+                    if is_monetary(account_code) {
+                        (closing_rate, RateType::Closing)
+                    } else {
+                        let hist_rate = self
+                            .historical_equity_rates
+                            .get(account_code)
+                            .copied()
+                            .unwrap_or(closing_rate);
+                        (hist_rate, RateType::Historical)
+                    }
+                }
+            },
+            TranslationMethod::MonetaryNonMonetary => match account_type {
+                TranslationAccountType::CommonStock
+                | TranslationAccountType::AdditionalPaidInCapital
+                | TranslationAccountType::RetainedEarnings
+                | TranslationAccountType::Equity => {
+                    let hist_rate = self
+                        .historical_equity_rates
+                        .get(account_code)
+                        .copied()
+                        .unwrap_or(Decimal::ONE);
+                    (hist_rate, RateType::Historical)
+                }
+                _ => {
+                    if is_monetary(account_code) {
+                        (closing_rate, RateType::Closing)
+                    } else {
+                        let hist_rate = self
+                            .historical_equity_rates
+                            .get(account_code)
+                            .copied()
+                            .unwrap_or(closing_rate);
+                        (hist_rate, RateType::Historical)
+                    }
+                }
+            },
         };
 
         TranslatedAmount {
@@ -227,6 +369,23 @@ impl CurrencyTranslator {
         TranslationAccountType::Asset
     }
 
+    /// Looks up a historical equity rate for a given account code.
+    ///
+    /// Checks both the instance-level `historical_equity_rates` and the
+    /// passed-in `historical_rates` parameter. Instance-level rates take precedence.
+    fn lookup_historical_equity_rate(
+        &self,
+        account_code: &str,
+        historical_rates: &HashMap<String, Decimal>,
+        fallback: Decimal,
+    ) -> Decimal {
+        self.historical_equity_rates
+            .get(account_code)
+            .or_else(|| historical_rates.get(account_code))
+            .copied()
+            .unwrap_or(fallback)
+    }
+
     /// Determines the appropriate rate to use for an account.
     fn determine_rate(
         &self,
@@ -248,10 +407,11 @@ impl CurrencyTranslator {
                     TranslationAccountType::CommonStock
                     | TranslationAccountType::AdditionalPaidInCapital => {
                         // Use historical rate if available
-                        historical_rates
-                            .get(account_code)
-                            .copied()
-                            .unwrap_or(closing_rate)
+                        self.lookup_historical_equity_rate(
+                            account_code,
+                            historical_rates,
+                            closing_rate,
+                        )
                     }
                     TranslationAccountType::Equity | TranslationAccountType::RetainedEarnings => {
                         // These are typically calculated separately
@@ -260,18 +420,73 @@ impl CurrencyTranslator {
                 }
             }
             TranslationMethod::Temporal => {
-                // Temporal method: monetary items at closing, non-monetary at historical
+                // Temporal method: monetary items at closing rate, non-monetary at historical rate.
+                // Equity accounts always use historical rates.
                 match account_type {
-                    TranslationAccountType::Asset => {
-                        // Would need to distinguish monetary vs non-monetary
-                        // For simplicity, using closing rate
-                        closing_rate
+                    TranslationAccountType::CommonStock
+                    | TranslationAccountType::AdditionalPaidInCapital
+                    | TranslationAccountType::RetainedEarnings => self
+                        .lookup_historical_equity_rate(
+                            account_code,
+                            historical_rates,
+                            closing_rate,
+                        ),
+                    TranslationAccountType::Equity => self.lookup_historical_equity_rate(
+                        account_code,
+                        historical_rates,
+                        closing_rate,
+                    ),
+                    TranslationAccountType::Revenue | TranslationAccountType::Expense => {
+                        // Income statement items use average rate under temporal method
+                        average_rate
                     }
-                    TranslationAccountType::Liability => closing_rate,
-                    _ => average_rate,
+                    TranslationAccountType::Asset | TranslationAccountType::Liability => {
+                        // Distinguish monetary vs non-monetary for balance sheet items
+                        if is_monetary(account_code) {
+                            closing_rate
+                        } else {
+                            // Non-monetary items use historical rate if available,
+                            // otherwise fall back to closing rate
+                            historical_rates
+                                .get(account_code)
+                                .copied()
+                                .unwrap_or(closing_rate)
+                        }
+                    }
                 }
             }
-            TranslationMethod::MonetaryNonMonetary => closing_rate, // Simplified
+            TranslationMethod::MonetaryNonMonetary => {
+                // Monetary/Non-monetary method: similar to temporal but focused
+                // specifically on the monetary vs non-monetary distinction.
+                // Equity accounts use historical rates.
+                match account_type {
+                    TranslationAccountType::CommonStock
+                    | TranslationAccountType::AdditionalPaidInCapital
+                    | TranslationAccountType::RetainedEarnings => self
+                        .lookup_historical_equity_rate(
+                            account_code,
+                            historical_rates,
+                            closing_rate,
+                        ),
+                    TranslationAccountType::Equity => self.lookup_historical_equity_rate(
+                        account_code,
+                        historical_rates,
+                        closing_rate,
+                    ),
+                    _ => {
+                        // For all other accounts, classify based on monetary nature
+                        if is_monetary(account_code) {
+                            closing_rate
+                        } else {
+                            // Non-monetary items use historical rate if available
+                            historical_rates
+                                .get(account_code)
+                                .copied()
+                                .unwrap_or(closing_rate)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -524,5 +739,315 @@ mod tests {
         assert!(translated.is_local_balanced());
         assert_eq!(translated.closing_rate, dec!(1.10));
         assert_eq!(translated.average_rate, dec!(1.08));
+    }
+
+    #[test]
+    fn test_is_monetary() {
+        // Cash and cash equivalents - monetary
+        assert!(is_monetary("1000"));
+        assert!(is_monetary("1001"));
+        assert!(is_monetary("1099"));
+
+        // Accounts receivable - monetary
+        assert!(is_monetary("1100"));
+        assert!(is_monetary("1150"));
+
+        // Short-term investments - monetary
+        assert!(is_monetary("1200"));
+
+        // Notes receivable - monetary
+        assert!(is_monetary("1300"));
+
+        // Prepaid expenses - non-monetary
+        assert!(!is_monetary("1400"));
+        assert!(!is_monetary("1450"));
+
+        // Inventory - non-monetary
+        assert!(!is_monetary("1500"));
+        assert!(!is_monetary("1550"));
+
+        // PP&E - non-monetary
+        assert!(!is_monetary("1600"));
+        assert!(!is_monetary("1650"));
+
+        // Intangible assets - non-monetary
+        assert!(!is_monetary("1700"));
+
+        // Long-term investments - non-monetary
+        assert!(!is_monetary("1800"));
+
+        // Other non-current assets - non-monetary
+        assert!(!is_monetary("1900"));
+
+        // Liabilities - all monetary
+        assert!(is_monetary("2000"));
+        assert!(is_monetary("2100"));
+        assert!(is_monetary("2500"));
+        assert!(is_monetary("2900"));
+
+        // Equity - non-monetary
+        assert!(!is_monetary("3000"));
+        assert!(!is_monetary("3100"));
+        assert!(!is_monetary("3200"));
+        assert!(!is_monetary("3900"));
+
+        // Revenue - treated as monetary (average rate in temporal)
+        assert!(is_monetary("4000"));
+        assert!(is_monetary("4500"));
+
+        // Expenses - treated as monetary (average rate in temporal)
+        assert!(is_monetary("5000"));
+        assert!(is_monetary("6000"));
+
+        // Short codes default to monetary
+        assert!(is_monetary("1"));
+        assert!(is_monetary(""));
+    }
+
+    #[test]
+    fn test_historical_equity_rates() {
+        let mut translator = CurrencyTranslator::new(CurrencyTranslatorConfig::default());
+
+        // Initially empty
+        assert!(translator.historical_equity_rates.is_empty());
+
+        // Set historical equity rates
+        let mut rates = HashMap::new();
+        rates.insert("3100".to_string(), dec!(1.05));
+        rates.insert("3200".to_string(), dec!(0.98));
+        translator.set_historical_equity_rates(rates);
+
+        assert_eq!(translator.historical_equity_rates.len(), 2);
+        assert_eq!(
+            translator.historical_equity_rates.get("3100"),
+            Some(&dec!(1.05))
+        );
+        assert_eq!(
+            translator.historical_equity_rates.get("3200"),
+            Some(&dec!(0.98))
+        );
+
+        // Verify these rates are used in determine_rate for CurrentRate method
+        let rate = translator.determine_rate(
+            "3100",
+            &TranslationAccountType::CommonStock,
+            dec!(1.10),
+            dec!(1.08),
+            &HashMap::new(),
+        );
+        assert_eq!(rate, dec!(1.05));
+    }
+
+    #[test]
+    fn test_temporal_method_monetary_vs_non_monetary() {
+        let config = CurrencyTranslatorConfig {
+            method: TranslationMethod::Temporal,
+            ..CurrencyTranslatorConfig::default()
+        };
+        let translator = CurrencyTranslator::new(config);
+
+        let closing_rate = dec!(1.10);
+        let average_rate = dec!(1.08);
+        let mut historical_rates = HashMap::new();
+        historical_rates.insert("1500".to_string(), dec!(1.02)); // historical rate for inventory
+
+        // Cash (1000) is monetary -> closing rate
+        let rate = translator.determine_rate(
+            "1000",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Accounts receivable (1100) is monetary -> closing rate
+        let rate = translator.determine_rate(
+            "1100",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Inventory (1500) is non-monetary -> historical rate
+        let rate = translator.determine_rate(
+            "1500",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(1.02));
+
+        // PP&E (1600) is non-monetary -> falls back to closing rate (no historical rate set)
+        let rate = translator.determine_rate(
+            "1600",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Liabilities (2000) are monetary -> closing rate
+        let rate = translator.determine_rate(
+            "2000",
+            &TranslationAccountType::Liability,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Revenue (4000) -> average rate under temporal method
+        let rate = translator.determine_rate(
+            "4000",
+            &TranslationAccountType::Revenue,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, average_rate);
+
+        // Expenses (5000) -> average rate under temporal method
+        let rate = translator.determine_rate(
+            "5000",
+            &TranslationAccountType::Expense,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, average_rate);
+
+        // Equity accounts -> historical equity rate (via lookup)
+        let mut translator_with_equity = CurrencyTranslator::new(CurrencyTranslatorConfig {
+            method: TranslationMethod::Temporal,
+            ..CurrencyTranslatorConfig::default()
+        });
+        let mut equity_rates = HashMap::new();
+        equity_rates.insert("3100".to_string(), dec!(0.95));
+        translator_with_equity.set_historical_equity_rates(equity_rates);
+
+        let rate = translator_with_equity.determine_rate(
+            "3100",
+            &TranslationAccountType::CommonStock,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(0.95));
+    }
+
+    #[test]
+    fn test_monetary_non_monetary_method() {
+        let config = CurrencyTranslatorConfig {
+            method: TranslationMethod::MonetaryNonMonetary,
+            ..CurrencyTranslatorConfig::default()
+        };
+        let mut translator = CurrencyTranslator::new(config);
+
+        let closing_rate = dec!(1.10);
+        let average_rate = dec!(1.08);
+        let mut historical_rates = HashMap::new();
+        historical_rates.insert("1500".to_string(), dec!(1.02));
+        historical_rates.insert("1600".to_string(), dec!(0.99));
+
+        // Set historical equity rates
+        let mut equity_rates = HashMap::new();
+        equity_rates.insert("3100".to_string(), dec!(1.05));
+        equity_rates.insert("3300".to_string(), dec!(1.03));
+        translator.set_historical_equity_rates(equity_rates);
+
+        // Cash (1000) is monetary -> closing rate
+        let rate = translator.determine_rate(
+            "1000",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Accounts receivable (1100) is monetary -> closing rate
+        let rate = translator.determine_rate(
+            "1100",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Inventory (1500) is non-monetary -> historical rate
+        let rate = translator.determine_rate(
+            "1500",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(1.02));
+
+        // PP&E (1600) is non-monetary -> historical rate
+        let rate = translator.determine_rate(
+            "1600",
+            &TranslationAccountType::Asset,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(0.99));
+
+        // Liabilities (2000) are monetary -> closing rate
+        let rate = translator.determine_rate(
+            "2000",
+            &TranslationAccountType::Liability,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Equity: Common Stock (3100) -> uses historical equity rate from instance
+        let rate = translator.determine_rate(
+            "3100",
+            &TranslationAccountType::CommonStock,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(1.05));
+
+        // Equity: Retained Earnings (3300) -> uses historical equity rate from instance
+        let rate = translator.determine_rate(
+            "3300",
+            &TranslationAccountType::RetainedEarnings,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, dec!(1.03));
+
+        // Revenue (4000) is monetary -> closing rate (not average like temporal)
+        let rate = translator.determine_rate(
+            "4000",
+            &TranslationAccountType::Revenue,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
+
+        // Expenses (5000) is monetary -> closing rate
+        let rate = translator.determine_rate(
+            "5000",
+            &TranslationAccountType::Expense,
+            closing_rate,
+            average_rate,
+            &historical_rates,
+        );
+        assert_eq!(rate, closing_rate);
     }
 }
