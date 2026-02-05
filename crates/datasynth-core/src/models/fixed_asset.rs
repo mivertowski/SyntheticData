@@ -3,10 +3,50 @@
 //! Provides fixed asset master data including depreciation schedules
 //! for realistic fixed asset accounting simulation.
 
+use std::str::FromStr;
+
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
+
+/// MACRS GDS half-year convention percentages (IRS Publication 946).
+/// Stored as string slices so they convert to `Decimal` without floating-point artefacts.
+const MACRS_GDS_3_YEAR: &[&str] = &["33.33", "44.45", "14.81", "7.41"];
+const MACRS_GDS_5_YEAR: &[&str] = &["20.00", "32.00", "19.20", "11.52", "11.52", "5.76"];
+const MACRS_GDS_7_YEAR: &[&str] = &[
+    "14.29", "24.49", "17.49", "12.49", "8.93", "8.92", "8.93", "4.46",
+];
+const MACRS_GDS_10_YEAR: &[&str] = &[
+    "10.00", "18.00", "14.40", "11.52", "9.22", "7.37", "6.55", "6.55", "6.56", "6.55", "3.28",
+];
+const MACRS_GDS_15_YEAR: &[&str] = &[
+    "5.00", "9.50", "8.55", "7.70", "6.93", "6.23", "5.90", "5.90", "5.91", "5.90", "5.91", "5.90",
+    "5.91", "5.90", "5.91", "2.95",
+];
+const MACRS_GDS_20_YEAR: &[&str] = &[
+    "3.750", "7.219", "6.677", "6.177", "5.713", "5.285", "4.888", "4.522", "4.462", "4.461",
+    "4.462", "4.461", "4.462", "4.461", "4.462", "4.461", "4.462", "4.461", "4.462", "4.461",
+    "2.231",
+];
+
+/// Map useful life in years to the appropriate MACRS GDS depreciation table.
+fn macrs_table_for_life(useful_life_years: u32) -> Option<&'static [&'static str]> {
+    match useful_life_years {
+        1..=3 => Some(MACRS_GDS_3_YEAR),
+        4..=5 => Some(MACRS_GDS_5_YEAR),
+        6..=7 => Some(MACRS_GDS_7_YEAR),
+        8..=10 => Some(MACRS_GDS_10_YEAR),
+        11..=15 => Some(MACRS_GDS_15_YEAR),
+        16..=20 => Some(MACRS_GDS_20_YEAR),
+        _ => None,
+    }
+}
+
+/// Parse a MACRS percentage string into a `Decimal`.
+fn macrs_pct(s: &str) -> Decimal {
+    Decimal::from_str(s).unwrap_or(Decimal::ZERO)
+}
 
 /// Asset class for categorization and default depreciation rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -169,12 +209,29 @@ impl DepreciationMethod {
             }
 
             Self::Macrs => {
-                // Simplified MACRS using half-year convention
-                // Full implementation would need MACRS tables
-                let annual_rate = Decimal::from(2) / Decimal::from(useful_life_months) * dec!(12);
-                let monthly_rate = annual_rate / dec!(12);
-                let depreciation = net_book_value * monthly_rate;
-                depreciation.min(net_book_value - salvage_value)
+                // MACRS GDS half-year convention using IRS Publication 946 tables.
+                // MACRS ignores salvage value — the full acquisition cost is the depreciable base.
+                let useful_life_years = useful_life_months / 12;
+                let current_year = (months_elapsed / 12) as usize;
+
+                if let Some(table) = macrs_table_for_life(useful_life_years) {
+                    if current_year < table.len() {
+                        let pct = macrs_pct(table[current_year]);
+                        let annual_depreciation = acquisition_cost * pct / dec!(100);
+                        let monthly_amount = annual_depreciation / dec!(12);
+                        // Cap so we don't go below zero NBV
+                        monthly_amount.min(net_book_value)
+                    } else {
+                        Decimal::ZERO
+                    }
+                } else {
+                    // Useful life outside MACRS table range — fall back to DDB
+                    let annual_rate =
+                        Decimal::from(2) / Decimal::from(useful_life_months) * dec!(12);
+                    let monthly_rate = annual_rate / dec!(12);
+                    let depreciation = net_book_value * monthly_rate;
+                    depreciation.min(net_book_value - salvage_value)
+                }
             }
 
             Self::ImmediateExpense => {
@@ -514,6 +571,49 @@ impl FixedAsset {
             _ => Decimal::from(12) / Decimal::from(self.useful_life_months) * dec!(100),
         }
     }
+
+    /// Return the annual MACRS depreciation for a given recovery year (1-indexed).
+    ///
+    /// Uses the IRS Publication 946 GDS half-year convention tables.
+    /// MACRS depreciation is based on the full acquisition cost (salvage value is ignored).
+    /// Returns `Decimal::ZERO` if the year is out of range or no table matches the useful life.
+    pub fn macrs_depreciation(&self, year: u32) -> Decimal {
+        if year == 0 {
+            return Decimal::ZERO;
+        }
+
+        let useful_life_years = self.useful_life_months / 12;
+        let table_index = (year - 1) as usize;
+
+        match macrs_table_for_life(useful_life_years) {
+            Some(table) if table_index < table.len() => {
+                let pct = macrs_pct(table[table_index]);
+                self.acquisition_cost * pct / dec!(100)
+            }
+            _ => Decimal::ZERO,
+        }
+    }
+
+    /// Return the monthly double-declining balance depreciation amount.
+    ///
+    /// The DDB rate is `2 / useful_life_months * 12` applied monthly against the current
+    /// net book value. The result is rounded to 2 decimal places and capped so the asset
+    /// does not depreciate below the salvage value.
+    pub fn ddb_depreciation(&self) -> Decimal {
+        if self.useful_life_months == 0 {
+            return Decimal::ZERO;
+        }
+
+        let net_book_value = self.acquisition_cost - self.accumulated_depreciation;
+        if net_book_value <= self.salvage_value {
+            return Decimal::ZERO;
+        }
+
+        let annual_rate = Decimal::from(2) / Decimal::from(self.useful_life_months) * dec!(12);
+        let monthly_rate = annual_rate / dec!(12);
+        let depreciation = (net_book_value * monthly_rate).round_dp(2);
+        depreciation.min(net_book_value - self.salvage_value)
+    }
 }
 
 /// Pool of fixed assets for transaction generation.
@@ -793,5 +893,178 @@ mod tests {
         assert_eq!(asset.months_since_capitalization(test_date(2024, 3, 1)), 0);
         assert_eq!(asset.months_since_capitalization(test_date(2024, 6, 1)), 3);
         assert_eq!(asset.months_since_capitalization(test_date(2025, 3, 1)), 12);
+    }
+
+    // ---- MACRS GDS table tests ----
+
+    #[test]
+    fn test_macrs_tables_sum_to_100() {
+        let tables: &[(&str, &[&str])] = &[
+            ("3-year", MACRS_GDS_3_YEAR),
+            ("5-year", MACRS_GDS_5_YEAR),
+            ("7-year", MACRS_GDS_7_YEAR),
+            ("10-year", MACRS_GDS_10_YEAR),
+            ("15-year", MACRS_GDS_15_YEAR),
+            ("20-year", MACRS_GDS_20_YEAR),
+        ];
+
+        let tolerance = dec!(0.02);
+        let hundred = dec!(100);
+
+        for (label, table) in tables {
+            let sum: Decimal = table.iter().map(|s| macrs_pct(s)).sum();
+            let diff = (sum - hundred).abs();
+            assert!(
+                diff < tolerance,
+                "MACRS GDS {label} table sums to {sum}, expected ~100.0"
+            );
+        }
+    }
+
+    #[test]
+    fn test_macrs_table_for_life_mapping() {
+        // 1-3 years -> 3-year table (4 entries)
+        assert_eq!(macrs_table_for_life(1).unwrap().len(), 4);
+        assert_eq!(macrs_table_for_life(3).unwrap().len(), 4);
+
+        // 4-5 years -> 5-year table (6 entries)
+        assert_eq!(macrs_table_for_life(4).unwrap().len(), 6);
+        assert_eq!(macrs_table_for_life(5).unwrap().len(), 6);
+
+        // 6-7 years -> 7-year table (8 entries)
+        assert_eq!(macrs_table_for_life(6).unwrap().len(), 8);
+        assert_eq!(macrs_table_for_life(7).unwrap().len(), 8);
+
+        // 8-10 years -> 10-year table (11 entries)
+        assert_eq!(macrs_table_for_life(8).unwrap().len(), 11);
+        assert_eq!(macrs_table_for_life(10).unwrap().len(), 11);
+
+        // 11-15 years -> 15-year table (16 entries)
+        assert_eq!(macrs_table_for_life(11).unwrap().len(), 16);
+        assert_eq!(macrs_table_for_life(15).unwrap().len(), 16);
+
+        // 16-20 years -> 20-year table (21 entries)
+        assert_eq!(macrs_table_for_life(16).unwrap().len(), 21);
+        assert_eq!(macrs_table_for_life(20).unwrap().len(), 21);
+
+        // Out of range -> None
+        assert!(macrs_table_for_life(0).is_none());
+        assert!(macrs_table_for_life(21).is_none());
+        assert!(macrs_table_for_life(100).is_none());
+    }
+
+    #[test]
+    fn test_macrs_depreciation_5_year_asset() {
+        let asset = FixedAsset::new(
+            "FA-MACRS",
+            "Vehicle",
+            AssetClass::Vehicles,
+            "1000",
+            test_date(2024, 1, 1),
+            Decimal::from(10000),
+        )
+        .with_useful_life_months(60) // 5 years
+        .with_depreciation_method(DepreciationMethod::Macrs);
+
+        // Year 1: 20.00% of 10,000 = 2,000
+        assert_eq!(asset.macrs_depreciation(1), Decimal::from(2000));
+        // Year 2: 32.00% of 10,000 = 3,200
+        assert_eq!(asset.macrs_depreciation(2), Decimal::from(3200));
+        // Year 3: 19.20% of 10,000 = 1,920
+        assert_eq!(asset.macrs_depreciation(3), Decimal::from(1920));
+        // Year 4: 11.52% of 10,000 = 1,152
+        assert_eq!(asset.macrs_depreciation(4), Decimal::from(1152));
+        // Year 5: 11.52% of 10,000 = 1,152
+        assert_eq!(asset.macrs_depreciation(5), Decimal::from(1152));
+        // Year 6: 5.76% of 10,000 = 576
+        assert_eq!(asset.macrs_depreciation(6), Decimal::from(576));
+        // Year 7: beyond table -> 0
+        assert_eq!(asset.macrs_depreciation(7), Decimal::ZERO);
+        // Year 0: invalid -> 0
+        assert_eq!(asset.macrs_depreciation(0), Decimal::ZERO);
+    }
+
+    #[test]
+    fn test_macrs_calculate_monthly_depreciation_uses_tables() {
+        let asset = FixedAsset::new(
+            "FA-MACRS-M",
+            "Vehicle",
+            AssetClass::Vehicles,
+            "1000",
+            test_date(2024, 1, 1),
+            Decimal::from(12000),
+        )
+        .with_useful_life_months(60) // 5 years
+        .with_depreciation_method(DepreciationMethod::Macrs);
+
+        // Year 1 (months_elapsed 0..11): 20.00% of 12,000 = 2,400 annual -> 200/month
+        let monthly_year1 = asset.calculate_monthly_depreciation(test_date(2024, 2, 1));
+        assert_eq!(monthly_year1, Decimal::from(200));
+
+        // Year 2 (months_elapsed 12..23): 32.00% of 12,000 = 3,840 annual -> 320/month
+        let monthly_year2 = asset.calculate_monthly_depreciation(test_date(2025, 2, 1));
+        assert_eq!(monthly_year2, Decimal::from(320));
+    }
+
+    #[test]
+    fn test_ddb_depreciation() {
+        let asset = FixedAsset::new(
+            "FA-DDB",
+            "Server",
+            AssetClass::ComputerHardware,
+            "1000",
+            test_date(2024, 1, 1),
+            Decimal::from(3600),
+        )
+        .with_useful_life_months(36) // 3 years
+        .with_depreciation_method(DepreciationMethod::DoubleDecliningBalance);
+
+        // DDB annual rate = 2 / 36 * 12 = 2/3
+        // Monthly rate = (2/3) / 12 = 1/18
+        // First month: 3600 * (1/18) = 200
+        let monthly = asset.ddb_depreciation();
+        assert_eq!(monthly, Decimal::from(200));
+    }
+
+    #[test]
+    fn test_ddb_depreciation_with_accumulated() {
+        let mut asset = FixedAsset::new(
+            "FA-DDB2",
+            "Laptop",
+            AssetClass::ComputerHardware,
+            "1000",
+            test_date(2024, 1, 1),
+            Decimal::from(1800),
+        )
+        .with_useful_life_months(36);
+
+        // After accumulating 900 of depreciation, NBV = 900
+        asset.apply_depreciation(Decimal::from(900));
+
+        // Monthly rate = 1/18, on NBV 900 -> 50
+        let monthly = asset.ddb_depreciation();
+        assert_eq!(monthly, Decimal::from(50));
+    }
+
+    #[test]
+    fn test_ddb_depreciation_respects_salvage() {
+        let mut asset = FixedAsset::new(
+            "FA-DDB3",
+            "Printer",
+            AssetClass::ComputerHardware,
+            "1000",
+            test_date(2024, 1, 1),
+            Decimal::from(1800),
+        )
+        .with_useful_life_months(36)
+        .with_salvage_value(Decimal::from(200));
+
+        // Accumulate until NBV is barely above salvage
+        // NBV = 1800 - 1590 = 210, salvage = 200
+        asset.apply_depreciation(Decimal::from(1590));
+
+        // DDB would compute 210 * (1/18) = 11.666..., but cap at NBV - salvage = 10
+        let monthly = asset.ddb_depreciation();
+        assert_eq!(monthly, Decimal::from(10));
     }
 }
