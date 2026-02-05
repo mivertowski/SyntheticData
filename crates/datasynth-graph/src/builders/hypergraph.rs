@@ -140,6 +140,9 @@ pub struct HypergraphBuilder {
     customer_node_ids: HashMap<String, String>,
     /// Employee ID → node ID mapping.
     employee_node_ids: HashMap<String, String>,
+    /// Process document node IDs to their counterparty type and ID.
+    /// (node_id, entity_type) → counterparty_id
+    doc_counterparty_links: Vec<(String, String, String)>, // (doc_node_id, counterparty_type, counterparty_id)
 }
 
 impl HypergraphBuilder {
@@ -160,6 +163,7 @@ impl HypergraphBuilder {
             vendor_node_ids: HashMap::new(),
             customer_node_ids: HashMap::new(),
             employee_node_ids: HashMap::new(),
+            doc_counterparty_links: Vec::new(),
         }
     }
 
@@ -746,8 +750,8 @@ impl HypergraphBuilder {
         for vendor_id in &vendors_needing_pools {
             let count = vendor_doc_counts[vendor_id];
             let pool_id = format!("pool_p2p_{}", vendor_id);
-            self.try_add_node(HypergraphNode {
-                id: pool_id,
+            if self.try_add_node(HypergraphNode {
+                id: pool_id.clone(),
                 entity_type: "P2PPool".to_string(),
                 entity_type_code: type_codes::POOL_NODE,
                 layer: HypergraphLayer::ProcessEvents,
@@ -764,7 +768,13 @@ impl HypergraphBuilder {
                 anomaly_type: None,
                 is_aggregate: true,
                 aggregate_count: count,
-            });
+            }) {
+                self.doc_counterparty_links.push((
+                    pool_id,
+                    "vendor".to_string(),
+                    vendor_id.clone(),
+                ));
+            }
             self.aggregate_count += 1;
         }
 
@@ -776,8 +786,8 @@ impl HypergraphBuilder {
 
             let doc_id = &po.header.document_id;
             let node_id = format!("po_{}", doc_id);
-            self.try_add_node(HypergraphNode {
-                id: node_id,
+            if self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
                 entity_type: "PurchaseOrder".to_string(),
                 entity_type_code: type_codes::PURCHASE_ORDER,
                 layer: HypergraphLayer::ProcessEvents,
@@ -802,7 +812,13 @@ impl HypergraphBuilder {
                 anomaly_type: None,
                 is_aggregate: false,
                 aggregate_count: 0,
-            });
+            }) {
+                self.doc_counterparty_links.push((
+                    node_id,
+                    "vendor".to_string(),
+                    po.vendor_id.clone(),
+                ));
+            }
         }
 
         // Add GR nodes
@@ -936,8 +952,8 @@ impl HypergraphBuilder {
         for customer_id in &customers_needing_pools {
             let count = customer_doc_counts[customer_id];
             let pool_id = format!("pool_o2c_{}", customer_id);
-            self.try_add_node(HypergraphNode {
-                id: pool_id,
+            if self.try_add_node(HypergraphNode {
+                id: pool_id.clone(),
                 entity_type: "O2CPool".to_string(),
                 entity_type_code: type_codes::POOL_NODE,
                 layer: HypergraphLayer::ProcessEvents,
@@ -957,7 +973,13 @@ impl HypergraphBuilder {
                 anomaly_type: None,
                 is_aggregate: true,
                 aggregate_count: count,
-            });
+            }) {
+                self.doc_counterparty_links.push((
+                    pool_id,
+                    "customer".to_string(),
+                    customer_id.clone(),
+                ));
+            }
             self.aggregate_count += 1;
         }
 
@@ -967,8 +989,8 @@ impl HypergraphBuilder {
             }
             let doc_id = &so.header.document_id;
             let node_id = format!("so_{}", doc_id);
-            self.try_add_node(HypergraphNode {
-                id: node_id,
+            if self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
                 entity_type: "SalesOrder".to_string(),
                 entity_type_code: type_codes::SALES_ORDER,
                 layer: HypergraphLayer::ProcessEvents,
@@ -992,7 +1014,13 @@ impl HypergraphBuilder {
                 anomaly_type: None,
                 is_aggregate: false,
                 aggregate_count: 0,
-            });
+            }) {
+                self.doc_counterparty_links.push((
+                    node_id,
+                    "customer".to_string(),
+                    so.customer_id.clone(),
+                ));
+            }
         }
 
         for del in deliveries {
@@ -1051,77 +1079,27 @@ impl HypergraphBuilder {
             return;
         }
 
-        // Vendor → PO: SuppliesTo edges (L1 → L2)
-        for node in &self.nodes {
-            if node.entity_type == "PurchaseOrder" {
-                if let Some(vendor_id) = node.properties.get("vendor_id").and_then(|v| v.as_str()) {
-                    if let Some(vendor_node_id) = self.vendor_node_ids.get(vendor_id) {
-                        self.edges.push(CrossLayerEdge {
-                            source_id: vendor_node_id.clone(),
-                            source_layer: HypergraphLayer::GovernanceControls,
-                            target_id: node.id.clone(),
-                            target_layer: HypergraphLayer::ProcessEvents,
-                            edge_type: "SuppliesTo".to_string(),
-                            edge_type_code: type_codes::SUPPLIES_TO,
-                            properties: HashMap::new(),
-                        });
-                    }
-                }
-            }
-
-            // Customer → SO: SuppliesTo edges (L1 → L2)
-            if node.entity_type == "SalesOrder" {
-                if let Some(customer_id) =
-                    node.properties.get("customer_id").and_then(|v| v.as_str())
-                {
-                    if let Some(customer_node_id) = self.customer_node_ids.get(customer_id) {
-                        self.edges.push(CrossLayerEdge {
-                            source_id: customer_node_id.clone(),
-                            source_layer: HypergraphLayer::GovernanceControls,
-                            target_id: node.id.clone(),
-                            target_layer: HypergraphLayer::ProcessEvents,
-                            edge_type: "SuppliesTo".to_string(),
-                            edge_type_code: type_codes::SUPPLIES_TO,
-                            properties: HashMap::new(),
-                        });
-                    }
-                }
-            }
-
-            // Pool nodes → vendor/customer too
-            if node.entity_type == "P2PPool" {
-                if let Some(vendor_id) = node.properties.get("vendor_id").and_then(|v| v.as_str()) {
-                    if let Some(vendor_node_id) = self.vendor_node_ids.get(vendor_id) {
-                        self.edges.push(CrossLayerEdge {
-                            source_id: vendor_node_id.clone(),
-                            source_layer: HypergraphLayer::GovernanceControls,
-                            target_id: node.id.clone(),
-                            target_layer: HypergraphLayer::ProcessEvents,
-                            edge_type: "SuppliesTo".to_string(),
-                            edge_type_code: type_codes::SUPPLIES_TO,
-                            properties: HashMap::new(),
-                        });
-                    }
-                }
-            }
-            if node.entity_type == "O2CPool" {
-                if let Some(customer_id) =
-                    node.properties.get("customer_id").and_then(|v| v.as_str())
-                {
-                    if let Some(customer_node_id) = self.customer_node_ids.get(customer_id) {
-                        self.edges.push(CrossLayerEdge {
-                            source_id: customer_node_id.clone(),
-                            source_layer: HypergraphLayer::GovernanceControls,
-                            target_id: node.id.clone(),
-                            target_layer: HypergraphLayer::ProcessEvents,
-                            edge_type: "SuppliesTo".to_string(),
-                            edge_type_code: type_codes::SUPPLIES_TO,
-                            properties: HashMap::new(),
-                        });
-                    }
-                }
+        // Use pre-collected counterparty links instead of iterating all nodes
+        let links = std::mem::take(&mut self.doc_counterparty_links);
+        for (doc_node_id, counterparty_type, counterparty_id) in &links {
+            let source_node_id = match counterparty_type.as_str() {
+                "vendor" => self.vendor_node_ids.get(counterparty_id),
+                "customer" => self.customer_node_ids.get(counterparty_id),
+                _ => None,
+            };
+            if let Some(source_id) = source_node_id {
+                self.edges.push(CrossLayerEdge {
+                    source_id: source_id.clone(),
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: doc_node_id.clone(),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "SuppliesTo".to_string(),
+                    edge_type_code: type_codes::SUPPLIES_TO,
+                    properties: HashMap::new(),
+                });
             }
         }
+        self.doc_counterparty_links = links;
     }
 
     /// Finalize and build the Hypergraph.
