@@ -24,7 +24,10 @@ use datasynth_core::models::{
     RelationalAnomalyType,
 };
 
-use super::context::{BehavioralBaseline, BehavioralBaselineConfig, EntityAwareInjector};
+use super::context::{
+    AccountContext, BehavioralBaseline, BehavioralBaselineConfig, EmployeeContext,
+    EntityAwareInjector, VendorContext,
+};
 use super::correlation::{AnomalyCoOccurrence, TemporalClusterGenerator};
 use super::difficulty::DifficultyCalculator;
 use super::near_miss::{NearMissConfig, NearMissGenerator};
@@ -162,6 +165,13 @@ pub struct AnomalyInjector {
     scheme_actions: Vec<SchemeAction>,
     /// Difficulty distribution.
     difficulty_distribution: HashMap<AnomalyDetectionDifficulty, usize>,
+    // Entity context lookup maps for risk-adjusted injection rates
+    /// Vendor contexts keyed by vendor ID.
+    vendor_contexts: HashMap<String, VendorContext>,
+    /// Employee contexts keyed by employee ID.
+    employee_contexts: HashMap<String, EmployeeContext>,
+    /// Account contexts keyed by account code.
+    account_contexts: HashMap<String, AccountContext>,
 }
 
 /// Internal statistics tracking.
@@ -266,6 +276,9 @@ impl AnomalyInjector {
             behavioral_baseline,
             scheme_actions: Vec::new(),
             difficulty_distribution: HashMap::new(),
+            vendor_contexts: HashMap::new(),
+            employee_contexts: HashMap::new(),
+            account_contexts: HashMap::new(),
         }
     }
 
@@ -293,14 +306,30 @@ impl AnomalyInjector {
             }
 
             // Calculate effective rate (temporal clustering is applied later per-type)
-            let effective_rate = self.config.rates.total_rate;
+            let base_rate = self.config.rates.total_rate;
 
-            // Calculate entity-aware rate adjustment
-            if let Some(ref injector) = self.entity_aware_injector {
-                // TODO: Would need entity context to adjust rate here
-                // For now, use default rate
-                let _ = injector;
-            }
+            // Calculate entity-aware rate adjustment using context lookup maps
+            let effective_rate = if let Some(ref injector) = self.entity_aware_injector {
+                let employee_id = &entry.header.created_by;
+                let first_account = entry
+                    .lines
+                    .first()
+                    .map(|l| l.gl_account.as_str())
+                    .unwrap_or("");
+                // Look up vendor from the entry's reference field (vendor ID convention)
+                let vendor_ref = entry.header.reference.as_deref().unwrap_or("");
+
+                let vendor_ctx = self.vendor_contexts.get(vendor_ref);
+                let employee_ctx = self.employee_contexts.get(employee_id);
+                let account_ctx = self.account_contexts.get(first_account);
+
+                let multiplier =
+                    injector.get_rate_multiplier(vendor_ctx, employee_ctx, account_ctx);
+                (base_rate * multiplier).min(1.0)
+            } else {
+                // No entity-aware injector: fall back to context maps alone
+                self.calculate_context_rate_multiplier(entry) * base_rate
+            };
 
             // Determine if we inject an anomaly
             if should_inject_anomaly(
@@ -537,6 +566,22 @@ impl AnomalyInjector {
             };
             label = label.with_causal_reason(causal_reason);
 
+            // Add entity context metadata if contexts are populated
+            let context_multiplier = self.calculate_context_rate_multiplier(entry);
+            if (context_multiplier - 1.0).abs() > f64::EPSILON {
+                label = label.with_metadata(
+                    "entity_context_multiplier",
+                    &format!("{:.3}", context_multiplier),
+                );
+                label = label.with_metadata(
+                    "effective_rate",
+                    &format!(
+                        "{:.6}",
+                        (self.config.rates.total_rate * context_multiplier).min(1.0)
+                    ),
+                );
+            }
+
             // Add monetary impact
             if let Some(impact) = result.monetary_impact {
                 label = label.with_monetary_impact(impact);
@@ -735,6 +780,100 @@ impl AnomalyInjector {
     /// Returns the number of clusters created.
     pub fn cluster_count(&self) -> usize {
         self.cluster_manager.cluster_count()
+    }
+
+    // =========================================================================
+    // Entity Context API
+    // =========================================================================
+
+    /// Sets entity contexts for risk-adjusted anomaly injection.
+    ///
+    /// When entity contexts are provided, the injector adjusts anomaly injection
+    /// rates based on entity risk factors. Entries involving high-risk vendors,
+    /// new employees, or sensitive accounts will have higher effective injection
+    /// rates.
+    ///
+    /// Pass empty HashMaps to clear previously set contexts.
+    pub fn set_entity_contexts(
+        &mut self,
+        vendors: HashMap<String, VendorContext>,
+        employees: HashMap<String, EmployeeContext>,
+        accounts: HashMap<String, AccountContext>,
+    ) {
+        self.vendor_contexts = vendors;
+        self.employee_contexts = employees;
+        self.account_contexts = accounts;
+    }
+
+    /// Returns a reference to the vendor context map.
+    pub fn vendor_contexts(&self) -> &HashMap<String, VendorContext> {
+        &self.vendor_contexts
+    }
+
+    /// Returns a reference to the employee context map.
+    pub fn employee_contexts(&self) -> &HashMap<String, EmployeeContext> {
+        &self.employee_contexts
+    }
+
+    /// Returns a reference to the account context map.
+    pub fn account_contexts(&self) -> &HashMap<String, AccountContext> {
+        &self.account_contexts
+    }
+
+    /// Calculates a rate multiplier from the entity context maps alone (no
+    /// `EntityAwareInjector` needed). This provides a lightweight fallback
+    /// when context-aware injection is not fully enabled but context maps
+    /// have been populated.
+    ///
+    /// The multiplier is the product of individual entity risk factors found
+    /// in the context maps for the given journal entry. If no contexts match,
+    /// returns 1.0 (no adjustment).
+    fn calculate_context_rate_multiplier(&self, entry: &JournalEntry) -> f64 {
+        if self.vendor_contexts.is_empty()
+            && self.employee_contexts.is_empty()
+            && self.account_contexts.is_empty()
+        {
+            return 1.0;
+        }
+
+        let mut multiplier = 1.0;
+
+        // Vendor lookup via reference field
+        if let Some(ref vendor_ref) = entry.header.reference {
+            if let Some(ctx) = self.vendor_contexts.get(vendor_ref) {
+                // New vendors get a 2.0x multiplier, dormant reactivations get 1.5x
+                if ctx.is_new {
+                    multiplier *= 2.0;
+                }
+                if ctx.is_dormant_reactivation {
+                    multiplier *= 1.5;
+                }
+            }
+        }
+
+        // Employee lookup via created_by
+        if let Some(ctx) = self.employee_contexts.get(&entry.header.created_by) {
+            if ctx.is_new {
+                multiplier *= 1.5;
+            }
+            if ctx.is_volume_fatigued {
+                multiplier *= 1.3;
+            }
+            if ctx.is_overtime {
+                multiplier *= 1.2;
+            }
+        }
+
+        // Account lookup via first line's GL account
+        if let Some(first_line) = entry.lines.first() {
+            if let Some(ctx) = self.account_contexts.get(&first_line.gl_account) {
+                if ctx.is_high_risk {
+                    multiplier *= 2.0;
+                }
+            }
+        }
+
+        multiplier
     }
 
     // =========================================================================
@@ -1084,5 +1223,380 @@ mod tests {
 
         // No anomalies because entries are in company 1000, not 2000
         assert_eq!(result.anomalies_injected, 0);
+    }
+
+    // =========================================================================
+    // Entity Context Tests
+    // =========================================================================
+
+    /// Helper to create a test entry with specific vendor reference and employee.
+    fn create_test_entry_with_context(
+        doc_num: &str,
+        vendor_ref: Option<&str>,
+        employee_id: &str,
+        gl_account: &str,
+    ) -> JournalEntry {
+        let mut entry = JournalEntry::new_simple(
+            doc_num.to_string(),
+            "1000".to_string(),
+            NaiveDate::from_ymd_opt(2024, 6, 15).unwrap(),
+            "Test Entry".to_string(),
+        );
+
+        entry.header.reference = vendor_ref.map(|v| v.to_string());
+        entry.header.created_by = employee_id.to_string();
+
+        entry.add_line(JournalEntryLine {
+            line_number: 1,
+            gl_account: gl_account.to_string(),
+            debit_amount: dec!(1000),
+            ..Default::default()
+        });
+
+        entry.add_line(JournalEntryLine {
+            line_number: 2,
+            gl_account: "1000".to_string(),
+            credit_amount: dec!(1000),
+            ..Default::default()
+        });
+
+        entry
+    }
+
+    #[test]
+    fn test_set_entity_contexts() {
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        // Initially empty
+        assert!(injector.vendor_contexts().is_empty());
+        assert!(injector.employee_contexts().is_empty());
+        assert!(injector.account_contexts().is_empty());
+
+        // Set contexts
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V001".to_string(),
+            VendorContext {
+                vendor_id: "V001".to_string(),
+                is_new: true,
+                ..Default::default()
+            },
+        );
+
+        let mut employees = HashMap::new();
+        employees.insert(
+            "EMP001".to_string(),
+            EmployeeContext {
+                employee_id: "EMP001".to_string(),
+                is_new: true,
+                ..Default::default()
+            },
+        );
+
+        let mut accounts = HashMap::new();
+        accounts.insert(
+            "8100".to_string(),
+            AccountContext {
+                account_code: "8100".to_string(),
+                is_high_risk: true,
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(vendors, employees, accounts);
+
+        assert_eq!(injector.vendor_contexts().len(), 1);
+        assert_eq!(injector.employee_contexts().len(), 1);
+        assert_eq!(injector.account_contexts().len(), 1);
+        assert!(injector.vendor_contexts().contains_key("V001"));
+        assert!(injector.employee_contexts().contains_key("EMP001"));
+        assert!(injector.account_contexts().contains_key("8100"));
+    }
+
+    #[test]
+    fn test_default_behavior_no_contexts() {
+        // Without any entity contexts, the base rate is used unchanged.
+        let config = AnomalyInjectorConfigBuilder::new()
+            .with_total_rate(0.5)
+            .with_seed(42)
+            .build();
+
+        let mut injector = AnomalyInjector::new(config);
+
+        let mut entries: Vec<_> = (0..200)
+            .map(|i| create_test_entry(&format!("JE{:04}", i)))
+            .collect();
+
+        let result = injector.process_entries(&mut entries);
+
+        // With 50% base rate and no context, expect roughly 50% injection
+        // Allow wide margin for randomness
+        assert!(result.anomalies_injected > 0);
+        let rate = result.anomalies_injected as f64 / result.entries_processed as f64;
+        assert!(
+            rate > 0.2 && rate < 0.8,
+            "Expected ~50% rate, got {:.2}%",
+            rate * 100.0
+        );
+    }
+
+    #[test]
+    fn test_entity_context_increases_injection_rate() {
+        // With high-risk entity contexts, the effective rate should be higher
+        // than the base rate, leading to more anomalies being injected.
+        let base_rate = 0.10; // Low base rate
+
+        // Run without contexts
+        let config_no_ctx = AnomalyInjectorConfigBuilder::new()
+            .with_total_rate(base_rate)
+            .with_seed(123)
+            .build();
+
+        let mut injector_no_ctx = AnomalyInjector::new(config_no_ctx);
+
+        let mut entries_no_ctx: Vec<_> = (0..500)
+            .map(|i| {
+                create_test_entry_with_context(
+                    &format!("JE{:04}", i),
+                    Some("V001"),
+                    "EMP001",
+                    "8100",
+                )
+            })
+            .collect();
+
+        let result_no_ctx = injector_no_ctx.process_entries(&mut entries_no_ctx);
+
+        // Run with high-risk contexts (same seed for comparable randomness)
+        let config_ctx = AnomalyInjectorConfigBuilder::new()
+            .with_total_rate(base_rate)
+            .with_seed(123)
+            .build();
+
+        let mut injector_ctx = AnomalyInjector::new(config_ctx);
+
+        // Set up high-risk contexts
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V001".to_string(),
+            VendorContext {
+                vendor_id: "V001".to_string(),
+                is_new: true,                  // 2.0x multiplier
+                is_dormant_reactivation: true, // 1.5x multiplier
+                ..Default::default()
+            },
+        );
+
+        let mut employees = HashMap::new();
+        employees.insert(
+            "EMP001".to_string(),
+            EmployeeContext {
+                employee_id: "EMP001".to_string(),
+                is_new: true, // 1.5x multiplier
+                ..Default::default()
+            },
+        );
+
+        let mut accounts = HashMap::new();
+        accounts.insert(
+            "8100".to_string(),
+            AccountContext {
+                account_code: "8100".to_string(),
+                is_high_risk: true, // 2.0x multiplier
+                ..Default::default()
+            },
+        );
+
+        injector_ctx.set_entity_contexts(vendors, employees, accounts);
+
+        let mut entries_ctx: Vec<_> = (0..500)
+            .map(|i| {
+                create_test_entry_with_context(
+                    &format!("JE{:04}", i),
+                    Some("V001"),
+                    "EMP001",
+                    "8100",
+                )
+            })
+            .collect();
+
+        let result_ctx = injector_ctx.process_entries(&mut entries_ctx);
+
+        // The context-enhanced run should inject more anomalies
+        assert!(
+            result_ctx.anomalies_injected > result_no_ctx.anomalies_injected,
+            "Expected more anomalies with high-risk contexts: {} (with ctx) vs {} (without ctx)",
+            result_ctx.anomalies_injected,
+            result_no_ctx.anomalies_injected,
+        );
+    }
+
+    #[test]
+    fn test_risk_score_multiplication() {
+        // Verify the calculate_context_rate_multiplier produces correct values.
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        // No contexts: multiplier should be 1.0
+        let entry_plain = create_test_entry_with_context("JE001", None, "USER1", "5000");
+        assert!(
+            (injector.calculate_context_rate_multiplier(&entry_plain) - 1.0).abs() < f64::EPSILON,
+        );
+
+        // Set up a new vendor (2.0x) + high-risk account (2.0x) = 4.0x
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V_RISKY".to_string(),
+            VendorContext {
+                vendor_id: "V_RISKY".to_string(),
+                is_new: true,
+                ..Default::default()
+            },
+        );
+
+        let mut accounts = HashMap::new();
+        accounts.insert(
+            "9000".to_string(),
+            AccountContext {
+                account_code: "9000".to_string(),
+                is_high_risk: true,
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(vendors, HashMap::new(), accounts);
+
+        let entry_risky = create_test_entry_with_context("JE002", Some("V_RISKY"), "USER1", "9000");
+        let multiplier = injector.calculate_context_rate_multiplier(&entry_risky);
+        // new vendor = 2.0x, high-risk account = 2.0x => 4.0x
+        assert!(
+            (multiplier - 4.0).abs() < f64::EPSILON,
+            "Expected 4.0x multiplier, got {}",
+            multiplier,
+        );
+
+        // Entry with only vendor context match (no account match)
+        let entry_vendor_only =
+            create_test_entry_with_context("JE003", Some("V_RISKY"), "USER1", "5000");
+        let multiplier_vendor = injector.calculate_context_rate_multiplier(&entry_vendor_only);
+        assert!(
+            (multiplier_vendor - 2.0).abs() < f64::EPSILON,
+            "Expected 2.0x multiplier (vendor only), got {}",
+            multiplier_vendor,
+        );
+
+        // Entry with no matching contexts
+        let entry_no_match =
+            create_test_entry_with_context("JE004", Some("V_SAFE"), "USER1", "5000");
+        let multiplier_none = injector.calculate_context_rate_multiplier(&entry_no_match);
+        assert!(
+            (multiplier_none - 1.0).abs() < f64::EPSILON,
+            "Expected 1.0x multiplier (no match), got {}",
+            multiplier_none,
+        );
+    }
+
+    #[test]
+    fn test_employee_context_multiplier() {
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        let mut employees = HashMap::new();
+        employees.insert(
+            "EMP_NEW".to_string(),
+            EmployeeContext {
+                employee_id: "EMP_NEW".to_string(),
+                is_new: true,             // 1.5x
+                is_volume_fatigued: true, // 1.3x
+                is_overtime: true,        // 1.2x
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(HashMap::new(), employees, HashMap::new());
+
+        let entry = create_test_entry_with_context("JE001", None, "EMP_NEW", "5000");
+        let multiplier = injector.calculate_context_rate_multiplier(&entry);
+
+        // 1.5 * 1.3 * 1.2 = 2.34
+        let expected = 1.5 * 1.3 * 1.2;
+        assert!(
+            (multiplier - expected).abs() < 0.01,
+            "Expected {:.3}x multiplier, got {:.3}",
+            expected,
+            multiplier,
+        );
+    }
+
+    #[test]
+    fn test_entity_contexts_persist_across_reset() {
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V001".to_string(),
+            VendorContext {
+                vendor_id: "V001".to_string(),
+                is_new: true,
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(vendors, HashMap::new(), HashMap::new());
+        assert_eq!(injector.vendor_contexts().len(), 1);
+
+        // Reset clears labels and stats but not entity contexts
+        injector.reset();
+        assert_eq!(injector.vendor_contexts().len(), 1);
+    }
+
+    #[test]
+    fn test_set_empty_contexts_clears() {
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V001".to_string(),
+            VendorContext {
+                vendor_id: "V001".to_string(),
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(vendors, HashMap::new(), HashMap::new());
+        assert_eq!(injector.vendor_contexts().len(), 1);
+
+        // Setting empty maps clears
+        injector.set_entity_contexts(HashMap::new(), HashMap::new(), HashMap::new());
+        assert!(injector.vendor_contexts().is_empty());
+    }
+
+    #[test]
+    fn test_dormant_vendor_multiplier() {
+        let config = AnomalyInjectorConfig::default();
+        let mut injector = AnomalyInjector::new(config);
+
+        let mut vendors = HashMap::new();
+        vendors.insert(
+            "V_DORMANT".to_string(),
+            VendorContext {
+                vendor_id: "V_DORMANT".to_string(),
+                is_dormant_reactivation: true, // 1.5x
+                ..Default::default()
+            },
+        );
+
+        injector.set_entity_contexts(vendors, HashMap::new(), HashMap::new());
+
+        let entry = create_test_entry_with_context("JE001", Some("V_DORMANT"), "USER1", "5000");
+        let multiplier = injector.calculate_context_rate_multiplier(&entry);
+        assert!(
+            (multiplier - 1.5).abs() < f64::EPSILON,
+            "Expected 1.5x multiplier for dormant vendor, got {}",
+            multiplier,
+        );
     }
 }
