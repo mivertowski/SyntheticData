@@ -98,6 +98,36 @@ pub struct Lease {
     /// Whether this is a low-value asset lease election (IFRS 16 only).
     pub low_value_election: bool,
 
+    /// Does the lease transfer ownership to the lessee at end of lease term?
+    /// ASC 842 Test 1.
+    #[serde(default)]
+    pub transfers_ownership: bool,
+
+    /// Is there a bargain purchase option that the lessee is reasonably certain to exercise?
+    /// ASC 842 Test 2.
+    #[serde(default)]
+    pub has_bargain_purchase_option: bool,
+
+    /// Is the underlying asset specialized with no alternative use to the lessor?
+    /// ASC 842 Test 5.
+    #[serde(default)]
+    pub is_specialized_asset: bool,
+
+    /// Initial direct costs incurred by the lessee (e.g., commissions, legal fees).
+    #[serde(default)]
+    #[serde(with = "rust_decimal::serde::str")]
+    pub initial_direct_costs: Decimal,
+
+    /// Lease payments made at or before the commencement date (prepayments).
+    #[serde(default)]
+    #[serde(with = "rust_decimal::serde::str")]
+    pub prepaid_payments: Decimal,
+
+    /// Lease incentives received from the lessor.
+    #[serde(default)]
+    #[serde(with = "rust_decimal::serde::str")]
+    pub lease_incentives: Decimal,
+
     /// Related fixed asset ID (if any).
     pub fixed_asset_id: Option<Uuid>,
 
@@ -169,6 +199,12 @@ impl Lease {
             framework,
             short_term_election: false,
             low_value_election: false,
+            transfers_ownership: false,
+            has_bargain_purchase_option: false,
+            is_specialized_asset: false,
+            initial_direct_costs: Decimal::ZERO,
+            prepaid_payments: Decimal::ZERO,
+            lease_incentives: Decimal::ZERO,
             fixed_asset_id: None,
             journal_entry_ids: Vec::new(),
         };
@@ -201,10 +237,16 @@ impl Lease {
     /// US GAAP classification using bright-line tests (ASC 842).
     fn classify_us_gaap(&mut self) {
         // Test 1: Transfer of ownership at end of lease term
-        // (Would need additional data to determine this)
+        if self.transfers_ownership {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
 
-        // Test 2: Bargain purchase option
-        // (Would need additional data to determine this)
+        // Test 2: Bargain purchase option that lessee is reasonably certain to exercise
+        if self.has_bargain_purchase_option {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
 
         // Test 3: Lease term >= 75% of economic life
         let term_ratio =
@@ -216,14 +258,21 @@ impl Lease {
 
         // Test 4: Present value of lease payments >= 90% of fair value
         let pv = self.calculate_present_value_of_payments();
-        let pv_ratio = pv / self.fair_value_at_commencement;
+        let pv_ratio = if self.fair_value_at_commencement > Decimal::ZERO {
+            pv / self.fair_value_at_commencement
+        } else {
+            Decimal::ZERO
+        };
         if pv_ratio >= Decimal::from_str_exact("0.90").unwrap() {
             self.classification = LeaseClassification::Finance;
             return;
         }
 
-        // Test 5: Specialized nature (no alternative use)
-        // (Would need additional data to determine this)
+        // Test 5: Specialized asset with no alternative use to the lessor
+        if self.is_specialized_asset {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
 
         self.classification = LeaseClassification::Operating;
     }
@@ -234,8 +283,19 @@ impl Lease {
         // The finance vs operating distinction is less relevant for lessees
         // but maintained for lessors
 
-        // For simplicity, use similar logic to US GAAP but with more judgment
         // In practice, IFRS looks at transfer of substantially all risks and rewards
+
+        // Transfer of ownership indicates substantially all risks and rewards transfer
+        if self.transfers_ownership {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
+
+        // Bargain purchase option indicates substantially all risks and rewards transfer
+        if self.has_bargain_purchase_option {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
 
         let term_ratio =
             Decimal::from(self.lease_term_months) / Decimal::from(self.economic_life_months);
@@ -251,9 +311,16 @@ impl Lease {
             || pv_ratio >= Decimal::from_str_exact("0.90").unwrap()
         {
             self.classification = LeaseClassification::Finance;
-        } else {
-            self.classification = LeaseClassification::Operating;
+            return;
         }
+
+        // Specialized asset with no alternative use
+        if self.is_specialized_asset {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
+
+        self.classification = LeaseClassification::Operating;
     }
 
     /// Calculate present value of lease payments.
@@ -278,10 +345,12 @@ impl Lease {
         // Lease liability = PV of lease payments
         self.lease_liability.initial_measurement = pv;
 
-        // ROU Asset = Lease liability + initial direct costs + prepayments - incentives
-        // For simplicity, assume ROU asset = lease liability
-        self.rou_asset.initial_measurement = pv;
-        self.rou_asset.carrying_amount = pv;
+        // ROU Asset = Lease liability + initial direct costs + prepaid payments - lease incentives
+        // Per ASC 842-20-30-5 / IFRS 16.24
+        let rou_initial =
+            pv + self.initial_direct_costs + self.prepaid_payments - self.lease_incentives;
+        self.rou_asset.initial_measurement = rou_initial.max(Decimal::ZERO);
+        self.rou_asset.carrying_amount = self.rou_asset.initial_measurement;
 
         // Split liability into current and non-current
         self.update_liability_classification();
@@ -718,5 +787,278 @@ mod tests {
 
         assert_eq!(rou_asset.accumulated_depreciation, monthly_dep * dec!(6));
         assert!(rou_asset.carrying_amount < initial);
+    }
+
+    /// Helper: creates an operating lease (short term, low fair value ratios)
+    /// that would NOT trigger any of the 5 ASC 842 tests by default.
+    fn create_base_operating_lease(framework: AccountingFramework) -> Lease {
+        // lease_term=24, economic_life=120 → 20% (< 75%)
+        // PV of payments will be well under 90% of fair_value
+        Lease::new(
+            "2000",
+            "Test Lessor",
+            "Operating Lease Test",
+            LeaseAssetClass::Equipment,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            24,        // 2 years
+            dec!(500), // modest payment
+            PaymentFrequency::Monthly,
+            dec!(0.05),
+            dec!(500000), // high fair value → PV ratio will be low
+            120,          // 10 year economic life → term ratio 20%
+            framework,
+        )
+    }
+
+    #[test]
+    fn test_classification_transfer_of_ownership() {
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+        // Verify baseline is operating
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+
+        // Set transfers_ownership and reclassify
+        lease.transfers_ownership = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "Transfer of ownership (ASC 842 Test 1) should trigger finance lease"
+        );
+    }
+
+    #[test]
+    fn test_classification_bargain_purchase_option() {
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+
+        lease.has_bargain_purchase_option = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "Bargain purchase option (ASC 842 Test 2) should trigger finance lease"
+        );
+    }
+
+    #[test]
+    fn test_classification_specialized_asset() {
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+
+        lease.is_specialized_asset = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "Specialized asset (ASC 842 Test 5) should trigger finance lease"
+        );
+    }
+
+    #[test]
+    fn test_rou_asset_with_direct_costs_and_incentives() {
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+
+        let pv = lease.calculate_present_value_of_payments();
+
+        // Set initial direct costs, prepaid payments, and lease incentives
+        lease.initial_direct_costs = dec!(5000);
+        lease.prepaid_payments = dec!(2000);
+        lease.lease_incentives = dec!(1500);
+        lease.calculate_initial_measurement();
+
+        // ROU asset = PV + initial_direct_costs + prepaid_payments - lease_incentives
+        let expected_rou = pv + dec!(5000) + dec!(2000) - dec!(1500);
+        assert_eq!(
+            lease.rou_asset.initial_measurement, expected_rou,
+            "ROU asset should equal PV + direct costs + prepaid - incentives"
+        );
+
+        // Lease liability should still equal PV (not affected by direct costs/incentives)
+        assert_eq!(lease.lease_liability.initial_measurement, pv);
+    }
+
+    #[test]
+    fn test_new_fields_default_values() {
+        let lease = create_base_operating_lease(AccountingFramework::UsGaap);
+
+        assert!(
+            !lease.transfers_ownership,
+            "transfers_ownership should default to false"
+        );
+        assert!(
+            !lease.has_bargain_purchase_option,
+            "has_bargain_purchase_option should default to false"
+        );
+        assert!(
+            !lease.is_specialized_asset,
+            "is_specialized_asset should default to false"
+        );
+        assert_eq!(
+            lease.initial_direct_costs,
+            Decimal::ZERO,
+            "initial_direct_costs should default to zero"
+        );
+        assert_eq!(
+            lease.prepaid_payments,
+            Decimal::ZERO,
+            "prepaid_payments should default to zero"
+        );
+        assert_eq!(
+            lease.lease_incentives,
+            Decimal::ZERO,
+            "lease_incentives should default to zero"
+        );
+    }
+
+    #[test]
+    fn test_operating_lease_none_of_criteria_met() {
+        let lease = create_base_operating_lease(AccountingFramework::UsGaap);
+
+        // None of the 5 ASC 842 tests should be triggered
+        assert!(!lease.transfers_ownership);
+        assert!(!lease.has_bargain_purchase_option);
+        assert!(!lease.is_specialized_asset);
+
+        // Term ratio: 24/120 = 20% < 75%
+        let term_ratio =
+            Decimal::from(lease.lease_term_months) / Decimal::from(lease.economic_life_months);
+        assert!(term_ratio < Decimal::from_str_exact("0.75").unwrap());
+
+        // PV ratio should be < 90% (small payments, high fair value)
+        let pv = lease.calculate_present_value_of_payments();
+        let pv_ratio = pv / lease.fair_value_at_commencement;
+        assert!(pv_ratio < Decimal::from_str_exact("0.90").unwrap());
+
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Operating,
+            "Lease should be operating when no ASC 842 criteria are met"
+        );
+    }
+
+    #[test]
+    fn test_finance_lease_multiple_criteria() {
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+
+        // Set multiple criteria simultaneously
+        lease.transfers_ownership = true;
+        lease.has_bargain_purchase_option = true;
+        lease.is_specialized_asset = true;
+        lease.classify();
+
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "Lease with multiple finance criteria should be classified as finance"
+        );
+    }
+
+    #[test]
+    fn test_ifrs_classification_with_new_criteria() {
+        // Test that the new criteria also work under IFRS framework
+        let mut lease = create_base_operating_lease(AccountingFramework::Ifrs);
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+
+        lease.transfers_ownership = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "IFRS: Transfer of ownership should trigger finance classification"
+        );
+
+        // Reset and test bargain purchase option
+        lease.transfers_ownership = false;
+        lease.has_bargain_purchase_option = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "IFRS: Bargain purchase option should trigger finance classification"
+        );
+
+        // Reset and test specialized asset
+        lease.has_bargain_purchase_option = false;
+        lease.is_specialized_asset = true;
+        lease.classify();
+        assert_eq!(
+            lease.classification,
+            LeaseClassification::Finance,
+            "IFRS: Specialized asset should trigger finance classification"
+        );
+    }
+
+    #[test]
+    fn test_rou_asset_incentives_exceed_pv() {
+        // Edge case: lease incentives are very large
+        let mut lease = create_base_operating_lease(AccountingFramework::UsGaap);
+        let pv = lease.calculate_present_value_of_payments();
+
+        // Set incentives larger than PV + direct costs + prepaid
+        lease.lease_incentives = pv + dec!(10000);
+        lease.calculate_initial_measurement();
+
+        // ROU asset should be floored at zero (cannot be negative)
+        assert_eq!(
+            lease.rou_asset.initial_measurement,
+            Decimal::ZERO,
+            "ROU asset should not go below zero when incentives exceed other components"
+        );
+    }
+
+    #[test]
+    fn test_serde_default_new_fields() {
+        // Verify that deserializing JSON without the new fields works via serde defaults
+        let json = r#"{
+            "lease_id": "00000000-0000-0000-0000-000000000001",
+            "company_code": "1000",
+            "lessor_name": "Test",
+            "description": "Test Lease",
+            "asset_class": "equipment",
+            "classification": "operating",
+            "commencement_date": "2024-01-01",
+            "lease_term_months": 24,
+            "noncancelable_term_months": 24,
+            "renewal_option_months": null,
+            "termination_option_months": null,
+            "fixed_payment": "1000",
+            "payment_frequency": "monthly",
+            "variable_payments": [],
+            "discount_rate": "0.05",
+            "implicit_rate_determinable": false,
+            "fair_value_at_commencement": "50000",
+            "economic_life_months": 60,
+            "rou_asset": {
+                "lease_id": "00000000-0000-0000-0000-000000000001",
+                "initial_measurement": "1000",
+                "accumulated_depreciation": "0",
+                "accumulated_impairment": "0",
+                "carrying_amount": "1000",
+                "useful_life_months": 24,
+                "depreciation_method": "straight_line"
+            },
+            "lease_liability": {
+                "lease_id": "00000000-0000-0000-0000-000000000001",
+                "initial_measurement": "1000",
+                "current_portion": "500",
+                "non_current_portion": "500",
+                "accumulated_interest": "0",
+                "amortization_schedule": []
+            },
+            "framework": "us_gaap",
+            "short_term_election": false,
+            "low_value_election": false,
+            "fixed_asset_id": null,
+            "journal_entry_ids": []
+        }"#;
+
+        let lease: Lease =
+            serde_json::from_str(json).expect("Should deserialize without new fields");
+        assert!(!lease.transfers_ownership);
+        assert!(!lease.has_bargain_purchase_option);
+        assert!(!lease.is_specialized_asset);
+        assert_eq!(lease.initial_direct_costs, Decimal::ZERO);
+        assert_eq!(lease.prepaid_payments, Decimal::ZERO);
+        assert_eq!(lease.lease_incentives, Decimal::ZERO);
     }
 }
