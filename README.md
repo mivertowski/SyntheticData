@@ -89,7 +89,7 @@ The generator produces statistically accurate data based on empirical research f
   - 36 activity types across P2P, O2C, R2R, and A2R processes
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
 - **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
-- **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
+- **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases with 5 bright-line tests), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
 - **Audit Standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance with deficiency classification
 
 ### Interconnectivity & Relationships
@@ -151,7 +151,7 @@ The generator produces statistically accurate data based on empirical research f
 - **Differential Privacy**: Laplace mechanism with configurable epsilon budget
 - **K-Anonymity**: Suppression of rare categorical values
 - **Privacy Audit Trail**: Complete logging of all privacy decisions
-- **Fidelity Evaluation**: Validate synthetic data matches original fingerprint
+- **Fidelity Evaluation**: Wasserstein-1, Jensen-Shannon divergence, and KS statistics per column
 
 ### Production Features
 
@@ -190,7 +190,7 @@ datasynth-config       Configuration schema, validation, industry presets
     │
 datasynth-core         Domain models, traits, distributions, resource guards
     │
-datasynth-output       Output sinks (CSV, JSON, NDJSON, Parquet) with streaming support
+datasynth-output       Output sinks (CSV, JSON, NDJSON, Parquet/Zstd) with streaming support
 datasynth-test-utils   Test utilities, fixtures, mocks
 ```
 
@@ -421,8 +421,8 @@ ocpm:
     export_reference_models: true # Export P2P/O2C/R2R reference models
 
 output:
-  format: csv
-  compression: none
+  format: csv                       # csv, json, parquet
+  compression: none                 # none, gzip, zstd (parquet uses zstd by default)
 ```
 
 See the [Configuration Guide](docs/configuration.md) for complete documentation.

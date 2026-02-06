@@ -22,13 +22,20 @@ Runtime orchestration, parallel execution, and memory management.
 
 ## Generation Workflow
 
-1. **Initialize**: Load configuration, validate settings
-2. **Master Data**: Generate vendors, customers, materials, assets
-3. **Opening Balances**: Create coherent opening balance sheet
-4. **Transactions**: Generate journal entries with document flows
-5. **Period Close**: Run monthly/quarterly/annual close processes
-6. **Anomalies**: Inject configured anomalies and data quality issues
-7. **Export**: Write outputs and generate ML labels
+The `generate()` method orchestrates 12 focused phase methods in sequence:
+
+1. **Chart of Accounts**: CoA generation with industry-specific structures
+2. **Master Data**: Vendors, customers, materials, fixed assets, employees
+3. **Document Flows**: P2P and O2C document chain generation
+4. **OCPM Events**: OCEL 2.0 event log generation
+5. **Journal Entries**: JEs from document flows and standalone transactions
+6. **Anomaly Injection**: Entity-aware anomaly injection with risk-adjusted rates
+7. **Balance Validation**: Balance sheet equation verification
+8. **Data Quality**: Typos, missing values, format variations injection
+9. **Audit Data**: Engagements, workpapers, evidence, findings, judgments
+10. **Banking Data**: KYC/AML banking transaction generation
+11. **Graph Export**: PyTorch Geometric, Neo4j, DGL, RustGraph export
+12. **Hypergraph Export**: Multi-layer hypergraph for RustGraph
 
 ## Usage
 

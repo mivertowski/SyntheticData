@@ -5,6 +5,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-05
+
+### Added
+
+- **Parquet Output Sink** (`datasynth-output`): Full Apache Parquet output replacing previous stub
+  - 15-column Arrow schema for denormalized journal entry line items
+  - Zstd compression (level 3) for efficient storage
+  - Configurable batch size (default 10,000 rows) for memory-efficient writes
+  - Decimal amounts and UUIDs stored as UTF-8 strings (IEEE 754 precision-safe)
+  - `ParquetSink` implements the `Sink` trait with `write()`, `flush()`, `close()`
+
+- **Wasserstein-1 and Jensen-Shannon Divergence** (`datasynth-fingerprint`): Real statistical distance metrics replacing placeholders
+  - **Wasserstein-1 (Earth Mover's Distance)**: Piecewise-linear inverse CDF integration via trapezoidal rule across 9 percentile knots (p1-p99)
+  - **Jensen-Shannon Divergence**: PMF construction from percentile bins with proper KL divergence computation
+  - **Gamma CDF**: Regularized incomplete gamma function via Lanczos approximation (g=7, 9 coefficients) with series expansion and modified Lentz continued fraction
+  - **Pareto CDF**: `1 - (x_m/x)^alpha` for heavy-tailed distribution fitting
+  - **PointMass and Mixture CDFs**: Step function and weighted sum of component CDFs
+  - Per-column Wasserstein distances and JS divergences populated in fidelity evaluation reports
+
+- **IRS MACRS GDS Depreciation Tables** (`datasynth-core`): Proper tax depreciation replacing simplified DDB
+  - 6 recovery period tables (3, 5, 7, 10, 15, 20-year) from IRS Publication 946
+  - Half-year convention percentages stored as string slices (no f64 precision loss)
+  - `macrs_table_for_life()` maps useful life to nearest recovery period
+  - `macrs_depreciation(year)` and `ddb_depreciation()` public methods on `FixedAsset`
+  - Existing double-declining balance retained as fallback for non-standard useful lives
+
+- **ASC 842 Lease Classification Tests** (`datasynth-standards`): Complete bright-line test implementation
+  - 6 new `Lease` fields: `transfers_ownership`, `has_bargain_purchase_option`, `is_specialized_asset`, `initial_direct_costs`, `prepaid_payments`, `lease_incentives`
+  - Tests 1 (ownership transfer), 2 (bargain purchase option), and 5 (specialized asset) for both US GAAP and IFRS
+  - Enhanced ROU asset measurement: PV + direct costs + prepaid payments - lease incentives (floored at zero)
+  - All fields use `#[serde(default)]` for backward compatibility
+
+- **FX Monetary/Non-Monetary Classification** (`datasynth-generators`): Proper translation method support
+  - `is_monetary(account_code)` classifies accounts by 2-digit prefix (cash, AR, liabilities = monetary; inventory, PP&E, equity = non-monetary)
+  - `historical_equity_rates` field on `CurrencyTranslator` for equity account translation
+  - **Temporal method**: Monetary assets → closing rate, non-monetary → historical rate, income/expense → average rate
+  - **MonetaryNonMonetary method**: Full rate selection based on monetary classification
+
+- **Entity-Aware Anomaly Injection** (`datasynth-generators`): Risk-adjusted injection rates
+  - `VendorContext`, `EmployeeContext`, `AccountContext` structs with risk attributes
+  - `set_entity_contexts()` for orchestrator to provide context after master data generation
+  - Rate multipliers: new vendor 2.0x, dormant vendor 1.5x, new employee 1.5x, volume-fatigued 1.3x, high-risk account 2.0x
+  - Multiplied factors cap at 1.0; entity contexts persist across `reset()` calls
+  - Anomaly labels annotated with `entity_context_multiplier` and `effective_rate`
+
+### Changed
+
+- **Orchestrator Decomposition** (`datasynth-runtime`): `generate()` method refactored from ~300-line monolith into 12 focused phase methods
+  - `phase_chart_of_accounts`, `phase_master_data`, `phase_document_flows`, `phase_ocpm_events`, `phase_journal_entries`, `phase_anomaly_injection`, `phase_balance_validation`, `phase_data_quality_injection`, `phase_audit_data`, `phase_banking_data`, `phase_graph_export`, `phase_hypergraph_export`
+  - Main `generate()` is now a ~90-line pipeline calling phase methods in sequence
+
+- **Graph Exporter Config Consolidation** (`datasynth-graph`): DRY refactoring of export configuration
+  - New `CommonExportConfig` struct shared by PyG, DGL, and Neo4j exporters (8 fields: features, labels, masks, train/val ratio, seed)
+  - New `CommonGraphMetadata` struct shared by PyG and DGL exporters (11 fields)
+  - ~200 lines of duplicated field definitions and defaults eliminated
+
+- **Validation Helper Extraction** (`datasynth-config`): DRY refactoring of config validation
+  - 5 shared helper functions: `validate_sum_to_one`, `validate_range_f64`, `validate_ascending`, `validate_positive`, `validate_rate`
+  - Replaced 16+ sum-to-one, 15+ rate, 3 ascending, and 6 positive inline validation checks
+
+- **Test Fixture Centralization**: Shared test helper modules replacing duplicated fixtures
+  - `datasynth-graph`: 9 copies of `create_test_graph()` → `test_helpers.rs` with 3 variants
+  - `datasynth-generators`: 4 copies of `create_test_engagement()` → `audit/test_helpers.rs`
+  - `datasynth-output`: 3 copies of `create_test_je()` → `test_helpers.rs`
+
+- Bumped all Rust crate versions to 0.4.0
+- Python wrapper version bumped to 0.4.0
+
 ## [0.3.1] - 2026-02-05
 
 ### Added

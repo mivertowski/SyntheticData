@@ -180,6 +180,29 @@ println!("Statistical fidelity: {:.2}", report.statistical_fidelity);
 println!("Correlation fidelity: {:.2}", report.correlation_fidelity);
 ```
 
+### Statistical Distance Metrics
+
+The fidelity evaluator computes per-column distance metrics:
+
+| Metric | Description |
+|--------|-------------|
+| KS Statistic | Kolmogorov-Smirnov two-sample test statistic |
+| Wasserstein-1 | Earth Mover's Distance via inverse CDF integration (9 percentile knots) |
+| JS Divergence | Jensen-Shannon divergence from percentile-bin PMFs (bounded by ln(2)) |
+
+### Distribution CDFs
+
+The distribution fitter supports CDF computation for fitted distributions:
+
+| Distribution | CDF Method |
+|-------------|------------|
+| Normal | Standard error function |
+| LogNormal | Transform to normal CDF |
+| Gamma | Regularized incomplete gamma (Lanczos + Lentz CF) |
+| Pareto | `1 - (x_m/x)^alpha` |
+| PointMass | Step function |
+| Mixture | Weighted sum of component CDFs |
+
 ## Privacy Levels
 
 | Level | Epsilon | K | Use Case |

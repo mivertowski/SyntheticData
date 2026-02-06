@@ -1,6 +1,6 @@
 # datasynth-output
 
-Output sinks for CSV, JSON, and streaming formats.
+Output sinks for CSV, JSON, Parquet, and streaming formats.
 
 ## Overview
 
@@ -8,7 +8,9 @@ Output sinks for CSV, JSON, and streaming formats.
 
 - **CSV Sink**: High-performance CSV writing with optional compression
 - **JSON Sink**: JSON and JSONL (newline-delimited) output
+- **Parquet Sink**: Apache Parquet output with Arrow schema and Zstd compression
 - **Streaming**: Async streaming output for real-time generation
+- **ERP Formats**: SAP, Oracle EBS, and NetSuite export formats
 - **Control Export**: Internal control and SoD rule export
 
 ## Supported Formats
@@ -18,9 +20,12 @@ Output sinks for CSV, JSON, and streaming formats.
 | CSV | Standard comma-separated values |
 | JSON | Pretty-printed JSON arrays |
 | JSONL | Newline-delimited JSON (streaming-friendly) |
+| Parquet | Apache Parquet with Zstd compression (15-column Arrow schema) |
 
 ## Features
 
+- Apache Parquet output with configurable batch size (default 10K rows)
+- Zstd compression for efficient storage
 - Configurable compression (gzip, zstd)
 - Streaming writes for memory efficiency
 - Decimal values serialized as strings (IEEE 754 safe)

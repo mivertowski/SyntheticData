@@ -6,8 +6,9 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 
 `datasynth-graph` provides graph construction and export capabilities:
 
-- **Graph Builders**: Transaction, approval, and entity relationship graphs
-- **ML Export**: PyTorch Geometric, Neo4j, and DGL formats
+- **Graph Builders**: Transaction, approval, entity relationship, and multi-layer hypergraph builders
+- **ML Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats
+- **Unified Config**: `CommonExportConfig` shared across all ML exporters for consistent feature/label/mask settings
 - **Feature Engineering**: Temporal, amount, structural, and categorical features
 - **Data Splits**: Train/validation/test split generation
 
