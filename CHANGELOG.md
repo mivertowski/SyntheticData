@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-02-06
+
+### Added
+
+- **RustGraph Unified Hypergraph Exporter** (`datasynth-graph`): New `RustGraphUnifiedExporter` producing JSONL with RustGraph-native field names
+  - `RawUnifiedNode`: maps `entity_type`→`node_type`, `label`→`name`, `HypergraphLayer`→`layer` as `u8`
+  - `RawUnifiedEdge`: maps `source_id`→`source`, `target_id`→`target`, layers→`u8`, adds `weight: f32`
+  - `RawUnifiedHyperedge`: extracts `member_ids` from participants, `layer`→`u8`
+  - `UnifiedHypergraphMetadata` with `format: "rustgraph_unified_v1"` identifier
+  - `export()` for file-based output, `export_to_writer()` for streaming with `_type` tag per line
+  - 8 unit tests covering field mapping, file creation, JSONL parseability, and metadata format
+
+- **Streaming to RustGraph Ingest Endpoint** (`datasynth-runtime`): HTTP streaming client behind `streaming` feature flag
+  - `StreamClient` implements `std::io::Write` for direct use with `export_to_writer()`
+  - Buffers JSONL lines and auto-flushes batches via `reqwest::blocking::Client` POST
+  - Configurable batch size (default 1000), timeout (30s), API key auth (`RUSTGRAPH_API_KEY` env), retry with backoff (max 3)
+  - `reqwest` added as workspace dependency, gated behind `streaming` feature in runtime and CLI crates
+
+- **CLI Streaming Flags** (`datasynth-cli`): `--stream-target <URL>`, `--stream-api-key`, `--stream-batch-size`
+  - Auto-enables hypergraph export in unified format when `--stream-target` is set
+
+- **Hypergraph Output Format Config** (`datasynth-config`): `output_format`, `stream_target`, `stream_batch_size` fields on `HypergraphExportSettings`
+  - `output_format: "native"` (default) preserves existing behavior; `"unified"` uses new exporter
+
+### Changed
+
+- **AssureTwin Comprehensive Template**: `graph_export.hypergraph` section now enabled with `output_format: unified`, governance/process/accounting layers, and cross-layer edges
+- Orchestrator branches on `output_format` to select unified vs native hypergraph exporter
+- Bumped all Rust crate versions to 0.4.1
+- Python wrapper version bumped to 0.4.1
+
 ## [0.4.0] - 2026-02-05
 
 ### Added

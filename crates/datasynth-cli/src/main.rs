@@ -90,6 +90,18 @@ enum Commands {
         /// Enable graph export for accounting networks (PyTorch Geometric format)
         #[arg(long)]
         graph_export: bool,
+
+        /// Stream unified hypergraph JSONL to a RustGraph ingest endpoint URL
+        #[arg(long)]
+        stream_target: Option<String>,
+
+        /// API key for the RustGraph ingest endpoint
+        #[arg(long)]
+        stream_api_key: Option<String>,
+
+        /// Batch size for streaming (lines per HTTP POST, default 1000)
+        #[arg(long, default_value = "1000")]
+        stream_batch_size: usize,
     },
 
     /// Validate a configuration file
@@ -228,6 +240,9 @@ fn main() -> Result<()> {
             memory_limit,
             max_threads,
             graph_export,
+            stream_target,
+            stream_api_key,
+            stream_batch_size,
         } => {
             // ========================================
             // CPU SAFEGUARD: Limit thread pool size
@@ -346,6 +361,19 @@ fn main() -> Result<()> {
                     if graph_export {
                         cfg.graph_export.enabled = true;
                         tracing::info!("Graph export enabled (PyTorch Geometric format)");
+                    }
+
+                    // Apply streaming settings if provided
+                    if let Some(ref target) = stream_target {
+                        cfg.graph_export.enabled = true;
+                        cfg.graph_export.hypergraph.enabled = true;
+                        cfg.graph_export.hypergraph.output_format = "unified".to_string();
+                        cfg.graph_export.hypergraph.stream_target = Some(target.clone());
+                        cfg.graph_export.hypergraph.stream_batch_size = stream_batch_size;
+                        if let Some(ref key) = stream_api_key {
+                            std::env::set_var("RUSTGRAPH_API_KEY", key);
+                        }
+                        tracing::info!("Streaming unified hypergraph to: {}", target);
                     }
 
                     // Apply output and resource settings

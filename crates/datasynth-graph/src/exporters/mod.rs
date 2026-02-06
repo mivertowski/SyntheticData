@@ -14,6 +14,7 @@ pub mod hypergraph;
 mod neo4j;
 mod pytorch_geometric;
 mod rustgraph;
+pub mod unified;
 
 pub use common::*;
 pub use dgl::*;
@@ -21,3 +22,4 @@ pub use hypergraph::*;
 pub use neo4j::*;
 pub use pytorch_geometric::*;
 pub use rustgraph::*;
+pub use unified::*;

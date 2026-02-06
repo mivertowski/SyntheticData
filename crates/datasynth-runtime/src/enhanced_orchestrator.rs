@@ -2411,6 +2411,7 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<HypergraphExportInfo> {
         use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
         use datasynth_graph::exporters::hypergraph::{HypergraphExportConfig, HypergraphExporter};
+        use datasynth_graph::exporters::unified::{RustGraphUnifiedExporter, UnifiedExportConfig};
         use datasynth_graph::models::hypergraph::AggregationStrategy;
 
         let hg_settings = &self.config.graph_export.hypergraph;
@@ -2490,20 +2491,78 @@ impl EnhancedOrchestrator {
             .join(&self.config.graph_export.output_subdirectory)
             .join(&hg_settings.output_subdirectory);
 
-        let exporter = HypergraphExporter::new(HypergraphExportConfig::default());
-        let metadata = exporter
-            .export(&hypergraph, &hg_dir)
-            .map_err(|e| SynthError::generation(format!("Hypergraph export failed: {}", e)))?;
+        // Branch on output format
+        let (num_nodes, num_edges, num_hyperedges) = match hg_settings.output_format.as_str() {
+            "unified" => {
+                let exporter = RustGraphUnifiedExporter::new(UnifiedExportConfig::default());
+                let metadata = exporter.export(&hypergraph, &hg_dir).map_err(|e| {
+                    SynthError::generation(format!("Unified hypergraph export failed: {}", e))
+                })?;
+                (
+                    metadata.num_nodes,
+                    metadata.num_edges,
+                    metadata.num_hyperedges,
+                )
+            }
+            _ => {
+                // "native" or any unrecognized format → use existing exporter
+                let exporter = HypergraphExporter::new(HypergraphExportConfig::default());
+                let metadata = exporter.export(&hypergraph, &hg_dir).map_err(|e| {
+                    SynthError::generation(format!("Hypergraph export failed: {}", e))
+                })?;
+                (
+                    metadata.num_nodes,
+                    metadata.num_edges,
+                    metadata.num_hyperedges,
+                )
+            }
+        };
+
+        // Stream to RustGraph ingest endpoint if configured
+        #[cfg(feature = "streaming")]
+        if let Some(ref target_url) = hg_settings.stream_target {
+            use crate::stream_client::{StreamClient, StreamConfig};
+            use std::io::Write as _;
+
+            let api_key = std::env::var("RUSTGRAPH_API_KEY").ok();
+            let stream_config = StreamConfig {
+                target_url: target_url.clone(),
+                batch_size: hg_settings.stream_batch_size,
+                api_key,
+                ..StreamConfig::default()
+            };
+
+            match StreamClient::new(stream_config) {
+                Ok(mut client) => {
+                    let exporter = RustGraphUnifiedExporter::new(UnifiedExportConfig::default());
+                    match exporter.export_to_writer(&hypergraph, &mut client) {
+                        Ok(_) => {
+                            if let Err(e) = client.flush() {
+                                warn!("Failed to flush stream client: {}", e);
+                            } else {
+                                info!("Streamed {} records to {}", client.total_sent(), target_url);
+                            }
+                        }
+                        Err(e) => {
+                            warn!("Streaming export failed: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to create stream client: {}", e);
+                }
+            }
+        }
 
         // Update stats
-        stats.graph_node_count += metadata.num_nodes;
-        stats.graph_edge_count += metadata.num_edges;
+        stats.graph_node_count += num_nodes;
+        stats.graph_edge_count += num_edges;
         stats.graph_export_count += 1;
 
         Ok(HypergraphExportInfo {
-            node_count: metadata.num_nodes,
-            edge_count: metadata.num_edges,
-            hyperedge_count: metadata.num_hyperedges,
+            node_count: num_nodes,
+            edge_count: num_edges,
+            hyperedge_count: num_hyperedges,
             output_path: hg_dir,
         })
     }

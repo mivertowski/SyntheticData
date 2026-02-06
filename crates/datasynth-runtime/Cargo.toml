@@ -8,6 +8,10 @@ repository.workspace = true
 homepage.workspace = true
 description = "Runtime orchestration, parallel execution, and memory management"
 
+[features]
+default = ["streaming"]
+streaming = ["dep:reqwest"]
+
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
@@ -33,6 +37,7 @@ csv = { workspace = true }
 uuid = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
+reqwest = { workspace = true, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

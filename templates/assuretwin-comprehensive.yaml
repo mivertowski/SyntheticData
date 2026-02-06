@@ -217,6 +217,27 @@ graph_export:
   enabled: true
   train_ratio: 0.70
   validation_ratio: 0.15
+  hypergraph:
+    enabled: true
+    max_nodes: 100000
+    aggregation_strategy: pool_by_counterparty
+    output_format: unified
+    governance_layer:
+      include_coso: true
+      include_controls: true
+      include_sox: true
+      include_vendors: true
+      include_customers: true
+      include_employees: true
+    process_layer:
+      include_p2p: true
+      include_o2c: true
+      events_as_hyperedges: true
+    accounting_layer:
+      include_accounts: true
+      je_as_hyperedges: true
+    cross_layer:
+      enabled: true
 
 # Intercompany transactions
 intercompany:

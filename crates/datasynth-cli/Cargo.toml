@@ -12,6 +12,10 @@ description = "Command-line interface for synthetic accounting data generation"
 name = "datasynth-data"
 path = "src/main.rs"
 
+[features]
+default = ["streaming"]
+streaming = ["dep:reqwest", "datasynth-runtime/streaming"]
+
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
@@ -20,6 +24,7 @@ datasynth-output = { workspace = true }
 datasynth-runtime = { workspace = true }
 datasynth-banking = { workspace = true }
 datasynth-fingerprint = { workspace = true }
+datasynth-graph = { workspace = true }
 clap = { workspace = true }
 indicatif = { workspace = true }
 anyhow = { workspace = true }
@@ -30,6 +35,7 @@ serde_yaml = { workspace = true }
 serde_json = { workspace = true }
 rayon = { workspace = true }
 num_cpus = { workspace = true }
+reqwest = { workspace = true, optional = true }
 
 # Signal handling for pause/resume
 [target.'cfg(unix)'.dependencies]

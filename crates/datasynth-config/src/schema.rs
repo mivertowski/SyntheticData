@@ -247,6 +247,18 @@ pub struct HypergraphExportSettings {
     /// Output subdirectory for hypergraph files (relative to graph output directory).
     #[serde(default = "default_hypergraph_subdir")]
     pub output_subdirectory: String,
+
+    /// Output format: "native" (default) for internal field names, "unified" for RustGraph format.
+    #[serde(default = "default_hypergraph_format")]
+    pub output_format: String,
+
+    /// Optional URL for streaming unified JSONL to a RustGraph ingest endpoint.
+    #[serde(default)]
+    pub stream_target: Option<String>,
+
+    /// Batch size for streaming (number of JSONL lines per HTTP POST). Default: 1000.
+    #[serde(default = "default_stream_batch_size")]
+    pub stream_batch_size: usize,
 }
 
 fn default_hypergraph_max_nodes() -> usize {
@@ -261,6 +273,14 @@ fn default_hypergraph_subdir() -> String {
     "hypergraph".to_string()
 }
 
+fn default_hypergraph_format() -> String {
+    "native".to_string()
+}
+
+fn default_stream_batch_size() -> usize {
+    1000
+}
+
 impl Default for HypergraphExportSettings {
     fn default() -> Self {
         Self {
@@ -272,6 +292,9 @@ impl Default for HypergraphExportSettings {
             accounting_layer: AccountingLayerSettings::default(),
             cross_layer: CrossLayerSettings::default(),
             output_subdirectory: "hypergraph".to_string(),
+            output_format: "native".to_string(),
+            stream_target: None,
+            stream_batch_size: 1000,
         }
     }
 }
