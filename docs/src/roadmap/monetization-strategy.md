@@ -1,9 +1,9 @@
 # Monetization Strategy: Beyond SaaS
 
-> **Version**: 1.0 | **Date**: February 2026 | **Status**: Strategic Draft
+> **Version**: 1.1 | **Date**: February 2026 | **Status**: Strategic Draft
 > **Audience**: Leadership, BD, Product | **Classification**: Internal
 
-This document outlines a monetization strategy for DataSynth through the lens of Big 4 professional services firms (Deloitte, PwC, EY, KPMG) and the broader enterprise audit/compliance ecosystem. It goes beyond a simple SaaS model to address the unique procurement patterns, deployment constraints, and value drivers in regulated professional services.
+This document outlines a monetization strategy for DataSynth through the lens of Big 4 professional services firms (Deloitte, PwC, EY, KPMG) and the broader enterprise audit/compliance ecosystem. It goes beyond a simple SaaS model to address the unique procurement patterns, deployment constraints, and value drivers in regulated professional services. It includes a **Data-as-a-Service (DaaS) pay-as-you-go API** model -- the "OpenRouter for financial data" -- that serves as the bottom-up adoption engine feeding the enterprise sales pipeline.
 
 ---
 
@@ -18,6 +18,7 @@ This document outlines a monetization strategy for DataSynth through the lens of
 - [Revenue Model 5: Training & Certification](#revenue-model-5-training--certification)
 - [Revenue Model 6: Managed Fingerprint Library](#revenue-model-6-managed-fingerprint-library)
 - [Revenue Model 7: Compliance Tooling Add-Ons](#revenue-model-7-compliance-tooling-add-ons)
+- [Revenue Model 8: Data as a Service (Pay-as-You-Go API)](#revenue-model-8-data-as-a-service-pay-as-you-go-api)
 - [Go-to-Market Architecture](#go-to-market-architecture)
 - [Technical Prerequisites](#technical-prerequisites)
 - [Pricing Framework](#pricing-framework)
@@ -418,6 +419,354 @@ For the managed service or server deployment:
 
 ---
 
+## Revenue Model 8: Data as a Service (Pay-as-You-Go API)
+
+### The OpenRouter Analogy
+
+OpenRouter solved a key problem for LLMs: developers don't want enterprise contracts or annual commitments just to experiment. They want an API key, a credit card, and per-token pricing. The same unmet need exists for financial synthetic data.
+
+Nobody in the synthetic data market offers this today. Gretel charges usage-based but requires onboarding. MOSTLY AI and Tonic are enterprise-only. SDV is free but self-hosted. There is no "just call an API and get realistic financial data billed by the row" option.
+
+**DataSynth DaaS fills this gap: Stripe-simple API, OpenRouter-style pricing, Bloomberg-quality financial data.**
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DataSynth DaaS Platform                      │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                      API Gateway                           │  │
+│  │                                                           │  │
+│  │  POST /v1/generate          ← Submit generation job       │  │
+│  │  GET  /v1/generate/{id}     ← Poll job status             │  │
+│  │  GET  /v1/stream/{id}       ← Stream results (SSE/WS)    │  │
+│  │  POST /v1/generate/quick    ← Sync for small jobs (<10K)  │  │
+│  │  GET  /v1/catalog           ← Browse sector profiles      │  │
+│  │  GET  /v1/usage             ← Credit balance & history    │  │
+│  │  POST /v1/fingerprint       ← Upload private fingerprint  │  │
+│  └──────────────────────────┬────────────────────────────────┘  │
+│                              │                                   │
+│  ┌──────────────────────────┴────────────────────────────────┐  │
+│  │                   Metering & Billing                       │  │
+│  │                                                           │  │
+│  │  • Credit-based metering (1 credit ≈ 1 row of base JEs)  │  │
+│  │  • Complexity multipliers by generation type              │  │
+│  │  • Sector pack multipliers for premium content            │  │
+│  │  • Real-time usage dashboard                              │  │
+│  │  • Stripe integration for self-serve billing              │  │
+│  └──────────────────────────┬────────────────────────────────┘  │
+│                              │                                   │
+│  ┌──────────────────────────┴────────────────────────────────┐  │
+│  │                  Generation Backend                        │  │
+│  │                                                           │  │
+│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐   │  │
+│  │  │ Rule-Based  │  │ Fingerprint- │  │ Diffusion      │   │  │
+│  │  │ (Current)   │  │ Based        │  │ Model (Future) │   │  │
+│  │  │             │  │              │  │                │   │  │
+│  │  │ All 16      │  │ From sector  │  │ FinDiff /      │   │  │
+│  │  │ crates      │  │ packs or     │  │ TabDDPM        │   │  │
+│  │  │             │  │ uploaded .dsf│  │ backend        │   │  │
+│  │  └─────────────┘  └──────────────┘  └────────────────┘   │  │
+│  │                                                           │  │
+│  │  Router selects backend based on request parameters       │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### The "Token" for Financial Data: Credits
+
+Just as LLMs bill per token, DataSynth DaaS bills per **credit**. One credit equals one row of base journal entries. More complex outputs cost more credits, similar to how GPT-4 costs more per token than GPT-3.5.
+
+#### Credit Rates by Generation Type
+
+| Generation Type | Credits / Unit | Rationale |
+|----------------|---------------|-----------|
+| **Journal entries** (base) | 1 credit/row | Baseline unit |
+| **Chart of accounts** | 0.5 credits/account | Simpler structure |
+| **Master data** (vendors, customers, materials) | 1 credit/record | Similar complexity to JEs |
+| **Document flow chain** (PO→GR→Invoice→Payment) | 5 credits/chain | Generates 4+ linked records with referential integrity |
+| **Intercompany matched pairs** | 8 credits/pair | Multi-entity, elimination entries, FX |
+| **Full P2P cycle** (with subledger + 3-way match) | 10 credits/cycle | End-to-end with reconciliation |
+| **Banking/KYC profile** | 3 credits/customer | Complex nested structure (accounts, transactions, KYC) |
+| **OCEL 2.0 event log** | 2 credits/event | Process mining format with object references |
+| **Audit workpaper package** | 15 credits/engagement | Multiple linked artifacts |
+| **Graph export** (PyTorch Geometric / Neo4j) | +50% multiplier | Additional computation for graph structure |
+
+#### Sector Premium Multipliers
+
+| Content Source | Multiplier | Why |
+|---------------|-----------|-----|
+| **Generic distributions** (built-in presets) | 1.0x | Free tier default |
+| **Curated sector pack** (DataSynth-published) | 1.5x | Expert-calibrated; premium content |
+| **Custom uploaded fingerprint** (.dsf) | 1.0x | Customer's own data; no content premium |
+| **Third-party marketplace fingerprint** | 1.2-2.0x | Revenue share with contributor |
+
+#### Labeled Data Premium
+
+| Feature | Multiplier | Why |
+|---------|-----------|-----|
+| **Base generation** (no labels) | 1.0x | Default |
+| **With anomaly labels** (ground truth) | 1.3x | ML training value; known fraud/error flags |
+| **With COSO control mappings** | 1.2x | Audit-ready, control-mapped data |
+| **With full evaluation report** (Benford, balance coherence) | 1.5x | Quality-certified output |
+
+### Pricing Tiers
+
+| Tier | Monthly Price | Credits Included | Overage Rate | Target User |
+|------|-------------|-----------------|-------------|-------------|
+| **Free** | $0 | 10,000 | N/A (hard cap) | Students, researchers, evaluation |
+| **Developer** | $49 | 500,000 | $0.0002/credit | Solo devs, prototyping, CI/CD |
+| **Team** | $199 | 5,000,000 | $0.00015/credit | Small firms, fintech startups |
+| **Scale** | $499 | 25,000,000 | $0.0001/credit | Growing companies, mid-tier audit firms |
+| **Enterprise PAYG** | Custom | Committed volume | $0.00005-0.0001 | Large orgs who prefer PAYG over annual license |
+
+#### What the Free Tier Gets You
+
+10,000 credits/month is enough to:
+- Generate ~10,000 journal entries (1 year of a small company)
+- Or ~2,000 full P2P document chains
+- Or ~1,000 banking customer profiles
+- Or a mix of the above
+
+This is deliberately generous -- enough to build a working prototype or complete a university assignment, but not enough for production workloads. The goal is **zero-friction adoption** that creates habit and dependency.
+
+### API Experience
+
+The developer experience must feel like calling Stripe or OpenAI -- familiar, well-documented, immediately productive.
+
+**Quick generation (synchronous, small jobs):**
+
+```bash
+curl https://api.datasynth.io/v1/generate/quick \
+  -H "Authorization: Bearer ds_live_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "preset": "retail_small",
+    "tables": ["journal_entries", "vendors", "chart_of_accounts"],
+    "rows": { "journal_entries": 5000 },
+    "format": "json",
+    "seed": 42,
+    "options": {
+      "anomaly_injection": { "fraud_rate": 0.03 },
+      "labels": true
+    }
+  }'
+```
+
+**Async generation (large jobs, streaming):**
+
+```python
+import datasynth
+
+client = datasynth.Client(api_key="ds_live_abc123")
+
+# Submit job
+job = client.generate(
+    sector="financial_services/regional_bank",  # Uses curated pack (1.5x)
+    tables=["bank_transactions", "kyc_profiles", "aml_labels"],
+    rows={"bank_transactions": 1_000_000},
+    format="parquet",
+    labels=True,                                 # With ground truth (1.3x)
+    seed=42,
+)
+
+# Stream results as they're generated
+for chunk in job.stream():
+    df = chunk.to_pandas()
+    process(df)
+
+# Or wait and download
+job.wait()
+result = job.download("./output/")
+
+# Check usage
+print(client.usage.current_month)
+# → { "credits_used": 1_950_000, "credits_remaining": 3_050_000, "cost": "$58.50" }
+```
+
+**Natural language generation (Phase 4 -- LLM-augmented):**
+
+```python
+# Future: describe what you need in plain English
+job = client.generate_from_description(
+    prompt="""Generate 1 year of financial data for a mid-size German
+    manufacturing company (€200M revenue) with 3 subsidiaries, IFRS reporting,
+    and a 2% fraud rate focused on vendor kickback schemes.""",
+    format="parquet",
+)
+```
+
+### The Router Concept
+
+Like OpenRouter routing to different LLM providers, DataSynth DaaS routes to the best generation backend:
+
+```
+Request: "Generate retail banking data with realistic fraud patterns"
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │    Router     │
+                    │               │
+                    │ Evaluates:    │
+                    │ • Sector      │
+                    │ • Complexity  │
+                    │ • Fidelity    │
+                    │   requirement │
+                    │ • Budget      │
+                    └───┬───┬───┬───┘
+                        │   │   │
+              ┌─────────┘   │   └─────────┐
+              ▼             ▼             ▼
+    ┌──────────────┐ ┌───────────┐ ┌───────────────┐
+    │  Rule-Based  │ │ Fingerprint│ │  Diffusion    │
+    │  Engine      │ │ + Rules   │ │  Model        │
+    │              │ │           │ │               │
+    │ Fast, cheap  │ │ Calibrated│ │ Highest       │
+    │ 1.0x credits │ │ 1.5x     │ │ fidelity      │
+    │              │ │ credits   │ │ 3.0x credits  │
+    │ Good for:    │ │ Good for: │ │ Good for:     │
+    │ • Prototyping│ │ • Audit   │ │ • ML training │
+    │ • Testing    │ │ • Prod-   │ │ • Research    │
+    │ • CI/CD      │ │   like    │ │ • Highest     │
+    │              │ │   data    │ │   realism     │
+    └──────────────┘ └───────────┘ └───────────────┘
+```
+
+Users can either let the router auto-select or pin a specific backend:
+
+```python
+# Auto-route (default): picks best backend for the request
+job = client.generate(sector="retail", rows=10000)
+
+# Pin to rule-based (cheapest, fastest)
+job = client.generate(sector="retail", rows=10000, backend="rules")
+
+# Pin to fingerprint-based (sector-calibrated)
+job = client.generate(sector="retail/ecommerce_v3", rows=10000, backend="fingerprint")
+
+# Pin to diffusion model (highest fidelity, most expensive)
+job = client.generate(sector="retail", rows=10000, backend="diffusion")
+```
+
+### Marketplace: The Network Effect
+
+The DaaS platform naturally becomes a **marketplace for financial data profiles**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DataSynth Marketplace                      │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                 First-Party Content                    │  │
+│  │  Published by DataSynth team                          │  │
+│  │  • 10+ sector packs (expert-calibrated)               │  │
+│  │  • Quarterly updates                                  │  │
+│  │  • Quality-certified                                  │  │
+│  │  Revenue: 100% to DataSynth                           │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              Third-Party Content                       │  │
+│  │  Published by domain experts, consulting firms, ISVs  │  │
+│  │  • Niche verticals (cannabis, crypto, maritime)       │  │
+│  │  • Regional profiles (LATAM tax, APAC banking)        │  │
+│  │  • Custom scenarios (M&A integration, IPO readiness)  │  │
+│  │  Revenue: 70% to creator, 30% to DataSynth           │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                Private Content                         │  │
+│  │  Uploaded by customers (not shared publicly)          │  │
+│  │  • Client-specific fingerprints                       │  │
+│  │  • Internal distributions                             │  │
+│  │  • Team-scoped access control                         │  │
+│  │  Revenue: Generation credits only (no content fee)    │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+The marketplace creates compounding value:
+- **More profiles → more users**: Broader coverage attracts niche use cases
+- **More users → more creators**: Usage data + revenue share incentivizes expert contributions
+- **More creators → more profiles**: Virtuous cycle
+
+This is where the OpenRouter analogy becomes a **platform analogy**: just as app stores (Apple, Google) and model aggregators (OpenRouter, HuggingFace) capture the platform premium, DataSynth captures 30% of all third-party content revenue plus generation credits on every API call.
+
+### Who Uses DaaS (and Who Uses Enterprise)
+
+This is critical: DaaS doesn't cannibalize enterprise revenue. They serve different buyers at different stages.
+
+| Dimension | DaaS (Pay-as-You-Go) | Enterprise (License) |
+|-----------|---------------------|---------------------|
+| **Buyer** | Individual developer, small team, startup | CTO/CISO, procurement, firm-wide |
+| **Decision** | Credit card, self-serve | 3-6 month sales cycle, MSA/SOW |
+| **Data stays** | In DataSynth cloud (multi-tenant) | On customer infrastructure |
+| **Use case** | Prototyping, CI/CD, ML experimentation, demos | Production audit procedures, firm-wide deployment |
+| **Sensitivity** | Public/internal data patterns only | Client engagement data (fingerprints extracted on-prem) |
+| **Compliance** | Shared responsibility | Customer-controlled |
+| **Price** | $0-499/month | $100K-1M/year |
+| **Conversion path** | → Scale tier → Enterprise PAYG → Enterprise license | Direct sale |
+
+**The funnel:**
+
+```
+Free tier (10K developers)
+    │
+    │  5% convert
+    ▼
+Developer tier ($49/mo, 500 developers)
+    │
+    │  20% upgrade
+    ▼
+Team/Scale tier ($199-499/mo, 100 teams)
+    │
+    │  10% become enterprise leads
+    ▼
+Enterprise conversations (10 enterprise deals/year)
+    │
+    │  50% close
+    ▼
+Enterprise license ($100K-1M/year, 5 deals/year)
+```
+
+Even without enterprise conversion, the DaaS tiers alone generate meaningful revenue:
+- 500 Developer subs × $49 = $24.5K/month ($294K ARR)
+- 100 Team subs × $199 = $19.9K/month ($239K ARR)
+- 20 Scale subs × $499 = $10K/month ($120K ARR)
+- Overage + marketplace: ~$50K/month ($600K ARR)
+- **DaaS standalone: ~$1.25M ARR at scale**
+
+Plus it feeds the enterprise pipeline, which is the real multiplier.
+
+### Technical Requirements for DaaS
+
+| Component | Technology | Notes |
+|-----------|-----------|-------|
+| **API Gateway** | Kong / AWS API Gateway | Rate limiting, auth, metering |
+| **Metering** | Custom (Redis + Kafka) or Amberflo/Orb | Real-time credit tracking per request |
+| **Billing** | Stripe Billing + Stripe Metered | Self-serve, usage-based invoicing |
+| **Auth** | API keys (simple) + OAuth2 (team accounts) | `ds_live_xxx` / `ds_test_xxx` key format |
+| **Generation workers** | K8s pods with DataSynth runtime | Auto-scale on job queue depth |
+| **Storage** | S3-compatible (output files) + PostgreSQL (metadata) | Pre-signed URLs for download |
+| **Streaming** | Server-Sent Events or WebSocket | For large jobs, stream chunks as generated |
+| **SDK** | Python (primary), TypeScript, Rust, Go | Idiomatic clients with async support |
+| **Dashboard** | Web app (usage, billing, API keys, job history) | Self-serve management |
+
+### DaaS-Specific Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| Abuse (generating data for fraud training) | Medium | High | Terms of service; rate limiting on fraud-heavy configs; anomaly detection on usage patterns |
+| Cost of compute exceeds revenue at low tiers | Medium | Medium | Right-size credits; DataSynth is 100K+ rows/sec so compute cost per credit is very low (~$0.00001) |
+| Free tier attracts non-converting users | High | Low | Free tier is marketing spend; generous enough to hook, limited enough to push upgrade |
+| Enterprise customers downgrade to Scale PAYG | Low | Medium | Enterprise value prop is on-prem + compliance + support, not just price |
+| Multi-tenant security incident | Low | Critical | Strict tenant isolation; no cross-tenant data access; SOC 2 |
+
+---
+
 ## Go-to-Market Architecture
 
 ### Phase 1: Establish Credibility (Months 0-6)
@@ -460,6 +809,44 @@ For the managed service or server deployment:
 | OEM at scale | 5+ platform integrations |
 | Community marketplace | Third-party fingerprint contributions (vetted) |
 
+### Dual-Motion GTM: Top-Down + Bottom-Up
+
+The DaaS model fundamentally changes the go-to-market from pure enterprise sales to a **dual-motion strategy**:
+
+```
+    TOP-DOWN (Enterprise)                    BOTTOM-UP (DaaS)
+    ─────────────────────                    ──────────────────
+
+    Big 4 innovation lab                     Free tier API
+    (design partner)                         (10K credits/month)
+         │                                        │
+         ▼                                        ▼
+    Practice-wide license                    Developer tier ($49)
+    ($300K-1M/year)                          (individual devs, CI/CD)
+         │                                        │
+         ▼                                        ▼
+    Big 4 deploys at                         Team tier ($199)
+    client sites                             (startups, small firms)
+         │                                        │
+         ▼                                        ▼
+    Client becomes                           Scale tier ($499)
+    enterprise customer                      (mid-size companies)
+    ($100K-1M/year)                               │
+         │                                        ▼
+         │                                   Enterprise PAYG lead
+         │                                   ("we need on-prem")
+         │                                        │
+         └──────────────┬─────────────────────────┘
+                        ▼
+              Enterprise License
+              ($100K-1M/year)
+```
+
+The motions reinforce each other:
+- **Top-down** creates credibility and case studies that drive DaaS adoption
+- **Bottom-up** creates demand signals and usage data that warm enterprise leads
+- A Big 4 partner's junior analyst uses the free tier personally → tells their team → team adopts Team tier → firm signs enterprise license
+
 ### Channel Strategy
 
 ```
@@ -474,13 +861,13 @@ For the managed service or server deployment:
                     ┌───────────────┼───────────────┐
                     ▼               ▼               ▼
          ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-         │   Big 4 as   │ │  OEM / ISV   │ │  System      │
-         │   Channel    │ │  Partners    │ │  Integrators │
+         │   Big 4 as   │ │  OEM / ISV   │ │  DaaS API    │
+         │   Channel    │ │  Partners    │ │  (Self-Serve) │
          │              │ │              │ │              │
-         │ Deploy at    │ │ Embed in     │ │ Implement    │
-         │ client sites │ │ their        │ │ at customer  │
-         │ during       │ │ platforms    │ │ sites        │
-         │ engagements  │ │              │ │              │
+         │ Deploy at    │ │ Embed in     │ │ Credit card  │
+         │ client sites │ │ their        │ │ sign-up      │
+         │ during       │ │ platforms    │ │ → upgrade    │
+         │ engagements  │ │              │ │ → enterprise │
          └──────────────┘ └──────────────┘ └──────────────┘
                     │               │               │
                     └───────────────┼───────────────┘
@@ -492,6 +879,8 @@ For the managed service or server deployment:
                          │ audit departments    │
                          │ Finance teams        │
                          │ Data science teams   │
+                         │ Fintech startups     │
+                         │ Academic researchers │
                          └──────────────────────┘
 ```
 
@@ -515,6 +904,9 @@ Cross-referencing with the [Production Readiness Roadmap](./production-readiness
 | **Helm chart + Docker** | On-premise deployment | Phase 1 | Critical |
 | **SOC 2 preparation** | Enterprise sales | Phase 3 | Medium |
 | **Plugin SDK** | OEM extensibility | Phase 3 | Medium |
+| **API gateway + metering** | DaaS pay-as-you-go | New (Phase 1-2) | High |
+| **Stripe billing integration** | DaaS self-serve billing | New (Phase 1) | High |
+| **Marketplace + content management** | Third-party fingerprint marketplace | New (Phase 3) | Medium |
 
 ### DSF Encryption Implementation Sketch
 
@@ -575,6 +967,7 @@ POST /v1/combine
 | Training & Certification | $500/person | $500K/firm-wide | ~70% (content + delivery) |
 | Managed Library | $30K/year | $300K/year | ~75% (curation + infrastructure) |
 | Compliance Add-Ons | $10K/year | $60K/year | ~85% |
+| **DaaS (Pay-as-You-Go API)** | **$0 (free tier)** | **$499/month (Scale)** | **~90% (compute is negligible at 100K rows/sec)** |
 
 ### Big 4 Firm Deal Structure (Illustrative)
 
@@ -597,11 +990,11 @@ Year 2-3 revenue is ~80% of Year 1, creating strong recurring revenue with decli
 
 | Phase | Timeline | Revenue Streams Active | Target ARR |
 |-------|----------|----------------------|------------|
-| **1: Foundation** | Months 0-6 | Professional services only (design partner) | $100-200K |
-| **2: Product Launch** | Months 6-12 | + On-premise license + 3 sector packs | $500K-1M |
-| **3: Scale** | Months 12-18 | + Training + Managed Library + OEM (1 partner) | $2-4M |
-| **4: Expansion** | Months 18-24 | All streams + multi-firm + compliance module | $5-10M |
-| **5: Ecosystem** | Months 24-36 | Full ecosystem + marketplace + international | $10-20M |
+| **1: Foundation** | Months 0-6 | Professional services + DaaS Free/Developer tiers | $100-200K |
+| **2: Product Launch** | Months 6-12 | + On-premise license + 3 sector packs + DaaS Team tier | $500K-1M |
+| **3: Scale** | Months 12-18 | + Training + Managed Library + OEM + DaaS Scale + marketplace | $2-4M |
+| **4: Expansion** | Months 18-24 | All streams + multi-firm + compliance + diffusion backend | $5-10M |
+| **5: Ecosystem** | Months 24-36 | Full ecosystem + marketplace + NL generation + international | $10-20M |
 
 ---
 
@@ -616,6 +1009,8 @@ Year 2-3 revenue is ~80% of Year 1, creating strong recurring revenue with decli
 | Big 4 procurement cycles too slow | High | Medium | Start with innovation lab budgets (faster approval); expand to firm-wide later |
 | Pricing too high for mid-tier firms | Medium | Low | Tiered pricing; Professional edition at $100K accessible to mid-tier |
 | Encryption adds friction to adoption | Low | Medium | Good UX; seamless license validation; offline mode for air-gapped |
+| DaaS free tier burns cash without conversion | Medium | Low | Free tier is marketing spend (~$2K/month in compute); conversion to $49+ tiers covers cost |
+| DaaS data used to train competing models | Medium | Medium | ToS restrictions; watermarking; monitor bulk download patterns |
 
 ### Competitive Defense
 
@@ -636,8 +1031,9 @@ DataSynth's Apache 2.0 license is an asset, not a liability. The open core model
 | Layer | License | Contents |
 |-------|---------|----------|
 | **Core (Open Source)** | Apache 2.0 | CLI, all generators, output sinks, evaluation framework, fingerprint extraction (unencrypted) |
+| **DaaS (Commercial)** | Pay-as-you-go | Hosted API, credit-based metering, marketplace, multi-backend routing |
 | **Enterprise (Commercial)** | Proprietary | Server RBAC/SSO, encrypted .dsf support, license validation, multi-tenancy, premium support |
 | **Content (Commercial)** | Proprietary subscription | Sector distribution packs, managed library, training materials, compliance templates |
 | **Services (Commercial)** | SOW-based | Calibration, integration, advisory, training delivery |
 
-This maximizes adoption (anyone can use the open source core) while monetizing the layers where enterprises need support, security, and curated content.
+This maximizes adoption at every tier: the open-source core for self-hosted users, DaaS for developers who want zero-ops convenience, and enterprise for organizations that need on-prem control. The content and services layers monetize domain expertise regardless of deployment model.
