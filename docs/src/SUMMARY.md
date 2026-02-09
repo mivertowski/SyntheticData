@@ -117,6 +117,7 @@
 
 - [Enterprise Simulation & ML Ground Truth](roadmap/README.md)
 - [Production Readiness](roadmap/production-readiness.md)
+- [Monetization Strategy](roadmap/monetization-strategy.md)
 - [Research: System Improvements](roadmap/research/README.md)
   - [Realism: Names & Metadata](roadmap/research/01-realism-names-metadata.md)
   - [Statistical Distributions](roadmap/research/02-statistical-distributions.md)
