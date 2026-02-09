@@ -1037,3 +1037,317 @@ DataSynth's Apache 2.0 license is an asset, not a liability. The open core model
 | **Services (Commercial)** | SOW-based | Calibration, integration, advisory, training delivery |
 
 This maximizes adoption at every tier: the open-source core for self-hosted users, DaaS for developers who want zero-ops convenience, and enterprise for organizations that need on-prem control. The content and services layers monetize domain expertise regardless of deployment model.
+
+---
+
+## Appendix: Infrastructure Cost Model (AWS & Azure)
+
+> All prices are US East region, February 2026. Reserved instance pricing assumes 1-year commitment. Actual costs will vary by region, negotiated discounts (EDP/MACC), and usage patterns.
+
+### Why DataSynth Has Exceptional Unit Economics
+
+Before the numbers: DataSynth generates **100K+ rows/sec single-threaded** in Rust. This means:
+
+- 1M journal entries = ~10 seconds on a single core
+- A 4-vCPU node (c7g.xlarge / D4as_v5) can generate ~400K rows/sec
+- **Cost per 1M rows of compute ≈ $0.0001** (fractions of a cent)
+
+The dominant cost drivers are **NOT compute** but rather managed services (databases, caching, message queues), data transfer (egress), and storage. This is the structural advantage of a Rust-native engine over Python-based competitors whose compute costs are 10-100x higher.
+
+### Architecture Component Mapping
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                      DaaS Platform Stack                          │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Edge                                                        │ │
+│  │  DNS (Route 53 / Azure DNS)                                 │ │
+│  │  CDN (CloudFront / Azure Front Door)                        │ │
+│  │  WAF (AWS WAF / Azure WAF)                                  │ │
+│  │  API Gateway (HTTP API / Azure APIM Consumption)            │ │
+│  └──────────────────────────┬──────────────────────────────────┘ │
+│                              │                                    │
+│  ┌──────────────────────────┴──────────────────────────────────┐ │
+│  │ Kubernetes Cluster (EKS / AKS)                              │ │
+│  │                                                             │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
+│  │  │ API Pods     │  │ Gen Workers  │  │ Billing/Metering │  │ │
+│  │  │ (2-4 nodes)  │  │ (2-8 nodes)  │  │ (1-2 nodes)      │  │ │
+│  │  │ c7g.xlarge   │  │ c7g.xlarge   │  │ c7g.xlarge       │  │ │
+│  │  │ / D4as_v5    │  │ - c7g.4xlarge│  │ / D4as_v5        │  │ │
+│  │  └──────────────┘  │ / D4as-D16as │  └──────────────────┘  │ │
+│  │                     └──────────────┘                         │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                              │                                    │
+│  ┌──────────────────────────┴──────────────────────────────────┐ │
+│  │ Data Layer                                                  │ │
+│  │  PostgreSQL (RDS / Azure Flex Server)  - metadata, users    │ │
+│  │  Redis (ElastiCache / Azure Cache)     - rate limits, cache │ │
+│  │  Kafka (MSK / Event Hubs)              - metering events    │ │
+│  │  S3 / Blob Storage                     - generated output   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Scenario 1: Launch Phase (Months 0-6)
+
+**Load profile**: ~100 Free users, ~20 Developer subs, ~500K API calls/month, ~50GB generated data/month, single region, no HA.
+
+#### AWS (us-east-1)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | EKS | 1 cluster | $73 |
+| Generation workers | EC2 (c7g.xlarge) | 2 nodes × $106 | $212 |
+| API / billing | EC2 (c7g.xlarge) | 1 node | $106 |
+| Database | RDS PostgreSQL (db.r7g.large) | Single-AZ, 100GB gp3 | $183 |
+| Cache | ElastiCache Redis (cache.r7g.large) | 1 node | $160 |
+| Message queue | MSK Serverless | Low volume | ~$30 |
+| Load balancer | ALB | 1 | $22 |
+| Object storage | S3 Standard | 50GB + requests | $7 |
+| CDN | CloudFront | 50GB transfer (free tier) | $0 |
+| API Gateway | HTTP API | 500K requests | $1 |
+| NAT Gateway | NAT GW | 1 AZ + 50GB | $35 |
+| DNS | Route 53 | 1 zone | $1 |
+| Monitoring | CloudWatch | Logs + metrics | $30 |
+| WAF | AWS WAF | 1 ACL + 10 rules | $17 |
+| Container registry | ECR | ~2GB | $1 |
+| Secrets | Secrets Manager | 10 secrets | $4 |
+| **Total** | | | **~$882/month** |
+
+#### Azure (East US)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | AKS Standard | 1 cluster | $73 |
+| Generation workers | D4as_v5 | 2 nodes × $125 | $250 |
+| API / billing | D4as_v5 | 1 node | $125 |
+| Database | PostgreSQL Flex (D4s_v3) | Single, 100GB | $310 |
+| Cache | Azure Cache Redis (C2 Standard) | 2.5GB | $202 |
+| Message queue | Event Hubs Standard | 1 TU | $22 |
+| Load balancer | Standard LB | 5 rules | $18 |
+| Object storage | Blob Storage Hot | 50GB + requests | $7 |
+| CDN | Front Door Standard | Base + 50GB | $39 |
+| API Gateway | APIM Consumption | 500K calls (free tier) | $0 |
+| DNS | Azure DNS | 1 zone | $1 |
+| Monitoring | Azure Monitor | 5GB logs + metrics | $15 |
+| WAF | Front Door custom rules | 1 policy | $6 |
+| Container registry | ACR Standard | 100GB | $20 |
+| Secrets | Key Vault | ~50K ops | $1 |
+| **Total** | | | **~$1,089/month** |
+
+#### Launch Phase: Margin Analysis
+
+| Metric | Value |
+|--------|-------|
+| DaaS revenue (20 Developer subs) | ~$980/month |
+| Enterprise design partner (free) | $0 |
+| Professional services revenue | ~$5K-15K/month |
+| **Total revenue** | **~$6K-16K/month** |
+| Infrastructure cost (AWS) | ~$882/month |
+| Stripe fees (~4.1% of DaaS) | ~$40/month |
+| **Total COGS** | **~$922/month** |
+| **Gross margin (DaaS only)** | **~6% (subsidized growth)** |
+| **Gross margin (incl. services)** | **~85-94%** |
+
+DaaS is negative/break-even in launch phase -- this is expected and intentional. Professional services carry the P&L while DaaS builds the user base.
+
+---
+
+### Scenario 2: Growth Phase (Months 6-18)
+
+**Load profile**: ~1,000 Free users, ~200 Developer, ~50 Team, ~10 Scale subs, ~10M API calls/month, ~2TB generated data/month, single region, Multi-AZ HA.
+
+#### AWS (us-east-1)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | EKS | 1 cluster | $73 |
+| Generation workers | EC2 (c7g.2xlarge) | 4 nodes × $212 | $848 |
+| API / billing / metering | EC2 (c7g.xlarge) | 2 nodes × $106 | $212 |
+| Database | RDS PostgreSQL (db.r7g.xlarge) | Multi-AZ, 500GB gp3 | $738 |
+| Cache | ElastiCache Redis (cache.r7g.xlarge) | 1 node | $256 |
+| Message queue | MSK (kafka.m7g.large) | 3 brokers × $150 | $450 |
+| Load balancer | ALB | 1 (higher LCUs) | $40 |
+| Object storage | S3 Standard | 2TB + requests | $97 |
+| CDN | CloudFront | 2TB transfer | $170 |
+| API Gateway | HTTP API | 10M requests | $10 |
+| NAT Gateway | NAT GW | 2 AZ + 2TB | $156 |
+| DNS | Route 53 | 2 zones + health checks | $5 |
+| Monitoring | CloudWatch + AMP | Logs + Prometheus | $150 |
+| WAF | AWS WAF | 1 ACL + 15 rules | $26 |
+| Container registry | ECR | ~5GB | $1 |
+| Secrets | Secrets Manager | 20 secrets | $8 |
+| **Total** | | | **~$3,240/month** |
+
+#### Azure (East US)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | AKS Standard | 1 cluster | $73 |
+| Generation workers | D8as_v5 | 4 nodes × $251 | $1,004 |
+| API / billing / metering | D4as_v5 | 2 nodes × $125 | $250 |
+| Database | PostgreSQL Flex (D8s_v3) | HA, 500GB | $1,250 |
+| Cache | Azure Cache Redis (P1 Premium) | 6GB, clustering | $455 |
+| Message queue | Event Hubs Standard | 3 TUs | $66 |
+| Load balancer | Standard LB | 5 rules + data | $30 |
+| Object storage | Blob Storage Hot | 2TB + requests | $97 |
+| CDN | Front Door Standard | Base + 2TB | $201 |
+| API Gateway | APIM Basic v2 | 10M calls | $143 |
+| DNS | Azure DNS | 2 zones | $2 |
+| Monitoring | Azure Monitor | 20GB logs + metrics | $55 |
+| WAF | Front Door custom rules | 2 policies | $12 |
+| Container registry | ACR Standard | 100GB | $20 |
+| Secrets | Key Vault | ~200K ops | $1 |
+| **Total** | | | **~$3,659/month** |
+
+#### Growth Phase: Margin Analysis
+
+| Metric | Value |
+|--------|-------|
+| DaaS revenue | |
+| - 200 Developer × $49 | $9,800/month |
+| - 50 Team × $199 | $9,950/month |
+| - 10 Scale × $499 | $4,990/month |
+| - Overage + marketplace | ~$3,000/month |
+| **DaaS subtotal** | **~$27,740/month** |
+| Enterprise licenses (2-3 customers) | ~$25K-50K/month |
+| Professional services | ~$10K-20K/month |
+| **Total revenue** | **~$63K-98K/month** |
+| Infrastructure cost (AWS) | ~$3,240/month |
+| Stripe fees (~4.1% of DaaS) | ~$1,137/month |
+| **Total COGS** | **~$4,377/month** |
+| **Gross margin (DaaS only)** | **~84%** |
+| **Gross margin (all revenue)** | **~93-96%** |
+
+At growth phase, infrastructure is **~4-5% of revenue**. The Rust engine's compute efficiency means scaling users barely moves the cost needle.
+
+---
+
+### Scenario 3: Scale Phase (Months 18-36)
+
+**Load profile**: ~10,000 Free users, ~500 Developer, ~100 Team, ~20 Scale, ~5 Enterprise PAYG, ~100M API calls/month, ~20TB generated data/month, multi-region (US + EU), full HA, 1-year reserved instances.
+
+#### AWS (us-east-1 + eu-west-1, reserved)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | EKS | 2 clusters (US + EU) | $146 |
+| Generation workers | EC2 (c7g.4xlarge, RI) | 8 nodes × $333 | $2,664 |
+| API / billing / metering | EC2 (c7g.2xlarge, RI) | 4 nodes × $178 | $712 |
+| Database | RDS PostgreSQL (db.r7g.xlarge) | Multi-AZ + read replica, RI | $810 |
+| Cache | ElastiCache Redis (cache.r7g.xlarge, RI) | 2 nodes × $217 | $434 |
+| Message queue | MSK (kafka.m7g.large) | 6 brokers | $900 |
+| Load balancer | ALB | 2 (US + EU) | $100 |
+| Object storage | S3 Standard | 20TB + requests | $960 |
+| CDN | CloudFront | 20TB transfer (50TB tier) | $1,200 |
+| API Gateway | HTTP API | 100M requests | $100 |
+| NAT Gateway | NAT GW | 4 (2 AZ × 2 regions) + 20TB | $1,032 |
+| DNS | Route 53 | 5 zones + latency routing | $25 |
+| Monitoring | CloudWatch + AMP | Full stack, 2 regions | $300 |
+| WAF | AWS WAF | 2 ACLs + 20 rules | $55 |
+| Container registry | ECR | ~10GB | $1 |
+| Secrets | Secrets Manager | 40 secrets | $16 |
+| Global Accelerator | GA | 2 endpoints | $75 |
+| **Total** | | | **~$9,530/month** |
+
+#### Azure (East US + West Europe, reserved)
+
+| Component | Service | Spec | Monthly Cost |
+|-----------|---------|------|-------------|
+| K8s control plane | AKS Standard | 2 clusters (US + EU) | $146 |
+| Generation workers | D16as_v5 (RI) | 8 nodes × $320 | $2,560 |
+| API / billing / metering | D8as_v5 (RI) | 4 nodes × $164 | $656 |
+| Database | PostgreSQL Flex (D8s_v3) | HA + read replica, RI | $1,080 |
+| Cache | Azure Cache Redis (P1 Premium) | 2 nodes | $910 |
+| Message queue | Event Hubs Premium | 2 PUs | $1,800 |
+| Load balancer | Standard LB | 2 (US + EU) | $60 |
+| Object storage | Blob Storage Hot | 20TB + requests | $960 |
+| CDN | Front Door Premium | Base + 20TB + WAF included | $1,530 |
+| API Gateway | APIM Standard v2 | 100M calls | $665 |
+| DNS | Azure DNS | 5 zones | $5 |
+| Monitoring | Azure Monitor | 50GB logs + metrics | $130 |
+| WAF | Included in Front Door Premium | | $0 |
+| Container registry | ACR Premium | geo-replicated | $50 |
+| Secrets | Key Vault | ~1M ops | $3 |
+| **Total** | | | **~$10,555/month** |
+
+#### Scale Phase: Margin Analysis
+
+| Metric | Value |
+|--------|-------|
+| DaaS revenue | |
+| - 500 Developer × $49 | $24,500/month |
+| - 100 Team × $199 | $19,900/month |
+| - 20 Scale × $499 | $9,980/month |
+| - 5 Enterprise PAYG | ~$10,000/month |
+| - Overage + marketplace | ~$50,000/month |
+| **DaaS subtotal** | **~$114,380/month (~$1.37M ARR)** |
+| Enterprise licenses (5-10 customers) | ~$60K-100K/month |
+| Sector packs + managed library | ~$30K-50K/month |
+| Training + certification | ~$15K-25K/month |
+| Professional services | ~$15K-25K/month |
+| Compliance add-ons | ~$5K-10K/month |
+| **Total revenue** | **~$240K-324K/month (~$2.9-3.9M ARR)** |
+| Infrastructure cost (AWS) | ~$9,530/month |
+| Stripe fees (~4.1% of DaaS) | ~$4,690/month |
+| **Total COGS** | **~$14,220/month** |
+| **Gross margin (DaaS only)** | **~88%** |
+| **Gross margin (all revenue)** | **~94-96%** |
+| **Infra as % of total revenue** | **~3-4%** |
+
+---
+
+### Cost Comparison Summary: AWS vs. Azure
+
+| Phase | AWS Monthly | Azure Monthly | Delta | Notes |
+|-------|-----------|-------------|-------|-------|
+| **Launch** | ~$882 | ~$1,089 | Azure +23% | Azure PostgreSQL Flex + APIM are more expensive at small scale |
+| **Growth** | ~$3,240 | ~$3,659 | Azure +13% | Gap narrows; Azure Event Hubs cheaper than MSK |
+| **Scale** | ~$9,530 | ~$10,555 | Azure +11% | Azure Front Door Premium bundles WAF; APIM is the main delta |
+
+**AWS advantages**: Graviton ARM pricing is very competitive; HTTP API Gateway at $1/million is hard to beat; MSK Serverless for low-volume start; NAT Gateway is expensive but predictable.
+
+**Azure advantages**: AKS free tier for dev/test clusters; Front Door Premium bundles WAF + CDN; Event Hubs is simpler/cheaper than MSK at low scale; better enterprise procurement story (EA/MACC credits) for Big 4 clients who are already Azure-heavy.
+
+**Recommendation**: Start on **AWS** for cost efficiency at launch. Add **Azure** as a second region in the Scale phase, both for geo-redundancy and because many Big 4 firms have Azure enterprise agreements with committed spend that can offset infrastructure costs.
+
+### Cost Optimization Levers
+
+| Lever | Savings | Phase |
+|-------|---------|-------|
+| **Graviton/ARM instances** (c7g, r7g) | 20-30% vs x86 equivalents | All |
+| **1-year reserved instances** | 15-21% on compute | Growth+ |
+| **Spot instances for generation workers** | 60-80% on burst capacity | Growth+ |
+| **S3 Intelligent-Tiering** | Auto-archive old outputs | Growth+ |
+| **VPC endpoints for S3** | Eliminate NAT Gateway data charges | All |
+| **CloudFront/Front Door caching** | Reduce origin egress for repeated downloads | Growth+ |
+| **Committed use discounts** (AWS EDP / Azure MACC) | 10-20% on total spend | Scale |
+| **Right-sizing gen workers** | Use HPA to scale to zero during off-peak | All |
+| **MSK Serverless → Provisioned** | Cost-effective at high volume | Scale |
+| **Kinesis instead of MSK** | Simpler, cheaper for pure metering events | Launch |
+
+### Stripe Billing Costs at Scale
+
+Stripe is the largest non-infrastructure cost at scale:
+
+| Phase | DaaS Revenue | Stripe Fee (3.4% + $0.30 + 0.7% Billing) | % of Revenue |
+|-------|-------------|------------------------------------------|-------------|
+| Launch | ~$980/mo | ~$40/mo | ~4.1% |
+| Growth | ~$27,740/mo | ~$1,137/mo | ~4.1% |
+| Scale | ~$114,380/mo | ~$4,690/mo | ~4.1% |
+
+At $100K+/month in Stripe volume, negotiate custom rates (typically 2.4% + $0.30 for cards). At scale, consider direct ACH/wire for Enterprise PAYG customers to bypass card processing entirely.
+
+### Total Cost of Ownership: Infrastructure + Payments
+
+| Phase | Revenue/mo | AWS Infra | Stripe | Total COGS | Gross Margin |
+|-------|-----------|----------|--------|-----------|-------------|
+| **Launch** | $6-16K | $882 | $40 | **$922** | **85-94%** |
+| **Growth** | $63-98K | $3,240 | $1,137 | **$4,377** | **93-96%** |
+| **Scale** | $240-324K | $9,530 | $4,690 | **$14,220** | **94-96%** |
+
+Note: Excludes headcount, office, legal, marketing. Infrastructure alone yields **SaaS-best-in-class gross margins** because DataSynth's Rust engine makes compute essentially free relative to revenue. The cost floor is set by managed services and data transfer, not generation compute.
+
