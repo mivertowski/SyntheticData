@@ -155,7 +155,14 @@ The generator produces statistically accurate data based on empirical research f
 
 ### Production Features
 
-- **REST & gRPC APIs**: Streaming generation with authentication and rate limiting
+- **REST & gRPC APIs**: Streaming generation with Argon2id authentication and rate limiting
+- **Security Hardening**: Security headers, request validation, request ID propagation, timing-safe auth
+- **TLS Support**: Native rustls TLS or reverse proxy (nginx/envoy) with documented configuration
+- **OpenTelemetry**: Feature-gated OTEL integration with OTLP traces and Prometheus metrics
+- **Structured Logging**: JSON-formatted logs with request IDs, method, path, status, and latency
+- **Docker & Compose**: Multi-stage distroless containers, local dev stack with Prometheus + Grafana
+- **CI/CD Pipeline**: 7-job GitHub Actions (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
+- **Release Automation**: Binary builds for 5 platforms, GHCR container publishing, Trivy scanning
 - **Streaming Output API**: Async generation with backpressure handling (Block, DropOldest, DropNewest, Buffer)
 - **Rate Limiting**: Token bucket rate limiter for controlled generation throughput
 - **Temporal Attributes**: Bi-temporal data support (valid time + transaction time) with version chains
@@ -491,15 +498,41 @@ output/
 ## Server Usage
 
 ```bash
-# Start REST/gRPC server
-cargo run -p datasynth-server -- --port 3000 --worker-threads 4
+# Start REST + gRPC server
+cargo run -p datasynth-server -- --rest-port 3000 --grpc-port 50051 --worker-threads 4
 
+# With API key authentication
+cargo run -p datasynth-server -- --api-keys "key1,key2"
+
+# With TLS (requires tls feature)
+cargo run -p datasynth-server --features tls -- --tls-cert cert.pem --tls-key key.pem
+```
+
+```bash
 # API endpoints
-curl http://localhost:3000/api/config
-curl -X POST http://localhost:3000/api/stream/start
+curl http://localhost:3000/health              # Health check
+curl http://localhost:3000/ready               # Readiness probe (config + memory + disk)
+curl http://localhost:3000/metrics             # Prometheus metrics
+curl -H "Authorization: Bearer <key>" http://localhost:3000/api/config
+curl -H "Authorization: Bearer <key>" -X POST http://localhost:3000/api/stream/start
 ```
 
 WebSocket streaming available at `ws://localhost:3000/ws/events`.
+
+### Docker
+
+```bash
+# Build and run the server
+docker build -t datasynth:latest .
+docker run -p 50051:50051 -p 3000:3000 datasynth:latest
+
+# Or use Docker Compose for full stack (server + Prometheus + Grafana)
+docker compose up -d
+# REST API: http://localhost:3000 | gRPC: localhost:50051
+# Prometheus: http://localhost:9090 | Grafana: http://localhost:3001
+```
+
+See the [Deployment Guide](deploy/README.md) for Docker, SystemD, and reverse proxy setup.
 
 ---
 

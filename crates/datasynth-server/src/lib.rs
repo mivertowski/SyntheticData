@@ -53,6 +53,8 @@
 //! ```
 
 pub mod grpc;
+pub mod observability;
 pub mod rest;
+pub mod tls;
 
 pub use grpc::{SynthService, SyntheticDataServiceServer};

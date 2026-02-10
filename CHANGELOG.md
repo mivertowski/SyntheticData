@@ -5,6 +5,107 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-10
+
+### Added
+
+- **CI/CD Hardening** (`.github/workflows/`): Expanded from single-job to 7-job CI pipeline
+  - `fmt`: `cargo fmt --check`
+  - `clippy`: Lint with `-D warnings`
+  - `test`: Cross-platform test matrix (Ubuntu, macOS, Windows)
+  - `msrv`: Minimum supported Rust version validation (1.75)
+  - `security`: `cargo deny check` + `cargo audit` for CVE and license compliance
+  - `coverage`: `cargo-llvm-cov` with Codecov integration
+  - `benchmarks`: Criterion regression check on PRs
+
+- **Dependency Auditing** (`deny.toml`): cargo-deny policy for license, advisory, bans, and source auditing
+  - Denies known vulnerabilities, warns on unmaintained/yanked crates
+  - Allows MIT, Apache-2.0, BSD-2/3, ISC, Zlib, Unicode, OpenSSL, BSL-1.0, MPL-2.0
+  - Denies copyleft licenses, unknown registries, and git sources
+
+- **Automated Dependency Updates** (`.github/dependabot.yml`): Dependabot for cargo, pip, and GitHub Actions dependencies
+
+- **Release Automation** (`.github/workflows/release.yml`): Full release pipeline on `v*` tags
+  - Draft GitHub Release with git-cliff changelog generation
+  - Pre-built binaries for 5 platforms: x86_64-linux, aarch64-linux, x86_64-macos, aarch64-macos, x86_64-windows
+  - Docker image build + push to GHCR (linux/amd64 + linux/arm64)
+  - Trivy container security scanning with SARIF upload
+
+- **Benchmark Tracking** (`.github/workflows/benchmarks.yml`): Criterion benchmark results tracked on main pushes
+
+- **Security Headers Middleware** (`datasynth-server`): Injects security response headers on all responses
+  - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 0`
+  - `Referrer-Policy: strict-origin-when-cross-origin`, `Content-Security-Policy: default-src 'none'`
+  - `Cache-Control: no-store` for API responses
+
+- **Request Validation Middleware** (`datasynth-server`): Content-Type enforcement for mutation requests
+  - POST/PUT/PATCH with body must include `Content-Type: application/json` (returns 415 otherwise)
+  - GET/DELETE/OPTIONS bypass Content-Type check
+
+- **Request ID Middleware** (`datasynth-server`): X-Request-Id header propagation
+  - Preserves client-sent request IDs or generates UUID v4
+  - Available in request extensions for downstream middleware (logging, tracing)
+
+- **Environment Variable Interpolation** (`datasynth-config`): `${ENV_VAR}` and `${ENV_VAR:-default}` support in YAML configs
+  - Regex-based preprocessing before YAML parsing
+  - Errors on unset variables without defaults
+
+- **TLS Support** (`datasynth-server`): Optional rustls TLS behind `tls` feature flag
+  - `--tls-cert` and `--tls-key` CLI arguments
+  - Uses `axum-server` with rustls backend
+
+- **Observability Stack** (`datasynth-server`): Feature-gated OpenTelemetry integration
+  - `otel` feature flag enables OTLP trace export and Prometheus metric bridge
+  - `ServerMetrics` struct with AtomicU64 counters/gauges and `DurationTimer` utility
+  - Structured JSON logging via `tracing-subscriber` registry with `EnvFilter`
+  - Request logging middleware with method, path, status, latency_ms, request_id spans
+
+- **Prometheus Alert Rules** (`deploy/prometheus-alerts.yml`): Example alerting rules
+  - HighErrorRate, HighLatency, HighMemoryUsage, ServerDown, NoEntitiesGenerated
+
+- **Docker Support**: Multi-stage container builds for server and CLI
+  - `Dockerfile`: cargo-chef dependency caching + distroless runtime with both server and CLI binaries
+  - `Dockerfile.cli`: Slim CLI-only variant
+  - `.dockerignore`: Proper context exclusion
+
+- **Docker Compose Stack** (`docker-compose.yml`): Local development stack
+  - DataSynth server (ports 50051 gRPC + 3000 REST)
+  - Prometheus (port 9090) with auto-configured scrape target
+  - Grafana (port 3001) with auto-provisioned Prometheus datasource
+
+- **SystemD Service** (`deploy/datasynth-server.service`): Production daemon configuration
+  - Security hardening: NoNewPrivileges, ProtectSystem=strict, PrivateTmp, PrivateDevices
+  - Resource limits: MemoryMax=4G, CPUQuota=200%, TasksMax=512, LimitNOFILE=65536
+
+- **Deployment Guide** (`deploy/README.md`): Docker, Docker Compose, and SystemD deployment instructions
+
+- **TLS Reverse Proxy Guide** (`docs/src/deployment/tls-reverse-proxy.md`): nginx and envoy configuration examples
+
+### Changed
+
+- **API Key Authentication** (`datasynth-server`): Hardened with Argon2id hashing
+  - Keys hashed with Argon2id at construction time, stored as PHC-format hashes
+  - `with_prehashed_keys()` for loading pre-hashed keys from config/env
+  - Timing-safe verification iterating ALL hashes (no short-circuit) via `subtle::ConstantTimeEq`
+  - FNV-1a LRU cache with 5-second TTL to avoid Argon2id cost on every request
+
+- **Enhanced `/ready` Endpoint** (`datasynth-server`): Now returns structured health checks
+  - Config, memory, and disk health checks with individual status
+  - Returns 503 if any check reports "fail"
+
+- **Server Startup** (`datasynth-server`): Now runs both gRPC and REST servers concurrently
+  - `--rest-port` (default 3000) and `--grpc-port` (default 50051) CLI arguments
+  - `--api-keys` CLI argument for comma-separated API keys
+  - Shared `ServerState` between both servers
+
+- **Middleware Stack** (`datasynth-server`): Full production middleware ordering
+  - Timeout (5 min) → Rate Limiting → Request Validation → Auth → Request ID → CORS → Security Headers → Router
+
+- **Release Profile** (`Cargo.toml`): Added `strip = true` for smaller release binaries
+
+- Bumped all Rust crate versions to 0.5.0
+- Python wrapper version bumped to 0.5.0
+
 ## [0.4.1] - 2026-02-06
 
 ### Added

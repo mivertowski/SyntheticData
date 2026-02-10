@@ -1,0 +1,47 @@
+groups:
+  - name: datasynth
+    rules:
+      - alert: HighErrorRate
+        expr: rate(synth_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on DataSynth server"
+          description: "Error rate is {{ $value }} errors/sec over the last 5 minutes."
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.99, rate(datasynth_api_request_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency on DataSynth server"
+          description: "99th percentile latency is {{ $value }}s over the last 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: synth_memory_usage_bytes / 1024 / 1024 > 3072
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage on DataSynth server"
+          description: "Memory usage is {{ $value }}MB, exceeding 3GB threshold."
+
+      - alert: ServerDown
+        expr: up{job="datasynth"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DataSynth server is down"
+          description: "DataSynth server has been unreachable for more than 1 minute."
+
+      - alert: NoEntitiesGenerated
+        expr: increase(synth_entries_generated_total[1h]) == 0 and synth_active_streams > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Active streams but no entries generated"
+          description: "There are active streams but no entries have been generated in the last hour."

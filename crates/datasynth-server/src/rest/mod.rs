@@ -2,7 +2,11 @@
 
 mod auth;
 mod rate_limit;
+pub mod request_id;
+pub mod request_logging;
+pub mod request_validation;
 mod routes;
+pub mod security_headers;
 mod websocket;
 
 pub use auth::{auth_middleware, AuthConfig};

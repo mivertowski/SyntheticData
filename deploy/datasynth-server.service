@@ -1,0 +1,48 @@
+[Unit]
+Description=DataSynth Synthetic Data Server
+Documentation=https://github.com/ey-asu-rnd/SyntheticData
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=datasynth
+Group=datasynth
+EnvironmentFile=-/etc/datasynth/server.env
+ExecStart=/usr/local/bin/datasynth-server \
+    --host 0.0.0.0 \
+    --port 50051 \
+    --rest-port 3000
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+# Resource limits
+MemoryMax=4G
+CPUQuota=200%
+TasksMax=512
+LimitNOFILE=65536
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/datasynth
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=datasynth-server
+
+[Install]
+WantedBy=multi-user.target

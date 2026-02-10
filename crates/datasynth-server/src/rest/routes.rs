@@ -79,6 +79,9 @@ impl Default for CorsConfig {
 
 use super::auth::{auth_middleware, AuthConfig};
 use super::rate_limit::{rate_limit_middleware, RateLimitConfig, RateLimiter};
+use super::request_id::request_id_middleware;
+use super::request_validation::request_validation_middleware;
+use super::security_headers::security_headers_middleware;
 
 /// Create the REST API router with default CORS settings.
 pub fn create_router(service: SynthService) -> Router {
@@ -142,12 +145,16 @@ pub fn create_router_full(
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
-        // Middleware (order matters: timeout outermost, then rate limit, then auth)
+        // Middleware stack (outermost applied first, innermost last)
+        // Order: Timeout -> RateLimit -> RequestValidation -> Auth -> RequestId -> CORS -> SecurityHeaders -> Router
+        .layer(axum::middleware::from_fn(security_headers_middleware))
+        .layer(cors)
+        .layer(axum::middleware::from_fn(request_id_middleware))
         .layer(axum::middleware::from_fn(auth_middleware))
         .layer(axum::Extension(auth_config))
+        .layer(axum::middleware::from_fn(request_validation_middleware))
         .layer(axum::middleware::from_fn(rate_limit_middleware))
         .layer(axum::Extension(rate_limiter))
-        .layer(cors)
         .layer(TimeoutLayer::new(Duration::from_secs(
             timeout_config.request_timeout_secs,
         )))
@@ -387,22 +394,61 @@ async fn health_check(State(state): State<AppState>) -> Json<HealthResponse> {
 /// Use for Kubernetes readiness probes.
 async fn readiness_check(
     State(state): State<AppState>,
-) -> Result<Json<ReadinessResponse>, StatusCode> {
+) -> Result<Json<ReadinessResponse>, (StatusCode, Json<ReadinessResponse>)> {
+    let mut checks = Vec::new();
+    let mut any_fail = false;
+
     // Check if configuration is loaded and valid
     let config = state.server_state.config.read().await;
     let config_valid = !config.companies.is_empty();
+    checks.push(HealthCheck {
+        name: "config".to_string(),
+        status: if config_valid { "ok" } else { "fail" }.to_string(),
+    });
+    if !config_valid {
+        any_fail = true;
+    }
+    drop(config);
 
-    if config_valid {
-        Ok(Json(ReadinessResponse {
-            ready: true,
-            message: "Service is ready".to_string(),
-            checks: vec![HealthCheck {
-                name: "config".to_string(),
-                status: "ok".to_string(),
-            }],
-        }))
+    // Check resource guard (memory)
+    let resource_status = state.server_state.resource_status();
+    let memory_status = if resource_status.degradation_level == "Emergency" {
+        any_fail = true;
+        "fail"
+    } else if resource_status.degradation_level != "Normal" {
+        "degraded"
     } else {
-        Err(StatusCode::SERVICE_UNAVAILABLE)
+        "ok"
+    };
+    checks.push(HealthCheck {
+        name: "memory".to_string(),
+        status: memory_status.to_string(),
+    });
+
+    // Check disk (>100MB free)
+    let disk_ok = resource_status.disk_available_mb > 100;
+    checks.push(HealthCheck {
+        name: "disk".to_string(),
+        status: if disk_ok { "ok" } else { "fail" }.to_string(),
+    });
+    if !disk_ok {
+        any_fail = true;
+    }
+
+    let response = ReadinessResponse {
+        ready: !any_fail,
+        message: if any_fail {
+            "Service is not ready".to_string()
+        } else {
+            "Service is ready".to_string()
+        },
+        checks,
+    };
+
+    if any_fail {
+        Err((StatusCode::SERVICE_UNAVAILABLE, Json(response)))
+    } else {
+        Ok(Json(response))
     }
 }
 

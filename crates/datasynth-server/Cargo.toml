@@ -8,6 +8,18 @@ repository.workspace = true
 homepage.workspace = true
 description = "gRPC and REST server for synthetic data generation"
 
+[features]
+default = []
+tls = ["dep:axum-server"]
+otel = [
+    "dep:opentelemetry",
+    "dep:opentelemetry_sdk",
+    "dep:opentelemetry-otlp",
+    "dep:opentelemetry-prometheus",
+    "dep:prometheus",
+    "dep:tracing-opentelemetry",
+]
+
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
@@ -24,6 +36,7 @@ prost-types = { workspace = true }
 axum = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
+axum-server = { workspace = true, optional = true }
 
 # Async
 tokio = { workspace = true }
@@ -54,6 +67,18 @@ uuid = { workspace = true }
 
 # Decimal
 rust_decimal = { workspace = true }
+
+# Security
+argon2 = { workspace = true }
+subtle = { workspace = true }
+
+# OpenTelemetry (optional, behind `otel` feature)
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+opentelemetry-prometheus = { workspace = true, optional = true }
+prometheus = { workspace = true, optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
 
 [build-dependencies]
 tonic-build = { workspace = true }

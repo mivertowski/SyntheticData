@@ -1,30 +1,38 @@
-//! Synthetic Data gRPC Server
+//! Synthetic Data gRPC + REST Server
 //!
-//! Starts a gRPC server for synthetic data generation.
+//! Starts both gRPC and REST servers for synthetic data generation.
 
 use std::net::SocketAddr;
 use std::panic;
+use std::sync::Arc;
 
 use clap::Parser;
 use tokio::signal;
 use tonic::transport::Server;
-use tracing::{error, info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::{error, info};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
-use datasynth_server::grpc::service::default_generator_config;
-use datasynth_server::{SynthService, SyntheticDataServiceServer};
+use datasynth_server::grpc::service::{default_generator_config, ServerState, SynthService};
+use datasynth_server::rest::{
+    create_router_full, AuthConfig, CorsConfig, RateLimitConfig, TimeoutConfig,
+};
+use datasynth_server::SyntheticDataServiceServer;
 
 #[derive(Parser, Debug)]
 #[command(name = "synth-server")]
-#[command(about = "Synthetic Data gRPC Server", long_about = None)]
+#[command(about = "Synthetic Data gRPC + REST Server", long_about = None)]
 struct Args {
     /// Host address to bind to
     #[arg(short = 'H', long, default_value = "0.0.0.0")]
     host: String,
 
-    /// Port to listen on
+    /// gRPC port to listen on
     #[arg(short, long, default_value = "50051")]
     port: u16,
+
+    /// REST API port to listen on
+    #[arg(long, default_value = "3000")]
+    rest_port: u16,
 
     /// Enable verbose logging
     #[arg(short, long)]
@@ -33,6 +41,20 @@ struct Args {
     /// Number of worker threads (0 = automatic based on CPU cores)
     #[arg(short, long, default_value = "0")]
     worker_threads: usize,
+
+    /// API keys for authentication (comma-separated)
+    #[arg(long, env = "DATASYNTH_API_KEYS")]
+    api_keys: Option<String>,
+
+    /// TLS certificate file path (PEM format)
+    #[cfg(feature = "tls")]
+    #[arg(long, env = "DATASYNTH_TLS_CERT")]
+    tls_cert: Option<String>,
+
+    /// TLS private key file path (PEM format)
+    #[cfg(feature = "tls")]
+    #[arg(long, env = "DATASYNTH_TLS_KEY")]
+    tls_key: Option<String>,
 }
 
 /// Setup panic hook to log panics before aborting.
@@ -97,38 +119,104 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let runtime = runtime_builder.build()?;
 
     runtime.block_on(async {
-        // Initialize tracing
-        let log_level = if args.verbose {
-            Level::DEBUG
-        } else {
-            Level::INFO
-        };
+        // Initialize structured logging
+        let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            if args.verbose {
+                EnvFilter::new("debug")
+            } else {
+                EnvFilter::new("info")
+            }
+        });
 
-        let subscriber = FmtSubscriber::builder()
-            .with_max_level(log_level)
-            .with_target(false)
-            .with_thread_ids(false)
-            .finish();
+        let fmt_layer = fmt::layer()
+            .json()
+            .with_target(true)
+            .with_thread_ids(true)
+            .with_file(false)
+            .with_line_number(false);
 
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("Failed to set tracing subscriber");
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(fmt_layer)
+            .init();
 
         // Parse address
-        let addr: SocketAddr = format!("{}:{}", args.host, args.port)
+        let grpc_addr: SocketAddr = format!("{}:{}", args.host, args.port)
             .parse()
-            .expect("Invalid address");
+            .expect("Invalid gRPC address");
 
-        info!("Starting Synthetic Data gRPC Server on {}", addr);
+        let rest_addr: SocketAddr = format!("{}:{}", args.host, args.rest_port)
+            .parse()
+            .expect("Invalid REST address");
 
-        // Create service with default config
-        let service = SynthService::new(default_generator_config());
+        // Create shared state
+        let config = default_generator_config();
+        let state = Arc::new(ServerState::new(config));
 
-        // Start server with graceful shutdown
-        Server::builder()
-            .add_service(SyntheticDataServiceServer::new(service))
-            .serve_with_shutdown(addr, shutdown_signal())
-            .await
-            .expect("Server failed");
+        // Create gRPC service
+        let grpc_service = SynthService::with_state(Arc::clone(&state));
+
+        // Create REST service with shared state
+        let rest_service = SynthService::with_state(Arc::clone(&state));
+
+        // Configure auth
+        let auth_config = if let Some(keys_str) = &args.api_keys {
+            let keys: Vec<String> = keys_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            if keys.is_empty() {
+                AuthConfig::default()
+            } else {
+                info!("API key authentication enabled with {} key(s)", keys.len());
+                AuthConfig::with_api_keys(keys)
+            }
+        } else {
+            AuthConfig::default()
+        };
+
+        let router = create_router_full(
+            rest_service,
+            CorsConfig::default(),
+            auth_config,
+            RateLimitConfig::default(),
+            TimeoutConfig::default(),
+        );
+
+        info!(
+            "Starting Synthetic Data Server - gRPC on {}, REST on {}",
+            grpc_addr, rest_addr
+        );
+
+        // Start both servers concurrently
+        let grpc_handle = tokio::spawn(async move {
+            Server::builder()
+                .add_service(SyntheticDataServiceServer::new(grpc_service))
+                .serve_with_shutdown(grpc_addr, shutdown_signal())
+                .await
+                .expect("gRPC server failed");
+        });
+
+        let rest_handle = tokio::spawn(async move {
+            let listener = tokio::net::TcpListener::bind(rest_addr)
+                .await
+                .expect("Failed to bind REST listener");
+            axum::serve(listener, router)
+                .with_graceful_shutdown(shutdown_signal())
+                .await
+                .expect("REST server failed");
+        });
+
+        // Wait for either server to finish (shutdown)
+        tokio::select! {
+            _ = grpc_handle => {
+                info!("gRPC server shutdown complete");
+            }
+            _ = rest_handle => {
+                info!("REST server shutdown complete");
+            }
+        }
 
         info!("Server shutdown complete");
     });
