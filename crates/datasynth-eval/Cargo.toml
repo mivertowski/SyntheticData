@@ -35,7 +35,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 
 # Report generation
-askama = "0.12"
+askama = "0.15"
 
 # Chart generation (optional feature)
 plotters = { version = "0.3", optional = true }
