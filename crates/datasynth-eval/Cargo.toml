@@ -19,7 +19,7 @@ rust_decimal_macros = { workspace = true }
 
 # Statistics
 statrs = "0.17"
-ndarray = "0.16"
+ndarray = "0.17"
 
 # Date/Time
 chrono = { workspace = true }
