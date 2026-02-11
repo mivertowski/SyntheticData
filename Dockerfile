@@ -1,7 +1,7 @@
 # =============================================================================
 # Stage 1: Chef - dependency recipe computation
 # =============================================================================
-FROM rust:1.82-bookworm AS chef
+FROM rust:1.88-bookworm AS chef
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
@@ -17,8 +17,8 @@ RUN cargo chef prepare --recipe-path recipe.json
 # =============================================================================
 FROM chef AS builder
 
-# Install protoc for gRPC code generation
-RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+# Install protoc for gRPC code generation and fontconfig for plotters
+RUN apt-get update && apt-get install -y protobuf-compiler libfontconfig1-dev && rm -rf /var/lib/apt/lists/*
 
 # Cook dependencies first (cached layer)
 COPY --from=planner /app/recipe.json recipe.json
@@ -27,6 +27,11 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
 RUN cargo build --release -p datasynth-server -p datasynth-cli
+
+# Stage shared libs to a well-known path for the final image
+RUN mkdir -p /staging/lib && \
+    ARCH=$(uname -m) && \
+    cp /usr/lib/${ARCH}-linux-gnu/liblzma.so.5* /staging/lib/
 
 # =============================================================================
 # Stage 4: Runtime - minimal distroless image
@@ -37,7 +42,7 @@ COPY --from=builder /app/target/release/datasynth-server /usr/local/bin/datasynt
 COPY --from=builder /app/target/release/datasynth-data /usr/local/bin/datasynth-data
 
 # Copy shared libraries needed for Parquet (lzma)
-COPY --from=builder /usr/lib/x86_64-linux-gnu/liblzma.so.5* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /staging/lib/ /usr/lib/
 
 USER nonroot:nonroot
 

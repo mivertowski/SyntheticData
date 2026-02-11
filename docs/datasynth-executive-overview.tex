@@ -50,7 +50,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.4.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.5.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -104,14 +104,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python wrapper \textbullet{} REST/gRPC API \textbullet{} Desktop UI}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.0 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.4.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.5.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -121,7 +121,7 @@
 \vfill
 \begin{flushleft}
   \textcolor{midgray}{\small
-    Built with Rust \& Python \textbullet{} 16 modular crates \textbullet{} 100\,K+ entries/sec\\[4pt]
+    Built with Rust \& Python \textbullet{} 15 modular crates \textbullet{} 100\,K+ entries/sec\\[4pt]
     Open-source (Apache-2.0) \textbullet{} Commercial license available\\[4pt]
     \textbf{Contact:} \href{mailto:michael.ivertowski@ch.ey.com}{michael.ivertowski@ch.ey.com}
   }
@@ -185,7 +185,7 @@ real-world enterprise resource planning (ERP) systems.
 % Row 2
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{16}}\\[3pt]
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{15}}\\[3pt]
   {\small modular Rust crates}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
@@ -326,6 +326,61 @@ checking and process variant analysis.
   \item \textbf{Reference Models}: Canonical P2P (9 activities), O2C (10 activities), and R2R (11 activities) process models for conformance checking.
   \item \textbf{17 R2R/A2R Activities}: GL posting, FX revaluation, period close, depreciation, consolidation.
   \item \textbf{Deterministic UUIDs}: FNV-1a hash-based IDs with type discriminators for reproducible event logs.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\section{AI-Augmented Generation}
+
+\textit{New in v0.5.0} --- three opt-in AI backends that enhance the rule-based
+core without sacrificing determinism or reproducibility.
+
+\subsection{LLM-Augmented Metadata Enrichment}
+
+An \texttt{LlmProvider} trait integrates external language models for
+contextual metadata enrichment while preserving deterministic fallback:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Provider trait}: \texttt{MockProvider} (deterministic, default) and
+        \texttt{HttpProvider} (OpenAI, Anthropic, or custom API) implementations.
+  \item \textbf{Enrichment targets}: Vendor names, transaction descriptions,
+        anomaly explanations, and memo fields.
+  \item \textbf{Natural language config}: Generate YAML configurations from
+        plain English descriptions.
+  \item \textbf{Response caching}: LRU cache with deterministic fallback ensures
+        reproducibility even with stochastic providers.
+\end{itemize}
+
+\subsection{Diffusion Model Integration}
+
+A statistical diffusion backend learns distribution shapes from fingerprints
+and blends them with rule-based outputs:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Noise schedules}: Cosine, linear, and sigmoid with configurable
+        step count.
+  \item \textbf{Hybrid mode}: Weighted blend of rule-based and diffusion-generated
+        values (\texttt{diffusion\_weight} 0.0--1.0).
+  \item \textbf{Training pipeline}: \texttt{DiffusionTrainer} with epoch count,
+        batch size, and learning rate configuration.
+\end{itemize}
+
+\subsection{Causal \& Counterfactual Generation}
+
+Structural causal models enable ``what-if'' scenario generation grounded in
+do-calculus:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{CausalGraph}: DAG specification of causal relationships between
+        entities (e.g., vendor risk $\to$ invoice amount $\to$ approval level).
+  \item \textbf{StructuralCausalModel}: Functional causal model with noise terms
+        and topological evaluation.
+  \item \textbf{Interventions}: Do-calculus interventions for hypothetical scenarios
+        (``what if vendor risk doubled?'').
+  \item \textbf{Counterfactuals}: Generate alternative versions of existing records
+        under modified assumptions.
+  \item \textbf{Templates}: Pre-built causal graphs for fraud detection, revenue
+        impact analysis, and supply chain modeling.
 \end{itemize}
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -488,6 +543,38 @@ mechanisms), k-anonymity with rare-value suppression, and outlier
 winsorization. A full privacy audit trail records every decision and the
 cumulative epsilon budget spent.
 
+\subsection{Federated Fingerprinting \& Certificates}
+
+\textit{New in v0.5.0} --- distributed fingerprint extraction and
+cryptographic provenance:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Federated Coordinator}: Aggregate fingerprints from
+        distributed data sources without centralizing raw data.
+  \item \textbf{Synthetic Data Certificates}: \texttt{SyntheticDataCertificate}
+        with cryptographic proof of differential privacy guarantees,
+        generation metadata, and validation workflow.
+  \item \textbf{Pareto Frontier}: Automated exploration of optimal
+        privacy--utility trade-offs across epsilon values.
+\end{itemize}
+
+\subsection{Formal DP Composition}
+
+\textit{New in v0.5.0} --- advanced privacy accounting beyond naive
+$\varepsilon$-summation:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{R\'{e}nyi DP}: RDP curve tracking at $\alpha$ values 2--128
+        with conversion to ($\varepsilon$,$\delta$)-DP.
+  \item \textbf{zCDP}: Zero-Concentrated DP with additive $\rho$ composition
+        and tighter bounds.
+  \item \textbf{Budget Manager}: Global budget tracking across extraction
+        runs with composition-aware enforcement.
+  \item \textbf{Privacy Evaluation}: Post-generation membership inference
+        attack (MIA) testing, linkage attack assessment, and
+        NIST SP 800-226 alignment.
+\end{itemize}
+
 \subsection{Fidelity Evaluation}
 
 Per-column statistical distance metrics quantify how well synthetic data
@@ -611,14 +698,26 @@ Streaming Output &
   compression) streaming sinks with backpressure strategies
   (Block, DropOldest, DropNewest, Buffer). \\
 API Layer &
-  REST + gRPC + WebSocket with API-key authentication, sliding-window rate
-  limiting, and configurable timeouts. \\
+  REST + gRPC + WebSocket with Argon2id API-key auth, JWT/OIDC bearer tokens
+  (RS256, Keycloak/Auth0/Entra ID), RBAC (Admin/Operator/Viewer),
+  sliding-window rate limiting (in-memory or Redis), TLS (rustls),
+  async job queue, security headers, and structured audit logging. \\
 Desktop UI &
   Tauri + SvelteKit cross-platform application with 15+ configuration pages
   and real-time streaming viewer. \\
+Plugin SDK &
+  \texttt{GeneratorPlugin}, \texttt{SinkPlugin}, and \texttt{TransformPlugin}
+  traits with thread-safe registry for custom extensions. \\
+Webhooks &
+  Fire-and-forget event dispatch (RunStarted, RunCompleted, RunFailed,
+  GateViolation) with HMAC signing and configurable retry. \\
+Data Lineage &
+  Per-file SHA-256 checksums, \texttt{LineageGraph} tracking
+  config$\to$generator$\to$output relationships, W3C PROV-JSON export,
+  CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} package with blueprints, pandas integration, and
-  WebSocket streaming support. \\
+  \texttt{datasynth-py} 1.0 with blueprints, pandas/polars integration,
+  async client, and WebSocket streaming support. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -745,6 +844,18 @@ goodness-of-fit, chi-squared, and correlation matrix verification.
   \item[$\blacktriangleright$] \textbf{Network Analytics} ---
     Multi-tier vendor networks and customer segmentation graphs with
     relationship strength metrics for supply chain and customer analytics.
+
+  \item[$\blacktriangleright$] \textbf{Causal Inference Testing} ---
+    Structural causal models with do-calculus interventions for
+    counterfactual scenario generation and what-if analysis.
+
+  \item[$\blacktriangleright$] \textbf{Pipeline Orchestration} ---
+    Apache Airflow operators, dbt source generation, MLflow experiment
+    tracking, and Spark DataFrame readers for end-to-end ML pipelines.
+
+  \item[$\blacktriangleright$] \textbf{EU AI Act Compliance} ---
+    Article 50 synthetic content marking with content credentials and
+    Article 10 data governance reports with bias assessments.
 \end{description}
 \end{tcolorbox}
 
@@ -783,7 +894,118 @@ An \textbf{auto-tuning engine} analyses evaluation results and produces
 prioritized configuration patches with expected improvement estimates ---
 closing the loop between generation and validation.
 
+\subsection{Quality Gate Engine}
+
+\textit{New in v0.5.0} --- configurable pass/fail thresholds that can block
+releases of low-quality synthetic data:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{8 metrics}: Benford MAD, balance coherence, document chain
+        completeness, duplicate rate, missing rate, distribution fit,
+        correlation accuracy, anomaly precision.
+  \item \textbf{Built-in profiles}: \texttt{strict}, \texttt{default},
+        \texttt{lenient} --- or define custom per-metric thresholds.
+  \item \textbf{CLI integration}: \texttt{--quality-gate <profile>} with
+        exit code 2 on failure for CI/CD pipelines.
+\end{itemize}
+
 % ══════════════════════════════════════════════════════════════════════════════
+\section{Compliance \& Governance}
+
+\subsection{EU AI Act}
+
+DataSynth implements Article 50 (synthetic content marking) and Article 10
+(data governance) requirements:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Content Credentials}: \texttt{SyntheticContentMarker} creates
+        machine-readable credentials (generator name, version, timestamp,
+        config hash) in embedded, sidecar, or both formats.
+  \item \textbf{Data Governance Report}: \texttt{DataGovernanceReport} with
+        \texttt{BiasAssessment} documenting data provenance, quality metrics,
+        and bias evaluation for regulatory submission.
+\end{itemize}
+
+\subsection{Regulatory Compliance Documentation}
+
+Pre-built compliance guides with self-assessment templates:
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
+\toprule
+\textbf{Framework} & \textbf{Coverage} \\
+\midrule
+EU AI Act & Article 50 content marking, Article 10 governance \\
+NIST AI RMF & Self-assessment across MAP, MEASURE, MANAGE, GOVERN \\
+GDPR & Article 30 records, DPIA guidance, data minimization \\
+SOC 2 Type II & Readiness across 5 Trust Service Criteria \\
+ISO 27001:2022 & Annex A alignment (11 implemented, 6 partial) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{DevOps \& Deployment}
+
+\subsection{CI/CD Pipeline}
+
+A 7-job GitHub Actions pipeline ensures release quality:
+
+\begin{enumerate}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{fmt}: \texttt{cargo fmt --check}
+  \item \textbf{clippy}: Lint with \texttt{-D warnings}
+  \item \textbf{test}: Cross-platform matrix (Ubuntu, macOS, Windows)
+  \item \textbf{msrv}: Minimum Supported Rust Version validation (1.88)
+  \item \textbf{security}: \texttt{cargo deny} + \texttt{cargo audit}
+  \item \textbf{coverage}: \texttt{cargo-llvm-cov} with Codecov
+  \item \textbf{benchmarks}: Criterion regression checks on PRs
+\end{enumerate}
+
+\subsection{Deployment Options}
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
+\toprule
+\textbf{Target} & \textbf{Details} \\
+\midrule
+Docker &
+  Multi-stage builds with cargo-chef caching; distroless runtime images
+  for server and CLI. \\
+Docker Compose &
+  Server + Prometheus + Grafana stack with auto-provisioned datasources. \\
+Kubernetes &
+  Helm chart with HPA (2--10 replicas), PDB, rolling updates, optional
+  Redis subchart, Prometheus ServiceMonitor, and ConfigMap/Secret templates. \\
+Bare Metal &
+  SystemD service with security hardening (NoNewPrivileges, ProtectSystem,
+  MemoryMax=4G, CPUQuota=200\%). \\
+Release Pipeline &
+  Pre-built binaries for 5 platforms, Docker image to GHCR (amd64 + arm64),
+  Trivy container scanning. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Ecosystem Integrations}
+
+Python-native integrations for popular data engineering tools:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Apache Airflow}: \texttt{DataSynthOperator}, \texttt{DataSynthSensor},
+        and \texttt{DataSynthValidateOperator} for orchestrated generation.
+  \item \textbf{dbt}: \texttt{DbtSourceGenerator} for source YAML and seed files.
+  \item \textbf{MLflow}: \texttt{DataSynthMlflowTracker} for experiment tracking
+        with quality metrics.
+  \item \textbf{Apache Spark}: \texttt{DataSynthSparkReader} for direct DataFrame
+        loading from DataSynth output.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
 \section{Getting Started}
 
 \subsection{Quick Start (CLI)}
@@ -840,7 +1062,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.4.0 \textbullet{}
+  DataSynth v0.5.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
