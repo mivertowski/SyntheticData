@@ -38,7 +38,7 @@ anyhow = { workspace = true }
 # Random & Statistics
 rand = { workspace = true }
 rand_chacha = { workspace = true }
-rand_distr = "0.4"
+rand_distr = "0.6"
 statrs = "0.18"
 
 # Matrix operations for correlations
