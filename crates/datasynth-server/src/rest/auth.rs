@@ -2,6 +2,9 @@
 //!
 //! Provides API key authentication with Argon2id hashing and
 //! timing-safe comparison for protecting endpoints.
+//!
+//! When the `jwt` feature is enabled, also supports JWT validation
+//! from external OIDC providers (Keycloak, Auth0, Entra ID).
 
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -17,6 +20,123 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+// ===========================================================================
+// JWT types (feature-gated)
+// ===========================================================================
+
+/// JWT validation configuration for OIDC providers.
+#[cfg(feature = "jwt")]
+#[derive(Clone, Debug)]
+pub struct JwtConfig {
+    /// Expected token issuer (e.g., "https://auth.example.com/realms/main").
+    pub issuer: String,
+    /// Expected audience claim.
+    pub audience: String,
+    /// PEM-encoded public key for RS256 verification.
+    pub public_key_pem: Option<String>,
+    /// Allowed algorithms (default: RS256).
+    pub allowed_algorithms: Vec<jsonwebtoken::Algorithm>,
+}
+
+#[cfg(feature = "jwt")]
+impl JwtConfig {
+    /// Create a new JWT config with RS256 algorithm.
+    pub fn new(issuer: String, audience: String) -> Self {
+        Self {
+            issuer,
+            audience,
+            public_key_pem: None,
+            allowed_algorithms: vec![jsonwebtoken::Algorithm::RS256],
+        }
+    }
+
+    /// Set the PEM public key.
+    pub fn with_public_key(mut self, pem: String) -> Self {
+        self.public_key_pem = Some(pem);
+        self
+    }
+}
+
+/// Claims extracted from a validated JWT.
+#[cfg(feature = "jwt")]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TokenClaims {
+    /// Subject (user ID).
+    pub sub: String,
+    /// Email address (optional).
+    #[serde(default)]
+    pub email: Option<String>,
+    /// Roles assigned to the user.
+    #[serde(default)]
+    pub roles: Vec<String>,
+    /// Tenant ID for multi-tenancy (optional).
+    #[serde(default)]
+    pub tenant_id: Option<String>,
+    /// Expiration timestamp.
+    pub exp: usize,
+    /// Issuer.
+    pub iss: String,
+    /// Audience (can be string or array).
+    #[serde(default)]
+    pub aud: Option<serde_json::Value>,
+}
+
+/// JWT validator that verifies tokens from external OIDC providers.
+#[cfg(feature = "jwt")]
+#[derive(Clone, Debug)]
+pub struct JwtValidator {
+    config: JwtConfig,
+    decoding_key: Option<jsonwebtoken::DecodingKey>,
+}
+
+#[cfg(feature = "jwt")]
+impl JwtValidator {
+    /// Create a new JWT validator.
+    pub fn new(config: JwtConfig) -> Result<Self, String> {
+        let decoding_key = if let Some(ref pem) = config.public_key_pem {
+            Some(
+                jsonwebtoken::DecodingKey::from_rsa_pem(pem.as_bytes())
+                    .map_err(|e| format!("Invalid RSA PEM key: {}", e))?,
+            )
+        } else {
+            None
+        };
+
+        Ok(Self {
+            config,
+            decoding_key,
+        })
+    }
+
+    /// Validate a JWT token and extract claims.
+    pub fn validate_token(&self, token: &str) -> Result<TokenClaims, String> {
+        let decoding_key = self
+            .decoding_key
+            .as_ref()
+            .ok_or_else(|| "No decoding key configured".to_string())?;
+
+        let mut validation = jsonwebtoken::Validation::new(
+            *self
+                .config
+                .allowed_algorithms
+                .first()
+                .unwrap_or(&jsonwebtoken::Algorithm::RS256),
+        );
+        validation.set_issuer(&[&self.config.issuer]);
+        validation.set_audience(&[&self.config.audience]);
+        validation.validate_exp = true;
+
+        let token_data = jsonwebtoken::decode::<TokenClaims>(token, decoding_key, &validation)
+            .map_err(|e| format!("JWT validation failed: {}", e))?;
+
+        Ok(token_data.claims)
+    }
+}
+
+// ===========================================================================
+// Authentication configuration
+// ===========================================================================
+
 /// Authentication configuration.
 #[derive(Clone, Debug)]
 pub struct AuthConfig {
@@ -28,6 +148,9 @@ pub struct AuthConfig {
     pub exempt_paths: HashSet<String>,
     /// LRU cache for recently verified keys (fast hash -> expiry).
     cache: Arc<Mutex<Vec<CacheEntry>>>,
+    /// JWT validator (only available with `jwt` feature).
+    #[cfg(feature = "jwt")]
+    pub jwt_validator: Option<JwtValidator>,
 }
 
 #[derive(Clone, Debug)]
@@ -50,6 +173,8 @@ impl Default for AuthConfig {
                 "/metrics".to_string(),
             ]),
             cache: Arc::new(Mutex::new(Vec::new())),
+            #[cfg(feature = "jwt")]
+            jwt_validator: None,
         }
     }
 }
@@ -81,6 +206,8 @@ impl AuthConfig {
                 "/metrics".to_string(),
             ]),
             cache: Arc::new(Mutex::new(Vec::new())),
+            #[cfg(feature = "jwt")]
+            jwt_validator: None,
         }
     }
 
@@ -98,7 +225,18 @@ impl AuthConfig {
                 "/metrics".to_string(),
             ]),
             cache: Arc::new(Mutex::new(Vec::new())),
+            #[cfg(feature = "jwt")]
+            jwt_validator: None,
         }
+    }
+
+    /// Add JWT validation support.
+    #[cfg(feature = "jwt")]
+    pub fn with_jwt(mut self, config: JwtConfig) -> Result<Self, String> {
+        let validator = JwtValidator::new(config)?;
+        self.jwt_validator = Some(validator);
+        self.enabled = true;
+        Ok(self)
     }
 
     /// Add exempt paths that don't require authentication.
@@ -157,6 +295,33 @@ impl AuthConfig {
 
         any_match
     }
+
+    /// Try to validate a Bearer token as JWT first, then fall back to API key.
+    fn verify_bearer(&self, token: &str) -> AuthResult {
+        // Try JWT first (if feature enabled and configured)
+        #[cfg(feature = "jwt")]
+        if let Some(ref validator) = self.jwt_validator {
+            match validator.validate_token(token) {
+                Ok(_claims) => return AuthResult::Authenticated,
+                Err(_) => {
+                    // JWT validation failed — fall through to API key check
+                }
+            }
+        }
+
+        // Fall back to API key verification
+        if self.verify_key(token) {
+            AuthResult::Authenticated
+        } else {
+            AuthResult::InvalidCredentials
+        }
+    }
+}
+
+/// Result of an authentication attempt.
+enum AuthResult {
+    Authenticated,
+    InvalidCredentials,
 }
 
 /// Fast non-cryptographic hash for cache key lookup.
@@ -170,10 +335,10 @@ fn fast_hash(s: &str) -> u64 {
     hash
 }
 
-/// Authentication middleware that checks for valid API key.
+/// Authentication middleware that checks for valid API key or JWT.
 ///
-/// Checks for API key in:
-/// 1. `Authorization: Bearer <key>` header
+/// Checks for credentials in:
+/// 1. `Authorization: Bearer <key_or_jwt>` header
 /// 2. `X-API-Key: <key>` header
 pub async fn auth_middleware(
     axum::Extension(config): axum::Extension<AuthConfig>,
@@ -191,54 +356,62 @@ pub async fn auth_middleware(
         return next.run(request).await;
     }
 
-    // Extract API key from headers
-    let api_key = extract_api_key(&request);
+    // Extract credential from headers
+    let bearer_token = extract_bearer_token(&request);
+    let api_key = extract_x_api_key(&request);
 
-    match api_key {
-        Some(key) if config.verify_key(&key) => {
-            // Valid API key, proceed
-            next.run(request).await
-        }
-        Some(_) => {
-            // Invalid API key
-            (
+    // Try Bearer token first (supports both JWT and API key)
+    if let Some(token) = bearer_token {
+        return match config.verify_bearer(&token) {
+            AuthResult::Authenticated => next.run(request).await,
+            AuthResult::InvalidCredentials => (
                 StatusCode::UNAUTHORIZED,
                 [(header::WWW_AUTHENTICATE, "Bearer")],
-                "Invalid API key",
+                "Invalid credentials",
             )
-                .into_response()
-        }
-        None => {
-            // No API key provided
-            (
-                StatusCode::UNAUTHORIZED,
-                [(header::WWW_AUTHENTICATE, "Bearer")],
-                "API key required. Provide via 'Authorization: Bearer <key>' or 'X-API-Key' header",
-            )
-                .into_response()
-        }
-    }
-}
-
-/// Extract API key from request headers.
-fn extract_api_key(request: &Request<Body>) -> Option<String> {
-    // Try Authorization: Bearer <key>
-    if let Some(auth_header) = request.headers().get(header::AUTHORIZATION) {
-        if let Ok(auth_str) = auth_header.to_str() {
-            if let Some(key) = auth_str.strip_prefix("Bearer ") {
-                return Some(key.to_string());
-            }
-        }
+                .into_response(),
+        };
     }
 
     // Try X-API-Key header
-    if let Some(api_key_header) = request.headers().get("X-API-Key") {
-        if let Ok(key) = api_key_header.to_str() {
-            return Some(key.to_string());
+    if let Some(key) = api_key {
+        if config.verify_key(&key) {
+            return next.run(request).await;
         }
+        return (
+            StatusCode::UNAUTHORIZED,
+            [(header::WWW_AUTHENTICATE, "Bearer")],
+            "Invalid API key",
+        )
+            .into_response();
     }
 
-    None
+    // No credentials provided
+    (
+        StatusCode::UNAUTHORIZED,
+        [(header::WWW_AUTHENTICATE, "Bearer")],
+        "API key required. Provide via 'Authorization: Bearer <key>' or 'X-API-Key' header",
+    )
+        .into_response()
+}
+
+/// Extract Bearer token from Authorization header.
+fn extract_bearer_token(request: &Request<Body>) -> Option<String> {
+    request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|s| s.to_string())
+}
+
+/// Extract API key from X-API-Key header.
+fn extract_x_api_key(request: &Request<Body>) -> Option<String> {
+    request
+        .headers()
+        .get("X-API-Key")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string())
 }
 
 #[cfg(test)]
@@ -398,5 +571,63 @@ mod tests {
             .unwrap();
         let response2 = router2.oneshot(request2).await.unwrap();
         assert_eq!(response2.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_api_key_fallback_still_works() {
+        // Even without JWT feature, API key auth should work
+        let config = AuthConfig::with_api_keys(vec!["my-key".to_string()]);
+        let router = test_router(config);
+
+        let request = Request::builder()
+            .uri("/api/test")
+            .header("Authorization", "Bearer my-key")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = router.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[cfg(feature = "jwt")]
+    mod jwt_tests {
+        use super::*;
+
+        #[test]
+        fn test_jwt_config_creation() {
+            let config = JwtConfig::new(
+                "https://auth.example.com".to_string(),
+                "my-api".to_string(),
+            );
+            assert_eq!(config.issuer, "https://auth.example.com");
+            assert_eq!(config.audience, "my-api");
+            assert!(config.public_key_pem.is_none());
+            assert_eq!(config.allowed_algorithms, vec![jsonwebtoken::Algorithm::RS256]);
+        }
+
+        #[test]
+        fn test_jwt_validator_requires_key() {
+            let config = JwtConfig::new("issuer".to_string(), "audience".to_string());
+            let validator = JwtValidator::new(config).expect("should create");
+            let result = validator.validate_token("some.invalid.token");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_token_claims_deserialization() {
+            let json = r#"{
+                "sub": "user123",
+                "email": "user@example.com",
+                "roles": ["admin", "operator"],
+                "tenant_id": "tenant1",
+                "exp": 9999999999,
+                "iss": "https://auth.example.com"
+            }"#;
+            let claims: TokenClaims = serde_json::from_str(json).unwrap();
+            assert_eq!(claims.sub, "user123");
+            assert_eq!(claims.email, Some("user@example.com".to_string()));
+            assert_eq!(claims.roles, vec!["admin", "operator"]);
+            assert_eq!(claims.tenant_id, Some("tenant1".to_string()));
+        }
     }
 }

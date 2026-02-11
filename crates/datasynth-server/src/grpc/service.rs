@@ -861,6 +861,9 @@ pub fn default_generator_config() -> GeneratorConfig {
         anomaly_injection: Default::default(),
         industry_specific: Default::default(),
         fingerprint_privacy: Default::default(),
+        quality_gates: Default::default(),
+        compliance: Default::default(),
+        webhooks: Default::default(),
     }
 }
 

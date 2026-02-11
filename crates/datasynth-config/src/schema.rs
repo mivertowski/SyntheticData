@@ -133,6 +133,15 @@ pub struct GeneratorConfig {
     /// Fingerprint privacy configuration for extraction/synthesis
     #[serde(default)]
     pub fingerprint_privacy: FingerprintPrivacyConfig,
+    /// Quality gate configuration for pass/fail thresholds
+    #[serde(default)]
+    pub quality_gates: QualityGatesSchemaConfig,
+    /// Compliance configuration (EU AI Act, content marking)
+    #[serde(default)]
+    pub compliance: ComplianceSchemaConfig,
+    /// Webhook notification configuration
+    #[serde(default)]
+    pub webhooks: WebhookSchemaConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -9583,6 +9592,153 @@ impl Default for FingerprintPrivacyConfig {
             composition_method: "naive".to_string(),
         }
     }
+}
+
+/// Quality gates configuration for pass/fail thresholds on generation runs.
+///
+/// ```yaml
+/// quality_gates:
+///   enabled: true
+///   profile: strict  # strict, default, lenient, custom
+///   fail_on_violation: true
+///   custom_gates:
+///     - name: benford_compliance
+///       metric: benford_mad
+///       threshold: 0.015
+///       comparison: lte
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGatesSchemaConfig {
+    /// Enable quality gate evaluation.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Gate profile: "strict", "default", "lenient", or "custom".
+    #[serde(default = "default_gate_profile_name")]
+    pub profile: String,
+    /// Whether to fail the generation on gate violations.
+    #[serde(default)]
+    pub fail_on_violation: bool,
+    /// Custom gate definitions (used when profile = "custom").
+    #[serde(default)]
+    pub custom_gates: Vec<QualityGateEntry>,
+}
+
+fn default_gate_profile_name() -> String {
+    "default".to_string()
+}
+
+impl Default for QualityGatesSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            profile: default_gate_profile_name(),
+            fail_on_violation: false,
+            custom_gates: Vec::new(),
+        }
+    }
+}
+
+/// A single quality gate entry in configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGateEntry {
+    /// Gate name.
+    pub name: String,
+    /// Metric to check: benford_mad, balance_coherence, document_chain_integrity,
+    /// correlation_preservation, temporal_consistency, privacy_mia_auc,
+    /// completion_rate, duplicate_rate, referential_integrity, ic_match_rate.
+    pub metric: String,
+    /// Threshold value.
+    pub threshold: f64,
+    /// Upper threshold for "between" comparison.
+    #[serde(default)]
+    pub upper_threshold: Option<f64>,
+    /// Comparison operator: "gte", "lte", "eq", "between".
+    #[serde(default = "default_gate_comparison")]
+    pub comparison: String,
+}
+
+fn default_gate_comparison() -> String {
+    "gte".to_string()
+}
+
+/// Compliance configuration for regulatory requirements.
+///
+/// ```yaml
+/// compliance:
+///   content_marking:
+///     enabled: true
+///     format: embedded  # embedded, sidecar, both
+///   article10_report: true
+/// ```
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ComplianceSchemaConfig {
+    /// Synthetic content marking configuration (EU AI Act Article 50).
+    #[serde(default)]
+    pub content_marking: ContentMarkingSchemaConfig,
+    /// Generate Article 10 data governance report.
+    #[serde(default)]
+    pub article10_report: bool,
+}
+
+/// Content marking configuration for synthetic data output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContentMarkingSchemaConfig {
+    /// Whether content marking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Marking format: "embedded", "sidecar", or "both".
+    #[serde(default = "default_marking_format")]
+    pub format: String,
+}
+
+fn default_marking_format() -> String {
+    "embedded".to_string()
+}
+
+impl Default for ContentMarkingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            format: default_marking_format(),
+        }
+    }
+}
+
+/// Webhook notification configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct WebhookSchemaConfig {
+    /// Whether webhooks are enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Webhook endpoint configurations.
+    #[serde(default)]
+    pub endpoints: Vec<WebhookEndpointConfig>,
+}
+
+/// Configuration for a single webhook endpoint.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebhookEndpointConfig {
+    /// Target URL for the webhook.
+    pub url: String,
+    /// Event types this endpoint subscribes to.
+    #[serde(default)]
+    pub events: Vec<String>,
+    /// Optional secret for HMAC-SHA256 signature.
+    #[serde(default)]
+    pub secret: Option<String>,
+    /// Maximum retry attempts (default: 3).
+    #[serde(default = "default_webhook_retries")]
+    pub max_retries: u32,
+    /// Timeout in seconds (default: 10).
+    #[serde(default = "default_webhook_timeout")]
+    pub timeout_secs: u64,
+}
+
+fn default_webhook_retries() -> u32 {
+    3
+}
+fn default_webhook_timeout() -> u64 {
+    10
 }
 
 #[cfg(test)]

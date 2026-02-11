@@ -1,5 +1,6 @@
 """Python wrapper for DataSynth."""
 
+from datasynth_py.async_client import AsyncDataSynth, StreamEvent
 from datasynth_py.client import DataSynth, GenerationResult, OutputSpec, StreamingSession
 from datasynth_py.config import blueprints
 from datasynth_py.config.models import (
@@ -40,6 +41,7 @@ from datasynth_py.config.models import (
     ValidTimeSettings,
 )
 from datasynth_py.config.validation import ConfigValidationError
+from datasynth_py.dataframes import list_tables, to_pandas, to_polars
 from datasynth_py.fingerprint import FidelityReport, FingerprintClient, FingerprintInfo
 
 __all__ = [
@@ -86,5 +88,10 @@ __all__ = [
     "TransactionSettings",
     "TransactionTimeSettings",
     "ValidTimeSettings",
+    "AsyncDataSynth",
+    "StreamEvent",
     "blueprints",
+    "list_tables",
+    "to_pandas",
+    "to_polars",
 ]

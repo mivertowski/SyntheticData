@@ -5,9 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2026-02-10
+## [0.5.0] - 2026-02-11
 
 ### Added
+
+- **JWT Validation & OIDC Support** (`datasynth-server`): Token-based authentication behind `jwt` feature flag
+  - RS256 JWT validation via `jsonwebtoken` crate with issuer/audience verification
+  - OIDC provider support (Keycloak, Auth0, Entra ID) via `--jwt-issuer`, `--jwt-audience`, `--jwt-public-key` CLI args
+  - Bearer token flow: JWT validated first, falls back to API key if JWT feature disabled
+  - `JwtConfig`, `TokenClaims`, `JwtValidator` structs with full test coverage
+
+- **Role-Based Access Control** (`datasynth-server`): RBAC with structured audit logging
+  - `Role` enum: Admin, Operator (default), Viewer with 7 permission types
+  - `Permission` matrix: GenerateData, ManageJobs, ViewJobs, ManageConfig, ViewConfig, ViewMetrics, ManageApiKeys
+  - `RolePermissions::has_permission()` for middleware-level authorization
+  - `--rbac-enabled` CLI flag for opt-in activation
+
+- **Structured Audit Logging** (`datasynth-server`): JSON audit event trail
+  - `AuditEvent` struct with actor, action, resource, outcome, and correlation ID
+  - `AuditLogger` trait with `JsonAuditLogger` (via `tracing::info`) and `NoopAuditLogger`
+  - `--audit-log` CLI flag for opt-in activation
+
+- **gRPC Authentication Interceptor** (`datasynth-server`): Token validation for gRPC endpoints
+  - `GrpcAuthConfig` with `new(api_keys)` and `disabled()` constructors
+  - `auth_interceptor()` function extracting Bearer tokens from `authorization` metadata
+  - `X-API-Version: v1` response header injected on all REST responses
+
+- **Quality Gate Engine** (`datasynth-eval`): Configurable pass/fail thresholds for generation quality
+  - `GateEngine::evaluate()` extracts 8 metrics from `ComprehensiveEvaluation`
+  - Metrics: BenfordMad, BalanceCoherence, DocumentChainCompleteness, DuplicateRate, MissingRate, DistributionFit, CorrelationAccuracy, AnomalyPrecision
+  - Built-in profiles: `strict`, `default`, `lenient` with per-metric thresholds
+  - `GateResult` with pass/fail, metric details, and failed gate list
+  - CLI: `--quality-gate <none|lenient|default|strict>` with exit code 2 on failure
+  - Config: `quality_gates` section with profile, custom gates, and `fail_on_violation`
+
+- **Plugin SDK** (`datasynth-core`): Extensible trait-based plugin system
+  - `GeneratorPlugin` trait: `generate(context) -> Vec<GeneratedRecord>`
+  - `SinkPlugin` trait: `open()`, `write_batch()`, `close() -> SinkSummary`
+  - `TransformPlugin` trait: `transform(records) -> Vec<GeneratedRecord>`
+  - `PluginRegistry`: Thread-safe `Arc<RwLock<...>>` registry for all plugin types
+  - `PluginInfo` struct with name, version, and description
+  - Example plugins: `CsvEchoSink` and `TimestampEnricher`
+
+- **Webhook Notifications** (`datasynth-runtime`): Fire-and-forget event dispatch
+  - `WebhookEvent` enum: RunStarted, RunCompleted, RunFailed, GateViolation
+  - `WebhookPayload` with event type, run ID, timestamp, and extensible detail map
+  - `WebhookEndpoint` with URL, event filter, optional HMAC secret, retry, and timeout
+  - `WebhookDispatcher` with endpoint matching and payload factory methods
+  - Config: `webhooks` section with enabled flag and endpoint list
+
+- **Async Python Client** (`python/datasynth_py`): Non-blocking generation via asyncio
+  - `AsyncDataSynth` with async context manager, `generate()`, `stream_generate()`, `validate_config()`
+  - `StreamEvent` dataclass for real-time generation progress
+  - Uses `asyncio.create_subprocess_exec` for subprocess-based execution
+
+- **DataFrame Integration** (`python/datasynth_py`): Direct DataFrame loading
+  - `to_pandas(result)`: Load CSV tables into pandas DataFrames (comment="#" for synthetic markers)
+  - `to_polars(result)`: Load CSV tables into polars DataFrames (comment_prefix="#")
+  - `list_tables(result)`: Enumerate available output tables with subdirectory support
+
+- **EU AI Act Compliance** (`datasynth-core`): Article 50 synthetic content marking
+  - `SyntheticContentMarker` with `create_credential()` and config hashing
+  - `ContentCredential` struct with generator, version, timestamp, config hash, and marking format
+  - `MarkingFormat` enum: Embedded (default), Sidecar, Both
+  - Article 10 data governance: `DataGovernanceReport` with `BiasAssessment`
+  - Config: `compliance` section with `content_marking` and `article10_report` settings
+
+- **Compliance Documentation** (`docs/src/compliance/`): Regulatory framework guides
+  - EU AI Act: Article 50 content marking and Article 10 governance report usage
+  - NIST AI RMF: Self-assessment across MAP, MEASURE, MANAGE, GOVERN functions
+  - GDPR: Article 30 record templates, DPIA guidance, data minimization
+  - SOC 2 Type II: Readiness assessment across 5 Trust Service Criteria with controls mapping
+  - ISO 27001:2022: Annex A alignment with 11 implemented, 6 partial, and 8 N/A controls
+
+- **Python 1.0.0 Release** (`python/`): Production-stable Python wrapper
+  - Version bumped to 1.0.0 with "Production/Stable" classifier
+  - CHANGELOG.md documenting all features, config models, and optional dependencies
 
 - **CI/CD Hardening** (`.github/workflows/`): Expanded from single-job to 7-job CI pipeline
   - `fmt`: `cargo fmt --check`

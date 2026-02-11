@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datasynth-py"
-version = "0.5.0"
+version = "1.0.0"
 description = "Python wrapper for DataSynth synthetic data generation"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -16,7 +16,7 @@ maintainers = [
     { name = "EY ASU RnD", email = "michael.ivertowski@ch.ey.com" }
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Science/Research",
@@ -48,10 +48,16 @@ dependencies = []
 cli = ["PyYAML>=6.0"]
 memory = ["pandas>=2.0"]
 streaming = ["websockets>=12.0"]
+pandas = ["pandas>=1.5"]
+polars = ["polars>=0.20"]
+jupyter = ["jupyter", "matplotlib"]
 all = [
     "PyYAML>=6.0",
     "pandas>=2.0",
     "websockets>=12.0",
+    "polars>=0.20",
+    "jupyter",
+    "matplotlib",
 ]
 dev = [
     "PyYAML>=6.0",

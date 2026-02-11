@@ -445,6 +445,8 @@ pub struct EnhancedGenerationResult {
     pub statistics: EnhancedGenerationStatistics,
     /// Data lineage graph (if tracking enabled).
     pub lineage: Option<super::lineage::LineageGraph>,
+    /// Quality gate evaluation result.
+    pub gate_result: Option<datasynth_eval::gates::GateResult>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -935,6 +937,7 @@ impl EnhancedOrchestrator {
             data_quality_stats,
             statistics: stats,
             lineage: Some(lineage),
+            gate_result: None,
         })
     }
 
@@ -2822,6 +2825,9 @@ mod tests {
             anomaly_injection: Default::default(),
             industry_specific: Default::default(),
             fingerprint_privacy: Default::default(),
+            quality_gates: Default::default(),
+            compliance: Default::default(),
+            webhooks: Default::default(),
         }
     }
 

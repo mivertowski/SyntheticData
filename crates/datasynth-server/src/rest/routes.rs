@@ -79,6 +79,16 @@ impl Default for CorsConfig {
     }
 }
 
+/// Add API version header to responses.
+async fn api_version_header(response: axum::response::Response) -> axum::response::Response {
+    let (mut parts, body) = response.into_parts();
+    parts.headers.insert(
+        axum::http::HeaderName::from_static("x-api-version"),
+        axum::http::HeaderValue::from_static("v1"),
+    );
+    axum::response::Response::from_parts(parts, body)
+}
+
 use super::auth::{auth_middleware, AuthConfig};
 use super::rate_limit::RateLimitConfig;
 use super::rate_limit_backend::{backend_rate_limit_middleware, RateLimitBackend};
@@ -183,8 +193,9 @@ pub fn create_router_full_with_backend(
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
         // Middleware stack (outermost applied first, innermost last)
-        // Order: Timeout -> RateLimit -> RequestValidation -> Auth -> RequestId -> CORS -> SecurityHeaders -> Router
+        // Order: Timeout -> RateLimit -> RequestValidation -> Auth -> RequestId -> CORS -> SecurityHeaders -> APIVersion -> Router
         .layer(axum::middleware::from_fn(security_headers_middleware))
+        .layer(axum::middleware::map_response(api_version_header))
         .layer(cors)
         .layer(axum::middleware::from_fn(request_id_middleware))
         .layer(axum::middleware::from_fn(auth_middleware))

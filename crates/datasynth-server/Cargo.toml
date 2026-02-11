@@ -11,6 +11,7 @@ description = "gRPC and REST server for synthetic data generation"
 [features]
 default = []
 tls = ["dep:axum-server"]
+jwt = ["dep:jsonwebtoken"]
 redis = ["dep:redis"]
 otel = [
     "dep:opentelemetry",
@@ -73,6 +74,9 @@ rust_decimal = { workspace = true }
 # Security
 argon2 = { workspace = true }
 subtle = { workspace = true }
+
+# JWT (optional - OIDC token validation)
+jsonwebtoken = { workspace = true, optional = true }
 
 # Redis (optional - distributed rate limiting)
 redis = { workspace = true, optional = true }

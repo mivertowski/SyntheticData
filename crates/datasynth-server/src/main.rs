@@ -62,6 +62,29 @@ struct Args {
     #[cfg(feature = "tls")]
     #[arg(long, env = "DATASYNTH_TLS_KEY")]
     tls_key: Option<String>,
+
+    /// JWT issuer URL for OIDC token validation (e.g., "https://auth.example.com/realms/main")
+    #[cfg(feature = "jwt")]
+    #[arg(long, env = "DATASYNTH_JWT_ISSUER")]
+    jwt_issuer: Option<String>,
+
+    /// JWT audience claim for token validation (e.g., "datasynth-api")
+    #[cfg(feature = "jwt")]
+    #[arg(long, env = "DATASYNTH_JWT_AUDIENCE")]
+    jwt_audience: Option<String>,
+
+    /// PEM-encoded RSA public key for JWT verification
+    #[cfg(feature = "jwt")]
+    #[arg(long, env = "DATASYNTH_JWT_PUBLIC_KEY")]
+    jwt_public_key: Option<String>,
+
+    /// Enable RBAC (role-based access control)
+    #[arg(long, env = "DATASYNTH_RBAC_ENABLED", default_value = "false")]
+    rbac_enabled: bool,
+
+    /// Path to audit log file (stdout if not specified)
+    #[arg(long, env = "DATASYNTH_AUDIT_LOG")]
+    audit_log: Option<String>,
 }
 
 /// Setup panic hook to log panics before aborting.
@@ -167,7 +190,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let rest_service = SynthService::with_state(Arc::clone(&state));
 
         // Configure auth
-        let auth_config = if let Some(keys_str) = &args.api_keys {
+        #[allow(unused_mut)]
+        let mut auth_config = if let Some(keys_str) = &args.api_keys {
             let keys: Vec<String> = keys_str
                 .split(',')
                 .map(|s| s.trim().to_string())
@@ -182,6 +206,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             AuthConfig::default()
         };
+
+        // Configure JWT authentication (if feature enabled and args provided)
+        #[cfg(feature = "jwt")]
+        {
+            use datasynth_server::rest::JwtConfig;
+
+            if let (Some(issuer), Some(audience)) = (&args.jwt_issuer, &args.jwt_audience) {
+                let mut jwt_config = JwtConfig::new(issuer.clone(), audience.clone());
+                if let Some(ref key_pem) = args.jwt_public_key {
+                    jwt_config = jwt_config.with_public_key(key_pem.clone());
+                }
+                auth_config = auth_config
+                    .with_jwt(jwt_config)
+                    .expect("Failed to configure JWT validation");
+                info!(
+                    "JWT authentication enabled (issuer: {}, audience: {})",
+                    issuer, audience
+                );
+            }
+        }
 
         // Configure rate limiting backend
         let rate_limit_config = RateLimitConfig::default();

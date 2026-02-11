@@ -21,6 +21,7 @@ pub mod run_manifest;
 #[cfg(feature = "streaming")]
 pub mod stream_client;
 pub mod streaming_orchestrator;
+pub mod webhooks;
 
 pub use enhanced_orchestrator::*;
 pub use label_export::*;

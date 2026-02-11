@@ -71,6 +71,9 @@ pub fn create_preset(
         anomaly_injection: EnhancedAnomalyConfig::default(),
         industry_specific: IndustrySpecificConfig::default(),
         fingerprint_privacy: FingerprintPrivacyConfig::default(),
+        quality_gates: QualityGatesSchemaConfig::default(),
+        compliance: ComplianceSchemaConfig::default(),
+        webhooks: WebhookSchemaConfig::default(),
     }
 }
 

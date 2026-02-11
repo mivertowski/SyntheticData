@@ -48,6 +48,8 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_anomaly_injection(config)?;
     validate_hypergraph(config)?;
     validate_fingerprint_privacy(config)?;
+    validate_quality_gates(config)?;
+    validate_compliance(config)?;
     Ok(())
 }
 
@@ -2083,6 +2085,54 @@ fn validate_fingerprint_privacy(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate quality gates configuration.
+fn validate_quality_gates(config: &GeneratorConfig) -> SynthResult<()> {
+    let qg = &config.quality_gates;
+
+    let valid_profiles = ["strict", "default", "lenient", "custom"];
+    if !valid_profiles.contains(&qg.profile.as_str()) {
+        return Err(SynthError::validation(format!(
+            "quality_gates.profile must be one of: strict, default, lenient, custom (got '{}')",
+            qg.profile
+        )));
+    }
+
+    let valid_comparisons = ["gte", "lte", "eq", "between"];
+    for gate in &qg.custom_gates {
+        if gate.name.is_empty() {
+            return Err(SynthError::validation(
+                "quality_gates.custom_gates[].name must not be empty",
+            ));
+        }
+        if !valid_comparisons.contains(&gate.comparison.as_str()) {
+            return Err(SynthError::validation(format!(
+                "quality_gates.custom_gates[{}].comparison must be one of: gte, lte, eq, between (got '{}')",
+                gate.name, gate.comparison
+            )));
+        }
+        if gate.comparison == "between" && gate.upper_threshold.is_none() {
+            return Err(SynthError::validation(format!(
+                "quality_gates.custom_gates[{}].upper_threshold is required for 'between' comparison",
+                gate.name
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate compliance configuration.
+fn validate_compliance(config: &GeneratorConfig) -> SynthResult<()> {
+    let valid_formats = ["embedded", "sidecar", "both"];
+    if !valid_formats.contains(&config.compliance.content_marking.format.as_str()) {
+        return Err(SynthError::validation(format!(
+            "compliance.content_marking.format must be one of: embedded, sidecar, both (got '{}')",
+            config.compliance.content_marking.format
+        )));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2158,6 +2208,9 @@ mod tests {
             anomaly_injection: EnhancedAnomalyConfig::default(),
             industry_specific: IndustrySpecificConfig::default(),
             fingerprint_privacy: FingerprintPrivacyConfig::default(),
+            quality_gates: QualityGatesSchemaConfig::default(),
+            compliance: ComplianceSchemaConfig::default(),
+            webhooks: WebhookSchemaConfig::default(),
         }
     }
 

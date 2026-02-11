@@ -21,6 +21,62 @@ pub struct EvaluationConfig {
     pub report: ReportConfig,
     /// Pass/fail thresholds.
     pub thresholds: EvaluationThresholds,
+    /// Quality gate configuration.
+    #[serde(default)]
+    pub quality_gates: QualityGateConfig,
+}
+
+/// Configuration for quality gates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGateConfig {
+    /// Whether quality gate evaluation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Profile name: "strict", "default", "lenient", or "custom".
+    #[serde(default = "default_gate_profile")]
+    pub profile: String,
+    /// Custom gate definitions (used when profile = "custom").
+    #[serde(default)]
+    pub custom_gates: Vec<CustomGateConfig>,
+    /// Whether to fail the generation run on gate violations.
+    #[serde(default)]
+    pub fail_on_violation: bool,
+}
+
+fn default_gate_profile() -> String {
+    "default".to_string()
+}
+
+impl Default for QualityGateConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            profile: default_gate_profile(),
+            custom_gates: Vec::new(),
+            fail_on_violation: false,
+        }
+    }
+}
+
+/// Configuration for a custom quality gate.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomGateConfig {
+    /// Gate name.
+    pub name: String,
+    /// Metric to check (e.g., "benford_mad", "completion_rate", "duplicate_rate").
+    pub metric: String,
+    /// Threshold value.
+    pub threshold: f64,
+    /// Upper threshold for "between" comparison.
+    #[serde(default)]
+    pub upper_threshold: Option<f64>,
+    /// Comparison: "gte", "lte", "eq", "between".
+    #[serde(default = "default_comparison")]
+    pub comparison: String,
+}
+
+fn default_comparison() -> String {
+    "gte".to_string()
 }
 
 /// Privacy evaluation configuration.

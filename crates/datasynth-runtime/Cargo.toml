@@ -15,6 +15,7 @@ streaming = ["dep:reqwest"]
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
+datasynth-eval = { workspace = true }
 datasynth-generators = { workspace = true }
 datasynth-ocpm = { workspace = true }
 datasynth-output = { workspace = true }

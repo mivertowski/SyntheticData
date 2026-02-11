@@ -36,6 +36,7 @@ pub mod benchmarks;
 pub mod config;
 pub mod enhancement;
 pub mod error;
+pub mod gates;
 pub mod privacy;
 
 pub mod coherence;

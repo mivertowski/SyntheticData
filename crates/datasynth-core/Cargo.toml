@@ -21,6 +21,8 @@ thiserror = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 rand_distr = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

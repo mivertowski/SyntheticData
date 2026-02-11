@@ -6,13 +6,13 @@ use uuid::Uuid;
 
 use datasynth_config::schema::{
     AccountingStandardsConfig, AuditGenerationConfig, AuditStandardsConfig,
-    BehavioralDriftSchemaConfig, ChartOfAccountsConfig, CompanyConfig,
+    BehavioralDriftSchemaConfig, ChartOfAccountsConfig, CompanyConfig, ComplianceSchemaConfig,
     CrossProcessLinksSchemaConfig, CustomerSegmentationSchemaConfig, DataQualitySchemaConfig,
     DriftLabelingSchemaConfig, FingerprintPrivacyConfig, FraudConfig, GeneratorConfig,
     GlobalConfig, GraphExportConfig, IndustrySpecificConfig, MarketDriftSchemaConfig, OcpmConfig,
-    OrganizationalEventsSchemaConfig, OutputConfig, RateLimitSchemaConfig,
-    RelationshipSchemaConfig, RelationshipStrengthSchemaConfig, ScenarioConfig,
-    StreamingSchemaConfig, TemporalAttributeSchemaConfig, TransactionVolume,
+    OrganizationalEventsSchemaConfig, OutputConfig, QualityGatesSchemaConfig,
+    RateLimitSchemaConfig, RelationshipSchemaConfig, RelationshipStrengthSchemaConfig,
+    ScenarioConfig, StreamingSchemaConfig, TemporalAttributeSchemaConfig, TransactionVolume,
     VendorNetworkSchemaConfig,
 };
 use datasynth_core::models::{
@@ -91,6 +91,9 @@ pub fn minimal_config() -> GeneratorConfig {
         anomaly_injection: Default::default(),
         industry_specific: IndustrySpecificConfig::default(),
         fingerprint_privacy: FingerprintPrivacyConfig::default(),
+        quality_gates: QualityGatesSchemaConfig::default(),
+        compliance: ComplianceSchemaConfig::default(),
+        webhooks: Default::default(),
     }
 }
 

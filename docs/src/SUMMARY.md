@@ -128,6 +128,17 @@
 
 ---
 
+# Compliance & Regulatory
+
+- [Overview](compliance/README.md)
+- [EU AI Act](compliance/eu-ai-act.md)
+- [NIST AI RMF](compliance/nist-ai-rmf.md)
+- [GDPR](compliance/gdpr.md)
+- [SOC 2 Readiness](compliance/soc2.md)
+- [ISO 27001 Alignment](compliance/iso27001.md)
+
+---
+
 # Roadmap
 
 - [Enterprise Simulation & ML Ground Truth](roadmap/README.md)

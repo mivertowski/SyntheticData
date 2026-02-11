@@ -57,6 +57,24 @@ pub struct RunManifest {
     /// Data lineage graph tracking config → generator → output relationships.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lineage: Option<super::lineage::LineageGraph>,
+    /// Quality gate evaluation result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quality_gate_result: Option<QualityGateResultSummary>,
+}
+
+/// Summary of quality gate evaluation for the run manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualityGateResultSummary {
+    /// Whether all gates passed.
+    pub passed: bool,
+    /// Profile name used.
+    pub profile_name: String,
+    /// Number of gates that passed.
+    pub gates_passed: usize,
+    /// Total number of gates evaluated.
+    pub gates_total: usize,
+    /// Names of failed gates.
+    pub failed_gates: Vec<String>,
 }
 
 fn default_manifest_version() -> String {
@@ -150,6 +168,7 @@ impl RunManifest {
             output_files: Vec::new(),
             warnings: Vec::new(),
             lineage: None,
+            quality_gate_result: None,
         }
     }
 
@@ -361,6 +380,9 @@ mod tests {
             anomaly_injection: Default::default(),
             industry_specific: Default::default(),
             fingerprint_privacy: Default::default(),
+            quality_gates: Default::default(),
+            compliance: Default::default(),
+            webhooks: Default::default(),
         }
     }
 

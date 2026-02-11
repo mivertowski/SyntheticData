@@ -160,6 +160,14 @@ The generator produces statistically accurate data based on empirical research f
 ### Production Features
 
 - **REST & gRPC APIs**: Streaming generation with Argon2id authentication and rate limiting
+- **JWT/OIDC Authentication**: RS256 JWT validation with Keycloak, Auth0, and Entra ID support (feature-gated)
+- **Role-Based Access Control**: Admin/Operator/Viewer roles with 7 permission types and structured JSON audit logging
+- **gRPC Auth Interceptor**: Bearer token validation for gRPC endpoints with API versioning headers
+- **Quality Gates**: Configurable pass/fail thresholds (strict/default/lenient) with 8 metrics and CLI enforcement
+- **Plugin SDK**: Extensible `GeneratorPlugin`, `SinkPlugin`, `TransformPlugin` traits with thread-safe registry
+- **Webhook Notifications**: Fire-and-forget event dispatch for RunStarted, RunCompleted, RunFailed, GateViolation
+- **EU AI Act Compliance**: Article 50 synthetic content marking and Article 10 data governance reports
+- **Compliance Documentation**: SOC 2 Type II readiness, ISO 27001 Annex A alignment, NIST AI RMF, GDPR templates
 - **Async Job Queue**: Submit/poll/cancel pattern for long-running generation jobs
 - **Security Hardening**: Security headers, request validation, request ID propagation, timing-safe auth
 - **TLS Support**: Native rustls TLS or reverse proxy (nginx/envoy) with documented configuration
@@ -179,7 +187,7 @@ The generator produces statistically accurate data based on empirical research f
 - **Resource Guards**: Memory, disk, and CPU monitoring with graceful degradation
 - **Panic-Free Library Crates**: `#![deny(clippy::unwrap_used)]` enforced across all library crates
 - **Fuzzing**: cargo-fuzz targets for config parsing, fingerprint loading, and validation
-- **Evaluation Framework**: Auto-tuning with configuration recommendations
+- **Evaluation Framework**: Auto-tuning with quality gate enforcement and configuration recommendations
 - **Deterministic Generation**: Seeded RNG for reproducible output
 
 ---
@@ -515,6 +523,15 @@ cargo run -p datasynth-server -- --rest-port 3000 --grpc-port 50051 --worker-thr
 # With API key authentication
 cargo run -p datasynth-server -- --api-keys "key1,key2"
 
+# With JWT/OIDC authentication (requires jwt feature)
+cargo run -p datasynth-server --features jwt -- \
+  --jwt-issuer "https://auth.example.com" \
+  --jwt-audience "datasynth-api" \
+  --jwt-public-key /path/to/public.pem
+
+# With RBAC and audit logging
+cargo run -p datasynth-server -- --api-keys "key1" --rbac-enabled --audit-log
+
 # With TLS (requires tls feature)
 cargo run -p datasynth-server --features tls -- --tls-cert cert.pem --tls-key key.pem
 ```
@@ -601,15 +618,16 @@ See the [Fingerprinting Guide](docs/fingerprint/) for complete documentation.
 
 ## Python Wrapper
 
-A Python wrapper is available for programmatic access:
+A Python wrapper (v1.0.0) is available for programmatic access:
 
 ```bash
 cd python
-pip install -e ".[all]"
+pip install -e ".[all]"    # Includes pandas, polars, jupyter, streaming
 ```
 
 ```python
-from datasynth_py import DataSynth
+from datasynth_py import DataSynth, AsyncDataSynth
+from datasynth_py import to_pandas, to_polars, list_tables
 from datasynth_py.config import blueprints
 
 # Basic generation
@@ -618,17 +636,22 @@ synth = DataSynth()
 result = synth.generate(config=config, output={"format": "csv", "sink": "temp_dir"})
 print(result.output_dir)
 
+# DataFrame loading
+tables = list_tables(result)          # ['journal_entries', 'vendors', ...]
+df = to_pandas(result, "journal_entries")
+pl_df = to_polars(result, "vendors")
+
+# Async generation
+async with AsyncDataSynth() as synth:
+    result = await synth.generate(config=config)
+
 # Fingerprint operations
 synth.fingerprint.extract("./real_data/", "./fingerprint.dsf", privacy_level="standard")
 report = synth.fingerprint.evaluate("./fingerprint.dsf", "./synthetic/")
 print(f"Fidelity score: {report.overall_score}")
-
-# Streaming with pattern triggers
-session = synth.stream(config=config)
-session.trigger_month_end()  # Trigger month-end volume spike
-async for event in session.events():
-    process(event)
 ```
+
+Optional dependencies: `[pandas]`, `[polars]`, `[jupyter]`, `[streaming]`, `[all]`.
 
 See the [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md) for complete documentation.
 
@@ -640,6 +663,7 @@ See the [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md) for comple
 - [API Reference](docs/api.md)
 - [Architecture Overview](docs/architecture.md)
 - [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md)
+- [Compliance & Regulatory](docs/src/compliance/README.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
 
 ---

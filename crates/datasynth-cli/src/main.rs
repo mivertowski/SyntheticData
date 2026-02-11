@@ -102,6 +102,10 @@ enum Commands {
         /// Batch size for streaming (lines per HTTP POST, default 1000)
         #[arg(long, default_value = "1000")]
         stream_batch_size: usize,
+
+        /// Quality gate profile (none/lenient/default/strict)
+        #[arg(long, default_value = "none")]
+        quality_gate: String,
     },
 
     /// Validate a configuration file
@@ -258,6 +262,7 @@ fn main() -> Result<()> {
             stream_target,
             stream_api_key,
             stream_batch_size,
+            quality_gate,
         } => {
             // ========================================
             // CPU SAFEGUARD: Limit thread pool size
@@ -720,6 +725,52 @@ fn main() -> Result<()> {
                     manifest_path.display(),
                     manifest.run_id()
                 );
+            }
+
+            // ========================================
+            // QUALITY GATE EVALUATION
+            // ========================================
+            if quality_gate != "none" {
+                if let Some(profile) = datasynth_eval::gates::get_profile(&quality_gate) {
+                    // Build a ComprehensiveEvaluation for the gate engine.
+                    // Currently we use an empty evaluation since full evaluation
+                    // integration is not yet wired into the generation pipeline.
+                    let evaluation = datasynth_eval::ComprehensiveEvaluation::new();
+                    let gate_result =
+                        datasynth_eval::gates::GateEngine::evaluate(&evaluation, &profile);
+
+                    // Print gate result summary
+                    println!();
+                    println!("Quality Gate Evaluation (profile: {})", gate_result.profile_name);
+                    println!("==========================================");
+                    for check in &gate_result.results {
+                        let status = if check.passed { "PASS" } else { "FAIL" };
+                        println!(
+                            "  [{}] {}: {}",
+                            status, check.gate_name, check.message
+                        );
+                    }
+                    println!();
+                    println!(
+                        "Result: {}/{} gates passed",
+                        gate_result.gates_passed, gate_result.gates_total
+                    );
+                    println!("{}", gate_result.summary);
+
+                    if !gate_result.passed {
+                        tracing::error!(
+                            "Quality gates FAILED: {}/{}",
+                            gate_result.gates_total - gate_result.gates_passed,
+                            gate_result.gates_total
+                        );
+                        std::process::exit(2);
+                    }
+                } else {
+                    tracing::warn!(
+                        "Unknown quality gate profile '{}'. Valid profiles: none, lenient, default, strict",
+                        quality_gate
+                    );
+                }
             }
 
             Ok(())
@@ -1454,6 +1505,9 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         anomaly_injection: Default::default(),
         industry_specific: Default::default(),
         fingerprint_privacy: Default::default(),
+        quality_gates: Default::default(),
+        compliance: Default::default(),
+        webhooks: Default::default(),
     }
 }
 

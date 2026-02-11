@@ -1,5 +1,6 @@
 //! gRPC service implementation for synthetic data generation.
 
+pub mod auth_interceptor;
 pub mod service;
 
 // Include the generated protobuf code
