@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -188,8 +188,11 @@
 ├── period_close/         # Trial balances and closing
 ├── consolidation/        # Elimination entries
 ├── fx/                   # Exchange rates
+├── banking/              # KYC profiles and bank transactions
+├── process_mining/       # OCEL 2.0 event logs
+├── audit/                # Audit engagements and workpapers
 ├── graphs/               # ML-ready graph exports
-├── labels/               # Anomaly/fraud labels
+├── labels/               # Anomaly, fraud, and quality labels
 └── controls/             # Internal control mappings
 </code></pre>
 <h2 id="file-formats"><a class="header" href="#file-formats">File Formats</a></h2>
@@ -200,6 +203,7 @@
 <li>Comma-separated values</li>
 <li>Header row included</li>
 <li>Quoted strings when needed</li>
+<li>Decimal values serialized as strings (prevents floating-point artifacts)</li>
 </ul>
 <p><strong>Example (journal_entries.csv):</strong></p>
 <pre><code class="language-csv">document_id,posting_date,company_code,account,description,debit,credit,is_fraud
@@ -396,6 +400,11 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 <li>Payment documents</li>
 <li>Bank references, cleared invoices</li>
 </ul>
+<p><strong>document_references.csv:</strong></p>
+<ul>
+<li>Links between documents (FollowOn, Payment, Reversal)</li>
+<li>Ensures complete document chains</li>
+</ul>
 <h2 id="subledger-files"><a class="header" href="#subledger-files">Subledger Files</a></h2>
 <h3 id="ar_open_itemscsv"><a class="header" href="#ar_open_itemscsv">ar_open_items.csv</a></h3>
 <div class="table-wrapper">
@@ -470,6 +479,251 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 <p>Accrual entries with reversal dates.</p>
 <h3 id="depreciationcsv"><a class="header" href="#depreciationcsv">depreciation.csv</a></h3>
 <p>Monthly depreciation entries per asset.</p>
+<h2 id="banking-files"><a class="header" href="#banking-files">Banking Files</a></h2>
+<h3 id="banking_customerscsv"><a class="header" href="#banking_customerscsv">banking_customers.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>customer_id</td><td>Unique identifier</td></tr>
+<tr><td>customer_type</td><td>retail, business, trust</td></tr>
+<tr><td>name</td><td>Customer name</td></tr>
+<tr><td>created_at</td><td>Account creation date</td></tr>
+<tr><td>risk_score</td><td>Calculated risk score (0-100)</td></tr>
+<tr><td>kyc_status</td><td>verified, pending, enhanced_due_diligence</td></tr>
+<tr><td>pep_flag</td><td>Politically exposed person</td></tr>
+<tr><td>sanctions_flag</td><td>Sanctions list match</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank_accountscsv"><a class="header" href="#bank_accountscsv">bank_accounts.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>account_id</td><td>Unique identifier</td></tr>
+<tr><td>customer_id</td><td>Owner reference</td></tr>
+<tr><td>account_type</td><td>checking, savings, money_market</td></tr>
+<tr><td>currency</td><td>Account currency</td></tr>
+<tr><td>opened_date</td><td>Opening date</td></tr>
+<tr><td>balance</td><td>Current balance</td></tr>
+<tr><td>status</td><td>active, dormant, closed</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank_transactionscsv"><a class="header" href="#bank_transactionscsv">bank_transactions.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>transaction_id</td><td>Unique identifier</td></tr>
+<tr><td>account_id</td><td>Account reference</td></tr>
+<tr><td>timestamp</td><td>Transaction time</td></tr>
+<tr><td>amount</td><td>Transaction amount</td></tr>
+<tr><td>currency</td><td>Transaction currency</td></tr>
+<tr><td>direction</td><td>credit, debit</td></tr>
+<tr><td>channel</td><td>branch, atm, online, wire, ach</td></tr>
+<tr><td>category</td><td>Transaction category</td></tr>
+<tr><td>counterparty_id</td><td>Counterparty reference</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="kyc_profilescsv"><a class="header" href="#kyc_profilescsv">kyc_profiles.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>customer_id</td><td>Customer reference</td></tr>
+<tr><td>declared_turnover</td><td>Expected monthly volume</td></tr>
+<tr><td>transaction_frequency</td><td>Expected transactions/month</td></tr>
+<tr><td>source_of_funds</td><td>Declared income source</td></tr>
+<tr><td>geographic_exposure</td><td>List of countries</td></tr>
+<tr><td>cash_intensity</td><td>Expected cash ratio</td></tr>
+<tr><td>beneficial_owner_complexity</td><td>Ownership layers</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="aml_typology_labelscsv"><a class="header" href="#aml_typology_labelscsv">aml_typology_labels.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>transaction_id</td><td>Transaction reference</td></tr>
+<tr><td>typology</td><td>structuring, funnel, layering, mule, fraud</td></tr>
+<tr><td>confidence</td><td>Confidence score (0-1)</td></tr>
+<tr><td>pattern_id</td><td>Related pattern identifier</td></tr>
+<tr><td>related_transactions</td><td>Comma-separated related IDs</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="entity_risk_labelscsv"><a class="header" href="#entity_risk_labelscsv">entity_risk_labels.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>entity_id</td><td>Customer or account ID</td></tr>
+<tr><td>entity_type</td><td>customer, account</td></tr>
+<tr><td>risk_category</td><td>high, medium, low</td></tr>
+<tr><td>risk_factors</td><td>Contributing factors</td></tr>
+<tr><td>label_date</td><td>Label timestamp</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="process-mining-files-ocel-20"><a class="header" href="#process-mining-files-ocel-20">Process Mining Files (OCEL 2.0)</a></h2>
+<h3 id="event_logjson"><a class="header" href="#event_logjson">event_log.json</a></h3>
+<p>OCEL 2.0 format event log:</p>
+<pre><code class="language-json">{
+  "ocel:global-log": {
+    "ocel:version": "2.0",
+    "ocel:ordering": "timestamp"
+  },
+  "ocel:events": {
+    "e1": {
+      "ocel:activity": "Create Purchase Order",
+      "ocel:timestamp": "2024-01-15T10:30:00Z",
+      "ocel:typedOmap": [
+        {"ocel:oid": "PO-001", "ocel:qualifier": "order"}
+      ]
+    }
+  },
+  "ocel:objects": {
+    "PO-001": {
+      "ocel:type": "PurchaseOrder",
+      "ocel:attributes": {
+        "vendor": "VEND-001",
+        "amount": "10000.00"
+      }
+    }
+  }
+}
+</code></pre>
+<h3 id="objectsjson"><a class="header" href="#objectsjson">objects.json</a></h3>
+<p>Object instances with types and attributes.</p>
+<h3 id="eventsjson"><a class="header" href="#eventsjson">events.json</a></h3>
+<p>Event records with object relationships.</p>
+<h3 id="process_variantscsv"><a class="header" href="#process_variantscsv">process_variants.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>variant_id</td><td>Unique identifier</td></tr>
+<tr><td>activity_sequence</td><td>Ordered activity list</td></tr>
+<tr><td>frequency</td><td>Occurrence count</td></tr>
+<tr><td>avg_duration</td><td>Average case duration</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="audit-files"><a class="header" href="#audit-files">Audit Files</a></h2>
+<h3 id="audit_engagementscsv"><a class="header" href="#audit_engagementscsv">audit_engagements.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>engagement_id</td><td>Unique identifier</td></tr>
+<tr><td>client_name</td><td>Client entity</td></tr>
+<tr><td>engagement_type</td><td>Financial, Compliance, Operational</td></tr>
+<tr><td>fiscal_year</td><td>Audit period</td></tr>
+<tr><td>materiality</td><td>Materiality threshold</td></tr>
+<tr><td>status</td><td>Planning, Fieldwork, Completion</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit_workpaperscsv"><a class="header" href="#audit_workpaperscsv">audit_workpapers.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>workpaper_id</td><td>Unique identifier</td></tr>
+<tr><td>engagement_id</td><td>Engagement reference</td></tr>
+<tr><td>workpaper_type</td><td>Lead schedule, Substantive, etc.</td></tr>
+<tr><td>prepared_by</td><td>Preparer ID</td></tr>
+<tr><td>reviewed_by</td><td>Reviewer ID</td></tr>
+<tr><td>status</td><td>Draft, Reviewed, Final</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit_evidencecsv"><a class="header" href="#audit_evidencecsv">audit_evidence.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>evidence_id</td><td>Unique identifier</td></tr>
+<tr><td>workpaper_id</td><td>Workpaper reference</td></tr>
+<tr><td>evidence_type</td><td>Document, Inquiry, Observation, etc.</td></tr>
+<tr><td>source</td><td>Evidence source</td></tr>
+<tr><td>reliability</td><td>High, Medium, Low</td></tr>
+<tr><td>sufficiency</td><td>Sufficient, Insufficient</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit_riskscsv"><a class="header" href="#audit_riskscsv">audit_risks.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>risk_id</td><td>Unique identifier</td></tr>
+<tr><td>engagement_id</td><td>Engagement reference</td></tr>
+<tr><td>risk_description</td><td>Risk narrative</td></tr>
+<tr><td>risk_level</td><td>High, Significant, Low</td></tr>
+<tr><td>likelihood</td><td>Probable, Possible, Remote</td></tr>
+<tr><td>response</td><td>Response strategy</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit_findingscsv"><a class="header" href="#audit_findingscsv">audit_findings.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>finding_id</td><td>Unique identifier</td></tr>
+<tr><td>engagement_id</td><td>Engagement reference</td></tr>
+<tr><td>finding_type</td><td>Deficiency, Significant, Material Weakness</td></tr>
+<tr><td>description</td><td>Finding narrative</td></tr>
+<tr><td>recommendation</td><td>Recommended action</td></tr>
+<tr><td>management_response</td><td>Response text</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit_judgmentscsv"><a class="header" href="#audit_judgmentscsv">audit_judgments.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>judgment_id</td><td>Unique identifier</td></tr>
+<tr><td>workpaper_id</td><td>Workpaper reference</td></tr>
+<tr><td>judgment_area</td><td>Revenue recognition, Estimates, etc.</td></tr>
+<tr><td>alternatives_considered</td><td>Options evaluated</td></tr>
+<tr><td>conclusion</td><td>Selected approach</td></tr>
+<tr><td>rationale</td><td>Reasoning documentation</td></tr>
+</tbody>
+</table>
+</div>
 <h2 id="graph-export-files"><a class="header" href="#graph-export-files">Graph Export Files</a></h2>
 <h3 id="pytorch-geometric"><a class="header" href="#pytorch-geometric">PyTorch Geometric</a></h3>
 <pre><code>graphs/transaction_network/pytorch_geometric/
@@ -490,6 +744,12 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 ├── edges_approval.csv
 └── import.cypher        # Import script
 </code></pre>
+<h3 id="dgl-deep-graph-library"><a class="header" href="#dgl-deep-graph-library">DGL (Deep Graph Library)</a></h3>
+<pre><code>graphs/transaction_network/dgl/
+├── graph.bin           # DGL binary format
+├── node_features.npy   # NumPy arrays
+└── edge_features.npy
+</code></pre>
 <h2 id="label-files"><a class="header" href="#label-files">Label Files</a></h2>
 <h3 id="anomaly_labelscsv"><a class="header" href="#anomaly_labelscsv">anomaly_labels.csv</a></h3>
 <div class="table-wrapper">
@@ -501,7 +761,7 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 <tr><td>document_id</td><td>Entry reference</td></tr>
 <tr><td>anomaly_id</td><td>Unique anomaly ID</td></tr>
 <tr><td>anomaly_type</td><td>Classification</td></tr>
-<tr><td>anomaly_category</td><td>Fraud, Error, Process, etc.</td></tr>
+<tr><td>anomaly_category</td><td>Fraud, Error, Process, Statistical, Relational</td></tr>
 <tr><td>severity</td><td>Low, Medium, High</td></tr>
 <tr><td>description</td><td>Human-readable explanation</td></tr>
 </tbody>
@@ -515,9 +775,26 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 </thead>
 <tbody>
 <tr><td>document_id</td><td>Entry reference</td></tr>
-<tr><td>fraud_type</td><td>Specific fraud pattern</td></tr>
+<tr><td>fraud_type</td><td>Specific fraud pattern (20+ types)</td></tr>
 <tr><td>detection_difficulty</td><td>Easy, Medium, Hard</td></tr>
 <tr><td>description</td><td>Fraud scenario description</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="quality_labelscsv"><a class="header" href="#quality_labelscsv">quality_labels.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>record_id</td><td>Record reference</td></tr>
+<tr><td>field_name</td><td>Affected field</td></tr>
+<tr><td>issue_type</td><td>MissingValue, Typo, FormatVariation, Duplicate</td></tr>
+<tr><td>issue_subtype</td><td>Detailed classification</td></tr>
+<tr><td>original_value</td><td>Value before modification</td></tr>
+<tr><td>modified_value</td><td>Value after modification</td></tr>
+<tr><td>severity</td><td>Severity level (1-5)</td></tr>
 </tbody>
 </table>
 </div>
@@ -537,8 +814,52 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 </tbody>
 </table>
 </div>
+<h3 id="control_account_mappingscsv"><a class="header" href="#control_account_mappingscsv">control_account_mappings.csv</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>control_id</td><td>Control reference</td></tr>
+<tr><td>account_number</td><td>GL account</td></tr>
+<tr><td>threshold</td><td>Monetary threshold</td></tr>
+</tbody>
+</table>
+</div>
 <h3 id="sod_rulescsv"><a class="header" href="#sod_rulescsv">sod_rules.csv</a></h3>
 <p>Segregation of duties conflict definitions.</p>
+<h3 id="sod_conflict_pairscsv"><a class="header" href="#sod_conflict_pairscsv">sod_conflict_pairs.csv</a></h3>
+<p>Actual SoD violations detected in generated data.</p>
+<h2 id="parquet-format"><a class="header" href="#parquet-format">Parquet Format</a></h2>
+<p>Apache Parquet columnar format for large analytical datasets:</p>
+<pre><code class="language-yaml">output:
+  format: parquet
+  compression: snappy      # snappy, gzip, zstd
+</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li>Columnar storage — efficient for queries touching few columns</li>
+<li>Built-in compression — typically 5-10x smaller than CSV</li>
+<li>Schema embedding — self-describing files with full type information</li>
+<li>Predicate pushdown — query engines skip irrelevant row groups</li>
+</ul>
+<p><strong>Use with:</strong> Apache Spark, DuckDB, Polars, pandas, BigQuery, Snowflake, Databricks.</p>
+<h2 id="erp-specific-formats"><a class="header" href="#erp-specific-formats">ERP-Specific Formats</a></h2>
+<p>SyntheticData can export in native ERP table schemas:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Target ERP</th><th>Tables</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sap</code></td><td>SAP S/4HANA</td><td>BKPF, BSEG, ACDOCA, LFA1, KNA1, MARA, CSKS, CEPC</td></tr>
+<tr><td><code>oracle</code></td><td>Oracle EBS</td><td>GL_JE_HEADERS, GL_JE_LINES, GL_JE_BATCHES</td></tr>
+<tr><td><code>netsuite</code></td><td>NetSuite</td><td>Journal entries with subsidiary, multi-book, custom fields</td></tr>
+</tbody>
+</table>
+</div>
+<p>See <a href="erp-output-formats.html">ERP Output Formats</a> for field mappings and configuration.</p>
 <h2 id="compression-options"><a class="header" href="#compression-options">Compression Options</a></h2>
 <div class="table-wrapper">
 <table>
@@ -549,20 +870,26 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
 <tr><td>none</td><td>.csv/.json</td><td>Development, small datasets</td></tr>
 <tr><td>gzip</td><td>.csv.gz</td><td>General compression</td></tr>
 <tr><td>zstd</td><td>.csv.zst</td><td>High performance</td></tr>
+<tr><td>snappy</td><td>.parquet</td><td>Parquet default (fast)</td></tr>
 </tbody>
 </table>
 </div>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <pre><code class="language-yaml">output:
-  format: csv              # csv or json
-  compression: none        # none, gzip, zstd
+  format: csv              # csv, json, jsonl, parquet, sap, oracle, netsuite
+  compression: none        # none, gzip, zstd (CSV/JSON) or snappy/gzip/zstd (Parquet)
   compression_level: 6     # 1-9 (if compression enabled)
+  streaming: false         # Enable streaming mode for large outputs
 </code></pre>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
-<li><a href="../configuration/output-settings.html">Configuration</a></li>
+<li><a href="erp-output-formats.html">ERP Output Formats</a> — SAP, Oracle, NetSuite table exports</li>
+<li><a href="streaming-output.html">Streaming Output</a> — Real-time streaming sinks</li>
+<li><a href="../configuration/output-settings.html">Configuration</a> — Output settings reference</li>
 <li><a href="../advanced/graph-export.html">Graph Export</a></li>
 <li><a href="../advanced/anomaly-injection.html">Anomaly Injection</a></li>
+<li><a href="../use-cases/aml-kyc-testing.html">AML/KYC Testing</a></li>
+<li><a href="../use-cases/process-mining.html">Process Mining</a></li>
 </ul>
 
                     </main>
@@ -573,7 +900,7 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../configuration/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../user-guide/erp-output-formats.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -587,7 +914,7 @@ abc-123,2024-01-15,1000,1200,Cash receipt,"0.00","1000.00",false
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../configuration/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../user-guide/erp-output-formats.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

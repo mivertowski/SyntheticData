@@ -26,6 +26,7 @@ datasynth-data generate --config config.yaml --output ./output
 | [Document Flows](document-flows.md) | P2P, O2C configuration |
 | [Financial Settings](financial-settings.md) | Balance, subledger, FX, period close |
 | [Compliance](compliance.md) | Fraud, controls, approval |
+| [AI & ML Features](ai-ml-features.md) | LLM, diffusion, causal, certificates |
 | [Output Settings](output-settings.md) | Format, compression |
 
 ## Reference
@@ -111,6 +112,24 @@ graph_export:
   formats:
     - pytorch_geometric
     - neo4j
+
+# AI & ML Features (v0.5.0)
+diffusion:
+  enabled: true
+  n_steps: 1000
+  schedule: "cosine"
+  sample_size: 1000
+
+causal:
+  enabled: true
+  template: "fraud_detection"
+  sample_size: 1000
+  validate: true
+
+certificates:
+  enabled: true
+  issuer: "DataSynth"
+  include_quality_metrics: true
 
 output:
   format: csv

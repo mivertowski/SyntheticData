@@ -273,8 +273,70 @@ sqlite.apply(ocel, "output/ocel.sqlite")
 # Open in OCPA tool
 ```
 
+## S2P Process Mining
+
+The full Source-to-Pay chain provides rich process mining opportunities beyond basic P2P:
+
+### Extended Event Sequence
+
+```
+Spend Analysis → Supplier Qualification → RFx Published →
+Bid Received → Bid Evaluation → Contract Award →
+Create PO → Approve PO → Release PO →
+Create GR → Post GR →
+Receive Invoice → Verify Invoice (Three-Way Match) → Post Invoice →
+Schedule Payment → Execute Payment
+```
+
+### Extended Object Types
+
+| Object Type | Attributes |
+|-------------|------------|
+| SpendCategory | category_code, total_spend, vendor_count |
+| SourcingProject | project_type, target_savings, status |
+| SupplierBid | vendor_id, bid_amount, technical_score |
+| ProcurementContract | contract_value, validity_period, terms |
+| PurchaseRequisition | requester, catalog_item, urgency |
+| PurchaseOrder | po_type, vendor_id, total_amount |
+| GoodsReceipt | gr_number, received_qty, movement_type |
+| VendorInvoice | invoice_amount, match_status, due_date |
+| Payment | payment_method, cleared_amount, bank_ref |
+
+### Cycle Time Analysis
+
+```python
+# Analyze end-to-end procurement cycle times
+po_events = events[events['object_type'] == 'PurchaseOrder']
+
+# PO creation to payment completion
+cycle_times = po_events.groupby('case_id').agg({
+    'timestamp': ['min', 'max']
+})
+cycle_times['cycle_time'] = (
+    cycle_times[('timestamp', 'max')] -
+    cycle_times[('timestamp', 'min')]
+)
+
+# Segment by PO type
+cycle_by_type = po_events.merge(
+    objects[['po_type']], on='object_id'
+).groupby('po_type')['cycle_time'].describe()
+```
+
+### Three-Way Match Conformance
+
+```python
+# Identify invoices that failed three-way match
+match_events = events[events['activity'] == 'Verify Invoice']
+blocked = match_events[match_events['match_status'] == 'blocked']
+
+print(f"Three-way match block rate: {len(blocked)/len(match_events):.1%}")
+print(f"Most common variance: {blocked['variance_type'].mode()[0]}")
+```
+
 ## See Also
 
-- [Document Flows](../configuration/document-flows.md)
-- [datasynth-ocpm Crate](../crates/datasynth-ocpm.md)
+- [Document Flows](../configuration/document-flows.md) — P2P and O2C configuration
+- [Process Chains](../architecture/process-chains.md) — Enterprise process chain architecture
+- [datasynth-ocpm Crate](../crates/datasynth-ocpm.md) — OCEL 2.0 implementation
 - [Audit Analytics](audit-analytics.md)

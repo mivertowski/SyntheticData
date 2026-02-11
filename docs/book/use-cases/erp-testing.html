@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -326,13 +326,13 @@ output:
 <h2 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h2>
 <h3 id="generation-metrics"><a class="header" href="#generation-metrics">Generation Metrics</a></h3>
 <pre><code class="language-bash"># Time generation
-time synth-data generate --config config.yaml --output ./output
+time datasynth-data generate --config config.yaml --output ./output
 
 # Monitor memory
-/usr/bin/time -v synth-data generate --config config.yaml --output ./output
+/usr/bin/time -v datasynth-data generate --config config.yaml --output ./output
 
 # Watch progress
-synth-data generate --config config.yaml --output ./output -v
+datasynth-data generate --config config.yaml --output ./output -v
 </code></pre>
 <h3 id="import-metrics"><a class="header" href="#import-metrics">Import Metrics</a></h3>
 <p>Track these during ERP import:</p>
@@ -353,7 +353,7 @@ synth-data generate --config config.yaml --output ./output -v
 <h2 id="data-import-strategies"><a class="header" href="#data-import-strategies">Data Import Strategies</a></h2>
 <h3 id="sap-s4hana"><a class="header" href="#sap-s4hana">SAP S/4HANA</a></h3>
 <pre><code class="language-bash"># Generate ACDOCA format
-synth-data generate --config config.yaml --output ./output
+datasynth-data generate --config config.yaml --output ./output
 
 # Use SAP Data Services or LSMW for import
 # Output: output/transactions/acdoca.csv
@@ -409,7 +409,7 @@ assert abs(source['debit_amount'].sum() - target['debit'].sum()) &lt; 0.01
 <p>For very large volumes, generate in chunks:</p>
 <pre><code class="language-bash"># Generate 10 batches of 1M each
 for i in {1..10}; do
-    synth-data generate \
+    datasynth-data generate \
         --config config.yaml \
         --output ./output/batch_$i \
         --seed $((42 + i))
@@ -448,11 +448,11 @@ wait
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../use-cases/process-mining.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../use-cases/aml-kyc-testing.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../contributing/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../use-cases/causal-analysis.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -462,11 +462,11 @@ wait
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../use-cases/process-mining.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../use-cases/aml-kyc-testing.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../contributing/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../use-cases/causal-analysis.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

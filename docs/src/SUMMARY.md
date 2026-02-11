@@ -20,8 +20,11 @@
 - [Server API](user-guide/server-api.md)
 - [Desktop UI](user-guide/desktop-ui.md)
 - [Output Formats](user-guide/output-formats.md)
+- [ERP Output Formats](user-guide/erp-output-formats.md)
+- [Streaming Output](user-guide/streaming-output.md)
 - [Python Wrapper Specification](user-guide/python-wrapper-spec.md)
 - [Python Wrapper Guide](user-guide/python-wrapper.md)
+- [Ecosystem Integrations](user-guide/ecosystem-integrations.md)
 
 ---
 
@@ -35,9 +38,12 @@
 - [Transactions](configuration/transactions.md)
 - [Master Data](configuration/master-data.md)
 - [Document Flows](configuration/document-flows.md)
+- [Subledgers](configuration/subledgers.md)
+- [FX & Currency](configuration/fx-currency.md)
 - [Financial Settings](configuration/financial-settings.md)
 - [Compliance](configuration/compliance.md)
 - [Output Settings](configuration/output-settings.md)
+- [AI & ML Features](configuration/ai-ml-features.md)
 
 ---
 
@@ -49,6 +55,7 @@
 - [Data Flow](architecture/data-flow.md)
 - [Generation Pipeline](architecture/generation-pipeline.md)
 - [Memory Management](architecture/memory-management.md)
+- [Process Chains](architecture/process-chains.md)
 - [Design Decisions](architecture/design-decisions.md)
 
 ---
@@ -88,6 +95,11 @@
 - [Fingerprinting](advanced/fingerprinting.md)
 - [Accounting & Audit Standards](advanced/accounting-standards.md)
 - [Performance Tuning](advanced/performance.md)
+- [LLM-Augmented Generation](advanced/llm-generation.md)
+- [Diffusion Models](advanced/diffusion-models.md)
+- [Causal & Counterfactual Generation](advanced/causal-generation.md)
+- [Federated Fingerprinting](advanced/federated-fingerprinting.md)
+- [Synthetic Data Certificates](advanced/certificates.md)
 
 ---
 
@@ -115,6 +127,9 @@
 - [Process Mining](use-cases/process-mining.md)
 - [AML/KYC Testing](use-cases/aml-kyc-testing.md)
 - [ERP Load Testing](use-cases/erp-testing.md)
+- [Causal Analysis](use-cases/causal-analysis.md)
+- [LLM Training Data](use-cases/llm-training-data.md)
+- [Pipeline Orchestration](use-cases/pipeline-orchestration.md)
 
 ---
 

@@ -321,6 +321,87 @@ pub fn export(&self) -> Result<()> {
 - Graph exports
 - Label files
 
+## Stage 8: Banking & Process Mining
+
+**Purpose:** Generate banking/KYC/AML data and OCEL 2.0 event logs
+
+If banking or OCEL generation is enabled in the config, this stage produces banking transactions with KYC profiles and/or OCEL 2.0 event logs for process mining.
+
+**Outputs:**
+- Banking customers, accounts, transactions
+- KYC profiles and AML typology labels
+- OCEL 2.0 event logs, objects, process variants
+
+## Stage 9: Audit Generation
+
+**Purpose:** Generate ISA-compliant audit data
+
+If audit generation is enabled, generates engagement records, workpapers, evidence, risks, findings, and professional judgments.
+
+**Outputs:**
+- Audit engagements, workpapers, evidence
+- Risk assessments and findings
+- Professional judgment documentation
+
+## Stage 10: Graph Export
+
+**Purpose:** Build and export ML-ready graphs
+
+If graph export is enabled, builds transaction, approval, and entity graphs and exports to configured formats.
+
+**Outputs:**
+- PyTorch Geometric tensors (.pt)
+- Neo4j CSV + Cypher scripts
+- DGL graph structures
+
+## Stage 11: LLM Enrichment (v0.5.0)
+
+**Purpose:** Enrich generated data with LLM-generated metadata
+
+When LLM enrichment is enabled, uses the configured `LlmProvider` (Mock, OpenAI, Anthropic, or Custom) to generate realistic:
+- Vendor names appropriate for industry and spend category
+- Transaction descriptions and memo fields
+- Natural language explanations for injected anomalies
+
+The Mock provider is deterministic and requires no network access, making it suitable for CI/CD pipelines.
+
+**Outputs:**
+- Enriched vendor master data
+- Enriched journal entry descriptions
+- Anomaly explanation text
+
+## Stage 12: Diffusion Enhancement (v0.5.0)
+
+**Purpose:** Optionally blend diffusion model outputs with rule-based data
+
+When diffusion is enabled, uses a `StatisticalDiffusionBackend` to generate samples through a learned denoising process. The `HybridGenerator` blends diffusion outputs with rule-based data using one of three strategies:
+
+- **Interpolate**: Weighted average of rule-based and diffusion values
+- **Select**: Per-record random selection from either source
+- **Ensemble**: Column-level blending (diffusion for amounts, rule-based for categoricals)
+
+**Outputs:**
+- Blended transaction amounts and attributes
+- Diffusion fit report (mean/std errors, correlation preservation)
+
+## Stage 13: Causal Overlay (v0.5.0)
+
+**Purpose:** Apply causal structure to generated data
+
+When causal generation is enabled, constructs a `StructuralCausalModel` from the configured causal graph (or a built-in template like `fraud_detection` or `revenue_cycle`) and generates data that respects causal relationships. Supports:
+
+- **Observational generation**: Data following the causal structure
+- **Interventional generation**: Data under do-calculus interventions ("what-if" scenarios)
+- **Counterfactual generation**: Counterfactual versions of existing records via abduction-action-prediction
+
+The causal validator verifies that generated data preserves the specified causal structure.
+
+**Outputs:**
+- Causally-structured records
+- Intervention results with effect estimates
+- Counterfactual pairs (factual + counterfactual)
+- Causal validation report
+
 ## Parallel Execution
 
 Stages that support parallelism:

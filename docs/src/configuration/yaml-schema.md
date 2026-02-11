@@ -389,6 +389,62 @@ output:
 | Company codes | Unique |
 | Dates | Valid and consistent |
 
+## Diffusion Configuration (v0.5.0)
+
+```yaml
+diffusion:
+  enabled: false                    # Enable diffusion model backend
+  n_steps: 1000                     # Number of diffusion steps (default: 1000)
+  schedule: "linear"                # Noise schedule: "linear", "cosine", "sigmoid"
+  sample_size: 1000                 # Number of samples to generate (default: 1000)
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable diffusion model generation |
+| `n_steps` | integer | `1000` | Number of forward/reverse diffusion steps |
+| `schedule` | string | `"linear"` | Noise schedule type: `linear`, `cosine`, `sigmoid` |
+| `sample_size` | integer | `1000` | Number of samples to generate |
+
+## Causal Configuration (v0.5.0)
+
+```yaml
+causal:
+  enabled: false                    # Enable causal generation
+  template: "fraud_detection"       # Built-in template or custom graph path
+  sample_size: 1000                 # Number of samples to generate
+  validate: true                    # Validate causal structure in output
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable causal/counterfactual generation |
+| `template` | string | `"fraud_detection"` | Template name (`fraud_detection`, `revenue_cycle`) or path to custom YAML |
+| `sample_size` | integer | `1000` | Number of causal samples to generate |
+| `validate` | bool | `true` | Run causal structure validation on output |
+
+### Built-in Causal Templates
+
+| Template | Variables | Description |
+|----------|-----------|-------------|
+| `fraud_detection` | transaction_amount, approval_level, vendor_risk, fraud_flag | Fraud detection causal graph |
+| `revenue_cycle` | order_size, credit_score, payment_delay, revenue | Revenue cycle causal graph |
+
+## Certificate Configuration (v0.5.0)
+
+```yaml
+certificates:
+  enabled: false                    # Enable synthetic data certificates
+  issuer: "DataSynth"              # Certificate issuer name
+  include_quality_metrics: true     # Include quality metrics in certificate
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Attach certificate to generated output |
+| `issuer` | string | `"DataSynth"` | Issuer identity for the certificate |
+| `include_quality_metrics` | bool | `true` | Include Benford MAD, correlation, fidelity metrics |
+
 ## See Also
 
 - [Configuration Overview](README.md)

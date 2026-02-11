@@ -31,6 +31,12 @@ The orchestrator executes phases in order:
 5. **Period Close**: Run monthly/quarterly/annual close processes
 6. **Anomalies**: Inject configured anomalies and data quality issues
 7. **Export**: Write outputs and generate ML labels
+8. **Banking**: Generate KYC/AML data (if enabled)
+9. **Audit**: Generate ISA-compliant audit data (if enabled)
+10. **Graphs**: Build and export ML graphs (if enabled)
+11. **LLM Enrichment**: Enrich data with LLM-generated metadata (v0.5.0, if enabled)
+12. **Diffusion Enhancement**: Blend diffusion model outputs (v0.5.0, if enabled)
+13. **Causal Overlay**: Apply causal structure (v0.5.0, if enabled)
 
 ## Key Types
 

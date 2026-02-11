@@ -289,6 +289,34 @@ approval:
 | `control.id` | Unique |
 | `thresholds` | Strictly ascending |
 
+## Synthetic Data Certificates (v0.5.0)
+
+Certificates provide cryptographic proof of the privacy guarantees and quality metrics of generated data.
+
+```yaml
+certificates:
+  enabled: true
+  issuer: "DataSynth"
+  include_quality_metrics: true
+```
+
+When enabled, a `certificate.json` file is produced alongside the output containing:
+
+- **DP Guarantee**: Mechanism (Laplace/Gaussian), epsilon, delta, composition method
+- **Quality Metrics**: Benford MAD, correlation preservation, statistical fidelity, MIA AUC
+- **Config Hash**: SHA-256 hash of the generation configuration
+- **Signature**: HMAC-SHA256 signature for tamper detection
+- **Fingerprint Hash**: Hash of source fingerprint (if fingerprint-based generation)
+
+The certificate can be embedded in Parquet file metadata or included as a separate JSON file.
+
+```bash
+# Generate with certificate
+datasynth-data generate --config config.yaml --output ./output --certificate
+
+# Certificate is written to ./output/certificate.json
+```
+
 ## See Also
 
 - [Anomaly Injection](../advanced/anomaly-injection.md)

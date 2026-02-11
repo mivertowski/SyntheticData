@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -211,23 +211,23 @@
 </table>
 </div>
 <h2 id="cli-overview"><a class="header" href="#cli-overview">CLI Overview</a></h2>
-<p>The command-line interface (<code>synth-data</code>) is ideal for:</p>
+<p>The command-line interface (<code>datasynth-data</code>) is ideal for:</p>
 <ul>
 <li>Batch generation</li>
 <li>CI/CD pipelines</li>
 <li>Scripting and automation</li>
 <li>Server environments</li>
 </ul>
-<pre><code class="language-bash">synth-data generate --config config.yaml --output ./output
+<pre><code class="language-bash">datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 <h2 id="server-overview"><a class="header" href="#server-overview">Server Overview</a></h2>
-<p>The server (<code>synth-server</code>) provides:</p>
+<p>The server (<code>datasynth-server</code>) provides:</p>
 <ul>
 <li>REST API for configuration and control</li>
 <li>gRPC for high-performance integration</li>
 <li>WebSocket for real-time streaming</li>
 </ul>
-<pre><code class="language-bash">cargo run -p synth-server -- --port 3000
+<pre><code class="language-bash">cargo run -p datasynth-server -- --port 3000
 </code></pre>
 <h2 id="desktop-ui-overview"><a class="header" href="#desktop-ui-overview">Desktop UI Overview</a></h2>
 <p>The desktop application offers:</p>
@@ -237,7 +237,7 @@
 <li>Real-time generation monitoring</li>
 <li>Cross-platform support (Windows, macOS, Linux)</li>
 </ul>
-<pre><code class="language-bash">cd crates/synth-ui &amp;&amp; npm run tauri dev
+<pre><code class="language-bash">cd crates/datasynth-ui &amp;&amp; npm run tauri dev
 </code></pre>
 <h2 id="output-formats"><a class="header" href="#output-formats">Output Formats</a></h2>
 <p>SyntheticData produces various output formats:</p>

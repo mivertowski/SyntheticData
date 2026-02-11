@@ -90,6 +90,35 @@ The fingerprinting workflow consists of three main stages:
 | **FidelityReport** | Overall score, component scores, pass/fail status |
 | **FidelityConfig** | Thresholds and weights for evaluation |
 
+### Federated Fingerprinting (`federated/`) — v0.5.0
+
+| Component | Description |
+|-----------|-------------|
+| **FederatedFingerprintProtocol** | Orchestrates multi-source fingerprint aggregation |
+| **PartialFingerprint** | Per-source fingerprint with local DP (epsilon, means, stds, correlations) |
+| **AggregatedFingerprint** | Combined fingerprint with total epsilon and source count |
+| **AggregationMethod** | WeightedAverage, Median, or TrimmedMean strategies |
+| **FederatedConfig** | min_sources, max_epsilon_per_source, aggregation_method |
+
+### Certificates (`certificates/`) — v0.5.0
+
+| Component | Description |
+|-----------|-------------|
+| **SyntheticDataCertificate** | Certificate with DP guarantees, quality metrics, config hash, signature |
+| **CertificateBuilder** | Builder pattern for constructing certificates |
+| **DpGuarantee** | DP mechanism, epsilon, delta, composition method, total queries |
+| **QualityMetrics** | Benford MAD, correlation preservation, statistical fidelity, MIA AUC |
+| **sign_certificate()** | HMAC-SHA256 signing |
+| **verify_certificate()** | Signature verification |
+
+### Privacy-Utility Frontier (`privacy/pareto.rs`) — v0.5.0
+
+| Component | Description |
+|-----------|-------------|
+| **ParetoFrontier** | Explore privacy-utility tradeoff space |
+| **ParetoPoint** | Epsilon, utility_score, benford_mad, correlation_score |
+| **recommend()** | Recommend optimal epsilon for target utility |
+
 ## DSF File Format
 
 The DataSynth Fingerprint (`.dsf`) file is a ZIP archive containing:
@@ -181,6 +210,66 @@ for (metric, score) in &report.component_scores {
 }
 ```
 
+### Federated Fingerprinting
+
+```rust
+use datasynth_fingerprint::federated::{
+    FederatedFingerprintProtocol, FederatedConfig, AggregationMethod,
+};
+
+let config = FederatedConfig {
+    min_sources: 2,
+    max_epsilon_per_source: 5.0,
+    aggregation_method: AggregationMethod::WeightedAverage,
+};
+
+let protocol = FederatedFingerprintProtocol::new(config);
+
+// Create partial fingerprints from each data source
+let partial1 = FederatedFingerprintProtocol::create_partial(
+    "source_a", vec!["amount".into(), "count".into()], 10000,
+    vec![5000.0, 3.0], vec![2000.0, 1.5], 1.0,
+);
+let partial2 = FederatedFingerprintProtocol::create_partial(
+    "source_b", vec!["amount".into(), "count".into()], 8000,
+    vec![4500.0, 2.8], vec![1800.0, 1.2], 1.0,
+);
+
+// Aggregate without centralizing raw data
+let aggregated = protocol.aggregate(&[partial1, partial2])?;
+println!("Total epsilon: {}", aggregated.total_epsilon);
+```
+
+### Synthetic Data Certificates
+
+```rust
+use datasynth_fingerprint::certificates::{
+    CertificateBuilder, DpGuarantee, QualityMetrics,
+    sign_certificate, verify_certificate,
+};
+
+let mut cert = CertificateBuilder::new("DataSynth v0.5.0")
+    .with_dp_guarantee(DpGuarantee {
+        mechanism: "Laplace".into(),
+        epsilon: 1.0,
+        delta: None,
+        composition_method: "sequential".into(),
+        total_queries: 50,
+    })
+    .with_quality_metrics(QualityMetrics {
+        benford_mad: Some(0.008),
+        correlation_preservation: Some(0.95),
+        statistical_fidelity: Some(0.92),
+        mia_auc: Some(0.52),
+    })
+    .with_seed(42)
+    .build();
+
+// Sign and verify
+sign_certificate(&mut cert, "my-secret-key");
+assert!(verify_certificate(&cert, "my-secret-key"));
+```
+
 ## Fidelity Metrics
 
 | Category | Metrics |
@@ -222,6 +311,15 @@ datasynth-data fingerprint evaluate \
     --fingerprint ./fp.dsf \
     --synthetic ./synthetic/ \
     --threshold 0.8
+
+# Federated fingerprinting
+datasynth-data fingerprint federated \
+    --sources ./source_a.dsf ./source_b.dsf \
+    --output ./aggregated.dsf \
+    --method weighted_average
+
+# Generate with certificate
+datasynth-data generate --config config.yaml --output ./output --certificate
 ```
 
 ## Dependencies

@@ -400,3 +400,104 @@ synth = DataSynth(binary_path="/path/to/datasynth-data")
 - **CLI not found**: Build the `datasynth-data` binary and set `DATASYNTH_BINARY` or pass `binary_path`.
 - **ConfigValidationError**: Check the error details for invalid configuration values.
 - **Streaming errors**: Verify the server is running and reachable at the configured URL.
+
+## Ecosystem Integrations (v0.5.0)
+
+DataSynth includes optional integrations with popular data engineering and ML platforms. Install with:
+
+```bash
+pip install datasynth-py[integrations]
+# Or install specific integrations
+pip install datasynth-py[airflow,dbt,mlflow,spark]
+```
+
+### Apache Airflow
+
+Use the `DataSynthOperator` to generate data as part of Airflow DAGs:
+
+```python
+from datasynth_py.integrations import DataSynthOperator, DataSynthSensor, DataSynthValidateOperator
+
+# Generate data
+generate = DataSynthOperator(
+    task_id="generate_data",
+    config=config,
+    output_path="/data/synthetic/output",
+)
+
+# Wait for completion
+sensor = DataSynthSensor(
+    task_id="wait_for_data",
+    output_path="/data/synthetic/output",
+)
+
+# Validate config
+validate = DataSynthValidateOperator(
+    task_id="validate_config",
+    config_path="/data/configs/config.yaml",
+)
+```
+
+### dbt Integration
+
+Generate dbt sources and seeds from synthetic data:
+
+```python
+from datasynth_py.integrations import DbtSourceGenerator, create_dbt_project
+
+gen = DbtSourceGenerator()
+
+# Generate sources.yml for dbt
+sources_path = gen.generate_sources_yaml("./output", "./my_dbt_project")
+
+# Generate seed CSVs
+seeds_dir = gen.generate_seeds("./output", "./my_dbt_project")
+
+# Create complete dbt project from synthetic output
+project = create_dbt_project("./output", "my_dbt_project")
+```
+
+### MLflow Tracking
+
+Track generation runs as MLflow experiments:
+
+```python
+from datasynth_py.integrations import DataSynthMlflowTracker
+
+tracker = DataSynthMlflowTracker(experiment_name="synthetic_data_runs")
+
+# Track a generation run
+run_info = tracker.track_generation("./output", config=cfg)
+
+# Log quality metrics
+tracker.log_quality_metrics({
+    "completeness": 0.98,
+    "benford_mad": 0.008,
+    "correlation_preservation": 0.95,
+})
+
+# Compare recent runs
+comparison = tracker.compare_runs(n=5)
+```
+
+### Apache Spark
+
+Read synthetic data as Spark DataFrames:
+
+```python
+from datasynth_py.integrations import DataSynthSparkReader
+
+reader = DataSynthSparkReader()
+
+# Read a single table
+df = reader.read_table(spark, "./output", "journal_entries")
+
+# Read all tables
+tables = reader.read_all_tables(spark, "./output")
+
+# Create temporary views for SQL queries
+views = reader.create_temp_views(spark, "./output")
+spark.sql("SELECT * FROM journal_entries WHERE amount > 10000").show()
+```
+
+For comprehensive integration documentation, see the [Ecosystem Integrations](ecosystem-integrations.md) guide.

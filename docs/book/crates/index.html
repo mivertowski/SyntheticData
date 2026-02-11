@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,27 +179,30 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="crate-reference"><a class="header" href="#crate-reference">Crate Reference</a></h1>
-<p>SyntheticData is organized as a Rust workspace with modular crates. This section provides detailed documentation for each crate.</p>
+<p>SyntheticData is organized as a Rust workspace with 15 modular crates. This section provides detailed documentation for each crate.</p>
 <h2 id="workspace-structure"><a class="header" href="#workspace-structure">Workspace Structure</a></h2>
-<pre><code>synth-cli          → Binary entry point (commands: generate, validate, init, info)
-synth-server       → REST/gRPC/WebSocket server with auth, rate limiting
-synth-ui           → Tauri/SvelteKit desktop UI
+<pre><code>datasynth-cli          → Binary entry point (commands: generate, validate, init, info, fingerprint)
+datasynth-server       → REST/gRPC/WebSocket server with auth, rate limiting, timeouts
+datasynth-ui           → Tauri/SvelteKit desktop UI
     ↓
-synth-runtime      → Orchestration layer (GenerationOrchestrator coordinates workflow)
+datasynth-runtime      → Orchestration layer (GenerationOrchestrator coordinates workflow)
     ↓
-synth-generators   → Data generators (JE, Document Flows, Subledgers, Anomalies)
+datasynth-generators   → Data generators (JE, Document Flows, Subledgers, Anomalies, Audit)
+datasynth-banking      → KYC/AML banking transaction generator with fraud typologies
+datasynth-ocpm         → Object-Centric Process Mining (OCEL 2.0 event logs)
+datasynth-fingerprint  → Privacy-preserving fingerprint extraction and synthesis
+datasynth-standards    → Accounting/audit standards (US GAAP, IFRS, ISA, SOX)
     ↓
-synth-graph        → Graph/network export (PyTorch Geometric, Neo4j, DGL)
+datasynth-graph        → Graph/network export (PyTorch Geometric, Neo4j, DGL)
+datasynth-eval         → Evaluation framework with auto-tuning and recommendations
     ↓
-synth-config       → Configuration schema, validation, industry presets
+datasynth-config       → Configuration schema, validation, industry presets
     ↓
-synth-core         → Domain models, traits, distributions, templates
+datasynth-core         → Domain models, traits, distributions, templates, resource guards
     ↓
-synth-output       → Output sinks (CSV, JSON, streaming)
+datasynth-output       → Output sinks (CSV, JSON, Parquet, ControlExport)
 
-synth-eval         → Evaluation framework (quality, coherence)
-synth-ocpm         → Object-Centric Process Mining (OCEL 2.0)
-synth-test-utils   → Testing utilities and fixtures
+datasynth-test-utils   → Testing utilities and fixtures
 </code></pre>
 <h2 id="crate-categories"><a class="header" href="#crate-categories">Crate Categories</a></h2>
 <h3 id="application-layer"><a class="header" href="#application-layer">Application Layer</a></h3>
@@ -209,9 +212,9 @@ synth-test-utils   → Testing utilities and fixtures
 <tr><th>Crate</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><a href="synth-cli.html">synth-cli</a></td><td>Command-line interface binary</td></tr>
-<tr><td><a href="synth-server.html">synth-server</a></td><td>REST/gRPC/WebSocket server</td></tr>
-<tr><td><a href="synth-ui.html">synth-ui</a></td><td>Desktop GUI application</td></tr>
+<tr><td><a href="datasynth-cli.html">datasynth-cli</a></td><td>Command-line interface binary with generate, validate, init, info, fingerprint commands</td></tr>
+<tr><td><a href="datasynth-server.html">datasynth-server</a></td><td>REST/gRPC/WebSocket server with authentication, rate limiting, and timeouts</td></tr>
+<tr><td><a href="datasynth-ui.html">datasynth-ui</a></td><td>Cross-platform desktop GUI application (Tauri + SvelteKit)</td></tr>
 </tbody>
 </table>
 </div>
@@ -222,9 +225,23 @@ synth-test-utils   → Testing utilities and fixtures
 <tr><th>Crate</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><a href="synth-runtime.html">synth-runtime</a></td><td>Generation orchestration</td></tr>
-<tr><td><a href="synth-generators.html">synth-generators</a></td><td>All data generators</td></tr>
-<tr><td><a href="synth-graph.html">synth-graph</a></td><td>ML graph export</td></tr>
+<tr><td><a href="datasynth-runtime.html">datasynth-runtime</a></td><td>Generation orchestration with resource guards and graceful degradation</td></tr>
+<tr><td><a href="datasynth-generators.html">datasynth-generators</a></td><td>All data generators (JE, master data, documents, subledgers, anomalies, audit)</td></tr>
+<tr><td><a href="datasynth-graph.html">datasynth-graph</a></td><td>ML graph export (PyTorch Geometric, Neo4j, DGL)</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="domain-specific-modules"><a class="header" href="#domain-specific-modules">Domain-Specific Modules</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Crate</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="datasynth-banking.html">datasynth-banking</a></td><td>KYC/AML banking transactions with fraud typologies</td></tr>
+<tr><td><a href="datasynth-ocpm.html">datasynth-ocpm</a></td><td>Object-Centric Process Mining (OCEL 2.0)</td></tr>
+<tr><td><a href="datasynth-fingerprint.html">datasynth-fingerprint</a></td><td>Privacy-preserving fingerprint extraction and synthesis</td></tr>
+<tr><td><a href="datasynth-standards.html">datasynth-standards</a></td><td>Accounting/audit standards (US GAAP, IFRS, ISA, SOX, PCAOB)</td></tr>
 </tbody>
 </table>
 </div>
@@ -235,9 +252,9 @@ synth-test-utils   → Testing utilities and fixtures
 <tr><th>Crate</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><a href="synth-core.html">synth-core</a></td><td>Domain models and distributions</td></tr>
-<tr><td><a href="synth-config.html">synth-config</a></td><td>Configuration and validation</td></tr>
-<tr><td><a href="synth-output.html">synth-output</a></td><td>Output sinks</td></tr>
+<tr><td><a href="datasynth-core.html">datasynth-core</a></td><td>Domain models, distributions, traits, resource guards</td></tr>
+<tr><td><a href="datasynth-config.html">datasynth-config</a></td><td>Configuration schema and validation</td></tr>
+<tr><td><a href="datasynth-output.html">datasynth-output</a></td><td>Output sinks (CSV, JSON, Parquet)</td></tr>
 </tbody>
 </table>
 </div>
@@ -248,41 +265,50 @@ synth-test-utils   → Testing utilities and fixtures
 <tr><th>Crate</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><a href="synth-eval.html">synth-eval</a></td><td>Quality evaluation</td></tr>
-<tr><td><a href="synth-ocpm.html">synth-ocpm</a></td><td>Process mining (OCEL 2.0)</td></tr>
-<tr><td><a href="synth-test-utils.html">synth-test-utils</a></td><td>Test utilities</td></tr>
+<tr><td><a href="datasynth-eval.html">datasynth-eval</a></td><td>Quality evaluation with auto-tuning recommendations</td></tr>
+<tr><td><a href="datasynth-test-utils.html">datasynth-test-utils</a></td><td>Test utilities and fixtures</td></tr>
 </tbody>
 </table>
 </div>
 <h2 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h2>
 <p>The crates follow a strict dependency hierarchy:</p>
 <ol>
-<li><strong>synth-core</strong>: No internal dependencies (foundation)</li>
-<li><strong>synth-config</strong>: Depends on synth-core</li>
-<li><strong>synth-output</strong>: Depends on synth-core</li>
-<li><strong>synth-generators</strong>: Depends on synth-core, synth-config</li>
-<li><strong>synth-graph</strong>: Depends on synth-core, synth-generators</li>
-<li><strong>synth-runtime</strong>: Depends on synth-core, synth-config, synth-generators, synth-output, synth-graph</li>
-<li><strong>synth-cli</strong>: Depends on synth-runtime</li>
-<li><strong>synth-server</strong>: Depends on synth-runtime</li>
-<li><strong>synth-ui</strong>: Depends on synth-runtime (via Tauri)</li>
+<li><strong>datasynth-core</strong>: No internal dependencies (foundation)</li>
+<li><strong>datasynth-config</strong>: Depends on datasynth-core</li>
+<li><strong>datasynth-output</strong>: Depends on datasynth-core</li>
+<li><strong>datasynth-generators</strong>: Depends on datasynth-core, datasynth-config</li>
+<li><strong>datasynth-graph</strong>: Depends on datasynth-core, datasynth-generators</li>
+<li><strong>datasynth-eval</strong>: Depends on datasynth-core</li>
+<li><strong>datasynth-banking</strong>: Depends on datasynth-core, datasynth-config</li>
+<li><strong>datasynth-ocpm</strong>: Depends on datasynth-core</li>
+<li><strong>datasynth-fingerprint</strong>: Depends on datasynth-core, datasynth-config</li>
+<li><strong>datasynth-runtime</strong>: Depends on datasynth-core, datasynth-config, datasynth-generators, datasynth-output, datasynth-graph, datasynth-banking, datasynth-ocpm, datasynth-fingerprint, datasynth-eval</li>
+<li><strong>datasynth-cli</strong>: Depends on datasynth-runtime, datasynth-fingerprint</li>
+<li><strong>datasynth-server</strong>: Depends on datasynth-runtime</li>
+<li><strong>datasynth-ui</strong>: Depends on datasynth-runtime (via Tauri)</li>
+<li><strong>datasynth-standards</strong>: Depends on datasynth-core, datasynth-config</li>
+<li><strong>datasynth-test-utils</strong>: Depends on datasynth-core</li>
 </ol>
 <h2 id="building-individual-crates"><a class="header" href="#building-individual-crates">Building Individual Crates</a></h2>
 <pre><code class="language-bash"># Build specific crate
-cargo build -p synth-core
-cargo build -p synth-generators
+cargo build -p datasynth-core
+cargo build -p datasynth-generators
+cargo build -p datasynth-fingerprint
 
 # Run tests for specific crate
-cargo test -p synth-core
-cargo test -p synth-generators
+cargo test -p datasynth-core
+cargo test -p datasynth-generators
+cargo test -p datasynth-fingerprint
 
 # Generate docs for specific crate
-cargo doc -p synth-core --open
+cargo doc -p datasynth-core --open
+cargo doc -p datasynth-fingerprint --open
 </code></pre>
 <h2 id="api-documentation"><a class="header" href="#api-documentation">API Documentation</a></h2>
 <p>For detailed Rust API documentation, generate and view rustdoc:</p>
 <pre><code class="language-bash">cargo doc --workspace --no-deps --open
 </code></pre>
+<p>After deployment, API documentation is available at <code>/api/</code> in the documentation site.</p>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="../architecture/README.html">Architecture Overview</a></li>
@@ -298,7 +324,7 @@ cargo doc -p synth-core --open
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../crates/synth-core.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../crates/datasynth-core.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -312,7 +338,7 @@ cargo doc -p synth-core --open
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../crates/synth-core.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../crates/datasynth-core.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

@@ -74,6 +74,54 @@ Display available options.
 datasynth-data info
 ```
 
+### fingerprint
+
+Privacy-preserving fingerprint operations.
+
+```bash
+# Extract fingerprint
+datasynth-data fingerprint extract --input ./data.csv --output ./fp.dsf --privacy-level standard
+
+# Validate fingerprint
+datasynth-data fingerprint validate ./fp.dsf
+
+# View fingerprint details
+datasynth-data fingerprint info ./fp.dsf --detailed
+
+# Evaluate fidelity
+datasynth-data fingerprint evaluate --fingerprint ./fp.dsf --synthetic ./output/ --threshold 0.8
+
+# Federated aggregation (v0.5.0)
+datasynth-data fingerprint federated --sources ./a.dsf ./b.dsf --output ./combined.dsf --method weighted_average
+```
+
+### diffusion (v0.5.0)
+
+Diffusion model training and evaluation.
+
+```bash
+# Train diffusion model from fingerprint
+datasynth-data diffusion train --fingerprint ./fp.dsf --output ./model.json
+
+# Evaluate model fit
+datasynth-data diffusion evaluate --model ./model.json --samples 5000
+```
+
+### causal (v0.5.0)
+
+Causal and counterfactual data generation.
+
+```bash
+# Generate from causal template
+datasynth-data causal generate --template fraud_detection --samples 10000 --output ./causal/
+
+# Run intervention
+datasynth-data causal intervene --template fraud_detection --variable transaction_amount --value 50000 --samples 5000 --output ./intervention/
+
+# Validate causal structure
+datasynth-data causal validate --data ./causal/ --template fraud_detection
+```
+
 ## Key Types
 
 ### CLI Arguments
@@ -99,6 +147,9 @@ pub enum Command {
     Init(InitArgs),
     Validate(ValidateArgs),
     Info,
+    Fingerprint(FingerprintArgs),   // fingerprint subcommands
+    Diffusion(DiffusionArgs),       // v0.5.0: diffusion model commands
+    Causal(CausalArgs),             // v0.5.0: causal generation commands
 }
 ```
 
@@ -125,6 +176,18 @@ pub struct GenerateArgs {
     /// Output format
     #[arg(long, default_value = "csv")]
     pub format: String,
+
+    /// Attach a synthetic data certificate (v0.5.0)
+    #[arg(long)]
+    pub certificate: bool,
+}
+
+pub struct InitArgs {
+    // ... existing fields ...
+
+    /// Generate config from natural language description (v0.5.0)
+    #[arg(long)]
+    pub from_description: Option<String>,
 }
 ```
 

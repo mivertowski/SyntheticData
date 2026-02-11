@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -182,7 +182,7 @@
 <p>SyntheticData includes pre-configured settings for common industries.</p>
 <h2 id="using-presets"><a class="header" href="#using-presets">Using Presets</a></h2>
 <pre><code class="language-bash"># Create configuration from preset
-synth-data init --industry manufacturing --complexity medium -o config.yaml
+datasynth-data init --industry manufacturing --complexity medium -o config.yaml
 </code></pre>
 <h2 id="available-industries"><a class="header" href="#available-industries">Available Industries</a></h2>
 <div class="table-wrapper">
@@ -450,7 +450,7 @@ capitalization:
 <h2 id="customizing-presets"><a class="header" href="#customizing-presets">Customizing Presets</a></h2>
 <p>Start with a preset and customize:</p>
 <pre><code class="language-bash"># Generate preset
-synth-data init --industry manufacturing -o config.yaml
+datasynth-data init --industry manufacturing -o config.yaml
 
 # Edit config.yaml
 # - Adjust transaction counts
@@ -458,8 +458,8 @@ synth-data init --industry manufacturing -o config.yaml
 # - Enable additional features
 
 # Validate and generate
-synth-data validate --config config.yaml
-synth-data generate --config config.yaml --output ./output
+datasynth-data validate --config config.yaml
+datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 <h2 id="combining-industries"><a class="header" href="#combining-industries">Combining Industries</a></h2>
 <p>For conglomerates, use multiple companies with different characteristics:</p>

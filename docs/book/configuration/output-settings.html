@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -199,8 +199,13 @@
 <h2 id="format"><a class="header" href="#format">Format</a></h2>
 <p>Output file format selection.</p>
 <pre><code class="language-yaml">output:
-  format: csv    # CSV format (default)
-  format: json   # JSON format
+  format: csv        # CSV format (default)
+  format: json       # JSON format
+  format: jsonl      # Newline-delimited JSON
+  format: parquet    # Apache Parquet columnar
+  format: sap        # SAP S/4HANA table format
+  format: oracle     # Oracle EBS GL tables
+  format: netsuite   # NetSuite journal entries
 </code></pre>
 <h3 id="csv-format"><a class="header" href="#csv-format">CSV Format</a></h3>
 <p>Standard comma-separated values:</p>
@@ -231,6 +236,43 @@ abc-123,2024-01-15,1000,4000,"0.00","1000.00"
   }
 ]
 </code></pre>
+<h3 id="parquet-format"><a class="header" href="#parquet-format">Parquet Format</a></h3>
+<p>Apache Parquet columnar format for analytics:</p>
+<pre><code class="language-yaml">output:
+  format: parquet
+  compression: snappy     # snappy (default), gzip, zstd
+</code></pre>
+<p>Parquet files are self-describing with embedded schema and support columnar compression. Ideal for Spark, DuckDB, Polars, pandas, and cloud data warehouses.</p>
+<h3 id="erp-formats"><a class="header" href="#erp-formats">ERP Formats</a></h3>
+<p>Export in native ERP table schemas for load testing and integration validation:</p>
+<pre><code class="language-yaml"># SAP S/4HANA
+output:
+  format: sap
+  sap:
+    tables: [bkpf, bseg, acdoca, lfa1, kna1, mara, csks, cepc]
+    client: "100"
+
+# Oracle EBS
+output:
+  format: oracle
+  oracle:
+    ledger_id: 1
+
+# NetSuite
+output:
+  format: netsuite
+  netsuite:
+    subsidiary_id: 1
+    include_custom_fields: true
+</code></pre>
+<p>See <a href="../user-guide/erp-output-formats.html">ERP Output Formats</a> for full field mappings.</p>
+<h3 id="streaming-mode"><a class="header" href="#streaming-mode">Streaming Mode</a></h3>
+<p>Enable streaming output for memory-efficient generation of large datasets:</p>
+<pre><code class="language-yaml">output:
+  format: csv           # Any format
+  streaming: true       # Enable streaming mode
+</code></pre>
+<p>See <a href="../user-guide/streaming-output.html">Streaming Output</a> for details.</p>
 <h2 id="compression"><a class="header" href="#compression">Compression</a></h2>
 <p>File compression options.</p>
 <pre><code class="language-yaml">output:
@@ -409,7 +451,7 @@ abc-123,2024-01-15,1000,4000,"0.00","1000.00"
 <ul>
 <li><a href="../user-guide/output-formats.html">Output Formats</a></li>
 <li><a href="../advanced/graph-export.html">Graph Export</a></li>
-<li><a href="../crates/synth-output.html">synth-output Crate</a></li>
+<li><a href="../crates/datasynth-output.html">datasynth-output Crate</a></li>
 </ul>
 
                     </main>
@@ -420,7 +462,7 @@ abc-123,2024-01-15,1000,4000,"0.00","1000.00"
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../architecture/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../configuration/ai-ml-features.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -434,7 +476,7 @@ abc-123,2024-01-15,1000,4000,"0.00","1000.00"
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../architecture/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../configuration/ai-ml-features.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

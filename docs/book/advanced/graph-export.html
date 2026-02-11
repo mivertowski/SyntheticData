@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,11 +183,115 @@
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <p>Graph export transforms financial data into network representations:</p>
 <ul>
+<li><strong>Accounting Network</strong> (GL accounts as nodes, transactions as edges) - <em>New in v0.2.1</em></li>
 <li>Transaction networks (accounts and entities)</li>
 <li>Approval networks (users and approvals)</li>
 <li>Entity relationship graphs (ownership)</li>
 </ul>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<h2 id="accounting-network-graph-export"><a class="header" href="#accounting-network-graph-export">Accounting Network Graph Export</a></h2>
+<p>The accounting network represents money flows between GL accounts, designed for <strong>network reconstruction</strong> and <strong>anomaly detection</strong> algorithms.</p>
+<h3 id="quick-start"><a class="header" href="#quick-start">Quick Start</a></h3>
+<pre><code class="language-bash"># Generate with graph export enabled
+datasynth-data generate --config config.yaml --output ./output --graph-export
+</code></pre>
+<h3 id="graph-structure"><a class="header" href="#graph-structure">Graph Structure</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Element</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nodes</strong></td><td>GL Accounts from Chart of Accounts</td></tr>
+<tr><td><strong>Edges</strong></td><td>Money flows FROM credit accounts TO debit accounts</td></tr>
+<tr><td><strong>Direction</strong></td><td>Directed graph (source→target)</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>     ┌──────────────┐
+     │ Credit Acct  │
+     │   (2000)     │
+     └──────┬───────┘
+            │ $1,000
+            ▼
+     ┌──────────────┐
+     │ Debit Acct   │
+     │   (1100)     │
+     └──────────────┘
+</code></pre>
+<h3 id="edge-features-8-dimensions"><a class="header" href="#edge-features-8-dimensions">Edge Features (8 dimensions)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Index</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>log_amount</code></td><td>F0</td><td>log10(transaction amount)</td></tr>
+<tr><td><code>benford_prob</code></td><td>F1</td><td>Expected first-digit probability</td></tr>
+<tr><td><code>weekday</code></td><td>F2</td><td>Day of week (normalized 0-1)</td></tr>
+<tr><td><code>period</code></td><td>F3</td><td>Fiscal period (normalized 0-1)</td></tr>
+<tr><td><code>is_month_end</code></td><td>F4</td><td>Last 3 days of month</td></tr>
+<tr><td><code>is_year_end</code></td><td>F5</td><td>Last month of year</td></tr>
+<tr><td><code>is_anomaly</code></td><td>F6</td><td>Anomaly flag (0 or 1)</td></tr>
+<tr><td><code>business_process</code></td><td>F7</td><td>Encoded business process</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="output-files"><a class="header" href="#output-files">Output Files</a></h3>
+<pre><code>output/graphs/accounting_network/pytorch_geometric/
+├── edge_index.npy      # [2, E] source→target node indices
+├── node_features.npy   # [N, 4] node feature vectors
+├── edge_features.npy   # [E, 8] edge feature vectors
+├── edge_labels.npy     # [E] anomaly labels (0=normal, 1=anomaly)
+├── node_labels.npy     # [N] node labels
+├── train_mask.npy      # [N] boolean training mask
+├── val_mask.npy        # [N] boolean validation mask
+├── test_mask.npy       # [N] boolean test mask
+├── metadata.json       # Graph statistics and configuration
+└── load_graph.py       # Auto-generated Python loader script
+</code></pre>
+<h3 id="loading-in-python"><a class="header" href="#loading-in-python">Loading in Python</a></h3>
+<pre><code class="language-python">import numpy as np
+import json
+
+# Load metadata
+with open('metadata.json') as f:
+    meta = json.load(f)
+print(f"Nodes: {meta['num_nodes']}, Edges: {meta['num_edges']}")
+
+# Load arrays
+edge_index = np.load('edge_index.npy')      # [2, E]
+node_features = np.load('node_features.npy') # [N, F]
+edge_features = np.load('edge_features.npy') # [E, 8]
+edge_labels = np.load('edge_labels.npy')     # [E]
+
+# For PyTorch Geometric
+import torch
+from torch_geometric.data import Data
+
+data = Data(
+    x=torch.from_numpy(node_features).float(),
+    edge_index=torch.from_numpy(edge_index).long(),
+    edge_attr=torch.from_numpy(edge_features).float(),
+    y=torch.from_numpy(edge_labels).long(),
+)
+</code></pre>
+<h3 id="configuration"><a class="header" href="#configuration">Configuration</a></h3>
+<pre><code class="language-yaml">graph_export:
+  enabled: true
+  formats:
+    - pytorch_geometric
+  train_ratio: 0.7
+  validation_ratio: 0.15
+  # test_ratio is automatically 1 - train - val = 0.15
+</code></pre>
+<h3 id="use-cases"><a class="header" href="#use-cases">Use Cases</a></h3>
+<ol>
+<li><strong>Anomaly Detection</strong>: Train GNNs to detect anomalous transaction patterns</li>
+<li><strong>Network Reconstruction</strong>: Validate accounting network recovery algorithms</li>
+<li><strong>Fraud Detection</strong>: Identify suspicious money flow patterns</li>
+<li><strong>Link Prediction</strong>: Predict likely transaction relationships</li>
+</ol>
+<h2 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h2>
 <pre><code class="language-yaml">graph_export:
   enabled: true
 
@@ -462,7 +566,7 @@ for epoch in range(100):
 <ul>
 <li><a href="anomaly-injection.html">Anomaly Injection</a></li>
 <li><a href="../use-cases/fraud-detection.html">Fraud Detection Use Case</a></li>
-<li><a href="../crates/synth-graph.html">synth-graph Crate</a></li>
+<li><a href="../crates/datasynth-graph.html">datasynth-graph Crate</a></li>
 </ul>
 
                     </main>

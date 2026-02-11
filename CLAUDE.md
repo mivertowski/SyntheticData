@@ -34,7 +34,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 
 ## Architecture
 
-Rust workspace with 16 crates:
+Rust workspace with 15 crates:
 
 ```
 datasynth-cli          → Binary (generate, validate, init, info, fingerprint)

@@ -27,7 +27,7 @@ use datasynth_runtime::{
 use signal_hook::consts::SIGUSR1;
 
 #[derive(Parser)]
-#[command(name = "synth-data")]
+#[command(name = "datasynth-data")]
 #[command(about = "Synthetic Enterprise Accounting Data Generator")]
 #[command(version)]
 struct Cli {

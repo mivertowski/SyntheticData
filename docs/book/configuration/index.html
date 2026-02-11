@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -182,13 +182,13 @@
 <p>SyntheticData uses YAML configuration files to control all aspects of data generation.</p>
 <h2 id="quick-start"><a class="header" href="#quick-start">Quick Start</a></h2>
 <pre><code class="language-bash"># Create configuration from preset
-synth-data init --industry manufacturing --complexity medium -o config.yaml
+datasynth-data init --industry manufacturing --complexity medium -o config.yaml
 
 # Validate configuration
-synth-data validate --config config.yaml
+datasynth-data validate --config config.yaml
 
 # Generate with configuration
-synth-data generate --config config.yaml --output ./output
+datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 <h2 id="configuration-sections"><a class="header" href="#configuration-sections">Configuration Sections</a></h2>
 <div class="table-wrapper">
@@ -204,6 +204,7 @@ synth-data generate --config config.yaml --output ./output
 <tr><td><a href="document-flows.html">Document Flows</a></td><td>P2P, O2C configuration</td></tr>
 <tr><td><a href="financial-settings.html">Financial Settings</a></td><td>Balance, subledger, FX, period close</td></tr>
 <tr><td><a href="compliance.html">Compliance</a></td><td>Fraud, controls, approval</td></tr>
+<tr><td><a href="ai-ml-features.html">AI &amp; ML Features</a></td><td>LLM, diffusion, causal, certificates</td></tr>
 <tr><td><a href="output-settings.html">Output Settings</a></td><td>Format, compression</td></tr>
 </tbody>
 </table>
@@ -287,6 +288,24 @@ graph_export:
     - pytorch_geometric
     - neo4j
 
+# AI &amp; ML Features (v0.5.0)
+diffusion:
+  enabled: true
+  n_steps: 1000
+  schedule: "cosine"
+  sample_size: 1000
+
+causal:
+  enabled: true
+  template: "fraud_detection"
+  sample_size: 1000
+  validate: true
+
+certificates:
+  enabled: true
+  issuer: "DataSynth"
+  include_quality_metrics: true
+
 output:
   format: csv
   compression: none
@@ -296,17 +315,17 @@ output:
 <ol>
 <li>
 <p><strong>YAML file</strong> (recommended):</p>
-<pre><code class="language-bash">synth-data generate --config config.yaml --output ./output
+<pre><code class="language-bash">datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 </li>
 <li>
 <p><strong>JSON file</strong>:</p>
-<pre><code class="language-bash">synth-data generate --config config.json --output ./output
+<pre><code class="language-bash">datasynth-data generate --config config.json --output ./output
 </code></pre>
 </li>
 <li>
 <p><strong>Demo preset</strong>:</p>
-<pre><code class="language-bash">synth-data generate --demo --output ./output
+<pre><code class="language-bash">datasynth-data generate --demo --output ./output
 </code></pre>
 </li>
 </ol>
@@ -328,15 +347,15 @@ output:
 </table>
 </div>
 <p>Run validation:</p>
-<pre><code class="language-bash">synth-data validate --config config.yaml
+<pre><code class="language-bash">datasynth-data validate --config config.yaml
 </code></pre>
 <h2 id="overriding-values"><a class="header" href="#overriding-values">Overriding Values</a></h2>
 <p>Command-line options override configuration file values:</p>
 <pre><code class="language-bash"># Override seed
-synth-data generate --config config.yaml --seed 12345 --output ./output
+datasynth-data generate --config config.yaml --seed 12345 --output ./output
 
 # Override format
-synth-data generate --config config.yaml --format json --output ./output
+datasynth-data generate --config config.yaml --format json --output ./output
 </code></pre>
 <h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
 <p>Some settings can be controlled via environment variables:</p>
@@ -356,14 +375,14 @@ synth-data generate --config config.yaml --format json --output ./output
 <ul>
 <li><a href="../getting-started/quick-start.html">Quick Start</a></li>
 <li><a href="../user-guide/cli-reference.html">CLI Reference</a></li>
-<li><a href="../crates/synth-config.html">synth-config Crate</a></li>
+<li><a href="../crates/datasynth-config.html">datasynth-config Crate</a></li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../user-guide/output-formats.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../user-guide/ecosystem-integrations.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -377,7 +396,7 @@ synth-data generate --config config.yaml --format json --output ./output
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../user-guide/output-formats.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../user-guide/ecosystem-integrations.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

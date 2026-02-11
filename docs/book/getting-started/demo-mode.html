@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,7 +181,7 @@
                         <h1 id="demo-mode"><a class="header" href="#demo-mode">Demo Mode</a></h1>
 <p>Demo mode provides a quick way to explore SyntheticData without creating a configuration file. It uses sensible defaults to generate a complete synthetic dataset.</p>
 <h2 id="running-demo-mode"><a class="header" href="#running-demo-mode">Running Demo Mode</a></h2>
-<pre><code class="language-bash">synth-data generate --demo --output ./demo-output
+<pre><code class="language-bash">datasynth-data generate --demo --output ./demo-output
 </code></pre>
 <h2 id="what-demo-mode-generates"><a class="header" href="#what-demo-mode-generates">What Demo Mode Generates</a></h2>
 <p>Demo mode creates a comprehensive dataset with:</p>
@@ -295,12 +295,12 @@ head demo-output/period_close/trial_balances/2024_01.csv
 <h2 id="customizing-demo-output"><a class="header" href="#customizing-demo-output">Customizing Demo Output</a></h2>
 <p>You can combine demo mode with some options:</p>
 <pre><code class="language-bash"># Change output directory
-synth-data generate --demo --output ./my-demo
+datasynth-data generate --demo --output ./my-demo
 
 # Use demo as starting point, then create config
-synth-data init --industry manufacturing --complexity medium -o config.yaml
+datasynth-data init --industry manufacturing --complexity medium -o config.yaml
 # Edit config.yaml as needed
-synth-data generate --config config.yaml --output ./output
+datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 <h2 id="use-cases-for-demo-mode"><a class="header" href="#use-cases-for-demo-mode">Use Cases for Demo Mode</a></h2>
 <h3 id="quick-exploration"><a class="header" href="#quick-exploration">Quick Exploration</a></h3>
@@ -316,7 +316,7 @@ synth-data generate --config config.yaml --output ./output
 <ol>
 <li>
 <p><strong>Create a configuration file:</strong></p>
-<pre><code class="language-bash">synth-data init --industry &lt;your-industry&gt; -o config.yaml
+<pre><code class="language-bash">datasynth-data init --industry &lt;your-industry&gt; -o config.yaml
 </code></pre>
 </li>
 <li>
@@ -330,7 +330,7 @@ synth-data generate --config config.yaml --output ./output
 </li>
 <li>
 <p><strong>Generate with your config:</strong></p>
-<pre><code class="language-bash">synth-data generate --config config.yaml --output ./output
+<pre><code class="language-bash">datasynth-data generate --config config.yaml --output ./output
 </code></pre>
 </li>
 </ol>

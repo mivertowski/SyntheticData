@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,7 +179,7 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="document-flows"><a class="header" href="#document-flows">Document Flows</a></h1>
-<p>Document flow settings control P2P and O2C process generation.</p>
+<p>Document flow settings control P2P (Procure-to-Pay) and O2C (Order-to-Cash) process generation, including document types, three-way matching, credit checks, and document chain management.</p>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <pre><code class="language-yaml">document_flows:
   p2p:
@@ -195,28 +195,123 @@
     flow_rate: 0.3
     completion_rate: 0.95
 </code></pre>
+<hr>
 <h2 id="procure-to-pay-p2p"><a class="header" href="#procure-to-pay-p2p">Procure-to-Pay (P2P)</a></h2>
-<p>Purchase requisition through payment.</p>
 <h3 id="flow"><a class="header" href="#flow">Flow</a></h3>
-<pre><code>Create PO → Goods Receipt → Vendor Invoice → Payment
+<pre><code>Purchase     Purchase    Goods      Vendor     Three-Way
+Requisition → Order   → Receipt  → Invoice  → Match    → Payment
+                │                     │          │
+                │                ┌────┘          │
+                ▼                ▼               ▼
+           AP Open Item ← Match Result      AP Aging
 </code></pre>
-<h3 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h3>
+<h3 id="purchase-order-types"><a class="header" href="#purchase-order-types">Purchase Order Types</a></h3>
+<p>SyntheticData models 6 PO types, each with different downstream behavior:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Requires GR?</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Standard</code></td><td>Standard goods purchase</td><td>Yes</td><td>Most common PO type</td></tr>
+<tr><td><code>Service</code></td><td>Service procurement</td><td>No</td><td>Consulting, maintenance, etc.</td></tr>
+<tr><td><code>Framework</code></td><td>Blanket/framework agreement</td><td>Yes</td><td>Long-term supply agreements</td></tr>
+<tr><td><code>Consignment</code></td><td>Vendor-managed inventory</td><td>Yes</td><td>Consignment stock</td></tr>
+<tr><td><code>StockTransfer</code></td><td>Inter-plant transfer</td><td>Yes</td><td>Internal stock movement</td></tr>
+<tr><td><code>Subcontracting</code></td><td>External processing</td><td>Yes</td><td>Outsourced manufacturing</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="goods-receipt-movement-types"><a class="header" href="#goods-receipt-movement-types">Goods Receipt Movement Types</a></h3>
+<p>Goods receipts use SAP-style movement type codes:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Movement Type</th><th>Code</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>GrForPo</code></td><td>101</td><td>Standard GR against purchase order</td></tr>
+<tr><td><code>ReturnToVendor</code></td><td>122</td><td>Return materials to vendor</td></tr>
+<tr><td><code>GrForProduction</code></td><td>131</td><td>GR from production order</td></tr>
+<tr><td><code>TransferPosting</code></td><td>301</td><td>Transfer between plants/locations</td></tr>
+<tr><td><code>InitialEntry</code></td><td>561</td><td>Initial stock entry</td></tr>
+<tr><td><code>Scrapping</code></td><td>551</td><td>Scrap disposal</td></tr>
+<tr><td><code>Consumption</code></td><td>201</td><td>Direct consumption posting</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="three-way-match"><a class="header" href="#three-way-match">Three-Way Match</a></h3>
+<p>The three-way match validator compares Purchase Order, Goods Receipt, and Vendor Invoice to detect variances before payment.</p>
+<h4 id="algorithm"><a class="header" href="#algorithm">Algorithm</a></h4>
+<pre><code>For each invoice line item:
+  1. Find matching PO line (by PO reference + line number)
+  2. Sum GR quantities for that PO line (supports multiple partial GRs)
+  3. Compare:
+     a. PO quantity vs GR quantity → QuantityPoGr variance
+     b. GR quantity vs Invoice quantity → QuantityGrInvoice variance
+     c. PO unit price vs Invoice unit price → PricePoInvoice variance
+     d. PO total vs Invoice total → TotalAmount variance
+  4. Apply tolerances:
+     - Quantity: ±quantity_tolerance (default 2%)
+     - Price: ±price_tolerance (default 5%)
+     - Absolute: ±absolute_amount_tolerance (default $0.01)
+  5. Check over-delivery:
+     - If GR qty &gt; PO qty and allow_over_delivery=true:
+       allow up to max_over_delivery_pct (default 10%)
+</code></pre>
+<h4 id="variance-types"><a class="header" href="#variance-types">Variance Types</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variance Type</th><th>Description</th><th>Detection</th></tr>
+</thead>
+<tbody>
+<tr><td><code>QuantityPoGr</code></td><td>GR quantity differs from PO quantity</td><td>PO vs GR comparison</td></tr>
+<tr><td><code>QuantityGrInvoice</code></td><td>Invoice quantity differs from GR quantity</td><td>GR vs Invoice comparison</td></tr>
+<tr><td><code>PricePoInvoice</code></td><td>Invoice unit price differs from PO price</td><td>PO vs Invoice comparison</td></tr>
+<tr><td><code>TotalAmount</code></td><td>Total invoice amount mismatch</td><td>Overall amount check</td></tr>
+<tr><td><code>MissingLine</code></td><td>PO line not found in invoice or GR</td><td>Line matching</td></tr>
+<tr><td><code>ExtraLine</code></td><td>Invoice has lines not on PO</td><td>Line matching</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="match-outcomes"><a class="header" href="#match-outcomes">Match Outcomes</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Outcome</th><th>Meaning</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td><code>passed</code></td><td>All within tolerance</td><td>Proceed to payment</td></tr>
+<tr><td><code>quantity_variance</code></td><td>Quantity outside tolerance</td><td>Review required</td></tr>
+<tr><td><code>price_variance</code></td><td>Price outside tolerance</td><td>Review required</td></tr>
+<tr><td><code>blocked</code></td><td>Multiple variances or critical mismatch</td><td>Manual resolution</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h4>
 <pre><code class="language-yaml">document_flows:
   p2p:
-    enabled: true                    # Enable P2P generation
-    flow_rate: 0.3                   # % of JEs from P2P
-    completion_rate: 0.95            # % completing full flow
-
-    stages:
-      po_approval_rate: 0.9          # POs that get approved
-      gr_rate: 0.98                  # POs with goods receipts
-      invoice_rate: 0.95             # GRs with invoices
-      payment_rate: 0.92             # Invoices that get paid
-
     three_way_match:
       enabled: true
-      quantity_tolerance: 0.02       # 2% quantity variance allowed
-      price_tolerance: 0.01          # 1% price variance allowed
+      price_tolerance: 0.05              # 5% price variance allowed
+      quantity_tolerance: 0.02            # 2% quantity variance allowed
+      absolute_amount_tolerance: 0.01     # $0.01 rounding tolerance
+      allow_over_delivery: true
+      max_over_delivery_pct: 0.10         # 10% over-delivery allowed
+</code></pre>
+<h3 id="p2p-stage-configuration"><a class="header" href="#p2p-stage-configuration">P2P Stage Configuration</a></h3>
+<pre><code class="language-yaml">document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.3                       # 30% of JEs from P2P
+    completion_rate: 0.95                # 95% complete full flow
+
+    stages:
+      po_approval_rate: 0.9             # 90% of POs approved
+      gr_rate: 0.98                     # 98% of POs get goods receipts
+      invoice_rate: 0.95                # 95% of GRs get invoices
+      payment_rate: 0.92                # 92% of invoices get paid
 
     timing:
       po_to_gr_days:
@@ -229,71 +324,116 @@
         min: 10
         max: 60
 </code></pre>
-<h3 id="generated-documents"><a class="header" href="#generated-documents">Generated Documents</a></h3>
+<h3 id="p2p-journal-entries"><a class="header" href="#p2p-journal-entries">P2P Journal Entries</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Document</th><th>Fields</th></tr>
+<tr><th>Stage</th><th>Debit</th><th>Credit</th><th>Trigger</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Purchase Order</strong></td><td>PO number, vendor, items, quantities, prices</td></tr>
-<tr><td><strong>Goods Receipt</strong></td><td>GR number, PO reference, received quantities</td></tr>
-<tr><td><strong>Vendor Invoice</strong></td><td>Invoice number, PO/GR reference, amounts</td></tr>
-<tr><td><strong>Payment</strong></td><td>Payment number, invoice references</td></tr>
-</tbody>
-</table>
-</div>
-<h3 id="three-way-match"><a class="header" href="#three-way-match">Three-Way Match</a></h3>
-<p>Validates PO, GR, and Invoice alignment:</p>
-<pre><code class="language-yaml">three_way_match:
-  enabled: true
-  quantity_tolerance: 0.02    # Allow 2% quantity variance
-  price_tolerance: 0.01       # Allow 1% price variance
-
-  variance_types:
-    - over_receipt             # GR &gt; PO quantity
-    - under_receipt            # GR &lt; PO quantity
-    - price_variance           # Invoice price ≠ PO price
-</code></pre>
-<p><strong>Match outcomes:</strong></p>
-<ul>
-<li><code>matched</code>: All within tolerance</li>
-<li><code>quantity_variance</code>: Quantity outside tolerance</li>
-<li><code>price_variance</code>: Price outside tolerance</li>
-<li><code>blocked</code>: Manual review required</li>
-</ul>
-<h3 id="journal-entries-generated"><a class="header" href="#journal-entries-generated">Journal Entries Generated</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th>Stage</th><th>Debit</th><th>Credit</th></tr>
-</thead>
-<tbody>
-<tr><td>Goods Receipt</td><td>Inventory</td><td>GR/IR Clearing</td></tr>
-<tr><td>Invoice Receipt</td><td>GR/IR Clearing</td><td>Accounts Payable</td></tr>
-<tr><td>Payment</td><td>Accounts Payable</td><td>Cash</td></tr>
+<tr><td>Goods Receipt</td><td>Inventory (1300)</td><td>GR/IR Clearing (2100)</td><td>GR posted</td></tr>
+<tr><td>Invoice Receipt</td><td>GR/IR Clearing (2100)</td><td>Accounts Payable (2000)</td><td>Invoice verified</td></tr>
+<tr><td>Payment</td><td>Accounts Payable (2000)</td><td>Cash (1000)</td><td>Payment executed</td></tr>
+<tr><td>Price Variance</td><td>PPV Expense (5xxx)</td><td>GR/IR Clearing (2100)</td><td>Price mismatch</td></tr>
 </tbody>
 </table>
 </div>
 <hr>
 <h2 id="order-to-cash-o2c"><a class="header" href="#order-to-cash-o2c">Order-to-Cash (O2C)</a></h2>
-<p>Sales order through cash receipt.</p>
 <h3 id="flow-1"><a class="header" href="#flow-1">Flow</a></h3>
-<pre><code>Create SO → Delivery → Customer Invoice → Customer Receipt
+<pre><code>Sales     Credit   Delivery    Customer    Customer
+Order   → Check  → (Pick/   → Invoice   → Receipt
+  │                Pack/         │           │
+  │                Ship)         │           │
+  │                  │           ▼           ▼
+  │                  │      AR Open Item   AR Aging
+  │                  │           │
+  │                  │           └→ Dunning (if overdue)
+  │                  ▼
+  │            Inventory Issue
+  │            (COGS posting)
+  ▼
+Revenue Recognition
+(ASC 606 / IFRS 15)
 </code></pre>
-<h3 id="configuration-2"><a class="header" href="#configuration-2">Configuration</a></h3>
+<h3 id="sales-order-types"><a class="header" href="#sales-order-types">Sales Order Types</a></h3>
+<p>SyntheticData models 9 SO types:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Requires Delivery?</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Standard</code></td><td>Standard sales order</td><td>Yes</td></tr>
+<tr><td><code>Rush</code></td><td>Priority/expedited order</td><td>Yes</td></tr>
+<tr><td><code>CashSale</code></td><td>Immediate payment at sale</td><td>Yes</td></tr>
+<tr><td><code>Return</code></td><td>Customer return order</td><td>No (creates return delivery)</td></tr>
+<tr><td><code>FreeOfCharge</code></td><td>No-charge delivery (samples, warranty)</td><td>Yes</td></tr>
+<tr><td><code>Consignment</code></td><td>Consignment fill-up/issue</td><td>Yes</td></tr>
+<tr><td><code>Service</code></td><td>Service order (no physical delivery)</td><td>No</td></tr>
+<tr><td><code>CreditMemoRequest</code></td><td>Request for credit memo</td><td>No</td></tr>
+<tr><td><code>DebitMemoRequest</code></td><td>Request for debit memo</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="delivery-types"><a class="header" href="#delivery-types">Delivery Types</a></h3>
+<p>6 delivery types model different fulfillment scenarios:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Direction</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Outbound</code></td><td>Standard outbound delivery</td><td>Ship to customer</td></tr>
+<tr><td><code>Return</code></td><td>Customer return delivery</td><td>Receive from customer</td></tr>
+<tr><td><code>StockTransfer</code></td><td>Inter-plant stock transfer</td><td>Internal movement</td></tr>
+<tr><td><code>Replenishment</code></td><td>Replenishment delivery</td><td>Warehouse → store</td></tr>
+<tr><td><code>ConsignmentIssue</code></td><td>Issue from consignment stock</td><td>Consignment → customer</td></tr>
+<tr><td><code>ConsignmentReturn</code></td><td>Return to consignment stock</td><td>Customer → consignment</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="customer-invoice-types"><a class="header" href="#customer-invoice-types">Customer Invoice Types</a></h3>
+<p>7 invoice types with different accounting treatment:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>AR Impact</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Standard</code></td><td>Normal sales invoice</td><td>Creates receivable</td></tr>
+<tr><td><code>CreditMemo</code></td><td>Credit for returns/adjustments</td><td>Reduces receivable</td></tr>
+<tr><td><code>DebitMemo</code></td><td>Additional charge</td><td>Increases receivable</td></tr>
+<tr><td><code>ProForma</code></td><td>Pre-delivery invoice (no posting)</td><td>None</td></tr>
+<tr><td><code>DownPaymentRequest</code></td><td>Advance payment request</td><td>Creates special receivable</td></tr>
+<tr><td><code>FinalInvoice</code></td><td>Settles down payment</td><td>Clears down payment</td></tr>
+<tr><td><code>Intercompany</code></td><td>IC billing</td><td>Creates IC receivable</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="credit-check"><a class="header" href="#credit-check">Credit Check</a></h3>
+<p>Sales orders pass through credit verification before delivery:</p>
 <pre><code class="language-yaml">document_flows:
   o2c:
-    enabled: true                    # Enable O2C generation
-    flow_rate: 0.3                   # % of JEs from O2C
-    completion_rate: 0.95            # % completing full flow
+    credit_check:
+      enabled: true
+      check_credit_limit: true          # Verify customer limit
+      check_overdue: true               # Check for past-due AR
+      block_threshold: 0.9              # Block if &gt;90% of limit used
+</code></pre>
+<h3 id="o2c-stage-configuration"><a class="header" href="#o2c-stage-configuration">O2C Stage Configuration</a></h3>
+<pre><code class="language-yaml">document_flows:
+  o2c:
+    enabled: true
+    flow_rate: 0.3                       # 30% of JEs from O2C
+    completion_rate: 0.95                # 95% complete full flow
 
     stages:
-      so_approval_rate: 0.95         # SOs that get approved
-      credit_check_pass_rate: 0.9    # Pass credit check
-      delivery_rate: 0.98            # SOs with deliveries
-      invoice_rate: 0.95             # Deliveries with invoices
-      collection_rate: 0.85          # Invoices that get paid
+      so_approval_rate: 0.95            # 95% of SOs approved
+      credit_check_pass_rate: 0.9       # 90% pass credit check
+      delivery_rate: 0.98               # 98% of SOs get deliveries
+      invoice_rate: 0.95                # 95% of deliveries get invoices
+      collection_rate: 0.85             # 85% of invoices collected
 
     timing:
       so_to_delivery_days:
@@ -306,97 +446,122 @@
         min: 15
         max: 90
 </code></pre>
-<h3 id="generated-documents-1"><a class="header" href="#generated-documents-1">Generated Documents</a></h3>
+<h3 id="o2c-journal-entries"><a class="header" href="#o2c-journal-entries">O2C Journal Entries</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Document</th><th>Fields</th></tr>
+<tr><th>Stage</th><th>Debit</th><th>Credit</th><th>Trigger</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Sales Order</strong></td><td>SO number, customer, items, quantities, prices</td></tr>
-<tr><td><strong>Delivery</strong></td><td>Delivery number, SO reference, shipped quantities</td></tr>
-<tr><td><strong>Customer Invoice</strong></td><td>Invoice number, SO/delivery reference, amounts</td></tr>
-<tr><td><strong>Customer Receipt</strong></td><td>Receipt number, invoice references</td></tr>
-</tbody>
-</table>
-</div>
-<h3 id="credit-check"><a class="header" href="#credit-check">Credit Check</a></h3>
-<pre><code class="language-yaml">o2c:
-  credit_check:
-    enabled: true
-    check_credit_limit: true       # Verify customer limit
-    check_overdue: true            # Check for past-due AR
-    block_threshold: 0.9           # Block if &gt;90% of limit used
-</code></pre>
-<h3 id="journal-entries-generated-1"><a class="header" href="#journal-entries-generated-1">Journal Entries Generated</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th>Stage</th><th>Debit</th><th>Credit</th></tr>
-</thead>
-<tbody>
-<tr><td>Delivery</td><td>Cost of Goods Sold</td><td>Inventory</td></tr>
-<tr><td>Invoice</td><td>Accounts Receivable</td><td>Revenue</td></tr>
-<tr><td>Receipt</td><td>Cash</td><td>Accounts Receivable</td></tr>
+<tr><td>Delivery</td><td>Cost of Goods Sold (5000)</td><td>Inventory (1300)</td><td>Goods issued</td></tr>
+<tr><td>Invoice</td><td>Accounts Receivable (1100)</td><td>Revenue (4000)</td><td>Invoice posted</td></tr>
+<tr><td>Receipt</td><td>Cash (1000)</td><td>Accounts Receivable (1100)</td><td>Payment received</td></tr>
+<tr><td>Credit Memo</td><td>Revenue (4000)</td><td>Accounts Receivable (1100)</td><td>Credit issued</td></tr>
 </tbody>
 </table>
 </div>
 <hr>
-<h2 id="combined-example"><a class="header" href="#combined-example">Combined Example</a></h2>
+<h2 id="document-chain-manager"><a class="header" href="#document-chain-manager">Document Chain Manager</a></h2>
+<p>The document chain manager maintains referential integrity across the complete document flow by tracking references between documents.</p>
+<h3 id="reference-types"><a class="header" href="#reference-types">Reference Types</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>FollowOn</code></td><td>Next document in normal flow</td><td>PO → GR → Invoice → Payment</td></tr>
+<tr><td><code>Payment</code></td><td>Payment for invoice</td><td>PAY-001 → INV-001</td></tr>
+<tr><td><code>Reversal</code></td><td>Correction or reversal document</td><td>CRED-001 → INV-001</td></tr>
+<tr><td><code>Partial</code></td><td>Partial fulfillment</td><td>GR-001 (partial) → PO-001</td></tr>
+<tr><td><code>CreditMemo</code></td><td>Credit against invoice</td><td>CM-001 → INV-001</td></tr>
+<tr><td><code>DebitMemo</code></td><td>Debit against invoice</td><td>DM-001 → INV-001</td></tr>
+<tr><td><code>Return</code></td><td>Return against delivery</td><td>RET-001 → DEL-001</td></tr>
+<tr><td><code>IntercompanyMatch</code></td><td>IC matched pair</td><td>IC-INV-001 → IC-INV-002</td></tr>
+<tr><td><code>Manual</code></td><td>User-defined reference</td><td>Any → Any</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="document-chain-output"><a class="header" href="#document-chain-output">Document Chain Output</a></h3>
+<pre><code>PO-001 ─→ GR-001 ─→ INV-001 ─→ PAY-001
+   │          │          │          │
+   └──────────┴──────────┴──────────┘
+              Document Chain
+</code></pre>
+<p>The <code>document_references.csv</code> output file records all links:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>source_document_id</code></td><td>Referencing document</td></tr>
+<tr><td><code>target_document_id</code></td><td>Referenced document</td></tr>
+<tr><td><code>reference_type</code></td><td>Type of reference</td></tr>
+<tr><td><code>created_date</code></td><td>Date reference was created</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="complex-scenario-examples"><a class="header" href="#complex-scenario-examples">Complex Scenario Examples</a></h2>
+<h3 id="partial-deliveries-with-split-invoice"><a class="header" href="#partial-deliveries-with-split-invoice">Partial Deliveries with Split Invoice</a></h3>
+<pre><code class="language-yaml">document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.4
+    completion_rate: 0.90           # 10% incomplete (partial deliveries)
+    three_way_match:
+      quantity_tolerance: 0.05      # 5% tolerance for partials
+      allow_over_delivery: true
+      max_over_delivery_pct: 0.10
+    timing:
+      po_to_gr_days: { min: 3, max: 45 }    # Longer lead times
+      gr_to_invoice_days: { min: 1, max: 21 }
+      invoice_to_payment_days: { min: 30, max: 90 }
+</code></pre>
+<h3 id="high-volume-retail-o2c"><a class="header" href="#high-volume-retail-o2c">High-Volume Retail O2C</a></h3>
+<pre><code class="language-yaml">document_flows:
+  o2c:
+    enabled: true
+    flow_rate: 0.5                  # 50% of JEs from O2C
+    completion_rate: 0.98           # High completion rate
+    stages:
+      so_approval_rate: 0.99       # Auto-approved
+      credit_check_pass_rate: 0.95
+      delivery_rate: 0.99
+      invoice_rate: 0.99
+      collection_rate: 0.92
+    timing:
+      so_to_delivery_days: { min: 0, max: 3 }     # Fast fulfillment
+      delivery_to_invoice_days: { min: 0, max: 0 } # Immediate invoice
+      invoice_to_payment_days: { min: 10, max: 45 }
+</code></pre>
+<h3 id="combined-manufacturing-p2p--o2c"><a class="header" href="#combined-manufacturing-p2p--o2c">Combined Manufacturing P2P + O2C</a></h3>
 <pre><code class="language-yaml">document_flows:
   p2p:
     enabled: true
     flow_rate: 0.35
     completion_rate: 0.95
-
     three_way_match:
       quantity_tolerance: 0.02
       price_tolerance: 0.01
-
     timing:
-      po_to_gr_days:
-        min: 3
-        max: 21
-      gr_to_invoice_days:
-        min: 1
-        max: 10
-      invoice_to_payment_days:
-        min: 20
-        max: 45
+      po_to_gr_days: { min: 5, max: 30 }
+      gr_to_invoice_days: { min: 1, max: 10 }
+      invoice_to_payment_days: { min: 20, max: 45 }
 
   o2c:
     enabled: true
     flow_rate: 0.35
     completion_rate: 0.90
-
     credit_check:
       enabled: true
       block_threshold: 0.85
-
     timing:
-      so_to_delivery_days:
-        min: 1
-        max: 7
-      delivery_to_invoice_days:
-        min: 0
-        max: 1
-      invoice_to_payment_days:
-        min: 30
-        max: 60
+      so_to_delivery_days: { min: 3, max: 21 }
+      delivery_to_invoice_days: { min: 0, max: 2 }
+      invoice_to_payment_days: { min: 30, max: 60 }
 </code></pre>
-<h2 id="document-references"><a class="header" href="#document-references">Document References</a></h2>
-<p>Documents maintain proper reference chains:</p>
-<pre><code>PO-001 → GR-001 → INV-001 → PAY-001
-   │         │         │         │
-   └─────────┴─────────┴─────────┘
-              Document Chain
-</code></pre>
-<p>Reference types:</p>
-<ul>
-<li><code>follows_from</code>: Next document in flow</li>
-<li><code>payment_for</code>: Payment → Invoice link</li>
-<li><code>reversal_of</code>: Credit memo / reversal</li>
-</ul>
 <h2 id="validation"><a class="header" href="#validation">Validation</a></h2>
 <div class="table-wrapper">
 <table>
@@ -409,14 +574,18 @@
 <tr><td><code>tolerance</code> values</td><td>0.0 - 1.0</td></tr>
 <tr><td><code>timing.min</code></td><td>≥ 0</td></tr>
 <tr><td><code>timing.max</code></td><td>≥ min</td></tr>
+<tr><td>Stage rates</td><td>0.0 - 1.0</td></tr>
 </tbody>
 </table>
 </div>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
-<li><a href="master-data.html">Master Data</a></li>
-<li><a href="financial-settings.html">Financial Settings</a></li>
-<li><a href="../crates/synth-generators.html">synth-generators</a></li>
+<li><a href="subledgers.html">Subledgers</a> — AR/AP records generated by document flows</li>
+<li><a href="fx-currency.html">FX &amp; Currency</a> — Multi-currency document flows</li>
+<li><a href="master-data.html">Master Data</a> — Vendor and customer master records</li>
+<li><a href="../architecture/process-chains.html">Process Chains</a> — Enterprise process chain architecture</li>
+<li><a href="../use-cases/process-mining.html">Process Mining</a> — OCEL 2.0 event logs from document flows</li>
+<li><a href="../crates/datasynth-generators.html">datasynth-generators</a> — Generator crate reference</li>
 </ul>
 
                     </main>
@@ -427,7 +596,7 @@
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../configuration/financial-settings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../configuration/subledgers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -441,7 +610,7 @@
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../configuration/financial-settings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../configuration/subledgers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

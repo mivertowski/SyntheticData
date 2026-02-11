@@ -1,6 +1,6 @@
 # Fraud Patterns & ACFE Taxonomy
 
-SyntheticData v0.3.0 introduces comprehensive fraud pattern modeling aligned with the Association of Certified Fraud Examiners (ACFE) Report to the Nations. This enables generation of realistic fraud scenarios for training machine learning models and testing audit analytics.
+SyntheticData includes comprehensive fraud pattern modeling aligned with the Association of Certified Fraud Examiners (ACFE) Report to the Nations. This enables generation of realistic fraud scenarios for training machine learning models and testing audit analytics.
 
 ## ACFE Fraud Taxonomy
 

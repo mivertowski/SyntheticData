@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -458,6 +458,27 @@ approval:
 </tbody>
 </table>
 </div>
+<h2 id="synthetic-data-certificates-v050"><a class="header" href="#synthetic-data-certificates-v050">Synthetic Data Certificates (v0.5.0)</a></h2>
+<p>Certificates provide cryptographic proof of the privacy guarantees and quality metrics of generated data.</p>
+<pre><code class="language-yaml">certificates:
+  enabled: true
+  issuer: "DataSynth"
+  include_quality_metrics: true
+</code></pre>
+<p>When enabled, a <code>certificate.json</code> file is produced alongside the output containing:</p>
+<ul>
+<li><strong>DP Guarantee</strong>: Mechanism (Laplace/Gaussian), epsilon, delta, composition method</li>
+<li><strong>Quality Metrics</strong>: Benford MAD, correlation preservation, statistical fidelity, MIA AUC</li>
+<li><strong>Config Hash</strong>: SHA-256 hash of the generation configuration</li>
+<li><strong>Signature</strong>: HMAC-SHA256 signature for tamper detection</li>
+<li><strong>Fingerprint Hash</strong>: Hash of source fingerprint (if fingerprint-based generation)</li>
+</ul>
+<p>The certificate can be embedded in Parquet file metadata or included as a separate JSON file.</p>
+<pre><code class="language-bash"># Generate with certificate
+datasynth-data generate --config config.yaml --output ./output --certificate
+
+# Certificate is written to ./output/certificate.json
+</code></pre>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="../advanced/anomaly-injection.html">Anomaly Injection</a></li>

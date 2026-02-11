@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -215,15 +215,15 @@ No additional dependencies required.</p>
 <p><strong>Windows:</strong>
 WebView2 runtime (usually pre-installed on Windows 10/11).</p>
 <h3 id="running-in-development"><a class="header" href="#running-in-development">Running in Development</a></h3>
-<pre><code class="language-bash">cd crates/synth-ui
+<pre><code class="language-bash">cd crates/datasynth-ui
 npm install
 npm run tauri dev
 </code></pre>
 <h3 id="building-for-production"><a class="header" href="#building-for-production">Building for Production</a></h3>
-<pre><code class="language-bash">cd crates/synth-ui
+<pre><code class="language-bash">cd crates/datasynth-ui
 npm run tauri build
 </code></pre>
-<p>Build outputs are in <code>crates/synth-ui/src-tauri/target/release/bundle/</code>.</p>
+<p>Build outputs are in <code>crates/datasynth-ui/src-tauri/target/release/bundle/</code>.</p>
 <h2 id="application-layout"><a class="header" href="#application-layout">Application Layout</a></h2>
 <h3 id="dashboard"><a class="header" href="#dashboard">Dashboard</a></h3>
 <p>The main dashboard provides:</p>
@@ -359,9 +359,9 @@ npm run tauri build
 <tr><th>Platform</th><th>Location</th></tr>
 </thead>
 <tbody>
-<tr><td>Linux</td><td><code>~/.config/synth-data/</code></td></tr>
-<tr><td>macOS</td><td><code>~/Library/Application Support/synth-data/</code></td></tr>
-<tr><td>Windows</td><td><code>%APPDATA%\synth-data\</code></td></tr>
+<tr><td>Linux</td><td><code>~/.config/datasynth-data/</code></td></tr>
+<tr><td>macOS</td><td><code>~/Library/Application Support/datasynth-data/</code></td></tr>
+<tr><td>Windows</td><td><code>%APPDATA%\datasynth-data\</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -371,11 +371,11 @@ npm run tauri build
 <li>Configure in the UI</li>
 <li>Click “Export” → “Export YAML”</li>
 <li>Save the <code>.yaml</code> file</li>
-<li>Use with CLI: <code>synth-data generate --config exported.yaml --output ./output</code></li>
+<li>Use with CLI: <code>datasynth-data generate --config exported.yaml --output ./output</code></li>
 </ol>
 <h2 id="development"><a class="header" href="#development">Development</a></h2>
 <h3 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h3>
-<pre><code>crates/synth-ui/
+<pre><code>crates/datasynth-ui/
 ├── src/                      # SvelteKit frontend
 │   ├── routes/               # Page routes
 │   │   ├── +page.svelte      # Dashboard
@@ -416,7 +416,7 @@ npm run tauri build
 <p>Check file permissions in the config directory.</p>
 <h3 id="websocket-connection-failed"><a class="header" href="#websocket-connection-failed">WebSocket Connection Failed</a></h3>
 <p>Ensure the server is running if using streaming features:</p>
-<pre><code class="language-bash">cargo run -p synth-server -- --port 3000
+<pre><code class="language-bash">cargo run -p datasynth-server -- --port 3000
 </code></pre>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>

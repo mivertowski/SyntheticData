@@ -311,6 +311,147 @@ datasynth-data fingerprint evaluate \
     --report ./fidelity_report.html
 ```
 
+## diffusion (v0.5.0)
+
+Train and evaluate diffusion models for statistical data generation.
+
+### diffusion train
+
+Train a diffusion model from a fingerprint file.
+
+```bash
+datasynth-data diffusion train \
+    --fingerprint ./fingerprint.dsf \
+    --output ./model.json \
+    --n-steps 1000 \
+    --schedule cosine
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--fingerprint` | path | (required) | Path to .dsf fingerprint file |
+| `--output` | path | (required) | Output path for trained model |
+| `--n-steps` | integer | `1000` | Number of diffusion steps |
+| `--schedule` | string | `linear` | Noise schedule: `linear`, `cosine`, `sigmoid` |
+
+### diffusion evaluate
+
+Evaluate a trained diffusion model's fit quality.
+
+```bash
+datasynth-data diffusion evaluate \
+    --model ./model.json \
+    --samples 5000
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--model` | path | (required) | Path to trained model |
+| `--samples` | integer | `1000` | Number of evaluation samples |
+
+## causal (v0.5.0)
+
+Generate data with causal structure, run interventions, and produce counterfactuals.
+
+### causal generate
+
+Generate data following a causal graph structure.
+
+```bash
+datasynth-data causal generate \
+    --template fraud_detection \
+    --samples 10000 \
+    --seed 42 \
+    --output ./causal_output
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--template` | string | (required) | Built-in template (`fraud_detection`, `revenue_cycle`) or path to custom YAML |
+| `--samples` | integer | `1000` | Number of samples to generate |
+| `--seed` | integer | (random) | Random seed for reproducibility |
+| `--output` | path | (required) | Output directory |
+
+### causal intervene
+
+Run do-calculus interventions ("what-if" scenarios).
+
+```bash
+datasynth-data causal intervene \
+    --template fraud_detection \
+    --variable transaction_amount \
+    --value 50000 \
+    --samples 5000 \
+    --output ./intervention_output
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--template` | string | (required) | Causal template or YAML path |
+| `--variable` | string | (required) | Variable to intervene on |
+| `--value` | float | (required) | Value to set the variable to |
+| `--samples` | integer | `1000` | Number of intervention samples |
+| `--output` | path | (required) | Output directory |
+
+### causal validate
+
+Validate that generated data preserves causal structure.
+
+```bash
+datasynth-data causal validate \
+    --data ./causal_output \
+    --template fraud_detection
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--data` | path | (required) | Path to generated data |
+| `--template` | string | (required) | Causal template to validate against |
+
+## fingerprint federated (v0.5.0)
+
+Aggregate fingerprints from multiple distributed sources without centralizing raw data.
+
+```bash
+datasynth-data fingerprint federated \
+    --sources ./source_a.dsf ./source_b.dsf ./source_c.dsf \
+    --output ./aggregated.dsf \
+    --method weighted_average \
+    --max-epsilon 5.0
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--sources` | paths | (required) | Two or more .dsf fingerprint files |
+| `--output` | path | (required) | Output path for aggregated fingerprint |
+| `--method` | string | `weighted_average` | Aggregation method: `weighted_average`, `median`, `trimmed_mean` |
+| `--max-epsilon` | float | `5.0` | Maximum epsilon budget per source |
+
+## init --from-description (v0.5.0)
+
+Generate configuration from a natural language description using LLM.
+
+```bash
+datasynth-data init \
+    --from-description "Generate 1 year of retail data for a mid-size US company with fraud patterns" \
+    -o config.yaml
+```
+
+Uses the configured LLM provider (defaults to Mock) to parse the description and generate an appropriate YAML configuration.
+
+## generate --certificate (v0.5.0)
+
+Attach a synthetic data certificate to the generated output.
+
+```bash
+datasynth-data generate \
+    --config config.yaml \
+    --output ./output \
+    --certificate
+```
+
+Produces a `certificate.json` in the output directory containing DP guarantees, quality metrics, and an HMAC-SHA256 signature.
+
 ## Signal Handling (Unix)
 
 On Unix systems, you can pause and resume generation:

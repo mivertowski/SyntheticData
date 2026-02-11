@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,7 +179,7 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="generation-pipeline"><a class="header" href="#generation-pipeline">Generation Pipeline</a></h1>
-<p>Step-by-step generation process orchestrated by <code>synth-runtime</code>.</p>
+<p>Step-by-step generation process orchestrated by <code>datasynth-runtime</code>.</p>
 <h2 id="pipeline-overview"><a class="header" href="#pipeline-overview">Pipeline Overview</a></h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────────┐
 │                      GenerationOrchestrator                          │
@@ -488,6 +488,77 @@
 <li>Graph exports</li>
 <li>Label files</li>
 </ul>
+<h2 id="stage-8-banking--process-mining"><a class="header" href="#stage-8-banking--process-mining">Stage 8: Banking &amp; Process Mining</a></h2>
+<p><strong>Purpose:</strong> Generate banking/KYC/AML data and OCEL 2.0 event logs</p>
+<p>If banking or OCEL generation is enabled in the config, this stage produces banking transactions with KYC profiles and/or OCEL 2.0 event logs for process mining.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Banking customers, accounts, transactions</li>
+<li>KYC profiles and AML typology labels</li>
+<li>OCEL 2.0 event logs, objects, process variants</li>
+</ul>
+<h2 id="stage-9-audit-generation"><a class="header" href="#stage-9-audit-generation">Stage 9: Audit Generation</a></h2>
+<p><strong>Purpose:</strong> Generate ISA-compliant audit data</p>
+<p>If audit generation is enabled, generates engagement records, workpapers, evidence, risks, findings, and professional judgments.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Audit engagements, workpapers, evidence</li>
+<li>Risk assessments and findings</li>
+<li>Professional judgment documentation</li>
+</ul>
+<h2 id="stage-10-graph-export"><a class="header" href="#stage-10-graph-export">Stage 10: Graph Export</a></h2>
+<p><strong>Purpose:</strong> Build and export ML-ready graphs</p>
+<p>If graph export is enabled, builds transaction, approval, and entity graphs and exports to configured formats.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>PyTorch Geometric tensors (.pt)</li>
+<li>Neo4j CSV + Cypher scripts</li>
+<li>DGL graph structures</li>
+</ul>
+<h2 id="stage-11-llm-enrichment-v050"><a class="header" href="#stage-11-llm-enrichment-v050">Stage 11: LLM Enrichment (v0.5.0)</a></h2>
+<p><strong>Purpose:</strong> Enrich generated data with LLM-generated metadata</p>
+<p>When LLM enrichment is enabled, uses the configured <code>LlmProvider</code> (Mock, OpenAI, Anthropic, or Custom) to generate realistic:</p>
+<ul>
+<li>Vendor names appropriate for industry and spend category</li>
+<li>Transaction descriptions and memo fields</li>
+<li>Natural language explanations for injected anomalies</li>
+</ul>
+<p>The Mock provider is deterministic and requires no network access, making it suitable for CI/CD pipelines.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Enriched vendor master data</li>
+<li>Enriched journal entry descriptions</li>
+<li>Anomaly explanation text</li>
+</ul>
+<h2 id="stage-12-diffusion-enhancement-v050"><a class="header" href="#stage-12-diffusion-enhancement-v050">Stage 12: Diffusion Enhancement (v0.5.0)</a></h2>
+<p><strong>Purpose:</strong> Optionally blend diffusion model outputs with rule-based data</p>
+<p>When diffusion is enabled, uses a <code>StatisticalDiffusionBackend</code> to generate samples through a learned denoising process. The <code>HybridGenerator</code> blends diffusion outputs with rule-based data using one of three strategies:</p>
+<ul>
+<li><strong>Interpolate</strong>: Weighted average of rule-based and diffusion values</li>
+<li><strong>Select</strong>: Per-record random selection from either source</li>
+<li><strong>Ensemble</strong>: Column-level blending (diffusion for amounts, rule-based for categoricals)</li>
+</ul>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Blended transaction amounts and attributes</li>
+<li>Diffusion fit report (mean/std errors, correlation preservation)</li>
+</ul>
+<h2 id="stage-13-causal-overlay-v050"><a class="header" href="#stage-13-causal-overlay-v050">Stage 13: Causal Overlay (v0.5.0)</a></h2>
+<p><strong>Purpose:</strong> Apply causal structure to generated data</p>
+<p>When causal generation is enabled, constructs a <code>StructuralCausalModel</code> from the configured causal graph (or a built-in template like <code>fraud_detection</code> or <code>revenue_cycle</code>) and generates data that respects causal relationships. Supports:</p>
+<ul>
+<li><strong>Observational generation</strong>: Data following the causal structure</li>
+<li><strong>Interventional generation</strong>: Data under do-calculus interventions (“what-if” scenarios)</li>
+<li><strong>Counterfactual generation</strong>: Counterfactual versions of existing records via abduction-action-prediction</li>
+</ul>
+<p>The causal validator verifies that generated data preserves the specified causal structure.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Causally-structured records</li>
+<li>Intervention results with effect estimates</li>
+<li>Counterfactual pairs (factual + counterfactual)</li>
+<li>Causal validation report</li>
+</ul>
 <h2 id="parallel-execution"><a class="header" href="#parallel-execution">Parallel Execution</a></h2>
 <p>Stages that support parallelism:</p>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -526,7 +597,7 @@ where
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="data-flow.html">Data Flow</a></li>
-<li><a href="../crates/synth-runtime.html">synth-runtime</a></li>
+<li><a href="../crates/datasynth-runtime.html">datasynth-runtime</a></li>
 <li><a href="memory-management.html">Memory Management</a></li>
 </ul>
 

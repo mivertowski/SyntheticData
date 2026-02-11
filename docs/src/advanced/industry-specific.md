@@ -1,6 +1,6 @@
 # Industry-Specific Features
 
-SyntheticData v0.3.0 introduces comprehensive industry-specific transaction modeling with authentic terminology, master data structures, and anomaly patterns for six major industries.
+SyntheticData includes industry-specific transaction modeling with authentic terminology, master data structures, and anomaly patterns. Three industries have full generator implementations (Manufacturing, Retail, Healthcare), while three additional industries (Technology, Financial Services, Professional Services) are available as configuration presets with industry-appropriate GL structures and anomaly rates.
 
 ## Overview
 
@@ -11,6 +11,19 @@ Each industry module provides:
 - **Anomaly patterns**: Industry-authentic fraud and error patterns
 - **GL account structures**: Industry-appropriate chart of accounts
 - **Configuration options**: Fine-grained control over industry characteristics
+
+## Implementation Status
+
+| Industry | Status | Transaction Types | Master Data | Anomaly Patterns | Benchmarks |
+|----------|--------|-------------------|-------------|-----------------|------------|
+| **Manufacturing** | Full generator | 13 types | BOM, routings, work centers | 5 patterns | Yes |
+| **Retail** | Full generator | 11 types | Stores, POS, loyalty | 6 patterns | Yes |
+| **Healthcare** | Full generator | 9 types | ICD-10, CPT, DRG, payers | 6 patterns | Yes |
+| **Technology** | Config preset | Config-only | — | 3 anomaly rates | Yes |
+| **Financial Services** | Config preset | Config-only | — | 3 anomaly rates | Yes |
+| **Professional Services** | Config preset | Config-only | — | 3 anomaly rates | No |
+
+**Full generator** industries have dedicated Rust enum types with per-transaction generation logic, dedicated master data structures, and industry-specific anomaly injection. **Config preset** industries use the standard generator pipeline but apply industry-appropriate GL account structures, transaction distributions, and anomaly rates through configuration.
 
 ## Manufacturing
 

@@ -14,7 +14,7 @@ datasynth-runtime      → Orchestration layer (GenerationOrchestrator coordinat
     │
     ├─────────────────────────────────────┐
     ▼                                     ▼
-datasynth-generators   datasynth-banking  datasynth-ocpm  datasynth-fingerprint
+datasynth-generators   datasynth-banking  datasynth-ocpm  datasynth-fingerprint  datasynth-standards
     │                        │                  │                    │
     └────────────────────────┴──────────────────┴────────────────────┘
                                      │
@@ -48,6 +48,7 @@ datasynth-generators   datasynth-banking  datasynth-ocpm  datasynth-fingerprint
 | datasynth-banking | datasynth-core, datasynth-config |
 | datasynth-ocpm | datasynth-core |
 | datasynth-fingerprint | datasynth-core, datasynth-config |
+| datasynth-standards | datasynth-core, datasynth-config |
 | datasynth-runtime | datasynth-core, datasynth-config, datasynth-generators, datasynth-output, datasynth-graph, datasynth-banking, datasynth-ocpm, datasynth-fingerprint, datasynth-eval |
 | datasynth-cli | datasynth-runtime, datasynth-fingerprint |
 | datasynth-server | datasynth-runtime |
@@ -75,7 +76,10 @@ SyntheticData/
 │   │       ├── disk_guard.rs   # Disk space monitoring
 │   │       ├── cpu_monitor.rs  # CPU load tracking
 │   │       ├── resource_guard.rs # Unified resource orchestration
-│   │       └── degradation.rs  # Graceful degradation controller
+│   │       ├── degradation.rs  # Graceful degradation controller
+│   │       ├── llm/            # LLM provider abstraction (Mock, HTTP, OpenAI, Anthropic)
+│   │       ├── diffusion/      # Diffusion model backend (statistical, hybrid, training)
+│   │       └── causal/         # Causal graphs, SCMs, interventions, counterfactuals
 │   ├── datasynth-config/
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -99,7 +103,9 @@ SyntheticData/
 │   │       ├── period_close/   # Close engine, accruals, depreciation
 │   │       ├── anomaly/        # Anomaly injection engine
 │   │       ├── data_quality/   # Missing values, typos, duplicates
-│   │       └── audit/          # Engagement, workpaper, evidence, findings
+│   │       ├── audit/          # Engagement, workpaper, evidence, findings
+│   │       ├── llm_enrichment/ # LLM-powered vendor names, descriptions, anomaly explanations
+│   │       └── relationships/  # Entity graph, cross-process links, relationship strength
 │   ├── datasynth-output/
 │   │   ├── Cargo.toml
 │   │   └── src/
@@ -173,7 +179,17 @@ SyntheticData/
 │   │       ├── extraction/     # Schema, stats, correlation, integrity extractors
 │   │       ├── io/             # DSF file reader, writer, validator
 │   │       ├── synthesis/      # ConfigSynthesizer, DistributionFitter, GaussianCopula
-│   │       └── evaluation/     # FidelityEvaluator, FidelityReport
+│   │       ├── evaluation/     # FidelityEvaluator, FidelityReport
+│   │       ├── federated/      # Federated fingerprint protocol, secure aggregation
+│   │       └── certificates/   # Synthetic data certificates, HMAC-SHA256 signing
+│   ├── datasynth-standards/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── framework.rs     # AccountingFramework, FrameworkSettings
+│   │       ├── accounting/      # Revenue (ASC 606/IFRS 15), Leases, Fair Value, Impairment
+│   │       ├── audit/           # ISA standards, Analytical procedures, Opinions
+│   │       └── regulatory/      # SOX 302/404, DeficiencyMatrix
 │   └── datasynth-test-utils/
 │       ├── Cargo.toml
 │       └── src/
@@ -210,6 +226,7 @@ SyntheticData/
 | **datasynth-banking** | KYC/AML banking transactions with fraud typologies |
 | **datasynth-ocpm** | OCEL 2.0 process mining event logs |
 | **datasynth-fingerprint** | Privacy-preserving fingerprint extraction and synthesis |
+| **datasynth-standards** | Accounting/audit standards (US GAAP, IFRS, ISA, SOX, PCAOB) |
 
 ### Foundation Layer
 

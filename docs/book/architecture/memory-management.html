@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,15 +178,17 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="memory-management"><a class="header" href="#memory-management">Memory Management</a></h1>
-<p>How SyntheticData manages memory during generation.</p>
+                        <h1 id="resource-management"><a class="header" href="#resource-management">Resource Management</a></h1>
+<p>How SyntheticData manages system resources during generation.</p>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>Large-scale data generation can consume significant memory. SyntheticData provides:</p>
+<p>Large-scale data generation can stress system resources. SyntheticData provides:</p>
 <ul>
-<li><strong>Memory Guard</strong>: Cross-platform memory tracking</li>
-<li><strong>Soft/Hard Limits</strong>: Configurable thresholds</li>
+<li><strong>Memory Guard</strong>: Cross-platform memory tracking with soft/hard limits</li>
+<li><strong>Disk Space Guard</strong>: Disk capacity monitoring and pre-write checks</li>
+<li><strong>CPU Monitor</strong>: CPU load tracking with auto-throttling</li>
+<li><strong>Resource Guard</strong>: Unified orchestration of all resource guards</li>
+<li><strong>Graceful Degradation</strong>: Progressive feature reduction under resource pressure</li>
 <li><strong>Streaming Output</strong>: Reduce memory pressure</li>
-<li><strong>Growth Rate Monitoring</strong>: Detect runaway consumption</li>
 </ul>
 <h2 id="memory-guard"><a class="header" href="#memory-guard">Memory Guard</a></h2>
 <p>The <code>MemoryGuard</code> component tracks process memory usage:</p>
@@ -442,10 +444,173 @@ impl LazyRegistry {
 </span><span class="boring">fn main() {
 </span>orchestrator.clear_caches();
 <span class="boring">}</span></code></pre>
+<h2 id="disk-space-guard"><a class="header" href="#disk-space-guard">Disk Space Guard</a></h2>
+<p>Monitors disk space and prevents disk exhaustion:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct DiskSpaceGuardConfig {
+    pub hard_limit_mb: usize,       // Minimum free space required
+    pub soft_limit_mb: usize,       // Warning threshold
+    pub check_interval: usize,      // Check every N operations
+    pub reserve_buffer_mb: usize,   // Buffer to maintain
+}
+<span class="boring">}</span></code></pre>
+<h3 id="platform-support-1"><a class="header" href="#platform-support-1">Platform Support</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>Method</th></tr>
+</thead>
+<tbody>
+<tr><td>Linux/macOS</td><td><code>statvfs</code> syscall</td></tr>
+<tr><td>Windows</td><td><code>GetDiskFreeSpaceExW</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="usage"><a class="header" href="#usage">Usage</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let guard = DiskSpaceGuard::with_min_free(100);  // 100 MB minimum
+
+// Periodic check
+guard.check()?;
+
+// Pre-write check with size estimation
+guard.check_before_write(estimated_bytes)?;
+
+// Size estimation for planning
+let size = estimate_output_size_mb(100_000, &amp;[OutputFormat::Csv], false);
+<span class="boring">}</span></code></pre>
+<h2 id="cpu-monitor"><a class="header" href="#cpu-monitor">CPU Monitor</a></h2>
+<p>Tracks CPU load with optional auto-throttling:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CpuMonitorConfig {
+    pub enabled: bool,
+    pub high_load_threshold: f64,      // 0.85 default
+    pub critical_load_threshold: f64,  // 0.95 default
+    pub sample_interval_ms: u64,
+    pub auto_throttle: bool,
+    pub throttle_delay_ms: u64,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="platform-support-2"><a class="header" href="#platform-support-2">Platform Support</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>Method</th></tr>
+</thead>
+<tbody>
+<tr><td>Linux</td><td><code>/proc/stat</code> parsing</td></tr>
+<tr><td>macOS</td><td><code>top -l 1</code> command</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="usage-1"><a class="header" href="#usage-1">Usage</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let config = CpuMonitorConfig::with_thresholds(0.85, 0.95)
+    .with_auto_throttle(50);
+
+let monitor = CpuMonitor::new(config);
+
+// In generation loop
+if let Some(load) = monitor.sample() {
+    if load &gt; 0.85 {
+        // Consider slowing down
+    }
+    monitor.maybe_throttle();  // Applies delay if critical
+}
+<span class="boring">}</span></code></pre>
+<h2 id="unified-resource-guard"><a class="header" href="#unified-resource-guard">Unified Resource Guard</a></h2>
+<p>Combines all guards into single interface:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let guard = ResourceGuard::new(ResourceGuardConfig::default())
+    .with_memory_limit(2 * 1024 * 1024 * 1024)
+    .with_output_path("./output")
+    .with_cpu_monitoring();
+
+// Check all resources at once
+guard.check_all()?;
+
+let stats = guard.stats();
+println!("Memory: {}%", stats.memory_usage_percent);
+println!("Disk: {} MB free", stats.disk_available_mb);
+println!("CPU: {}%", stats.cpu_load * 100.0);
+<span class="boring">}</span></code></pre>
+<h2 id="graceful-degradation"><a class="header" href="#graceful-degradation">Graceful Degradation</a></h2>
+<p>Progressive feature reduction under resource pressure:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum DegradationLevel {
+    Normal,    // All features enabled
+    Reduced,   // 50% batch, skip data quality, 50% anomaly rate
+    Minimal,   // 25% batch, essential only, no injections
+    Emergency, // Flush and terminate
+}
+<span class="boring">}</span></code></pre>
+<h3 id="thresholds"><a class="header" href="#thresholds">Thresholds</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Level</th><th>Memory</th><th>Disk</th><th>Batch Size</th><th>Actions</th></tr>
+</thead>
+<tbody>
+<tr><td>Normal</td><td>&lt;70%</td><td>&gt;1GB</td><td>100%</td><td>Full operation</td></tr>
+<tr><td>Reduced</td><td>70-85%</td><td>500MB-1GB</td><td>50%</td><td>Skip data quality</td></tr>
+<tr><td>Minimal</td><td>85-95%</td><td>100-500MB</td><td>25%</td><td>Essential data only</td></tr>
+<tr><td>Emergency</td><td>&gt;95%</td><td>&lt;100MB</td><td>0%</td><td>Graceful shutdown</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="usage-2"><a class="header" href="#usage-2">Usage</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let controller = DegradationController::new(DegradationConfig::default());
+
+// Update based on current resource status
+let status = ResourceStatus::new(
+    Some(memory_usage),
+    Some(disk_available_mb),
+    Some(cpu_load),
+);
+
+let (level, changed) = controller.update(&amp;status);
+
+if changed {
+    let actions = DegradationActions::for_level(level);
+
+    if actions.skip_data_quality {
+        // Disable data quality injection
+    }
+    if actions.terminate {
+        // Flush and exit
+    }
+}
+<span class="boring">}</span></code></pre>
+<h3 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h3>
+<pre><code class="language-yaml">global:
+  resource_budget:
+    memory:
+      hard_limit_mb: 2048
+    disk:
+      min_free_mb: 500
+      reserve_buffer_mb: 100
+    cpu:
+      enabled: true
+      high_load_threshold: 0.85
+      auto_throttle: true
+    degradation:
+      enabled: true
+      reduced_threshold: 0.70
+      minimal_threshold: 0.85
+</code></pre>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="../advanced/performance.html">Performance Tuning</a></li>
-<li><a href="../crates/synth-runtime.html">synth-runtime</a></li>
+<li><a href="../crates/datasynth-runtime.html">datasynth-runtime</a></li>
+<li><a href="../crates/datasynth-core.html">datasynth-core</a></li>
 <li><a href="../configuration/global-settings.html">Configuration</a></li>
 </ul>
 
@@ -457,7 +622,7 @@ impl LazyRegistry {
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../architecture/design-decisions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../architecture/process-chains.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -471,7 +636,7 @@ impl LazyRegistry {
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../architecture/design-decisions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../architecture/process-chains.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

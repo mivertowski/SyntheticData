@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-e207af74.js";
+            window.path_to_searchindex_js = "searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-56b2ef65.js"></script>
+        <script src="toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,9 +183,9 @@
 <p class="subtitle">High-Performance Synthetic Enterprise Financial Data Generator</p>
 
 <div class="badges">
-<p><a href="https://github.com/ey-asu-rnd/SyntheticData"><img src="https://img.shields.io/badge/version-0.1.0-blue.svg" alt="Version"></a>
+<p><a href="https://github.com/ey-asu-rnd/SyntheticData"><img src="https://img.shields.io/badge/version-0.5.0-blue.svg" alt="Version"></a>
 <a href="https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green.svg" alt="License"></a>
-<a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.75%2B-orange.svg" alt="Rust"></a></p>
+<a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.82%2B-orange.svg" alt="Rust"></a></p>
 </div>
 
 <p class="attribution">Developed by <a href="https://www.ey.com/ch">Ernst &amp; Young Ltd.</a>, Zurich, Switzerland</p>
@@ -193,8 +193,11 @@
 </div>
 
 <h2 id="what-is-syntheticdata"><a class="header" href="#what-is-syntheticdata">What is SyntheticData?</a></h2>
-<p>SyntheticData is a configurable synthetic data generator that produces realistic, interconnected enterprise financial data. It generates General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, and ML-ready graph exports at scale.</p>
+<p>SyntheticData is a configurable synthetic data generator that produces realistic, interconnected enterprise financial data. It generates General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, audit workpapers, and ML-ready graph exports at scale.</p>
 <p>The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford’s Law compliance, temporal patterns, and document flow integrity.</p>
+<p><strong>New in v0.5.0:</strong> LLM-augmented generation (vendor names, descriptions, anomaly explanations), diffusion model backend (statistical denoising, hybrid generation), causal &amp; counterfactual generation (SCMs, do-calculus interventions), federated fingerprinting, synthetic data certificates, and ecosystem integrations (Airflow, dbt, MLflow, Spark).</p>
+<p><strong>v0.3.0:</strong> ACFE-aligned fraud taxonomy, collusion modeling, industry-specific transactions (Manufacturing, Retail, Healthcare), and ML benchmarks.</p>
+<p><strong>v0.2.x:</strong> Privacy-preserving fingerprinting, accounting/audit standards (US GAAP, IFRS, ISA, SOX), streaming output API.</p>
 <h2 id="quick-links"><a class="header" href="#quick-links">Quick Links</a></h2>
 <div class="table-wrapper">
 <table>
@@ -203,12 +206,12 @@
 </thead>
 <tbody>
 <tr><td><a href="getting-started/README.html">Getting Started</a></td><td>Installation, quick start guide, and demo mode</td></tr>
-<tr><td><a href="user-guide/README.html">User Guide</a></td><td>CLI reference, server API, desktop UI</td></tr>
+<tr><td><a href="user-guide/README.html">User Guide</a></td><td>CLI reference, server API, desktop UI, Python wrapper</td></tr>
 <tr><td><a href="configuration/README.html">Configuration</a></td><td>Complete YAML schema and presets</td></tr>
-<tr><td><a href="architecture/README.html">Architecture</a></td><td>System design and data flow</td></tr>
-<tr><td><a href="crates/README.html">Crate Reference</a></td><td>Detailed crate documentation</td></tr>
-<tr><td><a href="advanced/README.html">Advanced Topics</a></td><td>Anomaly injection, graph export, performance</td></tr>
-<tr><td><a href="use-cases/README.html">Use Cases</a></td><td>Fraud detection, audit, compliance</td></tr>
+<tr><td><a href="architecture/README.html">Architecture</a></td><td>System design, data flow, resource management</td></tr>
+<tr><td><a href="crates/README.html">Crate Reference</a></td><td>Detailed crate documentation (15 crates)</td></tr>
+<tr><td><a href="advanced/README.html">Advanced Topics</a></td><td>Anomaly injection, graph export, fingerprinting, performance</td></tr>
+<tr><td><a href="use-cases/README.html">Use Cases</a></td><td>Fraud detection, audit, AML/KYC, compliance</td></tr>
 </tbody>
 </table>
 </div>
@@ -232,25 +235,63 @@
 <h3 id="enterprise-simulation"><a class="header" href="#enterprise-simulation">Enterprise Simulation</a></h3>
 <ul>
 <li><strong>Master Data Management</strong>: Vendors, customers, materials, fixed assets, employees with temporal validity</li>
-<li><strong>Document Flow Engine</strong>: Complete P2P (Procure-to-Pay) and O2C (Order-to-Cash) processes</li>
+<li><strong>Document Flow Engine</strong>: Complete P2P (Procure-to-Pay) and O2C (Order-to-Cash) processes with three-way matching</li>
 <li><strong>Intercompany Transactions</strong>: IC matching, transfer pricing, consolidation eliminations</li>
 <li><strong>Balance Coherence</strong>: Opening balances, running balance tracking, trial balance generation</li>
 <li><strong>Subledger Simulation</strong>: AR, AP, Fixed Assets, Inventory with GL reconciliation</li>
-<li><strong>Currency &amp; FX</strong>: Realistic exchange rates, currency translation, CTA generation</li>
+<li><strong>Currency &amp; FX</strong>: Realistic exchange rates (Ornstein-Uhlenbeck process), currency translation, CTA generation</li>
 <li><strong>Period Close Engine</strong>: Monthly close, depreciation runs, accruals, year-end closing</li>
+<li><strong>Banking/KYC/AML</strong>: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering, round-tripping)</li>
+<li><strong>Process Mining</strong>: OCEL 2.0 event logs with object-centric relationships</li>
+<li><strong>Audit Simulation</strong>: ISA-compliant engagements, workpapers, findings, risk assessments, professional judgments</li>
+</ul>
+<h3 id="fraud-patterns--industry-specific-features"><a class="header" href="#fraud-patterns--industry-specific-features">Fraud Patterns &amp; Industry-Specific Features</a></h3>
+<ul>
+<li><strong>ACFE-Aligned Fraud Taxonomy</strong>: Asset Misappropriation, Corruption, Financial Statement Fraud calibrated to ACFE statistics</li>
+<li><strong>Collusion &amp; Conspiracy Modeling</strong>: Multi-party fraud networks with 9 ring types and role-based conspirators</li>
+<li><strong>Management Override</strong>: Senior-level fraud with fraud triangle modeling (Pressure, Opportunity, Rationalization)</li>
+<li><strong>Red Flag Generation</strong>: 40+ probabilistic fraud indicators with Bayesian probabilities</li>
+<li><strong>Industry-Specific Transactions</strong>: Manufacturing (BOM, WIP), Retail (POS, shrinkage), Healthcare (ICD-10, claims)</li>
+<li><strong>Industry-Specific Anomalies</strong>: Authentic fraud patterns per industry (upcoding, sweethearting, yield manipulation)</li>
 </ul>
 <h3 id="machine-learning--analytics"><a class="header" href="#machine-learning--analytics">Machine Learning &amp; Analytics</a></h3>
 <ul>
-<li><strong>Graph Export</strong>: PyTorch Geometric, Neo4j, and DGL formats with train/val/test splits</li>
-<li><strong>Anomaly Injection</strong>: 20+ fraud types, errors, process issues with full labeling</li>
-<li><strong>Data Quality Variations</strong>: Missing values, format variations, duplicates, typos</li>
+<li><strong>Graph Export</strong>: PyTorch Geometric, Neo4j, DGL, and RustGraph formats with train/val/test splits</li>
+<li><strong>Anomaly Injection</strong>: 60+ fraud types, errors, process issues with full labeling</li>
+<li><strong>Data Quality Variations</strong>: Missing values (MCAR, MAR, MNAR), format variations, duplicates, typos</li>
+<li><strong>Evaluation Framework</strong>: Auto-tuning with configuration recommendations based on metric gaps</li>
+<li><strong>ACFE Benchmarks</strong>: ML benchmarks calibrated to ACFE fraud statistics</li>
+<li><strong>Industry Benchmarks</strong>: Pre-configured benchmarks for fraud detection by industry</li>
+</ul>
+<h3 id="ai--ml-powered-generation"><a class="header" href="#ai--ml-powered-generation">AI &amp; ML-Powered Generation</a></h3>
+<ul>
+<li><strong>LLM-Augmented Generation</strong>: Use LLMs to generate realistic vendor names, transaction descriptions, memo fields, and anomaly explanations via pluggable provider abstraction (Mock, OpenAI, Anthropic, Custom)</li>
+<li><strong>Natural Language Configuration</strong>: Generate YAML configs from natural language descriptions (<code>init --from-description "Generate 1 year of retail data for a mid-size US company"</code>)</li>
+<li><strong>Diffusion Model Backend</strong>: Statistical diffusion with configurable noise schedules (linear, cosine, sigmoid) for learned distribution capture</li>
+<li><strong>Hybrid Generation</strong>: Blend rule-based and diffusion outputs using interpolation, selection, or ensemble strategies</li>
+<li><strong>Causal Generation</strong>: Define Structural Causal Models (SCMs) with interventional (“what-if”) and counterfactual generation</li>
+<li><strong>Built-in Causal Templates</strong>: Pre-configured <code>fraud_detection</code> and <code>revenue_cycle</code> causal graphs</li>
+</ul>
+<h3 id="privacy-preserving-fingerprinting"><a class="header" href="#privacy-preserving-fingerprinting">Privacy-Preserving Fingerprinting</a></h3>
+<ul>
+<li><strong>Fingerprint Extraction</strong>: Extract statistical properties from real data into <code>.dsf</code> files</li>
+<li><strong>Differential Privacy</strong>: Laplace and Gaussian mechanisms with configurable epsilon budget</li>
+<li><strong>K-Anonymity</strong>: Suppression of rare categorical values below configurable threshold</li>
+<li><strong>Privacy Audit Trail</strong>: Complete logging of all privacy decisions and epsilon spent</li>
+<li><strong>Fidelity Evaluation</strong>: Validate synthetic data matches original fingerprint (KS, Wasserstein, Benford MAD)</li>
+<li><strong>Gaussian Copula</strong>: Preserve multivariate correlations during synthesis</li>
+<li><strong>Federated Fingerprinting</strong>: Extract fingerprints from distributed data sources without centralization using secure aggregation (weighted average, median, trimmed mean)</li>
+<li><strong>Synthetic Data Certificates</strong>: Cryptographic proof of DP guarantees with HMAC-SHA256 signing, embeddable in Parquet metadata and JSON output</li>
+<li><strong>Privacy-Utility Pareto Frontier</strong>: Automated exploration of optimal epsilon values for given utility targets</li>
 </ul>
 <h3 id="production-features"><a class="header" href="#production-features">Production Features</a></h3>
 <ul>
 <li><strong>REST &amp; gRPC APIs</strong>: Streaming generation with authentication and rate limiting</li>
-<li><strong>Desktop UI</strong>: Cross-platform Tauri/SvelteKit application</li>
-<li><strong>Memory Management</strong>: Configurable limits with OOM prevention</li>
-<li><strong>Deterministic Generation</strong>: Seeded RNG for reproducible output</li>
+<li><strong>Desktop UI</strong>: Cross-platform Tauri/SvelteKit application with 15+ configuration pages</li>
+<li><strong>Resource Guards</strong>: Memory, disk, and CPU monitoring with graceful degradation</li>
+<li><strong>Graceful Degradation</strong>: Progressive feature reduction under resource pressure (Normal→Reduced→Minimal→Emergency)</li>
+<li><strong>Deterministic Generation</strong>: Seeded RNG (ChaCha8) for reproducible output</li>
+<li><strong>Python Wrapper</strong>: Programmatic access with blueprints and config validation</li>
 </ul>
 <h2 id="performance"><a class="header" href="#performance">Performance</a></h2>
 <div class="table-wrapper">
@@ -274,10 +315,15 @@
 <tbody>
 <tr><td><strong>Fraud Detection ML</strong></td><td>Train supervised models with labeled fraud patterns</td></tr>
 <tr><td><strong>Graph Neural Networks</strong></td><td>Entity relationship graphs for anomaly detection</td></tr>
+<tr><td><strong>AML/KYC Testing</strong></td><td>Banking transaction data with structuring, layering, mule patterns</td></tr>
 <tr><td><strong>Audit Analytics</strong></td><td>Test audit procedures with known control exceptions</td></tr>
 <tr><td><strong>Process Mining</strong></td><td>OCEL 2.0 event logs for process discovery</td></tr>
 <tr><td><strong>ERP Testing</strong></td><td>Load testing with realistic transaction volumes</td></tr>
 <tr><td><strong>SOX Compliance</strong></td><td>Test internal control monitoring systems</td></tr>
+<tr><td><strong>Data Quality ML</strong></td><td>Train models to detect missing values, typos, duplicates</td></tr>
+<tr><td><strong>Causal Analysis</strong></td><td>“What-if” scenarios and counterfactual generation for audit</td></tr>
+<tr><td><strong>LLM Training Data</strong></td><td>Generate LLM-enriched training datasets with realistic metadata</td></tr>
+<tr><td><strong>Pipeline Orchestration</strong></td><td>Integrate with Airflow, dbt, MLflow, and Spark pipelines</td></tr>
 </tbody>
 </table>
 </div>
@@ -288,11 +334,98 @@ cd SyntheticData
 cargo build --release
 
 # Run demo mode
-./target/release/synth-data generate --demo --output ./output
+./target/release/datasynth-data generate --demo --output ./output
 
 # Or create a custom configuration
-./target/release/synth-data init --industry manufacturing --complexity medium -o config.yaml
-./target/release/synth-data generate --config config.yaml --output ./output
+./target/release/datasynth-data init --industry manufacturing --complexity medium -o config.yaml
+./target/release/datasynth-data generate --config config.yaml --output ./output
+</code></pre>
+<h3 id="fingerprinting-new-in-v020"><a class="header" href="#fingerprinting-new-in-v020">Fingerprinting (New in v0.2.0)</a></h3>
+<pre><code class="language-bash"># Extract fingerprint from real data with privacy protection
+./target/release/datasynth-data fingerprint extract \
+    --input ./real_data.csv \
+    --output ./fingerprint.dsf \
+    --privacy-level standard
+
+# Validate fingerprint integrity
+./target/release/datasynth-data fingerprint validate ./fingerprint.dsf
+
+# View fingerprint details
+./target/release/datasynth-data fingerprint info ./fingerprint.dsf --detailed
+
+# Evaluate synthetic data fidelity
+./target/release/datasynth-data fingerprint evaluate \
+    --fingerprint ./fingerprint.dsf \
+    --synthetic ./synthetic_data/ \
+    --threshold 0.8
+</code></pre>
+<h3 id="llm-augmented-generation-new-in-v050"><a class="header" href="#llm-augmented-generation-new-in-v050">LLM-Augmented Generation (New in v0.5.0)</a></h3>
+<pre><code class="language-bash"># Generate config from natural language description
+./target/release/datasynth-data init \
+    --from-description "Generate 1 year of retail data for a mid-size US company with fraud patterns" \
+    -o config.yaml
+
+# Generate with LLM enrichment (uses mock provider by default)
+./target/release/datasynth-data generate --config config.yaml --output ./output
+</code></pre>
+<h3 id="causal-generation-new-in-v050"><a class="header" href="#causal-generation-new-in-v050">Causal Generation (New in v0.5.0)</a></h3>
+<pre><code class="language-bash"># Generate data with causal structure (fraud_detection template)
+./target/release/datasynth-data causal generate \
+    --template fraud_detection \
+    --samples 10000 \
+    --output ./causal_output
+
+# Run intervention ("what-if" scenario)
+./target/release/datasynth-data causal intervene \
+    --template fraud_detection \
+    --variable transaction_amount \
+    --value 50000 \
+    --samples 5000 \
+    --output ./intervention_output
+</code></pre>
+<h3 id="diffusion-model-training-new-in-v050"><a class="header" href="#diffusion-model-training-new-in-v050">Diffusion Model Training (New in v0.5.0)</a></h3>
+<pre><code class="language-bash"># Train a diffusion model on fingerprint data
+./target/release/datasynth-data diffusion train \
+    --fingerprint ./fingerprint.dsf \
+    --output ./model.json
+
+# Evaluate diffusion model fit
+./target/release/datasynth-data diffusion evaluate \
+    --model ./model.json \
+    --samples 5000
+</code></pre>
+<h3 id="python-wrapper"><a class="header" href="#python-wrapper">Python Wrapper</a></h3>
+<pre><code class="language-python">from datasynth_py import DataSynth
+from datasynth_py.config import blueprints
+
+config = blueprints.retail_small(companies=4, transactions=10000)
+synth = DataSynth()
+result = synth.generate(config=config, output={"format": "csv", "sink": "temp_dir"})
+print(result.output_dir)
+</code></pre>
+<h2 id="architecture"><a class="header" href="#architecture">Architecture</a></h2>
+<p>SyntheticData is organized as a Rust workspace with 15 modular crates:</p>
+<pre><code>datasynth-cli          Command-line interface (binary: datasynth-data)
+datasynth-server       REST/gRPC/WebSocket server with auth and rate limiting
+datasynth-ui           Tauri/SvelteKit desktop application
+    │
+datasynth-runtime      Orchestration layer (parallel execution, resource guards)
+    │
+datasynth-generators   Data generators (JE, documents, subledgers, anomalies, audit)
+datasynth-banking      KYC/AML banking transaction generator
+datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0)
+datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
+datasynth-standards    Accounting/audit standards (US GAAP, IFRS, ISA, SOX)
+    │
+datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL)
+datasynth-eval         Evaluation framework with auto-tuning
+    │
+datasynth-config       Configuration schema, validation, industry presets
+    │
+datasynth-core         Domain models, traits, distributions, resource guards
+    │
+datasynth-output       Output sinks (CSV, JSON, Parquet, streaming)
+datasynth-test-utils   Test utilities, fixtures, mocks
 </code></pre>
 <h2 id="license"><a class="header" href="#license">License</a></h2>
 <p>Copyright 2024-2026 Michael Ivertowski, Ernst &amp; Young Ltd., Zurich, Switzerland</p>

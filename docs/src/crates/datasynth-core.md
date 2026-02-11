@@ -56,6 +56,26 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `resource_guard.rs` | Unified orchestration of all resource guards |
 | `degradation.rs` | Graceful degradation system (Normal→Reduced→Minimal→Emergency) |
 
+### AI & ML Modules (v0.5.0)
+
+| Module | Description |
+|--------|-------------|
+| `llm/provider.rs` | `LlmProvider` trait with `complete()` and `complete_batch()` methods |
+| `llm/mock_provider.rs` | Deterministic `MockLlmProvider` for testing (no network required) |
+| `llm/http_provider.rs` | `HttpLlmProvider` for OpenAI, Anthropic, and custom API endpoints |
+| `llm/nl_config.rs` | `NlConfigGenerator` — natural language to YAML configuration |
+| `llm/cache.rs` | `LlmCache` with FNV-1a hashing for prompt deduplication |
+| `diffusion/backend.rs` | `DiffusionBackend` trait with `forward()`, `reverse()`, `generate()` methods |
+| `diffusion/schedule.rs` | `NoiseSchedule` with linear, cosine, and sigmoid schedules |
+| `diffusion/statistical.rs` | `StatisticalDiffusionBackend` — fingerprint-guided denoising |
+| `diffusion/hybrid.rs` | `HybridGenerator` with Interpolate, Select, Ensemble blend strategies |
+| `diffusion/training.rs` | `DiffusionTrainer` and `TrainedDiffusionModel` with save/load |
+| `causal/graph.rs` | `CausalGraph` with variables, edges, and built-in templates |
+| `causal/scm.rs` | `StructuralCausalModel` with topological-order generation |
+| `causal/intervention.rs` | `InterventionEngine` with do-calculus and effect estimation |
+| `causal/counterfactual.rs` | `CounterfactualGenerator` with abduction-action-prediction |
+| `causal/validation.rs` | `CausalValidator` for causal structure validation |
+
 ## Key Types
 
 ### JournalEntry
@@ -261,6 +281,63 @@ if actions.skip_data_quality {
 if actions.terminate {
     // Flush and exit gracefully
 }
+```
+
+### LLM Provider
+
+```rust
+use synth_core::llm::{LlmProvider, LlmRequest, MockLlmProvider};
+
+let provider = MockLlmProvider::new(42);
+let request = LlmRequest::new("Generate a realistic vendor name for a manufacturing company")
+    .with_seed(42)
+    .with_max_tokens(50);
+let response = provider.complete(&request)?;
+println!("Generated: {}", response.content);
+```
+
+### Causal Generation
+
+```rust
+use synth_core::causal::{CausalGraph, StructuralCausalModel};
+
+// Use built-in fraud detection template
+let graph = CausalGraph::fraud_detection_template();
+let scm = StructuralCausalModel::new(graph)?;
+
+// Generate observational samples
+let samples = scm.generate(1000, 42)?;
+
+// Run intervention: what if transaction_amount is set to 50000?
+let intervened = scm.intervene("transaction_amount", 50000.0)?;
+let intervention_samples = intervened.generate(1000, 42)?;
+```
+
+### Diffusion Model
+
+```rust
+use synth_core::diffusion::{
+    StatisticalDiffusionBackend, DiffusionConfig, NoiseScheduleType,
+    HybridGenerator, BlendStrategy,
+};
+
+let config = DiffusionConfig {
+    n_steps: 1000,
+    schedule: NoiseScheduleType::Cosine,
+    seed: 42,
+};
+
+let backend = StatisticalDiffusionBackend::new(
+    vec![100.0, 5.0],  // means
+    vec![50.0, 2.0],   // stds
+    config,
+);
+
+let samples = backend.generate(1000, 2, 42);
+
+// Hybrid: blend rule-based + diffusion
+let hybrid = HybridGenerator::new(0.3); // 30% diffusion weight
+let blended = hybrid.blend(&rule_based, &samples, BlendStrategy::Ensemble, 42);
 ```
 
 ## Traits

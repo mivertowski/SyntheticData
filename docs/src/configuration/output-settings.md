@@ -27,8 +27,13 @@ Output file format selection.
 
 ```yaml
 output:
-  format: csv    # CSV format (default)
-  format: json   # JSON format
+  format: csv        # CSV format (default)
+  format: json       # JSON format
+  format: jsonl      # Newline-delimited JSON
+  format: parquet    # Apache Parquet columnar
+  format: sap        # SAP S/4HANA table format
+  format: oracle     # Oracle EBS GL tables
+  format: netsuite   # NetSuite journal entries
 ```
 
 ### CSV Format
@@ -66,6 +71,58 @@ Structured JSON with nested objects:
   }
 ]
 ```
+
+### Parquet Format
+
+Apache Parquet columnar format for analytics:
+
+```yaml
+output:
+  format: parquet
+  compression: snappy     # snappy (default), gzip, zstd
+```
+
+Parquet files are self-describing with embedded schema and support columnar compression. Ideal for Spark, DuckDB, Polars, pandas, and cloud data warehouses.
+
+### ERP Formats
+
+Export in native ERP table schemas for load testing and integration validation:
+
+```yaml
+# SAP S/4HANA
+output:
+  format: sap
+  sap:
+    tables: [bkpf, bseg, acdoca, lfa1, kna1, mara, csks, cepc]
+    client: "100"
+
+# Oracle EBS
+output:
+  format: oracle
+  oracle:
+    ledger_id: 1
+
+# NetSuite
+output:
+  format: netsuite
+  netsuite:
+    subsidiary_id: 1
+    include_custom_fields: true
+```
+
+See [ERP Output Formats](../user-guide/erp-output-formats.md) for full field mappings.
+
+### Streaming Mode
+
+Enable streaming output for memory-efficient generation of large datasets:
+
+```yaml
+output:
+  format: csv           # Any format
+  streaming: true       # Enable streaming mode
+```
+
+See [Streaming Output](../user-guide/streaming-output.md) for details.
 
 ## Compression
 

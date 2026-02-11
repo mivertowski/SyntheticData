@@ -6,9 +6,9 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://www.rust-lang.org)
 
 </div>
 
@@ -22,7 +22,9 @@ SyntheticData is a configurable synthetic data generator that produces realistic
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
 
-**New in v0.3.0:** ACFE-aligned fraud taxonomy, collusion modeling, industry-specific transactions (Manufacturing, Retail, Healthcare), and ML benchmarks.
+**New in v0.5.0:** LLM-augmented generation (vendor names, descriptions, anomaly explanations), diffusion model backend (statistical denoising, hybrid generation), causal & counterfactual generation (SCMs, do-calculus interventions), federated fingerprinting, synthetic data certificates, and ecosystem integrations (Airflow, dbt, MLflow, Spark).
+
+**v0.3.0:** ACFE-aligned fraud taxonomy, collusion modeling, industry-specific transactions (Manufacturing, Retail, Healthcare), and ML benchmarks.
 
 **v0.2.x:** Privacy-preserving fingerprinting, accounting/audit standards (US GAAP, IFRS, ISA, SOX), streaming output API.
 
@@ -82,6 +84,15 @@ The generator produces statistically accurate data based on empirical research f
 - **ACFE Benchmarks**: ML benchmarks calibrated to ACFE fraud statistics
 - **Industry Benchmarks**: Pre-configured benchmarks for fraud detection by industry
 
+### AI & ML-Powered Generation
+
+- **LLM-Augmented Generation**: Use LLMs to generate realistic vendor names, transaction descriptions, memo fields, and anomaly explanations via pluggable provider abstraction (Mock, OpenAI, Anthropic, Custom)
+- **Natural Language Configuration**: Generate YAML configs from natural language descriptions (`init --from-description "Generate 1 year of retail data for a mid-size US company"`)
+- **Diffusion Model Backend**: Statistical diffusion with configurable noise schedules (linear, cosine, sigmoid) for learned distribution capture
+- **Hybrid Generation**: Blend rule-based and diffusion outputs using interpolation, selection, or ensemble strategies
+- **Causal Generation**: Define Structural Causal Models (SCMs) with interventional ("what-if") and counterfactual generation
+- **Built-in Causal Templates**: Pre-configured `fraud_detection` and `revenue_cycle` causal graphs
+
 ### Privacy-Preserving Fingerprinting
 
 - **Fingerprint Extraction**: Extract statistical properties from real data into `.dsf` files
@@ -90,6 +101,9 @@ The generator produces statistically accurate data based on empirical research f
 - **Privacy Audit Trail**: Complete logging of all privacy decisions and epsilon spent
 - **Fidelity Evaluation**: Validate synthetic data matches original fingerprint (KS, Wasserstein, Benford MAD)
 - **Gaussian Copula**: Preserve multivariate correlations during synthesis
+- **Federated Fingerprinting**: Extract fingerprints from distributed data sources without centralization using secure aggregation (weighted average, median, trimmed mean)
+- **Synthetic Data Certificates**: Cryptographic proof of DP guarantees with HMAC-SHA256 signing, embeddable in Parquet metadata and JSON output
+- **Privacy-Utility Pareto Frontier**: Automated exploration of optimal epsilon values for given utility targets
 
 ### Production Features
 
@@ -120,6 +134,9 @@ The generator produces statistically accurate data based on empirical research f
 | **ERP Testing** | Load testing with realistic transaction volumes |
 | **SOX Compliance** | Test internal control monitoring systems |
 | **Data Quality ML** | Train models to detect missing values, typos, duplicates |
+| **Causal Analysis** | "What-if" scenarios and counterfactual generation for audit |
+| **LLM Training Data** | Generate LLM-enriched training datasets with realistic metadata |
+| **Pipeline Orchestration** | Integrate with Airflow, dbt, MLflow, and Spark pipelines |
 
 ## Quick Start
 
@@ -159,6 +176,50 @@ cargo build --release
     --threshold 0.8
 ```
 
+### LLM-Augmented Generation (New in v0.5.0)
+
+```bash
+# Generate config from natural language description
+./target/release/datasynth-data init \
+    --from-description "Generate 1 year of retail data for a mid-size US company with fraud patterns" \
+    -o config.yaml
+
+# Generate with LLM enrichment (uses mock provider by default)
+./target/release/datasynth-data generate --config config.yaml --output ./output
+```
+
+### Causal Generation (New in v0.5.0)
+
+```bash
+# Generate data with causal structure (fraud_detection template)
+./target/release/datasynth-data causal generate \
+    --template fraud_detection \
+    --samples 10000 \
+    --output ./causal_output
+
+# Run intervention ("what-if" scenario)
+./target/release/datasynth-data causal intervene \
+    --template fraud_detection \
+    --variable transaction_amount \
+    --value 50000 \
+    --samples 5000 \
+    --output ./intervention_output
+```
+
+### Diffusion Model Training (New in v0.5.0)
+
+```bash
+# Train a diffusion model on fingerprint data
+./target/release/datasynth-data diffusion train \
+    --fingerprint ./fingerprint.dsf \
+    --output ./model.json
+
+# Evaluate diffusion model fit
+./target/release/datasynth-data diffusion evaluate \
+    --model ./model.json \
+    --samples 5000
+```
+
 ### Python Wrapper
 
 ```python
@@ -186,6 +247,7 @@ datasynth-generators   Data generators (JE, documents, subledgers, anomalies, au
 datasynth-banking      KYC/AML banking transaction generator
 datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0)
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
+datasynth-standards    Accounting/audit standards (US GAAP, IFRS, ISA, SOX)
     │
 datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL)
 datasynth-eval         Evaluation framework with auto-tuning

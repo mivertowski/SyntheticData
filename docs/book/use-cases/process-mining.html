@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -236,7 +236,7 @@ output:
   format: csv
 </code></pre>
 <h2 id="ocel-20-export"><a class="header" href="#ocel-20-export">OCEL 2.0 Export</a></h2>
-<p>Use the <code>synth-ocpm</code> crate for OCEL 2.0 export:</p>
+<p>Use the <code>datasynth-ocpm</code> crate for OCEL 2.0 export:</p>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use synth_ocpm::{OcpmGenerator, Ocel2Exporter, ExportFormat};
@@ -411,10 +411,66 @@ from pm4py.objects.ocel.exporter import sqlite
 sqlite.apply(ocel, "output/ocel.sqlite")
 # Open in OCPA tool
 </code></pre>
+<h2 id="s2p-process-mining"><a class="header" href="#s2p-process-mining">S2P Process Mining</a></h2>
+<p>The full Source-to-Pay chain provides rich process mining opportunities beyond basic P2P:</p>
+<h3 id="extended-event-sequence"><a class="header" href="#extended-event-sequence">Extended Event Sequence</a></h3>
+<pre><code>Spend Analysis → Supplier Qualification → RFx Published →
+Bid Received → Bid Evaluation → Contract Award →
+Create PO → Approve PO → Release PO →
+Create GR → Post GR →
+Receive Invoice → Verify Invoice (Three-Way Match) → Post Invoice →
+Schedule Payment → Execute Payment
+</code></pre>
+<h3 id="extended-object-types"><a class="header" href="#extended-object-types">Extended Object Types</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Object Type</th><th>Attributes</th></tr>
+</thead>
+<tbody>
+<tr><td>SpendCategory</td><td>category_code, total_spend, vendor_count</td></tr>
+<tr><td>SourcingProject</td><td>project_type, target_savings, status</td></tr>
+<tr><td>SupplierBid</td><td>vendor_id, bid_amount, technical_score</td></tr>
+<tr><td>ProcurementContract</td><td>contract_value, validity_period, terms</td></tr>
+<tr><td>PurchaseRequisition</td><td>requester, catalog_item, urgency</td></tr>
+<tr><td>PurchaseOrder</td><td>po_type, vendor_id, total_amount</td></tr>
+<tr><td>GoodsReceipt</td><td>gr_number, received_qty, movement_type</td></tr>
+<tr><td>VendorInvoice</td><td>invoice_amount, match_status, due_date</td></tr>
+<tr><td>Payment</td><td>payment_method, cleared_amount, bank_ref</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="cycle-time-analysis"><a class="header" href="#cycle-time-analysis">Cycle Time Analysis</a></h3>
+<pre><code class="language-python"># Analyze end-to-end procurement cycle times
+po_events = events[events['object_type'] == 'PurchaseOrder']
+
+# PO creation to payment completion
+cycle_times = po_events.groupby('case_id').agg({
+    'timestamp': ['min', 'max']
+})
+cycle_times['cycle_time'] = (
+    cycle_times[('timestamp', 'max')] -
+    cycle_times[('timestamp', 'min')]
+)
+
+# Segment by PO type
+cycle_by_type = po_events.merge(
+    objects[['po_type']], on='object_id'
+).groupby('po_type')['cycle_time'].describe()
+</code></pre>
+<h3 id="three-way-match-conformance"><a class="header" href="#three-way-match-conformance">Three-Way Match Conformance</a></h3>
+<pre><code class="language-python"># Identify invoices that failed three-way match
+match_events = events[events['activity'] == 'Verify Invoice']
+blocked = match_events[match_events['match_status'] == 'blocked']
+
+print(f"Three-way match block rate: {len(blocked)/len(match_events):.1%}")
+print(f"Most common variance: {blocked['variance_type'].mode()[0]}")
+</code></pre>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
-<li><a href="../configuration/document-flows.html">Document Flows</a></li>
-<li><a href="../crates/synth-ocpm.html">synth-ocpm Crate</a></li>
+<li><a href="../configuration/document-flows.html">Document Flows</a> — P2P and O2C configuration</li>
+<li><a href="../architecture/process-chains.html">Process Chains</a> — Enterprise process chain architecture</li>
+<li><a href="../crates/datasynth-ocpm.html">datasynth-ocpm Crate</a> — OCEL 2.0 implementation</li>
 <li><a href="audit-analytics.html">Audit Analytics</a></li>
 </ul>
 
@@ -426,7 +482,7 @@ sqlite.apply(ocel, "output/ocel.sqlite")
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../use-cases/erp-testing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../use-cases/aml-kyc-testing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -440,7 +496,7 @@ sqlite.apply(ocel, "output/ocel.sqlite")
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../use-cases/erp-testing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../use-cases/aml-kyc-testing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

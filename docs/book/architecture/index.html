@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,16 +183,16 @@
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────────┐
 │                         Application Layer                            │
-│   synth-cli │ synth-server │ synth-ui                               │
+│   datasynth-cli │ datasynth-server │ datasynth-ui                               │
 ├─────────────────────────────────────────────────────────────────────┤
 │                        Orchestration Layer                           │
-│                         synth-runtime                                │
+│                         datasynth-runtime                                │
 ├─────────────────────────────────────────────────────────────────────┤
 │                        Generation Layer                              │
-│   synth-generators │ synth-graph                                    │
+│   datasynth-generators │ datasynth-graph                                    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                        Foundation Layer                              │
-│   synth-core │ synth-config │ synth-output                          │
+│   datasynth-core │ datasynth-config │ datasynth-output                          │
 └─────────────────────────────────────────────────────────────────────┘
 </code></pre>
 <h2 id="key-characteristics"><a class="header" href="#key-characteristics">Key Characteristics</a></h2>
@@ -230,22 +230,22 @@
 <h3 id="separation-of-concerns"><a class="header" href="#separation-of-concerns">Separation of Concerns</a></h3>
 <p>Each crate has a single responsibility:</p>
 <ul>
-<li><code>synth-core</code>: Domain models and distributions</li>
-<li><code>synth-config</code>: Configuration and validation</li>
-<li><code>synth-generators</code>: Data generation logic</li>
-<li><code>synth-output</code>: File writing</li>
-<li><code>synth-runtime</code>: Orchestration</li>
+<li><code>datasynth-core</code>: Domain models and distributions</li>
+<li><code>datasynth-config</code>: Configuration and validation</li>
+<li><code>datasynth-generators</code>: Data generation logic</li>
+<li><code>datasynth-output</code>: File writing</li>
+<li><code>datasynth-runtime</code>: Orchestration</li>
 </ul>
 <h3 id="dependency-inversion"><a class="header" href="#dependency-inversion">Dependency Inversion</a></h3>
 <p>Core components define traits, implementations provided by higher layers:</p>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// synth-core defines the trait
+</span>// datasynth-core defines the trait
 pub trait Generator&lt;T&gt; {
     fn generate_batch(&amp;mut self, count: usize) -&gt; Result&lt;Vec&lt;T&gt;&gt;;
 }
 
-// synth-generators implements it
+// datasynth-generators implements it
 impl Generator&lt;JournalEntry&gt; for JournalEntryGenerator {
     fn generate_batch(&amp;mut self, count: usize) -&gt; Result&lt;Vec&lt;JournalEntry&gt;&gt; {
         // Implementation
@@ -356,15 +356,15 @@ while !guard.check().exceeds_hard_limit {
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="../crates/README.html">Crate Reference</a></li>
-<li><a href="../crates/synth-core.html">synth-core</a></li>
-<li><a href="../crates/synth-runtime.html">synth-runtime</a></li>
+<li><a href="../crates/datasynth-core.html">datasynth-core</a></li>
+<li><a href="../crates/datasynth-runtime.html">datasynth-runtime</a></li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../configuration/output-settings.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../configuration/ai-ml-features.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -378,7 +378,7 @@ while !guard.check().exceeds_hard_limit {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../configuration/output-settings.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../configuration/ai-ml-features.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

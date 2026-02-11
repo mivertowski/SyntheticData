@@ -547,6 +547,36 @@ Segregation of duties conflict definitions.
 
 Actual SoD violations detected in generated data.
 
+## Parquet Format
+
+Apache Parquet columnar format for large analytical datasets:
+
+```yaml
+output:
+  format: parquet
+  compression: snappy      # snappy, gzip, zstd
+```
+
+**Benefits:**
+- Columnar storage — efficient for queries touching few columns
+- Built-in compression — typically 5-10x smaller than CSV
+- Schema embedding — self-describing files with full type information
+- Predicate pushdown — query engines skip irrelevant row groups
+
+**Use with:** Apache Spark, DuckDB, Polars, pandas, BigQuery, Snowflake, Databricks.
+
+## ERP-Specific Formats
+
+SyntheticData can export in native ERP table schemas:
+
+| Format | Target ERP | Tables |
+|--------|-----------|--------|
+| `sap` | SAP S/4HANA | BKPF, BSEG, ACDOCA, LFA1, KNA1, MARA, CSKS, CEPC |
+| `oracle` | Oracle EBS | GL_JE_HEADERS, GL_JE_LINES, GL_JE_BATCHES |
+| `netsuite` | NetSuite | Journal entries with subsidiary, multi-book, custom fields |
+
+See [ERP Output Formats](erp-output-formats.md) for field mappings and configuration.
+
 ## Compression Options
 
 | Option | Extension | Use Case |
@@ -554,19 +584,23 @@ Actual SoD violations detected in generated data.
 | none | .csv/.json | Development, small datasets |
 | gzip | .csv.gz | General compression |
 | zstd | .csv.zst | High performance |
+| snappy | .parquet | Parquet default (fast) |
 
 ## Configuration
 
 ```yaml
 output:
-  format: csv              # csv or json
-  compression: none        # none, gzip, zstd
+  format: csv              # csv, json, jsonl, parquet, sap, oracle, netsuite
+  compression: none        # none, gzip, zstd (CSV/JSON) or snappy/gzip/zstd (Parquet)
   compression_level: 6     # 1-9 (if compression enabled)
+  streaming: false         # Enable streaming mode for large outputs
 ```
 
 ## See Also
 
-- [Configuration](../configuration/output-settings.md)
+- [ERP Output Formats](erp-output-formats.md) — SAP, Oracle, NetSuite table exports
+- [Streaming Output](streaming-output.md) — Real-time streaming sinks
+- [Configuration](../configuration/output-settings.md) — Output settings reference
 - [Graph Export](../advanced/graph-export.md)
 - [Anomaly Injection](../advanced/anomaly-injection.md)
 - [AML/KYC Testing](../use-cases/aml-kyc-testing.md)

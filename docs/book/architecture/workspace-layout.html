@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,31 +179,36 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h1>
-<p>SyntheticData is organized as a Rust workspace with 12 crates.</p>
+<p>SyntheticData is organized as a Rust workspace with 15 crates following a layered architecture.</p>
 <h2 id="crate-hierarchy"><a class="header" href="#crate-hierarchy">Crate Hierarchy</a></h2>
-<pre><code>synth-cli          → Binary entry point
-synth-server       → REST/gRPC/WebSocket server
-synth-ui           → Desktop application
+<pre><code>datasynth-cli          → Binary entry point (commands: generate, validate, init, info, fingerprint)
+datasynth-server       → REST/gRPC/WebSocket server with auth, rate limiting, timeouts
+datasynth-ui           → Tauri/SvelteKit desktop UI
     │
     ▼
-synth-runtime      → Generation orchestration
+datasynth-runtime      → Orchestration layer (GenerationOrchestrator coordinates workflow)
     │
-    ├─────────────────┐
-    ▼                 ▼
-synth-generators  synth-graph
-    │                 │
-    └────────┬────────┘
-             ▼
-    ┌────────┴────────┐
-    ▼                 ▼
-synth-config     synth-output
-    │
-    ▼
-synth-core         → Foundation layer
+    ├─────────────────────────────────────┐
+    ▼                                     ▼
+datasynth-generators   datasynth-banking  datasynth-ocpm  datasynth-fingerprint  datasynth-standards
+    │                        │                  │                    │
+    └────────────────────────┴──────────────────┴────────────────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+           datasynth-graph                    datasynth-eval
+                    │                                 │
+                    └────────────────┬────────────────┘
+                                     ▼
+                            datasynth-config
+                                     │
+                                     ▼
+                            datasynth-core         → Foundation layer
+                                     │
+                                     ▼
+                            datasynth-output
 
-synth-eval         → Evaluation (standalone)
-synth-ocpm         → Process mining (standalone)
-synth-test-utils   → Testing utilities
+                            datasynth-test-utils   → Testing utilities
 </code></pre>
 <h2 id="dependency-matrix"><a class="header" href="#dependency-matrix">Dependency Matrix</a></h2>
 <div class="table-wrapper">
@@ -212,18 +217,21 @@ synth-test-utils   → Testing utilities
 <tr><th>Crate</th><th>Depends On</th></tr>
 </thead>
 <tbody>
-<tr><td>synth-core</td><td>(none)</td></tr>
-<tr><td>synth-config</td><td>synth-core</td></tr>
-<tr><td>synth-output</td><td>synth-core</td></tr>
-<tr><td>synth-generators</td><td>synth-core, synth-config</td></tr>
-<tr><td>synth-graph</td><td>synth-core, synth-generators</td></tr>
-<tr><td>synth-runtime</td><td>synth-core, synth-config, synth-generators, synth-output, synth-graph</td></tr>
-<tr><td>synth-cli</td><td>synth-runtime</td></tr>
-<tr><td>synth-server</td><td>synth-runtime</td></tr>
-<tr><td>synth-ui</td><td>synth-runtime (via Tauri)</td></tr>
-<tr><td>synth-eval</td><td>synth-core</td></tr>
-<tr><td>synth-ocpm</td><td>synth-core</td></tr>
-<tr><td>synth-test-utils</td><td>synth-core</td></tr>
+<tr><td>datasynth-core</td><td>(none)</td></tr>
+<tr><td>datasynth-config</td><td>datasynth-core</td></tr>
+<tr><td>datasynth-output</td><td>datasynth-core</td></tr>
+<tr><td>datasynth-generators</td><td>datasynth-core, datasynth-config</td></tr>
+<tr><td>datasynth-graph</td><td>datasynth-core, datasynth-generators</td></tr>
+<tr><td>datasynth-eval</td><td>datasynth-core</td></tr>
+<tr><td>datasynth-banking</td><td>datasynth-core, datasynth-config</td></tr>
+<tr><td>datasynth-ocpm</td><td>datasynth-core</td></tr>
+<tr><td>datasynth-fingerprint</td><td>datasynth-core, datasynth-config</td></tr>
+<tr><td>datasynth-standards</td><td>datasynth-core, datasynth-config</td></tr>
+<tr><td>datasynth-runtime</td><td>datasynth-core, datasynth-config, datasynth-generators, datasynth-output, datasynth-graph, datasynth-banking, datasynth-ocpm, datasynth-fingerprint, datasynth-eval</td></tr>
+<tr><td>datasynth-cli</td><td>datasynth-runtime, datasynth-fingerprint</td></tr>
+<tr><td>datasynth-server</td><td>datasynth-runtime</td></tr>
+<tr><td>datasynth-ui</td><td>datasynth-runtime (via Tauri)</td></tr>
+<tr><td>datasynth-test-utils</td><td>datasynth-core</td></tr>
 </tbody>
 </table>
 </div>
@@ -231,76 +239,144 @@ synth-test-utils   → Testing utilities
 <pre><code>SyntheticData/
 ├── Cargo.toml              # Workspace manifest
 ├── crates/
-│   ├── synth-core/
+│   ├── datasynth-core/
 │   │   ├── Cargo.toml
 │   │   ├── README.md
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── models/
-│   │       ├── distributions/
-│   │       ├── traits/
-│   │       └── templates/
-│   ├── synth-config/
+│   │       ├── models/         # Domain models (JournalEntry, Master data, etc.)
+│   │       ├── distributions/  # Statistical samplers
+│   │       ├── traits/         # Generator, Sink, PostProcessor traits
+│   │       ├── templates/      # Template loading system
+│   │       ├── accounts.rs     # GL account constants
+│   │       ├── uuid_factory.rs # Deterministic UUID generation
+│   │       ├── memory_guard.rs # Memory limit enforcement
+│   │       ├── disk_guard.rs   # Disk space monitoring
+│   │       ├── cpu_monitor.rs  # CPU load tracking
+│   │       ├── resource_guard.rs # Unified resource orchestration
+│   │       ├── degradation.rs  # Graceful degradation controller
+│   │       ├── llm/            # LLM provider abstraction (Mock, HTTP, OpenAI, Anthropic)
+│   │       ├── diffusion/      # Diffusion model backend (statistical, hybrid, training)
+│   │       └── causal/         # Causal graphs, SCMs, interventions, counterfactuals
+│   ├── datasynth-config/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── schema.rs
-│   │       ├── validation.rs
-│   │       └── presets/
-│   ├── synth-generators/
+│   │       ├── schema.rs       # Configuration schema
+│   │       ├── validation.rs   # Config validation rules
+│   │       └── presets/        # Industry preset definitions
+│   ├── datasynth-generators/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── je_generator.rs
-│   │       ├── master_data/
-│   │       ├── document_flow/
-│   │       ├── intercompany/
-│   │       ├── balance/
-│   │       ├── subledger/
-│   │       ├── fx/
-│   │       ├── period_close/
-│   │       ├── anomaly/
-│   │       └── data_quality/
-│   ├── synth-output/
+│   │       ├── coa_generator.rs
+│   │       ├── control_generator.rs
+│   │       ├── master_data/    # Vendor, Customer, Material, Asset, Employee
+│   │       ├── document_flow/  # P2P, O2C, three-way match
+│   │       ├── intercompany/   # IC generation, matching, elimination
+│   │       ├── balance/        # Opening balance, balance tracker
+│   │       ├── subledger/      # AR, AP, FA, Inventory
+│   │       ├── fx/             # FX rates, translation, CTA
+│   │       ├── period_close/   # Close engine, accruals, depreciation
+│   │       ├── anomaly/        # Anomaly injection engine
+│   │       ├── data_quality/   # Missing values, typos, duplicates
+│   │       ├── audit/          # Engagement, workpaper, evidence, findings
+│   │       ├── llm_enrichment/ # LLM-powered vendor names, descriptions, anomaly explanations
+│   │       └── relationships/  # Entity graph, cross-process links, relationship strength
+│   ├── datasynth-output/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
 │   │       ├── csv_sink.rs
-│   │       └── json_sink.rs
-│   ├── synth-graph/
+│   │       ├── json_sink.rs
+│   │       └── control_export.rs
+│   ├── datasynth-graph/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── builders/
-│   │       ├── exporters/
-│   │       └── features/
-│   ├── synth-runtime/
+│   │       ├── models/         # Node, edge types
+│   │       ├── builders/       # Transaction, approval, entity graphs
+│   │       ├── exporters/      # PyTorch Geometric, Neo4j, DGL
+│   │       └── ml/             # Feature computation, train/val/test splits
+│   ├── datasynth-runtime/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── orchestrator.rs
-│   │       └── progress.rs
-│   ├── synth-cli/
+│   │       ├── orchestrator.rs # GenerationOrchestrator
+│   │       └── progress.rs     # Progress tracking
+│   ├── datasynth-cli/
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       └── main.rs
-│   ├── synth-server/
+│   │       └── main.rs         # generate, validate, init, info, fingerprint commands
+│   ├── datasynth-server/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── main.rs
-│   │       ├── rest/
-│   │       ├── grpc/
-│   │       └── websocket/
-│   ├── synth-ui/
+│   │       ├── rest/           # Axum REST API
+│   │       ├── grpc/           # Tonic gRPC service
+│   │       └── websocket/      # WebSocket streaming
+│   ├── datasynth-ui/
 │   │   ├── package.json
-│   │   ├── src/              # Svelte frontend
-│   │   └── src-tauri/        # Rust backend
-│   ├── synth-eval/
-│   ├── synth-ocpm/
-│   └── synth-test-utils/
-├── benches/                  # Benchmark suite
-├── docs/                     # This documentation
-└── tests/                    # Integration tests
+│   │   ├── src/                # SvelteKit frontend
+│   │   │   ├── routes/         # 15+ config pages
+│   │   │   └── lib/            # Components, stores
+│   │   └── src-tauri/          # Rust backend
+│   ├── datasynth-eval/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── statistical/    # Benford, distributions, temporal
+│   │       ├── coherence/      # Balance, IC, document chains
+│   │       ├── quality/        # Completeness, consistency, duplicates
+│   │       ├── ml/             # Feature distributions, label quality
+│   │       ├── report/         # HTML/JSON report generation
+│   │       └── enhancement/    # AutoTuner, RecommendationEngine
+│   ├── datasynth-banking/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── models/         # Customer, Account, Transaction, KYC
+│   │       ├── generators/     # Customer, account, transaction generation
+│   │       ├── typologies/     # Structuring, funnel, layering, mule, fraud
+│   │       ├── personas/       # Retail, business, trust behaviors
+│   │       └── labels/         # Entity, relationship, transaction labels
+│   ├── datasynth-ocpm/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── models/         # EventLog, Event, ObjectInstance, ObjectType
+│   │       ├── generator/      # P2P, O2C event generation
+│   │       └── export/         # OCEL 2.0 JSON export
+│   ├── datasynth-fingerprint/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── models/         # Fingerprint, Manifest, Schema, Statistics
+│   │       ├── privacy/        # Laplace, Gaussian, k-anonymity, PrivacyEngine
+│   │       ├── extraction/     # Schema, stats, correlation, integrity extractors
+│   │       ├── io/             # DSF file reader, writer, validator
+│   │       ├── synthesis/      # ConfigSynthesizer, DistributionFitter, GaussianCopula
+│   │       ├── evaluation/     # FidelityEvaluator, FidelityReport
+│   │       ├── federated/      # Federated fingerprint protocol, secure aggregation
+│   │       └── certificates/   # Synthetic data certificates, HMAC-SHA256 signing
+│   ├── datasynth-standards/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── framework.rs     # AccountingFramework, FrameworkSettings
+│   │       ├── accounting/      # Revenue (ASC 606/IFRS 15), Leases, Fair Value, Impairment
+│   │       ├── audit/           # ISA standards, Analytical procedures, Opinions
+│   │       └── regulatory/      # SOX 302/404, DeficiencyMatrix
+│   └── datasynth-test-utils/
+│       ├── Cargo.toml
+│       └── src/
+│           └── lib.rs          # Test fixtures, assertions, mocks
+├── benches/                    # Criterion benchmark suite
+├── docs/                       # This documentation (mdBook)
+├── python/                     # Python wrapper (datasynth_py)
+├── examples/                   # Example configurations and templates
+└── tests/                      # Integration tests
 </code></pre>
 <h2 id="crate-purposes"><a class="header" href="#crate-purposes">Crate Purposes</a></h2>
 <h3 id="application-layer"><a class="header" href="#application-layer">Application Layer</a></h3>
@@ -310,9 +386,9 @@ synth-test-utils   → Testing utilities
 <tr><th>Crate</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>synth-cli</strong></td><td>Command-line interface</td></tr>
-<tr><td><strong>synth-server</strong></td><td>REST/gRPC/WebSocket API</td></tr>
-<tr><td><strong>synth-ui</strong></td><td>Desktop application</td></tr>
+<tr><td><strong>datasynth-cli</strong></td><td>Command-line interface with generate, validate, init, info, fingerprint commands</td></tr>
+<tr><td><strong>datasynth-server</strong></td><td>REST/gRPC/WebSocket API with auth, rate limiting, timeouts</td></tr>
+<tr><td><strong>datasynth-ui</strong></td><td>Cross-platform desktop application (Tauri + SvelteKit)</td></tr>
 </tbody>
 </table>
 </div>
@@ -323,9 +399,23 @@ synth-test-utils   → Testing utilities
 <tr><th>Crate</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>synth-runtime</strong></td><td>Orchestrates generation workflow</td></tr>
-<tr><td><strong>synth-generators</strong></td><td>All data generation logic</td></tr>
-<tr><td><strong>synth-graph</strong></td><td>Graph construction and export</td></tr>
+<tr><td><strong>datasynth-runtime</strong></td><td>Orchestrates generation workflow with resource guards</td></tr>
+<tr><td><strong>datasynth-generators</strong></td><td>Core data generation (JE, master data, documents, anomalies, audit)</td></tr>
+<tr><td><strong>datasynth-graph</strong></td><td>Graph construction and export for ML</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="domain-specific-modules"><a class="header" href="#domain-specific-modules">Domain-Specific Modules</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Crate</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>datasynth-banking</strong></td><td>KYC/AML banking transactions with fraud typologies</td></tr>
+<tr><td><strong>datasynth-ocpm</strong></td><td>OCEL 2.0 process mining event logs</td></tr>
+<tr><td><strong>datasynth-fingerprint</strong></td><td>Privacy-preserving fingerprint extraction and synthesis</td></tr>
+<tr><td><strong>datasynth-standards</strong></td><td>Accounting/audit standards (US GAAP, IFRS, ISA, SOX, PCAOB)</td></tr>
 </tbody>
 </table>
 </div>
@@ -336,9 +426,9 @@ synth-test-utils   → Testing utilities
 <tr><th>Crate</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>synth-core</strong></td><td>Domain models, traits, distributions</td></tr>
-<tr><td><strong>synth-config</strong></td><td>Configuration schema and validation</td></tr>
-<tr><td><strong>synth-output</strong></td><td>Output sinks (CSV, JSON)</td></tr>
+<tr><td><strong>datasynth-core</strong></td><td>Domain models, traits, distributions, resource guards</td></tr>
+<tr><td><strong>datasynth-config</strong></td><td>Configuration schema and validation</td></tr>
+<tr><td><strong>datasynth-output</strong></td><td>Output sinks (CSV, JSON, Parquet)</td></tr>
 </tbody>
 </table>
 </div>
@@ -349,9 +439,8 @@ synth-test-utils   → Testing utilities
 <tr><th>Crate</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>synth-eval</strong></td><td>Quality evaluation framework</td></tr>
-<tr><td><strong>synth-ocpm</strong></td><td>OCEL 2.0 process mining</td></tr>
-<tr><td><strong>synth-test-utils</strong></td><td>Test fixtures and assertions</td></tr>
+<tr><td><strong>datasynth-eval</strong></td><td>Quality evaluation with auto-tuning recommendations</td></tr>
+<tr><td><strong>datasynth-test-utils</strong></td><td>Test fixtures and assertions</td></tr>
 </tbody>
 </table>
 </div>
@@ -360,12 +449,14 @@ synth-test-utils   → Testing utilities
 cargo build --release
 
 # Build specific crate
-cargo build -p synth-core
-cargo build -p synth-generators
+cargo build -p datasynth-core
+cargo build -p datasynth-generators
+cargo build -p datasynth-fingerprint
 
 # Run tests
 cargo test
-cargo test -p synth-core
+cargo test -p datasynth-core
+cargo test -p datasynth-fingerprint
 
 # Generate documentation
 cargo doc --workspace --no-deps
@@ -383,42 +474,44 @@ ui = []
 graph = []
 </code></pre>
 <p>Crate-level features:</p>
-<pre><code class="language-toml"># synth-core
+<pre><code class="language-toml"># datasynth-core
 [features]
 templates = ["serde_yaml"]
 
-# synth-output
+# datasynth-output
 [features]
 compression = ["flate2", "zstd"]
 </code></pre>
 <h2 id="adding-a-new-crate"><a class="header" href="#adding-a-new-crate">Adding a New Crate</a></h2>
 <ol>
-<li>Create directory: <code>crates/synth-newcrate/</code></li>
+<li>Create directory: <code>crates/datasynth-newcrate/</code></li>
 <li>Add <code>Cargo.toml</code>:
 <pre><code class="language-toml">[package]
-name = "synth-newcrate"
-version = "0.1.0"
+name = "datasynth-newcrate"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-synth-core = { path = "../synth-core" }
+datasynth-core = { path = "../datasynth-core" }
 </code></pre>
 </li>
 <li>Add to workspace <code>Cargo.toml</code>:
 <pre><code class="language-toml">[workspace]
 members = [
     # ...
-    "crates/synth-newcrate",
+    "crates/datasynth-newcrate",
 ]
 </code></pre>
 </li>
 <li>Create <code>src/lib.rs</code></li>
+<li>Add documentation to <code>docs/src/crates/</code></li>
 </ol>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="../crates/README.html">Crate Reference</a></li>
 <li><a href="domain-models.html">Domain Models</a></li>
 <li><a href="data-flow.html">Data Flow</a></li>
+<li><a href="memory-management.html">Memory Management</a></li>
 </ul>
 
                     </main>

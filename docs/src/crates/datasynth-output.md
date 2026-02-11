@@ -13,16 +13,37 @@ Output sinks for CSV, JSON, and streaming formats.
 
 ## Supported Formats
 
+### Standard Formats
+
 | Format | Description | Extension |
 |--------|-------------|-----------|
 | CSV | Standard comma-separated values | `.csv` |
 | JSON | Pretty-printed JSON arrays | `.json` |
 | JSONL | Newline-delimited JSON | `.jsonl` |
+| Parquet | Apache Parquet columnar format | `.parquet` |
+
+### ERP Formats
+
+| Format | Target ERP | Tables |
+|--------|-----------|--------|
+| SAP S/4HANA | `SapExporter` | BKPF, BSEG, ACDOCA, LFA1, KNA1, MARA, CSKS, CEPC |
+| Oracle EBS | `OracleExporter` | GL_JE_HEADERS, GL_JE_LINES, GL_JE_BATCHES |
+| NetSuite | `NetSuiteExporter` | Journal entries with subsidiary/multi-book support |
+
+### Streaming Sinks
+
+| Sink | Description |
+|------|-------------|
+| `CsvStreamingSink` | Streaming CSV with automatic headers |
+| `JsonStreamingSink` | Streaming JSON arrays |
+| `NdjsonStreamingSink` | Streaming newline-delimited JSON |
+| `ParquetStreamingSink` | Streaming Apache Parquet |
 
 ## Features
 
-- Configurable compression (gzip, zstd)
-- Streaming writes for memory efficiency
+- Configurable compression (gzip, zstd, snappy for Parquet)
+- Streaming writes for memory efficiency with backpressure support
+- ERP-native table schemas (SAP, Oracle, NetSuite)
 - Decimal values serialized as strings (IEEE 754 safe)
 - Configurable field ordering and headers
 - Automatic directory creation
@@ -248,6 +269,8 @@ pub enum OutputError {
 
 ## See Also
 
-- [Output Formats](../user-guide/output-formats.md)
+- [Output Formats](../user-guide/output-formats.md) — Standard format details
+- [ERP Output Formats](../user-guide/erp-output-formats.md) — SAP, Oracle, NetSuite exports
+- [Streaming Output](../user-guide/streaming-output.md) — StreamingSink API
 - [Configuration - Output Settings](../configuration/output-settings.md)
 - [datasynth-core](datasynth-core.md)

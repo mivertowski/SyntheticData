@@ -121,6 +121,21 @@ ISA-compliant audit data generation.
 | `finding_generator` | Audit findings per ISA 265 |
 | `judgment_generator` | Professional judgment documentation per ISA 200 |
 
+### LLM Enrichment (`llm_enrichment/`) — v0.5.0
+
+| Generator | Description |
+|-----------|-------------|
+| `VendorLlmEnricher` | Generate realistic vendor names by industry, spend category, and country |
+| `TransactionLlmEnricher` | Generate transaction descriptions and memo fields |
+| `AnomalyLlmExplainer` | Generate natural language explanations for injected anomalies |
+
+### Relationships (`relationships/`)
+
+| Generator | Description |
+|-----------|-------------|
+| `entity_graph_generator` | Cross-process entity relationship graphs |
+| `relationship_strength` | Weighted relationship strength calculation |
+
 **Audit Engagement Structure:**
 
 ```rust
@@ -193,6 +208,25 @@ let mut injector = AnomalyInjector::new(config.anomaly_injection, seed);
 
 // Inject into existing entries
 let (modified_entries, labels) = injector.inject(&entries)?;
+```
+
+### LLM Enrichment
+
+```rust
+use synth_generators::llm_enrichment::{VendorLlmEnricher, TransactionLlmEnricher};
+use synth_core::llm::MockLlmProvider;
+use std::sync::Arc;
+
+let provider = Arc::new(MockLlmProvider::new(42));
+
+// Enrich vendor names
+let vendor_enricher = VendorLlmEnricher::new(provider.clone());
+let name = vendor_enricher.enrich_vendor_name("manufacturing", "raw_materials", "US")?;
+
+// Enrich transaction descriptions
+let tx_enricher = TransactionLlmEnricher::new(provider);
+let desc = tx_enricher.enrich_description("Office Supplies", "1000-5000", "retail", 3)?;
+let memo = tx_enricher.enrich_memo("VendorInvoice", "Acme Corp", "2500.00")?;
 ```
 
 ## Three-Way Match

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e207af74.js";
+            window.path_to_searchindex_js = "../searchindex-116f4267.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-56b2ef65.js"></script>
+        <script src="../toc-1a598c96.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -196,8 +196,8 @@ cargo test -- --test-threads=1
 </code></pre>
 <h3 id="specific-tests"><a class="header" href="#specific-tests">Specific Tests</a></h3>
 <pre><code class="language-bash"># Run tests for a specific crate
-cargo test -p synth-core
-cargo test -p synth-generators
+cargo test -p datasynth-core
+cargo test -p datasynth-generators
 
 # Run a single test by name
 cargo test test_balanced_entry
@@ -246,7 +246,7 @@ mod tests {
 <span class="boring">}</span></code></pre>
 <h3 id="integration-tests"><a class="header" href="#integration-tests">Integration Tests</a></h3>
 <p>Place integration tests in the <code>tests/</code> directory:</p>
-<pre><code>crates/synth-generators/
+<pre><code>crates/datasynth-generators/
 ├── src/
 │   └── ...
 └── tests/
