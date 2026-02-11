@@ -456,12 +456,15 @@ impl ApprovalWorkflowGenerator {
             // Before 9 AM, move to 9 AM
             result = result
                 .date_naive()
-                .and_time(NaiveTime::from_hms_opt(9, 0, 0).unwrap())
+                .and_time(NaiveTime::from_hms_opt(9, 0, 0).expect("valid time components"))
                 .and_utc();
         } else if hour >= 18 {
             // After 6 PM, move to next day 9 AM
             result = (result.date_naive() + Duration::days(1))
-                .and_time(NaiveTime::from_hms_opt(9, rng.gen_range(0..59), 0).unwrap())
+                .and_time(
+                    NaiveTime::from_hms_opt(9, rng.gen_range(0..59), 0)
+                        .expect("valid time components"),
+                )
                 .and_utc();
         }
 

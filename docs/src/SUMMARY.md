@@ -91,6 +91,21 @@
 
 ---
 
+# Deployment & Operations
+
+- [Overview](deployment/README.md)
+- [Docker](deployment/docker.md)
+- [Kubernetes](deployment/kubernetes.md)
+- [Bare Metal](deployment/bare-metal.md)
+- [Operational Runbook](deployment/runbook.md)
+- [Capacity Planning](deployment/capacity-planning.md)
+- [Disaster Recovery](deployment/disaster-recovery.md)
+- [API Reference](deployment/api-reference.md)
+- [Security Hardening](deployment/security-hardening.md)
+- [TLS & Reverse Proxy](deployment/tls-reverse-proxy.md)
+
+---
+
 # Use Cases
 
 - [Overview](use-cases/README.md)
@@ -117,7 +132,6 @@
 
 - [Enterprise Simulation & ML Ground Truth](roadmap/README.md)
 - [Production Readiness](roadmap/production-readiness.md)
-- [Monetization Strategy](roadmap/monetization-strategy.md)
 - [Research: System Improvements](roadmap/research/README.md)
   - [Realism: Names & Metadata](roadmap/research/01-realism-names-metadata.md)
   - [Statistical Distributions](roadmap/research/02-statistical-distributions.md)

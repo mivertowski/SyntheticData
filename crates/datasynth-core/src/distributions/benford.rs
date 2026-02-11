@@ -364,7 +364,9 @@ pub fn get_first_two_digits(amount: Decimal) -> Option<(u8, u8)> {
 
     for c in s.chars() {
         if c.is_ascii_digit() {
-            let d = c.to_digit(10).unwrap() as u8;
+            let d = c
+                .to_digit(10)
+                .expect("digit char confirmed by is_ascii_digit") as u8;
             if !first_found && d != 0 {
                 first_digit = d;
                 first_found = true;

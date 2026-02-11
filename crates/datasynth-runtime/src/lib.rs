@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-runtime
 //!
 //! Runtime orchestration, parallel execution, and memory management.
@@ -13,7 +14,9 @@
 
 pub mod enhanced_orchestrator;
 pub mod label_export;
+pub mod lineage;
 pub mod orchestrator;
+pub mod prov;
 pub mod run_manifest;
 #[cfg(feature = "streaming")]
 pub mod stream_client;

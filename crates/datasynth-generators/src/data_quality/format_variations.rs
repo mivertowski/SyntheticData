@@ -66,13 +66,13 @@ impl DateFormat {
             DateFormat::ShortYear => date.format("%m/%d/%y").to_string(),
             DateFormat::Compact => date.format("%Y%m%d").to_string(),
             DateFormat::Unix => {
-                let epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+                let epoch = NaiveDate::from_ymd_opt(1970, 1, 1).expect("valid unix epoch date");
                 let days = (date - epoch).num_days();
                 (days * 86400).to_string()
             }
             DateFormat::ExcelSerial => {
                 // Excel epoch is December 30, 1899
-                let epoch = NaiveDate::from_ymd_opt(1899, 12, 30).unwrap();
+                let epoch = NaiveDate::from_ymd_opt(1899, 12, 30).expect("valid excel epoch date");
                 let days = (date - epoch).num_days();
                 days.to_string()
             }

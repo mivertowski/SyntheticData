@@ -111,12 +111,18 @@ pub struct MigrationPhases {
 impl Default for MigrationPhases {
     fn default() -> Self {
         Self {
-            preparation_start: Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
-            data_migration_start: Some(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()),
-            parallel_run_start: Some(NaiveDate::from_ymd_opt(2024, 8, 1).unwrap()),
-            cutover_date: NaiveDate::from_ymd_opt(2024, 9, 1).unwrap(),
-            stabilization_end: NaiveDate::from_ymd_opt(2024, 11, 30).unwrap(),
-            hypercare_end: Some(NaiveDate::from_ymd_opt(2024, 12, 31).unwrap()),
+            preparation_start: Some(
+                NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
+            ),
+            data_migration_start: Some(
+                NaiveDate::from_ymd_opt(2024, 6, 1).expect("valid default date"),
+            ),
+            parallel_run_start: Some(
+                NaiveDate::from_ymd_opt(2024, 8, 1).expect("valid default date"),
+            ),
+            cutover_date: NaiveDate::from_ymd_opt(2024, 9, 1).expect("valid default date"),
+            stabilization_end: NaiveDate::from_ymd_opt(2024, 11, 30).expect("valid default date"),
+            hypercare_end: Some(NaiveDate::from_ymd_opt(2024, 12, 31).expect("valid default date")),
         }
     }
 }
@@ -355,7 +361,7 @@ impl Default for ModuleImplementationConfig {
         Self {
             module_name: String::new(),
             target_system: None,
-            go_live_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            go_live_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             rollout_months: 4,
             implementation_error_rate: 0.04,
             training_completion_rate: 0.85,
@@ -421,7 +427,7 @@ impl Default for IntegrationUpgradeConfig {
             integration_name: String::new(),
             source_system: None,
             target_system: None,
-            upgrade_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            upgrade_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             transition_months: 2,
             transition_error_rate: 0.03,
             format_changes: Vec::new(),

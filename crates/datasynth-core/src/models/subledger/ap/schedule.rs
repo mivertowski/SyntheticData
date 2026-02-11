@@ -121,7 +121,9 @@ impl APAgingReport {
             let aging = VendorAging::from_invoices(vendor_id, vendor_name, &invoices, as_of_date);
 
             for (bucket, amount) in &aging.bucket_amounts {
-                *bucket_totals.get_mut(bucket).unwrap() += amount;
+                *bucket_totals
+                    .get_mut(bucket)
+                    .expect("bucket initialized in map") += amount;
             }
 
             vendor_details.push(aging);
@@ -192,14 +194,18 @@ impl VendorAging {
             let bucket = APAgingBucket::from_days_overdue(days_overdue);
             let amount = invoice.amount_remaining;
 
-            *bucket_amounts.get_mut(&bucket).unwrap() += amount;
-            *invoice_counts.get_mut(&bucket).unwrap() += 1;
+            *bucket_amounts
+                .get_mut(&bucket)
+                .expect("bucket initialized in map") += amount;
+            *invoice_counts
+                .get_mut(&bucket)
+                .expect("bucket initialized in map") += 1;
             total_balance += amount;
 
             let days_outstanding = (as_of_date - invoice.invoice_date).num_days();
             total_days_weighted += Decimal::from(days_outstanding) * amount;
 
-            if oldest_date.map_or(true, |d| invoice.invoice_date < d) {
+            if oldest_date.is_none_or(|d| invoice.invoice_date < d) {
                 oldest_date = Some(invoice.invoice_date);
             }
         }

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: datasynth
+description: A Helm chart for DataSynth - synthetic financial data generation server
+type: application
+version: 0.1.0
+appVersion: "0.5.0"
+keywords:
+  - synthetic-data
+  - financial-data
+  - data-generation
+  - audit
+  - accounting
+home: https://github.com/ey-asu-rnd/SyntheticData
+maintainers:
+  - name: DataSynth Team

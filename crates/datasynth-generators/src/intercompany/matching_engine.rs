@@ -280,7 +280,7 @@ impl ICMatchingEngine {
                         continue;
                     }
 
-                    let ic_ref = item.ic_reference.as_ref().unwrap();
+                    let ic_ref = item.ic_reference.as_ref().expect("checked is_none above");
 
                     // Look for matching item in counterparty
                     if let Some(counterparty_items) = self.unmatched_items.get(&item.counterparty) {

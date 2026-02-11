@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-output
 //!
 //! Output sinks for CSV, Parquet, JSON, and streaming formats.

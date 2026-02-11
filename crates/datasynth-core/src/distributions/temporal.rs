@@ -120,36 +120,36 @@ impl Default for IntraDayPatterns {
             segments: vec![
                 IntraDaySegment {
                     name: "morning_spike".to_string(),
-                    start: NaiveTime::from_hms_opt(8, 30, 0).unwrap(),
-                    end: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
+                    start: NaiveTime::from_hms_opt(8, 30, 0).expect("valid date/time components"),
+                    end: NaiveTime::from_hms_opt(10, 0, 0).expect("valid date/time components"),
                     multiplier: 1.8,
                     posting_type: PostingType::Both,
                 },
                 IntraDaySegment {
                     name: "mid_morning".to_string(),
-                    start: NaiveTime::from_hms_opt(10, 0, 0).unwrap(),
-                    end: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
+                    start: NaiveTime::from_hms_opt(10, 0, 0).expect("valid date/time components"),
+                    end: NaiveTime::from_hms_opt(12, 0, 0).expect("valid date/time components"),
                     multiplier: 1.2,
                     posting_type: PostingType::Both,
                 },
                 IntraDaySegment {
                     name: "lunch_dip".to_string(),
-                    start: NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
-                    end: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
+                    start: NaiveTime::from_hms_opt(12, 0, 0).expect("valid date/time components"),
+                    end: NaiveTime::from_hms_opt(13, 30, 0).expect("valid date/time components"),
                     multiplier: 0.4,
                     posting_type: PostingType::Human,
                 },
                 IntraDaySegment {
                     name: "afternoon".to_string(),
-                    start: NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
-                    end: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
+                    start: NaiveTime::from_hms_opt(13, 30, 0).expect("valid date/time components"),
+                    end: NaiveTime::from_hms_opt(16, 0, 0).expect("valid date/time components"),
                     multiplier: 1.1,
                     posting_type: PostingType::Both,
                 },
                 IntraDaySegment {
                     name: "eod_rush".to_string(),
-                    start: NaiveTime::from_hms_opt(16, 0, 0).unwrap(),
-                    end: NaiveTime::from_hms_opt(17, 30, 0).unwrap(),
+                    start: NaiveTime::from_hms_opt(16, 0, 0).expect("valid date/time components"),
+                    end: NaiveTime::from_hms_opt(17, 30, 0).expect("valid date/time components"),
                     multiplier: 1.5,
                     posting_type: PostingType::Both,
                 },
@@ -396,16 +396,16 @@ impl TemporalSampler {
         let mut holidays = Vec::new();
 
         // New Year's Day
-        holidays.push(NaiveDate::from_ymd_opt(year, 1, 1).unwrap());
+        holidays.push(NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date/time components"));
         // Independence Day
-        holidays.push(NaiveDate::from_ymd_opt(year, 7, 4).unwrap());
+        holidays.push(NaiveDate::from_ymd_opt(year, 7, 4).expect("valid date/time components"));
         // Christmas
-        holidays.push(NaiveDate::from_ymd_opt(year, 12, 25).unwrap());
+        holidays.push(NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date/time components"));
         // Thanksgiving (4th Thursday of November)
         let first_thursday = (1..=7)
-            .map(|d| NaiveDate::from_ymd_opt(year, 11, d).unwrap())
+            .map(|d| NaiveDate::from_ymd_opt(year, 11, d).expect("valid date/time components"))
             .find(|d| d.weekday() == Weekday::Thu)
-            .unwrap();
+            .expect("valid date/time components");
         let thanksgiving = first_thursday + Duration::weeks(3);
         holidays.push(thanksgiving);
 
@@ -500,9 +500,11 @@ impl TemporalSampler {
         let month = date.month();
 
         if month == 12 {
-            NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("valid date/time components")
+                - Duration::days(1)
         } else {
-            NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year, month + 1, 1).expect("valid date/time components")
+                - Duration::days(1)
         }
     }
 
@@ -676,7 +678,8 @@ impl TemporalSampler {
             };
             let minute = self.rng.gen_range(0..60);
             let second = self.rng.gen_range(0..60);
-            return NaiveTime::from_hms_opt(hour.clamp(0, 23) as u32, minute, second).unwrap();
+            return NaiveTime::from_hms_opt(hour.clamp(0, 23) as u32, minute, second)
+                .expect("valid date/time components");
         }
 
         // Human users follow working hours
@@ -695,7 +698,7 @@ impl TemporalSampler {
                     .working_hours_config
                     .peak_hours
                     .choose(&mut self.rng)
-                    .unwrap()
+                    .expect("valid date/time components")
             } else {
                 self.rng.gen_range(
                     self.working_hours_config.day_start..self.working_hours_config.day_end,
@@ -706,7 +709,7 @@ impl TemporalSampler {
         let minute = self.rng.gen_range(0..60);
         let second = self.rng.gen_range(0..60);
 
-        NaiveTime::from_hms_opt(hour as u32, minute, second).unwrap()
+        NaiveTime::from_hms_opt(hour as u32, minute, second).expect("valid date/time components")
     }
 
     /// Calculate expected transaction count for a date given daily average.
@@ -738,8 +741,10 @@ impl TimePeriod {
     /// Create a time period for a full fiscal year.
     pub fn fiscal_year(year: u16) -> Self {
         Self {
-            start_date: NaiveDate::from_ymd_opt(year as i32, 1, 1).unwrap(),
-            end_date: NaiveDate::from_ymd_opt(year as i32, 12, 31).unwrap(),
+            start_date: NaiveDate::from_ymd_opt(year as i32, 1, 1)
+                .expect("valid date/time components"),
+            end_date: NaiveDate::from_ymd_opt(year as i32, 12, 31)
+                .expect("valid date/time components"),
             fiscal_year: year,
             fiscal_periods: (1..=12).collect(),
         }
@@ -747,11 +752,13 @@ impl TimePeriod {
 
     /// Create a time period for specific months.
     pub fn months(year: u16, start_month: u8, num_months: u8) -> Self {
-        let start_date = NaiveDate::from_ymd_opt(year as i32, start_month as u32, 1).unwrap();
+        let start_date = NaiveDate::from_ymd_opt(year as i32, start_month as u32, 1)
+            .expect("valid date/time components");
         let end_month = ((start_month - 1 + num_months - 1) % 12) + 1;
         let end_year = year + (start_month as u16 - 1 + num_months as u16 - 1) / 12;
         let end_date = TemporalSampler::last_day_of_month(
-            NaiveDate::from_ymd_opt(end_year as i32, end_month as u32, 1).unwrap(),
+            NaiveDate::from_ymd_opt(end_year as i32, end_month as u32, 1)
+                .expect("valid date/time components"),
         );
 
         Self {

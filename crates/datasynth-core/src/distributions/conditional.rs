@@ -56,13 +56,15 @@ impl ConditionalDistributionParams {
         match self {
             Self::Fixed { value } => *value,
             Self::Normal { mu, sigma } => {
-                let dist =
-                    Normal::new(*mu, *sigma).unwrap_or_else(|_| Normal::new(0.0, 1.0).unwrap());
+                let dist = Normal::new(*mu, *sigma).unwrap_or_else(|_| {
+                    Normal::new(0.0, 1.0).expect("valid fallback distribution params")
+                });
                 dist.sample(rng)
             }
             Self::LogNormal { mu, sigma } => {
-                let dist = LogNormal::new(*mu, *sigma)
-                    .unwrap_or_else(|_| LogNormal::new(0.0, 1.0).unwrap());
+                let dist = LogNormal::new(*mu, *sigma).unwrap_or_else(|_| {
+                    LogNormal::new(0.0, 1.0).expect("valid fallback distribution params")
+                });
                 dist.sample(rng)
             }
             Self::Uniform { min, max } => {
@@ -75,8 +77,9 @@ impl ConditionalDistributionParams {
                 min,
                 max,
             } => {
-                let dist =
-                    Beta::new(*alpha, *beta).unwrap_or_else(|_| Beta::new(2.0, 2.0).unwrap());
+                let dist = Beta::new(*alpha, *beta).unwrap_or_else(|_| {
+                    Beta::new(2.0, 2.0).expect("valid fallback distribution params")
+                });
                 let u = dist.sample(rng);
                 min + u * (max - min)
             }

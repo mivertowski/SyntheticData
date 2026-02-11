@@ -860,6 +860,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         drift_labeling: Default::default(),
         anomaly_injection: Default::default(),
         industry_specific: Default::default(),
+        fingerprint_privacy: Default::default(),
     }
 }
 

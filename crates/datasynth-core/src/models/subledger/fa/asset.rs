@@ -117,9 +117,9 @@ impl FixedAssetRecord {
         let month = acquisition_date.month();
 
         if month == 12 {
-            NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap()
+            NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("valid date components")
         } else {
-            NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap()
+            NaiveDate::from_ymd_opt(year, month + 1, 1).expect("valid date components")
         }
     }
 

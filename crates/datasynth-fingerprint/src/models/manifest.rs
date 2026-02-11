@@ -137,6 +137,14 @@ pub struct PrivacyMetadata {
 
     /// Minimum occurrence threshold for categorical values.
     pub min_occurrence: u32,
+
+    /// Delta parameter for approximate DP (used with RDP and zCDP composition).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delta: Option<f64>,
+
+    /// The composition method used for budget accounting (e.g., "naive", "renyi_dp", "zcdp").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub composition_method: Option<String>,
 }
 
 impl PrivacyMetadata {
@@ -144,7 +152,7 @@ impl PrivacyMetadata {
     pub fn from_level(level: PrivacyLevel) -> Self {
         let (epsilon, k, outlier_percentile, min_occurrence) = match level {
             PrivacyLevel::Minimal => (5.0, 3, 99.0, 3),
-            PrivacyLevel::Standard => (1.0, 5, 95.0, 5),
+            PrivacyLevel::Standard | PrivacyLevel::Custom => (1.0, 5, 95.0, 5),
             PrivacyLevel::High => (0.5, 10, 90.0, 10),
             PrivacyLevel::Maximum => (0.1, 20, 85.0, 20),
         };
@@ -156,6 +164,8 @@ impl PrivacyMetadata {
             outlier_percentile,
             suppressed_fields: Vec::new(),
             min_occurrence,
+            delta: None,
+            composition_method: None,
         }
     }
 
@@ -168,6 +178,8 @@ impl PrivacyMetadata {
             outlier_percentile: 95.0,
             suppressed_fields: Vec::new(),
             min_occurrence: k_anonymity,
+            delta: None,
+            composition_method: None,
         }
     }
 }
@@ -192,26 +204,34 @@ pub enum PrivacyLevel {
     /// Maximum privacy protection (epsilon=0.1, k=20).
     /// Use for highly sensitive data where privacy is paramount.
     Maximum,
+
+    /// Custom privacy parameters specified by the user.
+    /// Use when predefined levels don't fit your requirements.
+    Custom,
 }
 
 impl PrivacyLevel {
     /// Get the epsilon value for this privacy level.
+    /// For `Custom`, returns 1.0 as a placeholder (actual value comes from config).
     pub fn epsilon(&self) -> f64 {
         match self {
             Self::Minimal => 5.0,
             Self::Standard => 1.0,
             Self::High => 0.5,
             Self::Maximum => 0.1,
+            Self::Custom => 1.0,
         }
     }
 
     /// Get the k-anonymity threshold for this privacy level.
+    /// For `Custom`, returns 5 as a placeholder (actual value comes from config).
     pub fn k_anonymity(&self) -> u32 {
         match self {
             Self::Minimal => 3,
             Self::Standard => 5,
             Self::High => 10,
             Self::Maximum => 20,
+            Self::Custom => 5,
         }
     }
 }

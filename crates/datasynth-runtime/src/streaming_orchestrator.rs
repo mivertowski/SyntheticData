@@ -381,7 +381,7 @@ impl StreamingOrchestrator {
         let seed = config.global.seed.unwrap_or(42);
         let md_config = &config.master_data;
         let effective_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
 
         let company_code = config
             .companies
@@ -492,7 +492,7 @@ impl StreamingOrchestrator {
 
         // Parse start date
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
         let end_date =
             start_date + chrono::Duration::days((config.global.period_months as i64) * 30);
 
@@ -557,7 +557,7 @@ impl StreamingOrchestrator {
 
         // Parse dates
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
 
         let company_code = config
             .companies

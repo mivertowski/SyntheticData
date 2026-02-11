@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-banking
 //!
 //! KYC/AML banking transaction generator for synthetic data.

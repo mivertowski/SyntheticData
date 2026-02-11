@@ -69,7 +69,8 @@ impl YearEndCloseGenerator {
         trial_balance: &HashMap<String, Decimal>,
         spec: &YearEndClosingSpec,
     ) -> YearEndCloseResult {
-        let closing_date = NaiveDate::from_ymd_opt(fiscal_year, 12, 31).unwrap();
+        let closing_date =
+            NaiveDate::from_ymd_opt(fiscal_year, 12, 31).expect("valid year-end date");
 
         let mut result = YearEndCloseResult {
             company_code: company_code.to_string(),
@@ -361,7 +362,8 @@ impl YearEndCloseGenerator {
         permanent_differences: Vec<TaxAdjustment>,
         temporary_differences: Vec<TaxAdjustment>,
     ) -> TaxProvisionGenerationResult {
-        let closing_date = NaiveDate::from_ymd_opt(fiscal_year, 12, 31).unwrap();
+        let closing_date =
+            NaiveDate::from_ymd_opt(fiscal_year, 12, 31).expect("valid year-end date");
 
         let input = TaxProvisionInput {
             company_code: company_code.to_string(),

@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-generators
 //!
 //! Data generators for journal entries, chart of accounts, ACDOCA event logs,

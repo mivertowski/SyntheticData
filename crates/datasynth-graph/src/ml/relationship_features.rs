@@ -32,7 +32,7 @@ impl Default for RelationshipFeatureConfig {
     fn default() -> Self {
         Self {
             new_relationship_days: 30,
-            reference_date: NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            reference_date: NaiveDate::from_ymd_opt(2024, 12, 31).expect("valid default date"),
             high_risk_threshold: 0.5,
             weight_by_amount: true,
             min_transactions: 1,

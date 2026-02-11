@@ -324,7 +324,7 @@ impl DGLExporter {
         let type_indices: Vec<i64> = node_ids
             .iter()
             .map(|id| {
-                let node = graph.nodes.get(id).unwrap();
+                let node = graph.nodes.get(id).expect("node ID from keys()");
                 *type_to_idx.get(&node.node_type).unwrap_or(&0)
             })
             .collect();
@@ -353,7 +353,7 @@ impl DGLExporter {
         let type_indices: Vec<i64> = edge_ids
             .iter()
             .map(|id| {
-                let edge = graph.edges.get(id).unwrap();
+                let edge = graph.edges.get(id).expect("edge ID from keys()");
                 *type_to_idx.get(&edge.edge_type).unwrap_or(&0)
             })
             .collect();

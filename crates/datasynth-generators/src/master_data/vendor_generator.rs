@@ -788,7 +788,7 @@ impl VendorGenerator {
             quality_score: (base_quality + quality_variance).clamp(0.0_f64, 1.0_f64),
             invoice_accuracy_score: (base_invoice + invoice_variance).clamp(0.0_f64, 1.0_f64),
             responsiveness_score: (base_response + response_variance).clamp(0.0_f64, 1.0_f64),
-            last_evaluation: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            last_evaluation: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             evaluation_count: self.rng.gen_range(1..20),
         }
     }

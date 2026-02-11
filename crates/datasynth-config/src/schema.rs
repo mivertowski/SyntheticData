@@ -130,6 +130,9 @@ pub struct GeneratorConfig {
     /// Industry-specific transaction and anomaly generation configuration
     #[serde(default)]
     pub industry_specific: IndustrySpecificConfig,
+    /// Fingerprint privacy configuration for extraction/synthesis
+    #[serde(default)]
+    pub fingerprint_privacy: FingerprintPrivacyConfig,
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -9522,6 +9525,62 @@ impl Default for ProfessionalServicesAnomalyRates {
             time_billing_fraud: default_time_fraud_rate(),
             expense_fraud: default_expense_fraud_rate(),
             trust_misappropriation: default_trust_misappropriation_rate(),
+        }
+    }
+}
+
+/// Fingerprint privacy configuration for extraction and synthesis.
+///
+/// Controls the privacy parameters used when extracting fingerprints
+/// from sensitive data. Supports predefined levels or custom (epsilon, delta) tuples.
+///
+/// ```yaml
+/// fingerprint_privacy:
+///   level: custom
+///   epsilon: 0.5
+///   delta: 1.0e-5
+///   k_anonymity: 10
+///   composition_method: renyi_dp
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FingerprintPrivacyConfig {
+    /// Privacy level preset. Use "custom" for user-specified epsilon/delta.
+    #[serde(default)]
+    pub level: String,
+    /// Custom epsilon value (only used when level = "custom").
+    #[serde(default = "default_epsilon")]
+    pub epsilon: f64,
+    /// Custom delta value for (epsilon, delta)-DP (only used with RDP/zCDP).
+    #[serde(default = "default_delta")]
+    pub delta: f64,
+    /// K-anonymity threshold.
+    #[serde(default = "default_k_anonymity")]
+    pub k_anonymity: u32,
+    /// Composition method: "naive", "advanced", "renyi_dp", "zcdp".
+    #[serde(default)]
+    pub composition_method: String,
+}
+
+fn default_epsilon() -> f64 {
+    1.0
+}
+
+fn default_delta() -> f64 {
+    1e-5
+}
+
+fn default_k_anonymity() -> u32 {
+    5
+}
+
+impl Default for FingerprintPrivacyConfig {
+    fn default() -> Self {
+        Self {
+            level: "standard".to_string(),
+            epsilon: default_epsilon(),
+            delta: default_delta(),
+            k_anonymity: default_k_anonymity(),
+            composition_method: "naive".to_string(),
         }
     }
 }

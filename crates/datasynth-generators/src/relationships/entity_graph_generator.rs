@@ -124,8 +124,9 @@ impl Default for TransactionSummary {
         Self {
             total_volume: Decimal::ZERO,
             transaction_count: 0,
-            first_transaction_date: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
-            last_transaction_date: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+            first_transaction_date: NaiveDate::from_ymd_opt(2020, 1, 1)
+                .expect("valid default date"),
+            last_transaction_date: NaiveDate::from_ymd_opt(2020, 1, 1).expect("valid default date"),
             related_entities: HashSet::new(),
         }
     }

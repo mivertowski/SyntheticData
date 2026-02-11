@@ -360,7 +360,7 @@ impl VendorLifecycleStage {
 impl Default for VendorLifecycleStage {
     fn default() -> Self {
         Self::SteadyState {
-            since: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+            since: NaiveDate::from_ymd_opt(2020, 1, 1).expect("valid default date"),
         }
     }
 }
@@ -474,7 +474,7 @@ impl Default for VendorQualityScore {
             quality_score: 0.9,
             invoice_accuracy_score: 0.95,
             responsiveness_score: 0.85,
-            last_evaluation: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+            last_evaluation: NaiveDate::from_ymd_opt(2020, 1, 1).expect("valid default date"),
             evaluation_count: 0,
         }
     }

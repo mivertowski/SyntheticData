@@ -172,8 +172,8 @@ impl CorrelationAnalyzer {
             for j in (i + 1)..n_fields {
                 let field1 = &fields[i];
                 let field2 = &fields[j];
-                let values1 = data.get(field1).unwrap();
-                let values2 = data.get(field2).unwrap();
+                let values1 = data.get(field1).expect("field from data.keys()");
+                let values2 = data.get(field2).expect("field from data.keys()");
                 let r = pearson_correlation(values1, values2);
                 correlation_matrix.push(r);
             }

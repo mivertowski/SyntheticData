@@ -104,7 +104,7 @@ impl BenfordAnalyzer {
         let s = abs_amount.to_string();
         for c in s.chars() {
             if c.is_ascii_digit() && c != '0' {
-                return Some(c.to_digit(10).unwrap() as u8);
+                return Some(c.to_digit(10).expect("char is ascii digit") as u8);
             }
         }
         None
@@ -171,8 +171,8 @@ impl BenfordAnalyzer {
                     (observed_frequencies[i] - BENFORD_PROBABILITIES[i]).abs(),
                 )
             })
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-            .unwrap();
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+            .expect("9-element range is non-empty");
 
         // Calculate anti-Benford score (how much it deviates toward uniform distribution)
         let uniform_prob = 1.0 / 9.0;
@@ -283,7 +283,7 @@ impl BenfordAnalyzer {
                 if !found_first && c != '0' {
                     found_first = true;
                 } else if found_first && c != '.' {
-                    return Some(c.to_digit(10).unwrap() as u8);
+                    return Some(c.to_digit(10).expect("char is ascii digit") as u8);
                 }
             }
         }

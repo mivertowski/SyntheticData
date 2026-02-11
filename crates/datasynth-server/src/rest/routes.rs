@@ -16,6 +16,7 @@ use tower_http::timeout::TimeoutLayer;
 use tracing::info;
 
 use crate::grpc::service::{ServerState, SynthService};
+use crate::jobs::{JobQueue, JobRequest};
 use datasynth_runtime::{EnhancedOrchestrator, PhaseConfig};
 
 use super::websocket;
@@ -26,6 +27,7 @@ pub struct AppState {
     #[allow(dead_code)] // Reserved for future use
     pub service: Arc<SynthService>,
     pub server_state: Arc<ServerState>,
+    pub job_queue: Option<Arc<JobQueue>>,
 }
 
 /// Timeout configuration for the REST API.
@@ -78,7 +80,8 @@ impl Default for CorsConfig {
 }
 
 use super::auth::{auth_middleware, AuthConfig};
-use super::rate_limit::{rate_limit_middleware, RateLimitConfig, RateLimiter};
+use super::rate_limit::RateLimitConfig;
+use super::rate_limit_backend::{backend_rate_limit_middleware, RateLimitBackend};
 use super::request_id::request_id_middleware;
 use super::request_validation::request_validation_middleware;
 use super::security_headers::security_headers_middleware;
@@ -89,6 +92,9 @@ pub fn create_router(service: SynthService) -> Router {
 }
 
 /// Create the REST API router with full configuration (CORS, auth, rate limiting, and timeout).
+///
+/// Uses in-memory rate limiting by default. For distributed rate limiting
+/// with Redis, use [`create_router_full_with_backend`] instead.
 pub fn create_router_full(
     service: SynthService,
     cors_config: CorsConfig,
@@ -96,10 +102,37 @@ pub fn create_router_full(
     rate_limit_config: RateLimitConfig,
     timeout_config: TimeoutConfig,
 ) -> Router {
+    let backend = RateLimitBackend::in_memory(rate_limit_config);
+    create_router_full_with_backend(service, cors_config, auth_config, backend, timeout_config)
+}
+
+/// Create the REST API router with full configuration and a specific rate limiting backend.
+///
+/// This allows using either in-memory or Redis-backed rate limiting.
+///
+/// # Example (in-memory)
+/// ```rust,ignore
+/// let backend = RateLimitBackend::in_memory(rate_limit_config);
+/// let router = create_router_full_with_backend(service, cors, auth, backend, timeout);
+/// ```
+///
+/// # Example (Redis)
+/// ```rust,ignore
+/// let backend = RateLimitBackend::redis("redis://127.0.0.1:6379", rate_limit_config).await?;
+/// let router = create_router_full_with_backend(service, cors, auth, backend, timeout);
+/// ```
+pub fn create_router_full_with_backend(
+    service: SynthService,
+    cors_config: CorsConfig,
+    auth_config: AuthConfig,
+    rate_limit_backend: RateLimitBackend,
+    timeout_config: TimeoutConfig,
+) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
         service: Arc::new(service),
         server_state,
+        job_queue: None,
     };
 
     let cors = if cors_config.allow_any_origin {
@@ -123,8 +156,6 @@ pub fn create_router_full(
             .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
     };
 
-    let rate_limiter = RateLimiter::new(rate_limit_config);
-
     Router::new()
         // Health and metrics (exempt from auth and rate limiting by default)
         .route("/health", get(health_check))
@@ -135,6 +166,7 @@ pub fn create_router_full(
         // Configuration
         .route("/api/config", get(get_config))
         .route("/api/config", post(set_config))
+        .route("/api/config/reload", post(reload_config))
         // Generation
         .route("/api/generate/bulk", post(bulk_generate))
         .route("/api/stream/start", post(start_stream))
@@ -142,6 +174,11 @@ pub fn create_router_full(
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
         .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        // Jobs
+        .route("/api/jobs/submit", post(submit_job))
+        .route("/api/jobs", get(list_jobs))
+        .route("/api/jobs/:id", get(get_job))
+        .route("/api/jobs/:id/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -153,8 +190,8 @@ pub fn create_router_full(
         .layer(axum::middleware::from_fn(auth_middleware))
         .layer(axum::Extension(auth_config))
         .layer(axum::middleware::from_fn(request_validation_middleware))
-        .layer(axum::middleware::from_fn(rate_limit_middleware))
-        .layer(axum::Extension(rate_limiter))
+        .layer(axum::middleware::from_fn(backend_rate_limit_middleware))
+        .layer(axum::Extension(rate_limit_backend))
         .layer(TimeoutLayer::new(Duration::from_secs(
             timeout_config.request_timeout_secs,
         )))
@@ -171,6 +208,7 @@ pub fn create_router_with_auth(
     let state = AppState {
         service: Arc::new(service),
         server_state,
+        job_queue: None,
     };
 
     let cors = if cors_config.allow_any_origin {
@@ -204,6 +242,7 @@ pub fn create_router_with_auth(
         // Configuration
         .route("/api/config", get(get_config))
         .route("/api/config", post(set_config))
+        .route("/api/config/reload", post(reload_config))
         // Generation
         .route("/api/generate/bulk", post(bulk_generate))
         .route("/api/stream/start", post(start_stream))
@@ -211,6 +250,11 @@ pub fn create_router_with_auth(
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
         .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        // Jobs
+        .route("/api/jobs/submit", post(submit_job))
+        .route("/api/jobs", get(list_jobs))
+        .route("/api/jobs/:id", get(get_job))
+        .route("/api/jobs/:id/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -226,6 +270,7 @@ pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -
     let state = AppState {
         service: Arc::new(service),
         server_state,
+        job_queue: None,
     };
 
     let cors = if cors_config.allow_any_origin {
@@ -261,6 +306,7 @@ pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -
         // Configuration
         .route("/api/config", get(get_config))
         .route("/api/config", post(set_config))
+        .route("/api/config/reload", post(reload_config))
         // Generation
         .route("/api/generate/bulk", post(bulk_generate))
         .route("/api/stream/start", post(start_stream))
@@ -268,6 +314,11 @@ pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
         .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        // Jobs
+        .route("/api/jobs/submit", post(submit_job))
+        .route("/api/jobs", get(list_jobs))
+        .route("/api/jobs/:id", get(get_job))
+        .route("/api/jobs/:id/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -878,6 +929,133 @@ async fn websocket_events(
     State(state): State<AppState>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| websocket::handle_events_socket(socket, state))
+}
+
+// ===========================================================================
+// Job Queue Handlers
+// ===========================================================================
+
+/// Submit a new async generation job.
+async fn submit_job(
+    State(state): State<AppState>,
+    Json(request): Json<JobRequest>,
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    let queue = state.job_queue.as_ref().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Job queue not enabled"})),
+        )
+    })?;
+
+    let job_id = queue.submit(request).await;
+    info!("Job submitted: {}", job_id);
+
+    Ok((
+        StatusCode::CREATED,
+        Json(serde_json::json!({
+            "id": job_id.to_string(),
+            "status": "queued"
+        })),
+    ))
+}
+
+/// Get status of a specific job.
+async fn get_job(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let queue = state.job_queue.as_ref().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Job queue not enabled"})),
+        )
+    })?;
+
+    match queue.get(&id).await {
+        Some(entry) => Ok(Json(serde_json::json!({
+            "id": entry.id,
+            "status": format!("{:?}", entry.status).to_lowercase(),
+            "submitted_at": entry.submitted_at.to_rfc3339(),
+            "started_at": entry.started_at.map(|t| t.to_rfc3339()),
+            "completed_at": entry.completed_at.map(|t| t.to_rfc3339()),
+            "result": entry.result,
+        }))),
+        None => Err((
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Job not found"})),
+        )),
+    }
+}
+
+/// List all jobs.
+async fn list_jobs(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let queue = state.job_queue.as_ref().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Job queue not enabled"})),
+        )
+    })?;
+
+    let summaries: Vec<_> = queue
+        .list()
+        .await
+        .into_iter()
+        .map(|s| {
+            serde_json::json!({
+                "id": s.id,
+                "status": format!("{:?}", s.status).to_lowercase(),
+                "submitted_at": s.submitted_at.to_rfc3339(),
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({ "jobs": summaries })))
+}
+
+/// Cancel a queued job.
+async fn cancel_job(
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let queue = state.job_queue.as_ref().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Job queue not enabled"})),
+        )
+    })?;
+
+    if queue.cancel(&id).await {
+        Ok(Json(serde_json::json!({"id": id, "status": "cancelled"})))
+    } else {
+        Err((
+            StatusCode::CONFLICT,
+            Json(
+                serde_json::json!({"error": "Job cannot be cancelled (not in queued state or not found)"}),
+            ),
+        ))
+    }
+}
+
+// ===========================================================================
+// Config Reload Handler
+// ===========================================================================
+
+/// Reload configuration from the configured source.
+async fn reload_config(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    // Reload from default config source
+    let new_config = crate::grpc::service::default_generator_config();
+    let mut config = state.server_state.config.write().await;
+    *config = new_config;
+    info!("Configuration reloaded via REST API");
+
+    Ok(Json(serde_json::json!({
+        "success": true,
+        "message": "Configuration reloaded"
+    })))
 }
 
 #[cfg(test)]

@@ -282,7 +282,9 @@ impl AccountGenerator {
         let routing_prefixes = [
             "021", "026", "031", "041", "051", "061", "071", "081", "091",
         ];
-        let prefix = routing_prefixes.choose(&mut self.rng).unwrap();
+        let prefix = routing_prefixes
+            .choose(&mut self.rng)
+            .expect("non-empty array");
         format!("{}{:06}", prefix, self.rng.gen_range(0..1_000_000))
     }
 
@@ -321,7 +323,7 @@ impl AccountGenerator {
             }
         }
 
-        options.last().unwrap().0
+        options.last().expect("options must not be empty").0
     }
 }
 

@@ -1009,12 +1009,16 @@ impl NamePool {
         let is_male = rng.gen_bool(0.5);
 
         let first_name = if is_male {
-            self.first_names_male.choose(rng).unwrap()
+            self.first_names_male
+                .choose(rng)
+                .expect("non-empty name list")
         } else {
-            self.first_names_female.choose(rng).unwrap()
+            self.first_names_female
+                .choose(rng)
+                .expect("non-empty name list")
         };
 
-        let last_name = self.last_names.choose(rng).unwrap();
+        let last_name = self.last_names.choose(rng).expect("non-empty name list");
 
         PersonName {
             first_name: (*first_name).to_string(),

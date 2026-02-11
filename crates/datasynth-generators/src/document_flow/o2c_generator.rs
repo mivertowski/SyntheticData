@@ -558,7 +558,7 @@ impl O2CGenerator {
                 let cogs = (so_item.base.unit_price
                     * ship_qty
                     * Decimal::from_f64_retain(cogs_pct)
-                        .unwrap_or(Decimal::from_f64_retain(0.65).unwrap()))
+                        .unwrap_or(Decimal::from_f64_retain(0.65).expect("valid decimal literal")))
                 .round_dp(2);
 
                 let mut item = DeliveryItem::from_sales_order(

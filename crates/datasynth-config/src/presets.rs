@@ -70,6 +70,7 @@ pub fn create_preset(
         drift_labeling: DriftLabelingSchemaConfig::default(),
         anomaly_injection: EnhancedAnomalyConfig::default(),
         industry_specific: IndustrySpecificConfig::default(),
+        fingerprint_privacy: FingerprintPrivacyConfig::default(),
     }
 }
 

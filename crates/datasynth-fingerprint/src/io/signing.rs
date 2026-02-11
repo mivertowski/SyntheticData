@@ -172,12 +172,14 @@ pub fn canonical_manifest_json(manifest: &Manifest) -> String {
     manifest.signature = None;
 
     // Convert to serde_json::Value for sorting
-    let value = serde_json::to_value(&manifest).unwrap();
+    let value = serde_json::to_value(&manifest)
+        .expect("Manifest serialization to serde_json::Value should not fail");
 
     // Recursively sort all objects
     let sorted = sort_json_value(value);
 
-    serde_json::to_string(&sorted).unwrap()
+    serde_json::to_string(&sorted)
+        .expect("Sorted JSON Value serialization to string should not fail")
 }
 
 /// Recursively sort all keys in a JSON value.

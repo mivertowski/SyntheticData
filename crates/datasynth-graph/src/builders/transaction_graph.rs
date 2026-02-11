@@ -290,7 +290,11 @@ impl TransactionGraphBuilder {
             return "Unknown".to_string();
         }
 
-        match account_code.chars().next().unwrap() {
+        match account_code
+            .chars()
+            .next()
+            .expect("non-empty checked above")
+        {
             '1' => "Asset".to_string(),
             '2' => "Liability".to_string(),
             '3' => "Equity".to_string(),
@@ -306,7 +310,13 @@ impl TransactionGraphBuilder {
             return false;
         }
 
-        matches!(account_code.chars().next().unwrap(), '1' | '2' | '3')
+        matches!(
+            account_code
+                .chars()
+                .next()
+                .expect("non-empty checked above"),
+            '1' | '2' | '3'
+        )
     }
 
     /// Infers normal balance from account code.
@@ -315,7 +325,11 @@ impl TransactionGraphBuilder {
             return "Debit".to_string();
         }
 
-        match account_code.chars().next().unwrap() {
+        match account_code
+            .chars()
+            .next()
+            .expect("non-empty checked above")
+        {
             '1' | '5' | '6' | '7' => "Debit".to_string(),
             '2' | '3' | '4' => "Credit".to_string(),
             _ => "Debit".to_string(),

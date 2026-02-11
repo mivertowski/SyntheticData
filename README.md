@@ -149,25 +149,36 @@ The generator produces statistically accurate data based on empirical research f
 
 - **Fingerprint Extraction**: Extract statistical properties from real data into `.dsf` files
 - **Differential Privacy**: Laplace mechanism with configurable epsilon budget
+- **Formal DP Composition**: Rényi DP and zCDP accounting with tighter composition bounds
 - **K-Anonymity**: Suppression of rare categorical values
-- **Privacy Audit Trail**: Complete logging of all privacy decisions
+- **Custom Privacy Levels**: Configurable (ε, δ) tuples with preset levels (minimal, standard, high, maximum)
+- **Privacy Budget Management**: Global budget tracking across multiple extraction runs
+- **Privacy Audit Trail**: Complete logging of all privacy decisions with composition metadata
 - **Fidelity Evaluation**: Wasserstein-1, Jensen-Shannon divergence, and KS statistics per column
+- **Privacy Evaluation**: Membership inference attack (MIA) testing, linkage attack assessment, NIST SP 800-226 alignment, SynQP matrix
 
 ### Production Features
 
 - **REST & gRPC APIs**: Streaming generation with Argon2id authentication and rate limiting
+- **Async Job Queue**: Submit/poll/cancel pattern for long-running generation jobs
 - **Security Hardening**: Security headers, request validation, request ID propagation, timing-safe auth
 - **TLS Support**: Native rustls TLS or reverse proxy (nginx/envoy) with documented configuration
 - **OpenTelemetry**: Feature-gated OTEL integration with OTLP traces and Prometheus metrics
 - **Structured Logging**: JSON-formatted logs with request IDs, method, path, status, and latency
 - **Docker & Compose**: Multi-stage distroless containers, local dev stack with Prometheus + Grafana
+- **Kubernetes Helm Chart**: Production-ready chart with HPA, PDB, optional Redis subchart, and Prometheus ServiceMonitor
 - **CI/CD Pipeline**: 7-job GitHub Actions (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
 - **Release Automation**: Binary builds for 5 platforms, GHCR container publishing, Trivy scanning
+- **Data Lineage & Provenance**: Per-file checksums, lineage graph, W3C PROV-JSON export, CLI `verify` command
+- **Distributed Rate Limiting**: Redis-backed sliding window rate limiting for multi-instance deployments
 - **Streaming Output API**: Async generation with backpressure handling (Block, DropOldest, DropNewest, Buffer)
 - **Rate Limiting**: Token bucket rate limiter for controlled generation throughput
+- **Load Testing**: k6 scripts for health, bulk generation, WebSocket, job queue, and soak testing
 - **Temporal Attributes**: Bi-temporal data support (valid time + transaction time) with version chains
 - **Desktop UI**: Cross-platform Tauri/SvelteKit application
 - **Resource Guards**: Memory, disk, and CPU monitoring with graceful degradation
+- **Panic-Free Library Crates**: `#![deny(clippy::unwrap_used)]` enforced across all library crates
+- **Fuzzing**: cargo-fuzz targets for config parsing, fingerprint loading, and validation
 - **Evaluation Framework**: Auto-tuning with configuration recommendations
 - **Deterministic Generation**: Seeded RNG for reproducible output
 

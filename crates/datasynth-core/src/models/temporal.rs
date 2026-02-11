@@ -129,7 +129,7 @@ impl<T> BiTemporal<T> {
     /// Check if this record is currently valid (business time).
     pub fn is_currently_valid(&self) -> bool {
         let now = Utc::now().naive_utc();
-        self.valid_from <= now && self.valid_to.map_or(true, |to| to > now)
+        self.valid_from <= now && self.valid_to.is_none_or(|to| to > now)
     }
 
     /// Check if this is the current version (system time).
@@ -139,12 +139,12 @@ impl<T> BiTemporal<T> {
 
     /// Check if this record was valid at a specific business time.
     pub fn was_valid_at(&self, at: NaiveDateTime) -> bool {
-        self.valid_from <= at && self.valid_to.map_or(true, |to| to > at)
+        self.valid_from <= at && self.valid_to.is_none_or(|to| to > at)
     }
 
     /// Check if this version was the current version at a specific system time.
     pub fn was_current_at(&self, at: DateTime<Utc>) -> bool {
-        self.recorded_at <= at && self.superseded_at.map_or(true, |sup| sup > at)
+        self.recorded_at <= at && self.superseded_at.is_none_or(|sup| sup > at)
     }
 
     /// Supersede this record with a new version.

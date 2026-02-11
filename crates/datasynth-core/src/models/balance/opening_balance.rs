@@ -66,7 +66,7 @@ impl OpeningBalanceSpec {
     pub fn for_industry(total_assets: Decimal, industry: IndustryType) -> Self {
         Self {
             company_code: String::new(),
-            as_of_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            as_of_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             fiscal_year: 2024,
             currency: "USD".to_string(),
             total_assets,

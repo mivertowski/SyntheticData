@@ -478,7 +478,7 @@ impl RustGraphExporter {
         // Determine valid_from from timestamp
         let valid_from = if self.config.include_temporal {
             edge.timestamp
-                .map(|d| d.and_hms_opt(0, 0, 0).unwrap())
+                .map(|d| d.and_hms_opt(0, 0, 0).expect("midnight is always valid"))
                 .or_else(|| Some(generated_at.naive_utc()))
         } else {
             None

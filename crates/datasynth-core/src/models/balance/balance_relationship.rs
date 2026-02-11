@@ -186,8 +186,8 @@ impl BalanceRelationshipRule {
 
     /// Check if a calculated value is within acceptable range.
     pub fn is_within_range(&self, value: Decimal) -> bool {
-        let within_min = self.min_value.map_or(true, |min| value >= min);
-        let within_max = self.max_value.map_or(true, |max| value <= max);
+        let within_min = self.min_value.is_none_or(|min| value >= min);
+        let within_max = self.max_value.is_none_or(|max| value <= max);
         within_min && within_max
     }
 

@@ -143,7 +143,11 @@ impl TimezoneHandler {
         let tz = self.get_entity_timezone(entity_code);
         tz.from_local_datetime(&local)
             .single()
-            .unwrap_or_else(|| tz.from_local_datetime(&local).earliest().unwrap())
+            .unwrap_or_else(|| {
+                tz.from_local_datetime(&local)
+                    .earliest()
+                    .expect("valid time components")
+            })
             .with_timezone(&Utc)
     }
 

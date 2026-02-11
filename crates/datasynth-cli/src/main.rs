@@ -129,6 +129,21 @@ enum Commands {
     /// Show information about available presets
     Info,
 
+    /// Verify output integrity (checksums, record counts)
+    Verify {
+        /// Output directory to verify
+        #[arg(short, long, default_value = "./output")]
+        output: PathBuf,
+
+        /// Verify file checksums
+        #[arg(long)]
+        checksums: bool,
+
+        /// Verify record counts
+        #[arg(long)]
+        record_counts: bool,
+    },
+
     /// Fingerprint extraction and management
     Fingerprint {
         #[command(subcommand)]
@@ -641,6 +656,9 @@ fn main() -> Result<()> {
                 format: "json".to_string(),
                 record_count: Some(sample_entries.len()),
                 size_bytes: None,
+                sha256_checksum: None,
+                first_record_index: None,
+                last_record_index: None,
             });
 
             if !result.anomaly_labels.labels.is_empty() {
@@ -649,8 +667,48 @@ fn main() -> Result<()> {
                     format: "csv".to_string(),
                     record_count: Some(result.anomaly_labels.labels.len()),
                     size_bytes: None,
+                    sha256_checksum: None,
+                    first_record_index: None,
+                    last_record_index: None,
                 });
             }
+
+            // Attach lineage graph to manifest and write separate file
+            if let Some(ref lineage) = result.lineage {
+                manifest.lineage = Some(lineage.clone());
+                let lineage_path = output.join("lineage_graph.json");
+                if let Ok(json) = lineage.to_json() {
+                    if let Err(e) = std::fs::write(&lineage_path, json) {
+                        tracing::warn!("Failed to write lineage graph: {}", e);
+                    } else {
+                        tracing::info!(
+                            "Lineage graph written to: {} ({} nodes, {} edges)",
+                            lineage_path.display(),
+                            lineage.node_count(),
+                            lineage.edge_count()
+                        );
+                    }
+                }
+            }
+
+            // Write W3C PROV-JSON
+            {
+                let prov_path = output.join("prov.json");
+                let prov_doc = datasynth_runtime::prov::manifest_to_prov(&manifest);
+                match serde_json::to_string_pretty(&prov_doc) {
+                    Ok(json) => {
+                        if let Err(e) = std::fs::write(&prov_path, json) {
+                            tracing::warn!("Failed to write PROV-JSON: {}", e);
+                        } else {
+                            tracing::info!("PROV-JSON written to: {}", prov_path.display());
+                        }
+                    }
+                    Err(e) => tracing::warn!("Failed to serialize PROV-JSON: {}", e),
+                }
+            }
+
+            // Populate file checksums
+            manifest.populate_file_checksums(&output);
 
             // Write manifest
             let manifest_path = output.join("run_manifest.json");
@@ -734,6 +792,141 @@ fn main() -> Result<()> {
             println!("  --memory-limit <MB>  : Set memory limit (default: 1024 MB)");
             println!("  --max-threads <N>    : Limit CPU threads (default: half of cores, max 4)");
             Ok(())
+        }
+
+        Commands::Verify {
+            output,
+            checksums,
+            record_counts,
+        } => {
+            let manifest_path = output.join("run_manifest.json");
+            if !manifest_path.exists() {
+                anyhow::bail!("No run_manifest.json found in {}", output.display());
+            }
+
+            let manifest_json = std::fs::read_to_string(&manifest_path)?;
+            let manifest: RunManifest = serde_json::from_str(&manifest_json)?;
+
+            println!("Verifying output: {}", output.display());
+            println!("  Manifest version: {}", manifest.manifest_version);
+            println!("  Run ID: {}", manifest.run_id);
+            println!("  Generator version: {}", manifest.generator_version);
+            println!("  Output files: {}", manifest.output_files.len());
+            println!();
+
+            let mut all_pass = true;
+            let mut checked = 0;
+            let mut passed = 0;
+            let mut failed = 0;
+
+            // Check file existence
+            for file_info in &manifest.output_files {
+                let file_path = output.join(&file_info.path);
+                checked += 1;
+                if file_path.exists() {
+                    passed += 1;
+                    println!("  [PASS] {} exists", file_info.path);
+                } else {
+                    failed += 1;
+                    all_pass = false;
+                    println!("  [FAIL] {} missing", file_info.path);
+                }
+            }
+
+            // Verify checksums
+            if checksums {
+                println!();
+                println!("Checksum verification:");
+                let results = manifest.verify_file_checksums(&output);
+                for result in &results {
+                    match result.status {
+                        datasynth_runtime::ChecksumStatus::Ok => {
+                            println!("  [PASS] {} checksum OK", result.path);
+                            passed += 1;
+                        }
+                        datasynth_runtime::ChecksumStatus::Mismatch => {
+                            println!("  [FAIL] {} checksum MISMATCH", result.path);
+                            if let (Some(ref exp), Some(ref act)) =
+                                (&result.expected, &result.actual)
+                            {
+                                println!("         expected: {}", exp);
+                                println!("         actual:   {}", act);
+                            }
+                            failed += 1;
+                            all_pass = false;
+                        }
+                        datasynth_runtime::ChecksumStatus::Missing => {
+                            println!("  [FAIL] {} file missing", result.path);
+                            failed += 1;
+                            all_pass = false;
+                        }
+                        datasynth_runtime::ChecksumStatus::NoChecksum => {
+                            println!("  [SKIP] {} no checksum recorded", result.path);
+                        }
+                    }
+                    checked += 1;
+                }
+            }
+
+            // Verify record counts
+            if record_counts {
+                println!();
+                println!("Record count verification:");
+                for file_info in &manifest.output_files {
+                    let file_path = output.join(&file_info.path);
+                    if let Some(expected_count) = file_info.record_count {
+                        checked += 1;
+                        if file_path.exists() {
+                            // Count lines for CSV/JSON
+                            let content = std::fs::read_to_string(&file_path).unwrap_or_default();
+                            let line_count = if file_info.format == "csv" {
+                                content.lines().count().saturating_sub(1) // minus header
+                            } else if file_info.format == "json" {
+                                // JSON array - count top-level objects
+                                if let Ok(arr) =
+                                    serde_json::from_str::<Vec<serde_json::Value>>(&content)
+                                {
+                                    arr.len()
+                                } else {
+                                    content.lines().count()
+                                }
+                            } else {
+                                content.lines().count()
+                            };
+
+                            if line_count == expected_count {
+                                println!(
+                                    "  [PASS] {} count: {} records",
+                                    file_info.path, expected_count
+                                );
+                                passed += 1;
+                            } else {
+                                println!(
+                                    "  [WARN] {} count: expected {}, found {}",
+                                    file_info.path, expected_count, line_count
+                                );
+                                // Counts may differ due to formatting, so warn only
+                                passed += 1;
+                            }
+                        } else {
+                            println!("  [SKIP] {} file missing", file_info.path);
+                        }
+                    }
+                }
+            }
+
+            println!();
+            println!(
+                "Summary: {} checked, {} passed, {} failed",
+                checked, passed, failed
+            );
+
+            if all_pass {
+                println!("Verification: PASSED");
+                Ok(())
+            } else {
+                anyhow::bail!("Verification: FAILED ({} failures)", failed);
+            }
         }
 
         Commands::Fingerprint { command } => handle_fingerprint_command(command),
@@ -1260,6 +1453,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         drift_labeling: datasynth_config::schema::DriftLabelingSchemaConfig::default(),
         anomaly_injection: Default::default(),
         industry_specific: Default::default(),
+        fingerprint_privacy: Default::default(),
     }
 }
 

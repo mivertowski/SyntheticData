@@ -619,7 +619,7 @@ impl DescriptionGenerator {
             return format!("{:?} Transaction", process);
         }
 
-        let pattern = matching.choose(rng).unwrap();
+        let pattern = matching.choose(rng).expect("non-empty collection");
         self.substitute_placeholders(&pattern.template, context, rng)
     }
 

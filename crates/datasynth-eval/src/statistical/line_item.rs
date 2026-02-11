@@ -206,7 +206,7 @@ impl LineItemAnalyzer {
             .sum();
 
         let df = (EXPECTED_LINE_DISTRIBUTION.len() - 1) as f64;
-        let chi_sq_dist = ChiSquared::new(df).unwrap();
+        let chi_sq_dist = ChiSquared::new(df).expect("df > 0 for chi-squared distribution");
         let p_value = 1.0 - chi_sq_dist.cdf(chi_squared);
 
         (chi_squared, p_value)

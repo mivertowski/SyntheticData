@@ -225,7 +225,7 @@ impl EntityRecord {
     /// Check if the entity is valid on a given date.
     pub fn is_valid_on(&self, date: NaiveDate) -> bool {
         date >= self.valid_from
-            && self.valid_to.map_or(true, |to| date <= to)
+            && self.valid_to.is_none_or(|to| date <= to)
             && self.status == EntityStatus::Active
     }
 

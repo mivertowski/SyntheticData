@@ -11,6 +11,7 @@ description = "gRPC and REST server for synthetic data generation"
 [features]
 default = []
 tls = ["dep:axum-server"]
+redis = ["dep:redis"]
 otel = [
     "dep:opentelemetry",
     "dep:opentelemetry_sdk",
@@ -47,6 +48,7 @@ async-trait = { workspace = true }
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 
 # Error handling
 thiserror = { workspace = true }
@@ -71,6 +73,9 @@ rust_decimal = { workspace = true }
 # Security
 argon2 = { workspace = true }
 subtle = { workspace = true }
+
+# Redis (optional - distributed rate limiting)
+redis = { workspace = true, optional = true }
 
 # OpenTelemetry (optional, behind `otel` feature)
 opentelemetry = { workspace = true, optional = true }

@@ -152,7 +152,7 @@ impl TypoGenerator {
             return text.to_string();
         }
 
-        let idx = *alpha_indices.choose(rng).unwrap();
+        let idx = *alpha_indices.choose(rng).expect("non-empty collection");
         let original_char = chars[idx].to_ascii_lowercase();
 
         if let Some(neighbors) = self.keyboard_neighbors.get(&original_char) {
@@ -185,7 +185,7 @@ impl TypoGenerator {
             return text.to_string();
         }
 
-        let idx = *valid_positions.choose(rng).unwrap();
+        let idx = *valid_positions.choose(rng).expect("non-empty collection");
         let mut result = chars.clone();
         result.swap(idx, idx + 1);
         result.into_iter().collect()
@@ -210,7 +210,7 @@ impl TypoGenerator {
             return text.to_string();
         }
 
-        let idx = *valid_positions.choose(rng).unwrap();
+        let idx = *valid_positions.choose(rng).expect("non-empty collection");
         let mut result = chars.clone();
         result.remove(idx);
         result.into_iter().collect()
@@ -234,7 +234,7 @@ impl TypoGenerator {
             return text.to_string();
         }
 
-        let idx = *valid_positions.choose(rng).unwrap();
+        let idx = *valid_positions.choose(rng).expect("non-empty collection");
         let mut result = chars.clone();
         result.insert(idx, chars[idx]);
         result.into_iter().collect()

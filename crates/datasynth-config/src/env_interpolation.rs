@@ -34,7 +34,7 @@ pub enum EnvInterpolationError {
 /// std::env::remove_var("TEST_PORT");
 /// ```
 pub fn interpolate_env(input: &str) -> Result<String, EnvInterpolationError> {
-    let re = Regex::new(r"\$\{([^}]+)\}").unwrap();
+    let re = Regex::new(r"\$\{([^}]+)\}").expect("valid env interpolation regex");
     let mut result = input.to_string();
     let mut errors = Vec::new();
 
@@ -42,8 +42,16 @@ pub fn interpolate_env(input: &str) -> Result<String, EnvInterpolationError> {
     let matches: Vec<(String, String)> = re
         .captures_iter(input)
         .map(|cap| {
-            let full_match = cap.get(0).unwrap().as_str().to_string();
-            let inner = cap.get(1).unwrap().as_str().to_string();
+            let full_match = cap
+                .get(0)
+                .expect("capture group 0 always exists")
+                .as_str()
+                .to_string();
+            let inner = cap
+                .get(1)
+                .expect("capture group 1 defined in regex")
+                .as_str()
+                .to_string();
             (full_match, inner)
         })
         .collect();

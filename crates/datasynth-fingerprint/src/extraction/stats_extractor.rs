@@ -265,13 +265,13 @@ fn compute_numeric_stats(
 
     let count = values.len() as u64;
     let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(|a, b| a.total_cmp(b));
 
     // Winsorize before computing stats
     privacy.winsorize(&mut sorted, target);
 
-    let min = *sorted.first().unwrap();
-    let max = *sorted.last().unwrap();
+    let min = sorted.first().copied().unwrap_or(0.0);
+    let max = sorted.last().copied().unwrap_or(0.0);
     let sum: f64 = sorted.iter().sum();
     let mean = sum / sorted.len() as f64;
 
@@ -406,10 +406,12 @@ fn compute_benford_first_digit(values: &[f64]) -> [f64; 9] {
             let s = format!("{:.15}", abs_v);
             for c in s.chars() {
                 if c.is_ascii_digit() && c != '0' {
-                    let digit = c.to_digit(10).unwrap() as usize;
-                    if (1..=9).contains(&digit) {
-                        counts[digit - 1] += 1;
-                        total += 1;
+                    if let Some(digit) = c.to_digit(10) {
+                        let digit = digit as usize;
+                        if (1..=9).contains(&digit) {
+                            counts[digit - 1] += 1;
+                            total += 1;
+                        }
                     }
                     break;
                 }

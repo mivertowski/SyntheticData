@@ -22,6 +22,27 @@ services:
           cpus: "2.0"
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:v2.51.0
     ports:
@@ -50,3 +71,4 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
+  redis-data:

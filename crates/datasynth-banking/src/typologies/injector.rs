@@ -187,7 +187,9 @@ impl TypologyInjector {
             let scenario_id = self.next_scenario_id();
             let start_date =
                 NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+                    .unwrap_or_else(|_| {
+                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+                    });
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =
@@ -248,7 +250,9 @@ impl TypologyInjector {
             let scenario_id = self.next_scenario_id();
             let start_date =
                 NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+                    .unwrap_or_else(|_| {
+                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+                    });
             let end_date = start_date + chrono::Months::new(2);
 
             let mut scenario = AmlScenario::new(
@@ -307,7 +311,9 @@ impl TypologyInjector {
             let scenario_id = self.next_scenario_id();
             let start_date =
                 NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+                    .unwrap_or_else(|_| {
+                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+                    });
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =
@@ -360,7 +366,9 @@ impl TypologyInjector {
             let scenario_id = self.next_scenario_id();
             let start_date =
                 NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+                    .unwrap_or_else(|_| {
+                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+                    });
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =

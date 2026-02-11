@@ -1,0 +1,188 @@
+# Default values for datasynth.
+
+replicaCount: 2
+
+image:
+  repository: datasynth/datasynth-server
+  pullPolicy: IfNotPresent
+  tag: "0.5.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  restPort: 3000
+  grpcPort: 50051
+
+resources:
+  limits:
+    cpu: "2"
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /live
+    port: http-rest
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http-rest
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+# Startup probe configuration (optional, useful for slow-starting containers)
+startupProbe:
+  httpGet:
+    path: /live
+    port: http-rest
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
+# Rolling update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+terminationGracePeriodSeconds: 30
+
+# Environment variables from values
+env:
+  RUST_LOG: "info"
+  DATASYNTH_WORKER_THREADS: "4"
+  DATASYNTH_PORT: "3000"
+  DATASYNTH_GRPC_PORT: "50051"
+
+# API keys stored in a Kubernetes secret
+apiKeys: []
+# - name: default-key
+#   key: "change-me-in-production"
+
+# Optional DataSynth YAML configuration mounted as a ConfigMap
+config:
+  enabled: false
+  # content: |
+  #   global:
+  #     industry: manufacturing
+  #     start_date: "2024-01-01"
+  #     period_months: 12
+
+# Redis configuration (optional caching layer)
+redis:
+  enabled: false
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  port: 6379
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Prometheus ServiceMonitor
+serviceMonitor:
+  enabled: false
+  # Additional labels for the ServiceMonitor
+  labels: {}
+  # Scrape interval
+  interval: 30s
+  # Scrape timeout
+  scrapeTimeout: 10s
+  # Path to metrics endpoint
+  path: /metrics
+  # Namespace for the ServiceMonitor (defaults to release namespace)
+  namespace: ""
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: datasynth.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: datasynth-tls
+  #    hosts:
+  #      - datasynth.local
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Topology spread constraints for high availability
+topologySpreadConstraints: []
+# - maxSkew: 1
+#   topologyKey: topology.kubernetes.io/zone
+#   whenUnsatisfiable: DoNotSchedule
+#   labelSelector:
+#     matchLabels: {}

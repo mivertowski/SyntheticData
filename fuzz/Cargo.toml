@@ -1,0 +1,34 @@
+[package]
+name = "datasynth-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+datasynth-config = { path = "../crates/datasynth-config" }
+datasynth-fingerprint = { path = "../crates/datasynth-fingerprint" }
+serde_yaml = "0.9"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_config_parse"
+path = "fuzz_targets/config_parse.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_dsf_load"
+path = "fuzz_targets/dsf_load.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_yaml_validation"
+path = "fuzz_targets/yaml_validation.rs"
+doc = false

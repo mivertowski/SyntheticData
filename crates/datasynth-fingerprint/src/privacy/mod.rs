@@ -88,10 +88,16 @@
 //! [`PrivacyAudit`]: crate::models::PrivacyAudit
 
 mod audit;
+pub mod budget;
+pub mod composition;
 mod differential;
 mod kanonymity;
 
 pub use audit::*;
+pub use composition::{
+    create_accountant, CompositionMethod, MechanismRecord, NaiveAccountant, PrivacyAccountant,
+    RenyiDPAccountant, ZeroCDPAccountant,
+};
 pub use differential::*;
 pub use kanonymity::*;
 
@@ -115,6 +121,9 @@ pub struct PrivacyConfig {
     pub min_occurrence: u32,
     /// Fields to always suppress.
     pub suppressed_fields: Vec<String>,
+    /// Composition method for privacy budget accounting.
+    /// Defaults to `Naive` for backward compatibility.
+    pub composition_method: CompositionMethod,
 }
 
 impl PrivacyConfig {
@@ -128,29 +137,45 @@ impl PrivacyConfig {
             outlier_percentile: metadata.outlier_percentile,
             min_occurrence: metadata.min_occurrence,
             suppressed_fields: metadata.suppressed_fields,
+            composition_method: CompositionMethod::Naive,
         }
     }
 
     /// Create custom configuration.
     pub fn custom(epsilon: f64, k_anonymity: u32) -> Self {
-        // Infer level from epsilon
-        let level = if epsilon >= 5.0 {
-            PrivacyLevel::Minimal
-        } else if epsilon >= 1.0 {
-            PrivacyLevel::Standard
-        } else if epsilon >= 0.5 {
-            PrivacyLevel::High
-        } else {
-            PrivacyLevel::Maximum
-        };
-
         Self {
-            level,
+            level: PrivacyLevel::Custom,
             epsilon,
             k_anonymity,
             outlier_percentile: 95.0,
             min_occurrence: k_anonymity,
             suppressed_fields: Vec::new(),
+            composition_method: CompositionMethod::Naive,
+        }
+    }
+
+    /// Create custom configuration with delta and composition method.
+    ///
+    /// Use this for advanced composition (RDP/zCDP) where delta is meaningful.
+    ///
+    /// Note: The `delta` parameter is not stored in `PrivacyConfig` directly;
+    /// it is managed by the accountant created in `PrivacyEngine::new()`.
+    /// The delta value is captured in `PrivacyMetadata` for the manifest via
+    /// the accountant's `target_delta()` method.
+    pub fn custom_with_delta(
+        epsilon: f64,
+        _delta: f64,
+        k_anonymity: u32,
+        composition_method: CompositionMethod,
+    ) -> Self {
+        Self {
+            level: PrivacyLevel::Custom,
+            epsilon,
+            k_anonymity,
+            outlier_percentile: 95.0,
+            min_occurrence: k_anonymity,
+            suppressed_fields: Vec::new(),
+            composition_method,
         }
     }
 }
@@ -162,20 +187,34 @@ impl Default for PrivacyConfig {
 }
 
 /// Privacy engine that applies privacy mechanisms during extraction.
+///
+/// The engine coordinates differential privacy (Laplace noise), k-anonymity,
+/// and privacy budget accounting via a pluggable [`PrivacyAccountant`].
+///
+/// When using advanced composition methods (RDP or zCDP), the accountant
+/// provides tighter effective epsilon bounds than naive summation, allowing
+/// more queries within the same total privacy budget.
 pub struct PrivacyEngine {
     config: PrivacyConfig,
     audit: PrivacyAudit,
     laplace: LaplaceMechanism,
     kanon: KAnonymity,
+    accountant: Box<dyn PrivacyAccountant>,
 }
 
 impl PrivacyEngine {
     /// Create a new privacy engine.
+    ///
+    /// The appropriate [`PrivacyAccountant`] is created based on
+    /// `config.composition_method`. For `Naive` (the default), this is
+    /// fully backward compatible with the original behavior.
     pub fn new(config: PrivacyConfig) -> Self {
+        let accountant = create_accountant(config.composition_method, config.epsilon);
         Self {
             audit: PrivacyAudit::new(config.epsilon, config.k_anonymity),
             laplace: LaplaceMechanism::new(config.epsilon),
             kanon: KAnonymity::new(config.k_anonymity, config.min_occurrence),
+            accountant,
             config,
         }
     }
@@ -186,11 +225,28 @@ impl PrivacyEngine {
     }
 
     /// Check if budget allows spending epsilon.
+    ///
+    /// For naive composition, this checks the audit trail's simple sum.
+    /// For advanced composition (RDP/zCDP), this uses the accountant's
+    /// tighter effective epsilon calculation.
     pub fn can_spend(&self, epsilon: f64) -> bool {
-        self.audit.remaining_budget() >= epsilon
+        match self.config.composition_method {
+            CompositionMethod::Naive | CompositionMethod::Advanced => {
+                // Backward compatible: use the audit trail's simple sum
+                self.audit.remaining_budget() >= epsilon
+            }
+            CompositionMethod::RenyiDP | CompositionMethod::ZeroCDP => {
+                // Use the accountant's tighter bound
+                self.accountant.remaining_budget() >= epsilon
+            }
+        }
     }
 
     /// Add noise to a numeric value.
+    ///
+    /// Each call consumes `epsilon / 100.0` of the privacy budget.
+    /// The mechanism is recorded with both the audit trail (for logging)
+    /// and the accountant (for composition-aware budget tracking).
     pub fn add_noise(
         &mut self,
         value: f64,
@@ -209,6 +265,13 @@ impl PrivacyEngine {
         let noised = self
             .laplace
             .add_noise(value, sensitivity, epsilon_per_query);
+
+        // Record with the accountant for composition-aware tracking
+        let mechanism_record = MechanismRecord::new(
+            epsilon_per_query,
+            format!("Laplace noise on {} (sensitivity={})", target, sensitivity),
+        );
+        self.accountant.record_mechanism(mechanism_record);
 
         let action = PrivacyAction::new(
             PrivacyActionType::LaplaceNoise,
@@ -290,14 +353,60 @@ impl PrivacyEngine {
         &self.audit
     }
 
-    /// Consume and return the privacy audit.
-    pub fn into_audit(self) -> PrivacyAudit {
+    /// Consume and return the privacy audit, populated with composition metadata.
+    ///
+    /// When using advanced composition (RDP/zCDP), the audit's `composition_method`
+    /// and `rdp_alpha_effective` fields are populated from the accountant.
+    pub fn into_audit(mut self) -> PrivacyAudit {
+        // Populate composition metadata on the audit
+        self.audit.composition_method = Some(self.accountant.method().to_string());
+
+        // For RDP, record the optimal alpha order
+        if let Some(alpha) = self.accountant.optimal_alpha() {
+            self.audit.rdp_alpha_effective = Some(alpha);
+        }
+
         self.audit
     }
 
     /// Get remaining epsilon budget.
     pub fn remaining_budget(&self) -> f64 {
         self.audit.remaining_budget()
+    }
+
+    /// Get the effective epsilon as computed by the accountant.
+    ///
+    /// For naive composition, this equals the sum of per-query epsilons.
+    /// For RDP/zCDP, this is the tighter composed epsilon after conversion
+    /// to (epsilon, delta)-DP.
+    pub fn effective_epsilon(&self) -> f64 {
+        self.accountant.effective_epsilon()
+    }
+
+    /// Get the accountant's remaining budget (composition-aware).
+    ///
+    /// For naive composition, this is the same as `remaining_budget()`.
+    /// For RDP/zCDP, this may be larger due to tighter composition bounds.
+    pub fn accountant_remaining_budget(&self) -> f64 {
+        self.accountant.remaining_budget()
+    }
+
+    /// Build [`PrivacyMetadata`] from the current engine state.
+    ///
+    /// This populates the `delta` and `composition_method` fields based on
+    /// the accountant configuration.
+    pub fn build_privacy_metadata(&self) -> PrivacyMetadata {
+        let mut meta = PrivacyMetadata::from_level(self.config.level);
+        meta.epsilon = self.config.epsilon;
+        meta.k_anonymity = self.config.k_anonymity;
+        meta.composition_method = Some(self.accountant.method().to_string());
+        meta.delta = self.accountant.target_delta();
+        meta
+    }
+
+    /// Get a reference to the composition method in use.
+    pub fn composition_method(&self) -> CompositionMethod {
+        self.config.composition_method
     }
 }
 
@@ -313,7 +422,7 @@ fn winsorize_values(values: &mut [f64], percentile: f64) -> (usize, usize) {
 
     // Sort to find percentile values
     let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(|a, b| a.total_cmp(b));
 
     let low_threshold = sorted.get(low_idx).copied().unwrap_or(f64::MIN);
     let high_threshold = sorted.get(high_idx.min(n - 1)).copied().unwrap_or(f64::MAX);
@@ -332,4 +441,285 @@ fn winsorize_values(values: &mut [f64], percentile: f64) -> (usize, usize) {
     }
 
     (low_count, high_count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -----------------------------------------------------------------------
+    // Backward compatibility: Standard level with Naive composition unchanged
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_standard_level_backward_compat_unchanged() {
+        // The default behavior (Naive composition) must be identical to pre-PR behavior.
+        let mut engine = PrivacyEngine::from_level(PrivacyLevel::Standard);
+
+        // Verify config defaults
+        assert_eq!(engine.composition_method(), CompositionMethod::Naive);
+        assert!((engine.remaining_budget() - 1.0).abs() < 1e-10);
+
+        // Add noise 50 times (each costing epsilon/100 = 0.01)
+        for i in 0..50 {
+            engine.add_noise(100.0, 1.0, &format!("col_{}", i)).unwrap();
+        }
+
+        // With naive composition, total spent = 50 * 0.01 = 0.50
+        let audit = engine.audit();
+        assert!((audit.total_epsilon_spent - 0.50).abs() < 1e-10);
+        assert_eq!(audit.actions.len(), 50);
+
+        // can_spend should use audit-based remaining budget
+        let remaining = 1.0 - 0.50;
+        assert!((engine.remaining_budget() - remaining).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_naive_engine_into_audit_populates_composition_method() {
+        let mut engine = PrivacyEngine::from_level(PrivacyLevel::Standard);
+        engine.add_noise(42.0, 1.0, "test.col").unwrap();
+
+        let audit = engine.into_audit();
+        assert_eq!(audit.composition_method, Some("naive".to_string()));
+        assert_eq!(audit.rdp_alpha_effective, None);
+    }
+
+    // -----------------------------------------------------------------------
+    // RDP composition: tighter effective epsilon than naive for same operations
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_rdp_tighter_effective_epsilon_than_naive() {
+        // Create two engines with the same budget, one naive and one RDP
+        let epsilon = 5.0;
+        let n_queries = 50;
+
+        let mut naive_config = PrivacyConfig::custom(epsilon, 5);
+        naive_config.composition_method = CompositionMethod::Naive;
+        let mut naive_engine = PrivacyEngine::new(naive_config);
+
+        let mut rdp_config = PrivacyConfig::custom(epsilon, 5);
+        rdp_config.composition_method = CompositionMethod::RenyiDP;
+        let mut rdp_engine = PrivacyEngine::new(rdp_config);
+
+        // Apply the same queries to both
+        for i in 0..n_queries {
+            let target = format!("col_{}", i);
+            naive_engine.add_noise(100.0, 1.0, &target).unwrap();
+            rdp_engine.add_noise(100.0, 1.0, &target).unwrap();
+        }
+
+        // Naive effective epsilon = sum of per-query epsilons = n * (epsilon/100)
+        let naive_effective = naive_engine.effective_epsilon();
+        let rdp_effective = rdp_engine.effective_epsilon();
+
+        // RDP should give a tighter (lower) effective epsilon for many queries
+        assert!(
+            rdp_effective < naive_effective,
+            "RDP effective epsilon ({:.6}) should be less than naive ({:.6})",
+            rdp_effective,
+            naive_effective
+        );
+
+        // Both should report the same number of actions in the audit
+        assert_eq!(naive_engine.audit().actions.len(), n_queries);
+        assert_eq!(rdp_engine.audit().actions.len(), n_queries);
+    }
+
+    #[test]
+    fn test_rdp_engine_into_audit_populates_fields() {
+        let mut config = PrivacyConfig::custom(5.0, 5);
+        config.composition_method = CompositionMethod::RenyiDP;
+        let mut engine = PrivacyEngine::new(config);
+
+        engine.add_noise(42.0, 1.0, "test.col").unwrap();
+
+        let audit = engine.into_audit();
+        assert_eq!(audit.composition_method, Some("renyi_dp".to_string()));
+        assert!(
+            audit.rdp_alpha_effective.is_some(),
+            "RDP audit should have optimal alpha set"
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // zCDP composition
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_zcdp_tighter_effective_epsilon_than_naive() {
+        let epsilon = 5.0;
+        let n_queries = 50;
+
+        let mut naive_config = PrivacyConfig::custom(epsilon, 5);
+        naive_config.composition_method = CompositionMethod::Naive;
+        let mut naive_engine = PrivacyEngine::new(naive_config);
+
+        let mut zcdp_config = PrivacyConfig::custom(epsilon, 5);
+        zcdp_config.composition_method = CompositionMethod::ZeroCDP;
+        let mut zcdp_engine = PrivacyEngine::new(zcdp_config);
+
+        for i in 0..n_queries {
+            let target = format!("col_{}", i);
+            naive_engine.add_noise(100.0, 1.0, &target).unwrap();
+            zcdp_engine.add_noise(100.0, 1.0, &target).unwrap();
+        }
+
+        let naive_effective = naive_engine.effective_epsilon();
+        let zcdp_effective = zcdp_engine.effective_epsilon();
+
+        assert!(
+            zcdp_effective < naive_effective,
+            "zCDP effective epsilon ({:.6}) should be less than naive ({:.6})",
+            zcdp_effective,
+            naive_effective
+        );
+    }
+
+    #[test]
+    fn test_zcdp_engine_into_audit_populates_fields() {
+        let mut config = PrivacyConfig::custom(5.0, 5);
+        config.composition_method = CompositionMethod::ZeroCDP;
+        let mut engine = PrivacyEngine::new(config);
+
+        engine.add_noise(42.0, 1.0, "test.col").unwrap();
+
+        let audit = engine.into_audit();
+        assert_eq!(audit.composition_method, Some("zcdp".to_string()));
+        // zCDP does not set rdp_alpha_effective
+        assert_eq!(audit.rdp_alpha_effective, None);
+    }
+
+    // -----------------------------------------------------------------------
+    // Budget exhaustion with composition
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_naive_budget_exhaustion() {
+        // With Naive composition and epsilon=1.0, each query costs epsilon/100 = 0.01.
+        // Due to floating-point accumulation, we may not get exactly 100 queries.
+        // The key property: the engine MUST eventually refuse queries.
+        let mut engine = PrivacyEngine::from_level(PrivacyLevel::Standard);
+
+        let mut succeeded = 0;
+        for i in 0..110 {
+            match engine.add_noise(1.0, 1.0, &format!("q_{}", i)) {
+                Ok(_) => succeeded += 1,
+                Err(_) => break,
+            }
+        }
+
+        // Should get close to 100 queries (floating-point may cause slight variance)
+        assert!(
+            succeeded >= 99 && succeeded <= 100,
+            "Expected ~100 successful queries, got {}",
+            succeeded
+        );
+
+        // After exhaustion, the next query must fail
+        let result = engine.add_noise(1.0, 1.0, "q_overflow");
+        assert!(
+            result.is_err(),
+            "Should fail after exhausting budget with naive composition"
+        );
+    }
+
+    #[test]
+    fn test_rdp_budget_allows_more_queries_than_naive_before_exhaustion() {
+        // RDP with composition should allow more queries before the
+        // effective epsilon reaches the budget, compared to naive.
+        //
+        // With epsilon=1.0 and naive: exactly 100 queries at 0.01 each.
+        // With RDP: effective_epsilon grows sub-linearly, so more queries fit.
+        let mut rdp_config = PrivacyConfig::custom(1.0, 5);
+        rdp_config.composition_method = CompositionMethod::RenyiDP;
+        let mut rdp_engine = PrivacyEngine::new(rdp_config);
+
+        let mut count = 0;
+        for i in 0..500 {
+            // Try up to 500, should get more than 100
+            let result = rdp_engine.add_noise(1.0, 1.0, &format!("q_{}", i));
+            if result.is_err() {
+                break;
+            }
+            count += 1;
+        }
+
+        assert!(
+            count > 100,
+            "RDP engine should allow more than 100 queries (got {}), since \
+             effective epsilon grows sub-linearly with composition",
+            count
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // PrivacyMetadata builder
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_build_privacy_metadata_naive() {
+        let engine = PrivacyEngine::from_level(PrivacyLevel::Standard);
+        let meta = engine.build_privacy_metadata();
+
+        assert_eq!(meta.composition_method, Some("naive".to_string()));
+        assert_eq!(meta.delta, None);
+        assert!((meta.epsilon - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_build_privacy_metadata_rdp() {
+        let mut config = PrivacyConfig::custom(2.0, 5);
+        config.composition_method = CompositionMethod::RenyiDP;
+        let engine = PrivacyEngine::new(config);
+        let meta = engine.build_privacy_metadata();
+
+        assert_eq!(meta.composition_method, Some("renyi_dp".to_string()));
+        assert!(meta.delta.is_some(), "RDP metadata should include delta");
+        assert!((meta.delta.unwrap() - 1e-5).abs() < 1e-15);
+        assert!((meta.epsilon - 2.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_build_privacy_metadata_zcdp() {
+        let mut config = PrivacyConfig::custom(2.0, 5);
+        config.composition_method = CompositionMethod::ZeroCDP;
+        let engine = PrivacyEngine::new(config);
+        let meta = engine.build_privacy_metadata();
+
+        assert_eq!(meta.composition_method, Some("zcdp".to_string()));
+        assert!(meta.delta.is_some(), "zCDP metadata should include delta");
+        assert!((meta.delta.unwrap() - 1e-5).abs() < 1e-15);
+    }
+
+    // -----------------------------------------------------------------------
+    // Accountant remaining budget vs audit remaining budget
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_accountant_remaining_budget_tighter_for_rdp() {
+        let mut config = PrivacyConfig::custom(5.0, 5);
+        config.composition_method = CompositionMethod::RenyiDP;
+        let mut engine = PrivacyEngine::new(config);
+
+        // Add 50 queries
+        for i in 0..50 {
+            engine.add_noise(1.0, 1.0, &format!("q_{}", i)).unwrap();
+        }
+
+        let audit_remaining = engine.remaining_budget();
+        let accountant_remaining = engine.accountant_remaining_budget();
+
+        // Audit remaining = total - sum(per_query_eps) = 5.0 - 50*0.05 = 2.5
+        assert!((audit_remaining - 2.5).abs() < 1e-10);
+
+        // Accountant remaining should be larger (because effective eps < sum)
+        assert!(
+            accountant_remaining > audit_remaining,
+            "Accountant remaining ({:.4}) should be greater than audit remaining ({:.4}) for RDP",
+            accountant_remaining,
+            audit_remaining
+        );
+    }
 }

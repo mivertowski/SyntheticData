@@ -703,12 +703,12 @@ impl FingerprintExtractor {
             None
         };
 
-        // Build manifest
+        // Build manifest with composition metadata from the engine
         let source_meta = build_source_metadata(source, &schema);
-        let privacy_meta = PrivacyMetadata::from_level(self.config.privacy.level);
+        let privacy_meta = privacy.build_privacy_metadata();
         let manifest = Manifest::new(source_meta, privacy_meta);
 
-        // Get privacy audit
+        // Get privacy audit (includes composition method and RDP alpha)
         let privacy_audit = privacy.into_audit();
 
         // Build fingerprint

@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-graph
 //!
 //! Graph/network export library for synthetic accounting data.

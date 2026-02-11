@@ -8,11 +8,12 @@ use datasynth_config::schema::{
     AccountingStandardsConfig, AuditGenerationConfig, AuditStandardsConfig,
     BehavioralDriftSchemaConfig, ChartOfAccountsConfig, CompanyConfig,
     CrossProcessLinksSchemaConfig, CustomerSegmentationSchemaConfig, DataQualitySchemaConfig,
-    DriftLabelingSchemaConfig, FraudConfig, GeneratorConfig, GlobalConfig, GraphExportConfig,
-    IndustrySpecificConfig, MarketDriftSchemaConfig, OcpmConfig, OrganizationalEventsSchemaConfig,
-    OutputConfig, RateLimitSchemaConfig, RelationshipSchemaConfig,
-    RelationshipStrengthSchemaConfig, ScenarioConfig, StreamingSchemaConfig,
-    TemporalAttributeSchemaConfig, TransactionVolume, VendorNetworkSchemaConfig,
+    DriftLabelingSchemaConfig, FingerprintPrivacyConfig, FraudConfig, GeneratorConfig,
+    GlobalConfig, GraphExportConfig, IndustrySpecificConfig, MarketDriftSchemaConfig, OcpmConfig,
+    OrganizationalEventsSchemaConfig, OutputConfig, RateLimitSchemaConfig,
+    RelationshipSchemaConfig, RelationshipStrengthSchemaConfig, ScenarioConfig,
+    StreamingSchemaConfig, TemporalAttributeSchemaConfig, TransactionVolume,
+    VendorNetworkSchemaConfig,
 };
 use datasynth_core::models::{
     AccountSubType, AccountType, BusinessProcess, CoAComplexity, GLAccount, IndustrySector,
@@ -89,6 +90,7 @@ pub fn minimal_config() -> GeneratorConfig {
         drift_labeling: DriftLabelingSchemaConfig::default(),
         anomaly_injection: Default::default(),
         industry_specific: IndustrySpecificConfig::default(),
+        fingerprint_privacy: FingerprintPrivacyConfig::default(),
     }
 }
 

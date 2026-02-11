@@ -276,7 +276,7 @@ impl EmpiricalCdf {
 
     /// Evaluate CDF at a value.
     pub fn cdf(&self, x: f64) -> f64 {
-        match self.values.binary_search_by(|v| v.partial_cmp(&x).unwrap()) {
+        match self.values.binary_search_by(|v| v.total_cmp(&x)) {
             Ok(i) => self.probabilities[i],
             Err(i) => {
                 if i == 0 {
@@ -302,10 +302,7 @@ impl EmpiricalCdf {
             return *self.values.last().unwrap_or(&0.0);
         }
 
-        match self
-            .probabilities
-            .binary_search_by(|v| v.partial_cmp(&p).unwrap())
-        {
+        match self.probabilities.binary_search_by(|v| v.total_cmp(&p)) {
             Ok(i) => self.values[i],
             Err(i) => {
                 if i == 0 {

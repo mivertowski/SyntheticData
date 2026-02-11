@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 //! # synth-core
 //!
 //! Core domain models, traits, and distributions for synthetic accounting data generation.

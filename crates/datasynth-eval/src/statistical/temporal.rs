@@ -95,8 +95,8 @@ impl TemporalAnalyzer {
 
         // Get date range
         let dates: Vec<NaiveDate> = entries.iter().map(|e| e.posting_date).collect();
-        let start_date = *dates.iter().min().unwrap();
-        let end_date = *dates.iter().max().unwrap();
+        let start_date = *dates.iter().min().expect("non-empty after length check");
+        let end_date = *dates.iter().max().expect("non-empty after length check");
         let days_spanned = (end_date - start_date).num_days() + 1;
 
         // Count by date

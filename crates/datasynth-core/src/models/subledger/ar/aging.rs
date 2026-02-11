@@ -126,7 +126,9 @@ impl ARAgingReport {
 
             // Add to bucket totals
             for (bucket, amount) in &aging.bucket_amounts {
-                *bucket_totals.get_mut(bucket).unwrap() += amount;
+                *bucket_totals
+                    .get_mut(bucket)
+                    .expect("bucket initialized in map") += amount;
             }
 
             customer_details.push(aging);
@@ -235,8 +237,12 @@ impl CustomerAging {
             let bucket = AgingBucket::from_days_overdue(days_overdue);
             let amount = invoice.amount_remaining;
 
-            *bucket_amounts.get_mut(&bucket).unwrap() += amount;
-            *invoice_counts.get_mut(&bucket).unwrap() += 1;
+            *bucket_amounts
+                .get_mut(&bucket)
+                .expect("bucket initialized in map") += amount;
+            *invoice_counts
+                .get_mut(&bucket)
+                .expect("bucket initialized in map") += 1;
             total_balance += amount;
 
             // Weighted average calculation
@@ -244,7 +250,7 @@ impl CustomerAging {
             total_days_weighted += Decimal::from(days_outstanding) * amount;
 
             // Track oldest invoice
-            if oldest_date.map_or(true, |d| invoice.invoice_date < d) {
+            if oldest_date.is_none_or(|d| invoice.invoice_date < d) {
                 oldest_date = Some(invoice.invoice_date);
             }
 

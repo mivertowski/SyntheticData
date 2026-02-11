@@ -27,6 +27,14 @@ pub struct PrivacyAudit {
     /// Warnings generated during privacy processing.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<PrivacyWarning>,
+
+    /// The composition method used for budget accounting (e.g., "naive", "renyi_dp", "zcdp").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub composition_method: Option<String>,
+
+    /// The optimal Renyi DP alpha order (only set when using RDP composition).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rdp_alpha_effective: Option<f64>,
 }
 
 impl PrivacyAudit {
@@ -40,6 +48,8 @@ impl PrivacyAudit {
             summary: PrivacySummary::default(),
             created_at: Utc::now(),
             warnings: Vec::new(),
+            composition_method: None,
+            rdp_alpha_effective: None,
         }
     }
 

@@ -434,7 +434,7 @@ fn canonicalize_cycle(path: &[NodeId]) -> Vec<NodeId> {
 
     // Rotate reversed to start with minimum
     if reversed.len() > 1 {
-        let last = reversed.pop().unwrap();
+        let last = reversed.pop().expect("len > 1 guarantees non-empty");
         reversed.insert(0, last);
     }
 

@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 // Allow some clippy lints that are common in test/evaluation code
 #![allow(clippy::field_reassign_with_default)]
 #![allow(clippy::too_many_arguments)]
@@ -35,6 +36,7 @@ pub mod benchmarks;
 pub mod config;
 pub mod enhancement;
 pub mod error;
+pub mod privacy;
 
 pub mod coherence;
 pub mod ml;
@@ -44,7 +46,7 @@ pub mod statistical;
 pub mod tuning;
 
 // Re-exports
-pub use config::{EvaluationConfig, EvaluationThresholds};
+pub use config::{EvaluationConfig, EvaluationThresholds, PrivacyEvaluationConfig};
 pub use error::{EvalError, EvalResult};
 
 pub use statistical::{
@@ -93,6 +95,11 @@ pub use enhancement::{
     AutoTuneResult, AutoTuner, ConfigPatch, EnhancementReport, Recommendation,
     RecommendationCategory, RecommendationEngine, RecommendationPriority, RootCause,
     SuggestedAction,
+};
+
+pub use privacy::{
+    LinkageAttack, LinkageConfig, LinkageResults, MembershipInferenceAttack, MiaConfig, MiaResults,
+    NistAlignmentReport, NistCriterion, PrivacyEvaluation, SynQPMatrix, SynQPQuadrant,
 };
 
 pub use benchmarks::{
@@ -147,6 +154,9 @@ pub struct ComprehensiveEvaluation {
     pub quality: QualityEvaluation,
     /// ML-readiness evaluation.
     pub ml_readiness: MLReadinessEvaluation,
+    /// Privacy evaluation (optional — only populated when privacy testing is enabled).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub privacy: Option<PrivacyEvaluation>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of all failures.
@@ -165,6 +175,7 @@ impl ComprehensiveEvaluation {
             coherence: CoherenceEvaluation::default(),
             quality: QualityEvaluation::default(),
             ml_readiness: MLReadinessEvaluation::default(),
+            privacy: None,
             passes: true,
             failures: Vec::new(),
             tuning_opportunities: Vec::new(),
@@ -191,6 +202,12 @@ impl ComprehensiveEvaluation {
         // Check ML thresholds
         self.ml_readiness.check_thresholds(thresholds);
         self.failures.extend(self.ml_readiness.failures.clone());
+
+        // Check privacy evaluation (if present)
+        if let Some(ref mut privacy) = self.privacy {
+            privacy.update_status();
+            self.failures.extend(privacy.failures.clone());
+        }
 
         self.passes = self.failures.is_empty();
     }

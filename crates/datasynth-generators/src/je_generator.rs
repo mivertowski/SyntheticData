@@ -949,7 +949,10 @@ impl JournalEntryGenerator {
             state.remaining = state.remaining.saturating_sub(1);
         }
 
-        let batch = self.batch_state.clone().unwrap();
+        let batch = self
+            .batch_state
+            .clone()
+            .expect("batch_state set before calling generate_batched_entry");
 
         // Use the batch's posting date (work done on same day)
         let posting_date = batch.base_posting_date;

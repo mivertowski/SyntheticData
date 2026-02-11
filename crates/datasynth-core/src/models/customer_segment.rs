@@ -281,7 +281,7 @@ impl CustomerLifecycleStage {
 impl Default for CustomerLifecycleStage {
     fn default() -> Self {
         Self::Mature {
-            stable_since: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+            stable_since: NaiveDate::from_ymd_opt(2020, 1, 1).expect("valid default date"),
             avg_annual_spend: Decimal::from(50000),
         }
     }

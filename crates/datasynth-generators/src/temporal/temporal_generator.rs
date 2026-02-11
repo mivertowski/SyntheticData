@@ -223,7 +223,7 @@ impl TemporalAttributeGenerator {
                 self.rng.gen_range(0..60),
                 self.rng.gen_range(0..60),
             )
-            .unwrap();
+            .expect("valid h/m/s ranges");
 
         // Determine if validity is closed
         let valid_to = if self.rng.gen_bool(self.config.valid_time.closed_probability) {

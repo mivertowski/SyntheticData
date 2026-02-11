@@ -238,7 +238,7 @@ impl AmountDistributionAnalyzer {
 
         // KS test against fitted normal distribution of log values
         let mut sorted_log = log_amounts.clone();
-        sorted_log.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted_log.sort_by(|a, b| a.total_cmp(b));
 
         // Calculate KS statistic
         let n_usize = sorted_log.len();

@@ -672,30 +672,36 @@ impl CompanyNameGenerator {
 
         match style {
             CompanyNameStyle::FounderBased => {
-                let founder = self.founder_names.choose(rng).unwrap();
-                let descriptor = descriptors.choose(rng).unwrap();
+                let founder = self.founder_names.choose(rng).expect("non-empty name pool");
+                let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", founder, descriptor)
             }
             CompanyNameStyle::Descriptive => {
                 let adjective = self.select_adjective(rng);
-                let descriptor = descriptors.choose(rng).unwrap();
+                let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", adjective, descriptor)
             }
             CompanyNameStyle::LocationBased => {
-                let location = self.location_prefixes.choose(rng).unwrap();
-                let descriptor = descriptors.choose(rng).unwrap();
+                let location = self
+                    .location_prefixes
+                    .choose(rng)
+                    .expect("non-empty name pool");
+                let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", location, descriptor)
             }
             CompanyNameStyle::Acronym => {
                 let letters: String = (0..3)
                     .map(|_| (b'A' + rng.gen_range(0..26)) as char)
                     .collect();
-                let descriptor = descriptors.choose(rng).unwrap();
+                let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", letters, descriptor)
             }
             CompanyNameStyle::Abstract => {
-                let abstract_name = self.abstract_names.choose(rng).unwrap();
-                let descriptor = descriptors.choose(rng).unwrap();
+                let abstract_name = self
+                    .abstract_names
+                    .choose(rng)
+                    .expect("non-empty name pool");
+                let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", abstract_name, descriptor)
             }
         }
@@ -760,7 +766,7 @@ impl CompanyNameGenerator {
             "Universal",
             "General",
         ];
-        ADJECTIVES.choose(rng).unwrap()
+        ADJECTIVES.choose(rng).expect("non-empty name pool")
     }
 
     fn select_suffix(&self, rng: &mut impl Rng) -> LegalSuffix {

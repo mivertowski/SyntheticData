@@ -81,7 +81,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **TLS Reverse Proxy Guide** (`docs/src/deployment/tls-reverse-proxy.md`): nginx and envoy configuration examples
 
+- **Data Lineage & Provenance** (`datasynth-runtime`): Full generation lineage tracking
+  - Per-file SHA-256 checksums in `RunManifest` with streaming verification
+  - `LineageGraph` tracking config → generator phase → output file relationships
+  - CLI `verify` command for manifest integrity validation (`--checksums`, `--record-counts`)
+  - W3C PROV-JSON export for interoperability with lineage tools
+
+- **Async Job Queue** (`datasynth-server`): Submit/poll/cancel pattern for long-running generation
+  - `POST /api/jobs/submit`, `GET /api/jobs/:id`, `GET /api/jobs`, `POST /api/jobs/:id/cancel`
+  - Configurable concurrency limit (`--max-concurrent-jobs`, default 4)
+  - Status transitions: Queued → Running → Completed/Failed/Cancelled
+
+- **Redis-Backed Distributed Rate Limiting** (`datasynth-server`): Optional `redis` feature flag
+  - Lua-scripted atomic sliding window via `INCR + EXPIRE`
+  - `RateLimitBackend` enum abstracting InMemory vs Redis backends
+  - Shared rate limit state across server instances
+
+- **Stateless Config Loading** (`datasynth-server`): External config sources
+  - `ConfigSource` enum: File, URL, Inline, Default
+  - `POST /api/config/reload` endpoint for hot config reloading
+
+- **Formal DP Composition** (`datasynth-fingerprint`): Rényi DP and zCDP accounting
+  - `PrivacyAccountant` trait with `NaiveAccountant`, `RenyiDPAccountant`, `ZeroCDPAccountant`
+  - RDP curve tracking at alpha values 2-128 with conversion to (ε,δ)-DP
+  - zCDP additive ρ composition with tighter bounds
+  - `PrivacyBudgetManager` for global budget tracking across extraction runs
+  - Composition-aware `PrivacyEngine` with accountant integration
+
+- **Privacy Evaluation Module** (`datasynth-eval`): Post-generation privacy quality gate
+  - Membership Inference Attack (MIA) testing via kNN distance-based classifier with AUC-ROC
+  - Linkage attack assessment via quasi-identifier re-identification rate
+  - NIST SP 800-226 alignment self-assessment
+  - SynQP quality-privacy matrix classification (IEEE framework)
+
+- **Custom Privacy Levels** (`datasynth-config`): Configurable (ε, δ) tuples
+  - `FingerprintPrivacyConfig` with level, epsilon, delta, k_anonymity, composition_method
+  - `PrivacyLevel::Custom` variant for user-specified parameters
+  - Validation: epsilon > 0, delta ∈ [0,1), valid composition method
+
+- **Kubernetes Helm Chart** (`deploy/helm/datasynth/`): Production-ready chart
+  - HPA (2-10 replicas, CPU target 70%), PDB (minAvailable 1)
+  - Rolling updates (maxUnavailable 0, maxSurge 1) with preStop hook
+  - Optional Redis subchart (bitnami) for distributed rate limiting
+  - Prometheus ServiceMonitor for `/metrics` scraping
+  - ConfigMap and Secret templates for YAML config and API keys
+
+- **Load Testing Framework** (`tests/load/`): k6 scripts for API stress testing
+  - Health endpoint smoke test (p95 < 100ms)
+  - Bulk generation ramp test (1→50→1 VUs)
+  - WebSocket streaming test
+  - Job queue lifecycle test
+  - 30-minute soak test with memory leak monitoring
+
+- **Fuzzing Harnesses** (`fuzz/`): cargo-fuzz targets for untrusted input boundaries
+  - Config parsing fuzz target (`serde_yaml::from_slice::<GeneratorConfig>`)
+  - DSF fingerprint loading fuzz target
+  - YAML validation subsection fuzzing
+  - Expanded proptest coverage for distributions, balance coherence, document flows, and privacy
+
+- **Deployment & Operations Documentation** (`docs/src/deployment/`):
+  - Docker, Kubernetes, and bare-metal deployment guides
+  - Operational runbook with alert response procedures
+  - Capacity planning guide with sizing model
+  - Disaster recovery procedures
+  - API reference with auth, rate limiting, and CORS documentation
+  - Security hardening checklist for production deployments
+
 ### Changed
+
+- **Unwrap Audit**: Replaced ~2,000+ `.unwrap()` calls in library crates with proper error handling
+  - Added `#![deny(clippy::unwrap_used)]` to all library crates (fingerprint, core, generators, output, eval, config, runtime, graph, banking, ocpm, standards)
+  - `partial_cmp().unwrap()` → `total_cmp()` for f64 sorting throughout codebase
+  - Fallible operations use `?`, `.unwrap_or_default()`, or `.expect()` with descriptive messages
+  - Binary crates (cli, server) and test-utils excluded from deny lint
 
 - **API Key Authentication** (`datasynth-server`): Hardened with Argon2id hashing
   - Keys hashed with Argon2id at construction time, stored as PHC-format hashes

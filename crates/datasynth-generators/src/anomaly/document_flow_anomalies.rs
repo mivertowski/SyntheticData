@@ -226,7 +226,8 @@ impl DocumentFlowAnomalyInjector {
                 original_value: Some(original_qty.to_string()),
                 modified_value: Some(gr_item.base.quantity.to_string()),
                 document_ids: vec![gr.header.document_id.clone(), po.header.document_id.clone()],
-                severity: if variance > Decimal::from_f64_retain(1.1).unwrap() {
+                severity: if variance > Decimal::from_f64_retain(1.1).expect("valid f64 to decimal")
+                {
                     4
                 } else {
                     3
@@ -285,7 +286,8 @@ impl DocumentFlowAnomalyInjector {
                     invoice.header.document_id.clone(),
                     po.header.document_id.clone(),
                 ],
-                severity: if variance > Decimal::from_f64_retain(1.1).unwrap() {
+                severity: if variance > Decimal::from_f64_retain(1.1).expect("valid f64 to decimal")
+                {
                     4
                 } else {
                     3

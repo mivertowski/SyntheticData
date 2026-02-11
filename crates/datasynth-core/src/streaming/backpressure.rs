@@ -167,7 +167,7 @@ impl AdaptiveBackpressure {
 
     /// Adjusts the delay based on current fill ratio.
     pub fn adjust(&self, current_fill: f64) {
-        let mut last_adj = self.last_adjustment.lock().unwrap();
+        let mut last_adj = self.last_adjustment.lock().expect("mutex poisoned");
         if last_adj.elapsed() < self.adjustment_interval {
             return;
         }

@@ -220,7 +220,7 @@ pub fn compute_temporal_sequence_features(
     let reference_date = config
         .reference_date
         .or(index.max_date)
-        .unwrap_or_else(|| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        .unwrap_or_else(|| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
 
     // Compute inter-event intervals
     let (interval_mean, interval_std) = compute_inter_event_intervals(edges);
@@ -360,7 +360,7 @@ fn compute_trend_direction(edges: &[(NaiveDate, EdgeId)], graph: &Graph) -> f64 
         return 0.0;
     }
 
-    let first_date = edges.first().map(|(d, _)| *d).unwrap();
+    let first_date = edges.first().map(|(d, _)| *d).expect("edges.len() >= 3");
 
     // Collect (days_since_start, amount) pairs
     let points: Vec<(f64, f64)> = edges

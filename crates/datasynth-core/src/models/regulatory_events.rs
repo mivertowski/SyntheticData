@@ -371,7 +371,8 @@ impl RegulatoryCalendar {
                         framework: AccountingFramework::UsGaap,
                         topic: "leases".to_string(),
                     },
-                    effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                    effective_date: NaiveDate::from_ymd_opt(2024, 1, 1)
+                        .expect("valid date components"),
                     announcement_date: None,
                     transition_period_days: 0,
                     affected_accounts: vec![
@@ -399,7 +400,7 @@ impl RegulatoryCalendar {
                         "Cybersecurity disclosure review".to_string(),
                     ],
                 },
-                effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date components"),
                 priority_level: 2,
                 risk_areas: vec!["IT controls".to_string(), "Data security".to_string()],
                 accounts_with_additional_procedures: Vec::new(),
@@ -418,7 +419,7 @@ impl RegulatoryCalendar {
                     framework: AccountingFramework::Ifrs,
                     topic: "leases".to_string(),
                 },
-                effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+                effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date components"),
                 announcement_date: None,
                 transition_period_days: 0,
                 affected_accounts: vec!["1600".to_string(), "2300".to_string()],

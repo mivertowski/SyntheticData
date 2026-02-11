@@ -132,7 +132,7 @@ impl Default for AcquisitionConfig {
         Self {
             acquired_entity_code: String::new(),
             acquired_entity_name: None,
-            acquisition_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            acquisition_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             volume_multiplier: 1.35,
             integration_error_rate: 0.05,
             parallel_posting_days: 30,
@@ -171,14 +171,14 @@ fn default_stabilization_error_rate() -> f64 {
 
 impl Default for IntegrationPhaseConfig {
     fn default() -> Self {
-        let cutover = NaiveDate::from_ymd_opt(2024, 3, 1).unwrap();
+        let cutover = NaiveDate::from_ymd_opt(2024, 3, 1).expect("valid default date");
         Self {
             parallel_run: Some(DateRange {
-                start: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-                end: NaiveDate::from_ymd_opt(2024, 2, 28).unwrap(),
+                start: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
+                end: NaiveDate::from_ymd_opt(2024, 2, 28).expect("valid default date"),
             }),
             cutover_date: cutover,
-            stabilization_end: NaiveDate::from_ymd_opt(2024, 5, 31).unwrap(),
+            stabilization_end: NaiveDate::from_ymd_opt(2024, 5, 31).expect("valid default date"),
             parallel_run_error_rate: 0.08,
             stabilization_error_rate: 0.03,
         }
@@ -335,7 +335,7 @@ impl Default for DivestitureConfig {
         Self {
             divested_entity_code: String::new(),
             divested_entity_name: None,
-            divestiture_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            divestiture_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             volume_reduction: 0.70,
             transition_months: 3,
             remove_entity: true,
@@ -378,7 +378,7 @@ impl Default for ReorganizationConfig {
     fn default() -> Self {
         Self {
             description: None,
-            effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            effective_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             cost_center_remapping: HashMap::new(),
             department_remapping: HashMap::new(),
             reporting_changes: Vec::new(),
@@ -432,7 +432,7 @@ impl Default for LeadershipChangeConfig {
     fn default() -> Self {
         Self {
             role: "CFO".to_string(),
-            change_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            change_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             policy_changes: Vec::new(),
             vendor_review_triggered: false,
             policy_transition_months: 6,
@@ -520,7 +520,7 @@ fn default_workforce_transition() -> u32 {
 impl Default for WorkforceReductionConfig {
     fn default() -> Self {
         Self {
-            reduction_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            reduction_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             reduction_percent: 0.10,
             affected_departments: Vec::new(),
             error_rate_increase: 0.05,
@@ -567,7 +567,7 @@ impl Default for MergerConfig {
         Self {
             merged_entity_code: String::new(),
             merged_entity_name: None,
-            merger_date: NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            merger_date: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
             volume_multiplier: 1.80,
             integration_error_rate: 0.05,
             integration_phases: IntegrationPhaseConfig::default(),

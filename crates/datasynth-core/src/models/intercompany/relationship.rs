@@ -64,7 +64,7 @@ impl IntercompanyRelationship {
 
     /// Check if the relationship is active on a given date.
     pub fn is_active_on(&self, date: NaiveDate) -> bool {
-        date >= self.effective_date && self.end_date.map_or(true, |end| date <= end)
+        date >= self.effective_date && self.end_date.is_none_or(|end| date <= end)
     }
 
     /// Check if this represents a controlling interest.

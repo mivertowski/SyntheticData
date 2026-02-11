@@ -195,7 +195,7 @@ impl StreamingNumericStats {
     /// Estimate percentiles from the reservoir sample.
     pub fn percentiles(&self) -> crate::models::Percentiles {
         let mut sorted = self.reservoir.clone();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.total_cmp(b));
 
         fn percentile(sorted: &[f64], p: f64) -> f64 {
             if sorted.is_empty() {
@@ -251,8 +251,8 @@ impl StreamingCategoricalStats {
 
         self.count += 1;
 
-        if self.frequencies.contains_key(&value) {
-            *self.frequencies.get_mut(&value).unwrap() += 1;
+        if let Some(count) = self.frequencies.get_mut(&value) {
+            *count += 1;
         } else if self.frequencies.len() < self.max_categories {
             self.frequencies.insert(value, 1);
         } else {

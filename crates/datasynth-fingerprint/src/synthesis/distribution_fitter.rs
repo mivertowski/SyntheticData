@@ -94,7 +94,7 @@ pub fn goodness_of_fit(
     }
 
     let mut sorted = observed.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(|a, b| a.total_cmp(b));
 
     let n = sorted.len();
     let mut max_diff = 0.0;

@@ -141,7 +141,8 @@ impl NearMissGenerator {
 
         // Select random pattern
         let idx = self.rng.gen_range(0..patterns.len());
-        let (pattern, trigger, explanation) = patterns.into_iter().nth(idx).unwrap();
+        let (pattern, trigger, explanation) =
+            patterns.into_iter().nth(idx).expect("idx < patterns.len()");
 
         // Calculate suspicion score based on pattern
         let suspicion_score = match &pattern {

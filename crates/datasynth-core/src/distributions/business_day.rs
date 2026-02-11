@@ -71,7 +71,7 @@ pub struct WireSettlementConfig {
 impl Default for WireSettlementConfig {
     fn default() -> Self {
         Self {
-            cutoff_time: NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
+            cutoff_time: NaiveTime::from_hms_opt(14, 0, 0).expect("valid date/time components"),
             before_cutoff: SettlementType::SameDay,
             after_cutoff: SettlementType::NextBusinessDay,
         }
@@ -376,7 +376,8 @@ impl BusinessDayCalculator {
 
     /// Get the first business day of the month containing the given date.
     pub fn first_business_day_of_month(&self, date: NaiveDate) -> NaiveDate {
-        let first = NaiveDate::from_ymd_opt(date.year(), date.month(), 1).unwrap();
+        let first = NaiveDate::from_ymd_opt(date.year(), date.month(), 1)
+            .expect("valid date/time components");
         self.next_business_day(first, true)
     }
 
@@ -414,15 +415,17 @@ impl BusinessDayCalculator {
         let month = date.month();
 
         if month == 12 {
-            NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("valid date/time components")
+                - Duration::days(1)
         } else {
-            NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year, month + 1, 1).expect("valid date/time components")
+                - Duration::days(1)
         }
     }
 
     /// Get business days in a month.
     pub fn business_days_in_month(&self, year: i32, month: u32) -> Vec<NaiveDate> {
-        let first = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+        let first = NaiveDate::from_ymd_opt(year, month, 1).expect("valid date/time components");
         let last = self.last_day_of_month(first);
 
         let mut business_days = Vec::new();
@@ -498,16 +501,16 @@ impl BusinessDayCalculatorBuilder {
     ///
     /// Typically: day before Independence Day, Black Friday, Christmas Eve
     pub fn add_us_market_half_days(mut self, year: i32) -> Self {
-        let close_time = NaiveTime::from_hms_opt(13, 0, 0).unwrap();
+        let close_time = NaiveTime::from_hms_opt(13, 0, 0).expect("valid date/time components");
 
         // Day before Independence Day (if July 3 is a weekday)
-        let july_3 = NaiveDate::from_ymd_opt(year, 7, 3).unwrap();
+        let july_3 = NaiveDate::from_ymd_opt(year, 7, 3).expect("valid date/time components");
         if !matches!(july_3.weekday(), Weekday::Sat | Weekday::Sun) {
             self.half_days.insert(july_3, close_time);
         }
 
         // Black Friday (day after Thanksgiving - 4th Thursday of November)
-        let first_nov = NaiveDate::from_ymd_opt(year, 11, 1).unwrap();
+        let first_nov = NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date/time components");
         let days_until_thu = (Weekday::Thu.num_days_from_monday() as i32
             - first_nov.weekday().num_days_from_monday() as i32
             + 7)
@@ -517,7 +520,8 @@ impl BusinessDayCalculatorBuilder {
         self.half_days.insert(black_friday, close_time);
 
         // Christmas Eve (if December 24 is a weekday)
-        let christmas_eve = NaiveDate::from_ymd_opt(year, 12, 24).unwrap();
+        let christmas_eve =
+            NaiveDate::from_ymd_opt(year, 12, 24).expect("valid date/time components");
         if !matches!(christmas_eve.weekday(), Weekday::Sat | Weekday::Sun) {
             self.half_days.insert(christmas_eve, close_time);
         }
@@ -646,7 +650,9 @@ impl SettlementRulesConfig {
     /// Convert to SettlementRules.
     pub fn to_settlement_rules(&self) -> SettlementRules {
         let cutoff_time = NaiveTime::parse_from_str(&self.wire_cutoff_time, "%H:%M")
-            .unwrap_or_else(|_| NaiveTime::from_hms_opt(14, 0, 0).unwrap());
+            .unwrap_or_else(|_| {
+                NaiveTime::from_hms_opt(14, 0, 0).expect("valid date/time components")
+            });
 
         SettlementRules {
             equity: SettlementType::TPlus(self.equity_days),

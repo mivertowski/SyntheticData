@@ -251,7 +251,7 @@ impl Lease {
         // Test 3: Lease term >= 75% of economic life
         let term_ratio =
             Decimal::from(self.lease_term_months) / Decimal::from(self.economic_life_months);
-        if term_ratio >= Decimal::from_str_exact("0.75").unwrap() {
+        if term_ratio >= Decimal::from_str_exact("0.75").expect("valid decimal literal") {
             self.classification = LeaseClassification::Finance;
             return;
         }
@@ -263,7 +263,7 @@ impl Lease {
         } else {
             Decimal::ZERO
         };
-        if pv_ratio >= Decimal::from_str_exact("0.90").unwrap() {
+        if pv_ratio >= Decimal::from_str_exact("0.90").expect("valid decimal literal") {
             self.classification = LeaseClassification::Finance;
             return;
         }
@@ -307,8 +307,8 @@ impl Lease {
         };
 
         // Major part of economic life or substantially all fair value
-        if term_ratio >= Decimal::from_str_exact("0.75").unwrap()
-            || pv_ratio >= Decimal::from_str_exact("0.90").unwrap()
+        if term_ratio >= Decimal::from_str_exact("0.75").expect("valid decimal literal")
+            || pv_ratio >= Decimal::from_str_exact("0.90").expect("valid decimal literal")
         {
             self.classification = LeaseClassification::Finance;
             return;
@@ -922,12 +922,12 @@ mod tests {
         // Term ratio: 24/120 = 20% < 75%
         let term_ratio =
             Decimal::from(lease.lease_term_months) / Decimal::from(lease.economic_life_months);
-        assert!(term_ratio < Decimal::from_str_exact("0.75").unwrap());
+        assert!(term_ratio < Decimal::from_str_exact("0.75").expect("valid decimal literal"));
 
         // PV ratio should be < 90% (small payments, high fair value)
         let pv = lease.calculate_present_value_of_payments();
         let pv_ratio = pv / lease.fair_value_at_commencement;
-        assert!(pv_ratio < Decimal::from_str_exact("0.90").unwrap());
+        assert!(pv_ratio < Decimal::from_str_exact("0.90").expect("valid decimal literal"));
 
         assert_eq!(
             lease.classification,

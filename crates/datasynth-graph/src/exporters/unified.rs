@@ -325,7 +325,7 @@ impl RustGraphUnifiedExporter {
             let unified = RawUnifiedNode::from_hypergraph_node(node);
             let mut obj = serde_json::to_value(&unified)?;
             obj.as_object_mut()
-                .unwrap()
+                .expect("serialized struct is always a JSON object")
                 .insert("_type".to_string(), Value::String("node".to_string()));
             serde_json::to_writer(&mut *writer, &obj)?;
             writeln!(writer)?;
@@ -336,7 +336,7 @@ impl RustGraphUnifiedExporter {
             let unified = RawUnifiedEdge::from_cross_layer_edge(edge);
             let mut obj = serde_json::to_value(&unified)?;
             obj.as_object_mut()
-                .unwrap()
+                .expect("serialized struct is always a JSON object")
                 .insert("_type".to_string(), Value::String("edge".to_string()));
             serde_json::to_writer(&mut *writer, &obj)?;
             writeln!(writer)?;
@@ -347,7 +347,7 @@ impl RustGraphUnifiedExporter {
             let unified = RawUnifiedHyperedge::from_hyperedge(he);
             let mut obj = serde_json::to_value(&unified)?;
             obj.as_object_mut()
-                .unwrap()
+                .expect("serialized struct is always a JSON object")
                 .insert("_type".to_string(), Value::String("hyperedge".to_string()));
             serde_json::to_writer(&mut *writer, &obj)?;
             writeln!(writer)?;

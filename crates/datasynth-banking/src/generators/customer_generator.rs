@@ -24,7 +24,7 @@ impl CustomerGenerator {
     /// Create a new customer generator.
     pub fn new(config: BankingConfig, seed: u64) -> Self {
         let start_date = NaiveDate::parse_from_str(&config.population.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
         let end_date = start_date + chrono::Months::new(config.population.period_months);
 
         Self {
@@ -215,7 +215,7 @@ impl CustomerGenerator {
             TrustPersona::InvestmentHolding,
             TrustPersona::SpecialPurposeVehicle,
         ];
-        *options.choose(&mut self.rng).unwrap()
+        *options.choose(&mut self.rng).expect("non-empty array")
     }
 
     /// Generate a person name.
@@ -285,8 +285,8 @@ impl CustomerGenerator {
             "Robinson",
         ];
 
-        let first = first_names.choose(&mut self.rng).unwrap();
-        let last = last_names.choose(&mut self.rng).unwrap();
+        let first = first_names.choose(&mut self.rng).expect("non-empty array");
+        let last = last_names.choose(&mut self.rng).expect("non-empty array");
         (first.to_string(), last.to_string())
     }
 
@@ -309,8 +309,8 @@ impl CustomerGenerator {
             _ => ["Company", "Business", "Firm", "LLC"],
         };
 
-        let prefix = prefixes.choose(&mut self.rng).unwrap();
-        let suffix = industries.choose(&mut self.rng).unwrap();
+        let prefix = prefixes.choose(&mut self.rng).expect("non-empty array");
+        let suffix = industries.choose(&mut self.rng).expect("non-empty array");
         format!("{} {}", prefix, suffix)
     }
 
@@ -341,7 +341,10 @@ impl CustomerGenerator {
             "FR".to_string()
         } else {
             let countries = ["JP", "AU", "SG", "CH", "NL"];
-            countries.choose(&mut self.rng).unwrap().to_string()
+            countries
+                .choose(&mut self.rng)
+                .expect("non-empty array")
+                .to_string()
         }
     }
 
@@ -504,7 +507,7 @@ impl CustomerGenerator {
             PepCategory::CloseAssociate,
             PepCategory::StateEnterprise,
         ];
-        *categories.choose(&mut self.rng).unwrap()
+        *categories.choose(&mut self.rng).expect("non-empty array")
     }
 
     /// Generate email address.
@@ -516,7 +519,7 @@ impl CustomerGenerator {
             "hotmail.com",
             "icloud.com",
         ];
-        let domain = domains.choose(&mut self.rng).unwrap();
+        let domain = domains.choose(&mut self.rng).expect("non-empty array");
         let num: u32 = self.rng.gen_range(1..999);
         format!(
             "{}.{}{}@{}",
@@ -566,8 +569,9 @@ impl CustomerGenerator {
         let month: u32 = self.rng.gen_range(1..=12);
         let day: u32 = self.rng.gen_range(1..=28);
 
-        NaiveDate::from_ymd_opt(base_year - age, month, day)
-            .unwrap_or_else(|| NaiveDate::from_ymd_opt(base_year - age, 1, 1).unwrap())
+        NaiveDate::from_ymd_opt(base_year - age, month, day).unwrap_or_else(|| {
+            NaiveDate::from_ymd_opt(base_year - age, 1, 1).expect("valid fallback date")
+        })
     }
 
     /// Get industry description for business persona.

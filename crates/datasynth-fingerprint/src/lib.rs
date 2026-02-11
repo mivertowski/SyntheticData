@@ -1,6 +1,7 @@
 // Allow some clippy lints that are common in numerical/matrix code
 #![allow(clippy::needless_range_loop)]
 #![allow(clippy::explicit_counter_loop)]
+#![deny(clippy::unwrap_used)]
 
 //! DataSynth Fingerprint - Privacy-preserving synthetic data fingerprinting.
 //!

@@ -89,9 +89,9 @@ impl DepreciationRun {
         let next_month = if month == 12 { 1 } else { month + 1 };
         let next_year = if month == 12 { year + 1 } else { year };
         NaiveDate::from_ymd_opt(next_year, next_month, 1)
-            .unwrap()
+            .expect("valid date components")
             .pred_opt()
-            .unwrap()
+            .expect("valid date components")
     }
 
     /// Adds a depreciation entry.
@@ -360,9 +360,11 @@ impl DepreciationForecast {
 
             // Move to next month
             current_date = if current_date.month() == 12 {
-                NaiveDate::from_ymd_opt(current_date.year() + 1, 1, 1).unwrap()
+                NaiveDate::from_ymd_opt(current_date.year() + 1, 1, 1)
+                    .expect("valid date components")
             } else {
-                NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1).unwrap()
+                NaiveDate::from_ymd_opt(current_date.year(), current_date.month() + 1, 1)
+                    .expect("valid date components")
             };
         }
 

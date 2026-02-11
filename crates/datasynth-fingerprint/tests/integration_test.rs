@@ -131,6 +131,7 @@ fn test_extract_with_privacy_levels() {
             PrivacyLevel::Standard => assert!(fingerprint.manifest.privacy.epsilon >= 0.9),
             PrivacyLevel::High => assert!(fingerprint.manifest.privacy.epsilon >= 0.4),
             PrivacyLevel::Maximum => assert!(fingerprint.manifest.privacy.epsilon >= 0.05),
+            PrivacyLevel::Custom => {} // Custom uses user-specified values
         }
     }
 }

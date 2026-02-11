@@ -381,7 +381,8 @@ impl ProcessingLagCalculator {
             let morning_minute: u32 = self.rng.gen_range(0..60);
             posting_time = NaiveDateTime::new(
                 next_day,
-                NaiveTime::from_hms_opt(morning_hour, morning_minute, 0).unwrap(),
+                NaiveTime::from_hms_opt(morning_hour, morning_minute, 0)
+                    .expect("valid distribution params"),
             );
         }
 
@@ -406,7 +407,8 @@ impl ProcessingLagCalculator {
         event_date: NaiveDate,
         event_hour: u8,
     ) -> NaiveDate {
-        let event_time = NaiveTime::from_hms_opt(event_hour as u32, 0, 0).unwrap();
+        let event_time =
+            NaiveTime::from_hms_opt(event_hour as u32, 0, 0).expect("valid distribution params");
         let event_datetime = NaiveDateTime::new(event_date, event_time);
         self.calculate_posting_time(event_type, event_datetime)
             .date()

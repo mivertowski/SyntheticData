@@ -151,7 +151,7 @@ impl EliminationGenerator {
             );
         }
 
-        self.journals.get(fiscal_period).unwrap()
+        self.get_or_create_journal(fiscal_period, entry_date)
     }
 
     /// Generate IC balance eliminations (receivables vs payables).

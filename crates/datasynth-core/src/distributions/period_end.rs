@@ -138,17 +138,21 @@ impl PeriodEndModel {
                         let nearest = keys
                             .iter()
                             .min_by_key(|&&k| (k - days_to_end).abs())
-                            .unwrap();
+                            .expect("valid date components");
                         *profile.get(nearest).unwrap_or(&1.0)
                     }
                     InterpolationMethod::Linear => {
                         let mut below = None;
                         let mut above = None;
                         for &k in &keys {
-                            if k <= days_to_end && (below.is_none() || k > below.unwrap()) {
+                            if k <= days_to_end
+                                && (below.is_none() || k > below.expect("valid date components"))
+                            {
                                 below = Some(k);
                             }
-                            if k >= days_to_end && (above.is_none() || k < above.unwrap()) {
+                            if k >= days_to_end
+                                && (above.is_none() || k < above.expect("valid date components"))
+                            {
                                 above = Some(k);
                             }
                         }
@@ -407,9 +411,11 @@ impl PeriodEndDynamics {
         let month = date.month();
 
         if month == 12 {
-            NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("valid date components")
+                - Duration::days(1)
         } else {
-            NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year, month + 1, 1).expect("valid date components")
+                - Duration::days(1)
         }
     }
 

@@ -443,6 +443,8 @@ pub struct EnhancedGenerationResult {
     pub data_quality_stats: DataQualityStats,
     /// Generation statistics.
     pub statistics: EnhancedGenerationStatistics,
+    /// Data lineage graph (if tracking enabled).
+    pub lineage: Option<super::lineage::LineageGraph>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -915,6 +917,9 @@ impl EnhancedOrchestrator {
             resource_stats.degradation_level
         );
 
+        // Build data lineage graph
+        let lineage = self.build_lineage_graph();
+
         Ok(EnhancedGenerationResult {
             chart_of_accounts: (*coa).clone(),
             master_data: self.master_data.clone(),
@@ -929,6 +934,7 @@ impl EnhancedOrchestrator {
             balance_validation,
             data_quality_stats,
             statistics: stats,
+            lineage: Some(lineage),
         })
     }
 
@@ -2653,6 +2659,84 @@ impl EnhancedOrchestrator {
     pub fn get_master_data(&self) -> &MasterDataSnapshot {
         &self.master_data
     }
+
+    /// Build a lineage graph describing config → phase → output relationships.
+    fn build_lineage_graph(&self) -> super::lineage::LineageGraph {
+        use super::lineage::LineageGraphBuilder;
+
+        let mut builder = LineageGraphBuilder::new();
+
+        // Config sections
+        builder.add_config_section("config:global", "Global Config");
+        builder.add_config_section("config:chart_of_accounts", "Chart of Accounts Config");
+        builder.add_config_section("config:transactions", "Transaction Config");
+
+        // Generator phases
+        builder.add_generator_phase("phase:coa", "Chart of Accounts Generation");
+        builder.add_generator_phase("phase:je", "Journal Entry Generation");
+
+        // Config → phase edges
+        builder.configured_by("phase:coa", "config:chart_of_accounts");
+        builder.configured_by("phase:je", "config:transactions");
+
+        // Output files
+        builder.add_output_file("output:je", "Journal Entries", "sample_entries.json");
+        builder.produced_by("output:je", "phase:je");
+
+        // Optional phases based on config
+        if self.phase_config.generate_master_data {
+            builder.add_config_section("config:master_data", "Master Data Config");
+            builder.add_generator_phase("phase:master_data", "Master Data Generation");
+            builder.configured_by("phase:master_data", "config:master_data");
+            builder.input_to("phase:master_data", "phase:je");
+        }
+
+        if self.phase_config.generate_document_flows {
+            builder.add_config_section("config:document_flows", "Document Flow Config");
+            builder.add_generator_phase("phase:p2p", "P2P Document Flow");
+            builder.add_generator_phase("phase:o2c", "O2C Document Flow");
+            builder.configured_by("phase:p2p", "config:document_flows");
+            builder.configured_by("phase:o2c", "config:document_flows");
+
+            builder.add_output_file("output:po", "Purchase Orders", "purchase_orders.csv");
+            builder.add_output_file("output:gr", "Goods Receipts", "goods_receipts.csv");
+            builder.add_output_file("output:vi", "Vendor Invoices", "vendor_invoices.csv");
+            builder.add_output_file("output:so", "Sales Orders", "sales_orders.csv");
+            builder.add_output_file("output:ci", "Customer Invoices", "customer_invoices.csv");
+
+            builder.produced_by("output:po", "phase:p2p");
+            builder.produced_by("output:gr", "phase:p2p");
+            builder.produced_by("output:vi", "phase:p2p");
+            builder.produced_by("output:so", "phase:o2c");
+            builder.produced_by("output:ci", "phase:o2c");
+        }
+
+        if self.phase_config.inject_anomalies {
+            builder.add_config_section("config:fraud", "Fraud/Anomaly Config");
+            builder.add_generator_phase("phase:anomaly", "Anomaly Injection");
+            builder.configured_by("phase:anomaly", "config:fraud");
+            builder.add_output_file(
+                "output:labels",
+                "Anomaly Labels",
+                "labels/anomaly_labels.csv",
+            );
+            builder.produced_by("output:labels", "phase:anomaly");
+        }
+
+        if self.phase_config.generate_audit {
+            builder.add_config_section("config:audit", "Audit Config");
+            builder.add_generator_phase("phase:audit", "Audit Data Generation");
+            builder.configured_by("phase:audit", "config:audit");
+        }
+
+        if self.phase_config.generate_banking {
+            builder.add_config_section("config:banking", "Banking Config");
+            builder.add_generator_phase("phase:banking", "Banking KYC/AML Generation");
+            builder.configured_by("phase:banking", "config:banking");
+        }
+
+        builder.build()
+    }
 }
 
 /// Get the directory name for a graph export format.
@@ -2737,6 +2821,7 @@ mod tests {
             drift_labeling: DriftLabelingSchemaConfig::default(),
             anomaly_injection: Default::default(),
             industry_specific: Default::default(),
+            fingerprint_privacy: Default::default(),
         }
     }
 

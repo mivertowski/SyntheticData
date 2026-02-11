@@ -367,9 +367,9 @@ impl ClusterManager {
                 // If preserving relationships, prefer matching accounts/entities
                 let relationship_match = if self.config.preserve_account_relationships {
                     let account_match =
-                        account.map_or(true, |a| active.accounts.contains(&a.to_string()));
+                        account.is_none_or(|a| active.accounts.contains(&a.to_string()));
                     let entity_match =
-                        entity.map_or(true, |e| active.entities.contains(&e.to_string()));
+                        entity.is_none_or(|e| active.entities.contains(&e.to_string()));
                     account_match || entity_match
                 } else {
                     true

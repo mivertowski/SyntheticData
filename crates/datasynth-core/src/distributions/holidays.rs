@@ -155,7 +155,7 @@ impl HolidayCalendar {
         let mut cal = Self::new(Region::US, year);
 
         // New Year's Day - Jan 1 (observed)
-        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
+        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "New Year's Day",
             Self::observe_weekend(new_years),
@@ -175,7 +175,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Memorial Day", memorial, 0.05));
 
         // Juneteenth - June 19
-        let juneteenth = NaiveDate::from_ymd_opt(year, 6, 19).unwrap();
+        let juneteenth = NaiveDate::from_ymd_opt(year, 6, 19).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Juneteenth",
             Self::observe_weekend(juneteenth),
@@ -183,7 +183,7 @@ impl HolidayCalendar {
         ));
 
         // Independence Day - July 4
-        let independence = NaiveDate::from_ymd_opt(year, 7, 4).unwrap();
+        let independence = NaiveDate::from_ymd_opt(year, 7, 4).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Independence Day",
             Self::observe_weekend(independence),
@@ -199,7 +199,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Columbus Day", columbus, 0.2));
 
         // Veterans Day - November 11
-        let veterans = NaiveDate::from_ymd_opt(year, 11, 11).unwrap();
+        let veterans = NaiveDate::from_ymd_opt(year, 11, 11).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Veterans Day",
             Self::observe_weekend(veterans),
@@ -218,11 +218,11 @@ impl HolidayCalendar {
         ));
 
         // Christmas Eve - December 24
-        let christmas_eve = NaiveDate::from_ymd_opt(year, 12, 24).unwrap();
+        let christmas_eve = NaiveDate::from_ymd_opt(year, 12, 24).expect("valid date components");
         cal.add_holiday(Holiday::new("Christmas Eve", christmas_eve, 0.1));
 
         // Christmas Day - December 25
-        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).unwrap();
+        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Christmas Day",
             Self::observe_weekend(christmas),
@@ -230,7 +230,7 @@ impl HolidayCalendar {
         ));
 
         // New Year's Eve - December 31
-        let new_years_eve = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
+        let new_years_eve = NaiveDate::from_ymd_opt(year, 12, 31).expect("valid date components");
         cal.add_holiday(Holiday::new("New Year's Eve", new_years_eve, 0.1));
 
         cal
@@ -243,7 +243,7 @@ impl HolidayCalendar {
         // Neujahr - January 1
         cal.add_holiday(Holiday::new(
             "Neujahr",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -261,7 +261,7 @@ impl HolidayCalendar {
         // Tag der Arbeit - May 1
         cal.add_holiday(Holiday::new(
             "Tag der Arbeit",
-            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -282,26 +282,26 @@ impl HolidayCalendar {
         // Tag der Deutschen Einheit - October 3
         cal.add_holiday(Holiday::new(
             "Tag der Deutschen Einheit",
-            NaiveDate::from_ymd_opt(year, 10, 3).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 3).expect("valid date components"),
             0.02,
         ));
 
         // Weihnachten - December 25-26
         cal.add_holiday(Holiday::new(
             "1. Weihnachtstag",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.02,
         ));
         cal.add_holiday(Holiday::new(
             "2. Weihnachtstag",
-            NaiveDate::from_ymd_opt(year, 12, 26).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 26).expect("valid date components"),
             0.02,
         ));
 
         // Silvester - December 31
         cal.add_holiday(Holiday::new(
             "Silvester",
-            NaiveDate::from_ymd_opt(year, 12, 31).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 31).expect("valid date components"),
             0.1,
         ));
 
@@ -313,7 +313,7 @@ impl HolidayCalendar {
         let mut cal = Self::new(Region::GB, year);
 
         // New Year's Day
-        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
+        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "New Year's Day",
             Self::observe_weekend(new_years),
@@ -348,7 +348,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Summer Bank Holiday", summer, 0.02));
 
         // Christmas Day
-        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).unwrap();
+        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Christmas Day",
             Self::observe_weekend(christmas),
@@ -356,7 +356,7 @@ impl HolidayCalendar {
         ));
 
         // Boxing Day
-        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).unwrap();
+        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Boxing Day",
             Self::observe_weekend(boxing),
@@ -373,7 +373,7 @@ impl HolidayCalendar {
         // New Year's Day - January 1
         cal.add_holiday(Holiday::new(
             "New Year",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.05,
         ));
 
@@ -395,7 +395,7 @@ impl HolidayCalendar {
         // Qingming Festival - April 4-6 (approximate)
         cal.add_holiday(Holiday::new(
             "Qingming Festival",
-            NaiveDate::from_ymd_opt(year, 4, 5).unwrap(),
+            NaiveDate::from_ymd_opt(year, 4, 5).expect("valid date components"),
             0.05,
         ));
 
@@ -407,7 +407,8 @@ impl HolidayCalendar {
                 } else {
                     "Labor Day Holiday"
                 },
-                NaiveDate::from_ymd_opt(year, 5, 1).unwrap() + Duration::days(i),
+                NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components")
+                    + Duration::days(i),
                 0.05,
             ));
         }
@@ -415,14 +416,14 @@ impl HolidayCalendar {
         // Dragon Boat Festival - approximate early June
         cal.add_holiday(Holiday::new(
             "Dragon Boat Festival",
-            NaiveDate::from_ymd_opt(year, 6, 10).unwrap(),
+            NaiveDate::from_ymd_opt(year, 6, 10).expect("valid date components"),
             0.05,
         ));
 
         // Mid-Autumn Festival - approximate late September
         cal.add_holiday(Holiday::new(
             "Mid-Autumn Festival",
-            NaiveDate::from_ymd_opt(year, 9, 15).unwrap(),
+            NaiveDate::from_ymd_opt(year, 9, 15).expect("valid date components"),
             0.05,
         ));
 
@@ -434,7 +435,8 @@ impl HolidayCalendar {
                 } else {
                     "National Day Holiday"
                 },
-                NaiveDate::from_ymd_opt(year, 10, 1).unwrap() + Duration::days(i),
+                NaiveDate::from_ymd_opt(year, 10, 1).expect("valid date components")
+                    + Duration::days(i),
                 0.02,
             ));
         }
@@ -449,19 +451,19 @@ impl HolidayCalendar {
         // Ganjitsu - January 1
         cal.add_holiday(Holiday::new(
             "Ganjitsu (New Year)",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
         // New Year holidays - January 2-3
         cal.add_holiday(Holiday::new(
             "New Year Holiday",
-            NaiveDate::from_ymd_opt(year, 1, 2).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 2).expect("valid date components"),
             0.05,
         ));
         cal.add_holiday(Holiday::new(
             "New Year Holiday",
-            NaiveDate::from_ymd_opt(year, 1, 3).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 3).expect("valid date components"),
             0.05,
         ));
 
@@ -472,45 +474,45 @@ impl HolidayCalendar {
         // Kenkoku Kinen no Hi - National Foundation Day - February 11
         cal.add_holiday(Holiday::new(
             "Kenkoku Kinen no Hi",
-            NaiveDate::from_ymd_opt(year, 2, 11).unwrap(),
+            NaiveDate::from_ymd_opt(year, 2, 11).expect("valid date components"),
             0.02,
         ));
 
         // Tenno Tanjobi - Emperor's Birthday - February 23
         cal.add_holiday(Holiday::new(
             "Tenno Tanjobi",
-            NaiveDate::from_ymd_opt(year, 2, 23).unwrap(),
+            NaiveDate::from_ymd_opt(year, 2, 23).expect("valid date components"),
             0.02,
         ));
 
         // Shunbun no Hi - Vernal Equinox - around March 20-21
         cal.add_holiday(Holiday::new(
             "Shunbun no Hi",
-            NaiveDate::from_ymd_opt(year, 3, 20).unwrap(),
+            NaiveDate::from_ymd_opt(year, 3, 20).expect("valid date components"),
             0.02,
         ));
 
         // Showa no Hi - Showa Day - April 29
         cal.add_holiday(Holiday::new(
             "Showa no Hi",
-            NaiveDate::from_ymd_opt(year, 4, 29).unwrap(),
+            NaiveDate::from_ymd_opt(year, 4, 29).expect("valid date components"),
             0.02,
         ));
 
         // Golden Week - April 29 - May 5
         cal.add_holiday(Holiday::new(
             "Kenpo Kinenbi",
-            NaiveDate::from_ymd_opt(year, 5, 3).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 3).expect("valid date components"),
             0.02,
         ));
         cal.add_holiday(Holiday::new(
             "Midori no Hi",
-            NaiveDate::from_ymd_opt(year, 5, 4).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 4).expect("valid date components"),
             0.02,
         ));
         cal.add_holiday(Holiday::new(
             "Kodomo no Hi",
-            NaiveDate::from_ymd_opt(year, 5, 5).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 5).expect("valid date components"),
             0.02,
         ));
 
@@ -521,7 +523,7 @@ impl HolidayCalendar {
         // Yama no Hi - Mountain Day - August 11
         cal.add_holiday(Holiday::new(
             "Yama no Hi",
-            NaiveDate::from_ymd_opt(year, 8, 11).unwrap(),
+            NaiveDate::from_ymd_opt(year, 8, 11).expect("valid date components"),
             0.05,
         ));
 
@@ -532,7 +534,7 @@ impl HolidayCalendar {
         // Shubun no Hi - Autumnal Equinox - around September 22-23
         cal.add_holiday(Holiday::new(
             "Shubun no Hi",
-            NaiveDate::from_ymd_opt(year, 9, 23).unwrap(),
+            NaiveDate::from_ymd_opt(year, 9, 23).expect("valid date components"),
             0.02,
         ));
 
@@ -543,14 +545,14 @@ impl HolidayCalendar {
         // Bunka no Hi - Culture Day - November 3
         cal.add_holiday(Holiday::new(
             "Bunka no Hi",
-            NaiveDate::from_ymd_opt(year, 11, 3).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 3).expect("valid date components"),
             0.02,
         ));
 
         // Kinro Kansha no Hi - Labor Thanksgiving Day - November 23
         cal.add_holiday(Holiday::new(
             "Kinro Kansha no Hi",
-            NaiveDate::from_ymd_opt(year, 11, 23).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 23).expect("valid date components"),
             0.02,
         ));
 
@@ -564,14 +566,14 @@ impl HolidayCalendar {
         // Republic Day - January 26
         cal.add_holiday(Holiday::new(
             "Republic Day",
-            NaiveDate::from_ymd_opt(year, 1, 26).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 26).expect("valid date components"),
             0.02,
         ));
 
         // Holi - approximate March (lunar calendar)
         cal.add_holiday(Holiday::new(
             "Holi",
-            NaiveDate::from_ymd_opt(year, 3, 10).unwrap(),
+            NaiveDate::from_ymd_opt(year, 3, 10).expect("valid date components"),
             0.05,
         ));
 
@@ -586,21 +588,21 @@ impl HolidayCalendar {
         // Independence Day - August 15
         cal.add_holiday(Holiday::new(
             "Independence Day",
-            NaiveDate::from_ymd_opt(year, 8, 15).unwrap(),
+            NaiveDate::from_ymd_opt(year, 8, 15).expect("valid date components"),
             0.02,
         ));
 
         // Gandhi Jayanti - October 2
         cal.add_holiday(Holiday::new(
             "Gandhi Jayanti",
-            NaiveDate::from_ymd_opt(year, 10, 2).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 2).expect("valid date components"),
             0.02,
         ));
 
         // Dussehra - approximate October (lunar calendar)
         cal.add_holiday(Holiday::new(
             "Dussehra",
-            NaiveDate::from_ymd_opt(year, 10, 15).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 15).expect("valid date components"),
             0.05,
         ));
 
@@ -623,7 +625,7 @@ impl HolidayCalendar {
         // Christmas - December 25
         cal.add_holiday(Holiday::new(
             "Christmas",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.1,
         ));
 
@@ -637,7 +639,7 @@ impl HolidayCalendar {
         // Confraternização Universal - January 1
         cal.add_holiday(Holiday::new(
             "Confraternização Universal",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -658,14 +660,14 @@ impl HolidayCalendar {
         // Tiradentes - April 21
         cal.add_holiday(Holiday::new(
             "Tiradentes",
-            NaiveDate::from_ymd_opt(year, 4, 21).unwrap(),
+            NaiveDate::from_ymd_opt(year, 4, 21).expect("valid date components"),
             0.02,
         ));
 
         // Dia do Trabalho - May 1
         cal.add_holiday(Holiday::new(
             "Dia do Trabalho",
-            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -679,35 +681,35 @@ impl HolidayCalendar {
         // Independência do Brasil - September 7
         cal.add_holiday(Holiday::new(
             "Independência do Brasil",
-            NaiveDate::from_ymd_opt(year, 9, 7).unwrap(),
+            NaiveDate::from_ymd_opt(year, 9, 7).expect("valid date components"),
             0.02,
         ));
 
         // Nossa Senhora Aparecida - October 12
         cal.add_holiday(Holiday::new(
             "Nossa Senhora Aparecida",
-            NaiveDate::from_ymd_opt(year, 10, 12).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 12).expect("valid date components"),
             0.02,
         ));
 
         // Finados - November 2
         cal.add_holiday(Holiday::new(
             "Finados",
-            NaiveDate::from_ymd_opt(year, 11, 2).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 2).expect("valid date components"),
             0.02,
         ));
 
         // Proclamação da República - November 15
         cal.add_holiday(Holiday::new(
             "Proclamação da República",
-            NaiveDate::from_ymd_opt(year, 11, 15).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 15).expect("valid date components"),
             0.02,
         ));
 
         // Natal - December 25
         cal.add_holiday(Holiday::new(
             "Natal",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.02,
         ));
 
@@ -721,7 +723,7 @@ impl HolidayCalendar {
         // Año Nuevo - January 1
         cal.add_holiday(Holiday::new(
             "Año Nuevo",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -749,14 +751,14 @@ impl HolidayCalendar {
         // Día del Trabajo - May 1
         cal.add_holiday(Holiday::new(
             "Día del Trabajo",
-            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
             0.02,
         ));
 
         // Día de la Independencia - September 16
         cal.add_holiday(Holiday::new(
             "Día de la Independencia",
-            NaiveDate::from_ymd_opt(year, 9, 16).unwrap(),
+            NaiveDate::from_ymd_opt(year, 9, 16).expect("valid date components"),
             0.02,
         ));
 
@@ -767,19 +769,19 @@ impl HolidayCalendar {
         // Día de Muertos - November 1-2 (not official but widely observed)
         cal.add_holiday(Holiday::new(
             "Día de Muertos",
-            NaiveDate::from_ymd_opt(year, 11, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date components"),
             0.1,
         ));
         cal.add_holiday(Holiday::new(
             "Día de Muertos",
-            NaiveDate::from_ymd_opt(year, 11, 2).unwrap(),
+            NaiveDate::from_ymd_opt(year, 11, 2).expect("valid date components"),
             0.1,
         ));
 
         // Navidad - December 25
         cal.add_holiday(Holiday::new(
             "Navidad",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.02,
         ));
 
@@ -791,7 +793,7 @@ impl HolidayCalendar {
         let mut cal = Self::new(Region::AU, year);
 
         // New Year's Day - January 1
-        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).unwrap();
+        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "New Year's Day",
             Self::observe_weekend(new_years),
@@ -799,7 +801,7 @@ impl HolidayCalendar {
         ));
 
         // Australia Day - January 26 (observed)
-        let australia_day = NaiveDate::from_ymd_opt(year, 1, 26).unwrap();
+        let australia_day = NaiveDate::from_ymd_opt(year, 1, 26).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Australia Day",
             Self::observe_weekend(australia_day),
@@ -829,7 +831,7 @@ impl HolidayCalendar {
         ));
 
         // ANZAC Day - April 25
-        let anzac = NaiveDate::from_ymd_opt(year, 4, 25).unwrap();
+        let anzac = NaiveDate::from_ymd_opt(year, 4, 25).expect("valid date components");
         cal.add_holiday(Holiday::new("ANZAC Day", anzac, 0.02));
 
         // Queen's Birthday - Second Monday of June (varies by state, using NSW)
@@ -837,7 +839,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Queen's Birthday", queens_birthday, 0.02));
 
         // Christmas Day
-        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).unwrap();
+        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Christmas Day",
             Self::observe_weekend(christmas),
@@ -845,7 +847,7 @@ impl HolidayCalendar {
         ));
 
         // Boxing Day - December 26
-        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).unwrap();
+        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Boxing Day",
             Self::observe_weekend(boxing),
@@ -862,7 +864,7 @@ impl HolidayCalendar {
         // New Year's Day - January 1
         cal.add_holiday(Holiday::new(
             "New Year's Day",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -886,7 +888,7 @@ impl HolidayCalendar {
         // Labour Day - May 1
         cal.add_holiday(Holiday::new(
             "Labour Day",
-            NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -905,7 +907,7 @@ impl HolidayCalendar {
         // National Day - August 9
         cal.add_holiday(Holiday::new(
             "National Day",
-            NaiveDate::from_ymd_opt(year, 8, 9).unwrap(),
+            NaiveDate::from_ymd_opt(year, 8, 9).expect("valid date components"),
             0.02,
         ));
 
@@ -916,7 +918,7 @@ impl HolidayCalendar {
         // Christmas Day
         cal.add_holiday(Holiday::new(
             "Christmas Day",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.02,
         ));
 
@@ -930,7 +932,7 @@ impl HolidayCalendar {
         // New Year's Day - January 1
         cal.add_holiday(Holiday::new(
             "Sinjeong",
-            NaiveDate::from_ymd_opt(year, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
             0.02,
         ));
 
@@ -951,14 +953,14 @@ impl HolidayCalendar {
         // Independence Movement Day - March 1
         cal.add_holiday(Holiday::new(
             "Samiljeol",
-            NaiveDate::from_ymd_opt(year, 3, 1).unwrap(),
+            NaiveDate::from_ymd_opt(year, 3, 1).expect("valid date components"),
             0.02,
         ));
 
         // Children's Day - May 5
         cal.add_holiday(Holiday::new(
             "Eorininal",
-            NaiveDate::from_ymd_opt(year, 5, 5).unwrap(),
+            NaiveDate::from_ymd_opt(year, 5, 5).expect("valid date components"),
             0.02,
         ));
 
@@ -969,14 +971,14 @@ impl HolidayCalendar {
         // Memorial Day - June 6
         cal.add_holiday(Holiday::new(
             "Hyeonchungil",
-            NaiveDate::from_ymd_opt(year, 6, 6).unwrap(),
+            NaiveDate::from_ymd_opt(year, 6, 6).expect("valid date components"),
             0.02,
         ));
 
         // Liberation Day - August 15
         cal.add_holiday(Holiday::new(
             "Gwangbokjeol",
-            NaiveDate::from_ymd_opt(year, 8, 15).unwrap(),
+            NaiveDate::from_ymd_opt(year, 8, 15).expect("valid date components"),
             0.02,
         ));
 
@@ -997,21 +999,21 @@ impl HolidayCalendar {
         // National Foundation Day - October 3
         cal.add_holiday(Holiday::new(
             "Gaecheonjeol",
-            NaiveDate::from_ymd_opt(year, 10, 3).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 3).expect("valid date components"),
             0.02,
         ));
 
         // Hangul Day - October 9
         cal.add_holiday(Holiday::new(
             "Hangullal",
-            NaiveDate::from_ymd_opt(year, 10, 9).unwrap(),
+            NaiveDate::from_ymd_opt(year, 10, 9).expect("valid date components"),
             0.02,
         ));
 
         // Christmas - December 25
         cal.add_holiday(Holiday::new(
             "Seongtanjeol",
-            NaiveDate::from_ymd_opt(year, 12, 25).unwrap(),
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
             0.02,
         ));
 
@@ -1035,12 +1037,12 @@ impl HolidayCalendar {
         let month = (h + l - 7 * m + 114) / 31;
         let day = ((h + l - 7 * m + 114) % 31) + 1;
 
-        NaiveDate::from_ymd_opt(year, month as u32, day as u32).unwrap()
+        NaiveDate::from_ymd_opt(year, month as u32, day as u32).expect("valid date components")
     }
 
     /// Get nth weekday of a month (e.g., 3rd Monday of January).
     fn nth_weekday_of_month(year: i32, month: u32, weekday: Weekday, n: u32) -> NaiveDate {
-        let first = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+        let first = NaiveDate::from_ymd_opt(year, month, 1).expect("valid date components");
         let first_weekday = first.weekday();
 
         let days_until = (weekday.num_days_from_monday() as i64
@@ -1054,9 +1056,11 @@ impl HolidayCalendar {
     /// Get last weekday of a month (e.g., last Monday of May).
     fn last_weekday_of_month(year: i32, month: u32, weekday: Weekday) -> NaiveDate {
         let last = if month == 12 {
-            NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("valid date components")
+                - Duration::days(1)
         } else {
-            NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap() - Duration::days(1)
+            NaiveDate::from_ymd_opt(year, month + 1, 1).expect("valid date components")
+                - Duration::days(1)
         };
 
         let last_weekday = last.weekday();
@@ -1082,7 +1086,7 @@ impl HolidayCalendar {
         // Chinese New Year falls between Jan 21 and Feb 20
         // This is a simplified approximation
         let base_year = 2000;
-        let cny_2000 = NaiveDate::from_ymd_opt(2000, 2, 5).unwrap();
+        let cny_2000 = NaiveDate::from_ymd_opt(2000, 2, 5).expect("valid date components");
 
         let years_diff = year - base_year;
         let lunar_cycle = 29.5306; // days per lunar month
@@ -1101,7 +1105,10 @@ impl HolidayCalendar {
         // Adjust year if needed
         if result.year() != year {
             result = NaiveDate::from_ymd_opt(year, result.month(), result.day().min(28))
-                .unwrap_or_else(|| NaiveDate::from_ymd_opt(year, result.month(), 28).unwrap());
+                .unwrap_or_else(|| {
+                    NaiveDate::from_ymd_opt(year, result.month(), 28)
+                        .expect("valid date components")
+                });
         }
 
         result
@@ -1112,10 +1119,10 @@ impl HolidayCalendar {
         // Diwali typically falls in October-November
         // This is a simplified approximation
         match year % 4 {
-            0 => NaiveDate::from_ymd_opt(year, 11, 1).unwrap(),
-            1 => NaiveDate::from_ymd_opt(year, 10, 24).unwrap(),
-            2 => NaiveDate::from_ymd_opt(year, 11, 12).unwrap(),
-            _ => NaiveDate::from_ymd_opt(year, 11, 4).unwrap(),
+            0 => NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date components"),
+            1 => NaiveDate::from_ymd_opt(year, 10, 24).expect("valid date components"),
+            2 => NaiveDate::from_ymd_opt(year, 11, 12).expect("valid date components"),
+            _ => NaiveDate::from_ymd_opt(year, 11, 4).expect("valid date components"),
         }
     }
 
@@ -1147,7 +1154,8 @@ impl HolidayCalendar {
         };
         let month = if base > 20 { 4 } else { 5 };
         let day = if base > 20 { base - 10 } else { base };
-        NaiveDate::from_ymd_opt(year, month, day.clamp(1, 28) as u32).unwrap()
+        NaiveDate::from_ymd_opt(year, month, day.clamp(1, 28) as u32)
+            .expect("valid date components")
     }
 
     /// Approximate Hari Raya Puasa (Eid al-Fitr).
@@ -1156,7 +1164,7 @@ impl HolidayCalendar {
         // Islamic calendar moves about 11 days earlier each year
         // Base: 2024 Eid al-Fitr was approximately April 10
         let base_year = 2024;
-        let base_date = NaiveDate::from_ymd_opt(2024, 4, 10).unwrap();
+        let base_date = NaiveDate::from_ymd_opt(2024, 4, 10).expect("valid date components");
         let years_diff = year - base_year;
         let days_shift = (years_diff as f64 * -10.63) as i64;
         let mut result = base_date + Duration::days(days_shift);
@@ -1194,25 +1202,25 @@ impl HolidayCalendar {
     fn approximate_korean_buddha_birthday(year: i32) -> NaiveDate {
         // Typically falls in late April to late May
         match year % 19 {
-            0 => NaiveDate::from_ymd_opt(year, 5, 15).unwrap(),
-            1 => NaiveDate::from_ymd_opt(year, 5, 4).unwrap(),
-            2 => NaiveDate::from_ymd_opt(year, 5, 23).unwrap(),
-            3 => NaiveDate::from_ymd_opt(year, 5, 12).unwrap(),
-            4 => NaiveDate::from_ymd_opt(year, 5, 1).unwrap(),
-            5 => NaiveDate::from_ymd_opt(year, 5, 20).unwrap(),
-            6 => NaiveDate::from_ymd_opt(year, 5, 10).unwrap(),
-            7 => NaiveDate::from_ymd_opt(year, 4, 29).unwrap(),
-            8 => NaiveDate::from_ymd_opt(year, 5, 18).unwrap(),
-            9 => NaiveDate::from_ymd_opt(year, 5, 7).unwrap(),
-            10 => NaiveDate::from_ymd_opt(year, 5, 26).unwrap(),
-            11 => NaiveDate::from_ymd_opt(year, 5, 15).unwrap(),
-            12 => NaiveDate::from_ymd_opt(year, 5, 4).unwrap(),
-            13 => NaiveDate::from_ymd_opt(year, 5, 24).unwrap(),
-            14 => NaiveDate::from_ymd_opt(year, 5, 13).unwrap(),
-            15 => NaiveDate::from_ymd_opt(year, 5, 2).unwrap(),
-            16 => NaiveDate::from_ymd_opt(year, 5, 21).unwrap(),
-            17 => NaiveDate::from_ymd_opt(year, 5, 10).unwrap(),
-            _ => NaiveDate::from_ymd_opt(year, 4, 30).unwrap(),
+            0 => NaiveDate::from_ymd_opt(year, 5, 15).expect("valid date components"),
+            1 => NaiveDate::from_ymd_opt(year, 5, 4).expect("valid date components"),
+            2 => NaiveDate::from_ymd_opt(year, 5, 23).expect("valid date components"),
+            3 => NaiveDate::from_ymd_opt(year, 5, 12).expect("valid date components"),
+            4 => NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
+            5 => NaiveDate::from_ymd_opt(year, 5, 20).expect("valid date components"),
+            6 => NaiveDate::from_ymd_opt(year, 5, 10).expect("valid date components"),
+            7 => NaiveDate::from_ymd_opt(year, 4, 29).expect("valid date components"),
+            8 => NaiveDate::from_ymd_opt(year, 5, 18).expect("valid date components"),
+            9 => NaiveDate::from_ymd_opt(year, 5, 7).expect("valid date components"),
+            10 => NaiveDate::from_ymd_opt(year, 5, 26).expect("valid date components"),
+            11 => NaiveDate::from_ymd_opt(year, 5, 15).expect("valid date components"),
+            12 => NaiveDate::from_ymd_opt(year, 5, 4).expect("valid date components"),
+            13 => NaiveDate::from_ymd_opt(year, 5, 24).expect("valid date components"),
+            14 => NaiveDate::from_ymd_opt(year, 5, 13).expect("valid date components"),
+            15 => NaiveDate::from_ymd_opt(year, 5, 2).expect("valid date components"),
+            16 => NaiveDate::from_ymd_opt(year, 5, 21).expect("valid date components"),
+            17 => NaiveDate::from_ymd_opt(year, 5, 10).expect("valid date components"),
+            _ => NaiveDate::from_ymd_opt(year, 4, 30).expect("valid date components"),
         }
     }
 
@@ -1221,25 +1229,25 @@ impl HolidayCalendar {
     fn approximate_chuseok(year: i32) -> NaiveDate {
         // Chuseok typically falls in September or early October
         match year % 19 {
-            0 => NaiveDate::from_ymd_opt(year, 9, 17).unwrap(),
-            1 => NaiveDate::from_ymd_opt(year, 10, 6).unwrap(),
-            2 => NaiveDate::from_ymd_opt(year, 9, 25).unwrap(),
-            3 => NaiveDate::from_ymd_opt(year, 9, 14).unwrap(),
-            4 => NaiveDate::from_ymd_opt(year, 10, 3).unwrap(),
-            5 => NaiveDate::from_ymd_opt(year, 9, 22).unwrap(),
-            6 => NaiveDate::from_ymd_opt(year, 9, 11).unwrap(),
-            7 => NaiveDate::from_ymd_opt(year, 9, 30).unwrap(),
-            8 => NaiveDate::from_ymd_opt(year, 9, 19).unwrap(),
-            9 => NaiveDate::from_ymd_opt(year, 10, 9).unwrap(),
-            10 => NaiveDate::from_ymd_opt(year, 9, 28).unwrap(),
-            11 => NaiveDate::from_ymd_opt(year, 9, 17).unwrap(),
-            12 => NaiveDate::from_ymd_opt(year, 10, 6).unwrap(),
-            13 => NaiveDate::from_ymd_opt(year, 9, 25).unwrap(),
-            14 => NaiveDate::from_ymd_opt(year, 9, 14).unwrap(),
-            15 => NaiveDate::from_ymd_opt(year, 10, 4).unwrap(),
-            16 => NaiveDate::from_ymd_opt(year, 9, 22).unwrap(),
-            17 => NaiveDate::from_ymd_opt(year, 9, 12).unwrap(),
-            _ => NaiveDate::from_ymd_opt(year, 10, 1).unwrap(),
+            0 => NaiveDate::from_ymd_opt(year, 9, 17).expect("valid date components"),
+            1 => NaiveDate::from_ymd_opt(year, 10, 6).expect("valid date components"),
+            2 => NaiveDate::from_ymd_opt(year, 9, 25).expect("valid date components"),
+            3 => NaiveDate::from_ymd_opt(year, 9, 14).expect("valid date components"),
+            4 => NaiveDate::from_ymd_opt(year, 10, 3).expect("valid date components"),
+            5 => NaiveDate::from_ymd_opt(year, 9, 22).expect("valid date components"),
+            6 => NaiveDate::from_ymd_opt(year, 9, 11).expect("valid date components"),
+            7 => NaiveDate::from_ymd_opt(year, 9, 30).expect("valid date components"),
+            8 => NaiveDate::from_ymd_opt(year, 9, 19).expect("valid date components"),
+            9 => NaiveDate::from_ymd_opt(year, 10, 9).expect("valid date components"),
+            10 => NaiveDate::from_ymd_opt(year, 9, 28).expect("valid date components"),
+            11 => NaiveDate::from_ymd_opt(year, 9, 17).expect("valid date components"),
+            12 => NaiveDate::from_ymd_opt(year, 10, 6).expect("valid date components"),
+            13 => NaiveDate::from_ymd_opt(year, 9, 25).expect("valid date components"),
+            14 => NaiveDate::from_ymd_opt(year, 9, 14).expect("valid date components"),
+            15 => NaiveDate::from_ymd_opt(year, 10, 4).expect("valid date components"),
+            16 => NaiveDate::from_ymd_opt(year, 9, 22).expect("valid date components"),
+            17 => NaiveDate::from_ymd_opt(year, 9, 12).expect("valid date components"),
+            _ => NaiveDate::from_ymd_opt(year, 10, 1).expect("valid date components"),
         }
     }
 }
@@ -1267,7 +1275,8 @@ impl CustomHolidayConfig {
     pub fn to_holiday(&self, year: i32) -> Holiday {
         Holiday::new(
             &self.name,
-            NaiveDate::from_ymd_opt(year, self.month as u32, self.day as u32).unwrap(),
+            NaiveDate::from_ymd_opt(year, self.month as u32, self.day as u32)
+                .expect("valid date components"),
             self.activity_multiplier,
         )
     }

@@ -1,3 +1,4 @@
+#![deny(clippy::unwrap_used)]
 //! # synth-config
 //!
 //! Configuration schema, validation, and presets for synthetic data generation.

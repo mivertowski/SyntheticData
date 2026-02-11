@@ -179,7 +179,8 @@ impl FiscalCalendar {
                 let year_start =
                     NaiveDate::from_ymd_opt(date.year(), *start_month as u32, *start_day as u32)
                         .unwrap_or_else(|| {
-                            NaiveDate::from_ymd_opt(date.year(), *start_month as u32, 1).unwrap()
+                            NaiveDate::from_ymd_opt(date.year(), *start_month as u32, 1)
+                                .expect("valid date components")
                         });
                 if date >= year_start {
                     date.year()
@@ -274,17 +275,18 @@ pub struct FiscalPeriod {
 impl FiscalPeriod {
     /// Creates a monthly fiscal period.
     pub fn monthly(year: i32, month: u8) -> Self {
-        let start_date = NaiveDate::from_ymd_opt(year, month as u32, 1).unwrap();
+        let start_date =
+            NaiveDate::from_ymd_opt(year, month as u32, 1).expect("valid date components");
         let end_date = if month == 12 {
             NaiveDate::from_ymd_opt(year + 1, 1, 1)
-                .unwrap()
+                .expect("valid date components")
                 .pred_opt()
-                .unwrap()
+                .expect("valid date components")
         } else {
             NaiveDate::from_ymd_opt(year, month as u32 + 1, 1)
-                .unwrap()
+                .expect("valid date components")
                 .pred_opt()
-                .unwrap()
+                .expect("valid date components")
         };
 
         Self {
@@ -303,17 +305,18 @@ impl FiscalPeriod {
         let start_month = (quarter - 1) * 3 + 1;
         let end_month = quarter * 3;
 
-        let start_date = NaiveDate::from_ymd_opt(year, start_month as u32, 1).unwrap();
+        let start_date =
+            NaiveDate::from_ymd_opt(year, start_month as u32, 1).expect("valid date components");
         let end_date = if end_month == 12 {
             NaiveDate::from_ymd_opt(year + 1, 1, 1)
-                .unwrap()
+                .expect("valid date components")
                 .pred_opt()
-                .unwrap()
+                .expect("valid date components")
         } else {
             NaiveDate::from_ymd_opt(year, end_month as u32 + 1, 1)
-                .unwrap()
+                .expect("valid date components")
                 .pred_opt()
-                .unwrap()
+                .expect("valid date components")
         };
 
         Self {
@@ -371,10 +374,12 @@ impl FiscalPeriod {
                 let start_date = if period_num == 1 {
                     NaiveDate::from_ymd_opt(fiscal_year, *start_month as u32, *start_day as u32)
                         .unwrap_or_else(|| {
-                            NaiveDate::from_ymd_opt(fiscal_year, *start_month as u32, 1).unwrap()
+                            NaiveDate::from_ymd_opt(fiscal_year, *start_month as u32, 1)
+                                .expect("valid date components")
                         })
                 } else {
-                    NaiveDate::from_ymd_opt(period_year, period_start_month as u32, 1).unwrap()
+                    NaiveDate::from_ymd_opt(period_year, period_start_month as u32, 1)
+                        .expect("valid date components")
                 };
 
                 let end_date = if period_num == 12 {
@@ -382,10 +387,10 @@ impl FiscalPeriod {
                     NaiveDate::from_ymd_opt(fiscal_year + 1, *start_month as u32, *start_day as u32)
                         .unwrap_or_else(|| {
                             NaiveDate::from_ymd_opt(fiscal_year + 1, *start_month as u32, 1)
-                                .unwrap()
+                                .expect("valid date components")
                         })
                         .pred_opt()
-                        .unwrap()
+                        .expect("valid date components")
                 } else {
                     let next_month = if period_start_month == 12 {
                         1
@@ -398,9 +403,9 @@ impl FiscalPeriod {
                         period_year
                     };
                     NaiveDate::from_ymd_opt(next_year, next_month as u32, 1)
-                        .unwrap()
+                        .expect("valid date components")
                         .pred_opt()
-                        .unwrap()
+                        .expect("valid date components")
                 };
 
                 Self {
@@ -421,7 +426,8 @@ impl FiscalPeriod {
                 let period_weeks = weeks[period_in_quarter as usize];
 
                 // Calculate start of fiscal year (simplified)
-                let year_start = NaiveDate::from_ymd_opt(fiscal_year, 1, 1).unwrap();
+                let year_start =
+                    NaiveDate::from_ymd_opt(fiscal_year, 1, 1).expect("valid date components");
 
                 // Calculate period start by summing previous period weeks
                 let mut weeks_before = 0u32;
@@ -450,7 +456,8 @@ impl FiscalPeriod {
             }
             FiscalCalendarType::ThirteenPeriod(_) => {
                 // 13 periods of 28 days each (4 weeks)
-                let year_start = NaiveDate::from_ymd_opt(fiscal_year, 1, 1).unwrap();
+                let year_start =
+                    NaiveDate::from_ymd_opt(fiscal_year, 1, 1).expect("valid date components");
                 let start_date = year_start + chrono::Duration::days((period_num as i64 - 1) * 28);
                 let end_date = start_date + chrono::Duration::days(27);
 
@@ -702,7 +709,7 @@ impl AccrualDefinition {
             auto_reverse: true,
             cost_center: None,
             is_active: true,
-            effective_from: NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+            effective_from: NaiveDate::from_ymd_opt(2020, 1, 1).expect("valid date components"),
             effective_to: None,
         }
     }

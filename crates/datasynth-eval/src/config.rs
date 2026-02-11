@@ -14,10 +14,46 @@ pub struct EvaluationConfig {
     pub quality: QualityConfig,
     /// ML-readiness evaluation settings.
     pub ml: MlConfig,
+    /// Privacy evaluation settings.
+    #[serde(default)]
+    pub privacy: PrivacyEvaluationConfig,
     /// Report generation settings.
     pub report: ReportConfig,
     /// Pass/fail thresholds.
     pub thresholds: EvaluationThresholds,
+}
+
+/// Privacy evaluation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PrivacyEvaluationConfig {
+    /// Enable membership inference attack testing.
+    pub mia_enabled: bool,
+    /// Enable linkage attack assessment.
+    pub linkage_enabled: bool,
+    /// Enable NIST SP 800-226 alignment report.
+    pub nist_alignment_enabled: bool,
+    /// Enable SynQP quality-privacy matrix.
+    pub synqp_enabled: bool,
+    /// Maximum AUC-ROC threshold for MIA (default: 0.6).
+    pub mia_auc_threshold: f64,
+    /// Maximum re-identification rate for linkage (default: 0.05).
+    pub max_reidentification_rate: f64,
+    /// Minimum k-anonymity for linkage (default: 5).
+    pub min_k_anonymity: usize,
+}
+
+impl Default for PrivacyEvaluationConfig {
+    fn default() -> Self {
+        Self {
+            mia_enabled: false,
+            linkage_enabled: false,
+            nist_alignment_enabled: false,
+            synqp_enabled: false,
+            mia_auc_threshold: 0.6,
+            max_reidentification_rate: 0.05,
+            min_k_anonymity: 5,
+        }
+    }
 }
 
 /// Statistical evaluation configuration.

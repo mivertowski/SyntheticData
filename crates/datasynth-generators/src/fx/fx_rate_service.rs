@@ -134,17 +134,18 @@ impl FxRateService {
     ) -> Vec<FxRate> {
         let mut rates = Vec::new();
 
-        let period_start = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+        let period_start =
+            NaiveDate::from_ymd_opt(year, month, 1).expect("valid year/month for period start");
         let period_end = if month == 12 {
             NaiveDate::from_ymd_opt(year + 1, 1, 1)
-                .unwrap()
+                .expect("valid next year start")
                 .pred_opt()
-                .unwrap()
+                .expect("valid predecessor date")
         } else {
             NaiveDate::from_ymd_opt(year, month + 1, 1)
-                .unwrap()
+                .expect("valid next month start")
                 .pred_opt()
-                .unwrap()
+                .expect("valid predecessor date")
         };
 
         for currency in &self.config.currencies {
@@ -226,7 +227,7 @@ impl FxRateService {
         };
 
         // Generate normal random shock
-        let normal = Normal::new(0.0, 1.0).unwrap();
+        let normal = Normal::new(0.0, 1.0).expect("valid standard normal parameters");
         let dw: f64 = normal.sample(&mut self.rng);
 
         // O-U update: X(t+1) = X(t) + θ(μ - X(t)) + σ * dW

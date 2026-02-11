@@ -47,6 +47,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_cross_process_links(config)?;
     validate_anomaly_injection(config)?;
     validate_hypergraph(config)?;
+    validate_fingerprint_privacy(config)?;
     Ok(())
 }
 
@@ -2047,6 +2048,41 @@ fn validate_hypergraph(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate fingerprint privacy configuration.
+fn validate_fingerprint_privacy(config: &GeneratorConfig) -> SynthResult<()> {
+    let fp = &config.fingerprint_privacy;
+
+    if fp.epsilon <= 0.0 {
+        return Err(SynthError::validation(
+            "fingerprint_privacy.epsilon must be positive",
+        ));
+    }
+
+    if fp.delta < 0.0 || fp.delta >= 1.0 {
+        return Err(SynthError::validation(
+            "fingerprint_privacy.delta must be in [0.0, 1.0)",
+        ));
+    }
+
+    let valid_methods = ["naive", "advanced", "renyi_dp", "zcdp", ""];
+    if !valid_methods.contains(&fp.composition_method.as_str()) {
+        return Err(SynthError::validation(format!(
+            "fingerprint_privacy.composition_method must be one of: naive, advanced, renyi_dp, zcdp (got '{}')",
+            fp.composition_method
+        )));
+    }
+
+    let valid_levels = ["minimal", "standard", "high", "maximum", "custom", ""];
+    if !valid_levels.contains(&fp.level.as_str()) {
+        return Err(SynthError::validation(format!(
+            "fingerprint_privacy.level must be one of: minimal, standard, high, maximum, custom (got '{}')",
+            fp.level
+        )));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2121,6 +2157,7 @@ mod tests {
             drift_labeling: DriftLabelingSchemaConfig::default(),
             anomaly_injection: EnhancedAnomalyConfig::default(),
             industry_specific: IndustrySpecificConfig::default(),
+            fingerprint_privacy: FingerprintPrivacyConfig::default(),
         }
     }
 

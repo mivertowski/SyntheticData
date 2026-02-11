@@ -14,7 +14,8 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Env
 
 use datasynth_server::grpc::service::{default_generator_config, ServerState, SynthService};
 use datasynth_server::rest::{
-    create_router_full, AuthConfig, CorsConfig, RateLimitConfig, TimeoutConfig,
+    create_router_full_with_backend, AuthConfig, CorsConfig, RateLimitBackend, RateLimitConfig,
+    TimeoutConfig,
 };
 use datasynth_server::SyntheticDataServiceServer;
 
@@ -45,6 +46,12 @@ struct Args {
     /// API keys for authentication (comma-separated)
     #[arg(long, env = "DATASYNTH_API_KEYS")]
     api_keys: Option<String>,
+
+    /// Redis URL for distributed rate limiting (e.g., redis://127.0.0.1:6379).
+    /// When provided, rate limiting state is shared across all server instances.
+    /// Requires the `redis` feature to be enabled.
+    #[arg(long, env = "DATASYNTH_REDIS_URL")]
+    redis_url: Option<String>,
 
     /// TLS certificate file path (PEM format)
     #[cfg(feature = "tls")]
@@ -176,11 +183,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             AuthConfig::default()
         };
 
-        let router = create_router_full(
+        // Configure rate limiting backend
+        let rate_limit_config = RateLimitConfig::default();
+        let rate_limit_backend = {
+            #[cfg(feature = "redis")]
+            {
+                if let Some(ref redis_url) = args.redis_url {
+                    match RateLimitBackend::redis(redis_url, rate_limit_config.clone()).await {
+                        Ok(backend) => {
+                            info!(
+                                "Using Redis-backed distributed rate limiting ({})",
+                                redis_url
+                            );
+                            backend
+                        }
+                        Err(e) => {
+                            error!(
+                                "Failed to connect to Redis at {}: {}. Falling back to in-memory rate limiting.",
+                                redis_url, e
+                            );
+                            RateLimitBackend::in_memory(rate_limit_config)
+                        }
+                    }
+                } else {
+                    info!("Using in-memory rate limiting (single instance)");
+                    RateLimitBackend::in_memory(rate_limit_config)
+                }
+            }
+            #[cfg(not(feature = "redis"))]
+            {
+                if args.redis_url.is_some() {
+                    error!(
+                        "--redis-url was provided but the `redis` feature is not enabled. \
+                         Rebuild with `cargo build --features redis` to enable Redis rate limiting. \
+                         Falling back to in-memory rate limiting."
+                    );
+                }
+                info!("Using in-memory rate limiting (single instance)");
+                RateLimitBackend::in_memory(rate_limit_config)
+            }
+        };
+
+        let router = create_router_full_with_backend(
             rest_service,
             CorsConfig::default(),
             auth_config,
-            RateLimitConfig::default(),
+            rate_limit_backend,
             TimeoutConfig::default(),
         );
 

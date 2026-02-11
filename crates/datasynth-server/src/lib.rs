@@ -52,7 +52,9 @@
 //! }
 //! ```
 
+pub mod config_loader;
 pub mod grpc;
+pub mod jobs;
 pub mod observability;
 pub mod rest;
 pub mod tls;

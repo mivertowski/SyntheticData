@@ -400,12 +400,18 @@ impl EmployeeGenerator {
 
         let cfo = self.generate_executive(company_code, "CFO", start_date);
         let cfo_id = cfo.employee_id.clone();
-        pool.employees.last_mut().unwrap().manager_id = Some(ceo_id.clone());
+        pool.employees
+            .last_mut()
+            .expect("just added CEO")
+            .manager_id = Some(ceo_id.clone());
         pool.add_employee(cfo);
 
         let coo = self.generate_executive(company_code, "COO", start_date);
         let coo_id = coo.employee_id.clone();
-        pool.employees.last_mut().unwrap().manager_id = Some(ceo_id.clone());
+        pool.employees
+            .last_mut()
+            .expect("just added CFO")
+            .manager_id = Some(ceo_id.clone());
         pool.add_employee(coo);
 
         // Generate department pools

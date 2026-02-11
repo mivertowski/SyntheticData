@@ -3,16 +3,8 @@
 
 [graph]
 targets = []
-all-features = false
-no-default-features = false
 
 [advisories]
-db-path = "~/.cargo/advisory-db"
-db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "warn"
-notice = "warn"
 ignore = []
 
 [licenses]
@@ -33,7 +25,6 @@ allow = [
     "CC0-1.0",
     "0BSD",
 ]
-copyleft = "deny"
 confidence-threshold = 0.8
 
 [[licenses.clarify]]
@@ -49,5 +40,8 @@ highlight = "all"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-registry = [
+    "https://github.com/rust-lang/crates.io-index",
+    "https://index.crates.io",
+]
 allow-git = []

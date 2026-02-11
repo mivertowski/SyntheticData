@@ -229,7 +229,7 @@ impl EnhancedReferenceGenerator {
     }
 
     fn next_sequence(&self, format: EnhancedReferenceFormat, year: i32) -> u64 {
-        let mut counters = self.counters.lock().unwrap();
+        let mut counters = self.counters.lock().expect("mutex poisoned");
         let counter = counters
             .entry((format, year))
             .or_insert_with(|| AtomicU64::new(1));
@@ -238,7 +238,7 @@ impl EnhancedReferenceGenerator {
 
     /// Reset all counters (useful for testing).
     pub fn reset(&self) {
-        self.counters.lock().unwrap().clear();
+        self.counters.lock().expect("mutex poisoned").clear();
         self.sap_counter.store(4500000001, Ordering::Relaxed);
         self.check_counter.store(100001, Ordering::Relaxed);
     }

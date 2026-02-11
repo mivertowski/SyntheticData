@@ -312,7 +312,10 @@ impl FIFOTracker {
         let mut total_cost = Decimal::ZERO;
 
         while remaining > Decimal::ZERO && !self.layers.is_empty() {
-            let front = self.layers.front_mut().unwrap();
+            let front = self
+                .layers
+                .front_mut()
+                .expect("FIFO layer exists when remaining > 0");
 
             if front.quantity <= remaining {
                 // Consume entire layer

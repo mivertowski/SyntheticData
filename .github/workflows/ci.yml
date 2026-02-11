@@ -52,16 +52,16 @@ jobs:
       - run: cargo test --all-targets
 
   msrv:
-    name: MSRV (1.75)
+    name: MSRV (1.82)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.75
+      - uses: dtolnay/rust-toolchain@1.82
       - uses: Swatinem/rust-cache@v2
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - run: cargo check --all-targets
+      - run: cargo check --workspace --exclude datasynth-ui
 
   security:
     name: Security Audit
@@ -94,7 +94,7 @@ jobs:
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
       - name: Generate coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --exclude datasynth-ui --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

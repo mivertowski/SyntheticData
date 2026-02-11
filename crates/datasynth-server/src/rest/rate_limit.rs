@@ -87,7 +87,7 @@ impl RateLimiter {
     }
 
     /// Check if request should be allowed.
-    async fn check_rate_limit(&self, key: &str) -> bool {
+    pub async fn check_rate_limit(&self, key: &str) -> bool {
         if !self.config.enabled {
             return true;
         }
@@ -127,7 +127,7 @@ impl RateLimiter {
     }
 
     /// Get remaining requests for a key.
-    async fn remaining(&self, key: &str) -> u32 {
+    pub async fn remaining(&self, key: &str) -> u32 {
         if !self.config.enabled {
             return self.config.max_requests;
         }

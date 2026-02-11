@@ -209,7 +209,7 @@ impl AssetGenerator {
         asset.useful_life_months = self.get_useful_life(&asset_class);
         asset.salvage_value = (asset.acquisition_cost
             * Decimal::from_f64_retain(self.config.salvage_value_percent)
-                .unwrap_or(Decimal::from_f64_retain(0.05).unwrap()))
+                .unwrap_or(Decimal::from_f64_retain(0.05).expect("valid decimal literal")))
         .round_dp(2);
 
         // Set account determination
@@ -266,7 +266,7 @@ impl AssetGenerator {
         asset.useful_life_months = self.get_useful_life(&asset_class);
         asset.salvage_value = (asset.acquisition_cost
             * Decimal::from_f64_retain(self.config.salvage_value_percent)
-                .unwrap_or(Decimal::from_f64_retain(0.05).unwrap()))
+                .unwrap_or(Decimal::from_f64_retain(0.05).expect("valid decimal literal")))
         .round_dp(2);
 
         asset.account_determination = self.generate_account_determination(&asset_class);
