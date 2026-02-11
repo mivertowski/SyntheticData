@@ -46,10 +46,7 @@ impl GrpcAuthConfig {
 ///
 /// Checks for `authorization` metadata key with `Bearer <token>` format.
 #[allow(clippy::result_large_err)]
-pub fn auth_interceptor(
-    config: &GrpcAuthConfig,
-    request: &Request<()>,
-) -> Result<(), Status> {
+pub fn auth_interceptor(config: &GrpcAuthConfig, request: &Request<()>) -> Result<(), Status> {
     if !config.enabled {
         return Ok(());
     }
@@ -91,10 +88,9 @@ mod tests {
     fn test_valid_token_passes() {
         let config = GrpcAuthConfig::new(vec!["my-key".to_string()]);
         let mut request = Request::new(());
-        request.metadata_mut().insert(
-            "authorization",
-            "Bearer my-key".parse().unwrap(),
-        );
+        request
+            .metadata_mut()
+            .insert("authorization", "Bearer my-key".parse().unwrap());
         assert!(auth_interceptor(&config, &request).is_ok());
     }
 
@@ -102,10 +98,9 @@ mod tests {
     fn test_invalid_token_fails() {
         let config = GrpcAuthConfig::new(vec!["my-key".to_string()]);
         let mut request = Request::new(());
-        request.metadata_mut().insert(
-            "authorization",
-            "Bearer wrong-key".parse().unwrap(),
-        );
+        request
+            .metadata_mut()
+            .insert("authorization", "Bearer wrong-key".parse().unwrap());
         assert!(auth_interceptor(&config, &request).is_err());
     }
 }

@@ -346,6 +346,9 @@ mod tests {
             quality_gates: Default::default(),
             compliance: Default::default(),
             webhooks: Default::default(),
+            llm: Default::default(),
+            diffusion: Default::default(),
+            causal: Default::default(),
         };
 
         let mut manifest = RunManifest::new(&config, 42);

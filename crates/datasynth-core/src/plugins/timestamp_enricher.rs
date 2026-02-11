@@ -28,10 +28,7 @@ impl TransformPlugin for TimestampEnricher {
         "timestamp_enricher"
     }
 
-    fn transform(
-        &self,
-        records: Vec<GeneratedRecord>,
-    ) -> Result<Vec<GeneratedRecord>, SynthError> {
+    fn transform(&self, records: Vec<GeneratedRecord>) -> Result<Vec<GeneratedRecord>, SynthError> {
         let now = Utc::now().to_rfc3339();
         let version = serde_json::Value::String("1.0.0".to_string());
 
@@ -61,13 +58,13 @@ mod tests {
         let enricher = TimestampEnricher::new();
 
         let records = vec![
-            GeneratedRecord::new("invoice")
-                .with_field("id", serde_json::json!("INV001")),
-            GeneratedRecord::new("invoice")
-                .with_field("id", serde_json::json!("INV002")),
+            GeneratedRecord::new("invoice").with_field("id", serde_json::json!("INV001")),
+            GeneratedRecord::new("invoice").with_field("id", serde_json::json!("INV002")),
         ];
 
-        let result = enricher.transform(records).expect("transform should succeed");
+        let result = enricher
+            .transform(records)
+            .expect("transform should succeed");
         assert_eq!(result.len(), 2);
 
         for record in &result {
@@ -91,7 +88,9 @@ mod tests {
     #[test]
     fn test_timestamp_enricher_empty_input() {
         let enricher = TimestampEnricher::new();
-        let result = enricher.transform(vec![]).expect("transform should succeed");
+        let result = enricher
+            .transform(vec![])
+            .expect("transform should succeed");
         assert!(result.is_empty());
     }
 
@@ -103,7 +102,9 @@ mod tests {
             .with_field("customer", serde_json::json!("CUST001"))
             .with_field("amount", serde_json::json!(1500.0))];
 
-        let result = enricher.transform(records).expect("transform should succeed");
+        let result = enricher
+            .transform(records)
+            .expect("transform should succeed");
         let record = &result[0];
 
         assert_eq!(record.get_str("customer"), Some("CUST001"));

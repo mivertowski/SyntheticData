@@ -60,6 +60,56 @@ pub struct RunManifest {
     /// Quality gate evaluation result.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality_gate_result: Option<QualityGateResultSummary>,
+    /// LLM enrichment phase summary.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_enrichment: Option<LlmEnrichmentSummary>,
+    /// Diffusion enhancement phase summary.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub diffusion_model: Option<DiffusionModelSummary>,
+    /// Causal generation phase summary.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub causal_generation: Option<CausalGenerationSummary>,
+}
+
+/// Summary of LLM enrichment phase for the run manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmEnrichmentSummary {
+    /// Whether LLM enrichment was enabled.
+    pub enabled: bool,
+    /// Execution time in milliseconds.
+    pub timing_ms: u64,
+    /// Number of vendors enriched.
+    pub vendors_enriched: usize,
+    /// Provider used (e.g., "mock", "openai").
+    pub provider: String,
+}
+
+/// Summary of diffusion enhancement phase for the run manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiffusionModelSummary {
+    /// Whether diffusion enhancement was enabled.
+    pub enabled: bool,
+    /// Execution time in milliseconds.
+    pub timing_ms: u64,
+    /// Number of samples generated.
+    pub samples_generated: usize,
+    /// Number of diffusion steps used.
+    pub n_steps: usize,
+}
+
+/// Summary of causal generation phase for the run manifest.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CausalGenerationSummary {
+    /// Whether causal generation was enabled.
+    pub enabled: bool,
+    /// Execution time in milliseconds.
+    pub timing_ms: u64,
+    /// Number of causal samples generated.
+    pub samples_generated: usize,
+    /// Template used (e.g., "fraud_detection", "revenue_cycle").
+    pub template: String,
+    /// Whether causal validation passed (None if validation was not run).
+    pub validation_passed: Option<bool>,
 }
 
 /// Summary of quality gate evaluation for the run manifest.
@@ -169,6 +219,9 @@ impl RunManifest {
             warnings: Vec::new(),
             lineage: None,
             quality_gate_result: None,
+            llm_enrichment: None,
+            diffusion_model: None,
+            causal_generation: None,
         }
     }
 
@@ -383,6 +436,9 @@ mod tests {
             quality_gates: Default::default(),
             compliance: Default::default(),
             webhooks: Default::default(),
+            llm: Default::default(),
+            diffusion: Default::default(),
+            causal: Default::default(),
         }
     }
 

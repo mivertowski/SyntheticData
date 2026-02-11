@@ -11,6 +11,9 @@
 //! 8. Audit data generation (engagements, workpapers, evidence, risks, findings, judgments)
 //! 9. Banking KYC/AML data generation (customers, accounts, transactions, typologies)
 //! 10. Graph export (accounting network for ML training and network reconstruction)
+//! 11. LLM enrichment (AI-augmented vendor names, descriptions)
+//! 12. Diffusion enhancement (statistical diffusion-based sample generation)
+//! 13. Causal overlay (structural causal model generation and validation)
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -92,7 +95,11 @@ use datasynth_ocpm::{
 };
 
 use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
+use datasynth_core::causal::{CausalGraph, CausalValidator, StructuralCausalModel};
+use datasynth_core::diffusion::{DiffusionBackend, DiffusionConfig, StatisticalDiffusionBackend};
+use datasynth_core::llm::MockLlmProvider;
 use datasynth_core::models::documents::PaymentMethod;
+use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 
 // ============================================================================
 // Configuration Conversion Functions
@@ -498,6 +505,27 @@ pub struct EnhancedGenerationStatistics {
     pub graph_export_count: usize,
     pub graph_node_count: usize,
     pub graph_edge_count: usize,
+    /// LLM enrichment timing (milliseconds).
+    #[serde(default)]
+    pub llm_enrichment_ms: u64,
+    /// Number of vendor names enriched by LLM.
+    #[serde(default)]
+    pub llm_vendors_enriched: usize,
+    /// Diffusion enhancement timing (milliseconds).
+    #[serde(default)]
+    pub diffusion_enhancement_ms: u64,
+    /// Number of diffusion samples generated.
+    #[serde(default)]
+    pub diffusion_samples_generated: usize,
+    /// Causal generation timing (milliseconds).
+    #[serde(default)]
+    pub causal_generation_ms: u64,
+    /// Number of causal samples generated.
+    #[serde(default)]
+    pub causal_samples_generated: usize,
+    /// Whether causal validation passed.
+    #[serde(default)]
+    pub causal_validation_passed: Option<bool>,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -910,6 +938,15 @@ impl EnhancedOrchestrator {
         // Phase 10b: Hypergraph Export
         self.phase_hypergraph_export(&coa, &entries, &document_flows, &mut stats)?;
 
+        // Phase 11: LLM Enrichment
+        self.phase_llm_enrichment(&mut stats);
+
+        // Phase 12: Diffusion Enhancement
+        self.phase_diffusion_enhancement(&mut stats);
+
+        // Phase 13: Causal Overlay
+        self.phase_causal_overlay(&mut stats);
+
         // Log final resource statistics
         let resource_stats = self.resource_guard.stats();
         info!(
@@ -1266,6 +1303,197 @@ impl EnhancedOrchestrator {
             debug!("Phase 10b: Skipped (hypergraph export disabled or no entries)");
         }
         Ok(())
+    }
+
+    /// Phase 11: LLM Enrichment.
+    ///
+    /// Uses an LLM provider (mock by default) to enrich vendor names with
+    /// realistic, context-aware names. This phase is non-blocking: failures
+    /// log a warning but do not stop the generation pipeline.
+    fn phase_llm_enrichment(&mut self, stats: &mut EnhancedGenerationStatistics) {
+        if !self.config.llm.enabled {
+            debug!("Phase 11: Skipped (LLM enrichment disabled)");
+            return;
+        }
+
+        info!("Phase 11: Starting LLM Enrichment");
+        let start = std::time::Instant::now();
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let provider = Arc::new(MockLlmProvider::new(self.seed));
+            let enricher = VendorLlmEnricher::new(provider);
+
+            let industry = format!("{:?}", self.config.global.industry);
+            let max_enrichments = self
+                .config
+                .llm
+                .max_vendor_enrichments
+                .min(self.master_data.vendors.len());
+
+            let mut enriched_count = 0usize;
+            for vendor in self.master_data.vendors.iter_mut().take(max_enrichments) {
+                match enricher.enrich_vendor_name(&industry, "general", &vendor.country) {
+                    Ok(name) => {
+                        vendor.name = name;
+                        enriched_count += 1;
+                    }
+                    Err(e) => {
+                        warn!(
+                            "LLM vendor enrichment failed for {}: {}",
+                            vendor.vendor_id, e
+                        );
+                    }
+                }
+            }
+
+            enriched_count
+        }));
+
+        match result {
+            Ok(enriched_count) => {
+                stats.llm_vendors_enriched = enriched_count;
+                let elapsed = start.elapsed();
+                stats.llm_enrichment_ms = elapsed.as_millis() as u64;
+                info!(
+                    "Phase 11 complete: {} vendors enriched in {}ms",
+                    enriched_count, stats.llm_enrichment_ms
+                );
+            }
+            Err(_) => {
+                let elapsed = start.elapsed();
+                stats.llm_enrichment_ms = elapsed.as_millis() as u64;
+                warn!("Phase 11: LLM enrichment failed (panic caught), continuing");
+            }
+        }
+    }
+
+    /// Phase 12: Diffusion Enhancement.
+    ///
+    /// Generates a sample set using the statistical diffusion backend to
+    /// demonstrate distribution-matching data generation. This phase is
+    /// non-blocking: failures log a warning but do not stop the pipeline.
+    fn phase_diffusion_enhancement(&self, stats: &mut EnhancedGenerationStatistics) {
+        if !self.config.diffusion.enabled {
+            debug!("Phase 12: Skipped (diffusion enhancement disabled)");
+            return;
+        }
+
+        info!("Phase 12: Starting Diffusion Enhancement");
+        let start = std::time::Instant::now();
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // Target distribution: transaction amounts (log-normal-like)
+            let means = vec![5000.0, 3.0, 2.0]; // amount, line_items, approval_level
+            let stds = vec![2000.0, 1.5, 1.0];
+
+            let diffusion_config = DiffusionConfig {
+                n_steps: self.config.diffusion.n_steps,
+                seed: self.seed,
+                ..Default::default()
+            };
+
+            let backend = StatisticalDiffusionBackend::new(means, stds, diffusion_config);
+
+            let n_samples = self.config.diffusion.sample_size;
+            let n_features = 3; // amount, line_items, approval_level
+            let samples = backend.generate(n_samples, n_features, self.seed);
+
+            samples.len()
+        }));
+
+        match result {
+            Ok(sample_count) => {
+                stats.diffusion_samples_generated = sample_count;
+                let elapsed = start.elapsed();
+                stats.diffusion_enhancement_ms = elapsed.as_millis() as u64;
+                info!(
+                    "Phase 12 complete: {} diffusion samples generated in {}ms",
+                    sample_count, stats.diffusion_enhancement_ms
+                );
+            }
+            Err(_) => {
+                let elapsed = start.elapsed();
+                stats.diffusion_enhancement_ms = elapsed.as_millis() as u64;
+                warn!("Phase 12: Diffusion enhancement failed (panic caught), continuing");
+            }
+        }
+    }
+
+    /// Phase 13: Causal Overlay.
+    ///
+    /// Builds a structural causal model from a built-in template (e.g.,
+    /// fraud_detection) and generates causal samples. Optionally validates
+    /// that the output respects the causal structure. This phase is
+    /// non-blocking: failures log a warning but do not stop the pipeline.
+    fn phase_causal_overlay(&self, stats: &mut EnhancedGenerationStatistics) {
+        if !self.config.causal.enabled {
+            debug!("Phase 13: Skipped (causal generation disabled)");
+            return;
+        }
+
+        info!("Phase 13: Starting Causal Overlay");
+        let start = std::time::Instant::now();
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // Select template based on config
+            let graph = match self.config.causal.template.as_str() {
+                "revenue_cycle" => CausalGraph::revenue_cycle_template(),
+                _ => CausalGraph::fraud_detection_template(),
+            };
+
+            let scm = StructuralCausalModel::new(graph.clone())
+                .map_err(|e| SynthError::generation(format!("Failed to build SCM: {}", e)))?;
+
+            let n_samples = self.config.causal.sample_size;
+            let samples = scm
+                .generate(n_samples, self.seed)
+                .map_err(|e| SynthError::generation(format!("SCM generation failed: {}", e)))?;
+
+            // Optionally validate causal structure
+            let validation_passed = if self.config.causal.validate {
+                let report = CausalValidator::validate_causal_structure(&samples, &graph);
+                if report.valid {
+                    info!(
+                        "Causal validation passed: all {} checks OK",
+                        report.checks.len()
+                    );
+                } else {
+                    warn!(
+                        "Causal validation: {} violations detected: {:?}",
+                        report.violations.len(),
+                        report.violations
+                    );
+                }
+                Some(report.valid)
+            } else {
+                None
+            };
+
+            Ok::<(usize, Option<bool>), SynthError>((samples.len(), validation_passed))
+        }));
+
+        match result {
+            Ok(Ok((sample_count, validation_passed))) => {
+                stats.causal_samples_generated = sample_count;
+                stats.causal_validation_passed = validation_passed;
+                let elapsed = start.elapsed();
+                stats.causal_generation_ms = elapsed.as_millis() as u64;
+                info!(
+                    "Phase 13 complete: {} causal samples generated in {}ms (validation: {:?})",
+                    sample_count, stats.causal_generation_ms, validation_passed,
+                );
+            }
+            Ok(Err(e)) => {
+                let elapsed = start.elapsed();
+                stats.causal_generation_ms = elapsed.as_millis() as u64;
+                warn!("Phase 13: Causal generation failed: {}", e);
+            }
+            Err(_) => {
+                let elapsed = start.elapsed();
+                stats.causal_generation_ms = elapsed.as_millis() as u64;
+                warn!("Phase 13: Causal generation failed (panic caught), continuing");
+            }
+        }
     }
 
     /// Generate the chart of accounts.
@@ -2738,6 +2966,24 @@ impl EnhancedOrchestrator {
             builder.configured_by("phase:banking", "config:banking");
         }
 
+        if self.config.llm.enabled {
+            builder.add_config_section("config:llm", "LLM Enrichment Config");
+            builder.add_generator_phase("phase:llm_enrichment", "LLM Enrichment");
+            builder.configured_by("phase:llm_enrichment", "config:llm");
+        }
+
+        if self.config.diffusion.enabled {
+            builder.add_config_section("config:diffusion", "Diffusion Enhancement Config");
+            builder.add_generator_phase("phase:diffusion", "Diffusion Enhancement");
+            builder.configured_by("phase:diffusion", "config:diffusion");
+        }
+
+        if self.config.causal.enabled {
+            builder.add_config_section("config:causal", "Causal Generation Config");
+            builder.add_generator_phase("phase:causal", "Causal Overlay");
+            builder.configured_by("phase:causal", "config:causal");
+        }
+
         builder.build()
     }
 }
@@ -2828,6 +3074,9 @@ mod tests {
             quality_gates: Default::default(),
             compliance: Default::default(),
             webhooks: Default::default(),
+            llm: Default::default(),
+            diffusion: Default::default(),
+            causal: Default::default(),
         }
     }
 
@@ -3318,5 +3567,251 @@ mod tests {
             result.statistics.audit_judgment_count,
             result.audit.judgments.len()
         );
+    }
+
+    #[test]
+    fn test_new_phases_disabled_by_default() {
+        let config = create_test_config();
+        // Verify new config fields default to disabled
+        assert!(!config.llm.enabled);
+        assert!(!config.diffusion.enabled);
+        assert!(!config.causal.enabled);
+
+        let phase_config = PhaseConfig {
+            generate_master_data: false,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // All new phase statistics should be zero when disabled
+        assert_eq!(result.statistics.llm_enrichment_ms, 0);
+        assert_eq!(result.statistics.llm_vendors_enriched, 0);
+        assert_eq!(result.statistics.diffusion_enhancement_ms, 0);
+        assert_eq!(result.statistics.diffusion_samples_generated, 0);
+        assert_eq!(result.statistics.causal_generation_ms, 0);
+        assert_eq!(result.statistics.causal_samples_generated, 0);
+        assert!(result.statistics.causal_validation_passed.is_none());
+    }
+
+    #[test]
+    fn test_llm_enrichment_enabled() {
+        let mut config = create_test_config();
+        config.llm.enabled = true;
+        config.llm.max_vendor_enrichments = 3;
+
+        let phase_config = PhaseConfig {
+            generate_master_data: true,
+            generate_document_flows: false,
+            generate_journal_entries: false,
+            inject_anomalies: false,
+            show_progress: false,
+            vendors_per_company: 5,
+            customers_per_company: 3,
+            materials_per_company: 3,
+            assets_per_company: 3,
+            employees_per_company: 3,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // LLM enrichment should have run
+        assert!(result.statistics.llm_vendors_enriched > 0);
+        assert!(result.statistics.llm_vendors_enriched <= 3);
+    }
+
+    #[test]
+    fn test_diffusion_enhancement_enabled() {
+        let mut config = create_test_config();
+        config.diffusion.enabled = true;
+        config.diffusion.n_steps = 50;
+        config.diffusion.sample_size = 20;
+
+        let phase_config = PhaseConfig {
+            generate_master_data: false,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // Diffusion phase should have generated samples
+        assert_eq!(result.statistics.diffusion_samples_generated, 20);
+    }
+
+    #[test]
+    fn test_causal_overlay_enabled() {
+        let mut config = create_test_config();
+        config.causal.enabled = true;
+        config.causal.template = "fraud_detection".to_string();
+        config.causal.sample_size = 100;
+        config.causal.validate = true;
+
+        let phase_config = PhaseConfig {
+            generate_master_data: false,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // Causal phase should have generated samples
+        assert_eq!(result.statistics.causal_samples_generated, 100);
+        // Validation should have run
+        assert!(result.statistics.causal_validation_passed.is_some());
+    }
+
+    #[test]
+    fn test_causal_overlay_revenue_cycle_template() {
+        let mut config = create_test_config();
+        config.causal.enabled = true;
+        config.causal.template = "revenue_cycle".to_string();
+        config.causal.sample_size = 50;
+        config.causal.validate = false;
+
+        let phase_config = PhaseConfig {
+            generate_master_data: false,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // Causal phase should have generated samples
+        assert_eq!(result.statistics.causal_samples_generated, 50);
+        // Validation was disabled
+        assert!(result.statistics.causal_validation_passed.is_none());
+    }
+
+    #[test]
+    fn test_all_new_phases_enabled_together() {
+        let mut config = create_test_config();
+        config.llm.enabled = true;
+        config.llm.max_vendor_enrichments = 2;
+        config.diffusion.enabled = true;
+        config.diffusion.n_steps = 20;
+        config.diffusion.sample_size = 10;
+        config.causal.enabled = true;
+        config.causal.sample_size = 50;
+        config.causal.validate = true;
+
+        let phase_config = PhaseConfig {
+            generate_master_data: true,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            vendors_per_company: 5,
+            customers_per_company: 3,
+            materials_per_company: 3,
+            assets_per_company: 3,
+            employees_per_company: 3,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // All three phases should have run
+        assert!(result.statistics.llm_vendors_enriched > 0);
+        assert_eq!(result.statistics.diffusion_samples_generated, 10);
+        assert_eq!(result.statistics.causal_samples_generated, 50);
+        assert!(result.statistics.causal_validation_passed.is_some());
+    }
+
+    #[test]
+    fn test_statistics_serialization_with_new_fields() {
+        let stats = EnhancedGenerationStatistics {
+            total_entries: 100,
+            total_line_items: 500,
+            llm_enrichment_ms: 42,
+            llm_vendors_enriched: 10,
+            diffusion_enhancement_ms: 100,
+            diffusion_samples_generated: 50,
+            causal_generation_ms: 200,
+            causal_samples_generated: 100,
+            causal_validation_passed: Some(true),
+            ..Default::default()
+        };
+
+        let json = serde_json::to_string(&stats).unwrap();
+        let deserialized: EnhancedGenerationStatistics = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.llm_enrichment_ms, 42);
+        assert_eq!(deserialized.llm_vendors_enriched, 10);
+        assert_eq!(deserialized.diffusion_enhancement_ms, 100);
+        assert_eq!(deserialized.diffusion_samples_generated, 50);
+        assert_eq!(deserialized.causal_generation_ms, 200);
+        assert_eq!(deserialized.causal_samples_generated, 100);
+        assert_eq!(deserialized.causal_validation_passed, Some(true));
+    }
+
+    #[test]
+    fn test_statistics_backward_compat_deserialization() {
+        // Old JSON without the new fields should still deserialize
+        let old_json = r#"{
+            "total_entries": 100,
+            "total_line_items": 500,
+            "accounts_count": 50,
+            "companies_count": 1,
+            "period_months": 12,
+            "vendor_count": 10,
+            "customer_count": 20,
+            "material_count": 15,
+            "asset_count": 5,
+            "employee_count": 8,
+            "p2p_chain_count": 5,
+            "o2c_chain_count": 5,
+            "ap_invoice_count": 5,
+            "ar_invoice_count": 5,
+            "ocpm_event_count": 0,
+            "ocpm_object_count": 0,
+            "ocpm_case_count": 0,
+            "audit_engagement_count": 0,
+            "audit_workpaper_count": 0,
+            "audit_evidence_count": 0,
+            "audit_risk_count": 0,
+            "audit_finding_count": 0,
+            "audit_judgment_count": 0,
+            "anomalies_injected": 0,
+            "data_quality_issues": 0,
+            "banking_customer_count": 0,
+            "banking_account_count": 0,
+            "banking_transaction_count": 0,
+            "banking_suspicious_count": 0,
+            "graph_export_count": 0,
+            "graph_node_count": 0,
+            "graph_edge_count": 0
+        }"#;
+
+        let stats: EnhancedGenerationStatistics = serde_json::from_str(old_json).unwrap();
+
+        // New fields should default to 0 / None
+        assert_eq!(stats.llm_enrichment_ms, 0);
+        assert_eq!(stats.llm_vendors_enriched, 0);
+        assert_eq!(stats.diffusion_enhancement_ms, 0);
+        assert_eq!(stats.diffusion_samples_generated, 0);
+        assert_eq!(stats.causal_generation_ms, 0);
+        assert_eq!(stats.causal_samples_generated, 0);
+        assert!(stats.causal_validation_passed.is_none());
     }
 }

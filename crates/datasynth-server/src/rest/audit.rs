@@ -191,8 +191,7 @@ mod tests {
         };
 
         let json = serde_json::to_string(&event).expect("should serialize");
-        let deserialized: AuditEvent =
-            serde_json::from_str(&json).expect("should deserialize");
+        let deserialized: AuditEvent = serde_json::from_str(&json).expect("should deserialize");
 
         assert_eq!(deserialized.request_id, "req-003");
         assert_eq!(deserialized.actor, "admin-key-ab12");

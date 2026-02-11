@@ -595,14 +595,15 @@ mod tests {
 
         #[test]
         fn test_jwt_config_creation() {
-            let config = JwtConfig::new(
-                "https://auth.example.com".to_string(),
-                "my-api".to_string(),
-            );
+            let config =
+                JwtConfig::new("https://auth.example.com".to_string(), "my-api".to_string());
             assert_eq!(config.issuer, "https://auth.example.com");
             assert_eq!(config.audience, "my-api");
             assert!(config.public_key_pem.is_none());
-            assert_eq!(config.allowed_algorithms, vec![jsonwebtoken::Algorithm::RS256]);
+            assert_eq!(
+                config.allowed_algorithms,
+                vec![jsonwebtoken::Algorithm::RS256]
+            );
         }
 
         #[test]

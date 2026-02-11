@@ -67,7 +67,11 @@ impl GeneratedRecord {
     }
 
     /// Add a field to the record.
-    pub fn with_field(mut self, key: impl Into<String>, value: impl Into<serde_json::Value>) -> Self {
+    pub fn with_field(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<serde_json::Value>,
+    ) -> Self {
         self.fields.insert(key.into(), value.into());
         self
     }
@@ -204,10 +208,7 @@ pub trait TransformPlugin: Send + Sync {
     /// Unique name identifying this transform.
     fn name(&self) -> &str;
     /// Transform a batch of records.
-    fn transform(
-        &self,
-        records: Vec<GeneratedRecord>,
-    ) -> Result<Vec<GeneratedRecord>, SynthError>;
+    fn transform(&self, records: Vec<GeneratedRecord>) -> Result<Vec<GeneratedRecord>, SynthError>;
 }
 
 #[cfg(test)]

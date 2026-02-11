@@ -94,6 +94,9 @@ pub fn minimal_config() -> GeneratorConfig {
         quality_gates: QualityGatesSchemaConfig::default(),
         compliance: ComplianceSchemaConfig::default(),
         webhooks: Default::default(),
+        llm: Default::default(),
+        diffusion: Default::default(),
+        causal: Default::default(),
     }
 }
 

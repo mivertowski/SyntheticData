@@ -30,6 +30,7 @@ pub mod fx;
 pub mod industry;
 pub mod intercompany;
 pub mod je_generator;
+pub mod llm_enrichment;
 pub mod master_data;
 pub mod period_close;
 pub mod relationships;

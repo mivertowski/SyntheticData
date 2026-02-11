@@ -22,6 +22,10 @@ A high-performance, configurable synthetic data generator for enterprise financi
     - [Enterprise Simulation](#enterprise-simulation)
     - [Machine Learning \& Analytics](#machine-learning--analytics)
     - [Production Features](#production-features)
+    - [LLM-Augmented Generation](#llm-augmented-generation)
+    - [Diffusion Model Integration](#diffusion-model-integration)
+    - [Causal \& Counterfactual Generation](#causal--counterfactual-generation)
+    - [Ecosystem Integrations](#ecosystem-integrations)
   - [Architecture](#architecture)
   - [Installation](#installation)
     - [From Source](#from-source)
@@ -156,6 +160,41 @@ The generator produces statistically accurate data based on empirical research f
 - **Privacy Audit Trail**: Complete logging of all privacy decisions with composition metadata
 - **Fidelity Evaluation**: Wasserstein-1, Jensen-Shannon divergence, and KS statistics per column
 - **Privacy Evaluation**: Membership inference attack (MIA) testing, linkage attack assessment, NIST SP 800-226 alignment, SynQP matrix
+- **Federated Fingerprinting**: Extract partial fingerprints from distributed data sources and aggregate without centralizing raw data (weighted average, median, trimmed mean)
+- **Synthetic Data Certificates**: Cryptographic attestation of DP guarantees and quality metrics with HMAC-SHA256 signing and verification
+- **Pareto Privacy-Utility Frontier**: Explore and navigate the optimal tradeoff between privacy (epsilon) and data utility
+
+### LLM-Augmented Generation
+
+- **Provider Abstraction**: Pluggable `LlmProvider` trait with mock (deterministic) and HTTP (OpenAI-compatible) backends
+- **Metadata Enrichment**: LLM-generated vendor names, transaction descriptions, memo fields, and anomaly explanations
+- **Natural Language Configuration**: Generate YAML configs from plain English (e.g., "1 year of retail data for a German company")
+- **Response Caching**: In-memory LRU cache keyed by prompt hash for deduplication
+- **Graceful Fallback**: All enrichment falls back to template-based generation when LLM is disabled or unavailable
+
+### Diffusion Model Integration
+
+- **Backend Trait**: Extensible `DiffusionBackend` with forward (noise) and reverse (denoise) processes
+- **Noise Schedules**: Linear, cosine, and sigmoid schedules with precomputed alpha/beta values
+- **Statistical Diffusion**: Pure-Rust Langevin-inspired reverse process guided by fingerprint statistics (no ML framework dependency)
+- **Hybrid Generation**: Blend rule-based and diffusion outputs via interpolation, selection, or per-column ensemble strategies
+- **Training Pipeline**: Fit diffusion models from column statistics, persist as JSON, evaluate with mean/std/correlation error metrics
+
+### Causal & Counterfactual Generation
+
+- **Causal Graphs**: Directed acyclic graphs with linear, threshold, polynomial, and logistic mechanisms
+- **Structural Causal Models**: Generate samples respecting causal structure via topological traversal
+- **do-Calculus Interventions**: Fix variables to specific values and measure average treatment effects with confidence intervals
+- **Counterfactual Generation**: Abduction-action-prediction framework for "what-if" scenario analysis
+- **Causal Validation**: Verify edge correlations, non-edge weakness, and topological consistency
+- **Built-in Templates**: Pre-configured fraud detection and revenue cycle causal models
+
+### Ecosystem Integrations
+
+- **Apache Airflow**: `DataSynthOperator`, `DataSynthSensor`, and `DataSynthValidateOperator` for DAG-based orchestration
+- **dbt**: Source YAML generation, seed export, and project scaffolding from DataSynth output
+- **MLflow**: Track generation runs as experiments with parameters, metrics, and artifact logging
+- **Apache Spark**: Read DataSynth output as Spark DataFrames with schema inference and temp view registration
 
 ### Production Features
 
@@ -446,6 +485,26 @@ ocpm:
     xes_include_resources: true   # Include resource attributes
     export_reference_models: true # Export P2P/O2C/R2R reference models
 
+llm:
+  enabled: true
+  provider: mock                    # mock, openai, anthropic, custom
+  enrichment:
+    vendor_names: true
+    transaction_descriptions: true
+    anomaly_explanations: true
+
+diffusion:
+  enabled: true
+  n_steps: 100
+  schedule: cosine                  # linear, cosine, sigmoid
+  sample_size: 100
+
+causal:
+  enabled: true
+  template: fraud_detection         # fraud_detection, revenue_cycle
+  sample_size: 500
+  validate: true
+
 output:
   format: csv                       # csv, json, parquet
   compression: none                 # none, gzip, zstd (parquet uses zstd by default)
@@ -501,6 +560,9 @@ output/
 | **Data Quality ML** | Train models to detect missing values, typos, duplicates |
 | **RustGraph Integration** | Stream data directly to RustAssureTwin knowledge graphs |
 | **Hypergraph Analytics** | 3-layer hypergraph export (Governance, Process, Accounting) for multi-relational GNN models |
+| **Causal Analysis** | Generate interventional and counterfactual datasets for causal ML research |
+| **LLM Training Data** | LLM-enriched metadata with realistic vendor names, descriptions, and explanations |
+| **Pipeline Orchestration** | Airflow operators, dbt sources, MLflow tracking, Spark DataFrames |
 
 ---
 
@@ -651,7 +713,34 @@ report = synth.fingerprint.evaluate("./fingerprint.dsf", "./synthetic/")
 print(f"Fidelity score: {report.overall_score}")
 ```
 
-Optional dependencies: `[pandas]`, `[polars]`, `[jupyter]`, `[streaming]`, `[all]`.
+Optional dependencies: `[pandas]`, `[polars]`, `[jupyter]`, `[streaming]`, `[airflow]`, `[dbt]`, `[mlflow]`, `[spark]`, `[all]`.
+
+**Ecosystem Integrations:**
+
+```python
+from datasynth_py.config import blueprints
+
+# LLM-enriched generation
+config = blueprints.with_llm_enrichment(provider="mock")
+
+# Diffusion-enhanced generation
+config = blueprints.with_diffusion(schedule="cosine", hybrid_weight=0.3)
+
+# Causal data generation
+config = blueprints.with_causal(template="fraud_detection")
+
+# Airflow operator
+from datasynth_py.integrations.airflow import DataSynthOperator
+
+# dbt integration
+from datasynth_py.integrations.dbt import DbtSourceGenerator
+
+# MLflow tracking
+from datasynth_py.integrations.mlflow_tracker import DataSynthMlflowTracker
+
+# Spark connector
+from datasynth_py.integrations.spark import DataSynthSparkReader
+```
 
 See the [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md) for complete documentation.
 

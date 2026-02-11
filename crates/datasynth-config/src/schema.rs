@@ -142,6 +142,142 @@ pub struct GeneratorConfig {
     /// Webhook notification configuration
     #[serde(default)]
     pub webhooks: WebhookSchemaConfig,
+    /// LLM enrichment configuration (AI-augmented vendor names, descriptions, explanations)
+    #[serde(default)]
+    pub llm: LlmSchemaConfig,
+    /// Diffusion model configuration (statistical diffusion-based data enhancement)
+    #[serde(default)]
+    pub diffusion: DiffusionSchemaConfig,
+    /// Causal generation configuration (structural causal models, interventions)
+    #[serde(default)]
+    pub causal: CausalSchemaConfig,
+}
+
+/// LLM enrichment configuration.
+///
+/// Controls AI-augmented metadata enrichment using LLM providers.
+/// When enabled, vendor names, transaction descriptions, and anomaly explanations
+/// are enriched using the configured provider (mock by default).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmSchemaConfig {
+    /// Whether LLM enrichment is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Provider type: "mock", "openai", "anthropic", "custom".
+    #[serde(default = "default_llm_provider")]
+    pub provider: String,
+    /// Model name/ID for the provider.
+    #[serde(default = "default_llm_model_name")]
+    pub model: String,
+    /// Maximum number of vendor names to enrich per run.
+    #[serde(default = "default_llm_batch_size")]
+    pub max_vendor_enrichments: usize,
+}
+
+fn default_llm_provider() -> String {
+    "mock".to_string()
+}
+
+fn default_llm_model_name() -> String {
+    "gpt-4o-mini".to_string()
+}
+
+fn default_llm_batch_size() -> usize {
+    50
+}
+
+impl Default for LlmSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            provider: default_llm_provider(),
+            model: default_llm_model_name(),
+            max_vendor_enrichments: default_llm_batch_size(),
+        }
+    }
+}
+
+/// Diffusion model configuration.
+///
+/// Controls statistical diffusion-based data enhancement that generates samples
+/// matching target distribution properties (means, standard deviations, correlations).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiffusionSchemaConfig {
+    /// Whether diffusion enhancement is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of diffusion steps (higher = better quality, slower).
+    #[serde(default = "default_diffusion_steps")]
+    pub n_steps: usize,
+    /// Noise schedule type: "linear", "cosine", "sigmoid".
+    #[serde(default = "default_diffusion_schedule")]
+    pub schedule: String,
+    /// Number of sample rows to generate for demonstration.
+    #[serde(default = "default_diffusion_sample_size")]
+    pub sample_size: usize,
+}
+
+fn default_diffusion_steps() -> usize {
+    100
+}
+
+fn default_diffusion_schedule() -> String {
+    "linear".to_string()
+}
+
+fn default_diffusion_sample_size() -> usize {
+    100
+}
+
+impl Default for DiffusionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            n_steps: default_diffusion_steps(),
+            schedule: default_diffusion_schedule(),
+            sample_size: default_diffusion_sample_size(),
+        }
+    }
+}
+
+/// Causal generation configuration.
+///
+/// Controls structural causal model (SCM) based data generation that respects
+/// causal relationships between variables, supports do-calculus interventions,
+/// and enables counterfactual scenarios.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CausalSchemaConfig {
+    /// Whether causal generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Built-in template to use: "fraud_detection", "revenue_cycle", or "custom".
+    #[serde(default = "default_causal_template")]
+    pub template: String,
+    /// Number of causal samples to generate.
+    #[serde(default = "default_causal_sample_size")]
+    pub sample_size: usize,
+    /// Whether to run causal validation on the output.
+    #[serde(default = "default_true")]
+    pub validate: bool,
+}
+
+fn default_causal_template() -> String {
+    "fraud_detection".to_string()
+}
+
+fn default_causal_sample_size() -> usize {
+    500
+}
+
+impl Default for CausalSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            template: default_causal_template(),
+            sample_size: default_causal_sample_size(),
+            validate: true,
+        }
+    }
 }
 
 /// Graph export configuration for accounting network and ML training exports.
@@ -9678,6 +9814,23 @@ pub struct ComplianceSchemaConfig {
     /// Generate Article 10 data governance report.
     #[serde(default)]
     pub article10_report: bool,
+    /// Certificate configuration for proving DP guarantees.
+    #[serde(default)]
+    pub certificates: CertificateSchemaConfig,
+}
+
+/// Configuration for synthetic data certificates.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CertificateSchemaConfig {
+    /// Whether certificate generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Environment variable name for the signing key.
+    #[serde(default)]
+    pub signing_key_env: Option<String>,
+    /// Whether to include quality metrics in the certificate.
+    #[serde(default)]
+    pub include_quality_metrics: bool,
 }
 
 /// Content marking configuration for synthetic data output.

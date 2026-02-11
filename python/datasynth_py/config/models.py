@@ -779,6 +779,9 @@ class Config:
     distributions: Optional[AdvancedDistributionSettings] = None
     templates: Optional[TemplateSettings] = None
     temporal_patterns: Optional[TemporalPatternsConfig] = None
+    llm: Optional[Dict[str, Any]] = None
+    diffusion: Optional[Dict[str, Any]] = None
+    causal: Optional[Dict[str, Any]] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -1132,6 +1135,15 @@ class Config:
                     ]
                 tp_dict["timezones"] = tz_dict
             payload["temporal_patterns"] = tp_dict
+
+        if self.llm is not None:
+            payload["llm"] = self.llm
+
+        if self.diffusion is not None:
+            payload["diffusion"] = self.diffusion
+
+        if self.causal is not None:
+            payload["causal"] = self.causal
 
         # Merge extra fields
         payload.update(self.extra)
@@ -1497,12 +1509,17 @@ class Config:
                 timezones=timezones,
             )
 
+        # LLM, diffusion, and causal configs are passed through as dicts
+        llm = data.get("llm")
+        diffusion = data.get("diffusion")
+        causal = data.get("causal")
+
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
             "fraud", "banking", "scenario", "temporal", "data_quality", "graph_export",
             "audit", "streaming", "rate_limit", "temporal_attributes", "relationships",
             "accounting_standards", "audit_standards", "distributions", "templates",
-            "temporal_patterns"
+            "temporal_patterns", "llm", "diffusion", "causal",
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -1528,6 +1545,9 @@ class Config:
             distributions=distributions,
             templates=templates,
             temporal_patterns=temporal_patterns,
+            llm=llm,
+            diffusion=diffusion,
+            causal=causal,
             extra=extra,
         )
 

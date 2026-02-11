@@ -2211,6 +2211,9 @@ mod tests {
             quality_gates: QualityGatesSchemaConfig::default(),
             compliance: ComplianceSchemaConfig::default(),
             webhooks: WebhookSchemaConfig::default(),
+            llm: LlmSchemaConfig::default(),
+            diffusion: DiffusionSchemaConfig::default(),
+            causal: CausalSchemaConfig::default(),
         }
     }
 

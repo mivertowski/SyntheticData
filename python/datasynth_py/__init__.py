@@ -43,6 +43,7 @@ from datasynth_py.config.models import (
 from datasynth_py.config.validation import ConfigValidationError
 from datasynth_py.dataframes import list_tables, to_pandas, to_polars
 from datasynth_py.fingerprint import FidelityReport, FingerprintClient, FingerprintInfo
+from datasynth_py import integrations
 
 __all__ = [
     # Accounting Standards
@@ -91,6 +92,7 @@ __all__ = [
     "AsyncDataSynth",
     "StreamEvent",
     "blueprints",
+    "integrations",
     "list_tables",
     "to_pandas",
     "to_polars",

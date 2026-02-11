@@ -60,9 +60,9 @@ impl SinkPlugin for CsvEchoSink {
     fn initialize(&mut self, config: &serde_json::Value) -> Result<(), SynthError> {
         if let Some(delim) = config.get("delimiter").and_then(|v| v.as_str()) {
             let mut chars = delim.chars();
-            self.delimiter = chars.next().ok_or_else(|| {
-                SynthError::generation("delimiter must be a non-empty string")
-            })?;
+            self.delimiter = chars
+                .next()
+                .ok_or_else(|| SynthError::generation("delimiter must be a non-empty string"))?;
         }
         self.buffer.clear();
         self.record_count = 0;
@@ -174,10 +174,8 @@ mod tests {
         sink.initialize(&serde_json::json!({}))
             .expect("init should succeed");
 
-        sink.write_records(&sample_records())
-            .expect("first batch");
-        sink.write_records(&sample_records())
-            .expect("second batch");
+        sink.write_records(&sample_records()).expect("first batch");
+        sink.write_records(&sample_records()).expect("second batch");
 
         assert_eq!(sink.record_count(), 4);
         assert_eq!(sink.lines().len(), 4);

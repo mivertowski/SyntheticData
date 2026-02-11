@@ -9,6 +9,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **LLM-Augmented Generation** (`datasynth-core`, `datasynth-generators`): Opt-in LLM-powered metadata enrichment
+  - `LlmProvider` trait with `MockProvider` (deterministic) and `HttpProvider` (external API) implementations
+  - `LlmEnrichmentEngine`: Enriches vendor names, transaction descriptions, anomaly explanations, and memo fields
+  - Natural language configuration: Generate YAML configs from plain English descriptions
+  - `LlmConfig` with provider selection, model, caching, and per-field enrichment toggles
+  - Response caching with deterministic fallback for reproducible generation
+
+- **Diffusion Model Integration** (`datasynth-core`): Statistical diffusion backend for learned distribution capture
+  - `DiffusionBackend` trait with `StatisticalDiffusionBackend` implementation
+  - Noise schedules: cosine, linear, sigmoid with configurable step count
+  - Hybrid generation mode combining rule-based and diffusion outputs with configurable weight
+  - Training pipeline: `DiffusionTrainer` with epoch, batch size, and learning rate configuration
+  - `DiffusionConfig` with backend selection, noise schedule, hybrid mode, and training settings
+
+- **Advanced Privacy: Federated Fingerprinting** (`datasynth-fingerprint`): Distributed fingerprint extraction
+  - `FederatedFingerprintCoordinator`: Aggregate fingerprints from distributed data sources without centralization
+  - Synthetic data certificates: `SyntheticDataCertificate` with cryptographic proof of DP guarantees
+  - Privacy-utility Pareto frontier: `ParetoFrontier` for automated exploration of optimal epsilon values
+  - Certificate validation and verification workflow
+
+- **Causal & Counterfactual Generation** (`datasynth-core`): Causal modeling for what-if scenarios
+  - `CausalGraph`: DAG specification of causal relationships between entities
+  - `StructuralCausalModel` (SCM): Functional causal model with noise terms
+  - `Intervention`: Do-calculus interventions for hypothetical scenario generation
+  - `CounterfactualGenerator`: Generate counterfactual versions of existing records
+  - `CausalValidator`: Validate that generated data preserves specified causal structure
+  - Template causal graphs: fraud_detection, revenue_impact, supply_chain
+
+- **Ecosystem Integrations** (`python/datasynth_py/integrations`): Pipeline and workflow integrations
+  - `DataSynthOperator` / `DataSynthSensor` / `DataSynthValidateOperator`: Apache Airflow operators for orchestrated generation
+  - `DbtSourceGenerator`: Generate dbt source YAML and seed files from DataSynth output
+  - `DataSynthMlflowTracker`: Track generation runs as MLflow experiments with quality metrics
+  - `DataSynthSparkReader`: Read DataSynth output directly as Spark DataFrames
+  - Lazy imports to avoid requiring dependencies at import time
+
+- **Python Phase 4 Blueprints** (`python/datasynth_py`): New blueprint variants
+  - `with_llm_enrichment()`: Add LLM enrichment overlay to any base config
+  - `with_diffusion()`: Add diffusion model enhancement with hybrid mode
+  - `with_causal()`: Add causal generation with interventions and counterfactuals
+  - `Config.llm`, `Config.diffusion`, `Config.causal` optional dict fields for Phase 4 config sections
+
 - **JWT Validation & OIDC Support** (`datasynth-server`): Token-based authentication behind `jwt` feature flag
   - RS256 JWT validation via `jsonwebtoken` crate with issuer/audience verification
   - OIDC provider support (Keycloak, Auth0, Entra ID) via `--jwt-issuer`, `--jwt-audience`, `--jwt-public-key` CLI args

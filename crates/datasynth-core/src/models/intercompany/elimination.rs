@@ -472,9 +472,7 @@ impl EliminationRule {
 
     /// Check if rule is active on a given date.
     pub fn is_active_on(&self, date: NaiveDate) -> bool {
-        self.is_active
-            && date >= self.effective_date
-            && self.end_date.is_none_or(|end| date <= end)
+        self.is_active && date >= self.effective_date && self.end_date.is_none_or(|end| date <= end)
     }
 }
 

@@ -92,6 +92,7 @@ pub mod budget;
 pub mod composition;
 mod differential;
 mod kanonymity;
+pub mod pareto;
 
 pub use audit::*;
 pub use composition::{

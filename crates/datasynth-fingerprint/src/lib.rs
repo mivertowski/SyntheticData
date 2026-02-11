@@ -261,9 +261,11 @@
 //! [`PrivacyLevel::High`]: models::PrivacyLevel::High
 //! [`PrivacyLevel::Maximum`]: models::PrivacyLevel::Maximum
 
+pub mod certificates;
 pub mod error;
 pub mod evaluation;
 pub mod extraction;
+pub mod federated;
 pub mod io;
 pub mod models;
 pub mod privacy;

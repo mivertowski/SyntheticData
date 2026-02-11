@@ -864,6 +864,9 @@ pub fn default_generator_config() -> GeneratorConfig {
         quality_gates: Default::default(),
         compliance: Default::default(),
         webhooks: Default::default(),
+        llm: Default::default(),
+        diffusion: Default::default(),
+        causal: Default::default(),
     }
 }
 

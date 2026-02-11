@@ -2,9 +2,9 @@
 
 pub mod audit;
 mod auth;
-pub mod rbac;
 mod rate_limit;
 mod rate_limit_backend;
+pub mod rbac;
 #[cfg(feature = "redis")]
 mod redis_rate_limit;
 pub mod request_id;
@@ -14,13 +14,15 @@ mod routes;
 pub mod security_headers;
 mod websocket;
 
-pub use audit::{AuditConfig, AuditEvent, AuditLogger, AuditOutcome, JsonAuditLogger, NoopAuditLogger};
+pub use audit::{
+    AuditConfig, AuditEvent, AuditLogger, AuditOutcome, JsonAuditLogger, NoopAuditLogger,
+};
 pub use auth::{auth_middleware, AuthConfig};
 #[cfg(feature = "jwt")]
 pub use auth::{JwtConfig, JwtValidator, TokenClaims};
-pub use rbac::{Permission, RbacConfig, Role, RolePermissions};
 pub use rate_limit::{rate_limit_middleware, RateLimitConfig, RateLimiter};
 pub use rate_limit_backend::{backend_rate_limit_middleware, RateLimitBackend};
+pub use rbac::{Permission, RbacConfig, Role, RolePermissions};
 #[cfg(feature = "redis")]
 pub use redis_rate_limit::RedisRateLimiter;
 pub use routes::{

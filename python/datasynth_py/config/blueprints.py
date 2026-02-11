@@ -761,6 +761,114 @@ def statistical_validation(
     )
 
 
+def with_llm_enrichment(
+    base_config: Optional[Config] = None,
+    provider: str = "mock",
+    model: str = "default",
+) -> Config:
+    """Add LLM enrichment to a base config.
+
+    Enables LLM-augmented generation for realistic vendor names, transaction
+    descriptions, anomaly explanations, and memo fields.
+
+    Args:
+        base_config: Base configuration to extend. Defaults to retail_small().
+        provider: LLM provider name (mock, openai, anthropic, http).
+        model: Model identifier for the LLM provider.
+
+    Returns:
+        New Config with LLM enrichment enabled.
+    """
+    config = base_config if base_config is not None else retail_small()
+    llm_config: Dict[str, Any] = {
+        "enabled": True,
+        "provider": provider,
+        "model": model,
+        "cache_enabled": True,
+        "enrichment": {
+            "vendor_names": True,
+            "transaction_descriptions": True,
+            "anomaly_explanations": True,
+            "memo_fields": True,
+        },
+    }
+    return config.override(llm=llm_config)
+
+
+def with_diffusion(
+    base_config: Optional[Config] = None,
+    n_steps: int = 1000,
+    schedule: str = "cosine",
+    hybrid_weight: float = 0.3,
+) -> Config:
+    """Add diffusion model enhancement to a base config.
+
+    Enables diffusion-based generation for learned distribution capture,
+    optionally combined with rule-based generators in hybrid mode.
+
+    Args:
+        base_config: Base configuration to extend. Defaults to retail_small().
+        n_steps: Number of diffusion steps.
+        schedule: Noise schedule type (cosine, linear, sigmoid).
+        hybrid_weight: Weight of diffusion output in hybrid mode (0.0-1.0).
+
+    Returns:
+        New Config with diffusion model enabled.
+    """
+    config = base_config if base_config is not None else retail_small()
+    diffusion_config: Dict[str, Any] = {
+        "enabled": True,
+        "backend": "statistical",
+        "n_steps": n_steps,
+        "noise_schedule": schedule,
+        "hybrid_mode": {
+            "enabled": True,
+            "diffusion_weight": hybrid_weight,
+        },
+        "training": {
+            "enabled": False,
+            "epochs": 100,
+            "batch_size": 256,
+        },
+    }
+    return config.override(diffusion=diffusion_config)
+
+
+def with_causal(
+    base_config: Optional[Config] = None,
+    template: str = "fraud_detection",
+) -> Config:
+    """Add causal generation overlay to a base config.
+
+    Enables causal graph specification and interventional/counterfactual
+    generation for what-if scenario modeling.
+
+    Args:
+        base_config: Base configuration to extend. Defaults to retail_small().
+        template: Causal graph template (fraud_detection, revenue_impact, supply_chain).
+
+    Returns:
+        New Config with causal generation enabled.
+    """
+    config = base_config if base_config is not None else retail_small()
+    causal_config: Dict[str, Any] = {
+        "enabled": True,
+        "template": template,
+        "interventions": {
+            "enabled": True,
+        },
+        "counterfactuals": {
+            "enabled": True,
+            "samples_per_record": 5,
+        },
+        "validation": {
+            "enabled": True,
+            "check_causal_structure": True,
+        },
+    }
+    return config.override(causal=causal_config)
+
+
 def _transactions_to_volume(count: int) -> str:
     """Map transaction count to volume preset."""
     if count <= 10_000:
@@ -783,6 +891,9 @@ _REGISTRY: Dict[str, BlueprintFactory] = {
     "ml_training": ml_training,
     "audit_engagement": audit_engagement,
     "statistical_validation": statistical_validation,
+    "with_llm_enrichment": with_llm_enrichment,
+    "with_diffusion": with_diffusion,
+    "with_causal": with_causal,
 }
 
 

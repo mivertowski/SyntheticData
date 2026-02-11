@@ -25,7 +25,11 @@ pub fn strict_profile() -> GateProfile {
                 QualityMetric::DocumentChainIntegrity,
                 0.95,
             ),
-            QualityGate::gte("temporal_consistency", QualityMetric::TemporalConsistency, 0.90),
+            QualityGate::gte(
+                "temporal_consistency",
+                QualityMetric::TemporalConsistency,
+                0.90,
+            ),
             QualityGate::gte("completion_rate", QualityMetric::CompletionRate, 0.99),
             QualityGate::lte("duplicate_rate", QualityMetric::DuplicateRate, 0.001),
             QualityGate::gte(
@@ -60,7 +64,11 @@ pub fn default_profile() -> GateProfile {
                 QualityMetric::DocumentChainIntegrity,
                 0.90,
             ),
-            QualityGate::gte("temporal_consistency", QualityMetric::TemporalConsistency, 0.80),
+            QualityGate::gte(
+                "temporal_consistency",
+                QualityMetric::TemporalConsistency,
+                0.80,
+            ),
             QualityGate::gte("completion_rate", QualityMetric::CompletionRate, 0.95),
             QualityGate::lte("duplicate_rate", QualityMetric::DuplicateRate, 0.01),
             QualityGate::gte(
@@ -95,7 +103,11 @@ pub fn lenient_profile() -> GateProfile {
                 QualityMetric::DocumentChainIntegrity,
                 0.80,
             ),
-            QualityGate::gte("temporal_consistency", QualityMetric::TemporalConsistency, 0.60),
+            QualityGate::gte(
+                "temporal_consistency",
+                QualityMetric::TemporalConsistency,
+                0.60,
+            ),
             QualityGate::gte("completion_rate", QualityMetric::CompletionRate, 0.90),
             QualityGate::lte("duplicate_rate", QualityMetric::DuplicateRate, 0.05),
             QualityGate::gte(
@@ -153,12 +165,23 @@ mod tests {
         let lenient = lenient_profile();
 
         // Find Benford MAD gate in both
-        let strict_benford = strict.gates.iter().find(|g| g.metric == QualityMetric::BenfordMad);
-        let lenient_benford = lenient.gates.iter().find(|g| g.metric == QualityMetric::BenfordMad);
+        let strict_benford = strict
+            .gates
+            .iter()
+            .find(|g| g.metric == QualityMetric::BenfordMad);
+        let lenient_benford = lenient
+            .gates
+            .iter()
+            .find(|g| g.metric == QualityMetric::BenfordMad);
 
         if let (Some(s), Some(l)) = (strict_benford, lenient_benford) {
             // Strict should have a lower (tighter) MAD threshold
-            assert!(s.threshold < l.threshold, "strict MAD ({}) should be < lenient MAD ({})", s.threshold, l.threshold);
+            assert!(
+                s.threshold < l.threshold,
+                "strict MAD ({}) should be < lenient MAD ({})",
+                s.threshold,
+                l.threshold
+            );
         }
     }
 

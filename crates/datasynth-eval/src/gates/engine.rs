@@ -95,7 +95,12 @@ pub struct QualityGate {
 
 impl QualityGate {
     /// Create a new quality gate.
-    pub fn new(name: impl Into<String>, metric: QualityMetric, threshold: f64, comparison: Comparison) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        metric: QualityMetric,
+        threshold: f64,
+        comparison: Comparison,
+    ) -> Self {
         Self {
             name: name.into(),
             metric,
@@ -231,9 +236,15 @@ impl GateEngine {
                         threshold: gate.threshold,
                         comparison: gate.comparison.clone(),
                         message: if passed {
-                            format!("{}: {:.4} passes {:?} {:.4}", gate.name, value, gate.comparison, gate.threshold)
+                            format!(
+                                "{}: {:.4} passes {:?} {:.4}",
+                                gate.name, value, gate.comparison, gate.threshold
+                            )
                         } else {
-                            format!("{}: {:.4} fails {:?} {:.4}", gate.name, value, gate.comparison, gate.threshold)
+                            format!(
+                                "{}: {:.4} fails {:?} {:.4}",
+                                gate.name, value, gate.comparison, gate.threshold
+                            )
                         },
                     }
                 }
@@ -304,11 +315,13 @@ impl GateEngine {
                 (mad, "benford analysis not available".to_string())
             }
             QualityMetric::BalanceCoherence => {
-                let rate = evaluation
-                    .coherence
-                    .balance
-                    .as_ref()
-                    .map(|b| if b.equation_balanced { 1.0 } else { 0.0 });
+                let rate = evaluation.coherence.balance.as_ref().map(|b| {
+                    if b.equation_balanced {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                });
                 (rate, "balance sheet evaluation not available".to_string())
             }
             QualityMetric::DocumentChainIntegrity => {
@@ -321,7 +334,10 @@ impl GateEngine {
             }
             QualityMetric::CorrelationPreservation => {
                 // Not directly available in ComprehensiveEvaluation - return None
-                (None, "correlation preservation metric not available".to_string())
+                (
+                    None,
+                    "correlation preservation metric not available".to_string(),
+                )
             }
             QualityMetric::TemporalConsistency => {
                 let rate = evaluation
@@ -361,7 +377,10 @@ impl GateEngine {
                     .referential
                     .as_ref()
                     .map(|r| r.overall_integrity_score);
-                (rate, "referential integrity evaluation not available".to_string())
+                (
+                    rate,
+                    "referential integrity evaluation not available".to_string(),
+                )
             }
             QualityMetric::IcMatchRate => {
                 let rate = evaluation
@@ -371,9 +390,13 @@ impl GateEngine {
                     .map(|ic| ic.match_rate);
                 (rate, "IC matching evaluation not available".to_string())
             }
-            QualityMetric::Custom(name) => {
-                (None, format!("custom metric '{}' not available in standard evaluation", name))
-            }
+            QualityMetric::Custom(name) => (
+                None,
+                format!(
+                    "custom metric '{}' not available in standard evaluation",
+                    name
+                ),
+            ),
         }
     }
 }
@@ -443,10 +466,19 @@ mod tests {
                 // This will fail because balance_coherence is not available
                 // but N/A is treated as pass. Let's create a custom gate
                 // that we know will fail
-                QualityGate::gte("custom_gate", QualityMetric::Custom("nonexistent".to_string()), 0.99),
-                QualityGate::gte("another", QualityMetric::Custom("also_nonexistent".to_string()), 0.99),
+                QualityGate::gte(
+                    "custom_gate",
+                    QualityMetric::Custom("nonexistent".to_string()),
+                    0.99,
+                ),
+                QualityGate::gte(
+                    "another",
+                    QualityMetric::Custom("also_nonexistent".to_string()),
+                    0.99,
+                ),
             ],
-        ).with_fail_strategy(FailStrategy::FailFast);
+        )
+        .with_fail_strategy(FailStrategy::FailFast);
 
         let result = GateEngine::evaluate(&evaluation, &profile);
         // Custom metrics unavailable are treated as pass, so both pass
@@ -462,7 +494,8 @@ mod tests {
                 QualityGate::lte("mad", QualityMetric::BenfordMad, 0.015),
                 QualityGate::gte("completion", QualityMetric::CompletionRate, 0.95),
             ],
-        ).with_fail_strategy(FailStrategy::CollectAll);
+        )
+        .with_fail_strategy(FailStrategy::CollectAll);
 
         let result = GateEngine::evaluate(&evaluation, &profile);
         assert_eq!(result.results.len(), 2);
@@ -479,7 +512,10 @@ mod tests {
     #[test]
     fn test_quality_metric_display() {
         assert_eq!(QualityMetric::BenfordMad.to_string(), "benford_mad");
-        assert_eq!(QualityMetric::BalanceCoherence.to_string(), "balance_coherence");
+        assert_eq!(
+            QualityMetric::BalanceCoherence.to_string(),
+            "balance_coherence"
+        );
         assert_eq!(
             QualityMetric::Custom("my_metric".to_string()).to_string(),
             "custom:my_metric"

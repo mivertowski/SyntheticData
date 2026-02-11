@@ -33,10 +33,7 @@ impl PluginRegistry {
     /// Register a generator plugin.
     ///
     /// Returns an error if a generator with the same name is already registered.
-    pub fn register_generator(
-        &self,
-        plugin: Box<dyn GeneratorPlugin>,
-    ) -> Result<(), SynthError> {
+    pub fn register_generator(&self, plugin: Box<dyn GeneratorPlugin>) -> Result<(), SynthError> {
         let name = plugin.name().to_string();
         let mut generators = self
             .generators
@@ -74,10 +71,7 @@ impl PluginRegistry {
     /// Register a transform plugin.
     ///
     /// Returns an error if a transform with the same name is already registered.
-    pub fn register_transform(
-        &self,
-        plugin: Box<dyn TransformPlugin>,
-    ) -> Result<(), SynthError> {
+    pub fn register_transform(&self, plugin: Box<dyn TransformPlugin>) -> Result<(), SynthError> {
         let name = plugin.name().to_string();
         let mut transforms = self
             .transforms
@@ -250,10 +244,9 @@ mod tests {
             mut records: Vec<GeneratedRecord>,
         ) -> Result<Vec<GeneratedRecord>, SynthError> {
             for record in &mut records {
-                record.fields.insert(
-                    "_transformed".to_string(),
-                    serde_json::Value::Bool(true),
-                );
+                record
+                    .fields
+                    .insert("_transformed".to_string(), serde_json::Value::Bool(true));
             }
             Ok(records)
         }

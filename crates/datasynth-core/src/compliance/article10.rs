@@ -62,32 +62,40 @@ impl DataGovernanceReport {
         self.processing_steps = vec![
             ProcessingStep {
                 name: "Chart of Accounts Generation".to_string(),
-                description: "Generate GL account structure based on industry and complexity".to_string(),
+                description: "Generate GL account structure based on industry and complexity"
+                    .to_string(),
                 order: 1,
             },
             ProcessingStep {
                 name: "Master Data Generation".to_string(),
-                description: "Generate vendors, customers, materials, fixed assets, employees".to_string(),
+                description: "Generate vendors, customers, materials, fixed assets, employees"
+                    .to_string(),
                 order: 2,
             },
             ProcessingStep {
                 name: "Document Flow Generation".to_string(),
-                description: "Generate P2P and O2C document chains with three-way matching".to_string(),
+                description: "Generate P2P and O2C document chains with three-way matching"
+                    .to_string(),
                 order: 3,
             },
             ProcessingStep {
                 name: "Journal Entry Generation".to_string(),
-                description: "Generate balanced journal entries following Benford's Law".to_string(),
+                description: "Generate balanced journal entries following Benford's Law"
+                    .to_string(),
                 order: 4,
             },
             ProcessingStep {
                 name: "Anomaly Injection".to_string(),
-                description: "Inject configurable fraud and error patterns with ground truth labels".to_string(),
+                description:
+                    "Inject configurable fraud and error patterns with ground truth labels"
+                        .to_string(),
                 order: 5,
             },
             ProcessingStep {
                 name: "Quality Validation".to_string(),
-                description: "Validate balance coherence, referential integrity, and statistical properties".to_string(),
+                description:
+                    "Validate balance coherence, referential integrity, and statistical properties"
+                        .to_string(),
                 order: 6,
             },
         ];
@@ -98,7 +106,8 @@ impl DataGovernanceReport {
         self.quality_measures = vec![
             QualityMeasure {
                 name: "Benford's Law Compliance".to_string(),
-                description: "First-digit distribution follows Benford's Law (MAD < 0.015)".to_string(),
+                description: "First-digit distribution follows Benford's Law (MAD < 0.015)"
+                    .to_string(),
                 result: "Applied".to_string(),
             },
             QualityMeasure {

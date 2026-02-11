@@ -15,12 +15,15 @@
 //! - Streaming infrastructure for real-time data generation
 
 pub mod accounts;
+pub mod causal;
 pub mod compliance;
 pub mod cpu_monitor;
 pub mod degradation;
+pub mod diffusion;
 pub mod disk_guard;
 pub mod distributions;
 pub mod error;
+pub mod llm;
 pub mod memory_guard;
 pub mod models;
 pub mod plugins;

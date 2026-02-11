@@ -158,10 +158,7 @@ impl WebhookDispatcher {
     /// Create a payload for a gate-violation event.
     pub fn gate_violation_payload(run_id: &str, failed_gates: Vec<String>) -> WebhookPayload {
         let mut data = HashMap::new();
-        data.insert(
-            "failed_gates".to_string(),
-            serde_json::json!(failed_gates),
-        );
+        data.insert("failed_gates".to_string(), serde_json::json!(failed_gates));
         WebhookPayload {
             event: WebhookEvent::GateViolation,
             run_id: run_id.to_string(),

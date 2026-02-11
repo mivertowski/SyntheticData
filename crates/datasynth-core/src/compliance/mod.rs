@@ -7,4 +7,6 @@ pub mod article10;
 pub mod content_marking;
 
 pub use article10::{DataGovernanceReport, ProcessingStep, QualityMeasure};
-pub use content_marking::{ContentCredential, MarkingConfig, MarkingFormat, SyntheticContentMarker};
+pub use content_marking::{
+    ContentCredential, MarkingConfig, MarkingFormat, SyntheticContentMarker,
+};

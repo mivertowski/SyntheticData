@@ -741,14 +741,14 @@ fn main() -> Result<()> {
 
                     // Print gate result summary
                     println!();
-                    println!("Quality Gate Evaluation (profile: {})", gate_result.profile_name);
+                    println!(
+                        "Quality Gate Evaluation (profile: {})",
+                        gate_result.profile_name
+                    );
                     println!("==========================================");
                     for check in &gate_result.results {
                         let status = if check.passed { "PASS" } else { "FAIL" };
-                        println!(
-                            "  [{}] {}: {}",
-                            status, check.gate_name, check.message
-                        );
+                        println!("  [{}] {}: {}", status, check.gate_name, check.message);
                     }
                     println!();
                     println!(
@@ -1508,6 +1508,9 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         quality_gates: Default::default(),
         compliance: Default::default(),
         webhooks: Default::default(),
+        llm: Default::default(),
+        diffusion: Default::default(),
+        causal: Default::default(),
     }
 }
 
