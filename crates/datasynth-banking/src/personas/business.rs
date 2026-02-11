@@ -260,6 +260,7 @@ fn business_spending_profile(_cash_intensity: f64, international_rate: f64) -> S
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

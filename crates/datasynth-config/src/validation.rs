@@ -2134,6 +2134,7 @@ fn validate_compliance(config: &GeneratorConfig) -> SynthResult<()> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::presets::{create_preset, demo_preset, stress_test_preset};

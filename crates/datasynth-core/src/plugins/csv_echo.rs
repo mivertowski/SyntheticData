@@ -108,6 +108,7 @@ impl SinkPlugin for CsvEchoSink {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

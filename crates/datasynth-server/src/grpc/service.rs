@@ -871,6 +871,7 @@ pub fn default_generator_config() -> GeneratorConfig {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::grpc::synth::synthetic_data_service_server::SyntheticDataService;

@@ -3000,6 +3000,7 @@ fn format_name(format: datasynth_config::schema::GraphExportFormat) -> &'static 
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use datasynth_config::schema::*;

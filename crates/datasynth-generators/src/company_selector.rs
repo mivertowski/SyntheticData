@@ -146,6 +146,7 @@ impl Default for WeightedCompanySelector {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

@@ -356,6 +356,7 @@ impl Default for TemporalAttributeConfigBuilder {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

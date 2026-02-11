@@ -523,7 +523,7 @@ impl StreamingOrchestrator {
             count += 1;
 
             // Send progress updates
-            if count % progress_interval == 0 {
+            if count.is_multiple_of(progress_interval) {
                 progress.items_generated = count;
                 progress.items_remaining = Some(total_entries as u64 - count);
                 sender.send(StreamEvent::Progress(progress.clone()))?;
@@ -655,7 +655,7 @@ impl StreamingOrchestrator {
                     count += 1;
                 }
 
-                if count % progress_interval == 0 {
+                if count.is_multiple_of(progress_interval) {
                     progress.items_generated = count;
                     sender.send(StreamEvent::Progress(progress.clone()))?;
                 }
@@ -719,7 +719,7 @@ impl StreamingOrchestrator {
                     count += 1;
                 }
 
-                if count % progress_interval == 0 {
+                if count.is_multiple_of(progress_interval) {
                     progress.items_generated = count;
                     sender.send(StreamEvent::Progress(progress.clone()))?;
                 }
@@ -751,6 +751,7 @@ pub struct StreamingOrchestratorStats {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use datasynth_config::presets::create_preset;

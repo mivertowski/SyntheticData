@@ -62,7 +62,7 @@ impl JsonLinesSink {
     /// Check disk space if guard is configured.
     fn check_disk_space(&self) -> SynthResult<()> {
         if let Some(guard) = &self.disk_guard {
-            if self.items_written % self.check_interval == 0 {
+            if self.items_written.is_multiple_of(self.check_interval) {
                 guard
                     .check()
                     .map_err(|e| SynthError::disk_exhausted(e.available_mb, e.required_mb))?;

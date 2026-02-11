@@ -429,6 +429,7 @@ pub mod conditional_presets {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

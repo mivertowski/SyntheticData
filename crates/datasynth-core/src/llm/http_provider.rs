@@ -175,6 +175,7 @@ impl LlmProvider for HttpLlmProvider {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

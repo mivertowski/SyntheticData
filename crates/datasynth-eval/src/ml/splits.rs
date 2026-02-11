@@ -342,6 +342,7 @@ impl Default for SplitAnalyzer {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

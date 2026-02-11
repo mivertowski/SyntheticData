@@ -47,7 +47,7 @@ proptest! {
                 .and_then(|c| c.to_digit(10))
             {
                 let d = first_digit as usize;
-                if d >= 1 && d <= 9 {
+                if (1..=9).contains(&d) {
                     digit_counts[d - 1] += 1;
                 }
             }

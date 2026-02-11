@@ -164,7 +164,7 @@ impl ResourceGuard {
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         // Only perform actual checks at intervals
-        if count % self.config.check_interval as u64 != 0 {
+        if !count.is_multiple_of(self.config.check_interval as u64) {
             return Ok(self.degradation_controller.current_level());
         }
 
@@ -455,6 +455,7 @@ impl ResourceGuardBuilder {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

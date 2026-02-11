@@ -956,6 +956,7 @@ pub fn generate_html_report(report: &FidelityReport) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::models::Percentiles;

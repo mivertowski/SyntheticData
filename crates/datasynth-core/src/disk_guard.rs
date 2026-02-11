@@ -146,7 +146,7 @@ impl DiskSpaceGuard {
         let count = self.operation_counter.fetch_add(1, Ordering::Relaxed);
 
         // Only check at intervals to minimize overhead
-        if count % self.config.check_interval as u64 != 0 {
+        if !count.is_multiple_of(self.config.check_interval as u64) {
             return Ok(());
         }
 
@@ -511,6 +511,7 @@ pub fn check_sufficient_disk_space(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

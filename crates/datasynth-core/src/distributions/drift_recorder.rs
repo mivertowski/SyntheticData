@@ -617,6 +617,7 @@ pub struct DriftRecorderSummary {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

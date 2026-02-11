@@ -554,6 +554,7 @@ pub fn sample_negative_edges(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::test_helpers::create_splits_test_graph;

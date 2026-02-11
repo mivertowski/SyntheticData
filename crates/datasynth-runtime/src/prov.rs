@@ -277,6 +277,7 @@ pub fn manifest_to_prov(manifest: &RunManifest) -> ProvDocument {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::run_manifest::{OutputFileInfo, RunManifest};

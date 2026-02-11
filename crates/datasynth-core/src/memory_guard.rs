@@ -144,7 +144,7 @@ impl MemoryGuard {
             self.config.check_interval
         };
 
-        if count % interval as u64 != 0 {
+        if !count.is_multiple_of(interval as u64) {
             return Ok(());
         }
 
@@ -369,6 +369,7 @@ pub fn check_sufficient_memory(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

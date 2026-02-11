@@ -205,6 +205,7 @@ fn find_changed_variables(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::causal::graph::CausalGraph;

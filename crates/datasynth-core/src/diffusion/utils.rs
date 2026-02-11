@@ -108,6 +108,7 @@ pub fn generate_noise(n_samples: usize, n_features: usize, seed: u64) -> Vec<Vec
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

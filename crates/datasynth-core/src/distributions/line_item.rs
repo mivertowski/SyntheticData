@@ -242,7 +242,7 @@ impl LineItemSampler {
         let should_be_even = self.sample_even();
 
         // Adjust to match parity requirement
-        let is_even = base_count % 2 == 0;
+        let is_even = base_count.is_multiple_of(2);
         if should_be_even != is_even {
             // Use symmetric adjustment: randomly increment or decrement
             if base_count <= 2 {
@@ -346,6 +346,7 @@ impl LineItemSpec {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

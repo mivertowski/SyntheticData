@@ -593,6 +593,7 @@ pub fn compare_snapshots(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

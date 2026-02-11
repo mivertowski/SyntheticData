@@ -445,6 +445,7 @@ fn winsorize_values(values: &mut [f64], percentile: f64) -> (usize, usize) {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -613,7 +614,7 @@ mod tests {
 
         // Should get close to 100 queries (floating-point may cause slight variance)
         assert!(
-            succeeded >= 99 && succeeded <= 100,
+            (99..=100).contains(&succeeded),
             "Expected ~100 successful queries, got {}",
             succeeded
         );

@@ -29,6 +29,7 @@ pub mod ml;
 pub mod models;
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 pub(crate) mod test_helpers;
 
 pub use builders::*;

@@ -348,6 +348,7 @@ pub fn assuretwin_comprehensive_preset() -> GeneratorConfig {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

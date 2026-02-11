@@ -83,10 +83,23 @@ pub struct TokenClaims {
 
 /// JWT validator that verifies tokens from external OIDC providers.
 #[cfg(feature = "jwt")]
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct JwtValidator {
     config: JwtConfig,
     decoding_key: Option<jsonwebtoken::DecodingKey>,
+}
+
+#[cfg(feature = "jwt")]
+impl std::fmt::Debug for JwtValidator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("JwtValidator")
+            .field("config", &self.config)
+            .field(
+                "decoding_key",
+                &self.decoding_key.as_ref().map(|_| "[redacted]"),
+            )
+            .finish()
+    }
 }
 
 #[cfg(feature = "jwt")]
@@ -415,6 +428,7 @@ fn extract_x_api_key(request: &Request<Body>) -> Option<String> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use axum::{

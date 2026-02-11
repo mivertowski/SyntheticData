@@ -568,6 +568,7 @@ fn sample_positive_stable(rng: &mut ChaCha8Rng, alpha: f64) -> f64 {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

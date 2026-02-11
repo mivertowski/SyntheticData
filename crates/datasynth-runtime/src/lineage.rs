@@ -252,6 +252,7 @@ pub fn build_generation_lineage(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

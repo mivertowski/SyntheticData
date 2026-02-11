@@ -205,6 +205,7 @@ impl Default for SubledgerEvaluator {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

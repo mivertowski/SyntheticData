@@ -461,6 +461,7 @@ impl<T: Send> StreamingSink<T> for CollectorSink<T> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

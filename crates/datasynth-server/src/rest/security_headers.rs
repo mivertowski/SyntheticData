@@ -40,6 +40,7 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use axum::{routing::get, Router};

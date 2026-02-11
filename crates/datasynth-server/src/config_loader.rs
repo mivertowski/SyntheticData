@@ -90,6 +90,7 @@ impl std::fmt::Display for ConfigLoadError {
 impl std::error::Error for ConfigLoadError {}
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

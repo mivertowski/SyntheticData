@@ -553,6 +553,7 @@ impl Default for CounterfactualConfig {
 use rust_decimal::prelude::*;
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use chrono::NaiveDate;

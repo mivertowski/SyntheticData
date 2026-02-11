@@ -134,6 +134,7 @@ pub fn get_profile(name: &str) -> Option<GateProfile> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

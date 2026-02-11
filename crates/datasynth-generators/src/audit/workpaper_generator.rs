@@ -560,6 +560,7 @@ impl WorkpaperGenerator {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::audit::test_helpers::create_test_engagement;

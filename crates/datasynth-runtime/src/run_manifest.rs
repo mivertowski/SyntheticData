@@ -368,6 +368,7 @@ impl RunManifest {
 // and exported via datasynth_config::schema::ScenarioConfig
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use datasynth_config::schema::*;

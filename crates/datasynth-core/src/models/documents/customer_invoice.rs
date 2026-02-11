@@ -712,6 +712,7 @@ pub enum AgingBucket {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

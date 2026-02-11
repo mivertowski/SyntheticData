@@ -356,6 +356,7 @@ fn set_nested_value(root: &mut serde_yaml::Mapping, path: &[&str], value: &Confi
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

@@ -585,7 +585,7 @@ impl CollusionRing {
                         .saturating_mul(Decimal::from_str_exact("1.5").unwrap_or(Decimal::ONE));
                 }
             }
-            RingStatus::Dormant if self.active_months % 3 == 0 => {
+            RingStatus::Dormant if self.active_months.is_multiple_of(3) => {
                 // Chance to reactivate
                 if rng.gen::<f64>() < 0.4 && self.detection_risk < 0.4 {
                     self.status = RingStatus::Active;
@@ -653,6 +653,7 @@ impl CollusionRing {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use rand::SeedableRng;

@@ -238,6 +238,7 @@ pub async fn handle_events_socket(socket: WebSocket, state: AppState) {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

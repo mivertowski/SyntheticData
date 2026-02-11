@@ -38,6 +38,7 @@ pub async fn request_id_middleware(mut request: Request<Body>, next: Next) -> Re
 pub struct RequestId(pub String);
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use axum::{routing::get, Router};

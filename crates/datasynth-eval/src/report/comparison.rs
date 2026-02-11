@@ -445,6 +445,7 @@ impl Default for BaselineComparer {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

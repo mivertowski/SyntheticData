@@ -280,6 +280,7 @@ fn hmac_sha256(data: &[u8], key: &[u8]) -> Vec<u8> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

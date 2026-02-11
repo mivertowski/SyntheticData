@@ -473,6 +473,7 @@ pub fn create_accountant(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

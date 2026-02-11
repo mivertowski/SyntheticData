@@ -7,11 +7,11 @@
 #[cfg(feature = "otel")]
 use opentelemetry::global;
 #[cfg(feature = "otel")]
+use opentelemetry::trace::TracerProvider as _;
+#[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
-#[cfg(feature = "otel")]
-use tracing_subscriber::Layer;
+use opentelemetry_sdk::trace::TracerProvider;
 
 /// Initialize OpenTelemetry tracing and metrics.
 ///
@@ -32,18 +32,13 @@ pub fn init_otel_layer() -> Result<
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 
-    let exporter = opentelemetry_otlp::new_exporter()
-        .tonic()
-        .with_endpoint(&endpoint);
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(&endpoint)
+        .build()?;
 
     let tracer_provider = TracerProvider::builder()
-        .with_batch_exporter(
-            opentelemetry_otlp::new_pipeline()
-                .tracing()
-                .with_exporter(exporter)
-                .build_batch(Tokio)?,
-            Tokio,
-        )
+        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
         .build();
 
     let tracer = tracer_provider.tracer("datasynth-server");

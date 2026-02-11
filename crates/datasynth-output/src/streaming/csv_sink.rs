@@ -155,6 +155,7 @@ impl<T: Serialize + Send> StreamingSink<T> for CsvStreamingSink<T> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};

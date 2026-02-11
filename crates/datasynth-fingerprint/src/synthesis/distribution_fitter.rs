@@ -379,6 +379,7 @@ fn regularized_gamma_q_cf(a: f64, x: f64) -> f64 {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::models::MixtureComponent;
@@ -810,7 +811,7 @@ mod tests {
         let score = goodness_of_fit(&data, DistributionType::Gamma, &params);
         // Just verify it returns a valid score
         assert!(
-            score >= 0.0 && score <= 1.0,
+            (0.0..=1.0).contains(&score),
             "Score should be in [0,1], got {}",
             score
         );
@@ -827,7 +828,7 @@ mod tests {
         };
         let score = goodness_of_fit(&data, DistributionType::Pareto, &params);
         assert!(
-            score >= 0.0 && score <= 1.0,
+            (0.0..=1.0).contains(&score),
             "Score should be in [0,1], got {}",
             score
         );

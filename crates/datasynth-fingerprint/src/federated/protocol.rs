@@ -446,7 +446,7 @@ fn compute_median(sorted: &[f64]) -> f64 {
         return 0.0;
     }
     let mid = sorted.len() / 2;
-    if sorted.len() % 2 == 0 {
+    if sorted.len().is_multiple_of(2) {
         (sorted[mid - 1] + sorted[mid]) / 2.0
     } else {
         sorted[mid]
@@ -462,6 +462,7 @@ fn trim_slice(sorted: &[f64], count: usize) -> &[f64] {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -554,7 +555,7 @@ mod tests {
         assert!(result
             .as_ref()
             .err()
-            .map_or(false, |e| e.contains("Need at least 2 sources")));
+            .is_some_and(|e| e.contains("Need at least 2 sources")));
 
         // Empty slice
         let result = protocol.aggregate(&[]);
@@ -574,7 +575,7 @@ mod tests {
         assert!(result
             .as_ref()
             .err()
-            .map_or(false, |e| e.contains("zero records")));
+            .is_some_and(|e| e.contains("zero records")));
     }
 
     #[test]
@@ -614,7 +615,7 @@ mod tests {
         assert!(result
             .as_ref()
             .err()
-            .map_or(false, |e| e.contains("exceeds max")));
+            .is_some_and(|e| e.contains("exceeds max")));
     }
 
     #[test]
@@ -634,7 +635,7 @@ mod tests {
         assert!(result
             .as_ref()
             .err()
-            .map_or(false, |e| e.contains("Column name mismatch")));
+            .is_some_and(|e| e.contains("Column name mismatch")));
     }
 
     #[test]

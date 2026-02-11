@@ -640,6 +640,7 @@ fn edge_property_to_json(prop: &EdgeProperty) -> Value {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::models::{EdgeType, NodeType};

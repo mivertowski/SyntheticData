@@ -254,6 +254,7 @@ fn compute_best_threshold_metrics(scored: &[(f64, bool)]) -> (f64, f64, f64) {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

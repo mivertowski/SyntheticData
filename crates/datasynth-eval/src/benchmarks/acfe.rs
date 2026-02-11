@@ -463,6 +463,7 @@ pub fn all_acfe_benchmarks() -> Vec<BenchmarkSuite> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

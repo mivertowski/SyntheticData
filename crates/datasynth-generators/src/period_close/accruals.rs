@@ -310,7 +310,7 @@ impl AccrualGenerator {
     fn should_accrue(&self, definition: &AccrualDefinition, period: &FiscalPeriod) -> bool {
         match definition.frequency {
             AccrualFrequency::Monthly => true,
-            AccrualFrequency::Quarterly => period.period % 3 == 0,
+            AccrualFrequency::Quarterly => period.period.is_multiple_of(3),
             AccrualFrequency::Annually => period.is_year_end,
         }
     }
@@ -473,6 +473,7 @@ pub struct SkippedAccrual {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

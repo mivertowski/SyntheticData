@@ -490,6 +490,7 @@ fn compute_entropy(frequencies: &[CategoryFrequency]) -> f64 {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

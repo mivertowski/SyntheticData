@@ -412,6 +412,7 @@ impl Default for GraphAnalyzer {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

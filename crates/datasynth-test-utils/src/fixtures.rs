@@ -259,6 +259,7 @@ pub fn standard_test_accounts() -> Vec<GLAccount> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

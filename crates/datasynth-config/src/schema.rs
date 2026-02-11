@@ -9895,6 +9895,7 @@ fn default_webhook_timeout() -> u64 {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::presets::demo_preset;

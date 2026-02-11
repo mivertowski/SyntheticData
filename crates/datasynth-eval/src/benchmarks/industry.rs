@@ -416,6 +416,7 @@ pub fn get_industry_benchmark(industry: &str) -> Option<BenchmarkSuite> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

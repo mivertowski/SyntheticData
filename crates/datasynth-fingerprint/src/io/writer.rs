@@ -305,6 +305,7 @@ fn compute_checksum(data: &[u8]) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::models::{

@@ -401,6 +401,7 @@ pub enum AlertSeverity {
 pub use datasynth_core::models::banking::EvasionTactic;
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

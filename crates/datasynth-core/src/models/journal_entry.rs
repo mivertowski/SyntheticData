@@ -673,7 +673,7 @@ impl JournalEntry {
 
     /// Check if the line count is even.
     pub fn has_even_line_count(&self) -> bool {
-        self.lines.len() % 2 == 0
+        self.lines.len().is_multiple_of(2)
     }
 
     /// Get the count of debit and credit lines.
@@ -761,6 +761,7 @@ impl JournalEntry {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

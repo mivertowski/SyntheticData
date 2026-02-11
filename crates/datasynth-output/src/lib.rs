@@ -24,4 +24,5 @@ pub use streaming::{
 };
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod test_helpers;

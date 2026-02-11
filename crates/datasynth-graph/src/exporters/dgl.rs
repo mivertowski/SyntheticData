@@ -880,6 +880,7 @@ impl SimpleRng {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::test_helpers::create_test_graph_with_company;

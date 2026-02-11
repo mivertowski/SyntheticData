@@ -1258,6 +1258,7 @@ fn compute_je_features(entry: &JournalEntry) -> Vec<f64> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use datasynth_core::models::{

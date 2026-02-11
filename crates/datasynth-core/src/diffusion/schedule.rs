@@ -105,6 +105,7 @@ impl NoiseSchedule {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -144,7 +145,7 @@ mod tests {
         let schedule = NoiseSchedule::new(&NoiseScheduleType::Sigmoid, 100);
         for &beta in &schedule.betas {
             assert!(
-                beta >= 0.0001 && beta <= 0.02,
+                (0.0001..=0.02).contains(&beta),
                 "Sigmoid betas should be within [0.0001, 0.02], got {}",
                 beta
             );

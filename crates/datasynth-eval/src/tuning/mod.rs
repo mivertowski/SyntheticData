@@ -656,6 +656,7 @@ impl Default for ConfigSuggestionGenerator {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

@@ -356,6 +356,7 @@ pub struct FitReport {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::super::backend::NoiseScheduleType;
     use super::*;
@@ -689,7 +690,7 @@ mod tests {
                 val,
             );
             assert!(
-                val >= 1.0 && val <= 50.0,
+                (1.0..=50.0).contains(&val),
                 "Integer column value {} out of range [1, 50]",
                 val,
             );
@@ -722,7 +723,7 @@ mod tests {
                 val,
             );
             assert!(
-                val >= 0.0 && val <= 2.0,
+                (0.0..=2.0).contains(&val),
                 "Categorical index {} out of range [0, 2]",
                 val,
             );

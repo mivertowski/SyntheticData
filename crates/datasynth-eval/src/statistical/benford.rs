@@ -315,6 +315,7 @@ pub struct SecondDigitAnalysis {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use rust_decimal_macros::dec;
