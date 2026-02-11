@@ -6,7 +6,7 @@ Set up your local development environment for SyntheticData.
 
 ### Required
 
-- **Rust**: 1.75 or later (install via [rustup](https://rustup.rs/))
+- **Rust**: 1.88 or later (install via [rustup](https://rustup.rs/))
 - **Git**: For version control
 - **Cargo**: Included with Rust
 

@@ -28,7 +28,7 @@ This roadmap addresses the infrastructure, operations, security, compliance, and
 |----------|-------|--------|--------------|
 | **Workspace Structure** | 9/10 | Excellent | 15 well-organized crates, clear separation of concerns |
 | **Testing** | 10/10 | Excellent | 2,500+ tests, property testing via proptest, fuzzing harnesses (cargo-fuzz), k6 load tests, coverage via cargo-llvm-cov + Codecov |
-| **CI/CD** | 9/10 | Excellent | 7-job pipeline: fmt, clippy, cross-platform test (Linux/macOS/Windows), MSRV 1.75, security scanning (cargo-deny + cargo-audit), coverage, benchmark regression |
+| **CI/CD** | 9/10 | Excellent | 7-job pipeline: fmt, clippy, cross-platform test (Linux/macOS/Windows), MSRV 1.88, security scanning (cargo-deny + cargo-audit), coverage, benchmark regression |
 | **Error Handling** | 10/10 | Excellent | Idiomatic `thiserror`/`anyhow`; `#![deny(clippy::unwrap_used)]` enforced across all library crates; zero unwrap calls in non-test code |
 | **Observability** | 9/10 | Excellent | Structured JSON logging, feature-gated OpenTelemetry (OTLP traces + Prometheus metrics), request ID propagation, request logging middleware, data lineage graph |
 | **Deployment** | 10/10 | Excellent | Multi-stage Dockerfile (distroless), Docker Compose, Kubernetes Helm chart (HPA, PDB, Redis subchart), SystemD service, comprehensive deployment guides (Docker, K8s, bare-metal) |
@@ -64,7 +64,7 @@ This roadmap addresses the infrastructure, operations, security, compliance, and
 **Implementation Notes:**
 ```
 # Target image structure
-FROM rust:1.82-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 # ... build with --release
 FROM gcr.io/distroless/cc-debian12
 COPY --from=builder /app/target/release/datasynth-server /
@@ -115,7 +115,7 @@ ENTRYPOINT ["/datasynth-server"]
 |-------------|-------------|
 | Code coverage | `cargo-tarpaulin` or `cargo-llvm-cov` with Codecov integration |
 | Security scanning | `cargo-audit` for CVEs, `cargo-deny` for license compliance |
-| MSRV validation | CI job testing against minimum supported Rust version (1.75) |
+| MSRV validation | CI job testing against minimum supported Rust version (1.88) |
 | Cross-platform matrix | Test on Linux, macOS, Windows in CI |
 | Benchmark tracking | Criterion results uploaded to GitHub Pages; regression alerts on PRs |
 | Release automation | Semantic versioning with auto-changelog via `git-cliff` |

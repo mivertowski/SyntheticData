@@ -418,7 +418,7 @@ DataSynth does not require any Kubernetes API access. If `automount` is not need
 
 The Dockerfile uses pinned versions:
 
-- `rust:1.82-bookworm` -- pinned Rust compiler version
+- `rust:1.88-bookworm` -- pinned Rust compiler version
 - `gcr.io/distroless/cc-debian12` -- pinned distroless image
 - `cargo-chef --locked` -- locked dependency resolution
 

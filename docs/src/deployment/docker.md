@@ -23,7 +23,7 @@ DataSynth provides two container images:
 The server Dockerfile uses a four-stage build with `cargo-chef` for dependency caching:
 
 ```
-Stage 1: chef       -- installs cargo-chef on rust:1.82-bookworm
+Stage 1: chef       -- installs cargo-chef on rust:1.88-bookworm
 Stage 2: planner    -- computes recipe.json from Cargo.lock
 Stage 3: builder    -- cooks dependencies (cached), then builds datasynth-server + datasynth-data
 Stage 4: runtime    -- copies binaries into gcr.io/distroless/cc-debian12

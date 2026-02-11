@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/datasynth-core.svg)](https://crates.io/crates/datasynth-core)
 [![Documentation](https://docs.rs/datasynth-core/badge.svg)](https://docs.rs/datasynth-core)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml)
 
 A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, and ML-ready graph exports at scale.
@@ -303,7 +303,7 @@ The binary is available at `target/release/datasynth-data`.
 
 ### Requirements
 
-- Rust 1.82 or later
+- Rust 1.88 or later
 - For the desktop UI: Node.js 18+ and platform-specific Tauri dependencies
 
 ---

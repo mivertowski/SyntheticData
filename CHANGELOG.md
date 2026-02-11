@@ -127,7 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `fmt`: `cargo fmt --check`
   - `clippy`: Lint with `-D warnings`
   - `test`: Cross-platform test matrix (Ubuntu, macOS, Windows)
-  - `msrv`: Minimum supported Rust version validation (1.75)
+  - `msrv`: Minimum supported Rust version validation (1.88)
   - `security`: `cargo deny check` + `cargo audit` for CVE and license compliance
   - `coverage`: `cargo-llvm-cov` with Codecov integration
   - `benchmarks`: Criterion regression check on PRs

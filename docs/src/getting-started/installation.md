@@ -8,7 +8,7 @@ This guide covers installing SyntheticData from source.
 
 | Requirement | Version | Purpose |
 |-------------|---------|---------|
-| Rust | 1.75+ | Compilation |
+| Rust | 1.88+ | Compilation |
 | Git | Any recent | Clone repository |
 | C compiler | gcc/clang | Native dependencies |
 

@@ -195,7 +195,7 @@ pub struct RateLimitConfig {
 ### Docker
 
 ```dockerfile
-FROM rust:1.75 as builder
+FROM rust:1.88 as builder
 WORKDIR /app
 COPY . .
 RUN cargo build --release -p datasynth-server

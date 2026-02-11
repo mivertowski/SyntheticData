@@ -12,7 +12,7 @@ Welcome to SyntheticData! This section will help you get up and running quickly.
 
 Before you begin, ensure you have:
 
-- **Rust 1.75+**: SyntheticData is written in Rust and requires the Rust toolchain
+- **Rust 1.88+**: SyntheticData is written in Rust and requires the Rust toolchain
 - **Git**: For cloning the repository
 - **(Optional) Node.js 18+**: Required only for the desktop UI
 

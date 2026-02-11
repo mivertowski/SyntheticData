@@ -8,7 +8,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
 </div>
 

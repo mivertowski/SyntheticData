@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-116f4267.js";
+            window.path_to_searchindex_js = "searchindex-fc3fe19e.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1a598c96.js"></script>
@@ -186,7 +186,7 @@
 <div class="badges">
 <p><a href="https://github.com/ey-asu-rnd/SyntheticData"><img src="https://img.shields.io/badge/version-0.5.0-blue.svg" alt="Version"></a>
 <a href="https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green.svg" alt="License"></a>
-<a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.82%2B-orange.svg" alt="Rust"></a></p>
+<a href="https://www.rust-lang.org"><img src="https://img.shields.io/badge/rust-1.88%2B-orange.svg" alt="Rust"></a></p>
 </div>
 
 <p class="attribution">Developed by <a href="https://www.ey.com/ch">Ernst &amp; Young Ltd.</a>, Zurich, Switzerland</p>
@@ -447,7 +447,7 @@ datasynth-test-utils   Test utilities, fixtures, mocks
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
 <p>Before you begin, ensure you have:</p>
 <ul>
-<li><strong>Rust 1.75+</strong>: SyntheticData is written in Rust and requires the Rust toolchain</li>
+<li><strong>Rust 1.88+</strong>: SyntheticData is written in Rust and requires the Rust toolchain</li>
 <li><strong>Git</strong>: For cloning the repository</li>
 <li><strong>(Optional) Node.js 18+</strong>: Required only for the desktop UI</li>
 </ul>
@@ -502,7 +502,7 @@ cargo build --release
 <tr><th>Requirement</th><th>Version</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td>Rust</td><td>1.75+</td><td>Compilation</td></tr>
+<tr><td>Rust</td><td>1.88+</td><td>Compilation</td></tr>
 <tr><td>Git</td><td>Any recent</td><td>Clone repository</td></tr>
 <tr><td>C compiler</td><td>gcc/clang</td><td>Native dependencies</td></tr>
 </tbody>
@@ -2006,7 +2006,7 @@ async function generate() {
 <tbody>
 <tr><td>Node.js</td><td>18+</td></tr>
 <tr><td>npm</td><td>9+</td></tr>
-<tr><td>Rust</td><td>1.75+</td></tr>
+<tr><td>Rust</td><td>1.88+</td></tr>
 <tr><td>Platform dependencies</td><td>See below</td></tr>
 </tbody>
 </table>
@@ -13439,7 +13439,7 @@ curl -H "X-API-Key: your-key" http://localhost:3000/api/config
 <span class="boring">}</span></code></pre>
 <h2 id="production-deployment"><a class="header" href="#production-deployment">Production Deployment</a></h2>
 <h3 id="docker"><a class="header" href="#docker">Docker</a></h3>
-<pre><code class="language-dockerfile">FROM rust:1.75 as builder
+<pre><code class="language-dockerfile">FROM rust:1.88 as builder
 WORKDIR /app
 COPY . .
 RUN cargo build --release -p datasynth-server
@@ -20204,7 +20204,7 @@ if let Some(recommended_epsilon) = ParetoFrontier::recommend(&amp;points, 0.90) 
 </div>
 <h2 id="multi-stage-build-walkthrough"><a class="header" href="#multi-stage-build-walkthrough">Multi-Stage Build Walkthrough</a></h2>
 <p>The server Dockerfile uses a four-stage build with <code>cargo-chef</code> for dependency caching:</p>
-<pre><code>Stage 1: chef       -- installs cargo-chef on rust:1.82-bookworm
+<pre><code>Stage 1: chef       -- installs cargo-chef on rust:1.88-bookworm
 Stage 2: planner    -- computes recipe.json from Cargo.lock
 Stage 3: builder    -- cooks dependencies (cached), then builds datasynth-server + datasynth-data
 Stage 4: runtime    -- copies binaries into gcr.io/distroless/cc-debian12
@@ -22494,7 +22494,7 @@ scrape_configs:
 <h3 id="reproducible-builds"><a class="header" href="#reproducible-builds">Reproducible Builds</a></h3>
 <p>The Dockerfile uses pinned versions:</p>
 <ul>
-<li><code>rust:1.82-bookworm</code> – pinned Rust compiler version</li>
+<li><code>rust:1.88-bookworm</code> – pinned Rust compiler version</li>
 <li><code>gcr.io/distroless/cc-debian12</code> – pinned distroless image</li>
 <li><code>cargo-chef --locked</code> – locked dependency resolution</li>
 </ul>
@@ -24834,7 +24834,7 @@ cargo test
 <h2 id="prerequisites-9"><a class="header" href="#prerequisites-9">Prerequisites</a></h2>
 <h3 id="required-1"><a class="header" href="#required-1">Required</a></h3>
 <ul>
-<li><strong>Rust</strong>: 1.75 or later (install via <a href="https://rustup.rs/">rustup</a>)</li>
+<li><strong>Rust</strong>: 1.88 or later (install via <a href="https://rustup.rs/">rustup</a>)</li>
 <li><strong>Git</strong>: For version control</li>
 <li><strong>Cargo</strong>: Included with Rust</li>
 </ul>
@@ -27040,7 +27040,7 @@ The <code>JsonAuditLogger</code> emits structured JSON events via the <code>trac
 <li><strong>Test coverage</strong>: 2,500+ tests across 15 crates covering unit, integration, and property-based scenarios.</li>
 <li><strong>Dependency auditing</strong>: <code>cargo audit</code> checks for known vulnerabilities in dependencies.</li>
 <li><strong>Type safety</strong>: Rust’s ownership model and type system eliminate entire classes of memory safety and concurrency bugs at compile time.</li>
-<li><strong>MSRV policy</strong>: Minimum Supported Rust Version (1.82) ensures builds use a recent, well-supported compiler.</li>
+<li><strong>MSRV policy</strong>: Minimum Supported Rust Version (1.88) ensures builds use a recent, well-supported compiler.</li>
 <li><strong>CI/CD</strong>: Automated build, test, lint, and audit checks on every commit.</li>
 </ul>
 <h3 id="a828-secure-coding"><a class="header" href="#a828-secure-coding">A.8.28 Secure Coding</a></h3>
@@ -27362,7 +27362,7 @@ The <code>JsonAuditLogger</code> emits structured JSON events via the <code>trac
 <tbody>
 <tr><td><strong>Workspace Structure</strong></td><td>9/10</td><td>Excellent</td><td>15 well-organized crates, clear separation of concerns</td></tr>
 <tr><td><strong>Testing</strong></td><td>10/10</td><td>Excellent</td><td>2,500+ tests, property testing via proptest, fuzzing harnesses (cargo-fuzz), k6 load tests, coverage via cargo-llvm-cov + Codecov</td></tr>
-<tr><td><strong>CI/CD</strong></td><td>9/10</td><td>Excellent</td><td>7-job pipeline: fmt, clippy, cross-platform test (Linux/macOS/Windows), MSRV 1.75, security scanning (cargo-deny + cargo-audit), coverage, benchmark regression</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>9/10</td><td>Excellent</td><td>7-job pipeline: fmt, clippy, cross-platform test (Linux/macOS/Windows), MSRV 1.88, security scanning (cargo-deny + cargo-audit), coverage, benchmark regression</td></tr>
 <tr><td><strong>Error Handling</strong></td><td>10/10</td><td>Excellent</td><td>Idiomatic <code>thiserror</code>/<code>anyhow</code>; <code>#![deny(clippy::unwrap_used)]</code> enforced across all library crates; zero unwrap calls in non-test code</td></tr>
 <tr><td><strong>Observability</strong></td><td>9/10</td><td>Excellent</td><td>Structured JSON logging, feature-gated OpenTelemetry (OTLP traces + Prometheus metrics), request ID propagation, request logging middleware, data lineage graph</td></tr>
 <tr><td><strong>Deployment</strong></td><td>10/10</td><td>Excellent</td><td>Multi-stage Dockerfile (distroless), Docker Compose, Kubernetes Helm chart (HPA, PDB, Redis subchart), SystemD service, comprehensive deployment guides (Docker, K8s, bare-metal)</td></tr>
@@ -27399,7 +27399,7 @@ The <code>JsonAuditLogger</code> emits structured JSON events via the <code>trac
 </div>
 <p><strong>Implementation Notes:</strong></p>
 <pre><code># Target image structure
-FROM rust:1.82-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 # ... build with --release
 FROM gcr.io/distroless/cc-debian12
 COPY --from=builder /app/target/release/datasynth-server /
@@ -27460,7 +27460,7 @@ ENTRYPOINT ["/datasynth-server"]
 <tbody>
 <tr><td>Code coverage</td><td><code>cargo-tarpaulin</code> or <code>cargo-llvm-cov</code> with Codecov integration</td></tr>
 <tr><td>Security scanning</td><td><code>cargo-audit</code> for CVEs, <code>cargo-deny</code> for license compliance</td></tr>
-<tr><td>MSRV validation</td><td>CI job testing against minimum supported Rust version (1.75)</td></tr>
+<tr><td>MSRV validation</td><td>CI job testing against minimum supported Rust version (1.88)</td></tr>
 <tr><td>Cross-platform matrix</td><td>Test on Linux, macOS, Windows in CI</td></tr>
 <tr><td>Benchmark tracking</td><td>Criterion results uploaded to GitHub Pages; regression alerts on PRs</td></tr>
 <tr><td>Release automation</td><td>Semantic versioning with auto-changelog via <code>git-cliff</code></td></tr>

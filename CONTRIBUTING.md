@@ -13,7 +13,7 @@ Thank you for your interest in contributing to SyntheticData! This document prov
 
 ### Prerequisites
 
-- Rust 1.75 or later (install via [rustup](https://rustup.rs/))
+- Rust 1.88 or later (install via [rustup](https://rustup.rs/))
 - Git
 - Cargo (included with Rust)
 

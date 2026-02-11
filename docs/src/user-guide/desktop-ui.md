@@ -18,7 +18,7 @@ The desktop UI provides:
 |-------------|---------|
 | Node.js | 18+ |
 | npm | 9+ |
-| Rust | 1.75+ |
+| Rust | 1.88+ |
 | Platform dependencies | See below |
 
 ### Platform Dependencies
