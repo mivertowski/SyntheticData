@@ -751,6 +751,168 @@ class AuditStandardsConfig:
     pcaob: Optional[PcaobConfig] = None
 
 
+# ============================================================================
+# Enterprise Process Chain Configurations (v0.6.0)
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class SourceToPayConfig:
+    """Source-to-pay process chain configuration."""
+    enabled: bool = False
+    spend_analysis: Optional[Dict[str, Any]] = None
+    sourcing: Optional[Dict[str, Any]] = None
+    qualification: Optional[Dict[str, Any]] = None
+    rfx: Optional[Dict[str, Any]] = None
+    contracts: Optional[Dict[str, Any]] = None
+    catalog: Optional[Dict[str, Any]] = None
+    scorecards: Optional[Dict[str, Any]] = None
+    p2p_integration: Optional[Dict[str, Any]] = None
+
+
+@dataclass(frozen=True)
+class ManagementKpisSchemaConfig:
+    """Management KPI generation configuration."""
+    enabled: bool = False
+    frequency: str = "monthly"
+
+
+@dataclass(frozen=True)
+class BudgetSchemaConfig:
+    """Budget generation configuration."""
+    enabled: bool = False
+    revenue_growth_rate: float = 0.05
+    expense_inflation_rate: float = 0.03
+    variance_noise: float = 0.10
+
+
+@dataclass(frozen=True)
+class FinancialReportingConfig:
+    """Financial reporting generation configuration."""
+    enabled: bool = False
+    generate_balance_sheet: bool = True
+    generate_income_statement: bool = True
+    generate_cash_flow: bool = True
+    generate_changes_in_equity: bool = True
+    comparative_periods: int = 1
+    management_kpis: Optional[ManagementKpisSchemaConfig] = None
+    budgets: Optional[BudgetSchemaConfig] = None
+
+
+@dataclass(frozen=True)
+class PayrollSchemaConfig:
+    """Payroll generation configuration."""
+    enabled: bool = True
+    pay_frequency: str = "monthly"
+    benefits_enrollment_rate: float = 0.60
+    retirement_participation_rate: float = 0.45
+
+
+@dataclass(frozen=True)
+class TimeAttendanceSchemaConfig:
+    """Time and attendance configuration."""
+    enabled: bool = True
+    overtime_rate: float = 0.10
+
+
+@dataclass(frozen=True)
+class ExpenseSchemaConfig:
+    """Expense management configuration."""
+    enabled: bool = True
+    submission_rate: float = 0.30
+    policy_violation_rate: float = 0.08
+
+
+@dataclass(frozen=True)
+class HrConfig:
+    """HR (Hire-to-Retire) process configuration."""
+    enabled: bool = False
+    payroll: Optional[PayrollSchemaConfig] = None
+    time_attendance: Optional[TimeAttendanceSchemaConfig] = None
+    expenses: Optional[ExpenseSchemaConfig] = None
+
+
+@dataclass(frozen=True)
+class ProductionOrderSchemaConfig:
+    """Production order configuration."""
+    orders_per_month: int = 50
+    avg_batch_size: int = 100
+    yield_rate: float = 0.97
+    make_to_order_rate: float = 0.20
+    rework_rate: float = 0.03
+
+
+@dataclass(frozen=True)
+class ManufacturingCostingSchemaConfig:
+    """Manufacturing costing configuration."""
+    labor_rate_per_hour: float = 35.0
+    overhead_rate: float = 1.50
+    standard_cost_update_frequency: str = "quarterly"
+
+
+@dataclass(frozen=True)
+class RoutingSchemaConfig:
+    """Routing configuration for production operations."""
+    avg_operations: int = 4
+    setup_time_hours: float = 1.5
+    run_time_variation: float = 0.15
+
+
+@dataclass(frozen=True)
+class ManufacturingProcessConfig:
+    """Manufacturing process configuration."""
+    enabled: bool = False
+    production_orders: Optional[ProductionOrderSchemaConfig] = None
+    costing: Optional[ManufacturingCostingSchemaConfig] = None
+    routing: Optional[RoutingSchemaConfig] = None
+
+
+@dataclass(frozen=True)
+class SalesQuoteSchemaConfig:
+    """Sales quote pipeline configuration."""
+    enabled: bool = False
+    quotes_per_month: int = 30
+    win_rate: float = 0.35
+    validity_days: int = 30
+
+
+@dataclass(frozen=True)
+class VendorNetworkConfig:
+    """Vendor network generation configuration."""
+    enabled: bool = False
+    depth: int = 3
+    tiers: Optional[Dict[str, Any]] = None
+    clusters: Optional[Dict[str, Any]] = None
+    dependencies: Optional[Dict[str, Any]] = None
+
+
+@dataclass(frozen=True)
+class CustomerSegmentationConfig:
+    """Customer segmentation generation configuration."""
+    enabled: bool = False
+    value_segments: Optional[Dict[str, Any]] = None
+    lifecycle: Optional[Dict[str, Any]] = None
+    networks: Optional[Dict[str, Any]] = None
+
+
+@dataclass(frozen=True)
+class RelationshipStrengthConfig:
+    """Relationship strength calculation configuration."""
+    enabled: bool = False
+    calculation: Optional[Dict[str, Any]] = None
+    thresholds: Optional[Dict[str, Any]] = None
+
+
+@dataclass(frozen=True)
+class CrossProcessLinksConfig:
+    """Cross-process linkage configuration."""
+    enabled: bool = False
+    inventory_p2p_o2c: bool = True
+    payment_bank_reconciliation: bool = True
+    intercompany_bilateral: bool = True
+    inventory_link_rate: float = 0.30
+
+
 @dataclass(frozen=True)
 class Config:
     """Root configuration container.
@@ -782,6 +944,15 @@ class Config:
     llm: Optional[Dict[str, Any]] = None
     diffusion: Optional[Dict[str, Any]] = None
     causal: Optional[Dict[str, Any]] = None
+    source_to_pay: Optional[SourceToPayConfig] = None
+    financial_reporting: Optional[FinancialReportingConfig] = None
+    hr: Optional[HrConfig] = None
+    manufacturing: Optional[ManufacturingProcessConfig] = None
+    sales_quotes: Optional[SalesQuoteSchemaConfig] = None
+    vendor_network: Optional[VendorNetworkConfig] = None
+    customer_segmentation: Optional[CustomerSegmentationConfig] = None
+    relationship_strength: Optional[RelationshipStrengthConfig] = None
+    cross_process_links: Optional[CrossProcessLinksConfig] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -1144,6 +1315,99 @@ class Config:
 
         if self.causal is not None:
             payload["causal"] = self.causal
+
+        if self.source_to_pay is not None:
+            s2p_dict: Dict[str, Any] = {"enabled": self.source_to_pay.enabled}
+            if self.source_to_pay.spend_analysis is not None:
+                s2p_dict["spend_analysis"] = self.source_to_pay.spend_analysis
+            if self.source_to_pay.sourcing is not None:
+                s2p_dict["sourcing"] = self.source_to_pay.sourcing
+            if self.source_to_pay.qualification is not None:
+                s2p_dict["qualification"] = self.source_to_pay.qualification
+            if self.source_to_pay.rfx is not None:
+                s2p_dict["rfx"] = self.source_to_pay.rfx
+            if self.source_to_pay.contracts is not None:
+                s2p_dict["contracts"] = self.source_to_pay.contracts
+            if self.source_to_pay.catalog is not None:
+                s2p_dict["catalog"] = self.source_to_pay.catalog
+            if self.source_to_pay.scorecards is not None:
+                s2p_dict["scorecards"] = self.source_to_pay.scorecards
+            if self.source_to_pay.p2p_integration is not None:
+                s2p_dict["p2p_integration"] = self.source_to_pay.p2p_integration
+            payload["source_to_pay"] = s2p_dict
+
+        if self.financial_reporting is not None:
+            fr_dict: Dict[str, Any] = {
+                "enabled": self.financial_reporting.enabled,
+                "generate_balance_sheet": self.financial_reporting.generate_balance_sheet,
+                "generate_income_statement": self.financial_reporting.generate_income_statement,
+                "generate_cash_flow": self.financial_reporting.generate_cash_flow,
+                "generate_changes_in_equity": self.financial_reporting.generate_changes_in_equity,
+                "comparative_periods": self.financial_reporting.comparative_periods,
+            }
+            if self.financial_reporting.management_kpis is not None:
+                fr_dict["management_kpis"] = _strip_none(
+                    self.financial_reporting.management_kpis.__dict__
+                )
+            if self.financial_reporting.budgets is not None:
+                fr_dict["budgets"] = _strip_none(self.financial_reporting.budgets.__dict__)
+            payload["financial_reporting"] = fr_dict
+
+        if self.hr is not None:
+            hr_dict: Dict[str, Any] = {"enabled": self.hr.enabled}
+            if self.hr.payroll is not None:
+                hr_dict["payroll"] = _strip_none(self.hr.payroll.__dict__)
+            if self.hr.time_attendance is not None:
+                hr_dict["time_attendance"] = _strip_none(self.hr.time_attendance.__dict__)
+            if self.hr.expenses is not None:
+                hr_dict["expenses"] = _strip_none(self.hr.expenses.__dict__)
+            payload["hr"] = hr_dict
+
+        if self.manufacturing is not None:
+            mfg_dict: Dict[str, Any] = {"enabled": self.manufacturing.enabled}
+            if self.manufacturing.production_orders is not None:
+                mfg_dict["production_orders"] = _strip_none(
+                    self.manufacturing.production_orders.__dict__
+                )
+            if self.manufacturing.costing is not None:
+                mfg_dict["costing"] = _strip_none(self.manufacturing.costing.__dict__)
+            if self.manufacturing.routing is not None:
+                mfg_dict["routing"] = _strip_none(self.manufacturing.routing.__dict__)
+            payload["manufacturing"] = mfg_dict
+
+        if self.sales_quotes is not None:
+            payload["sales_quotes"] = _strip_none(self.sales_quotes.__dict__)
+
+        if self.vendor_network is not None:
+            vn_dict: Dict[str, Any] = {"enabled": self.vendor_network.enabled, "depth": self.vendor_network.depth}
+            if self.vendor_network.tiers is not None:
+                vn_dict["tiers"] = self.vendor_network.tiers
+            if self.vendor_network.clusters is not None:
+                vn_dict["clusters"] = self.vendor_network.clusters
+            if self.vendor_network.dependencies is not None:
+                vn_dict["dependencies"] = self.vendor_network.dependencies
+            payload["vendor_network"] = vn_dict
+
+        if self.customer_segmentation is not None:
+            cs_dict: Dict[str, Any] = {"enabled": self.customer_segmentation.enabled}
+            if self.customer_segmentation.value_segments is not None:
+                cs_dict["value_segments"] = self.customer_segmentation.value_segments
+            if self.customer_segmentation.lifecycle is not None:
+                cs_dict["lifecycle"] = self.customer_segmentation.lifecycle
+            if self.customer_segmentation.networks is not None:
+                cs_dict["networks"] = self.customer_segmentation.networks
+            payload["customer_segmentation"] = cs_dict
+
+        if self.relationship_strength is not None:
+            rs_dict: Dict[str, Any] = {"enabled": self.relationship_strength.enabled}
+            if self.relationship_strength.calculation is not None:
+                rs_dict["calculation"] = self.relationship_strength.calculation
+            if self.relationship_strength.thresholds is not None:
+                rs_dict["thresholds"] = self.relationship_strength.thresholds
+            payload["relationship_strength"] = rs_dict
+
+        if self.cross_process_links is not None:
+            payload["cross_process_links"] = _strip_none(self.cross_process_links.__dict__)
 
         # Merge extra fields
         payload.update(self.extra)
@@ -1514,12 +1778,108 @@ class Config:
         diffusion = data.get("diffusion")
         causal = data.get("causal")
 
+        # Build source_to_pay with nested structures
+        source_to_pay = None
+        s2p_data = data.get("source_to_pay")
+        if s2p_data is not None:
+            source_to_pay = SourceToPayConfig(
+                enabled=s2p_data.get("enabled", False),
+                spend_analysis=s2p_data.get("spend_analysis"),
+                sourcing=s2p_data.get("sourcing"),
+                qualification=s2p_data.get("qualification"),
+                rfx=s2p_data.get("rfx"),
+                contracts=s2p_data.get("contracts"),
+                catalog=s2p_data.get("catalog"),
+                scorecards=s2p_data.get("scorecards"),
+                p2p_integration=s2p_data.get("p2p_integration"),
+            )
+
+        # Build financial_reporting with nested structures
+        financial_reporting = None
+        fr_data = data.get("financial_reporting")
+        if fr_data is not None:
+            financial_reporting = FinancialReportingConfig(
+                enabled=fr_data.get("enabled", False),
+                generate_balance_sheet=fr_data.get("generate_balance_sheet", True),
+                generate_income_statement=fr_data.get("generate_income_statement", True),
+                generate_cash_flow=fr_data.get("generate_cash_flow", True),
+                generate_changes_in_equity=fr_data.get("generate_changes_in_equity", True),
+                comparative_periods=fr_data.get("comparative_periods", 1),
+                management_kpis=_build_dataclass(
+                    ManagementKpisSchemaConfig, fr_data.get("management_kpis")
+                ),
+                budgets=_build_dataclass(BudgetSchemaConfig, fr_data.get("budgets")),
+            )
+
+        # Build hr with nested structures
+        hr = None
+        hr_data = data.get("hr")
+        if hr_data is not None:
+            hr = HrConfig(
+                enabled=hr_data.get("enabled", False),
+                payroll=_build_dataclass(PayrollSchemaConfig, hr_data.get("payroll")),
+                time_attendance=_build_dataclass(
+                    TimeAttendanceSchemaConfig, hr_data.get("time_attendance")
+                ),
+                expenses=_build_dataclass(ExpenseSchemaConfig, hr_data.get("expenses")),
+            )
+
+        # Build manufacturing with nested structures
+        manufacturing = None
+        mfg_data = data.get("manufacturing")
+        if mfg_data is not None:
+            manufacturing = ManufacturingProcessConfig(
+                enabled=mfg_data.get("enabled", False),
+                production_orders=_build_dataclass(
+                    ProductionOrderSchemaConfig, mfg_data.get("production_orders")
+                ),
+                costing=_build_dataclass(
+                    ManufacturingCostingSchemaConfig, mfg_data.get("costing")
+                ),
+                routing=_build_dataclass(RoutingSchemaConfig, mfg_data.get("routing")),
+            )
+
+        sales_quotes = _build_dataclass(SalesQuoteSchemaConfig, data.get("sales_quotes"))
+        vendor_network = None
+        vn_data = data.get("vendor_network")
+        if vn_data is not None:
+            vendor_network = VendorNetworkConfig(
+                enabled=vn_data.get("enabled", False),
+                depth=vn_data.get("depth", 3),
+                tiers=vn_data.get("tiers"),
+                clusters=vn_data.get("clusters"),
+                dependencies=vn_data.get("dependencies"),
+            )
+        customer_segmentation = None
+        cs_data = data.get("customer_segmentation")
+        if cs_data is not None:
+            customer_segmentation = CustomerSegmentationConfig(
+                enabled=cs_data.get("enabled", False),
+                value_segments=cs_data.get("value_segments"),
+                lifecycle=cs_data.get("lifecycle"),
+                networks=cs_data.get("networks"),
+            )
+        relationship_strength = None
+        rs_data = data.get("relationship_strength")
+        if rs_data is not None:
+            relationship_strength = RelationshipStrengthConfig(
+                enabled=rs_data.get("enabled", False),
+                calculation=rs_data.get("calculation"),
+                thresholds=rs_data.get("thresholds"),
+            )
+        cross_process_links = _build_dataclass(
+            CrossProcessLinksConfig, data.get("cross_process_links")
+        )
+
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
             "fraud", "banking", "scenario", "temporal", "data_quality", "graph_export",
             "audit", "streaming", "rate_limit", "temporal_attributes", "relationships",
             "accounting_standards", "audit_standards", "distributions", "templates",
             "temporal_patterns", "llm", "diffusion", "causal",
+            "source_to_pay", "financial_reporting", "hr", "manufacturing",
+            "sales_quotes", "vendor_network", "customer_segmentation",
+            "relationship_strength", "cross_process_links",
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -1548,6 +1908,15 @@ class Config:
             llm=llm,
             diffusion=diffusion,
             causal=causal,
+            source_to_pay=source_to_pay,
+            financial_reporting=financial_reporting,
+            hr=hr,
+            manufacturing=manufacturing,
+            sales_quotes=sales_quotes,
+            vendor_network=vendor_network,
+            customer_segmentation=customer_segmentation,
+            relationship_strength=relationship_strength,
+            cross_process_links=cross_process_links,
             extra=extra,
         )
 

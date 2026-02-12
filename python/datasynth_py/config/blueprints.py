@@ -8,6 +8,7 @@ from datasynth_py.config.models import (
     AdvancedDistributionSettings,
     AuditSettings,
     BankingSettings,
+    BudgetSchemaConfig,
     BusinessDaySchemaConfig,
     CalendarSchemaConfig,
     ChartOfAccountsSettings,
@@ -15,32 +16,43 @@ from datasynth_py.config.models import (
     Config,
     CorrelationConfig,
     CorrelationFieldConfig,
+    CrossProcessLinksConfig,
     CultureDistributionConfig,
+    CustomerSegmentationConfig,
     DataQualitySettings,
     DescriptionTemplateConfig,
     EconomicCycleConfig,
     EntityTimezoneMappingConfig,
+    FinancialReportingConfig,
     FraudSettings,
     GlobalSettings,
     GraphExportSettings,
+    HrConfig,
     IntraDaySchemaConfig,
     IntraDaySegmentConfig,
+    ManagementKpisSchemaConfig,
+    ManufacturingProcessConfig,
     MixtureComponentConfig,
     MixtureDistributionConfig,
     NameTemplateConfig,
+    PayrollSchemaConfig,
     PeriodEndModelConfig,
     PeriodEndSchemaConfig,
     ProcessingLagSchemaConfig,
     LagDistributionConfig,
+    ProductionOrderSchemaConfig,
     ReferenceTemplateConfig,
     RegimeChangeConfig,
+    SalesQuoteSchemaConfig,
     ScenarioSettings,
     SettlementRulesConfig,
+    SourceToPayConfig,
     StatisticalTestConfig,
     StatisticalValidationConfig,
     TemplateSettings,
     TemporalPatternsConfig,
     TimezoneSchemaConfig,
+    VendorNetworkConfig,
 )
 
 BlueprintFactory = Callable[..., Config]
@@ -144,6 +156,7 @@ def manufacturing_large(companies: int = 10, transactions: int = 100000) -> Conf
             for i in range(companies)
         ],
         chart_of_accounts=ChartOfAccountsSettings(complexity="large"),
+        manufacturing=ManufacturingProcessConfig(enabled=True),
     )
 
 
@@ -869,6 +882,143 @@ def with_causal(
     return config.override(causal=causal_config)
 
 
+def with_sourcing(
+    base_config: Config,
+    projects_per_year: int = 10,
+) -> Config:
+    """Add source-to-pay procurement pipeline to an existing configuration.
+
+    Enables sourcing projects, supplier qualification, RFx events,
+    bid evaluation, procurement contracts, and catalog management.
+
+    Args:
+        base_config: Base configuration to extend.
+        projects_per_year: Number of sourcing projects per year.
+
+    Returns:
+        New Config with source-to-pay enabled.
+    """
+    s2p = SourceToPayConfig(
+        enabled=True,
+        sourcing={"projects_per_year": projects_per_year},
+    )
+    return base_config.override(source_to_pay=s2p.__dict__)
+
+
+def with_financial_reporting(
+    base_config: Config,
+    with_kpis: bool = True,
+    with_budgets: bool = True,
+) -> Config:
+    """Add financial reporting to an existing configuration.
+
+    Generates balance sheet, income statement, cash flow statement,
+    and changes in equity from trial balance data.
+
+    Args:
+        base_config: Base configuration to extend.
+        with_kpis: Enable management KPI generation.
+        with_budgets: Enable budget variance analysis.
+
+    Returns:
+        New Config with financial reporting enabled.
+    """
+    fr_dict: Dict[str, Any] = {
+        "enabled": True,
+        "generate_balance_sheet": True,
+        "generate_income_statement": True,
+        "generate_cash_flow": True,
+        "generate_changes_in_equity": True,
+    }
+    if with_kpis:
+        fr_dict["management_kpis"] = {"enabled": True, "frequency": "monthly"}
+    if with_budgets:
+        fr_dict["budgets"] = {
+            "enabled": True,
+            "revenue_growth_rate": 0.05,
+            "expense_inflation_rate": 0.03,
+        }
+    return base_config.override(financial_reporting=fr_dict)
+
+
+def with_hr(
+    base_config: Config,
+    with_payroll: bool = True,
+    with_time_tracking: bool = True,
+    with_expenses: bool = True,
+) -> Config:
+    """Add HR/payroll generation to an existing configuration.
+
+    Generates payroll runs, time entries, and expense reports
+    for the employee pool.
+
+    Args:
+        base_config: Base configuration to extend.
+        with_payroll: Enable payroll generation.
+        with_time_tracking: Enable time and attendance tracking.
+        with_expenses: Enable expense report generation.
+
+    Returns:
+        New Config with HR generation enabled.
+    """
+    hr_dict: Dict[str, Any] = {"enabled": True}
+    if with_payroll:
+        hr_dict["payroll"] = {"enabled": True, "pay_frequency": "monthly"}
+    if with_time_tracking:
+        hr_dict["time_attendance"] = {"enabled": True, "overtime_rate": 0.10}
+    if with_expenses:
+        hr_dict["expenses"] = {"enabled": True, "submission_rate": 0.30}
+    return base_config.override(hr=hr_dict)
+
+
+def with_manufacturing(
+    base_config: Config,
+    orders_per_month: int = 50,
+) -> Config:
+    """Add manufacturing process chain to an existing configuration.
+
+    Generates production orders, routing operations, component issues,
+    and production variances.
+
+    Args:
+        base_config: Base configuration to extend.
+        orders_per_month: Number of production orders per month.
+
+    Returns:
+        New Config with manufacturing enabled.
+    """
+    mfg_dict: Dict[str, Any] = {
+        "enabled": True,
+        "production_orders": {"orders_per_month": orders_per_month},
+    }
+    return base_config.override(manufacturing=mfg_dict)
+
+
+def with_sales_quotes(
+    base_config: Config,
+    quotes_per_month: int = 30,
+    win_rate: float = 0.35,
+) -> Config:
+    """Add sales quote pipeline to an existing configuration.
+
+    Generates sales quotes that precede sales orders in the O2C flow.
+
+    Args:
+        base_config: Base configuration to extend.
+        quotes_per_month: Number of quotes generated per month.
+        win_rate: Fraction of quotes that convert to sales orders.
+
+    Returns:
+        New Config with sales quotes enabled.
+    """
+    sq_dict: Dict[str, Any] = {
+        "enabled": True,
+        "quotes_per_month": quotes_per_month,
+        "win_rate": win_rate,
+    }
+    return base_config.override(sales_quotes=sq_dict)
+
+
 def _transactions_to_volume(count: int) -> str:
     """Map transaction count to volume preset."""
     if count <= 10_000:
@@ -894,6 +1044,11 @@ _REGISTRY: Dict[str, BlueprintFactory] = {
     "with_llm_enrichment": with_llm_enrichment,
     "with_diffusion": with_diffusion,
     "with_causal": with_causal,
+    "with_sourcing": with_sourcing,
+    "with_financial_reporting": with_financial_reporting,
+    "with_hr": with_hr,
+    "with_manufacturing": with_manufacturing,
+    "with_sales_quotes": with_sales_quotes,
 }
 
 

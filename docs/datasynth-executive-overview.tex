@@ -18,6 +18,7 @@
 \usepackage{hyperref}
 % fontawesome5 removed — using text symbols instead
 \usepackage{tcolorbox}
+\usepackage{needspace}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{amssymb}
@@ -50,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.5.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.6.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -104,14 +105,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.0 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.1 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.5.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.6.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -174,7 +175,7 @@ real-world enterprise resource planning (ERP) systems.
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{50+}}\\[3pt]
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{60+}}\\[3pt]
   {\small ACFE-aligned fraud schemes}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
@@ -190,7 +191,7 @@ real-world enterprise resource planning (ERP) systems.
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{40+}}\\[3pt]
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{50+}}\\[3pt]
   {\small red flag patterns}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
@@ -209,8 +210,8 @@ real-world enterprise resource planning (ERP) systems.
 
 DataSynth generates a complete, internally consistent accounting universe:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -225,7 +226,7 @@ Master Data &
 Document Flows &
   Full Procure-to-Pay (PO\,$\to$\,GR\,$\to$\,Invoice\,$\to$\,Payment) and
   Order-to-Cash (SO\,$\to$\,Delivery\,$\to$\,Invoice\,$\to$\,Receipt) with
-  three-way match validation. \\
+  three-way match validation and contract price enforcement. \\
 Intercompany &
   Matched IC journal entry pairs, transfer pricing (Cost-Plus, Resale-Minus,
   CUP), and consolidation elimination entries. \\
@@ -242,7 +243,50 @@ Period Close &
   period status tracking. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
+
+\needspace{12\baselineskip}
+\subsection{Enterprise Process Chains}
+
+\textit{New in v0.6.0} --- five end-to-end process chains with full
+referential integrity, temporal coherence, and anomaly injection:
+
+\vspace{0.4em}
+\noindent
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
+\toprule
+\textbf{Chain} & \textbf{Capabilities} \\
+\midrule
+Source-to-Pay &
+  Spend analysis, sourcing projects, supplier qualification, RFx/bid
+  evaluation, procurement contracts, catalog management, supplier
+  scorecards --- with contract-governed PO generation and maverick spend
+  detection. \\
+Hire-to-Retire &
+  Payroll runs with tax/deduction calculations, time entries with overtime
+  modeling, expense reports with policy violation detection, and payroll
+  journal entry generation. \\
+Manufacturing &
+  Production orders with BOM explosion, routing operations, component
+  issues, finished goods receipts, WIP costing (material/labor/overhead),
+  and variance settlement. \\
+Bank Reconciliation &
+  Statement line matching against cleared payments, outstanding checks,
+  deposits in transit, bank fees, and zero-net-difference enforcement. \\
+Financial Reporting &
+  Balance sheet, income statement, cash flow statement (indirect method),
+  and changes in equity --- derived from trial balance with prior-period
+  comparatives, management KPIs, and budget variance analysis. \\
+\bottomrule
+\end{tabularx}
+\renewcommand{\arraystretch}{1.0}
+
+\vspace{0.4em}
+\noindent
+Each chain defaults to \texttt{enabled: false} and integrates with the
+existing generation pipeline via new orchestrator phases. All new fields
+on existing structs use \texttt{Option<>} for backward compatibility.
 
 \subsection{Banking, KYC \& AML}
 
@@ -289,8 +333,8 @@ Full integration with the COSO Internal Control-Integrated Framework:
 
 Comprehensive standards support via the \texttt{datasynth-standards} crate:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -309,8 +353,10 @@ Regulatory &
   Deficiency Matrix (MW/SD classification) \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
+\vspace{0.3em}
+\noindent
 Supports dual reporting mode (US GAAP + IFRS) with automatic framework
 difference reconciliation.
 
@@ -323,8 +369,8 @@ checking and process variant analysis.
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
   \item \textbf{OCEL 2.0}: JSON and XML export with objects, events, and object relationships.
   \item \textbf{XES 2.0}: IEEE standard format for ProM, Celonis, Disco, and pm4py.
-  \item \textbf{Reference Models}: Canonical P2P (9 activities), O2C (10 activities), and R2R (11 activities) process models for conformance checking.
-  \item \textbf{17 R2R/A2R Activities}: GL posting, FX revaluation, period close, depreciation, consolidation.
+  \item \textbf{Reference Models}: Canonical P2P (9 activities), O2C (10 activities), R2R (11 activities), S2C (9 activities), H2R, and MFG process models for conformance checking.
+  \item \textbf{30+ R2R/A2R/S2C Activities}: GL posting, FX revaluation, period close, depreciation, consolidation, sourcing, qualification, bidding, contract management.
   \item \textbf{Deterministic UUIDs}: FNV-1a hash-based IDs with type discriminators for reproducible event logs.
 \end{itemize}
 
@@ -392,8 +438,8 @@ do-calculus:
 DataSynth implements the ACFE (Association of Certified Fraud Examiners)
 ``Report to the Nations'' taxonomy with calibrated statistics:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l c X}
 \toprule
@@ -404,7 +450,7 @@ Corruption            & 33\% & Conflicts of interest, bribery, kickbacks, bid ri
 Financial Statement   & 10\% & Revenue manipulation, expense timing, concealed liabilities, improper disclosures \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 \noindent
 \textbf{Calibration}: \$117k median loss, 12-month median duration, detection method distribution (42\% tips, 16\% internal audit, 12\% management review).
@@ -416,6 +462,8 @@ Financial Statement   & 10\% & Revenue manipulation, expense timing, concealed l
   \item \textbf{Management Override}: Executive-level fraud with override techniques, Fraud Triangle modeling (Pressure, Opportunity, Rationalization), concealment strategies.
   \item \textbf{Red Flag Patterns}: 40+ patterns with Bayesian probabilities, 6 categories (Vendor, Transaction, Timing, Approval, Document, Behavioral), realistic false positive rates.
   \item \textbf{Industry-Specific}: Manufacturing (yield manipulation, phantom production), Retail (sweethearting, refund fraud), Healthcare (upcoding, unbundling, phantom billing).
+  \item \textbf{Procurement Fraud}: Bid rigging, phantom vendor contracts, split-to-avoid-threshold, conflict of interest, maverick spend, expired contract purchases, qualification bypass.
+  \item \textbf{HR/Payroll Fraud}: Ghost employee payroll, payroll inflation, duplicate expense reports, fictitious expenses, split expense to avoid approval.
 \end{itemize}
 
 Anomaly injection is \textbf{entity-aware}: injection rates are adjusted per
@@ -522,8 +570,8 @@ individual records.
 
 \subsection{Privacy Levels}
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{l c c c X}
 \toprule
@@ -536,7 +584,7 @@ High     & 0.5  & 10 & 90\% & Sensitive environments \\
 Maximum  & 0.1  & 20 & 85\% & Maximum privacy guarantees \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 The privacy engine combines differential privacy (Laplace and Gaussian
 mechanisms), k-anonymity with rare-value suppression, and outlier
@@ -580,8 +628,8 @@ $\varepsilon$-summation:
 Per-column statistical distance metrics quantify how well synthetic data
 matches the source fingerprint:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -596,7 +644,7 @@ JS Divergence &
   Jensen-Shannon divergence from percentile-bin PMFs, bounded by $\ln 2$. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 \noindent
 Distribution CDFs are computed analytically for Normal, LogNormal, Gamma
@@ -674,8 +722,8 @@ Pareto, PointMass, and Mixture distributions.
 
 \subsection{Production-Grade Infrastructure}
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -716,11 +764,12 @@ Data Lineage &
   config$\to$generator$\to$output relationships, W3C PROV-JSON export,
   CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} 1.0 with blueprints, pandas/polars integration,
-  async client, and WebSocket streaming support. \\
+  \texttt{datasynth-py} 1.1 with blueprints (sourcing, HR, manufacturing,
+  financial reporting), pandas/polars integration, async client, and
+  WebSocket streaming support. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 % ══════════════════════════════════════════════════════════════════════════════
 \newpage
@@ -730,8 +779,8 @@ DataSynth ships with ten industry-specific configuration presets, each tuned
 for realistic business process weightings, chart-of-accounts structures, and
 regional multi-company setups.
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\textwidth}{>{\bfseries}l l X}
 \toprule
@@ -754,8 +803,10 @@ Real Estate         & --- & Property portfolios, lease accounting. \\
 Telecommunications  & --- & Subscription revenue, network assets. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
+\vspace{0.3em}
+\noindent
 Each preset supports three complexity tiers:
 \textbf{Small} ($\sim$100 GL accounts),
 \textbf{Medium} ($\sim$400 accounts), and
@@ -767,8 +818,8 @@ Each preset supports three complexity tiers:
 DataSynth includes an advanced statistical distribution framework for generating
 empirically grounded synthetic data:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -788,8 +839,9 @@ Industry Profiles &
   Pre-configured profiles for Retail, Manufacturing, Financial Services. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
+\vspace{0.3em}
 \noindent
 All distributions include validation tests: Benford's Law MAD, Anderson-Darling
 goodness-of-fit, chi-squared, and correlation matrix verification.
@@ -930,8 +982,8 @@ DataSynth implements Article 50 (synthetic content marking) and Article 10
 
 Pre-built compliance guides with self-assessment templates:
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -944,7 +996,7 @@ SOC 2 Type II & Readiness across 5 Trust Service Criteria \\
 ISO 27001:2022 & Annex A alignment (11 implemented, 6 partial) \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{DevOps \& Deployment}
@@ -965,8 +1017,8 @@ A 7-job GitHub Actions pipeline ensures release quality:
 
 \subsection{Deployment Options}
 
-\begin{table}[h!]
-\centering
+\vspace{0.4em}
+\noindent
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\textwidth}{>{\bfseries\color{brand}}l X}
 \toprule
@@ -988,7 +1040,7 @@ Release Pipeline &
   Trivy container scanning. \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.0}
 
 \subsection{Ecosystem Integrations}
 
@@ -1062,7 +1114,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.5.0 \textbullet{}
+  DataSynth v0.6.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
