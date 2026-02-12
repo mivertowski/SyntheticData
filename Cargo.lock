@@ -1525,7 +1525,7 @@ checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
 name = "datasynth-banking"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "csv",
@@ -1544,7 +1544,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-cli"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -1574,7 +1574,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-config"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-banking",
@@ -1589,7 +1589,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1613,7 +1613,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-eval"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "askama",
  "chrono",
@@ -1641,7 +1641,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-fingerprint"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "arrow",
@@ -1673,7 +1673,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-generators"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-config",
@@ -1693,7 +1693,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-graph"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-banking",
@@ -1708,7 +1708,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-ocpm"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-core",
@@ -1724,7 +1724,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-output"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "arrow",
  "chrono",
@@ -1744,7 +1744,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-runtime"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "crossbeam-channel",
@@ -1779,7 +1779,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-server"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1827,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-standards"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-core",
@@ -1842,7 +1842,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-test-utils"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "datasynth-banking",
@@ -1864,7 +1864,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-ui"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "futures",
  "reqwest 0.12.28",
@@ -1879,7 +1879,7 @@ dependencies = [
 
 [[package]]
 name = "datasynth-workspace"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "criterion",
