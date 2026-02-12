@@ -293,6 +293,36 @@ The Inventory subledger generates:
 | `FIFO` | First-in, first-out costing | Perishable goods |
 | `LIFO` | Last-in, first-out costing | Tax optimization (where permitted) |
 
+### Cycle Counting (v0.6.0)
+
+The `cycle_count_frequency` setting controls how often physical inventory counts are performed. Cycle counting generates `PhysicalInventory` movement records that reconcile book quantities against counted quantities:
+
+```yaml
+subledger:
+  inventory:
+    enabled: true
+    cycle_count_frequency: monthly     # monthly, quarterly, annual
+```
+
+| Frequency | Behavior |
+|-----------|----------|
+| `monthly` | Each storage location counted once per month on a rolling basis |
+| `quarterly` | Full count once per quarter, with high-value items counted monthly |
+| `annual` | Single year-end wall-to-wall count |
+
+Cycle count differences generate adjustment entries (`InventoryAdjustmentIn` or `InventoryAdjustmentOut`) and are flagged in the quality labels output for audit trail analysis.
+
+### Quality Inspection (v0.6.0)
+
+Inventory positions can be placed in quality inspection status via `TransferToInspection` movements. This models the inspection hold process common in manufacturing and pharmaceutical industries:
+
+```
+Goods Receipt → Transfer to Inspection → QC Hold → Transfer from Inspection → Unrestricted Use
+                                                 └→ Scrap (if rejected)
+```
+
+The rate of items routed through inspection depends on the material type and vendor scorecard grades (when `source_to_pay` is enabled). Materials from vendors with grade C or lower are routed through inspection at a higher rate.
+
 ### Inventory Journal Entries
 
 | Movement | Debit | Credit |

@@ -226,6 +226,30 @@ master_data:
 | `approval_limit` | Max approval amount |
 | `transaction_codes` | Authorized T-codes |
 
+## HR and Payroll Integration (v0.6.0)
+
+Employee master data serves as the foundation for the `hr` configuration section introduced in v0.6.0. When the HR module is enabled, each employee record drives downstream generation:
+
+- **Payroll**: Salary, tax withholdings, benefits deductions, and retirement contributions are computed per employee based on their role and the salary ranges defined in `hr.payroll.salary_ranges`. The `pay_frequency` setting (monthly, biweekly, or weekly) determines how many payroll runs are generated per period.
+- **Time and Attendance**: Time entries are generated for each employee according to working days in the period. The `overtime_rate` controls how many employees have overtime hours in a given period.
+- **Expense Reports**: A subset of employees (controlled by `hr.expenses.submission_rate`) generate expense reports each month. Policy violations are injected at the configured `policy_violation_rate`.
+
+The `employees.count` and `employees.hierarchy_depth` settings in `master_data` directly determine the population size for all HR outputs. Increasing the employee count will proportionally increase payroll journal entries, time records, and expense reports.
+
+```yaml
+master_data:
+  employees:
+    count: 200                     # Drives payroll and HR volume
+    hierarchy_depth: 5
+
+hr:
+  enabled: true                    # Activates payroll, time, and expenses
+  payroll:
+    pay_frequency: "biweekly"      # 26 pay periods per year
+  expenses:
+    submission_rate: 0.40          # 40% of employees submit per month
+```
+
 ## Examples
 
 ### Small Company

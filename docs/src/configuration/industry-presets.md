@@ -278,6 +278,30 @@ capitalization:
 
 ---
 
+## Process Chain Defaults (v0.6.0)
+
+Starting in v0.6.0, all five industry presets include default settings for the new enterprise process chains. When you generate a configuration with `datasynth-data init`, the preset populates sensible defaults for each new section, though they remain disabled until explicitly turned on.
+
+| Process Chain | Manufacturing | Retail | Financial Services | Healthcare | Technology |
+|---------------|:---:|:---:|:---:|:---:|:---:|
+| `source_to_pay` | High | Medium | Low | Medium | Low |
+| `financial_reporting` | Full | Full | Full | Full | Full |
+| `hr` | Full | Full | Full | Full | Full |
+| `manufacturing` | High | -- | -- | -- | -- |
+| `sales_quotes` | Medium | High | Low | Medium | High |
+
+**Manufacturing** presets emphasize production orders, routing, and costing. **Retail** presets increase sales quote volume and quote-to-order win rates. **Financial Services** presets focus on financial reporting with comprehensive KPIs and budgets. **Healthcare** and **Technology** presets provide balanced defaults.
+
+Each preset configures the following when you set `enabled: true`:
+
+- **source_to_pay**: Sourcing projects, RFx events, contract management, catalogs, and vendor scorecards that feed into the existing P2P document flow.
+- **financial_reporting**: Balance sheets, income statements, cash flow statements, management KPIs, and budget vs. actual variance analysis.
+- **hr**: Payroll runs based on employee master data, time and attendance tracking, and expense report generation with policy violation injection.
+- **manufacturing**: Production orders, WIP tracking, standard costing with labor and overhead, and routing operations.
+- **sales_quotes**: Quote-to-order pipeline that feeds into the existing O2C document flow.
+
+---
+
 ## Customizing Presets
 
 Start with a preset and customize:

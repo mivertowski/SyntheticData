@@ -161,6 +161,176 @@ output:
   compression: none                  # For fastest import
 ```
 
+## Manufacturing ERP Testing (v0.6.0)
+
+### Production Order Load
+
+Generate production orders with WIP tracking, routings, and standard costing:
+
+```yaml
+global:
+  industry: manufacturing
+  start_date: 2024-01-01
+  period_months: 12
+  worker_threads: 8
+
+transactions:
+  target_count: 500000
+
+manufacturing:
+  enabled: true
+  production_orders:
+    orders_per_month: 200              # High volume
+    avg_batch_size: 150
+    yield_rate: 0.96
+    rework_rate: 0.04
+  costing:
+    labor_rate_per_hour: 42.0
+    overhead_rate: 1.75
+  routing:
+    avg_operations: 6
+    setup_time_hours: 2.0
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40                    # Heavy procurement
+
+subledger:
+  inventory:
+    enabled: true
+    valuation_methods:
+      - standard_cost
+      - weighted_average
+```
+
+This configuration exercises production order creation, goods issue to production, goods receipt from production, WIP valuation, and standard cost variance posting.
+
+### Three-Way Match with Source-to-Pay
+
+Test the full procurement lifecycle from sourcing through payment:
+
+```yaml
+source_to_pay:
+  enabled: true
+  sourcing:
+    projects_per_year: 20
+  rfx:
+    min_invited_vendors: 5
+    max_invited_vendors: 12
+  contracts:
+    min_duration_months: 12
+    max_duration_months: 24
+  p2p_integration:
+    off_contract_rate: 0.10            # 10% maverick spending
+    catalog_enforcement: true
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40
+    three_way_match:
+      quantity_tolerance: 0.02
+      price_tolerance: 0.01
+```
+
+---
+
+## HR and Payroll Testing (v0.6.0)
+
+### Payroll Processing Load
+
+Generate payroll runs, time entries, and expense reports:
+
+```yaml
+master_data:
+  employees:
+    count: 500
+    hierarchy_depth: 6
+
+hr:
+  enabled: true
+  payroll:
+    enabled: true
+    pay_frequency: "biweekly"          # 26 pay periods per year
+    benefits_enrollment_rate: 0.75
+    retirement_participation_rate: 0.55
+  time_attendance:
+    enabled: true
+    overtime_rate: 0.15
+  expenses:
+    enabled: true
+    submission_rate: 0.40
+    policy_violation_rate: 0.05
+```
+
+This exercises payroll journal entry generation (salary, tax withholdings, benefits deductions), time and attendance record creation, and expense report approval workflows.
+
+### Expense Report Compliance
+
+Test expense policy enforcement with elevated violation rates:
+
+```yaml
+hr:
+  enabled: true
+  expenses:
+    enabled: true
+    submission_rate: 0.60              # 60% of employees submit
+    policy_violation_rate: 0.15        # Elevated violation rate for testing
+
+anomaly_injection:
+  enabled: true
+  generate_labels: true
+```
+
+---
+
+## Procurement Testing (v0.6.0)
+
+### Vendor Scorecard and Qualification
+
+Generate the full source-to-pay cycle for procurement system testing:
+
+```yaml
+source_to_pay:
+  enabled: true
+  qualification:
+    pass_rate: 0.80
+    validity_days: 365
+  scorecards:
+    frequency: "quarterly"
+    grade_a_threshold: 85.0
+    grade_c_threshold: 55.0
+  catalog:
+    preferred_vendor_flag_rate: 0.65
+    multi_source_rate: 0.30
+
+vendor_network:
+  enabled: true
+  depth: 3
+```
+
+### Sales Quote Pipeline
+
+Test quote-to-order conversion with the O2C flow:
+
+```yaml
+sales_quotes:
+  enabled: true
+  quotes_per_month: 100
+  win_rate: 0.30
+  validity_days: 45
+
+document_flows:
+  o2c:
+    enabled: true
+    flow_rate: 0.40
+```
+
+Won quotes automatically feed into the O2C document flow as sales orders.
+
+---
+
 ## Performance Monitoring
 
 ### Generation Metrics

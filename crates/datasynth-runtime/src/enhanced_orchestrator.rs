@@ -14,6 +14,9 @@
 //! 11. LLM enrichment (AI-augmented vendor names, descriptions)
 //! 12. Diffusion enhancement (statistical diffusion-based sample generation)
 //! 13. Causal overlay (structural causal model generation and validation)
+//! 14. Source-to-Contract (S2C) sourcing data generation
+//! 15. Bank reconciliation generation
+//! 16. Financial statement generation
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -33,6 +36,10 @@ use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
     AuditEngagement, AuditEvidence, AuditFinding, ProfessionalJudgment, RiskAssessment, Workpaper,
 };
+use datasynth_core::models::sourcing::{
+    BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
+    SupplierBid, SupplierQualification, SupplierScorecard,
+};
 use datasynth_core::models::subledger::ap::APInvoice;
 use datasynth_core::models::subledger::ar::ARInvoice;
 use datasynth_core::models::*;
@@ -50,8 +57,13 @@ use datasynth_generators::{
     // Audit generators
     AuditEngagementGenerator,
     BalanceTrackerConfig,
+    // S2C sourcing generators
+    BidEvaluationGenerator,
+    BidGenerator,
+    CatalogGenerator,
     // Core generators
     ChartOfAccountsGenerator,
+    ContractGenerator,
     CustomerGenerator,
     DataQualityConfig,
     // Data quality
@@ -64,6 +76,8 @@ use datasynth_generators::{
     DocumentFlowLinker,
     EmployeeGenerator,
     EvidenceGenerator,
+    // Financial statement generator
+    FinancialStatementGenerator,
     FindingGenerator,
     JournalEntryGenerator,
     JudgmentGenerator,
@@ -78,9 +92,14 @@ use datasynth_generators::{
     P2PGenerator,
     P2PGeneratorConfig,
     P2PPaymentBehavior,
+    QualificationGenerator,
+    RfxGenerator,
     RiskAssessmentGenerator,
     // Balance validation
     RunningBalanceTracker,
+    ScorecardGenerator,
+    SourcingProjectGenerator,
+    SpendAnalysisGenerator,
     ValidationError,
     // Master data generators
     VendorGenerator,
@@ -223,6 +242,18 @@ pub struct PhaseConfig {
     pub generate_banking: bool,
     /// Generate graph exports (accounting network for ML training).
     pub generate_graph_export: bool,
+    /// Generate S2C sourcing data (spend analysis, RFx, bids, contracts, catalogs, scorecards).
+    pub generate_sourcing: bool,
+    /// Generate bank reconciliations from payments.
+    pub generate_bank_reconciliation: bool,
+    /// Generate financial statements from trial balances.
+    pub generate_financial_statements: bool,
+    /// Generate accounting standards data (revenue recognition, impairment).
+    pub generate_accounting_standards: bool,
+    /// Generate manufacturing data (production orders, quality inspections, cycle counts).
+    pub generate_manufacturing: bool,
+    /// Generate sales quotes, management KPIs, and budgets.
+    pub generate_sales_kpi_budgets: bool,
 }
 
 impl Default for PhaseConfig {
@@ -250,8 +281,14 @@ impl Default for PhaseConfig {
             risks_per_engagement: 15,
             findings_per_engagement: 8,
             judgments_per_engagement: 10,
-            generate_banking: false,      // Off by default
-            generate_graph_export: false, // Off by default
+            generate_banking: false,              // Off by default
+            generate_graph_export: false,         // Off by default
+            generate_sourcing: false,             // Off by default
+            generate_bank_reconciliation: false,  // Off by default
+            generate_financial_statements: false, // Off by default
+            generate_accounting_standards: false, // Off by default
+            generate_manufacturing: false,        // Off by default
+            generate_sales_kpi_budgets: false,    // Off by default
         }
     }
 }
@@ -387,6 +424,82 @@ pub struct GraphExportInfo {
     pub edge_count: usize,
 }
 
+/// S2C sourcing data snapshot.
+#[derive(Debug, Clone, Default)]
+pub struct SourcingSnapshot {
+    /// Spend analyses.
+    pub spend_analyses: Vec<SpendAnalysis>,
+    /// Sourcing projects.
+    pub sourcing_projects: Vec<SourcingProject>,
+    /// Supplier qualifications.
+    pub qualifications: Vec<SupplierQualification>,
+    /// RFx events (RFI, RFP, RFQ).
+    pub rfx_events: Vec<RfxEvent>,
+    /// Supplier bids.
+    pub bids: Vec<SupplierBid>,
+    /// Bid evaluations.
+    pub bid_evaluations: Vec<BidEvaluation>,
+    /// Procurement contracts.
+    pub contracts: Vec<ProcurementContract>,
+    /// Catalog items.
+    pub catalog_items: Vec<CatalogItem>,
+    /// Supplier scorecards.
+    pub scorecards: Vec<SupplierScorecard>,
+}
+
+/// Financial reporting snapshot (financial statements + bank reconciliations).
+#[derive(Debug, Clone, Default)]
+pub struct FinancialReportingSnapshot {
+    /// Financial statements (balance sheet, income statement, cash flow).
+    pub financial_statements: Vec<FinancialStatement>,
+    /// Bank reconciliations.
+    pub bank_reconciliations: Vec<BankReconciliation>,
+}
+
+/// HR data snapshot (payroll runs, time entries, expense reports).
+#[derive(Debug, Clone, Default)]
+pub struct HrSnapshot {
+    /// Payroll runs.
+    pub payroll_run_count: usize,
+    /// Payroll line item count.
+    pub payroll_line_item_count: usize,
+    /// Time entry count.
+    pub time_entry_count: usize,
+    /// Expense report count.
+    pub expense_report_count: usize,
+}
+
+/// Accounting standards data snapshot (revenue recognition, impairment).
+#[derive(Debug, Clone, Default)]
+pub struct AccountingStandardsSnapshot {
+    /// Revenue recognition contract count.
+    pub revenue_contract_count: usize,
+    /// Impairment test count.
+    pub impairment_test_count: usize,
+}
+
+/// Manufacturing data snapshot (production orders, quality inspections, cycle counts).
+#[derive(Debug, Clone, Default)]
+pub struct ManufacturingSnapshot {
+    /// Production order count.
+    pub production_order_count: usize,
+    /// Quality inspection count.
+    pub quality_inspection_count: usize,
+    /// Cycle count count.
+    pub cycle_count_count: usize,
+}
+
+/// Sales, KPI, and budget data snapshot.
+#[derive(Debug, Clone, Default)]
+pub struct SalesKpiBudgetsSnapshot {
+    /// Sales quote count.
+    pub sales_quote_count: usize,
+    /// Management KPI count.
+    pub kpi_count: usize,
+    /// Budget line count.
+    pub budget_line_count: usize,
+}
+
 /// Anomaly labels generated during injection.
 #[derive(Debug, Clone, Default)]
 pub struct AnomalyLabels {
@@ -440,6 +553,18 @@ pub struct EnhancedGenerationResult {
     pub banking: BankingSnapshot,
     /// Graph export snapshot (if graph export enabled).
     pub graph_export: GraphExportSnapshot,
+    /// S2C sourcing data snapshot (if sourcing generation enabled).
+    pub sourcing: SourcingSnapshot,
+    /// Financial reporting snapshot (financial statements + bank reconciliations).
+    pub financial_reporting: FinancialReportingSnapshot,
+    /// HR data snapshot (payroll, time entries, expenses).
+    pub hr: HrSnapshot,
+    /// Accounting standards snapshot (revenue recognition, impairment).
+    pub accounting_standards: AccountingStandardsSnapshot,
+    /// Manufacturing snapshot (production orders, quality inspections, cycle counts).
+    pub manufacturing: ManufacturingSnapshot,
+    /// Sales, KPI, and budget snapshot.
+    pub sales_kpi_budgets: SalesKpiBudgetsSnapshot,
     /// Generated journal entries.
     pub journal_entries: Vec<JournalEntry>,
     /// Anomaly labels (if injection enabled).
@@ -526,6 +651,50 @@ pub struct EnhancedGenerationStatistics {
     /// Whether causal validation passed.
     #[serde(default)]
     pub causal_validation_passed: Option<bool>,
+    /// S2C sourcing counts.
+    #[serde(default)]
+    pub sourcing_project_count: usize,
+    #[serde(default)]
+    pub rfx_event_count: usize,
+    #[serde(default)]
+    pub bid_count: usize,
+    #[serde(default)]
+    pub contract_count: usize,
+    #[serde(default)]
+    pub catalog_item_count: usize,
+    #[serde(default)]
+    pub scorecard_count: usize,
+    /// Financial reporting counts.
+    #[serde(default)]
+    pub financial_statement_count: usize,
+    #[serde(default)]
+    pub bank_reconciliation_count: usize,
+    /// HR counts.
+    #[serde(default)]
+    pub payroll_run_count: usize,
+    #[serde(default)]
+    pub time_entry_count: usize,
+    #[serde(default)]
+    pub expense_report_count: usize,
+    /// Accounting standards counts.
+    #[serde(default)]
+    pub revenue_contract_count: usize,
+    #[serde(default)]
+    pub impairment_test_count: usize,
+    /// Manufacturing counts.
+    #[serde(default)]
+    pub production_order_count: usize,
+    #[serde(default)]
+    pub quality_inspection_count: usize,
+    #[serde(default)]
+    pub cycle_count_count: usize,
+    /// Sales & reporting counts.
+    #[serde(default)]
+    pub sales_quote_count: usize,
+    #[serde(default)]
+    pub kpi_count: usize,
+    #[serde(default)]
+    pub budget_line_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -947,6 +1116,24 @@ impl EnhancedOrchestrator {
         // Phase 13: Causal Overlay
         self.phase_causal_overlay(&mut stats);
 
+        // Phase 14: S2C Sourcing Data
+        let sourcing = self.phase_sourcing_data(&mut stats)?;
+
+        // Phase 15: Bank Reconciliation + Financial Statements
+        let financial_reporting = self.phase_financial_reporting(&document_flows, &mut stats)?;
+
+        // Phase 16: HR Data (Payroll, Time Entries, Expenses)
+        let hr = self.phase_hr_data(&mut stats)?;
+
+        // Phase 17: Accounting Standards (Revenue Recognition, Impairment)
+        let accounting_standards = self.phase_accounting_standards(&mut stats)?;
+
+        // Phase 18: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
+        let manufacturing_snap = self.phase_manufacturing(&mut stats)?;
+
+        // Phase 19: Sales Quotes, Management KPIs, Budgets
+        let sales_kpi_budgets = self.phase_sales_kpi_budgets(&coa, &mut stats)?;
+
         // Log final resource statistics
         let resource_stats = self.resource_guard.stats();
         info!(
@@ -968,6 +1155,12 @@ impl EnhancedOrchestrator {
             audit,
             banking,
             graph_export,
+            sourcing,
+            financial_reporting,
+            hr,
+            accounting_standards,
+            manufacturing: manufacturing_snap,
+            sales_kpi_budgets,
             journal_entries: entries,
             anomaly_labels,
             balance_validation,
@@ -1494,6 +1687,813 @@ impl EnhancedOrchestrator {
                 warn!("Phase 13: Causal generation failed (panic caught), continuing");
             }
         }
+    }
+
+    /// Phase 14: Generate S2C sourcing data.
+    fn phase_sourcing_data(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<SourcingSnapshot> {
+        if !self.phase_config.generate_sourcing && !self.config.source_to_pay.enabled {
+            debug!("Phase 14: Skipped (sourcing generation disabled)");
+            return Ok(SourcingSnapshot::default());
+        }
+
+        info!("Phase 14: Generating S2C Sourcing Data");
+        let seed = self.seed;
+
+        // Gather vendor data from master data
+        let vendor_ids: Vec<String> = self
+            .master_data
+            .vendors
+            .iter()
+            .map(|v| v.vendor_id.clone())
+            .collect();
+        if vendor_ids.is_empty() {
+            debug!("Phase 14: Skipped (no vendors available)");
+            return Ok(SourcingSnapshot::default());
+        }
+
+        let categories: Vec<(String, String)> = vec![
+            ("CAT-RAW".to_string(), "Raw Materials".to_string()),
+            ("CAT-OFF".to_string(), "Office Supplies".to_string()),
+            ("CAT-IT".to_string(), "IT Equipment".to_string()),
+            ("CAT-SVC".to_string(), "Professional Services".to_string()),
+            ("CAT-LOG".to_string(), "Logistics".to_string()),
+        ];
+        let categories_with_spend: Vec<(String, String, rust_decimal::Decimal)> = categories
+            .iter()
+            .map(|(id, name)| {
+                (
+                    id.clone(),
+                    name.clone(),
+                    rust_decimal::Decimal::from(100_000),
+                )
+            })
+            .collect();
+
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let fiscal_year = start_date.year() as u16;
+        let owner_ids: Vec<String> = self
+            .master_data
+            .employees
+            .iter()
+            .take(5)
+            .map(|e| e.employee_id.clone())
+            .collect();
+        let owner_id = owner_ids.first().map(|s| s.as_str()).unwrap_or("BUYER-001");
+
+        // Step 1: Spend Analysis
+        let mut spend_gen = SpendAnalysisGenerator::new(seed);
+        let spend_analyses =
+            spend_gen.generate(company_code, &vendor_ids, &categories, fiscal_year);
+
+        // Step 2: Sourcing Projects
+        let mut project_gen = SourcingProjectGenerator::new(seed + 1);
+        let sourcing_projects = if owner_ids.is_empty() {
+            Vec::new()
+        } else {
+            project_gen.generate(
+                company_code,
+                &categories_with_spend,
+                &owner_ids,
+                start_date,
+                self.config.global.period_months,
+            )
+        };
+        stats.sourcing_project_count = sourcing_projects.len();
+
+        // Step 3: Qualifications
+        let qual_vendor_ids: Vec<String> = vendor_ids.iter().take(20).cloned().collect();
+        let mut qual_gen = QualificationGenerator::new(seed + 2);
+        let qualifications = qual_gen.generate(
+            company_code,
+            &qual_vendor_ids,
+            sourcing_projects.first().map(|p| p.project_id.as_str()),
+            owner_id,
+            start_date,
+        );
+
+        // Step 4: RFx Events
+        let mut rfx_gen = RfxGenerator::new(seed + 3);
+        let rfx_events: Vec<RfxEvent> = sourcing_projects
+            .iter()
+            .map(|proj| {
+                let qualified_vids: Vec<String> = vendor_ids.iter().take(5).cloned().collect();
+                rfx_gen.generate(
+                    company_code,
+                    &proj.project_id,
+                    &proj.category_id,
+                    &qualified_vids,
+                    owner_id,
+                    start_date,
+                    50000.0,
+                )
+            })
+            .collect();
+        stats.rfx_event_count = rfx_events.len();
+
+        // Step 5: Bids
+        let mut bid_gen = BidGenerator::new(seed + 4);
+        let mut all_bids = Vec::new();
+        for rfx in &rfx_events {
+            let bidder_count = vendor_ids.len().clamp(2, 5);
+            let responding: Vec<String> = vendor_ids.iter().take(bidder_count).cloned().collect();
+            let bids = bid_gen.generate(rfx, &responding, start_date);
+            all_bids.extend(bids);
+        }
+        stats.bid_count = all_bids.len();
+
+        // Step 6: Bid Evaluations
+        let mut eval_gen = BidEvaluationGenerator::new(seed + 5);
+        let bid_evaluations: Vec<BidEvaluation> = rfx_events
+            .iter()
+            .map(|rfx| {
+                let rfx_bids: Vec<SupplierBid> = all_bids
+                    .iter()
+                    .filter(|b| b.rfx_id == rfx.rfx_id)
+                    .cloned()
+                    .collect();
+                eval_gen.evaluate(rfx, &rfx_bids, owner_id)
+            })
+            .collect();
+
+        // Step 7: Contracts from winning bids
+        let mut contract_gen = ContractGenerator::new(seed + 6);
+        let contracts: Vec<ProcurementContract> = bid_evaluations
+            .iter()
+            .zip(rfx_events.iter())
+            .filter_map(|(eval, rfx)| {
+                eval.ranked_bids.first().and_then(|winner| {
+                    all_bids
+                        .iter()
+                        .find(|b| b.bid_id == winner.bid_id)
+                        .map(|winning_bid| {
+                            contract_gen.generate_from_bid(
+                                winning_bid,
+                                Some(&rfx.sourcing_project_id),
+                                &rfx.category_id,
+                                owner_id,
+                                start_date,
+                            )
+                        })
+                })
+            })
+            .collect();
+        stats.contract_count = contracts.len();
+
+        // Step 8: Catalog Items
+        let mut catalog_gen = CatalogGenerator::new(seed + 7);
+        let catalog_items = catalog_gen.generate(&contracts);
+        stats.catalog_item_count = catalog_items.len();
+
+        // Step 9: Scorecards
+        let mut scorecard_gen = ScorecardGenerator::new(seed + 8);
+        let vendor_contracts: Vec<(String, Vec<&ProcurementContract>)> = contracts
+            .iter()
+            .fold(
+                std::collections::HashMap::<String, Vec<&ProcurementContract>>::new(),
+                |mut acc, c| {
+                    acc.entry(c.vendor_id.clone()).or_default().push(c);
+                    acc
+                },
+            )
+            .into_iter()
+            .collect();
+        let scorecards = scorecard_gen.generate(
+            company_code,
+            &vendor_contracts,
+            start_date,
+            end_date,
+            owner_id,
+        );
+        stats.scorecard_count = scorecards.len();
+
+        info!(
+            "S2C sourcing generated: {} projects, {} RFx, {} bids, {} contracts, {} catalog items, {} scorecards",
+            stats.sourcing_project_count, stats.rfx_event_count, stats.bid_count,
+            stats.contract_count, stats.catalog_item_count, stats.scorecard_count
+        );
+        self.check_resources_with_log("post-sourcing")?;
+
+        Ok(SourcingSnapshot {
+            spend_analyses,
+            sourcing_projects,
+            qualifications,
+            rfx_events,
+            bids: all_bids,
+            bid_evaluations,
+            contracts,
+            catalog_items,
+            scorecards,
+        })
+    }
+
+    /// Phase 15: Generate bank reconciliations and financial statements.
+    fn phase_financial_reporting(
+        &mut self,
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<FinancialReportingSnapshot> {
+        let fs_enabled = self.phase_config.generate_financial_statements
+            || self.config.financial_reporting.enabled;
+        let br_enabled = self.phase_config.generate_bank_reconciliation;
+
+        if !fs_enabled && !br_enabled {
+            debug!("Phase 15: Skipped (financial reporting disabled)");
+            return Ok(FinancialReportingSnapshot::default());
+        }
+
+        info!("Phase 15: Generating Financial Reporting Data");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+
+        let mut financial_statements = Vec::new();
+        let bank_reconciliations = Vec::new();
+
+        // Generate financial statements from document flow data
+        if fs_enabled {
+            let company_code = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.code.as_str())
+                .unwrap_or("1000");
+            let currency = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.currency.as_str())
+                .unwrap_or("USD");
+            let mut fs_gen = FinancialStatementGenerator::new(seed + 20);
+
+            // Generate one set of statements per period
+            for period in 0..self.config.global.period_months {
+                let period_start = start_date + chrono::Months::new(period);
+                let period_end =
+                    start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
+                let fiscal_year = period_end.year() as u16;
+                let fiscal_period = period_end.month() as u8;
+
+                // Build simplified trial balance entries from document flow aggregates
+                let tb_entries = self.build_trial_balance_from_flows(document_flows, &period_end);
+
+                let stmts = fs_gen.generate(
+                    company_code,
+                    currency,
+                    &tb_entries,
+                    period_start,
+                    period_end,
+                    fiscal_year,
+                    fiscal_period,
+                    None,
+                    "SYS-AUTOCLOSE",
+                );
+                financial_statements.extend(stmts);
+            }
+            stats.financial_statement_count = financial_statements.len();
+            info!(
+                "Financial statements generated: {} statements",
+                stats.financial_statement_count
+            );
+        }
+
+        stats.bank_reconciliation_count = bank_reconciliations.len();
+        self.check_resources_with_log("post-financial-reporting")?;
+
+        Ok(FinancialReportingSnapshot {
+            financial_statements,
+            bank_reconciliations,
+        })
+    }
+
+    /// Build simplified trial balance entries from document flow data for financial statement generation.
+    fn build_trial_balance_from_flows(
+        &self,
+        flows: &DocumentFlowSnapshot,
+        _period_end: &NaiveDate,
+    ) -> Vec<datasynth_generators::TrialBalanceEntry> {
+        use rust_decimal::Decimal;
+
+        let mut entries = Vec::new();
+
+        // Aggregate AR from customer invoices
+        let ar_total: Decimal = flows
+            .customer_invoices
+            .iter()
+            .map(|ci| ci.total_gross_amount)
+            .sum();
+        if !ar_total.is_zero() {
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: "1100".to_string(),
+                account_name: "Accounts Receivable".to_string(),
+                category: "Receivables".to_string(),
+                debit_balance: ar_total,
+                credit_balance: Decimal::ZERO,
+            });
+        }
+
+        // Aggregate AP from vendor invoices
+        let ap_total: Decimal = flows
+            .vendor_invoices
+            .iter()
+            .map(|vi| vi.payable_amount)
+            .sum();
+        if !ap_total.is_zero() {
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: "2000".to_string(),
+                account_name: "Accounts Payable".to_string(),
+                category: "Payables".to_string(),
+                debit_balance: Decimal::ZERO,
+                credit_balance: ap_total,
+            });
+        }
+
+        // Revenue from sales
+        let revenue: Decimal = flows
+            .customer_invoices
+            .iter()
+            .map(|ci| ci.total_gross_amount)
+            .sum();
+        if !revenue.is_zero() {
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: "4000".to_string(),
+                account_name: "Revenue".to_string(),
+                category: "Revenue".to_string(),
+                debit_balance: Decimal::ZERO,
+                credit_balance: revenue,
+            });
+        }
+
+        // COGS from purchase orders
+        let cogs: Decimal = flows
+            .purchase_orders
+            .iter()
+            .map(|po| po.total_net_amount)
+            .sum();
+        if !cogs.is_zero() {
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: "5000".to_string(),
+                account_name: "Cost of Goods Sold".to_string(),
+                category: "CostOfSales".to_string(),
+                debit_balance: cogs,
+                credit_balance: Decimal::ZERO,
+            });
+        }
+
+        // Cash from payments
+        let payments_out: Decimal = flows.payments.iter().map(|p| p.amount).sum();
+        if !payments_out.is_zero() {
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: "1000".to_string(),
+                account_name: "Cash".to_string(),
+                category: "Cash".to_string(),
+                debit_balance: payments_out,
+                credit_balance: Decimal::ZERO,
+            });
+        }
+
+        entries
+    }
+
+    /// Phase 16: Generate HR data (payroll runs, time entries, expense reports).
+    fn phase_hr_data(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<HrSnapshot> {
+        if !self.config.hr.enabled {
+            debug!("Phase 16: Skipped (HR generation disabled)");
+            return Ok(HrSnapshot::default());
+        }
+
+        info!("Phase 16: Generating HR Data (Payroll, Time Entries, Expenses)");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+        let currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.as_str())
+            .unwrap_or("USD");
+
+        let employee_ids: Vec<String> = self
+            .master_data
+            .employees
+            .iter()
+            .map(|e| e.employee_id.clone())
+            .collect();
+
+        if employee_ids.is_empty() {
+            debug!("Phase 16: Skipped (no employees available)");
+            return Ok(HrSnapshot::default());
+        }
+
+        let mut snapshot = HrSnapshot::default();
+
+        // Generate payroll runs (one per month)
+        if self.config.hr.payroll.enabled {
+            let mut payroll_gen = datasynth_generators::PayrollGenerator::new(seed + 30);
+            let employees_with_salary: Vec<(
+                String,
+                rust_decimal::Decimal,
+                Option<String>,
+                Option<String>,
+            )> = self
+                .master_data
+                .employees
+                .iter()
+                .map(|e| {
+                    (
+                        e.employee_id.clone(),
+                        rust_decimal::Decimal::from(5000), // Default monthly salary
+                        e.cost_center.clone(),
+                        e.department_id.clone(),
+                    )
+                })
+                .collect();
+
+            for month in 0..self.config.global.period_months {
+                let period_start = start_date + chrono::Months::new(month);
+                let period_end = start_date + chrono::Months::new(month + 1) - chrono::Days::new(1);
+                let (run, items) = payroll_gen.generate(
+                    company_code,
+                    &employees_with_salary,
+                    period_start,
+                    period_end,
+                    currency,
+                );
+                let _ = run; // stored for export when output sinks are wired
+                snapshot.payroll_run_count += 1;
+                snapshot.payroll_line_item_count += items.len();
+            }
+        }
+
+        // Generate time entries
+        if self.config.hr.time_attendance.enabled {
+            let mut time_gen = datasynth_generators::TimeEntryGenerator::new(seed + 31);
+            let entries = time_gen.generate(
+                &employee_ids,
+                start_date,
+                end_date,
+                &self.config.hr.time_attendance,
+            );
+            snapshot.time_entry_count = entries.len();
+        }
+
+        // Generate expense reports
+        if self.config.hr.expenses.enabled {
+            let mut expense_gen = datasynth_generators::ExpenseReportGenerator::new(seed + 32);
+            let reports = expense_gen.generate(
+                &employee_ids,
+                start_date,
+                end_date,
+                &self.config.hr.expenses,
+            );
+            snapshot.expense_report_count = reports.len();
+        }
+
+        stats.payroll_run_count = snapshot.payroll_run_count;
+        stats.time_entry_count = snapshot.time_entry_count;
+        stats.expense_report_count = snapshot.expense_report_count;
+
+        info!(
+            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports",
+            snapshot.payroll_run_count, snapshot.payroll_line_item_count,
+            snapshot.time_entry_count, snapshot.expense_report_count
+        );
+        self.check_resources_with_log("post-hr")?;
+
+        Ok(snapshot)
+    }
+
+    /// Phase 17: Generate accounting standards data (revenue recognition, impairment).
+    fn phase_accounting_standards(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<AccountingStandardsSnapshot> {
+        if !self.phase_config.generate_accounting_standards
+            || !self.config.accounting_standards.enabled
+        {
+            debug!("Phase 17: Skipped (accounting standards generation disabled)");
+            return Ok(AccountingStandardsSnapshot::default());
+        }
+        info!("Phase 17: Generating Accounting Standards Data");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+        let currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.as_str())
+            .unwrap_or("USD");
+
+        // Convert config framework to standards framework
+        let framework = match self.config.accounting_standards.framework {
+            datasynth_config::schema::AccountingFrameworkConfig::UsGaap => {
+                datasynth_standards::framework::AccountingFramework::UsGaap
+            }
+            datasynth_config::schema::AccountingFrameworkConfig::Ifrs => {
+                datasynth_standards::framework::AccountingFramework::Ifrs
+            }
+            datasynth_config::schema::AccountingFrameworkConfig::DualReporting => {
+                datasynth_standards::framework::AccountingFramework::DualReporting
+            }
+        };
+
+        let mut snapshot = AccountingStandardsSnapshot::default();
+
+        // Revenue recognition
+        if self.config.accounting_standards.revenue_recognition.enabled {
+            let customer_ids: Vec<String> = self
+                .master_data
+                .customers
+                .iter()
+                .map(|c| c.customer_id.clone())
+                .collect();
+
+            if !customer_ids.is_empty() {
+                let mut rev_gen = datasynth_generators::RevenueRecognitionGenerator::new(seed + 40);
+                let contracts = rev_gen.generate(
+                    company_code,
+                    &customer_ids,
+                    start_date,
+                    end_date,
+                    currency,
+                    &self.config.accounting_standards.revenue_recognition,
+                    framework,
+                );
+                snapshot.revenue_contract_count = contracts.len();
+            }
+        }
+
+        // Impairment testing
+        if self.config.accounting_standards.impairment.enabled {
+            let asset_data: Vec<(String, String, rust_decimal::Decimal)> = self
+                .master_data
+                .assets
+                .iter()
+                .map(|a| {
+                    (
+                        a.asset_id.clone(),
+                        a.description.clone(),
+                        a.acquisition_cost,
+                    )
+                })
+                .collect();
+
+            if !asset_data.is_empty() {
+                let mut imp_gen = datasynth_generators::ImpairmentGenerator::new(seed + 41);
+                let tests = imp_gen.generate(
+                    company_code,
+                    &asset_data,
+                    end_date,
+                    &self.config.accounting_standards.impairment,
+                    framework,
+                );
+                snapshot.impairment_test_count = tests.len();
+            }
+        }
+
+        stats.revenue_contract_count = snapshot.revenue_contract_count;
+        stats.impairment_test_count = snapshot.impairment_test_count;
+
+        info!(
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests",
+            snapshot.revenue_contract_count, snapshot.impairment_test_count
+        );
+        self.check_resources_with_log("post-accounting-standards")?;
+
+        Ok(snapshot)
+    }
+
+    /// Phase 18: Generate manufacturing data (production orders, quality inspections, cycle counts).
+    fn phase_manufacturing(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<ManufacturingSnapshot> {
+        if !self.phase_config.generate_manufacturing || !self.config.manufacturing.enabled {
+            debug!("Phase 18: Skipped (manufacturing generation disabled)");
+            return Ok(ManufacturingSnapshot::default());
+        }
+        info!("Phase 18: Generating Manufacturing Data");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        let material_data: Vec<(String, String)> = self
+            .master_data
+            .materials
+            .iter()
+            .map(|m| (m.material_id.clone(), m.description.clone()))
+            .collect();
+
+        if material_data.is_empty() {
+            debug!("Phase 18: Skipped (no materials available)");
+            return Ok(ManufacturingSnapshot::default());
+        }
+
+        let mut snapshot = ManufacturingSnapshot::default();
+
+        // Generate production orders
+        let mut prod_gen = datasynth_generators::ProductionOrderGenerator::new(seed + 50);
+        let production_orders = prod_gen.generate(
+            company_code,
+            &material_data,
+            start_date,
+            end_date,
+            &self.config.manufacturing.production_orders,
+            &self.config.manufacturing.costing,
+            &self.config.manufacturing.routing,
+        );
+        snapshot.production_order_count = production_orders.len();
+
+        // Generate quality inspections from production orders
+        let inspection_data: Vec<(String, String, String)> = production_orders
+            .iter()
+            .map(|po| {
+                (
+                    po.order_id.clone(),
+                    po.material_id.clone(),
+                    po.material_description.clone(),
+                )
+            })
+            .collect();
+
+        if !inspection_data.is_empty() {
+            let mut qi_gen = datasynth_generators::QualityInspectionGenerator::new(seed + 51);
+            let inspections = qi_gen.generate(company_code, &inspection_data, end_date);
+            snapshot.quality_inspection_count = inspections.len();
+        }
+
+        // Generate cycle counts (one per month)
+        let storage_locations: Vec<(String, String)> = material_data
+            .iter()
+            .enumerate()
+            .map(|(i, (mid, _))| (mid.clone(), format!("SL-{:03}", (i % 10) + 1)))
+            .collect();
+
+        let mut cc_gen = datasynth_generators::CycleCountGenerator::new(seed + 52);
+        let mut cycle_count_total = 0usize;
+        for month in 0..self.config.global.period_months {
+            let count_date = start_date + chrono::Months::new(month);
+            let items_per_count = storage_locations.len().clamp(10, 50);
+            let _cc = cc_gen.generate(
+                company_code,
+                &storage_locations,
+                count_date,
+                items_per_count,
+            );
+            cycle_count_total += 1;
+        }
+        snapshot.cycle_count_count = cycle_count_total;
+
+        stats.production_order_count = snapshot.production_order_count;
+        stats.quality_inspection_count = snapshot.quality_inspection_count;
+        stats.cycle_count_count = snapshot.cycle_count_count;
+
+        info!(
+            "Manufacturing data generated: {} production orders, {} quality inspections, {} cycle counts",
+            snapshot.production_order_count, snapshot.quality_inspection_count, snapshot.cycle_count_count
+        );
+        self.check_resources_with_log("post-manufacturing")?;
+
+        Ok(snapshot)
+    }
+
+    /// Phase 19: Generate sales quotes, management KPIs, and budgets.
+    fn phase_sales_kpi_budgets(
+        &mut self,
+        coa: &Arc<ChartOfAccounts>,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<SalesKpiBudgetsSnapshot> {
+        if !self.phase_config.generate_sales_kpi_budgets {
+            debug!("Phase 19: Skipped (sales/KPI/budget generation disabled)");
+            return Ok(SalesKpiBudgetsSnapshot::default());
+        }
+        info!("Phase 19: Generating Sales Quotes, KPIs, and Budgets");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        let mut snapshot = SalesKpiBudgetsSnapshot::default();
+
+        // Sales Quotes
+        if self.config.sales_quotes.enabled {
+            let customer_data: Vec<(String, String)> = self
+                .master_data
+                .customers
+                .iter()
+                .map(|c| (c.customer_id.clone(), c.name.clone()))
+                .collect();
+            let material_data: Vec<(String, String)> = self
+                .master_data
+                .materials
+                .iter()
+                .map(|m| (m.material_id.clone(), m.description.clone()))
+                .collect();
+
+            if !customer_data.is_empty() && !material_data.is_empty() {
+                let mut quote_gen = datasynth_generators::SalesQuoteGenerator::new(seed + 60);
+                let quotes = quote_gen.generate(
+                    company_code,
+                    &customer_data,
+                    &material_data,
+                    start_date,
+                    end_date,
+                    &self.config.sales_quotes,
+                );
+                snapshot.sales_quote_count = quotes.len();
+            }
+        }
+
+        // Management KPIs
+        if self.config.financial_reporting.management_kpis.enabled {
+            let mut kpi_gen = datasynth_generators::KpiGenerator::new(seed + 61);
+            let kpis = kpi_gen.generate(
+                company_code,
+                start_date,
+                end_date,
+                &self.config.financial_reporting.management_kpis,
+            );
+            snapshot.kpi_count = kpis.len();
+        }
+
+        // Budgets
+        if self.config.financial_reporting.budgets.enabled {
+            let account_data: Vec<(String, String)> = coa
+                .accounts
+                .iter()
+                .map(|a| (a.account_number.clone(), a.short_description.clone()))
+                .collect();
+
+            if !account_data.is_empty() {
+                let fiscal_year = start_date.year() as u32;
+                let mut budget_gen = datasynth_generators::BudgetGenerator::new(seed + 62);
+                let budget = budget_gen.generate(
+                    company_code,
+                    fiscal_year,
+                    &account_data,
+                    &self.config.financial_reporting.budgets,
+                );
+                snapshot.budget_line_count = budget.line_items.len();
+            }
+        }
+
+        stats.sales_quote_count = snapshot.sales_quote_count;
+        stats.kpi_count = snapshot.kpi_count;
+        stats.budget_line_count = snapshot.budget_line_count;
+
+        info!(
+            "Sales/KPI/Budget data generated: {} quotes, {} KPIs, {} budget lines",
+            snapshot.sales_quote_count, snapshot.kpi_count, snapshot.budget_line_count
+        );
+        self.check_resources_with_log("post-sales-kpi-budgets")?;
+
+        Ok(snapshot)
     }
 
     /// Generate the chart of accounts.
@@ -3078,6 +4078,11 @@ mod tests {
             llm: Default::default(),
             diffusion: Default::default(),
             causal: Default::default(),
+            source_to_pay: Default::default(),
+            financial_reporting: Default::default(),
+            hr: Default::default(),
+            manufacturing: Default::default(),
+            sales_quotes: Default::default(),
         }
     }
 

@@ -28,6 +28,12 @@ datasynth-data generate --config config.yaml --output ./output
 | [Compliance](compliance.md) | Fraud, controls, approval |
 | [AI & ML Features](ai-ml-features.md) | LLM, diffusion, causal, certificates |
 | [Output Settings](output-settings.md) | Format, compression |
+| Source-to-Pay | S2C sourcing pipeline (projects, RFx, bids, contracts, catalogs, scorecards) |
+| Financial Reporting | Financial statements, bank reconciliation, management KPIs, budgets |
+| HR | Payroll runs, time entries, expense reports |
+| Manufacturing | Production orders, quality inspections, cycle counts |
+| Sales Quotes | Quote-to-order pipeline |
+| Accounting Standards | Revenue recognition (ASC 606/IFRS 15), impairment testing |
 
 ## Reference
 
@@ -130,6 +136,43 @@ certificates:
   enabled: true
   issuer: "DataSynth"
   include_quality_metrics: true
+
+# Enterprise Process Chains (v0.6.0)
+source_to_pay:
+  enabled: true
+  projects_per_period: 5
+  avg_bids_per_rfx: 4
+  contract_award_rate: 0.75
+  catalog_items_per_contract: 10
+
+financial_reporting:
+  enabled: true
+  generate_balance_sheet: true
+  generate_income_statement: true
+  generate_cash_flow: true
+  generate_changes_in_equity: true
+  management_kpis:
+    enabled: true
+  budgets:
+    enabled: true
+    variance_threshold: 0.10
+
+hr:
+  enabled: true
+  payroll_frequency: monthly
+  time_tracking: true
+  expense_reports: true
+
+manufacturing:
+  enabled: true
+  production_orders_per_period: 20
+  quality_inspection_rate: 0.30
+  cycle_count_frequency: quarterly
+
+sales_quotes:
+  enabled: true
+  quotes_per_period: 15
+  conversion_rate: 0.35
 
 output:
   format: csv

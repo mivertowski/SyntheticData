@@ -61,6 +61,12 @@ datasynth-test-utils   → Test utilities
 | Accounting | JournalEntry, ChartOfAccounts, ACDOCA |
 | Master Data | Vendor, Customer, Material, FixedAsset, Employee, EntityRegistry |
 | Document Flow | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment, SalesOrder, Delivery, CustomerInvoice, CustomerReceipt, DocumentReference |
+| Sourcing (S2C) | SourcingProject, SupplierQualification, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis |
+| Financial Reporting | FinancialStatement, FinancialStatementLineItem, CashFlowItem, ManagementKpi, Budget, BudgetLineItem |
+| HR/Payroll | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem |
+| Manufacturing | ProductionOrder, RoutingOperation, QualityInspection, InspectionCharacteristic, CycleCount, CycleCountItem |
+| Sales | SalesQuote, QuoteLineItem |
+| Bank Reconciliation | BankReconciliation, BankStatementLine, ReconcilingItem |
 | Intercompany | IntercompanyRelationship, ICTransactionType, ICMatchedPair, TransferPricingMethod |
 | Subledger | AccountBalance, TrialBalance, AR*/AP*/FA*/Inventory* records |
 | FX/Close | FxRate, CurrencyTranslation, FiscalPeriod, AccrualEntry |
@@ -86,14 +92,18 @@ datasynth-test-utils   → Test utilities
 
 | Directory | Purpose |
 |-----------|---------|
-| (root) | je_generator, coa_generator, company_selector, user_generator, control_generator |
+| (root) | je_generator, coa_generator, company_selector, user_generator, control_generator, sales_quote_generator, kpi_generator, budget_generator, bank_reconciliation_generator |
 | master_data/ | vendor, customer, material, asset, employee generators |
 | document_flow/ | p2p_generator, o2c_generator, three_way_match, document_chain_manager |
+| sourcing/ | spend_analysis, sourcing_project, qualification, rfx, bid, bid_evaluation, contract, catalog, scorecard generators |
+| hr/ | payroll_generator, time_entry_generator, expense_report_generator |
+| manufacturing/ | production_order_generator, quality_inspection_generator, cycle_count_generator |
+| standards/ | revenue_recognition_generator, impairment_generator |
 | intercompany/ | ic_generator, matching_engine, elimination_generator |
 | balance/ | opening_balance, balance_tracker, trial_balance generators |
 | subledger/ | ar, ap, fa, inventory generators + reconciliation |
 | fx/ | fx_rate_service, currency_translator, cta_generator |
-| period_close/ | close_engine, accruals, depreciation, year_end |
+| period_close/ | close_engine, accruals, depreciation, year_end, financial_statement_generator |
 | anomaly/ | injector, types, strategies, patterns |
 | data_quality/ | missing_values, format_variations, duplicates, typos, labels |
 | audit/ | engagement, workpaper, evidence, risk, finding, judgment generators |
@@ -348,7 +358,7 @@ temporal_patterns:
 
 ## Configuration
 
-YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `temporal_patterns`, `accounting_standards`, `audit_standards`, `vendor_network`, `customer_segmentation`, `relationship_strength`, `cross_process_links`
+YAML sections: `global`, `companies`, `chart_of_accounts`, `transactions`, `output`, `fraud`, `internal_controls`, `enterprise`, `master_data`, `document_flows`, `intercompany`, `balance`, `subledger`, `fx`, `period_close`, `graph_export`, `anomaly_injection`, `data_quality`, `business_processes`, `templates`, `approval`, `departments`, `distributions`, `temporal_patterns`, `accounting_standards`, `audit_standards`, `vendor_network`, `customer_segmentation`, `relationship_strength`, `cross_process_links`, `source_to_pay`, `financial_reporting`, `hr`, `manufacturing`, `sales_quotes`
 
 Presets: manufacturing, retail, financial_services, healthcare, technology
 Complexity: small (~100 accounts), medium (~400), large (~2500)
@@ -454,12 +464,17 @@ cross_process_links:
 | Transactions | journal_entries.csv/.json, acdoca.csv |
 | Master Data | vendors, customers, materials, fixed_assets, employees, cost_centers |
 | Document Flow | purchase_orders, goods_receipts, vendor_invoices, payments, sales_orders, deliveries, customer_invoices, customer_receipts, document_references |
+| Sourcing (S2C) | sourcing_projects, supplier_qualifications, rfx_events, supplier_bids, bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards |
+| HR/Payroll | payroll_runs, payslips, time_entries, expense_reports, expense_line_items |
+| Manufacturing | production_orders, routing_operations, quality_inspection_lots, cycle_count_records |
+| Financial Reporting | balance_sheet, income_statement, cash_flow_statement, changes_in_equity, financial_kpis, budget_variance |
+| Sales | sales_quotes, sales_quote_items |
 | Subledgers | ar_*, ap_*, fa_*, inventory_* |
 | Period Close | trial_balances/, accruals, depreciation, closing_entries |
 | Consolidation | eliminations, currency_translation, consolidated_trial_balance |
 | Labels | anomaly_labels, fraud_labels, quality_issues, quality_labels |
 | Controls | internal_controls, control_*_mappings, sod_*, coso_control_mapping |
-| Banking | banking_customers, bank_accounts, bank_transactions, kyc_profiles, aml_typology_labels |
+| Banking | banking_customers, bank_accounts, bank_transactions, kyc_profiles, aml_typology_labels, bank_statement_lines, bank_reconciliations, reconciling_items |
 | Process Mining | event_log.json (OCEL 2.0), objects.json, events.json, process_variants |
 | Audit | audit_engagements, audit_workpapers, audit_evidence, audit_risks, audit_findings, audit_judgments |
 | Standards | customer_contracts, performance_obligations, leases, rou_assets, lease_liabilities, fair_value_measurements, impairment_tests, isa_mappings, confirmations, audit_opinions, sox_assessments |

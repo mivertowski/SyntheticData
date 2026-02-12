@@ -1511,6 +1511,11 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         llm: Default::default(),
         diffusion: Default::default(),
         causal: Default::default(),
+        source_to_pay: Default::default(),
+        financial_reporting: Default::default(),
+        hr: Default::default(),
+        manufacturing: Default::default(),
+        sales_quotes: Default::default(),
     }
 }
 

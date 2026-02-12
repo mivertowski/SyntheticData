@@ -50,6 +50,14 @@ pub enum GraphEntityType {
     Invoice,
     /// Payment
     Payment,
+    /// Sourcing project
+    SourcingProject,
+    /// RFx event
+    RfxEvent,
+    /// Production order
+    ProductionOrder,
+    /// Bank reconciliation
+    BankReconciliation,
 }
 
 impl GraphEntityType {
@@ -72,6 +80,10 @@ impl GraphEntityType {
             Self::SalesOrder => "SO",
             Self::Invoice => "IV",
             Self::Payment => "PM",
+            Self::SourcingProject => "SP",
+            Self::RfxEvent => "RX",
+            Self::ProductionOrder => "PR",
+            Self::BankReconciliation => "BR",
         }
     }
 
@@ -162,6 +174,30 @@ pub enum RelationshipType {
     UsedIn,
     /// Material sourced via
     SourcedVia,
+
+    // ===== Sourcing/procurement relationships =====
+    /// RFx awarded to vendor
+    AwardedTo,
+    /// Contract governs a purchase order
+    GovernsOrder,
+    /// Bid evaluated by evaluator
+    EvaluatedBy,
+    /// Vendor qualified as (status)
+    QualifiedAs,
+    /// Vendor scored by scorecard
+    ScoredBy,
+    /// Order sourced through contract
+    SourcedThrough,
+    /// Item belongs to catalog
+    CatalogItemOf,
+
+    // ===== Manufacturing relationships =====
+    /// Material produced by production order
+    ProducedBy,
+
+    // ===== Banking relationships =====
+    /// Payment reconciled with bank statement line
+    ReconciledWith,
 }
 
 impl RelationshipType {
@@ -193,6 +229,15 @@ impl RelationshipType {
             Self::InventoryLink => "INV",
             Self::UsedIn => "UI",
             Self::SourcedVia => "SV",
+            Self::AwardedTo => "AT",
+            Self::GovernsOrder => "GO",
+            Self::EvaluatedBy => "EB",
+            Self::QualifiedAs => "QA",
+            Self::ScoredBy => "SB",
+            Self::SourcedThrough => "STH",
+            Self::CatalogItemOf => "CIO",
+            Self::ProducedBy => "PB",
+            Self::ReconciledWith => "RW",
         }
     }
 
@@ -225,6 +270,16 @@ impl RelationshipType {
             Self::InventoryLink => Self::InventoryLink,
             Self::UsedIn => Self::UsedIn,
             Self::SourcedVia => Self::SourcedVia,
+            // Sourcing/procurement (symmetric or self-inverse)
+            Self::AwardedTo => Self::AwardedTo,
+            Self::GovernsOrder => Self::GovernsOrder,
+            Self::EvaluatedBy => Self::EvaluatedBy,
+            Self::QualifiedAs => Self::QualifiedAs,
+            Self::ScoredBy => Self::ScoredBy,
+            Self::SourcedThrough => Self::SourcedThrough,
+            Self::CatalogItemOf => Self::CatalogItemOf,
+            Self::ProducedBy => Self::ProducedBy,
+            Self::ReconciledWith => Self::ReconciledWith,
         }
     }
 

@@ -649,6 +649,20 @@ impl JournalEntryGenerator {
             | FraudType::ImpairmentTestAvoidance
             | FraudType::CashFlowProjectionManipulation
             | FraudType::ImproperImpairmentReversal => FraudAmountPattern::StatisticallyImprobable,
+            // Sourcing/Procurement Fraud
+            FraudType::BidRigging
+            | FraudType::PhantomVendorContract
+            | FraudType::ConflictOfInterestSourcing => FraudAmountPattern::Normal,
+            FraudType::SplitContractThreshold => FraudAmountPattern::ThresholdAdjacent,
+            // HR/Payroll Fraud
+            FraudType::GhostEmployeePayroll
+            | FraudType::PayrollInflation
+            | FraudType::DuplicateExpenseReport
+            | FraudType::FictitiousExpense => FraudAmountPattern::Normal,
+            FraudType::SplitExpenseToAvoidApproval => FraudAmountPattern::ThresholdAdjacent,
+            // O2C Fraud
+            FraudType::RevenueTimingManipulation => FraudAmountPattern::StatisticallyImprobable,
+            FraudType::QuotePriceOverride => FraudAmountPattern::Normal,
         }
     }
 

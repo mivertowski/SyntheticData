@@ -11,6 +11,7 @@ description = "Data generators for journal entries, chart of accounts, and ACDOC
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
+datasynth-standards = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rust_decimal = { workspace = true }

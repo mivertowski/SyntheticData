@@ -38,6 +38,16 @@ pub mod subledger;
 pub mod temporal;
 pub mod user_generator;
 
+// Enterprise process chain generators
+pub mod bank_reconciliation_generator;
+pub mod budget_generator;
+pub mod hr;
+pub mod kpi_generator;
+pub mod manufacturing;
+pub mod sales_quote_generator;
+pub mod sourcing;
+pub mod standards;
+
 pub use anomaly::*;
 pub use audit::*;
 pub use balance::*;
@@ -59,3 +69,13 @@ pub use relationships::*;
 pub use subledger::*;
 pub use temporal::*;
 pub use user_generator::*;
+
+// Enterprise process chain re-exports
+pub use bank_reconciliation_generator::*;
+pub use budget_generator::*;
+pub use hr::*;
+pub use kpi_generator::*;
+pub use manufacturing::*;
+pub use sales_quote_generator::*;
+pub use sourcing::*;
+pub use standards::*;

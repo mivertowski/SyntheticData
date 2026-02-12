@@ -22,7 +22,7 @@ Runtime orchestration, parallel execution, and memory management.
 
 ## Generation Workflow
 
-The `generate()` method orchestrates 12 focused phase methods in sequence:
+The `generate()` method orchestrates 19 focused phase methods in sequence:
 
 1. **Chart of Accounts**: CoA generation with industry-specific structures
 2. **Master Data**: Vendors, customers, materials, fixed assets, employees
@@ -36,6 +36,22 @@ The `generate()` method orchestrates 12 focused phase methods in sequence:
 10. **Banking Data**: KYC/AML banking transaction generation
 11. **Graph Export**: PyTorch Geometric, Neo4j, DGL, RustGraph export
 12. **Hypergraph Export**: Multi-layer hypergraph for RustGraph
+13-15. *(Reserved)*
+16. **HR** (v0.6.0): Payroll runs, time entries, expense reports
+17. **Accounting Standards** (v0.6.0): Revenue recognition, impairment testing, financial statements
+18. **Manufacturing** (v0.6.0): Production orders, quality inspections, cycle counts
+19. **Sales/KPIs/Budgets** (v0.6.0): Sales quotations, management KPIs, budget plans
+
+### Snapshot Structs (v0.6.0)
+
+Each new phase produces a typed snapshot that feeds into downstream phases:
+
+| Snapshot | Contents |
+|----------|----------|
+| `HrSnapshot` | Payroll runs, time entries, expense reports |
+| `AccountingStandardsSnapshot` | Revenue schedules, impairment results, financial statements |
+| `ManufacturingSnapshot` | Production orders, quality inspections, cycle counts |
+| `SalesKpiBudgetsSnapshot` | Sales quotes, KPI metrics, budget plans with variances |
 
 ## Usage
 

@@ -2215,6 +2215,11 @@ mod tests {
             llm: LlmSchemaConfig::default(),
             diffusion: DiffusionSchemaConfig::default(),
             causal: CausalSchemaConfig::default(),
+            source_to_pay: SourceToPayConfig::default(),
+            financial_reporting: FinancialReportingConfig::default(),
+            hr: HrConfig::default(),
+            manufacturing: ManufacturingProcessConfig::default(),
+            sales_quotes: SalesQuoteConfig::default(),
         }
     }
 

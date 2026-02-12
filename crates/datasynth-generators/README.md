@@ -53,6 +53,50 @@ Data generators for journal entries, master data, document flows, and anomalies.
 | `fx_rate_service` | Ornstein-Uhlenbeck FX rates |
 | `close_engine` | Period close orchestration |
 
+### Sourcing (`sourcing/`) (v0.6.0)
+
+| Generator | Description |
+|-----------|-------------|
+| `sourcing_project_generator` | End-to-end sourcing project lifecycle |
+| `rfx_generator` | RFI/RFP/RFQ event generation |
+| `supplier_bid_generator` | Supplier bid responses with scoring |
+| `procurement_contract_generator` | Contract creation from awarded bids |
+| `catalog_generator` | Procurement catalog items and pricing |
+| 4 additional generators | Supplier qualification, spend analysis, savings tracking, compliance |
+
+### HR (`hr/`) (v0.6.0)
+
+| Generator | Description |
+|-----------|-------------|
+| `payroll_generator` | Payroll runs with deductions and tax withholdings |
+| `time_generator` | Time entry tracking with approval workflows |
+| `expense_generator` | Expense reports with receipt matching and policy checks |
+
+### Manufacturing (`manufacturing/`) (v0.6.0)
+
+| Generator | Description |
+|-----------|-------------|
+| `production_order_generator` | Production orders with operations and material consumption |
+| `quality_inspection_generator` | Quality inspection lots and defect recording |
+| `cycle_count_generator` | Inventory cycle count programs and variance analysis |
+
+### Standards (`standards/`) (v0.6.0)
+
+| Generator | Description |
+|-----------|-------------|
+| `revenue_recognition_generator` | ASC 606 / IFRS 15 revenue recognition schedules |
+| `impairment_generator` | ASC 360 / IAS 36 impairment test generation |
+
+### Additional Generators (v0.6.0)
+
+| Generator | Description |
+|-----------|-------------|
+| `bank_reconciliation_generator` | Bank statement reconciliation with auto-matching |
+| `financial_statement_generator` | Income statement, balance sheet, cash flow generation (in `period_close/`) |
+| `sales_quote_generator` | Sales quotation generation with quote-to-order conversion |
+| `kpi_generator` | Management KPI and scorecard metric generation |
+| `budget_generator` | Budget planning with line items and variance analysis |
+
 ### Quality (`anomaly/`, `data_quality/`)
 
 | Generator | Description |

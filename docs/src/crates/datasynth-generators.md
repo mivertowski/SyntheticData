@@ -11,6 +11,11 @@ Data generators for journal entries, master data, document flows, and anomalies.
 - **Document Flows**: P2P (Procure-to-Pay), O2C (Order-to-Cash)
 - **Financial**: Intercompany, balance tracking, subledgers, FX, period close
 - **Quality**: Anomaly injection, data quality variations
+- **Sourcing (S2C)**: Spend analysis, RFx, bids, contracts, catalogs, scorecards (v0.6.0)
+- **HR / Payroll**: Payroll runs, time entries, expense reports (v0.6.0)
+- **Financial Reporting**: Financial statements, bank reconciliation (v0.6.0)
+- **Standards**: Revenue recognition, impairment testing (v0.6.0)
+- **Manufacturing**: Production orders, quality inspections, cycle counts (v0.6.0)
 
 ## Module Structure
 
@@ -128,6 +133,55 @@ ISA-compliant audit data generation.
 | `VendorLlmEnricher` | Generate realistic vendor names by industry, spend category, and country |
 | `TransactionLlmEnricher` | Generate transaction descriptions and memo fields |
 | `AnomalyLlmExplainer` | Generate natural language explanations for injected anomalies |
+
+### Sourcing (`sourcing/`) -- v0.6.0
+
+Source-to-Contract (S2C) procurement pipeline generators.
+
+| Generator | Description |
+|-----------|-------------|
+| `spend_analysis_generator` | Spend analysis records and category hierarchies |
+| `sourcing_project_generator` | Sourcing project lifecycle management |
+| `qualification_generator` | Supplier qualification assessments |
+| `rfx_generator` | RFx events (RFI/RFP/RFQ) with invited suppliers |
+| `bid_generator` | Supplier bids with pricing and compliance data |
+| `bid_evaluation_generator` | Bid scoring, ranking, and award recommendations |
+| `contract_generator` | Procurement contracts with terms and renewal rules |
+| `catalog_generator` | Catalog items linked to contracts |
+| `scorecard_generator` | Supplier scorecards with performance metrics |
+
+Generation DAG: `spend_analysis -> sourcing_project -> qualification -> rfx -> bid -> bid_evaluation -> contract -> catalog -> [P2P] -> scorecard`
+
+### HR (`hr/`) -- v0.6.0
+
+Hire-to-Retire (H2R) generators for the HR process chain.
+
+| Generator | Description |
+|-----------|-------------|
+| `payroll_generator` | Payroll runs with employee pay line items (gross, deductions, net, employer cost) |
+| `time_entry_generator` | Employee time entries with regular, overtime, PTO, and sick hours |
+| `expense_report_generator` | Expense reports with categorized line items and approval workflows |
+
+### Standards (`standards/`) -- v0.6.0
+
+Accounting and audit standards generators.
+
+| Generator | Description |
+|-----------|-------------|
+| `revenue_recognition_generator` | ASC 606/IFRS 15 customer contracts with performance obligations |
+| `impairment_generator` | Asset impairment tests with recoverable amount calculations |
+
+### Period Close Additions -- v0.6.0
+
+| Generator | Description |
+|-----------|-------------|
+| `financial_statement_generator` | Balance sheet, income statement, cash flow, and changes in equity from trial balance data |
+
+### Bank Reconciliation -- v0.6.0
+
+| Generator | Description |
+|-----------|-------------|
+| `bank_reconciliation_generator` | Bank reconciliations with statement lines, auto-matching, and reconciling items |
 
 ### Relationships (`relationships/`)
 

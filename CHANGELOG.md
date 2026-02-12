@@ -5,13 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - Unreleased
+## [0.6.0] - 2026-02-12
 
 ### Added
+
+- **Enterprise Process Chain Extensions**: 8 new enterprise process chains spanning 4 implementation waves with 18+ new models and 18+ new generators
+
+- **Source-to-Contract (S2C) Pipeline** (`datasynth-core`, `datasynth-generators`): Complete sourcing lifecycle
+  - `SourcingProject`, `SupplierQualification`, `RfxEvent`, `SupplierBid`, `BidEvaluation`, `ProcurementContract`, `CatalogItem`, `SupplierScorecard` models
+  - `SpendAnalysis` with vendor spend shares and HHI concentration
+  - Full generation DAG: spend analysis → sourcing project → qualification → RFx → bid → evaluation → contract → catalog → scorecard
+  - P2P integration: contract-based PO creation, maverick spend tracking, contract utilization
+  - Three-way match extended with contract price variance checking
+  - 12 new export files: `sourcing_projects.csv`, `rfx_events.csv`, `supplier_bids.csv`, `procurement_contracts.csv`, `catalog_items.csv`, `supplier_scorecards.csv`, and more
+
+- **Bank Reconciliation** (`datasynth-generators`): Automated bank statement matching
+  - `BankReconciliation`, `BankStatementLine`, `ReconcilingItem` models with match status tracking
+  - Auto-match cleared payments to statement lines (configurable 90% rate)
+  - Outstanding checks, deposits in transit, and bank-only lines (fees, interest)
+  - Net difference validation ensuring reconciliation balances to zero
+  - 3 new export files: `bank_statement_lines.csv`, `bank_reconciliations.csv`, `reconciling_items.csv`
+
+- **Financial Statements** (`datasynth-generators`): Complete financial reporting suite
+  - `FinancialStatement`, `FinancialStatementLineItem`, `CashFlowItem` models
+  - Balance Sheet, Income Statement, Cash Flow Statement, Changes in Equity generation
+  - GL account-to-statement line item mapping via account type classification
+  - BS equation enforcement (Assets = Liabilities + Equity)
+  - Indirect cash flow method (Net Income + non-cash adjustments ± working capital changes)
+  - 4 new export files: `balance_sheet.csv`, `income_statement.csv`, `cash_flow_statement.csv`, `changes_in_equity.csv`
+
+- **Hire-to-Retire (H2R) — Payroll, Time & Attendance, Expenses** (`datasynth-core`, `datasynth-generators`): Full HR lifecycle
+  - `PayrollRun`, `PayrollLineItem` with earnings, deductions, and employer tax calculations
+  - `TimeEntry` with regular, overtime, and leave tracking with approval workflow
+  - `ExpenseReport`, `ExpenseLineItem` with category-based amounts and policy violation detection
+  - Payroll journal entry generation (DR Salary Expense, CR Payroll Payable, CR Tax Withholding)
+  - Overtime correlated with period-end dynamics
+  - 5 new export files: `payroll_runs.csv`, `payslips.csv`, `time_entries.csv`, `expense_reports.csv`, `expense_line_items.csv`
+
+- **Revenue Recognition** (`datasynth-generators`): ASC 606/IFRS 15 contract generation
+  - `RevenueRecognitionGenerator` creating `CustomerContract` and `PerformanceObligation` records
+  - Single and multi-element arrangements with standalone selling price allocation
+  - Linked to O2C sales orders via `sales_order_id`
+
+- **Impairment Testing** (`datasynth-generators`): Asset impairment workflow
+  - `ImpairmentGenerator` selecting assets for testing based on risk indicators
+  - Fair value estimation with random walk from carrying amount
+  - Impairment loss calculation and journal entry generation
+  - Technology assets at higher impairment risk (2x multiplier)
+
+- **Manufacturing** (`datasynth-core`, `datasynth-generators`): Production order lifecycle
+  - `ProductionOrder` with routing operations, component issues, and WIP tracking
+  - `QualityInspection` with inspection characteristics and pass/fail results
+  - `CycleCount` with book-to-physical variance tracking and ABC classification
+  - BOM explosion for component requirements
+  - Production variances (material, labor, overhead)
+  - 4 new export files: `production_orders.csv`, `routing_operations.csv`, `quality_inspection_lots.csv`, `cycle_count_records.csv`
+
+- **Sales Quotes** (`datasynth-core`, `datasynth-generators`): Quote-to-order pipeline
+  - `SalesQuote`, `QuoteLineItem` with configurable win rate and validity periods
+  - Quote-to-sales-order conversion tracking
+  - Pricing 5-15% above final order price with negotiation modeling
+
+- **Management KPIs** (`datasynth-core`, `datasynth-generators`): Financial ratio computation
+  - `ManagementKpi` with category classification (liquidity, profitability, efficiency, leverage)
+  - Monthly or quarterly frequency with trend tracking
+  - Derived from financial statement line items
+
+- **Budgets** (`datasynth-core`, `datasynth-generators`): Budget variance analysis
+  - `Budget`, `BudgetLineItem` with GL account-level budget vs actual tracking
+  - Prior year actuals × (1 + growth_rate) with configurable noise
+  - Variance calculation with favorable/unfavorable classification
+
+- **New Configuration Sections** (`datasynth-config`): All defaulting to `enabled: false`
+  - `source_to_pay`: S2C sourcing pipeline configuration (spend analysis, qualification, RFx, contracts, catalogs, scorecards, P2P integration)
+  - `financial_reporting`: Financial statements, management KPIs, and budgets
+  - `hr`: Payroll (pay frequency, salary ranges, tax rates), time & attendance (overtime rate), expenses (submission rate, policy violations)
+  - `manufacturing`: Production orders (batch size, yield rate, rework), costing (labor/overhead rates), routing (operations, setup time)
+  - `sales_quotes`: Quote generation (quotes/month, win rate, validity days)
+
+- **Industry Preset Updates** (`datasynth-config`): All 5 industry presets updated with new process chain defaults
+  - Manufacturing: Quality-focused sourcing, full production order support
+  - Retail: Price-focused sourcing, high-volume sales quotes
+  - Financial Services: Compliance-focused sourcing, conservative budgets
+  - Healthcare and Technology: Appropriate defaults for each new process chain
+
+- **UUID Factory Extensions** (`datasynth-core`): 12 new generator type discriminators
+  - `SourcingProject` (0x28), `RfxEvent` (0x29), `SupplierBid` (0x2A), `ProcurementContract` (0x2B), `CatalogItem` (0x2C)
+  - `BankReconciliation` (0x2D), `FinancialStatement` (0x2E)
+  - `PayrollRun` (0x2F), `TimeEntry` (0x30), `ExpenseReport` (0x31)
+  - `ProductionOrder` (0x32), `CycleCount` (0x33), `QualityInspection` (0x34)
+  - `SalesQuote` (0x35), `BudgetLine` (0x36), `RevenueRecognition` (0x37), `ImpairmentTest` (0x38), `Kpi` (0x39)
+
+- **Orchestrator Phases** (`datasynth-runtime`): 4 new generation phases
+  - Phase 16: HR Data (payroll runs, time entries, expense reports)
+  - Phase 17: Accounting Standards (revenue recognition contracts, impairment tests)
+  - Phase 18: Manufacturing (production orders, quality inspections, cycle counts)
+  - Phase 19: Sales Quotes, Management KPIs, and Budgets
 
 ### Changed
 
 - Bumped all Rust crate versions to 0.6.0
+- `GeneratorConfig` extended with `source_to_pay`, `financial_reporting`, `hr`, `manufacturing`, `sales_quotes` fields (all `#[serde(default)]`)
+- `GeneratorType` enum extended from 0x27 to 0x39 (18 new discriminators)
+- All new model structs use `Option<>` fields and `#[serde(default)]` for backward compatibility
+- Existing YAML configs parse without errors (all new sections have defaults)
 
 ## [0.5.0] - 2026-02-11
 

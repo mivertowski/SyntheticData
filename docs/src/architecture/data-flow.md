@@ -205,6 +205,66 @@ let exporter = PyTorchGeometricExporter::new("output/graphs");
 exporter.export(&graph, split_config)?;
 ```
 
+## Phase 9: Enterprise Process Chains (v0.6.0)
+
+### Source-to-Contract (S2C) Flow
+
+```
+Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Contract Award → Catalog Items → [feeds into P2P] → Supplier Scorecard
+```
+
+S2C data feeds into the existing P2P procurement flow. Procurement contracts and catalog items provide the upstream sourcing context for purchase orders.
+
+### HR / Payroll Flow
+
+```
+Employees (Master Data) → Time Entries → Payroll Run → JE (Salary Expense/Cash)
+                        → Expense Reports → JE (Expense/AP)
+```
+
+HR data depends on the employee master data from Phase 2. Payroll runs generate journal entries that post to salary expense and cash accounts.
+
+### Financial Reporting Flow
+
+```
+Trial Balance → Balance Sheet + Income Statement
+             → Cash Flow Statement (indirect method)
+             → Changes in Equity
+             → Management KPIs
+             → Budget Variance Analysis
+
+Payments (P2P/O2C) → Bank Reconciliation → Matched/Unmatched Items
+```
+
+Financial statements are derived from the adjusted trial balance. Bank reconciliations match payments from document flows against bank statement lines.
+
+### Manufacturing Flow
+
+```
+Materials (Master Data) → Production Orders → Quality Inspections
+                                            → Cycle Counts
+```
+
+Manufacturing data depends on materials from the master data. Production orders consume raw materials and produce finished goods.
+
+### Sales Quote Flow
+
+```
+Customers (Master Data) → Sales Quotes → [feeds into O2C when won]
+```
+
+The quote-to-order pipeline generates sales quotes that, when won, link to sales orders in the O2C flow.
+
+### Accounting Standards Flow
+
+```
+Customers → Customer Contracts → Performance Obligations (ASC 606/IFRS 15)
+Fixed Assets → Impairment Tests → Recoverable Amount Calculations
+```
+
+Revenue recognition generates contracts with performance obligations. Impairment testing evaluates fixed asset carrying amounts against recoverable values.
+
 ## Data Dependencies
 
 ```
@@ -233,12 +293,12 @@ exporter.export(&graph, split_config)?;
         │   Entries   │
         └──────┬──────┘
                │
-    ┌──────────┼──────────┐
-    │          │          │
-    ▼          ▼          ▼
-┌───────┐ ┌───────┐ ┌───────┐
-│  TB   │ │ Graph │ │Labels │
-└───────┘ └───────┘ └───────┘
+    ┌──────────┼──────────┐──────────┐──────────┐
+    │          │          │          │          │
+    ▼          ▼          ▼          ▼          ▼
+┌───────┐ ┌───────┐ ┌───────┐ ┌─────────┐ ┌───────┐
+│  TB   │ │ Graph │ │Labels │ │Fin.Stmt │ │BankRec│
+└───────┘ └───────┘ └───────┘ └─────────┘ └───────┘
 ```
 
 ## Streaming vs Batch

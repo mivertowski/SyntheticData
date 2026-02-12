@@ -237,6 +237,110 @@ print(f"Unique customers: {entries['customer_id'].nunique()}")
 print(f"Date range: {entries['posting_date'].min()} to {entries['posting_date'].max()}")
 ```
 
+### 7. Financial Statement Analytics (v0.6.0)
+
+Analyze generated financial statements for consistency, trend analysis, and ratio testing:
+
+```python
+import pandas as pd
+
+# Load financial statements
+balance_sheet = pd.read_csv('output/financial_reporting/balance_sheet.csv')
+income_stmt = pd.read_csv('output/financial_reporting/income_statement.csv')
+cash_flow = pd.read_csv('output/financial_reporting/cash_flow.csv')
+
+# Verify accounting equation holds
+for _, row in balance_sheet.iterrows():
+    assets = row['total_assets']
+    liabilities = row['total_liabilities']
+    equity = row['total_equity']
+    imbalance = abs(assets - (liabilities + equity))
+    assert imbalance < 0.01, f"A=L+E violation: {imbalance}"
+
+# Analytical procedures: ratio analysis
+ratios = pd.DataFrame({
+    'period': balance_sheet['period'],
+    'current_ratio': balance_sheet['current_assets'] / balance_sheet['current_liabilities'],
+    'gross_margin': income_stmt['gross_profit'] / income_stmt['revenue'],
+    'debt_to_equity': balance_sheet['total_liabilities'] / balance_sheet['total_equity'],
+})
+
+# Flag unusual ratio movements (> 2 std devs from mean)
+for col in ['current_ratio', 'gross_margin', 'debt_to_equity']:
+    mean = ratios[col].mean()
+    std = ratios[col].std()
+    outliers = ratios[abs(ratios[col] - mean) > 2 * std]
+    if len(outliers) > 0:
+        print(f"Unusual {col} in periods: {outliers['period'].tolist()}")
+```
+
+### Budget Variance Analysis
+
+When budgets are enabled, compare budget to actual for each account:
+
+```python
+# Load budget vs actual data
+budget = pd.read_csv('output/financial_reporting/budget_vs_actual.csv')
+
+# Calculate variance percentage
+budget['variance_pct'] = (budget['actual'] - budget['budget']) / budget['budget']
+
+# Identify material variances (> 10%)
+material = budget[abs(budget['variance_pct']) > 0.10]
+print(f"Material variances: {len(material)} accounts")
+print(material[['account', 'budget', 'actual', 'variance_pct']].to_string())
+
+# Favorable vs unfavorable analysis
+favorable = budget[
+    ((budget['account_type'] == 'revenue') & (budget['variance_pct'] > 0)) |
+    ((budget['account_type'] == 'expense') & (budget['variance_pct'] < 0))
+]
+print(f"Favorable variances: {len(favorable)}")
+```
+
+### Management KPI Trend Analysis
+
+```python
+# Load KPI data
+kpis = pd.read_csv('output/financial_reporting/management_kpis.csv')
+
+# Check for declining trends
+for kpi_name in kpis['kpi_name'].unique():
+    series = kpis[kpis['kpi_name'] == kpi_name].sort_values('period')
+    values = series['value'].values
+    # Simple trend check: are last 3 periods declining?
+    if len(values) >= 3 and all(values[-3+i] > values[-3+i+1] for i in range(2)):
+        print(f"Declining trend: {kpi_name}")
+```
+
+### Payroll Audit Testing (v0.6.0)
+
+When the HR module is enabled, test payroll data for anomalies:
+
+```python
+# Load payroll data
+payroll = pd.read_csv('output/hr/payroll_entries.csv')
+
+# Ghost employee check: employees with pay but no time entries
+time_entries = pd.read_csv('output/hr/time_entries.csv')
+paid_employees = set(payroll['employee_id'].unique())
+active_employees = set(time_entries['employee_id'].unique())
+no_time = paid_employees - active_employees
+print(f"Employees paid without time entries: {len(no_time)}")
+
+# Payroll amount reasonableness
+payroll_summary = payroll.groupby('employee_id')['gross_pay'].sum()
+mean_pay = payroll_summary.mean()
+std_pay = payroll_summary.std()
+outliers = payroll_summary[payroll_summary > mean_pay + 3 * std_pay]
+print(f"Unusually high total pay: {len(outliers)} employees")
+
+# Expense policy violation detection
+expenses = pd.read_csv('output/hr/expense_reports.csv')
+violations = expenses[expenses['policy_violation'] == True]
+print(f"Expense policy violations: {len(violations)}")
+```
+
 ## Sampling
 
 ### Statistical Sampling

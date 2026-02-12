@@ -26,6 +26,27 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `anomaly.rs` | Anomaly types and labels for ML training |
 | `internal_control.rs` | SOX 404 control definitions |
 
+### Enterprise Process Chain Models (v0.6.0)
+
+| Module | Description |
+|--------|-------------|
+| `sourcing/` | SourcingProject, RfxEvent, SupplierBid, ProcurementContract, CatalogItem and related procurement models |
+| `bank_reconciliation.rs` | Bank reconciliation statements and matching rules |
+| `financial_statements.rs` | Income statement, balance sheet, cash flow statement models |
+| `payroll.rs` | Payroll runs, pay stubs, deductions, tax withholdings |
+| `time_entry.rs` | Time tracking entries, approval workflows |
+| `expense_report.rs` | Expense reports, line items, receipt matching |
+| `production_order.rs` | Manufacturing production orders and operations |
+| `quality_inspection.rs` | Quality inspection lots, results, defect codes |
+| `cycle_count.rs` | Inventory cycle count programs and variances |
+| `sales_quote.rs` | Sales quotations and quote-to-order conversion |
+| `management_kpi.rs` | Management KPIs and scorecard metrics |
+| `budget.rs` | Budget plans, line items, variance analysis |
+
+### UUID Factory Extensions (v0.6.0)
+
+The UUID factory (`uuid_factory.rs`) has been extended with 18 new `GeneratorType` discriminators (0x28-0x39) covering sourcing, HR, manufacturing, financial reporting, and sales/KPI/budget entities. This ensures collision-free deterministic UUID generation across all new model types.
+
 ### Statistical Distributions (`distributions/`)
 
 | Distribution | Description |

@@ -26,6 +26,11 @@ business_processes:        # Process distribution
 templates:                 # External templates
 approval:                  # Approval thresholds
 departments:               # Department distribution
+source_to_pay:             # Source-to-Pay (v0.6.0)
+financial_reporting:       # Financial statements & KPIs (v0.6.0)
+hr:                        # HR / payroll / expenses (v0.6.0)
+manufacturing:             # Production orders & costing (v0.6.0)
+sales_quotes:              # Quote-to-order pipeline (v0.6.0)
 ```
 
 ## global
@@ -444,6 +449,217 @@ certificates:
 | `enabled` | bool | `false` | Attach certificate to generated output |
 | `issuer` | string | `"DataSynth"` | Issuer identity for the certificate |
 | `include_quality_metrics` | bool | `true` | Include Benford MAD, correlation, fidelity metrics |
+
+## Source-to-Pay Configuration (v0.6.0)
+
+```yaml
+source_to_pay:
+  enabled: false                       # Enable source-to-pay generation
+
+  spend_analysis:
+    hhi_threshold: 2500.0              # f64 - HHI threshold for sourcing trigger
+    contract_coverage_target: 0.80     # f64, 0-1 - target spend under contracts
+
+  sourcing:
+    projects_per_year: 10              # u32 - sourcing projects per year
+    renewal_horizon_months: 3          # u32 - months before expiry to trigger renewal
+    project_duration_months: 4         # u32 - average project duration
+
+  qualification:
+    pass_rate: 0.75                    # f64, 0-1 - qualification pass rate
+    validity_days: 365                 # u32 - qualification validity in days
+    financial_weight: 0.25             # f64 - financial stability weight
+    quality_weight: 0.30               # f64 - quality management weight
+    delivery_weight: 0.25              # f64 - delivery performance weight
+    compliance_weight: 0.20            # f64 - compliance weight
+
+  rfx:
+    rfi_threshold: 100000.0            # f64 - spend above which RFI required
+    min_invited_vendors: 3             # u32 - minimum vendors per RFx
+    max_invited_vendors: 8             # u32 - maximum vendors per RFx
+    response_rate: 0.70                # f64, 0-1 - vendor response rate
+    default_price_weight: 0.40         # f64 - price weight in evaluation
+    default_quality_weight: 0.35       # f64 - quality weight in evaluation
+    default_delivery_weight: 0.25      # f64 - delivery weight in evaluation
+
+  contracts:
+    min_duration_months: 12            # u32 - minimum contract duration
+    max_duration_months: 36            # u32 - maximum contract duration
+    auto_renewal_rate: 0.40            # f64, 0-1 - auto-renewal rate
+    amendment_rate: 0.20               # f64, 0-1 - contracts with amendments
+    type_distribution:
+      fixed_price: 0.40               # f64 - fixed price contracts
+      blanket: 0.30                    # f64 - blanket/framework agreements
+      time_and_materials: 0.15         # f64 - T&M contracts
+      service_agreement: 0.15          # f64 - service agreements
+
+  catalog:
+    preferred_vendor_flag_rate: 0.70   # f64, 0-1 - items marked as preferred
+    multi_source_rate: 0.25            # f64, 0-1 - items with multiple sources
+
+  scorecards:
+    frequency: "quarterly"             # string - review frequency
+    on_time_delivery_weight: 0.30      # f64 - OTD weight in score
+    quality_weight: 0.30               # f64 - quality weight in score
+    price_weight: 0.25                 # f64 - price competitiveness weight
+    responsiveness_weight: 0.15        # f64 - responsiveness weight
+    grade_a_threshold: 90.0            # f64 - grade A threshold
+    grade_b_threshold: 75.0            # f64 - grade B threshold
+    grade_c_threshold: 60.0            # f64 - grade C threshold
+
+  p2p_integration:
+    off_contract_rate: 0.15            # f64, 0-1 - maverick purchase rate
+    price_tolerance: 0.02              # f64 - contract price variance allowed
+    catalog_enforcement: false          # bool - enforce catalog ordering
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable source-to-pay generation |
+| `sourcing.projects_per_year` | u32 | `10` | Sourcing projects per year |
+| `qualification.pass_rate` | f64 | `0.75` | Supplier qualification pass rate |
+| `rfx.response_rate` | f64 | `0.70` | Fraction of invited vendors that respond |
+| `contracts.auto_renewal_rate` | f64 | `0.40` | Auto-renewal rate |
+| `scorecards.frequency` | string | `"quarterly"` | Scorecard review frequency |
+| `p2p_integration.off_contract_rate` | f64 | `0.15` | Rate of off-contract (maverick) purchases |
+
+## Financial Reporting Configuration (v0.6.0)
+
+```yaml
+financial_reporting:
+  enabled: false                       # Enable financial reporting generation
+  generate_balance_sheet: true         # bool - generate balance sheet
+  generate_income_statement: true      # bool - generate income statement
+  generate_cash_flow: true             # bool - generate cash flow statement
+  generate_changes_in_equity: true     # bool - generate changes in equity
+  comparative_periods: 1               # u32 - number of comparative periods
+
+  management_kpis:
+    enabled: false                     # bool - enable KPI generation
+    frequency: "monthly"               # string - monthly, quarterly
+
+  budgets:
+    enabled: false                     # bool - enable budget generation
+    revenue_growth_rate: 0.05          # f64 - expected revenue growth rate
+    expense_inflation_rate: 0.03       # f64 - expected expense inflation rate
+    variance_noise: 0.10               # f64 - noise for budget vs actual
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable financial reporting generation |
+| `generate_balance_sheet` | bool | `true` | Generate balance sheet output |
+| `generate_income_statement` | bool | `true` | Generate income statement output |
+| `generate_cash_flow` | bool | `true` | Generate cash flow statement output |
+| `generate_changes_in_equity` | bool | `true` | Generate changes in equity statement |
+| `comparative_periods` | u32 | `1` | Number of comparative periods to include |
+| `management_kpis.enabled` | bool | `false` | Enable management KPI calculation |
+| `management_kpis.frequency` | string | `"monthly"` | KPI calculation frequency |
+| `budgets.enabled` | bool | `false` | Enable budget generation |
+| `budgets.revenue_growth_rate` | f64 | `0.05` | Expected revenue growth rate for budgeting |
+| `budgets.expense_inflation_rate` | f64 | `0.03` | Expected expense inflation rate |
+| `budgets.variance_noise` | f64 | `0.10` | Random noise added to budget vs actual |
+
+## HR Configuration (v0.6.0)
+
+```yaml
+hr:
+  enabled: false                       # Enable HR generation
+
+  payroll:
+    enabled: true                      # bool - enable payroll generation
+    pay_frequency: "monthly"           # string - monthly, biweekly, weekly
+    salary_ranges:
+      staff_min: 50000.0               # f64 - staff level minimum salary
+      staff_max: 70000.0               # f64 - staff level maximum salary
+      manager_min: 80000.0             # f64 - manager level minimum salary
+      manager_max: 120000.0            # f64 - manager level maximum salary
+      director_min: 120000.0           # f64 - director level minimum salary
+      director_max: 180000.0           # f64 - director level maximum salary
+      executive_min: 180000.0          # f64 - executive level minimum salary
+      executive_max: 350000.0          # f64 - executive level maximum salary
+    tax_rates:
+      federal_effective: 0.22          # f64 - federal effective tax rate
+      state_effective: 0.05            # f64 - state effective tax rate
+      fica: 0.0765                     # f64 - FICA/social security rate
+    benefits_enrollment_rate: 0.60     # f64, 0-1 - benefits enrollment rate
+    retirement_participation_rate: 0.45 # f64, 0-1 - retirement plan participation
+
+  time_attendance:
+    enabled: true                      # bool - enable time tracking
+    overtime_rate: 0.10                # f64, 0-1 - employees with overtime
+
+  expenses:
+    enabled: true                      # bool - enable expense report generation
+    submission_rate: 0.30              # f64, 0-1 - employees submitting per month
+    policy_violation_rate: 0.08        # f64, 0-1 - rate of policy violations
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable HR generation |
+| `payroll.enabled` | bool | `true` | Enable payroll generation |
+| `payroll.pay_frequency` | string | `"monthly"` | Pay frequency: `monthly`, `biweekly`, `weekly` |
+| `payroll.benefits_enrollment_rate` | f64 | `0.60` | Benefits enrollment rate |
+| `payroll.retirement_participation_rate` | f64 | `0.45` | Retirement plan participation rate |
+| `time_attendance.enabled` | bool | `true` | Enable time tracking |
+| `time_attendance.overtime_rate` | f64 | `0.10` | Rate of employees with overtime |
+| `expenses.enabled` | bool | `true` | Enable expense report generation |
+| `expenses.submission_rate` | f64 | `0.30` | Rate of employees submitting expenses per month |
+| `expenses.policy_violation_rate` | f64 | `0.08` | Rate of policy violations |
+
+## Manufacturing Configuration (v0.6.0)
+
+```yaml
+manufacturing:
+  enabled: false                       # Enable manufacturing generation
+
+  production_orders:
+    orders_per_month: 50               # u32 - production orders per month
+    avg_batch_size: 100                # u32 - average batch size
+    yield_rate: 0.97                   # f64, 0-1 - production yield rate
+    make_to_order_rate: 0.20           # f64, 0-1 - MTO vs MTS ratio
+    rework_rate: 0.03                  # f64, 0-1 - rework rate
+
+  costing:
+    labor_rate_per_hour: 35.0          # f64 - labor rate per hour
+    overhead_rate: 1.50                # f64 - overhead multiplier on direct labor
+    standard_cost_update_frequency: "quarterly"  # string - cost update cycle
+
+  routing:
+    avg_operations: 4                  # u32 - average operations per routing
+    setup_time_hours: 1.5              # f64 - average setup time in hours
+    run_time_variation: 0.15           # f64 - run time variation coefficient
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable manufacturing generation |
+| `production_orders.orders_per_month` | u32 | `50` | Number of production orders per month |
+| `production_orders.avg_batch_size` | u32 | `100` | Average batch size |
+| `production_orders.yield_rate` | f64 | `0.97` | Production yield rate |
+| `production_orders.rework_rate` | f64 | `0.03` | Rework rate |
+| `costing.labor_rate_per_hour` | f64 | `35.0` | Direct labor cost per hour |
+| `costing.overhead_rate` | f64 | `1.50` | Overhead application multiplier |
+| `routing.avg_operations` | u32 | `4` | Average operations per routing step |
+| `routing.setup_time_hours` | f64 | `1.5` | Average machine setup time in hours |
+
+## Sales Quotes Configuration (v0.6.0)
+
+```yaml
+sales_quotes:
+  enabled: false                       # Enable sales quote generation
+  quotes_per_month: 30                 # u32 - quotes generated per month
+  win_rate: 0.35                       # f64, 0-1 - quote-to-order conversion
+  validity_days: 30                    # u32 - default quote validity period
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable sales quote generation |
+| `quotes_per_month` | u32 | `30` | Number of quotes generated per month |
+| `win_rate` | f64 | `0.35` | Fraction of quotes that convert to sales orders |
+| `validity_days` | u32 | `30` | Default quote validity period in days |
 
 ## See Also
 

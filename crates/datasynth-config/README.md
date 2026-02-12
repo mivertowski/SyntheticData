@@ -33,6 +33,18 @@ Configuration schema, validation, and industry presets for synthetic data genera
 | `graph_export` | ML graph export formats |
 | `output` | Output format and compression |
 
+### Enterprise Process Chain Sections (v0.6.0)
+
+| Section | Description |
+|---------|-------------|
+| `source_to_pay` | `SourceToPayConfig` -- sourcing projects, RFx events, supplier bids, procurement contracts, catalogs |
+| `financial_reporting` | `FinancialReportingConfig` -- financial statements, `ManagementKpisConfig`, `BudgetConfig` |
+| `hr` | `HrConfig` -- `PayrollConfig`, `TimeAttendanceConfig`, `ExpenseConfig` |
+| `manufacturing_process` | `ManufacturingProcessConfig` -- `ProductionOrderConfig`, `ManufacturingCostingConfig`, `RoutingConfig` |
+| `sales_quotes` | `SalesQuoteConfig` -- quotation generation and quote-to-order conversion |
+
+All new sections default to `enabled: false` for full backward compatibility with existing configurations.
+
 ## Industry Presets
 
 | Industry | Description |

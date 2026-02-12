@@ -36,6 +36,30 @@ mod temporal;
 mod user;
 mod vendor_network;
 
+// Source-to-Contract models (S2C pipeline)
+pub mod sourcing;
+
+// Bank reconciliation models
+mod bank_reconciliation;
+
+// Financial statement models
+mod financial_statements;
+
+// Hire-to-Retire (H2R) models
+mod expense_report;
+mod payroll;
+mod time_entry;
+
+// Manufacturing models
+mod cycle_count;
+mod production_order;
+mod quality_inspection;
+
+// Wave 4: Sales Quotes, KPIs, Budgets
+mod budget;
+mod management_kpi;
+mod sales_quote;
+
 // Pattern drift models (Phase: Pattern and Process Drift Over Time)
 pub mod drift_events;
 pub mod organizational_event;
@@ -84,6 +108,30 @@ pub use sod::*;
 pub use temporal::*;
 pub use user::*;
 pub use vendor_network::*;
+
+// Sourcing exports
+pub use sourcing::*;
+
+// Bank reconciliation exports
+pub use bank_reconciliation::*;
+
+// Financial statement exports
+pub use financial_statements::*;
+
+// Hire-to-Retire (H2R) exports
+pub use expense_report::*;
+pub use payroll::*;
+pub use time_entry::*;
+
+// Manufacturing exports
+pub use cycle_count::*;
+pub use production_order::*;
+pub use quality_inspection::*;
+
+// Wave 4 exports
+pub use budget::*;
+pub use management_kpi::*;
+pub use sales_quote::*;
 
 // Pattern drift exports
 pub use drift_events::*;

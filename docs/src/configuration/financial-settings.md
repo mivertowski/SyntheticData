@@ -340,6 +340,57 @@ period_close:
     retained_earnings: true
 ```
 
+## Financial Reporting (v0.6.0)
+
+The `financial_reporting` section generates structured financial statements, management KPIs, and budgets derived from the underlying journal entries, trial balances, and period close data.
+
+### Financial Statements
+
+```yaml
+financial_reporting:
+  enabled: true
+  generate_balance_sheet: true         # Balance sheet
+  generate_income_statement: true      # Income statement / P&L
+  generate_cash_flow: true             # Cash flow statement
+  generate_changes_in_equity: true     # Statement of changes in equity
+  comparative_periods: 1               # Number of prior-period comparatives
+```
+
+When enabled, the generator produces financial statements at each period close. The `comparative_periods` setting controls how many prior periods are included for comparative analysis. Statements are aggregated from the trial balance and subledger data, ensuring consistency with the underlying journal entries.
+
+### Management KPIs
+
+```yaml
+financial_reporting:
+  management_kpis:
+    enabled: true
+    frequency: "monthly"               # monthly or quarterly
+```
+
+Management KPIs include ratios and metrics computed from the generated financial data:
+
+| KPI Category | Examples |
+|-------------|----------|
+| Liquidity | Current ratio, quick ratio, cash conversion cycle |
+| Profitability | Gross margin, operating margin, ROE, ROA |
+| Efficiency | Inventory turnover, receivables turnover, asset turnover |
+| Leverage | Debt-to-equity, interest coverage |
+
+### Budgets
+
+```yaml
+financial_reporting:
+  budgets:
+    enabled: true
+    revenue_growth_rate: 0.05          # 5% expected growth
+    expense_inflation_rate: 0.03       # 3% cost inflation
+    variance_noise: 0.10               # 10% random noise on actuals vs budget
+```
+
+Budget generation creates a budget line for each GL account based on prior-period actuals, adjusted by the configured growth and inflation rates. The `variance_noise` parameter controls the spread between budget and actual figures, producing realistic budget-to-actual variance reports.
+
+---
+
 ## See Also
 
 - [Companies](companies.md)

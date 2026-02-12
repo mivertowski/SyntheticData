@@ -68,6 +68,44 @@ pub enum GeneratorType {
     CustomerInvoice = 0x26,
     /// Customer Receipt document
     CustomerReceipt = 0x27,
+
+    // ===== Enterprise Process Chain generators =====
+    /// Sourcing project generator
+    SourcingProject = 0x28,
+    /// RFx event generator
+    RfxEvent = 0x29,
+    /// Supplier bid generator
+    SupplierBid = 0x2A,
+    /// Procurement contract generator
+    ProcurementContract = 0x2B,
+    /// Catalog item generator
+    CatalogItem = 0x2C,
+    /// Bank reconciliation generator
+    BankReconciliation = 0x2D,
+    /// Financial statement generator
+    FinancialStatement = 0x2E,
+    /// Payroll run generator
+    PayrollRun = 0x2F,
+    /// Time entry generator
+    TimeEntry = 0x30,
+    /// Expense report generator
+    ExpenseReport = 0x31,
+    /// Production order generator
+    ProductionOrder = 0x32,
+    /// Cycle count generator
+    CycleCount = 0x33,
+    /// Quality inspection generator
+    QualityInspection = 0x34,
+    /// Sales quote generator
+    SalesQuote = 0x35,
+    /// Budget line generator
+    BudgetLine = 0x36,
+    /// Revenue recognition contract generator
+    RevenueRecognition = 0x37,
+    /// Impairment test generator
+    ImpairmentTest = 0x38,
+    /// Management KPI generator
+    Kpi = 0x39,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

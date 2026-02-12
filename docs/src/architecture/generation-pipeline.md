@@ -402,6 +402,89 @@ The causal validator verifies that generated data preserves the specified causal
 - Counterfactual pairs (factual + counterfactual)
 - Causal validation report
 
+## Stage 14: Source-to-Contract (v0.6.0)
+
+**Purpose:** Generate the full S2C procurement pipeline
+
+When source-to-pay is enabled, generates the complete sourcing lifecycle from spend analysis through supplier scorecards. The generation DAG follows:
+
+```
+Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Procurement Contract → Catalog Items → [feeds into P2P] → Supplier Scorecard
+```
+
+**Outputs:**
+- Spend analysis records and category hierarchies
+- Sourcing projects with supplier qualification data
+- RFx events (RFI/RFP/RFQ), bids, and bid evaluations
+- Procurement contracts and catalog items
+- Supplier scorecards with performance metrics
+
+## Stage 15: Financial Reporting (v0.6.0)
+
+**Purpose:** Generate bank reconciliations and financial statements
+
+When financial reporting is enabled, produces bank reconciliations with auto-matching and full financial statement sets derived from the adjusted trial balance.
+
+Bank reconciliations match payments to bank statement lines with configurable auto-match, manual match, and exception rates. Financial statements include:
+
+- **Balance Sheet**: Assets = Liabilities + Equity
+- **Income Statement**: Revenue - COGS - OpEx - Tax = Net Income
+- **Cash Flow Statement**: Indirect method with operating, investing, and financing categories
+- **Statement of Changes in Equity**: Retained earnings, dividends, comprehensive income
+
+Also generates management KPIs (financial ratios) and budget variance analysis when configured.
+
+**Outputs:**
+- Bank reconciliations with statement lines and reconciling items
+- Financial statements (balance sheet, income statement, cash flow, changes in equity)
+- Management KPIs and financial ratios
+- Budget vs. actual variance reports
+
+## Stage 16: HR Data (v0.6.0)
+
+**Purpose:** Generate Hire-to-Retire (H2R) process data
+
+When HR generation is enabled, produces payroll runs, time entries, and expense reports linked to the employee master data generated in Stage 2.
+
+**Outputs:**
+- Payroll runs with employee pay line items (gross, deductions, net, employer cost)
+- Time entries with regular hours, overtime, PTO, and sick leave
+- Expense reports with categorized line items and approval workflows
+
+## Stage 17: Accounting Standards (v0.6.0)
+
+**Purpose:** Generate ASC 606/IFRS 15 revenue recognition and impairment testing data
+
+When accounting standards generation is enabled, produces customer contracts with performance obligations for revenue recognition and asset impairment test records.
+
+**Outputs:**
+- Customer contracts with performance obligations (ASC 606/IFRS 15)
+- Revenue recognition schedules
+- Asset impairment tests with recoverable amount calculations
+
+## Stage 18: Manufacturing (v0.6.0)
+
+**Purpose:** Generate manufacturing process data
+
+When manufacturing is enabled, produces production orders, quality inspections, and cycle counts linked to materials from the master data.
+
+**Outputs:**
+- Production orders with BOM components and routing steps
+- Quality inspections with pass/fail/conditional results
+- Inventory cycle counts with variance analysis
+
+## Stage 19: Sales Quotes, KPIs, and Budgets (v0.6.0)
+
+**Purpose:** Generate sales pipeline and financial planning data
+
+When enabled, produces the quote-to-order pipeline, management KPI computations, and budget variance analysis.
+
+**Outputs:**
+- Sales quotes with line items, conversion tracking, and win/loss rates
+- Management KPIs (liquidity, profitability, efficiency, leverage ratios)
+- Budget records with actual vs. planned variance analysis
+
 ## Parallel Execution
 
 Stages that support parallelism:

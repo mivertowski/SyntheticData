@@ -17,6 +17,7 @@ datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
 datasynth-eval = { workspace = true }
 datasynth-generators = { workspace = true }
+datasynth-standards = { workspace = true }
 datasynth-ocpm = { workspace = true }
 datasynth-output = { workspace = true }
 datasynth-banking = { workspace = true }

@@ -151,6 +151,23 @@ pub struct GeneratorConfig {
     /// Causal generation configuration (structural causal models, interventions)
     #[serde(default)]
     pub causal: CausalSchemaConfig,
+
+    // ===== Enterprise Process Chain Extensions =====
+    /// Source-to-Pay (S2C/S2P) configuration (sourcing, contracts, catalogs, scorecards)
+    #[serde(default)]
+    pub source_to_pay: SourceToPayConfig,
+    /// Financial reporting configuration (financial statements, KPIs, budgets)
+    #[serde(default)]
+    pub financial_reporting: FinancialReportingConfig,
+    /// HR process configuration (payroll, time & attendance, expenses)
+    #[serde(default)]
+    pub hr: HrConfig,
+    /// Manufacturing configuration (production orders, WIP, routing)
+    #[serde(default)]
+    pub manufacturing: ManufacturingProcessConfig,
+    /// Sales quote configuration (quote-to-order pipeline)
+    #[serde(default)]
+    pub sales_quotes: SalesQuoteConfig,
 }
 
 /// LLM enrichment configuration.
@@ -9892,6 +9909,930 @@ fn default_webhook_retries() -> u32 {
 }
 fn default_webhook_timeout() -> u64 {
     10
+}
+
+// ===== Enterprise Process Chain Config Structs =====
+
+// ----- Source-to-Pay (S2C/S2P) -----
+
+/// Source-to-Pay configuration covering the entire sourcing lifecycle.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SourceToPayConfig {
+    /// Enable source-to-pay generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Spend analysis configuration
+    #[serde(default)]
+    pub spend_analysis: SpendAnalysisConfig,
+    /// Sourcing project configuration
+    #[serde(default)]
+    pub sourcing: SourcingConfig,
+    /// Supplier qualification configuration
+    #[serde(default)]
+    pub qualification: QualificationConfig,
+    /// RFx event configuration
+    #[serde(default)]
+    pub rfx: RfxConfig,
+    /// Contract configuration
+    #[serde(default)]
+    pub contracts: ContractConfig,
+    /// Catalog configuration
+    #[serde(default)]
+    pub catalog: CatalogConfig,
+    /// Scorecard configuration
+    #[serde(default)]
+    pub scorecards: ScorecardConfig,
+    /// P2P integration settings
+    #[serde(default)]
+    pub p2p_integration: P2PIntegrationConfig,
+}
+
+/// Spend analysis configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpendAnalysisConfig {
+    /// HHI threshold for triggering sourcing project
+    #[serde(default = "default_hhi_threshold")]
+    pub hhi_threshold: f64,
+    /// Target spend coverage under contracts
+    #[serde(default = "default_contract_coverage_target")]
+    pub contract_coverage_target: f64,
+}
+
+impl Default for SpendAnalysisConfig {
+    fn default() -> Self {
+        Self {
+            hhi_threshold: default_hhi_threshold(),
+            contract_coverage_target: default_contract_coverage_target(),
+        }
+    }
+}
+
+fn default_hhi_threshold() -> f64 {
+    2500.0
+}
+fn default_contract_coverage_target() -> f64 {
+    0.80
+}
+
+/// Sourcing project configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourcingConfig {
+    /// Number of sourcing projects per year
+    #[serde(default = "default_sourcing_projects_per_year")]
+    pub projects_per_year: u32,
+    /// Months before expiry to trigger renewal project
+    #[serde(default = "default_renewal_horizon_months")]
+    pub renewal_horizon_months: u32,
+    /// Average project duration in months
+    #[serde(default = "default_project_duration_months")]
+    pub project_duration_months: u32,
+}
+
+impl Default for SourcingConfig {
+    fn default() -> Self {
+        Self {
+            projects_per_year: default_sourcing_projects_per_year(),
+            renewal_horizon_months: default_renewal_horizon_months(),
+            project_duration_months: default_project_duration_months(),
+        }
+    }
+}
+
+fn default_sourcing_projects_per_year() -> u32 {
+    10
+}
+fn default_renewal_horizon_months() -> u32 {
+    3
+}
+fn default_project_duration_months() -> u32 {
+    4
+}
+
+/// Supplier qualification configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QualificationConfig {
+    /// Pass rate for qualification
+    #[serde(default = "default_qualification_pass_rate")]
+    pub pass_rate: f64,
+    /// Qualification validity in days
+    #[serde(default = "default_qualification_validity_days")]
+    pub validity_days: u32,
+    /// Financial stability weight
+    #[serde(default = "default_financial_weight")]
+    pub financial_weight: f64,
+    /// Quality management weight
+    #[serde(default = "default_quality_weight")]
+    pub quality_weight: f64,
+    /// Delivery performance weight
+    #[serde(default = "default_delivery_weight")]
+    pub delivery_weight: f64,
+    /// Compliance weight
+    #[serde(default = "default_compliance_weight")]
+    pub compliance_weight: f64,
+}
+
+impl Default for QualificationConfig {
+    fn default() -> Self {
+        Self {
+            pass_rate: default_qualification_pass_rate(),
+            validity_days: default_qualification_validity_days(),
+            financial_weight: default_financial_weight(),
+            quality_weight: default_quality_weight(),
+            delivery_weight: default_delivery_weight(),
+            compliance_weight: default_compliance_weight(),
+        }
+    }
+}
+
+fn default_qualification_pass_rate() -> f64 {
+    0.75
+}
+fn default_qualification_validity_days() -> u32 {
+    365
+}
+fn default_financial_weight() -> f64 {
+    0.25
+}
+fn default_quality_weight() -> f64 {
+    0.30
+}
+fn default_delivery_weight() -> f64 {
+    0.25
+}
+fn default_compliance_weight() -> f64 {
+    0.20
+}
+
+/// RFx event configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RfxConfig {
+    /// Spend threshold above which RFI is required before RFP
+    #[serde(default = "default_rfi_threshold")]
+    pub rfi_threshold: f64,
+    /// Minimum vendors invited per RFx
+    #[serde(default = "default_min_invited_vendors")]
+    pub min_invited_vendors: u32,
+    /// Maximum vendors invited per RFx
+    #[serde(default = "default_max_invited_vendors")]
+    pub max_invited_vendors: u32,
+    /// Response rate (% of invited vendors that submit bids)
+    #[serde(default = "default_response_rate")]
+    pub response_rate: f64,
+    /// Default price weight in evaluation
+    #[serde(default = "default_price_weight")]
+    pub default_price_weight: f64,
+    /// Default quality weight in evaluation
+    #[serde(default = "default_rfx_quality_weight")]
+    pub default_quality_weight: f64,
+    /// Default delivery weight in evaluation
+    #[serde(default = "default_rfx_delivery_weight")]
+    pub default_delivery_weight: f64,
+}
+
+impl Default for RfxConfig {
+    fn default() -> Self {
+        Self {
+            rfi_threshold: default_rfi_threshold(),
+            min_invited_vendors: default_min_invited_vendors(),
+            max_invited_vendors: default_max_invited_vendors(),
+            response_rate: default_response_rate(),
+            default_price_weight: default_price_weight(),
+            default_quality_weight: default_rfx_quality_weight(),
+            default_delivery_weight: default_rfx_delivery_weight(),
+        }
+    }
+}
+
+fn default_rfi_threshold() -> f64 {
+    100_000.0
+}
+fn default_min_invited_vendors() -> u32 {
+    3
+}
+fn default_max_invited_vendors() -> u32 {
+    8
+}
+fn default_response_rate() -> f64 {
+    0.70
+}
+fn default_price_weight() -> f64 {
+    0.40
+}
+fn default_rfx_quality_weight() -> f64 {
+    0.35
+}
+fn default_rfx_delivery_weight() -> f64 {
+    0.25
+}
+
+/// Contract configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContractConfig {
+    /// Minimum contract duration in months
+    #[serde(default = "default_min_contract_months")]
+    pub min_duration_months: u32,
+    /// Maximum contract duration in months
+    #[serde(default = "default_max_contract_months")]
+    pub max_duration_months: u32,
+    /// Auto-renewal rate
+    #[serde(default = "default_auto_renewal_rate")]
+    pub auto_renewal_rate: f64,
+    /// Amendment rate (% of contracts with at least one amendment)
+    #[serde(default = "default_amendment_rate")]
+    pub amendment_rate: f64,
+    /// Distribution of contract types
+    #[serde(default)]
+    pub type_distribution: ContractTypeDistribution,
+}
+
+impl Default for ContractConfig {
+    fn default() -> Self {
+        Self {
+            min_duration_months: default_min_contract_months(),
+            max_duration_months: default_max_contract_months(),
+            auto_renewal_rate: default_auto_renewal_rate(),
+            amendment_rate: default_amendment_rate(),
+            type_distribution: ContractTypeDistribution::default(),
+        }
+    }
+}
+
+fn default_min_contract_months() -> u32 {
+    12
+}
+fn default_max_contract_months() -> u32 {
+    36
+}
+fn default_auto_renewal_rate() -> f64 {
+    0.40
+}
+fn default_amendment_rate() -> f64 {
+    0.20
+}
+
+/// Distribution of contract types.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContractTypeDistribution {
+    /// Fixed price percentage
+    #[serde(default = "default_fixed_price_pct")]
+    pub fixed_price: f64,
+    /// Blanket/framework percentage
+    #[serde(default = "default_blanket_pct")]
+    pub blanket: f64,
+    /// Time and materials percentage
+    #[serde(default = "default_time_materials_pct")]
+    pub time_and_materials: f64,
+    /// Service agreement percentage
+    #[serde(default = "default_service_agreement_pct")]
+    pub service_agreement: f64,
+}
+
+impl Default for ContractTypeDistribution {
+    fn default() -> Self {
+        Self {
+            fixed_price: default_fixed_price_pct(),
+            blanket: default_blanket_pct(),
+            time_and_materials: default_time_materials_pct(),
+            service_agreement: default_service_agreement_pct(),
+        }
+    }
+}
+
+fn default_fixed_price_pct() -> f64 {
+    0.40
+}
+fn default_blanket_pct() -> f64 {
+    0.30
+}
+fn default_time_materials_pct() -> f64 {
+    0.15
+}
+fn default_service_agreement_pct() -> f64 {
+    0.15
+}
+
+/// Catalog configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CatalogConfig {
+    /// Percentage of catalog items marked as preferred
+    #[serde(default = "default_preferred_vendor_flag_rate")]
+    pub preferred_vendor_flag_rate: f64,
+    /// Rate of materials with multiple sources in catalog
+    #[serde(default = "default_multi_source_rate")]
+    pub multi_source_rate: f64,
+}
+
+impl Default for CatalogConfig {
+    fn default() -> Self {
+        Self {
+            preferred_vendor_flag_rate: default_preferred_vendor_flag_rate(),
+            multi_source_rate: default_multi_source_rate(),
+        }
+    }
+}
+
+fn default_preferred_vendor_flag_rate() -> f64 {
+    0.70
+}
+fn default_multi_source_rate() -> f64 {
+    0.25
+}
+
+/// Scorecard configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScorecardConfig {
+    /// Scorecard review frequency (quarterly, monthly)
+    #[serde(default = "default_scorecard_frequency")]
+    pub frequency: String,
+    /// On-time delivery weight in overall score
+    #[serde(default = "default_otd_weight")]
+    pub on_time_delivery_weight: f64,
+    /// Quality weight in overall score
+    #[serde(default = "default_quality_score_weight")]
+    pub quality_weight: f64,
+    /// Price competitiveness weight
+    #[serde(default = "default_price_score_weight")]
+    pub price_weight: f64,
+    /// Responsiveness weight
+    #[serde(default = "default_responsiveness_weight")]
+    pub responsiveness_weight: f64,
+    /// Grade A threshold (score >= this)
+    #[serde(default = "default_grade_a_threshold")]
+    pub grade_a_threshold: f64,
+    /// Grade B threshold
+    #[serde(default = "default_grade_b_threshold")]
+    pub grade_b_threshold: f64,
+    /// Grade C threshold
+    #[serde(default = "default_grade_c_threshold")]
+    pub grade_c_threshold: f64,
+}
+
+impl Default for ScorecardConfig {
+    fn default() -> Self {
+        Self {
+            frequency: default_scorecard_frequency(),
+            on_time_delivery_weight: default_otd_weight(),
+            quality_weight: default_quality_score_weight(),
+            price_weight: default_price_score_weight(),
+            responsiveness_weight: default_responsiveness_weight(),
+            grade_a_threshold: default_grade_a_threshold(),
+            grade_b_threshold: default_grade_b_threshold(),
+            grade_c_threshold: default_grade_c_threshold(),
+        }
+    }
+}
+
+fn default_scorecard_frequency() -> String {
+    "quarterly".to_string()
+}
+fn default_otd_weight() -> f64 {
+    0.30
+}
+fn default_quality_score_weight() -> f64 {
+    0.30
+}
+fn default_price_score_weight() -> f64 {
+    0.25
+}
+fn default_responsiveness_weight() -> f64 {
+    0.15
+}
+fn default_grade_a_threshold() -> f64 {
+    90.0
+}
+fn default_grade_b_threshold() -> f64 {
+    75.0
+}
+fn default_grade_c_threshold() -> f64 {
+    60.0
+}
+
+/// P2P integration settings for contract enforcement.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct P2PIntegrationConfig {
+    /// Rate of off-contract (maverick) purchases
+    #[serde(default = "default_off_contract_rate")]
+    pub off_contract_rate: f64,
+    /// Price tolerance for contract price validation
+    #[serde(default = "default_price_tolerance")]
+    pub price_tolerance: f64,
+    /// Whether to enforce catalog ordering
+    #[serde(default)]
+    pub catalog_enforcement: bool,
+}
+
+impl Default for P2PIntegrationConfig {
+    fn default() -> Self {
+        Self {
+            off_contract_rate: default_off_contract_rate(),
+            price_tolerance: default_price_tolerance(),
+            catalog_enforcement: false,
+        }
+    }
+}
+
+fn default_off_contract_rate() -> f64 {
+    0.15
+}
+fn default_price_tolerance() -> f64 {
+    0.02
+}
+
+// ----- Financial Reporting -----
+
+/// Financial reporting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FinancialReportingConfig {
+    /// Enable financial reporting generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Generate balance sheet
+    #[serde(default = "default_true")]
+    pub generate_balance_sheet: bool,
+    /// Generate income statement
+    #[serde(default = "default_true")]
+    pub generate_income_statement: bool,
+    /// Generate cash flow statement
+    #[serde(default = "default_true")]
+    pub generate_cash_flow: bool,
+    /// Generate changes in equity statement
+    #[serde(default = "default_true")]
+    pub generate_changes_in_equity: bool,
+    /// Number of comparative periods
+    #[serde(default = "default_comparative_periods")]
+    pub comparative_periods: u32,
+    /// Management KPIs configuration
+    #[serde(default)]
+    pub management_kpis: ManagementKpisConfig,
+    /// Budget configuration
+    #[serde(default)]
+    pub budgets: BudgetConfig,
+}
+
+impl Default for FinancialReportingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            generate_balance_sheet: true,
+            generate_income_statement: true,
+            generate_cash_flow: true,
+            generate_changes_in_equity: true,
+            comparative_periods: default_comparative_periods(),
+            management_kpis: ManagementKpisConfig::default(),
+            budgets: BudgetConfig::default(),
+        }
+    }
+}
+
+fn default_comparative_periods() -> u32 {
+    1
+}
+
+/// Management KPIs configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ManagementKpisConfig {
+    /// Enable KPI generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// KPI calculation frequency (monthly, quarterly)
+    #[serde(default = "default_kpi_frequency")]
+    pub frequency: String,
+}
+
+fn default_kpi_frequency() -> String {
+    "monthly".to_string()
+}
+
+/// Budget configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BudgetConfig {
+    /// Enable budget generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Expected revenue growth rate for budgeting
+    #[serde(default = "default_revenue_growth_rate")]
+    pub revenue_growth_rate: f64,
+    /// Expected expense inflation rate
+    #[serde(default = "default_expense_inflation_rate")]
+    pub expense_inflation_rate: f64,
+    /// Random noise to add to budget vs actual
+    #[serde(default = "default_variance_noise")]
+    pub variance_noise: f64,
+}
+
+impl Default for BudgetConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            revenue_growth_rate: default_revenue_growth_rate(),
+            expense_inflation_rate: default_expense_inflation_rate(),
+            variance_noise: default_variance_noise(),
+        }
+    }
+}
+
+fn default_revenue_growth_rate() -> f64 {
+    0.05
+}
+fn default_expense_inflation_rate() -> f64 {
+    0.03
+}
+fn default_variance_noise() -> f64 {
+    0.10
+}
+
+// ----- HR Configuration -----
+
+/// HR (Hire-to-Retire) process configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct HrConfig {
+    /// Enable HR generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Payroll configuration
+    #[serde(default)]
+    pub payroll: PayrollConfig,
+    /// Time and attendance configuration
+    #[serde(default)]
+    pub time_attendance: TimeAttendanceConfig,
+    /// Expense management configuration
+    #[serde(default)]
+    pub expenses: ExpenseConfig,
+}
+
+/// Payroll configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayrollConfig {
+    /// Enable payroll generation
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Pay frequency (monthly, biweekly, weekly)
+    #[serde(default = "default_pay_frequency")]
+    pub pay_frequency: String,
+    /// Salary ranges by job level
+    #[serde(default)]
+    pub salary_ranges: PayrollSalaryRanges,
+    /// Effective tax rates
+    #[serde(default)]
+    pub tax_rates: PayrollTaxRates,
+    /// Benefits enrollment rate
+    #[serde(default = "default_benefits_enrollment_rate")]
+    pub benefits_enrollment_rate: f64,
+    /// Retirement plan participation rate
+    #[serde(default = "default_retirement_participation_rate")]
+    pub retirement_participation_rate: f64,
+}
+
+impl Default for PayrollConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            pay_frequency: default_pay_frequency(),
+            salary_ranges: PayrollSalaryRanges::default(),
+            tax_rates: PayrollTaxRates::default(),
+            benefits_enrollment_rate: default_benefits_enrollment_rate(),
+            retirement_participation_rate: default_retirement_participation_rate(),
+        }
+    }
+}
+
+fn default_pay_frequency() -> String {
+    "monthly".to_string()
+}
+fn default_benefits_enrollment_rate() -> f64 {
+    0.60
+}
+fn default_retirement_participation_rate() -> f64 {
+    0.45
+}
+
+/// Salary ranges by job level.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayrollSalaryRanges {
+    /// Staff level min/max
+    #[serde(default = "default_staff_min")]
+    pub staff_min: f64,
+    #[serde(default = "default_staff_max")]
+    pub staff_max: f64,
+    /// Manager level min/max
+    #[serde(default = "default_manager_min")]
+    pub manager_min: f64,
+    #[serde(default = "default_manager_max")]
+    pub manager_max: f64,
+    /// Director level min/max
+    #[serde(default = "default_director_min")]
+    pub director_min: f64,
+    #[serde(default = "default_director_max")]
+    pub director_max: f64,
+    /// Executive level min/max
+    #[serde(default = "default_executive_min")]
+    pub executive_min: f64,
+    #[serde(default = "default_executive_max")]
+    pub executive_max: f64,
+}
+
+impl Default for PayrollSalaryRanges {
+    fn default() -> Self {
+        Self {
+            staff_min: default_staff_min(),
+            staff_max: default_staff_max(),
+            manager_min: default_manager_min(),
+            manager_max: default_manager_max(),
+            director_min: default_director_min(),
+            director_max: default_director_max(),
+            executive_min: default_executive_min(),
+            executive_max: default_executive_max(),
+        }
+    }
+}
+
+fn default_staff_min() -> f64 {
+    50_000.0
+}
+fn default_staff_max() -> f64 {
+    70_000.0
+}
+fn default_manager_min() -> f64 {
+    80_000.0
+}
+fn default_manager_max() -> f64 {
+    120_000.0
+}
+fn default_director_min() -> f64 {
+    120_000.0
+}
+fn default_director_max() -> f64 {
+    180_000.0
+}
+fn default_executive_min() -> f64 {
+    180_000.0
+}
+fn default_executive_max() -> f64 {
+    350_000.0
+}
+
+/// Effective tax rates for payroll.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayrollTaxRates {
+    /// Federal effective tax rate
+    #[serde(default = "default_federal_rate")]
+    pub federal_effective: f64,
+    /// State effective tax rate
+    #[serde(default = "default_state_rate")]
+    pub state_effective: f64,
+    /// FICA/social security rate
+    #[serde(default = "default_fica_rate")]
+    pub fica: f64,
+}
+
+impl Default for PayrollTaxRates {
+    fn default() -> Self {
+        Self {
+            federal_effective: default_federal_rate(),
+            state_effective: default_state_rate(),
+            fica: default_fica_rate(),
+        }
+    }
+}
+
+fn default_federal_rate() -> f64 {
+    0.22
+}
+fn default_state_rate() -> f64 {
+    0.05
+}
+fn default_fica_rate() -> f64 {
+    0.0765
+}
+
+/// Time and attendance configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimeAttendanceConfig {
+    /// Enable time tracking
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Overtime rate (% of employees with overtime in a period)
+    #[serde(default = "default_overtime_rate")]
+    pub overtime_rate: f64,
+}
+
+impl Default for TimeAttendanceConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            overtime_rate: default_overtime_rate(),
+        }
+    }
+}
+
+fn default_overtime_rate() -> f64 {
+    0.10
+}
+
+/// Expense management configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExpenseConfig {
+    /// Enable expense report generation
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Rate of employees submitting expenses per month
+    #[serde(default = "default_expense_submission_rate")]
+    pub submission_rate: f64,
+    /// Rate of policy violations
+    #[serde(default = "default_policy_violation_rate")]
+    pub policy_violation_rate: f64,
+}
+
+impl Default for ExpenseConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            submission_rate: default_expense_submission_rate(),
+            policy_violation_rate: default_policy_violation_rate(),
+        }
+    }
+}
+
+fn default_expense_submission_rate() -> f64 {
+    0.30
+}
+fn default_policy_violation_rate() -> f64 {
+    0.08
+}
+
+// ----- Manufacturing Configuration -----
+
+/// Manufacturing process configuration (production orders, WIP, routing).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ManufacturingProcessConfig {
+    /// Enable manufacturing generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Production order configuration
+    #[serde(default)]
+    pub production_orders: ProductionOrderConfig,
+    /// Costing configuration
+    #[serde(default)]
+    pub costing: ManufacturingCostingConfig,
+    /// Routing configuration
+    #[serde(default)]
+    pub routing: RoutingConfig,
+}
+
+/// Production order configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProductionOrderConfig {
+    /// Orders per month
+    #[serde(default = "default_prod_orders_per_month")]
+    pub orders_per_month: u32,
+    /// Average batch size
+    #[serde(default = "default_prod_avg_batch_size")]
+    pub avg_batch_size: u32,
+    /// Yield rate
+    #[serde(default = "default_prod_yield_rate")]
+    pub yield_rate: f64,
+    /// Make-to-order rate (vs make-to-stock)
+    #[serde(default = "default_prod_make_to_order_rate")]
+    pub make_to_order_rate: f64,
+    /// Rework rate
+    #[serde(default = "default_prod_rework_rate")]
+    pub rework_rate: f64,
+}
+
+impl Default for ProductionOrderConfig {
+    fn default() -> Self {
+        Self {
+            orders_per_month: default_prod_orders_per_month(),
+            avg_batch_size: default_prod_avg_batch_size(),
+            yield_rate: default_prod_yield_rate(),
+            make_to_order_rate: default_prod_make_to_order_rate(),
+            rework_rate: default_prod_rework_rate(),
+        }
+    }
+}
+
+fn default_prod_orders_per_month() -> u32 {
+    50
+}
+fn default_prod_avg_batch_size() -> u32 {
+    100
+}
+fn default_prod_yield_rate() -> f64 {
+    0.97
+}
+fn default_prod_make_to_order_rate() -> f64 {
+    0.20
+}
+fn default_prod_rework_rate() -> f64 {
+    0.03
+}
+
+/// Manufacturing costing configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManufacturingCostingConfig {
+    /// Labor rate per hour
+    #[serde(default = "default_labor_rate")]
+    pub labor_rate_per_hour: f64,
+    /// Overhead application rate (multiplier on direct labor)
+    #[serde(default = "default_overhead_rate")]
+    pub overhead_rate: f64,
+    /// Standard cost update frequency
+    #[serde(default = "default_cost_update_frequency")]
+    pub standard_cost_update_frequency: String,
+}
+
+impl Default for ManufacturingCostingConfig {
+    fn default() -> Self {
+        Self {
+            labor_rate_per_hour: default_labor_rate(),
+            overhead_rate: default_overhead_rate(),
+            standard_cost_update_frequency: default_cost_update_frequency(),
+        }
+    }
+}
+
+fn default_labor_rate() -> f64 {
+    35.0
+}
+fn default_overhead_rate() -> f64 {
+    1.50
+}
+fn default_cost_update_frequency() -> String {
+    "quarterly".to_string()
+}
+
+/// Routing configuration for production operations.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoutingConfig {
+    /// Average number of operations per routing
+    #[serde(default = "default_avg_operations")]
+    pub avg_operations: u32,
+    /// Average setup time in hours
+    #[serde(default = "default_setup_time")]
+    pub setup_time_hours: f64,
+    /// Run time variation coefficient
+    #[serde(default = "default_run_time_variation")]
+    pub run_time_variation: f64,
+}
+
+impl Default for RoutingConfig {
+    fn default() -> Self {
+        Self {
+            avg_operations: default_avg_operations(),
+            setup_time_hours: default_setup_time(),
+            run_time_variation: default_run_time_variation(),
+        }
+    }
+}
+
+fn default_avg_operations() -> u32 {
+    4
+}
+fn default_setup_time() -> f64 {
+    1.5
+}
+fn default_run_time_variation() -> f64 {
+    0.15
+}
+
+// ----- Sales Quote Configuration -----
+
+/// Sales quote (quote-to-order) pipeline configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SalesQuoteConfig {
+    /// Enable sales quote generation
+    #[serde(default)]
+    pub enabled: bool,
+    /// Quotes per month
+    #[serde(default = "default_quotes_per_month")]
+    pub quotes_per_month: u32,
+    /// Win rate (fraction of quotes that convert to orders)
+    #[serde(default = "default_quote_win_rate")]
+    pub win_rate: f64,
+    /// Average quote validity in days
+    #[serde(default = "default_quote_validity_days")]
+    pub validity_days: u32,
+}
+
+impl Default for SalesQuoteConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            quotes_per_month: default_quotes_per_month(),
+            win_rate: default_quote_win_rate(),
+            validity_days: default_quote_validity_days(),
+        }
+    }
+}
+
+fn default_quotes_per_month() -> u32 {
+    30
+}
+fn default_quote_win_rate() -> f64 {
+    0.35
+}
+fn default_quote_validity_days() -> u32 {
+    30
 }
 
 #[cfg(test)]

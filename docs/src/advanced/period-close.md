@@ -220,6 +220,89 @@ period_close:
         rate: 0.10                   # 10% of salary expense
 ```
 
+## Financial Statements (v0.6.0)
+
+The period close engine can now generate full financial statement sets from the adjusted trial balance. This is controlled by the `financial_reporting` configuration section.
+
+### Balance Sheet
+
+Generates a statement of financial position with current/non-current asset and liability classifications:
+
+```
+Assets                              Liabilities & Equity
+├── Current Assets                  ├── Current Liabilities
+│   ├── Cash & Equivalents          │   ├── Accounts Payable
+│   ├── Accounts Receivable         │   ├── Accrued Liabilities
+│   └── Inventory                   │   └── Current Debt
+├── Non-Current Assets              ├── Non-Current Liabilities
+│   ├── Fixed Assets (net)          │   └── Long-Term Debt
+│   └── Intangibles                 └── Equity
+Total Assets = Total L + E              ├── Common Stock
+                                        └── Retained Earnings
+```
+
+### Income Statement
+
+Generates a multi-step income statement:
+
+```
+Revenue
+- Cost of Goods Sold
+= Gross Profit
+- Operating Expenses
+= Operating Income
++/- Other Income/Expense
+= Income Before Tax
+- Income Tax
+= Net Income
+```
+
+### Cash Flow Statement
+
+Generates an indirect-method cash flow statement with three categories:
+
+```yaml
+financial_reporting:
+  generate_cash_flow: true
+```
+
+Categories:
+- **Operating**: Net income + non-cash adjustments + working capital changes
+- **Investing**: Capital expenditures, asset disposals
+- **Financing**: Debt proceeds/repayments, equity transactions, dividends
+
+### Statement of Changes in Equity
+
+Tracks equity movements across the period:
+
+- Opening retained earnings
+- Net income for the period
+- Dividends declared
+- Other comprehensive income (CTA, unrealized gains)
+- Closing retained earnings
+
+### Management KPIs
+
+When `financial_reporting.management_kpis` is enabled, computes financial ratios:
+
+- **Liquidity**: Current ratio, quick ratio, cash ratio
+- **Profitability**: Gross margin, operating margin, net margin, ROA, ROE
+- **Efficiency**: Inventory turnover, AR turnover, AP turnover, days sales outstanding
+- **Leverage**: Debt-to-equity, debt-to-assets, interest coverage
+
+### Budgets
+
+When `financial_reporting.budgets` is enabled, generates budget records with variance analysis:
+
+```yaml
+financial_reporting:
+  budgets:
+    enabled: true
+    variance_threshold: 0.10    # Flag variances > 10%
+```
+
+Produces budget vs. actual comparisons by account and period, with favorable/unfavorable variance flags.
+
 ## Output Files
 
 ### trial_balances/YYYY_MM.csv
@@ -264,6 +347,44 @@ period_close:
 | `account` | Account closed |
 | `amount` | Closing amount |
 | `fiscal_year` | Year closed |
+
+### financial_statements.csv (v0.6.0)
+
+| Field | Description |
+|-------|-------------|
+| `statement_id` | Unique statement identifier |
+| `statement_type` | balance_sheet, income_statement, cash_flow, changes_in_equity |
+| `company_code` | Company code |
+| `period_end` | Statement date |
+| `basis` | us_gaap, ifrs, statutory |
+| `line_code` | Line item code |
+| `label` | Display label |
+| `section` | Statement section |
+| `amount` | Current period amount |
+| `amount_prior` | Prior period amount |
+
+### bank_reconciliations.csv (v0.6.0)
+
+| Field | Description |
+|-------|-------------|
+| `reconciliation_id` | Unique reconciliation ID |
+| `company_code` | Company code |
+| `bank_account` | Bank account identifier |
+| `period_start` | Reconciliation period start |
+| `period_end` | Reconciliation period end |
+| `opening_balance` | Opening bank balance |
+| `closing_balance` | Closing bank balance |
+| `status` | in_progress, completed, completed_with_exceptions |
+
+### management_kpis.csv (v0.6.0)
+
+| Field | Description |
+|-------|-------------|
+| `company_code` | Company code |
+| `period` | Reporting period |
+| `kpi_name` | Ratio name (e.g., current_ratio, gross_margin) |
+| `kpi_value` | Computed ratio value |
+| `category` | liquidity, profitability, efficiency, leverage |
 
 ## Close Schedule
 

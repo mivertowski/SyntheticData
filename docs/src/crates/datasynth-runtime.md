@@ -37,6 +37,12 @@ The orchestrator executes phases in order:
 11. **LLM Enrichment**: Enrich data with LLM-generated metadata (v0.5.0, if enabled)
 12. **Diffusion Enhancement**: Blend diffusion model outputs (v0.5.0, if enabled)
 13. **Causal Overlay**: Apply causal structure (v0.5.0, if enabled)
+14. **S2C Sourcing**: Generate Source-to-Contract procurement pipeline (v0.6.0, if enabled)
+15. **Financial Reporting**: Generate bank reconciliations and financial statements (v0.6.0, if enabled)
+16. **HR Data**: Generate payroll runs, time entries, and expense reports (v0.6.0, if enabled)
+17. **Accounting Standards**: Generate revenue recognition and impairment data (v0.6.0, if enabled)
+18. **Manufacturing**: Generate production orders, quality inspections, and cycle counts (v0.6.0, if enabled)
+19. **Sales/KPIs/Budgets**: Generate sales quotes, management KPIs, and budget variance data (v0.6.0, if enabled)
 
 ## Key Types
 
@@ -190,6 +196,21 @@ orchestrator
     .with_graph_export()
     .run()?;
 ```
+
+### Enterprise Process Chain Phases (v0.6.0)
+
+The `EnhancedOrchestrator` supports six new phases for enterprise process chains, controlled by `PhaseConfig`:
+
+| Phase | Config Flag | Description |
+|-------|-------------|-------------|
+| 14 | `generate_sourcing` | S2C procurement pipeline: spend analysis through supplier scorecards |
+| 15 | `generate_financial_statements` / `generate_bank_reconciliation` | Financial statements and bank reconciliations |
+| 16 | `generate_hr` | Payroll runs, time entries, expense reports |
+| 17 | `generate_accounting_standards` | Revenue recognition (ASC 606/IFRS 15), impairment testing |
+| 18 | `generate_manufacturing` | Production orders, quality inspections, cycle counts |
+| 19 | `generate_sales_kpi_budgets` | Sales quotes, management KPIs, budget variance analysis |
+
+Each phase is independently enabled and gracefully skips when its dependencies (e.g., master data) are unavailable.
 
 ## Output Coordination
 

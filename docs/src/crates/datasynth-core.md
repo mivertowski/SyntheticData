@@ -25,6 +25,12 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `temporal.rs` | Bi-temporal data model for audit trails |
 | `anomaly.rs` | Anomaly types and labels for ML training |
 | `internal_control.rs` | SOX 404 control definitions |
+| `sourcing/` | S2C models: SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis |
+| `payroll.rs` | PayrollRun, PayrollLineItem with gross/deductions/net/employer cost |
+| `time_entry.rs` | TimeEntry with regular, overtime, PTO, and sick hours |
+| `expense_report.rs` | ExpenseReport, ExpenseLineItem with category and approval workflow |
+| `financial_statements.rs` | FinancialStatement, FinancialStatementLineItem, CashFlowItem, StatementType |
+| `bank_reconciliation.rs` | BankReconciliation, BankStatementLine, ReconcilingItem with auto-matching |
 
 ### Statistical Distributions (`distributions/`)
 

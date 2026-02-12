@@ -412,6 +412,34 @@ pub enum FraudType {
     CashFlowProjectionManipulation,
     /// Improper impairment reversal (IFRS only).
     ImproperImpairmentReversal,
+
+    // Sourcing/Procurement Fraud (S2C)
+    /// Bid rigging or collusion among bidders.
+    BidRigging,
+    /// Contracts with phantom/shell vendors.
+    PhantomVendorContract,
+    /// Splitting contracts to avoid approval thresholds.
+    SplitContractThreshold,
+    /// Conflict of interest in sourcing decisions.
+    ConflictOfInterestSourcing,
+
+    // HR/Payroll Fraud (H2R)
+    /// Ghost employee on payroll.
+    GhostEmployeePayroll,
+    /// Payroll inflation/unauthorized raises.
+    PayrollInflation,
+    /// Duplicate expense report submission.
+    DuplicateExpenseReport,
+    /// Fictitious expense claims.
+    FictitiousExpense,
+    /// Splitting expenses to avoid approval threshold.
+    SplitExpenseToAvoidApproval,
+
+    // O2C Fraud
+    /// Revenue timing manipulation via quotes.
+    RevenueTimingManipulation,
+    /// Overriding quote prices without authorization.
+    QuotePriceOverride,
 }
 
 impl FraudType {
@@ -585,6 +613,22 @@ pub enum ProcessIssueType {
     PostFactoChange,
     /// Incomplete audit trail.
     IncompleteAuditTrail,
+
+    // Sourcing/Procurement Issues (S2C)
+    /// Purchasing outside of contracts (maverick spend).
+    MaverickSpend,
+    /// Purchasing against an expired contract.
+    ExpiredContractPurchase,
+    /// Overriding contracted price without authorization.
+    ContractPriceOverride,
+    /// Award given with only a single bid received.
+    SingleBidAward,
+    /// Bypassing supplier qualification requirements.
+    QualificationBypass,
+
+    // O2C Issues
+    /// Converting an expired quote to a sales order.
+    ExpiredQuoteConversion,
 }
 
 impl ProcessIssueType {
@@ -642,6 +686,16 @@ pub enum StatisticalAnomalyType {
     VarianceChange,
     /// Distribution shift.
     DistributionShift,
+
+    // Sourcing/Contract Anomalies
+    /// Pattern of SLA breaches from a vendor.
+    SlaBreachPattern,
+    /// Contract with zero utilization.
+    UnusedContract,
+
+    // HR/Payroll Anomalies
+    /// Anomalous overtime patterns.
+    OvertimeAnomaly,
 }
 
 impl StatisticalAnomalyType {

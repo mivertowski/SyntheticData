@@ -10,6 +10,11 @@ Core data structures representing enterprise financial concepts.
 | [Master Data](#master-data) | Vendor, Customer, Material, FixedAsset, Employee |
 | [Documents](#documents) | PurchaseOrder, Invoice, Payment, etc. |
 | [Financial](#financial) | TrialBalance, FxRate, AccountBalance |
+| [Financial Reporting](#financial-reporting) | FinancialStatement, CashFlowItem, BankReconciliation, BankStatementLine |
+| [Sourcing (S2C)](#sourcing-s2c) | SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis |
+| [HR / Payroll](#hr--payroll) | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem |
+| [Manufacturing](#manufacturing) | ProductionOrder, QualityInspection, CycleCount |
+| [Sales Quotes](#sales-quotes) | SalesQuote, QuoteLineItem |
 | [Compliance](#compliance) | InternalControl, SoDRule, LabeledAnomaly |
 
 ---
@@ -414,6 +419,264 @@ pub struct InternalControl {
     pub control_type: ControlType,
     pub frequency: ControlFrequency,
     pub assertions: Vec<Assertion>,
+}
+```
+
+---
+
+## Financial Reporting
+
+### FinancialStatement
+
+Period-end financial statement with line items.
+
+```rust
+pub enum StatementType {
+    BalanceSheet,
+    IncomeStatement,
+    CashFlowStatement,
+    ChangesInEquity,
+}
+
+pub struct FinancialStatementLineItem {
+    pub line_code: String,
+    pub label: String,
+    pub section: String,
+    pub sort_order: u32,
+    pub amount: Decimal,
+    pub amount_prior: Option<Decimal>,
+    pub indent_level: u8,
+    pub is_total: bool,
+    pub gl_accounts: Vec<String>,
+}
+
+pub struct CashFlowItem {
+    pub item_code: String,
+    pub label: String,
+    pub category: CashFlowCategory,  // Operating, Investing, Financing
+    pub amount: Decimal,
+}
+```
+
+### BankReconciliation
+
+Bank statement reconciliation with auto-matching.
+
+```rust
+pub struct BankStatementLine {
+    pub line_id: String,
+    pub statement_date: NaiveDate,
+    pub direction: Direction,         // Inflow, Outflow
+    pub amount: Decimal,
+    pub description: String,
+    pub match_status: MatchStatus,    // Unmatched, AutoMatched, ManuallyMatched, BankCharge, Interest
+    pub matched_payment_id: Option<String>,
+}
+
+pub struct BankReconciliation {
+    pub reconciliation_id: String,
+    pub company_code: String,
+    pub bank_account: String,
+    pub period_start: NaiveDate,
+    pub period_end: NaiveDate,
+    pub opening_balance: Decimal,
+    pub closing_balance: Decimal,
+    pub status: ReconciliationStatus, // InProgress, Completed, CompletedWithExceptions
+}
+```
+
+---
+
+## Sourcing (S2C)
+
+Source-to-Contract models for the procurement pipeline.
+
+### SourcingProject
+
+Top-level sourcing initiative.
+
+```rust
+pub struct SourcingProject {
+    pub project_id: String,
+    pub title: String,
+    pub category: String,
+    pub status: SourcingProjectStatus,
+    pub estimated_spend: Decimal,
+    pub start_date: NaiveDate,
+    pub target_award_date: NaiveDate,
+}
+```
+
+### RfxEvent
+
+Request for Information/Proposal/Quote.
+
+```rust
+pub struct RfxEvent {
+    pub rfx_id: String,
+    pub project_id: String,
+    pub rfx_type: RfxType,       // Rfi, Rfp, Rfq
+    pub title: String,
+    pub issue_date: NaiveDate,
+    pub close_date: NaiveDate,
+    pub invited_suppliers: Vec<String>,
+}
+```
+
+### ProcurementContract
+
+Awarded contract resulting from bid evaluation.
+
+```rust
+pub struct ProcurementContract {
+    pub contract_id: String,
+    pub vendor_id: String,
+    pub rfx_id: Option<String>,
+    pub contract_value: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub auto_renew: bool,
+}
+```
+
+Additional S2C models include `SpendAnalysis`, `SupplierQualification`, `Bid`, `BidEvaluation`, `CatalogItem`, and `SupplierScorecard`.
+
+---
+
+## HR / Payroll
+
+Hire-to-Retire (H2R) process models.
+
+### PayrollRun
+
+A complete pay cycle for a company.
+
+```rust
+pub struct PayrollRun {
+    pub payroll_id: String,
+    pub company_code: String,
+    pub pay_period_start: NaiveDate,
+    pub pay_period_end: NaiveDate,
+    pub run_date: NaiveDate,
+    pub status: PayrollRunStatus,     // Draft, Calculated, Approved, Posted, Reversed
+    pub total_gross: Decimal,
+    pub total_deductions: Decimal,
+    pub total_net: Decimal,
+    pub total_employer_cost: Decimal,
+    pub employee_count: u32,
+}
+```
+
+### TimeEntry
+
+Employee time tracking record.
+
+```rust
+pub struct TimeEntry {
+    pub entry_id: String,
+    pub employee_id: String,
+    pub date: NaiveDate,
+    pub hours_regular: f64,
+    pub hours_overtime: f64,
+    pub hours_pto: f64,
+    pub hours_sick: f64,
+    pub project_id: Option<String>,
+    pub cost_center: Option<String>,
+    pub approval_status: TimeApprovalStatus,  // Pending, Approved, Rejected
+}
+```
+
+### ExpenseReport
+
+Employee expense reimbursement.
+
+```rust
+pub struct ExpenseReport {
+    pub report_id: String,
+    pub employee_id: String,
+    pub submission_date: NaiveDate,
+    pub status: ExpenseStatus,        // Draft, Submitted, Approved, Rejected, Paid
+    pub total_amount: Decimal,
+    pub line_items: Vec<ExpenseLineItem>,
+}
+
+pub enum ExpenseCategory {
+    Travel, Meals, Lodging, Transportation,
+    Office, Entertainment, Training, Other,
+}
+```
+
+---
+
+## Manufacturing
+
+Production and quality process models.
+
+### ProductionOrder
+
+Manufacturing production order linked to materials.
+
+```rust
+pub struct ProductionOrder {
+    pub order_id: String,
+    pub material_id: String,
+    pub planned_quantity: Decimal,
+    pub actual_quantity: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: Option<NaiveDate>,
+    pub status: ProductionOrderStatus,
+}
+```
+
+### QualityInspection
+
+Quality control inspection record.
+
+```rust
+pub struct QualityInspection {
+    pub inspection_id: String,
+    pub production_order_id: String,
+    pub inspection_date: NaiveDate,
+    pub result: InspectionResult,     // Pass, Fail, Conditional
+    pub defect_count: u32,
+}
+```
+
+### CycleCount
+
+Inventory cycle count with variance tracking.
+
+```rust
+pub struct CycleCount {
+    pub count_id: String,
+    pub material_id: String,
+    pub warehouse: String,
+    pub count_date: NaiveDate,
+    pub system_quantity: Decimal,
+    pub counted_quantity: Decimal,
+    pub variance: Decimal,
+}
+```
+
+---
+
+## Sales Quotes
+
+Quote-to-order pipeline models.
+
+### SalesQuote
+
+Sales quotation record.
+
+```rust
+pub struct SalesQuote {
+    pub quote_id: String,
+    pub customer_id: String,
+    pub quote_date: NaiveDate,
+    pub valid_until: NaiveDate,
+    pub total_amount: Decimal,
+    pub status: QuoteStatus,          // Draft, Sent, Won, Lost, Expired
+    pub converted_order_id: Option<String>,
 }
 ```
 

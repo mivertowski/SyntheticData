@@ -6,7 +6,7 @@
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml)
 
-A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, and ML-ready graph exports at scale.
+A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, ML-ready graph exports, and complete enterprise process chains (S2C sourcing, HR/payroll, manufacturing, financial reporting) at scale.
 
 **Developed by [Ernst & Young Ltd.](https://www.ey.com/ch), Zurich, Switzerland**
 
@@ -80,11 +80,20 @@ The generator produces statistically accurate data based on empirical research f
 
 - **Master Data Management**: Vendors, customers, materials, fixed assets, employees with temporal validity
 - **Document Flow Engine**: Complete P2P (Procure-to-Pay) and O2C (Order-to-Cash) processes
+- **Source-to-Contract (S2C)**: Spend analysis → sourcing projects → supplier qualification → RFx → bids → evaluation → contracts → catalogs → scorecards
+- **Hire-to-Retire (H2R)**: Payroll runs with tax/deduction calculations, time & attendance tracking, expense report management
+- **Manufacturing**: Production orders with BOM explosion, routing operations, WIP costing, quality inspections, cycle counting
+- **Financial Reporting**: Balance sheet, income statement, cash flow statement, changes in equity with BS equation enforcement
+- **Sales Quotes**: Quote-to-order pipeline with win rate modeling and pricing negotiation
+- **Management KPIs & Budgets**: Financial ratio computation (liquidity, profitability, efficiency, leverage) and budget variance analysis
+- **Revenue Recognition**: ASC 606/IFRS 15 contract generation with performance obligations and standalone selling price allocation
+- **Impairment Testing**: Asset impairment workflow with fair value estimation and journal entry generation
 - **Intercompany Transactions**: IC matching, transfer pricing, consolidation eliminations
 - **Balance Coherence**: Opening balances, running balance tracking, trial balance generation
 - **Subledger Simulation**: AR, AP, Fixed Assets, Inventory with GL reconciliation
 - **Currency & FX**: Realistic exchange rates, currency translation, CTA generation
 - **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
+- **Bank Reconciliation**: Automated statement matching, outstanding checks, deposits in transit, net difference validation
 - **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
 - **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships
   - OCEL 2.0 JSON/XML export for object-centric process mining
@@ -444,6 +453,61 @@ audit_standards:
     enabled: true
     materiality_threshold: 10000.0
 
+# Enterprise Process Chain Extensions (v0.6.0)
+source_to_pay:
+  enabled: true
+  sourcing:
+    projects_per_year: 20
+  qualification:
+    pass_rate: 0.80
+  rfx:
+    invited_vendors_min: 3
+    invited_vendors_max: 8
+  contracts:
+    duration_months_min: 12
+    duration_months_max: 36
+  scorecards:
+    frequency: quarterly
+
+financial_reporting:
+  enabled: true
+  generate_balance_sheet: true
+  generate_income_statement: true
+  generate_cash_flow: true
+  management_kpis:
+    enabled: true
+    frequency: monthly
+  budgets:
+    enabled: true
+    revenue_growth_rate: 0.05
+
+hr:
+  enabled: true
+  payroll:
+    enabled: true
+    pay_frequency: monthly
+  time_attendance:
+    enabled: true
+    overtime_rate: 0.10
+  expenses:
+    enabled: true
+    submission_rate: 0.30
+
+manufacturing:
+  enabled: true
+  production_orders:
+    orders_per_month: 50
+    yield_rate: 0.97
+  costing:
+    labor_rate_per_hour: 35.00
+    overhead_rate: 1.50
+
+sales_quotes:
+  enabled: true
+  quotes_per_month: 30
+  win_rate: 0.35
+  validity_days: 30
+
 vendor_network:
   enabled: true
   depth: 3                          # Tier1/Tier2/Tier3
@@ -520,11 +584,43 @@ See the [Configuration Guide](docs/configuration.md) for complete documentation.
 output/
 ├── master_data/          Vendors, customers, materials, assets, employees
 ├── transactions/         Journal entries, purchase orders, invoices, payments
+├── sourcing/             S2C sourcing pipeline outputs
+│   ├── sourcing_projects.csv
+│   ├── supplier_qualifications.csv
+│   ├── rfx_events.csv
+│   ├── supplier_bids.csv
+│   ├── bid_evaluations.csv
+│   ├── procurement_contracts.csv
+│   ├── catalog_items.csv
+│   └── supplier_scorecards.csv
 ├── subledgers/           AR, AP, FA, inventory detail records
+├── hr/                   HR & payroll outputs
+│   ├── payroll_runs.csv
+│   ├── payslips.csv
+│   ├── time_entries.csv
+│   └── expense_reports.csv
+├── manufacturing/        Production & quality outputs
+│   ├── production_orders.csv
+│   ├── routing_operations.csv
+│   ├── quality_inspection_lots.csv
+│   └── cycle_count_records.csv
 ├── period_close/         Trial balances, accruals, closing entries
+├── financial_reporting/  Financial statements & management reporting
+│   ├── balance_sheet.csv
+│   ├── income_statement.csv
+│   ├── cash_flow_statement.csv
+│   ├── changes_in_equity.csv
+│   ├── financial_kpis.csv
+│   └── budget_variance.csv
+├── sales/                Sales pipeline outputs
+│   ├── sales_quotes.csv
+│   └── sales_quote_items.csv
 ├── consolidation/        Eliminations, currency translation
 ├── fx/                   Exchange rates, CTA adjustments
 ├── banking/              KYC profiles, bank transactions, AML typology labels
+│   ├── bank_statement_lines.csv
+│   ├── bank_reconciliations.csv
+│   └── reconciling_items.csv
 ├── process_mining/       Event logs and process models
 │   ├── event_log.json    OCEL 2.0 JSON format
 │   ├── event_log.xes     XES 2.0 XML format (for ProM, Celonis, Disco)
@@ -553,6 +649,11 @@ output/
 | **Process Mining** | OCEL 2.0 and XES 2.0 event logs for process discovery and conformance checking |
 | **Conformance Checking** | Reference process models (P2P, O2C, R2R) for process validation |
 | **ERP Testing** | Load testing with realistic transaction volumes |
+| **Procurement Analytics** | Source-to-contract pipeline with spend analysis, RFx, bids, and supplier scorecards |
+| **HR & Payroll Testing** | Payroll runs, time tracking, expense management with policy compliance |
+| **Manufacturing Simulation** | Production orders, BOM explosion, WIP costing, quality inspections |
+| **Financial Reporting** | Balance sheet, income statement, cash flow, KPIs, and budget variance |
+| **Bank Reconciliation** | Statement matching, outstanding items, net difference validation |
 | **SOX Compliance** | Test internal control monitoring systems |
 | **COSO Framework** | COSO 2013 control mapping with 5 components, 17 principles, maturity levels |
 | **Standards Compliance** | IFRS/US GAAP revenue recognition, lease accounting, fair value, impairment testing |
