@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -558,6 +558,74 @@
 <li>Intervention results with effect estimates</li>
 <li>Counterfactual pairs (factual + counterfactual)</li>
 <li>Causal validation report</li>
+</ul>
+<h2 id="stage-14-source-to-contract-v060"><a class="header" href="#stage-14-source-to-contract-v060">Stage 14: Source-to-Contract (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate the full S2C procurement pipeline</p>
+<p>When source-to-pay is enabled, generates the complete sourcing lifecycle from spend analysis through supplier scorecards. The generation DAG follows:</p>
+<pre><code>Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Procurement Contract → Catalog Items → [feeds into P2P] → Supplier Scorecard
+</code></pre>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Spend analysis records and category hierarchies</li>
+<li>Sourcing projects with supplier qualification data</li>
+<li>RFx events (RFI/RFP/RFQ), bids, and bid evaluations</li>
+<li>Procurement contracts and catalog items</li>
+<li>Supplier scorecards with performance metrics</li>
+</ul>
+<h2 id="stage-15-financial-reporting-v060"><a class="header" href="#stage-15-financial-reporting-v060">Stage 15: Financial Reporting (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate bank reconciliations and financial statements</p>
+<p>When financial reporting is enabled, produces bank reconciliations with auto-matching and full financial statement sets derived from the adjusted trial balance.</p>
+<p>Bank reconciliations match payments to bank statement lines with configurable auto-match, manual match, and exception rates. Financial statements include:</p>
+<ul>
+<li><strong>Balance Sheet</strong>: Assets = Liabilities + Equity</li>
+<li><strong>Income Statement</strong>: Revenue - COGS - OpEx - Tax = Net Income</li>
+<li><strong>Cash Flow Statement</strong>: Indirect method with operating, investing, and financing categories</li>
+<li><strong>Statement of Changes in Equity</strong>: Retained earnings, dividends, comprehensive income</li>
+</ul>
+<p>Also generates management KPIs (financial ratios) and budget variance analysis when configured.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Bank reconciliations with statement lines and reconciling items</li>
+<li>Financial statements (balance sheet, income statement, cash flow, changes in equity)</li>
+<li>Management KPIs and financial ratios</li>
+<li>Budget vs. actual variance reports</li>
+</ul>
+<h2 id="stage-16-hr-data-v060"><a class="header" href="#stage-16-hr-data-v060">Stage 16: HR Data (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate Hire-to-Retire (H2R) process data</p>
+<p>When HR generation is enabled, produces payroll runs, time entries, and expense reports linked to the employee master data generated in Stage 2.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Payroll runs with employee pay line items (gross, deductions, net, employer cost)</li>
+<li>Time entries with regular hours, overtime, PTO, and sick leave</li>
+<li>Expense reports with categorized line items and approval workflows</li>
+</ul>
+<h2 id="stage-17-accounting-standards-v060"><a class="header" href="#stage-17-accounting-standards-v060">Stage 17: Accounting Standards (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate ASC 606/IFRS 15 revenue recognition and impairment testing data</p>
+<p>When accounting standards generation is enabled, produces customer contracts with performance obligations for revenue recognition and asset impairment test records.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Customer contracts with performance obligations (ASC 606/IFRS 15)</li>
+<li>Revenue recognition schedules</li>
+<li>Asset impairment tests with recoverable amount calculations</li>
+</ul>
+<h2 id="stage-18-manufacturing-v060"><a class="header" href="#stage-18-manufacturing-v060">Stage 18: Manufacturing (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate manufacturing process data</p>
+<p>When manufacturing is enabled, produces production orders, quality inspections, and cycle counts linked to materials from the master data.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Production orders with BOM components and routing steps</li>
+<li>Quality inspections with pass/fail/conditional results</li>
+<li>Inventory cycle counts with variance analysis</li>
+</ul>
+<h2 id="stage-19-sales-quotes-kpis-and-budgets-v060"><a class="header" href="#stage-19-sales-quotes-kpis-and-budgets-v060">Stage 19: Sales Quotes, KPIs, and Budgets (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate sales pipeline and financial planning data</p>
+<p>When enabled, produces the quote-to-order pipeline, management KPI computations, and budget variance analysis.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Sales quotes with line items, conversion tracking, and win/loss rates</li>
+<li>Management KPIs (liquidity, profitability, efficiency, leverage ratios)</li>
+<li>Budget records with actual vs. planned variance analysis</li>
 </ul>
 <h2 id="parallel-execution"><a class="header" href="#parallel-execution">Parallel Execution</a></h2>
 <p>Stages that support parallelism:</p>

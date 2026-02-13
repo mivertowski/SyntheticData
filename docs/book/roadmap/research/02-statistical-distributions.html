@@ -1,0 +1,851 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Statistical Distributions - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="research-statistical-and-numerical-distributions"><a class="header" href="#research-statistical-and-numerical-distributions">Research: Statistical and Numerical Distributions</a></h1>
+<h2 id="current-state-analysis"><a class="header" href="#current-state-analysis">Current State Analysis</a></h2>
+<h3 id="existing-distribution-implementations"><a class="header" href="#existing-distribution-implementations">Existing Distribution Implementations</a></h3>
+<p>The system currently supports several distribution types:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Distribution</th><th>Implementation</th><th>Usage</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Log-Normal</strong></td><td><code>AmountSampler</code></td><td>Transaction amounts</td></tr>
+<tr><td><strong>Benford’s Law</strong></td><td><code>BenfordSampler</code></td><td>First-digit distribution</td></tr>
+<tr><td><strong>Uniform</strong></td><td>Standard</td><td>ID generation, selection</td></tr>
+<tr><td><strong>Weighted</strong></td><td><code>LineItemSampler</code></td><td>Line item counts</td></tr>
+<tr><td><strong>Poisson</strong></td><td><code>TemporalSampler</code></td><td>Event counts</td></tr>
+<tr><td><strong>Normal/Gaussian</strong></td><td>Standard</td><td>Some variations</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="current-strengths"><a class="header" href="#current-strengths">Current Strengths</a></h3>
+<ol>
+<li><strong>Benford’s Law compliance</strong>: First-digit distribution follows expected 30.1%, 17.6%, 12.5%… pattern</li>
+<li><strong>Log-normal amounts</strong>: Realistic transaction size distributions</li>
+<li><strong>Temporal weighting</strong>: Period-end spikes, day-of-week patterns</li>
+<li><strong>Industry seasonality</strong>: 10 industry profiles with event-based multipliers</li>
+</ol>
+<h3 id="current-gaps"><a class="header" href="#current-gaps">Current Gaps</a></h3>
+<ol>
+<li><strong>Single-mode distributions</strong>: No mixture models for multi-modal data</li>
+<li><strong>Limited correlation</strong>: Cross-field dependencies not modeled</li>
+<li><strong>Static parameters</strong>: No regime changes or parameter drift</li>
+<li><strong>Missing distributions</strong>: Pareto, Weibull, Beta not available</li>
+<li><strong>No copulas</strong>: Joint distributions not correlated realistically</li>
+</ol>
+<hr>
+<h2 id="improvement-recommendations"><a class="header" href="#improvement-recommendations">Improvement Recommendations</a></h2>
+<h3 id="1-multi-modal-distribution-support"><a class="header" href="#1-multi-modal-distribution-support">1. Multi-Modal Distribution Support</a></h3>
+<h4 id="11-gaussian-mixture-models"><a class="header" href="#11-gaussian-mixture-models">1.1 Gaussian Mixture Models</a></h4>
+<p>Real-world transaction amounts often exhibit multiple modes:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Gaussian Mixture Model for multi-modal distributions
+pub struct GaussianMixture {
+    components: Vec&lt;GaussianComponent&gt;,
+}
+
+pub struct GaussianComponent {
+    weight: f64,      // Component weight (sum to 1.0)
+    mean: f64,        // Component mean
+    std_dev: f64,     // Component standard deviation
+}
+
+impl GaussianMixture {
+    /// Sample from the mixture distribution
+    pub fn sample(&amp;self, rng: &amp;mut impl Rng) -&gt; f64 {
+        // Select component based on weights
+        let component = self.select_component(rng);
+        // Sample from selected Gaussian
+        component.sample(rng)
+    }
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Configuration</strong>:</p>
+<pre><code class="language-yaml">amount_distribution:
+  type: gaussian_mixture
+  components:
+    - weight: 0.60
+      mean: 500
+      std_dev: 200
+      label: "small_transactions"
+    - weight: 0.30
+      mean: 5000
+      std_dev: 1500
+      label: "medium_transactions"
+    - weight: 0.10
+      mean: 50000
+      std_dev: 15000
+      label: "large_transactions"
+</code></pre>
+<h4 id="12-log-normal-mixture"><a class="header" href="#12-log-normal-mixture">1.2 Log-Normal Mixture</a></h4>
+<p>For strictly positive amounts with multiple modes:</p>
+<pre><code class="language-yaml">amount_distribution:
+  type: lognormal_mixture
+  components:
+    - weight: 0.70
+      mu: 5.5       # log-scale mean
+      sigma: 1.2    # log-scale std dev
+      label: "routine_expenses"
+    - weight: 0.25
+      mu: 8.5
+      sigma: 0.8
+      label: "capital_expenses"
+    - weight: 0.05
+      mu: 11.0
+      sigma: 0.5
+      label: "major_projects"
+</code></pre>
+<h4 id="13-realistic-transaction-amount-profiles"><a class="header" href="#13-realistic-transaction-amount-profiles">1.3 Realistic Transaction Amount Profiles</a></h4>
+<p><strong>By Transaction Type</strong>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Distribution</th><th>Parameters</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Petty Cash</td><td>Log-normal</td><td>μ=3.5, σ=0.8</td><td>$10-$500 range</td></tr>
+<tr><td>AP Invoices</td><td>Mixture(3)</td><td>See below</td><td>Multi-modal</td></tr>
+<tr><td>Payroll</td><td>Normal</td><td>μ=4500, σ=1200</td><td>Per employee</td></tr>
+<tr><td>Utilities</td><td>Log-normal</td><td>μ=7.0, σ=0.4</td><td>Monthly, stable</td></tr>
+<tr><td>Capital</td><td>Pareto</td><td>α=1.5, xₘ=10000</td><td>Heavy tail</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>AP Invoice Mixture</strong>:</p>
+<pre><code class="language-yaml">ap_invoices:
+  type: lognormal_mixture
+  components:
+    # Operating expenses
+    - weight: 0.50
+      mu: 6.0        # ~$400 median
+      sigma: 1.5
+    # Inventory/materials
+    - weight: 0.35
+      mu: 8.0        # ~$3000 median
+      sigma: 1.0
+    # Capital/projects
+    - weight: 0.15
+      mu: 10.5       # ~$36000 median
+      sigma: 0.8
+</code></pre>
+<hr>
+<h3 id="2-cross-field-correlation-modeling"><a class="header" href="#2-cross-field-correlation-modeling">2. Cross-Field Correlation Modeling</a></h3>
+<h4 id="21-correlation-matrix-support"><a class="header" href="#21-correlation-matrix-support">2.1 Correlation Matrix Support</a></h4>
+<p>Define correlations between numeric fields:</p>
+<pre><code class="language-yaml">correlations:
+  enabled: true
+  fields:
+    - name: transaction_amount
+    - name: line_item_count
+    - name: approval_level
+    - name: processing_time_hours
+    - name: discount_percentage
+
+  matrix:
+    # Correlation coefficients (Pearson's r)
+    # Higher amounts → more line items
+    - [1.00, 0.65, 0.72, 0.45, -0.20]
+    # More items → higher amount
+    - [0.65, 1.00, 0.55, 0.60, -0.15]
+    # Higher amount → higher approval
+    - [0.72, 0.55, 1.00, 0.50, -0.30]
+    # More complex → longer processing
+    - [0.45, 0.60, 0.50, 1.00, -0.10]
+    # Higher amount → lower discount %
+    - [-0.20, -0.15, -0.30, -0.10, 1.00]
+</code></pre>
+<h4 id="22-copula-based-generation"><a class="header" href="#22-copula-based-generation">2.2 Copula-Based Generation</a></h4>
+<p>For more sophisticated dependency modeling:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Copula types for dependency modeling
+pub enum CopulaType {
+    /// Gaussian copula - symmetric dependencies
+    Gaussian { correlation: f64 },
+    /// Clayton copula - lower tail dependence
+    Clayton { theta: f64 },
+    /// Gumbel copula - upper tail dependence
+    Gumbel { theta: f64 },
+    /// Frank copula - symmetric, no tail dependence
+    Frank { theta: f64 },
+    /// Student-t copula - both tail dependencies
+    StudentT { correlation: f64, df: f64 },
+}
+
+pub struct CopulaGenerator {
+    copula: CopulaType,
+    marginals: Vec&lt;Box&lt;dyn Distribution&gt;&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Use Cases</strong>:</p>
+<ul>
+<li><strong>Amount &amp; Days-to-Pay</strong>: Larger invoices may have longer payment terms (Clayton copula)</li>
+<li><strong>Revenue &amp; COGS</strong>: Strong positive correlation (Gaussian copula)</li>
+<li><strong>Fraud Amount &amp; Detection Delay</strong>: Upper tail dependence (Gumbel copula)</li>
+</ul>
+<h4 id="23-conditional-distributions"><a class="header" href="#23-conditional-distributions">2.3 Conditional Distributions</a></h4>
+<p>Generate values conditional on other fields:</p>
+<pre><code class="language-yaml">conditional_distributions:
+  # Discount percentage depends on order amount
+  discount:
+    type: conditional
+    given: order_amount
+    breakpoints:
+      - threshold: 1000
+        distribution: { type: constant, value: 0 }
+      - threshold: 5000
+        distribution: { type: uniform, min: 0, max: 0.05 }
+      - threshold: 25000
+        distribution: { type: uniform, min: 0.05, max: 0.10 }
+      - threshold: 100000
+        distribution: { type: uniform, min: 0.10, max: 0.15 }
+      - threshold: infinity
+        distribution: { type: normal, mean: 0.15, std: 0.03 }
+
+  # Payment terms depend on vendor relationship
+  payment_terms:
+    type: conditional
+    given: vendor_relationship_months
+    breakpoints:
+      - threshold: 6
+        distribution: { type: choice, values: [0, 15], weights: [0.8, 0.2] }
+      - threshold: 24
+        distribution: { type: choice, values: [15, 30], weights: [0.6, 0.4] }
+      - threshold: infinity
+        distribution: { type: choice, values: [30, 45, 60], weights: [0.5, 0.35, 0.15] }
+</code></pre>
+<hr>
+<h3 id="3-industry-specific-amount-distributions"><a class="header" href="#3-industry-specific-amount-distributions">3. Industry-Specific Amount Distributions</a></h3>
+<h4 id="31-retail"><a class="header" href="#31-retail">3.1 Retail</a></h4>
+<pre><code class="language-yaml">retail:
+  transaction_amounts:
+    pos_sales:
+      type: lognormal_mixture
+      components:
+        - weight: 0.65
+          mu: 3.0      # ~$20 median
+          sigma: 1.0
+          label: "small_basket"
+        - weight: 0.30
+          mu: 4.5      # ~$90 median
+          sigma: 0.8
+          label: "medium_basket"
+        - weight: 0.05
+          mu: 6.0      # ~$400 median
+          sigma: 0.6
+          label: "large_basket"
+
+    inventory_orders:
+      type: lognormal
+      mu: 9.0          # ~$8000 median
+      sigma: 1.5
+
+    seasonal_multipliers:
+      black_friday: 3.5
+      christmas_week: 2.8
+      back_to_school: 1.6
+</code></pre>
+<h4 id="32-manufacturing"><a class="header" href="#32-manufacturing">3.2 Manufacturing</a></h4>
+<pre><code class="language-yaml">manufacturing:
+  transaction_amounts:
+    raw_materials:
+      type: lognormal_mixture
+      components:
+        - weight: 0.40
+          mu: 8.0      # ~$3000 median
+          sigma: 1.0
+          label: "consumables"
+        - weight: 0.45
+          mu: 10.0     # ~$22000 median
+          sigma: 0.8
+          label: "production_materials"
+        - weight: 0.15
+          mu: 12.0     # ~$163000 median
+          sigma: 0.6
+          label: "bulk_orders"
+
+    maintenance:
+      type: pareto
+      alpha: 2.0
+      x_min: 500
+      label: "repair_costs"
+
+    capital_equipment:
+      type: lognormal
+      mu: 12.5         # ~$268000 median
+      sigma: 1.0
+</code></pre>
+<h4 id="33-financial-services"><a class="header" href="#33-financial-services">3.3 Financial Services</a></h4>
+<pre><code class="language-yaml">financial_services:
+  transaction_amounts:
+    wire_transfers:
+      type: lognormal_mixture
+      components:
+        - weight: 0.30
+          mu: 8.0      # ~$3000
+          sigma: 1.2
+          label: "retail_wire"
+        - weight: 0.40
+          mu: 11.0     # ~$60000
+          sigma: 1.0
+          label: "commercial_wire"
+        - weight: 0.20
+          mu: 14.0     # ~$1.2M
+          sigma: 0.8
+          label: "institutional_wire"
+        - weight: 0.10
+          mu: 17.0     # ~$24M
+          sigma: 1.0
+          label: "large_value"
+
+    ach_transactions:
+      type: lognormal
+      mu: 7.5          # ~$1800
+      sigma: 2.0
+
+    fee_income:
+      type: weibull
+      scale: 500
+      shape: 1.5
+</code></pre>
+<hr>
+<h3 id="4-regime-change-modeling"><a class="header" href="#4-regime-change-modeling">4. Regime Change Modeling</a></h3>
+<h4 id="41-structural-breaks"><a class="header" href="#41-structural-breaks">4.1 Structural Breaks</a></h4>
+<p>Model sudden changes in distribution parameters:</p>
+<pre><code class="language-yaml">regime_changes:
+  enabled: true
+  changes:
+    - date: "2024-03-15"
+      type: acquisition
+      effects:
+        - field: transaction_volume
+          multiplier: 1.35
+        - field: average_amount
+          shift: 5000
+        - field: vendor_count
+          multiplier: 1.25
+
+    - date: "2024-07-01"
+      type: price_increase
+      effects:
+        - field: cogs_ratio
+          shift: 0.03
+        - field: avg_invoice_amount
+          multiplier: 1.08
+
+    - date: "2024-10-01"
+      type: new_product_line
+      effects:
+        - field: revenue
+          multiplier: 1.20
+        - field: inventory_turns
+          multiplier: 0.85
+</code></pre>
+<h4 id="42-gradual-parameter-drift"><a class="header" href="#42-gradual-parameter-drift">4.2 Gradual Parameter Drift</a></h4>
+<p>Model slow changes over time:</p>
+<pre><code class="language-yaml">parameter_drift:
+  enabled: true
+  parameters:
+    - field: transaction_amount
+      type: linear
+      annual_drift: 0.03    # 3% annual increase (inflation)
+
+    - field: digital_payment_ratio
+      type: logistic
+      start_value: 0.40
+      end_value: 0.85
+      midpoint_months: 18
+      steepness: 0.15
+
+    - field: approval_threshold
+      type: step
+      steps:
+        - month: 6
+          value: 5000
+        - month: 18
+          value: 7500
+        - month: 30
+          value: 10000
+</code></pre>
+<h4 id="43-economic-cycle-modeling"><a class="header" href="#43-economic-cycle-modeling">4.3 Economic Cycle Modeling</a></h4>
+<pre><code class="language-yaml">economic_cycles:
+  enabled: true
+  base_cycle:
+    type: sinusoidal
+    period_months: 48      # 4-year cycle
+    amplitude: 0.15        # ±15% variation
+
+  recession_events:
+    - start: "2024-09-01"
+      duration_months: 8
+      severity: moderate    # 10-20% decline
+      effects:
+        - revenue: -0.15
+        - discretionary_spend: -0.35
+        - capital_investment: -0.50
+        - headcount: -0.10
+      recovery:
+        type: gradual
+        months: 12
+</code></pre>
+<hr>
+<h3 id="5-enhanced-benfords-law-compliance"><a class="header" href="#5-enhanced-benfords-law-compliance">5. Enhanced Benford’s Law Compliance</a></h3>
+<h4 id="51-second-and-third-digit-distributions"><a class="header" href="#51-second-and-third-digit-distributions">5.1 Second and Third Digit Distributions</a></h4>
+<p>Extend beyond first-digit to full Benford compliance:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct BenfordDistribution {
+    digits: BenfordDigitConfig,
+}
+
+pub struct BenfordDigitConfig {
+    first_digit: bool,     // Standard Benford
+    second_digit: bool,    // Second digit distribution
+    first_two: bool,       // Joint first-two digits
+    summation: bool,       // Summation test
+}
+
+impl BenfordDistribution {
+    /// Generate amount following full Benford's Law
+    pub fn sample_benford_compliant(&amp;self, rng: &amp;mut impl Rng) -&gt; Decimal {
+        // Use log-uniform distribution to ensure Benford compliance
+        // across multiple digit positions
+    }
+}
+<span class="boring">}</span></code></pre>
+<h4 id="52-benford-deviation-injection"><a class="header" href="#52-benford-deviation-injection">5.2 Benford Deviation Injection</a></h4>
+<p>For anomaly scenarios, intentionally violate Benford:</p>
+<pre><code class="language-yaml">benford_deviations:
+  enabled: false  # Enable for fraud scenarios
+
+  deviation_types:
+    # Round number preference (fraud indicator)
+    round_number_bias:
+      probability: 0.15
+      targets: [1000, 5000, 10000, 25000]
+      tolerance: 0.01
+
+    # Threshold avoidance (approval bypass)
+    threshold_clustering:
+      thresholds: [5000, 10000, 25000]
+      cluster_below: true
+      distance: 50-200
+
+    # Uniform distribution (fabricated data)
+    uniform_injection:
+      probability: 0.05
+      range: [1000, 9999]
+</code></pre>
+<hr>
+<h3 id="6-statistical-validation-framework"><a class="header" href="#6-statistical-validation-framework">6. Statistical Validation Framework</a></h3>
+<h4 id="61-distribution-fitness-tests"><a class="header" href="#61-distribution-fitness-tests">6.1 Distribution Fitness Tests</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct DistributionValidator {
+    tests: Vec&lt;StatisticalTest&gt;,
+}
+
+pub enum StatisticalTest {
+    /// Kolmogorov-Smirnov test
+    KolmogorovSmirnov { significance: f64 },
+    /// Chi-squared goodness of fit
+    ChiSquared { bins: usize, significance: f64 },
+    /// Anderson-Darling test
+    AndersonDarling { significance: f64 },
+    /// Benford's Law chi-squared
+    BenfordChiSquared { digits: u8, significance: f64 },
+    /// Mean Absolute Deviation from Benford
+    BenfordMAD { threshold: f64 },
+}
+<span class="boring">}</span></code></pre>
+<h4 id="62-validation-configuration"><a class="header" href="#62-validation-configuration">6.2 Validation Configuration</a></h4>
+<pre><code class="language-yaml">validation:
+  statistical_tests:
+    enabled: true
+    tests:
+      - type: benford_first_digit
+        threshold_mad: 0.015
+        warning_mad: 0.010
+
+      - type: distribution_fit
+        target: lognormal
+        ks_significance: 0.05
+
+      - type: correlation_check
+        expected_correlations:
+          - fields: [amount, line_items]
+            expected_r: 0.65
+            tolerance: 0.10
+
+  reporting:
+    generate_plots: true
+    output_format: html
+    include_raw_data: false
+</code></pre>
+<hr>
+<h3 id="7-new-distribution-types"><a class="header" href="#7-new-distribution-types">7. New Distribution Types</a></h3>
+<h4 id="71-pareto-distribution"><a class="header" href="#71-pareto-distribution">7.1 Pareto Distribution</a></h4>
+<p>For heavy-tailed phenomena (80/20 rule):</p>
+<pre><code class="language-yaml"># Top 20% of customers generate 80% of revenue
+customer_revenue:
+  type: pareto
+  alpha: 1.16      # Shape parameter for 80/20
+  x_min: 1000      # Minimum value
+  truncate_max: 10000000  # Optional cap
+</code></pre>
+<h4 id="72-weibull-distribution"><a class="header" href="#72-weibull-distribution">7.2 Weibull Distribution</a></h4>
+<p>For time-to-event data:</p>
+<pre><code class="language-yaml"># Days until payment
+days_to_payment:
+  type: weibull
+  shape: 2.0       # k &gt; 1: increasing hazard (more likely to pay over time)
+  scale: 30.0      # λ: characteristic life
+  shift: 0         # Minimum days
+</code></pre>
+<h4 id="73-beta-distribution"><a class="header" href="#73-beta-distribution">7.3 Beta Distribution</a></h4>
+<p>For proportions and percentages:</p>
+<pre><code class="language-yaml"># Discount percentage
+discount_rate:
+  type: beta
+  alpha: 2.0       # Shape parameter 1
+  beta: 8.0        # Shape parameter 2
+  # This gives mode around 11%, right-skewed
+  scale:
+    min: 0.0
+    max: 0.25      # Max 25% discount
+</code></pre>
+<h4 id="74-zero-inflated-distributions"><a class="header" href="#74-zero-inflated-distributions">7.4 Zero-Inflated Distributions</a></h4>
+<p>For data with excess zeros:</p>
+<pre><code class="language-yaml"># Credits/returns (many transactions have zero)
+credit_amount:
+  type: zero_inflated
+  zero_probability: 0.85
+  positive_distribution:
+    type: lognormal
+    mu: 5.0
+    sigma: 1.5
+</code></pre>
+<hr>
+<h3 id="8-implementation-priority"><a class="header" href="#8-implementation-priority">8. Implementation Priority</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Enhancement</th><th>Complexity</th><th>Impact</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Mixture models</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Correlation matrices</td><td>High</td><td>Critical</td><td>P1</td></tr>
+<tr><td>Industry-specific profiles</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Regime changes</td><td>Medium</td><td>High</td><td>P2</td></tr>
+<tr><td>Copula support</td><td>High</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Additional distributions</td><td>Low</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Validation framework</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Conditional distributions</td><td>Medium</td><td>Medium</td><td>P3</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="9-configuration-example"><a class="header" href="#9-configuration-example">9. Configuration Example</a></h3>
+<pre><code class="language-yaml"># Complete statistical distribution configuration
+distributions:
+  # Global amount settings
+  amounts:
+    default:
+      type: lognormal_mixture
+      components:
+        - { weight: 0.6, mu: 6.0, sigma: 1.5 }
+        - { weight: 0.3, mu: 8.5, sigma: 1.0 }
+        - { weight: 0.1, mu: 11.0, sigma: 0.8 }
+
+    by_transaction_type:
+      payroll:
+        type: normal
+        mean: 4500
+        std_dev: 1500
+        truncate_min: 1000
+
+      utilities:
+        type: lognormal
+        mu: 7.0
+        sigma: 0.5
+
+  # Correlation settings
+  correlations:
+    enabled: true
+    model: gaussian_copula
+    pairs:
+      - fields: [amount, processing_days]
+        correlation: 0.45
+      - fields: [amount, approval_level]
+        correlation: 0.72
+
+  # Drift settings
+  drift:
+    enabled: true
+    inflation_rate: 0.03
+    regime_changes:
+      - date: "2024-06-01"
+        field: avg_transaction
+        multiplier: 1.15
+
+  # Validation
+  validation:
+    benford_compliance: true
+    distribution_tests: true
+    correlation_verification: true
+</code></pre>
+<hr>
+<h2 id="technical-implementation-notes"><a class="header" href="#technical-implementation-notes">Technical Implementation Notes</a></h2>
+<h3 id="performance-considerations"><a class="header" href="#performance-considerations">Performance Considerations</a></h3>
+<ol>
+<li><strong>Pre-computation</strong>: Calculate CDF tables for frequently-used distributions</li>
+<li><strong>Vectorization</strong>: Use SIMD for batch sampling where possible</li>
+<li><strong>Caching</strong>: Cache correlation matrix decompositions (Cholesky)</li>
+<li><strong>Lazy evaluation</strong>: Defer complex distribution calculations until needed</li>
+</ol>
+<h3 id="memory-efficiency"><a class="header" href="#memory-efficiency">Memory Efficiency</a></h3>
+<ol>
+<li><strong>Streaming</strong>: Generate correlated samples in batches</li>
+<li><strong>Reference tables</strong>: Use compact lookup tables for standard distributions</li>
+<li><strong>On-demand</strong>: Compute regime-adjusted parameters at sample time</li>
+</ol>
+<hr>
+<p><em>See also</em>: <a href="03-temporal-patterns.html">03-temporal-patterns.md</a> for time-based distributions</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../roadmap/research/01-realism-names-metadata.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../roadmap/research/03-temporal-patterns.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../roadmap/research/01-realism-names-metadata.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../roadmap/research/03-temporal-patterns.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

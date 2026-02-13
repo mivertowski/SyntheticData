@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -179,14 +179,15 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="process-mining"><a class="header" href="#process-mining">Process Mining</a></h1>
-<p>Generate OCEL 2.0 event logs for process mining analysis.</p>
+<p>Generate OCEL 2.0 event logs for process mining analysis across 8 enterprise process families.</p>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>SyntheticData generates process mining data:</p>
+<p>SyntheticData generates comprehensive process mining data:</p>
 <ul>
-<li>OCEL 2.0 compliant event logs</li>
-<li>P2P (Procure-to-Pay) process flows</li>
-<li>O2C (Order-to-Cash) process flows</li>
-<li>Object-centric relationships</li>
+<li>OCEL 2.0 compliant event logs with <strong>88 activity types</strong> and <strong>52 object types</strong></li>
+<li><strong>8 process families</strong>: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon</li>
+<li>Object-centric relationships with lifecycle states</li>
+<li>Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)</li>
+<li>Cross-process object linking via shared document IDs</li>
 </ul>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <pre><code class="language-yaml">global:
@@ -410,6 +411,36 @@ from pm4py.objects.ocel.exporter import sqlite
 
 sqlite.apply(ocel, "output/ocel.sqlite")
 # Open in OCPA tool
+</code></pre>
+<h2 id="new-process-families-v062"><a class="header" href="#new-process-families-v062">New Process Families (v0.6.2)</a></h2>
+<h3 id="s2c--source-to-contract"><a class="header" href="#s2c--source-to-contract">S2C — Source-to-Contract</a></h3>
+<pre><code>Create Sourcing Project → Qualify Supplier → Publish RFx →
+Submit Bid → Evaluate Bids → Award Contract →
+Activate Contract → Complete Sourcing
+</code></pre>
+<h3 id="h2r--hire-to-retire"><a class="header" href="#h2r--hire-to-retire">H2R — Hire-to-Retire</a></h3>
+<pre><code>Submit Time Entry → Approve Time Entry →
+Create Payroll Run → Calculate Payroll → Approve Payroll → Post Payroll
+Submit Expense → Approve Expense
+</code></pre>
+<h3 id="mfg--manufacturing"><a class="header" href="#mfg--manufacturing">MFG — Manufacturing</a></h3>
+<pre><code>Create Production Order → Release → Start Operation →
+Complete Operation → Quality Inspection → Confirm Production →
+Close Production Order
+</code></pre>
+<h3 id="bank--banking-operations"><a class="header" href="#bank--banking-operations">BANK — Banking Operations</a></h3>
+<pre><code>Onboard Customer → KYC Review → Open Account →
+Execute Transaction → Authorize → Complete Transaction
+</code></pre>
+<h3 id="audit--audit-engagement-lifecycle"><a class="header" href="#audit--audit-engagement-lifecycle">AUDIT — Audit Engagement Lifecycle</a></h3>
+<pre><code>Create Engagement → Plan → Assess Risk → Create Workpaper →
+Collect Evidence → Review Workpaper → Raise Finding →
+Remediate Finding → Record Judgment → Complete Engagement
+</code></pre>
+<h3 id="bank-recon--bank-reconciliation"><a class="header" href="#bank-recon--bank-reconciliation">Bank Recon — Bank Reconciliation</a></h3>
+<pre><code>Import Bank Statement → Auto Match Items → Manual Match Item →
+Create Reconciling Item → Resolve Exception →
+Approve Reconciliation → Post Entries → Complete Reconciliation
 </code></pre>
 <h2 id="s2p-process-mining"><a class="header" href="#s2p-process-mining">S2P Process Mining</a></h2>
 <p>The full Source-to-Pay chain provides rich process mining opportunities beyond basic P2P:</p>

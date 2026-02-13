@@ -6,8 +6,9 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 
 `datasynth-graph` provides graph construction and export capabilities:
 
-- **Graph Builders**: Transaction, approval, and entity relationship graphs
-- **ML Export**: PyTorch Geometric, Neo4j, and DGL formats
+- **Graph Builders**: Transaction, approval, entity relationship, and multi-layer hypergraph builders
+- **Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 8 process families with 24 entity type codes and OCPM event hyperedges
+- **ML Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats
 - **Feature Engineering**: Temporal, amount, structural, and categorical features
 - **Data Splits**: Train/validation/test split generation
 
@@ -267,8 +268,25 @@ graph_export:
     categorical: true
 ```
 
+## Multi-Layer Hypergraph (v0.6.2)
+
+The hypergraph builder supports all 8 enterprise process families:
+
+| Method | Family | Node Types |
+|--------|--------|-----------|
+| `add_p2p_documents()` | P2P | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment |
+| `add_o2c_documents()` | O2C | SalesOrder, Delivery, CustomerInvoice |
+| `add_s2c_documents()` | S2C | SourcingProject, RfxEvent, SupplierBid, ProcurementContract |
+| `add_h2r_documents()` | H2R | PayrollRun, TimeEntry, ExpenseReport |
+| `add_mfg_documents()` | MFG | ProductionOrder, QualityInspection, CycleCount |
+| `add_bank_documents()` | BANK | BankingCustomer, BankAccount, BankTransaction |
+| `add_audit_documents()` | AUDIT | AuditEngagement, Workpaper, AuditFinding, AuditEvidence |
+| `add_bank_recon_documents()` | Bank Recon | BankReconciliation, BankStatementLine, ReconcilingItem |
+| `add_ocpm_events()` | OCPM | Events as hyperedges (entity type 400) |
+
 ## See Also
 
 - [Graph Export](../advanced/graph-export.md)
+- [Process Mining](../use-cases/process-mining.md)
 - [Fraud Detection Use Case](../use-cases/fraud-detection.md)
 - [datasynth-generators](datasynth-generators.md)

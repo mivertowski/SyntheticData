@@ -1,0 +1,1010 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Pattern &amp; Process Drift - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="research-pattern-and-process-drift-over-time"><a class="header" href="#research-pattern-and-process-drift-over-time">Research: Pattern and Process Drift Over Time</a></h1>
+<blockquote>
+<p><strong>Implementation Status: COMPLETE</strong> (v0.3.0)</p>
+<p>This research document has been fully implemented. See the following modules:</p>
+<ul>
+<li><code>datasynth-core/src/models/organizational_event.rs</code> - Organizational events</li>
+<li><code>datasynth-core/src/models/process_evolution.rs</code> - Process evolution types</li>
+<li><code>datasynth-core/src/models/technology_transition.rs</code> - Technology transitions</li>
+<li><code>datasynth-core/src/models/regulatory_events.rs</code> - Regulatory changes</li>
+<li><code>datasynth-core/src/models/drift_events.rs</code> - Ground truth labels</li>
+<li><code>datasynth-core/src/distributions/behavioral_drift.rs</code> - Behavioral drift</li>
+<li><code>datasynth-core/src/distributions/market_drift.rs</code> - Market/economic drift</li>
+<li><code>datasynth-core/src/distributions/event_timeline.rs</code> - Event orchestration</li>
+<li><code>datasynth-core/src/distributions/drift_recorder.rs</code> - Ground truth recording</li>
+<li><code>datasynth-eval/src/statistical/drift_detection.rs</code> - Drift detection evaluation</li>
+<li><code>datasynth-config/src/schema.rs</code> - Configuration types</li>
+</ul>
+</blockquote>
+<h2 id="current-state-analysis"><a class="header" href="#current-state-analysis">Current State Analysis</a></h2>
+<h3 id="existing-drift-implementation"><a class="header" href="#existing-drift-implementation">Existing Drift Implementation</a></h3>
+<p>The current <code>DriftController</code> (373 lines) supports:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Drift Type</th><th>Implementation</th><th>Realism</th></tr>
+</thead>
+<tbody>
+<tr><td>Gradual</td><td>Linear parameter drift</td><td>Medium</td></tr>
+<tr><td>Sudden</td><td>Point-in-time shifts</td><td>Medium</td></tr>
+<tr><td>Recurring</td><td>Seasonal patterns</td><td>Good</td></tr>
+<tr><td>Mixed</td><td>Combination modes</td><td>Medium</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="current-capabilities"><a class="header" href="#current-capabilities">Current Capabilities</a></h3>
+<ol>
+<li><strong>Amount drift</strong>: Mean and variance adjustments over time</li>
+<li><strong>Anomaly rate drift</strong>: Changing fraud/error rates</li>
+<li><strong>Concept drift factor</strong>: Generic drift indicator</li>
+<li><strong>Seasonal adjustment</strong>: Periodic recurring patterns</li>
+<li><strong>Sudden drift probability</strong>: Random regime changes</li>
+</ol>
+<h3 id="current-gaps"><a class="header" href="#current-gaps">Current Gaps</a></h3>
+<ol>
+<li><strong>No organizational events</strong>: Mergers, restructuring not modeled</li>
+<li><strong>No process evolution</strong>: Static business processes</li>
+<li><strong>No regulatory changes</strong>: Compliance requirements don’t evolve</li>
+<li><strong>No technology transitions</strong>: System changes not simulated</li>
+<li><strong>No behavioral drift</strong>: Entity behaviors remain static</li>
+<li><strong>No market-driven drift</strong>: External factors not modeled</li>
+<li><strong>Limited drift detection signals</strong>: Hard to validate drift presence</li>
+</ol>
+<hr>
+<h2 id="improvement-recommendations"><a class="header" href="#improvement-recommendations">Improvement Recommendations</a></h2>
+<h3 id="1-organizational-event-modeling"><a class="header" href="#1-organizational-event-modeling">1. Organizational Event Modeling</a></h3>
+<h4 id="11-corporate-event-timeline"><a class="header" href="#11-corporate-event-timeline">1.1 Corporate Event Timeline</a></h4>
+<pre><code class="language-yaml">organizational_events:
+  enabled: true
+
+  events:
+    # Mergers and Acquisitions
+    - type: acquisition
+      date: "2024-06-15"
+      acquired_entity: "TargetCorp"
+      effects:
+        - entity_count_increase: 1.35
+        - vendor_count_increase: 1.25
+        - customer_overlap: 0.15
+        - integration_period_months: 12
+        - synergy_realization:
+            start_month: 6
+            full_realization_month: 18
+            cost_reduction: 0.08
+
+    # Divestiture
+    - type: divestiture
+      date: "2024-09-01"
+      divested_entity: "NonCoreBusiness"
+      effects:
+        - revenue_reduction: 0.12
+        - entity_count_reduction: 0.10
+        - vendor_transition_period: 6
+
+    # Reorganization
+    - type: reorganization
+      date: "2024-04-01"
+      type: functional_to_regional
+      effects:
+        - cost_center_restructure: true
+        - approval_chain_changes: true
+        - reporting_line_changes: true
+        - transition_period_months: 3
+        - temporary_confusion_factor: 1.15
+
+    # Leadership Change
+    - type: leadership_change
+      date: "2024-07-01"
+      position: CFO
+      effects:
+        - policy_changes_probability: 0.40
+        - approval_threshold_review: true
+        - vendor_review_trigger: true
+        - audit_focus_shift: possible
+
+    # Layoffs
+    - type: workforce_reduction
+      date: "2024-11-01"
+      reduction_percent: 0.10
+      effects:
+        - employee_count_reduction: 0.10
+        - workload_redistribution: true
+        - approval_delays: 1.20
+        - error_rate_increase: 1.15
+        - duration_months: 6
+</code></pre>
+<h4 id="12-integration-pattern-modeling"><a class="header" href="#12-integration-pattern-modeling">1.2 Integration Pattern Modeling</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct IntegrationSimulator {
+    phases: Vec&lt;IntegrationPhase&gt;,
+    current_phase: usize,
+}
+
+pub struct IntegrationPhase {
+    name: String,
+    start_month: u32,
+    end_month: u32,
+    effects: IntegrationEffects,
+}
+
+pub struct IntegrationEffects {
+    // Duplicate transactions during transition
+    duplicate_probability: f64,
+    // Coding errors during chart migration
+    miscoding_rate: f64,
+    // Legacy system parallel run
+    parallel_posting: bool,
+    // Vendor/customer migration errors
+    master_data_errors: f64,
+    // Timing differences
+    posting_delay_multiplier: f64,
+}
+<span class="boring">}</span></code></pre>
+<h4 id="13-merger-accounting-patterns"><a class="header" href="#13-merger-accounting-patterns">1.3 Merger Accounting Patterns</a></h4>
+<pre><code class="language-yaml">merger_accounting:
+  enabled: true
+
+  day_1_entries:
+    - type: fair_value_adjustment
+      accounts: [inventory, fixed_assets, intangibles]
+      adjustment_range: [-0.20, 0.30]
+
+    - type: goodwill_recognition
+      calculation: "purchase_price - fair_value_net_assets"
+
+    - type: liability_assumption
+      includes: [accounts_payable, debt, contingencies]
+
+  post_merger:
+    # Integration costs
+    integration_expenses:
+      monthly_range: [100000, 500000]
+      duration_months: 12-18
+      categories: [consulting, severance, systems, legal]
+
+    # Synergy realization
+    synergies:
+      start_month: 6
+      ramp_up_months: 12
+      categories:
+        - type: headcount_reduction
+          target: 0.05
+        - type: vendor_consolidation
+          target: 0.10
+        - type: facility_optimization
+          target: 0.03
+
+    # Restructuring reserves
+    restructuring:
+      initial_reserve: 5000000
+      utilization_pattern: front_loaded
+      true_up_probability: 0.30
+</code></pre>
+<hr>
+<h3 id="2-process-evolution-modeling"><a class="header" href="#2-process-evolution-modeling">2. Process Evolution Modeling</a></h3>
+<h4 id="21-business-process-changes"><a class="header" href="#21-business-process-changes">2.1 Business Process Changes</a></h4>
+<pre><code class="language-yaml">process_evolution:
+  enabled: true
+
+  changes:
+    # New approval workflow
+    - type: approval_workflow_change
+      date: "2024-03-01"
+      from: sequential
+      to: parallel
+      effects:
+        - approval_time_reduction: 0.40
+        - same_day_approval_increase: 0.25
+        - skip_approval_detection: improved
+
+    # Automation introduction
+    - type: process_automation
+      date: "2024-05-01"
+      process: invoice_matching
+      effects:
+        - manual_matching_reduction: 0.70
+        - matching_accuracy_improvement: 0.15
+        - exception_visibility_increase: true
+        - posting_timing: more_consistent
+
+    # Policy change
+    - type: policy_change
+      date: "2024-08-01"
+      policy: expense_approval_limits
+      changes:
+        - manager_limit: 5000 -&gt; 7500
+        - director_limit: 25000 -&gt; 35000
+      effects:
+        - approval_escalation_reduction: 0.20
+        - processing_time_reduction: 0.15
+
+    # Control enhancement
+    - type: control_enhancement
+      date: "2024-10-01"
+      control: three_way_match
+      changes:
+        - tolerance: 0.05 -&gt; 0.02
+        - mandatory_for: all_po_invoices
+      effects:
+        - exception_rate_increase: 0.15
+        - fraud_detection_improvement: 0.25
+</code></pre>
+<h4 id="22-technology-transition-patterns"><a class="header" href="#22-technology-transition-patterns">2.2 Technology Transition Patterns</a></h4>
+<pre><code class="language-yaml">technology_transitions:
+  enabled: true
+
+  transitions:
+    # ERP migration
+    - type: erp_migration
+      phases:
+        - name: parallel_run
+          start: "2024-06-01"
+          duration_months: 3
+          effects:
+            - duplicate_entries: true
+            - reconciliation_required: true
+            - posting_delays: 1.30
+
+        - name: cutover
+          date: "2024-09-01"
+          effects:
+            - legacy_system: read_only
+            - new_system: live
+            - catch_up_period: 5_days
+
+        - name: stabilization
+          start: "2024-09-01"
+          duration_months: 3
+          effects:
+            - error_rate_multiplier: 1.25
+            - support_ticket_increase: 3.0
+            - workaround_transactions: 0.10
+
+    # Module implementation
+    - type: module_implementation
+      module: advanced_analytics
+      go_live: "2024-04-15"
+      effects:
+        - new_transaction_types: [analytical_adjustment]
+        - automated_entries_increase: 0.20
+
+    # Integration change
+    - type: integration_upgrade
+      system: bank_interface
+      date: "2024-07-01"
+      effects:
+        - real_time_enabled: true
+        - batch_processing: deprecated
+        - posting_frequency: continuous
+</code></pre>
+<hr>
+<h3 id="3-regulatory-and-compliance-drift"><a class="header" href="#3-regulatory-and-compliance-drift">3. Regulatory and Compliance Drift</a></h3>
+<h4 id="31-regulatory-changes"><a class="header" href="#31-regulatory-changes">3.1 Regulatory Changes</a></h4>
+<pre><code class="language-yaml">regulatory_changes:
+  enabled: true
+
+  changes:
+    # New accounting standard
+    - type: accounting_standard_adoption
+      standard: ASC_842  # Leases
+      effective_date: "2024-01-01"
+      effects:
+        - new_account_codes: [rou_asset, lease_liability]
+        - reclassification_entries: true
+        - disclosure_changes: true
+        - audit_focus: high
+
+    # Tax law change
+    - type: tax_law_change
+      date: "2024-07-01"
+      jurisdiction: federal
+      change: corporate_tax_rate
+      from: 0.21
+      to: 0.25
+      effects:
+        - deferred_tax_revaluation: true
+        - provision_adjustment: true
+        - quarterly_estimate_revision: true
+
+    # Compliance requirement
+    - type: new_compliance_requirement
+      regulation: SOX_AI_controls
+      effective_date: "2024-10-01"
+      requirements:
+        - ai_model_documentation: required
+        - automated_control_testing: required
+        - data_lineage_tracking: required
+      effects:
+        - new_control_activities: 15
+        - testing_frequency: quarterly
+        - documentation_overhead: 0.10
+
+    # Industry regulation
+    - type: industry_regulation
+      industry: financial_services
+      regulation: enhanced_kyc
+      date: "2024-06-01"
+      effects:
+        - customer_onboarding_time: 1.50
+        - documentation_requirements: increased
+        - rejection_rate_increase: 0.08
+</code></pre>
+<h4 id="32-audit-focus-shifts"><a class="header" href="#32-audit-focus-shifts">3.2 Audit Focus Shifts</a></h4>
+<pre><code class="language-yaml">audit_focus_evolution:
+  enabled: true
+
+  shifts:
+    # Risk-based changes
+    - trigger: fraud_detection
+      date: "2024-03-15"
+      new_focus_areas:
+        - vendor_payments: high
+        - manual_journal_entries: high
+        - related_party_transactions: medium
+      effects:
+        - sampling_rate_increase: 0.30
+        - documentation_requests: increased
+
+    # Industry trend response
+    - trigger: industry_trend
+      date: "2024-06-01"
+      trend: cybersecurity_risks
+      new_focus_areas:
+        - it_general_controls: high
+        - access_management: high
+        - change_management: medium
+      effects:
+        - itgc_testing_expansion: true
+        - soc2_requirements: enhanced
+
+    # Prior year findings
+    - trigger: prior_year_finding
+      finding: revenue_recognition_timing
+      date: "2024-01-01"
+      effects:
+        - cutoff_testing: enhanced
+        - sample_sizes: increased
+        - management_inquiry: extensive
+</code></pre>
+<hr>
+<h3 id="4-behavioral-drift"><a class="header" href="#4-behavioral-drift">4. Behavioral Drift</a></h3>
+<h4 id="41-entity-behavior-evolution"><a class="header" href="#41-entity-behavior-evolution">4.1 Entity Behavior Evolution</a></h4>
+<pre><code class="language-yaml">behavioral_drift:
+  enabled: true
+
+  vendor_behavior:
+    # Payment term negotiation
+    payment_terms_drift:
+      direction: extending
+      rate_per_year: 2.5  # Days per year
+      variance_increase: true
+      trigger: economic_conditions
+
+    # Quality drift
+    quality_drift:
+      new_vendors:
+        initial_period_months: 6
+        quality_improvement_rate: 0.02
+      established_vendors:
+        complacency_risk: 0.05
+        quality_decline_rate: 0.01
+
+    # Price drift
+    pricing_behavior:
+      inflation_pass_through: 0.80
+      contract_renegotiation_frequency: annual
+      opportunistic_increase_probability: 0.10
+
+  customer_behavior:
+    # Payment behavior evolution
+    payment_drift:
+      economic_downturn:
+        days_extension: 5-15
+        bad_debt_rate_increase: 0.02
+      economic_upturn:
+        days_reduction: 2-5
+        early_payment_discount_uptake: 0.15
+
+    # Order pattern drift
+    order_drift:
+      digital_shift:
+        online_order_increase_per_year: 0.05
+        average_order_value_decrease: 0.03
+        order_frequency_increase: 0.10
+
+  employee_behavior:
+    # Approval pattern drift
+    approval_drift:
+      end_of_month_rush:
+        intensity_increase_per_year: 0.05
+      rubber_stamping_risk:
+        increase_with_volume: true
+        threshold: 50  # Approvals per day
+
+    # Error pattern drift
+    error_drift:
+      new_employee:
+        error_rate: 0.08
+        learning_curve_months: 6
+        target_error_rate: 0.02
+      experienced_employee:
+        fatigue_increase: 0.01_per_year
+</code></pre>
+<h4 id="42-collective-behavior-patterns"><a class="header" href="#42-collective-behavior-patterns">4.2 Collective Behavior Patterns</a></h4>
+<pre><code class="language-yaml">collective_drift:
+  enabled: true
+
+  patterns:
+    # Year-end behavior
+    year_end_intensity:
+      drift: increasing
+      rate_per_year: 0.05
+      explanation: "tighter close deadlines, more scrutiny"
+
+    # Automation adoption
+    automation_adoption:
+      s_curve_adoption: true
+      early_adopters: 0.15
+      mainstream: 0.60
+      laggards: 0.25
+      effects_by_phase:
+        early:
+          manual_reduction: 0.10
+          error_types_shift: true
+        mainstream:
+          manual_reduction: 0.50
+          new_error_types: automation_failures
+        late:
+          manual_reduction: 0.80
+          exception_handling_focus: true
+
+    # Remote work impact
+    remote_work_patterns:
+      transition_date: "2024-01-01"
+      remote_percentage: 0.60
+      effects:
+        - posting_time_distribution: flattened
+        - batch_processing_increase: true
+        - approval_response_time: longer
+        - documentation_quality: variable
+</code></pre>
+<hr>
+<h3 id="5-market-driven-drift"><a class="header" href="#5-market-driven-drift">5. Market-Driven Drift</a></h3>
+<h4 id="51-economic-cycle-effects"><a class="header" href="#51-economic-cycle-effects">5.1 Economic Cycle Effects</a></h4>
+<pre><code class="language-yaml">economic_cycles:
+  enabled: true
+
+  cycles:
+    # Business cycle
+    business_cycle:
+      type: sinusoidal
+      period_months: 48
+      amplitude: 0.15
+      effects:
+        expansion:
+          revenue_growth: positive
+          hiring: active
+          capital_investment: high
+          credit_terms: generous
+        contraction:
+          revenue_growth: negative
+          layoffs: possible
+          capital_investment: low
+          credit_terms: tight
+
+    # Industry cycle
+    industry_specific:
+      technology:
+        period_months: 36
+        amplitude: 0.25
+      manufacturing:
+        period_months: 60
+        amplitude: 0.20
+      retail:
+        period_months: 12  # Annual
+        amplitude: 0.35
+
+  # Recession simulation
+  recession:
+    enabled: false  # Trigger explicitly
+    onset: gradual  # or sudden
+    duration_months: 12-24
+    severity: moderate  # mild, moderate, severe
+    effects:
+      revenue_decline: 0.15-0.30
+      ar_aging_increase: 15_days
+      bad_debt_increase: 0.03
+      vendor_consolidation: 0.10
+      workforce_reduction: 0.08
+      capex_freeze: true
+</code></pre>
+<h4 id="52-commodity-and-input-cost-drift"><a class="header" href="#52-commodity-and-input-cost-drift">5.2 Commodity and Input Cost Drift</a></h4>
+<pre><code class="language-yaml">input_cost_drift:
+  enabled: true
+
+  commodities:
+    - name: steel
+      base_price: 800  # per ton
+      volatility: 0.20
+      correlation_with_economy: 0.60
+      pass_through_to_cogs: 0.15
+
+    - name: energy
+      base_price: 75   # per barrel equivalent
+      volatility: 0.35
+      seasonal_pattern: true
+      pass_through_to_overhead: 0.08
+
+    - name: labor
+      base_cost: 35    # per hour
+      annual_increase: 0.03
+      regional_variation: true
+      pass_through_to_all: true
+
+  price_shock_events:
+    - type: supply_disruption
+      probability_per_year: 0.10
+      duration_months: 3-9
+      price_increase: 0.30-1.00
+      affected_commodities: [specific]
+
+    - type: demand_surge
+      probability_per_year: 0.15
+      duration_months: 2-6
+      price_increase: 0.15-0.40
+      affected_commodities: [broad]
+</code></pre>
+<hr>
+<h3 id="6-concept-drift-detection-signals"><a class="header" href="#6-concept-drift-detection-signals">6. Concept Drift Detection Signals</a></h3>
+<h4 id="61-drift-indicators-in-generated-data"><a class="header" href="#61-drift-indicators-in-generated-data">6.1 Drift Indicators in Generated Data</a></h4>
+<pre><code class="language-yaml">drift_signals:
+  enabled: true
+
+  embedded_signals:
+    # Statistical shift markers
+    statistical:
+      - type: mean_shift
+        field: transaction_amount
+        visibility: detectable_by_cusum
+        magnitude: configurable
+
+      - type: variance_change
+        field: processing_time
+        visibility: detectable_by_levene
+        direction: both
+
+      - type: distribution_change
+        field: payment_terms
+        visibility: detectable_by_ks_test
+        gradual: true
+
+    # Categorical drift markers
+    categorical:
+      - type: category_proportion_shift
+        field: transaction_type
+        new_category_emergence: true
+        old_category_decline: true
+
+      - type: label_drift
+        field: account_code
+        new_codes: added_over_time
+        deprecated_codes: declining_usage
+
+    # Temporal drift markers
+    temporal:
+      - type: seasonality_change
+        field: transaction_count
+        pattern_evolution: true
+        detectability: acf_analysis
+
+      - type: trend_change
+        field: revenue
+        change_points: marked
+        detectability: pelt_algorithm
+
+  # Ground truth labels for drift
+  drift_labels:
+    enabled: true
+    output_file: drift_events.csv
+    columns:
+      - event_type
+      - start_date
+      - end_date
+      - affected_fields
+      - magnitude
+      - detection_difficulty
+</code></pre>
+<h4 id="62-drift-validation-metrics"><a class="header" href="#62-drift-validation-metrics">6.2 Drift Validation Metrics</a></h4>
+<pre><code class="language-yaml">drift_validation:
+  metrics:
+    # Drift presence verification
+    drift_detection:
+      methods:
+        - adwin   # Adaptive Windowing
+        - ddm     # Drift Detection Method
+        - eddm    # Early Drift Detection Method
+        - ph      # Page-Hinkley Test
+      threshold_calibration: true
+
+    # Drift magnitude
+    magnitude_metrics:
+      - hellinger_distance
+      - kl_divergence
+      - wasserstein_distance
+      - psi  # Population Stability Index
+
+    # Drift timing accuracy
+    timing_metrics:
+      - detection_delay_days
+      - false_positive_rate
+      - detection_precision
+</code></pre>
+<hr>
+<h3 id="7-implementation-framework"><a class="header" href="#7-implementation-framework">7. Implementation Framework</a></h3>
+<h4 id="71-drift-controller-enhancement"><a class="header" href="#71-drift-controller-enhancement">7.1 Drift Controller Enhancement</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct EnhancedDriftController {
+    // Existing drift
+    parameter_drift: ParameterDrift,
+
+    // New: Organizational events
+    event_timeline: EventTimeline,
+
+    // New: Process changes
+    process_evolution: ProcessEvolution,
+
+    // New: Regulatory changes
+    regulatory_calendar: RegulatoryCalendar,
+
+    // New: Behavioral models
+    behavioral_drift: BehavioralDriftModel,
+
+    // New: Market factors
+    market_model: MarketModel,
+
+    // Drift detection ground truth
+    drift_labels: DriftLabelRecorder,
+}
+
+impl EnhancedDriftController {
+    /// Get all active effects for a given date
+    pub fn get_effects(&amp;self, date: NaiveDate) -&gt; DriftEffects {
+        let mut effects = DriftEffects::default();
+
+        // Apply organizational events
+        effects.merge(self.event_timeline.effects_at(date));
+
+        // Apply process evolution
+        effects.merge(self.process_evolution.effects_at(date));
+
+        // Apply regulatory changes
+        effects.merge(self.regulatory_calendar.effects_at(date));
+
+        // Apply behavioral drift
+        effects.merge(self.behavioral_drift.effects_at(date));
+
+        // Apply market conditions
+        effects.merge(self.market_model.effects_at(date));
+
+        // Record for ground truth
+        self.drift_labels.record(date, &amp;effects);
+
+        effects
+    }
+}
+<span class="boring">}</span></code></pre>
+<h4 id="72-configuration-integration"><a class="header" href="#72-configuration-integration">7.2 Configuration Integration</a></h4>
+<pre><code class="language-yaml"># Master drift configuration
+drift:
+  enabled: true
+
+  # Parameter drift (existing)
+  parameters:
+    amount_mean_drift: 0.02
+    amount_variance_drift: 0.01
+
+  # Organizational events (new)
+  organizational:
+    events_file: "organizational_events.yaml"
+    random_events:
+      reorganization_probability: 0.10
+      leadership_change_probability: 0.15
+
+  # Process evolution (new)
+  process:
+    automation_curve: s_curve
+    policy_review_frequency: quarterly
+
+  # Regulatory changes (new)
+  regulatory:
+    calendar_file: "regulatory_calendar.yaml"
+    jurisdictions: [us, eu]
+
+  # Behavioral drift (new)
+  behavioral:
+    vendor_learning: true
+    customer_churn: true
+    employee_turnover: 0.15
+
+  # Market factors (new)
+  market:
+    economic_cycle: true
+    commodity_volatility: true
+    inflation_rate: 0.03
+
+  # Drift labeling (new)
+  labels:
+    enabled: true
+    output_format: csv
+    include_magnitude: true
+</code></pre>
+<hr>
+<h3 id="8-implementation-priority"><a class="header" href="#8-implementation-priority">8. Implementation Priority</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Enhancement</th><th>Complexity</th><th>Impact</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Organizational events</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Process evolution</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Regulatory changes</td><td>Low</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Behavioral drift</td><td>High</td><td>High</td><td>P1</td></tr>
+<tr><td>Market-driven drift</td><td>Medium</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Drift detection signals</td><td>Low</td><td>High</td><td>P1</td></tr>
+<tr><td>Technology transitions</td><td>High</td><td>Medium</td><td>P3</td></tr>
+<tr><td>Collective behavior</td><td>Medium</td><td>Medium</td><td>P2</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="9-use-cases"><a class="header" href="#9-use-cases">9. Use Cases</a></h3>
+<ol>
+<li><strong>ML Model Robustness Testing</strong>: Train models on stable data, test on drifted data</li>
+<li><strong>Drift Detection Benchmarking</strong>: Evaluate drift detection algorithms on known drift</li>
+<li><strong>Change Management Simulation</strong>: Test system responses to organizational changes</li>
+<li><strong>Regulatory Impact Analysis</strong>: Model effects of compliance requirement changes</li>
+<li><strong>Economic Scenario Planning</strong>: Generate data under different economic conditions</li>
+</ol>
+<hr>
+<p><em>See also</em>: <a href="06-anomaly-patterns.html">06-anomaly-patterns.md</a> for anomaly injection patterns</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../roadmap/research/04-interconnectivity.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../roadmap/research/06-anomaly-patterns.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../roadmap/research/04-interconnectivity.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../roadmap/research/06-anomaly-patterns.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

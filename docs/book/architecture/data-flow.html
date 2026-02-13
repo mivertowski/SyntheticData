@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -350,6 +350,41 @@ let graph = builder.build(&amp;entries)?;
 let exporter = PyTorchGeometricExporter::new("output/graphs");
 exporter.export(&amp;graph, split_config)?;
 <span class="boring">}</span></code></pre>
+<h2 id="phase-9-enterprise-process-chains-v060"><a class="header" href="#phase-9-enterprise-process-chains-v060">Phase 9: Enterprise Process Chains (v0.6.0)</a></h2>
+<h3 id="source-to-contract-s2c-flow"><a class="header" href="#source-to-contract-s2c-flow">Source-to-Contract (S2C) Flow</a></h3>
+<pre><code>Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Contract Award → Catalog Items → [feeds into P2P] → Supplier Scorecard
+</code></pre>
+<p>S2C data feeds into the existing P2P procurement flow. Procurement contracts and catalog items provide the upstream sourcing context for purchase orders.</p>
+<h3 id="hr--payroll-flow"><a class="header" href="#hr--payroll-flow">HR / Payroll Flow</a></h3>
+<pre><code>Employees (Master Data) → Time Entries → Payroll Run → JE (Salary Expense/Cash)
+                        → Expense Reports → JE (Expense/AP)
+</code></pre>
+<p>HR data depends on the employee master data from Phase 2. Payroll runs generate journal entries that post to salary expense and cash accounts.</p>
+<h3 id="financial-reporting-flow"><a class="header" href="#financial-reporting-flow">Financial Reporting Flow</a></h3>
+<pre><code>Trial Balance → Balance Sheet + Income Statement
+             → Cash Flow Statement (indirect method)
+             → Changes in Equity
+             → Management KPIs
+             → Budget Variance Analysis
+
+Payments (P2P/O2C) → Bank Reconciliation → Matched/Unmatched Items
+</code></pre>
+<p>Financial statements are derived from the adjusted trial balance. Bank reconciliations match payments from document flows against bank statement lines.</p>
+<h3 id="manufacturing-flow"><a class="header" href="#manufacturing-flow">Manufacturing Flow</a></h3>
+<pre><code>Materials (Master Data) → Production Orders → Quality Inspections
+                                            → Cycle Counts
+</code></pre>
+<p>Manufacturing data depends on materials from the master data. Production orders consume raw materials and produce finished goods.</p>
+<h3 id="sales-quote-flow"><a class="header" href="#sales-quote-flow">Sales Quote Flow</a></h3>
+<pre><code>Customers (Master Data) → Sales Quotes → [feeds into O2C when won]
+</code></pre>
+<p>The quote-to-order pipeline generates sales quotes that, when won, link to sales orders in the O2C flow.</p>
+<h3 id="accounting-standards-flow"><a class="header" href="#accounting-standards-flow">Accounting Standards Flow</a></h3>
+<pre><code>Customers → Customer Contracts → Performance Obligations (ASC 606/IFRS 15)
+Fixed Assets → Impairment Tests → Recoverable Amount Calculations
+</code></pre>
+<p>Revenue recognition generates contracts with performance obligations. Impairment testing evaluates fixed asset carrying amounts against recoverable values.</p>
 <h2 id="data-dependencies"><a class="header" href="#data-dependencies">Data Dependencies</a></h2>
 <pre><code>         ┌─────────────┐
          │    Config   │
@@ -376,12 +411,12 @@ exporter.export(&amp;graph, split_config)?;
         │   Entries   │
         └──────┬──────┘
                │
-    ┌──────────┼──────────┐
-    │          │          │
-    ▼          ▼          ▼
-┌───────┐ ┌───────┐ ┌───────┐
-│  TB   │ │ Graph │ │Labels │
-└───────┘ └───────┘ └───────┘
+    ┌──────────┼──────────┐──────────┐──────────┐
+    │          │          │          │          │
+    ▼          ▼          ▼          ▼          ▼
+┌───────┐ ┌───────┐ ┌───────┐ ┌─────────┐ ┌───────┐
+│  TB   │ │ Graph │ │Labels │ │Fin.Stmt │ │BankRec│
+└───────┘ └───────┘ └───────┘ └─────────┘ └───────┘
 </code></pre>
 <h2 id="streaming-vs-batch"><a class="header" href="#streaming-vs-batch">Streaming vs Batch</a></h2>
 <h3 id="batch-mode"><a class="header" href="#batch-mode">Batch Mode</a></h3>

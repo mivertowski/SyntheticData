@@ -11,6 +11,7 @@ description = "Graph/network export for synthetic accounting data - supports PyT
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-banking = { workspace = true }
+datasynth-ocpm = { workspace = true }
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true }

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -464,6 +464,48 @@ period_close:
     closing_entries: true
     retained_earnings: true
 </code></pre>
+<h2 id="financial-reporting-v060"><a class="header" href="#financial-reporting-v060">Financial Reporting (v0.6.0)</a></h2>
+<p>The <code>financial_reporting</code> section generates structured financial statements, management KPIs, and budgets derived from the underlying journal entries, trial balances, and period close data.</p>
+<h3 id="financial-statements"><a class="header" href="#financial-statements">Financial Statements</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  enabled: true
+  generate_balance_sheet: true         # Balance sheet
+  generate_income_statement: true      # Income statement / P&amp;L
+  generate_cash_flow: true             # Cash flow statement
+  generate_changes_in_equity: true     # Statement of changes in equity
+  comparative_periods: 1               # Number of prior-period comparatives
+</code></pre>
+<p>When enabled, the generator produces financial statements at each period close. The <code>comparative_periods</code> setting controls how many prior periods are included for comparative analysis. Statements are aggregated from the trial balance and subledger data, ensuring consistency with the underlying journal entries.</p>
+<h3 id="management-kpis"><a class="header" href="#management-kpis">Management KPIs</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  management_kpis:
+    enabled: true
+    frequency: "monthly"               # monthly or quarterly
+</code></pre>
+<p>Management KPIs include ratios and metrics computed from the generated financial data:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>KPI Category</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td>Liquidity</td><td>Current ratio, quick ratio, cash conversion cycle</td></tr>
+<tr><td>Profitability</td><td>Gross margin, operating margin, ROE, ROA</td></tr>
+<tr><td>Efficiency</td><td>Inventory turnover, receivables turnover, asset turnover</td></tr>
+<tr><td>Leverage</td><td>Debt-to-equity, interest coverage</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="budgets"><a class="header" href="#budgets">Budgets</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  budgets:
+    enabled: true
+    revenue_growth_rate: 0.05          # 5% expected growth
+    expense_inflation_rate: 0.03       # 3% cost inflation
+    variance_noise: 0.10               # 10% random noise on actuals vs budget
+</code></pre>
+<p>Budget generation creates a budget line for each GL account based on prior-period actuals, adjusted by the configured growth and inflation rates. The <code>variance_noise</code> parameter controls the spread between budget and actual figures, producing realistic budget-to-actual variance reports.</p>
+<hr>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>
 <li><a href="companies.html">Companies</a></li>

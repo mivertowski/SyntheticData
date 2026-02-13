@@ -1,0 +1,676 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>datasynth-generators - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="datasynth-generators"><a class="header" href="#datasynth-generators">datasynth-generators</a></h1>
+<p>Data generators for journal entries, master data, document flows, and anomalies.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p><code>datasynth-generators</code> contains all data generation logic for SyntheticData:</p>
+<ul>
+<li><strong>Core Generators</strong>: Journal entries, chart of accounts, users</li>
+<li><strong>Master Data</strong>: Vendors, customers, materials, assets, employees</li>
+<li><strong>Document Flows</strong>: P2P (Procure-to-Pay), O2C (Order-to-Cash)</li>
+<li><strong>Financial</strong>: Intercompany, balance tracking, subledgers, FX, period close</li>
+<li><strong>Quality</strong>: Anomaly injection, data quality variations</li>
+<li><strong>Sourcing (S2C)</strong>: Spend analysis, RFx, bids, contracts, catalogs, scorecards (v0.6.0)</li>
+<li><strong>HR / Payroll</strong>: Payroll runs, time entries, expense reports (v0.6.0)</li>
+<li><strong>Financial Reporting</strong>: Financial statements, bank reconciliation (v0.6.0)</li>
+<li><strong>Standards</strong>: Revenue recognition, impairment testing (v0.6.0)</li>
+<li><strong>Manufacturing</strong>: Production orders, quality inspections, cycle counts (v0.6.0)</li>
+</ul>
+<h2 id="module-structure"><a class="header" href="#module-structure">Module Structure</a></h2>
+<h3 id="core-generators"><a class="header" href="#core-generators">Core Generators</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>je_generator</code></td><td>Journal entry generation with statistical distributions</td></tr>
+<tr><td><code>coa_generator</code></td><td>Chart of accounts with industry-specific structures</td></tr>
+<tr><td><code>company_selector</code></td><td>Weighted company selection for transactions</td></tr>
+<tr><td><code>user_generator</code></td><td>User/persona generation with roles</td></tr>
+<tr><td><code>control_generator</code></td><td>Internal controls and SoD rules</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="master-data-master_data"><a class="header" href="#master-data-master_data">Master Data (<code>master_data/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>vendor_generator</code></td><td>Vendors with payment terms, bank accounts, behaviors</td></tr>
+<tr><td><code>customer_generator</code></td><td>Customers with credit ratings, payment patterns</td></tr>
+<tr><td><code>material_generator</code></td><td>Materials/products with BOM, valuations</td></tr>
+<tr><td><code>asset_generator</code></td><td>Fixed assets with depreciation schedules</td></tr>
+<tr><td><code>employee_generator</code></td><td>Employees with manager hierarchy</td></tr>
+<tr><td><code>entity_registry_manager</code></td><td>Central entity registry with temporal validity</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="document-flow-document_flow"><a class="header" href="#document-flow-document_flow">Document Flow (<code>document_flow/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>p2p_generator</code></td><td>PO → GR → Invoice → Payment flow</td></tr>
+<tr><td><code>o2c_generator</code></td><td>SO → Delivery → Invoice → Receipt flow</td></tr>
+<tr><td><code>document_chain_manager</code></td><td>Reference chain management</td></tr>
+<tr><td><code>document_flow_je_generator</code></td><td>Generate JEs from document flows</td></tr>
+<tr><td><code>three_way_match</code></td><td>PO/GR/Invoice matching validation</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="intercompany-intercompany"><a class="header" href="#intercompany-intercompany">Intercompany (<code>intercompany/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ic_generator</code></td><td>Matched intercompany entry pairs</td></tr>
+<tr><td><code>matching_engine</code></td><td>IC matching and reconciliation</td></tr>
+<tr><td><code>elimination_generator</code></td><td>Consolidation elimination entries</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="balance-balance"><a class="header" href="#balance-balance">Balance (<code>balance/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>opening_balance_generator</code></td><td>Coherent opening balance sheet</td></tr>
+<tr><td><code>balance_tracker</code></td><td>Running balance validation</td></tr>
+<tr><td><code>trial_balance_generator</code></td><td>Period-end trial balance</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="subledger-subledger"><a class="header" href="#subledger-subledger">Subledger (<code>subledger/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ar_generator</code></td><td>AR invoices, receipts, credit memos, aging</td></tr>
+<tr><td><code>ap_generator</code></td><td>AP invoices, payments, debit memos</td></tr>
+<tr><td><code>fa_generator</code></td><td>Fixed assets, depreciation, disposals</td></tr>
+<tr><td><code>inventory_generator</code></td><td>Inventory positions, movements, valuation</td></tr>
+<tr><td><code>reconciliation</code></td><td>GL-to-subledger reconciliation</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="fx-fx"><a class="header" href="#fx-fx">FX (<code>fx/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>fx_rate_service</code></td><td>FX rate generation (Ornstein-Uhlenbeck process)</td></tr>
+<tr><td><code>currency_translator</code></td><td>Trial balance translation</td></tr>
+<tr><td><code>cta_generator</code></td><td>Currency Translation Adjustment entries</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="period-close-period_close"><a class="header" href="#period-close-period_close">Period Close (<code>period_close/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>close_engine</code></td><td>Main orchestration</td></tr>
+<tr><td><code>accruals</code></td><td>Accrual entry generation</td></tr>
+<tr><td><code>depreciation</code></td><td>Monthly depreciation runs</td></tr>
+<tr><td><code>year_end</code></td><td>Year-end closing entries</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="anomaly-anomaly"><a class="header" href="#anomaly-anomaly">Anomaly (<code>anomaly/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>injector</code></td><td>Main anomaly injection engine</td></tr>
+<tr><td><code>types</code></td><td>Weighted anomaly type configurations</td></tr>
+<tr><td><code>strategies</code></td><td>Injection strategies (amount, date, duplication)</td></tr>
+<tr><td><code>patterns</code></td><td>Temporal patterns, clustering, entity targeting</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="data-quality-data_quality"><a class="header" href="#data-quality-data_quality">Data Quality (<code>data_quality/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>injector</code></td><td>Main data quality injector</td></tr>
+<tr><td><code>missing_values</code></td><td>MCAR, MAR, MNAR, Systematic patterns</td></tr>
+<tr><td><code>format_variations</code></td><td>Date, amount, identifier formats</td></tr>
+<tr><td><code>duplicates</code></td><td>Exact, near, fuzzy duplicates</td></tr>
+<tr><td><code>typos</code></td><td>Keyboard-aware typos, OCR errors</td></tr>
+<tr><td><code>labels</code></td><td>ML training labels for data quality issues</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="audit-audit"><a class="header" href="#audit-audit">Audit (<code>audit/</code>)</a></h3>
+<p>ISA-compliant audit data generation.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>engagement_generator</code></td><td>Audit engagement with phases (Planning, Fieldwork, Completion)</td></tr>
+<tr><td><code>workpaper_generator</code></td><td>Audit workpapers per ISA 230</td></tr>
+<tr><td><code>evidence_generator</code></td><td>Audit evidence per ISA 500</td></tr>
+<tr><td><code>risk_generator</code></td><td>Risk assessment per ISA 315/330</td></tr>
+<tr><td><code>finding_generator</code></td><td>Audit findings per ISA 265</td></tr>
+<tr><td><code>judgment_generator</code></td><td>Professional judgment documentation per ISA 200</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="llm-enrichment-llm_enrichment--v050"><a class="header" href="#llm-enrichment-llm_enrichment--v050">LLM Enrichment (<code>llm_enrichment/</code>) — v0.5.0</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>VendorLlmEnricher</code></td><td>Generate realistic vendor names by industry, spend category, and country</td></tr>
+<tr><td><code>TransactionLlmEnricher</code></td><td>Generate transaction descriptions and memo fields</td></tr>
+<tr><td><code>AnomalyLlmExplainer</code></td><td>Generate natural language explanations for injected anomalies</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="sourcing-sourcing--v060"><a class="header" href="#sourcing-sourcing--v060">Sourcing (<code>sourcing/</code>) – v0.6.0</a></h3>
+<p>Source-to-Contract (S2C) procurement pipeline generators.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>spend_analysis_generator</code></td><td>Spend analysis records and category hierarchies</td></tr>
+<tr><td><code>sourcing_project_generator</code></td><td>Sourcing project lifecycle management</td></tr>
+<tr><td><code>qualification_generator</code></td><td>Supplier qualification assessments</td></tr>
+<tr><td><code>rfx_generator</code></td><td>RFx events (RFI/RFP/RFQ) with invited suppliers</td></tr>
+<tr><td><code>bid_generator</code></td><td>Supplier bids with pricing and compliance data</td></tr>
+<tr><td><code>bid_evaluation_generator</code></td><td>Bid scoring, ranking, and award recommendations</td></tr>
+<tr><td><code>contract_generator</code></td><td>Procurement contracts with terms and renewal rules</td></tr>
+<tr><td><code>catalog_generator</code></td><td>Catalog items linked to contracts</td></tr>
+<tr><td><code>scorecard_generator</code></td><td>Supplier scorecards with performance metrics</td></tr>
+</tbody>
+</table>
+</div>
+<p>Generation DAG: <code>spend_analysis -&gt; sourcing_project -&gt; qualification -&gt; rfx -&gt; bid -&gt; bid_evaluation -&gt; contract -&gt; catalog -&gt; [P2P] -&gt; scorecard</code></p>
+<h3 id="hr-hr--v060"><a class="header" href="#hr-hr--v060">HR (<code>hr/</code>) – v0.6.0</a></h3>
+<p>Hire-to-Retire (H2R) generators for the HR process chain.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>payroll_generator</code></td><td>Payroll runs with employee pay line items (gross, deductions, net, employer cost)</td></tr>
+<tr><td><code>time_entry_generator</code></td><td>Employee time entries with regular, overtime, PTO, and sick hours</td></tr>
+<tr><td><code>expense_report_generator</code></td><td>Expense reports with categorized line items and approval workflows</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="standards-standards--v060"><a class="header" href="#standards-standards--v060">Standards (<code>standards/</code>) – v0.6.0</a></h3>
+<p>Accounting and audit standards generators.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>revenue_recognition_generator</code></td><td>ASC 606/IFRS 15 customer contracts with performance obligations</td></tr>
+<tr><td><code>impairment_generator</code></td><td>Asset impairment tests with recoverable amount calculations</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="period-close-additions--v060"><a class="header" href="#period-close-additions--v060">Period Close Additions – v0.6.0</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>financial_statement_generator</code></td><td>Balance sheet, income statement, cash flow, and changes in equity from trial balance data</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank-reconciliation--v060"><a class="header" href="#bank-reconciliation--v060">Bank Reconciliation – v0.6.0</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bank_reconciliation_generator</code></td><td>Bank reconciliations with statement lines, auto-matching, and reconciling items</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="relationships-relationships"><a class="header" href="#relationships-relationships">Relationships (<code>relationships/</code>)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>entity_graph_generator</code></td><td>Cross-process entity relationship graphs</td></tr>
+<tr><td><code>relationship_strength</code></td><td>Weighted relationship strength calculation</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Audit Engagement Structure:</strong></p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct AuditEngagement {
+    pub engagement_id: String,
+    pub client_name: String,
+    pub fiscal_year: u16,
+    pub phase: AuditPhase,  // Planning, Fieldwork, Completion
+    pub materiality: MaterialityLevels,
+    pub team_size: usize,
+    pub has_fraud_risk: bool,
+    pub has_significant_risk: bool,
+}
+
+pub struct MaterialityLevels {
+    pub primary_materiality: Decimal,        // 0.3-1% of base
+    pub performance_materiality: Decimal,    // 50-75% of primary
+    pub clearly_trivial: Decimal,            // 3-5% of primary
+}
+<span class="boring">}</span></code></pre>
+<h2 id="usage-examples"><a class="header" href="#usage-examples">Usage Examples</a></h2>
+<h3 id="journal-entry-generation"><a class="header" href="#journal-entry-generation">Journal Entry Generation</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::je_generator::JournalEntryGenerator;
+
+let mut generator = JournalEntryGenerator::new(config, seed);
+
+// Generate batch
+let entries = generator.generate_batch(1000)?;
+
+// Stream generation
+for entry in generator.generate_stream().take(1000) {
+    process(entry?);
+}
+<span class="boring">}</span></code></pre>
+<h3 id="master-data-generation"><a class="header" href="#master-data-generation">Master Data Generation</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::master_data::{VendorGenerator, CustomerGenerator};
+
+let mut vendor_gen = VendorGenerator::new(seed);
+let vendors = vendor_gen.generate(100);
+
+let mut customer_gen = CustomerGenerator::new(seed);
+let customers = customer_gen.generate(200);
+<span class="boring">}</span></code></pre>
+<h3 id="document-flow-generation"><a class="header" href="#document-flow-generation">Document Flow Generation</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::document_flow::{P2pGenerator, O2cGenerator};
+
+let mut p2p = P2pGenerator::new(config, seed);
+let p2p_flows = p2p.generate_batch(500)?;
+
+let mut o2c = O2cGenerator::new(config, seed);
+let o2c_flows = o2c.generate_batch(500)?;
+<span class="boring">}</span></code></pre>
+<h3 id="anomaly-injection"><a class="header" href="#anomaly-injection">Anomaly Injection</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::anomaly::AnomalyInjector;
+
+let mut injector = AnomalyInjector::new(config.anomaly_injection, seed);
+
+// Inject into existing entries
+let (modified_entries, labels) = injector.inject(&amp;entries)?;
+<span class="boring">}</span></code></pre>
+<h3 id="llm-enrichment"><a class="header" href="#llm-enrichment">LLM Enrichment</a></h3>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::llm_enrichment::{VendorLlmEnricher, TransactionLlmEnricher};
+use synth_core::llm::MockLlmProvider;
+use std::sync::Arc;
+
+let provider = Arc::new(MockLlmProvider::new(42));
+
+// Enrich vendor names
+let vendor_enricher = VendorLlmEnricher::new(provider.clone());
+let name = vendor_enricher.enrich_vendor_name("manufacturing", "raw_materials", "US")?;
+
+// Enrich transaction descriptions
+let tx_enricher = TransactionLlmEnricher::new(provider);
+let desc = tx_enricher.enrich_description("Office Supplies", "1000-5000", "retail", 3)?;
+let memo = tx_enricher.enrich_memo("VendorInvoice", "Acme Corp", "2500.00")?;
+<span class="boring">}</span></code></pre>
+<h2 id="three-way-match"><a class="header" href="#three-way-match">Three-Way Match</a></h2>
+<p>The P2P generator validates document matching:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::document_flow::ThreeWayMatch;
+
+let match_result = ThreeWayMatch::validate(
+    &amp;purchase_order,
+    &amp;goods_receipt,
+    &amp;vendor_invoice,
+    tolerance_config,
+);
+
+match match_result {
+    MatchResult::Passed =&gt; { /* Process normally */ }
+    MatchResult::QuantityVariance(var) =&gt; { /* Handle variance */ }
+    MatchResult::PriceVariance(var) =&gt; { /* Handle variance */ }
+}
+<span class="boring">}</span></code></pre>
+<h2 id="balance-coherence"><a class="header" href="#balance-coherence">Balance Coherence</a></h2>
+<p>The balance tracker maintains accounting equation:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::balance::BalanceTracker;
+
+let mut tracker = BalanceTracker::new();
+
+for entry in &amp;entries {
+    tracker.post(&amp;entry)?;
+}
+
+// Verify Assets = Liabilities + Equity
+assert!(tracker.is_balanced());
+<span class="boring">}</span></code></pre>
+<h2 id="fx-rate-generation"><a class="header" href="#fx-rate-generation">FX Rate Generation</a></h2>
+<p>Uses Ornstein-Uhlenbeck process for realistic rate movements:</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use synth_generators::fx::FxRateService;
+
+let mut fx_service = FxRateService::new(config.fx, seed);
+
+// Get rate for date
+let rate = fx_service.get_rate("EUR", "USD", date)?;
+
+// Generate daily rates
+let rates = fx_service.generate_daily_rates(start, end)?;
+<span class="boring">}</span></code></pre>
+<h2 id="anomaly-types"><a class="header" href="#anomaly-types">Anomaly Types</a></h2>
+<h3 id="fraud-types"><a class="header" href="#fraud-types">Fraud Types</a></h3>
+<ul>
+<li>FictitiousTransaction, RevenueManipulation, ExpenseCapitalization</li>
+<li>SplitTransaction, RoundTripping, KickbackScheme</li>
+<li>GhostEmployee, DuplicatePayment, UnauthorizedDiscount</li>
+</ul>
+<h3 id="error-types"><a class="header" href="#error-types">Error Types</a></h3>
+<ul>
+<li>DuplicateEntry, ReversedAmount, WrongPeriod</li>
+<li>WrongAccount, MissingReference, IncorrectTaxCode</li>
+</ul>
+<h3 id="process-issues"><a class="header" href="#process-issues">Process Issues</a></h3>
+<ul>
+<li>LatePosting, SkippedApproval, ThresholdManipulation</li>
+<li>MissingDocumentation, OutOfSequence</li>
+</ul>
+<h3 id="statistical-anomalies"><a class="header" href="#statistical-anomalies">Statistical Anomalies</a></h3>
+<ul>
+<li>UnusualAmount, TrendBreak, BenfordViolation, OutlierValue</li>
+</ul>
+<h3 id="relational-anomalies"><a class="header" href="#relational-anomalies">Relational Anomalies</a></h3>
+<ul>
+<li>CircularTransaction, DormantAccountActivity, UnusualCounterparty</li>
+</ul>
+<h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
+<ul>
+<li><a href="datasynth-core.html">datasynth-core</a></li>
+<li><a href="../advanced/anomaly-injection.html">Anomaly Injection</a></li>
+<li><a href="../configuration/document-flows.html">Document Flows</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../crates/datasynth-config.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../crates/datasynth-output.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../crates/datasynth-config.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../crates/datasynth-output.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

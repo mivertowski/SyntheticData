@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-02-13
+
+### Added
+
+- **Universal OCPM Generation** (`datasynth-ocpm`): Extended process mining from 2 to 8 process families with 88 total activities and 52 object types
+  - **S2C Generator**: Source-to-Contract process events — sourcing projects, supplier qualification, RFx, bids, evaluations, contracts (8 activities, 6 object types)
+  - **H2R Generator**: Hire-to-Retire process events — payroll runs, time entries, expense reports with approval chains (8 activities, 4 object types)
+  - **MFG Generator**: Manufacturing process events — production orders, routing operations, quality inspections, cycle counts (10 activities, 4 object types)
+  - **BANK Generator**: Banking operations process events — customer onboarding, KYC, account management, transaction lifecycle (8 activities, 3 object types)
+  - **AUDIT Generator**: Audit engagement lifecycle events — planning, risk assessment, workpapers, evidence, findings, judgments (10 activities, 6 object types)
+  - **Bank Recon Generator**: Bank reconciliation process events — statement import, auto/manual matching, exception resolution (8 activities, 3 object types)
+  - All generators support three variant types: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
+  - Per-family config toggles: `generate_s2c`, `generate_h2r`, `generate_mfg`, `generate_bank`, `generate_audit`, `generate_bank_recon`
+
+- **Expanded Hypergraph Builder** (`datasynth-graph`): Extended from P2P/O2C to all 8 process families with 24 new entity type codes
+  - `add_s2c_documents()`: Sourcing project, RFx, bid, contract nodes with intra-chain edges
+  - `add_h2r_documents()`: Payroll, time entry, expense report nodes linked to employees
+  - `add_mfg_documents()`: Production order, quality inspection, cycle count nodes linked to materials
+  - `add_bank_documents()`: Banking customer, account, transaction nodes
+  - `add_audit_documents()`: Engagement, workpaper, finding, evidence, risk, judgment nodes
+  - `add_bank_recon_documents()`: Reconciliation, statement line, reconciling item nodes
+  - `add_ocpm_events()`: OCPM events as hyperedges connecting all participating object nodes (entity type 400)
+  - Per-family config toggles: `include_s2c`, `include_h2r`, `include_mfg`, `include_bank`, `include_audit`, `include_r2r`
+  - Entity type code ranges: S2C (320-325), H2R (330-333), MFG (340-343), BANK (350-352), AUDIT (360-365), Bank Recon (370-372), OCPM Events (400)
+
+- **BusinessProcess Enum Extensions** (`datasynth-core`): Added `S2C`, `Mfg`, `Bank`, `Audit` variants for process classification
+
+- **Orchestrator Phase Reordering** (`datasynth-runtime`): OCPM generation moved to Phase 18b (after all data generation) and hypergraph export to Phase 19b (after OCPM) for correct data flow
+
+### Changed
+
+- OCPM event log now contains events from all 8 process families (P2P, O2C, S2C, H2R, MFG, R2R, BANK, AUDIT)
+- Hypergraph `nodes.jsonl` includes entity types 100-400 spanning all process families
+- Hypergraph `hyperedges.jsonl` includes OCPM events when `events_as_hyperedges: true`
+- `ProcessLayerSettings` extended with 6 new per-family toggle fields
+- `HypergraphConfig` extended with matching per-family toggle fields
+- `OcpmGeneratorConfig` extended with per-family generation toggles
+- Comprehensive eval test marked `#[ignore]` to exclude from normal `cargo test` runs (run with `--ignored` flag)
+
+### Fixed
+
+- CI pipeline: Added separate `eval` job for comprehensive evaluation test (runs only on main pushes, 30-min timeout)
+
 ## [0.6.1] - 2026-02-13
 
 ### Added

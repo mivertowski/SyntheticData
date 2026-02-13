@@ -509,6 +509,24 @@ pub struct ProcessLayerSettings {
     /// Include O2C (Order-to-Cash) document flow nodes.
     #[serde(default = "default_true")]
     pub include_o2c: bool,
+    /// Include S2C (Source-to-Contract) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_s2c: bool,
+    /// Include H2R (Hire-to-Retire) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_h2r: bool,
+    /// Include MFG (Manufacturing) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_mfg: bool,
+    /// Include BANK (Banking) document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_bank: bool,
+    /// Include AUDIT document flow nodes.
+    #[serde(default = "default_true")]
+    pub include_audit: bool,
+    /// Include R2R (Record-to-Report) document flow nodes (bank recon + period close).
+    #[serde(default = "default_true")]
+    pub include_r2r: bool,
     /// Export OCPM events as hyperedges.
     #[serde(default = "default_true")]
     pub events_as_hyperedges: bool,
@@ -526,6 +544,12 @@ impl Default for ProcessLayerSettings {
         Self {
             include_p2p: true,
             include_o2c: true,
+            include_s2c: true,
+            include_h2r: true,
+            include_mfg: true,
+            include_bank: true,
+            include_audit: true,
+            include_r2r: true,
             events_as_hyperedges: true,
             docs_per_counterparty_threshold: 20,
         }

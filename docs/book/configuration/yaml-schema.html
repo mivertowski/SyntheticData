@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -202,6 +202,11 @@ business_processes:        # Process distribution
 templates:                 # External templates
 approval:                  # Approval thresholds
 departments:               # Department distribution
+source_to_pay:             # Source-to-Pay (v0.6.0)
+financial_reporting:       # Financial statements &amp; KPIs (v0.6.0)
+hr:                        # HR / payroll / expenses (v0.6.0)
+manufacturing:             # Production orders &amp; costing (v0.6.0)
+sales_quotes:              # Quote-to-order pipeline (v0.6.0)
 </code></pre>
 <h2 id="global"><a class="header" href="#global">global</a></h2>
 <pre><code class="language-yaml">global:
@@ -586,6 +591,232 @@ departments:               # Department distribution
 <tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Attach certificate to generated output</td></tr>
 <tr><td><code>issuer</code></td><td>string</td><td><code>"DataSynth"</code></td><td>Issuer identity for the certificate</td></tr>
 <tr><td><code>include_quality_metrics</code></td><td>bool</td><td><code>true</code></td><td>Include Benford MAD, correlation, fidelity metrics</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="source-to-pay-configuration-v060"><a class="header" href="#source-to-pay-configuration-v060">Source-to-Pay Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: false                       # Enable source-to-pay generation
+
+  spend_analysis:
+    hhi_threshold: 2500.0              # f64 - HHI threshold for sourcing trigger
+    contract_coverage_target: 0.80     # f64, 0-1 - target spend under contracts
+
+  sourcing:
+    projects_per_year: 10              # u32 - sourcing projects per year
+    renewal_horizon_months: 3          # u32 - months before expiry to trigger renewal
+    project_duration_months: 4         # u32 - average project duration
+
+  qualification:
+    pass_rate: 0.75                    # f64, 0-1 - qualification pass rate
+    validity_days: 365                 # u32 - qualification validity in days
+    financial_weight: 0.25             # f64 - financial stability weight
+    quality_weight: 0.30               # f64 - quality management weight
+    delivery_weight: 0.25              # f64 - delivery performance weight
+    compliance_weight: 0.20            # f64 - compliance weight
+
+  rfx:
+    rfi_threshold: 100000.0            # f64 - spend above which RFI required
+    min_invited_vendors: 3             # u32 - minimum vendors per RFx
+    max_invited_vendors: 8             # u32 - maximum vendors per RFx
+    response_rate: 0.70                # f64, 0-1 - vendor response rate
+    default_price_weight: 0.40         # f64 - price weight in evaluation
+    default_quality_weight: 0.35       # f64 - quality weight in evaluation
+    default_delivery_weight: 0.25      # f64 - delivery weight in evaluation
+
+  contracts:
+    min_duration_months: 12            # u32 - minimum contract duration
+    max_duration_months: 36            # u32 - maximum contract duration
+    auto_renewal_rate: 0.40            # f64, 0-1 - auto-renewal rate
+    amendment_rate: 0.20               # f64, 0-1 - contracts with amendments
+    type_distribution:
+      fixed_price: 0.40               # f64 - fixed price contracts
+      blanket: 0.30                    # f64 - blanket/framework agreements
+      time_and_materials: 0.15         # f64 - T&amp;M contracts
+      service_agreement: 0.15          # f64 - service agreements
+
+  catalog:
+    preferred_vendor_flag_rate: 0.70   # f64, 0-1 - items marked as preferred
+    multi_source_rate: 0.25            # f64, 0-1 - items with multiple sources
+
+  scorecards:
+    frequency: "quarterly"             # string - review frequency
+    on_time_delivery_weight: 0.30      # f64 - OTD weight in score
+    quality_weight: 0.30               # f64 - quality weight in score
+    price_weight: 0.25                 # f64 - price competitiveness weight
+    responsiveness_weight: 0.15        # f64 - responsiveness weight
+    grade_a_threshold: 90.0            # f64 - grade A threshold
+    grade_b_threshold: 75.0            # f64 - grade B threshold
+    grade_c_threshold: 60.0            # f64 - grade C threshold
+
+  p2p_integration:
+    off_contract_rate: 0.15            # f64, 0-1 - maverick purchase rate
+    price_tolerance: 0.02              # f64 - contract price variance allowed
+    catalog_enforcement: false          # bool - enforce catalog ordering
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable source-to-pay generation</td></tr>
+<tr><td><code>sourcing.projects_per_year</code></td><td>u32</td><td><code>10</code></td><td>Sourcing projects per year</td></tr>
+<tr><td><code>qualification.pass_rate</code></td><td>f64</td><td><code>0.75</code></td><td>Supplier qualification pass rate</td></tr>
+<tr><td><code>rfx.response_rate</code></td><td>f64</td><td><code>0.70</code></td><td>Fraction of invited vendors that respond</td></tr>
+<tr><td><code>contracts.auto_renewal_rate</code></td><td>f64</td><td><code>0.40</code></td><td>Auto-renewal rate</td></tr>
+<tr><td><code>scorecards.frequency</code></td><td>string</td><td><code>"quarterly"</code></td><td>Scorecard review frequency</td></tr>
+<tr><td><code>p2p_integration.off_contract_rate</code></td><td>f64</td><td><code>0.15</code></td><td>Rate of off-contract (maverick) purchases</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="financial-reporting-configuration-v060"><a class="header" href="#financial-reporting-configuration-v060">Financial Reporting Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">financial_reporting:
+  enabled: false                       # Enable financial reporting generation
+  generate_balance_sheet: true         # bool - generate balance sheet
+  generate_income_statement: true      # bool - generate income statement
+  generate_cash_flow: true             # bool - generate cash flow statement
+  generate_changes_in_equity: true     # bool - generate changes in equity
+  comparative_periods: 1               # u32 - number of comparative periods
+
+  management_kpis:
+    enabled: false                     # bool - enable KPI generation
+    frequency: "monthly"               # string - monthly, quarterly
+
+  budgets:
+    enabled: false                     # bool - enable budget generation
+    revenue_growth_rate: 0.05          # f64 - expected revenue growth rate
+    expense_inflation_rate: 0.03       # f64 - expected expense inflation rate
+    variance_noise: 0.10               # f64 - noise for budget vs actual
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable financial reporting generation</td></tr>
+<tr><td><code>generate_balance_sheet</code></td><td>bool</td><td><code>true</code></td><td>Generate balance sheet output</td></tr>
+<tr><td><code>generate_income_statement</code></td><td>bool</td><td><code>true</code></td><td>Generate income statement output</td></tr>
+<tr><td><code>generate_cash_flow</code></td><td>bool</td><td><code>true</code></td><td>Generate cash flow statement output</td></tr>
+<tr><td><code>generate_changes_in_equity</code></td><td>bool</td><td><code>true</code></td><td>Generate changes in equity statement</td></tr>
+<tr><td><code>comparative_periods</code></td><td>u32</td><td><code>1</code></td><td>Number of comparative periods to include</td></tr>
+<tr><td><code>management_kpis.enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable management KPI calculation</td></tr>
+<tr><td><code>management_kpis.frequency</code></td><td>string</td><td><code>"monthly"</code></td><td>KPI calculation frequency</td></tr>
+<tr><td><code>budgets.enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable budget generation</td></tr>
+<tr><td><code>budgets.revenue_growth_rate</code></td><td>f64</td><td><code>0.05</code></td><td>Expected revenue growth rate for budgeting</td></tr>
+<tr><td><code>budgets.expense_inflation_rate</code></td><td>f64</td><td><code>0.03</code></td><td>Expected expense inflation rate</td></tr>
+<tr><td><code>budgets.variance_noise</code></td><td>f64</td><td><code>0.10</code></td><td>Random noise added to budget vs actual</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="hr-configuration-v060"><a class="header" href="#hr-configuration-v060">HR Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">hr:
+  enabled: false                       # Enable HR generation
+
+  payroll:
+    enabled: true                      # bool - enable payroll generation
+    pay_frequency: "monthly"           # string - monthly, biweekly, weekly
+    salary_ranges:
+      staff_min: 50000.0               # f64 - staff level minimum salary
+      staff_max: 70000.0               # f64 - staff level maximum salary
+      manager_min: 80000.0             # f64 - manager level minimum salary
+      manager_max: 120000.0            # f64 - manager level maximum salary
+      director_min: 120000.0           # f64 - director level minimum salary
+      director_max: 180000.0           # f64 - director level maximum salary
+      executive_min: 180000.0          # f64 - executive level minimum salary
+      executive_max: 350000.0          # f64 - executive level maximum salary
+    tax_rates:
+      federal_effective: 0.22          # f64 - federal effective tax rate
+      state_effective: 0.05            # f64 - state effective tax rate
+      fica: 0.0765                     # f64 - FICA/social security rate
+    benefits_enrollment_rate: 0.60     # f64, 0-1 - benefits enrollment rate
+    retirement_participation_rate: 0.45 # f64, 0-1 - retirement plan participation
+
+  time_attendance:
+    enabled: true                      # bool - enable time tracking
+    overtime_rate: 0.10                # f64, 0-1 - employees with overtime
+
+  expenses:
+    enabled: true                      # bool - enable expense report generation
+    submission_rate: 0.30              # f64, 0-1 - employees submitting per month
+    policy_violation_rate: 0.08        # f64, 0-1 - rate of policy violations
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable HR generation</td></tr>
+<tr><td><code>payroll.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable payroll generation</td></tr>
+<tr><td><code>payroll.pay_frequency</code></td><td>string</td><td><code>"monthly"</code></td><td>Pay frequency: <code>monthly</code>, <code>biweekly</code>, <code>weekly</code></td></tr>
+<tr><td><code>payroll.benefits_enrollment_rate</code></td><td>f64</td><td><code>0.60</code></td><td>Benefits enrollment rate</td></tr>
+<tr><td><code>payroll.retirement_participation_rate</code></td><td>f64</td><td><code>0.45</code></td><td>Retirement plan participation rate</td></tr>
+<tr><td><code>time_attendance.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable time tracking</td></tr>
+<tr><td><code>time_attendance.overtime_rate</code></td><td>f64</td><td><code>0.10</code></td><td>Rate of employees with overtime</td></tr>
+<tr><td><code>expenses.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable expense report generation</td></tr>
+<tr><td><code>expenses.submission_rate</code></td><td>f64</td><td><code>0.30</code></td><td>Rate of employees submitting expenses per month</td></tr>
+<tr><td><code>expenses.policy_violation_rate</code></td><td>f64</td><td><code>0.08</code></td><td>Rate of policy violations</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="manufacturing-configuration-v060"><a class="header" href="#manufacturing-configuration-v060">Manufacturing Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">manufacturing:
+  enabled: false                       # Enable manufacturing generation
+
+  production_orders:
+    orders_per_month: 50               # u32 - production orders per month
+    avg_batch_size: 100                # u32 - average batch size
+    yield_rate: 0.97                   # f64, 0-1 - production yield rate
+    make_to_order_rate: 0.20           # f64, 0-1 - MTO vs MTS ratio
+    rework_rate: 0.03                  # f64, 0-1 - rework rate
+
+  costing:
+    labor_rate_per_hour: 35.0          # f64 - labor rate per hour
+    overhead_rate: 1.50                # f64 - overhead multiplier on direct labor
+    standard_cost_update_frequency: "quarterly"  # string - cost update cycle
+
+  routing:
+    avg_operations: 4                  # u32 - average operations per routing
+    setup_time_hours: 1.5              # f64 - average setup time in hours
+    run_time_variation: 0.15           # f64 - run time variation coefficient
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable manufacturing generation</td></tr>
+<tr><td><code>production_orders.orders_per_month</code></td><td>u32</td><td><code>50</code></td><td>Number of production orders per month</td></tr>
+<tr><td><code>production_orders.avg_batch_size</code></td><td>u32</td><td><code>100</code></td><td>Average batch size</td></tr>
+<tr><td><code>production_orders.yield_rate</code></td><td>f64</td><td><code>0.97</code></td><td>Production yield rate</td></tr>
+<tr><td><code>production_orders.rework_rate</code></td><td>f64</td><td><code>0.03</code></td><td>Rework rate</td></tr>
+<tr><td><code>costing.labor_rate_per_hour</code></td><td>f64</td><td><code>35.0</code></td><td>Direct labor cost per hour</td></tr>
+<tr><td><code>costing.overhead_rate</code></td><td>f64</td><td><code>1.50</code></td><td>Overhead application multiplier</td></tr>
+<tr><td><code>routing.avg_operations</code></td><td>u32</td><td><code>4</code></td><td>Average operations per routing step</td></tr>
+<tr><td><code>routing.setup_time_hours</code></td><td>f64</td><td><code>1.5</code></td><td>Average machine setup time in hours</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="sales-quotes-configuration-v060"><a class="header" href="#sales-quotes-configuration-v060">Sales Quotes Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">sales_quotes:
+  enabled: false                       # Enable sales quote generation
+  quotes_per_month: 30                 # u32 - quotes generated per month
+  win_rate: 0.35                       # f64, 0-1 - quote-to-order conversion
+  validity_days: 30                    # u32 - default quote validity period
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable sales quote generation</td></tr>
+<tr><td><code>quotes_per_month</code></td><td>u32</td><td><code>30</code></td><td>Number of quotes generated per month</td></tr>
+<tr><td><code>win_rate</code></td><td>f64</td><td><code>0.35</code></td><td>Fraction of quotes that convert to sales orders</td></tr>
+<tr><td><code>validity_days</code></td><td>u32</td><td><code>30</code></td><td>Default quote validity period in days</td></tr>
 </tbody>
 </table>
 </div>

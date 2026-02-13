@@ -4,10 +4,12 @@ Object-Centric Process Mining (OCPM) models and generators.
 
 ## Overview
 
-`datasynth-ocpm` provides OCEL 2.0 compliant event log generation:
+`datasynth-ocpm` provides OCEL 2.0 compliant event log generation across 8 enterprise process families:
 
 - **OCEL 2.0 Models**: Events, objects, relationships per IEEE standard
-- **Process Generators**: P2P (Procure-to-Pay), O2C (Order-to-Cash) flows
+- **8 Process Generators**: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon
+- **88 Activity Types**: Covering the full enterprise lifecycle
+- **52 Object Types**: With lifecycle states and inter-object relationships
 - **Export Formats**: OCEL 2.0 JSON, XML, and SQLite
 
 ## OCEL 2.0 Standard
@@ -206,7 +208,22 @@ Tables created:
 - `event_objects`
 - `object_relationships`
 
-## Object Types
+## Process Families (v0.6.2)
+
+| Family | Generator | Activities | Object Types | Variants |
+|--------|-----------|-----------|-------------|----------|
+| **P2P** | `generate_p2p_case()` | 9 | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment, Material, Vendor | Happy, Exception, Error |
+| **O2C** | `generate_o2c_case()` | 10 | SalesOrder, Delivery, CustomerInvoice, CustomerPayment, Material, Customer | Happy, Exception, Error |
+| **S2C** | `generate_s2c_case()` | 8 | SourcingProject, SupplierQualification, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract | Happy, Exception, Error |
+| **H2R** | `generate_h2r_case()` | 8 | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport | Happy, Exception, Error |
+| **MFG** | `generate_mfg_case()` | 10 | ProductionOrder, RoutingOperation, QualityInspection, CycleCount | Happy, Exception, Error |
+| **BANK** | `generate_bank_case()` | 8 | BankingCustomer, BankAccount, BankTransaction | Happy, Exception, Error |
+| **AUDIT** | `generate_audit_case()` | 10 | AuditEngagement, Workpaper, AuditFinding, AuditEvidence, RiskAssessment, ProfessionalJudgment | Happy, Exception, Error |
+| **Bank Recon** | `generate_bank_recon_case()` | 8 | BankReconciliation, BankStatementLine, ReconcilingItem | Happy, Exception, Error |
+
+Variant distribution: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%).
+
+## Object Types (P2P/O2C)
 
 | Type | Description |
 |------|-------------|

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -356,6 +356,69 @@ Period 2 (reverse):
       - type: bonus_accrual
         rate: 0.10                   # 10% of salary expense
 </code></pre>
+<h2 id="financial-statements-v060"><a class="header" href="#financial-statements-v060">Financial Statements (v0.6.0)</a></h2>
+<p>The period close engine can now generate full financial statement sets from the adjusted trial balance. This is controlled by the <code>financial_reporting</code> configuration section.</p>
+<h3 id="balance-sheet"><a class="header" href="#balance-sheet">Balance Sheet</a></h3>
+<p>Generates a statement of financial position with current/non-current asset and liability classifications:</p>
+<pre><code>Assets                              Liabilities &amp; Equity
+├── Current Assets                  ├── Current Liabilities
+│   ├── Cash &amp; Equivalents          │   ├── Accounts Payable
+│   ├── Accounts Receivable         │   ├── Accrued Liabilities
+│   └── Inventory                   │   └── Current Debt
+├── Non-Current Assets              ├── Non-Current Liabilities
+│   ├── Fixed Assets (net)          │   └── Long-Term Debt
+│   └── Intangibles                 └── Equity
+Total Assets = Total L + E              ├── Common Stock
+                                        └── Retained Earnings
+</code></pre>
+<h3 id="income-statement"><a class="header" href="#income-statement">Income Statement</a></h3>
+<p>Generates a multi-step income statement:</p>
+<pre><code>Revenue
+- Cost of Goods Sold
+= Gross Profit
+- Operating Expenses
+= Operating Income
++/- Other Income/Expense
+= Income Before Tax
+- Income Tax
+= Net Income
+</code></pre>
+<h3 id="cash-flow-statement"><a class="header" href="#cash-flow-statement">Cash Flow Statement</a></h3>
+<p>Generates an indirect-method cash flow statement with three categories:</p>
+<pre><code class="language-yaml">financial_reporting:
+  generate_cash_flow: true
+</code></pre>
+<p>Categories:</p>
+<ul>
+<li><strong>Operating</strong>: Net income + non-cash adjustments + working capital changes</li>
+<li><strong>Investing</strong>: Capital expenditures, asset disposals</li>
+<li><strong>Financing</strong>: Debt proceeds/repayments, equity transactions, dividends</li>
+</ul>
+<h3 id="statement-of-changes-in-equity"><a class="header" href="#statement-of-changes-in-equity">Statement of Changes in Equity</a></h3>
+<p>Tracks equity movements across the period:</p>
+<ul>
+<li>Opening retained earnings</li>
+<li>Net income for the period</li>
+<li>Dividends declared</li>
+<li>Other comprehensive income (CTA, unrealized gains)</li>
+<li>Closing retained earnings</li>
+</ul>
+<h3 id="management-kpis"><a class="header" href="#management-kpis">Management KPIs</a></h3>
+<p>When <code>financial_reporting.management_kpis</code> is enabled, computes financial ratios:</p>
+<ul>
+<li><strong>Liquidity</strong>: Current ratio, quick ratio, cash ratio</li>
+<li><strong>Profitability</strong>: Gross margin, operating margin, net margin, ROA, ROE</li>
+<li><strong>Efficiency</strong>: Inventory turnover, AR turnover, AP turnover, days sales outstanding</li>
+<li><strong>Leverage</strong>: Debt-to-equity, debt-to-assets, interest coverage</li>
+</ul>
+<h3 id="budgets"><a class="header" href="#budgets">Budgets</a></h3>
+<p>When <code>financial_reporting.budgets</code> is enabled, generates budget records with variance analysis:</p>
+<pre><code class="language-yaml">financial_reporting:
+  budgets:
+    enabled: true
+    variance_threshold: 0.10    # Flag variances &gt; 10%
+</code></pre>
+<p>Produces budget vs. actual comparisons by account and period, with favorable/unfavorable variance flags.</p>
 <h2 id="output-files"><a class="header" href="#output-files">Output Files</a></h2>
 <h3 id="trial_balancesyyyy_mmcsv"><a class="header" href="#trial_balancesyyyy_mmcsv">trial_balances/YYYY_MM.csv</a></h3>
 <div class="table-wrapper">
@@ -417,6 +480,59 @@ Period 2 (reverse):
 <tr><td><code>account</code></td><td>Account closed</td></tr>
 <tr><td><code>amount</code></td><td>Closing amount</td></tr>
 <tr><td><code>fiscal_year</code></td><td>Year closed</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="financial_statementscsv-v060"><a class="header" href="#financial_statementscsv-v060">financial_statements.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>statement_id</code></td><td>Unique statement identifier</td></tr>
+<tr><td><code>statement_type</code></td><td>balance_sheet, income_statement, cash_flow, changes_in_equity</td></tr>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>period_end</code></td><td>Statement date</td></tr>
+<tr><td><code>basis</code></td><td>us_gaap, ifrs, statutory</td></tr>
+<tr><td><code>line_code</code></td><td>Line item code</td></tr>
+<tr><td><code>label</code></td><td>Display label</td></tr>
+<tr><td><code>section</code></td><td>Statement section</td></tr>
+<tr><td><code>amount</code></td><td>Current period amount</td></tr>
+<tr><td><code>amount_prior</code></td><td>Prior period amount</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank_reconciliationscsv-v060"><a class="header" href="#bank_reconciliationscsv-v060">bank_reconciliations.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>reconciliation_id</code></td><td>Unique reconciliation ID</td></tr>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>bank_account</code></td><td>Bank account identifier</td></tr>
+<tr><td><code>period_start</code></td><td>Reconciliation period start</td></tr>
+<tr><td><code>period_end</code></td><td>Reconciliation period end</td></tr>
+<tr><td><code>opening_balance</code></td><td>Opening bank balance</td></tr>
+<tr><td><code>closing_balance</code></td><td>Closing bank balance</td></tr>
+<tr><td><code>status</code></td><td>in_progress, completed, completed_with_exceptions</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="management_kpiscsv-v060"><a class="header" href="#management_kpiscsv-v060">management_kpis.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>period</code></td><td>Reporting period</td></tr>
+<tr><td><code>kpi_name</code></td><td>Ratio name (e.g., current_ratio, gross_margin)</td></tr>
+<tr><td><code>kpi_value</code></td><td>Computed ratio value</td></tr>
+<tr><td><code>category</code></td><td>liquidity, profitability, efficiency, leverage</td></tr>
 </tbody>
 </table>
 </div>

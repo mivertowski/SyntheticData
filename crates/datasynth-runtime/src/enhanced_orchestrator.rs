@@ -112,8 +112,9 @@ use datasynth_graph::{
     PyGExportConfig, PyGExporter, TransactionGraphBuilder, TransactionGraphConfig,
 };
 use datasynth_ocpm::{
-    EventLogMetadata, O2cDocuments, OcpmEventGenerator, OcpmEventLog, OcpmGeneratorConfig,
-    P2pDocuments,
+    AuditDocuments, BankDocuments, BankReconDocuments, EventLogMetadata, H2rDocuments,
+    MfgDocuments, O2cDocuments, OcpmEventGenerator, OcpmEventLog, OcpmGeneratorConfig,
+    P2pDocuments, S2cDocuments,
 };
 
 use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
@@ -1099,9 +1100,6 @@ impl EnhancedOrchestrator {
         // Phase 3: Document Flows + Subledger Linking
         let (document_flows, subledger) = self.phase_document_flows(&mut stats)?;
 
-        // Phase 3c: OCPM Events
-        let ocpm = self.phase_ocpm_events(&document_flows, &mut stats)?;
-
         // Phase 4: Journal Entries
         let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
 
@@ -1127,9 +1125,6 @@ impl EnhancedOrchestrator {
         // Phase 10: Graph Export
         let graph_export = self.phase_graph_export(&entries, &coa, &mut stats)?;
 
-        // Phase 10b: Hypergraph Export
-        self.phase_hypergraph_export(&coa, &entries, &document_flows, &mut stats)?;
-
         // Phase 11: LLM Enrichment
         self.phase_llm_enrichment(&mut stats);
 
@@ -1154,8 +1149,35 @@ impl EnhancedOrchestrator {
         // Phase 18: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
         let manufacturing_snap = self.phase_manufacturing(&mut stats)?;
 
+        // Phase 18b: OCPM Events (after all process data is available)
+        let ocpm = self.phase_ocpm_events(
+            &document_flows,
+            &sourcing,
+            &hr,
+            &manufacturing_snap,
+            &banking,
+            &audit,
+            &financial_reporting,
+            &mut stats,
+        )?;
+
         // Phase 19: Sales Quotes, Management KPIs, Budgets
         let sales_kpi_budgets = self.phase_sales_kpi_budgets(&coa, &mut stats)?;
+
+        // Phase 19b: Hypergraph Export (after all data is available)
+        self.phase_hypergraph_export(
+            &coa,
+            &entries,
+            &document_flows,
+            &sourcing,
+            &hr,
+            &manufacturing_snap,
+            &banking,
+            &audit,
+            &financial_reporting,
+            &ocpm,
+            &mut stats,
+        )?;
 
         // Log final resource statistics
         let resource_stats = self.resource_guard.stats();
@@ -1273,14 +1295,29 @@ impl EnhancedOrchestrator {
     }
 
     /// Phase 3c: Generate OCPM events from document flows.
+    #[allow(clippy::too_many_arguments)]
     fn phase_ocpm_events(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
+        sourcing: &SourcingSnapshot,
+        hr: &HrSnapshot,
+        manufacturing: &ManufacturingSnapshot,
+        banking: &BankingSnapshot,
+        audit: &AuditSnapshot,
+        financial_reporting: &FinancialReportingSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<OcpmSnapshot> {
-        if self.phase_config.generate_ocpm_events && !document_flows.p2p_chains.is_empty() {
+        if self.phase_config.generate_ocpm_events {
             info!("Phase 3c: Generating OCPM Events");
-            let ocpm_snapshot = self.generate_ocpm_events(document_flows)?;
+            let ocpm_snapshot = self.generate_ocpm_events(
+                document_flows,
+                sourcing,
+                hr,
+                manufacturing,
+                banking,
+                audit,
+                financial_reporting,
+            )?;
             stats.ocpm_event_count = ocpm_snapshot.event_count;
             stats.ocpm_object_count = ocpm_snapshot.object_count;
             stats.ocpm_case_count = ocpm_snapshot.case_count;
@@ -1494,17 +1531,37 @@ impl EnhancedOrchestrator {
         }
     }
 
-    /// Phase 10b: Export multi-layer hypergraph for RustGraph integration.
+    /// Phase 19b: Export multi-layer hypergraph for RustGraph integration.
+    #[allow(clippy::too_many_arguments)]
     fn phase_hypergraph_export(
         &self,
         coa: &Arc<ChartOfAccounts>,
         entries: &[JournalEntry],
         document_flows: &DocumentFlowSnapshot,
+        sourcing: &SourcingSnapshot,
+        hr: &HrSnapshot,
+        manufacturing: &ManufacturingSnapshot,
+        banking: &BankingSnapshot,
+        audit: &AuditSnapshot,
+        financial_reporting: &FinancialReportingSnapshot,
+        ocpm: &OcpmSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<()> {
         if self.config.graph_export.hypergraph.enabled && !entries.is_empty() {
-            info!("Phase 10b: Exporting Multi-Layer Hypergraph");
-            match self.export_hypergraph(coa, entries, document_flows, stats) {
+            info!("Phase 19b: Exporting Multi-Layer Hypergraph");
+            match self.export_hypergraph(
+                coa,
+                entries,
+                document_flows,
+                sourcing,
+                hr,
+                manufacturing,
+                banking,
+                audit,
+                financial_reporting,
+                ocpm,
+                stats,
+            ) {
                 Ok(info) => {
                     info!(
                         "Hypergraph export complete: {} nodes, {} edges, {} hyperedges",
@@ -2983,8 +3040,25 @@ impl EnhancedOrchestrator {
     ///
     /// Creates OCEL 2.0 compliant event logs from P2P and O2C document flows,
     /// capturing the object-centric process perspective.
-    fn generate_ocpm_events(&mut self, flows: &DocumentFlowSnapshot) -> SynthResult<OcpmSnapshot> {
-        let total_chains = flows.p2p_chains.len() + flows.o2c_chains.len();
+    #[allow(clippy::too_many_arguments)]
+    fn generate_ocpm_events(
+        &mut self,
+        flows: &DocumentFlowSnapshot,
+        sourcing: &SourcingSnapshot,
+        hr: &HrSnapshot,
+        manufacturing: &ManufacturingSnapshot,
+        banking: &BankingSnapshot,
+        audit: &AuditSnapshot,
+        financial_reporting: &FinancialReportingSnapshot,
+    ) -> SynthResult<OcpmSnapshot> {
+        let total_chains = flows.p2p_chains.len()
+            + flows.o2c_chains.len()
+            + sourcing.sourcing_projects.len()
+            + hr.payroll_runs.len()
+            + manufacturing.production_orders.len()
+            + banking.customers.len()
+            + audit.engagements.len()
+            + financial_reporting.bank_reconciliations.len();
         let pb = self.create_progress_bar(total_chains as u64, "Generating OCPM Events");
 
         // Create OCPM event log with standard types
@@ -2995,6 +3069,12 @@ impl EnhancedOrchestrator {
         let ocpm_config = OcpmGeneratorConfig {
             generate_p2p: true,
             generate_o2c: true,
+            generate_s2c: !sourcing.sourcing_projects.is_empty(),
+            generate_h2r: !hr.payroll_runs.is_empty(),
+            generate_mfg: !manufacturing.production_orders.is_empty(),
+            generate_bank_recon: !financial_reporting.bank_reconciliations.is_empty(),
+            generate_bank: !banking.customers.is_empty(),
+            generate_audit: !audit.engagements.is_empty(),
             happy_path_rate: 0.75,
             exception_path_rate: 0.20,
             error_path_rate: 0.05,
@@ -3011,6 +3091,22 @@ impl EnhancedOrchestrator {
             .take(20)
             .map(|e| e.user_id.clone())
             .collect();
+
+        // Helper closure to add case results to event log
+        let add_result =
+            |event_log: &mut OcpmEventLog,
+             result: datasynth_ocpm::CaseGenerationResult| {
+                for event in result.events {
+                    event_log.add_event(event);
+                }
+                for object in result.objects {
+                    event_log.add_object(object);
+                }
+                for relationship in result.relationships {
+                    event_log.add_relationship(relationship);
+                }
+                event_log.add_case(result.case_trace);
+            };
 
         // Generate events from P2P chains
         for chain in &flows.p2p_chains {
@@ -3047,18 +3143,7 @@ impl EnhancedOrchestrator {
             let start_time =
                 chrono::DateTime::from_naive_utc_and_offset(po.header.entry_timestamp, chrono::Utc);
             let result = ocpm_gen.generate_p2p_case(&documents, start_time, &available_users);
-
-            // Add events and objects to the event log
-            for event in result.events {
-                event_log.add_event(event);
-            }
-            for object in result.objects {
-                event_log.add_object(object);
-            }
-            for relationship in result.relationships {
-                event_log.add_relationship(relationship);
-            }
-            event_log.add_case(result.case_trace);
+            add_result(&mut event_log, result);
 
             if let Some(pb) = &pb {
                 pb.inc(1);
@@ -3100,18 +3185,270 @@ impl EnhancedOrchestrator {
             let start_time =
                 chrono::DateTime::from_naive_utc_and_offset(so.header.entry_timestamp, chrono::Utc);
             let result = ocpm_gen.generate_o2c_case(&documents, start_time, &available_users);
+            add_result(&mut event_log, result);
 
-            // Add events and objects to the event log
-            for event in result.events {
-                event_log.add_event(event);
+            if let Some(pb) = &pb {
+                pb.inc(1);
             }
-            for object in result.objects {
-                event_log.add_object(object);
+        }
+
+        // Generate events from S2C sourcing projects
+        for project in &sourcing.sourcing_projects {
+            // Find vendor from contracts or qualifications
+            let vendor_id = sourcing
+                .contracts
+                .iter()
+                .find(|c| c.sourcing_project_id.as_deref() == Some(&project.project_id))
+                .map(|c| c.vendor_id.clone())
+                .or_else(|| sourcing.qualifications.first().map(|q| q.vendor_id.clone()))
+                .unwrap_or_else(|| "V000".to_string());
+            let mut docs = S2cDocuments::new(
+                &project.project_id,
+                &vendor_id,
+                &project.company_code,
+                project.estimated_annual_spend,
+            );
+            // Link RFx if available
+            if let Some(rfx) = sourcing.rfx_events.iter().find(|r| r.sourcing_project_id == project.project_id) {
+                docs = docs.with_rfx(&rfx.rfx_id);
+                // Link winning bid (status == Accepted)
+                if let Some(bid) = sourcing.bids.iter().find(|b| {
+                    b.rfx_id == rfx.rfx_id
+                        && b.status == datasynth_core::models::sourcing::BidStatus::Accepted
+                }) {
+                    docs = docs.with_winning_bid(&bid.bid_id);
+                }
             }
-            for relationship in result.relationships {
-                event_log.add_relationship(relationship);
+            // Link contract
+            if let Some(contract) = sourcing.contracts.iter().find(|c| {
+                c.sourcing_project_id.as_deref() == Some(&project.project_id)
+            }) {
+                docs = docs.with_contract(&contract.contract_id);
             }
-            event_log.add_case(result.case_trace);
+            let start_time = chrono::Utc::now() - chrono::Duration::days(90);
+            let result = ocpm_gen.generate_s2c_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
+
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
+        }
+
+        // Generate events from H2R payroll runs
+        for run in &hr.payroll_runs {
+            // Use first matching payroll line item's employee, or fallback
+            let employee_id = hr
+                .payroll_line_items
+                .iter()
+                .find(|li| li.payroll_id == run.payroll_id)
+                .map(|li| li.employee_id.as_str())
+                .unwrap_or("EMP000");
+            let docs = H2rDocuments::new(
+                &run.payroll_id,
+                employee_id,
+                &run.company_code,
+                run.total_gross,
+            )
+            .with_time_entries(
+                hr.time_entries
+                    .iter()
+                    .filter(|t| {
+                        t.date >= run.pay_period_start && t.date <= run.pay_period_end
+                    })
+                    .take(5)
+                    .map(|t| t.entry_id.as_str())
+                    .collect(),
+            );
+            let start_time = chrono::Utc::now() - chrono::Duration::days(30);
+            let result = ocpm_gen.generate_h2r_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
+
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
+        }
+
+        // Generate events from MFG production orders
+        for order in &manufacturing.production_orders {
+            let mut docs = MfgDocuments::new(
+                &order.order_id,
+                &order.material_id,
+                &order.company_code,
+                order.planned_quantity,
+            )
+            .with_operations(
+                order
+                    .operations
+                    .iter()
+                    .map(|o| format!("OP-{:04}", o.operation_number))
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            );
+            // Link quality inspection if available (via reference_id matching order_id)
+            if let Some(insp) = manufacturing
+                .quality_inspections
+                .iter()
+                .find(|i| i.reference_id == order.order_id)
+            {
+                docs = docs.with_inspection(&insp.inspection_id);
+            }
+            // Link cycle count if available (via items matching the material)
+            if let Some(cc) = manufacturing.cycle_counts.first() {
+                docs = docs.with_cycle_count(&cc.count_id);
+            }
+            let start_time = chrono::Utc::now() - chrono::Duration::days(60);
+            let result = ocpm_gen.generate_mfg_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
+
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
+        }
+
+        // Generate events from Banking customers
+        for customer in &banking.customers {
+            let customer_id_str = customer.customer_id.to_string();
+            let mut docs = BankDocuments::new(&customer_id_str, "1000");
+            // Link accounts (primary_owner_id matches customer_id)
+            if let Some(account) = banking
+                .accounts
+                .iter()
+                .find(|a| a.primary_owner_id == customer.customer_id)
+            {
+                let account_id_str = account.account_id.to_string();
+                docs = docs.with_account(&account_id_str);
+                // Link transactions for this account
+                let txn_strs: Vec<String> = banking
+                    .transactions
+                    .iter()
+                    .filter(|t| t.account_id == account.account_id)
+                    .take(10)
+                    .map(|t| t.transaction_id.to_string())
+                    .collect();
+                let txn_ids: Vec<&str> = txn_strs.iter().map(|s| s.as_str()).collect();
+                let txn_amounts: Vec<rust_decimal::Decimal> = banking
+                    .transactions
+                    .iter()
+                    .filter(|t| t.account_id == account.account_id)
+                    .take(10)
+                    .map(|t| t.amount)
+                    .collect();
+                if !txn_ids.is_empty() {
+                    docs = docs.with_transactions(txn_ids, txn_amounts);
+                }
+            }
+            let start_time = chrono::Utc::now() - chrono::Duration::days(180);
+            let result = ocpm_gen.generate_bank_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
+
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
+        }
+
+        // Generate events from Audit engagements
+        for engagement in &audit.engagements {
+            let engagement_id_str = engagement.engagement_id.to_string();
+            let docs = AuditDocuments::new(&engagement_id_str, &engagement.client_entity_id)
+                .with_workpapers(
+                    audit
+                        .workpapers
+                        .iter()
+                        .filter(|w| w.engagement_id == engagement.engagement_id)
+                        .take(10)
+                        .map(|w| w.workpaper_id.to_string())
+                        .collect::<Vec<_>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect(),
+                )
+                .with_evidence(
+                    audit
+                        .evidence
+                        .iter()
+                        .filter(|e| e.engagement_id == engagement.engagement_id)
+                        .take(10)
+                        .map(|e| e.evidence_id.to_string())
+                        .collect::<Vec<_>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect(),
+                )
+                .with_risks(
+                    audit
+                        .risk_assessments
+                        .iter()
+                        .filter(|r| r.engagement_id == engagement.engagement_id)
+                        .take(5)
+                        .map(|r| r.risk_id.to_string())
+                        .collect::<Vec<_>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect(),
+                )
+                .with_findings(
+                    audit
+                        .findings
+                        .iter()
+                        .filter(|f| f.engagement_id == engagement.engagement_id)
+                        .take(5)
+                        .map(|f| f.finding_id.to_string())
+                        .collect::<Vec<_>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect(),
+                )
+                .with_judgments(
+                    audit
+                        .judgments
+                        .iter()
+                        .filter(|j| j.engagement_id == engagement.engagement_id)
+                        .take(5)
+                        .map(|j| j.judgment_id.to_string())
+                        .collect::<Vec<_>>()
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect(),
+                );
+            let start_time = chrono::Utc::now() - chrono::Duration::days(120);
+            let result = ocpm_gen.generate_audit_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
+
+            if let Some(pb) = &pb {
+                pb.inc(1);
+            }
+        }
+
+        // Generate events from Bank Reconciliations
+        for recon in &financial_reporting.bank_reconciliations {
+            let docs = BankReconDocuments::new(
+                &recon.reconciliation_id,
+                &recon.bank_account_id,
+                &recon.company_code,
+                recon.bank_ending_balance,
+            )
+            .with_statement_lines(
+                recon
+                    .statement_lines
+                    .iter()
+                    .take(20)
+                    .map(|l| l.line_id.as_str())
+                    .collect(),
+            )
+            .with_reconciling_items(
+                recon
+                    .reconciling_items
+                    .iter()
+                    .take(10)
+                    .map(|i| i.item_id.as_str())
+                    .collect(),
+            );
+            let start_time = chrono::Utc::now() - chrono::Duration::days(30);
+            let result =
+                ocpm_gen.generate_bank_recon_case(&docs, start_time, &available_users);
+            add_result(&mut event_log, result);
 
             if let Some(pb) = &pb {
                 pb.inc(1);
@@ -3727,13 +4064,21 @@ impl EnhancedOrchestrator {
     ///
     /// Builds a 3-layer hypergraph:
     /// - Layer 1: Governance & Controls (COSO, internal controls, master data)
-    /// - Layer 2: Process Events (P2P/O2C document flows)
+    /// - Layer 2: Process Events (all process family document flows + OCPM events)
     /// - Layer 3: Accounting Network (GL accounts, journal entries as hyperedges)
+    #[allow(clippy::too_many_arguments)]
     fn export_hypergraph(
         &self,
         coa: &Arc<ChartOfAccounts>,
         entries: &[JournalEntry],
         document_flows: &DocumentFlowSnapshot,
+        sourcing: &SourcingSnapshot,
+        hr: &HrSnapshot,
+        manufacturing: &ManufacturingSnapshot,
+        banking: &BankingSnapshot,
+        audit: &AuditSnapshot,
+        financial_reporting: &FinancialReportingSnapshot,
+        ocpm: &OcpmSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<HypergraphExportInfo> {
         use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
@@ -3763,6 +4108,12 @@ impl EnhancedOrchestrator {
             include_employees: hg_settings.governance_layer.include_employees,
             include_p2p: hg_settings.process_layer.include_p2p,
             include_o2c: hg_settings.process_layer.include_o2c,
+            include_s2c: hg_settings.process_layer.include_s2c,
+            include_h2r: hg_settings.process_layer.include_h2r,
+            include_mfg: hg_settings.process_layer.include_mfg,
+            include_bank: hg_settings.process_layer.include_bank,
+            include_audit: hg_settings.process_layer.include_audit,
+            include_r2r: hg_settings.process_layer.include_r2r,
             events_as_hyperedges: hg_settings.process_layer.events_as_hyperedges,
             docs_per_counterparty_threshold: hg_settings
                 .process_layer
@@ -3789,7 +4140,7 @@ impl EnhancedOrchestrator {
         builder.add_customers(&self.master_data.customers);
         builder.add_employees(&self.master_data.employees);
 
-        // Layer 2: Process Events (P2P/O2C documents)
+        // Layer 2: Process Events (all process families)
         builder.add_p2p_documents(
             &document_flows.purchase_orders,
             &document_flows.goods_receipts,
@@ -3801,6 +4152,43 @@ impl EnhancedOrchestrator {
             &document_flows.deliveries,
             &document_flows.customer_invoices,
         );
+        builder.add_s2c_documents(
+            &sourcing.sourcing_projects,
+            &sourcing.qualifications,
+            &sourcing.rfx_events,
+            &sourcing.bids,
+            &sourcing.bid_evaluations,
+            &sourcing.contracts,
+        );
+        builder.add_h2r_documents(
+            &hr.payroll_runs,
+            &hr.time_entries,
+            &hr.expense_reports,
+        );
+        builder.add_mfg_documents(
+            &manufacturing.production_orders,
+            &manufacturing.quality_inspections,
+            &manufacturing.cycle_counts,
+        );
+        builder.add_bank_documents(
+            &banking.customers,
+            &banking.accounts,
+            &banking.transactions,
+        );
+        builder.add_audit_documents(
+            &audit.engagements,
+            &audit.workpapers,
+            &audit.findings,
+            &audit.evidence,
+            &audit.risk_assessments,
+            &audit.judgments,
+        );
+        builder.add_bank_recon_documents(&financial_reporting.bank_reconciliations);
+
+        // OCPM events as hyperedges
+        if let Some(ref event_log) = ocpm.event_log {
+            builder.add_ocpm_events(event_log);
+        }
 
         // Layer 3: Accounting Network
         builder.add_accounts(coa);

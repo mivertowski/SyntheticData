@@ -6,14 +6,15 @@ SyntheticData models enterprise operations as interconnected process chains — 
 
 | Chain | Full Name | Coverage | Status | Key Modules |
 |-------|-----------|----------|--------|-------------|
-| **S2P** | Source-to-Pay | 85% | Implemented (P2P complete, S2C planned) | `document_flow/p2p_generator`, `master_data/vendor`, `subledger/ap` |
-| **O2C** | Order-to-Cash | 93% | Implemented | `document_flow/o2c_generator`, `master_data/customer`, `subledger/ar` |
-| **R2R** | Record-to-Report | 78% | Mostly implemented | `je_generator`, `balance/`, `period_close/`, `intercompany/` |
+| **S2P** | Source-to-Pay | 95% | Implemented (P2P + S2C + OCPM) | `document_flow/p2p_generator`, `sourcing/`, `ocpm/s2c_generator` |
+| **O2C** | Order-to-Cash | 95% | Implemented (+ OCPM) | `document_flow/o2c_generator`, `master_data/customer`, `subledger/ar` |
+| **R2R** | Record-to-Report | 85% | Implemented (+ Bank Recon OCPM) | `je_generator`, `balance/`, `period_close/`, `ocpm/bank_recon_generator` |
 | **A2R** | Acquire-to-Retire | 70% | Partially implemented | `master_data/asset`, `subledger/fa`, `period_close/depreciation` |
 | **INV** | Inventory Management | 55% | Partially implemented | `subledger/inventory`, `document_flow/` (GR/delivery links) |
-| **BANK** | Banking & Treasury | 65% | Partially implemented | `datasynth-banking` (KYC/AML), payment clearing |
-| **H2R** | Hire-to-Retire | 30% | Minimal | `master_data/employee`, `user_generator` |
-| **MFG** | Plan-to-Produce | 20% | Config only | Industry-specific manufacturing config |
+| **BANK** | Banking & Treasury | 85% | Implemented (+ OCPM) | `datasynth-banking`, `ocpm/bank_generator` |
+| **H2R** | Hire-to-Retire | 85% | Implemented (+ OCPM) | `hr/`, `master_data/employee`, `ocpm/h2r_generator` |
+| **MFG** | Plan-to-Produce | 85% | Implemented (+ OCPM) | `manufacturing/`, `ocpm/mfg_generator` |
+| **AUDIT** | Audit Lifecycle | 90% | Implemented (+ OCPM) | `audit/`, `ocpm/audit_generator` |
 
 ---
 
@@ -120,6 +121,30 @@ The R2R chain covers financial close and reporting:
 
 ---
 
+### Banking & Treasury (BANK) — 85%
+
+**Implemented:** Bank customer profiles, KYC/AML, bank accounts, transactions with fraud typologies (structuring, funnel, layering, mule, round-tripping). OCPM events for customer onboarding, KYC review, account management, and transaction lifecycle.
+
+**Gaps:** Cash forecasting, liquidity management.
+
+### Hire-to-Retire (H2R) — 85%
+
+**Implemented:** Employee master data, payroll runs with tax/deduction calculations, time entries with overtime, expense reports with policy violations. OCPM events for payroll lifecycle, time entry approval, and expense approval chains.
+
+**Gaps:** Benefits administration, workforce planning.
+
+### Plan-to-Produce (MFG) — 85%
+
+**Implemented:** Production orders with BOM explosion, routing operations, WIP costing, quality inspections, cycle counting. OCPM events for production order lifecycle, quality inspection, and cycle count reconciliation.
+
+**Gaps:** Material requirements planning (MRP), advanced shop floor control.
+
+### Audit Lifecycle (AUDIT) — 90%
+
+**Implemented:** Engagement planning, risk assessment (ISA 315/330), workpaper creation and review (ISA 230), evidence collection (ISA 500), findings (ISA 265), professional judgment documentation (ISA 200). OCPM events for the full engagement lifecycle.
+
+**Gaps:** Multi-engagement portfolio management.
+
 ## Partially Implemented Chains
 
 ### Acquire-to-Retire (A2R) — 70%
@@ -132,46 +157,30 @@ The R2R chain covers financial close and reporting:
 
 **Implemented:** Inventory positions, 22 movement types, 4 valuation methods, stock status tracking, P2P goods receipts, O2C goods issues.
 
-**Gaps:** Cycle counting with count programs, quality inspection integration, obsolescence management, ABC analysis.
-
-### Banking & Treasury (BANK) — 65%
-
-**Implemented:** Bank customer profiles, KYC/AML, bank accounts, transactions with fraud typologies (structuring, funnel, layering, mule, round-tripping).
-
-**Gaps:** Bank statement reconciliation, cash forecasting, liquidity management.
-
-### Hire-to-Retire (H2R) — 30%
-
-**Implemented:** Employee master data, user/authorization generation.
-
-**Gaps:** Payroll runs, time management, expense management, benefits, workforce planning.
-
-### Plan-to-Produce (MFG) — 20%
-
-**Implemented:** Industry-specific manufacturing configuration (BOM depth, yield rates, work centers).
-
-**Gaps:** Production orders, WIP costing, material requirements planning (MRP), shop floor control.
+**Gaps:** Quality inspection integration, obsolescence management, ABC analysis.
 
 ---
 
 ## Cross-Process Integration
 
-Process chains share data through several integration points:
+Process chains share data through several integration points, now with full OCPM event coverage:
 
 ```
-         S2P                    O2C                    R2R
-          │                      │                      │
-    GR ───┼──── Inventory ───────┼── Delivery           │
-          │         │            │                      │
-    Payment ────────┼────────────┼── Receipt ──── Bank Recon
-          │         │            │                      │
-    AP Open Item    │       AR Open Item                │
-          │         │            │                      │
-          └─────────┴────────────┴───── Journal Entries ┘
-                                                │
-                                          Trial Balance
-                                                │
-                                         Consolidation
+    S2C ──→ S2P                    O2C                    R2R
+    │        │                      │                      │
+    Contract GR ──── Inventory ─────┼── Delivery           │
+             │         │            │                      │
+       Payment ────────┼────────────┼── Receipt ──── Bank Recon
+             │         │            │                  │   │
+       AP Open Item    │       AR Open Item         BANK  │
+             │     MFG─┘            │                 │   │
+             └──H2R──┴──────────────┴──── Journal Entries ┘
+                  │                                   │
+              AUDIT ─────────────────────────── Trial Balance
+                                                      │
+                                               Consolidation
+
+    ──── All chains feed OCEL 2.0 Event Log (88 activities) ────
 ```
 
 ### Integration Map

@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1a598c96.js"></script>
@@ -4344,6 +4344,12 @@ datasynth-data generate --config config.yaml --output ./output
 <tr><td><a href="#compliance-1">Compliance</a></td><td>Fraud, controls, approval</td></tr>
 <tr><td><a href="#ai--ml-features-configuration">AI &amp; ML Features</a></td><td>LLM, diffusion, causal, certificates</td></tr>
 <tr><td><a href="#output-settings-1">Output Settings</a></td><td>Format, compression</td></tr>
+<tr><td>Source-to-Pay</td><td>S2C sourcing pipeline (projects, RFx, bids, contracts, catalogs, scorecards)</td></tr>
+<tr><td>Financial Reporting</td><td>Financial statements, bank reconciliation, management KPIs, budgets</td></tr>
+<tr><td>HR</td><td>Payroll runs, time entries, expense reports</td></tr>
+<tr><td>Manufacturing</td><td>Production orders, quality inspections, cycle counts</td></tr>
+<tr><td>Sales Quotes</td><td>Quote-to-order pipeline</td></tr>
+<tr><td>Accounting Standards</td><td>Revenue recognition (ASC 606/IFRS 15), impairment testing</td></tr>
 </tbody>
 </table>
 </div>
@@ -4444,6 +4450,43 @@ certificates:
   issuer: "DataSynth"
   include_quality_metrics: true
 
+# Enterprise Process Chains (v0.6.0)
+source_to_pay:
+  enabled: true
+  projects_per_period: 5
+  avg_bids_per_rfx: 4
+  contract_award_rate: 0.75
+  catalog_items_per_contract: 10
+
+financial_reporting:
+  enabled: true
+  generate_balance_sheet: true
+  generate_income_statement: true
+  generate_cash_flow: true
+  generate_changes_in_equity: true
+  management_kpis:
+    enabled: true
+  budgets:
+    enabled: true
+    variance_threshold: 0.10
+
+hr:
+  enabled: true
+  payroll_frequency: monthly
+  time_tracking: true
+  expense_reports: true
+
+manufacturing:
+  enabled: true
+  production_orders_per_period: 20
+  quality_inspection_rate: 0.30
+  cycle_count_frequency: quarterly
+
+sales_quotes:
+  enabled: true
+  quotes_per_period: 15
+  conversion_rate: 0.35
+
 output:
   format: csv
   compression: none
@@ -4540,6 +4583,11 @@ business_processes:        # Process distribution
 templates:                 # External templates
 approval:                  # Approval thresholds
 departments:               # Department distribution
+source_to_pay:             # Source-to-Pay (v0.6.0)
+financial_reporting:       # Financial statements &amp; KPIs (v0.6.0)
+hr:                        # HR / payroll / expenses (v0.6.0)
+manufacturing:             # Production orders &amp; costing (v0.6.0)
+sales_quotes:              # Quote-to-order pipeline (v0.6.0)
 </code></pre>
 <h2 id="global"><a class="header" href="#global">global</a></h2>
 <pre><code class="language-yaml">global:
@@ -4927,6 +4975,232 @@ departments:               # Department distribution
 </tbody>
 </table>
 </div>
+<h2 id="source-to-pay-configuration-v060"><a class="header" href="#source-to-pay-configuration-v060">Source-to-Pay Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: false                       # Enable source-to-pay generation
+
+  spend_analysis:
+    hhi_threshold: 2500.0              # f64 - HHI threshold for sourcing trigger
+    contract_coverage_target: 0.80     # f64, 0-1 - target spend under contracts
+
+  sourcing:
+    projects_per_year: 10              # u32 - sourcing projects per year
+    renewal_horizon_months: 3          # u32 - months before expiry to trigger renewal
+    project_duration_months: 4         # u32 - average project duration
+
+  qualification:
+    pass_rate: 0.75                    # f64, 0-1 - qualification pass rate
+    validity_days: 365                 # u32 - qualification validity in days
+    financial_weight: 0.25             # f64 - financial stability weight
+    quality_weight: 0.30               # f64 - quality management weight
+    delivery_weight: 0.25              # f64 - delivery performance weight
+    compliance_weight: 0.20            # f64 - compliance weight
+
+  rfx:
+    rfi_threshold: 100000.0            # f64 - spend above which RFI required
+    min_invited_vendors: 3             # u32 - minimum vendors per RFx
+    max_invited_vendors: 8             # u32 - maximum vendors per RFx
+    response_rate: 0.70                # f64, 0-1 - vendor response rate
+    default_price_weight: 0.40         # f64 - price weight in evaluation
+    default_quality_weight: 0.35       # f64 - quality weight in evaluation
+    default_delivery_weight: 0.25      # f64 - delivery weight in evaluation
+
+  contracts:
+    min_duration_months: 12            # u32 - minimum contract duration
+    max_duration_months: 36            # u32 - maximum contract duration
+    auto_renewal_rate: 0.40            # f64, 0-1 - auto-renewal rate
+    amendment_rate: 0.20               # f64, 0-1 - contracts with amendments
+    type_distribution:
+      fixed_price: 0.40               # f64 - fixed price contracts
+      blanket: 0.30                    # f64 - blanket/framework agreements
+      time_and_materials: 0.15         # f64 - T&amp;M contracts
+      service_agreement: 0.15          # f64 - service agreements
+
+  catalog:
+    preferred_vendor_flag_rate: 0.70   # f64, 0-1 - items marked as preferred
+    multi_source_rate: 0.25            # f64, 0-1 - items with multiple sources
+
+  scorecards:
+    frequency: "quarterly"             # string - review frequency
+    on_time_delivery_weight: 0.30      # f64 - OTD weight in score
+    quality_weight: 0.30               # f64 - quality weight in score
+    price_weight: 0.25                 # f64 - price competitiveness weight
+    responsiveness_weight: 0.15        # f64 - responsiveness weight
+    grade_a_threshold: 90.0            # f64 - grade A threshold
+    grade_b_threshold: 75.0            # f64 - grade B threshold
+    grade_c_threshold: 60.0            # f64 - grade C threshold
+
+  p2p_integration:
+    off_contract_rate: 0.15            # f64, 0-1 - maverick purchase rate
+    price_tolerance: 0.02              # f64 - contract price variance allowed
+    catalog_enforcement: false          # bool - enforce catalog ordering
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable source-to-pay generation</td></tr>
+<tr><td><code>sourcing.projects_per_year</code></td><td>u32</td><td><code>10</code></td><td>Sourcing projects per year</td></tr>
+<tr><td><code>qualification.pass_rate</code></td><td>f64</td><td><code>0.75</code></td><td>Supplier qualification pass rate</td></tr>
+<tr><td><code>rfx.response_rate</code></td><td>f64</td><td><code>0.70</code></td><td>Fraction of invited vendors that respond</td></tr>
+<tr><td><code>contracts.auto_renewal_rate</code></td><td>f64</td><td><code>0.40</code></td><td>Auto-renewal rate</td></tr>
+<tr><td><code>scorecards.frequency</code></td><td>string</td><td><code>"quarterly"</code></td><td>Scorecard review frequency</td></tr>
+<tr><td><code>p2p_integration.off_contract_rate</code></td><td>f64</td><td><code>0.15</code></td><td>Rate of off-contract (maverick) purchases</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="financial-reporting-configuration-v060"><a class="header" href="#financial-reporting-configuration-v060">Financial Reporting Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">financial_reporting:
+  enabled: false                       # Enable financial reporting generation
+  generate_balance_sheet: true         # bool - generate balance sheet
+  generate_income_statement: true      # bool - generate income statement
+  generate_cash_flow: true             # bool - generate cash flow statement
+  generate_changes_in_equity: true     # bool - generate changes in equity
+  comparative_periods: 1               # u32 - number of comparative periods
+
+  management_kpis:
+    enabled: false                     # bool - enable KPI generation
+    frequency: "monthly"               # string - monthly, quarterly
+
+  budgets:
+    enabled: false                     # bool - enable budget generation
+    revenue_growth_rate: 0.05          # f64 - expected revenue growth rate
+    expense_inflation_rate: 0.03       # f64 - expected expense inflation rate
+    variance_noise: 0.10               # f64 - noise for budget vs actual
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable financial reporting generation</td></tr>
+<tr><td><code>generate_balance_sheet</code></td><td>bool</td><td><code>true</code></td><td>Generate balance sheet output</td></tr>
+<tr><td><code>generate_income_statement</code></td><td>bool</td><td><code>true</code></td><td>Generate income statement output</td></tr>
+<tr><td><code>generate_cash_flow</code></td><td>bool</td><td><code>true</code></td><td>Generate cash flow statement output</td></tr>
+<tr><td><code>generate_changes_in_equity</code></td><td>bool</td><td><code>true</code></td><td>Generate changes in equity statement</td></tr>
+<tr><td><code>comparative_periods</code></td><td>u32</td><td><code>1</code></td><td>Number of comparative periods to include</td></tr>
+<tr><td><code>management_kpis.enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable management KPI calculation</td></tr>
+<tr><td><code>management_kpis.frequency</code></td><td>string</td><td><code>"monthly"</code></td><td>KPI calculation frequency</td></tr>
+<tr><td><code>budgets.enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable budget generation</td></tr>
+<tr><td><code>budgets.revenue_growth_rate</code></td><td>f64</td><td><code>0.05</code></td><td>Expected revenue growth rate for budgeting</td></tr>
+<tr><td><code>budgets.expense_inflation_rate</code></td><td>f64</td><td><code>0.03</code></td><td>Expected expense inflation rate</td></tr>
+<tr><td><code>budgets.variance_noise</code></td><td>f64</td><td><code>0.10</code></td><td>Random noise added to budget vs actual</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="hr-configuration-v060"><a class="header" href="#hr-configuration-v060">HR Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">hr:
+  enabled: false                       # Enable HR generation
+
+  payroll:
+    enabled: true                      # bool - enable payroll generation
+    pay_frequency: "monthly"           # string - monthly, biweekly, weekly
+    salary_ranges:
+      staff_min: 50000.0               # f64 - staff level minimum salary
+      staff_max: 70000.0               # f64 - staff level maximum salary
+      manager_min: 80000.0             # f64 - manager level minimum salary
+      manager_max: 120000.0            # f64 - manager level maximum salary
+      director_min: 120000.0           # f64 - director level minimum salary
+      director_max: 180000.0           # f64 - director level maximum salary
+      executive_min: 180000.0          # f64 - executive level minimum salary
+      executive_max: 350000.0          # f64 - executive level maximum salary
+    tax_rates:
+      federal_effective: 0.22          # f64 - federal effective tax rate
+      state_effective: 0.05            # f64 - state effective tax rate
+      fica: 0.0765                     # f64 - FICA/social security rate
+    benefits_enrollment_rate: 0.60     # f64, 0-1 - benefits enrollment rate
+    retirement_participation_rate: 0.45 # f64, 0-1 - retirement plan participation
+
+  time_attendance:
+    enabled: true                      # bool - enable time tracking
+    overtime_rate: 0.10                # f64, 0-1 - employees with overtime
+
+  expenses:
+    enabled: true                      # bool - enable expense report generation
+    submission_rate: 0.30              # f64, 0-1 - employees submitting per month
+    policy_violation_rate: 0.08        # f64, 0-1 - rate of policy violations
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable HR generation</td></tr>
+<tr><td><code>payroll.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable payroll generation</td></tr>
+<tr><td><code>payroll.pay_frequency</code></td><td>string</td><td><code>"monthly"</code></td><td>Pay frequency: <code>monthly</code>, <code>biweekly</code>, <code>weekly</code></td></tr>
+<tr><td><code>payroll.benefits_enrollment_rate</code></td><td>f64</td><td><code>0.60</code></td><td>Benefits enrollment rate</td></tr>
+<tr><td><code>payroll.retirement_participation_rate</code></td><td>f64</td><td><code>0.45</code></td><td>Retirement plan participation rate</td></tr>
+<tr><td><code>time_attendance.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable time tracking</td></tr>
+<tr><td><code>time_attendance.overtime_rate</code></td><td>f64</td><td><code>0.10</code></td><td>Rate of employees with overtime</td></tr>
+<tr><td><code>expenses.enabled</code></td><td>bool</td><td><code>true</code></td><td>Enable expense report generation</td></tr>
+<tr><td><code>expenses.submission_rate</code></td><td>f64</td><td><code>0.30</code></td><td>Rate of employees submitting expenses per month</td></tr>
+<tr><td><code>expenses.policy_violation_rate</code></td><td>f64</td><td><code>0.08</code></td><td>Rate of policy violations</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="manufacturing-configuration-v060"><a class="header" href="#manufacturing-configuration-v060">Manufacturing Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">manufacturing:
+  enabled: false                       # Enable manufacturing generation
+
+  production_orders:
+    orders_per_month: 50               # u32 - production orders per month
+    avg_batch_size: 100                # u32 - average batch size
+    yield_rate: 0.97                   # f64, 0-1 - production yield rate
+    make_to_order_rate: 0.20           # f64, 0-1 - MTO vs MTS ratio
+    rework_rate: 0.03                  # f64, 0-1 - rework rate
+
+  costing:
+    labor_rate_per_hour: 35.0          # f64 - labor rate per hour
+    overhead_rate: 1.50                # f64 - overhead multiplier on direct labor
+    standard_cost_update_frequency: "quarterly"  # string - cost update cycle
+
+  routing:
+    avg_operations: 4                  # u32 - average operations per routing
+    setup_time_hours: 1.5              # f64 - average setup time in hours
+    run_time_variation: 0.15           # f64 - run time variation coefficient
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable manufacturing generation</td></tr>
+<tr><td><code>production_orders.orders_per_month</code></td><td>u32</td><td><code>50</code></td><td>Number of production orders per month</td></tr>
+<tr><td><code>production_orders.avg_batch_size</code></td><td>u32</td><td><code>100</code></td><td>Average batch size</td></tr>
+<tr><td><code>production_orders.yield_rate</code></td><td>f64</td><td><code>0.97</code></td><td>Production yield rate</td></tr>
+<tr><td><code>production_orders.rework_rate</code></td><td>f64</td><td><code>0.03</code></td><td>Rework rate</td></tr>
+<tr><td><code>costing.labor_rate_per_hour</code></td><td>f64</td><td><code>35.0</code></td><td>Direct labor cost per hour</td></tr>
+<tr><td><code>costing.overhead_rate</code></td><td>f64</td><td><code>1.50</code></td><td>Overhead application multiplier</td></tr>
+<tr><td><code>routing.avg_operations</code></td><td>u32</td><td><code>4</code></td><td>Average operations per routing step</td></tr>
+<tr><td><code>routing.setup_time_hours</code></td><td>f64</td><td><code>1.5</code></td><td>Average machine setup time in hours</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="sales-quotes-configuration-v060"><a class="header" href="#sales-quotes-configuration-v060">Sales Quotes Configuration (v0.6.0)</a></h2>
+<pre><code class="language-yaml">sales_quotes:
+  enabled: false                       # Enable sales quote generation
+  quotes_per_month: 30                 # u32 - quotes generated per month
+  win_rate: 0.35                       # f64, 0-1 - quote-to-order conversion
+  validity_days: 30                    # u32 - default quote validity period
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>enabled</code></td><td>bool</td><td><code>false</code></td><td>Enable sales quote generation</td></tr>
+<tr><td><code>quotes_per_month</code></td><td>u32</td><td><code>30</code></td><td>Number of quotes generated per month</td></tr>
+<tr><td><code>win_rate</code></td><td>f64</td><td><code>0.35</code></td><td>Fraction of quotes that convert to sales orders</td></tr>
+<tr><td><code>validity_days</code></td><td>u32</td><td><code>30</code></td><td>Default quote validity period in days</td></tr>
+</tbody>
+</table>
+</div>
 <h2 id="see-also-8"><a class="header" href="#see-also-8">See Also</a></h2>
 <ul>
 <li><a href="configuration/README.html">Configuration Overview</a></li>
@@ -5201,6 +5475,32 @@ capitalization:
 <li>Monthly recurring revenue (MRR)</li>
 <li>Annual contract billing (ACV)</li>
 <li>Usage-based components</li>
+</ul>
+<hr>
+<h2 id="process-chain-defaults-v060"><a class="header" href="#process-chain-defaults-v060">Process Chain Defaults (v0.6.0)</a></h2>
+<p>Starting in v0.6.0, all five industry presets include default settings for the new enterprise process chains. When you generate a configuration with <code>datasynth-data init</code>, the preset populates sensible defaults for each new section, though they remain disabled until explicitly turned on.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Process Chain</th><th style="text-align: center">Manufacturing</th><th style="text-align: center">Retail</th><th style="text-align: center">Financial Services</th><th style="text-align: center">Healthcare</th><th style="text-align: center">Technology</th></tr>
+</thead>
+<tbody>
+<tr><td><code>source_to_pay</code></td><td style="text-align: center">High</td><td style="text-align: center">Medium</td><td style="text-align: center">Low</td><td style="text-align: center">Medium</td><td style="text-align: center">Low</td></tr>
+<tr><td><code>financial_reporting</code></td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td></tr>
+<tr><td><code>hr</code></td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td></tr>
+<tr><td><code>manufacturing</code></td><td style="text-align: center">High</td><td style="text-align: center">–</td><td style="text-align: center">–</td><td style="text-align: center">–</td><td style="text-align: center">–</td></tr>
+<tr><td><code>sales_quotes</code></td><td style="text-align: center">Medium</td><td style="text-align: center">High</td><td style="text-align: center">Low</td><td style="text-align: center">Medium</td><td style="text-align: center">High</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Manufacturing</strong> presets emphasize production orders, routing, and costing. <strong>Retail</strong> presets increase sales quote volume and quote-to-order win rates. <strong>Financial Services</strong> presets focus on financial reporting with comprehensive KPIs and budgets. <strong>Healthcare</strong> and <strong>Technology</strong> presets provide balanced defaults.</p>
+<p>Each preset configures the following when you set <code>enabled: true</code>:</p>
+<ul>
+<li><strong>source_to_pay</strong>: Sourcing projects, RFx events, contract management, catalogs, and vendor scorecards that feed into the existing P2P document flow.</li>
+<li><strong>financial_reporting</strong>: Balance sheets, income statements, cash flow statements, management KPIs, and budget vs. actual variance analysis.</li>
+<li><strong>hr</strong>: Payroll runs based on employee master data, time and attendance tracking, and expense report generation with policy violation injection.</li>
+<li><strong>manufacturing</strong>: Production orders, WIP tracking, standard costing with labor and overhead, and routing operations.</li>
+<li><strong>sales_quotes</strong>: Quote-to-order pipeline that feeds into the existing O2C document flow.</li>
 </ul>
 <hr>
 <h2 id="customizing-presets"><a class="header" href="#customizing-presets">Customizing Presets</a></h2>
@@ -6314,6 +6614,26 @@ datasynth-data generate --config config.yaml --output ./output
 </tbody>
 </table>
 </div>
+<h2 id="hr-and-payroll-integration-v060"><a class="header" href="#hr-and-payroll-integration-v060">HR and Payroll Integration (v0.6.0)</a></h2>
+<p>Employee master data serves as the foundation for the <code>hr</code> configuration section introduced in v0.6.0. When the HR module is enabled, each employee record drives downstream generation:</p>
+<ul>
+<li><strong>Payroll</strong>: Salary, tax withholdings, benefits deductions, and retirement contributions are computed per employee based on their role and the salary ranges defined in <code>hr.payroll.salary_ranges</code>. The <code>pay_frequency</code> setting (monthly, biweekly, or weekly) determines how many payroll runs are generated per period.</li>
+<li><strong>Time and Attendance</strong>: Time entries are generated for each employee according to working days in the period. The <code>overtime_rate</code> controls how many employees have overtime hours in a given period.</li>
+<li><strong>Expense Reports</strong>: A subset of employees (controlled by <code>hr.expenses.submission_rate</code>) generate expense reports each month. Policy violations are injected at the configured <code>policy_violation_rate</code>.</li>
+</ul>
+<p>The <code>employees.count</code> and <code>employees.hierarchy_depth</code> settings in <code>master_data</code> directly determine the population size for all HR outputs. Increasing the employee count will proportionally increase payroll journal entries, time records, and expense reports.</p>
+<pre><code class="language-yaml">master_data:
+  employees:
+    count: 200                     # Drives payroll and HR volume
+    hierarchy_depth: 5
+
+hr:
+  enabled: true                    # Activates payroll, time, and expenses
+  payroll:
+    pay_frequency: "biweekly"      # 26 pay periods per year
+  expenses:
+    submission_rate: 0.40          # 40% of employees submit per month
+</code></pre>
 <h2 id="examples-4"><a class="header" href="#examples-4">Examples</a></h2>
 <h3 id="small-company"><a class="header" href="#small-company">Small Company</a></h3>
 <pre><code class="language-yaml">master_data:
@@ -7096,6 +7416,32 @@ early_payment_discount_rate: 0.02   # Take 2% discount when offered
 </tbody>
 </table>
 </div>
+<h3 id="cycle-counting-v060"><a class="header" href="#cycle-counting-v060">Cycle Counting (v0.6.0)</a></h3>
+<p>The <code>cycle_count_frequency</code> setting controls how often physical inventory counts are performed. Cycle counting generates <code>PhysicalInventory</code> movement records that reconcile book quantities against counted quantities:</p>
+<pre><code class="language-yaml">subledger:
+  inventory:
+    enabled: true
+    cycle_count_frequency: monthly     # monthly, quarterly, annual
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Frequency</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td><code>monthly</code></td><td>Each storage location counted once per month on a rolling basis</td></tr>
+<tr><td><code>quarterly</code></td><td>Full count once per quarter, with high-value items counted monthly</td></tr>
+<tr><td><code>annual</code></td><td>Single year-end wall-to-wall count</td></tr>
+</tbody>
+</table>
+</div>
+<p>Cycle count differences generate adjustment entries (<code>InventoryAdjustmentIn</code> or <code>InventoryAdjustmentOut</code>) and are flagged in the quality labels output for audit trail analysis.</p>
+<h3 id="quality-inspection-v060"><a class="header" href="#quality-inspection-v060">Quality Inspection (v0.6.0)</a></h3>
+<p>Inventory positions can be placed in quality inspection status via <code>TransferToInspection</code> movements. This models the inspection hold process common in manufacturing and pharmaceutical industries:</p>
+<pre><code>Goods Receipt → Transfer to Inspection → QC Hold → Transfer from Inspection → Unrestricted Use
+                                                 └→ Scrap (if rejected)
+</code></pre>
+<p>The rate of items routed through inspection depends on the material type and vendor scorecard grades (when <code>source_to_pay</code> is enabled). Materials from vendors with grade C or lower are routed through inspection at a higher rate.</p>
 <h3 id="inventory-journal-entries"><a class="header" href="#inventory-journal-entries">Inventory Journal Entries</a></h3>
 <div class="table-wrapper">
 <table>
@@ -7690,6 +8036,48 @@ period_close:
     closing_entries: true
     retained_earnings: true
 </code></pre>
+<h2 id="financial-reporting-v060"><a class="header" href="#financial-reporting-v060">Financial Reporting (v0.6.0)</a></h2>
+<p>The <code>financial_reporting</code> section generates structured financial statements, management KPIs, and budgets derived from the underlying journal entries, trial balances, and period close data.</p>
+<h3 id="financial-statements"><a class="header" href="#financial-statements">Financial Statements</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  enabled: true
+  generate_balance_sheet: true         # Balance sheet
+  generate_income_statement: true      # Income statement / P&amp;L
+  generate_cash_flow: true             # Cash flow statement
+  generate_changes_in_equity: true     # Statement of changes in equity
+  comparative_periods: 1               # Number of prior-period comparatives
+</code></pre>
+<p>When enabled, the generator produces financial statements at each period close. The <code>comparative_periods</code> setting controls how many prior periods are included for comparative analysis. Statements are aggregated from the trial balance and subledger data, ensuring consistency with the underlying journal entries.</p>
+<h3 id="management-kpis"><a class="header" href="#management-kpis">Management KPIs</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  management_kpis:
+    enabled: true
+    frequency: "monthly"               # monthly or quarterly
+</code></pre>
+<p>Management KPIs include ratios and metrics computed from the generated financial data:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>KPI Category</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td>Liquidity</td><td>Current ratio, quick ratio, cash conversion cycle</td></tr>
+<tr><td>Profitability</td><td>Gross margin, operating margin, ROE, ROA</td></tr>
+<tr><td>Efficiency</td><td>Inventory turnover, receivables turnover, asset turnover</td></tr>
+<tr><td>Leverage</td><td>Debt-to-equity, interest coverage</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="budgets"><a class="header" href="#budgets">Budgets</a></h3>
+<pre><code class="language-yaml">financial_reporting:
+  budgets:
+    enabled: true
+    revenue_growth_rate: 0.05          # 5% expected growth
+    expense_inflation_rate: 0.03       # 3% cost inflation
+    variance_noise: 0.10               # 10% random noise on actuals vs budget
+</code></pre>
+<p>Budget generation creates a budget line for each GL account based on prior-period actuals, adjusted by the configured growth and inflation rates. The <code>variance_noise</code> parameter controls the spread between budget and actual figures, producing realistic budget-to-actual variance reports.</p>
+<hr>
 <h2 id="see-also-17"><a class="header" href="#see-also-17">See Also</a></h2>
 <ul>
 <li><a href="#companies-1">Companies</a></li>
@@ -9139,6 +9527,11 @@ members = [
 <tr><td><a href="#master-data-2">Master Data</a></td><td>Vendor, Customer, Material, FixedAsset, Employee</td></tr>
 <tr><td><a href="#documents">Documents</a></td><td>PurchaseOrder, Invoice, Payment, etc.</td></tr>
 <tr><td><a href="#financial">Financial</a></td><td>TrialBalance, FxRate, AccountBalance</td></tr>
+<tr><td><a href="#financial-reporting">Financial Reporting</a></td><td>FinancialStatement, CashFlowItem, BankReconciliation, BankStatementLine</td></tr>
+<tr><td><a href="#sourcing-s2c">Sourcing (S2C)</a></td><td>SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis</td></tr>
+<tr><td><a href="#hr--payroll">HR / Payroll</a></td><td>PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem</td></tr>
+<tr><td><a href="#manufacturing-1">Manufacturing</a></td><td>ProductionOrder, QualityInspection, CycleCount</td></tr>
+<tr><td><a href="#sales-quotes">Sales Quotes</a></td><td>SalesQuote, QuoteLineItem</td></tr>
 <tr><td><a href="#compliance-2">Compliance</a></td><td>InternalControl, SoDRule, LabeledAnomaly</td></tr>
 </tbody>
 </table>
@@ -9508,6 +9901,225 @@ pub enum AnomalyType {
 }
 <span class="boring">}</span></code></pre>
 <hr>
+<h2 id="financial-reporting"><a class="header" href="#financial-reporting">Financial Reporting</a></h2>
+<h3 id="financialstatement"><a class="header" href="#financialstatement">FinancialStatement</a></h3>
+<p>Period-end financial statement with line items.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum StatementType {
+    BalanceSheet,
+    IncomeStatement,
+    CashFlowStatement,
+    ChangesInEquity,
+}
+
+pub struct FinancialStatementLineItem {
+    pub line_code: String,
+    pub label: String,
+    pub section: String,
+    pub sort_order: u32,
+    pub amount: Decimal,
+    pub amount_prior: Option&lt;Decimal&gt;,
+    pub indent_level: u8,
+    pub is_total: bool,
+    pub gl_accounts: Vec&lt;String&gt;,
+}
+
+pub struct CashFlowItem {
+    pub item_code: String,
+    pub label: String,
+    pub category: CashFlowCategory,  // Operating, Investing, Financing
+    pub amount: Decimal,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="bankreconciliation"><a class="header" href="#bankreconciliation">BankReconciliation</a></h3>
+<p>Bank statement reconciliation with auto-matching.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct BankStatementLine {
+    pub line_id: String,
+    pub statement_date: NaiveDate,
+    pub direction: Direction,         // Inflow, Outflow
+    pub amount: Decimal,
+    pub description: String,
+    pub match_status: MatchStatus,    // Unmatched, AutoMatched, ManuallyMatched, BankCharge, Interest
+    pub matched_payment_id: Option&lt;String&gt;,
+}
+
+pub struct BankReconciliation {
+    pub reconciliation_id: String,
+    pub company_code: String,
+    pub bank_account: String,
+    pub period_start: NaiveDate,
+    pub period_end: NaiveDate,
+    pub opening_balance: Decimal,
+    pub closing_balance: Decimal,
+    pub status: ReconciliationStatus, // InProgress, Completed, CompletedWithExceptions
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="sourcing-s2c"><a class="header" href="#sourcing-s2c">Sourcing (S2C)</a></h2>
+<p>Source-to-Contract models for the procurement pipeline.</p>
+<h3 id="sourcingproject"><a class="header" href="#sourcingproject">SourcingProject</a></h3>
+<p>Top-level sourcing initiative.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SourcingProject {
+    pub project_id: String,
+    pub title: String,
+    pub category: String,
+    pub status: SourcingProjectStatus,
+    pub estimated_spend: Decimal,
+    pub start_date: NaiveDate,
+    pub target_award_date: NaiveDate,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="rfxevent"><a class="header" href="#rfxevent">RfxEvent</a></h3>
+<p>Request for Information/Proposal/Quote.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct RfxEvent {
+    pub rfx_id: String,
+    pub project_id: String,
+    pub rfx_type: RfxType,       // Rfi, Rfp, Rfq
+    pub title: String,
+    pub issue_date: NaiveDate,
+    pub close_date: NaiveDate,
+    pub invited_suppliers: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="procurementcontract"><a class="header" href="#procurementcontract">ProcurementContract</a></h3>
+<p>Awarded contract resulting from bid evaluation.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProcurementContract {
+    pub contract_id: String,
+    pub vendor_id: String,
+    pub rfx_id: Option&lt;String&gt;,
+    pub contract_value: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub auto_renew: bool,
+}
+<span class="boring">}</span></code></pre>
+<p>Additional S2C models include <code>SpendAnalysis</code>, <code>SupplierQualification</code>, <code>Bid</code>, <code>BidEvaluation</code>, <code>CatalogItem</code>, and <code>SupplierScorecard</code>.</p>
+<hr>
+<h2 id="hr--payroll"><a class="header" href="#hr--payroll">HR / Payroll</a></h2>
+<p>Hire-to-Retire (H2R) process models.</p>
+<h3 id="payrollrun"><a class="header" href="#payrollrun">PayrollRun</a></h3>
+<p>A complete pay cycle for a company.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct PayrollRun {
+    pub payroll_id: String,
+    pub company_code: String,
+    pub pay_period_start: NaiveDate,
+    pub pay_period_end: NaiveDate,
+    pub run_date: NaiveDate,
+    pub status: PayrollRunStatus,     // Draft, Calculated, Approved, Posted, Reversed
+    pub total_gross: Decimal,
+    pub total_deductions: Decimal,
+    pub total_net: Decimal,
+    pub total_employer_cost: Decimal,
+    pub employee_count: u32,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="timeentry"><a class="header" href="#timeentry">TimeEntry</a></h3>
+<p>Employee time tracking record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct TimeEntry {
+    pub entry_id: String,
+    pub employee_id: String,
+    pub date: NaiveDate,
+    pub hours_regular: f64,
+    pub hours_overtime: f64,
+    pub hours_pto: f64,
+    pub hours_sick: f64,
+    pub project_id: Option&lt;String&gt;,
+    pub cost_center: Option&lt;String&gt;,
+    pub approval_status: TimeApprovalStatus,  // Pending, Approved, Rejected
+}
+<span class="boring">}</span></code></pre>
+<h3 id="expensereport"><a class="header" href="#expensereport">ExpenseReport</a></h3>
+<p>Employee expense reimbursement.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ExpenseReport {
+    pub report_id: String,
+    pub employee_id: String,
+    pub submission_date: NaiveDate,
+    pub status: ExpenseStatus,        // Draft, Submitted, Approved, Rejected, Paid
+    pub total_amount: Decimal,
+    pub line_items: Vec&lt;ExpenseLineItem&gt;,
+}
+
+pub enum ExpenseCategory {
+    Travel, Meals, Lodging, Transportation,
+    Office, Entertainment, Training, Other,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="manufacturing-1"><a class="header" href="#manufacturing-1">Manufacturing</a></h2>
+<p>Production and quality process models.</p>
+<h3 id="productionorder"><a class="header" href="#productionorder">ProductionOrder</a></h3>
+<p>Manufacturing production order linked to materials.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProductionOrder {
+    pub order_id: String,
+    pub material_id: String,
+    pub planned_quantity: Decimal,
+    pub actual_quantity: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: Option&lt;NaiveDate&gt;,
+    pub status: ProductionOrderStatus,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="qualityinspection"><a class="header" href="#qualityinspection">QualityInspection</a></h3>
+<p>Quality control inspection record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct QualityInspection {
+    pub inspection_id: String,
+    pub production_order_id: String,
+    pub inspection_date: NaiveDate,
+    pub result: InspectionResult,     // Pass, Fail, Conditional
+    pub defect_count: u32,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="cyclecount"><a class="header" href="#cyclecount">CycleCount</a></h3>
+<p>Inventory cycle count with variance tracking.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CycleCount {
+    pub count_id: String,
+    pub material_id: String,
+    pub warehouse: String,
+    pub count_date: NaiveDate,
+    pub system_quantity: Decimal,
+    pub counted_quantity: Decimal,
+    pub variance: Decimal,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="sales-quotes"><a class="header" href="#sales-quotes">Sales Quotes</a></h2>
+<p>Quote-to-order pipeline models.</p>
+<h3 id="salesquote"><a class="header" href="#salesquote">SalesQuote</a></h3>
+<p>Sales quotation record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SalesQuote {
+    pub quote_id: String,
+    pub customer_id: String,
+    pub quote_date: NaiveDate,
+    pub valid_until: NaiveDate,
+    pub total_amount: Decimal,
+    pub status: QuoteStatus,          // Draft, Sent, Won, Lost, Expired
+    pub converted_order_id: Option&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<hr>
 <h2 id="decimal-handling"><a class="header" href="#decimal-handling">Decimal Handling</a></h2>
 <p>All monetary amounts use <code>rust_decimal::Decimal</code>:</p>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -9700,6 +10312,41 @@ let graph = builder.build(&amp;entries)?;
 let exporter = PyTorchGeometricExporter::new("output/graphs");
 exporter.export(&amp;graph, split_config)?;
 <span class="boring">}</span></code></pre>
+<h2 id="phase-9-enterprise-process-chains-v060"><a class="header" href="#phase-9-enterprise-process-chains-v060">Phase 9: Enterprise Process Chains (v0.6.0)</a></h2>
+<h3 id="source-to-contract-s2c-flow"><a class="header" href="#source-to-contract-s2c-flow">Source-to-Contract (S2C) Flow</a></h3>
+<pre><code>Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Contract Award → Catalog Items → [feeds into P2P] → Supplier Scorecard
+</code></pre>
+<p>S2C data feeds into the existing P2P procurement flow. Procurement contracts and catalog items provide the upstream sourcing context for purchase orders.</p>
+<h3 id="hr--payroll-flow"><a class="header" href="#hr--payroll-flow">HR / Payroll Flow</a></h3>
+<pre><code>Employees (Master Data) → Time Entries → Payroll Run → JE (Salary Expense/Cash)
+                        → Expense Reports → JE (Expense/AP)
+</code></pre>
+<p>HR data depends on the employee master data from Phase 2. Payroll runs generate journal entries that post to salary expense and cash accounts.</p>
+<h3 id="financial-reporting-flow"><a class="header" href="#financial-reporting-flow">Financial Reporting Flow</a></h3>
+<pre><code>Trial Balance → Balance Sheet + Income Statement
+             → Cash Flow Statement (indirect method)
+             → Changes in Equity
+             → Management KPIs
+             → Budget Variance Analysis
+
+Payments (P2P/O2C) → Bank Reconciliation → Matched/Unmatched Items
+</code></pre>
+<p>Financial statements are derived from the adjusted trial balance. Bank reconciliations match payments from document flows against bank statement lines.</p>
+<h3 id="manufacturing-flow"><a class="header" href="#manufacturing-flow">Manufacturing Flow</a></h3>
+<pre><code>Materials (Master Data) → Production Orders → Quality Inspections
+                                            → Cycle Counts
+</code></pre>
+<p>Manufacturing data depends on materials from the master data. Production orders consume raw materials and produce finished goods.</p>
+<h3 id="sales-quote-flow"><a class="header" href="#sales-quote-flow">Sales Quote Flow</a></h3>
+<pre><code>Customers (Master Data) → Sales Quotes → [feeds into O2C when won]
+</code></pre>
+<p>The quote-to-order pipeline generates sales quotes that, when won, link to sales orders in the O2C flow.</p>
+<h3 id="accounting-standards-flow"><a class="header" href="#accounting-standards-flow">Accounting Standards Flow</a></h3>
+<pre><code>Customers → Customer Contracts → Performance Obligations (ASC 606/IFRS 15)
+Fixed Assets → Impairment Tests → Recoverable Amount Calculations
+</code></pre>
+<p>Revenue recognition generates contracts with performance obligations. Impairment testing evaluates fixed asset carrying amounts against recoverable values.</p>
 <h2 id="data-dependencies"><a class="header" href="#data-dependencies">Data Dependencies</a></h2>
 <pre><code>         ┌─────────────┐
          │    Config   │
@@ -9726,12 +10373,12 @@ exporter.export(&amp;graph, split_config)?;
         │   Entries   │
         └──────┬──────┘
                │
-    ┌──────────┼──────────┐
-    │          │          │
-    ▼          ▼          ▼
-┌───────┐ ┌───────┐ ┌───────┐
-│  TB   │ │ Graph │ │Labels │
-└───────┘ └───────┘ └───────┘
+    ┌──────────┼──────────┐──────────┐──────────┐
+    │          │          │          │          │
+    ▼          ▼          ▼          ▼          ▼
+┌───────┐ ┌───────┐ ┌───────┐ ┌─────────┐ ┌───────┐
+│  TB   │ │ Graph │ │Labels │ │Fin.Stmt │ │BankRec│
+└───────┘ └───────┘ └───────┘ └─────────┘ └───────┘
 </code></pre>
 <h2 id="streaming-vs-batch"><a class="header" href="#streaming-vs-batch">Streaming vs Batch</a></h2>
 <h3 id="batch-mode"><a class="header" href="#batch-mode">Batch Mode</a></h3>
@@ -10153,6 +10800,74 @@ sink.write_batch(&amp;entries)?;
 <li>Intervention results with effect estimates</li>
 <li>Counterfactual pairs (factual + counterfactual)</li>
 <li>Causal validation report</li>
+</ul>
+<h2 id="stage-14-source-to-contract-v060"><a class="header" href="#stage-14-source-to-contract-v060">Stage 14: Source-to-Contract (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate the full S2C procurement pipeline</p>
+<p>When source-to-pay is enabled, generates the complete sourcing lifecycle from spend analysis through supplier scorecards. The generation DAG follows:</p>
+<pre><code>Spend Analysis → Sourcing Project → Supplier Qualification → RFx Event → Bids →
+Bid Evaluation → Procurement Contract → Catalog Items → [feeds into P2P] → Supplier Scorecard
+</code></pre>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Spend analysis records and category hierarchies</li>
+<li>Sourcing projects with supplier qualification data</li>
+<li>RFx events (RFI/RFP/RFQ), bids, and bid evaluations</li>
+<li>Procurement contracts and catalog items</li>
+<li>Supplier scorecards with performance metrics</li>
+</ul>
+<h2 id="stage-15-financial-reporting-v060"><a class="header" href="#stage-15-financial-reporting-v060">Stage 15: Financial Reporting (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate bank reconciliations and financial statements</p>
+<p>When financial reporting is enabled, produces bank reconciliations with auto-matching and full financial statement sets derived from the adjusted trial balance.</p>
+<p>Bank reconciliations match payments to bank statement lines with configurable auto-match, manual match, and exception rates. Financial statements include:</p>
+<ul>
+<li><strong>Balance Sheet</strong>: Assets = Liabilities + Equity</li>
+<li><strong>Income Statement</strong>: Revenue - COGS - OpEx - Tax = Net Income</li>
+<li><strong>Cash Flow Statement</strong>: Indirect method with operating, investing, and financing categories</li>
+<li><strong>Statement of Changes in Equity</strong>: Retained earnings, dividends, comprehensive income</li>
+</ul>
+<p>Also generates management KPIs (financial ratios) and budget variance analysis when configured.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Bank reconciliations with statement lines and reconciling items</li>
+<li>Financial statements (balance sheet, income statement, cash flow, changes in equity)</li>
+<li>Management KPIs and financial ratios</li>
+<li>Budget vs. actual variance reports</li>
+</ul>
+<h2 id="stage-16-hr-data-v060"><a class="header" href="#stage-16-hr-data-v060">Stage 16: HR Data (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate Hire-to-Retire (H2R) process data</p>
+<p>When HR generation is enabled, produces payroll runs, time entries, and expense reports linked to the employee master data generated in Stage 2.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Payroll runs with employee pay line items (gross, deductions, net, employer cost)</li>
+<li>Time entries with regular hours, overtime, PTO, and sick leave</li>
+<li>Expense reports with categorized line items and approval workflows</li>
+</ul>
+<h2 id="stage-17-accounting-standards-v060"><a class="header" href="#stage-17-accounting-standards-v060">Stage 17: Accounting Standards (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate ASC 606/IFRS 15 revenue recognition and impairment testing data</p>
+<p>When accounting standards generation is enabled, produces customer contracts with performance obligations for revenue recognition and asset impairment test records.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Customer contracts with performance obligations (ASC 606/IFRS 15)</li>
+<li>Revenue recognition schedules</li>
+<li>Asset impairment tests with recoverable amount calculations</li>
+</ul>
+<h2 id="stage-18-manufacturing-v060"><a class="header" href="#stage-18-manufacturing-v060">Stage 18: Manufacturing (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate manufacturing process data</p>
+<p>When manufacturing is enabled, produces production orders, quality inspections, and cycle counts linked to materials from the master data.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Production orders with BOM components and routing steps</li>
+<li>Quality inspections with pass/fail/conditional results</li>
+<li>Inventory cycle counts with variance analysis</li>
+</ul>
+<h2 id="stage-19-sales-quotes-kpis-and-budgets-v060"><a class="header" href="#stage-19-sales-quotes-kpis-and-budgets-v060">Stage 19: Sales Quotes, KPIs, and Budgets (v0.6.0)</a></h2>
+<p><strong>Purpose:</strong> Generate sales pipeline and financial planning data</p>
+<p>When enabled, produces the quote-to-order pipeline, management KPI computations, and budget variance analysis.</p>
+<p><strong>Outputs:</strong></p>
+<ul>
+<li>Sales quotes with line items, conversion tracking, and win/loss rates</li>
+<li>Management KPIs (liquidity, profitability, efficiency, leverage ratios)</li>
+<li>Budget records with actual vs. planned variance analysis</li>
 </ul>
 <h2 id="parallel-execution-1"><a class="header" href="#parallel-execution-1">Parallel Execution</a></h2>
 <p>Stages that support parallelism:</p>
@@ -10641,14 +11356,15 @@ if changed {
 <tr><th>Chain</th><th>Full Name</th><th>Coverage</th><th>Status</th><th>Key Modules</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>S2P</strong></td><td>Source-to-Pay</td><td>85%</td><td>Implemented (P2P complete, S2C planned)</td><td><code>document_flow/p2p_generator</code>, <code>master_data/vendor</code>, <code>subledger/ap</code></td></tr>
-<tr><td><strong>O2C</strong></td><td>Order-to-Cash</td><td>93%</td><td>Implemented</td><td><code>document_flow/o2c_generator</code>, <code>master_data/customer</code>, <code>subledger/ar</code></td></tr>
-<tr><td><strong>R2R</strong></td><td>Record-to-Report</td><td>78%</td><td>Mostly implemented</td><td><code>je_generator</code>, <code>balance/</code>, <code>period_close/</code>, <code>intercompany/</code></td></tr>
+<tr><td><strong>S2P</strong></td><td>Source-to-Pay</td><td>95%</td><td>Implemented (P2P + S2C + OCPM)</td><td><code>document_flow/p2p_generator</code>, <code>sourcing/</code>, <code>ocpm/s2c_generator</code></td></tr>
+<tr><td><strong>O2C</strong></td><td>Order-to-Cash</td><td>95%</td><td>Implemented (+ OCPM)</td><td><code>document_flow/o2c_generator</code>, <code>master_data/customer</code>, <code>subledger/ar</code></td></tr>
+<tr><td><strong>R2R</strong></td><td>Record-to-Report</td><td>85%</td><td>Implemented (+ Bank Recon OCPM)</td><td><code>je_generator</code>, <code>balance/</code>, <code>period_close/</code>, <code>ocpm/bank_recon_generator</code></td></tr>
 <tr><td><strong>A2R</strong></td><td>Acquire-to-Retire</td><td>70%</td><td>Partially implemented</td><td><code>master_data/asset</code>, <code>subledger/fa</code>, <code>period_close/depreciation</code></td></tr>
 <tr><td><strong>INV</strong></td><td>Inventory Management</td><td>55%</td><td>Partially implemented</td><td><code>subledger/inventory</code>, <code>document_flow/</code> (GR/delivery links)</td></tr>
-<tr><td><strong>BANK</strong></td><td>Banking &amp; Treasury</td><td>65%</td><td>Partially implemented</td><td><code>datasynth-banking</code> (KYC/AML), payment clearing</td></tr>
-<tr><td><strong>H2R</strong></td><td>Hire-to-Retire</td><td>30%</td><td>Minimal</td><td><code>master_data/employee</code>, <code>user_generator</code></td></tr>
-<tr><td><strong>MFG</strong></td><td>Plan-to-Produce</td><td>20%</td><td>Config only</td><td>Industry-specific manufacturing config</td></tr>
+<tr><td><strong>BANK</strong></td><td>Banking &amp; Treasury</td><td>85%</td><td>Implemented (+ OCPM)</td><td><code>datasynth-banking</code>, <code>ocpm/bank_generator</code></td></tr>
+<tr><td><strong>H2R</strong></td><td>Hire-to-Retire</td><td>85%</td><td>Implemented (+ OCPM)</td><td><code>hr/</code>, <code>master_data/employee</code>, <code>ocpm/h2r_generator</code></td></tr>
+<tr><td><strong>MFG</strong></td><td>Plan-to-Produce</td><td>85%</td><td>Implemented (+ OCPM)</td><td><code>manufacturing/</code>, <code>ocpm/mfg_generator</code></td></tr>
+<tr><td><strong>AUDIT</strong></td><td>Audit Lifecycle</td><td>90%</td><td>Implemented (+ OCPM)</td><td><code>audit/</code>, <code>ocpm/audit_generator</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -10752,38 +11468,43 @@ if changed {
 </ul>
 <p><strong>Gaps:</strong> Financial statement generation (balance sheet, income statement, cash flow), budget vs actual reporting.</p>
 <hr>
+<h3 id="banking--treasury-bank--85"><a class="header" href="#banking--treasury-bank--85">Banking &amp; Treasury (BANK) — 85%</a></h3>
+<p><strong>Implemented:</strong> Bank customer profiles, KYC/AML, bank accounts, transactions with fraud typologies (structuring, funnel, layering, mule, round-tripping). OCPM events for customer onboarding, KYC review, account management, and transaction lifecycle.</p>
+<p><strong>Gaps:</strong> Cash forecasting, liquidity management.</p>
+<h3 id="hire-to-retire-h2r--85"><a class="header" href="#hire-to-retire-h2r--85">Hire-to-Retire (H2R) — 85%</a></h3>
+<p><strong>Implemented:</strong> Employee master data, payroll runs with tax/deduction calculations, time entries with overtime, expense reports with policy violations. OCPM events for payroll lifecycle, time entry approval, and expense approval chains.</p>
+<p><strong>Gaps:</strong> Benefits administration, workforce planning.</p>
+<h3 id="plan-to-produce-mfg--85"><a class="header" href="#plan-to-produce-mfg--85">Plan-to-Produce (MFG) — 85%</a></h3>
+<p><strong>Implemented:</strong> Production orders with BOM explosion, routing operations, WIP costing, quality inspections, cycle counting. OCPM events for production order lifecycle, quality inspection, and cycle count reconciliation.</p>
+<p><strong>Gaps:</strong> Material requirements planning (MRP), advanced shop floor control.</p>
+<h3 id="audit-lifecycle-audit--90"><a class="header" href="#audit-lifecycle-audit--90">Audit Lifecycle (AUDIT) — 90%</a></h3>
+<p><strong>Implemented:</strong> Engagement planning, risk assessment (ISA 315/330), workpaper creation and review (ISA 230), evidence collection (ISA 500), findings (ISA 265), professional judgment documentation (ISA 200). OCPM events for the full engagement lifecycle.</p>
+<p><strong>Gaps:</strong> Multi-engagement portfolio management.</p>
 <h2 id="partially-implemented-chains"><a class="header" href="#partially-implemented-chains">Partially Implemented Chains</a></h2>
 <h3 id="acquire-to-retire-a2r--70"><a class="header" href="#acquire-to-retire-a2r--70">Acquire-to-Retire (A2R) — 70%</a></h3>
 <p><strong>Implemented:</strong> Fixed asset master data, depreciation (6 methods), acquisition from PO, disposal with gain/loss accounting, impairment testing (ASC 360/IAS 36).</p>
 <p><strong>Gaps:</strong> Capital project/WBS integration, asset transfers between companies, construction-in-progress (CIP) tracking.</p>
 <h3 id="inventory-management-inv--55"><a class="header" href="#inventory-management-inv--55">Inventory Management (INV) — 55%</a></h3>
 <p><strong>Implemented:</strong> Inventory positions, 22 movement types, 4 valuation methods, stock status tracking, P2P goods receipts, O2C goods issues.</p>
-<p><strong>Gaps:</strong> Cycle counting with count programs, quality inspection integration, obsolescence management, ABC analysis.</p>
-<h3 id="banking--treasury-bank--65"><a class="header" href="#banking--treasury-bank--65">Banking &amp; Treasury (BANK) — 65%</a></h3>
-<p><strong>Implemented:</strong> Bank customer profiles, KYC/AML, bank accounts, transactions with fraud typologies (structuring, funnel, layering, mule, round-tripping).</p>
-<p><strong>Gaps:</strong> Bank statement reconciliation, cash forecasting, liquidity management.</p>
-<h3 id="hire-to-retire-h2r--30"><a class="header" href="#hire-to-retire-h2r--30">Hire-to-Retire (H2R) — 30%</a></h3>
-<p><strong>Implemented:</strong> Employee master data, user/authorization generation.</p>
-<p><strong>Gaps:</strong> Payroll runs, time management, expense management, benefits, workforce planning.</p>
-<h3 id="plan-to-produce-mfg--20"><a class="header" href="#plan-to-produce-mfg--20">Plan-to-Produce (MFG) — 20%</a></h3>
-<p><strong>Implemented:</strong> Industry-specific manufacturing configuration (BOM depth, yield rates, work centers).</p>
-<p><strong>Gaps:</strong> Production orders, WIP costing, material requirements planning (MRP), shop floor control.</p>
+<p><strong>Gaps:</strong> Quality inspection integration, obsolescence management, ABC analysis.</p>
 <hr>
 <h2 id="cross-process-integration"><a class="header" href="#cross-process-integration">Cross-Process Integration</a></h2>
-<p>Process chains share data through several integration points:</p>
-<pre><code>         S2P                    O2C                    R2R
-          │                      │                      │
-    GR ───┼──── Inventory ───────┼── Delivery           │
-          │         │            │                      │
-    Payment ────────┼────────────┼── Receipt ──── Bank Recon
-          │         │            │                      │
-    AP Open Item    │       AR Open Item                │
-          │         │            │                      │
-          └─────────┴────────────┴───── Journal Entries ┘
-                                                │
-                                          Trial Balance
-                                                │
-                                         Consolidation
+<p>Process chains share data through several integration points, now with full OCPM event coverage:</p>
+<pre><code>    S2C ──→ S2P                    O2C                    R2R
+    │        │                      │                      │
+    Contract GR ──── Inventory ─────┼── Delivery           │
+             │         │            │                      │
+       Payment ────────┼────────────┼── Receipt ──── Bank Recon
+             │         │            │                  │   │
+       AP Open Item    │       AR Open Item         BANK  │
+             │     MFG─┘            │                 │   │
+             └──H2R──┴──────────────┴──── Journal Entries ┘
+                  │                                   │
+              AUDIT ─────────────────────────── Trial Balance
+                                                      │
+                                               Consolidation
+
+    ──── All chains feed OCEL 2.0 Event Log (88 activities) ────
 </code></pre>
 <h3 id="integration-map"><a class="header" href="#integration-map">Integration Map</a></h3>
 <div class="table-wrapper">
@@ -11305,6 +12026,12 @@ cargo doc -p datasynth-fingerprint --open
 <tr><td><code>temporal.rs</code></td><td>Bi-temporal data model for audit trails</td></tr>
 <tr><td><code>anomaly.rs</code></td><td>Anomaly types and labels for ML training</td></tr>
 <tr><td><code>internal_control.rs</code></td><td>SOX 404 control definitions</td></tr>
+<tr><td><code>sourcing/</code></td><td>S2C models: SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis</td></tr>
+<tr><td><code>payroll.rs</code></td><td>PayrollRun, PayrollLineItem with gross/deductions/net/employer cost</td></tr>
+<tr><td><code>time_entry.rs</code></td><td>TimeEntry with regular, overtime, PTO, and sick hours</td></tr>
+<tr><td><code>expense_report.rs</code></td><td>ExpenseReport, ExpenseLineItem with category and approval workflow</td></tr>
+<tr><td><code>financial_statements.rs</code></td><td>FinancialStatement, FinancialStatementLineItem, CashFlowItem, StatementType</td></tr>
+<tr><td><code>bank_reconciliation.rs</code></td><td>BankReconciliation, BankStatementLine, ReconcilingItem with auto-matching</td></tr>
 </tbody>
 </table>
 </div>
@@ -11937,6 +12664,11 @@ output:
 <li><strong>Document Flows</strong>: P2P (Procure-to-Pay), O2C (Order-to-Cash)</li>
 <li><strong>Financial</strong>: Intercompany, balance tracking, subledgers, FX, period close</li>
 <li><strong>Quality</strong>: Anomaly injection, data quality variations</li>
+<li><strong>Sourcing (S2C)</strong>: Spend analysis, RFx, bids, contracts, catalogs, scorecards (v0.6.0)</li>
+<li><strong>HR / Payroll</strong>: Payroll runs, time entries, expense reports (v0.6.0)</li>
+<li><strong>Financial Reporting</strong>: Financial statements, bank reconciliation (v0.6.0)</li>
+<li><strong>Standards</strong>: Revenue recognition, impairment testing (v0.6.0)</li>
+<li><strong>Manufacturing</strong>: Production orders, quality inspections, cycle counts (v0.6.0)</li>
 </ul>
 <h2 id="module-structure-1"><a class="header" href="#module-structure-1">Module Structure</a></h2>
 <h3 id="core-generators"><a class="header" href="#core-generators">Core Generators</a></h3>
@@ -12110,6 +12842,76 @@ output:
 <tr><td><code>VendorLlmEnricher</code></td><td>Generate realistic vendor names by industry, spend category, and country</td></tr>
 <tr><td><code>TransactionLlmEnricher</code></td><td>Generate transaction descriptions and memo fields</td></tr>
 <tr><td><code>AnomalyLlmExplainer</code></td><td>Generate natural language explanations for injected anomalies</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="sourcing-sourcing--v060"><a class="header" href="#sourcing-sourcing--v060">Sourcing (<code>sourcing/</code>) – v0.6.0</a></h3>
+<p>Source-to-Contract (S2C) procurement pipeline generators.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>spend_analysis_generator</code></td><td>Spend analysis records and category hierarchies</td></tr>
+<tr><td><code>sourcing_project_generator</code></td><td>Sourcing project lifecycle management</td></tr>
+<tr><td><code>qualification_generator</code></td><td>Supplier qualification assessments</td></tr>
+<tr><td><code>rfx_generator</code></td><td>RFx events (RFI/RFP/RFQ) with invited suppliers</td></tr>
+<tr><td><code>bid_generator</code></td><td>Supplier bids with pricing and compliance data</td></tr>
+<tr><td><code>bid_evaluation_generator</code></td><td>Bid scoring, ranking, and award recommendations</td></tr>
+<tr><td><code>contract_generator</code></td><td>Procurement contracts with terms and renewal rules</td></tr>
+<tr><td><code>catalog_generator</code></td><td>Catalog items linked to contracts</td></tr>
+<tr><td><code>scorecard_generator</code></td><td>Supplier scorecards with performance metrics</td></tr>
+</tbody>
+</table>
+</div>
+<p>Generation DAG: <code>spend_analysis -&gt; sourcing_project -&gt; qualification -&gt; rfx -&gt; bid -&gt; bid_evaluation -&gt; contract -&gt; catalog -&gt; [P2P] -&gt; scorecard</code></p>
+<h3 id="hr-hr--v060"><a class="header" href="#hr-hr--v060">HR (<code>hr/</code>) – v0.6.0</a></h3>
+<p>Hire-to-Retire (H2R) generators for the HR process chain.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>payroll_generator</code></td><td>Payroll runs with employee pay line items (gross, deductions, net, employer cost)</td></tr>
+<tr><td><code>time_entry_generator</code></td><td>Employee time entries with regular, overtime, PTO, and sick hours</td></tr>
+<tr><td><code>expense_report_generator</code></td><td>Expense reports with categorized line items and approval workflows</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="standards-standards--v060"><a class="header" href="#standards-standards--v060">Standards (<code>standards/</code>) – v0.6.0</a></h3>
+<p>Accounting and audit standards generators.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>revenue_recognition_generator</code></td><td>ASC 606/IFRS 15 customer contracts with performance obligations</td></tr>
+<tr><td><code>impairment_generator</code></td><td>Asset impairment tests with recoverable amount calculations</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="period-close-additions--v060"><a class="header" href="#period-close-additions--v060">Period Close Additions – v0.6.0</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>financial_statement_generator</code></td><td>Balance sheet, income statement, cash flow, and changes in equity from trial balance data</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank-reconciliation--v060"><a class="header" href="#bank-reconciliation--v060">Bank Reconciliation – v0.6.0</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Generator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bank_reconciliation_generator</code></td><td>Bank reconciliations with statement lines, auto-matching, and reconciling items</td></tr>
 </tbody>
 </table>
 </div>
@@ -12601,6 +13403,12 @@ for entry in &amp;entries {
 <li><strong>LLM Enrichment</strong>: Enrich data with LLM-generated metadata (v0.5.0, if enabled)</li>
 <li><strong>Diffusion Enhancement</strong>: Blend diffusion model outputs (v0.5.0, if enabled)</li>
 <li><strong>Causal Overlay</strong>: Apply causal structure (v0.5.0, if enabled)</li>
+<li><strong>S2C Sourcing</strong>: Generate Source-to-Contract procurement pipeline (v0.6.0, if enabled)</li>
+<li><strong>Financial Reporting</strong>: Generate bank reconciliations and financial statements (v0.6.0, if enabled)</li>
+<li><strong>HR Data</strong>: Generate payroll runs, time entries, and expense reports (v0.6.0, if enabled)</li>
+<li><strong>Accounting Standards</strong>: Generate revenue recognition and impairment data (v0.6.0, if enabled)</li>
+<li><strong>Manufacturing</strong>: Generate production orders, quality inspections, and cycle counts (v0.6.0, if enabled)</li>
+<li><strong>Sales/KPIs/Budgets</strong>: Generate sales quotes, management KPIs, and budget variance data (v0.6.0, if enabled)</li>
 </ol>
 <h2 id="key-types-3"><a class="header" href="#key-types-3">Key Types</a></h2>
 <h3 id="generationorchestrator"><a class="header" href="#generationorchestrator">GenerationOrchestrator</a></h3>
@@ -12740,6 +13548,24 @@ orchestrator
     .with_graph_export()
     .run()?;
 <span class="boring">}</span></code></pre>
+<h3 id="enterprise-process-chain-phases-v060"><a class="header" href="#enterprise-process-chain-phases-v060">Enterprise Process Chain Phases (v0.6.0)</a></h3>
+<p>The <code>EnhancedOrchestrator</code> supports six new phases for enterprise process chains, controlled by <code>PhaseConfig</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Phase</th><th>Config Flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>14</td><td><code>generate_sourcing</code></td><td>S2C procurement pipeline: spend analysis through supplier scorecards</td></tr>
+<tr><td>15</td><td><code>generate_financial_statements</code> / <code>generate_bank_reconciliation</code></td><td>Financial statements and bank reconciliations</td></tr>
+<tr><td>16</td><td><code>generate_hr</code></td><td>Payroll runs, time entries, expense reports</td></tr>
+<tr><td>17</td><td><code>generate_accounting_standards</code></td><td>Revenue recognition (ASC 606/IFRS 15), impairment testing</td></tr>
+<tr><td>18</td><td><code>generate_manufacturing</code></td><td>Production orders, quality inspections, cycle counts</td></tr>
+<tr><td>19</td><td><code>generate_sales_kpi_budgets</code></td><td>Sales quotes, management KPIs, budget variance analysis</td></tr>
+</tbody>
+</table>
+</div>
+<p>Each phase is independently enabled and gracefully skips when its dependencies (e.g., master data) are unavailable.</p>
 <h2 id="output-coordination"><a class="header" href="#output-coordination">Output Coordination</a></h2>
 <p>The orchestrator coordinates output to multiple sinks:</p>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -12799,8 +13625,9 @@ let orchestrator = GenerationOrchestrator::with_threads(config, 4)?;
 <h2 id="overview-13"><a class="header" href="#overview-13">Overview</a></h2>
 <p><code>datasynth-graph</code> provides graph construction and export capabilities:</p>
 <ul>
-<li><strong>Graph Builders</strong>: Transaction, approval, and entity relationship graphs</li>
-<li><strong>ML Export</strong>: PyTorch Geometric, Neo4j, and DGL formats</li>
+<li><strong>Graph Builders</strong>: Transaction, approval, entity relationship, and multi-layer hypergraph builders</li>
+<li><strong>Hypergraph</strong>: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 8 process families with 24 entity type codes and OCPM event hyperedges</li>
+<li><strong>ML Export</strong>: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats</li>
 <li><strong>Feature Engineering</strong>: Temporal, amount, structural, and categorical features</li>
 <li><strong>Data Splits</strong>: Train/validation/test split generation</li>
 </ul>
@@ -13035,9 +13862,30 @@ neo4j-admin import \
     structural: true
     categorical: true
 </code></pre>
+<h2 id="multi-layer-hypergraph-v062"><a class="header" href="#multi-layer-hypergraph-v062">Multi-Layer Hypergraph (v0.6.2)</a></h2>
+<p>The hypergraph builder supports all 8 enterprise process families:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Family</th><th>Node Types</th></tr>
+</thead>
+<tbody>
+<tr><td><code>add_p2p_documents()</code></td><td>P2P</td><td>PurchaseOrder, GoodsReceipt, VendorInvoice, Payment</td></tr>
+<tr><td><code>add_o2c_documents()</code></td><td>O2C</td><td>SalesOrder, Delivery, CustomerInvoice</td></tr>
+<tr><td><code>add_s2c_documents()</code></td><td>S2C</td><td>SourcingProject, RfxEvent, SupplierBid, ProcurementContract</td></tr>
+<tr><td><code>add_h2r_documents()</code></td><td>H2R</td><td>PayrollRun, TimeEntry, ExpenseReport</td></tr>
+<tr><td><code>add_mfg_documents()</code></td><td>MFG</td><td>ProductionOrder, QualityInspection, CycleCount</td></tr>
+<tr><td><code>add_bank_documents()</code></td><td>BANK</td><td>BankingCustomer, BankAccount, BankTransaction</td></tr>
+<tr><td><code>add_audit_documents()</code></td><td>AUDIT</td><td>AuditEngagement, Workpaper, AuditFinding, AuditEvidence</td></tr>
+<tr><td><code>add_bank_recon_documents()</code></td><td>Bank Recon</td><td>BankReconciliation, BankStatementLine, ReconcilingItem</td></tr>
+<tr><td><code>add_ocpm_events()</code></td><td>OCPM</td><td>Events as hyperedges (entity type 400)</td></tr>
+</tbody>
+</table>
+</div>
 <h2 id="see-also-35"><a class="header" href="#see-also-35">See Also</a></h2>
 <ul>
 <li><a href="#graph-export">Graph Export</a></li>
+<li><a href="#process-mining-1">Process Mining</a></li>
 <li><a href="#fraud-detection-ml">Fraud Detection Use Case</a></li>
 <li><a href="#datasynth-generators">datasynth-generators</a></li>
 </ul>
@@ -14247,10 +15095,12 @@ for tx_label in &amp;labels.transaction_labels {
 <h1 id="datasynth-ocpm"><a class="header" href="#datasynth-ocpm">datasynth-ocpm</a></h1>
 <p>Object-Centric Process Mining (OCPM) models and generators.</p>
 <h2 id="overview-19"><a class="header" href="#overview-19">Overview</a></h2>
-<p><code>datasynth-ocpm</code> provides OCEL 2.0 compliant event log generation:</p>
+<p><code>datasynth-ocpm</code> provides OCEL 2.0 compliant event log generation across 8 enterprise process families:</p>
 <ul>
 <li><strong>OCEL 2.0 Models</strong>: Events, objects, relationships per IEEE standard</li>
-<li><strong>Process Generators</strong>: P2P (Procure-to-Pay), O2C (Order-to-Cash) flows</li>
+<li><strong>8 Process Generators</strong>: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon</li>
+<li><strong>88 Activity Types</strong>: Covering the full enterprise lifecycle</li>
+<li><strong>52 Object Types</strong>: With lifecycle states and inter-object relationships</li>
 <li><strong>Export Formats</strong>: OCEL 2.0 JSON, XML, and SQLite</li>
 </ul>
 <h2 id="ocel-20-standard"><a class="header" href="#ocel-20-standard">OCEL 2.0 Standard</a></h2>
@@ -14436,7 +15286,26 @@ exporter.export(&amp;event_log, "output/ocel2.sqlite")?;
 <li><code>event_objects</code></li>
 <li><code>object_relationships</code></li>
 </ul>
-<h2 id="object-types"><a class="header" href="#object-types">Object Types</a></h2>
+<h2 id="process-families-v062"><a class="header" href="#process-families-v062">Process Families (v0.6.2)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Family</th><th>Generator</th><th>Activities</th><th>Object Types</th><th>Variants</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>P2P</strong></td><td><code>generate_p2p_case()</code></td><td>9</td><td>PurchaseOrder, GoodsReceipt, VendorInvoice, Payment, Material, Vendor</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>O2C</strong></td><td><code>generate_o2c_case()</code></td><td>10</td><td>SalesOrder, Delivery, CustomerInvoice, CustomerPayment, Material, Customer</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>S2C</strong></td><td><code>generate_s2c_case()</code></td><td>8</td><td>SourcingProject, SupplierQualification, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>H2R</strong></td><td><code>generate_h2r_case()</code></td><td>8</td><td>PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>MFG</strong></td><td><code>generate_mfg_case()</code></td><td>10</td><td>ProductionOrder, RoutingOperation, QualityInspection, CycleCount</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>BANK</strong></td><td><code>generate_bank_case()</code></td><td>8</td><td>BankingCustomer, BankAccount, BankTransaction</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>AUDIT</strong></td><td><code>generate_audit_case()</code></td><td>10</td><td>AuditEngagement, Workpaper, AuditFinding, AuditEvidence, RiskAssessment, ProfessionalJudgment</td><td>Happy, Exception, Error</td></tr>
+<tr><td><strong>Bank Recon</strong></td><td><code>generate_bank_recon_case()</code></td><td>8</td><td>BankReconciliation, BankStatementLine, ReconcilingItem</td><td>Happy, Exception, Error</td></tr>
+</tbody>
+</table>
+</div>
+<p>Variant distribution: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%).</p>
+<h2 id="object-types-p2po2c"><a class="header" href="#object-types-p2po2c">Object Types (P2P/O2C)</a></h2>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -15687,7 +16556,7 @@ let bench = acfe_management_override_2k();
 </table>
 </div>
 <p><strong>Full generator</strong> industries have dedicated Rust enum types with per-transaction generation logic, dedicated master data structures, and industry-specific anomaly injection. <strong>Config preset</strong> industries use the standard generator pipeline but apply industry-appropriate GL account structures, transaction distributions, and anomaly rates through configuration.</p>
-<h2 id="manufacturing-1"><a class="header" href="#manufacturing-1">Manufacturing</a></h2>
+<h2 id="manufacturing-2"><a class="header" href="#manufacturing-2">Manufacturing</a></h2>
 <h3 id="transaction-types"><a class="header" href="#transaction-types">Transaction Types</a></h3>
 <pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -17064,11 +17933,51 @@ for epoch in range(100):
     loss.backward()
     optimizer.step()
 </code></pre>
+<h2 id="multi-layer-hypergraph-v062-1"><a class="header" href="#multi-layer-hypergraph-v062-1">Multi-Layer Hypergraph (v0.6.2)</a></h2>
+<p>The RustGraph Hypergraph exporter now supports all 8 enterprise process families with 24 entity type codes:</p>
+<h3 id="entity-type-codes"><a class="header" href="#entity-type-codes">Entity Type Codes</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Range</th><th>Family</th><th>Types</th></tr>
+</thead>
+<tbody>
+<tr><td>100</td><td>Accounting</td><td>GL Accounts</td></tr>
+<tr><td>300-303</td><td>P2P</td><td>PurchaseOrder, GoodsReceipt, VendorInvoice, Payment</td></tr>
+<tr><td>310-312</td><td>O2C</td><td>SalesOrder, Delivery, CustomerInvoice</td></tr>
+<tr><td>320-325</td><td>S2C</td><td>SourcingProject, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, SupplierQualification</td></tr>
+<tr><td>330-333</td><td>H2R</td><td>PayrollRun, TimeEntry, ExpenseReport, PayrollLineItem</td></tr>
+<tr><td>340-343</td><td>MFG</td><td>ProductionOrder, RoutingOperation, QualityInspection, CycleCount</td></tr>
+<tr><td>350-352</td><td>BANK</td><td>BankingCustomer, BankAccount, BankTransaction</td></tr>
+<tr><td>360-365</td><td>AUDIT</td><td>AuditEngagement, Workpaper, AuditFinding, AuditEvidence, RiskAssessment, ProfessionalJudgment</td></tr>
+<tr><td>370-372</td><td>Bank Recon</td><td>BankReconciliation, BankStatementLine, ReconcilingItem</td></tr>
+<tr><td>400</td><td>OCPM</td><td>OcpmEvent (events as hyperedges)</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="ocpm-events-as-hyperedges"><a class="header" href="#ocpm-events-as-hyperedges">OCPM Events as Hyperedges</a></h3>
+<p>When <code>events_as_hyperedges: true</code>, each OCPM event becomes a hyperedge connecting all its participating objects. This enables cross-process analysis via the hypergraph structure.</p>
+<h3 id="per-family-toggles"><a class="header" href="#per-family-toggles">Per-Family Toggles</a></h3>
+<pre><code class="language-yaml">graph_export:
+  hypergraph:
+    enabled: true
+    process_layer:
+      include_p2p: true
+      include_o2c: true
+      include_s2c: true
+      include_h2r: true
+      include_mfg: true
+      include_bank: true
+      include_audit: true
+      include_r2r: true
+      events_as_hyperedges: true
+</code></pre>
 <h2 id="see-also-48"><a class="header" href="#see-also-48">See Also</a></h2>
 <ul>
 <li><a href="#anomaly-injection-1">Anomaly Injection</a></li>
 <li><a href="#fraud-detection-ml">Fraud Detection Use Case</a></li>
 <li><a href="#datasynth-graph">datasynth-graph Crate</a></li>
+<li><a href="#process-mining-1">Process Mining</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="intercompany-processing"><a class="header" href="#intercompany-processing">Intercompany Processing</a></h1>
@@ -17920,6 +18829,69 @@ Period 2 (reverse):
       - type: bonus_accrual
         rate: 0.10                   # 10% of salary expense
 </code></pre>
+<h2 id="financial-statements-v060"><a class="header" href="#financial-statements-v060">Financial Statements (v0.6.0)</a></h2>
+<p>The period close engine can now generate full financial statement sets from the adjusted trial balance. This is controlled by the <code>financial_reporting</code> configuration section.</p>
+<h3 id="balance-sheet"><a class="header" href="#balance-sheet">Balance Sheet</a></h3>
+<p>Generates a statement of financial position with current/non-current asset and liability classifications:</p>
+<pre><code>Assets                              Liabilities &amp; Equity
+├── Current Assets                  ├── Current Liabilities
+│   ├── Cash &amp; Equivalents          │   ├── Accounts Payable
+│   ├── Accounts Receivable         │   ├── Accrued Liabilities
+│   └── Inventory                   │   └── Current Debt
+├── Non-Current Assets              ├── Non-Current Liabilities
+│   ├── Fixed Assets (net)          │   └── Long-Term Debt
+│   └── Intangibles                 └── Equity
+Total Assets = Total L + E              ├── Common Stock
+                                        └── Retained Earnings
+</code></pre>
+<h3 id="income-statement"><a class="header" href="#income-statement">Income Statement</a></h3>
+<p>Generates a multi-step income statement:</p>
+<pre><code>Revenue
+- Cost of Goods Sold
+= Gross Profit
+- Operating Expenses
+= Operating Income
++/- Other Income/Expense
+= Income Before Tax
+- Income Tax
+= Net Income
+</code></pre>
+<h3 id="cash-flow-statement"><a class="header" href="#cash-flow-statement">Cash Flow Statement</a></h3>
+<p>Generates an indirect-method cash flow statement with three categories:</p>
+<pre><code class="language-yaml">financial_reporting:
+  generate_cash_flow: true
+</code></pre>
+<p>Categories:</p>
+<ul>
+<li><strong>Operating</strong>: Net income + non-cash adjustments + working capital changes</li>
+<li><strong>Investing</strong>: Capital expenditures, asset disposals</li>
+<li><strong>Financing</strong>: Debt proceeds/repayments, equity transactions, dividends</li>
+</ul>
+<h3 id="statement-of-changes-in-equity"><a class="header" href="#statement-of-changes-in-equity">Statement of Changes in Equity</a></h3>
+<p>Tracks equity movements across the period:</p>
+<ul>
+<li>Opening retained earnings</li>
+<li>Net income for the period</li>
+<li>Dividends declared</li>
+<li>Other comprehensive income (CTA, unrealized gains)</li>
+<li>Closing retained earnings</li>
+</ul>
+<h3 id="management-kpis-1"><a class="header" href="#management-kpis-1">Management KPIs</a></h3>
+<p>When <code>financial_reporting.management_kpis</code> is enabled, computes financial ratios:</p>
+<ul>
+<li><strong>Liquidity</strong>: Current ratio, quick ratio, cash ratio</li>
+<li><strong>Profitability</strong>: Gross margin, operating margin, net margin, ROA, ROE</li>
+<li><strong>Efficiency</strong>: Inventory turnover, AR turnover, AP turnover, days sales outstanding</li>
+<li><strong>Leverage</strong>: Debt-to-equity, debt-to-assets, interest coverage</li>
+</ul>
+<h3 id="budgets-1"><a class="header" href="#budgets-1">Budgets</a></h3>
+<p>When <code>financial_reporting.budgets</code> is enabled, generates budget records with variance analysis:</p>
+<pre><code class="language-yaml">financial_reporting:
+  budgets:
+    enabled: true
+    variance_threshold: 0.10    # Flag variances &gt; 10%
+</code></pre>
+<p>Produces budget vs. actual comparisons by account and period, with favorable/unfavorable variance flags.</p>
 <h2 id="output-files-8"><a class="header" href="#output-files-8">Output Files</a></h2>
 <h3 id="trial_balancesyyyy_mmcsv-1"><a class="header" href="#trial_balancesyyyy_mmcsv-1">trial_balances/YYYY_MM.csv</a></h3>
 <div class="table-wrapper">
@@ -17981,6 +18953,59 @@ Period 2 (reverse):
 <tr><td><code>account</code></td><td>Account closed</td></tr>
 <tr><td><code>amount</code></td><td>Closing amount</td></tr>
 <tr><td><code>fiscal_year</code></td><td>Year closed</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="financial_statementscsv-v060"><a class="header" href="#financial_statementscsv-v060">financial_statements.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>statement_id</code></td><td>Unique statement identifier</td></tr>
+<tr><td><code>statement_type</code></td><td>balance_sheet, income_statement, cash_flow, changes_in_equity</td></tr>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>period_end</code></td><td>Statement date</td></tr>
+<tr><td><code>basis</code></td><td>us_gaap, ifrs, statutory</td></tr>
+<tr><td><code>line_code</code></td><td>Line item code</td></tr>
+<tr><td><code>label</code></td><td>Display label</td></tr>
+<tr><td><code>section</code></td><td>Statement section</td></tr>
+<tr><td><code>amount</code></td><td>Current period amount</td></tr>
+<tr><td><code>amount_prior</code></td><td>Prior period amount</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="bank_reconciliationscsv-v060"><a class="header" href="#bank_reconciliationscsv-v060">bank_reconciliations.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>reconciliation_id</code></td><td>Unique reconciliation ID</td></tr>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>bank_account</code></td><td>Bank account identifier</td></tr>
+<tr><td><code>period_start</code></td><td>Reconciliation period start</td></tr>
+<tr><td><code>period_end</code></td><td>Reconciliation period end</td></tr>
+<tr><td><code>opening_balance</code></td><td>Opening bank balance</td></tr>
+<tr><td><code>closing_balance</code></td><td>Closing bank balance</td></tr>
+<tr><td><code>status</code></td><td>in_progress, completed, completed_with_exceptions</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="management_kpiscsv-v060"><a class="header" href="#management_kpiscsv-v060">management_kpis.csv (v0.6.0)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>company_code</code></td><td>Company code</td></tr>
+<tr><td><code>period</code></td><td>Reporting period</td></tr>
+<tr><td><code>kpi_name</code></td><td>Ratio name (e.g., current_ratio, gross_margin)</td></tr>
+<tr><td><code>kpi_value</code></td><td>Computed ratio value</td></tr>
+<tr><td><code>category</code></td><td>liquidity, profitability, efficiency, leverage</td></tr>
 </tbody>
 </table>
 </div>
@@ -23228,6 +24253,95 @@ print(f"Unique vendors: {entries['vendor_id'].nunique()}")
 print(f"Unique customers: {entries['customer_id'].nunique()}")
 print(f"Date range: {entries['posting_date'].min()} to {entries['posting_date'].max()}")
 </code></pre>
+<h3 id="7-financial-statement-analytics-v060"><a class="header" href="#7-financial-statement-analytics-v060">7. Financial Statement Analytics (v0.6.0)</a></h3>
+<p>Analyze generated financial statements for consistency, trend analysis, and ratio testing:</p>
+<pre><code class="language-python">import pandas as pd
+
+# Load financial statements
+balance_sheet = pd.read_csv('output/financial_reporting/balance_sheet.csv')
+income_stmt = pd.read_csv('output/financial_reporting/income_statement.csv')
+cash_flow = pd.read_csv('output/financial_reporting/cash_flow.csv')
+
+# Verify accounting equation holds
+for _, row in balance_sheet.iterrows():
+    assets = row['total_assets']
+    liabilities = row['total_liabilities']
+    equity = row['total_equity']
+    imbalance = abs(assets - (liabilities + equity))
+    assert imbalance &lt; 0.01, f"A=L+E violation: {imbalance}"
+
+# Analytical procedures: ratio analysis
+ratios = pd.DataFrame({
+    'period': balance_sheet['period'],
+    'current_ratio': balance_sheet['current_assets'] / balance_sheet['current_liabilities'],
+    'gross_margin': income_stmt['gross_profit'] / income_stmt['revenue'],
+    'debt_to_equity': balance_sheet['total_liabilities'] / balance_sheet['total_equity'],
+})
+
+# Flag unusual ratio movements (&gt; 2 std devs from mean)
+for col in ['current_ratio', 'gross_margin', 'debt_to_equity']:
+    mean = ratios[col].mean()
+    std = ratios[col].std()
+    outliers = ratios[abs(ratios[col] - mean) &gt; 2 * std]
+    if len(outliers) &gt; 0:
+        print(f"Unusual {col} in periods: {outliers['period'].tolist()}")
+</code></pre>
+<h3 id="budget-variance-analysis"><a class="header" href="#budget-variance-analysis">Budget Variance Analysis</a></h3>
+<p>When budgets are enabled, compare budget to actual for each account:</p>
+<pre><code class="language-python"># Load budget vs actual data
+budget = pd.read_csv('output/financial_reporting/budget_vs_actual.csv')
+
+# Calculate variance percentage
+budget['variance_pct'] = (budget['actual'] - budget['budget']) / budget['budget']
+
+# Identify material variances (&gt; 10%)
+material = budget[abs(budget['variance_pct']) &gt; 0.10]
+print(f"Material variances: {len(material)} accounts")
+print(material[['account', 'budget', 'actual', 'variance_pct']].to_string())
+
+# Favorable vs unfavorable analysis
+favorable = budget[
+    ((budget['account_type'] == 'revenue') &amp; (budget['variance_pct'] &gt; 0)) |
+    ((budget['account_type'] == 'expense') &amp; (budget['variance_pct'] &lt; 0))
+]
+print(f"Favorable variances: {len(favorable)}")
+</code></pre>
+<h3 id="management-kpi-trend-analysis"><a class="header" href="#management-kpi-trend-analysis">Management KPI Trend Analysis</a></h3>
+<pre><code class="language-python"># Load KPI data
+kpis = pd.read_csv('output/financial_reporting/management_kpis.csv')
+
+# Check for declining trends
+for kpi_name in kpis['kpi_name'].unique():
+    series = kpis[kpis['kpi_name'] == kpi_name].sort_values('period')
+    values = series['value'].values
+    # Simple trend check: are last 3 periods declining?
+    if len(values) &gt;= 3 and all(values[-3+i] &gt; values[-3+i+1] for i in range(2)):
+        print(f"Declining trend: {kpi_name}")
+</code></pre>
+<h3 id="payroll-audit-testing-v060"><a class="header" href="#payroll-audit-testing-v060">Payroll Audit Testing (v0.6.0)</a></h3>
+<p>When the HR module is enabled, test payroll data for anomalies:</p>
+<pre><code class="language-python"># Load payroll data
+payroll = pd.read_csv('output/hr/payroll_entries.csv')
+
+# Ghost employee check: employees with pay but no time entries
+time_entries = pd.read_csv('output/hr/time_entries.csv')
+paid_employees = set(payroll['employee_id'].unique())
+active_employees = set(time_entries['employee_id'].unique())
+no_time = paid_employees - active_employees
+print(f"Employees paid without time entries: {len(no_time)}")
+
+# Payroll amount reasonableness
+payroll_summary = payroll.groupby('employee_id')['gross_pay'].sum()
+mean_pay = payroll_summary.mean()
+std_pay = payroll_summary.std()
+outliers = payroll_summary[payroll_summary &gt; mean_pay + 3 * std_pay]
+print(f"Unusually high total pay: {len(outliers)} employees")
+
+# Expense policy violation detection
+expenses = pd.read_csv('output/hr/expense_reports.csv')
+violations = expenses[expenses['policy_violation'] == True]
+print(f"Expense policy violations: {len(violations)}")
+</code></pre>
 <h2 id="sampling"><a class="header" href="#sampling">Sampling</a></h2>
 <h3 id="statistical-sampling"><a class="header" href="#statistical-sampling">Statistical Sampling</a></h3>
 <pre><code class="language-python">from scipy import stats
@@ -23539,14 +24653,15 @@ print(test_results[['control_name', 'exception_rate', 'deficiency_classification
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="process-mining-1"><a class="header" href="#process-mining-1">Process Mining</a></h1>
-<p>Generate OCEL 2.0 event logs for process mining analysis.</p>
+<p>Generate OCEL 2.0 event logs for process mining analysis across 8 enterprise process families.</p>
 <h2 id="overview-42"><a class="header" href="#overview-42">Overview</a></h2>
-<p>SyntheticData generates process mining data:</p>
+<p>SyntheticData generates comprehensive process mining data:</p>
 <ul>
-<li>OCEL 2.0 compliant event logs</li>
-<li>P2P (Procure-to-Pay) process flows</li>
-<li>O2C (Order-to-Cash) process flows</li>
-<li>Object-centric relationships</li>
+<li>OCEL 2.0 compliant event logs with <strong>88 activity types</strong> and <strong>52 object types</strong></li>
+<li><strong>8 process families</strong>: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon</li>
+<li>Object-centric relationships with lifecycle states</li>
+<li>Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)</li>
+<li>Cross-process object linking via shared document IDs</li>
 </ul>
 <h2 id="configuration-33"><a class="header" href="#configuration-33">Configuration</a></h2>
 <pre><code class="language-yaml">global:
@@ -23770,6 +24885,36 @@ from pm4py.objects.ocel.exporter import sqlite
 
 sqlite.apply(ocel, "output/ocel.sqlite")
 # Open in OCPA tool
+</code></pre>
+<h2 id="new-process-families-v062"><a class="header" href="#new-process-families-v062">New Process Families (v0.6.2)</a></h2>
+<h3 id="s2c--source-to-contract"><a class="header" href="#s2c--source-to-contract">S2C — Source-to-Contract</a></h3>
+<pre><code>Create Sourcing Project → Qualify Supplier → Publish RFx →
+Submit Bid → Evaluate Bids → Award Contract →
+Activate Contract → Complete Sourcing
+</code></pre>
+<h3 id="h2r--hire-to-retire"><a class="header" href="#h2r--hire-to-retire">H2R — Hire-to-Retire</a></h3>
+<pre><code>Submit Time Entry → Approve Time Entry →
+Create Payroll Run → Calculate Payroll → Approve Payroll → Post Payroll
+Submit Expense → Approve Expense
+</code></pre>
+<h3 id="mfg--manufacturing"><a class="header" href="#mfg--manufacturing">MFG — Manufacturing</a></h3>
+<pre><code>Create Production Order → Release → Start Operation →
+Complete Operation → Quality Inspection → Confirm Production →
+Close Production Order
+</code></pre>
+<h3 id="bank--banking-operations"><a class="header" href="#bank--banking-operations">BANK — Banking Operations</a></h3>
+<pre><code>Onboard Customer → KYC Review → Open Account →
+Execute Transaction → Authorize → Complete Transaction
+</code></pre>
+<h3 id="audit--audit-engagement-lifecycle"><a class="header" href="#audit--audit-engagement-lifecycle">AUDIT — Audit Engagement Lifecycle</a></h3>
+<pre><code>Create Engagement → Plan → Assess Risk → Create Workpaper →
+Collect Evidence → Review Workpaper → Raise Finding →
+Remediate Finding → Record Judgment → Complete Engagement
+</code></pre>
+<h3 id="bank-recon--bank-reconciliation"><a class="header" href="#bank-recon--bank-reconciliation">Bank Recon — Bank Reconciliation</a></h3>
+<pre><code>Import Bank Statement → Auto Match Items → Manual Match Item →
+Create Reconciling Item → Resolve Exception →
+Approve Reconciliation → Post Entries → Complete Reconciliation
 </code></pre>
 <h2 id="s2p-process-mining"><a class="header" href="#s2p-process-mining">S2P Process Mining</a></h2>
 <p>The full Source-to-Pay chain provides rich process mining opportunities beyond basic P2P:</p>
@@ -24253,6 +25398,143 @@ transactions:
 output:
   compression: none                  # For fastest import
 </code></pre>
+<h2 id="manufacturing-erp-testing-v060"><a class="header" href="#manufacturing-erp-testing-v060">Manufacturing ERP Testing (v0.6.0)</a></h2>
+<h3 id="production-order-load"><a class="header" href="#production-order-load">Production Order Load</a></h3>
+<p>Generate production orders with WIP tracking, routings, and standard costing:</p>
+<pre><code class="language-yaml">global:
+  industry: manufacturing
+  start_date: 2024-01-01
+  period_months: 12
+  worker_threads: 8
+
+transactions:
+  target_count: 500000
+
+manufacturing:
+  enabled: true
+  production_orders:
+    orders_per_month: 200              # High volume
+    avg_batch_size: 150
+    yield_rate: 0.96
+    rework_rate: 0.04
+  costing:
+    labor_rate_per_hour: 42.0
+    overhead_rate: 1.75
+  routing:
+    avg_operations: 6
+    setup_time_hours: 2.0
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40                    # Heavy procurement
+
+subledger:
+  inventory:
+    enabled: true
+    valuation_methods:
+      - standard_cost
+      - weighted_average
+</code></pre>
+<p>This configuration exercises production order creation, goods issue to production, goods receipt from production, WIP valuation, and standard cost variance posting.</p>
+<h3 id="three-way-match-with-source-to-pay"><a class="header" href="#three-way-match-with-source-to-pay">Three-Way Match with Source-to-Pay</a></h3>
+<p>Test the full procurement lifecycle from sourcing through payment:</p>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: true
+  sourcing:
+    projects_per_year: 20
+  rfx:
+    min_invited_vendors: 5
+    max_invited_vendors: 12
+  contracts:
+    min_duration_months: 12
+    max_duration_months: 24
+  p2p_integration:
+    off_contract_rate: 0.10            # 10% maverick spending
+    catalog_enforcement: true
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40
+    three_way_match:
+      quantity_tolerance: 0.02
+      price_tolerance: 0.01
+</code></pre>
+<hr>
+<h2 id="hr-and-payroll-testing-v060"><a class="header" href="#hr-and-payroll-testing-v060">HR and Payroll Testing (v0.6.0)</a></h2>
+<h3 id="payroll-processing-load"><a class="header" href="#payroll-processing-load">Payroll Processing Load</a></h3>
+<p>Generate payroll runs, time entries, and expense reports:</p>
+<pre><code class="language-yaml">master_data:
+  employees:
+    count: 500
+    hierarchy_depth: 6
+
+hr:
+  enabled: true
+  payroll:
+    enabled: true
+    pay_frequency: "biweekly"          # 26 pay periods per year
+    benefits_enrollment_rate: 0.75
+    retirement_participation_rate: 0.55
+  time_attendance:
+    enabled: true
+    overtime_rate: 0.15
+  expenses:
+    enabled: true
+    submission_rate: 0.40
+    policy_violation_rate: 0.05
+</code></pre>
+<p>This exercises payroll journal entry generation (salary, tax withholdings, benefits deductions), time and attendance record creation, and expense report approval workflows.</p>
+<h3 id="expense-report-compliance"><a class="header" href="#expense-report-compliance">Expense Report Compliance</a></h3>
+<p>Test expense policy enforcement with elevated violation rates:</p>
+<pre><code class="language-yaml">hr:
+  enabled: true
+  expenses:
+    enabled: true
+    submission_rate: 0.60              # 60% of employees submit
+    policy_violation_rate: 0.15        # Elevated violation rate for testing
+
+anomaly_injection:
+  enabled: true
+  generate_labels: true
+</code></pre>
+<hr>
+<h2 id="procurement-testing-v060"><a class="header" href="#procurement-testing-v060">Procurement Testing (v0.6.0)</a></h2>
+<h3 id="vendor-scorecard-and-qualification"><a class="header" href="#vendor-scorecard-and-qualification">Vendor Scorecard and Qualification</a></h3>
+<p>Generate the full source-to-pay cycle for procurement system testing:</p>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: true
+  qualification:
+    pass_rate: 0.80
+    validity_days: 365
+  scorecards:
+    frequency: "quarterly"
+    grade_a_threshold: 85.0
+    grade_c_threshold: 55.0
+  catalog:
+    preferred_vendor_flag_rate: 0.65
+    multi_source_rate: 0.30
+
+vendor_network:
+  enabled: true
+  depth: 3
+</code></pre>
+<h3 id="sales-quote-pipeline"><a class="header" href="#sales-quote-pipeline">Sales Quote Pipeline</a></h3>
+<p>Test quote-to-order conversion with the O2C flow:</p>
+<pre><code class="language-yaml">sales_quotes:
+  enabled: true
+  quotes_per_month: 100
+  win_rate: 0.30
+  validity_days: 45
+
+document_flows:
+  o2c:
+    enabled: true
+    flow_rate: 0.40
+</code></pre>
+<p>Won quotes automatically feed into the O2C document flow as sales orders.</p>
+<hr>
 <h2 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h2>
 <h3 id="generation-metrics"><a class="header" href="#generation-metrics">Generation Metrics</a></h3>
 <pre><code class="language-bash"># Time generation

@@ -95,11 +95,13 @@ The generator produces statistically accurate data based on empirical research f
 - **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
 - **Bank Reconciliation**: Automated statement matching, outstanding checks, deposits in transit, net difference validation
 - **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
-- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships
+- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships across 8 process families
   - OCEL 2.0 JSON/XML export for object-centric process mining
   - XES 2.0 XML export for ProM, Celonis, Disco, pm4py compatibility
-  - Reference process models (P2P, O2C, R2R) for conformance checking
-  - 36 activity types across P2P, O2C, R2R, and A2R processes
+  - 88 activity types across 8 process families: P2P, O2C, R2R/A2R, S2C, H2R, MFG, BANK, AUDIT
+  - 52 object types with lifecycle states and relationships
+  - 6 new OCPM generators: S2C (sourcing), H2R (payroll/time/expense), MFG (production/quality), BANK (customer/transactions), AUDIT (engagement lifecycle), Bank Recon (statement matching)
+  - Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
 - **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
 - **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases with 5 bright-line tests), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
@@ -153,6 +155,7 @@ The generator produces statistically accurate data based on empirical research f
 ### Machine Learning & Analytics
 
 - **Graph Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats with train/val/test splits
+- **Multi-Layer Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning all 8 process families with OCPM events as hyperedges, 24 entity type codes (100-400), and cross-process edge linking
 - **Anomaly Injection**: 60+ fraud types, errors, process issues with full labeling
 - **Data Quality Variations**: Missing values, format variations, duplicates, typos
 - **Relationship Generation**: Configurable entity relationships with cardinality rules
@@ -253,11 +256,11 @@ datasynth-runtime      Orchestration layer (parallel execution, resource guards)
     │
 datasynth-generators   Data generators (JE, documents, subledgers, anomalies, audit)
 datasynth-banking      KYC/AML banking transaction generator
-datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, reference models)
+datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, 8 process families)
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards    Accounting/audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
     │
-datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL, RustGraph Hypergraph)
+datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL, RustGraph Multi-Layer Hypergraph)
 datasynth-eval         Evaluation framework with auto-tuning
     │
 datasynth-config       Configuration schema, validation, industry presets

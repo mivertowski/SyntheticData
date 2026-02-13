@@ -1,0 +1,1034 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Domain-Specific Enhancements - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="research-domain-specific-enhancements"><a class="header" href="#research-domain-specific-enhancements">Research: Domain-Specific Enhancements</a></h1>
+<blockquote>
+<p><strong>Implementation Status: COMPLETE (v0.3.0)</strong></p>
+<p>This research document has been fully implemented in v0.3.0. See:</p>
+<ul>
+<li><a href="../../advanced/industry-specific.html">Industry-Specific Features Documentation</a></li>
+<li>CHANGELOG.md for detailed feature list</li>
+</ul>
+<p>Key implementations:</p>
+<ul>
+<li>Manufacturing: BOM, routings, work centers, production variances</li>
+<li>Retail: POS transactions, shrinkage, loss prevention</li>
+<li>Healthcare: Revenue cycle, ICD-10/CPT/DRG coding, payer mix</li>
+<li>Technology: License/subscription revenue, R&amp;D capitalization</li>
+<li>Financial Services: Loan origination, trading, regulatory frameworks</li>
+<li>Professional Services: Time &amp; billing, trust accounting</li>
+<li>Industry-specific anomaly patterns for each sector</li>
+<li>Industry-specific ML benchmarks</li>
+</ul>
+</blockquote>
+<h2 id="current-state-analysis"><a class="header" href="#current-state-analysis">Current State Analysis</a></h2>
+<h3 id="existing-industry-support"><a class="header" href="#existing-industry-support">Existing Industry Support</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Industry</th><th>Configuration</th><th>Generator Support</th><th>Realism</th></tr>
+</thead>
+<tbody>
+<tr><td>Manufacturing</td><td>Preset available</td><td>Good</td><td>Medium</td></tr>
+<tr><td>Retail</td><td>Preset available</td><td>Good</td><td>Medium</td></tr>
+<tr><td>Financial Services</td><td>Preset + Banking module</td><td>Strong</td><td>Good</td></tr>
+<tr><td>Healthcare</td><td>Preset available</td><td>Basic</td><td>Low</td></tr>
+<tr><td>Technology</td><td>Preset available</td><td>Basic</td><td>Low</td></tr>
+<tr><td>Professional Services</td><td>Limited</td><td>Basic</td><td>Low</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="current-strengths"><a class="header" href="#current-strengths">Current Strengths</a></h3>
+<ol>
+<li><strong>Banking module</strong>: Comprehensive KYC/AML with fraud typologies</li>
+<li><strong>Industry presets</strong>: 5 industry configurations available</li>
+<li><strong>Seasonality profiles</strong>: 10 industry-specific patterns</li>
+<li><strong>Standards support</strong>: IFRS, US GAAP, ISA, SOX frameworks</li>
+</ol>
+<h3 id="current-gaps"><a class="header" href="#current-gaps">Current Gaps</a></h3>
+<ol>
+<li><strong>Shallow industry modeling</strong>: Generic patterns across industries</li>
+<li><strong>Limited regulatory specificity</strong>: One-size-fits-all compliance</li>
+<li><strong>Missing vertical-specific transactions</strong>: Generic document flows</li>
+<li><strong>No industry-specific anomalies</strong>: Same fraud patterns everywhere</li>
+<li><strong>Limited terminology</strong>: Generic naming regardless of industry</li>
+</ol>
+<hr>
+<h2 id="industry-specific-enhancement-recommendations"><a class="header" href="#industry-specific-enhancement-recommendations">Industry-Specific Enhancement Recommendations</a></h2>
+<h3 id="1-manufacturing-industry"><a class="header" href="#1-manufacturing-industry">1. Manufacturing Industry</a></h3>
+<h4 id="11-enhanced-transaction-types"><a class="header" href="#11-enhanced-transaction-types">1.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">manufacturing:
+  transaction_types:
+    # Production-specific
+    production:
+      - work_order_issuance
+      - material_requisition
+      - labor_booking
+      - overhead_absorption
+      - scrap_reporting
+      - rework_order
+      - production_variance
+
+    # Inventory movements
+    inventory:
+      - raw_material_receipt
+      - wip_transfer
+      - finished_goods_transfer
+      - consignment_movement
+      - subcontractor_shipment
+      - cycle_count_adjustment
+      - physical_inventory_adjustment
+
+    # Cost accounting
+    costing:
+      - standard_cost_revaluation
+      - purchase_price_variance
+      - production_variance_allocation
+      - overhead_rate_adjustment
+      - interplant_transfer_pricing
+
+  # Manufacturing-specific master data
+  master_data:
+    bill_of_materials:
+      levels: 3-7
+      components_per_level: 2-15
+      yield_rates: 0.95-0.99
+      scrap_factors: 0.01-0.05
+
+    routings:
+      operations: 3-12
+      work_centers: 5-50
+      labor_rates: by_skill_level
+      machine_rates: by_equipment_type
+
+    production_orders:
+      types: [discrete, repetitive, process]
+      statuses: [planned, released, confirmed, completed]
+</code></pre>
+<h4 id="12-manufacturing-anomalies"><a class="header" href="#12-manufacturing-anomalies">1.2 Manufacturing Anomalies</a></h4>
+<pre><code class="language-yaml">manufacturing_anomalies:
+  production:
+    - type: yield_manipulation
+      description: "Inflating yield to hide scrap"
+      indicators: [abnormal_yield, missing_scrap_entries]
+
+    - type: labor_misallocation
+      description: "Charging labor to wrong orders"
+      indicators: [unusual_labor_distribution, overtime_patterns]
+
+    - type: phantom_production
+      description: "Recording production that didn't occur"
+      indicators: [no_material_consumption, missing_quality_records]
+
+  inventory:
+    - type: obsolete_inventory_concealment
+      description: "Failing to write down obsolete stock"
+      indicators: [no_movement_items, aging_without_provision]
+
+    - type: consignment_manipulation
+      description: "Recording consigned goods as owned"
+      indicators: [unusual_consignment_patterns, ownership_disputes]
+
+  costing:
+    - type: standard_cost_manipulation
+      description: "Setting unrealistic standards"
+      indicators: [persistent_favorable_variances, standard_changes]
+
+    - type: overhead_misallocation
+      description: "Allocating overhead to wrong products"
+      indicators: [margin_anomalies, allocation_base_changes]
+</code></pre>
+<hr>
+<h3 id="2-retail-industry"><a class="header" href="#2-retail-industry">2. Retail Industry</a></h3>
+<h4 id="21-enhanced-transaction-types"><a class="header" href="#21-enhanced-transaction-types">2.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">retail:
+  transaction_types:
+    # Point of Sale
+    pos:
+      - cash_sale
+      - credit_card_sale
+      - debit_sale
+      - gift_card_sale
+      - layaway_transaction
+      - special_order
+      - rain_check
+
+    # Returns and adjustments
+    returns:
+      - customer_return
+      - exchange
+      - price_adjustment
+      - markdown
+      - damage_writeoff
+      - vendor_return
+
+    # Inventory
+    inventory:
+      - receiving
+      - transfer_in
+      - transfer_out
+      - cycle_count
+      - shrinkage_adjustment
+      - donation
+      - disposal
+
+    # Promotions
+    promotions:
+      - coupon_redemption
+      - loyalty_redemption
+      - bundle_discount
+      - flash_sale
+      - clearance_markdown
+
+  # Retail-specific metrics
+  metrics:
+    same_store_sales: by_period
+    basket_size: average_and_distribution
+    conversion_rate: by_store_type
+    shrinkage_rate: by_category
+    markdown_percentage: by_season
+    inventory_turn: by_category
+</code></pre>
+<h4 id="22-retail-anomalies"><a class="header" href="#22-retail-anomalies">2.2 Retail Anomalies</a></h4>
+<pre><code class="language-yaml">retail_anomalies:
+  pos_fraud:
+    - type: sweethearting
+      description: "Employee gives free/discounted items to friends"
+      indicators: [high_void_rate, specific_cashier_patterns]
+
+    - type: skimming
+      description: "Not recording cash sales"
+      indicators: [cash_short, transaction_gaps]
+
+    - type: refund_fraud
+      description: "Fraudulent refunds to personal cards"
+      indicators: [refund_patterns, card_number_reuse]
+
+  inventory_fraud:
+    - type: receiving_fraud
+      description: "Collusion with vendors on short shipments"
+      indicators: [variance_patterns, vendor_concentration]
+
+    - type: transfer_fraud
+      description: "Fake transfers to cover theft"
+      indicators: [transfer_without_receipt, location_patterns]
+
+  promotional_abuse:
+    - type: coupon_fraud
+      description: "Applying coupons without customer purchase"
+      indicators: [high_coupon_rate, timing_patterns]
+
+    - type: employee_discount_abuse
+      description: "Using employee discount for non-employees"
+      indicators: [discount_volume, transaction_timing]
+</code></pre>
+<hr>
+<h3 id="3-healthcare-industry"><a class="header" href="#3-healthcare-industry">3. Healthcare Industry</a></h3>
+<h4 id="31-enhanced-transaction-types"><a class="header" href="#31-enhanced-transaction-types">3.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">healthcare:
+  transaction_types:
+    # Revenue cycle
+    revenue:
+      - patient_registration
+      - charge_capture
+      - claim_submission
+      - payment_posting
+      - denial_management
+      - patient_billing
+      - collection_activity
+
+    # Clinical operations
+    clinical:
+      - supply_consumption
+      - pharmacy_dispensing
+      - procedure_coding
+      - diagnosis_coding
+      - medical_record_documentation
+
+    # Payer transactions
+    payer:
+      - contract_payment
+      - capitation_payment
+      - risk_adjustment
+      - quality_bonus
+      - value_based_payment
+
+  # Healthcare-specific elements
+  elements:
+    coding:
+      icd10: diagnostic_codes
+      cpt: procedure_codes
+      drg: diagnosis_related_groups
+      hcpcs: healthcare_common_procedure
+
+    payers:
+      types: [medicare, medicaid, commercial, self_pay]
+      mix_distribution: configurable
+      contract_terms: by_payer
+
+    compliance:
+      hipaa: true
+      stark_law: true
+      anti_kickback: true
+      false_claims_act: true
+</code></pre>
+<h4 id="32-healthcare-anomalies"><a class="header" href="#32-healthcare-anomalies">3.2 Healthcare Anomalies</a></h4>
+<pre><code class="language-yaml">healthcare_anomalies:
+  billing_fraud:
+    - type: upcoding
+      description: "Billing for more expensive service than provided"
+      indicators: [code_distribution_shift, complexity_increase]
+
+    - type: unbundling
+      description: "Billing separately for bundled services"
+      indicators: [modifier_patterns, procedure_combinations]
+
+    - type: phantom_billing
+      description: "Billing for services not rendered"
+      indicators: [impossible_combinations, deceased_patient_billing]
+
+    - type: duplicate_billing
+      description: "Billing multiple times for same service"
+      indicators: [same_day_duplicates, claim_resubmission_patterns]
+
+  kickback_schemes:
+    - type: physician_referral_kickback
+      description: "Payments for patient referrals"
+      indicators: [referral_concentration, payment_timing]
+
+    - type: medical_director_fraud
+      description: "Sham medical director agreements"
+      indicators: [no_services_rendered, excessive_compensation]
+
+  compliance_violations:
+    - type: hipaa_violation
+      description: "Unauthorized access to patient records"
+      indicators: [access_patterns, audit_log_anomalies]
+
+    - type: credential_fraud
+      description: "Using credentials of another provider"
+      indicators: [impossible_geography, timing_conflicts]
+</code></pre>
+<hr>
+<h3 id="4-technology-industry"><a class="header" href="#4-technology-industry">4. Technology Industry</a></h3>
+<h4 id="41-enhanced-transaction-types"><a class="header" href="#41-enhanced-transaction-types">4.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">technology:
+  transaction_types:
+    # Revenue recognition (ASC 606)
+    revenue:
+      - license_revenue
+      - subscription_revenue
+      - professional_services
+      - maintenance_revenue
+      - usage_based_revenue
+      - milestone_based_revenue
+
+    # Software development
+    development:
+      - r_and_d_expense
+      - capitalized_software
+      - amortization
+      - impairment_testing
+
+    # Cloud operations
+    cloud:
+      - hosting_costs
+      - bandwidth_costs
+      - storage_costs
+      - compute_costs
+      - third_party_services
+
+    # Sales and marketing
+    sales:
+      - commission_expense
+      - deferred_commission
+      - customer_acquisition_cost
+      - marketing_program_expense
+
+  # Tech-specific accounting
+  accounting:
+    revenue_recognition:
+      multiple_element_arrangements: true
+      variable_consideration: true
+      contract_modifications: true
+
+    software_development:
+      capitalization_criteria: true
+      useful_life_determination: true
+      impairment_testing: annual
+
+    stock_compensation:
+      option_valuation: black_scholes
+      rsu_accounting: true
+      performance_units: true
+</code></pre>
+<h4 id="42-technology-anomalies"><a class="header" href="#42-technology-anomalies">4.2 Technology Anomalies</a></h4>
+<pre><code class="language-yaml">technology_anomalies:
+  revenue_fraud:
+    - type: premature_license_recognition
+      description: "Recognizing license revenue before delivery criteria met"
+      indicators: [quarter_end_concentration, delivery_delays]
+
+    - type: side_letter_abuse
+      description: "Hidden terms that negate revenue recognition"
+      indicators: [unusual_contract_terms, customer_complaints]
+
+    - type: channel_stuffing
+      description: "Forcing product on resellers at period end"
+      indicators: [reseller_inventory_buildup, returns_next_quarter]
+
+  capitalization_fraud:
+    - type: improper_capitalization
+      description: "Capitalizing expenses that should be expensed"
+      indicators: [r_and_d_ratio_changes, asset_growth]
+
+    - type: useful_life_manipulation
+      description: "Extending useful life to reduce amortization"
+      indicators: [useful_life_changes, peer_comparison]
+
+  stock_compensation:
+    - type: options_backdating
+      description: "Selecting favorable grant dates retroactively"
+      indicators: [grant_date_patterns, exercise_price_analysis]
+
+    - type: vesting_manipulation
+      description: "Accelerating vesting to manage earnings"
+      indicators: [vesting_schedule_changes, departure_timing]
+</code></pre>
+<hr>
+<h3 id="5-financial-services-industry"><a class="header" href="#5-financial-services-industry">5. Financial Services Industry</a></h3>
+<h4 id="51-enhanced-transaction-types"><a class="header" href="#51-enhanced-transaction-types">5.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">financial_services:
+  transaction_types:
+    # Banking operations
+    banking:
+      - loan_origination
+      - loan_disbursement
+      - loan_payment
+      - interest_accrual
+      - fee_income
+      - deposit_transaction
+      - wire_transfer
+      - ach_transaction
+
+    # Investment operations
+    investments:
+      - trade_execution
+      - trade_settlement
+      - dividend_receipt
+      - interest_receipt
+      - mark_to_market
+      - realized_gain_loss
+      - unrealized_gain_loss
+
+    # Insurance operations
+    insurance:
+      - premium_collection
+      - claim_payment
+      - reserve_adjustment
+      - reinsurance_transaction
+      - commission_payment
+      - policy_acquisition_cost
+
+    # Asset management
+    asset_management:
+      - management_fee
+      - performance_fee
+      - distribution
+      - capital_call
+      - redemption
+
+  # Regulatory requirements
+  regulatory:
+    capital_requirements:
+      basel_iii: true
+      leverage_ratio: true
+      liquidity_coverage: true
+
+    reporting:
+      call_reports: true
+      form_10k_10q: true
+      form_13f: true
+      sar_filing: true
+</code></pre>
+<h4 id="52-financial-services-anomalies"><a class="header" href="#52-financial-services-anomalies">5.2 Financial Services Anomalies</a></h4>
+<pre><code class="language-yaml">financial_services_anomalies:
+  lending_fraud:
+    - type: loan_fraud
+      description: "Falsified loan applications"
+      indicators: [documentation_inconsistencies, verification_failures]
+
+    - type: appraisal_fraud
+      description: "Inflated property valuations"
+      indicators: [appraisal_variances, appraiser_concentration]
+
+    - type: straw_borrower
+      description: "Using nominee to obtain loans"
+      indicators: [relationship_patterns, fund_flow_analysis]
+
+  trading_fraud:
+    - type: wash_trading
+      description: "Buying and selling same security to inflate volume"
+      indicators: [self_trades, volume_patterns]
+
+    - type: front_running
+      description: "Trading ahead of customer orders"
+      indicators: [timing_analysis, profitability_patterns]
+
+    - type: churning
+      description: "Excessive trading to generate commissions"
+      indicators: [turnover_ratio, commission_patterns]
+
+  insurance_fraud:
+    - type: premium_theft
+      description: "Agent pocketing premiums"
+      indicators: [lapsed_policies, customer_complaints]
+
+    - type: claims_fraud
+      description: "Fraudulent or inflated claims"
+      indicators: [claim_patterns, adjuster_analysis]
+
+    - type: reserve_manipulation
+      description: "Understating claim reserves"
+      indicators: [reserve_development, adequacy_analysis]
+</code></pre>
+<hr>
+<h3 id="6-professional-services"><a class="header" href="#6-professional-services">6. Professional Services</a></h3>
+<h4 id="61-enhanced-transaction-types"><a class="header" href="#61-enhanced-transaction-types">6.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">professional_services:
+  transaction_types:
+    # Time and billing
+    billing:
+      - time_entry
+      - expense_entry
+      - invoice_generation
+      - write_off_adjustment
+      - realization_adjustment
+      - wip_adjustment
+
+    # Engagement management
+    engagement:
+      - engagement_setup
+      - budget_allocation
+      - milestone_billing
+      - retainer_application
+      - contingency_fee
+
+    # Resource management
+    resource:
+      - staff_allocation
+      - contractor_engagement
+      - subcontractor_payment
+      - expert_fee
+
+    # Client accounting
+    client:
+      - trust_deposit
+      - trust_withdrawal
+      - cost_advance
+      - client_reimbursement
+
+  # Professional-specific metrics
+  metrics:
+    utilization_rate: by_level
+    realization_rate: by_practice
+    collection_rate: by_client
+    leverage_ratio: staff_to_partner
+    revenue_per_professional: by_level
+</code></pre>
+<h4 id="62-professional-services-anomalies"><a class="header" href="#62-professional-services-anomalies">6.2 Professional Services Anomalies</a></h4>
+<pre><code class="language-yaml">professional_services_anomalies:
+  billing_fraud:
+    - type: inflated_hours
+      description: "Billing for time not worked"
+      indicators: [impossible_hours, pattern_analysis]
+
+    - type: phantom_work
+      description: "Billing for work never performed"
+      indicators: [no_work_product, client_complaints]
+
+    - type: duplicate_billing
+      description: "Billing multiple clients for same time"
+      indicators: [time_overlap, total_hours_analysis]
+
+  expense_fraud:
+    - type: personal_expense_billing
+      description: "Charging personal expenses to clients"
+      indicators: [expense_patterns, vendor_analysis]
+
+    - type: markup_abuse
+      description: "Excessive markups on pass-through costs"
+      indicators: [markup_comparison, cost_analysis]
+
+  trust_account_fraud:
+    - type: commingling
+      description: "Mixing trust and operating funds"
+      indicators: [transfer_patterns, reconciliation_issues]
+
+    - type: misappropriation
+      description: "Using client funds for personal use"
+      indicators: [unauthorized_withdrawals, shortages]
+</code></pre>
+<hr>
+<h3 id="7-real-estate-industry"><a class="header" href="#7-real-estate-industry">7. Real Estate Industry</a></h3>
+<h4 id="71-enhanced-transaction-types"><a class="header" href="#71-enhanced-transaction-types">7.1 Enhanced Transaction Types</a></h4>
+<pre><code class="language-yaml">real_estate:
+  transaction_types:
+    # Property management
+    property:
+      - rent_collection
+      - cam_charges
+      - security_deposit
+      - lease_payment
+      - tenant_improvement
+      - property_tax
+      - insurance_expense
+
+    # Development
+    development:
+      - land_acquisition
+      - construction_draw
+      - development_fee
+      - capitalized_interest
+      - soft_cost
+      - hard_cost
+
+    # Investment
+    investment:
+      - property_acquisition
+      - property_disposition
+      - depreciation
+      - impairment
+      - fair_value_adjustment
+      - debt_service
+
+    # REIT-specific
+    reit:
+      - ffo_calculation
+      - dividend_distribution
+      - taxable_income
+      - section_1031_exchange
+</code></pre>
+<h4 id="72-real-estate-anomalies"><a class="header" href="#72-real-estate-anomalies">7.2 Real Estate Anomalies</a></h4>
+<pre><code class="language-yaml">real_estate_anomalies:
+  property_management:
+    - type: rent_skimming
+      description: "Not recording cash rent payments"
+      indicators: [occupancy_vs_revenue, cash_deposits]
+
+    - type: kickback_maintenance
+      description: "Receiving kickbacks from contractors"
+      indicators: [contractor_concentration, pricing_analysis]
+
+  development:
+    - type: cost_inflation
+      description: "Inflating development costs"
+      indicators: [cost_per_unit_comparison, change_order_patterns]
+
+    - type: capitalization_abuse
+      description: "Capitalizing operating expenses"
+      indicators: [capitalization_ratio, expense_classification]
+
+  valuation:
+    - type: appraisal_manipulation
+      description: "Influencing property appraisals"
+      indicators: [appraisal_vs_sale_price, appraiser_relationships]
+
+    - type: impairment_avoidance
+      description: "Failing to record impairments"
+      indicators: [occupancy_decline, market_comparisons]
+</code></pre>
+<hr>
+<h3 id="8-industry-specific-configuration"><a class="header" href="#8-industry-specific-configuration">8. Industry-Specific Configuration</a></h3>
+<h4 id="81-unified-industry-configuration"><a class="header" href="#81-unified-industry-configuration">8.1 Unified Industry Configuration</a></h4>
+<pre><code class="language-yaml"># Master industry configuration schema
+industry_configuration:
+  industry: manufacturing  # or retail, healthcare, etc.
+
+  # Industry-specific settings
+  settings:
+    transaction_types:
+      enabled: [production, inventory, costing]
+      weights:
+        production_orders: 0.30
+        inventory_movements: 0.40
+        cost_adjustments: 0.30
+
+    master_data:
+      bill_of_materials: true
+      routings: true
+      work_centers: true
+      production_resources: true
+
+    anomaly_injection:
+      industry_specific: true
+      generic: true
+      industry_weight: 0.60
+
+    terminology:
+      use_industry_terms: true
+      document_naming: industry_standard
+      account_descriptions: industry_specific
+
+    seasonality:
+      profile: manufacturing
+      custom_events:
+        - name: plant_shutdown
+          month: 7
+          duration_weeks: 2
+          activity_multiplier: 0.10
+
+    regulatory:
+      frameworks:
+        - environmental: epa
+        - safety: osha
+        - quality: iso_9001
+
+  # Cross-industry settings (inherit from base)
+  inherit:
+    - accounting_standards
+    - audit_standards
+    - control_framework
+</code></pre>
+<h4 id="82-industry-presets-enhancement"><a class="header" href="#82-industry-presets-enhancement">8.2 Industry Presets Enhancement</a></h4>
+<pre><code class="language-yaml">presets:
+  manufacturing_automotive:
+    base: manufacturing
+    customizations:
+      bom_depth: 7
+      just_in_time: true
+      quality_framework: iatf_16949
+      supplier_tiers: 3
+      defect_rates: very_low
+
+  retail_grocery:
+    base: retail
+    customizations:
+      perishable_inventory: true
+      high_volume_low_margin: true
+      shrinkage_focus: true
+      vendor_managed_inventory: true
+
+  healthcare_hospital:
+    base: healthcare
+    customizations:
+      inpatient: true
+      outpatient: true
+      emergency_services: true
+      ancillary_services: true
+      case_mix_complexity: high
+
+  technology_saas:
+    base: technology
+    customizations:
+      subscription_revenue: primary
+      professional_services: secondary
+      monthly_recurring_revenue: true
+      churn_modeling: true
+
+  financial_services_bank:
+    base: financial_services
+    customizations:
+      banking_charter: commercial
+      deposit_taking: true
+      lending: true
+      capital_markets: limited
+</code></pre>
+<hr>
+<h3 id="9-implementation-priority"><a class="header" href="#9-implementation-priority">9. Implementation Priority</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Industry</th><th>Enhancement Scope</th><th>Complexity</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Manufacturing</td><td>Full enhancement</td><td>High</td><td>P1</td></tr>
+<tr><td>Retail</td><td>Full enhancement</td><td>Medium</td><td>P1</td></tr>
+<tr><td>Healthcare</td><td>Full enhancement</td><td>High</td><td>P1</td></tr>
+<tr><td>Technology</td><td>Revenue recognition</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Financial Services</td><td>Extend banking module</td><td>Medium</td><td>P1</td></tr>
+<tr><td>Professional Services</td><td>New module</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Real Estate</td><td>New module</td><td>Medium</td><td>P3</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="10-terminology-and-naming"><a class="header" href="#10-terminology-and-naming">10. Terminology and Naming</a></h3>
+<pre><code class="language-yaml">industry_terminology:
+  manufacturing:
+    document_types:
+      purchase_order: "Production Purchase Order"
+      invoice: "Vendor Invoice"
+      receipt: "Goods Receipt / Material Document"
+
+    accounts:
+      wip: "Work in Process"
+      fg: "Finished Goods Inventory"
+      rm: "Raw Materials Inventory"
+
+    transactions:
+      production: "Manufacturing Order Settlement"
+      variance: "Production Variance Posting"
+
+  healthcare:
+    document_types:
+      invoice: "Claim"
+      payment: "Remittance Advice"
+      receipt: "Patient Payment"
+
+    accounts:
+      ar: "Patient Accounts Receivable"
+      revenue: "Net Patient Service Revenue"
+      contractual: "Contractual Allowance"
+
+    transactions:
+      billing: "Charge Capture"
+      collection: "Payment Posting"
+
+  # Similar for other industries...
+</code></pre>
+<hr>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This research document series provides a comprehensive analysis of improvement opportunities for the SyntheticData system. Key themes across all documents:</p>
+<ol>
+<li><strong>Depth over breadth</strong>: Enhance existing features rather than adding new surface-level capabilities</li>
+<li><strong>Correlation modeling</strong>: Move from independent generation to correlated, interconnected data</li>
+<li><strong>Temporal realism</strong>: Add dynamic behavior that evolves over time</li>
+<li><strong>Domain authenticity</strong>: Use real industry terminology, patterns, and regulations</li>
+<li><strong>Detection-aware design</strong>: Generate data that enables meaningful ML training and evaluation</li>
+</ol>
+<p>The recommended implementation approach is phased, starting with high-impact, lower-complexity enhancements and building toward more sophisticated modeling over time.</p>
+<hr>
+<p><em>End of Research Document Series</em></p>
+<p><em>Total documents: 8</em>
+<em>Research conducted: January 2026</em>
+<em>System version analyzed: 0.2.3</em></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../roadmap/research/07-fraud-patterns.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../roadmap/research/07-fraud-patterns.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

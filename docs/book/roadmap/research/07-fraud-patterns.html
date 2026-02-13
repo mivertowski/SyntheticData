@@ -1,0 +1,1157 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Fraud Patterns - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="research-fraud-pattern-improvements"><a class="header" href="#research-fraud-pattern-improvements">Research: Fraud Pattern Improvements</a></h1>
+<blockquote>
+<p><strong>Implementation Status: COMPLETE (v0.3.0)</strong></p>
+<p>This research document has been fully implemented in v0.3.0. See:</p>
+<ul>
+<li><a href="../../advanced/fraud-patterns.html">Fraud Patterns Documentation</a></li>
+<li>CHANGELOG.md for detailed feature list</li>
+</ul>
+<p>Key implementations:</p>
+<ul>
+<li>ACFE-aligned fraud taxonomy with calibration statistics</li>
+<li>Collusion and conspiracy modeling with 9 ring types</li>
+<li>Management override patterns with fraud triangle</li>
+<li>Red flag generation with Bayesian probabilities</li>
+<li>ACFE-calibrated ML benchmarks</li>
+</ul>
+</blockquote>
+<h2 id="current-state-analysis"><a class="header" href="#current-state-analysis">Current State Analysis</a></h2>
+<h3 id="existing-fraud-typologies"><a class="header" href="#existing-fraud-typologies">Existing Fraud Typologies</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Category</th><th>Types Implemented</th><th>Realism</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Asset Misappropriation</strong></td><td>Ghost Employee, Duplicate Payment, Fictitious Vendor</td><td>Medium</td></tr>
+<tr><td><strong>Financial Statement Fraud</strong></td><td>Revenue Manipulation, Round-tripping</td><td>Basic</td></tr>
+<tr><td><strong>Corruption</strong></td><td>(Limited)</td><td>Weak</td></tr>
+<tr><td><strong>Banking/AML</strong></td><td>Structuring, Layering, Mule, Funnel, Spoofing</td><td>Good</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="current-strengths"><a class="header" href="#current-strengths">Current Strengths</a></h3>
+<ol>
+<li><strong>Banking module</strong>: Sophisticated AML typologies with transaction networks</li>
+<li><strong>Fraud labeling</strong>: Ground truth labels for ML training</li>
+<li><strong>Control mapping</strong>: Fraud linked to control failures</li>
+<li><strong>Amount patterns</strong>: Benford violations for fraudulent amounts</li>
+</ol>
+<h3 id="current-gaps"><a class="header" href="#current-gaps">Current Gaps</a></h3>
+<ol>
+<li><strong>No collusion modeling</strong>: Fraud actors operate independently</li>
+<li><strong>Limited concealment</strong>: Fraud isn’t actively hidden</li>
+<li><strong>No behavioral adaptation</strong>: Fraudsters don’t learn</li>
+<li><strong>Static schemes</strong>: Same patterns throughout</li>
+<li><strong>Missing corruption types</strong>: Bribery, kickbacks underdeveloped</li>
+<li><strong>No management override</strong>: All fraud at operational level</li>
+<li><strong>Limited financial statement fraud</strong>: Complex schemes not modeled</li>
+</ol>
+<hr>
+<h2 id="improvement-recommendations"><a class="header" href="#improvement-recommendations">Improvement Recommendations</a></h2>
+<h3 id="1-comprehensive-fraud-taxonomy"><a class="header" href="#1-comprehensive-fraud-taxonomy">1. Comprehensive Fraud Taxonomy</a></h3>
+<h4 id="11-acfe-aligned-framework"><a class="header" href="#11-acfe-aligned-framework">1.1 ACFE-Aligned Framework</a></h4>
+<p>Based on the Association of Certified Fraud Examiners Occupational Fraud and Abuse Classification:</p>
+<pre><code class="language-yaml">fraud_taxonomy:
+  # Asset Misappropriation (86% of cases, $100k median loss)
+  asset_misappropriation:
+    cash:
+      theft_of_cash_on_hand:
+        - larceny
+        - skimming
+
+      theft_of_cash_receipts:
+        - sales_skimming
+        - receivables_skimming
+        - refund_schemes
+
+      fraudulent_disbursements:
+        - billing_schemes:
+            - shell_company
+            - non_accomplice_vendor
+            - personal_purchases
+        - payroll_schemes:
+            - ghost_employee
+            - falsified_wages
+            - commission_schemes
+        - expense_reimbursement:
+            - mischaracterized_expenses
+            - overstated_expenses
+            - fictitious_expenses
+        - check_tampering:
+            - forged_maker
+            - forged_endorsement
+            - altered_payee
+            - authorized_maker
+        - register_disbursements:
+            - false_voids
+            - false_refunds
+
+    inventory_and_assets:
+      - misuse
+      - larceny
+
+  # Corruption (33% of cases, $150k median loss)
+  corruption:
+    conflicts_of_interest:
+      - purchasing_schemes
+      - sales_schemes
+
+    bribery:
+      - invoice_kickbacks
+      - bid_rigging
+
+    illegal_gratuities: true
+
+    economic_extortion: true
+
+  # Financial Statement Fraud (10% of cases, $954k median loss)
+  financial_statement_fraud:
+    overstatement:
+      - timing_differences:
+          - premature_revenue
+          - delayed_expenses
+      - fictitious_revenues
+      - concealed_liabilities
+      - improper_asset_valuations
+      - improper_disclosures
+
+    understatement:
+      - understated_revenues
+      - overstated_expenses
+      - overstated_liabilities
+</code></pre>
+<h4 id="12-industry-specific-fraud-patterns"><a class="header" href="#12-industry-specific-fraud-patterns">1.2 Industry-Specific Fraud Patterns</a></h4>
+<pre><code class="language-yaml">industry_fraud_patterns:
+  manufacturing:
+    common_schemes:
+      - type: inventory_theft
+        frequency: high
+        methods: [larceny, false_shipments, scrap_manipulation]
+      - type: vendor_kickbacks
+        frequency: medium
+        methods: [inflated_pricing, phantom_materials]
+      - type: quality_fraud
+        frequency: low
+        methods: [false_certifications, spec_violations]
+
+  retail:
+    common_schemes:
+      - type: register_fraud
+        frequency: high
+        methods: [skimming, false_voids, sweethearting]
+      - type: return_fraud
+        frequency: high
+        methods: [fictitious_returns, receipt_fraud]
+      - type: inventory_shrinkage
+        frequency: very_high
+        methods: [employee_theft, vendor_collusion]
+
+  financial_services:
+    common_schemes:
+      - type: loan_fraud
+        frequency: medium
+        methods: [false_documentation, appraisal_fraud]
+      - type: insider_trading
+        frequency: low
+        methods: [front_running, tip_schemes]
+      - type: account_takeover
+        frequency: medium
+        methods: [identity_theft, credential_theft]
+
+  healthcare:
+    common_schemes:
+      - type: billing_fraud
+        frequency: high
+        methods: [upcoding, unbundling, phantom_billing]
+      - type: kickbacks
+        frequency: medium
+        methods: [referral_fees, drug_company_payments]
+      - type: identity_fraud
+        frequency: medium
+        methods: [patient_identity_theft, provider_impersonation]
+
+  professional_services:
+    common_schemes:
+      - type: billing_fraud
+        frequency: high
+        methods: [inflated_hours, phantom_work]
+      - type: expense_fraud
+        frequency: medium
+        methods: [personal_expenses, inflated_claims]
+      - type: client_fund_misappropriation
+        frequency: low
+        methods: [trust_account_theft, advance_fee_theft]
+</code></pre>
+<hr>
+<h3 id="2-collusion-and-conspiracy-modeling"><a class="header" href="#2-collusion-and-conspiracy-modeling">2. Collusion and Conspiracy Modeling</a></h3>
+<h4 id="21-collusion-network-generation"><a class="header" href="#21-collusion-network-generation">2.1 Collusion Network Generation</a></h4>
+<pre><code class="language-yaml">collusion_networks:
+  enabled: true
+
+  network_types:
+    # Internal collusion
+    internal:
+      - type: employee_pair
+        roles: [approver, processor]
+        scheme: approval_bypass
+        probability: 0.005
+
+      - type: department_ring
+        size: 3-5
+        roles: [initiator, approver, concealer]
+        scheme: expense_fraud
+        probability: 0.002
+
+      - type: management_subordinate
+        roles: [manager, subordinate]
+        scheme: ghost_employee
+        probability: 0.003
+
+    # Internal-external collusion
+    internal_external:
+      - type: employee_vendor
+        roles: [purchasing_agent, vendor_contact]
+        scheme: kickback
+        probability: 0.008
+
+      - type: employee_customer
+        roles: [sales_rep, customer]
+        scheme: false_credits
+        probability: 0.004
+
+      - type: employee_contractor
+        roles: [project_manager, contractor]
+        scheme: overbilling
+        probability: 0.006
+
+    # External rings
+    external:
+      - type: vendor_ring
+        size: 2-4
+        scheme: bid_rigging
+        probability: 0.002
+
+      - type: customer_ring
+        size: 2-3
+        scheme: return_fraud
+        probability: 0.003
+
+  network_characteristics:
+    trust_building:
+      initial_period_months: 3
+      test_transactions: 2-5
+      test_amounts: small
+
+    communication_patterns:
+      frequency: coded
+      channels: [personal_email, phone, in_person]
+      visibility: low
+
+    profit_sharing:
+      methods: [equal_split, role_based, initiator_premium]
+      payment_channels: [cash, personal_accounts, crypto]
+</code></pre>
+<h4 id="22-collusion-behavior-modeling"><a class="header" href="#22-collusion-behavior-modeling">2.2 Collusion Behavior Modeling</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CollusionRing {
+    ring_id: Uuid,
+    members: Vec&lt;Conspirator&gt;,
+    scheme_type: SchemeType,
+    formation_date: NaiveDate,
+    status: RingStatus,
+    total_stolen: Decimal,
+    detection_risk: f64,
+}
+
+pub struct Conspirator {
+    entity_id: EntityId,
+    role: ConspiratorRole,
+    join_date: NaiveDate,
+    loyalty: f64,           // Probability of not defecting
+    risk_tolerance: f64,    // Willingness to escalate
+    share: f64,             // Percentage of proceeds
+}
+
+pub enum ConspiratorRole {
+    Initiator,      // Conceives scheme
+    Executor,       // Performs transactions
+    Approver,       // Provides approvals
+    Concealer,      // Hides evidence
+    Lookout,        // Monitors for detection
+    Beneficiary,    // External recipient
+}
+
+impl CollusionRing {
+    /// Simulate ring behavior for a period
+    pub fn simulate_period(&amp;mut self, period: &amp;Period) -&gt; Vec&lt;FraudAction&gt; {
+        // Check for defection
+        if self.check_defection() {
+            return self.dissolve();
+        }
+
+        // Check for escalation
+        let escalation = self.check_escalation();
+
+        // Generate fraudulent transactions
+        let actions = self.generate_actions(period, escalation);
+
+        // Update detection risk
+        self.update_detection_risk(&amp;actions);
+
+        actions
+    }
+
+    /// Check if any member might defect
+    fn check_defection(&amp;self) -&gt; bool {
+        // Factors: loyalty, detection_risk, personal_circumstances
+    }
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="3-concealment-techniques"><a class="header" href="#3-concealment-techniques">3. Concealment Techniques</a></h3>
+<h4 id="31-document-manipulation"><a class="header" href="#31-document-manipulation">3.1 Document Manipulation</a></h4>
+<pre><code class="language-yaml">concealment_techniques:
+  document_manipulation:
+    # Forged documents
+    forgery:
+      types:
+        - invoices
+        - receipts
+        - approvals
+        - contracts
+      quality_levels:
+        crude: 0.20      # Easy to detect
+        moderate: 0.50   # Requires scrutiny
+        sophisticated: 0.25  # Difficult to detect
+        professional: 0.05   # Expert required
+
+    # Altered documents
+    alteration:
+      techniques:
+        - amount_change
+        - date_change
+        - payee_change
+        - description_change
+      detection_indicators:
+        - different_handwriting
+        - correction_fluid
+        - digital_artifacts
+
+    # Destroyed documents
+    destruction:
+      methods:
+        - physical_destruction
+        - digital_deletion
+        - "lost_in_transition"
+      recovery_probability: 0.30
+
+  audit_trail_manipulation:
+    techniques:
+      - backdating_entries
+      - manipulating_timestamps
+      - deleting_log_entries
+      - creating_false_trails
+
+    sophistication_levels:
+      basic: "obvious_gaps"
+      intermediate: "plausible_explanations"
+      advanced: "complete_alternative_narrative"
+
+  segregation_circumvention:
+    methods:
+      - shared_credentials
+      - delegated_authority_abuse
+      - emergency_access_exploitation
+      - system_override_use
+</code></pre>
+<h4 id="32-transaction-structuring"><a class="header" href="#32-transaction-structuring">3.2 Transaction Structuring</a></h4>
+<pre><code class="language-yaml">transaction_structuring:
+  # Below threshold structuring
+  threshold_avoidance:
+    thresholds:
+      - type: approval_limit
+        values: [1000, 5000, 10000, 25000]
+        technique: split_below
+        margin: 0.05-0.15
+
+      - type: reporting_threshold
+        values: [10000]  # CTR threshold
+        technique: structure_below
+        margin: 0.10-0.20
+
+      - type: audit_sample_threshold
+        values: [materiality * 0.5]
+        technique: avoid_population
+        margin: variable
+
+  # Timing manipulation
+  timing_techniques:
+    - type: spread_over_periods
+      purpose: avoid_trending
+      pattern: randomized
+
+    - type: burst_before_vacation
+      purpose: delayed_discovery
+      window: 1_week
+
+    - type: holiday_timing
+      purpose: reduced_oversight
+      targets: [year_end, summer]
+
+  # Entity rotation
+  entity_rotation:
+    - type: vendor_rotation
+      purpose: avoid_concentration_alerts
+      rotation_frequency: quarterly
+
+    - type: account_rotation
+      purpose: avoid_pattern_detection
+      accounts: [expense_categories]
+
+    - type: department_rotation
+      purpose: spread_impact
+      pattern: round_robin
+</code></pre>
+<hr>
+<h3 id="4-management-override"><a class="header" href="#4-management-override">4. Management Override</a></h3>
+<h4 id="41-override-patterns"><a class="header" href="#41-override-patterns">4.1 Override Patterns</a></h4>
+<pre><code class="language-yaml">management_override:
+  enabled: true
+
+  scenarios:
+    # Revenue manipulation
+    revenue_override:
+      perpetrator_level: senior_management
+      techniques:
+        - journal_entry_override
+        - revenue_recognition_acceleration
+        - reserve_manipulation
+        - side_agreement_concealment
+      concealment:
+        - false_documentation
+        - intimidation_of_subordinates
+        - auditor_deception
+
+    # Expense manipulation
+    expense_override:
+      perpetrator_level: department_head+
+      techniques:
+        - capitalization_abuse
+        - expense_deferral
+        - cost_allocation_manipulation
+      pressure_sources:
+        - budget_targets
+        - bonus_thresholds
+        - analyst_expectations
+
+    # Asset manipulation
+    asset_override:
+      perpetrator_level: senior_management
+      techniques:
+        - impairment_avoidance
+        - valuation_manipulation
+        - classification_abuse
+      motivations:
+        - covenant_compliance
+        - credit_rating_maintenance
+        - acquisition_valuation
+
+  override_characteristics:
+    # Authority abuse
+    authority_patterns:
+      - override_segregation_of_duties
+      - suppress_exception_reports
+      - modify_control_parameters
+      - grant_inappropriate_access
+
+    # Pressure and rationalization
+    fraud_triangle:
+      pressure:
+        - financial_targets
+        - personal_financial_issues
+        - market_expectations
+      opportunity:
+        - weak_board_oversight
+        - auditor_reliance_on_management
+        - complex_transactions
+      rationalization:
+        - "temporary_adjustment"
+        - "everyone_does_it"
+        - "for_the_good_of_company"
+</code></pre>
+<h4 id="42-tone-at-the-top-effects"><a class="header" href="#42-tone-at-the-top-effects">4.2 Tone at the Top Effects</a></h4>
+<pre><code class="language-yaml">tone_effects:
+  enabled: true
+
+  # Positive tone (ethical leadership)
+  ethical_leadership:
+    effects:
+      - fraud_rate_reduction: 0.50
+      - whistleblower_increase: 2.0
+      - control_compliance_improvement: 0.20
+
+  # Negative tone (pressure culture)
+  pressure_culture:
+    effects:
+      - fraud_rate_increase: 2.5
+      - concealment_sophistication: increased
+      - collusion_probability: 1.5x
+      - management_override_probability: 3.0x
+
+  # Mixed signals
+  inconsistent_messaging:
+    effects:
+      - employee_confusion: true
+      - selective_compliance: true
+      - rationalization_easier: true
+</code></pre>
+<hr>
+<h3 id="5-adaptive-fraud-behavior"><a class="header" href="#5-adaptive-fraud-behavior">5. Adaptive Fraud Behavior</a></h3>
+<h4 id="51-learning-and-adaptation"><a class="header" href="#51-learning-and-adaptation">5.1 Learning and Adaptation</a></h4>
+<pre><code class="language-yaml">adaptive_fraud:
+  enabled: true
+
+  learning_behaviors:
+    # Response to near-detection
+    near_detection_response:
+      behaviors:
+        - temporary_pause: 0.40
+        - technique_change: 0.30
+        - amount_reduction: 0.20
+        - scheme_abandonment: 0.10
+      pause_duration_days: 30-90
+
+    # Response to control changes
+    control_adaptation:
+      when: new_control_implemented
+      behaviors:
+        - find_workaround: 0.60
+        - wait_for_relaxation: 0.25
+        - abandon_scheme: 0.15
+      adaptation_time_days: 30-60
+
+    # Success reinforcement
+    success_reinforcement:
+      when: fraud_not_detected
+      behaviors:
+        - increase_frequency: 0.30
+        - increase_amount: 0.40
+        - recruit_accomplices: 0.15
+        - maintain_current: 0.15
+
+  sophistication_evolution:
+    stages:
+      novice:
+        characteristics: [obvious_patterns, small_amounts, nervous_behavior]
+        detection_difficulty: easy
+
+      intermediate:
+        characteristics: [some_concealment, medium_amounts, confidence]
+        detection_difficulty: moderate
+
+      experienced:
+        characteristics: [sophisticated_concealment, varied_amounts, systematic]
+        detection_difficulty: hard
+
+      expert:
+        characteristics: [professional_techniques, large_amounts, network]
+        detection_difficulty: expert
+
+    progression:
+      trigger: months_undetected &gt; 6
+      probability: 0.30_per_trigger
+</code></pre>
+<h4 id="52-detection-evasion"><a class="header" href="#52-detection-evasion">5.2 Detection Evasion</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct AdaptiveFraudster {
+    experience_level: ExperienceLevel,
+    known_controls: Vec&lt;ControlId&gt;,
+    detection_events: Vec&lt;DetectionEvent&gt;,
+    technique_repertoire: Vec&lt;FraudTechnique&gt;,
+}
+
+impl AdaptiveFraudster {
+    /// Adapt technique based on environment
+    pub fn adapt_technique(&amp;mut self, context: &amp;Context) -&gt; FraudTechnique {
+        // Avoid known controls
+        let available = self.filter_by_controls(context.active_controls);
+
+        // Avoid previously detected patterns
+        let safe = self.filter_by_history(&amp;available);
+
+        // Select based on risk/reward
+        self.select_optimal(&amp;safe, context.current_risk_tolerance)
+    }
+
+    /// Learn from near-detection
+    pub fn learn_from_event(&amp;mut self, event: &amp;DetectionEvent) {
+        match event.outcome {
+            DetectionOutcome::Detected =&gt; {
+                self.avoid_technique(event.technique);
+                self.reduce_risk_tolerance();
+            }
+            DetectionOutcome::NearMiss =&gt; {
+                self.modify_technique(event.technique);
+                self.record_warning_sign(event.indicator);
+            }
+            DetectionOutcome::Undetected =&gt; {
+                self.reinforce_technique(event.technique);
+                self.consider_escalation();
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="6-financial-statement-fraud-schemes"><a class="header" href="#6-financial-statement-fraud-schemes">6. Financial Statement Fraud Schemes</a></h3>
+<h4 id="61-revenue-manipulation-schemes"><a class="header" href="#61-revenue-manipulation-schemes">6.1 Revenue Manipulation Schemes</a></h4>
+<pre><code class="language-yaml">revenue_schemes:
+  # Premature revenue recognition
+  premature_recognition:
+    techniques:
+      - bill_and_hold:
+          description: "Ship to warehouse, recognize revenue"
+          indicators: [unusual_shipping, customer_complaints]
+          journal_entries:
+            - dr: accounts_receivable
+              cr: revenue
+
+      - channel_stuffing:
+          description: "Force product on distributors"
+          indicators: [quarter_end_spike, high_returns_next_period]
+          side_agreements: [return_rights, extended_payment]
+
+      - percentage_of_completion_abuse:
+          description: "Overstate project completion"
+          indicators: [optimistic_estimates, margin_improvements]
+          documentation: [false_progress_reports]
+
+      - round_tripping:
+          description: "Simultaneous buy/sell with related party"
+          indicators: [offsetting_transactions, unusual_counterparties]
+          complexity: high
+
+  # Fictitious revenue
+  fictitious_revenue:
+    techniques:
+      - fake_invoices:
+          description: "Bill nonexistent customers"
+          concealment: [fake_customer_setup, false_confirmations]
+
+      - side_agreements:
+          description: "Hidden terms negate sale"
+          concealment: [verbal_agreements, separate_documentation]
+
+      - related_party_transactions:
+          description: "Transactions with undisclosed affiliates"
+          concealment: [complex_ownership, offshore_entities]
+</code></pre>
+<h4 id="62-expense-and-liability-manipulation"><a class="header" href="#62-expense-and-liability-manipulation">6.2 Expense and Liability Manipulation</a></h4>
+<pre><code class="language-yaml">expense_liability_schemes:
+  # Expense deferral
+  expense_deferral:
+    techniques:
+      - improper_capitalization:
+          description: "Capitalize operating expenses"
+          accounts: [fixed_assets, intangibles]
+          indicators: [unusual_asset_growth, low_maintenance]
+
+      - reserve_manipulation:
+          description: "Cookie jar reserves"
+          pattern: [build_in_good_years, release_in_bad]
+          indicators: [volatile_provisions, earnings_smoothing]
+
+      - period_cutoff_manipulation:
+          description: "Push expenses to next period"
+          timing: [quarter_end, year_end]
+          techniques: [hold_invoices, delay_receipt]
+
+  # Liability concealment
+  liability_concealment:
+    techniques:
+      - off_balance_sheet:
+          description: "Structure to avoid consolidation"
+          vehicles: [SPEs, unconsolidated_subsidiaries]
+          concealment: [complex_structures, offshore]
+
+      - contingency_understatement:
+          description: "Understate legal/warranty liabilities"
+          rationalization: ["uncertain", "immaterial"]
+          indicators: [subsequent_large_settlements]
+</code></pre>
+<hr>
+<h3 id="7-fraud-red-flags-and-indicators"><a class="header" href="#7-fraud-red-flags-and-indicators">7. Fraud Red Flags and Indicators</a></h3>
+<h4 id="71-behavioral-red-flags"><a class="header" href="#71-behavioral-red-flags">7.1 Behavioral Red Flags</a></h4>
+<pre><code class="language-yaml">behavioral_red_flags:
+  # Employee behavior
+  employee_indicators:
+    - indicator: living_beyond_means
+      fraud_correlation: 0.45
+      detection_method: lifestyle_analysis
+
+    - indicator: financial_difficulties
+      fraud_correlation: 0.40
+      detection_method: background_check
+
+    - indicator: unusually_close_vendor_relationships
+      fraud_correlation: 0.35
+      detection_method: relationship_analysis
+
+    - indicator: control_issues_attitude
+      fraud_correlation: 0.30
+      detection_method: 360_feedback
+
+    - indicator: never_takes_vacation
+      fraud_correlation: 0.50
+      detection_method: hr_records
+
+    - indicator: excessive_overtime
+      fraud_correlation: 0.25
+      detection_method: time_records
+
+  # Transaction behavior
+  transaction_indicators:
+    - indicator: round_number_preference
+      fraud_correlation: 0.20
+      detection_method: benford_analysis
+
+    - indicator: just_below_threshold
+      fraud_correlation: 0.60
+      detection_method: threshold_analysis
+
+    - indicator: end_of_period_concentration
+      fraud_correlation: 0.35
+      detection_method: temporal_analysis
+
+    - indicator: unusual_journal_entries
+      fraud_correlation: 0.55
+      detection_method: journal_entry_testing
+</code></pre>
+<h4 id="72-red-flag-generation"><a class="header" href="#72-red-flag-generation">7.2 Red Flag Generation</a></h4>
+<pre><code class="language-yaml">red_flag_injection:
+  enabled: true
+
+  # Inject red flags that correlate with but don't prove fraud
+  correlations:
+    # Strong correlation - usually indicates fraud
+    strong:
+      - flag: matched_home_address_vendor_employee
+        fraud_probability: 0.85
+        inject_with_fraud: 0.90
+        inject_without_fraud: 0.001
+
+      - flag: sequential_check_numbers_to_same_vendor
+        fraud_probability: 0.70
+        inject_with_fraud: 0.80
+        inject_without_fraud: 0.01
+
+    # Moderate correlation - worth investigating
+    moderate:
+      - flag: vendor_no_physical_address
+        fraud_probability: 0.40
+        inject_with_fraud: 0.60
+        inject_without_fraud: 0.05
+
+      - flag: approval_just_under_threshold
+        fraud_probability: 0.35
+        inject_with_fraud: 0.70
+        inject_without_fraud: 0.10
+
+    # Weak correlation - often legitimate
+    weak:
+      - flag: round_number_invoice
+        fraud_probability: 0.15
+        inject_with_fraud: 0.40
+        inject_without_fraud: 0.20
+
+      - flag: end_of_month_timing
+        fraud_probability: 0.10
+        inject_with_fraud: 0.50
+        inject_without_fraud: 0.30
+</code></pre>
+<hr>
+<h3 id="8-fraud-investigation-scenarios"><a class="header" href="#8-fraud-investigation-scenarios">8. Fraud Investigation Scenarios</a></h3>
+<h4 id="81-investigation-ready-data"><a class="header" href="#81-investigation-ready-data">8.1 Investigation-Ready Data</a></h4>
+<pre><code class="language-yaml">investigation_scenarios:
+  enabled: true
+
+  scenarios:
+    # Whistleblower scenario
+    whistleblower_tip:
+      allegation: "Vendor XYZ may be fictitious"
+      evidence_trail:
+        - vendor_setup_documents
+        - approval_chain
+        - payment_history
+        - address_verification
+        - phone_verification
+      hidden_clues:
+        - approver_is_also_requester
+        - address_is_ups_store
+        - phone_goes_to_employee
+
+    # Audit finding follow-up
+    audit_finding:
+      initial_finding: "Unusual vendor payment pattern"
+      investigation_path:
+        - transaction_sample
+        - vendor_analysis
+        - employee_relationship_map
+        - comparative_analysis
+      discovery_stages:
+        - stage_1: "Vendor has only one customer - us"
+        - stage_2: "All invoices approved by same person"
+        - stage_3: "Vendor address matches employee relative"
+
+    # Hotline report
+    anonymous_tip:
+      report: "Manager taking kickbacks from contractor"
+      evidence_available:
+        - contract_documents
+        - bid_history
+        - payment_records
+        - email_metadata
+      additional_clues:
+        - bids_always_awarded_to_same_contractor
+        - contract_amendments_increase_cost_30%
+        - manager_new_car_timing_correlates
+</code></pre>
+<h4 id="82-evidence-chain-generation"><a class="header" href="#82-evidence-chain-generation">8.2 Evidence Chain Generation</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct FraudEvidenceChain {
+    fraud_id: Uuid,
+    evidence_items: Vec&lt;EvidenceItem&gt;,
+    discovery_order: Vec&lt;EvidenceId&gt;,
+    linking_relationships: Vec&lt;EvidenceLink&gt;,
+}
+
+pub struct EvidenceItem {
+    id: EvidenceId,
+    item_type: EvidenceType,
+    content: EvidenceContent,
+    source_system: String,
+    timestamp: DateTime&lt;Utc&gt;,
+    accessibility: Accessibility,  // How hard to find
+    probative_value: f64,         // Strength as evidence
+}
+
+pub enum EvidenceType {
+    Transaction,
+    Document,
+    Communication,
+    SystemLog,
+    ExternalRecord,
+    WitnessStatement,
+    PhysicalEvidence,
+}
+
+impl FraudEvidenceChain {
+    /// Generate investigation-ready evidence trail
+    pub fn generate_trail(&amp;self) -&gt; InvestigationTrail {
+        // Order evidence by discoverability
+        // Create logical links between items
+        // Add red herrings (false leads that are eliminated)
+        // Include corroborating evidence
+    }
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="9-implementation-priority"><a class="header" href="#9-implementation-priority">9. Implementation Priority</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Enhancement</th><th>Complexity</th><th>Impact</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>ACFE-aligned taxonomy</td><td>Low</td><td>High</td><td>P1</td></tr>
+<tr><td>Collusion modeling</td><td>High</td><td>High</td><td>P1</td></tr>
+<tr><td>Concealment techniques</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Management override</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Adaptive behavior</td><td>High</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Financial statement fraud</td><td>High</td><td>High</td><td>P1</td></tr>
+<tr><td>Red flag generation</td><td>Medium</td><td>High</td><td>P1</td></tr>
+<tr><td>Investigation scenarios</td><td>Medium</td><td>Medium</td><td>P2</td></tr>
+<tr><td>Industry-specific patterns</td><td>Medium</td><td>Medium</td><td>P2</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="10-validation-and-calibration"><a class="header" href="#10-validation-and-calibration">10. Validation and Calibration</a></h3>
+<pre><code class="language-yaml">fraud_validation:
+  # Calibration against real-world statistics
+  calibration:
+    source: acfe_report_to_the_nations_2024
+    metrics:
+      median_loss: 117000
+      median_duration_months: 12
+      detection_methods:
+        tip: 0.42
+        internal_audit: 0.16
+        management_review: 0.12
+        external_audit: 0.04
+        accident: 0.06
+      perpetrator_departments:
+        accounting: 0.21
+        operations: 0.17
+        executive: 0.12
+        sales: 0.11
+        customer_service: 0.08
+
+  # Distribution validation
+  distribution_checks:
+    - metric: loss_distribution
+      expected: lognormal
+      parameters_from: acfe_data
+
+    - metric: duration_distribution
+      expected: exponential
+      mean_months: 12
+
+    - metric: detection_method_distribution
+      expected: categorical
+      match_acfe: true
+</code></pre>
+<hr>
+<p><em>See also</em>: <a href="08-domain-specific.html">08-domain-specific.md</a> for industry-specific enhancements</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../roadmap/research/06-anomaly-patterns.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../roadmap/research/08-domain-specific.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../roadmap/research/06-anomaly-patterns.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../roadmap/research/08-domain-specific.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

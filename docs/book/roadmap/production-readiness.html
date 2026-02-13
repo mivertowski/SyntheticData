@@ -1,0 +1,947 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Production Readiness - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="production-readiness-roadmap"><a class="header" href="#production-readiness-roadmap">Production Readiness Roadmap</a></h1>
+<blockquote>
+<p><strong>Version</strong>: 1.0 | <strong>Date</strong>: February 2026 | <strong>Status</strong>: Living Document</p>
+</blockquote>
+<p>This roadmap addresses the infrastructure, operations, security, compliance, and ecosystem maturity required to transition DataSynth from a feature-complete beta to a production-grade enterprise platform. It complements the existing <a href="README.html">feature roadmap</a> which covers domain-specific enhancements.</p>
+<hr>
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
+<ul>
+<li><a href="#current-state-assessment">Current State Assessment</a></li>
+<li><a href="#phase-1-foundation-0-3-months">Phase 1: Foundation (0-3 months)</a></li>
+<li><a href="#phase-2-hardening-3-6-months">Phase 2: Hardening (3-6 months)</a></li>
+<li><a href="#phase-3-enterprise-grade-6-12-months">Phase 3: Enterprise Grade (6-12 months)</a></li>
+<li><a href="#phase-4-market-leadership-12-18-months">Phase 4: Market Leadership (12-18 months)</a></li>
+<li><a href="#industry--research-context">Industry &amp; Research Context</a></li>
+<li><a href="#competitive-positioning">Competitive Positioning</a></li>
+<li><a href="#regulatory-landscape">Regulatory Landscape</a></li>
+<li><a href="#risk-register">Risk Register</a></li>
+</ul>
+<hr>
+<h2 id="current-state-assessment"><a class="header" href="#current-state-assessment">Current State Assessment</a></h2>
+<h3 id="production-readiness-scorecard-v050--phase-2-complete"><a class="header" href="#production-readiness-scorecard-v050--phase-2-complete">Production Readiness Scorecard (v0.5.0 — Phase 2 Complete)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Category</th><th>Score</th><th>Status</th><th>Key Findings</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Workspace Structure</strong></td><td>9/10</td><td>Excellent</td><td>15 well-organized crates, clear separation of concerns</td></tr>
+<tr><td><strong>Testing</strong></td><td>10/10</td><td>Excellent</td><td>2,500+ tests, property testing via proptest, fuzzing harnesses (cargo-fuzz), k6 load tests, coverage via cargo-llvm-cov + Codecov</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>9/10</td><td>Excellent</td><td>7-job pipeline: fmt, clippy, cross-platform test (Linux/macOS/Windows), MSRV 1.88, security scanning (cargo-deny + cargo-audit), coverage, benchmark regression</td></tr>
+<tr><td><strong>Error Handling</strong></td><td>10/10</td><td>Excellent</td><td>Idiomatic <code>thiserror</code>/<code>anyhow</code>; <code>#![deny(clippy::unwrap_used)]</code> enforced across all library crates; zero unwrap calls in non-test code</td></tr>
+<tr><td><strong>Observability</strong></td><td>9/10</td><td>Excellent</td><td>Structured JSON logging, feature-gated OpenTelemetry (OTLP traces + Prometheus metrics), request ID propagation, request logging middleware, data lineage graph</td></tr>
+<tr><td><strong>Deployment</strong></td><td>10/10</td><td>Excellent</td><td>Multi-stage Dockerfile (distroless), Docker Compose, Kubernetes Helm chart (HPA, PDB, Redis subchart), SystemD service, comprehensive deployment guides (Docker, K8s, bare-metal)</td></tr>
+<tr><td><strong>Security</strong></td><td>9/10</td><td>Excellent</td><td>Argon2id key hashing with timing-safe comparison, security headers, request validation, TLS support (rustls), env var interpolation for secrets, cargo-deny + cargo-audit in CI, security hardening guide</td></tr>
+<tr><td><strong>Performance</strong></td><td>9/10</td><td>Excellent</td><td>5 Criterion benchmark suites, 100K+ entries/sec; CI benchmark regression tracking on PRs; k6 load testing framework</td></tr>
+<tr><td><strong>Python Bindings</strong></td><td>8/10</td><td>Strong</td><td>Strict mypy, PEP 561 compliant, blueprints; classified as “Beta”, no async support</td></tr>
+<tr><td><strong>Server</strong></td><td>10/10</td><td>Excellent</td><td>REST/gRPC/WebSocket complete; async job queue; distributed rate limiting (Redis); stateless config loading; enhanced probes; full middleware stack</td></tr>
+<tr><td><strong>Documentation</strong></td><td>10/10</td><td>Excellent</td><td>mdBook + rustdoc + CHANGELOG + CONTRIBUTING; deployment guides (Docker, K8s, bare-metal), operational runbook, capacity planning, DR procedures, API reference, security hardening</td></tr>
+<tr><td><strong>Code Quality</strong></td><td>10/10</td><td>Excellent</td><td>Zero TODO/FIXME comments, warnings-as-errors enforced, panic-free library crates, 6 unsafe blocks (all justified)</td></tr>
+<tr><td><strong>Privacy</strong></td><td>9/10</td><td>Excellent</td><td>Formal DP composition (RDP, zCDP), privacy budget management, MIA/linkage evaluation, NIST SP 800-226 alignment, SynQP matrix, custom privacy levels</td></tr>
+<tr><td><strong>Data Lineage</strong></td><td>9/10</td><td>Excellent</td><td>Per-file checksums, lineage graph, W3C PROV-JSON export, CLI verify command for manifest integrity</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Overall: 9.4/10</strong> — Enterprise-grade with Kubernetes deployment, formal privacy guarantees, panic-free library code, comprehensive operations documentation, and data lineage tracking. Remaining gaps: RBAC/OAuth2, plugin SDK, Python async support.</p>
+<hr>
+<h2 id="phase-1-foundation-0-3-months"><a class="header" href="#phase-1-foundation-0-3-months">Phase 1: Foundation (0-3 months)</a></h2>
+<p><em>Goal: Establish the minimum viable production infrastructure.</em></p>
+<h3 id="11-containerization--packaging"><a class="header" href="#11-containerization--packaging">1.1 Containerization &amp; Packaging</a></h3>
+<p><strong>Priority: Critical</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Multi-stage Dockerfile</td><td>Rust builder stage + distroless/alpine runtime (~20MB image)</td></tr>
+<tr><td>Docker Compose</td><td>Local dev stack: server + Prometheus + Grafana + Redis</td></tr>
+<tr><td>OCI image publishing</td><td>GitHub Actions workflow to push to GHCR/ECR on tagged releases</td></tr>
+<tr><td>Binary distribution</td><td>Pre-built binaries for Linux (x86_64, aarch64), macOS (Apple Silicon), Windows</td></tr>
+<tr><td>SystemD service file</td><td>Production daemon configuration with resource limits</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Implementation Notes:</strong></p>
+<pre><code># Target image structure
+FROM rust:1.88-bookworm AS builder
+# ... build with --release
+FROM gcr.io/distroless/cc-debian12
+COPY --from=builder /app/target/release/datasynth-server /
+EXPOSE 3000
+ENTRYPOINT ["/datasynth-server"]
+</code></pre>
+<h3 id="12-security-hardening"><a class="header" href="#12-security-hardening">1.2 Security Hardening</a></h3>
+<p><strong>Priority: Critical</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>API key hashing</td><td>Argon2id for stored keys; timing-safe comparison via <code>subtle</code> crate</td></tr>
+<tr><td>Request validation middleware</td><td>Content-Type enforcement, configurable max body size (default 10MB)</td></tr>
+<tr><td>TLS support</td><td>Native <code>rustls</code> integration or documented reverse proxy (nginx/Caddy) setup</td></tr>
+<tr><td>Secrets management</td><td>Environment variable interpolation in config (<code>${ENV_VAR}</code> syntax)</td></tr>
+<tr><td>Security headers</td><td><code>X-Content-Type-Options</code>, <code>X-Frame-Options</code>, <code>Strict-Transport-Security</code></td></tr>
+<tr><td>Input sanitization</td><td>Validate all user-supplied config values before processing</td></tr>
+<tr><td>Dependency auditing</td><td><code>cargo-audit</code> and <code>cargo-deny</code> in CI pipeline</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="13-observability-stack"><a class="header" href="#13-observability-stack">1.3 Observability Stack</a></h3>
+<p><strong>Priority: Critical</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>OpenTelemetry integration</td><td>Replace custom metrics with <code>opentelemetry</code> + <code>opentelemetry-otlp</code> crates</td></tr>
+<tr><td>Structured logging</td><td>JSON-formatted logs with request IDs, span context, correlation traces</td></tr>
+<tr><td>Prometheus metrics</td><td>Generation throughput, latency histograms, error rates, resource utilization</td></tr>
+<tr><td>Distributed tracing</td><td>Trace generation pipeline phases end-to-end with span hierarchy</td></tr>
+<tr><td>Health check enhancement</td><td>Add dependency checks (disk space, memory) to <code>/ready</code> endpoint</td></tr>
+<tr><td>Alert rules</td><td>Example Prometheus alerting rules for SLO violations</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Key Metrics to Instrument:</strong></p>
+<ul>
+<li><code>datasynth_generation_entries_total</code> (Counter) — Total entries generated</li>
+<li><code>datasynth_generation_duration_seconds</code> (Histogram) — Per-phase latency</li>
+<li><code>datasynth_generation_errors_total</code> (Counter) — Errors by type</li>
+<li><code>datasynth_memory_usage_bytes</code> (Gauge) — Current memory consumption</li>
+<li><code>datasynth_active_sessions</code> (Gauge) — Concurrent generation sessions</li>
+<li><code>datasynth_api_request_duration_seconds</code> (Histogram) — API latency by endpoint</li>
+</ul>
+<h3 id="14-cicd-hardening"><a class="header" href="#14-cicd-hardening">1.4 CI/CD Hardening</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: Low</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Code coverage</td><td><code>cargo-tarpaulin</code> or <code>cargo-llvm-cov</code> with Codecov integration</td></tr>
+<tr><td>Security scanning</td><td><code>cargo-audit</code> for CVEs, <code>cargo-deny</code> for license compliance</td></tr>
+<tr><td>MSRV validation</td><td>CI job testing against minimum supported Rust version (1.88)</td></tr>
+<tr><td>Cross-platform matrix</td><td>Test on Linux, macOS, Windows in CI</td></tr>
+<tr><td>Benchmark tracking</td><td>Criterion results uploaded to GitHub Pages; regression alerts on PRs</td></tr>
+<tr><td>Release automation</td><td>Semantic versioning with auto-changelog via <code>git-cliff</code></td></tr>
+<tr><td>Container scanning</td><td>Trivy or Grype scanning of published Docker images</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="phase-2-hardening-3-6-months"><a class="header" href="#phase-2-hardening-3-6-months">Phase 2: Hardening (3-6 months)</a></h2>
+<p><em>Goal: Enterprise-grade reliability, scalability, and compliance foundations.</em></p>
+<h3 id="21-scalability--high-availability"><a class="header" href="#21-scalability--high-availability">2.1 Scalability &amp; High Availability</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Redis-backed rate limiting</td><td>Distributed rate limiting via <code>redis-rs</code> for multi-instance deployments</td></tr>
+<tr><td>Horizontal scaling</td><td>Stateless server design; shared config via Redis/S3</td></tr>
+<tr><td>Kubernetes Helm chart</td><td>Production-ready chart with HPA, PDB, resource limits, readiness probes</td></tr>
+<tr><td>Load testing framework</td><td>k6 or Locust scripts for API stress testing</td></tr>
+<tr><td>Graceful rolling updates</td><td>Zero-downtime deployments with connection draining</td></tr>
+<tr><td>Job queue</td><td>Async generation jobs with status tracking (Redis Streams or similar)</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="22-data-lineage--provenance"><a class="header" href="#22-data-lineage--provenance">2.2 Data Lineage &amp; Provenance</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Generation manifest</td><td>JSON/YAML file recording: config hash, seed, version, timestamp, checksums for all outputs</td></tr>
+<tr><td>Data lineage graph</td><td>Track which config section produced which output file and row ranges</td></tr>
+<tr><td>Reproducibility verification</td><td>CLI command: <code>datasynth-data verify --manifest manifest.json --output ./output/</code></td></tr>
+<tr><td>W3C PROV compatibility</td><td>Export lineage in W3C PROV-JSON format for interoperability</td></tr>
+<tr><td>Audit trail</td><td>Append-only log of all generation runs with user, config, and output metadata</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Rationale:</strong> Data lineage is becoming a regulatory requirement under the EU AI Act (Article 10 — data governance for training data) and is a key differentiator in the enterprise synthetic data market. NIST AI RMF 1.0 also emphasizes provenance tracking under its MAP and MEASURE functions.</p>
+<h3 id="23-enhanced-privacy-guarantees"><a class="header" href="#23-enhanced-privacy-guarantees">2.3 Enhanced Privacy Guarantees</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Formal DP accounting</td><td>Implement Renyi DP and zero-concentrated DP (zCDP) composition tracking</td></tr>
+<tr><td>Privacy budget management</td><td>Global budget tracking across multiple generation runs</td></tr>
+<tr><td>Membership inference testing</td><td>Automated MIA evaluation as post-generation quality gate</td></tr>
+<tr><td>NIST SP 800-226 alignment</td><td>Validate DP implementation against NIST Guidelines for Evaluating DP Guarantees</td></tr>
+<tr><td>SynQP framework integration</td><td>Implement the IEEE SynQP evaluation matrix for joint quality-privacy assessment</td></tr>
+<tr><td>Configurable privacy levels</td><td>Presets: <code>relaxed</code> (ε=10), <code>standard</code> (ε=1), <code>strict</code> (ε=0.1) with utility tradeoff documentation</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Research Context:</strong> The NIST SP 800-226 (Guidelines for Evaluating Differential Privacy Guarantees) provides the authoritative framework for DP evaluation. The SynQP framework (IEEE, 2025) introduces standardized privacy-quality evaluation matrices. Benchmarking DP tabular synthesis algorithms was a key topic at TPDP 2025, and federated DP approaches (FedDPSyn) are emerging for distributed generation.</p>
+<h3 id="24-unwrap-audit--robustness"><a class="header" href="#24-unwrap-audit--robustness">2.4 Unwrap Audit &amp; Robustness</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Unwrap elimination</td><td>Audit and replace ~2,300 <code>unwrap()</code> calls in non-test code with proper error handling</td></tr>
+<tr><td>Panic-free guarantee</td><td>Add <code>#![deny(clippy::unwrap_used)]</code> lint for library crates (not test/bench)</td></tr>
+<tr><td>Fuzzing harnesses</td><td><code>cargo-fuzz</code> targets for config parsing, fingerprint loading, and API endpoints</td></tr>
+<tr><td>Property test expansion</td><td>Increase <code>proptest</code> coverage for statistical invariants and balance coherence</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="25-documentation-operations"><a class="header" href="#25-documentation-operations">2.5 Documentation: Operations</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Low</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Deployment guide</td><td>Docker, K8s, bare-metal deployment with step-by-step instructions</td></tr>
+<tr><td>Operational runbook</td><td>Monitoring dashboards, common alerts, troubleshooting procedures</td></tr>
+<tr><td>Capacity planning guide</td><td>Memory/CPU/disk sizing for different generation scales</td></tr>
+<tr><td>Disaster recovery</td><td>Backup/restore procedures for server state and configurations</td></tr>
+<tr><td>API rate limits documentation</td><td>Document auth, rate limiting, and CORS behavior for integrators</td></tr>
+<tr><td>Security hardening guide</td><td>Checklist for production security configuration</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="phase-3-enterprise-grade-6-12-months"><a class="header" href="#phase-3-enterprise-grade-6-12-months">Phase 3: Enterprise Grade (6-12 months)</a></h2>
+<p><em>Goal: Enterprise features, compliance certifications, and ecosystem maturity.</em></p>
+<h3 id="31-multi-tenancy--access-control"><a class="header" href="#31-multi-tenancy--access-control">3.1 Multi-Tenancy &amp; Access Control</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>RBAC</td><td>Role-based access control (admin, operator, viewer) with JWT/OAuth2</td></tr>
+<tr><td>Tenant isolation</td><td>Namespace-based isolation for multi-tenant SaaS deployment</td></tr>
+<tr><td>Audit logging</td><td>Structured audit events for all API actions (who/what/when)</td></tr>
+<tr><td>SSO integration</td><td>SAML 2.0 and OIDC support for enterprise identity providers</td></tr>
+<tr><td>API versioning</td><td>URL-based API versioning (v1, v2) with deprecation lifecycle</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="32-advanced-evaluation--quality-gates"><a class="header" href="#32-advanced-evaluation--quality-gates">3.2 Advanced Evaluation &amp; Quality Gates</a></h3>
+<p><strong>Priority: High</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Automated quality gates</td><td>Pre-configured pass/fail criteria for generation runs</td></tr>
+<tr><td>Benchmark suite expansion</td><td>Domain-specific benchmarks: financial realism, fraud detection efficacy, audit trail coherence</td></tr>
+<tr><td>Regression testing</td><td>Golden dataset comparison with tolerance thresholds</td></tr>
+<tr><td>Quality dashboard</td><td>Web-based visualization of quality metrics over time</td></tr>
+<tr><td>Third-party validation</td><td>Integration with SDMetrics and SDV evaluation utilities</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Quality Metrics to Implement:</strong></p>
+<ul>
+<li><strong>Statistical fidelity</strong>: Column distribution similarity (KL divergence, Wasserstein distance)</li>
+<li><strong>Structural fidelity</strong>: Correlation matrix preservation, inter-table referential integrity</li>
+<li><strong>Privacy</strong>: Nearest-neighbor distance ratio, attribute disclosure risk, identity disclosure risk (SynQP)</li>
+<li><strong>Utility</strong>: Train-on-synthetic-test-on-real (TSTR) ML performance parity</li>
+<li><strong>Temporal fidelity</strong>: Autocorrelation preservation, seasonal pattern retention</li>
+<li><strong>Domain-specific</strong>: Benford compliance MAD, balance equation coherence, document chain integrity</li>
+</ul>
+<h3 id="33-plugin--extension-sdk"><a class="header" href="#33-plugin--extension-sdk">3.3 Plugin &amp; Extension SDK</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Generator trait API</td><td>Stable, documented trait interface for custom generators</td></tr>
+<tr><td>Plugin loading</td><td>Dynamic plugin loading via <code>libloading</code> or WASM runtime</td></tr>
+<tr><td>Template marketplace</td><td>Repository of community-contributed industry templates</td></tr>
+<tr><td>Custom output sinks</td><td>Plugin API for custom export formats (database write, S3, GCS)</td></tr>
+<tr><td>Webhook system</td><td>Event-driven notifications (generation start/complete/error)</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="34-python-ecosystem-maturity"><a class="header" href="#34-python-ecosystem-maturity">3.4 Python Ecosystem Maturity</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Async support</td><td><code>asyncio</code>-compatible API using <code>websockets</code> for streaming</td></tr>
+<tr><td>Conda package</td><td>Publish to conda-forge for data science workflows</td></tr>
+<tr><td>Jupyter integration</td><td>Example notebooks for common use cases (fraud ML, audit analytics)</td></tr>
+<tr><td>pandas/polars integration</td><td>Direct DataFrame output without intermediate CSV</td></tr>
+<tr><td>PyPI 1.0.0 release</td><td>Promote from Beta to Production/Stable classifier</td></tr>
+<tr><td>Type stubs</td><td>Complete <code>.pyi</code> stubs for IDE support</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="35-regulatory-compliance-framework"><a class="header" href="#35-regulatory-compliance-framework">3.5 Regulatory Compliance Framework</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>EU AI Act readiness</td><td>Synthetic content marking (Article 50), training data documentation (Article 10)</td></tr>
+<tr><td>NIST AI RMF alignment</td><td>Self-assessment against MAP, MEASURE, MANAGE, GOVERN functions</td></tr>
+<tr><td>SOC 2 Type II preparation</td><td>Document controls for security, availability, processing integrity</td></tr>
+<tr><td>GDPR compliance documentation</td><td>Data processing documentation, privacy impact assessment template</td></tr>
+<tr><td>ISO 27001 alignment</td><td>Information security management system controls mapping</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Regulatory Context:</strong> The EU AI Act’s Article 50 transparency obligations (enforceable August 2026) require AI systems generating synthetic content to mark outputs as artificially generated in a machine-readable format. Article 10 mandates training data governance including documentation of data sources. Organizations face penalties up to €35M or 7% of global turnover for non-compliance. The NIST AI RMF 1.0 (expanded significantly through 2024-2025) provides the voluntary framework becoming the “operational layer” beneath regulatory compliance globally.</p>
+<hr>
+<h2 id="phase-4-market-leadership-12-18-months"><a class="header" href="#phase-4-market-leadership-12-18-months">Phase 4: Market Leadership (12-18 months)</a></h2>
+<p><em>Goal: Cutting-edge capabilities informed by latest research, establishing DataSynth as the reference platform for financial synthetic data.</em></p>
+<h3 id="41-llm-augmented-generation"><a class="header" href="#41-llm-augmented-generation">4.1 LLM-Augmented Generation</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>LLM-guided metadata enrichment</td><td>Use LLMs to generate realistic vendor names, descriptions, memo fields</td></tr>
+<tr><td>Natural language config</td><td>Generate YAML configs from natural language descriptions (“Generate 1 year of manufacturing data for a mid-size German company”)</td></tr>
+<tr><td>Semantic constraint validation</td><td>LLM-based validation of inter-column logical relationships</td></tr>
+<tr><td>Explanation generation</td><td>Natural language explanations for anomaly labels and findings</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Research Context:</strong> Multiple 2025 papers demonstrate LLM-augmented tabular data generation. LLM-TabFlow (March 2025) addresses preserving inter-column logical relationships. StructSynth (August 2025) focuses on structure-aware synthesis in low-data regimes. LLM-TabLogic (August 2025) uses prompt-guided latent diffusion to maintain logical constraints. The CFA Institute’s July 2025 report on “Synthetic Data in Investment Management” validates the growing importance of synthetic data in financial applications.</p>
+<h3 id="42-diffusion-model-integration"><a class="header" href="#42-diffusion-model-integration">4.2 Diffusion Model Integration</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Very High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>TabDDPM backend</td><td>Optional diffusion-model-based generation for learned distribution capture</td></tr>
+<tr><td>FinDiff integration</td><td>Financial-domain diffusion model for learned financial patterns</td></tr>
+<tr><td>Hybrid generation</td><td>Combine rule-based generators with learned models for maximum fidelity</td></tr>
+<tr><td>Model fine-tuning pipeline</td><td>Train custom diffusion models on fingerprint data</td></tr>
+<tr><td>Imb-FinDiff for rare events</td><td>Diffusion-based class imbalance handling for fraud patterns</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Research Context:</strong> The diffusion model landscape for tabular data has matured rapidly. TabDiff (ICLR 2025) introduced joint continuous-time diffusion with feature-wise learnable schedules, achieving 22.5% improvement over prior SOTA. FinDiff and its extensions (Imb-FinDiff for class imbalance, DP-Fed-FinDiff for federated privacy-preserving generation) are specifically designed for financial tabular data. A comprehensive survey (February 2025) catalogs 15+ diffusion models for tabular data. TabGraphSyn (December 2025) combines GNNs with diffusion for graph-guided tabular synthesis.</p>
+<h3 id="43-advanced-privacy-techniques"><a class="header" href="#43-advanced-privacy-techniques">4.3 Advanced Privacy Techniques</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Federated fingerprinting</td><td>Extract fingerprints from distributed data sources without centralization</td></tr>
+<tr><td>Synthetic data certificates</td><td>Cryptographic proof that output satisfies DP guarantees</td></tr>
+<tr><td>Privacy-utility Pareto frontier</td><td>Automated exploration of optimal ε values for given utility targets</td></tr>
+<tr><td>Surrogate public data</td><td>Support for surrogate public data approaches to improve DP utility</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Research Context:</strong> TPDP 2025 featured FedDPSyn for federated DP tabular synthesis and research on surrogate public data for DP (Hod et al.). The AI-generated synthetic tabular data market reached $1.36B in 2024 and is projected to reach $6.73B by 2029 (37.9% CAGR), driven by privacy regulation and AI training demand.</p>
+<h3 id="44-ecosystem--integration"><a class="header" href="#44-ecosystem--integration">4.4 Ecosystem &amp; Integration</a></h3>
+<p><strong>Priority: Medium</strong> | <strong>Effort: Medium</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Terraform provider</td><td>Infrastructure-as-code for DataSynth server deployment</td></tr>
+<tr><td>Airflow/Dagster operators</td><td>Pipeline integration for automated generation in data workflows</td></tr>
+<tr><td>dbt integration</td><td>Generate synthetic data as dbt sources for analytics testing</td></tr>
+<tr><td>Spark connector</td><td>Read DataSynth output directly as Spark DataFrames</td></tr>
+<tr><td>MLflow integration</td><td>Track generation runs as MLflow experiments with metrics</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="45-causal--counterfactual-generation"><a class="header" href="#45-causal--counterfactual-generation">4.5 Causal &amp; Counterfactual Generation</a></h3>
+<p><strong>Priority: Low</strong> | <strong>Effort: Very High</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Deliverable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Causal graph specification</td><td>Define causal relationships between entities in config</td></tr>
+<tr><td>Interventional generation</td><td>“What-if” scenarios: generate data under hypothetical interventions</td></tr>
+<tr><td>Counterfactual samples</td><td>Generate counterfactual versions of existing records</td></tr>
+<tr><td>Causal discovery validation</td><td>Validate that generated data preserves specified causal structure</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="industry--research-context"><a class="header" href="#industry--research-context">Industry &amp; Research Context</a></h2>
+<h3 id="synthetic-data-market-2025-2026"><a class="header" href="#synthetic-data-market-2025-2026">Synthetic Data Market (2025-2026)</a></h3>
+<p>The synthetic data market is experiencing explosive growth:</p>
+<ul>
+<li><strong>Gartner predicts</strong> 75% of businesses will use GenAI to create synthetic customer data by 2026, up from &lt;5% in 2023.</li>
+<li>The <strong>AI-generated synthetic tabular data</strong> market reached $1.36B in 2024, projected to $6.73B by 2029 (37.9% CAGR).</li>
+<li>Synthetic data is predicted to account for &gt;60% of all training data for GenAI models by 2030 (CFA Institute, July 2025).</li>
+</ul>
+<h3 id="key-research-papers--developments"><a class="header" href="#key-research-papers--developments">Key Research Papers &amp; Developments</a></h3>
+<h4 id="tabular-data-generation"><a class="header" href="#tabular-data-generation">Tabular Data Generation</a></h4>
+<ul>
+<li><strong>TabDiff</strong> (ICLR 2025) — Mixed-type diffusion with learnable feature-wise schedules; 22.5% improvement on correlation preservation</li>
+<li><strong>LLM-TabFlow</strong> (March 2025) — Preserving inter-column logical relationships via LLM guidance</li>
+<li><strong>StructSynth</strong> (August 2025) — Structure-aware LLM synthesis for low-data regimes</li>
+<li><strong>LLM-TabLogic</strong> (August 2025) — Prompt-guided latent diffusion maintaining logical constraints</li>
+<li><strong>TabGraphSyn</strong> (December 2025) — Graph-guided latent diffusion combining VAE+GNN with diffusion</li>
+</ul>
+<h4 id="financial-domain"><a class="header" href="#financial-domain">Financial Domain</a></h4>
+<ul>
+<li><strong>FinDiff</strong> (ICAIF 2023) — Diffusion models for financial tabular data</li>
+<li><strong>Imb-FinDiff</strong> (ICAIF 2024) — Conditional diffusion for class-imbalanced financial data</li>
+<li><strong>DP-Fed-FinDiff</strong> — Federated DP diffusion for privacy-preserving financial synthesis</li>
+<li><strong>CFA Institute Report</strong> (July 2025) — “Synthetic Data in Investment Management” validating FinDiff as SOTA</li>
+</ul>
+<h4 id="privacy--evaluation"><a class="header" href="#privacy--evaluation">Privacy &amp; Evaluation</a></h4>
+<ul>
+<li><strong>SynQP</strong> (IEEE, 2025) — Standardized quality-privacy evaluation framework for synthetic data</li>
+<li><strong>NIST SP 800-226</strong> — Guidelines for Evaluating Differential Privacy Guarantees</li>
+<li><strong>TPDP 2025</strong> — Benchmarking DP tabular synthesis; federated approaches; membership inference attacks</li>
+<li><strong>Consensus Privacy Metrics</strong> (Pilgram et al., 2025) — Framework for standardized privacy evaluation</li>
+</ul>
+<h4 id="surveys"><a class="header" href="#surveys">Surveys</a></h4>
+<ul>
+<li><strong>“Diffusion Models for Tabular Data”</strong> (February 2025) — Comprehensive survey cataloging 15+ models</li>
+<li><strong>“Comprehensive Survey of Synthetic Tabular Data Generation”</strong> (Shi et al., 2025) — Broad overview of methods</li>
+</ul>
+<h3 id="technology-trends-impacting-datasynth"><a class="header" href="#technology-trends-impacting-datasynth">Technology Trends Impacting DataSynth</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Trend</th><th>Impact</th><th>Timeframe</th></tr>
+</thead>
+<tbody>
+<tr><td>LLM-augmented generation</td><td>Realistic metadata, natural language config</td><td>2026</td></tr>
+<tr><td>Diffusion models for tabular data</td><td>Learned distribution capture as alternative/complement to rule-based</td><td>2026-2027</td></tr>
+<tr><td>Federated DP synthesis</td><td>Generate from distributed sources without centralization</td><td>2027</td></tr>
+<tr><td>Causal modeling</td><td>“What-if” scenarios and interventional generation</td><td>2027-2028</td></tr>
+<tr><td>OTEL standardization</td><td>Unified observability across Rust ecosystem</td><td>2026</td></tr>
+<tr><td>WASM plugins</td><td>Safe, sandboxed extensibility for custom generators</td><td>2026-2027</td></tr>
+<tr><td>EU AI Act enforcement</td><td>Mandatory synthetic content marking and data governance</td><td>August 2026</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="competitive-positioning"><a class="header" href="#competitive-positioning">Competitive Positioning</a></h2>
+<h3 id="market-landscape-2025-2026"><a class="header" href="#market-landscape-2025-2026">Market Landscape (2025-2026)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>Focus</th><th>Key Differentiator</th><th>Pricing</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Gretel.ai</strong></td><td>Developer APIs</td><td>Navigator (NL-to-data); acquired by NVIDIA (March 2025)</td><td>Usage-based</td><td>Integrated into NVIDIA NeMo</td></tr>
+<tr><td><strong>MOSTLY AI</strong></td><td>Enterprise compliance</td><td>TabularARGN with built-in DP; fairness controls</td><td>Enterprise license</td><td>Independent</td></tr>
+<tr><td><strong>Tonic.ai</strong></td><td>Test data management</td><td>Database-aware synthesis; acquired Fabricate (April 2025)</td><td>Per-database</td><td>Growing</td></tr>
+<tr><td><strong>Hazy</strong></td><td>Financial services</td><td>Regulated-sector focus; sequential data</td><td>Enterprise license</td><td>Independent</td></tr>
+<tr><td><strong>SDV/DataCebo</strong></td><td>Open source ecosystem</td><td>CTGAN, TVAEs, Gaussian copulas; Python-native</td><td>Freemium</td><td>Open source core</td></tr>
+<tr><td><strong>K2view</strong></td><td>Entity-based testing</td><td>All-in-one enterprise data management</td><td>Enterprise license</td><td>Established</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="datasynth-competitive-advantages"><a class="header" href="#datasynth-competitive-advantages">DataSynth Competitive Advantages</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Advantage</th><th>Detail</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Domain depth</strong></td><td>Deepest financial/accounting domain model (IFRS, US GAAP, ISA, SOX, COSO, KYC/AML)</td></tr>
+<tr><td><strong>Rule-based coherence</strong></td><td>Guaranteed balance equations, document chain integrity, three-way matching</td></tr>
+<tr><td><strong>Deterministic reproducibility</strong></td><td>ChaCha8 RNG with seed control; bit-exact reproducibility across runs</td></tr>
+<tr><td><strong>Performance</strong></td><td>100K+ entries/sec (Rust native); 10-100x faster than Python-based competitors</td></tr>
+<tr><td><strong>Privacy-preserving fingerprinting</strong></td><td>Unique extract-synthesize workflow with DP guarantees</td></tr>
+<tr><td><strong>Process mining</strong></td><td>Native OCEL 2.0 event log generation (unique in market)</td></tr>
+<tr><td><strong>Graph-native</strong></td><td>Direct PyTorch Geometric, Neo4j, DGL export for GNN workflows</td></tr>
+<tr><td><strong>Full-stack</strong></td><td>CLI + REST/gRPC/WebSocket server + Desktop UI + Python bindings</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="competitive-gaps-to-address"><a class="header" href="#competitive-gaps-to-address">Competitive Gaps to Address</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Gap</th><th>Competitors with Feature</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Cloud-hosted SaaS offering</td><td>Gretel, MOSTLY AI, Tonic</td><td>Phase 3</td></tr>
+<tr><td>No-code UI for non-technical users</td><td>MOSTLY AI, K2view</td><td>Phase 3</td></tr>
+<tr><td>Database-aware synthesis from production data</td><td>Tonic.ai</td><td>Phase 4</td></tr>
+<tr><td>LLM-powered natural language interface</td><td>Gretel Navigator</td><td>Phase 4</td></tr>
+<tr><td>Pre-built ML model training pipelines</td><td>Gretel</td><td>Phase 3</td></tr>
+<tr><td>Marketplace for community templates</td><td>SDV ecosystem</td><td>Phase 3</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="regulatory-landscape"><a class="header" href="#regulatory-landscape">Regulatory Landscape</a></h2>
+<h3 id="eu-ai-act-timeline"><a class="header" href="#eu-ai-act-timeline">EU AI Act Timeline</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Date</th><th>Milestone</th><th>DataSynth Impact</th></tr>
+</thead>
+<tbody>
+<tr><td>Feb 2025</td><td>Prohibited AI systems discontinued; AI literacy obligations</td><td>Low — DataSynth is a tool, not a prohibited system</td></tr>
+<tr><td>Aug 2025</td><td>GPAI transparency requirements; training data documentation</td><td>Medium — Users training AI with DataSynth output need provenance</td></tr>
+<tr><td><strong>Aug 2026</strong></td><td><strong>Full high-risk AI compliance; Article 50 transparency</strong></td><td><strong>High — Synthetic content marking required; data governance mandated</strong></td></tr>
+<tr><td>Aug 2027</td><td>High-risk AI in harmonized products</td><td>Low — Indirect impact</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="required-compliance-features"><a class="header" href="#required-compliance-features">Required Compliance Features</a></h3>
+<ol>
+<li><strong>Synthetic content marking</strong> (Article 50): All generated data must include machine-readable markers indicating artificial generation</li>
+<li><strong>Training data documentation</strong> (Article 10): Generation manifests must document configs, sources, and processing steps</li>
+<li><strong>Quality management</strong> (Annex IV): Documented quality assurance processes for generation and evaluation</li>
+<li><strong>Risk assessment</strong>: Template for users to assess risks of using synthetic data in AI systems</li>
+</ol>
+<h3 id="other-regulatory-frameworks"><a class="header" href="#other-regulatory-frameworks">Other Regulatory Frameworks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Framework</th><th>Relevance</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>NIST AI RMF 1.0</strong></td><td>Voluntary; becoming the operational governance layer globally</td><td>Self-assessment planned (Phase 3)</td></tr>
+<tr><td><strong>NIST SP 800-226</strong></td><td>DP evaluation guidelines</td><td>Alignment planned (Phase 2)</td></tr>
+<tr><td><strong>GDPR</strong></td><td>Synthetic data reduces but doesn’t eliminate privacy obligations</td><td>Documentation in Phase 3</td></tr>
+<tr><td><strong>SOX</strong></td><td>DataSynth already generates SOX-compliant test data</td><td>Feature complete</td></tr>
+<tr><td><strong>ISO 27001</strong></td><td>Information security controls for server deployment</td><td>Alignment in Phase 3</td></tr>
+<tr><td><strong>SOC 2 Type II</strong></td><td>Trust service criteria for SaaS offering</td><td>Phase 3 preparation</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="risk-register"><a class="header" href="#risk-register">Risk Register</a></h2>
+<h3 id="technical-risks"><a class="header" href="#technical-risks">Technical Risks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+</thead>
+<tbody>
+<tr><td>Performance regression with OTEL instrumentation</td><td>Medium</td><td>Medium</td><td>Benchmark-gated CI; sampling in production</td></tr>
+<tr><td>Breaking API changes during versioning</td><td>Low</td><td>High</td><td>Semantic versioning; deprecation policy; compatibility tests</td></tr>
+<tr><td>Memory safety issues in unsafe blocks</td><td>Low</td><td>Critical</td><td>Miri testing; minimize unsafe; regular audits</td></tr>
+<tr><td>Dependency CVEs</td><td>Medium</td><td>High</td><td><code>cargo-audit</code> in CI; Dependabot alerts</td></tr>
+<tr><td>Plugin system security (WASM/dynamic loading)</td><td>Medium</td><td>High</td><td>WASM sandboxing; capability-based permissions</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="business-risks"><a class="header" href="#business-risks">Business Risks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+</thead>
+<tbody>
+<tr><td>EU AI Act scope broader than anticipated</td><td>Medium</td><td>High</td><td>Proactive Article 50 compliance; legal review</td></tr>
+<tr><td>Competitor acqui-hires (Gretel→NVIDIA pattern)</td><td>Medium</td><td>Medium</td><td>Build unique domain depth as defensible moat</td></tr>
+<tr><td>Open-source competitors (SDV) closing feature gap</td><td>Medium</td><td>Medium</td><td>Focus on financial domain depth and performance</td></tr>
+<tr><td>Enterprise customers requiring SOC 2 certification</td><td>High</td><td>Medium</td><td>Begin SOC 2 preparation in Phase 3</td></tr>
+<tr><td>Python ecosystem expects native (PyO3) bindings</td><td>Medium</td><td>Medium</td><td>Evaluate PyO3 migration for v2.0</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="operational-risks"><a class="header" href="#operational-risks">Operational Risks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+</thead>
+<tbody>
+<tr><td>Production incidents without runbooks</td><td>High</td><td>Medium</td><td>Prioritize ops documentation in Phase 2</td></tr>
+<tr><td>Scaling issues under concurrent load</td><td>Medium</td><td>High</td><td>Load testing in Phase 2; HPA configuration</td></tr>
+<tr><td>Secret exposure in logs or configs</td><td>Low</td><td>Critical</td><td>Structured logging with PII filtering; secret scanning</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="success-criteria"><a class="header" href="#success-criteria">Success Criteria</a></h2>
+<h3 id="phase-1-exit-criteria"><a class="header" href="#phase-1-exit-criteria">Phase 1 Exit Criteria</a></h3>
+<ul>
+<li><input disabled="" type="checkbox" checked=""> Docker image published and scannable (multi-stage distroless build)</li>
+<li><input disabled="" type="checkbox" checked=""> <code>cargo-audit</code> and <code>cargo-deny</code> passing in CI</li>
+<li><input disabled="" type="checkbox" checked=""> OTEL traces available via feature-gated <code>otel</code> flag with OTLP export</li>
+<li><input disabled="" type="checkbox" checked=""> Prometheus metrics scraped and graphed (Docker Compose stack)</li>
+<li><input disabled="" type="checkbox" checked=""> Code coverage measured and reported via cargo-llvm-cov + Codecov</li>
+<li><input disabled="" type="checkbox" checked=""> Cross-platform CI (Linux + macOS + Windows)</li>
+</ul>
+<h3 id="phase-2-exit-criteria"><a class="header" href="#phase-2-exit-criteria">Phase 2 Exit Criteria</a></h3>
+<ul>
+<li><input disabled="" type="checkbox" checked=""> Helm chart deployed to staging K8s cluster</li>
+<li><input disabled="" type="checkbox" checked=""> Generation manifest produced for every run (with per-file checksums, lineage graph, W3C PROV-JSON)</li>
+<li><input disabled="" type="checkbox" checked=""> Load test: k6 scripts for health, bulk generation, WebSocket, job queue, and soak testing</li>
+<li><input disabled="" type="checkbox" checked=""> Zero <code>unwrap()</code> calls in library crate non-test code (<code>#![deny(clippy::unwrap_used)]</code> enforced)</li>
+<li><input disabled="" type="checkbox" checked=""> Formal DP composition tracking with budget management (RDP, zCDP, privacy budget manager)</li>
+<li><input disabled="" type="checkbox" checked=""> Operations runbook reviewed and validated (deployment guides, runbook, capacity planning, DR, API reference, security hardening)</li>
+</ul>
+<h3 id="phase-3-exit-criteria"><a class="header" href="#phase-3-exit-criteria">Phase 3 Exit Criteria</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"> JWT/OAuth2 authentication with RBAC</li>
+<li><input disabled="" type="checkbox"> Automated quality gates blocking below-threshold runs</li>
+<li><input disabled="" type="checkbox"> Plugin SDK documented with 2+ community plugins</li>
+<li><input disabled="" type="checkbox"> Python 1.0.0 on PyPI with async support</li>
+<li><input disabled="" type="checkbox"> EU AI Act Article 50 compliance verified</li>
+<li><input disabled="" type="checkbox"> SOC 2 Type II readiness assessment completed</li>
+</ul>
+<h3 id="phase-4-exit-criteria"><a class="header" href="#phase-4-exit-criteria">Phase 4 Exit Criteria</a></h3>
+<ul>
+<li><input disabled="" type="checkbox" checked=""> LLM-augmented generation available as opt-in feature</li>
+<li><input disabled="" type="checkbox" checked=""> Diffusion model backend demonstrated on financial dataset</li>
+<li><input disabled="" type="checkbox" checked=""> 3+ ecosystem integrations (Airflow, dbt, MLflow)</li>
+<li><input disabled="" type="checkbox" checked=""> Causal generation prototype validated</li>
+</ul>
+<hr>
+<h2 id="appendix-a-opentelemetry-integration-architecture"><a class="header" href="#appendix-a-opentelemetry-integration-architecture">Appendix A: OpenTelemetry Integration Architecture</a></h2>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│                   DataSynth Server                  │
+│  ┌───────────┐  ┌──────────┐  ┌─────────────────┐  │
+│  │  REST API  │  │   gRPC   │  │   WebSocket     │  │
+│  └─────┬─────┘  └────┬─────┘  └───────┬─────────┘  │
+│        │              │                │             │
+│  ┌─────┴──────────────┴────────────────┴──────────┐ │
+│  │          Tower Middleware Stack                 │ │
+│  │  [Auth] [RateLimit] [Tracing] [Metrics]        │ │
+│  └────────────────────┬───────────────────────────┘ │
+│                       │                              │
+│  ┌────────────────────┴───────────────────────────┐ │
+│  │           OpenTelemetry SDK                    │ │
+│  │  ┌─────────┐ ┌──────────┐ ┌─────────────────┐ │ │
+│  │  │ Traces  │ │ Metrics  │ │     Logs        │ │ │
+│  │  └────┬────┘ └────┬─────┘ └───────┬─────────┘ │ │
+│  └───────┼───────────┼───────────────┼────────────┘ │
+│          │           │               │               │
+│  ┌───────┴───────────┴───────────────┴────────────┐ │
+│  │           OTLP Exporter (gRPC/HTTP)            │ │
+│  └────────────────────┬───────────────────────────┘ │
+└───────────────────────┼─────────────────────────────┘
+                        │
+              ┌─────────┴──────────┐
+              │   OTel Collector   │
+              │  (Agent sidecar)   │
+              └──┬──────┬──────┬───┘
+                 │      │      │
+           ┌─────┘  ┌───┘  ┌──┘
+           ▼        ▼      ▼
+       ┌──────┐ ┌──────┐ ┌─────┐
+       │Jaeger│ │Prom. │ │Loki │
+       │/Tempo│ │      │ │     │
+       └──────┘ └──────┘ └─────┘
+</code></pre>
+<h2 id="appendix-b-recommended-rust-crate-additions"><a class="header" href="#appendix-b-recommended-rust-crate-additions">Appendix B: Recommended Rust Crate Additions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Category</th><th>Crate</th><th>Purpose</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td>Observability</td><td><code>opentelemetry</code> (0.27+)</td><td>Unified telemetry API</td><td>1</td></tr>
+<tr><td>Observability</td><td><code>opentelemetry-otlp</code></td><td>OTLP exporter</td><td>1</td></tr>
+<tr><td>Observability</td><td><code>tracing-opentelemetry</code></td><td>Bridge tracing → OTEL</td><td>1</td></tr>
+<tr><td>Security</td><td><code>argon2</code></td><td>Password/key hashing</td><td>1</td></tr>
+<tr><td>Security</td><td><code>subtle</code></td><td>Constant-time comparison</td><td>1</td></tr>
+<tr><td>Security</td><td><code>rustls</code></td><td>Native TLS</td><td>1</td></tr>
+<tr><td>Scalability</td><td><code>redis</code></td><td>Distributed state/rate-limiting</td><td>2</td></tr>
+<tr><td>Scalability</td><td><code>deadpool-redis</code></td><td>Redis connection pooling</td><td>2</td></tr>
+<tr><td>Testing</td><td><code>cargo-tarpaulin</code></td><td>Code coverage</td><td>1</td></tr>
+<tr><td>Testing</td><td><code>cargo-fuzz</code></td><td>Fuzz testing</td><td>2</td></tr>
+<tr><td>Auth</td><td><code>jsonwebtoken</code></td><td>JWT tokens</td><td>3</td></tr>
+<tr><td>Auth</td><td><code>oauth2</code></td><td>OAuth2 client</td><td>3</td></tr>
+<tr><td>Plugins</td><td><code>wasmtime</code></td><td>WASM plugin runtime</td><td>3</td></tr>
+<tr><td>Build</td><td><code>git-cliff</code></td><td>Changelog generation</td><td>1</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="appendix-c-key-references"><a class="header" href="#appendix-c-key-references">Appendix C: Key References</a></h2>
+<h3 id="standards--guidelines"><a class="header" href="#standards--guidelines">Standards &amp; Guidelines</a></h3>
+<ul>
+<li>NIST AI RMF 1.0 — AI Risk Management Framework</li>
+<li>NIST SP 800-226 — Guidelines for Evaluating Differential Privacy Guarantees</li>
+<li>EU AI Act (Regulation 2024/1689) — Articles 10, 50</li>
+<li>ISO/IEC 25020:2019 — Systems and software Quality Requirements and Evaluation (SQuaRE)</li>
+</ul>
+<h3 id="research-papers"><a class="header" href="#research-papers">Research Papers</a></h3>
+<ul>
+<li>Chen et al. (2025) — “Benchmarking Differentially Private Tabular Data Synthesis Algorithms” (TPDP 2025)</li>
+<li>SynQP (IEEE, 2025) — “A Framework and Metrics for Evaluating the Quality and Privacy Risk of Synthetic Data”</li>
+<li>Xu et al. (2025) — “TabDiff: a Mixed-type Diffusion Model for Tabular Data Generation” (ICLR 2025)</li>
+<li>Sattarov &amp; Schreyer (2023) — “FinDiff: Diffusion Models for Financial Tabular Data Generation” (ICAIF 2023)</li>
+<li>Shi et al. (2025) — “Comprehensive Survey of Synthetic Tabular Data Generation”</li>
+<li>CFA Institute (July 2025) — “Synthetic Data in Investment Management”</li>
+<li>Pilgram et al. (2025) — “A Consensus Privacy Metrics Framework for Synthetic Data”</li>
+</ul>
+<h3 id="industry-reports"><a class="header" href="#industry-reports">Industry Reports</a></h3>
+<ul>
+<li>Gartner (2024) — “By 2026, 75% of businesses will use GenAI for synthetic customer data”</li>
+<li>GlobeNewsWire (January 2026) — AI-Generated Synthetic Tabular Dataset Market: $6.73B by 2029</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../roadmap/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../roadmap/research/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../roadmap/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../roadmap/research/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

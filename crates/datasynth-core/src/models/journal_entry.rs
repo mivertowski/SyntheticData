@@ -55,6 +55,17 @@ pub enum BusinessProcess {
     H2R,
     /// Acquire-to-Retire: fixed assets, depreciation
     A2R,
+    /// Source-to-Contract: sourcing, supplier qualification, RFx
+    S2C,
+    /// Manufacturing: production orders, quality, cycle counts
+    #[serde(rename = "MFG")]
+    Mfg,
+    /// Banking operations: KYC/AML, accounts, transactions
+    #[serde(rename = "BANK")]
+    Bank,
+    /// Audit engagement lifecycle
+    #[serde(rename = "AUDIT")]
+    Audit,
     /// Treasury operations
     Treasury,
     /// Tax accounting

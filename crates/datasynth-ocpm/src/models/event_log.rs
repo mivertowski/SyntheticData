@@ -223,25 +223,77 @@ impl OcpmEventLog {
         }
     }
 
-    /// Initialize with standard P2P and O2C types.
+    /// Initialize with standard types for all process families.
     pub fn with_standard_types(mut self) -> Self {
-        // Register P2P object types
+        // Register P2P types
         for obj_type in ObjectType::p2p_types() {
             self.register_object_type(obj_type);
         }
-
-        // Register O2C object types
-        for obj_type in ObjectType::o2c_types() {
-            self.register_object_type(obj_type);
-        }
-
-        // Register P2P activities
         for activity in ActivityType::p2p_activities() {
             self.register_activity_type(activity);
         }
 
-        // Register O2C activities
+        // Register O2C types
+        for obj_type in ObjectType::o2c_types() {
+            self.register_object_type(obj_type);
+        }
         for activity in ActivityType::o2c_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register R2R + A2R types
+        for activity in ActivityType::r2r_activities() {
+            self.register_activity_type(activity);
+        }
+        for activity in ActivityType::a2r_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register S2C types
+        for obj_type in ObjectType::s2c_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::s2c_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register H2R types
+        for obj_type in ObjectType::h2r_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::h2r_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register MFG types
+        for obj_type in ObjectType::mfg_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::mfg_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register BANK types
+        for obj_type in ObjectType::bank_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::bank_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register AUDIT types
+        for obj_type in ObjectType::audit_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::audit_activities() {
+            self.register_activity_type(activity);
+        }
+
+        // Register Bank Reconciliation types (R2R subfamily)
+        for obj_type in ObjectType::bank_recon_types() {
+            self.register_object_type(obj_type);
+        }
+        for activity in ActivityType::bank_recon_activities() {
             self.register_activity_type(activity);
         }
 

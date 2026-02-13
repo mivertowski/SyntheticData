@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -406,6 +406,26 @@
 </tbody>
 </table>
 </div>
+<h2 id="hr-and-payroll-integration-v060"><a class="header" href="#hr-and-payroll-integration-v060">HR and Payroll Integration (v0.6.0)</a></h2>
+<p>Employee master data serves as the foundation for the <code>hr</code> configuration section introduced in v0.6.0. When the HR module is enabled, each employee record drives downstream generation:</p>
+<ul>
+<li><strong>Payroll</strong>: Salary, tax withholdings, benefits deductions, and retirement contributions are computed per employee based on their role and the salary ranges defined in <code>hr.payroll.salary_ranges</code>. The <code>pay_frequency</code> setting (monthly, biweekly, or weekly) determines how many payroll runs are generated per period.</li>
+<li><strong>Time and Attendance</strong>: Time entries are generated for each employee according to working days in the period. The <code>overtime_rate</code> controls how many employees have overtime hours in a given period.</li>
+<li><strong>Expense Reports</strong>: A subset of employees (controlled by <code>hr.expenses.submission_rate</code>) generate expense reports each month. Policy violations are injected at the configured <code>policy_violation_rate</code>.</li>
+</ul>
+<p>The <code>employees.count</code> and <code>employees.hierarchy_depth</code> settings in <code>master_data</code> directly determine the population size for all HR outputs. Increasing the employee count will proportionally increase payroll journal entries, time records, and expense reports.</p>
+<pre><code class="language-yaml">master_data:
+  employees:
+    count: 200                     # Drives payroll and HR volume
+    hierarchy_depth: 5
+
+hr:
+  enabled: true                    # Activates payroll, time, and expenses
+  payroll:
+    pay_frequency: "biweekly"      # 26 pay periods per year
+  expenses:
+    submission_rate: 0.40          # 40% of employees submit per month
+</code></pre>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <h3 id="small-company"><a class="header" href="#small-company">Small Company</a></h3>
 <pre><code class="language-yaml">master_data:

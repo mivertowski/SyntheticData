@@ -1,6 +1,9 @@
 //! Comprehensive evaluation of all eval framework evaluators against generated data.
 //!
-//! Run with: cargo test -p datasynth-runtime --test comprehensive_eval -- --nocapture
+//! This test is `#[ignore]`d by default because it runs a full 12-month enterprise
+//! generation (~minutes). Run explicitly with:
+//!
+//!   cargo test -p datasynth-runtime --test comprehensive_eval -- --ignored --nocapture
 
 use chrono::Datelike;
 use datasynth_config::schema::TransactionVolume;
@@ -92,6 +95,7 @@ fn full_enterprise_config() -> datasynth_config::schema::GeneratorConfig {
 }
 
 #[test]
+#[ignore] // Long-running (~minutes): run with `--ignored` flag
 fn comprehensive_evaluation() {
     // =========================================================================
     // PHASE 1: GENERATE DATA

@@ -1,0 +1,451 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ISO 27001 Alignment - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="iso-270012022-alignment"><a class="header" href="#iso-270012022-alignment">ISO 27001:2022 Alignment</a></h1>
+<p>This document maps DataSynth’s technical controls to the ISO/IEC 27001:2022 Annex A controls. DataSynth is a synthetic data generation tool, not a managed service, so this alignment focuses on controls that are directly addressable by the software. Organizational controls (A.5.1 through A.5.37), people controls (A.6), and physical controls (A.7) are primarily the responsibility of the deploying organization and are noted where DataSynth provides supporting capabilities.</p>
+<h2 id="assessment-scope"><a class="header" href="#assessment-scope">Assessment Scope</a></h2>
+<ul>
+<li><strong>System</strong>: DataSynth synthetic financial data generator</li>
+<li><strong>Version</strong>: 0.5.x</li>
+<li><strong>Standard</strong>: ISO/IEC 27001:2022 (Annex A controls from ISO/IEC 27002:2022)</li>
+<li><strong>Assessment Type</strong>: Self-assessment of technical control alignment</li>
+</ul>
+<hr>
+<h2 id="a5-organizational-controls"><a class="header" href="#a5-organizational-controls">A.5 Organizational Controls</a></h2>
+<h3 id="a51-policies-for-information-security"><a class="header" href="#a51-policies-for-information-security">A.5.1 Policies for Information Security</a></h3>
+<p>DataSynth supports policy-as-code through its configuration management approach:</p>
+<ul>
+<li><strong>Configuration-as-code</strong>: All generation parameters are defined in version-controllable YAML files with typed schema validation. Invalid configurations are rejected before generation begins.</li>
+<li><strong>Industry presets</strong>: Pre-validated configurations for retail, manufacturing, financial services, healthcare, and technology industries reduce misconfiguration risk.</li>
+<li><strong>CLAUDE.md</strong>: The project’s development guidelines are codified and version-controlled alongside the source code, establishing security-relevant coding standards (<code>#[deny(clippy::unwrap_used)]</code>, input validation requirements).</li>
+</ul>
+<p>Organizations should supplement these technical controls with written information security policies governing DataSynth deployment, access, and data handling.</p>
+<h3 id="a512-classification-of-information"><a class="header" href="#a512-classification-of-information">A.5.12 Classification of Information</a></h3>
+<p>DataSynth classifies all generated output as synthetic through the content marking system:</p>
+<ul>
+<li><strong>Embedded credentials</strong>: CSV headers, JSON metadata objects, and Parquet file metadata contain machine-readable <code>ContentCredential</code> records identifying the content as synthetic.</li>
+<li><strong>Human-readable declarations</strong>: Each credential includes a <code>declaration</code> field: “This content is synthetically generated and does not represent real transactions or entities.”</li>
+<li><strong>Configuration hash</strong>: SHA-256 hash of the generation configuration is embedded in output, enabling traceability from any output file back to its generation parameters.</li>
+<li><strong>Sidecar files</strong>: Optional <code>.synthetic-credential.json</code> sidecar files provide classification metadata alongside each output file.</li>
+</ul>
+<h3 id="a523-information-security-for-use-of-cloud-services"><a class="header" href="#a523-information-security-for-use-of-cloud-services">A.5.23 Information Security for Use of Cloud Services</a></h3>
+<p>DataSynth supports cloud deployment through:</p>
+<ul>
+<li><strong>Kubernetes support</strong>: Helm charts and deployment manifests for containerized deployment with health (<code>/health</code>), readiness (<code>/ready</code>), and liveness (<code>/live</code>) probe endpoints.</li>
+<li><strong>Stateless server</strong>: The server component maintains no persistent state beyond in-memory generation jobs. Configuration and output are externalized, supporting cloud-native architectures.</li>
+<li><strong>TLS termination</strong>: Integration with Kubernetes ingress controllers, nginx, Caddy, and Envoy for TLS termination.</li>
+<li><strong>Secret management</strong>: API keys can be injected via environment variables or mounted secrets rather than hardcoded in configuration files.</li>
+</ul>
+<hr>
+<h2 id="a8-technological-controls"><a class="header" href="#a8-technological-controls">A.8 Technological Controls</a></h2>
+<h3 id="a81-user-endpoint-devices"><a class="header" href="#a81-user-endpoint-devices">A.8.1 User Endpoint Devices</a></h3>
+<p>The CLI binary (<code>datasynth-data</code>) is a stateless executable:</p>
+<ul>
+<li><strong>No persistent credentials</strong>: The CLI does not store API keys, tokens, or session data on disk.</li>
+<li><strong>No network access required</strong>: The CLI operates entirely offline for generation workflows. Network access is only needed when connecting to a remote DataSynth server.</li>
+<li><strong>Deterministic output</strong>: Given the same configuration and seed, the CLI produces identical output, eliminating concerns about endpoint-specific state affecting results.</li>
+</ul>
+<h3 id="a85-secure-authentication"><a class="header" href="#a85-secure-authentication">A.8.5 Secure Authentication</a></h3>
+<p>DataSynth implements multiple authentication mechanisms:</p>
+<p><strong>API Key Authentication</strong>:</p>
+<ul>
+<li>Keys are hashed with Argon2id (memory-hard, timing-attack resistant) at server startup.</li>
+<li>Raw keys are discarded after hashing; only PHC-format hashes are retained in memory.</li>
+<li>Verification iterates all stored hashes without short-circuiting to prevent timing-based key enumeration.</li>
+<li>A 5-second TTL cache using FNV-1a fast hashing reduces repeated Argon2id computation overhead.</li>
+</ul>
+<p><strong>JWT/OIDC Integration</strong> (optional <code>jwt</code> feature):</p>
+<ul>
+<li>RS256 token validation with issuer, audience, and expiration checks.</li>
+<li>Compatible with Keycloak, Auth0, and Microsoft Entra ID.</li>
+<li>Claims extraction provides subject, email, roles, and tenant ID for downstream RBAC and audit.</li>
+</ul>
+<p><strong>Authentication Bypass</strong>:</p>
+<ul>
+<li>Infrastructure endpoints (<code>/health</code>, <code>/ready</code>, <code>/live</code>, <code>/metrics</code>) are exempt from authentication to support load balancer and orchestrator probes.</li>
+</ul>
+<h3 id="a89-configuration-management"><a class="header" href="#a89-configuration-management">A.8.9 Configuration Management</a></h3>
+<p>DataSynth enforces configuration integrity through:</p>
+<ul>
+<li><strong>Typed schema validation</strong>: YAML configuration is deserialized into strongly-typed Rust structs. Type mismatches, missing required fields, and constraint violations (e.g., rates outside 0.0–1.0, non-ascending approval thresholds) produce descriptive error messages before generation begins.</li>
+<li><strong>Complexity presets</strong>: Small (~100 accounts), medium (~400), and large (~2500) complexity levels provide pre-validated scaling parameters.</li>
+<li><strong>Template system</strong>: YAML/JSON templates with merge strategies enable configuration reuse while maintaining a single source of truth for shared settings.</li>
+<li><strong>Configuration hashing</strong>: SHA-256 hash of the resolved configuration is computed before generation and embedded in all output metadata, enabling drift detection.</li>
+</ul>
+<h3 id="a812-data-leakage-prevention"><a class="header" href="#a812-data-leakage-prevention">A.8.12 Data Leakage Prevention</a></h3>
+<p>DataSynth’s architecture inherently prevents data leakage:</p>
+<ul>
+<li><strong>Synthetic-only generation</strong>: The default workflow generates data from statistical distributions and configuration parameters. No real data enters the pipeline.</li>
+<li><strong>Content marking</strong>: All output files carry machine-readable synthetic content credentials (EU AI Act Article 50). Third-party systems can detect and flag synthetic content programmatically.</li>
+<li><strong>Fingerprint privacy</strong>: When real data is used as input for fingerprint extraction, differential privacy (Laplace mechanism, configurable epsilon/delta) and k-anonymity suppress individual-level information. The resulting <code>.dsf</code> file contains only aggregate statistics.</li>
+<li><strong>Quality gate enforcement</strong>: The <code>PrivacyMiaAuc</code> quality gate validates that generated data does not memorize real data patterns (MIA AUC-ROC threshold).</li>
+</ul>
+<h3 id="a816-monitoring-activities"><a class="header" href="#a816-monitoring-activities">A.8.16 Monitoring Activities</a></h3>
+<p>DataSynth provides monitoring at multiple layers:</p>
+<p><strong>Structured Audit Logging</strong>:
+The <code>JsonAuditLogger</code> emits structured JSON events via the <code>tracing</code> crate, recording:</p>
+<ul>
+<li>Timestamp (UTC), request ID, actor identity</li>
+<li>Action attempted, resource accessed, outcome (success/denied/error)</li>
+<li>Tenant ID, source IP, user agent</li>
+</ul>
+<p>Events are emitted at <code>INFO</code> level with a dedicated <code>audit_event</code> structured field for log aggregation filtering.</p>
+<p><strong>Resource Monitoring</strong>:</p>
+<ul>
+<li>Memory guard reads <code>/proc/self/statm</code> (Linux) or <code>ps</code> (macOS) for resident set size tracking.</li>
+<li>Disk guard uses <code>statvfs</code> (Unix) / <code>GetDiskFreeSpaceExW</code> (Windows) for available space monitoring.</li>
+<li>CPU monitor tracks utilization with auto-throttle at 0.95 threshold.</li>
+<li>The <code>DegradationController</code> combines all monitors and emits level-change events when resource pressure triggers degradation.</li>
+</ul>
+<p><strong>Generation Monitoring</strong>:</p>
+<ul>
+<li>Run manifests capture configuration hash, seed, crate versions, start/end times, record counts, and quality gate results.</li>
+<li>Prometheus-compatible <code>/metrics</code> endpoint exposes runtime statistics.</li>
+</ul>
+<h3 id="a824-use-of-cryptography"><a class="header" href="#a824-use-of-cryptography">A.8.24 Use of Cryptography</a></h3>
+<p>DataSynth uses cryptographic primitives for the following purposes:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Purpose</th><th>Algorithm</th><th>Implementation</th></tr>
+</thead>
+<tbody>
+<tr><td>Deterministic RNG</td><td>ChaCha8 (CSPRNG)</td><td><code>rand_chacha</code> crate, configurable seed</td></tr>
+<tr><td>API key hashing</td><td>Argon2id</td><td><code>argon2</code> crate, random salt, PHC format</td></tr>
+<tr><td>Configuration integrity</td><td>SHA-256</td><td>Config hash embedded in output metadata</td></tr>
+<tr><td>JWT verification</td><td>RS256 (RSA + SHA-256)</td><td><code>jsonwebtoken</code> crate (optional <code>jwt</code> feature)</td></tr>
+<tr><td>UUID generation</td><td>FNV-1a hash</td><td>Deterministic collision-free UUIDs with generator-type discriminators</td></tr>
+</tbody>
+</table>
+</div>
+<p>Cryptographic operations use well-maintained Rust crate implementations. No custom cryptographic algorithms are implemented.</p>
+<h3 id="a825-secure-development-lifecycle"><a class="header" href="#a825-secure-development-lifecycle">A.8.25 Secure Development Lifecycle</a></h3>
+<p>DataSynth’s development process includes:</p>
+<ul>
+<li><strong>Static analysis</strong>: <code>cargo clippy</code> with <code>#[deny(clippy::unwrap_used)]</code> enforces safe error handling across the codebase.</li>
+<li><strong>Test coverage</strong>: 2,500+ tests across 15 crates covering unit, integration, and property-based scenarios.</li>
+<li><strong>Dependency auditing</strong>: <code>cargo audit</code> checks for known vulnerabilities in dependencies.</li>
+<li><strong>Type safety</strong>: Rust’s ownership model and type system eliminate entire classes of memory safety and concurrency bugs at compile time.</li>
+<li><strong>MSRV policy</strong>: Minimum Supported Rust Version (1.88) ensures builds use a recent, well-supported compiler.</li>
+<li><strong>CI/CD</strong>: Automated build, test, lint, and audit checks on every commit.</li>
+</ul>
+<h3 id="a828-secure-coding"><a class="header" href="#a828-secure-coding">A.8.28 Secure Coding</a></h3>
+<p>DataSynth applies secure coding practices:</p>
+<ul>
+<li><strong>No <code>unwrap()</code> in library code</strong>: <code>#[deny(clippy::unwrap_used)]</code> prevents panics from unchecked error handling.</li>
+<li><strong>Input validation</strong>: All user-provided configuration values are validated against typed schemas with range constraints before use.</li>
+<li><strong>Precise decimal arithmetic</strong>: Financial amounts use <code>rust_decimal</code> (serialized as strings) instead of IEEE 754 floating point, preventing rounding errors in financial calculations.</li>
+<li><strong>No unsafe code</strong>: The codebase does not use <code>unsafe</code> blocks in application logic.</li>
+<li><strong>Timing-safe comparisons</strong>: API key verification uses constant-time Argon2id comparison (iterating all hashes) to prevent side-channel attacks.</li>
+<li><strong>Memory-safe concurrency</strong>: Rust’s ownership model prevents data races at compile time. Shared state uses <code>Arc&lt;Mutex&lt;&gt;&gt;</code> or atomic operations.</li>
+</ul>
+<hr>
+<h2 id="statement-of-applicability"><a class="header" href="#statement-of-applicability">Statement of Applicability</a></h2>
+<p>The following table summarizes the applicability of ISO 27001:2022 Annex A controls to DataSynth.</p>
+<h3 id="implemented-controls"><a class="header" href="#implemented-controls">Implemented Controls</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>Title</th><th>Implementation</th></tr>
+</thead>
+<tbody>
+<tr><td>A.5.1</td><td>Information security policies</td><td>Configuration-as-code with schema validation</td></tr>
+<tr><td>A.5.12</td><td>Classification of information</td><td>Synthetic content marking (EU AI Act Article 50)</td></tr>
+<tr><td>A.5.23</td><td>Cloud service security</td><td>Kubernetes deployment, health probes, TLS support</td></tr>
+<tr><td>A.8.1</td><td>User endpoint devices</td><td>Stateless CLI with no persistent credentials</td></tr>
+<tr><td>A.8.5</td><td>Secure authentication</td><td>Argon2id API keys, JWT/OIDC, RBAC</td></tr>
+<tr><td>A.8.9</td><td>Configuration management</td><td>Typed schema validation, presets, hashing</td></tr>
+<tr><td>A.8.12</td><td>Data leakage prevention</td><td>Synthetic-only generation, content marking, fingerprint privacy</td></tr>
+<tr><td>A.8.16</td><td>Monitoring activities</td><td>Structured audit logs, resource monitors, run manifests</td></tr>
+<tr><td>A.8.24</td><td>Use of cryptography</td><td>ChaCha8 RNG, Argon2id, SHA-256, RS256 JWT</td></tr>
+<tr><td>A.8.25</td><td>Secure development lifecycle</td><td>Clippy, 2,500+ tests, cargo audit, CI/CD</td></tr>
+<tr><td>A.8.28</td><td>Secure coding</td><td>No unwrap, input validation, precise decimals, no unsafe</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="partially-implemented-controls"><a class="header" href="#partially-implemented-controls">Partially Implemented Controls</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>Title</th><th>Status</th><th>Gap</th></tr>
+</thead>
+<tbody>
+<tr><td>A.5.8</td><td>Information security in project management</td><td>Partial</td><td>Security considerations are embedded in code (schema validation, quality gates) but formal project management security procedures are organizational</td></tr>
+<tr><td>A.5.14</td><td>Information transfer</td><td>Partial</td><td>TLS support for server API; file-based output transfer policies are organizational</td></tr>
+<tr><td>A.5.29</td><td>Information security during disruption</td><td>Partial</td><td>Graceful degradation handles resource pressure; broader business continuity is organizational</td></tr>
+<tr><td>A.8.8</td><td>Management of technical vulnerabilities</td><td>Partial</td><td><code>cargo audit</code> scans dependencies; patch management cadence is organizational</td></tr>
+<tr><td>A.8.15</td><td>Logging</td><td>Partial</td><td>Structured JSON audit events with correlation IDs; log retention and SIEM integration are organizational</td></tr>
+<tr><td>A.8.26</td><td>Application security requirements</td><td>Partial</td><td>Input validation and schema enforcement are built-in; threat modeling documentation is organizational</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="not-applicable-controls"><a class="header" href="#not-applicable-controls">Not Applicable Controls</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Control</th><th>Title</th><th>Rationale</th></tr>
+</thead>
+<tbody>
+<tr><td>A.5.19</td><td>Information security in supplier relationships</td><td>DataSynth is open-source software; supplier controls apply to the deploying organization</td></tr>
+<tr><td>A.5.30</td><td>ICT readiness for business continuity</td><td>Business continuity planning is an organizational responsibility</td></tr>
+<tr><td>A.6.1–A.6.8</td><td>People controls</td><td>Personnel security controls are organizational</td></tr>
+<tr><td>A.7.1–A.7.14</td><td>Physical controls</td><td>Physical security controls depend on deployment environment</td></tr>
+<tr><td>A.8.2</td><td>Privileged access rights</td><td>OS-level privilege management is outside DataSynth’s scope</td></tr>
+<tr><td>A.8.7</td><td>Protection against malware</td><td>Endpoint protection is an infrastructure concern</td></tr>
+<tr><td>A.8.20</td><td>Networks security</td><td>Network segmentation and firewall rules are infrastructure concerns</td></tr>
+<tr><td>A.8.23</td><td>Web filtering</td><td>Web filtering is an organizational network control</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="continuous-improvement"><a class="header" href="#continuous-improvement">Continuous Improvement</a></h2>
+<p>DataSynth supports ISO 27001’s Plan-Do-Check-Act cycle through:</p>
+<ul>
+<li><strong>Plan</strong>: Configuration-as-code with schema validation enforces security requirements at design time.</li>
+<li><strong>Do</strong>: Automated quality gates and resource guards enforce controls during operation.</li>
+<li><strong>Check</strong>: Evaluation framework produces quantitative metrics (Benford MAD, balance coherence, MIA AUC-ROC) that can be trended over time.</li>
+<li><strong>Act</strong>: The AutoTuner in <code>datasynth-eval</code> generates configuration patches from evaluation gaps, creating a feedback loop for continuous improvement.</li>
+</ul>
+<h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
+<ul>
+<li><a href="soc2.html">SOC 2 Readiness</a></li>
+<li><a href="../deployment/security-hardening.html">Security Hardening</a></li>
+<li><a href="nist-ai-rmf.html">NIST AI RMF Self-Assessment</a></li>
+<li><a href="gdpr.html">GDPR Compliance</a></li>
+<li><a href="eu-ai-act.html">EU AI Act Compliance</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../compliance/soc2.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../roadmap/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../compliance/soc2.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../roadmap/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

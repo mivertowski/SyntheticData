@@ -1,15 +1,16 @@
 # Process Mining
 
-Generate OCEL 2.0 event logs for process mining analysis.
+Generate OCEL 2.0 event logs for process mining analysis across 8 enterprise process families.
 
 ## Overview
 
-SyntheticData generates process mining data:
+SyntheticData generates comprehensive process mining data:
 
-- OCEL 2.0 compliant event logs
-- P2P (Procure-to-Pay) process flows
-- O2C (Order-to-Cash) process flows
-- Object-centric relationships
+- OCEL 2.0 compliant event logs with **88 activity types** and **52 object types**
+- **8 process families**: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon
+- Object-centric relationships with lifecycle states
+- Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
+- Cross-process object linking via shared document IDs
 
 ## Configuration
 
@@ -271,6 +272,55 @@ from pm4py.objects.ocel.exporter import sqlite
 
 sqlite.apply(ocel, "output/ocel.sqlite")
 # Open in OCPA tool
+```
+
+## New Process Families (v0.6.2)
+
+### S2C — Source-to-Contract
+
+```
+Create Sourcing Project → Qualify Supplier → Publish RFx →
+Submit Bid → Evaluate Bids → Award Contract →
+Activate Contract → Complete Sourcing
+```
+
+### H2R — Hire-to-Retire
+
+```
+Submit Time Entry → Approve Time Entry →
+Create Payroll Run → Calculate Payroll → Approve Payroll → Post Payroll
+Submit Expense → Approve Expense
+```
+
+### MFG — Manufacturing
+
+```
+Create Production Order → Release → Start Operation →
+Complete Operation → Quality Inspection → Confirm Production →
+Close Production Order
+```
+
+### BANK — Banking Operations
+
+```
+Onboard Customer → KYC Review → Open Account →
+Execute Transaction → Authorize → Complete Transaction
+```
+
+### AUDIT — Audit Engagement Lifecycle
+
+```
+Create Engagement → Plan → Assess Risk → Create Workpaper →
+Collect Evidence → Review Workpaper → Raise Finding →
+Remediate Finding → Record Judgment → Complete Engagement
+```
+
+### Bank Recon — Bank Reconciliation
+
+```
+Import Bank Statement → Auto Match Items → Manual Match Item →
+Create Reconciling Item → Resolve Exception →
+Approve Reconciliation → Post Entries → Complete Reconciliation
 ```
 
 ## S2P Process Mining

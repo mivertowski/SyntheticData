@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -191,6 +191,11 @@
 <tr><td><a href="#master-data">Master Data</a></td><td>Vendor, Customer, Material, FixedAsset, Employee</td></tr>
 <tr><td><a href="#documents">Documents</a></td><td>PurchaseOrder, Invoice, Payment, etc.</td></tr>
 <tr><td><a href="#financial">Financial</a></td><td>TrialBalance, FxRate, AccountBalance</td></tr>
+<tr><td><a href="#financial-reporting">Financial Reporting</a></td><td>FinancialStatement, CashFlowItem, BankReconciliation, BankStatementLine</td></tr>
+<tr><td><a href="#sourcing-s2c">Sourcing (S2C)</a></td><td>SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis</td></tr>
+<tr><td><a href="#hr--payroll">HR / Payroll</a></td><td>PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem</td></tr>
+<tr><td><a href="#manufacturing">Manufacturing</a></td><td>ProductionOrder, QualityInspection, CycleCount</td></tr>
+<tr><td><a href="#sales-quotes">Sales Quotes</a></td><td>SalesQuote, QuoteLineItem</td></tr>
 <tr><td><a href="#compliance">Compliance</a></td><td>InternalControl, SoDRule, LabeledAnomaly</td></tr>
 </tbody>
 </table>
@@ -557,6 +562,225 @@ pub enum AnomalyType {
     pub control_type: ControlType,
     pub frequency: ControlFrequency,
     pub assertions: Vec&lt;Assertion&gt;,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="financial-reporting"><a class="header" href="#financial-reporting">Financial Reporting</a></h2>
+<h3 id="financialstatement"><a class="header" href="#financialstatement">FinancialStatement</a></h3>
+<p>Period-end financial statement with line items.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum StatementType {
+    BalanceSheet,
+    IncomeStatement,
+    CashFlowStatement,
+    ChangesInEquity,
+}
+
+pub struct FinancialStatementLineItem {
+    pub line_code: String,
+    pub label: String,
+    pub section: String,
+    pub sort_order: u32,
+    pub amount: Decimal,
+    pub amount_prior: Option&lt;Decimal&gt;,
+    pub indent_level: u8,
+    pub is_total: bool,
+    pub gl_accounts: Vec&lt;String&gt;,
+}
+
+pub struct CashFlowItem {
+    pub item_code: String,
+    pub label: String,
+    pub category: CashFlowCategory,  // Operating, Investing, Financing
+    pub amount: Decimal,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="bankreconciliation"><a class="header" href="#bankreconciliation">BankReconciliation</a></h3>
+<p>Bank statement reconciliation with auto-matching.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct BankStatementLine {
+    pub line_id: String,
+    pub statement_date: NaiveDate,
+    pub direction: Direction,         // Inflow, Outflow
+    pub amount: Decimal,
+    pub description: String,
+    pub match_status: MatchStatus,    // Unmatched, AutoMatched, ManuallyMatched, BankCharge, Interest
+    pub matched_payment_id: Option&lt;String&gt;,
+}
+
+pub struct BankReconciliation {
+    pub reconciliation_id: String,
+    pub company_code: String,
+    pub bank_account: String,
+    pub period_start: NaiveDate,
+    pub period_end: NaiveDate,
+    pub opening_balance: Decimal,
+    pub closing_balance: Decimal,
+    pub status: ReconciliationStatus, // InProgress, Completed, CompletedWithExceptions
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="sourcing-s2c"><a class="header" href="#sourcing-s2c">Sourcing (S2C)</a></h2>
+<p>Source-to-Contract models for the procurement pipeline.</p>
+<h3 id="sourcingproject"><a class="header" href="#sourcingproject">SourcingProject</a></h3>
+<p>Top-level sourcing initiative.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SourcingProject {
+    pub project_id: String,
+    pub title: String,
+    pub category: String,
+    pub status: SourcingProjectStatus,
+    pub estimated_spend: Decimal,
+    pub start_date: NaiveDate,
+    pub target_award_date: NaiveDate,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="rfxevent"><a class="header" href="#rfxevent">RfxEvent</a></h3>
+<p>Request for Information/Proposal/Quote.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct RfxEvent {
+    pub rfx_id: String,
+    pub project_id: String,
+    pub rfx_type: RfxType,       // Rfi, Rfp, Rfq
+    pub title: String,
+    pub issue_date: NaiveDate,
+    pub close_date: NaiveDate,
+    pub invited_suppliers: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="procurementcontract"><a class="header" href="#procurementcontract">ProcurementContract</a></h3>
+<p>Awarded contract resulting from bid evaluation.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProcurementContract {
+    pub contract_id: String,
+    pub vendor_id: String,
+    pub rfx_id: Option&lt;String&gt;,
+    pub contract_value: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub auto_renew: bool,
+}
+<span class="boring">}</span></code></pre>
+<p>Additional S2C models include <code>SpendAnalysis</code>, <code>SupplierQualification</code>, <code>Bid</code>, <code>BidEvaluation</code>, <code>CatalogItem</code>, and <code>SupplierScorecard</code>.</p>
+<hr>
+<h2 id="hr--payroll"><a class="header" href="#hr--payroll">HR / Payroll</a></h2>
+<p>Hire-to-Retire (H2R) process models.</p>
+<h3 id="payrollrun"><a class="header" href="#payrollrun">PayrollRun</a></h3>
+<p>A complete pay cycle for a company.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct PayrollRun {
+    pub payroll_id: String,
+    pub company_code: String,
+    pub pay_period_start: NaiveDate,
+    pub pay_period_end: NaiveDate,
+    pub run_date: NaiveDate,
+    pub status: PayrollRunStatus,     // Draft, Calculated, Approved, Posted, Reversed
+    pub total_gross: Decimal,
+    pub total_deductions: Decimal,
+    pub total_net: Decimal,
+    pub total_employer_cost: Decimal,
+    pub employee_count: u32,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="timeentry"><a class="header" href="#timeentry">TimeEntry</a></h3>
+<p>Employee time tracking record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct TimeEntry {
+    pub entry_id: String,
+    pub employee_id: String,
+    pub date: NaiveDate,
+    pub hours_regular: f64,
+    pub hours_overtime: f64,
+    pub hours_pto: f64,
+    pub hours_sick: f64,
+    pub project_id: Option&lt;String&gt;,
+    pub cost_center: Option&lt;String&gt;,
+    pub approval_status: TimeApprovalStatus,  // Pending, Approved, Rejected
+}
+<span class="boring">}</span></code></pre>
+<h3 id="expensereport"><a class="header" href="#expensereport">ExpenseReport</a></h3>
+<p>Employee expense reimbursement.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ExpenseReport {
+    pub report_id: String,
+    pub employee_id: String,
+    pub submission_date: NaiveDate,
+    pub status: ExpenseStatus,        // Draft, Submitted, Approved, Rejected, Paid
+    pub total_amount: Decimal,
+    pub line_items: Vec&lt;ExpenseLineItem&gt;,
+}
+
+pub enum ExpenseCategory {
+    Travel, Meals, Lodging, Transportation,
+    Office, Entertainment, Training, Other,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="manufacturing"><a class="header" href="#manufacturing">Manufacturing</a></h2>
+<p>Production and quality process models.</p>
+<h3 id="productionorder"><a class="header" href="#productionorder">ProductionOrder</a></h3>
+<p>Manufacturing production order linked to materials.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProductionOrder {
+    pub order_id: String,
+    pub material_id: String,
+    pub planned_quantity: Decimal,
+    pub actual_quantity: Decimal,
+    pub start_date: NaiveDate,
+    pub end_date: Option&lt;NaiveDate&gt;,
+    pub status: ProductionOrderStatus,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="qualityinspection"><a class="header" href="#qualityinspection">QualityInspection</a></h3>
+<p>Quality control inspection record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct QualityInspection {
+    pub inspection_id: String,
+    pub production_order_id: String,
+    pub inspection_date: NaiveDate,
+    pub result: InspectionResult,     // Pass, Fail, Conditional
+    pub defect_count: u32,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="cyclecount"><a class="header" href="#cyclecount">CycleCount</a></h3>
+<p>Inventory cycle count with variance tracking.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CycleCount {
+    pub count_id: String,
+    pub material_id: String,
+    pub warehouse: String,
+    pub count_date: NaiveDate,
+    pub system_quantity: Decimal,
+    pub counted_quantity: Decimal,
+    pub variance: Decimal,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="sales-quotes"><a class="header" href="#sales-quotes">Sales Quotes</a></h2>
+<p>Quote-to-order pipeline models.</p>
+<h3 id="salesquote"><a class="header" href="#salesquote">SalesQuote</a></h3>
+<p>Sales quotation record.</p>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct SalesQuote {
+    pub quote_id: String,
+    pub customer_id: String,
+    pub quote_date: NaiveDate,
+    pub valid_until: NaiveDate,
+    pub total_amount: Decimal,
+    pub status: QuoteStatus,          // Draft, Sent, Won, Lost, Expired
+    pub converted_order_id: Option&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre>
 <hr>

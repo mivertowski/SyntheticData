@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -323,6 +323,143 @@ transactions:
 output:
   compression: none                  # For fastest import
 </code></pre>
+<h2 id="manufacturing-erp-testing-v060"><a class="header" href="#manufacturing-erp-testing-v060">Manufacturing ERP Testing (v0.6.0)</a></h2>
+<h3 id="production-order-load"><a class="header" href="#production-order-load">Production Order Load</a></h3>
+<p>Generate production orders with WIP tracking, routings, and standard costing:</p>
+<pre><code class="language-yaml">global:
+  industry: manufacturing
+  start_date: 2024-01-01
+  period_months: 12
+  worker_threads: 8
+
+transactions:
+  target_count: 500000
+
+manufacturing:
+  enabled: true
+  production_orders:
+    orders_per_month: 200              # High volume
+    avg_batch_size: 150
+    yield_rate: 0.96
+    rework_rate: 0.04
+  costing:
+    labor_rate_per_hour: 42.0
+    overhead_rate: 1.75
+  routing:
+    avg_operations: 6
+    setup_time_hours: 2.0
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40                    # Heavy procurement
+
+subledger:
+  inventory:
+    enabled: true
+    valuation_methods:
+      - standard_cost
+      - weighted_average
+</code></pre>
+<p>This configuration exercises production order creation, goods issue to production, goods receipt from production, WIP valuation, and standard cost variance posting.</p>
+<h3 id="three-way-match-with-source-to-pay"><a class="header" href="#three-way-match-with-source-to-pay">Three-Way Match with Source-to-Pay</a></h3>
+<p>Test the full procurement lifecycle from sourcing through payment:</p>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: true
+  sourcing:
+    projects_per_year: 20
+  rfx:
+    min_invited_vendors: 5
+    max_invited_vendors: 12
+  contracts:
+    min_duration_months: 12
+    max_duration_months: 24
+  p2p_integration:
+    off_contract_rate: 0.10            # 10% maverick spending
+    catalog_enforcement: true
+
+document_flows:
+  p2p:
+    enabled: true
+    flow_rate: 0.40
+    three_way_match:
+      quantity_tolerance: 0.02
+      price_tolerance: 0.01
+</code></pre>
+<hr>
+<h2 id="hr-and-payroll-testing-v060"><a class="header" href="#hr-and-payroll-testing-v060">HR and Payroll Testing (v0.6.0)</a></h2>
+<h3 id="payroll-processing-load"><a class="header" href="#payroll-processing-load">Payroll Processing Load</a></h3>
+<p>Generate payroll runs, time entries, and expense reports:</p>
+<pre><code class="language-yaml">master_data:
+  employees:
+    count: 500
+    hierarchy_depth: 6
+
+hr:
+  enabled: true
+  payroll:
+    enabled: true
+    pay_frequency: "biweekly"          # 26 pay periods per year
+    benefits_enrollment_rate: 0.75
+    retirement_participation_rate: 0.55
+  time_attendance:
+    enabled: true
+    overtime_rate: 0.15
+  expenses:
+    enabled: true
+    submission_rate: 0.40
+    policy_violation_rate: 0.05
+</code></pre>
+<p>This exercises payroll journal entry generation (salary, tax withholdings, benefits deductions), time and attendance record creation, and expense report approval workflows.</p>
+<h3 id="expense-report-compliance"><a class="header" href="#expense-report-compliance">Expense Report Compliance</a></h3>
+<p>Test expense policy enforcement with elevated violation rates:</p>
+<pre><code class="language-yaml">hr:
+  enabled: true
+  expenses:
+    enabled: true
+    submission_rate: 0.60              # 60% of employees submit
+    policy_violation_rate: 0.15        # Elevated violation rate for testing
+
+anomaly_injection:
+  enabled: true
+  generate_labels: true
+</code></pre>
+<hr>
+<h2 id="procurement-testing-v060"><a class="header" href="#procurement-testing-v060">Procurement Testing (v0.6.0)</a></h2>
+<h3 id="vendor-scorecard-and-qualification"><a class="header" href="#vendor-scorecard-and-qualification">Vendor Scorecard and Qualification</a></h3>
+<p>Generate the full source-to-pay cycle for procurement system testing:</p>
+<pre><code class="language-yaml">source_to_pay:
+  enabled: true
+  qualification:
+    pass_rate: 0.80
+    validity_days: 365
+  scorecards:
+    frequency: "quarterly"
+    grade_a_threshold: 85.0
+    grade_c_threshold: 55.0
+  catalog:
+    preferred_vendor_flag_rate: 0.65
+    multi_source_rate: 0.30
+
+vendor_network:
+  enabled: true
+  depth: 3
+</code></pre>
+<h3 id="sales-quote-pipeline"><a class="header" href="#sales-quote-pipeline">Sales Quote Pipeline</a></h3>
+<p>Test quote-to-order conversion with the O2C flow:</p>
+<pre><code class="language-yaml">sales_quotes:
+  enabled: true
+  quotes_per_month: 100
+  win_rate: 0.30
+  validity_days: 45
+
+document_flows:
+  o2c:
+    enabled: true
+    flow_rate: 0.40
+</code></pre>
+<p>Won quotes automatically feed into the O2C document flow as sales orders.</p>
+<hr>
 <h2 id="performance-monitoring"><a class="header" href="#performance-monitoring">Performance Monitoring</a></h2>
 <h3 id="generation-metrics"><a class="header" href="#generation-metrics">Generation Metrics</a></h3>
 <pre><code class="language-bash"># Time generation

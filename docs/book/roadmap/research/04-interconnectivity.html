@@ -1,0 +1,1104 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Interconnectivity - SyntheticData Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/css/custom-10f72185.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-3468cb70.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-1a598c96.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">SyntheticData Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/ey-asu-rnd/SyntheticData" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="research-interconnectivity-and-relationship-modeling"><a class="header" href="#research-interconnectivity-and-relationship-modeling">Research: Interconnectivity and Relationship Modeling</a></h1>
+<blockquote>
+<p><strong>Implementation Status</strong>: P1 features implemented in v0.3.0. See <a href="../../advanced/interconnectivity.html">Interconnectivity Documentation</a> for usage.</p>
+</blockquote>
+<h2 id="implementation-summary-v030"><a class="header" href="#implementation-summary-v030">Implementation Summary (v0.3.0)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Feature</th><th>Status</th><th>Location</th></tr>
+</thead>
+<tbody>
+<tr><td>Multi-tier vendor networks</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/vendor_network.rs</code></td></tr>
+<tr><td>Vendor clusters &amp; lifecycle</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/vendor_network.rs</code></td></tr>
+<tr><td>Customer value segmentation</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/customer_segment.rs</code></td></tr>
+<tr><td>Customer lifecycle stages</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/customer_segment.rs</code></td></tr>
+<tr><td>Relationship strength modeling</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/relationship.rs</code></td></tr>
+<tr><td>Entity graph (16 types, 26 relations)</td><td>✅ Implemented</td><td><code>datasynth-core/src/models/relationship.rs</code></td></tr>
+<tr><td>Cross-process links (P2P↔O2C)</td><td>✅ Implemented</td><td><code>datasynth-generators/src/relationships/</code></td></tr>
+<tr><td>Network evaluation metrics</td><td>✅ Implemented</td><td><code>datasynth-eval/src/coherence/network.rs</code></td></tr>
+<tr><td>Configuration &amp; validation</td><td>✅ Implemented</td><td><code>datasynth-config/src/schema.rs</code>, <code>validation.rs</code></td></tr>
+<tr><td>Organizational hierarchy depth</td><td>🔄 P2 - Planned</td><td>-</td></tr>
+<tr><td>Network effect modeling</td><td>🔄 P2 - Planned</td><td>-</td></tr>
+<tr><td>Community detection</td><td>🔄 P3 - Planned</td><td>-</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="current-state-analysis"><a class="header" href="#current-state-analysis">Current State Analysis</a></h2>
+<h3 id="existing-relationship-infrastructure"><a class="header" href="#existing-relationship-infrastructure">Existing Relationship Infrastructure</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Relationship Type</th><th>Implementation</th><th>Depth</th></tr>
+</thead>
+<tbody>
+<tr><td>Document Chains</td><td><code>DocumentChainManager</code></td><td>Strong</td></tr>
+<tr><td>Three-Way Match</td><td><code>ThreeWayMatcher</code></td><td>Strong</td></tr>
+<tr><td>Intercompany</td><td><code>ICMatchingEngine</code></td><td>Strong</td></tr>
+<tr><td>GL Balance Links</td><td>Account hierarchies</td><td>Medium</td></tr>
+<tr><td>Vendor-Customer</td><td>Basic master data</td><td>Weak</td></tr>
+<tr><td>Employee-Approval</td><td>Approval chains</td><td>Medium</td></tr>
+<tr><td>Entity Registry</td><td><code>EntityRegistry</code></td><td>Medium</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="current-strengths"><a class="header" href="#current-strengths">Current Strengths</a></h3>
+<ol>
+<li><strong>Document flow integrity</strong>: PO → GR → Invoice → Payment chains maintained</li>
+<li><strong>Intercompany matching</strong>: Automatic generation of offsetting entries</li>
+<li><strong>Balance coherence</strong>: Trial balance validation, A=L+E enforcement</li>
+<li><strong>Graph export</strong>: PyTorch Geometric, Neo4j, DGL formats supported</li>
+<li><strong>COSO control mapping</strong>: Controls linked to processes and risks</li>
+</ol>
+<h3 id="current-gaps"><a class="header" href="#current-gaps">Current Gaps</a></h3>
+<ol>
+<li><strong>Shallow vendor networks</strong>: No supplier-of-supplier modeling</li>
+<li><strong>Limited customer relationships</strong>: No customer segmentation</li>
+<li><strong>No organizational hierarchy depth</strong>: Flat cost center structures</li>
+<li><strong>Missing behavioral clustering</strong>: Entities don’t cluster by behavior</li>
+<li><strong>No network effects</strong>: Relationships don’t influence behavior</li>
+<li><strong>Static relationships</strong>: No relationship lifecycle modeling</li>
+</ol>
+<hr>
+<h2 id="improvement-recommendations"><a class="header" href="#improvement-recommendations">Improvement Recommendations</a></h2>
+<h3 id="1-deep-vendor-network-modeling"><a class="header" href="#1-deep-vendor-network-modeling">1. Deep Vendor Network Modeling</a></h3>
+<h4 id="11-multi-tier-supply-chain"><a class="header" href="#11-multi-tier-supply-chain">1.1 Multi-Tier Supply Chain</a></h4>
+<pre><code class="language-yaml">vendor_network:
+  enabled: true
+  depth: 3  # Tier-1, Tier-2, Tier-3 suppliers
+
+  tiers:
+    tier_1:
+      count: 50-100
+      relationship: direct_supplier
+      visibility: full
+      transaction_volume: high
+
+    tier_2:
+      count: 200-500
+      relationship: supplier_of_supplier
+      visibility: partial
+      transaction_volume: medium
+      # Only visible through Tier-1 transactions
+
+    tier_3:
+      count: 500-2000
+      relationship: indirect
+      visibility: minimal
+      transaction_volume: low
+
+  # Dependency modeling
+  dependencies:
+    concentration:
+      max_single_vendor: 0.15  # No vendor &gt; 15% of spend
+      top_5_vendors: 0.45      # Top 5 &lt; 45% of spend
+
+    critical_materials:
+      single_source: 0.05      # 5% of materials are single-source
+      dual_source: 0.15
+      multi_source: 0.80
+
+    substitutability:
+      easy: 0.60
+      moderate: 0.30
+      difficult: 0.10
+</code></pre>
+<h4 id="12-vendor-relationship-attributes"><a class="header" href="#12-vendor-relationship-attributes">1.2 Vendor Relationship Attributes</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct VendorRelationship {
+    vendor_id: VendorId,
+    relationship_type: VendorRelationshipType,
+    start_date: NaiveDate,
+    end_date: Option&lt;NaiveDate&gt;,
+
+    // Relationship strength
+    strategic_importance: StrategicLevel,  // Critical, Important, Standard, Transactional
+    spend_tier: SpendTier,                 // Platinum, Gold, Silver, Bronze
+
+    // Behavioral attributes
+    payment_history: PaymentBehavior,
+    dispute_frequency: DisputeLevel,
+    quality_score: f64,
+
+    // Contract terms
+    contracted_rates: Vec&lt;ContractedRate&gt;,
+    rebate_agreements: Vec&lt;RebateAgreement&gt;,
+    payment_terms: PaymentTerms,
+
+    // Network position
+    tier: SupplyChainTier,
+    parent_vendor: Option&lt;VendorId&gt;,
+    child_vendors: Vec&lt;VendorId&gt;,
+}
+
+pub enum VendorRelationshipType {
+    DirectSupplier,
+    ServiceProvider,
+    Contractor,
+    Distributor,
+    Manufacturer,
+    RawMaterialSupplier,
+    OEMPartner,
+    Affiliate,
+}
+<span class="boring">}</span></code></pre>
+<h4 id="13-vendor-behavior-clustering"><a class="header" href="#13-vendor-behavior-clustering">1.3 Vendor Behavior Clustering</a></h4>
+<pre><code class="language-yaml">vendor_clusters:
+  enabled: true
+
+  clusters:
+    reliable_strategic:
+      size: 0.20
+      characteristics:
+        payment_terms: [30, 45, 60]
+        on_time_delivery: 0.95-1.0
+        quality_issues: rare
+        price_stability: high
+        transaction_frequency: weekly+
+
+    standard_operational:
+      size: 0.50
+      characteristics:
+        payment_terms: [30]
+        on_time_delivery: 0.85-0.95
+        quality_issues: occasional
+        price_stability: medium
+        transaction_frequency: monthly
+
+    transactional:
+      size: 0.25
+      characteristics:
+        payment_terms: [0, 15]
+        on_time_delivery: 0.75-0.90
+        quality_issues: moderate
+        price_stability: low
+        transaction_frequency: quarterly
+
+    problematic:
+      size: 0.05
+      characteristics:
+        payment_terms: [0]  # COD only
+        on_time_delivery: 0.50-0.80
+        quality_issues: frequent
+        price_stability: volatile
+        transaction_frequency: declining
+</code></pre>
+<hr>
+<h3 id="2-customer-relationship-depth"><a class="header" href="#2-customer-relationship-depth">2. Customer Relationship Depth</a></h3>
+<h4 id="21-customer-segmentation"><a class="header" href="#21-customer-segmentation">2.1 Customer Segmentation</a></h4>
+<pre><code class="language-yaml">customer_segmentation:
+  enabled: true
+
+  dimensions:
+    value:
+      - segment: enterprise
+        revenue_share: 0.40
+        customer_share: 0.05
+        characteristics:
+          avg_order_value: 50000+
+          order_frequency: weekly
+          payment_behavior: terms
+          churn_risk: low
+
+      - segment: mid_market
+        revenue_share: 0.35
+        customer_share: 0.20
+        characteristics:
+          avg_order_value: 5000-50000
+          order_frequency: monthly
+          payment_behavior: mixed
+          churn_risk: medium
+
+      - segment: smb
+        revenue_share: 0.20
+        customer_share: 0.50
+        characteristics:
+          avg_order_value: 500-5000
+          order_frequency: quarterly
+          payment_behavior: prepay
+          churn_risk: high
+
+      - segment: consumer
+        revenue_share: 0.05
+        customer_share: 0.25
+        characteristics:
+          avg_order_value: 50-500
+          order_frequency: occasional
+          payment_behavior: immediate
+          churn_risk: very_high
+
+    lifecycle:
+      - stage: prospect
+        conversion_rate: 0.15
+        avg_duration_days: 30
+
+      - stage: new
+        definition: "&lt;90 days"
+        behavior: exploring
+        support_intensity: high
+
+      - stage: growth
+        definition: "90-365 days"
+        behavior: expanding
+        upsell_opportunity: high
+
+      - stage: mature
+        definition: "&gt;365 days"
+        behavior: stable
+        retention_focus: true
+
+      - stage: at_risk
+        triggers: [declining_orders, late_payments, complaints]
+        intervention: required
+
+      - stage: churned
+        definition: "no activity &gt;180 days"
+        win_back_probability: 0.10
+</code></pre>
+<h4 id="22-customer-network-effects"><a class="header" href="#22-customer-network-effects">2.2 Customer Network Effects</a></h4>
+<pre><code class="language-yaml">customer_networks:
+  enabled: true
+
+  # Referral relationships
+  referrals:
+    enabled: true
+    referral_rate: 0.15
+    referred_customer_value_multiplier: 1.2
+    max_referral_chain: 3
+
+  # Parent-child relationships (corporate structures)
+  corporate_hierarchies:
+    enabled: true
+    probability: 0.30
+    hierarchy_depth: 3
+    billing_consolidation: true
+
+  # Industry clustering
+  industry_affinity:
+    enabled: true
+    same_industry_cluster_probability: 0.40
+    industry_trend_correlation: 0.70
+</code></pre>
+<hr>
+<h3 id="3-organizational-hierarchy-modeling"><a class="header" href="#3-organizational-hierarchy-modeling">3. Organizational Hierarchy Modeling</a></h3>
+<h4 id="31-deep-cost-center-structure"><a class="header" href="#31-deep-cost-center-structure">3.1 Deep Cost Center Structure</a></h4>
+<pre><code class="language-yaml">organizational_structure:
+  depth: 5
+
+  levels:
+    - level: 1
+      name: division
+      count: 3-5
+      examples: ["North America", "EMEA", "APAC"]
+
+    - level: 2
+      name: business_unit
+      count_per_parent: 2-4
+      examples: ["Commercial", "Consumer", "Industrial"]
+
+    - level: 3
+      name: department
+      count_per_parent: 3-6
+      examples: ["Sales", "Marketing", "Operations", "Finance"]
+
+    - level: 4
+      name: function
+      count_per_parent: 2-5
+      examples: ["Inside Sales", "Field Sales", "Sales Ops"]
+
+    - level: 5
+      name: team
+      count_per_parent: 2-4
+      examples: ["Team Alpha", "Team Beta"]
+
+  # Cross-cutting structures
+  matrix_relationships:
+    enabled: true
+    types:
+      - primary: division
+        secondary: function
+        # e.g., "EMEA Sales" reports to both EMEA Head and Global Sales VP
+
+  # Shared services
+  shared_services:
+    enabled: true
+    centers:
+      - name: "Corporate Finance"
+        serves: all_divisions
+        allocation_method: headcount
+
+      - name: "IT Infrastructure"
+        serves: all_divisions
+        allocation_method: usage
+
+      - name: "HR Services"
+        serves: all_divisions
+        allocation_method: headcount
+</code></pre>
+<h4 id="32-approval-hierarchy"><a class="header" href="#32-approval-hierarchy">3.2 Approval Hierarchy</a></h4>
+<pre><code class="language-yaml">approval_hierarchy:
+  enabled: true
+
+  # Spending authority matrix
+  authority_matrix:
+    manager:
+      limit: 5000
+      exception_rate: 0.02
+
+    senior_manager:
+      limit: 25000
+      exception_rate: 0.01
+
+    director:
+      limit: 100000
+      exception_rate: 0.005
+
+    vp:
+      limit: 500000
+      exception_rate: 0.002
+
+    c_level:
+      limit: unlimited
+      exception_rate: 0.001
+
+  # Approval chains
+  chain_rules:
+    sequential:
+      enabled: true
+      for: [capital_expenditure, contracts]
+
+    parallel:
+      enabled: true
+      for: [operational_expenses]
+      minimum_approvals: 2
+
+    skip_level:
+      enabled: true
+      probability: 0.05
+      audit_flag: true
+</code></pre>
+<hr>
+<h3 id="4-entity-relationship-graph"><a class="header" href="#4-entity-relationship-graph">4. Entity Relationship Graph</a></h3>
+<h4 id="41-comprehensive-relationship-model"><a class="header" href="#41-comprehensive-relationship-model">4.1 Comprehensive Relationship Model</a></h4>
+<pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Unified entity relationship graph
+pub struct EntityGraph {
+    nodes: HashMap&lt;EntityId, EntityNode&gt;,
+    edges: Vec&lt;RelationshipEdge&gt;,
+    indexes: GraphIndexes,
+}
+
+pub struct EntityNode {
+    id: EntityId,
+    entity_type: EntityType,
+    attributes: EntityAttributes,
+    created_at: DateTime&lt;Utc&gt;,
+    last_activity: DateTime&lt;Utc&gt;,
+}
+
+pub enum EntityType {
+    Company,
+    Vendor,
+    Customer,
+    Employee,
+    Department,
+    CostCenter,
+    Project,
+    Contract,
+    Asset,
+    BankAccount,
+}
+
+pub struct RelationshipEdge {
+    from_id: EntityId,
+    to_id: EntityId,
+    relationship_type: RelationshipType,
+    strength: f64,           // 0.0 - 1.0
+    start_date: NaiveDate,
+    end_date: Option&lt;NaiveDate&gt;,
+    attributes: RelationshipAttributes,
+}
+
+pub enum RelationshipType {
+    // Transactional
+    BuysFrom,
+    SellsTo,
+    PaysTo,
+    ReceivesFrom,
+
+    // Organizational
+    ReportsTo,
+    Manages,
+    BelongsTo,
+    OwnedBy,
+
+    // Contractual
+    ContractedWith,
+    GuaranteedBy,
+    InsuredBy,
+
+    // Financial
+    LendsTo,
+    BorrowsFrom,
+    InvestsIn,
+
+    // Network
+    ReferredBy,
+    PartnersWith,
+    CompetesWith,
+}
+<span class="boring">}</span></code></pre>
+<h4 id="42-relationship-strength-modeling"><a class="header" href="#42-relationship-strength-modeling">4.2 Relationship Strength Modeling</a></h4>
+<pre><code class="language-yaml">relationship_strength:
+  calculation:
+    type: composite
+    factors:
+      transaction_volume:
+        weight: 0.30
+        normalization: log_scale
+
+      transaction_count:
+        weight: 0.25
+        normalization: sqrt_scale
+
+      relationship_duration:
+        weight: 0.20
+        decay: none
+
+      recency:
+        weight: 0.15
+        decay: exponential
+        half_life_days: 90
+
+      mutual_connections:
+        weight: 0.10
+        normalization: jaccard_similarity
+
+  thresholds:
+    strong: 0.7
+    moderate: 0.4
+    weak: 0.1
+    dormant: 0.0
+</code></pre>
+<hr>
+<h3 id="5-transaction-chain-integrity"><a class="header" href="#5-transaction-chain-integrity">5. Transaction Chain Integrity</a></h3>
+<h4 id="51-extended-document-chains"><a class="header" href="#51-extended-document-chains">5.1 Extended Document Chains</a></h4>
+<pre><code class="language-yaml">document_chains:
+  # P2P extended chain
+  procure_to_pay:
+    stages:
+      - type: purchase_requisition
+        optional: true
+        approval_required: conditional  # &gt;$1000
+
+      - type: purchase_order
+        required: true
+        generates: commitment
+
+      - type: goods_receipt
+        required: conditional  # For goods, not services
+        updates: inventory
+        tolerance: 0.05  # 5% over-receipt allowed
+
+      - type: vendor_invoice
+        required: true
+        matching: three_way  # PO, GR, Invoice
+        tolerance: 0.02
+
+      - type: payment
+        required: true
+        methods: [ach, wire, check, virtual_card]
+        generates: bank_transaction
+
+    # Chain integrity rules
+    integrity:
+      sequence_enforcement: strict
+      backdating_allowed: false
+      amount_cascade: true  # Amounts must flow through
+
+  # O2C extended chain
+  order_to_cash:
+    stages:
+      - type: quote
+        optional: true
+        validity_days: 30
+
+      - type: sales_order
+        required: true
+        credit_check: conditional
+
+      - type: pick_list
+        required: conditional
+        triggers: inventory_reservation
+
+      - type: delivery
+        required: conditional
+        updates: inventory
+        generates: shipping_document
+
+      - type: customer_invoice
+        required: true
+        triggers: revenue_recognition
+
+      - type: customer_receipt
+        required: true
+        applies_to: invoices
+        generates: bank_transaction
+
+    integrity:
+      partial_shipment: allowed
+      partial_payment: allowed
+      credit_memo: allowed
+</code></pre>
+<h4 id="52-cross-process-linkages"><a class="header" href="#52-cross-process-linkages">5.2 Cross-Process Linkages</a></h4>
+<pre><code class="language-yaml">cross_process_links:
+  enabled: true
+
+  links:
+    # Inventory connects P2P and O2C
+    - source_process: procure_to_pay
+      source_stage: goods_receipt
+      target_process: order_to_cash
+      target_stage: pick_list
+      through: inventory
+
+    # Returns create reverse flows
+    - source_process: order_to_cash
+      source_stage: delivery
+      target_process: returns
+      target_stage: return_receipt
+      condition: quality_issue
+
+    # Payments connect to bank reconciliation
+    - source_process: procure_to_pay
+      source_stage: payment
+      target_process: bank_reconciliation
+      target_stage: bank_statement_line
+      matching: automatic
+
+    # Intercompany bilateral links
+    - source_process: intercompany_sale
+      source_stage: ic_invoice
+      target_process: intercompany_purchase
+      target_stage: ic_invoice
+      matching: elimination_required
+</code></pre>
+<hr>
+<h3 id="6-network-effect-modeling"><a class="header" href="#6-network-effect-modeling">6. Network Effect Modeling</a></h3>
+<h4 id="61-behavioral-influence"><a class="header" href="#61-behavioral-influence">6.1 Behavioral Influence</a></h4>
+<pre><code class="language-yaml">network_effects:
+  enabled: true
+
+  influence_types:
+    # Transaction patterns spread through network
+    transaction_contagion:
+      enabled: true
+      effect: "similar vendors show similar payment patterns"
+      correlation: 0.40
+      lag_days: 30
+
+    # Risk propagation
+    risk_propagation:
+      enabled: true
+      effect: "vendor issues affect connected vendors"
+      propagation_depth: 2
+      decay_per_hop: 0.50
+
+    # Seasonal correlation
+    seasonal_sync:
+      enabled: true
+      effect: "connected entities show correlated seasonality"
+      correlation: 0.60
+
+    # Price correlation
+    price_linkage:
+      enabled: true
+      effect: "commodity price changes propagate"
+      propagation_speed: immediate
+      pass_through_rate: 0.80
+</code></pre>
+<h4 id="62-community-detection"><a class="header" href="#62-community-detection">6.2 Community Detection</a></h4>
+<pre><code class="language-yaml">community_detection:
+  enabled: true
+  algorithms:
+    - type: louvain
+      resolution: 1.0
+      output: vendor_communities
+
+    - type: label_propagation
+      output: customer_segments
+
+    - type: girvan_newman
+      output: department_clusters
+
+  use_cases:
+    # Fraud detection
+    fraud_rings:
+      algorithm: connected_components
+      edge_filter: suspicious_transactions
+      min_size: 3
+
+    # Vendor consolidation
+    vendor_overlap:
+      algorithm: jaccard_similarity
+      threshold: 0.70
+      output: consolidation_candidates
+
+    # Customer segmentation
+    behavioral_clusters:
+      algorithm: spectral
+      features: [purchase_pattern, payment_behavior, product_mix]
+</code></pre>
+<hr>
+<h3 id="7-relationship-lifecycle"><a class="header" href="#7-relationship-lifecycle">7. Relationship Lifecycle</a></h3>
+<h4 id="71-lifecycle-stages"><a class="header" href="#71-lifecycle-stages">7.1 Lifecycle Stages</a></h4>
+<pre><code class="language-yaml">relationship_lifecycle:
+  enabled: true
+
+  vendor_lifecycle:
+    stages:
+      onboarding:
+        duration_days: 30-90
+        activities: [due_diligence, contract_negotiation, system_setup]
+        transaction_volume: limited
+
+      ramp_up:
+        duration_days: 90-180
+        activities: [volume_increase, performance_monitoring]
+        transaction_volume: growing
+
+      steady_state:
+        duration_days: ongoing
+        activities: [regular_transactions, periodic_review]
+        transaction_volume: stable
+
+      decline:
+        triggers: [quality_issues, price_competitiveness, strategic_shift]
+        activities: [reduced_orders, alternative_sourcing]
+        transaction_volume: decreasing
+
+      termination:
+        triggers: [contract_end, performance_failure, strategic_decision]
+        activities: [final_settlement, transition]
+        transaction_volume: zero
+
+    transitions:
+      probability_matrix:
+        onboarding:
+          ramp_up: 0.80
+          termination: 0.20
+        ramp_up:
+          steady_state: 0.85
+          decline: 0.10
+          termination: 0.05
+        steady_state:
+          steady_state: 0.90
+          decline: 0.08
+          termination: 0.02
+        decline:
+          steady_state: 0.20
+          decline: 0.50
+          termination: 0.30
+
+  customer_lifecycle:
+    # Similar structure for customer relationships
+    stages:
+      prospect: { conversion_rate: 0.15 }
+      new: { retention_rate: 0.70 }
+      active: { retention_rate: 0.90 }
+      at_risk: { save_rate: 0.50 }
+      churned: { win_back_rate: 0.10 }
+</code></pre>
+<hr>
+<h3 id="8-graph-export-enhancements"><a class="header" href="#8-graph-export-enhancements">8. Graph Export Enhancements</a></h3>
+<h4 id="81-enhanced-pytorch-geometric-export"><a class="header" href="#81-enhanced-pytorch-geometric-export">8.1 Enhanced PyTorch Geometric Export</a></h4>
+<pre><code class="language-yaml">graph_export:
+  pytorch_geometric:
+    enabled: true
+
+    node_features:
+      # Node type encoding
+      type_encoding: one_hot
+
+      # Numeric features
+      numeric:
+        - field: transaction_volume
+          normalization: log_scale
+        - field: relationship_duration_days
+          normalization: min_max
+        - field: average_amount
+          normalization: z_score
+
+      # Categorical features
+      categorical:
+        - field: industry
+          encoding: label
+        - field: region
+          encoding: one_hot
+        - field: segment
+          encoding: embedding
+
+    edge_features:
+      - field: relationship_strength
+        normalization: none
+      - field: transaction_count
+        normalization: log_scale
+      - field: last_transaction_days_ago
+        normalization: min_max
+
+    # Temporal graphs
+    temporal:
+      enabled: true
+      snapshot_frequency: monthly
+      edge_weight_decay: exponential
+      half_life_days: 90
+
+    # Heterogeneous graph support
+    heterogeneous:
+      enabled: true
+      node_types: [company, vendor, customer, employee, account]
+      edge_types: [buys_from, sells_to, reports_to, pays_to]
+</code></pre>
+<h4 id="82-enhanced-neo4j-export"><a class="header" href="#82-enhanced-neo4j-export">8.2 Enhanced Neo4j Export</a></h4>
+<pre><code class="language-yaml">neo4j_export:
+  enabled: true
+
+  # Node labels
+  node_labels:
+    - label: Company
+      properties: [code, name, currency, country]
+    - label: Vendor
+      properties: [id, name, category, rating]
+    - label: Customer
+      properties: [id, name, segment, region]
+    - label: Transaction
+      properties: [id, amount, date, type]
+
+  # Relationship types
+  relationships:
+    - type: TRANSACTS_WITH
+      properties: [volume, count, first_date, last_date]
+    - type: BELONGS_TO
+      properties: [start_date, role]
+    - type: SUPPLIES
+      properties: [material_type, contract_id]
+
+  # Indexes for query optimization
+  indexes:
+    - label: Transaction
+      property: date
+      type: range
+    - label: Vendor
+      property: id
+      type: unique
+    - label: Customer
+      property: segment
+      type: lookup
+
+  # Full-text search
+  fulltext:
+    - name: entity_search
+      labels: [Vendor, Customer]
+      properties: [name, description]
+</code></pre>
+<hr>
+<h3 id="9-implementation-priority"><a class="header" href="#9-implementation-priority">9. Implementation Priority</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Enhancement</th><th>Complexity</th><th>Impact</th><th>Priority</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>Vendor network depth</td><td>High</td><td>High</td><td>P1</td><td>✅ v0.3.0</td></tr>
+<tr><td>Customer segmentation</td><td>Medium</td><td>High</td><td>P1</td><td>✅ v0.3.0</td></tr>
+<tr><td>Organizational hierarchy</td><td>Medium</td><td>Medium</td><td>P2</td><td>🔄 Planned</td></tr>
+<tr><td>Relationship strength modeling</td><td>Medium</td><td>High</td><td>P1</td><td>✅ v0.3.0</td></tr>
+<tr><td>Cross-process linkages</td><td>Medium</td><td>High</td><td>P1</td><td>✅ v0.3.0</td></tr>
+<tr><td>Network effect modeling</td><td>High</td><td>Medium</td><td>P2</td><td>🔄 Planned</td></tr>
+<tr><td>Relationship lifecycle</td><td>Medium</td><td>Medium</td><td>P2</td><td>✅ v0.3.0</td></tr>
+<tr><td>Community detection</td><td>High</td><td>Medium</td><td>P3</td><td>🔄 Planned</td></tr>
+<tr><td>Enhanced graph export</td><td>Low</td><td>High</td><td>P1</td><td>🔄 Partial</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="10-validation-framework"><a class="header" href="#10-validation-framework">10. Validation Framework</a></h3>
+<pre><code class="language-yaml">relationship_validation:
+  integrity_checks:
+    # All transactions have valid entity references
+    referential_integrity:
+      enabled: true
+      strict: true
+
+    # Document chains are complete
+    chain_completeness:
+      enabled: true
+      allow_partial: false
+      exception_rate: 0.02
+
+    # Intercompany entries balance
+    intercompany_balance:
+      enabled: true
+      tolerance: 0.01
+
+  network_metrics:
+    # Graph connectivity
+    connectivity:
+      check_strongly_connected: false
+      check_weakly_connected: true
+      max_isolated_nodes: 0.05
+
+    # Degree distribution
+    degree_distribution:
+      check_power_law: true
+      min_alpha: 1.5
+      max_alpha: 3.0
+
+    # Clustering coefficient
+    clustering:
+      min_coefficient: 0.1
+      max_coefficient: 0.5
+</code></pre>
+<hr>
+<p><em>See also</em>: <a href="05-pattern-drift.html">05-pattern-drift.md</a> for temporal evolution of patterns</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../roadmap/research/03-temporal-patterns.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../roadmap/research/05-pattern-drift.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../roadmap/research/03-temporal-patterns.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../roadmap/research/05-pattern-drift.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

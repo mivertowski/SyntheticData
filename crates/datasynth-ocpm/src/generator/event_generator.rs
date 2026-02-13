@@ -140,6 +140,18 @@ pub struct OcpmGeneratorConfig {
     pub generate_p2p: bool,
     /// Enable O2C process events
     pub generate_o2c: bool,
+    /// Enable S2C process events
+    pub generate_s2c: bool,
+    /// Enable H2R process events
+    pub generate_h2r: bool,
+    /// Enable MFG process events
+    pub generate_mfg: bool,
+    /// Enable Bank Reconciliation process events
+    pub generate_bank_recon: bool,
+    /// Enable Banking process events
+    pub generate_bank: bool,
+    /// Enable Audit process events
+    pub generate_audit: bool,
     /// Rate of happy path (normal) variants
     pub happy_path_rate: f64,
     /// Rate of exception path variants
@@ -157,6 +169,12 @@ impl Default for OcpmGeneratorConfig {
         Self {
             generate_p2p: true,
             generate_o2c: true,
+            generate_s2c: true,
+            generate_h2r: true,
+            generate_mfg: true,
+            generate_bank_recon: true,
+            generate_bank: true,
+            generate_audit: true,
             happy_path_rate: 0.75,
             exception_path_rate: 0.20,
             error_path_rate: 0.05,
@@ -176,6 +194,18 @@ pub struct OcpmEventGenerator {
     p2p_activities: Vec<ActivityType>,
     /// O2C activity types
     o2c_activities: Vec<ActivityType>,
+    /// S2C activity types
+    s2c_activities: Vec<ActivityType>,
+    /// H2R activity types
+    h2r_activities: Vec<ActivityType>,
+    /// MFG activity types
+    mfg_activities: Vec<ActivityType>,
+    /// Bank Recon activity types
+    bank_recon_activities: Vec<ActivityType>,
+    /// Banking activity types
+    bank_activities: Vec<ActivityType>,
+    /// Audit activity types
+    audit_activities: Vec<ActivityType>,
     /// Deterministic UUID factory for reproducible generation
     uuid_factory: OcpmUuidFactory,
 }
@@ -188,6 +218,12 @@ impl OcpmEventGenerator {
             config: OcpmGeneratorConfig::default(),
             p2p_activities: ActivityType::p2p_activities(),
             o2c_activities: ActivityType::o2c_activities(),
+            s2c_activities: ActivityType::s2c_activities(),
+            h2r_activities: ActivityType::h2r_activities(),
+            mfg_activities: ActivityType::mfg_activities(),
+            bank_recon_activities: ActivityType::bank_recon_activities(),
+            bank_activities: ActivityType::bank_activities(),
+            audit_activities: ActivityType::audit_activities(),
             uuid_factory: OcpmUuidFactory::new(seed),
         }
     }
@@ -199,6 +235,12 @@ impl OcpmEventGenerator {
             config,
             p2p_activities: ActivityType::p2p_activities(),
             o2c_activities: ActivityType::o2c_activities(),
+            s2c_activities: ActivityType::s2c_activities(),
+            h2r_activities: ActivityType::h2r_activities(),
+            mfg_activities: ActivityType::mfg_activities(),
+            bank_recon_activities: ActivityType::bank_recon_activities(),
+            bank_activities: ActivityType::bank_activities(),
+            audit_activities: ActivityType::audit_activities(),
             uuid_factory: OcpmUuidFactory::new(seed),
         }
     }
@@ -361,6 +403,41 @@ impl OcpmEventGenerator {
     /// Get O2C activities.
     pub fn o2c_activities(&self) -> &[ActivityType] {
         &self.o2c_activities
+    }
+
+    /// Get S2C activities.
+    pub fn s2c_activities(&self) -> &[ActivityType] {
+        &self.s2c_activities
+    }
+
+    /// Get H2R activities.
+    pub fn h2r_activities(&self) -> &[ActivityType] {
+        &self.h2r_activities
+    }
+
+    /// Get MFG activities.
+    pub fn mfg_activities(&self) -> &[ActivityType] {
+        &self.mfg_activities
+    }
+
+    /// Get Bank Reconciliation activities.
+    pub fn bank_recon_activities(&self) -> &[ActivityType] {
+        &self.bank_recon_activities
+    }
+
+    /// Get Banking activities.
+    pub fn bank_activities(&self) -> &[ActivityType] {
+        &self.bank_activities
+    }
+
+    /// Get Audit activities.
+    pub fn audit_activities(&self) -> &[ActivityType] {
+        &self.audit_activities
+    }
+
+    /// Get generator config.
+    pub fn config(&self) -> &OcpmGeneratorConfig {
+        &self.config
     }
 
     /// Generate random delay between activities (in minutes).

@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.6.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.6.2}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.6.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.6.2}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -248,8 +248,9 @@ Period Close &
 \needspace{12\baselineskip}
 \subsection{Enterprise Process Chains}
 
-\textit{New in v0.6.0} --- five end-to-end process chains with full
-referential integrity, temporal coherence, and anomaly injection:
+\textit{Updated in v0.6.2} --- seven end-to-end process chains with full
+referential integrity, temporal coherence, anomaly injection, and
+OCEL~2.0 process mining integration:
 
 \vspace{0.4em}
 \noindent
@@ -278,6 +279,14 @@ Financial Reporting &
   Balance sheet, income statement, cash flow statement (indirect method),
   and changes in equity --- derived from trial balance with prior-period
   comparatives, management KPIs, and budget variance analysis. \\
+Banking Operations &
+  Customer onboarding, KYC reviews, account management, transaction
+  lifecycle (authorize/complete/reverse), suspicious activity flagging,
+  and account freezing --- with full OCEL~2.0 event coverage. \\
+Audit Lifecycle &
+  Engagement planning, risk assessment, workpaper creation and review,
+  evidence collection, finding management, remediation tracking, and
+  professional judgment documentation --- ISA-aligned OCPM events. \\
 \bottomrule
 \end{tabularx}
 \renewcommand{\arraystretch}{1.0}
@@ -362,15 +371,16 @@ difference reconciliation.
 
 \subsection{Process Mining (OCEL 2.0 \& XES 2.0)}
 
-Object-Centric Event Logs track many-to-many relationships between business
-objects (orders, invoices, payments) and activities --- enabling conformance
-checking and process variant analysis.
+\textit{Major expansion in v0.6.2} --- Object-Centric Event Logs now cover
+all 8 enterprise process families with 88 activity types and 52 object types,
+enabling cross-process conformance checking and end-to-end variant analysis.
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
   \item \textbf{OCEL 2.0}: JSON and XML export with objects, events, and object relationships.
   \item \textbf{XES 2.0}: IEEE standard format for ProM, Celonis, Disco, and pm4py.
-  \item \textbf{Reference Models}: Canonical P2P (9 activities), O2C (10 activities), R2R (11 activities), S2C (9 activities), H2R, and MFG process models for conformance checking.
-  \item \textbf{30+ R2R/A2R/S2C Activities}: GL posting, FX revaluation, period close, depreciation, consolidation, sourcing, qualification, bidding, contract management.
+  \item \textbf{8 Process Families}: P2P~(9), O2C~(10), R2R/A2R~(17), S2C~(8), H2R~(8), MFG~(10), BANK~(8), AUDIT~(10) --- 88 activities total.
+  \item \textbf{52 Object Types}: Lifecycle states and relationships across all families --- from purchase orders through audit engagements.
+  \item \textbf{3 Variant Types}: HappyPath (75\%), ExceptionPath (20\%), ErrorPath (5\%) per generator for realistic process deviation.
   \item \textbf{Deterministic UUIDs}: FNV-1a hash-based IDs with type discriminators for reproducible event logs.
 \end{itemize}
 
@@ -519,10 +529,17 @@ Comprehensive drift modeling for realistic temporal evolution:
   Neo4j             & CSV node/edge files with Cypher import scripts. \\[4pt]
   DGL               & Deep Graph Library format for GNN training. \\[4pt]
   RustGraph         & Native Rust graph format with adjacency lists. \\[4pt]
-  RustGraph Hyper   & Multi-layer hypergraph export (entity, temporal, process
-                      layers with cross-layer edges).
+  RustGraph Hyper   & Multi-layer hypergraph export (governance, process event,
+                      and accounting network layers with cross-layer edges).
 \end{tabularx}
 \end{tcolorbox}
+
+\noindent
+\textit{Expanded in v0.6.2} --- the multi-layer hypergraph now spans all 8
+process families with 24 entity type codes (100--400), per-family document
+nodes (S2C, H2R, MFG, BANK, AUDIT, Bank Recon), and OCPM events as
+hyperedges connecting all participating objects when
+\texttt{events\_as\_hyperedges} is enabled.
 
 \noindent
 All five exporters share a unified \texttt{CommonExportConfig} for consistent
@@ -1003,12 +1020,13 @@ ISO 27001:2022 & Annex A alignment (11 implemented, 6 partial) \\
 
 \subsection{CI/CD Pipeline}
 
-A 7-job GitHub Actions pipeline ensures release quality:
+An 8-job GitHub Actions pipeline ensures release quality:
 
 \begin{enumerate}[leftmargin=1.4em, itemsep=2pt]
   \item \textbf{fmt}: \texttt{cargo fmt --check}
   \item \textbf{clippy}: Lint with \texttt{-D warnings}
   \item \textbf{test}: Cross-platform matrix (Ubuntu, macOS, Windows)
+  \item \textbf{eval}: Comprehensive evaluation (23 evaluators, all process families --- main branch only)
   \item \textbf{msrv}: Minimum Supported Rust Version validation (1.88)
   \item \textbf{security}: \texttt{cargo deny} + \texttt{cargo audit}
   \item \textbf{coverage}: \texttt{cargo-llvm-cov} with Codecov
@@ -1114,7 +1132,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.6.0 \textbullet{}
+  DataSynth v0.6.2 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]

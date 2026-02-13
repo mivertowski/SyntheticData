@@ -56,6 +56,23 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
       - run: cargo test --all-targets
 
+  eval:
+    name: Comprehensive Eval
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
+      - name: Run comprehensive evaluation
+        run: cargo test -p datasynth-runtime --test comprehensive_eval -- --ignored --nocapture
+        timeout-minutes: 30
+
   msrv:
     name: MSRV (1.88)
     runs-on: ubuntu-latest

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -445,6 +445,32 @@ capitalization:
 <li>Monthly recurring revenue (MRR)</li>
 <li>Annual contract billing (ACV)</li>
 <li>Usage-based components</li>
+</ul>
+<hr>
+<h2 id="process-chain-defaults-v060"><a class="header" href="#process-chain-defaults-v060">Process Chain Defaults (v0.6.0)</a></h2>
+<p>Starting in v0.6.0, all five industry presets include default settings for the new enterprise process chains. When you generate a configuration with <code>datasynth-data init</code>, the preset populates sensible defaults for each new section, though they remain disabled until explicitly turned on.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Process Chain</th><th style="text-align: center">Manufacturing</th><th style="text-align: center">Retail</th><th style="text-align: center">Financial Services</th><th style="text-align: center">Healthcare</th><th style="text-align: center">Technology</th></tr>
+</thead>
+<tbody>
+<tr><td><code>source_to_pay</code></td><td style="text-align: center">High</td><td style="text-align: center">Medium</td><td style="text-align: center">Low</td><td style="text-align: center">Medium</td><td style="text-align: center">Low</td></tr>
+<tr><td><code>financial_reporting</code></td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td></tr>
+<tr><td><code>hr</code></td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td><td style="text-align: center">Full</td></tr>
+<tr><td><code>manufacturing</code></td><td style="text-align: center">High</td><td style="text-align: center">–</td><td style="text-align: center">–</td><td style="text-align: center">–</td><td style="text-align: center">–</td></tr>
+<tr><td><code>sales_quotes</code></td><td style="text-align: center">Medium</td><td style="text-align: center">High</td><td style="text-align: center">Low</td><td style="text-align: center">Medium</td><td style="text-align: center">High</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Manufacturing</strong> presets emphasize production orders, routing, and costing. <strong>Retail</strong> presets increase sales quote volume and quote-to-order win rates. <strong>Financial Services</strong> presets focus on financial reporting with comprehensive KPIs and budgets. <strong>Healthcare</strong> and <strong>Technology</strong> presets provide balanced defaults.</p>
+<p>Each preset configures the following when you set <code>enabled: true</code>:</p>
+<ul>
+<li><strong>source_to_pay</strong>: Sourcing projects, RFx events, contract management, catalogs, and vendor scorecards that feed into the existing P2P document flow.</li>
+<li><strong>financial_reporting</strong>: Balance sheets, income statements, cash flow statements, management KPIs, and budget vs. actual variance analysis.</li>
+<li><strong>hr</strong>: Payroll runs based on employee master data, time and attendance tracking, and expense report generation with policy violation injection.</li>
+<li><strong>manufacturing</strong>: Production orders, WIP tracking, standard costing with labor and overhead, and routing operations.</li>
+<li><strong>sales_quotes</strong>: Quote-to-order pipeline that feeds into the existing O2C document flow.</li>
 </ul>
 <hr>
 <h2 id="customizing-presets"><a class="header" href="#customizing-presets">Customizing Presets</a></h2>

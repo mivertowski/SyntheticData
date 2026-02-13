@@ -425,8 +425,50 @@ for epoch in range(100):
     optimizer.step()
 ```
 
+## Multi-Layer Hypergraph (v0.6.2)
+
+The RustGraph Hypergraph exporter now supports all 8 enterprise process families with 24 entity type codes:
+
+### Entity Type Codes
+
+| Range | Family | Types |
+|-------|--------|-------|
+| 100 | Accounting | GL Accounts |
+| 300-303 | P2P | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment |
+| 310-312 | O2C | SalesOrder, Delivery, CustomerInvoice |
+| 320-325 | S2C | SourcingProject, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, SupplierQualification |
+| 330-333 | H2R | PayrollRun, TimeEntry, ExpenseReport, PayrollLineItem |
+| 340-343 | MFG | ProductionOrder, RoutingOperation, QualityInspection, CycleCount |
+| 350-352 | BANK | BankingCustomer, BankAccount, BankTransaction |
+| 360-365 | AUDIT | AuditEngagement, Workpaper, AuditFinding, AuditEvidence, RiskAssessment, ProfessionalJudgment |
+| 370-372 | Bank Recon | BankReconciliation, BankStatementLine, ReconcilingItem |
+| 400 | OCPM | OcpmEvent (events as hyperedges) |
+
+### OCPM Events as Hyperedges
+
+When `events_as_hyperedges: true`, each OCPM event becomes a hyperedge connecting all its participating objects. This enables cross-process analysis via the hypergraph structure.
+
+### Per-Family Toggles
+
+```yaml
+graph_export:
+  hypergraph:
+    enabled: true
+    process_layer:
+      include_p2p: true
+      include_o2c: true
+      include_s2c: true
+      include_h2r: true
+      include_mfg: true
+      include_bank: true
+      include_audit: true
+      include_r2r: true
+      events_as_hyperedges: true
+```
+
 ## See Also
 
 - [Anomaly Injection](anomaly-injection.md)
 - [Fraud Detection Use Case](../use-cases/fraud-detection.md)
 - [datasynth-graph Crate](../crates/datasynth-graph.md)
+- [Process Mining](../use-cases/process-mining.md)

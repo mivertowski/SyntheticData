@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fc3fe19e.js";
+            window.path_to_searchindex_js = "../searchindex-3468cb70.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1a598c96.js"></script>
@@ -206,6 +206,12 @@ datasynth-data generate --config config.yaml --output ./output
 <tr><td><a href="compliance.html">Compliance</a></td><td>Fraud, controls, approval</td></tr>
 <tr><td><a href="ai-ml-features.html">AI &amp; ML Features</a></td><td>LLM, diffusion, causal, certificates</td></tr>
 <tr><td><a href="output-settings.html">Output Settings</a></td><td>Format, compression</td></tr>
+<tr><td>Source-to-Pay</td><td>S2C sourcing pipeline (projects, RFx, bids, contracts, catalogs, scorecards)</td></tr>
+<tr><td>Financial Reporting</td><td>Financial statements, bank reconciliation, management KPIs, budgets</td></tr>
+<tr><td>HR</td><td>Payroll runs, time entries, expense reports</td></tr>
+<tr><td>Manufacturing</td><td>Production orders, quality inspections, cycle counts</td></tr>
+<tr><td>Sales Quotes</td><td>Quote-to-order pipeline</td></tr>
+<tr><td>Accounting Standards</td><td>Revenue recognition (ASC 606/IFRS 15), impairment testing</td></tr>
 </tbody>
 </table>
 </div>
@@ -305,6 +311,43 @@ certificates:
   enabled: true
   issuer: "DataSynth"
   include_quality_metrics: true
+
+# Enterprise Process Chains (v0.6.0)
+source_to_pay:
+  enabled: true
+  projects_per_period: 5
+  avg_bids_per_rfx: 4
+  contract_award_rate: 0.75
+  catalog_items_per_contract: 10
+
+financial_reporting:
+  enabled: true
+  generate_balance_sheet: true
+  generate_income_statement: true
+  generate_cash_flow: true
+  generate_changes_in_equity: true
+  management_kpis:
+    enabled: true
+  budgets:
+    enabled: true
+    variance_threshold: 0.10
+
+hr:
+  enabled: true
+  payroll_frequency: monthly
+  time_tracking: true
+  expense_reports: true
+
+manufacturing:
+  enabled: true
+  production_orders_per_period: 20
+  quality_inspection_rate: 0.30
+  cycle_count_frequency: quarterly
+
+sales_quotes:
+  enabled: true
+  quotes_per_period: 15
+  conversion_rate: 0.35
 
 output:
   format: csv
