@@ -196,12 +196,8 @@ impl OcpmEventGenerator {
             for (i, txn_id) in documents.transaction_ids.iter().enumerate() {
                 current_time += self.generate_inter_activity_delay(1, 1440);
 
-                let txn_object = self.create_object(
-                    &txn_type,
-                    txn_id,
-                    &documents.company_code,
-                    current_time,
-                );
+                let txn_object =
+                    self.create_object(&txn_type, txn_id, &documents.company_code, current_time);
                 objects.push(txn_object.clone());
 
                 relationships.push(ObjectRelationship::new(
@@ -363,11 +359,7 @@ mod tests {
                 vec![Decimal::new(5000, 0), Decimal::new(3000, 0)],
             );
 
-        let result = generator.generate_bank_case(
-            &documents,
-            Utc::now(),
-            &["user001".into()],
-        );
+        let result = generator.generate_bank_case(&documents, Utc::now(), &["user001".into()]);
 
         assert!(result.events.len() >= 3); // onboard + kyc + open account
         assert!(!result.objects.is_empty());

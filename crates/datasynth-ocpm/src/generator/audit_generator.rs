@@ -171,12 +171,8 @@ impl OcpmEventGenerator {
         for risk_id in &documents.risk_ids {
             current_time += self.generate_inter_activity_delay(480, 2880);
 
-            let risk_object = self.create_object(
-                &risk_type,
-                risk_id,
-                &documents.company_code,
-                current_time,
-            );
+            let risk_object =
+                self.create_object(&risk_type, risk_id, &documents.company_code, current_time);
             objects.push(risk_object.clone());
 
             relationships.push(ObjectRelationship::new(
@@ -355,7 +351,8 @@ impl OcpmEventGenerator {
             events.push(event);
 
             // Remediate finding
-            if !matches!(variant_type, VariantType::ExceptionPath) || !self.should_skip_activity(0.3)
+            if !matches!(variant_type, VariantType::ExceptionPath)
+                || !self.should_skip_activity(0.3)
             {
                 current_time += self.generate_inter_activity_delay(1440, 14400); // 1-10 days
 

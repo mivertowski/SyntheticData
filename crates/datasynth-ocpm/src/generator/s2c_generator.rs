@@ -43,12 +43,7 @@ pub struct S2cDocuments {
 
 impl S2cDocuments {
     /// Create new S2C documents.
-    pub fn new(
-        project_id: &str,
-        vendor_id: &str,
-        company_code: &str,
-        amount: Decimal,
-    ) -> Self {
+    pub fn new(project_id: &str, vendor_id: &str, company_code: &str, amount: Decimal) -> Self {
         Self {
             project_id: project_id.into(),
             project_uuid: Uuid::new_v4(),
@@ -184,12 +179,8 @@ impl OcpmEventGenerator {
             current_time = self.calculate_event_time(current_time, &qualify);
             current_time += self.generate_inter_activity_delay(1440, 7200); // 1-5 days
 
-            let rfx_object = self.create_object(
-                &rfx_type,
-                rfx_id,
-                &documents.company_code,
-                current_time,
-            );
+            let rfx_object =
+                self.create_object(&rfx_type, rfx_id, &documents.company_code, current_time);
             objects.push(rfx_object.clone());
 
             relationships.push(ObjectRelationship::new(
@@ -226,12 +217,8 @@ impl OcpmEventGenerator {
                 current_time = self.calculate_event_time(current_time, &publish);
                 current_time += self.generate_inter_activity_delay(7200, 20160); // 5-14 days
 
-                let bid_object = self.create_object(
-                    &bid_type,
-                    bid_id,
-                    &documents.company_code,
-                    current_time,
-                );
+                let bid_object =
+                    self.create_object(&bid_type, bid_id, &documents.company_code, current_time);
                 objects.push(bid_object.clone());
 
                 relationships.push(ObjectRelationship::new(
@@ -291,7 +278,8 @@ impl OcpmEventGenerator {
 
             // Activity: Award Contract
             if let Some(contract_id) = &documents.contract_id {
-                current_time = self.calculate_event_time(current_time, &ActivityType::evaluate_bids());
+                current_time =
+                    self.calculate_event_time(current_time, &ActivityType::evaluate_bids());
                 current_time += self.generate_inter_activity_delay(1440, 4320);
 
                 let contract_object = self.create_object(

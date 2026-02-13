@@ -3093,20 +3093,19 @@ impl EnhancedOrchestrator {
             .collect();
 
         // Helper closure to add case results to event log
-        let add_result =
-            |event_log: &mut OcpmEventLog,
-             result: datasynth_ocpm::CaseGenerationResult| {
-                for event in result.events {
-                    event_log.add_event(event);
-                }
-                for object in result.objects {
-                    event_log.add_object(object);
-                }
-                for relationship in result.relationships {
-                    event_log.add_relationship(relationship);
-                }
-                event_log.add_case(result.case_trace);
-            };
+        let add_result = |event_log: &mut OcpmEventLog,
+                          result: datasynth_ocpm::CaseGenerationResult| {
+            for event in result.events {
+                event_log.add_event(event);
+            }
+            for object in result.objects {
+                event_log.add_object(object);
+            }
+            for relationship in result.relationships {
+                event_log.add_relationship(relationship);
+            }
+            event_log.add_case(result.case_trace);
+        };
 
         // Generate events from P2P chains
         for chain in &flows.p2p_chains {
@@ -3209,7 +3208,11 @@ impl EnhancedOrchestrator {
                 project.estimated_annual_spend,
             );
             // Link RFx if available
-            if let Some(rfx) = sourcing.rfx_events.iter().find(|r| r.sourcing_project_id == project.project_id) {
+            if let Some(rfx) = sourcing
+                .rfx_events
+                .iter()
+                .find(|r| r.sourcing_project_id == project.project_id)
+            {
                 docs = docs.with_rfx(&rfx.rfx_id);
                 // Link winning bid (status == Accepted)
                 if let Some(bid) = sourcing.bids.iter().find(|b| {
@@ -3220,9 +3223,11 @@ impl EnhancedOrchestrator {
                 }
             }
             // Link contract
-            if let Some(contract) = sourcing.contracts.iter().find(|c| {
-                c.sourcing_project_id.as_deref() == Some(&project.project_id)
-            }) {
+            if let Some(contract) = sourcing
+                .contracts
+                .iter()
+                .find(|c| c.sourcing_project_id.as_deref() == Some(&project.project_id))
+            {
                 docs = docs.with_contract(&contract.contract_id);
             }
             let start_time = chrono::Utc::now() - chrono::Duration::days(90);
@@ -3252,9 +3257,7 @@ impl EnhancedOrchestrator {
             .with_time_entries(
                 hr.time_entries
                     .iter()
-                    .filter(|t| {
-                        t.date >= run.pay_period_start && t.date <= run.pay_period_end
-                    })
+                    .filter(|t| t.date >= run.pay_period_start && t.date <= run.pay_period_end)
                     .take(5)
                     .map(|t| t.entry_id.as_str())
                     .collect(),
@@ -3446,8 +3449,7 @@ impl EnhancedOrchestrator {
                     .collect(),
             );
             let start_time = chrono::Utc::now() - chrono::Duration::days(30);
-            let result =
-                ocpm_gen.generate_bank_recon_case(&docs, start_time, &available_users);
+            let result = ocpm_gen.generate_bank_recon_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
             if let Some(pb) = &pb {
@@ -4160,21 +4162,13 @@ impl EnhancedOrchestrator {
             &sourcing.bid_evaluations,
             &sourcing.contracts,
         );
-        builder.add_h2r_documents(
-            &hr.payroll_runs,
-            &hr.time_entries,
-            &hr.expense_reports,
-        );
+        builder.add_h2r_documents(&hr.payroll_runs, &hr.time_entries, &hr.expense_reports);
         builder.add_mfg_documents(
             &manufacturing.production_orders,
             &manufacturing.quality_inspections,
             &manufacturing.cycle_counts,
         );
-        builder.add_bank_documents(
-            &banking.customers,
-            &banking.accounts,
-            &banking.transactions,
-        );
+        builder.add_bank_documents(&banking.customers, &banking.accounts, &banking.transactions);
         builder.add_audit_documents(
             &audit.engagements,
             &audit.workpapers,

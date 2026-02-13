@@ -320,12 +320,26 @@ impl ObjectType {
                 ObjectLifecycleState::new("cancelled", "Cancelled", false, true),
             ],
             relationships: vec![
-                ObjectRelationshipType::new("has_rfx", "Has RFx", "rfx_event", Cardinality::OneToMany, false),
-                ObjectRelationshipType::new("awarded_contract", "Awarded Contract", "procurement_contract", Cardinality::OneToOne, false),
+                ObjectRelationshipType::new(
+                    "has_rfx",
+                    "Has RFx",
+                    "rfx_event",
+                    Cardinality::OneToMany,
+                    false,
+                ),
+                ObjectRelationshipType::new(
+                    "awarded_contract",
+                    "Awarded Contract",
+                    "procurement_contract",
+                    Cardinality::OneToOne,
+                    false,
+                ),
             ],
             allowed_activities: vec![
-                "create_sourcing_project".into(), "publish_rfx".into(),
-                "award_contract".into(), "complete_sourcing".into(),
+                "create_sourcing_project".into(),
+                "publish_rfx".into(),
+                "award_contract".into(),
+                "complete_sourcing".into(),
             ],
             attributes: HashMap::from([
                 ("project_id".into(), AttributeType::String),
@@ -347,9 +361,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("qualified", "Qualified", false, true),
                 ObjectLifecycleState::new("disqualified", "Disqualified", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("qualifies", "Qualifies", "vendor", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "qualifies",
+                "Qualifies",
+                "vendor",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["qualify_supplier".into()],
             attributes: HashMap::from([
                 ("qualification_id".into(), AttributeType::String),
@@ -373,8 +391,20 @@ impl ObjectType {
                 ObjectLifecycleState::new("cancelled", "Cancelled", false, true),
             ],
             relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "sourcing_project", Cardinality::ManyToOne, true),
-                ObjectRelationshipType::new("has_bids", "Has Bids", "supplier_bid", Cardinality::OneToMany, false),
+                ObjectRelationshipType::new(
+                    "belongs_to",
+                    "Belongs To",
+                    "sourcing_project",
+                    Cardinality::ManyToOne,
+                    true,
+                ),
+                ObjectRelationshipType::new(
+                    "has_bids",
+                    "Has Bids",
+                    "supplier_bid",
+                    Cardinality::OneToMany,
+                    false,
+                ),
             ],
             allowed_activities: vec!["publish_rfx".into(), "evaluate_bids".into()],
             attributes: HashMap::from([
@@ -397,9 +427,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("accepted", "Accepted", false, true),
                 ObjectLifecycleState::new("rejected", "Rejected", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("responds_to", "Responds To", "rfx_event", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "responds_to",
+                "Responds To",
+                "rfx_event",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["submit_bid".into()],
             attributes: HashMap::from([
                 ("bid_id".into(), AttributeType::String),
@@ -419,9 +453,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("created", "Created", true, false),
                 ObjectLifecycleState::new("finalized", "Finalized", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("evaluates", "Evaluates", "rfx_event", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "evaluates",
+                "Evaluates",
+                "rfx_event",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["evaluate_bids".into()],
             attributes: HashMap::from([
                 ("evaluation_id".into(), AttributeType::String),
@@ -442,9 +480,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("expired", "Expired", false, true),
                 ObjectLifecycleState::new("terminated", "Terminated", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("awarded_from", "Awarded From", "sourcing_project", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "awarded_from",
+                "Awarded From",
+                "sourcing_project",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["award_contract".into(), "activate_contract".into()],
             attributes: HashMap::from([
                 ("contract_id".into(), AttributeType::String),
@@ -481,12 +523,18 @@ impl ObjectType {
                 ObjectLifecycleState::new("posted", "Posted", false, true),
                 ObjectLifecycleState::new("reversed", "Reversed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("contains", "Contains", "payroll_line_item", Cardinality::OneToMany, false),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "contains",
+                "Contains",
+                "payroll_line_item",
+                Cardinality::OneToMany,
+                false,
+            )],
             allowed_activities: vec![
-                "create_payroll_run".into(), "calculate_payroll".into(),
-                "approve_payroll".into(), "post_payroll".into(),
+                "create_payroll_run".into(),
+                "calculate_payroll".into(),
+                "approve_payroll".into(),
+                "post_payroll".into(),
             ],
             attributes: HashMap::from([
                 ("payroll_id".into(), AttributeType::String),
@@ -506,9 +554,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("created", "Created", true, false),
                 ObjectLifecycleState::new("processed", "Processed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "payroll_run", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "payroll_run",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["calculate_payroll".into()],
             attributes: HashMap::from([
                 ("employee_id".into(), AttributeType::String),
@@ -587,12 +639,18 @@ impl ObjectType {
                 ObjectLifecycleState::new("closed", "Closed", false, true),
                 ObjectLifecycleState::new("cancelled", "Cancelled", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("has_operations", "Has Operations", "routing_operation", Cardinality::OneToMany, false),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "has_operations",
+                "Has Operations",
+                "routing_operation",
+                Cardinality::OneToMany,
+                false,
+            )],
             allowed_activities: vec![
-                "create_production_order".into(), "release_production_order".into(),
-                "start_operation".into(), "confirm_production".into(),
+                "create_production_order".into(),
+                "release_production_order".into(),
+                "start_operation".into(),
+                "confirm_production".into(),
                 "close_production_order".into(),
             ],
             attributes: HashMap::from([
@@ -615,9 +673,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("completed", "Completed", false, true),
                 ObjectLifecycleState::new("cancelled", "Cancelled", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "production_order", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "production_order",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["start_operation".into(), "complete_operation".into()],
             attributes: HashMap::from([
                 ("operation_id".into(), AttributeType::String),
@@ -639,10 +701,17 @@ impl ObjectType {
                 ObjectLifecycleState::new("accepted", "Accepted", false, true),
                 ObjectLifecycleState::new("rejected", "Rejected", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("inspects", "Inspects", "production_order", Cardinality::ManyToOne, false),
+            relationships: vec![ObjectRelationshipType::new(
+                "inspects",
+                "Inspects",
+                "production_order",
+                Cardinality::ManyToOne,
+                false,
+            )],
+            allowed_activities: vec![
+                "create_quality_inspection".into(),
+                "record_inspection_result".into(),
             ],
-            allowed_activities: vec!["create_quality_inspection".into(), "record_inspection_result".into()],
             attributes: HashMap::from([
                 ("inspection_id".into(), AttributeType::String),
                 ("lot_id".into(), AttributeType::String),
@@ -697,9 +766,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("frozen", "Frozen", false, false),
                 ObjectLifecycleState::new("closed", "Closed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("owns", "Owns", "bank_account", Cardinality::OneToMany, false),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "owns",
+                "Owns",
+                "bank_account",
+                Cardinality::OneToMany,
+                false,
+            )],
             allowed_activities: vec!["onboard_customer".into(), "perform_kyc_review".into()],
             attributes: HashMap::from([
                 ("customer_id".into(), AttributeType::String),
@@ -722,8 +795,20 @@ impl ObjectType {
                 ObjectLifecycleState::new("dormant", "Dormant", false, false),
             ],
             relationships: vec![
-                ObjectRelationshipType::new("owned_by", "Owned By", "banking_customer", Cardinality::ManyToOne, true),
-                ObjectRelationshipType::new("has_transactions", "Has Transactions", "bank_transaction", Cardinality::OneToMany, false),
+                ObjectRelationshipType::new(
+                    "owned_by",
+                    "Owned By",
+                    "banking_customer",
+                    Cardinality::ManyToOne,
+                    true,
+                ),
+                ObjectRelationshipType::new(
+                    "has_transactions",
+                    "Has Transactions",
+                    "bank_transaction",
+                    Cardinality::OneToMany,
+                    false,
+                ),
             ],
             allowed_activities: vec!["open_account".into(), "freeze_account".into()],
             attributes: HashMap::from([
@@ -748,12 +833,18 @@ impl ObjectType {
                 ObjectLifecycleState::new("reversed", "Reversed", false, true),
                 ObjectLifecycleState::new("flagged", "Flagged", false, false),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("on_account", "On Account", "bank_account", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "on_account",
+                "On Account",
+                "bank_account",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec![
-                "execute_transaction".into(), "authorize_transaction".into(),
-                "complete_transaction".into(), "flag_suspicious".into(),
+                "execute_transaction".into(),
+                "authorize_transaction".into(),
+                "complete_transaction".into(),
+                "flag_suspicious".into(),
             ],
             attributes: HashMap::from([
                 ("transaction_id".into(), AttributeType::String),
@@ -787,11 +878,24 @@ impl ObjectType {
                 ObjectLifecycleState::new("complete", "Complete", false, true),
             ],
             relationships: vec![
-                ObjectRelationshipType::new("has_workpapers", "Has Workpapers", "workpaper", Cardinality::OneToMany, false),
-                ObjectRelationshipType::new("has_findings", "Has Findings", "audit_finding", Cardinality::OneToMany, false),
+                ObjectRelationshipType::new(
+                    "has_workpapers",
+                    "Has Workpapers",
+                    "workpaper",
+                    Cardinality::OneToMany,
+                    false,
+                ),
+                ObjectRelationshipType::new(
+                    "has_findings",
+                    "Has Findings",
+                    "audit_finding",
+                    Cardinality::OneToMany,
+                    false,
+                ),
             ],
             allowed_activities: vec![
-                "create_engagement".into(), "plan_engagement".into(),
+                "create_engagement".into(),
+                "plan_engagement".into(),
                 "complete_engagement".into(),
             ],
             attributes: HashMap::from([
@@ -814,8 +918,20 @@ impl ObjectType {
                 ObjectLifecycleState::new("complete", "Complete", false, true),
             ],
             relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "audit_engagement", Cardinality::ManyToOne, true),
-                ObjectRelationshipType::new("has_evidence", "Has Evidence", "audit_evidence", Cardinality::OneToMany, false),
+                ObjectRelationshipType::new(
+                    "belongs_to",
+                    "Belongs To",
+                    "audit_engagement",
+                    Cardinality::ManyToOne,
+                    true,
+                ),
+                ObjectRelationshipType::new(
+                    "has_evidence",
+                    "Has Evidence",
+                    "audit_evidence",
+                    Cardinality::OneToMany,
+                    false,
+                ),
             ],
             allowed_activities: vec!["create_workpaper".into(), "review_workpaper".into()],
             attributes: HashMap::from([
@@ -837,9 +953,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("pending_review", "Pending Review", false, false),
                 ObjectLifecycleState::new("closed", "Closed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "audit_engagement", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "audit_engagement",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["raise_finding".into(), "remediate_finding".into()],
             attributes: HashMap::from([
                 ("finding_id".into(), AttributeType::String),
@@ -859,9 +979,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("collected", "Collected", true, false),
                 ObjectLifecycleState::new("assessed", "Assessed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("supports", "Supports", "workpaper", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "supports",
+                "Supports",
+                "workpaper",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["collect_evidence".into()],
             attributes: HashMap::from([
                 ("evidence_id".into(), AttributeType::String),
@@ -881,9 +1005,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("draft", "Draft", true, false),
                 ObjectLifecycleState::new("approved", "Approved", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "audit_engagement", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "audit_engagement",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["assess_risk".into()],
             attributes: HashMap::from([
                 ("risk_id".into(), AttributeType::String),
@@ -939,12 +1067,18 @@ impl ObjectType {
                 ObjectLifecycleState::new("posted", "Posted", false, false),
                 ObjectLifecycleState::new("completed", "Completed", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("has_lines", "Has Lines", "bank_statement_line", Cardinality::OneToMany, false),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "has_lines",
+                "Has Lines",
+                "bank_statement_line",
+                Cardinality::OneToMany,
+                false,
+            )],
             allowed_activities: vec![
-                "import_bank_statement".into(), "approve_reconciliation".into(),
-                "post_recon_entries".into(), "complete_reconciliation".into(),
+                "import_bank_statement".into(),
+                "approve_reconciliation".into(),
+                "post_recon_entries".into(),
+                "complete_reconciliation".into(),
             ],
             attributes: HashMap::from([
                 ("reconciliation_id".into(), AttributeType::String),
@@ -965,9 +1099,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("auto_matched", "Auto Matched", false, true),
                 ObjectLifecycleState::new("manually_matched", "Manually Matched", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "bank_reconciliation", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "bank_reconciliation",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["auto_match_items".into(), "manual_match_item".into()],
             attributes: HashMap::from([
                 ("line_id".into(), AttributeType::String),
@@ -987,9 +1125,13 @@ impl ObjectType {
                 ObjectLifecycleState::new("outstanding", "Outstanding", true, false),
                 ObjectLifecycleState::new("resolved", "Resolved", false, true),
             ],
-            relationships: vec![
-                ObjectRelationshipType::new("belongs_to", "Belongs To", "bank_reconciliation", Cardinality::ManyToOne, true),
-            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "bank_reconciliation",
+                Cardinality::ManyToOne,
+                true,
+            )],
             allowed_activities: vec!["create_reconciling_item".into(), "resolve_exception".into()],
             attributes: HashMap::from([
                 ("item_id".into(), AttributeType::String),

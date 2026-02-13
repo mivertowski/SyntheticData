@@ -91,12 +91,8 @@ impl OcpmEventGenerator {
 
         // Submit time entries first
         for time_id in &documents.time_entry_ids {
-            let time_object = self.create_object(
-                &time_type,
-                time_id,
-                &documents.company_code,
-                current_time,
-            );
+            let time_object =
+                self.create_object(&time_type, time_id, &documents.company_code, current_time);
             objects.push(time_object.clone());
 
             let submit_time = ActivityType::submit_time_entry();
@@ -122,7 +118,8 @@ impl OcpmEventGenerator {
             events.push(event);
 
             // Approve time entry (skip for exception paths sometimes)
-            if !matches!(variant_type, VariantType::ExceptionPath) || !self.should_skip_activity(0.3)
+            if !matches!(variant_type, VariantType::ExceptionPath)
+                || !self.should_skip_activity(0.3)
             {
                 current_time = self.calculate_event_time(current_time, &submit_time);
                 current_time += self.generate_inter_activity_delay(60, 1440);
@@ -338,10 +335,9 @@ mod tests {
     #[test]
     fn test_h2r_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents =
-            H2rDocuments::new("PR-000001", "EMP001", "1000", Decimal::new(5000, 0))
-                .with_time_entries(vec!["TE-001", "TE-002"])
-                .with_expense_report("ER-001");
+        let documents = H2rDocuments::new("PR-000001", "EMP001", "1000", Decimal::new(5000, 0))
+            .with_time_entries(vec!["TE-001", "TE-002"])
+            .with_expense_report("ER-001");
 
         let result = generator.generate_h2r_case(
             &documents,

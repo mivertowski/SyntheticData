@@ -13,11 +13,7 @@ use std::collections::HashMap;
 use chrono::Datelike;
 use serde_json::Value;
 
-use datasynth_core::models::{
-    BankReconciliation, ChartOfAccounts, CosoComponent, CosoPrinciple, Customer, CycleCount,
-    Employee, InternalControl, JournalEntry, PayrollRun, ProductionOrder, QualityInspection,
-    TimeEntry, Vendor,
-};
+use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
 use datasynth_core::models::audit::{
     AuditEngagement, AuditEvidence, AuditFinding, ProfessionalJudgment, RiskAssessment, Workpaper,
 };
@@ -25,8 +21,12 @@ use datasynth_core::models::sourcing::{
     BidEvaluation, ProcurementContract, RfxEvent, SourcingProject, SupplierBid,
     SupplierQualification,
 };
-use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
 use datasynth_core::models::ExpenseReport;
+use datasynth_core::models::{
+    BankReconciliation, ChartOfAccounts, CosoComponent, CosoPrinciple, Customer, CycleCount,
+    Employee, InternalControl, JournalEntry, PayrollRun, ProductionOrder, QualityInspection,
+    TimeEntry, Vendor,
+};
 
 use crate::models::hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
@@ -1154,60 +1154,111 @@ impl HypergraphBuilder {
                 external_id: p.project_id.clone(),
                 label: format!("SPRJ {}", p.project_id),
                 properties: HashMap::new(),
-                features: vec![p.estimated_annual_spend.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                features: vec![p
+                    .estimated_annual_spend
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for q in qualifications {
             let node_id = format!("s2c_qual_{}", q.qualification_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "SupplierQualification".into(),
+                id: node_id,
+                entity_type: "SupplierQualification".into(),
                 entity_type_code: type_codes::SUPPLIER_QUALIFICATION,
-                layer: HypergraphLayer::ProcessEvents, external_id: q.qualification_id.clone(),
-                label: format!("SQUAL {}", q.qualification_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: q.qualification_id.clone(),
+                label: format!("SQUAL {}", q.qualification_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for r in rfx_events {
             let node_id = format!("s2c_rfx_{}", r.rfx_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "RfxEvent".into(),
+                id: node_id,
+                entity_type: "RfxEvent".into(),
                 entity_type_code: type_codes::RFX_EVENT,
-                layer: HypergraphLayer::ProcessEvents, external_id: r.rfx_id.clone(),
-                label: format!("RFX {}", r.rfx_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: r.rfx_id.clone(),
+                label: format!("RFX {}", r.rfx_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for b in bids {
             let node_id = format!("s2c_bid_{}", b.bid_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "SupplierBid".into(),
+                id: node_id,
+                entity_type: "SupplierBid".into(),
                 entity_type_code: type_codes::SUPPLIER_BID,
-                layer: HypergraphLayer::ProcessEvents, external_id: b.bid_id.clone(),
-                label: format!("BID {}", b.bid_id), properties: HashMap::new(),
-                features: vec![b.total_amount.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: b.bid_id.clone(),
+                label: format!("BID {}", b.bid_id),
+                properties: HashMap::new(),
+                features: vec![b
+                    .total_amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for e in evaluations {
             let node_id = format!("s2c_eval_{}", e.evaluation_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "BidEvaluation".into(),
+                id: node_id,
+                entity_type: "BidEvaluation".into(),
                 entity_type_code: type_codes::BID_EVALUATION,
-                layer: HypergraphLayer::ProcessEvents, external_id: e.evaluation_id.clone(),
-                label: format!("BEVAL {}", e.evaluation_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: e.evaluation_id.clone(),
+                label: format!("BEVAL {}", e.evaluation_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for c in contracts {
             let node_id = format!("s2c_ctr_{}", c.contract_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "ProcurementContract".into(),
+                id: node_id,
+                entity_type: "ProcurementContract".into(),
                 entity_type_code: type_codes::PROCUREMENT_CONTRACT,
-                layer: HypergraphLayer::ProcessEvents, external_id: c.contract_id.clone(),
-                label: format!("CTR {}", c.contract_id), properties: HashMap::new(),
-                features: vec![c.total_value.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: c.contract_id.clone(),
+                label: format!("CTR {}", c.contract_id),
+                properties: HashMap::new(),
+                features: vec![c
+                    .total_value
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
             // Track vendor for cross-layer edges
             self.doc_counterparty_links.push((
@@ -1231,34 +1282,62 @@ impl HypergraphBuilder {
         for pr in payroll_runs {
             let node_id = format!("h2r_pay_{}", pr.payroll_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "PayrollRun".into(),
+                id: node_id,
+                entity_type: "PayrollRun".into(),
                 entity_type_code: type_codes::PAYROLL_RUN,
-                layer: HypergraphLayer::ProcessEvents, external_id: pr.payroll_id.clone(),
-                label: format!("PAY {}", pr.payroll_id), properties: HashMap::new(),
-                features: vec![pr.total_gross.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: pr.payroll_id.clone(),
+                label: format!("PAY {}", pr.payroll_id),
+                properties: HashMap::new(),
+                features: vec![pr
+                    .total_gross
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for te in time_entries {
             let node_id = format!("h2r_time_{}", te.entry_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "TimeEntry".into(),
+                id: node_id,
+                entity_type: "TimeEntry".into(),
                 entity_type_code: type_codes::TIME_ENTRY,
-                layer: HypergraphLayer::ProcessEvents, external_id: te.entry_id.clone(),
-                label: format!("TIME {}", te.entry_id), properties: HashMap::new(),
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: te.entry_id.clone(),
+                label: format!("TIME {}", te.entry_id),
+                properties: HashMap::new(),
                 features: vec![te.hours_regular + te.hours_overtime],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for er in expense_reports {
             let node_id = format!("h2r_exp_{}", er.report_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "ExpenseReport".into(),
+                id: node_id,
+                entity_type: "ExpenseReport".into(),
                 entity_type_code: type_codes::EXPENSE_REPORT,
-                layer: HypergraphLayer::ProcessEvents, external_id: er.report_id.clone(),
-                label: format!("EXP {}", er.report_id), properties: HashMap::new(),
-                features: vec![er.total_amount.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: er.report_id.clone(),
+                label: format!("EXP {}", er.report_id),
+                properties: HashMap::new(),
+                features: vec![er
+                    .total_amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
     }
@@ -1276,34 +1355,57 @@ impl HypergraphBuilder {
         for po in production_orders {
             let node_id = format!("mfg_po_{}", po.order_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "ProductionOrder".into(),
+                id: node_id,
+                entity_type: "ProductionOrder".into(),
                 entity_type_code: type_codes::PRODUCTION_ORDER,
-                layer: HypergraphLayer::ProcessEvents, external_id: po.order_id.clone(),
-                label: format!("PROD {}", po.order_id), properties: HashMap::new(),
-                features: vec![po.planned_quantity.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: po.order_id.clone(),
+                label: format!("PROD {}", po.order_id),
+                properties: HashMap::new(),
+                features: vec![po
+                    .planned_quantity
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for qi in quality_inspections {
             let node_id = format!("mfg_qi_{}", qi.inspection_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "QualityInspection".into(),
+                id: node_id,
+                entity_type: "QualityInspection".into(),
                 entity_type_code: type_codes::QUALITY_INSPECTION,
-                layer: HypergraphLayer::ProcessEvents, external_id: qi.inspection_id.clone(),
-                label: format!("QI {}", qi.inspection_id), properties: HashMap::new(),
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: qi.inspection_id.clone(),
+                label: format!("QI {}", qi.inspection_id),
+                properties: HashMap::new(),
                 features: vec![qi.defect_rate],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for cc in cycle_counts {
             let node_id = format!("mfg_cc_{}", cc.count_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "CycleCount".into(),
+                id: node_id,
+                entity_type: "CycleCount".into(),
                 entity_type_code: type_codes::CYCLE_COUNT,
-                layer: HypergraphLayer::ProcessEvents, external_id: cc.count_id.clone(),
-                label: format!("CC {}", cc.count_id), properties: HashMap::new(),
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: cc.count_id.clone(),
+                label: format!("CC {}", cc.count_id),
+                properties: HashMap::new(),
                 features: vec![cc.variance_rate],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
     }
@@ -1322,35 +1424,65 @@ impl HypergraphBuilder {
             let cid = cust.customer_id.to_string();
             let node_id = format!("bank_cust_{}", cid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "BankingCustomer".into(),
+                id: node_id,
+                entity_type: "BankingCustomer".into(),
                 entity_type_code: type_codes::BANKING_CUSTOMER,
-                layer: HypergraphLayer::ProcessEvents, external_id: cid,
-                label: format!("BCUST {}", cust.customer_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: cid,
+                label: format!("BCUST {}", cust.customer_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for acct in accounts {
             let aid = acct.account_id.to_string();
             let node_id = format!("bank_acct_{}", aid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "BankAccount".into(),
+                id: node_id,
+                entity_type: "BankAccount".into(),
                 entity_type_code: type_codes::BANK_ACCOUNT,
-                layer: HypergraphLayer::ProcessEvents, external_id: aid,
-                label: format!("BACCT {}", acct.account_number), properties: HashMap::new(),
-                features: vec![acct.current_balance.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: aid,
+                label: format!("BACCT {}", acct.account_number),
+                properties: HashMap::new(),
+                features: vec![acct
+                    .current_balance
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for txn in transactions {
             let tid = txn.transaction_id.to_string();
             let node_id = format!("bank_txn_{}", tid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "BankTransaction".into(),
+                id: node_id,
+                entity_type: "BankTransaction".into(),
                 entity_type_code: type_codes::BANK_TRANSACTION,
-                layer: HypergraphLayer::ProcessEvents, external_id: tid,
-                label: format!("BTXN {}", txn.reference), properties: HashMap::new(),
-                features: vec![txn.amount.to_string().parse::<f64>().unwrap_or(0.0).abs().ln_1p()],
-                is_anomaly: txn.is_suspicious, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: tid,
+                label: format!("BTXN {}", txn.reference),
+                properties: HashMap::new(),
+                features: vec![txn
+                    .amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: txn.is_suspicious,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
     }
@@ -1373,67 +1505,113 @@ impl HypergraphBuilder {
             let eid = eng.engagement_id.to_string();
             let node_id = format!("audit_eng_{}", eid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "AuditEngagement".into(),
+                id: node_id,
+                entity_type: "AuditEngagement".into(),
                 entity_type_code: type_codes::AUDIT_ENGAGEMENT,
-                layer: HypergraphLayer::ProcessEvents, external_id: eid,
-                label: format!("AENG {}", eng.engagement_ref), properties: HashMap::new(),
-                features: vec![eng.materiality.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: eid,
+                label: format!("AENG {}", eng.engagement_ref),
+                properties: HashMap::new(),
+                features: vec![eng
+                    .materiality
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for wp in workpapers {
             let wid = wp.workpaper_id.to_string();
             let node_id = format!("audit_wp_{}", wid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "Workpaper".into(),
+                id: node_id,
+                entity_type: "Workpaper".into(),
                 entity_type_code: type_codes::WORKPAPER,
-                layer: HypergraphLayer::ProcessEvents, external_id: wid,
-                label: format!("WP {}", wp.workpaper_ref), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: wid,
+                label: format!("WP {}", wp.workpaper_ref),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for f in findings {
             let fid = f.finding_id.to_string();
             let node_id = format!("audit_find_{}", fid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "AuditFinding".into(),
+                id: node_id,
+                entity_type: "AuditFinding".into(),
                 entity_type_code: type_codes::AUDIT_FINDING,
-                layer: HypergraphLayer::ProcessEvents, external_id: fid,
-                label: format!("AFIND {}", f.finding_ref), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: fid,
+                label: format!("AFIND {}", f.finding_ref),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for ev in evidence {
             let evid = ev.evidence_id.to_string();
             let node_id = format!("audit_ev_{}", evid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "AuditEvidence".into(),
+                id: node_id,
+                entity_type: "AuditEvidence".into(),
                 entity_type_code: type_codes::AUDIT_EVIDENCE,
-                layer: HypergraphLayer::ProcessEvents, external_id: evid,
-                label: format!("AEV {}", ev.evidence_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: evid,
+                label: format!("AEV {}", ev.evidence_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for r in risks {
             let rid = r.risk_id.to_string();
             let node_id = format!("audit_risk_{}", rid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "RiskAssessment".into(),
+                id: node_id,
+                entity_type: "RiskAssessment".into(),
                 entity_type_code: type_codes::RISK_ASSESSMENT,
-                layer: HypergraphLayer::ProcessEvents, external_id: rid,
-                label: format!("ARISK {}", r.risk_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: rid,
+                label: format!("ARISK {}", r.risk_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
         for j in judgments {
             let jid = j.judgment_id.to_string();
             let node_id = format!("audit_judg_{}", jid);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "ProfessionalJudgment".into(),
+                id: node_id,
+                entity_type: "ProfessionalJudgment".into(),
                 entity_type_code: type_codes::PROFESSIONAL_JUDGMENT,
-                layer: HypergraphLayer::ProcessEvents, external_id: jid,
-                label: format!("AJUDG {}", j.judgment_id), properties: HashMap::new(),
-                features: vec![], is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: jid,
+                label: format!("AJUDG {}", j.judgment_id),
+                properties: HashMap::new(),
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
     }
@@ -1446,33 +1624,68 @@ impl HypergraphBuilder {
         for recon in reconciliations {
             let node_id = format!("recon_{}", recon.reconciliation_id);
             self.try_add_node(HypergraphNode {
-                id: node_id, entity_type: "BankReconciliation".into(),
+                id: node_id,
+                entity_type: "BankReconciliation".into(),
                 entity_type_code: type_codes::BANK_RECONCILIATION,
-                layer: HypergraphLayer::ProcessEvents, external_id: recon.reconciliation_id.clone(),
-                label: format!("RECON {}", recon.reconciliation_id), properties: HashMap::new(),
-                features: vec![recon.bank_ending_balance.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
-                is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: recon.reconciliation_id.clone(),
+                label: format!("RECON {}", recon.reconciliation_id),
+                properties: HashMap::new(),
+                features: vec![recon
+                    .bank_ending_balance
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
             for line in &recon.statement_lines {
                 let node_id = format!("recon_line_{}", line.line_id);
                 self.try_add_node(HypergraphNode {
-                    id: node_id, entity_type: "BankStatementLine".into(),
+                    id: node_id,
+                    entity_type: "BankStatementLine".into(),
                     entity_type_code: type_codes::BANK_STATEMENT_LINE,
-                    layer: HypergraphLayer::ProcessEvents, external_id: line.line_id.clone(),
-                    label: format!("BSL {}", line.line_id), properties: HashMap::new(),
-                    features: vec![line.amount.to_string().parse::<f64>().unwrap_or(0.0).abs().ln_1p()],
-                    is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                    layer: HypergraphLayer::ProcessEvents,
+                    external_id: line.line_id.clone(),
+                    label: format!("BSL {}", line.line_id),
+                    properties: HashMap::new(),
+                    features: vec![line
+                        .amount
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p()],
+                    is_anomaly: false,
+                    anomaly_type: None,
+                    is_aggregate: false,
+                    aggregate_count: 0,
                 });
             }
             for item in &recon.reconciling_items {
                 let node_id = format!("recon_item_{}", item.item_id);
                 self.try_add_node(HypergraphNode {
-                    id: node_id, entity_type: "ReconcilingItem".into(),
+                    id: node_id,
+                    entity_type: "ReconcilingItem".into(),
                     entity_type_code: type_codes::RECONCILING_ITEM,
-                    layer: HypergraphLayer::ProcessEvents, external_id: item.item_id.clone(),
-                    label: format!("RITEM {}", item.item_id), properties: HashMap::new(),
-                    features: vec![item.amount.to_string().parse::<f64>().unwrap_or(0.0).abs().ln_1p()],
-                    is_anomaly: false, anomaly_type: None, is_aggregate: false, aggregate_count: 0,
+                    layer: HypergraphLayer::ProcessEvents,
+                    external_id: item.item_id.clone(),
+                    label: format!("RITEM {}", item.item_id),
+                    properties: HashMap::new(),
+                    features: vec![item
+                        .amount
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p()],
+                    is_anomaly: false,
+                    anomaly_type: None,
+                    is_aggregate: false,
+                    aggregate_count: 0,
                 });
             }
         }
@@ -1514,7 +1727,10 @@ impl HypergraphBuilder {
 
             if !participants.is_empty() {
                 let mut props = HashMap::new();
-                props.insert("activity_id".into(), Value::String(event.activity_id.clone()));
+                props.insert(
+                    "activity_id".into(),
+                    Value::String(event.activity_id.clone()),
+                );
                 props.insert(
                     "timestamp".into(),
                     Value::String(event.timestamp.to_rfc3339()),

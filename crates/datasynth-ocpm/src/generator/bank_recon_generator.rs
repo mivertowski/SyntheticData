@@ -125,12 +125,8 @@ impl OcpmEventGenerator {
         // Create statement line objects
         let mut line_objects = Vec::new();
         for line_id in &documents.statement_line_ids {
-            let line_object = self.create_object(
-                &line_type,
-                line_id,
-                &documents.company_code,
-                current_time,
-            );
+            let line_object =
+                self.create_object(&line_type, line_id, &documents.company_code, current_time);
             relationships.push(ObjectRelationship::new(
                 "belongs_to",
                 line_object.object_id,
@@ -175,12 +171,8 @@ impl OcpmEventGenerator {
             current_time += self.generate_inter_activity_delay(30, 240);
 
             for item_id in &documents.reconciling_item_ids {
-                let item_object = self.create_object(
-                    &item_type,
-                    item_id,
-                    &documents.company_code,
-                    current_time,
-                );
+                let item_object =
+                    self.create_object(&item_type, item_id, &documents.company_code, current_time);
                 relationships.push(ObjectRelationship::new(
                     "belongs_to",
                     item_object.object_id,
@@ -332,20 +324,13 @@ mod tests {
     #[test]
     fn test_bank_recon_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = BankReconDocuments::new(
-            "BR-000001",
-            "BA-001",
-            "1000",
-            Decimal::new(100000, 0),
-        )
-        .with_statement_lines(vec!["BSL-001", "BSL-002", "BSL-003"])
-        .with_reconciling_items(vec!["RI-001"]);
+        let documents =
+            BankReconDocuments::new("BR-000001", "BA-001", "1000", Decimal::new(100000, 0))
+                .with_statement_lines(vec!["BSL-001", "BSL-002", "BSL-003"])
+                .with_reconciling_items(vec!["RI-001"]);
 
-        let result = generator.generate_bank_recon_case(
-            &documents,
-            Utc::now(),
-            &["user001".into()],
-        );
+        let result =
+            generator.generate_bank_recon_case(&documents, Utc::now(), &["user001".into()]);
 
         assert!(result.events.len() >= 3);
         assert!(!result.objects.is_empty());

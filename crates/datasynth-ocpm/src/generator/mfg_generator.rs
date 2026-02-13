@@ -41,12 +41,7 @@ pub struct MfgDocuments {
 
 impl MfgDocuments {
     /// Create new MFG documents.
-    pub fn new(
-        order_id: &str,
-        material_id: &str,
-        company_code: &str,
-        quantity: Decimal,
-    ) -> Self {
+    pub fn new(order_id: &str, material_id: &str, company_code: &str, quantity: Decimal) -> Self {
         Self {
             order_id: order_id.into(),
             order_uuid: Uuid::new_v4(),
@@ -182,12 +177,8 @@ impl OcpmEventGenerator {
             current_time = self.calculate_event_time(current_time, &release);
             current_time += self.generate_inter_activity_delay(30, 480);
 
-            let op_object = self.create_object(
-                &op_type,
-                op_id,
-                &documents.company_code,
-                current_time,
-            );
+            let op_object =
+                self.create_object(&op_type, op_id, &documents.company_code, current_time);
             objects.push(op_object.clone());
 
             relationships.push(ObjectRelationship::new(
@@ -347,12 +338,8 @@ impl OcpmEventGenerator {
         if let Some(count_id) = &documents.cycle_count_id {
             current_time += self.generate_inter_activity_delay(1440, 7200);
 
-            let count_object = self.create_object(
-                &count_type,
-                count_id,
-                &documents.company_code,
-                current_time,
-            );
+            let count_object =
+                self.create_object(&count_type, count_id, &documents.company_code, current_time);
             objects.push(count_object.clone());
 
             let start_count = ActivityType::start_cycle_count();
@@ -418,17 +405,12 @@ mod tests {
     #[test]
     fn test_mfg_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents =
-            MfgDocuments::new("PO-MFG-001", "MAT-001", "1000", Decimal::new(100, 0))
-                .with_operations(vec!["OP-010", "OP-020"])
-                .with_inspection("QI-001")
-                .with_cycle_count("CC-001");
+        let documents = MfgDocuments::new("PO-MFG-001", "MAT-001", "1000", Decimal::new(100, 0))
+            .with_operations(vec!["OP-010", "OP-020"])
+            .with_inspection("QI-001")
+            .with_cycle_count("CC-001");
 
-        let result = generator.generate_mfg_case(
-            &documents,
-            Utc::now(),
-            &["user001".into()],
-        );
+        let result = generator.generate_mfg_case(&documents, Utc::now(), &["user001".into()]);
 
         assert!(result.events.len() >= 4);
         assert!(!result.objects.is_empty());
