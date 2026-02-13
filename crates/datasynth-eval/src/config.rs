@@ -131,6 +131,9 @@ pub struct StatisticalConfig {
     pub min_sample_size: usize,
     /// Window size for drift detection rolling statistics.
     pub drift_window_size: usize,
+    /// Enable anomaly realism evaluation.
+    #[serde(default)]
+    pub anomaly_realism_enabled: bool,
 }
 
 impl Default for StatisticalConfig {
@@ -144,6 +147,7 @@ impl Default for StatisticalConfig {
             significance_level: 0.05,
             min_sample_size: 100,
             drift_window_size: 10,
+            anomaly_realism_enabled: false,
         }
     }
 }
@@ -163,6 +167,27 @@ pub struct CoherenceConfig {
     pub referential_enabled: bool,
     /// Tolerance for balance differences.
     pub balance_tolerance: Decimal,
+    /// Enable financial reporting evaluation.
+    #[serde(default)]
+    pub financial_reporting_enabled: bool,
+    /// Enable HR/payroll evaluation.
+    #[serde(default)]
+    pub hr_payroll_enabled: bool,
+    /// Enable manufacturing evaluation.
+    #[serde(default)]
+    pub manufacturing_enabled: bool,
+    /// Enable bank reconciliation evaluation.
+    #[serde(default)]
+    pub bank_reconciliation_enabled: bool,
+    /// Enable sourcing (S2C) evaluation.
+    #[serde(default)]
+    pub sourcing_enabled: bool,
+    /// Enable cross-process link evaluation.
+    #[serde(default)]
+    pub cross_process_enabled: bool,
+    /// Enable audit evaluation.
+    #[serde(default)]
+    pub audit_enabled: bool,
 }
 
 impl Default for CoherenceConfig {
@@ -174,6 +199,13 @@ impl Default for CoherenceConfig {
             intercompany_enabled: true,
             referential_enabled: true,
             balance_tolerance: Decimal::new(1, 2), // 0.01
+            financial_reporting_enabled: false,
+            hr_payroll_enabled: false,
+            manufacturing_enabled: false,
+            bank_reconciliation_enabled: false,
+            sourcing_enabled: false,
+            cross_process_enabled: false,
+            audit_enabled: false,
         }
     }
 }
@@ -216,6 +248,30 @@ pub struct MlConfig {
     pub splits_enabled: bool,
     /// Enable graph structure analysis.
     pub graph_enabled: bool,
+    /// Enable anomaly scoring analysis.
+    #[serde(default)]
+    pub anomaly_scoring_enabled: bool,
+    /// Enable feature quality analysis.
+    #[serde(default)]
+    pub feature_quality_enabled: bool,
+    /// Enable GNN readiness analysis.
+    #[serde(default)]
+    pub gnn_readiness_enabled: bool,
+    /// Enable domain gap analysis.
+    #[serde(default)]
+    pub domain_gap_enabled: bool,
+    /// Enable temporal fidelity analysis.
+    #[serde(default)]
+    pub temporal_fidelity_enabled: bool,
+    /// Enable scheme detectability analysis.
+    #[serde(default)]
+    pub scheme_detectability_enabled: bool,
+    /// Enable cross-modal consistency analysis.
+    #[serde(default)]
+    pub cross_modal_enabled: bool,
+    /// Enable embedding readiness analysis.
+    #[serde(default)]
+    pub embedding_readiness_enabled: bool,
 }
 
 impl Default for MlConfig {
@@ -225,6 +281,14 @@ impl Default for MlConfig {
             labels_enabled: true,
             splits_enabled: true,
             graph_enabled: true,
+            anomaly_scoring_enabled: false,
+            feature_quality_enabled: false,
+            gnn_readiness_enabled: false,
+            domain_gap_enabled: false,
+            temporal_fidelity_enabled: false,
+            scheme_detectability_enabled: false,
+            cross_modal_enabled: false,
+            embedding_readiness_enabled: false,
         }
     }
 }
@@ -251,6 +315,44 @@ impl Default for ReportConfig {
             baseline_path: None,
         }
     }
+}
+
+/// Banking/KYC/AML evaluation configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BankingEvalConfig {
+    /// Enable KYC completeness evaluation.
+    #[serde(default)]
+    pub kyc_enabled: bool,
+    /// Enable AML detectability evaluation.
+    #[serde(default)]
+    pub aml_enabled: bool,
+}
+
+/// Process mining evaluation configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ProcessMiningEvalConfig {
+    /// Enable event sequence validation.
+    #[serde(default)]
+    pub event_sequence_enabled: bool,
+    /// Enable variant analysis.
+    #[serde(default)]
+    pub variant_analysis_enabled: bool,
+}
+
+/// Causal model evaluation configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CausalEvalConfig {
+    /// Enable causal model evaluation.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
+/// LLM enrichment quality evaluation configuration.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EnrichmentEvalConfig {
+    /// Enable enrichment quality evaluation.
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 /// Pass/fail thresholds for evaluation metrics.
@@ -296,6 +398,32 @@ pub struct EvaluationThresholds {
     /// Minimum format consistency rate.
     pub format_consistency_min: f64,
 
+    // New evaluator thresholds
+    /// Minimum anomaly separability (AUC-ROC).
+    #[serde(default = "default_anomaly_separability")]
+    pub min_anomaly_separability: f64,
+    /// Minimum feature quality score.
+    #[serde(default = "default_feature_quality")]
+    pub min_feature_quality: f64,
+    /// Minimum GNN readiness score.
+    #[serde(default = "default_gnn_readiness")]
+    pub min_gnn_readiness: f64,
+    /// Maximum domain gap score.
+    #[serde(default = "default_domain_gap")]
+    pub max_domain_gap: f64,
+    /// Minimum temporal fidelity score.
+    #[serde(default = "default_temporal_fidelity")]
+    pub min_temporal_fidelity: f64,
+    /// Minimum scheme detectability score.
+    #[serde(default = "default_scheme_detectability")]
+    pub min_scheme_detectability: f64,
+    /// Minimum cross-modal consistency.
+    #[serde(default = "default_cross_modal")]
+    pub min_cross_modal_consistency: f64,
+    /// Minimum embedding readiness score.
+    #[serde(default = "default_embedding_readiness")]
+    pub min_embedding_readiness: f64,
+
     // ML thresholds
     /// Minimum anomaly rate.
     pub anomaly_rate_min: f64,
@@ -309,6 +437,31 @@ pub struct EvaluationThresholds {
     pub graph_connectivity_min: f64,
 }
 
+fn default_anomaly_separability() -> f64 {
+    0.70
+}
+fn default_feature_quality() -> f64 {
+    0.60
+}
+fn default_gnn_readiness() -> f64 {
+    0.65
+}
+fn default_domain_gap() -> f64 {
+    0.25
+}
+fn default_temporal_fidelity() -> f64 {
+    0.70
+}
+fn default_scheme_detectability() -> f64 {
+    0.60
+}
+fn default_cross_modal() -> f64 {
+    0.60
+}
+fn default_embedding_readiness() -> f64 {
+    0.50
+}
+
 impl Default for EvaluationThresholds {
     fn default() -> Self {
         Self {
@@ -317,6 +470,16 @@ impl Default for EvaluationThresholds {
             benford_mad_max: 0.015,
             amount_ks_p_value_min: 0.05,
             temporal_correlation_min: 0.80,
+
+            // New evaluator thresholds
+            min_anomaly_separability: 0.70,
+            min_feature_quality: 0.60,
+            min_gnn_readiness: 0.65,
+            max_domain_gap: 0.25,
+            min_temporal_fidelity: 0.70,
+            min_scheme_detectability: 0.60,
+            min_cross_modal_consistency: 0.60,
+            min_embedding_readiness: 0.50,
 
             // Drift detection
             drift_magnitude_min: 0.05,
@@ -350,6 +513,14 @@ impl EvaluationThresholds {
     /// Create strict thresholds for rigorous validation.
     pub fn strict() -> Self {
         Self {
+            min_anomaly_separability: 0.80,
+            min_feature_quality: 0.70,
+            min_gnn_readiness: 0.75,
+            max_domain_gap: 0.15,
+            min_temporal_fidelity: 0.80,
+            min_scheme_detectability: 0.70,
+            min_cross_modal_consistency: 0.70,
+            min_embedding_readiness: 0.60,
             benford_p_value_min: 0.10,
             benford_mad_max: 0.010,
             amount_ks_p_value_min: 0.10,
@@ -377,6 +548,14 @@ impl EvaluationThresholds {
     /// Create lenient thresholds for exploratory validation.
     pub fn lenient() -> Self {
         Self {
+            min_anomaly_separability: 0.55,
+            min_feature_quality: 0.45,
+            min_gnn_readiness: 0.50,
+            max_domain_gap: 0.40,
+            min_temporal_fidelity: 0.55,
+            min_scheme_detectability: 0.45,
+            min_cross_modal_consistency: 0.45,
+            min_embedding_readiness: 0.35,
             benford_p_value_min: 0.01,
             benford_mad_max: 0.025,
             amount_ks_p_value_min: 0.01,

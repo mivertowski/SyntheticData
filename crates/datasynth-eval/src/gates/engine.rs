@@ -30,6 +30,30 @@ pub enum QualityMetric {
     ReferentialIntegrity,
     /// Intercompany match rate (0.0–1.0).
     IcMatchRate,
+    /// S2C chain completion rate.
+    S2CChainCompletion,
+    /// Payroll calculation accuracy.
+    PayrollAccuracy,
+    /// Manufacturing yield rate.
+    ManufacturingYield,
+    /// Bank reconciliation balance accuracy.
+    BankReconciliationBalance,
+    /// Financial reporting tie-back rate.
+    FinancialReportingTieBack,
+    /// AML detectability coverage.
+    AmlDetectability,
+    /// Process mining event coverage.
+    ProcessMiningCoverage,
+    /// Audit evidence coverage.
+    AuditEvidenceCoverage,
+    /// Anomaly separability (AUC-ROC).
+    AnomalySeparability,
+    /// Feature quality score.
+    FeatureQualityScore,
+    /// GNN readiness score.
+    GnnReadinessScore,
+    /// Domain gap score.
+    DomainGapScore,
     /// Custom metric identified by name.
     Custom(String),
 }
@@ -47,6 +71,18 @@ impl std::fmt::Display for QualityMetric {
             Self::DuplicateRate => write!(f, "duplicate_rate"),
             Self::ReferentialIntegrity => write!(f, "referential_integrity"),
             Self::IcMatchRate => write!(f, "ic_match_rate"),
+            Self::S2CChainCompletion => write!(f, "s2c_chain_completion"),
+            Self::PayrollAccuracy => write!(f, "payroll_accuracy"),
+            Self::ManufacturingYield => write!(f, "manufacturing_yield"),
+            Self::BankReconciliationBalance => write!(f, "bank_reconciliation_balance"),
+            Self::FinancialReportingTieBack => write!(f, "financial_reporting_tie_back"),
+            Self::AmlDetectability => write!(f, "aml_detectability"),
+            Self::ProcessMiningCoverage => write!(f, "process_mining_coverage"),
+            Self::AuditEvidenceCoverage => write!(f, "audit_evidence_coverage"),
+            Self::AnomalySeparability => write!(f, "anomaly_separability"),
+            Self::FeatureQualityScore => write!(f, "feature_quality_score"),
+            Self::GnnReadinessScore => write!(f, "gnn_readiness_score"),
+            Self::DomainGapScore => write!(f, "domain_gap_score"),
             Self::Custom(name) => write!(f, "custom:{}", name),
         }
     }
@@ -316,10 +352,11 @@ impl GateEngine {
             }
             QualityMetric::BalanceCoherence => {
                 let rate = evaluation.coherence.balance.as_ref().map(|b| {
-                    if b.equation_balanced {
-                        1.0
-                    } else {
+                    if b.periods_evaluated == 0 {
                         0.0
+                    } else {
+                        (b.periods_evaluated - b.periods_imbalanced) as f64
+                            / b.periods_evaluated as f64
                     }
                 });
                 (rate, "balance sheet evaluation not available".to_string())
@@ -389,6 +426,117 @@ impl GateEngine {
                     .as_ref()
                     .map(|ic| ic.match_rate);
                 (rate, "IC matching evaluation not available".to_string())
+            }
+            QualityMetric::S2CChainCompletion => {
+                let rate = evaluation
+                    .coherence
+                    .sourcing
+                    .as_ref()
+                    .map(|s| s.rfx_completion_rate);
+                (rate, "sourcing evaluation not available".to_string())
+            }
+            QualityMetric::PayrollAccuracy => {
+                let rate = evaluation
+                    .coherence
+                    .hr_payroll
+                    .as_ref()
+                    .map(|h| h.gross_to_net_accuracy);
+                (rate, "HR/payroll evaluation not available".to_string())
+            }
+            QualityMetric::ManufacturingYield => {
+                let rate = evaluation
+                    .coherence
+                    .manufacturing
+                    .as_ref()
+                    .map(|m| m.yield_rate_consistency);
+                (rate, "manufacturing evaluation not available".to_string())
+            }
+            QualityMetric::BankReconciliationBalance => {
+                let rate = evaluation
+                    .coherence
+                    .bank_reconciliation
+                    .as_ref()
+                    .map(|b| b.balance_accuracy);
+                (
+                    rate,
+                    "bank reconciliation evaluation not available".to_string(),
+                )
+            }
+            QualityMetric::FinancialReportingTieBack => {
+                let rate = evaluation
+                    .coherence
+                    .financial_reporting
+                    .as_ref()
+                    .map(|fr| fr.statement_tb_tie_rate);
+                (
+                    rate,
+                    "financial reporting evaluation not available".to_string(),
+                )
+            }
+            QualityMetric::AmlDetectability => {
+                let rate = evaluation
+                    .banking
+                    .as_ref()
+                    .and_then(|b| b.aml.as_ref())
+                    .map(|a| a.typology_coverage);
+                (
+                    rate,
+                    "AML detectability evaluation not available".to_string(),
+                )
+            }
+            QualityMetric::ProcessMiningCoverage => {
+                let rate = evaluation
+                    .process_mining
+                    .as_ref()
+                    .and_then(|pm| pm.event_sequence.as_ref())
+                    .map(|es| es.timestamp_monotonicity);
+                (rate, "process mining evaluation not available".to_string())
+            }
+            QualityMetric::AuditEvidenceCoverage => {
+                let rate = evaluation
+                    .coherence
+                    .audit
+                    .as_ref()
+                    .map(|a| a.evidence_to_finding_rate);
+                (rate, "audit evaluation not available".to_string())
+            }
+            QualityMetric::AnomalySeparability => {
+                let score = evaluation
+                    .ml_readiness
+                    .anomaly_scoring
+                    .as_ref()
+                    .map(|a| a.anomaly_separability);
+                (
+                    score,
+                    "anomaly scoring evaluation not available".to_string(),
+                )
+            }
+            QualityMetric::FeatureQualityScore => {
+                let score = evaluation
+                    .ml_readiness
+                    .feature_quality
+                    .as_ref()
+                    .map(|f| f.feature_quality_score);
+                (
+                    score,
+                    "feature quality evaluation not available".to_string(),
+                )
+            }
+            QualityMetric::GnnReadinessScore => {
+                let score = evaluation
+                    .ml_readiness
+                    .gnn_readiness
+                    .as_ref()
+                    .map(|g| g.gnn_readiness_score);
+                (score, "GNN readiness evaluation not available".to_string())
+            }
+            QualityMetric::DomainGapScore => {
+                let score = evaluation
+                    .ml_readiness
+                    .domain_gap
+                    .as_ref()
+                    .map(|d| d.domain_gap_score);
+                (score, "domain gap evaluation not available".to_string())
             }
             QualityMetric::Custom(name) => (
                 None,

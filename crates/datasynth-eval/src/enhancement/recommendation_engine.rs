@@ -380,6 +380,16 @@ impl RecommendationEngine {
         // Analyze ML readiness issues
         self.analyze_ml_readiness(&evaluation.ml_readiness, &mut report);
 
+        // Analyze banking issues
+        if let Some(ref banking) = evaluation.banking {
+            self.analyze_banking(banking, &mut report);
+        }
+
+        // Analyze process mining issues
+        if let Some(ref pm) = evaluation.process_mining {
+            self.analyze_process_mining(pm, &mut report);
+        }
+
         // Finalize the report
         report.finalize();
 
@@ -564,6 +574,9 @@ impl RecommendationEngine {
             }
         }
 
+        // Check enterprise process chain coherence
+        self.analyze_enterprise_coherence(coherence, report);
+
         // Check document chains
         if let Some(ref doc_chain) = coherence.document_chain {
             let avg_completion =
@@ -694,6 +707,139 @@ impl RecommendationEngine {
         }
     }
 
+    /// Analyze new coherence evaluators (enterprise process chains).
+    fn analyze_enterprise_coherence(
+        &mut self,
+        coherence: &crate::coherence::CoherenceEvaluation,
+        report: &mut EnhancementReport,
+    ) {
+        // HR/Payroll accuracy
+        if let Some(ref hr) = coherence.hr_payroll {
+            if !hr.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::High,
+                    RecommendationCategory::Coherence,
+                    "Payroll Calculation Errors",
+                )
+                .with_description(
+                    "Payroll calculations (gross-to-net, component sums) contain arithmetic errors.",
+                )
+                .with_root_cause(
+                    RootCause::new("Payroll arithmetic not enforced during generation")
+                        .with_explanation(
+                            "Real payroll systems enforce exact arithmetic: net = gross - deductions. \
+                             Generated data should maintain these invariants.",
+                        )
+                        .with_confidence(0.9),
+                )
+                .with_action(
+                    SuggestedAction::new("Ensure payroll calculation precision")
+                        .with_config_change("hr.payroll.calculation_precision", "exact")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("payroll_accuracy")
+                .with_expected_improvement("Payroll arithmetic accuracy > 99.9%");
+
+                report.add(rec);
+            }
+        }
+
+        // Manufacturing yield
+        if let Some(ref mfg) = coherence.manufacturing {
+            if !mfg.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::Coherence,
+                    "Manufacturing Data Inconsistencies",
+                )
+                .with_description(
+                    "Manufacturing data shows inconsistencies in yield rates, \
+                     operation sequencing, or quality inspection calculations.",
+                )
+                .with_root_cause(
+                    RootCause::new("Manufacturing constraints not fully enforced")
+                        .with_explanation(
+                            "Production orders should have consistent yield calculations, \
+                             monotonically ordered operations, and valid quality metrics.",
+                        )
+                        .with_confidence(0.8),
+                )
+                .with_action(
+                    SuggestedAction::new("Enable manufacturing constraint validation")
+                        .with_config_change("manufacturing.validate_constraints", "true")
+                        .with_effort("Medium"),
+                )
+                .with_affected_metric("manufacturing_yield")
+                .with_expected_improvement("Yield consistency > 95%");
+
+                report.add(rec);
+            }
+        }
+
+        // Financial reporting tie-back
+        if let Some(ref fr) = coherence.financial_reporting {
+            if !fr.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Critical,
+                    RecommendationCategory::Coherence,
+                    "Financial Statement Tie-Back Failures",
+                )
+                .with_description(
+                    "Financial statements do not reconcile to the trial balance. \
+                     This is a critical audit concern.",
+                )
+                .with_root_cause(
+                    RootCause::new("Statement generation not derived from GL data")
+                        .with_explanation(
+                            "Financial statements must tie back to trial balance totals. \
+                             Independent generation of statements and GL will cause discrepancies.",
+                        )
+                        .with_confidence(0.95),
+                )
+                .with_action(
+                    SuggestedAction::new("Enable statement-to-TB tie-back enforcement")
+                        .with_config_change("financial_reporting.tie_back_enforced", "true")
+                        .with_effort("Medium"),
+                )
+                .with_affected_metric("financial_reporting_tie_back")
+                .with_expected_improvement("Statement-TB tie-back rate > 99%");
+
+                report.add(rec);
+            }
+        }
+
+        // Sourcing chain
+        if let Some(ref sourcing) = coherence.sourcing {
+            if !sourcing.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::Coherence,
+                    "Incomplete S2C Process Chain",
+                )
+                .with_description(
+                    "Source-to-Contract chain has incomplete flows: \
+                     projects missing RFx events, evaluations, or contracts.",
+                )
+                .with_root_cause(
+                    RootCause::new("S2C completion rates configured too low").with_confidence(0.7),
+                )
+                .with_action(
+                    SuggestedAction::new("Increase S2C completion rates")
+                        .with_config_change("source_to_pay.rfx_completion_rate", "0.95")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("s2c_chain_completion")
+                .with_expected_improvement("RFx completion rate > 90%");
+
+                report.add(rec);
+            }
+        }
+    }
+
     /// Analyze ML readiness evaluation results.
     fn analyze_ml_readiness(
         &mut self,
@@ -807,6 +953,9 @@ impl RecommendationEngine {
             }
         }
 
+        // Check ML enrichment evaluators
+        self.analyze_ml_enrichment(ml, report);
+
         // Check graph connectivity
         if let Some(ref graph) = ml.graph {
             if graph.connectivity_score < self.thresholds.graph_connectivity_min {
@@ -840,6 +989,224 @@ impl RecommendationEngine {
                 )
                 .with_affected_metric("graph_connectivity")
                 .with_expected_improvement("Graph connectivity > 95%");
+
+                report.add(rec);
+            }
+        }
+    }
+
+    /// Analyze banking evaluation results.
+    fn analyze_banking(
+        &mut self,
+        banking: &crate::banking::BankingEvaluation,
+        report: &mut EnhancementReport,
+    ) {
+        if let Some(ref kyc) = banking.kyc {
+            if !kyc.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::High,
+                    RecommendationCategory::Coherence,
+                    "Incomplete KYC Profiles",
+                )
+                .with_description(
+                    "KYC profiles are missing required fields or beneficial owner data.",
+                )
+                .with_root_cause(
+                    RootCause::new("KYC generation not populating all required fields")
+                        .with_confidence(0.85),
+                )
+                .with_action(
+                    SuggestedAction::new("Enable full KYC field generation")
+                        .with_config_change("enterprise.banking.kyc_completeness", "full")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("kyc_completeness");
+
+                report.add(rec);
+            }
+        }
+
+        if let Some(ref aml) = banking.aml {
+            if !aml.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::MLReadiness,
+                    "Low AML Typology Detectability",
+                )
+                .with_description(
+                    "AML typologies are not producing statistically detectable patterns, \
+                     reducing ML training effectiveness.",
+                )
+                .with_root_cause(
+                    RootCause::new("AML typology signal too weak")
+                        .with_explanation(
+                            "Each AML typology (structuring, layering, etc.) should produce \
+                             patterns detectable above background noise.",
+                        )
+                        .with_confidence(0.75),
+                )
+                .with_action(
+                    SuggestedAction::new("Increase AML typology intensity")
+                        .with_config_change("enterprise.banking.aml_intensity", "medium")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("aml_detectability");
+
+                report.add(rec);
+            }
+        }
+    }
+
+    /// Analyze process mining evaluation results.
+    fn analyze_process_mining(
+        &mut self,
+        pm: &crate::process_mining::ProcessMiningEvaluation,
+        report: &mut EnhancementReport,
+    ) {
+        if let Some(ref es) = pm.event_sequence {
+            if !es.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::High,
+                    RecommendationCategory::Coherence,
+                    "Invalid Event Sequences",
+                )
+                .with_description(
+                    "OCEL 2.0 event logs contain timestamp ordering violations or \
+                     incomplete object lifecycles.",
+                )
+                .with_root_cause(
+                    RootCause::new("Event generation not enforcing temporal ordering")
+                        .with_confidence(0.9),
+                )
+                .with_action(
+                    SuggestedAction::new("Enable strict event timestamp ordering")
+                        .with_config_change("business_processes.ocel_strict_ordering", "true")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("process_mining_coverage");
+
+                report.add(rec);
+            }
+        }
+
+        if let Some(ref va) = pm.variants {
+            if !va.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::MLReadiness,
+                    "Low Process Variant Diversity",
+                )
+                .with_description(
+                    "Process variants lack diversity - too many cases follow the happy path.",
+                )
+                .with_root_cause(
+                    RootCause::new("Insufficient exception path generation").with_confidence(0.7),
+                )
+                .with_action(
+                    SuggestedAction::new("Increase exception path probability")
+                        .with_config_change("business_processes.exception_rate", "0.15")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("variant_diversity");
+
+                report.add(rec);
+            }
+        }
+    }
+
+    /// Analyze new ML enrichment evaluators.
+    fn analyze_ml_enrichment(
+        &mut self,
+        ml: &crate::ml::MLReadinessEvaluation,
+        report: &mut EnhancementReport,
+    ) {
+        if let Some(ref as_eval) = ml.anomaly_scoring {
+            if !as_eval.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::High,
+                    RecommendationCategory::MLReadiness,
+                    "Low Anomaly Separability",
+                )
+                .with_description(
+                    "Injected anomalies are not sufficiently separable from normal records, \
+                     reducing model training effectiveness.",
+                )
+                .with_root_cause(
+                    RootCause::new("Anomaly injection intensity too low")
+                        .with_explanation(
+                            "Anomalies need to produce measurable statistical deviations. \
+                             Subtle anomalies may be undetectable by ML models.",
+                        )
+                        .with_confidence(0.8),
+                )
+                .with_action(
+                    SuggestedAction::new("Increase anomaly injection signal strength")
+                        .with_config_change("anomaly_injection.base_rate", "0.05")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("anomaly_separability")
+                .with_expected_improvement("AUC-ROC > 0.70");
+
+                report.add(rec);
+            }
+        }
+
+        if let Some(ref dg_eval) = ml.domain_gap {
+            if !dg_eval.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::MLReadiness,
+                    "Large Domain Gap",
+                )
+                .with_description(
+                    "Synthetic data distributions diverge significantly from expected \
+                     real-world distributions, which may reduce transfer learning effectiveness.",
+                )
+                .with_root_cause(
+                    RootCause::new("Distribution parameters not calibrated to industry")
+                        .with_confidence(0.7),
+                )
+                .with_action(
+                    SuggestedAction::new("Use industry-specific distribution profile")
+                        .with_config_change("distributions.industry_profile", "financial_services")
+                        .with_effort("Low"),
+                )
+                .with_affected_metric("domain_gap_score")
+                .with_expected_improvement("Domain gap < 0.25");
+
+                report.add(rec);
+            }
+        }
+
+        if let Some(ref gnn_eval) = ml.gnn_readiness {
+            if !gnn_eval.passes {
+                let rec = Recommendation::new(
+                    self.next_id(),
+                    RecommendationPriority::Medium,
+                    RecommendationCategory::MLReadiness,
+                    "GNN Training Readiness Issues",
+                )
+                .with_description(
+                    "Graph structure may not be suitable for GNN training due to \
+                     low feature completeness, high label leakage, or poor homophily.",
+                )
+                .with_root_cause(
+                    RootCause::new("Graph structure not optimized for GNN training")
+                        .with_confidence(0.7),
+                )
+                .with_action(
+                    SuggestedAction::new("Enable graph connectivity and cross-process links")
+                        .with_config_change("cross_process_links.enabled", "true")
+                        .with_effort("Medium"),
+                )
+                .with_affected_metric("gnn_readiness_score")
+                .with_expected_improvement("GNN readiness > 0.65");
 
                 report.add(rec);
             }

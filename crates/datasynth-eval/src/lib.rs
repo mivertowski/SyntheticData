@@ -46,41 +46,62 @@ pub mod report;
 pub mod statistical;
 pub mod tuning;
 
+pub mod banking;
+pub mod causal;
+pub mod enrichment;
+pub mod process_mining;
+
 // Re-exports
 pub use config::{EvaluationConfig, EvaluationThresholds, PrivacyEvaluationConfig};
 pub use error::{EvalError, EvalResult};
 
 pub use statistical::{
-    AmountDistributionAnalysis, AmountDistributionAnalyzer, BenfordAnalysis, BenfordAnalyzer,
-    BenfordConformity, DetectionDifficulty, DriftDetectionAnalysis, DriftDetectionAnalyzer,
-    DriftDetectionEntry, DriftDetectionMetrics, DriftEventCategory, LabeledDriftEvent,
-    LabeledEventAnalysis, LineItemAnalysis, LineItemAnalyzer, LineItemEntry, StatisticalEvaluation,
-    TemporalAnalysis, TemporalAnalyzer, TemporalEntry,
+    AmountDistributionAnalysis, AmountDistributionAnalyzer, AnomalyRealismEvaluation,
+    AnomalyRealismEvaluator, BenfordAnalysis, BenfordAnalyzer, BenfordConformity,
+    DetectionDifficulty, DriftDetectionAnalysis, DriftDetectionAnalyzer, DriftDetectionEntry,
+    DriftDetectionMetrics, DriftEventCategory, LabeledDriftEvent, LabeledEventAnalysis,
+    LineItemAnalysis, LineItemAnalyzer, LineItemEntry, StatisticalEvaluation, TemporalAnalysis,
+    TemporalAnalyzer, TemporalEntry,
 };
 
 pub use coherence::{
+    AccountType, AuditEvaluation, AuditEvaluator, AuditFindingData, AuditRiskData,
     AuditTrailEvaluation, AuditTrailGap, BalanceSheetEvaluation, BalanceSheetEvaluator,
-    CoherenceEvaluation, ConcentrationMetrics, DocumentChainEvaluation, DocumentChainEvaluator,
-    FairValueEvaluation, FrameworkViolation, ICMatchingEvaluation, ICMatchingEvaluator,
-    ImpairmentEvaluation, IsaComplianceEvaluation, LeaseAccountingEvaluation,
-    LeaseAccountingEvaluator, LeaseEvaluation, NetworkEdge, NetworkEvaluation, NetworkEvaluator,
-    NetworkNode, NetworkThresholds, PcaobComplianceEvaluation, PerformanceObligation,
-    ReferentialIntegrityEvaluation, ReferentialIntegrityEvaluator, RevenueContract,
-    RevenueRecognitionEvaluation, RevenueRecognitionEvaluator, SoxComplianceEvaluation,
-    StandardsComplianceEvaluation, StandardsThresholds, StrengthStats, SubledgerEvaluator,
-    SubledgerReconciliationEvaluation, VariableConsideration, ViolationSeverity,
+    BalanceSnapshot, BankReconciliationEvaluation, BankReconciliationEvaluator, BidEvaluationData,
+    BudgetVarianceData, CoherenceEvaluation, ConcentrationMetrics, CrossProcessEvaluation,
+    CrossProcessEvaluator, CycleCountData, DocumentChainEvaluation, DocumentChainEvaluator,
+    DocumentReferenceData, EntityReferenceData, ExpenseReportData, FairValueEvaluation,
+    FinancialReportingEvaluation, FinancialReportingEvaluator, FinancialStatementData,
+    FrameworkViolation, HrPayrollEvaluation, HrPayrollEvaluator, ICMatchingData,
+    ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation, IsaComplianceEvaluation,
+    KpiData, LeaseAccountingEvaluation, LeaseAccountingEvaluator, LeaseEvaluation,
+    ManufacturingEvaluation, ManufacturingEvaluator, MaterialityData, NetworkEdge,
+    NetworkEvaluation, NetworkEvaluator, NetworkNode, NetworkThresholds, O2CChainData,
+    P2PChainData, PayrollHoursData, PayrollLineItemData, PayrollRunData, PcaobComplianceEvaluation,
+    PerformanceObligation, ProductionOrderData, QualityInspectionData, ReconciliationData,
+    ReferentialData, ReferentialIntegrityEvaluation, ReferentialIntegrityEvaluator,
+    RevenueContract, RevenueRecognitionEvaluation, RevenueRecognitionEvaluator,
+    RoutingOperationData, ScorecardCoverageData, SourcingEvaluation, SourcingEvaluator,
+    SourcingProjectData, SoxComplianceEvaluation, SpendAnalysisData, StandardsComplianceEvaluation,
+    StandardsThresholds, StrengthStats, SubledgerEvaluator, SubledgerReconciliationEvaluation,
+    TimeEntryData, VariableConsideration, ViolationSeverity, WorkpaperData,
 };
 
 pub use quality::{
     CompletenessAnalysis, CompletenessAnalyzer, ConsistencyAnalysis, ConsistencyAnalyzer,
-    ConsistencyRule, DuplicateInfo, FieldCompleteness, FormatAnalysis, FormatAnalyzer,
-    FormatVariation, QualityEvaluation, UniquenessAnalysis, UniquenessAnalyzer,
+    ConsistencyRule, DuplicateInfo, FieldCompleteness, FieldDefinition, FieldValue, FormatAnalysis,
+    FormatAnalyzer, FormatVariation, QualityEvaluation, UniqueRecord, UniquenessAnalysis,
+    UniquenessAnalyzer,
 };
 
 pub use ml::{
-    FeatureAnalysis, FeatureAnalyzer, FeatureStats, GraphAnalysis, GraphAnalyzer, GraphMetrics,
-    LabelAnalysis, LabelAnalyzer, LabelDistribution, MLReadinessEvaluation, SplitAnalysis,
-    SplitAnalyzer, SplitMetrics,
+    AnomalyScoringAnalysis, AnomalyScoringAnalyzer, CrossModalAnalysis, CrossModalAnalyzer,
+    DomainGapAnalysis, DomainGapAnalyzer, EmbeddingReadinessAnalysis, EmbeddingReadinessAnalyzer,
+    FeatureAnalysis, FeatureAnalyzer, FeatureQualityAnalysis, FeatureQualityAnalyzer, FeatureStats,
+    GnnReadinessAnalysis, GnnReadinessAnalyzer, GraphAnalysis, GraphAnalyzer, GraphMetrics,
+    LabelAnalysis, LabelAnalyzer, LabelDistribution, MLReadinessEvaluation,
+    SchemeDetectabilityAnalysis, SchemeDetectabilityAnalyzer, SplitAnalysis, SplitAnalyzer,
+    SplitMetrics, TemporalFidelityAnalysis, TemporalFidelityAnalyzer,
 };
 
 pub use report::{
@@ -142,6 +163,20 @@ pub use benchmarks::{
     SplitRatios,
 };
 
+pub use banking::{
+    AmlDetectabilityAnalysis, AmlDetectabilityAnalyzer, AmlTransactionData, BankingEvaluation,
+    KycCompletenessAnalysis, KycCompletenessAnalyzer, KycProfileData, TypologyData,
+};
+
+pub use process_mining::{
+    EventSequenceAnalysis, EventSequenceAnalyzer, ProcessEventData, ProcessMiningEvaluation,
+    VariantAnalysis, VariantAnalyzer, VariantData,
+};
+
+pub use causal::{CausalModelEvaluation, CausalModelEvaluator};
+
+pub use enrichment::{EnrichmentQualityEvaluation, EnrichmentQualityEvaluator};
+
 use serde::{Deserialize, Serialize};
 
 /// Comprehensive evaluation result combining all evaluation modules.
@@ -158,6 +193,18 @@ pub struct ComprehensiveEvaluation {
     /// Privacy evaluation (optional — only populated when privacy testing is enabled).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub privacy: Option<PrivacyEvaluation>,
+    /// Banking/KYC/AML evaluation (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub banking: Option<BankingEvaluation>,
+    /// OCEL 2.0 process mining evaluation (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub process_mining: Option<ProcessMiningEvaluation>,
+    /// Causal model evaluation (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub causal: Option<CausalModelEvaluation>,
+    /// LLM enrichment quality evaluation (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enrichment_quality: Option<EnrichmentQualityEvaluation>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of all failures.
@@ -177,6 +224,10 @@ impl ComprehensiveEvaluation {
             quality: QualityEvaluation::default(),
             ml_readiness: MLReadinessEvaluation::default(),
             privacy: None,
+            banking: None,
+            process_mining: None,
+            causal: None,
+            enrichment_quality: None,
             passes: true,
             failures: Vec::new(),
             tuning_opportunities: Vec::new(),
@@ -208,6 +259,32 @@ impl ComprehensiveEvaluation {
         if let Some(ref mut privacy) = self.privacy {
             privacy.update_status();
             self.failures.extend(privacy.failures.clone());
+        }
+
+        // Check banking evaluation
+        if let Some(ref mut banking) = self.banking {
+            banking.check_thresholds();
+            self.failures.extend(banking.issues.clone());
+        }
+
+        // Check process mining evaluation
+        if let Some(ref mut pm) = self.process_mining {
+            pm.check_thresholds();
+            self.failures.extend(pm.issues.clone());
+        }
+
+        // Check causal model evaluation
+        if let Some(ref causal) = self.causal {
+            if !causal.passes {
+                self.failures.extend(causal.issues.clone());
+            }
+        }
+
+        // Check enrichment quality evaluation
+        if let Some(ref enrichment) = self.enrichment_quality {
+            if !enrichment.passes {
+                self.failures.extend(enrichment.issues.clone());
+            }
         }
 
         self.passes = self.failures.is_empty();

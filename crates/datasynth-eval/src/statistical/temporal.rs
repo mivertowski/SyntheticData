@@ -356,7 +356,7 @@ impl TemporalAnalyzer {
 
             // Month-end effect
             if self.is_month_end(current) {
-                multiplier *= MONTH_END_SPIKE / 2.5;
+                multiplier *= MONTH_END_SPIKE;
             }
 
             // Year-end effect (stronger)

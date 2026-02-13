@@ -26,7 +26,7 @@
 #   Note: datasynth-ui is excluded (Tauri desktop app, not published to crates.io)
 #
 
-set -e
+set -eo pipefail
 
 # Colors for output
 RED='\033[0;31m'

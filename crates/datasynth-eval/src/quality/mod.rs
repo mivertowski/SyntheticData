@@ -8,10 +8,12 @@ mod consistency;
 mod format;
 mod uniqueness;
 
-pub use completeness::{CompletenessAnalysis, CompletenessAnalyzer, FieldCompleteness};
+pub use completeness::{
+    CompletenessAnalysis, CompletenessAnalyzer, FieldCompleteness, FieldDefinition, FieldValue,
+};
 pub use consistency::{ConsistencyAnalysis, ConsistencyAnalyzer, ConsistencyRule};
 pub use format::{FormatAnalysis, FormatAnalyzer, FormatVariation};
-pub use uniqueness::{DuplicateInfo, UniquenessAnalysis, UniquenessAnalyzer};
+pub use uniqueness::{DuplicateInfo, UniqueRecord, UniquenessAnalysis, UniquenessAnalyzer};
 
 use serde::{Deserialize, Serialize};
 

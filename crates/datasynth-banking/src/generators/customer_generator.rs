@@ -7,9 +7,13 @@ use datasynth_core::models::banking::{
 use datasynth_core::DeterministicUuidFactory;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
+use rust_decimal::Decimal;
 
 use crate::config::BankingConfig;
-use crate::models::{BankingCustomer, KycProfile, PepCategory, PersonaVariant};
+use crate::models::{
+    BankingCustomer, BeneficialOwner, ControlType, KycProfile, PepCategory, PersonaVariant,
+    VerificationStatus,
+};
 
 /// Generator for banking customers.
 pub struct CustomerGenerator {
@@ -100,6 +104,19 @@ impl CustomerGenerator {
         customer.phone = Some(self.generate_phone(&country));
         customer.date_of_birth = Some(self.generate_birth_date(persona));
 
+        // Generate address
+        let (addr, city, state, postal) = self.generate_address(&country);
+        customer.address_line1 = Some(addr);
+        customer.city = Some(city);
+        customer.state = Some(state);
+        customer.postal_code = Some(postal);
+
+        // Generate identification documents
+        customer.national_id = Some(self.generate_national_id(&country));
+        if self.rng.gen::<f64>() < 0.4 {
+            customer.passport_number = Some(self.generate_passport_number(&country));
+        }
+
         customer
     }
 
@@ -129,6 +146,37 @@ impl CustomerGenerator {
         // Set industry
         customer.industry_description = Some(self.get_industry_description(persona));
 
+        // Generate address
+        let (addr, city, state, postal) = self.generate_address(&country);
+        customer.address_line1 = Some(addr);
+        customer.city = Some(city);
+        customer.state = Some(state);
+        customer.postal_code = Some(postal);
+
+        // Generate beneficial owners (business entities must have UBOs)
+        let ubo_count = self.rng.gen_range(1..=3);
+        let mut remaining_pct = 100.0_f64;
+        for i in 0..ubo_count {
+            let (first, last) = self.generate_person_name();
+            let pct = if i == ubo_count - 1 {
+                remaining_pct
+            } else {
+                let share = self
+                    .rng
+                    .gen_range(15.0..=50.0_f64)
+                    .min(remaining_pct - 10.0);
+                remaining_pct -= share;
+                share
+            };
+            let ubo = BeneficialOwner::new(
+                self.uuid_factory.next(),
+                &format!("{} {}", first, last),
+                &country,
+                Decimal::from_f64_retain(pct).unwrap_or(Decimal::from(25)),
+            );
+            customer.beneficial_owners.push(ubo);
+        }
+
         customer
     }
 
@@ -152,6 +200,40 @@ impl CustomerGenerator {
         // Generate KYC profile
         customer.kyc_profile = KycProfile::high_net_worth()
             .with_turnover(datasynth_core::models::banking::TurnoverBand::VeryHigh);
+
+        // Generate address
+        let (addr, city, state, postal) = self.generate_address(&country);
+        customer.address_line1 = Some(addr);
+        customer.city = Some(city);
+        customer.state = Some(state);
+        customer.postal_code = Some(postal);
+
+        // Generate beneficial owners (trusts always have UBOs)
+        let ubo_count = self.rng.gen_range(1..=4);
+        let mut remaining_pct = 100.0_f64;
+        for i in 0..ubo_count {
+            let (first, last) = self.generate_person_name();
+            let pct = if i == ubo_count - 1 {
+                remaining_pct
+            } else {
+                let share = self.rng.gen_range(10.0..=40.0_f64).min(remaining_pct - 5.0);
+                remaining_pct -= share;
+                share
+            };
+            let mut ubo = BeneficialOwner::new(
+                self.uuid_factory.next(),
+                &format!("{} {}", first, last),
+                &country,
+                Decimal::from_f64_retain(pct).unwrap_or(Decimal::from(25)),
+            );
+            ubo.control_type = ControlType::TrustArrangement;
+            ubo.verification_status = if self.rng.gen::<f64>() < 0.7 {
+                VerificationStatus::Verified
+            } else {
+                VerificationStatus::PartiallyVerified
+            };
+            customer.beneficial_owners.push(ubo);
+        }
 
         customer
     }
@@ -587,6 +669,106 @@ impl CustomerGenerator {
             BusinessPersona::ProfessionalServices => "Professional Services",
         }
         .to_string()
+    }
+
+    /// Generate a realistic address.
+    fn generate_address(&mut self, country: &str) -> (String, String, String, String) {
+        let number: u32 = self.rng.gen_range(1..=9999);
+        let streets = [
+            "Main St",
+            "Oak Ave",
+            "Maple Dr",
+            "Broadway",
+            "Park Ave",
+            "Cedar Ln",
+            "Elm St",
+            "Washington Blvd",
+            "Market St",
+            "High St",
+        ];
+        let street = streets.choose(&mut self.rng).expect("non-empty array");
+        let addr = format!("{} {}", number, street);
+
+        let (city, state, postal) = match country {
+            "US" => {
+                let cities = [
+                    ("New York", "NY"),
+                    ("Los Angeles", "CA"),
+                    ("Chicago", "IL"),
+                    ("Houston", "TX"),
+                    ("Phoenix", "AZ"),
+                    ("Philadelphia", "PA"),
+                    ("San Antonio", "TX"),
+                    ("San Diego", "CA"),
+                    ("Dallas", "TX"),
+                    ("Austin", "TX"),
+                ];
+                let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
+                let zip: u32 = self.rng.gen_range(10001..=99999);
+                (c.to_string(), s.to_string(), format!("{:05}", zip))
+            }
+            "GB" => {
+                let cities = [
+                    ("London", "England"),
+                    ("Manchester", "England"),
+                    ("Birmingham", "England"),
+                    ("Edinburgh", "Scotland"),
+                ];
+                let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
+                let area: char = (b'A' + self.rng.gen_range(0..26)) as char;
+                let num: u8 = self.rng.gen_range(1..=9);
+                (
+                    c.to_string(),
+                    s.to_string(),
+                    format!("{}{}  {}AA", area, num, self.rng.gen_range(1..=9)),
+                )
+            }
+            "CA" => {
+                let cities = [
+                    ("Toronto", "ON"),
+                    ("Vancouver", "BC"),
+                    ("Montreal", "QC"),
+                    ("Calgary", "AB"),
+                ];
+                let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
+                let l1: char = (b'A' + self.rng.gen_range(0..26)) as char;
+                let d1: u8 = self.rng.gen_range(1..=9);
+                let l2: char = (b'A' + self.rng.gen_range(0..26)) as char;
+                (
+                    c.to_string(),
+                    s.to_string(),
+                    format!("{}{}{} {}{}{}", l1, d1, l2, d1, l1, d1),
+                )
+            }
+            _ => {
+                let zip: u32 = self.rng.gen_range(10000..=99999);
+                ("City".to_string(), "State".to_string(), format!("{}", zip))
+            }
+        };
+        (addr, city, state, postal)
+    }
+
+    /// Generate a national ID number.
+    fn generate_national_id(&mut self, country: &str) -> String {
+        match country {
+            "US" => format!(
+                "{:03}-{:02}-{:04}",
+                self.rng.gen_range(100..=999),
+                self.rng.gen_range(10..=99),
+                self.rng.gen_range(1000..=9999)
+            ),
+            "GB" => format!("AB{:06}C", self.rng.gen_range(100000..=999999)),
+            _ => format!("ID-{:010}", self.rng.gen_range(1000000000_u64..=9999999999)),
+        }
+    }
+
+    /// Generate a passport number.
+    fn generate_passport_number(&mut self, country: &str) -> String {
+        match country {
+            "US" => format!("{:09}", self.rng.gen_range(100000000_u64..=999999999)),
+            "GB" => format!("{:09}", self.rng.gen_range(100000000_u64..=999999999)),
+            _ => format!("P{:08}", self.rng.gen_range(10000000_u64..=99999999)),
+        }
     }
 
     /// Form households from retail customers.

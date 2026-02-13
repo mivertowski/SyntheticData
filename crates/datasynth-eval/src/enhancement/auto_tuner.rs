@@ -296,6 +296,135 @@ impl AutoTuner {
                 compute_value: ComputeStrategy::EnableBoolean,
             }],
         );
+
+        // --- New evaluator metric mappings ---
+
+        // Payroll accuracy
+        self.metric_mappings.insert(
+            "payroll_accuracy".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "hr.payroll.calculation_precision".to_string(),
+                influence: 0.9,
+                compute_value: ComputeStrategy::SetToTarget,
+            }],
+        );
+
+        // Manufacturing yield
+        self.metric_mappings.insert(
+            "manufacturing_yield".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "manufacturing.production_orders.yield_target".to_string(),
+                influence: 0.8,
+                compute_value: ComputeStrategy::SetToTarget,
+            }],
+        );
+
+        // S2C chain completion
+        self.metric_mappings.insert(
+            "s2c_chain_completion".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "source_to_pay.rfx_completion_rate".to_string(),
+                influence: 0.85,
+                compute_value: ComputeStrategy::SetToTarget,
+            }],
+        );
+
+        // Bank reconciliation balance
+        self.metric_mappings.insert(
+            "bank_recon_balance".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "enterprise.bank_reconciliation.tolerance".to_string(),
+                influence: 0.9,
+                compute_value: ComputeStrategy::DecreaseByGap,
+            }],
+        );
+
+        // Financial reporting tie-back
+        self.metric_mappings.insert(
+            "financial_reporting_tie_back".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "financial_reporting.statement_generation.enabled".to_string(),
+                influence: 0.85,
+                compute_value: ComputeStrategy::EnableBoolean,
+            }],
+        );
+
+        // AML detectability
+        self.metric_mappings.insert(
+            "aml_detectability".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "enterprise.banking.aml_typology_count".to_string(),
+                influence: 0.8,
+                compute_value: ComputeStrategy::IncreaseByGap,
+            }],
+        );
+
+        // Process mining coverage
+        self.metric_mappings.insert(
+            "process_mining_coverage".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "business_processes.ocel_enabled".to_string(),
+                influence: 0.85,
+                compute_value: ComputeStrategy::EnableBoolean,
+            }],
+        );
+
+        // Audit evidence coverage
+        self.metric_mappings.insert(
+            "audit_evidence_coverage".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "audit_standards.evidence_per_finding".to_string(),
+                influence: 0.8,
+                compute_value: ComputeStrategy::IncreaseByGap,
+            }],
+        );
+
+        // Anomaly separability
+        self.metric_mappings.insert(
+            "anomaly_separability".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "anomaly_injection.base_rate".to_string(),
+                influence: 0.75,
+                compute_value: ComputeStrategy::IncreaseByGap,
+            }],
+        );
+
+        // Feature quality
+        self.metric_mappings.insert(
+            "feature_quality".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "graph_export.feature_completeness".to_string(),
+                influence: 0.7,
+                compute_value: ComputeStrategy::EnableBoolean,
+            }],
+        );
+
+        // GNN readiness
+        self.metric_mappings.insert(
+            "gnn_readiness".to_string(),
+            vec![
+                MetricConfigMapping {
+                    config_path: "graph_export.ensure_connected".to_string(),
+                    influence: 0.6,
+                    compute_value: ComputeStrategy::EnableBoolean,
+                },
+                MetricConfigMapping {
+                    config_path: "cross_process_links.enabled".to_string(),
+                    influence: 0.5,
+                    compute_value: ComputeStrategy::EnableBoolean,
+                },
+            ],
+        );
+
+        // Domain gap
+        self.metric_mappings.insert(
+            "domain_gap".to_string(),
+            vec![MetricConfigMapping {
+                config_path: "distributions.industry_profile".to_string(),
+                influence: 0.7,
+                compute_value: ComputeStrategy::SetFixed(1.0), // placeholder - needs manual review
+            }],
+        );
     }
 
     /// Analyze evaluation results and produce auto-tune suggestions.
@@ -480,6 +609,109 @@ impl AutoTuner {
                     gap: self.thresholds.graph_connectivity_min - graph.connectivity_score,
                     is_minimum: true,
                     config_paths: vec!["graph_export.ensure_connected".to_string()],
+                });
+            }
+        }
+
+        // --- New evaluator metric gaps ---
+
+        // HR/Payroll accuracy
+        if let Some(ref hr) = evaluation.coherence.hr_payroll {
+            if hr.gross_to_net_accuracy < 0.999 {
+                gaps.push(MetricGap {
+                    metric_name: "payroll_accuracy".to_string(),
+                    current_value: hr.gross_to_net_accuracy,
+                    target_value: 0.999,
+                    gap: 0.999 - hr.gross_to_net_accuracy,
+                    is_minimum: true,
+                    config_paths: vec!["hr.payroll.calculation_precision".to_string()],
+                });
+            }
+        }
+
+        // Manufacturing yield
+        if let Some(ref mfg) = evaluation.coherence.manufacturing {
+            if mfg.yield_rate_consistency < 0.95 {
+                gaps.push(MetricGap {
+                    metric_name: "manufacturing_yield".to_string(),
+                    current_value: mfg.yield_rate_consistency,
+                    target_value: 0.95,
+                    gap: 0.95 - mfg.yield_rate_consistency,
+                    is_minimum: true,
+                    config_paths: vec!["manufacturing.production_orders.yield_target".to_string()],
+                });
+            }
+        }
+
+        // S2C chain completion
+        if let Some(ref sourcing) = evaluation.coherence.sourcing {
+            if sourcing.rfx_completion_rate < 0.90 {
+                gaps.push(MetricGap {
+                    metric_name: "s2c_chain_completion".to_string(),
+                    current_value: sourcing.rfx_completion_rate,
+                    target_value: 0.90,
+                    gap: 0.90 - sourcing.rfx_completion_rate,
+                    is_minimum: true,
+                    config_paths: vec!["source_to_pay.rfx_completion_rate".to_string()],
+                });
+            }
+        }
+
+        // Anomaly separability
+        if let Some(ref as_eval) = evaluation.ml_readiness.anomaly_scoring {
+            if as_eval.anomaly_separability < self.thresholds.min_anomaly_separability {
+                gaps.push(MetricGap {
+                    metric_name: "anomaly_separability".to_string(),
+                    current_value: as_eval.anomaly_separability,
+                    target_value: self.thresholds.min_anomaly_separability,
+                    gap: self.thresholds.min_anomaly_separability - as_eval.anomaly_separability,
+                    is_minimum: true,
+                    config_paths: vec!["anomaly_injection.base_rate".to_string()],
+                });
+            }
+        }
+
+        // Feature quality
+        if let Some(ref fq_eval) = evaluation.ml_readiness.feature_quality {
+            if fq_eval.feature_quality_score < self.thresholds.min_feature_quality {
+                gaps.push(MetricGap {
+                    metric_name: "feature_quality".to_string(),
+                    current_value: fq_eval.feature_quality_score,
+                    target_value: self.thresholds.min_feature_quality,
+                    gap: self.thresholds.min_feature_quality - fq_eval.feature_quality_score,
+                    is_minimum: true,
+                    config_paths: vec!["graph_export.feature_completeness".to_string()],
+                });
+            }
+        }
+
+        // GNN readiness
+        if let Some(ref gnn_eval) = evaluation.ml_readiness.gnn_readiness {
+            if gnn_eval.gnn_readiness_score < self.thresholds.min_gnn_readiness {
+                gaps.push(MetricGap {
+                    metric_name: "gnn_readiness".to_string(),
+                    current_value: gnn_eval.gnn_readiness_score,
+                    target_value: self.thresholds.min_gnn_readiness,
+                    gap: self.thresholds.min_gnn_readiness - gnn_eval.gnn_readiness_score,
+                    is_minimum: true,
+                    config_paths: vec![
+                        "graph_export.ensure_connected".to_string(),
+                        "cross_process_links.enabled".to_string(),
+                    ],
+                });
+            }
+        }
+
+        // Domain gap (max threshold - lower is better)
+        if let Some(ref dg_eval) = evaluation.ml_readiness.domain_gap {
+            if dg_eval.domain_gap_score > self.thresholds.max_domain_gap {
+                gaps.push(MetricGap {
+                    metric_name: "domain_gap".to_string(),
+                    current_value: dg_eval.domain_gap_score,
+                    target_value: self.thresholds.max_domain_gap,
+                    gap: dg_eval.domain_gap_score - self.thresholds.max_domain_gap,
+                    is_minimum: false,
+                    config_paths: vec!["distributions.industry_profile".to_string()],
                 });
             }
         }

@@ -16,6 +16,7 @@
 
 mod amount_distribution;
 mod anderson_darling;
+mod anomaly_realism;
 mod benford;
 mod chi_squared;
 mod correlation;
@@ -43,6 +44,10 @@ pub use drift_detection::{
 pub use line_item::{LineItemAnalysis, LineItemAnalyzer, LineItemEntry};
 pub use temporal::{TemporalAnalysis, TemporalAnalyzer, TemporalEntry};
 
+pub use anomaly_realism::{
+    AnomalyData, AnomalyRealismEvaluation, AnomalyRealismEvaluator, AnomalyRealismThresholds,
+};
+
 use serde::{Deserialize, Serialize};
 
 /// Combined statistical evaluation results.
@@ -66,6 +71,9 @@ pub struct StatisticalEvaluation {
     pub drift_detection: Option<DriftDetectionAnalysis>,
     /// Labeled drift event analysis results.
     pub drift_events: Option<LabeledEventAnalysis>,
+    /// Anomaly injection realism analysis results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anomaly_realism: Option<AnomalyRealismEvaluation>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -89,6 +97,7 @@ impl StatisticalEvaluation {
             chi_squared: None,
             drift_detection: None,
             drift_events: None,
+            anomaly_realism: None,
             passes: true,
             failures: Vec::new(),
             issues: Vec::new(),
@@ -222,6 +231,17 @@ impl StatisticalEvaluation {
                 let difficulty_score = 1.0 - events.avg_difficulty;
                 scores.push(difficulty_score);
             }
+        }
+
+        // Check anomaly realism
+        if let Some(ref anomaly_realism) = self.anomaly_realism {
+            if !anomaly_realism.passes {
+                for issue in &anomaly_realism.issues {
+                    self.failures.push(format!("Anomaly realism: {}", issue));
+                }
+            }
+            // Score based on detectability
+            scores.push(anomaly_realism.statistical_detectability);
         }
 
         // Sync issues with failures

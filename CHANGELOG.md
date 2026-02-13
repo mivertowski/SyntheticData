@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-02-13
+
+### Added
+
+- **Comprehensive Evaluation Framework** (`datasynth-eval`): 23 new evaluator modules providing end-to-end quality assessment
+  - **Statistical Evaluators**: Anomaly realism scoring, drift detection with labeled events
+  - **Coherence Evaluators**: Audit trail validation, bank reconciliation accuracy, cross-process consistency, financial reporting tie-back, HR/payroll gross-to-net verification, manufacturing yield/sequence validation, sourcing pipeline completion
+  - **ML Readiness Evaluators**: Anomaly scoring analysis, cross-modal consistency, domain gap measurement, embedding readiness, feature quality assessment, GNN readiness, scheme detectability, temporal fidelity
+  - **Banking Evaluators**: KYC completeness analysis, AML typology detectability
+  - **Process Mining Evaluators**: OCEL 2.0 event sequence validation, process variant analysis
+  - **Causal & Enrichment Evaluators**: Causal model validation, LLM enrichment quality assessment
+  - **Enhancement Engine**: Auto-tuner generating config patches from evaluation gaps, recommendation engine with root cause analysis and prioritized actions
+
+- **Quality Gate Engine Improvements** (`datasynth-eval`): Extended from 8 to 17 quality metrics
+  - New gates: HR payroll accuracy, manufacturing yield, bank reconciliation balance, KYC completeness, AML detectability, process mining coverage, audit evidence coverage, sourcing completion
+  - Balance coherence gate now uses rate-based scoring (balanced entries / total entries) instead of binary pass/fail
+
+- **KYC Data Generation** (`datasynth-banking`): Customer generator now populates all KYC-required fields
+  - Address fields (address_line1, city, state, postal_code) for all customer types
+  - Identity documents (national_id, passport_number) for retail customers
+  - Beneficial owners with control type and verification status for business and trust customers
+
+- **Bank Reconciliation Generation** (`datasynth-runtime`): Payment-to-statement matching
+  - Groups payments by company code and fiscal period
+  - Generates monthly reconciliations for each company (24 reconciliations for 2-company, 12-month setup)
+
+- **Snapshot Data Expansion** (`datasynth-runtime`): HR, Manufacturing, and Sales/KPI/Budget snapshots now store actual model instances
+  - `HrSnapshot`: payroll_runs, payroll_line_items, time_entries, expense_reports
+  - `ManufacturingSnapshot`: production_orders, quality_inspections, cycle_counts
+  - `SalesKpiBudgetsSnapshot`: sales_quotes, kpis, budgets
+
+- **Comprehensive Integration Test** (`datasynth-runtime`): Full end-to-end evaluation test
+  - Generates data with all enterprise process chains enabled
+  - Wires generated data into all 17 evaluator modules
+  - Runs quality gates across lenient/default/strict profiles
+  - Auto-tuner recommendations and enhancement report
+  - 17/17 feature coverage (100%), lenient gates 9/9 PASS
+
+### Fixed
+
+- **Temporal Pattern Correlation Bug** (`datasynth-eval`): Fixed month-end multiplier in expected pattern calculation
+  - `MONTH_END_SPIKE / 2.5` evaluated to 1.0 (no effect) — now correctly applies `MONTH_END_SPIKE` (2.5x)
+  - Pattern correlation improved from ~0.37 to ~0.78
+
+- **Financial Reporting BS Equation** (`datasynth-eval`): Fixed balance sheet equation validation
+  - Financial statements now correctly use total line codes (BS-TA, BS-TL, BS-TE) instead of summing all line items
+
+- **Manufacturing Operation Sequence** (`datasynth-eval`): Fixed timestamp-based ordering
+  - Uses operation_number offset to distinguish operations sharing the same date
+
+- **Audit Evaluator Mapping** (`datasynth-eval`): Fixed evidence-to-finding and workpaper cross-reference detection
+  - Falls back to engagement-level evidence when `evidence_refs` is empty
+  - Uses account_ids and evidence_refs as proxy for workpaper cross-references
+
+### Changed
+
+- Bumped all Rust crate versions to 0.6.1
+- Extended `PhaseConfig` with flags for all enterprise generators (audit, banking, sourcing, manufacturing, etc.)
+- `ComprehensiveEvaluation` extended with optional banking, process_mining, causal, and enrichment_quality fields
+
 ## [0.6.0] - 2026-02-12
 
 ### Added

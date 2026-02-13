@@ -57,6 +57,8 @@ use datasynth_generators::{
     // Audit generators
     AuditEngagementGenerator,
     BalanceTrackerConfig,
+    // Bank reconciliation generator
+    BankReconciliationGenerator,
     // S2C sourcing generators
     BidEvaluationGenerator,
     BidGenerator,
@@ -92,6 +94,7 @@ use datasynth_generators::{
     P2PGenerator,
     P2PGeneratorConfig,
     P2PPaymentBehavior,
+    PaymentReference,
     QualificationGenerator,
     RfxGenerator,
     RiskAssessmentGenerator,
@@ -459,6 +462,14 @@ pub struct FinancialReportingSnapshot {
 /// HR data snapshot (payroll runs, time entries, expense reports).
 #[derive(Debug, Clone, Default)]
 pub struct HrSnapshot {
+    /// Payroll runs (actual data).
+    pub payroll_runs: Vec<PayrollRun>,
+    /// Payroll line items (actual data).
+    pub payroll_line_items: Vec<PayrollLineItem>,
+    /// Time entries (actual data).
+    pub time_entries: Vec<TimeEntry>,
+    /// Expense reports (actual data).
+    pub expense_reports: Vec<ExpenseReport>,
     /// Payroll runs.
     pub payroll_run_count: usize,
     /// Payroll line item count.
@@ -481,6 +492,12 @@ pub struct AccountingStandardsSnapshot {
 /// Manufacturing data snapshot (production orders, quality inspections, cycle counts).
 #[derive(Debug, Clone, Default)]
 pub struct ManufacturingSnapshot {
+    /// Production orders (actual data).
+    pub production_orders: Vec<ProductionOrder>,
+    /// Quality inspections (actual data).
+    pub quality_inspections: Vec<QualityInspection>,
+    /// Cycle counts (actual data).
+    pub cycle_counts: Vec<CycleCount>,
     /// Production order count.
     pub production_order_count: usize,
     /// Quality inspection count.
@@ -492,6 +509,12 @@ pub struct ManufacturingSnapshot {
 /// Sales, KPI, and budget data snapshot.
 #[derive(Debug, Clone, Default)]
 pub struct SalesKpiBudgetsSnapshot {
+    /// Sales quotes (actual data).
+    pub sales_quotes: Vec<SalesQuote>,
+    /// Management KPIs (actual data).
+    pub kpis: Vec<ManagementKpi>,
+    /// Budgets (actual data).
+    pub budgets: Vec<Budget>,
     /// Sales quote count.
     pub sales_quote_count: usize,
     /// Management KPI count.
@@ -1919,7 +1942,7 @@ impl EnhancedOrchestrator {
             .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
         let mut financial_statements = Vec::new();
-        let bank_reconciliations = Vec::new();
+        let mut bank_reconciliations = Vec::new();
 
         // Generate financial statements from document flow data
         if fs_enabled {
@@ -1965,6 +1988,63 @@ impl EnhancedOrchestrator {
             info!(
                 "Financial statements generated: {} statements",
                 stats.financial_statement_count
+            );
+        }
+
+        // Generate bank reconciliations from payment data
+        if br_enabled && !document_flows.payments.is_empty() {
+            let mut br_gen = BankReconciliationGenerator::new(seed + 25);
+
+            // Group payments by company code and period
+            for company in &self.config.companies {
+                let company_payments: Vec<PaymentReference> = document_flows
+                    .payments
+                    .iter()
+                    .filter(|p| p.header.company_code == company.code)
+                    .map(|p| PaymentReference {
+                        id: p.header.document_id.clone(),
+                        amount: if p.is_vendor { p.amount } else { -p.amount },
+                        date: p.header.document_date,
+                        reference: p
+                            .check_number
+                            .clone()
+                            .or_else(|| p.wire_reference.clone())
+                            .unwrap_or_else(|| p.header.document_id.clone()),
+                    })
+                    .collect();
+
+                if company_payments.is_empty() {
+                    continue;
+                }
+
+                let bank_account_id = format!("{}-MAIN", company.code);
+
+                // Generate one reconciliation per period
+                for period in 0..self.config.global.period_months {
+                    let period_start = start_date + chrono::Months::new(period);
+                    let period_end =
+                        start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
+
+                    let period_payments: Vec<PaymentReference> = company_payments
+                        .iter()
+                        .filter(|p| p.date >= period_start && p.date <= period_end)
+                        .cloned()
+                        .collect();
+
+                    let recon = br_gen.generate(
+                        &company.code,
+                        &bank_account_id,
+                        period_start,
+                        period_end,
+                        &company.currency,
+                        &period_payments,
+                    );
+                    bank_reconciliations.push(recon);
+                }
+            }
+            info!(
+                "Bank reconciliations generated: {} reconciliations",
+                bank_reconciliations.len()
             );
         }
 
@@ -2141,9 +2221,10 @@ impl EnhancedOrchestrator {
                     period_end,
                     currency,
                 );
-                let _ = run; // stored for export when output sinks are wired
+                snapshot.payroll_runs.push(run);
                 snapshot.payroll_run_count += 1;
                 snapshot.payroll_line_item_count += items.len();
+                snapshot.payroll_line_items.extend(items);
             }
         }
 
@@ -2157,6 +2238,7 @@ impl EnhancedOrchestrator {
                 &self.config.hr.time_attendance,
             );
             snapshot.time_entry_count = entries.len();
+            snapshot.time_entries = entries;
         }
 
         // Generate expense reports
@@ -2169,6 +2251,7 @@ impl EnhancedOrchestrator {
                 &self.config.hr.expenses,
             );
             snapshot.expense_report_count = reports.len();
+            snapshot.expense_reports = reports;
         }
 
         stats.payroll_run_count = snapshot.payroll_run_count;
@@ -2355,10 +2438,13 @@ impl EnhancedOrchestrator {
             })
             .collect();
 
+        snapshot.production_orders = production_orders;
+
         if !inspection_data.is_empty() {
             let mut qi_gen = datasynth_generators::QualityInspectionGenerator::new(seed + 51);
             let inspections = qi_gen.generate(company_code, &inspection_data, end_date);
             snapshot.quality_inspection_count = inspections.len();
+            snapshot.quality_inspections = inspections;
         }
 
         // Generate cycle counts (one per month)
@@ -2373,12 +2459,13 @@ impl EnhancedOrchestrator {
         for month in 0..self.config.global.period_months {
             let count_date = start_date + chrono::Months::new(month);
             let items_per_count = storage_locations.len().clamp(10, 50);
-            let _cc = cc_gen.generate(
+            let cc = cc_gen.generate(
                 company_code,
                 &storage_locations,
                 count_date,
                 items_per_count,
             );
+            snapshot.cycle_counts.push(cc);
             cycle_count_total += 1;
         }
         snapshot.cycle_count_count = cycle_count_total;
@@ -2447,6 +2534,7 @@ impl EnhancedOrchestrator {
                     &self.config.sales_quotes,
                 );
                 snapshot.sales_quote_count = quotes.len();
+                snapshot.sales_quotes = quotes;
             }
         }
 
@@ -2460,6 +2548,7 @@ impl EnhancedOrchestrator {
                 &self.config.financial_reporting.management_kpis,
             );
             snapshot.kpi_count = kpis.len();
+            snapshot.kpis = kpis;
         }
 
         // Budgets
@@ -2480,6 +2569,7 @@ impl EnhancedOrchestrator {
                     &self.config.financial_reporting.budgets,
                 );
                 snapshot.budget_line_count = budget.line_items.len();
+                snapshot.budgets.push(budget);
             }
         }
 
