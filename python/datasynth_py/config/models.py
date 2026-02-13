@@ -2071,12 +2071,11 @@ def _strip_none(values: Dict[str, Any]) -> Dict[str, Any]:
 def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
     merged = dict(base)
     for key, value in overrides.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = _deep_merge(merged[key], value)
-        elif _is_dataclass_instance(value):
-            merged[key] = _strip_none(value.__dict__)
+        plain = _to_plain(value)
+        if isinstance(plain, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], plain)
         else:
-            merged[key] = value
+            merged[key] = plain
     return merged
 
 
@@ -2092,6 +2091,17 @@ def _build_dataclass(cls: Any, payload: Optional[Dict[str, Any]]) -> Optional[An
 
 def _is_dataclass_instance(value: Any) -> bool:
     return hasattr(value, "__dataclass_fields__")
+
+
+def _to_plain(value: Any) -> Any:
+    """Recursively convert dataclass instances to plain dicts."""
+    if _is_dataclass_instance(value):
+        return _strip_none({k: _to_plain(v) for k, v in value.__dict__.items()})
+    elif isinstance(value, dict):
+        return {k: _to_plain(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_to_plain(item) for item in value]
+    return value
 
 
 class MissingDependencyError(RuntimeError):
