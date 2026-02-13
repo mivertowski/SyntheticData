@@ -124,6 +124,38 @@ class DataQualitySettings:
 
 
 @dataclass(frozen=True)
+class ProcessLayerSettings:
+    """Process layer settings for hypergraph construction.
+
+    Controls which enterprise process families are included as Layer 2
+    nodes in the hypergraph and whether OCPM events become hyperedges.
+    """
+
+    include_p2p: bool = True
+    include_o2c: bool = True
+    include_s2c: bool = True
+    include_h2r: bool = True
+    include_mfg: bool = True
+    include_bank: bool = True
+    include_audit: bool = True
+    include_r2r: bool = True
+    events_as_hyperedges: bool = True
+    docs_per_counterparty_threshold: int = 20
+
+
+@dataclass(frozen=True)
+class HypergraphSettings:
+    """Hypergraph export configuration.
+
+    Multi-layer hypergraph with entity type codes 100-400 covering
+    master data, process events, and OCPM hyperedges.
+    """
+
+    enabled: bool = False
+    process_layer: Optional[ProcessLayerSettings] = None
+
+
+@dataclass(frozen=True)
 class GraphExportSettings:
     """Graph export configuration for accounting network ML training."""
 
@@ -133,6 +165,46 @@ class GraphExportSettings:
     train_ratio: float = 0.7
     validation_ratio: float = 0.15
     output_subdirectory: str = "graphs"
+    hypergraph: Optional[HypergraphSettings] = None
+
+
+@dataclass(frozen=True)
+class OcpmProcessSettings:
+    """Process-specific OCPM configuration."""
+
+    rework_probability: float = 0.05
+    skip_step_probability: float = 0.02
+    out_of_order_probability: float = 0.03
+
+
+@dataclass(frozen=True)
+class OcpmOutputSettings:
+    """OCPM output format configuration."""
+
+    ocel_json: bool = True
+    ocel_xml: bool = False
+    xes: bool = False
+    xes_include_lifecycle: bool = True
+    xes_include_resources: bool = True
+
+
+@dataclass(frozen=True)
+class OcpmSettings:
+    """OCPM (Object-Centric Process Mining) configuration.
+
+    Controls generation of OCEL 2.0 compatible event logs with 88 activity
+    types across 8 process families (P2P, O2C, S2C, H2R, MFG, BANK, AUDIT,
+    Bank Recon) and 52 object types with lifecycle states.
+    """
+
+    enabled: bool = False
+    generate_lifecycle_events: bool = True
+    include_object_relationships: bool = True
+    compute_variants: bool = True
+    max_variants: int = 0
+    p2p_process: Optional[OcpmProcessSettings] = None
+    o2c_process: Optional[OcpmProcessSettings] = None
+    output: Optional[OcpmOutputSettings] = None
 
 
 @dataclass(frozen=True)
@@ -931,6 +1003,7 @@ class Config:
     temporal: Optional[TemporalDriftSettings] = None
     data_quality: Optional[DataQualitySettings] = None
     graph_export: Optional[GraphExportSettings] = None
+    ocpm: Optional[OcpmSettings] = None
     audit: Optional[AuditSettings] = None
     streaming: Optional[StreamingSettings] = None
     rate_limit: Optional[RateLimitSettings] = None
@@ -1028,8 +1101,33 @@ class Config:
 
         if self.graph_export is not None:
             graph_dict = _strip_none(self.graph_export.__dict__)
+            if "hypergraph" in graph_dict and self.graph_export.hypergraph is not None:
+                hg_dict: Dict[str, Any] = {
+                    "enabled": self.graph_export.hypergraph.enabled,
+                }
+                if self.graph_export.hypergraph.process_layer is not None:
+                    hg_dict["process_layer"] = _strip_none(
+                        self.graph_export.hypergraph.process_layer.__dict__
+                    )
+                graph_dict["hypergraph"] = hg_dict
             if graph_dict:
                 payload["graph_export"] = graph_dict
+
+        if self.ocpm is not None:
+            ocpm_dict: Dict[str, Any] = {
+                "enabled": self.ocpm.enabled,
+                "generate_lifecycle_events": self.ocpm.generate_lifecycle_events,
+                "include_object_relationships": self.ocpm.include_object_relationships,
+                "compute_variants": self.ocpm.compute_variants,
+                "max_variants": self.ocpm.max_variants,
+            }
+            if self.ocpm.p2p_process is not None:
+                ocpm_dict["p2p_process"] = _strip_none(self.ocpm.p2p_process.__dict__)
+            if self.ocpm.o2c_process is not None:
+                ocpm_dict["o2c_process"] = _strip_none(self.ocpm.o2c_process.__dict__)
+            if self.ocpm.output is not None:
+                ocpm_dict["output"] = _strip_none(self.ocpm.output.__dict__)
+            payload["ocpm"] = ocpm_dict
 
         if self.audit is not None:
             audit_dict = _strip_none(self.audit.__dict__)
@@ -1488,7 +1586,47 @@ class Config:
         scenario = _build_dataclass(ScenarioSettings, data.get("scenario"))
         temporal = _build_dataclass(TemporalDriftSettings, data.get("temporal"))
         data_quality = _build_dataclass(DataQualitySettings, data.get("data_quality"))
-        graph_export = _build_dataclass(GraphExportSettings, data.get("graph_export"))
+        graph_export = None
+        ge_data = data.get("graph_export")
+        if ge_data is not None:
+            hypergraph = None
+            if ge_data.get("hypergraph"):
+                hg_data = ge_data["hypergraph"]
+                process_layer = _build_dataclass(
+                    ProcessLayerSettings, hg_data.get("process_layer")
+                )
+                hypergraph = HypergraphSettings(
+                    enabled=hg_data.get("enabled", False),
+                    process_layer=process_layer,
+                )
+            graph_export = GraphExportSettings(
+                enabled=ge_data.get("enabled", False),
+                formats=ge_data.get("formats"),
+                graph_types=ge_data.get("graph_types"),
+                train_ratio=ge_data.get("train_ratio", 0.7),
+                validation_ratio=ge_data.get("validation_ratio", 0.15),
+                output_subdirectory=ge_data.get("output_subdirectory", "graphs"),
+                hypergraph=hypergraph,
+            )
+
+        ocpm = None
+        ocpm_data = data.get("ocpm")
+        if ocpm_data is not None:
+            ocpm = OcpmSettings(
+                enabled=ocpm_data.get("enabled", False),
+                generate_lifecycle_events=ocpm_data.get("generate_lifecycle_events", True),
+                include_object_relationships=ocpm_data.get("include_object_relationships", True),
+                compute_variants=ocpm_data.get("compute_variants", True),
+                max_variants=ocpm_data.get("max_variants", 0),
+                p2p_process=_build_dataclass(
+                    OcpmProcessSettings, ocpm_data.get("p2p_process")
+                ),
+                o2c_process=_build_dataclass(
+                    OcpmProcessSettings, ocpm_data.get("o2c_process")
+                ),
+                output=_build_dataclass(OcpmOutputSettings, ocpm_data.get("output")),
+            )
+
         audit = _build_dataclass(AuditSettings, data.get("audit"))
         streaming = _build_dataclass(StreamingSettings, data.get("streaming"))
         rate_limit = _build_dataclass(RateLimitSettings, data.get("rate_limit"))
@@ -1874,9 +2012,9 @@ class Config:
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
             "fraud", "banking", "scenario", "temporal", "data_quality", "graph_export",
-            "audit", "streaming", "rate_limit", "temporal_attributes", "relationships",
-            "accounting_standards", "audit_standards", "distributions", "templates",
-            "temporal_patterns", "llm", "diffusion", "causal",
+            "ocpm", "audit", "streaming", "rate_limit", "temporal_attributes",
+            "relationships", "accounting_standards", "audit_standards", "distributions",
+            "templates", "temporal_patterns", "llm", "diffusion", "causal",
             "source_to_pay", "financial_reporting", "hr", "manufacturing",
             "sales_quotes", "vendor_network", "customer_segmentation",
             "relationship_strength", "cross_process_links",
@@ -1895,6 +2033,7 @@ class Config:
             temporal=temporal,
             data_quality=data_quality,
             graph_export=graph_export,
+            ocpm=ocpm,
             audit=audit,
             streaming=streaming,
             rate_limit=rate_limit,

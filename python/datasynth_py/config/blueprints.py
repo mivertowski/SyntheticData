@@ -28,6 +28,7 @@ from datasynth_py.config.models import (
     GlobalSettings,
     GraphExportSettings,
     HrConfig,
+    HypergraphSettings,
     IntraDaySchemaConfig,
     IntraDaySegmentConfig,
     ManagementKpisSchemaConfig,
@@ -35,9 +36,11 @@ from datasynth_py.config.models import (
     MixtureComponentConfig,
     MixtureDistributionConfig,
     NameTemplateConfig,
+    OcpmSettings,
     PayrollSchemaConfig,
     PeriodEndModelConfig,
     PeriodEndSchemaConfig,
+    ProcessLayerSettings,
     ProcessingLagSchemaConfig,
     LagDistributionConfig,
     ProductionOrderSchemaConfig,
@@ -1019,6 +1022,57 @@ def with_sales_quotes(
     return base_config.override(sales_quotes=sq_dict)
 
 
+def with_process_mining(
+    base_config: Config,
+    events_as_hyperedges: bool = True,
+) -> Config:
+    """Add OCEL 2.0 process mining and hypergraph integration to an existing configuration.
+
+    Enables OCPM event log generation across all 8 process families (P2P, O2C,
+    S2C, H2R, MFG, BANK, AUDIT, Bank Recon) with 88 activity types and 52
+    object types. Optionally wires events into the hypergraph as hyperedges.
+
+    Args:
+        base_config: Base configuration to extend.
+        events_as_hyperedges: Include OCPM events as hyperedges in the hypergraph.
+
+    Returns:
+        New Config with OCPM and hypergraph integration enabled.
+    """
+    ocpm_dict: Dict[str, Any] = {
+        "enabled": True,
+        "generate_lifecycle_events": True,
+        "include_object_relationships": True,
+        "compute_variants": True,
+    }
+
+    # Ensure graph export is enabled with hypergraph support
+    ge_dict: Dict[str, Any] = {
+        "enabled": True,
+        "hypergraph": {
+            "enabled": True,
+            "process_layer": {
+                "include_p2p": True,
+                "include_o2c": True,
+                "include_s2c": True,
+                "include_h2r": True,
+                "include_mfg": True,
+                "include_bank": True,
+                "include_audit": True,
+                "include_r2r": True,
+                "events_as_hyperedges": events_as_hyperedges,
+            },
+        },
+    }
+
+    # Preserve existing graph_export formats if present
+    if base_config.graph_export is not None:
+        if base_config.graph_export.formats is not None:
+            ge_dict["formats"] = base_config.graph_export.formats
+
+    return base_config.override(ocpm=ocpm_dict, graph_export=ge_dict)
+
+
 def _transactions_to_volume(count: int) -> str:
     """Map transaction count to volume preset."""
     if count <= 10_000:
@@ -1048,6 +1102,7 @@ _REGISTRY: Dict[str, BlueprintFactory] = {
     "with_financial_reporting": with_financial_reporting,
     "with_hr": with_hr,
     "with_manufacturing": with_manufacturing,
+    "with_process_mining": with_process_mining,
     "with_sales_quotes": with_sales_quotes,
 }
 
