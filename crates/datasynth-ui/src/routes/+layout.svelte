@@ -13,6 +13,7 @@
   // Determine if we should show sidebar based on route
   let showSidebar = $derived(
     $page.url.pathname.startsWith('/config') ||
+    $page.url.pathname.startsWith('/presets') ||
     $page.url.pathname === '/' ||
     $page.url.pathname === '/stream'
   );
@@ -108,6 +109,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    background-color: var(--color-background);
   }
 
   .main-content {
@@ -122,6 +124,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    background-color: var(--color-background);
   }
 
   .footer-text {

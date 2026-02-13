@@ -1,17 +1,13 @@
 <script lang="ts">
   import { configStore, COA_COMPLEXITIES } from '$lib/stores/config';
   import { FormGroup, FormSection, Toggle, InputNumber } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Chart of Accounts</h1>
-      <p>Configure account hierarchy and structure</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Chart of Accounts" description="Configure account hierarchy and structure" />
 
   {#if $config}
     <div class="sections">
@@ -130,14 +126,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Desktop UI Enhancements** (`datasynth-ui`): Visual polish and UX improvements across the configuration interface
+  - **Info cards on 6 config pages**: relationship-strength (3 cards), cross-process-links (3 cards), vendor-network (4 cards), customer-segmentation (4 cards), data-quality (4 cards), accounting-standards (4 cards) — always visible regardless of feature toggle state
+  - **Sidebar scroll indicator**: Animated bounce chevron appears when nav content overflows, hides when scrolled to bottom; collapsed Specialized section by default for better discoverability
+  - **Dashboard web-mode fallback**: Detects Tauri runtime availability via `window.__TAURI__`; shows friendly "Web Preview Mode" placeholder with setup instructions instead of raw TypeError in web-only contexts
+  - **56 visual regression baselines regenerated** with Playwright; 272 functional tests pass
+
 - **Universal OCPM Generation** (`datasynth-ocpm`): Extended process mining from 2 to 8 process families with 88 total activities and 52 object types
   - **S2C Generator**: Source-to-Contract process events — sourcing projects, supplier qualification, RFx, bids, evaluations, contracts (8 activities, 6 object types)
   - **H2R Generator**: Hire-to-Retire process events — payroll runs, time entries, expense reports with approval chains (8 activities, 4 object types)
@@ -36,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped all Rust crate versions to 0.6.2
 - OCPM event log now contains events from all 8 process families (P2P, O2C, S2C, H2R, MFG, R2R, BANK, AUDIT)
 - Hypergraph `nodes.jsonl` includes entity types 100-400 spanning all process families
 - Hypergraph `hyperedges.jsonl` includes OCPM events when `events_as_hyperedges: true`
@@ -46,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Magenta footer bar** (`datasynth-ui`): Added explicit `background-color` to `.app-footer`, `.main-area`, and `html`/`body` to prevent color bleed-through in full-page screenshots
+- **Dashboard raw error display** (`datasynth-ui`): Server error string now hidden behind a `<details>` collapse instead of shown inline
+- **Cross-process-links info cards** (`datasynth-ui`): Moved info cards outside `{#if enabled}` block so they are visible when the feature is disabled
 - CI pipeline: Added separate `eval` job for comprehensive evaluation test (runs only on main pushes, 30-min timeout)
 
 ## [0.6.1] - 2026-02-13

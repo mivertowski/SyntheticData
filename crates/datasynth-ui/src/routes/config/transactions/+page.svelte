@@ -1,6 +1,7 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormGroup, FormSection, Toggle } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
   import DistributionEditor from '$lib/components/forms/DistributionEditor.svelte';
 
   const config = configStore.config;
@@ -33,12 +34,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Transaction Settings</h1>
-      <p>Configure journal entry characteristics and distributions</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Transaction Settings" description="Configure journal entry characteristics and distributions" />
 
   {#if $config}
     <div class="sections">
@@ -332,14 +328,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

@@ -72,6 +72,8 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  height: 100%;
 }
 
 body {
@@ -81,6 +83,7 @@ body {
   color: var(--color-text-primary);
   background-color: var(--color-background);
   min-height: 100vh;
+  height: 100%;
 }
 
 /* Typography */

@@ -1,10 +1,9 @@
 <script lang="ts">
   import { configStore, DRIFT_TYPES, CALENDAR_REGIONS, HALF_DAY_POLICIES, MONTH_END_CONVENTIONS, PERIOD_END_MODELS, FISCAL_CALENDAR_TYPES, COMMON_TIMEZONES, POSTING_TYPES, DEFAULT_INTRADAY_SEGMENTS } from '$lib/stores/config';
   import { FormSection, FormGroup, Toggle } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
-  const isDirty = configStore.isDirty;
-  const saving = configStore.saving;
   const validationErrors = configStore.validationErrors;
 
   // Track which main section is active
@@ -13,10 +12,6 @@
   function getError(field: string): string {
     const found = $validationErrors.find(e => e.field === field);
     return found?.message || '';
-  }
-
-  async function handleSave() {
-    await configStore.save();
   }
 
   function toggleRegion(region: string) {
@@ -63,26 +58,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Temporal Configuration</h1>
-      <p>Configure business day calculations, period-end dynamics, and temporal drift simulation</p>
-    </div>
-    <div class="header-actions">
-      {#if $isDirty}
-        <button class="btn-secondary" onclick={() => configStore.reset()}>
-          Discard
-        </button>
-      {/if}
-      <button
-        class="btn-primary"
-        onclick={handleSave}
-        disabled={$saving || !$isDirty}
-      >
-        {$saving ? 'Saving...' : 'Save Changes'}
-      </button>
-    </div>
-  </header>
+  <ConfigPageHeader title="Temporal Configuration" description="Configure business day calculations, period-end dynamics, and temporal drift simulation" />
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
@@ -751,22 +727,6 @@
     max-width: 900px;
   }
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-4);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
   /* Tab Navigation */
   .tab-nav {
     display: flex;
@@ -1127,11 +1087,6 @@
     .info-grid,
     .region-grid {
       grid-template-columns: 1fr;
-    }
-
-    .page-header {
-      flex-direction: column;
-      gap: var(--space-4);
     }
 
     .segment-row,

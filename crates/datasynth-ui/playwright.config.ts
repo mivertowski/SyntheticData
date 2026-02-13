@@ -30,6 +30,17 @@ export default defineConfig({
 		screenshot: 'only-on-failure',
 	},
 
+	/* Visual regression snapshot settings */
+	snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+
+	expect: {
+		timeout: 5 * 1000,
+		toHaveScreenshot: {
+			maxDiffPixelRatio: 0.01,
+			animations: 'disabled',
+		},
+	},
+
 	/* Configure projects for major browsers */
 	projects: [
 		{
@@ -46,6 +57,12 @@ export default defineConfig({
 			name: 'webkit',
 			use: { ...devices['Desktop Safari'] },
 		},
+
+		{
+			name: 'visual',
+			testMatch: /visual-regression\.spec\.ts/,
+			use: { ...devices['Desktop Chrome'] },
+		},
 	],
 
 	/* Run your local dev server before starting the tests */
@@ -58,9 +75,4 @@ export default defineConfig({
 
 	/* Global timeout for each test */
 	timeout: 30 * 1000,
-
-	/* Expect timeout */
-	expect: {
-		timeout: 5 * 1000,
-	},
 });

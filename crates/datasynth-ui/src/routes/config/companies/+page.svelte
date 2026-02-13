@@ -1,10 +1,9 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormSection, FormGroup } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
-  const isDirty = configStore.isDirty;
-  const saving = configStore.saving;
   const validationErrors = configStore.validationErrors;
 
   const TRANSACTION_VOLUMES = [
@@ -85,33 +84,10 @@
     if (vol >= 1e3) return (vol / 1e3).toFixed(0) + 'K';
     return vol.toString();
   }
-
-  async function handleSave() {
-    await configStore.save();
-  }
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Companies</h1>
-      <p>Configure company codes, currencies, and transaction volumes</p>
-    </div>
-    <div class="header-actions">
-      {#if $isDirty}
-        <button class="btn-secondary" onclick={() => configStore.reset()}>
-          Discard
-        </button>
-      {/if}
-      <button
-        class="btn-primary"
-        onclick={handleSave}
-        disabled={$saving || !$isDirty}
-      >
-        {$saving ? 'Saving...' : 'Save Changes'}
-      </button>
-    </div>
-  </header>
+  <ConfigPageHeader title="Companies" description="Configure company codes, currencies, and transaction volumes" />
 
   {#if $config?.companies}
     <div class="summary-cards">
@@ -363,22 +339,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: var(--space-2);
   }
 
   .summary-cards {
@@ -656,9 +616,5 @@
       margin-left: auto;
     }
 
-    .page-header {
-      flex-direction: column;
-      gap: var(--space-4);
-    }
   }
 </style>

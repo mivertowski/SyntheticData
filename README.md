@@ -740,6 +740,13 @@ npm run tauri dev
 
 The desktop application provides visual configuration, real-time streaming, and preset management.
 
+**Features:**
+- **40+ config pages** with form controls for every generation parameter
+- **Info cards** on feature pages explaining capabilities before enabling
+- **Sidebar navigation** with collapsible sections and scroll indicator for 10 section groups
+- **Web preview mode** — run `npm run dev` for config editing without Tauri; dashboard requires `npm run tauri dev`
+- **Visual regression testing** — 56 Playwright screenshot baselines for UI consistency
+
 ---
 
 ## Fingerprinting

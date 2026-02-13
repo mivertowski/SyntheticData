@@ -1,50 +1,19 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormSection, FormGroup, Toggle } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
-  const isDirty = configStore.isDirty;
-  const saving = configStore.saving;
   const validationErrors = configStore.validationErrors;
 
   function getError(field: string): string {
     const found = $validationErrors.find(e => e.field === field);
     return found?.message || '';
   }
-
-  async function handleSave() {
-    await configStore.save();
-  }
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div class="breadcrumb">
-      <a href="/config/document-flows">Document Flows</a>
-      <span class="separator">/</span>
-      <span>Order to Cash</span>
-    </div>
-    <div class="header-row">
-      <div>
-        <h1>Order to Cash (O2C)</h1>
-        <p>Configure the sales order-to-cash receipt document flow</p>
-      </div>
-      <div class="header-actions">
-        {#if $isDirty}
-          <button class="btn-secondary" onclick={() => configStore.reset()}>
-            Discard
-          </button>
-        {/if}
-        <button
-          class="btn-primary"
-          onclick={handleSave}
-          disabled={$saving || !$isDirty}
-        >
-          {$saving ? 'Saving...' : 'Save Changes'}
-        </button>
-      </div>
-    </div>
-  </header>
+  <ConfigPageHeader title="Order to Cash (O2C)" description="Configure the sales order-to-cash receipt document flow" />
 
   {#if $config?.document_flows?.o2c}
     {@const o2c = $config.document_flows.o2c}
@@ -927,50 +896,6 @@
     max-width: 900px;
   }
 
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: 0.8125rem;
-    margin-bottom: var(--space-3);
-  }
-
-  .breadcrumb a {
-    color: var(--color-accent);
-    text-decoration: none;
-  }
-
-  .breadcrumb a:hover {
-    text-decoration: underline;
-  }
-
-  .breadcrumb .separator {
-    color: var(--color-text-muted);
-  }
-
-  .breadcrumb span:last-child {
-    color: var(--color-text-secondary);
-  }
-
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  .header-row h1 {
-    margin-bottom: var(--space-1);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
   .page-content {
     display: flex;
     flex-direction: column;
@@ -1111,11 +1036,6 @@
   @media (max-width: 768px) {
     .form-grid {
       grid-template-columns: 1fr;
-    }
-
-    .header-row {
-      flex-direction: column;
-      gap: var(--space-4);
     }
 
     .flow-diagram {

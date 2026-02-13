@@ -1,12 +1,11 @@
 <script lang="ts">
   import { FormSection, FormGroup, Toggle } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
   import { configStore, INDUSTRIES, COA_COMPLEXITIES } from '$lib/stores/config';
 
   const config = configStore.config;
   const loading = configStore.loading;
-  const saving = configStore.saving;
   const error = configStore.error;
-  const isDirty = configStore.isDirty;
   const validationErrors = configStore.validationErrors;
 
   // Get validation error for a field
@@ -14,33 +13,10 @@
     const found = $validationErrors.find(e => e.field === field);
     return found?.message || '';
   }
-
-  async function handleSave() {
-    await configStore.save();
-  }
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Global Settings</h1>
-      <p>Configure industry, time period, and performance settings</p>
-    </div>
-    <div class="header-actions">
-      {#if $isDirty}
-        <button class="btn-secondary" onclick={() => configStore.reset()}>
-          Discard Changes
-        </button>
-      {/if}
-      <button
-        class="btn-primary"
-        onclick={handleSave}
-        disabled={$saving || !$isDirty}
-      >
-        {$saving ? 'Saving...' : 'Save Changes'}
-      </button>
-    </div>
-  </header>
+  <ConfigPageHeader title="Global Settings" description="Configure industry, time period, and performance settings" />
 
   {#if $error}
     <div class="alert alert-error">
@@ -267,22 +243,6 @@
     max-width: 900px;
   }
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
   .page-content {
     display: flex;
     flex-direction: column;
@@ -326,11 +286,6 @@
   @media (max-width: 768px) {
     .form-grid {
       grid-template-columns: 1fr;
-    }
-
-    .page-header {
-      flex-direction: column;
-      gap: var(--space-4);
     }
   }
 </style>

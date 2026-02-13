@@ -807,6 +807,375 @@ export interface TemporalPatternsConfig {
   timezones: TimezoneConfig;
 }
 
+// =============================================================================
+// Source-to-Pay (S2C) Configuration
+// =============================================================================
+
+export interface SourceToPayConfig {
+  enabled: boolean;
+  spend_analysis: boolean;
+  sourcing_projects: boolean;
+  qualification: boolean;
+  rfx_events: boolean;
+  contracts: boolean;
+  catalogs: boolean;
+  scorecards: boolean;
+  avg_sourcing_cycle_days: number;
+  qualification_pass_rate: number;
+  contract_renewal_rate: number;
+}
+
+// =============================================================================
+// Financial Reporting Configuration
+// =============================================================================
+
+export interface FinancialReportingConfig {
+  enabled: boolean;
+  balance_sheet: boolean;
+  income_statement: boolean;
+  cash_flow: boolean;
+  equity_changes: boolean;
+  kpis: boolean;
+  budgets: boolean;
+  budget_variance_threshold: number;
+}
+
+// =============================================================================
+// HR / Payroll Configuration
+// =============================================================================
+
+export interface HrConfig {
+  enabled: boolean;
+  payroll_frequency: string;
+  overtime_rate: number;
+  benefits_rate: number;
+  time_tracking: boolean;
+  expenses: boolean;
+  avg_expense_amount: number;
+  expense_approval_threshold: number;
+}
+
+// =============================================================================
+// Manufacturing Process Configuration
+// =============================================================================
+
+export interface ManufacturingProcessConfig {
+  enabled: boolean;
+  production_orders: boolean;
+  wip_costing: boolean;
+  routing: boolean;
+  quality_inspections: boolean;
+  cycle_counts: boolean;
+  scrap_rate: number;
+  rework_rate: number;
+  avg_lead_time_days: number;
+}
+
+// =============================================================================
+// Sales Quote Configuration
+// =============================================================================
+
+export interface SalesQuoteConfig {
+  enabled: boolean;
+  avg_quotes_per_month: number;
+  conversion_rate: number;
+  validity_days: number;
+  avg_line_items: number;
+  discount_rate: number;
+  revision_rate: number;
+}
+
+// =============================================================================
+// Vendor Network Configuration
+// =============================================================================
+
+export interface VendorNetworkTierConfig {
+  count_min: number;
+  count_max: number;
+}
+
+export interface VendorNetworkTiersConfig {
+  tier1: VendorNetworkTierConfig;
+  tier2: { count_per_parent_min: number; count_per_parent_max: number };
+  tier3: { count_per_parent_min: number; count_per_parent_max: number };
+}
+
+export interface VendorClusterDistribution {
+  reliable_strategic: number;
+  standard_operational: number;
+  transactional: number;
+  problematic: number;
+}
+
+export interface VendorDependencyConfig {
+  max_single_vendor_concentration: number;
+  top_5_concentration: number;
+}
+
+export interface VendorNetworkConfig {
+  enabled: boolean;
+  depth: number;
+  tiers: VendorNetworkTiersConfig;
+  clusters: VendorClusterDistribution;
+  dependencies: VendorDependencyConfig;
+}
+
+// =============================================================================
+// Customer Segmentation Configuration
+// =============================================================================
+
+export interface ValueSegmentConfig {
+  revenue_share: number;
+  customer_share: number;
+  avg_order_min: number;
+  avg_order_max: number | null;
+}
+
+export interface CustomerLifecycleConfig {
+  prospect_rate: number;
+  new_rate: number;
+  growth_rate: number;
+  mature_rate: number;
+  at_risk_rate: number;
+  churned_rate: number;
+  won_back_rate: number;
+}
+
+export interface CustomerNetworkConfig {
+  referrals_enabled: boolean;
+  referral_rate: number;
+  corporate_hierarchies_enabled: boolean;
+  hierarchy_probability: number;
+}
+
+export interface CustomerSegmentationConfig {
+  enabled: boolean;
+  value_segments: {
+    enterprise: ValueSegmentConfig;
+    mid_market: ValueSegmentConfig;
+    smb: ValueSegmentConfig;
+    consumer: ValueSegmentConfig;
+  };
+  lifecycle: CustomerLifecycleConfig;
+  networks: CustomerNetworkConfig;
+}
+
+// =============================================================================
+// Relationship Strength Configuration
+// =============================================================================
+
+export interface RelationshipWeightsConfig {
+  transaction_volume_weight: number;
+  transaction_count_weight: number;
+  relationship_duration_weight: number;
+  recency_weight: number;
+  mutual_connections_weight: number;
+  recency_half_life_days: number;
+}
+
+export interface RelationshipThresholdsConfig {
+  strong: number;
+  moderate: number;
+  weak: number;
+}
+
+export interface RelationshipStrengthConfig {
+  enabled: boolean;
+  calculation: RelationshipWeightsConfig;
+  thresholds: RelationshipThresholdsConfig;
+}
+
+// =============================================================================
+// Cross-Process Links Configuration
+// =============================================================================
+
+export interface CrossProcessLinksConfig {
+  enabled: boolean;
+  inventory_p2p_o2c: boolean;
+  payment_bank_reconciliation: boolean;
+  intercompany_bilateral: boolean;
+}
+
+// =============================================================================
+// Accounting Standards Configuration
+// =============================================================================
+
+export interface RevenueRecognitionConfig {
+  enabled: boolean;
+  generate_contracts: boolean;
+  avg_obligations_per_contract: number;
+}
+
+export interface LeaseConfig {
+  enabled: boolean;
+  lease_count: number;
+  finance_lease_percent: number;
+}
+
+export interface FairValueConfig {
+  enabled: boolean;
+  level1_percent: number;
+  level2_percent: number;
+  level3_percent: number;
+}
+
+export interface ImpairmentConfig {
+  enabled: boolean;
+  test_frequency: string;
+}
+
+export interface AccountingStandardsConfig {
+  enabled: boolean;
+  framework: string;
+  revenue_recognition: RevenueRecognitionConfig;
+  leases: LeaseConfig;
+  fair_value: FairValueConfig;
+  impairment: ImpairmentConfig;
+}
+
+// =============================================================================
+// Graph Export Configuration
+// =============================================================================
+
+export interface GraphSplitConfig {
+  train: number;
+  val: number;
+  test: number;
+}
+
+export interface GraphExportConfig {
+  enabled: boolean;
+  pytorch_geometric: boolean;
+  neo4j: boolean;
+  dgl: boolean;
+  transaction_graph: boolean;
+  approval_graph: boolean;
+  entity_graph: boolean;
+  hypergraph: boolean;
+  split: GraphSplitConfig;
+}
+
+// =============================================================================
+// Quality Gates Configuration
+// =============================================================================
+
+export interface QualityGatesConfig {
+  enabled: boolean;
+  level: string;
+  benford_threshold: number;
+  balance_tolerance: number;
+  completeness_threshold: number;
+  fail_on_violation: boolean;
+}
+
+// =============================================================================
+// Data Quality Configuration
+// =============================================================================
+
+export interface MissingValuesConfig {
+  enabled: boolean;
+  mechanism: string;
+  overall_rate: number;
+  systematic_fields: string[];
+}
+
+export interface TypoConfig {
+  enabled: boolean;
+  rate: number;
+  keyboard_aware: boolean;
+  transposition: boolean;
+  ocr_errors: boolean;
+}
+
+export interface FormatVariationConfig {
+  enabled: boolean;
+  date_formats: boolean;
+  amount_formats: boolean;
+  identifier_formats: boolean;
+}
+
+export interface DuplicateConfig {
+  enabled: boolean;
+  rate: number;
+  exact_rate: number;
+  fuzzy_rate: number;
+}
+
+export interface EncodingConfig {
+  enabled: boolean;
+  mojibake: boolean;
+  bom_issues: boolean;
+  html_entities: boolean;
+}
+
+export interface DataQualityConfig {
+  enabled: boolean;
+  missing_values: MissingValuesConfig;
+  typos: TypoConfig;
+  format_variations: FormatVariationConfig;
+  duplicates: DuplicateConfig;
+  encoding: EncodingConfig;
+}
+
+// =============================================================================
+// Anomaly Injection Configuration
+// =============================================================================
+
+export interface AnomalyInjectionConfig {
+  enabled: boolean;
+  base_rate: number;
+  multi_stage_schemes: boolean;
+  correlated_injection: boolean;
+  near_miss_enabled: boolean;
+  near_miss_rate: number;
+  difficulty_level: string;
+  fraud_types_enabled: string[];
+}
+
+// =============================================================================
+// Behavioral Drift Configuration
+// =============================================================================
+
+export interface BehavioralDriftConfig {
+  enabled: boolean;
+  vendor_behavior_drift: number;
+  customer_behavior_drift: number;
+  employee_behavior_drift: number;
+  drift_velocity: number;
+}
+
+// =============================================================================
+// Market Drift Configuration
+// =============================================================================
+
+export interface MarketDriftConfig {
+  enabled: boolean;
+  economic_cycle_enabled: boolean;
+  cycle_period_months: number;
+  amplitude: number;
+  commodity_price_drift: number;
+  industry_cycle_enabled: boolean;
+  recession_probability: number;
+  recession_depth: number;
+}
+
+// =============================================================================
+// Organizational Events Configuration
+// =============================================================================
+
+export interface OrgEvent {
+  event_type: string;
+  date: string;
+  description: string;
+  volume_multiplier: number;
+  amount_multiplier: number;
+}
+
+export interface OrganizationalEventsConfig {
+  enabled: boolean;
+  events: OrgEvent[];
+}
+
 // Full generator config
 export interface GeneratorConfig {
   global: GlobalConfig;
@@ -834,6 +1203,27 @@ export interface GeneratorConfig {
   fingerprint: FingerprintConfig;
   distributions: AdvancedDistributionConfig;
   temporal_patterns: TemporalPatternsConfig;
+  // Enterprise processes
+  source_to_pay: SourceToPayConfig;
+  financial_reporting: FinancialReportingConfig;
+  hr: HrConfig;
+  manufacturing: ManufacturingProcessConfig;
+  sales_quotes: SalesQuoteConfig;
+  // Interconnectivity
+  vendor_network: VendorNetworkConfig;
+  customer_segmentation: CustomerSegmentationConfig;
+  relationship_strength: RelationshipStrengthConfig;
+  cross_process_links: CrossProcessLinksConfig;
+  // Standards
+  accounting_standards: AccountingStandardsConfig;
+  graph_export: GraphExportConfig;
+  quality_gates: QualityGatesConfig;
+  // Quality & Drift
+  data_quality: DataQualityConfig;
+  anomaly_injection: AnomalyInjectionConfig;
+  behavioral_drift: BehavioralDriftConfig;
+  market_drift: MarketDriftConfig;
+  organizational_events: OrganizationalEventsConfig;
 }
 
 // Default configuration
@@ -1398,6 +1788,240 @@ export function createDefaultConfig(): GeneratorConfig {
         consolidation_timezone: 'UTC',
         entity_mappings: [],
       },
+    },
+    // Enterprise processes
+    source_to_pay: {
+      enabled: false,
+      spend_analysis: true,
+      sourcing_projects: true,
+      qualification: true,
+      rfx_events: true,
+      contracts: true,
+      catalogs: true,
+      scorecards: true,
+      avg_sourcing_cycle_days: 45,
+      qualification_pass_rate: 0.75,
+      contract_renewal_rate: 0.60,
+    },
+    financial_reporting: {
+      enabled: false,
+      balance_sheet: true,
+      income_statement: true,
+      cash_flow: true,
+      equity_changes: true,
+      kpis: true,
+      budgets: true,
+      budget_variance_threshold: 0.10,
+    },
+    hr: {
+      enabled: false,
+      payroll_frequency: 'monthly',
+      overtime_rate: 0.08,
+      benefits_rate: 0.25,
+      time_tracking: true,
+      expenses: true,
+      avg_expense_amount: 250,
+      expense_approval_threshold: 500,
+    },
+    manufacturing: {
+      enabled: false,
+      production_orders: true,
+      wip_costing: true,
+      routing: true,
+      quality_inspections: true,
+      cycle_counts: true,
+      scrap_rate: 0.02,
+      rework_rate: 0.05,
+      avg_lead_time_days: 14,
+    },
+    sales_quotes: {
+      enabled: false,
+      avg_quotes_per_month: 50,
+      conversion_rate: 0.35,
+      validity_days: 30,
+      avg_line_items: 4,
+      discount_rate: 0.10,
+      revision_rate: 0.20,
+    },
+    // Interconnectivity
+    vendor_network: {
+      enabled: false,
+      depth: 3,
+      tiers: {
+        tier1: { count_min: 50, count_max: 100 },
+        tier2: { count_per_parent_min: 4, count_per_parent_max: 10 },
+        tier3: { count_per_parent_min: 2, count_per_parent_max: 5 },
+      },
+      clusters: {
+        reliable_strategic: 0.20,
+        standard_operational: 0.50,
+        transactional: 0.25,
+        problematic: 0.05,
+      },
+      dependencies: {
+        max_single_vendor_concentration: 0.15,
+        top_5_concentration: 0.45,
+      },
+    },
+    customer_segmentation: {
+      enabled: false,
+      value_segments: {
+        enterprise: { revenue_share: 0.40, customer_share: 0.05, avg_order_min: 50000, avg_order_max: null },
+        mid_market: { revenue_share: 0.35, customer_share: 0.20, avg_order_min: 5000, avg_order_max: 50000 },
+        smb: { revenue_share: 0.20, customer_share: 0.50, avg_order_min: 500, avg_order_max: 5000 },
+        consumer: { revenue_share: 0.05, customer_share: 0.25, avg_order_min: 50, avg_order_max: 500 },
+      },
+      lifecycle: {
+        prospect_rate: 0.10,
+        new_rate: 0.15,
+        growth_rate: 0.20,
+        mature_rate: 0.35,
+        at_risk_rate: 0.10,
+        churned_rate: 0.08,
+        won_back_rate: 0.02,
+      },
+      networks: {
+        referrals_enabled: true,
+        referral_rate: 0.15,
+        corporate_hierarchies_enabled: true,
+        hierarchy_probability: 0.30,
+      },
+    },
+    relationship_strength: {
+      enabled: false,
+      calculation: {
+        transaction_volume_weight: 0.30,
+        transaction_count_weight: 0.25,
+        relationship_duration_weight: 0.20,
+        recency_weight: 0.15,
+        mutual_connections_weight: 0.10,
+        recency_half_life_days: 90,
+      },
+      thresholds: {
+        strong: 0.7,
+        moderate: 0.4,
+        weak: 0.1,
+      },
+    },
+    cross_process_links: {
+      enabled: false,
+      inventory_p2p_o2c: true,
+      payment_bank_reconciliation: true,
+      intercompany_bilateral: true,
+    },
+    // Standards
+    accounting_standards: {
+      enabled: false,
+      framework: 'us_gaap',
+      revenue_recognition: {
+        enabled: true,
+        generate_contracts: true,
+        avg_obligations_per_contract: 2.0,
+      },
+      leases: {
+        enabled: true,
+        lease_count: 50,
+        finance_lease_percent: 0.30,
+      },
+      fair_value: {
+        enabled: true,
+        level1_percent: 0.60,
+        level2_percent: 0.30,
+        level3_percent: 0.10,
+      },
+      impairment: {
+        enabled: true,
+        test_frequency: 'annual',
+      },
+    },
+    graph_export: {
+      enabled: false,
+      pytorch_geometric: true,
+      neo4j: false,
+      dgl: false,
+      transaction_graph: true,
+      approval_graph: true,
+      entity_graph: true,
+      hypergraph: false,
+      split: {
+        train: 0.70,
+        val: 0.15,
+        test: 0.15,
+      },
+    },
+    quality_gates: {
+      enabled: false,
+      level: 'default',
+      benford_threshold: 0.015,
+      balance_tolerance: 0.01,
+      completeness_threshold: 0.95,
+      fail_on_violation: false,
+    },
+    // Quality & Drift
+    data_quality: {
+      enabled: false,
+      missing_values: {
+        enabled: false,
+        mechanism: 'mcar',
+        overall_rate: 0.05,
+        systematic_fields: [],
+      },
+      typos: {
+        enabled: false,
+        rate: 0.02,
+        keyboard_aware: true,
+        transposition: true,
+        ocr_errors: false,
+      },
+      format_variations: {
+        enabled: false,
+        date_formats: true,
+        amount_formats: true,
+        identifier_formats: true,
+      },
+      duplicates: {
+        enabled: false,
+        rate: 0.01,
+        exact_rate: 0.60,
+        fuzzy_rate: 0.40,
+      },
+      encoding: {
+        enabled: false,
+        mojibake: false,
+        bom_issues: false,
+        html_entities: false,
+      },
+    },
+    anomaly_injection: {
+      enabled: false,
+      base_rate: 0.005,
+      multi_stage_schemes: false,
+      correlated_injection: false,
+      near_miss_enabled: false,
+      near_miss_rate: 0.10,
+      difficulty_level: 'medium',
+      fraud_types_enabled: ['fictitious_transaction', 'split_transaction', 'duplicate_payment'],
+    },
+    behavioral_drift: {
+      enabled: false,
+      vendor_behavior_drift: 0.02,
+      customer_behavior_drift: 0.02,
+      employee_behavior_drift: 0.01,
+      drift_velocity: 0.5,
+    },
+    market_drift: {
+      enabled: false,
+      economic_cycle_enabled: true,
+      cycle_period_months: 48,
+      amplitude: 0.15,
+      commodity_price_drift: 0.03,
+      industry_cycle_enabled: false,
+      recession_probability: 0.1,
+      recession_depth: 0.25,
+    },
+    organizational_events: {
+      enabled: false,
+      events: [],
     },
   };
 }

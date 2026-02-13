@@ -1,6 +1,7 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormGroup, FormSection, Toggle, InputNumber } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
   import type { CustomDepartmentConfig } from '$lib/stores/config';
 
   const config = configStore.config;
@@ -39,12 +40,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Departments</h1>
-      <p>Configure organizational department structure</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Departments" description="Configure organizational department structure" />
 
   {#if $config}
     <div class="sections">
@@ -220,14 +216,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

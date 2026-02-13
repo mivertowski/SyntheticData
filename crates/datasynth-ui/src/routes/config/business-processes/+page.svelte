@@ -2,6 +2,7 @@
   import { configStore } from '$lib/stores/config';
   import { FormSection } from '$lib/components/forms';
   import DistributionEditor from '$lib/components/forms/DistributionEditor.svelte';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
 
@@ -23,12 +24,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Business Processes</h1>
-      <p>Configure the distribution of transactions across business processes</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Business Processes" description="Configure the distribution of transactions across business processes" />
 
   {#if $config}
     <div class="sections">
@@ -177,14 +173,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

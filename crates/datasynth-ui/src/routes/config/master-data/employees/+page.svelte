@@ -1,6 +1,7 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormGroup, FormSection, DistributionEditor } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
 
@@ -31,18 +32,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div class="header-content">
-      <a href="/config/master-data" class="back-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
-        Master Data
-      </a>
-      <h1>Employees Configuration</h1>
-      <p>Configure user accounts and approval hierarchies</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Employees Configuration" description="Configure user accounts and approval hierarchies" />
 
   {#if $config}
     <div class="sections">
@@ -209,39 +199,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .header-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: 0.8125rem;
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    margin-bottom: var(--space-2);
-  }
-
-  .back-link:hover {
-    color: var(--color-accent);
-  }
-
-  .back-link svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

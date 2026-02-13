@@ -1,17 +1,13 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
   import { FormGroup, FormSection, Toggle, InputNumber } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Financial Settings</h1>
-      <p>Configure balance coherence, subledgers, and foreign exchange</p>
-    </div>
-  </header>
+  <ConfigPageHeader title="Financial Settings" description="Configure balance coherence, subledgers, and foreign exchange" />
 
   {#if $config}
     <div class="sections">
@@ -391,14 +387,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
   }
 
   .sections {

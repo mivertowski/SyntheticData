@@ -1,18 +1,13 @@
 <script lang="ts">
   import { configStore, SCENARIO_PROFILES } from '$lib/stores/config';
   import { FormSection, FormGroup, Toggle } from '$lib/components/forms';
+  import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
-  const isDirty = configStore.isDirty;
-  const saving = configStore.saving;
 
   let newTag = $state('');
   let newMetaKey = $state('');
   let newMetaValue = $state('');
-
-  async function handleSave() {
-    await configStore.save();
-  }
 
   function addTag() {
     if (!$config?.scenario || !newTag.trim()) return;
@@ -45,26 +40,7 @@
 </script>
 
 <div class="page">
-  <header class="page-header">
-    <div>
-      <h1>Scenario Configuration</h1>
-      <p>Configure metadata, tagging, and ML training setup for this generation run</p>
-    </div>
-    <div class="header-actions">
-      {#if $isDirty}
-        <button class="btn-secondary" onclick={() => configStore.reset()}>
-          Discard
-        </button>
-      {/if}
-      <button
-        class="btn-primary"
-        onclick={handleSave}
-        disabled={$saving || !$isDirty}
-      >
-        {$saving ? 'Saving...' : 'Save Changes'}
-      </button>
-    </div>
-  </header>
+  <ConfigPageHeader title="Scenario Configuration" description="Configure metadata, tagging, and ML training setup for this generation run" />
 
   {#if $config}
     <div class="page-content">
@@ -241,22 +217,6 @@
 <style>
   .page {
     max-width: 900px;
-  }
-
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-6);
-  }
-
-  .page-header h1 {
-    margin-bottom: var(--space-1);
-  }
-
-  .header-actions {
-    display: flex;
-    gap: var(--space-2);
   }
 
   .page-content {
@@ -441,11 +401,6 @@
   @media (max-width: 768px) {
     .info-grid {
       grid-template-columns: 1fr;
-    }
-
-    .page-header {
-      flex-direction: column;
-      gap: var(--space-4);
     }
 
     .metadata-input-row {
