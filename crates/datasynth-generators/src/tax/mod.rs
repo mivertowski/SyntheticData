@@ -9,6 +9,12 @@
 
 mod tax_code_generator;
 mod tax_line_generator;
+mod tax_provision_generator;
+mod tax_return_generator;
+mod withholding_generator;
 
 pub use tax_code_generator::*;
 pub use tax_line_generator::*;
+pub use tax_provision_generator::*;
+pub use tax_return_generator::*;
+pub use withholding_generator::*;
