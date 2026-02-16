@@ -110,6 +110,8 @@ pub enum GeneratorType {
     Tax = 0x3A,
     /// Project accounting (cost lines, revenue, milestones, change orders, EVM)
     ProjectAccounting = 0x3B,
+    /// ESG / Sustainability (emissions, energy, water, waste, diversity, safety)
+    Esg = 0x3C,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

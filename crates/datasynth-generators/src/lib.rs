@@ -50,6 +50,7 @@ pub mod standards;
 pub mod project_accounting;
 pub mod tax;
 pub mod treasury;
+pub mod esg;
 
 pub use anomaly::*;
 pub use audit::*;
@@ -84,3 +85,4 @@ pub use sourcing::*;
 pub use standards::*;
 pub use project_accounting::*;
 pub use tax::*;
+pub use esg::*;
