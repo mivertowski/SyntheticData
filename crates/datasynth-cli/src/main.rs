@@ -1518,6 +1518,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         sales_quotes: Default::default(),
         tax: Default::default(),
         treasury: Default::default(),
+        project_accounting: Default::default(),
     }
 }
 

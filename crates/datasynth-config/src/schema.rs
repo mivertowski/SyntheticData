@@ -174,6 +174,9 @@ pub struct GeneratorConfig {
     /// Treasury and cash management configuration
     #[serde(default)]
     pub treasury: TreasuryConfig,
+    /// Project accounting configuration
+    #[serde(default)]
+    pub project_accounting: ProjectAccountingConfig,
 }
 
 /// LLM enrichment configuration.
@@ -11387,6 +11390,316 @@ impl Default for BankGuaranteeSchemaConfig {
         Self {
             enabled: false,
             count: default_guarantee_count(),
+        }
+    }
+}
+
+// ===========================================================================
+// Project Accounting Configuration
+// ===========================================================================
+
+/// Project accounting configuration.
+///
+/// Controls generation of project cost lines, revenue recognition,
+/// milestones, change orders, retainage, and earned value metrics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectAccountingConfig {
+    /// Whether project accounting is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of projects to generate.
+    #[serde(default = "default_project_count")]
+    pub project_count: u32,
+    /// Distribution of project types (capital, internal, customer, r_and_d, maintenance, technology).
+    #[serde(default)]
+    pub project_types: ProjectTypeDistribution,
+    /// WBS structure configuration.
+    #[serde(default)]
+    pub wbs: WbsSchemaConfig,
+    /// Cost allocation rates (what % of source documents get project-tagged).
+    #[serde(default)]
+    pub cost_allocation: CostAllocationConfig,
+    /// Revenue recognition configuration for project accounting.
+    #[serde(default)]
+    pub revenue_recognition: ProjectRevenueRecognitionConfig,
+    /// Milestone configuration.
+    #[serde(default)]
+    pub milestones: MilestoneSchemaConfig,
+    /// Change order configuration.
+    #[serde(default)]
+    pub change_orders: ChangeOrderSchemaConfig,
+    /// Retainage configuration.
+    #[serde(default)]
+    pub retainage: RetainageSchemaConfig,
+    /// Earned value management configuration.
+    #[serde(default)]
+    pub earned_value: EarnedValueSchemaConfig,
+    /// Anomaly injection rate for project accounting data (0.0 to 1.0).
+    #[serde(default = "default_project_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_project_count() -> u32 {
+    10
+}
+
+fn default_project_anomaly_rate() -> f64 {
+    0.03
+}
+
+impl Default for ProjectAccountingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            project_count: default_project_count(),
+            project_types: ProjectTypeDistribution::default(),
+            wbs: WbsSchemaConfig::default(),
+            cost_allocation: CostAllocationConfig::default(),
+            revenue_recognition: ProjectRevenueRecognitionConfig::default(),
+            milestones: MilestoneSchemaConfig::default(),
+            change_orders: ChangeOrderSchemaConfig::default(),
+            retainage: RetainageSchemaConfig::default(),
+            earned_value: EarnedValueSchemaConfig::default(),
+            anomaly_rate: default_project_anomaly_rate(),
+        }
+    }
+}
+
+/// Distribution of project types by weight.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectTypeDistribution {
+    /// Weight for capital projects (default 0.25).
+    #[serde(default = "default_capital_weight")]
+    pub capital: f64,
+    /// Weight for internal projects (default 0.20).
+    #[serde(default = "default_internal_weight")]
+    pub internal: f64,
+    /// Weight for customer projects (default 0.30).
+    #[serde(default = "default_customer_weight")]
+    pub customer: f64,
+    /// Weight for R&D projects (default 0.10).
+    #[serde(default = "default_rnd_weight")]
+    pub r_and_d: f64,
+    /// Weight for maintenance projects (default 0.10).
+    #[serde(default = "default_maintenance_weight")]
+    pub maintenance: f64,
+    /// Weight for technology projects (default 0.05).
+    #[serde(default = "default_technology_weight")]
+    pub technology: f64,
+}
+
+fn default_capital_weight() -> f64 { 0.25 }
+fn default_internal_weight() -> f64 { 0.20 }
+fn default_customer_weight() -> f64 { 0.30 }
+fn default_rnd_weight() -> f64 { 0.10 }
+fn default_maintenance_weight() -> f64 { 0.10 }
+fn default_technology_weight() -> f64 { 0.05 }
+
+impl Default for ProjectTypeDistribution {
+    fn default() -> Self {
+        Self {
+            capital: default_capital_weight(),
+            internal: default_internal_weight(),
+            customer: default_customer_weight(),
+            r_and_d: default_rnd_weight(),
+            maintenance: default_maintenance_weight(),
+            technology: default_technology_weight(),
+        }
+    }
+}
+
+/// WBS structure configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WbsSchemaConfig {
+    /// Maximum depth of WBS hierarchy (default 3).
+    #[serde(default = "default_wbs_max_depth")]
+    pub max_depth: u32,
+    /// Minimum elements per level-1 WBS (default 2).
+    #[serde(default = "default_wbs_min_elements")]
+    pub min_elements_per_level: u32,
+    /// Maximum elements per level-1 WBS (default 6).
+    #[serde(default = "default_wbs_max_elements")]
+    pub max_elements_per_level: u32,
+}
+
+fn default_wbs_max_depth() -> u32 { 3 }
+fn default_wbs_min_elements() -> u32 { 2 }
+fn default_wbs_max_elements() -> u32 { 6 }
+
+impl Default for WbsSchemaConfig {
+    fn default() -> Self {
+        Self {
+            max_depth: default_wbs_max_depth(),
+            min_elements_per_level: default_wbs_min_elements(),
+            max_elements_per_level: default_wbs_max_elements(),
+        }
+    }
+}
+
+/// Cost allocation rates — what fraction of each document type gets linked to a project.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostAllocationConfig {
+    /// Fraction of time entries assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_time_entry_rate")]
+    pub time_entry_project_rate: f64,
+    /// Fraction of expense reports assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_expense_rate")]
+    pub expense_project_rate: f64,
+    /// Fraction of purchase orders assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_po_rate")]
+    pub purchase_order_project_rate: f64,
+    /// Fraction of vendor invoices assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_vi_rate")]
+    pub vendor_invoice_project_rate: f64,
+}
+
+fn default_time_entry_rate() -> f64 { 0.60 }
+fn default_expense_rate() -> f64 { 0.30 }
+fn default_po_rate() -> f64 { 0.40 }
+fn default_vi_rate() -> f64 { 0.35 }
+
+impl Default for CostAllocationConfig {
+    fn default() -> Self {
+        Self {
+            time_entry_project_rate: default_time_entry_rate(),
+            expense_project_rate: default_expense_rate(),
+            purchase_order_project_rate: default_po_rate(),
+            vendor_invoice_project_rate: default_vi_rate(),
+        }
+    }
+}
+
+/// Revenue recognition configuration for project accounting.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRevenueRecognitionConfig {
+    /// Whether revenue recognition is enabled for customer projects.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Default method: "percentage_of_completion", "completed_contract", "milestone_based".
+    #[serde(default = "default_revenue_method")]
+    pub method: String,
+    /// Default completion measure: "cost_to_cost", "labor_hours", "physical_completion".
+    #[serde(default = "default_completion_measure")]
+    pub completion_measure: String,
+    /// Average contract value for customer projects.
+    #[serde(default = "default_avg_contract_value")]
+    pub avg_contract_value: f64,
+}
+
+fn default_revenue_method() -> String { "percentage_of_completion".to_string() }
+fn default_completion_measure() -> String { "cost_to_cost".to_string() }
+fn default_avg_contract_value() -> f64 { 500_000.0 }
+
+impl Default for ProjectRevenueRecognitionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            method: default_revenue_method(),
+            completion_measure: default_completion_measure(),
+            avg_contract_value: default_avg_contract_value(),
+        }
+    }
+}
+
+/// Milestone configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MilestoneSchemaConfig {
+    /// Whether milestone generation is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Average number of milestones per project.
+    #[serde(default = "default_milestones_per_project")]
+    pub avg_per_project: u32,
+    /// Fraction of milestones that are payment milestones (0.0 to 1.0).
+    #[serde(default = "default_payment_milestone_rate")]
+    pub payment_milestone_rate: f64,
+}
+
+fn default_milestones_per_project() -> u32 { 4 }
+fn default_payment_milestone_rate() -> f64 { 0.50 }
+
+impl Default for MilestoneSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            avg_per_project: default_milestones_per_project(),
+            payment_milestone_rate: default_payment_milestone_rate(),
+        }
+    }
+}
+
+/// Change order configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangeOrderSchemaConfig {
+    /// Whether change order generation is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Probability that a project will have at least one change order (0.0 to 1.0).
+    #[serde(default = "default_change_order_probability")]
+    pub probability: f64,
+    /// Maximum change orders per project.
+    #[serde(default = "default_max_change_orders")]
+    pub max_per_project: u32,
+    /// Approval rate for change orders (0.0 to 1.0).
+    #[serde(default = "default_change_order_approval_rate")]
+    pub approval_rate: f64,
+}
+
+fn default_change_order_probability() -> f64 { 0.40 }
+fn default_max_change_orders() -> u32 { 3 }
+fn default_change_order_approval_rate() -> f64 { 0.75 }
+
+impl Default for ChangeOrderSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            probability: default_change_order_probability(),
+            max_per_project: default_max_change_orders(),
+            approval_rate: default_change_order_approval_rate(),
+        }
+    }
+}
+
+/// Retainage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetainageSchemaConfig {
+    /// Whether retainage is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Default retainage percentage (0.0 to 1.0, e.g., 0.10 for 10%).
+    #[serde(default = "default_retainage_pct")]
+    pub default_percentage: f64,
+}
+
+fn default_retainage_pct() -> f64 { 0.10 }
+
+impl Default for RetainageSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            default_percentage: default_retainage_pct(),
+        }
+    }
+}
+
+/// Earned value management (EVM) configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EarnedValueSchemaConfig {
+    /// Whether EVM metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Measurement frequency: "weekly", "biweekly", "monthly".
+    #[serde(default = "default_evm_frequency")]
+    pub frequency: String,
+}
+
+fn default_evm_frequency() -> String { "monthly".to_string() }
+
+impl Default for EarnedValueSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frequency: default_evm_frequency(),
         }
     }
 }

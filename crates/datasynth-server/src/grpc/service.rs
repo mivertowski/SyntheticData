@@ -874,6 +874,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         sales_quotes: Default::default(),
         tax: Default::default(),
         treasury: Default::default(),
+        project_accounting: Default::default(),
     }
 }
 

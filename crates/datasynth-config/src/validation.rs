@@ -2222,6 +2222,7 @@ mod tests {
             sales_quotes: SalesQuoteConfig::default(),
             tax: TaxConfig::default(),
             treasury: TreasuryConfig::default(),
+            project_accounting: ProjectAccountingConfig::default(),
         }
     }
 

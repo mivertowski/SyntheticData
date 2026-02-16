@@ -84,6 +84,7 @@ pub fn create_preset(
         sales_quotes: SalesQuoteConfig::default(),
         tax: TaxConfig::default(),
         treasury: TreasuryConfig::default(),
+        project_accounting: ProjectAccountingConfig::default(),
     }
 }
 
