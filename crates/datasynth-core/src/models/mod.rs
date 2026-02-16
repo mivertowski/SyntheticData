@@ -37,6 +37,9 @@ mod tax;
 mod temporal;
 mod treasury;
 mod user;
+
+// ESG / Sustainability models
+mod esg;
 mod vendor_network;
 
 // Source-to-Contract models (S2C pipeline)
@@ -114,6 +117,9 @@ pub use temporal::*;
 pub use treasury::*;
 pub use user::*;
 pub use vendor_network::*;
+
+// ESG / Sustainability exports
+pub use esg::*;
 
 // Sourcing exports
 pub use sourcing::*;
