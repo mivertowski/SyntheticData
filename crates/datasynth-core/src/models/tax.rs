@@ -619,6 +619,7 @@ pub struct WithholdingTaxRecord {
     /// Category of withholding
     pub withholding_type: WithholdingType,
     /// Reduced rate under an applicable tax treaty
+    #[serde(default, with = "rust_decimal::serde::str_option")]
     pub treaty_rate: Option<Decimal>,
     /// Domestic statutory withholding rate
     #[serde(with = "rust_decimal::serde::str")]
@@ -984,5 +985,44 @@ mod tests {
         assert_eq!(deserialized.is_reverse_charge, code.is_reverse_charge);
         assert_eq!(deserialized.effective_date, code.effective_date);
         assert_eq!(deserialized.expiry_date, code.expiry_date);
+    }
+
+    #[test]
+    fn test_withholding_serde_roundtrip() {
+        // With treaty rate (Some)
+        let wht = WithholdingTaxRecord::new(
+            "WHT-SERDE-1",
+            "PAY-001",
+            "V-001",
+            WithholdingType::RoyaltyWithholding,
+            dec!(0.30),
+            dec!(0.15),
+            dec!(50000),
+        )
+        .with_treaty_rate(dec!(0.10));
+
+        let json = serde_json::to_string_pretty(&wht).unwrap();
+        let deserialized: WithholdingTaxRecord = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.treaty_rate, Some(dec!(0.10)));
+        assert_eq!(deserialized.statutory_rate, dec!(0.30));
+        assert_eq!(deserialized.applied_rate, dec!(0.15));
+        assert_eq!(deserialized.base_amount, dec!(50000));
+        assert_eq!(deserialized.withheld_amount, wht.withheld_amount);
+
+        // Without treaty rate (None)
+        let wht_no_treaty = WithholdingTaxRecord::new(
+            "WHT-SERDE-2",
+            "PAY-002",
+            "V-002",
+            WithholdingType::ServiceWithholding,
+            dec!(0.30),
+            dec!(0.30),
+            dec!(10000),
+        );
+
+        let json2 = serde_json::to_string_pretty(&wht_no_treaty).unwrap();
+        let deserialized2: WithholdingTaxRecord = serde_json::from_str(&json2).unwrap();
+        assert_eq!(deserialized2.treaty_rate, None);
+        assert_eq!(deserialized2.statutory_rate, dec!(0.30));
     }
 }
