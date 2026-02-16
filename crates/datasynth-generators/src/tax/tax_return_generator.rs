@@ -24,10 +24,8 @@ use datasynth_core::models::{TaxLine, TaxReturn, TaxReturnType, TaxableDocumentT
 /// input tax (from deductible [`TaxableDocumentType::VendorInvoice`] lines),
 /// then produces a single [`TaxReturn`] per jurisdiction.
 ///
-/// The return type is inferred from the `tax_code_id` prefix on the lines:
-/// - Codes starting with `"VAT"` or `"GST"` produce a [`TaxReturnType::VatReturn`].
-/// - Codes starting with `"ST"` produce a [`TaxReturnType::SalesTax`] return.
-/// - Otherwise defaults to [`TaxReturnType::VatReturn`].
+/// All indirect tax lines (VAT, GST, sales tax) produce
+/// [`TaxReturnType::VatReturn`] returns.
 ///
 /// Filing behavior:
 /// - ~95% of returns are filed on time.
