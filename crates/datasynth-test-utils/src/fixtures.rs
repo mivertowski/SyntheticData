@@ -103,6 +103,7 @@ pub fn minimal_config() -> GeneratorConfig {
         manufacturing: Default::default(),
         sales_quotes: Default::default(),
         tax: Default::default(),
+        treasury: Default::default(),
     }
 }
 

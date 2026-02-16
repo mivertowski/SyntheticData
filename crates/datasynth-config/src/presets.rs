@@ -83,6 +83,7 @@ pub fn create_preset(
         manufacturing: ManufacturingProcessConfig::default(),
         sales_quotes: SalesQuoteConfig::default(),
         tax: TaxConfig::default(),
+        treasury: TreasuryConfig::default(),
     }
 }
 

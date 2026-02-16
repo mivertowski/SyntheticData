@@ -171,6 +171,9 @@ pub struct GeneratorConfig {
     /// Tax accounting configuration (VAT/GST, sales tax, withholding, provisions, payroll tax)
     #[serde(default)]
     pub tax: TaxConfig,
+    /// Treasury and cash management configuration
+    #[serde(default)]
+    pub treasury: TreasuryConfig,
 }
 
 /// LLM enrichment configuration.
@@ -11059,6 +11062,333 @@ pub struct PayrollTaxSchemaConfig {
     /// Whether payroll tax generation is enabled.
     #[serde(default)]
     pub enabled: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Treasury & Cash Management Configuration
+// ---------------------------------------------------------------------------
+
+/// Treasury and cash management configuration.
+///
+/// Controls generation of cash positions, forecasts, pooling, hedging
+/// instruments (ASC 815 / IFRS 9), debt instruments with covenants,
+/// bank guarantees, and intercompany netting runs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TreasuryConfig {
+    /// Whether treasury generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Cash positioning configuration.
+    #[serde(default)]
+    pub cash_positioning: CashPositioningConfig,
+    /// Cash forecasting configuration.
+    #[serde(default)]
+    pub cash_forecasting: CashForecastingConfig,
+    /// Cash pooling configuration.
+    #[serde(default)]
+    pub cash_pooling: CashPoolingConfig,
+    /// Hedging configuration (FX forwards, IR swaps, etc.).
+    #[serde(default)]
+    pub hedging: HedgingSchemaConfig,
+    /// Debt instrument and covenant configuration.
+    #[serde(default)]
+    pub debt: DebtSchemaConfig,
+    /// Intercompany netting configuration.
+    #[serde(default)]
+    pub netting: NettingSchemaConfig,
+    /// Bank guarantee / letter of credit configuration.
+    #[serde(default)]
+    pub bank_guarantees: BankGuaranteeSchemaConfig,
+    /// Anomaly injection rate for treasury data (0.0 to 1.0).
+    #[serde(default = "default_treasury_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_treasury_anomaly_rate() -> f64 {
+    0.02
+}
+
+impl Default for TreasuryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cash_positioning: CashPositioningConfig::default(),
+            cash_forecasting: CashForecastingConfig::default(),
+            cash_pooling: CashPoolingConfig::default(),
+            hedging: HedgingSchemaConfig::default(),
+            debt: DebtSchemaConfig::default(),
+            netting: NettingSchemaConfig::default(),
+            bank_guarantees: BankGuaranteeSchemaConfig::default(),
+            anomaly_rate: default_treasury_anomaly_rate(),
+        }
+    }
+}
+
+/// Cash positioning configuration.
+///
+/// Controls daily cash position generation per entity/bank account.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashPositioningConfig {
+    /// Whether cash positioning is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Position generation frequency.
+    #[serde(default = "default_cash_frequency")]
+    pub frequency: String,
+    /// Minimum cash balance policy threshold.
+    #[serde(default = "default_minimum_balance_policy")]
+    pub minimum_balance_policy: f64,
+}
+
+fn default_cash_frequency() -> String {
+    "daily".to_string()
+}
+
+fn default_minimum_balance_policy() -> f64 {
+    100_000.0
+}
+
+impl Default for CashPositioningConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frequency: default_cash_frequency(),
+            minimum_balance_policy: default_minimum_balance_policy(),
+        }
+    }
+}
+
+/// Cash forecasting configuration.
+///
+/// Controls forward-looking cash forecast generation with probability-weighted items.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashForecastingConfig {
+    /// Whether cash forecasting is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of days to forecast into the future.
+    #[serde(default = "default_horizon_days")]
+    pub horizon_days: u32,
+    /// AR collection probability curve type ("aging" or "flat").
+    #[serde(default = "default_ar_probability_curve")]
+    pub ar_collection_probability_curve: String,
+    /// Confidence interval for the forecast (0.0 to 1.0).
+    #[serde(default = "default_confidence_interval")]
+    pub confidence_interval: f64,
+}
+
+fn default_horizon_days() -> u32 {
+    90
+}
+
+fn default_ar_probability_curve() -> String {
+    "aging".to_string()
+}
+
+fn default_confidence_interval() -> f64 {
+    0.90
+}
+
+impl Default for CashForecastingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            horizon_days: default_horizon_days(),
+            ar_collection_probability_curve: default_ar_probability_curve(),
+            confidence_interval: default_confidence_interval(),
+        }
+    }
+}
+
+/// Cash pooling configuration.
+///
+/// Controls cash pool structure generation (physical, notional, zero-balancing).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashPoolingConfig {
+    /// Whether cash pooling is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Pool type: "physical_pooling", "notional_pooling", or "zero_balancing".
+    #[serde(default = "default_pool_type")]
+    pub pool_type: String,
+    /// Time of day when sweeps occur (HH:MM format).
+    #[serde(default = "default_sweep_time")]
+    pub sweep_time: String,
+}
+
+fn default_pool_type() -> String {
+    "zero_balancing".to_string()
+}
+
+fn default_sweep_time() -> String {
+    "16:00".to_string()
+}
+
+impl Default for CashPoolingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            pool_type: default_pool_type(),
+            sweep_time: default_sweep_time(),
+        }
+    }
+}
+
+/// Hedging configuration.
+///
+/// Controls generation of hedging instruments and hedge relationship designations
+/// under ASC 815 / IFRS 9.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HedgingSchemaConfig {
+    /// Whether hedging generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Target hedge ratio (0.0 to 1.0). Proportion of FX exposure to hedge.
+    #[serde(default = "default_hedge_ratio")]
+    pub hedge_ratio: f64,
+    /// Types of instruments to generate (e.g., ["fx_forward", "interest_rate_swap"]).
+    #[serde(default = "default_hedge_instruments")]
+    pub instruments: Vec<String>,
+    /// Whether to designate formal hedge accounting relationships.
+    #[serde(default = "default_true")]
+    pub hedge_accounting: bool,
+    /// Effectiveness testing method: "dollar_offset", "regression", or "critical_terms".
+    #[serde(default = "default_effectiveness_method")]
+    pub effectiveness_method: String,
+}
+
+fn default_hedge_ratio() -> f64 {
+    0.75
+}
+
+fn default_hedge_instruments() -> Vec<String> {
+    vec!["fx_forward".to_string(), "interest_rate_swap".to_string()]
+}
+
+fn default_effectiveness_method() -> String {
+    "regression".to_string()
+}
+
+impl Default for HedgingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            hedge_ratio: default_hedge_ratio(),
+            instruments: default_hedge_instruments(),
+            hedge_accounting: true,
+            effectiveness_method: default_effectiveness_method(),
+        }
+    }
+}
+
+/// Debt instrument configuration.
+///
+/// Controls generation of debt instruments (term loans, revolving credit, bonds)
+/// with amortization schedules and financial covenants.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DebtSchemaConfig {
+    /// Whether debt instrument generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Debt instrument definitions.
+    #[serde(default)]
+    pub instruments: Vec<DebtInstrumentDef>,
+    /// Covenant definitions.
+    #[serde(default)]
+    pub covenants: Vec<CovenantDef>,
+}
+
+impl Default for DebtSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            instruments: Vec::new(),
+            covenants: Vec::new(),
+        }
+    }
+}
+
+/// Definition of a debt instrument in configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DebtInstrumentDef {
+    /// Instrument type: "term_loan", "revolving_credit", "bond", "commercial_paper", "bridge_loan".
+    #[serde(rename = "type")]
+    pub instrument_type: String,
+    /// Principal amount (for term loans, bonds).
+    #[serde(default)]
+    pub principal: Option<f64>,
+    /// Interest rate (annual, as decimal fraction).
+    #[serde(default)]
+    pub rate: Option<f64>,
+    /// Maturity in months.
+    #[serde(default)]
+    pub maturity_months: Option<u32>,
+    /// Facility limit (for revolving credit).
+    #[serde(default)]
+    pub facility: Option<f64>,
+}
+
+/// Definition of a debt covenant in configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CovenantDef {
+    /// Covenant type: "debt_to_equity", "interest_coverage", "current_ratio",
+    /// "net_worth", "debt_to_ebitda", "fixed_charge_coverage".
+    #[serde(rename = "type")]
+    pub covenant_type: String,
+    /// Covenant threshold value.
+    pub threshold: f64,
+}
+
+/// Intercompany netting configuration.
+///
+/// Controls generation of multilateral netting runs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NettingSchemaConfig {
+    /// Whether netting generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Netting cycle: "daily", "weekly", or "monthly".
+    #[serde(default = "default_netting_cycle")]
+    pub cycle: String,
+}
+
+fn default_netting_cycle() -> String {
+    "monthly".to_string()
+}
+
+impl Default for NettingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cycle: default_netting_cycle(),
+        }
+    }
+}
+
+/// Bank guarantee and letter of credit configuration.
+///
+/// Controls generation of bank guarantees, standby LCs, and performance bonds.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BankGuaranteeSchemaConfig {
+    /// Whether bank guarantee generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of guarantees to generate.
+    #[serde(default = "default_guarantee_count")]
+    pub count: u32,
+}
+
+fn default_guarantee_count() -> u32 {
+    5
+}
+
+impl Default for BankGuaranteeSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            count: default_guarantee_count(),
+        }
+    }
 }
 
 #[cfg(test)]
