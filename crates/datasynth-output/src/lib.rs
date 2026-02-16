@@ -9,12 +9,14 @@ pub mod csv_sink;
 pub mod formats;
 pub mod json_sink;
 pub mod parquet_sink;
+pub mod project_accounting_export;
 pub mod streaming;
 pub mod tax_export;
 pub mod treasury_export;
 
 pub use control_export::*;
 pub use csv_sink::*;
+pub use project_accounting_export::*;
 pub use tax_export::*;
 pub use treasury_export::*;
 pub use formats::{
