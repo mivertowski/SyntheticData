@@ -47,6 +47,7 @@ pub mod manufacturing;
 pub mod sales_quote_generator;
 pub mod sourcing;
 pub mod standards;
+pub mod tax;
 
 pub use anomaly::*;
 pub use audit::*;
@@ -79,3 +80,4 @@ pub use manufacturing::*;
 pub use sales_quote_generator::*;
 pub use sourcing::*;
 pub use standards::*;
+pub use tax::*;
