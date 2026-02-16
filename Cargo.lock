@@ -1633,7 +1633,7 @@ dependencies = [
  "rust_decimal_macros",
  "serde",
  "serde_json",
- "statrs 0.17.1",
+ "statrs",
  "tempfile",
  "thiserror 2.0.18",
  "tracing",
@@ -1650,7 +1650,7 @@ dependencies = [
  "datasynth-config",
  "datasynth-core",
  "hex",
- "nalgebra 0.33.2",
+ "nalgebra",
  "parquet",
  "proptest",
  "rand 0.8.5",
@@ -1663,7 +1663,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha2",
- "statrs 0.18.0",
+ "statrs",
  "tempfile",
  "thiserror 2.0.18",
  "tracing",
@@ -3772,24 +3772,6 @@ checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 
 [[package]]
 name = "nalgebra"
-version = "0.32.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b5c17de023a86f59ed79891b2e5d5a94c705dbe904a5b5c9c952ea6221b03e4"
-dependencies = [
- "approx",
- "matrixmultiply",
- "nalgebra-macros",
- "num-complex",
- "num-rational",
- "num-traits",
- "rand 0.8.5",
- "rand_distr",
- "simba 0.8.1",
- "typenum",
-]
-
-[[package]]
-name = "nalgebra"
 version = "0.33.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26aecdf64b707efd1310e3544d709c5c0ac61c13756046aaaba41be5c4f66a3b"
@@ -3802,7 +3784,7 @@ dependencies = [
  "num-traits",
  "rand 0.8.5",
  "rand_distr",
- "simba 0.9.1",
+ "simba",
  "typenum",
 ]
 
@@ -6051,19 +6033,6 @@ dependencies = [
 
 [[package]]
 name = "simba"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "061507c94fc6ab4ba1c9a0305018408e312e17c041eb63bef8aa726fa33aceae"
-dependencies = [
- "approx",
- "num-complex",
- "num-traits",
- "paste",
- "wide",
-]
-
-[[package]]
-name = "simba"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c99284beb21666094ba2b75bbceda012e610f5479dfcc2d6e2426f53197ffd95"
@@ -6211,24 +6180,12 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "statrs"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f697a07e4606a0a25c044de247e583a330dbb1731d11bc7350b81f48ad567255"
-dependencies = [
- "approx",
- "nalgebra 0.32.6",
- "num-traits",
- "rand 0.8.5",
-]
-
-[[package]]
-name = "statrs"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a3fe7c28c6512e766b0874335db33c94ad7b8f9054228ae1c2abd47ce7d335e"
 dependencies = [
  "approx",
- "nalgebra 0.33.2",
+ "nalgebra",
  "num-traits",
  "rand 0.8.5",
 ]
