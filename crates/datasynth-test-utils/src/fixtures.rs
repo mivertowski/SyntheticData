@@ -105,6 +105,7 @@ pub fn minimal_config() -> GeneratorConfig {
         tax: Default::default(),
         treasury: Default::default(),
         project_accounting: Default::default(),
+        esg: Default::default(),
     }
 }
 

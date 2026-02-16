@@ -85,6 +85,7 @@ pub fn create_preset(
         tax: TaxConfig::default(),
         treasury: TreasuryConfig::default(),
         project_accounting: ProjectAccountingConfig::default(),
+        esg: EsgConfig::default(),
     }
 }
 

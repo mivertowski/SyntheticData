@@ -177,6 +177,9 @@ pub struct GeneratorConfig {
     /// Project accounting configuration
     #[serde(default)]
     pub project_accounting: ProjectAccountingConfig,
+    /// ESG / Sustainability reporting configuration
+    #[serde(default)]
+    pub esg: EsgConfig,
 }
 
 /// LLM enrichment configuration.
@@ -11700,6 +11703,490 @@ impl Default for EarnedValueSchemaConfig {
         Self {
             enabled: true,
             frequency: default_evm_frequency(),
+        }
+    }
+}
+
+// =============================================================================
+// ESG / Sustainability Configuration
+// =============================================================================
+
+/// Top-level ESG / sustainability reporting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EsgConfig {
+    /// Whether ESG generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Environmental metrics (emissions, energy, water, waste).
+    #[serde(default)]
+    pub environmental: EnvironmentalConfig,
+    /// Social metrics (diversity, pay equity, safety).
+    #[serde(default)]
+    pub social: SocialConfig,
+    /// Governance metrics (board composition, ethics, compliance).
+    #[serde(default)]
+    pub governance: GovernanceSchemaConfig,
+    /// Supply-chain ESG assessment settings.
+    #[serde(default)]
+    pub supply_chain_esg: SupplyChainEsgConfig,
+    /// ESG reporting / disclosure framework settings.
+    #[serde(default)]
+    pub reporting: EsgReportingConfig,
+    /// Climate scenario analysis settings.
+    #[serde(default)]
+    pub climate_scenarios: ClimateScenarioConfig,
+    /// Anomaly injection rate for ESG data (0.0 to 1.0).
+    #[serde(default = "default_esg_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_esg_anomaly_rate() -> f64 {
+    0.02
+}
+
+impl Default for EsgConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            environmental: EnvironmentalConfig::default(),
+            social: SocialConfig::default(),
+            governance: GovernanceSchemaConfig::default(),
+            supply_chain_esg: SupplyChainEsgConfig::default(),
+            reporting: EsgReportingConfig::default(),
+            climate_scenarios: ClimateScenarioConfig::default(),
+            anomaly_rate: default_esg_anomaly_rate(),
+        }
+    }
+}
+
+/// Environmental metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvironmentalConfig {
+    /// Whether environmental metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Scope 1 (direct) emission generation settings.
+    #[serde(default)]
+    pub scope1: EmissionScopeConfig,
+    /// Scope 2 (purchased energy) emission generation settings.
+    #[serde(default)]
+    pub scope2: EmissionScopeConfig,
+    /// Scope 3 (value chain) emission generation settings.
+    #[serde(default)]
+    pub scope3: Scope3Config,
+    /// Energy consumption tracking settings.
+    #[serde(default)]
+    pub energy: EnergySchemaConfig,
+    /// Water usage tracking settings.
+    #[serde(default)]
+    pub water: WaterSchemaConfig,
+    /// Waste management tracking settings.
+    #[serde(default)]
+    pub waste: WasteSchemaConfig,
+}
+
+impl Default for EnvironmentalConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            scope1: EmissionScopeConfig::default(),
+            scope2: EmissionScopeConfig::default(),
+            scope3: Scope3Config::default(),
+            energy: EnergySchemaConfig::default(),
+            water: WaterSchemaConfig::default(),
+            waste: WasteSchemaConfig::default(),
+        }
+    }
+}
+
+/// Configuration for a single emission scope (Scope 1 or 2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmissionScopeConfig {
+    /// Whether this scope is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Emission factor region (e.g., "US", "EU", "global").
+    #[serde(default = "default_emission_region")]
+    pub factor_region: String,
+}
+
+fn default_emission_region() -> String {
+    "US".to_string()
+}
+
+impl Default for EmissionScopeConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            factor_region: default_emission_region(),
+        }
+    }
+}
+
+/// Scope 3 (value chain) emission configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Scope3Config {
+    /// Whether Scope 3 emissions are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Categories to include (e.g., "purchased_goods", "business_travel", "commuting").
+    #[serde(default = "default_scope3_categories")]
+    pub categories: Vec<String>,
+    /// Spend-based emission intensity (kg CO2e per USD).
+    #[serde(default = "default_spend_intensity")]
+    pub default_spend_intensity_kg_per_usd: f64,
+}
+
+fn default_scope3_categories() -> Vec<String> {
+    vec![
+        "purchased_goods".to_string(),
+        "business_travel".to_string(),
+        "employee_commuting".to_string(),
+    ]
+}
+
+fn default_spend_intensity() -> f64 {
+    0.5
+}
+
+impl Default for Scope3Config {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            categories: default_scope3_categories(),
+            default_spend_intensity_kg_per_usd: default_spend_intensity(),
+        }
+    }
+}
+
+/// Energy consumption configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnergySchemaConfig {
+    /// Whether energy consumption tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of facilities to generate.
+    #[serde(default = "default_facility_count")]
+    pub facility_count: u32,
+    /// Target percentage of energy from renewable sources (0.0 to 1.0).
+    #[serde(default = "default_renewable_target")]
+    pub renewable_target: f64,
+}
+
+fn default_facility_count() -> u32 {
+    5
+}
+
+fn default_renewable_target() -> f64 {
+    0.30
+}
+
+impl Default for EnergySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            facility_count: default_facility_count(),
+            renewable_target: default_renewable_target(),
+        }
+    }
+}
+
+/// Water usage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WaterSchemaConfig {
+    /// Whether water usage tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of facilities with water tracking.
+    #[serde(default = "default_water_facility_count")]
+    pub facility_count: u32,
+}
+
+fn default_water_facility_count() -> u32 {
+    3
+}
+
+impl Default for WaterSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            facility_count: default_water_facility_count(),
+        }
+    }
+}
+
+/// Waste management configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WasteSchemaConfig {
+    /// Whether waste tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Target diversion rate (0.0 to 1.0).
+    #[serde(default = "default_diversion_target")]
+    pub diversion_target: f64,
+}
+
+fn default_diversion_target() -> f64 {
+    0.50
+}
+
+impl Default for WasteSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            diversion_target: default_diversion_target(),
+        }
+    }
+}
+
+/// Social metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SocialConfig {
+    /// Whether social metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Workforce diversity tracking settings.
+    #[serde(default)]
+    pub diversity: DiversitySchemaConfig,
+    /// Pay equity analysis settings.
+    #[serde(default)]
+    pub pay_equity: PayEquitySchemaConfig,
+    /// Safety incident and metrics settings.
+    #[serde(default)]
+    pub safety: SafetySchemaConfig,
+}
+
+impl Default for SocialConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            diversity: DiversitySchemaConfig::default(),
+            pay_equity: PayEquitySchemaConfig::default(),
+            safety: SafetySchemaConfig::default(),
+        }
+    }
+}
+
+/// Workforce diversity configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiversitySchemaConfig {
+    /// Whether diversity metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Dimensions to track (e.g., "gender", "ethnicity", "age_group").
+    #[serde(default = "default_diversity_dimensions")]
+    pub dimensions: Vec<String>,
+}
+
+fn default_diversity_dimensions() -> Vec<String> {
+    vec![
+        "gender".to_string(),
+        "ethnicity".to_string(),
+        "age_group".to_string(),
+    ]
+}
+
+impl Default for DiversitySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            dimensions: default_diversity_dimensions(),
+        }
+    }
+}
+
+/// Pay equity analysis configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayEquitySchemaConfig {
+    /// Whether pay equity analysis is generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Target pay gap threshold for flagging (e.g., 0.05 = 5% gap).
+    #[serde(default = "default_pay_gap_threshold")]
+    pub gap_threshold: f64,
+}
+
+fn default_pay_gap_threshold() -> f64 {
+    0.05
+}
+
+impl Default for PayEquitySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            gap_threshold: default_pay_gap_threshold(),
+        }
+    }
+}
+
+/// Safety metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SafetySchemaConfig {
+    /// Whether safety metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Average annual recordable incidents per 200,000 hours.
+    #[serde(default = "default_trir_target")]
+    pub target_trir: f64,
+    /// Number of safety incidents to generate.
+    #[serde(default = "default_incident_count")]
+    pub incident_count: u32,
+}
+
+fn default_trir_target() -> f64 {
+    2.5
+}
+
+fn default_incident_count() -> u32 {
+    20
+}
+
+impl Default for SafetySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            target_trir: default_trir_target(),
+            incident_count: default_incident_count(),
+        }
+    }
+}
+
+/// Governance metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GovernanceSchemaConfig {
+    /// Whether governance metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of board members.
+    #[serde(default = "default_board_size")]
+    pub board_size: u32,
+    /// Target independent director ratio (0.0 to 1.0).
+    #[serde(default = "default_independence_target")]
+    pub independence_target: f64,
+}
+
+fn default_board_size() -> u32 {
+    11
+}
+
+fn default_independence_target() -> f64 {
+    0.67
+}
+
+impl Default for GovernanceSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            board_size: default_board_size(),
+            independence_target: default_independence_target(),
+        }
+    }
+}
+
+/// Supply-chain ESG assessment configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupplyChainEsgConfig {
+    /// Whether supply chain ESG assessments are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Proportion of vendors to assess (0.0 to 1.0).
+    #[serde(default = "default_assessment_coverage")]
+    pub assessment_coverage: f64,
+    /// High-risk country codes for automatic flagging.
+    #[serde(default = "default_high_risk_countries")]
+    pub high_risk_countries: Vec<String>,
+}
+
+fn default_assessment_coverage() -> f64 {
+    0.80
+}
+
+fn default_high_risk_countries() -> Vec<String> {
+    vec!["CN".to_string(), "BD".to_string(), "MM".to_string()]
+}
+
+impl Default for SupplyChainEsgConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            assessment_coverage: default_assessment_coverage(),
+            high_risk_countries: default_high_risk_countries(),
+        }
+    }
+}
+
+/// ESG reporting / disclosure framework configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EsgReportingConfig {
+    /// Whether ESG disclosures are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Frameworks to generate disclosures for.
+    #[serde(default = "default_esg_frameworks")]
+    pub frameworks: Vec<String>,
+    /// Whether materiality assessment is performed.
+    #[serde(default = "default_true")]
+    pub materiality_assessment: bool,
+    /// Materiality threshold for impact dimension (0.0 to 1.0).
+    #[serde(default = "default_materiality_threshold")]
+    pub impact_threshold: f64,
+    /// Materiality threshold for financial dimension (0.0 to 1.0).
+    #[serde(default = "default_materiality_threshold")]
+    pub financial_threshold: f64,
+}
+
+fn default_esg_frameworks() -> Vec<String> {
+    vec!["GRI".to_string(), "ESRS".to_string()]
+}
+
+fn default_materiality_threshold() -> f64 {
+    0.6
+}
+
+impl Default for EsgReportingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frameworks: default_esg_frameworks(),
+            materiality_assessment: true,
+            impact_threshold: default_materiality_threshold(),
+            financial_threshold: default_materiality_threshold(),
+        }
+    }
+}
+
+/// Climate scenario analysis configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClimateScenarioConfig {
+    /// Whether climate scenario analysis is generated.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Scenarios to model (e.g., "net_zero_2050", "stated_policies", "current_trajectory").
+    #[serde(default = "default_climate_scenarios")]
+    pub scenarios: Vec<String>,
+    /// Time horizons in years to project.
+    #[serde(default = "default_time_horizons")]
+    pub time_horizons: Vec<u32>,
+}
+
+fn default_climate_scenarios() -> Vec<String> {
+    vec![
+        "net_zero_2050".to_string(),
+        "stated_policies".to_string(),
+        "current_trajectory".to_string(),
+    ]
+}
+
+fn default_time_horizons() -> Vec<u32> {
+    vec![5, 10, 30]
+}
+
+impl Default for ClimateScenarioConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            scenarios: default_climate_scenarios(),
+            time_horizons: default_time_horizons(),
         }
     }
 }

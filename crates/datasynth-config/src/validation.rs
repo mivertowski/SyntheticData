@@ -2223,6 +2223,7 @@ mod tests {
             tax: TaxConfig::default(),
             treasury: TreasuryConfig::default(),
             project_accounting: ProjectAccountingConfig::default(),
+            esg: EsgConfig::default(),
         }
     }
 
