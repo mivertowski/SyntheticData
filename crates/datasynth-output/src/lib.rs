@@ -11,10 +11,12 @@ pub mod json_sink;
 pub mod parquet_sink;
 pub mod streaming;
 pub mod tax_export;
+pub mod treasury_export;
 
 pub use control_export::*;
 pub use csv_sink::*;
 pub use tax_export::*;
+pub use treasury_export::*;
 pub use formats::{
     NetSuiteExporter, NetSuiteJournalEntry, NetSuiteJournalLine, OracleExporter, OracleJeHeader,
     OracleJeLine, SapExportConfig, SapExporter, SapTableType,
