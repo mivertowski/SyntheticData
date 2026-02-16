@@ -1516,6 +1516,8 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         hr: Default::default(),
         manufacturing: Default::default(),
         sales_quotes: Default::default(),
+        tax: Default::default(),
+        treasury: Default::default(),
     }
 }
 

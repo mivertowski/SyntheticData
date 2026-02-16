@@ -872,6 +872,8 @@ pub fn default_generator_config() -> GeneratorConfig {
         hr: Default::default(),
         manufacturing: Default::default(),
         sales_quotes: Default::default(),
+        tax: Default::default(),
+        treasury: Default::default(),
     }
 }
 
