@@ -108,6 +108,8 @@ pub enum GeneratorType {
     Kpi = 0x39,
     /// Tax code / jurisdiction generator
     Tax = 0x3A,
+    /// Project accounting (cost lines, revenue, milestones, change orders, EVM)
+    ProjectAccounting = 0x3B,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique
