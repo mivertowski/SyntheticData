@@ -34,6 +34,7 @@ mod relationship;
 mod sod;
 mod tax;
 mod temporal;
+mod treasury;
 mod user;
 mod vendor_network;
 
@@ -108,6 +109,7 @@ pub use relationship::*;
 pub use sod::*;
 pub use tax::*;
 pub use temporal::*;
+pub use treasury::*;
 pub use user::*;
 pub use vendor_network::*;
 
