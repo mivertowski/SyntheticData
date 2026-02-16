@@ -2220,6 +2220,7 @@ mod tests {
             hr: HrConfig::default(),
             manufacturing: ManufacturingProcessConfig::default(),
             sales_quotes: SalesQuoteConfig::default(),
+            tax: TaxConfig::default(),
         }
     }
 

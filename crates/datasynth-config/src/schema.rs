@@ -168,6 +168,9 @@ pub struct GeneratorConfig {
     /// Sales quote configuration (quote-to-order pipeline)
     #[serde(default)]
     pub sales_quotes: SalesQuoteConfig,
+    /// Tax accounting configuration (VAT/GST, sales tax, withholding, provisions, payroll tax)
+    #[serde(default)]
+    pub tax: TaxConfig,
 }
 
 /// LLM enrichment configuration.
@@ -10859,6 +10862,205 @@ fn default_quote_validity_days() -> u32 {
     30
 }
 
+// =============================================================================
+// Tax Accounting Configuration
+// =============================================================================
+
+/// Tax accounting configuration.
+///
+/// Controls generation of tax-related data including VAT/GST, sales tax,
+/// withholding tax, tax provisions, and payroll tax across multiple jurisdictions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxConfig {
+    /// Whether tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Tax jurisdiction configuration.
+    #[serde(default)]
+    pub jurisdictions: TaxJurisdictionConfig,
+    /// VAT/GST configuration.
+    #[serde(default)]
+    pub vat_gst: VatGstConfig,
+    /// Sales tax configuration.
+    #[serde(default)]
+    pub sales_tax: SalesTaxConfig,
+    /// Withholding tax configuration.
+    #[serde(default)]
+    pub withholding: WithholdingTaxSchemaConfig,
+    /// Tax provision configuration.
+    #[serde(default)]
+    pub provisions: TaxProvisionSchemaConfig,
+    /// Payroll tax configuration.
+    #[serde(default)]
+    pub payroll_tax: PayrollTaxSchemaConfig,
+    /// Anomaly injection rate for tax data (0.0 to 1.0).
+    #[serde(default = "default_tax_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_tax_anomaly_rate() -> f64 {
+    0.03
+}
+
+impl Default for TaxConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            jurisdictions: TaxJurisdictionConfig::default(),
+            vat_gst: VatGstConfig::default(),
+            sales_tax: SalesTaxConfig::default(),
+            withholding: WithholdingTaxSchemaConfig::default(),
+            provisions: TaxProvisionSchemaConfig::default(),
+            payroll_tax: PayrollTaxSchemaConfig::default(),
+            anomaly_rate: default_tax_anomaly_rate(),
+        }
+    }
+}
+
+/// Tax jurisdiction configuration.
+///
+/// Specifies which countries and subnational jurisdictions to include
+/// when generating tax data.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TaxJurisdictionConfig {
+    /// List of country codes to include (e.g., ["US", "DE", "GB"]).
+    #[serde(default)]
+    pub countries: Vec<String>,
+    /// Whether to include subnational jurisdictions (e.g., US states, Canadian provinces).
+    #[serde(default)]
+    pub include_subnational: bool,
+}
+
+/// VAT/GST configuration.
+///
+/// Controls generation of Value Added Tax / Goods and Services Tax data,
+/// including standard and reduced rates, exempt categories, and reverse charge.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VatGstConfig {
+    /// Whether VAT/GST generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Standard VAT/GST rates by country code (e.g., {"DE": 0.19, "GB": 0.20}).
+    #[serde(default)]
+    pub standard_rates: std::collections::HashMap<String, f64>,
+    /// Reduced VAT/GST rates by country code (e.g., {"DE": 0.07, "GB": 0.05}).
+    #[serde(default)]
+    pub reduced_rates: std::collections::HashMap<String, f64>,
+    /// Categories exempt from VAT/GST (e.g., ["financial_services", "healthcare"]).
+    #[serde(default)]
+    pub exempt_categories: Vec<String>,
+    /// Whether to apply reverse charge mechanism for cross-border B2B transactions.
+    #[serde(default = "default_true")]
+    pub reverse_charge: bool,
+}
+
+impl Default for VatGstConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            standard_rates: std::collections::HashMap::new(),
+            reduced_rates: std::collections::HashMap::new(),
+            exempt_categories: Vec::new(),
+            reverse_charge: true,
+        }
+    }
+}
+
+/// Sales tax configuration.
+///
+/// Controls generation of US-style sales tax data including nexus determination.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SalesTaxConfig {
+    /// Whether sales tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// US states where the company has nexus (e.g., ["CA", "NY", "TX"]).
+    #[serde(default)]
+    pub nexus_states: Vec<String>,
+}
+
+/// Withholding tax configuration.
+///
+/// Controls generation of withholding tax data for cross-border payments,
+/// including treaty network and rate overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WithholdingTaxSchemaConfig {
+    /// Whether withholding tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Whether to simulate a treaty network with reduced rates.
+    #[serde(default = "default_true")]
+    pub treaty_network: bool,
+    /// Default withholding tax rate for non-treaty countries (0.0 to 1.0).
+    #[serde(default = "default_withholding_rate")]
+    pub default_rate: f64,
+    /// Reduced withholding tax rate for treaty countries (0.0 to 1.0).
+    #[serde(default = "default_treaty_reduced_rate")]
+    pub treaty_reduced_rate: f64,
+}
+
+fn default_withholding_rate() -> f64 {
+    0.30
+}
+
+fn default_treaty_reduced_rate() -> f64 {
+    0.15
+}
+
+impl Default for WithholdingTaxSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            treaty_network: true,
+            default_rate: default_withholding_rate(),
+            treaty_reduced_rate: default_treaty_reduced_rate(),
+        }
+    }
+}
+
+/// Tax provision configuration.
+///
+/// Controls generation of tax provision data including statutory rates
+/// and uncertain tax positions (ASC 740 / IAS 12).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxProvisionSchemaConfig {
+    /// Whether tax provision generation is enabled.
+    /// Defaults to true when tax is enabled, as provisions are typically required.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Statutory corporate tax rate (0.0 to 1.0).
+    #[serde(default = "default_statutory_rate")]
+    pub statutory_rate: f64,
+    /// Whether to generate uncertain tax positions (FIN 48 / IFRIC 23).
+    #[serde(default = "default_true")]
+    pub uncertain_positions: bool,
+}
+
+fn default_statutory_rate() -> f64 {
+    0.21
+}
+
+impl Default for TaxProvisionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            statutory_rate: default_statutory_rate(),
+            uncertain_positions: true,
+        }
+    }
+}
+
+/// Payroll tax configuration.
+///
+/// Controls generation of payroll tax data (employer/employee contributions,
+/// social security, Medicare, etc.).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PayrollTaxSchemaConfig {
+    /// Whether payroll tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -11694,5 +11896,160 @@ mod tests {
                 .yield_manipulation,
             0.02
         );
+    }
+
+    // ==========================================================================
+    // Tax Configuration Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_tax_config_defaults() {
+        let tax = TaxConfig::default();
+        assert!(!tax.enabled);
+        assert!(tax.jurisdictions.countries.is_empty());
+        assert!(!tax.jurisdictions.include_subnational);
+        assert!(!tax.vat_gst.enabled);
+        assert!(tax.vat_gst.standard_rates.is_empty());
+        assert!(tax.vat_gst.reduced_rates.is_empty());
+        assert!(tax.vat_gst.exempt_categories.is_empty());
+        assert!(tax.vat_gst.reverse_charge);
+        assert!(!tax.sales_tax.enabled);
+        assert!(tax.sales_tax.nexus_states.is_empty());
+        assert!(!tax.withholding.enabled);
+        assert!(tax.withholding.treaty_network);
+        assert_eq!(tax.withholding.default_rate, 0.30);
+        assert_eq!(tax.withholding.treaty_reduced_rate, 0.15);
+        assert!(tax.provisions.enabled);
+        assert_eq!(tax.provisions.statutory_rate, 0.21);
+        assert!(tax.provisions.uncertain_positions);
+        assert!(!tax.payroll_tax.enabled);
+        assert_eq!(tax.anomaly_rate, 0.03);
+    }
+
+    #[test]
+    fn test_tax_config_from_yaml() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 12
+              industry: retail
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+            tax:
+              enabled: true
+              anomaly_rate: 0.05
+              jurisdictions:
+                countries: ["US", "DE", "GB"]
+                include_subnational: true
+              vat_gst:
+                enabled: true
+                standard_rates:
+                  DE: 0.19
+                  GB: 0.20
+                reduced_rates:
+                  DE: 0.07
+                  GB: 0.05
+                exempt_categories:
+                  - financial_services
+                  - healthcare
+                reverse_charge: false
+              sales_tax:
+                enabled: true
+                nexus_states: ["CA", "NY", "TX"]
+              withholding:
+                enabled: true
+                treaty_network: false
+                default_rate: 0.25
+                treaty_reduced_rate: 0.10
+              provisions:
+                enabled: false
+                statutory_rate: 0.28
+                uncertain_positions: false
+              payroll_tax:
+                enabled: true
+        "#;
+
+        let config: GeneratorConfig = serde_yaml::from_str(yaml).expect("Failed to parse");
+        assert!(config.tax.enabled);
+        assert_eq!(config.tax.anomaly_rate, 0.05);
+
+        // Jurisdictions
+        assert_eq!(config.tax.jurisdictions.countries.len(), 3);
+        assert!(config
+            .tax
+            .jurisdictions
+            .countries
+            .contains(&"DE".to_string()));
+        assert!(config.tax.jurisdictions.include_subnational);
+
+        // VAT/GST
+        assert!(config.tax.vat_gst.enabled);
+        assert_eq!(config.tax.vat_gst.standard_rates.get("DE"), Some(&0.19));
+        assert_eq!(config.tax.vat_gst.standard_rates.get("GB"), Some(&0.20));
+        assert_eq!(config.tax.vat_gst.reduced_rates.get("DE"), Some(&0.07));
+        assert_eq!(config.tax.vat_gst.exempt_categories.len(), 2);
+        assert!(!config.tax.vat_gst.reverse_charge);
+
+        // Sales tax
+        assert!(config.tax.sales_tax.enabled);
+        assert_eq!(config.tax.sales_tax.nexus_states.len(), 3);
+        assert!(config
+            .tax
+            .sales_tax
+            .nexus_states
+            .contains(&"CA".to_string()));
+
+        // Withholding
+        assert!(config.tax.withholding.enabled);
+        assert!(!config.tax.withholding.treaty_network);
+        assert_eq!(config.tax.withholding.default_rate, 0.25);
+        assert_eq!(config.tax.withholding.treaty_reduced_rate, 0.10);
+
+        // Provisions
+        assert!(!config.tax.provisions.enabled);
+        assert_eq!(config.tax.provisions.statutory_rate, 0.28);
+        assert!(!config.tax.provisions.uncertain_positions);
+
+        // Payroll tax
+        assert!(config.tax.payroll_tax.enabled);
+    }
+
+    #[test]
+    fn test_generator_config_with_tax_default() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 12
+              industry: retail
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+        "#;
+
+        let config: GeneratorConfig =
+            serde_yaml::from_str(yaml).expect("Failed to parse config without tax section");
+        // Tax should be present with defaults when not specified in YAML
+        assert!(!config.tax.enabled);
+        assert!(config.tax.jurisdictions.countries.is_empty());
+        assert_eq!(config.tax.anomaly_rate, 0.03);
+        assert!(config.tax.provisions.enabled); // provisions default to enabled=true
+        assert_eq!(config.tax.provisions.statutory_rate, 0.21);
     }
 }
