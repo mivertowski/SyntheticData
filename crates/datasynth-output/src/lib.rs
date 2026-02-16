@@ -11,11 +11,13 @@ pub mod json_sink;
 pub mod parquet_sink;
 pub mod project_accounting_export;
 pub mod streaming;
+pub mod esg_export;
 pub mod tax_export;
 pub mod treasury_export;
 
 pub use control_export::*;
 pub use csv_sink::*;
+pub use esg_export::*;
 pub use project_accounting_export::*;
 pub use tax_export::*;
 pub use treasury_export::*;
