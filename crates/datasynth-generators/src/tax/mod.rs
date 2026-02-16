@@ -7,12 +7,14 @@
 //! - Tax provisions (ASC 740 / IAS 12)
 //! - Withholding tax on cross-border payments
 
+mod tax_anomaly;
 mod tax_code_generator;
 mod tax_line_generator;
 mod tax_provision_generator;
 mod tax_return_generator;
 mod withholding_generator;
 
+pub use tax_anomaly::*;
 pub use tax_code_generator::*;
 pub use tax_line_generator::*;
 pub use tax_provision_generator::*;
