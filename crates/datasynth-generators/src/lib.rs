@@ -48,6 +48,7 @@ pub mod sales_quote_generator;
 pub mod sourcing;
 pub mod standards;
 pub mod tax;
+pub mod treasury;
 
 pub use anomaly::*;
 pub use audit::*;
