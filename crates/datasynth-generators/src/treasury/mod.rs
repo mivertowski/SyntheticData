@@ -9,6 +9,14 @@
 //! - Bank guarantees and letters of credit
 //! - Intercompany netting runs
 
+mod cash_forecast_generator;
+mod cash_pool_generator;
 mod cash_position_generator;
+mod debt_generator;
+mod hedging_generator;
 
+pub use cash_forecast_generator::*;
+pub use cash_pool_generator::*;
 pub use cash_position_generator::*;
+pub use debt_generator::*;
+pub use hedging_generator::*;
