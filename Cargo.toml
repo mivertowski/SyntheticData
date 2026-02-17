@@ -136,7 +136,7 @@ subtle = "2.6"
 # OpenTelemetry (optional)
 opentelemetry = "0.27"
 opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic"] }
+opentelemetry-otlp = { version = "0.31", features = ["tonic"] }
 opentelemetry-prometheus = "0.27"
 prometheus = "0.14"
 tracing-opentelemetry = "0.28"
