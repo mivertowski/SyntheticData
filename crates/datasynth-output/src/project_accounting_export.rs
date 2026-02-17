@@ -335,6 +335,7 @@ impl ProjectAccountingExporter {
     }
 
     /// Export all project accounting data and return a summary.
+    #[allow(clippy::too_many_arguments)]
     pub fn export_all(
         &self,
         projects: &[Project],
@@ -347,15 +348,16 @@ impl ProjectAccountingExporter {
     ) -> SynthResult<ProjectAccountingExportSummary> {
         std::fs::create_dir_all(&self.output_dir)?;
 
-        let mut summary = ProjectAccountingExportSummary::default();
-        summary.projects_count = self.export_projects(projects)?;
-        summary.wbs_elements_count = self.export_wbs_elements(projects)?;
-        summary.cost_lines_count = self.export_cost_lines(cost_lines)?;
-        summary.revenue_count = self.export_revenue(revenues)?;
-        summary.milestones_count = self.export_milestones(milestones)?;
-        summary.change_orders_count = self.export_change_orders(change_orders)?;
-        summary.retainage_count = self.export_retainage(retainage)?;
-        summary.earned_value_count = self.export_earned_value(earned_value)?;
+        let summary = ProjectAccountingExportSummary {
+            projects_count: self.export_projects(projects)?,
+            wbs_elements_count: self.export_wbs_elements(projects)?,
+            cost_lines_count: self.export_cost_lines(cost_lines)?,
+            revenue_count: self.export_revenue(revenues)?,
+            milestones_count: self.export_milestones(milestones)?,
+            change_orders_count: self.export_change_orders(change_orders)?,
+            retainage_count: self.export_retainage(retainage)?,
+            earned_value_count: self.export_earned_value(earned_value)?,
+        };
         Ok(summary)
     }
 }
@@ -381,9 +383,7 @@ fn esc(s: &str) -> String {
 mod tests {
     use super::*;
     use chrono::NaiveDate;
-    use datasynth_core::models::{
-        CostCategory, CostSourceType, ProjectType, WbsElement,
-    };
+    use datasynth_core::models::{CostCategory, CostSourceType, ProjectType, WbsElement};
     use rust_decimal_macros::dec;
     use std::fs;
     use tempfile::TempDir;
@@ -441,9 +441,16 @@ mod tests {
         let exporter = ProjectAccountingExporter::new(tmp.path());
 
         let lines = vec![ProjectCostLine::new(
-            "PCL-001", "PRJ-001", "PRJ-001.01", "TEST",
-            d("2024-03-15"), CostCategory::Labor, CostSourceType::TimeEntry,
-            "TE-001", dec!(1500), "USD",
+            "PCL-001",
+            "PRJ-001",
+            "PRJ-001.01",
+            "TEST",
+            d("2024-03-15"),
+            CostCategory::Labor,
+            CostSourceType::TimeEntry,
+            "TE-001",
+            dec!(1500),
+            "USD",
         )];
 
         let count = exporter.export_cost_lines(&lines).unwrap();
@@ -460,8 +467,13 @@ mod tests {
         let exporter = ProjectAccountingExporter::new(tmp.path());
 
         let metrics = vec![EarnedValueMetric::compute(
-            "EVM-001", "PRJ-001", d("2024-06-30"),
-            dec!(1000000), dec!(500000), dec!(400000), dec!(450000),
+            "EVM-001",
+            "PRJ-001",
+            d("2024-06-30"),
+            dec!(1000000),
+            dec!(500000),
+            dec!(400000),
+            dec!(450000),
         )];
 
         let count = exporter.export_earned_value(&metrics).unwrap();
@@ -479,23 +491,47 @@ mod tests {
 
         let projects = vec![test_project()];
         let cost_lines = vec![ProjectCostLine::new(
-            "PCL-001", "PRJ-001", "PRJ-001.01", "TEST",
-            d("2024-03-15"), CostCategory::Labor, CostSourceType::TimeEntry,
-            "TE-001", dec!(1500), "USD",
+            "PCL-001",
+            "PRJ-001",
+            "PRJ-001.01",
+            "TEST",
+            d("2024-03-15"),
+            CostCategory::Labor,
+            CostSourceType::TimeEntry,
+            "TE-001",
+            dec!(1500),
+            "USD",
         )];
         let revenues = vec![];
         let milestones = vec![ProjectMilestone::new(
-            "MS-001", "PRJ-001", "Kickoff", d("2024-02-01"), 1,
+            "MS-001",
+            "PRJ-001",
+            "Kickoff",
+            d("2024-02-01"),
+            1,
         )];
         let change_orders = vec![];
         let retainage = vec![];
         let evm = vec![EarnedValueMetric::compute(
-            "EVM-001", "PRJ-001", d("2024-06-30"),
-            dec!(1000000), dec!(500000), dec!(400000), dec!(450000),
+            "EVM-001",
+            "PRJ-001",
+            d("2024-06-30"),
+            dec!(1000000),
+            dec!(500000),
+            dec!(400000),
+            dec!(450000),
         )];
 
         let summary = exporter
-            .export_all(&projects, &cost_lines, &revenues, &milestones, &change_orders, &retainage, &evm)
+            .export_all(
+                &projects,
+                &cost_lines,
+                &revenues,
+                &milestones,
+                &change_orders,
+                &retainage,
+                &evm,
+            )
             .unwrap();
 
         assert_eq!(summary.projects_count, 1);

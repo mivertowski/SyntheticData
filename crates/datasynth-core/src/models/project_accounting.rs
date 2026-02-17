@@ -88,6 +88,7 @@ pub struct ProjectCostLine {
 
 impl ProjectCostLine {
     /// Creates a new project cost line.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: impl Into<String>,
         project_id: impl Into<String>,
@@ -815,10 +816,16 @@ mod tests {
 
     #[test]
     fn test_milestone_creation() {
-        let ms = ProjectMilestone::new("MS-001", "PRJ-001", "Foundation Complete", d("2025-06-30"), 1)
-            .with_wbs("PRJ-001.02")
-            .with_payment(dec!(50000))
-            .with_weight(dec!(0.25));
+        let ms = ProjectMilestone::new(
+            "MS-001",
+            "PRJ-001",
+            "Foundation Complete",
+            d("2025-06-30"),
+            1,
+        )
+        .with_wbs("PRJ-001.02")
+        .with_payment(dec!(50000))
+        .with_weight(dec!(0.25));
 
         assert_eq!(ms.status, MilestoneStatus::Pending);
         assert_eq!(ms.payment_amount, dec!(50000));
@@ -905,8 +912,12 @@ mod tests {
     #[test]
     fn test_retainage_release_capped() {
         let mut ret = Retainage::new(
-            "RET-002", "PRJ-001", "C001", "V-001",
-            dec!(0.10), d("2025-01-15"),
+            "RET-002",
+            "PRJ-001",
+            "C001",
+            "V-001",
+            dec!(0.10),
+            d("2025-01-15"),
         );
         ret.add_from_payment(dec!(100000)); // held = 10000
 
@@ -926,10 +937,10 @@ mod tests {
             "EVM-001",
             "PRJ-001",
             d("2025-06-30"),
-            dec!(1000000),   // BAC
-            dec!(500000),    // PV (50% scheduled)
-            dec!(400000),    // EV (40% earned)
-            dec!(450000),    // AC (450k spent)
+            dec!(1000000), // BAC
+            dec!(500000),  // PV (50% scheduled)
+            dec!(400000),  // EV (40% earned)
+            dec!(450000),  // AC (450k spent)
         );
 
         // SV = EV - PV = 400000 - 500000 = -100000 (behind schedule)
@@ -959,10 +970,10 @@ mod tests {
             "EVM-002",
             "PRJ-002",
             d("2025-06-30"),
-            dec!(500000),    // BAC
-            dec!(250000),    // PV (50% scheduled)
-            dec!(275000),    // EV (55% earned — ahead)
-            dec!(240000),    // AC (240k — under budget)
+            dec!(500000), // BAC
+            dec!(250000), // PV (50% scheduled)
+            dec!(275000), // EV (55% earned — ahead)
+            dec!(240000), // AC (240k — under budget)
         );
 
         // SPI = 275000 / 250000 = 1.10
@@ -985,10 +996,10 @@ mod tests {
             "EVM-003",
             "PRJ-003",
             d("2025-01-01"),
-            dec!(1000000),   // BAC
-            Decimal::ZERO,   // PV
-            Decimal::ZERO,   // EV
-            Decimal::ZERO,   // AC
+            dec!(1000000), // BAC
+            Decimal::ZERO, // PV
+            Decimal::ZERO, // EV
+            Decimal::ZERO, // AC
         );
 
         // With PV=0 and AC=0, SPI and CPI default to 1.0
@@ -1023,8 +1034,13 @@ mod tests {
     #[test]
     fn test_evm_serde_roundtrip() {
         let evm = EarnedValueMetric::compute(
-            "EVM-100", "PRJ-001", d("2025-06-30"),
-            dec!(1000000), dec!(500000), dec!(400000), dec!(450000),
+            "EVM-100",
+            "PRJ-001",
+            d("2025-06-30"),
+            dec!(1000000),
+            dec!(500000),
+            dec!(400000),
+            dec!(450000),
         );
         let json = serde_json::to_string(&evm).unwrap();
         let deserialized: EarnedValueMetric = serde_json::from_str(&json).unwrap();

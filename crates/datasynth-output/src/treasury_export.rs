@@ -192,7 +192,10 @@ impl TreasuryExporter {
         let file = File::create(&path)?;
         let mut w = BufWriter::new(file);
 
-        writeln!(w, "id,pool_id,date,from_account_id,to_account_id,amount,currency")?;
+        writeln!(
+            w,
+            "id,pool_id,date,from_account_id,to_account_id,amount,currency"
+        )?;
 
         for s in data {
             writeln!(
@@ -690,7 +693,9 @@ mod tests {
 
         let di_count = exporter.export_debt_instruments(&instruments).unwrap();
         let dc_count = exporter.export_debt_covenants(&instruments).unwrap();
-        let as_count = exporter.export_amortization_schedules(&instruments).unwrap();
+        let as_count = exporter
+            .export_amortization_schedules(&instruments)
+            .unwrap();
 
         assert_eq!(di_count, 1);
         assert_eq!(dc_count, 1);

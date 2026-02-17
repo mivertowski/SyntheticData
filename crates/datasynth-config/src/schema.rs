@@ -11291,7 +11291,7 @@ impl Default for HedgingSchemaConfig {
 ///
 /// Controls generation of debt instruments (term loans, revolving credit, bonds)
 /// with amortization schedules and financial covenants.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DebtSchemaConfig {
     /// Whether debt instrument generation is enabled.
     #[serde(default)]
@@ -11302,16 +11302,6 @@ pub struct DebtSchemaConfig {
     /// Covenant definitions.
     #[serde(default)]
     pub covenants: Vec<CovenantDef>,
-}
-
-impl Default for DebtSchemaConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            instruments: Vec::new(),
-            covenants: Vec::new(),
-        }
-    }
 }
 
 /// Definition of a debt instrument in configuration.
@@ -11491,12 +11481,24 @@ pub struct ProjectTypeDistribution {
     pub technology: f64,
 }
 
-fn default_capital_weight() -> f64 { 0.25 }
-fn default_internal_weight() -> f64 { 0.20 }
-fn default_customer_weight() -> f64 { 0.30 }
-fn default_rnd_weight() -> f64 { 0.10 }
-fn default_maintenance_weight() -> f64 { 0.10 }
-fn default_technology_weight() -> f64 { 0.05 }
+fn default_capital_weight() -> f64 {
+    0.25
+}
+fn default_internal_weight() -> f64 {
+    0.20
+}
+fn default_customer_weight() -> f64 {
+    0.30
+}
+fn default_rnd_weight() -> f64 {
+    0.10
+}
+fn default_maintenance_weight() -> f64 {
+    0.10
+}
+fn default_technology_weight() -> f64 {
+    0.05
+}
 
 impl Default for ProjectTypeDistribution {
     fn default() -> Self {
@@ -11525,9 +11527,15 @@ pub struct WbsSchemaConfig {
     pub max_elements_per_level: u32,
 }
 
-fn default_wbs_max_depth() -> u32 { 3 }
-fn default_wbs_min_elements() -> u32 { 2 }
-fn default_wbs_max_elements() -> u32 { 6 }
+fn default_wbs_max_depth() -> u32 {
+    3
+}
+fn default_wbs_min_elements() -> u32 {
+    2
+}
+fn default_wbs_max_elements() -> u32 {
+    6
+}
 
 impl Default for WbsSchemaConfig {
     fn default() -> Self {
@@ -11556,10 +11564,18 @@ pub struct CostAllocationConfig {
     pub vendor_invoice_project_rate: f64,
 }
 
-fn default_time_entry_rate() -> f64 { 0.60 }
-fn default_expense_rate() -> f64 { 0.30 }
-fn default_po_rate() -> f64 { 0.40 }
-fn default_vi_rate() -> f64 { 0.35 }
+fn default_time_entry_rate() -> f64 {
+    0.60
+}
+fn default_expense_rate() -> f64 {
+    0.30
+}
+fn default_po_rate() -> f64 {
+    0.40
+}
+fn default_vi_rate() -> f64 {
+    0.35
+}
 
 impl Default for CostAllocationConfig {
     fn default() -> Self {
@@ -11589,9 +11605,15 @@ pub struct ProjectRevenueRecognitionConfig {
     pub avg_contract_value: f64,
 }
 
-fn default_revenue_method() -> String { "percentage_of_completion".to_string() }
-fn default_completion_measure() -> String { "cost_to_cost".to_string() }
-fn default_avg_contract_value() -> f64 { 500_000.0 }
+fn default_revenue_method() -> String {
+    "percentage_of_completion".to_string()
+}
+fn default_completion_measure() -> String {
+    "cost_to_cost".to_string()
+}
+fn default_avg_contract_value() -> f64 {
+    500_000.0
+}
 
 impl Default for ProjectRevenueRecognitionConfig {
     fn default() -> Self {
@@ -11618,8 +11640,12 @@ pub struct MilestoneSchemaConfig {
     pub payment_milestone_rate: f64,
 }
 
-fn default_milestones_per_project() -> u32 { 4 }
-fn default_payment_milestone_rate() -> f64 { 0.50 }
+fn default_milestones_per_project() -> u32 {
+    4
+}
+fn default_payment_milestone_rate() -> f64 {
+    0.50
+}
 
 impl Default for MilestoneSchemaConfig {
     fn default() -> Self {
@@ -11648,9 +11674,15 @@ pub struct ChangeOrderSchemaConfig {
     pub approval_rate: f64,
 }
 
-fn default_change_order_probability() -> f64 { 0.40 }
-fn default_max_change_orders() -> u32 { 3 }
-fn default_change_order_approval_rate() -> f64 { 0.75 }
+fn default_change_order_probability() -> f64 {
+    0.40
+}
+fn default_max_change_orders() -> u32 {
+    3
+}
+fn default_change_order_approval_rate() -> f64 {
+    0.75
+}
 
 impl Default for ChangeOrderSchemaConfig {
     fn default() -> Self {
@@ -11674,7 +11706,9 @@ pub struct RetainageSchemaConfig {
     pub default_percentage: f64,
 }
 
-fn default_retainage_pct() -> f64 { 0.10 }
+fn default_retainage_pct() -> f64 {
+    0.10
+}
 
 impl Default for RetainageSchemaConfig {
     fn default() -> Self {
@@ -11696,7 +11730,9 @@ pub struct EarnedValueSchemaConfig {
     pub frequency: String,
 }
 
-fn default_evm_frequency() -> String { "monthly".to_string() }
+fn default_evm_frequency() -> String {
+    "monthly".to_string()
+}
 
 impl Default for EarnedValueSchemaConfig {
     fn default() -> Self {

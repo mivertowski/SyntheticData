@@ -178,9 +178,7 @@ impl TaxExporter {
                 tc.rate,
                 escape_csv(&tc.jurisdiction_id),
                 tc.effective_date,
-                tc.expiry_date
-                    .map(|d| d.to_string())
-                    .unwrap_or_default(),
+                tc.expiry_date.map(|d| d.to_string()).unwrap_or_default(),
                 tc.is_reverse_charge,
                 tc.is_exempt,
             )?;
@@ -323,10 +321,7 @@ impl TaxExporter {
     }
 
     /// Export uncertain tax positions to `uncertain_tax_positions.csv`.
-    pub fn export_uncertain_positions(
-        &self,
-        data: &[UncertainTaxPosition],
-    ) -> SynthResult<usize> {
+    pub fn export_uncertain_positions(&self, data: &[UncertainTaxPosition]) -> SynthResult<usize> {
         let path = self.output_dir.join("uncertain_tax_positions.csv");
         let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
@@ -356,10 +351,7 @@ impl TaxExporter {
     }
 
     /// Export withholding tax records to `withholding_records.csv`.
-    pub fn export_withholding_records(
-        &self,
-        data: &[WithholdingTaxRecord],
-    ) -> SynthResult<usize> {
+    pub fn export_withholding_records(&self, data: &[WithholdingTaxRecord]) -> SynthResult<usize> {
         let path = self.output_dir.join("withholding_records.csv");
         let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
@@ -378,9 +370,7 @@ impl TaxExporter {
                 escape_csv(&wht.payment_id),
                 escape_csv(&wht.vendor_id),
                 wht.withholding_type,
-                wht.treaty_rate
-                    .map(|r| r.to_string())
-                    .unwrap_or_default(),
+                wht.treaty_rate.map(|r| r.to_string()).unwrap_or_default(),
                 wht.statutory_rate,
                 wht.applied_rate,
                 wht.base_amount,
@@ -662,8 +652,7 @@ mod tests {
         ];
 
         for (file_name, expected_header) in &expected_headers {
-            let content =
-                std::fs::read_to_string(temp_dir.path().join(file_name)).unwrap();
+            let content = std::fs::read_to_string(temp_dir.path().join(file_name)).unwrap();
             let first_line = content.lines().next().unwrap();
             assert_eq!(
                 first_line, *expected_header,
@@ -760,8 +749,7 @@ mod tests {
             .unwrap();
 
         // Tax codes: rate 0.20 must appear as exact decimal
-        let codes_csv =
-            std::fs::read_to_string(temp_dir.path().join("tax_codes.csv")).unwrap();
+        let codes_csv = std::fs::read_to_string(temp_dir.path().join("tax_codes.csv")).unwrap();
         let data_line = codes_csv.lines().nth(1).unwrap();
         assert!(
             data_line.contains("0.20"),
@@ -770,8 +758,7 @@ mod tests {
         );
 
         // Tax lines: amounts 1000.00 and 200.00
-        let lines_csv =
-            std::fs::read_to_string(temp_dir.path().join("tax_lines.csv")).unwrap();
+        let lines_csv = std::fs::read_to_string(temp_dir.path().join("tax_lines.csv")).unwrap();
         let data_line = lines_csv.lines().nth(1).unwrap();
         assert!(
             data_line.contains("1000.00"),
@@ -820,10 +807,8 @@ mod tests {
 
         exporter.export_uncertain_positions(&[utp]).unwrap();
 
-        let content = std::fs::read_to_string(
-            temp_dir.path().join("uncertain_tax_positions.csv"),
-        )
-        .unwrap();
+        let content =
+            std::fs::read_to_string(temp_dir.path().join("uncertain_tax_positions.csv")).unwrap();
         let data_line = content.lines().nth(1).unwrap();
         assert!(
             data_line.contains("\"R&D credit, software development\""),

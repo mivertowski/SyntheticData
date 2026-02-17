@@ -67,9 +67,8 @@ impl CashPoolGenerator {
         self.pool_counter += 1;
         let pool_type = self.parse_pool_type();
         let sweep_time = self.parse_sweep_time();
-        let interest_benefit = dec!(0.0025) + Decimal::try_from(
-            self.rng.gen_range(0.0f64..0.003)
-        ).unwrap_or(Decimal::ZERO);
+        let interest_benefit = dec!(0.0025)
+            + Decimal::try_from(self.rng.gen_range(0.0f64..0.003)).unwrap_or(Decimal::ZERO);
 
         let mut pool = CashPool::new(
             format!("POOL-{:06}", self.pool_counter),
@@ -195,7 +194,7 @@ impl CashPoolGenerator {
 
     fn parse_sweep_time(&self) -> NaiveTime {
         NaiveTime::parse_from_str(&self.config.sweep_time, "%H:%M")
-            .unwrap_or_else(|_| NaiveTime::from_hms_opt(16, 0, 0).unwrap())
+            .unwrap_or_else(|_| NaiveTime::from_hms_opt(16, 0, 0).expect("valid constant time"))
     }
 }
 
@@ -248,7 +247,10 @@ mod tests {
         assert_eq!(sweeps.len(), 2); // BA-003 is zero, no sweep
 
         // BA-001 positive → swept to header
-        let s1 = sweeps.iter().find(|s| s.from_account_id == "BA-001").unwrap();
+        let s1 = sweeps
+            .iter()
+            .find(|s| s.from_account_id == "BA-001")
+            .unwrap();
         assert_eq!(s1.to_account_id, "BA-HEADER");
         assert_eq!(s1.amount, dec!(50000));
 
@@ -269,7 +271,11 @@ mod tests {
             .create_pool(
                 "USD Pool",
                 "USD",
-                &["BA-HEADER".to_string(), "BA-001".to_string(), "BA-002".to_string()],
+                &[
+                    "BA-HEADER".to_string(),
+                    "BA-001".to_string(),
+                    "BA-002".to_string(),
+                ],
             )
             .unwrap();
 

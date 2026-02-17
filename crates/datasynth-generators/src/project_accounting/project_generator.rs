@@ -6,9 +6,7 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::{ProjectAccountingConfig, WbsSchemaConfig};
-use datasynth_core::models::{
-    Project, ProjectPool, ProjectStatus, ProjectType, WbsElement,
-};
+use datasynth_core::models::{Project, ProjectPool, ProjectStatus, ProjectType, WbsElement};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -46,9 +44,13 @@ impl ProjectGenerator {
             let project_id = format!("PRJ-{:04}", i + 1);
             let budget = self.generate_budget(project_type);
 
-            let mut project = Project::new(&project_id, &self.project_name(project_type, i), project_type)
-                .with_budget(budget)
-                .with_company(company_code);
+            let mut project = Project::new(
+                &project_id,
+                &self.project_name(project_type, i),
+                project_type,
+            )
+            .with_budget(budget)
+            .with_company(company_code);
 
             project.start_date = Some(start_date.to_string());
             project.end_date = Some(end_date.to_string());
@@ -71,8 +73,12 @@ impl ProjectGenerator {
     /// Pick a project type based on distribution weights.
     fn pick_project_type(&mut self) -> ProjectType {
         let dist = &self.config.project_types;
-        let total = dist.capital + dist.internal + dist.customer
-            + dist.r_and_d + dist.maintenance + dist.technology;
+        let total = dist.capital
+            + dist.internal
+            + dist.customer
+            + dist.r_and_d
+            + dist.maintenance
+            + dist.technology;
 
         let roll: f64 = self.rng.gen::<f64>() * total;
         let mut cumulative = 0.0;
@@ -138,9 +144,9 @@ impl ProjectGenerator {
         wbs_config: &WbsSchemaConfig,
     ) -> Vec<WbsElement> {
         let mut elements = Vec::new();
-        let top_count = self.rng.gen_range(
-            wbs_config.min_elements_per_level..=wbs_config.max_elements_per_level,
-        );
+        let top_count = self
+            .rng
+            .gen_range(wbs_config.min_elements_per_level..=wbs_config.max_elements_per_level);
 
         let mut remaining_budget = total_budget;
 
@@ -152,19 +158,19 @@ impl ProjectGenerator {
             let budget = if i == top_count - 1 {
                 remaining_budget
             } else {
-                let share = (total_budget / Decimal::from(top_count as u32)).round_dp(2);
+                let share = (total_budget / Decimal::from(top_count)).round_dp(2);
                 remaining_budget -= share;
                 share
             };
 
-            let element = WbsElement::new(&wbs_id, project_id, &phase_name)
-                .with_budget(budget);
+            let element = WbsElement::new(&wbs_id, project_id, &phase_name).with_budget(budget);
             elements.push(element);
 
             // Generate sub-levels if depth > 1
             if wbs_config.max_depth > 1 {
                 let sub_count = self.rng.gen_range(
-                    wbs_config.min_elements_per_level.min(3)..=wbs_config.max_elements_per_level.min(4),
+                    wbs_config.min_elements_per_level.min(3)
+                        ..=wbs_config.max_elements_per_level.min(4),
                 );
                 let mut sub_remaining = budget;
 
@@ -175,7 +181,7 @@ impl ProjectGenerator {
                     let sub_budget = if j == sub_count - 1 {
                         sub_remaining
                     } else {
-                        let share = (budget / Decimal::from(sub_count as u32)).round_dp(2);
+                        let share = (budget / Decimal::from(sub_count)).round_dp(2);
                         sub_remaining -= share;
                         share
                     };
@@ -209,34 +215,53 @@ impl ProjectGenerator {
     fn project_name(&self, project_type: ProjectType, index: usize) -> String {
         let names: &[&str] = match project_type {
             ProjectType::Capital => &[
-                "Data Center Expansion", "Manufacturing Line Upgrade",
-                "Office Renovation", "Fleet Replacement", "Warehouse Automation",
-                "Plant Equipment Overhaul", "New Facility Construction",
+                "Data Center Expansion",
+                "Manufacturing Line Upgrade",
+                "Office Renovation",
+                "Fleet Replacement",
+                "Warehouse Automation",
+                "Plant Equipment Overhaul",
+                "New Facility Construction",
             ],
             ProjectType::Internal => &[
-                "Process Improvement Initiative", "Employee Training Program",
-                "Quality Certification", "Lean Six Sigma Rollout",
-                "Culture Transformation", "Knowledge Management System",
+                "Process Improvement Initiative",
+                "Employee Training Program",
+                "Quality Certification",
+                "Lean Six Sigma Rollout",
+                "Culture Transformation",
+                "Knowledge Management System",
             ],
             ProjectType::Customer => &[
-                "Enterprise ERP Implementation", "Custom Software Build",
-                "Infrastructure Deployment", "System Integration",
-                "Data Migration Project", "Cloud Platform Build",
+                "Enterprise ERP Implementation",
+                "Custom Software Build",
+                "Infrastructure Deployment",
+                "System Integration",
+                "Data Migration Project",
+                "Cloud Platform Build",
             ],
             ProjectType::RandD => &[
-                "Next-Gen Product Research", "AI/ML Capability Study",
-                "Materials Science Investigation", "Prototype Development",
-                "Emerging Tech Evaluation", "Patent Portfolio Expansion",
+                "Next-Gen Product Research",
+                "AI/ML Capability Study",
+                "Materials Science Investigation",
+                "Prototype Development",
+                "Emerging Tech Evaluation",
+                "Patent Portfolio Expansion",
             ],
             ProjectType::Maintenance => &[
-                "Annual Equipment Maintenance", "HVAC System Overhaul",
-                "Network Infrastructure Refresh", "Building Repairs",
-                "Software Licensing Renewal", "Safety Compliance Update",
+                "Annual Equipment Maintenance",
+                "HVAC System Overhaul",
+                "Network Infrastructure Refresh",
+                "Building Repairs",
+                "Software Licensing Renewal",
+                "Safety Compliance Update",
             ],
             ProjectType::Technology => &[
-                "ERP System Implementation", "Cloud Migration",
-                "Cybersecurity Enhancement", "Digital Transformation",
-                "IT Infrastructure Upgrade", "Enterprise Data Platform",
+                "ERP System Implementation",
+                "Cloud Migration",
+                "Cybersecurity Enhancement",
+                "Digital Transformation",
+                "IT Infrastructure Upgrade",
+                "Enterprise Data Platform",
             ],
         };
         let name = names[index % names.len()];
@@ -249,9 +274,13 @@ impl ProjectGenerator {
 
     fn project_description(&mut self, project_type: ProjectType) -> String {
         match project_type {
-            ProjectType::Capital => "Capital expenditure project for asset acquisition or improvement.".to_string(),
+            ProjectType::Capital => {
+                "Capital expenditure project for asset acquisition or improvement.".to_string()
+            }
             ProjectType::Internal => "Internal project for operational improvement.".to_string(),
-            ProjectType::Customer => "Customer-facing project with contracted deliverables.".to_string(),
+            ProjectType::Customer => {
+                "Customer-facing project with contracted deliverables.".to_string()
+            }
             ProjectType::RandD => "Research and development initiative.".to_string(),
             ProjectType::Maintenance => "Maintenance and sustainment activities.".to_string(),
             ProjectType::Technology => "Technology infrastructure or platform project.".to_string(),
@@ -279,7 +308,10 @@ mod tests {
 
         assert_eq!(pool.projects.len(), 10);
         for project in &pool.projects {
-            assert!(!project.wbs_elements.is_empty(), "Each project should have WBS elements");
+            assert!(
+                !project.wbs_elements.is_empty(),
+                "Each project should have WBS elements"
+            );
             assert!(project.budget > Decimal::ZERO, "Budget should be positive");
             assert_eq!(project.company_code, "TEST");
         }
@@ -294,14 +326,17 @@ mod tests {
         let mut gen = ProjectGenerator::new(42, config);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
-        let customer_count = pool.projects.iter()
+        let customer_count = pool
+            .projects
+            .iter()
             .filter(|p| p.project_type == ProjectType::Customer)
             .count();
 
         // With 0.30 weight for customer, expect roughly 30 out of 100
         assert!(
             customer_count >= 15 && customer_count <= 50,
-            "Expected ~30 customer projects, got {}", customer_count
+            "Expected ~30 customer projects, got {}",
+            customer_count
         );
     }
 
@@ -317,7 +352,10 @@ mod tests {
 
         for project in &pool.projects {
             let has_children = project.wbs_elements.iter().any(|w| w.parent_wbs.is_some());
-            assert!(has_children, "WBS should have child elements when max_depth > 1");
+            assert!(
+                has_children,
+                "WBS should have child elements when max_depth > 1"
+            );
         }
     }
 
