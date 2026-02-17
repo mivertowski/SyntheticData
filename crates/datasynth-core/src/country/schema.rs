@@ -991,7 +991,8 @@ mod tests {
 
     #[test]
     fn test_deserialize_minimal_json() {
-        let json = r#"{"schema_version": "1.0", "country_code": "US", "country_name": "United States"}"#;
+        let json =
+            r#"{"schema_version": "1.0", "country_code": "US", "country_name": "United States"}"#;
         let pack: CountryPack = serde_json::from_str(json).expect("should parse");
         assert_eq!(pack.country_code, "US");
         assert_eq!(pack.schema_version, "1.0");

@@ -876,10 +876,7 @@ impl CustomerGenerator {
         let city = if cities.is_empty() {
             "City".to_string()
         } else {
-            cities
-                .choose(&mut self.rng)
-                .expect("non-empty vec")
-                .clone()
+            cities.choose(&mut self.rng).expect("non-empty vec").clone()
         };
 
         // --- State ---

@@ -95,10 +95,7 @@ fn spend_emission_factor(category: &str, country: &str) -> Decimal {
 /// `pack.business_rules.emission_country_multiplier`.  A value of `0.0` (the
 /// serde default when the field is absent) is treated as `1.0` so that packs
 /// without emission data fall back gracefully.
-fn spend_emission_factor_from_pack(
-    category: &str,
-    pack: &datasynth_core::CountryPack,
-) -> Decimal {
+fn spend_emission_factor_from_pack(category: &str, pack: &datasynth_core::CountryPack) -> Decimal {
     let base = match category {
         "manufacturing" => dec!(0.80),
         "construction" => dec!(0.65),

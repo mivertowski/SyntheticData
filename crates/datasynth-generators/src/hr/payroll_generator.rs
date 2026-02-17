@@ -86,7 +86,14 @@ impl PayrollGenerator {
         currency: &str,
     ) -> (PayrollRun, Vec<PayrollLineItem>) {
         let rates = self.rates_from_config();
-        self.generate_with_rates(company_code, employees, period_start, period_end, currency, &rates)
+        self.generate_with_rates(
+            company_code,
+            employees,
+            period_start,
+            period_end,
+            currency,
+            &rates,
+        )
     }
 
     /// Generate a payroll run using statutory deduction rates from a country pack.
@@ -119,7 +126,14 @@ impl PayrollGenerator {
         pack: &CountryPack,
     ) -> (PayrollRun, Vec<PayrollLineItem>) {
         let rates = self.rates_from_country_pack(pack);
-        self.generate_with_rates(company_code, employees, period_start, period_end, currency, &rates)
+        self.generate_with_rates(
+            company_code,
+            employees,
+            period_start,
+            period_end,
+            currency,
+            &rates,
+        )
     }
 
     // ------------------------------------------------------------------
@@ -180,27 +194,20 @@ impl PayrollGenerator {
 
             if code_upper == "FIT"
                 || code_upper == "LOHNST"
-                || (name_en_lower.contains("income tax")
-                    && !name_en_lower.contains("state"))
+                || (name_en_lower.contains("income tax") && !name_en_lower.contains("state"))
             {
                 federal_tax += rate;
                 found_federal = true;
-            } else if code_upper == "SIT"
-                || name_en_lower.contains("state income tax")
-            {
+            } else if code_upper == "SIT" || name_en_lower.contains("state income tax") {
                 state_tax += rate;
                 found_state = true;
-            } else if code_upper == "FICA"
-                || name_en_lower.contains("social security")
-            {
+            } else if code_upper == "FICA" || name_en_lower.contains("social security") {
                 fica += rate;
                 found_fica = true;
             } else if name_en_lower.contains("health insurance") {
                 health += rate;
                 found_health = true;
-            } else if name_en_lower.contains("pension")
-                || name_en_lower.contains("retirement")
-            {
+            } else if name_en_lower.contains("pension") || name_en_lower.contains("retirement") {
                 retirement += rate;
                 found_retirement = true;
             } else {
@@ -215,16 +222,39 @@ impl PayrollGenerator {
 
         PayrollRates {
             income_tax_rate: if found_federal || found_state {
-                let f = if found_federal { federal_tax } else { fallback.income_tax_rate - Decimal::from_f64_retain(self.config.tax_rates.state_effective).unwrap_or(Decimal::ZERO) };
-                let s = if found_state { state_tax } else { Decimal::from_f64_retain(self.config.tax_rates.state_effective).unwrap_or(Decimal::ZERO) };
+                let f = if found_federal {
+                    federal_tax
+                } else {
+                    fallback.income_tax_rate
+                        - Decimal::from_f64_retain(self.config.tax_rates.state_effective)
+                            .unwrap_or(Decimal::ZERO)
+                };
+                let s = if found_state {
+                    state_tax
+                } else {
+                    Decimal::from_f64_retain(self.config.tax_rates.state_effective)
+                        .unwrap_or(Decimal::ZERO)
+                };
                 f + s
             } else {
                 fallback.income_tax_rate
             },
             fica_rate: if found_fica { fica } else { fallback.fica_rate },
-            health_rate: if found_health { health } else { fallback.health_rate },
-            retirement_rate: if found_retirement { retirement } else { fallback.retirement_rate },
-            employer_fica_rate: if found_fica { fica } else { fallback.employer_fica_rate },
+            health_rate: if found_health {
+                health
+            } else {
+                fallback.health_rate
+            },
+            retirement_rate: if found_retirement {
+                retirement
+            } else {
+                fallback.retirement_rate
+            },
+            employer_fica_rate: if found_fica {
+                fica
+            } else {
+                fallback.employer_fica_rate
+            },
         }
     }
 
@@ -624,7 +654,12 @@ mod tests {
         let pack = us_country_pack();
 
         let (run, items) = gen.generate_with_country_pack(
-            "C001", &employees, period_start, period_end, "USD", &pack,
+            "C001",
+            &employees,
+            period_start,
+            period_end,
+            "USD",
+            &pack,
         );
 
         assert_eq!(run.company_code, "C001");
@@ -650,7 +685,12 @@ mod tests {
         let pack = de_country_pack();
 
         let (run, items) = gen.generate_with_country_pack(
-            "DE01", &employees, period_start, period_end, "EUR", &pack,
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
         );
 
         assert_eq!(run.company_code, "DE01");
@@ -664,10 +704,7 @@ mod tests {
             rates.retirement_rate,
             Decimal::from_f64_retain(0.093).unwrap()
         );
-        assert_eq!(
-            rates.health_rate,
-            Decimal::from_f64_retain(0.073).unwrap()
-        );
+        assert_eq!(rates.health_rate, Decimal::from_f64_retain(0.073).unwrap());
     }
 
     #[test]
@@ -693,12 +730,22 @@ mod tests {
 
         let mut gen1 = PayrollGenerator::new(42);
         let (run1, items1) = gen1.generate_with_country_pack(
-            "DE01", &employees, period_start, period_end, "EUR", &pack,
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
         );
 
         let mut gen2 = PayrollGenerator::new(42);
         let (run2, items2) = gen2.generate_with_country_pack(
-            "DE01", &employees, period_start, period_end, "EUR", &pack,
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
         );
 
         assert_eq!(run1.payroll_id, run2.payroll_id);

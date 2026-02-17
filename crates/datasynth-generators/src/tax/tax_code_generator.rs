@@ -560,8 +560,8 @@ impl TaxCodeGenerator {
             return (Vec::new(), Vec::new());
         }
 
-        let effective_date = NaiveDate::from_ymd_opt(fiscal_year, 1, 1)
-            .unwrap_or_else(default_effective_date);
+        let effective_date =
+            NaiveDate::from_ymd_opt(fiscal_year, 1, 1).unwrap_or_else(default_effective_date);
 
         let mut jurisdictions = Vec::new();
         let mut codes = Vec::new();
@@ -586,8 +586,7 @@ impl TaxCodeGenerator {
         // VAT/GST codes from pack
         // -------------------------------------------------------------------
         if has_vat {
-            let std_rate = Decimal::try_from(tax.vat.standard_rate)
-                .unwrap_or_else(|_| dec!(0));
+            let std_rate = Decimal::try_from(tax.vat.standard_rate).unwrap_or_else(|_| dec!(0));
 
             // Determine tax type: treat country packs as VAT by default,
             // but use GST for known GST countries.
@@ -633,8 +632,7 @@ impl TaxCodeGenerator {
                 if reduced.rate <= 0.0 {
                     continue;
                 }
-                let red_rate = Decimal::try_from(reduced.rate)
-                    .unwrap_or_else(|_| dec!(0));
+                let red_rate = Decimal::try_from(reduced.rate).unwrap_or_else(|_| dec!(0));
 
                 let label_suffix = if reduced.label.is_empty() {
                     format_rate_pct(red_rate)
@@ -735,21 +733,15 @@ impl TaxCodeGenerator {
             };
 
             jurisdictions.push(
-                TaxJurisdiction::new(
-                    &jur_id,
-                    sub_name,
-                    country_code,
-                    JurisdictionType::State,
-                )
-                .with_region_code(&sub.code)
-                .with_parent_jurisdiction_id(&federal_id)
-                .with_vat_registered(has_vat),
+                TaxJurisdiction::new(&jur_id, sub_name, country_code, JurisdictionType::State)
+                    .with_region_code(&sub.code)
+                    .with_parent_jurisdiction_id(&federal_id)
+                    .with_vat_registered(has_vat),
             );
 
             // Generate a tax code for this sub-national jurisdiction if it has a rate
             if sub.rate > 0.0 {
-                let sub_rate = Decimal::try_from(sub.rate)
-                    .unwrap_or_else(|_| dec!(0));
+                let sub_rate = Decimal::try_from(sub.rate).unwrap_or_else(|_| dec!(0));
 
                 let sub_tax_type = match sub.tax_type.as_str() {
                     "sales_tax" | "SalesTax" => TaxType::SalesTax,
@@ -778,11 +770,7 @@ impl TaxCodeGenerator {
 
                 let sub_code_id = format!("TC-{company_code}-{counter:04}");
                 let sub_mnemonic = format!("{type_label}-{}", sub.code);
-                let sub_desc = format!(
-                    "{sub_name} {} {}",
-                    type_label,
-                    format_rate_pct(sub_rate)
-                );
+                let sub_desc = format!("{sub_name} {} {}", type_label, format_rate_pct(sub_rate));
 
                 codes.push(TaxCode::new(
                     sub_code_id,

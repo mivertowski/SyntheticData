@@ -751,11 +751,10 @@ impl EnhancedOrchestrator {
 
         // Build country pack registry from config
         let country_pack_registry = match &config.country_packs {
-            Some(cp) => datasynth_core::CountryPackRegistry::new(
-                cp.external_dir.as_deref(),
-                &cp.overrides,
-            )
-            .map_err(|e| SynthError::config(e.to_string()))?,
+            Some(cp) => {
+                datasynth_core::CountryPackRegistry::new(cp.external_dir.as_deref(), &cp.overrides)
+                    .map_err(|e| SynthError::config(e.to_string()))?
+            }
             None => datasynth_core::CountryPackRegistry::builtin_only()
                 .map_err(|e| SynthError::config(e.to_string()))?,
         };

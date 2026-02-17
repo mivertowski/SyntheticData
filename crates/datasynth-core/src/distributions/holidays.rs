@@ -156,10 +156,7 @@ impl HolidayCalendar {
     /// lunar holiday types defined in the pack's `holidays` section.
     /// The `region` field is set to `Region::US` as a default; callers
     /// that need a specific `Region` value should set it afterwards.
-    pub fn from_country_pack(
-        pack: &crate::country::schema::CountryPack,
-        year: i32,
-    ) -> Self {
+    pub fn from_country_pack(pack: &crate::country::schema::CountryPack, year: i32) -> Self {
         // Try to map the pack's country_code to a Region for backward compat.
         let region = match pack.country_code.as_str() {
             "US" => Region::US,

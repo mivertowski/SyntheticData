@@ -14,9 +14,7 @@ pub fn deep_merge(base: &mut Value, overlay: &Value) {
     match (base, overlay) {
         (Value::Object(base_map), Value::Object(overlay_map)) => {
             for (key, overlay_val) in overlay_map {
-                let entry = base_map
-                    .entry(key.clone())
-                    .or_insert_with(|| Value::Null);
+                let entry = base_map.entry(key.clone()).or_insert_with(|| Value::Null);
                 deep_merge(entry, overlay_val);
             }
         }
@@ -34,10 +32,10 @@ pub fn apply_override(
     pack: &mut CountryPack,
     override_value: &Value,
 ) -> Result<(), CountryPackError> {
-    let mut base = serde_json::to_value(&*pack).map_err(|e| CountryPackError::merge(e.to_string()))?;
+    let mut base =
+        serde_json::to_value(&*pack).map_err(|e| CountryPackError::merge(e.to_string()))?;
     deep_merge(&mut base, override_value);
-    *pack =
-        serde_json::from_value(base).map_err(|e| CountryPackError::merge(e.to_string()))?;
+    *pack = serde_json::from_value(base).map_err(|e| CountryPackError::merge(e.to_string()))?;
     Ok(())
 }
 

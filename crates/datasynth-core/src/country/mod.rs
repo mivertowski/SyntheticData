@@ -195,9 +195,8 @@ impl CountryPackRegistry {
                 }
             }
 
-            let json = std::fs::read_to_string(&path).map_err(|e| {
-                CountryPackError::directory(format!("{}: {e}", path.display()))
-            })?;
+            let json = std::fs::read_to_string(&path)
+                .map_err(|e| CountryPackError::directory(format!("{}: {e}", path.display())))?;
 
             let label = path
                 .file_name()
