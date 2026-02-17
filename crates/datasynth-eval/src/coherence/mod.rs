@@ -6,18 +6,24 @@
 mod audit;
 mod balance;
 mod bank_reconciliation;
+mod country_packs;
 mod cross_process;
 mod document_chain;
+mod esg;
 mod financial_reporting;
 mod hr_payroll;
 mod intercompany;
 mod manufacturing;
 mod multi_table;
 mod network;
+mod project_accounting;
 mod referential;
+mod sales_quotes;
 mod sourcing;
 mod standards;
 mod subledger;
+mod tax;
+mod treasury;
 
 pub use audit::{
     AuditEvaluation, AuditEvaluator, AuditFindingData, AuditRiskData, AuditThresholds,
@@ -28,12 +34,20 @@ pub use bank_reconciliation::{
     BankReconciliationEvaluation, BankReconciliationEvaluator, BankReconciliationThresholds,
     ReconciliationData,
 };
+pub use country_packs::{
+    ApprovalLevelData, CountryPackData, CountryPackEvaluation, CountryPackEvaluator,
+    CountryPackThresholds, HolidayData, TaxRateData,
+};
 pub use cross_process::{
     CrossProcessEvaluation, CrossProcessEvaluator, CrossProcessLinkData, CrossProcessThresholds,
 };
 pub use document_chain::{
     DocumentChainEvaluation, DocumentChainEvaluator, DocumentReferenceData, O2CChainData,
     P2PChainData,
+};
+pub use esg::{
+    EsgEvaluation, EsgEvaluator, EsgThresholds, GovernanceData, SafetyMetricData, SupplierEsgData,
+    WaterUsageData,
 };
 pub use financial_reporting::{
     BudgetVarianceData, FinancialReportingEvaluation, FinancialReportingEvaluator,
@@ -58,9 +72,16 @@ pub use network::{
     ConcentrationMetrics, NetworkEdge, NetworkEvaluation, NetworkEvaluator, NetworkNode,
     NetworkThresholds, StrengthStats,
 };
+pub use project_accounting::{
+    EarnedValueData, ProjectAccountingEvaluation, ProjectAccountingEvaluator,
+    ProjectAccountingThresholds, ProjectRevenueData, RetainageData,
+};
 pub use referential::{
     EntityReferenceData, ReferentialData, ReferentialIntegrityEvaluation,
     ReferentialIntegrityEvaluator,
+};
+pub use sales_quotes::{
+    QuoteLineData, SalesQuoteData, SalesQuoteEvaluation, SalesQuoteEvaluator, SalesQuoteThresholds,
 };
 pub use sourcing::{
     BidEvaluationData, ScorecardCoverageData, SourcingEvaluation, SourcingEvaluator,
@@ -75,6 +96,13 @@ pub use standards::{
     VariableConsideration, ViolationSeverity,
 };
 pub use subledger::{SubledgerEvaluator, SubledgerReconciliationEvaluation};
+pub use tax::{
+    TaxEvaluation, TaxEvaluator, TaxLineData, TaxReturnData, TaxThresholds, WithholdingData,
+};
+pub use treasury::{
+    CashPositionData, CovenantData, HedgeEffectivenessData, NettingData, TreasuryEvaluation,
+    TreasuryEvaluator, TreasuryThresholds,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -118,6 +146,24 @@ pub struct CoherenceEvaluation {
     /// Audit evaluation results.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audit: Option<AuditEvaluation>,
+    /// Tax evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tax: Option<TaxEvaluation>,
+    /// Treasury evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub treasury: Option<TreasuryEvaluation>,
+    /// Project accounting evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project_accounting: Option<ProjectAccountingEvaluation>,
+    /// ESG evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub esg: Option<EsgEvaluation>,
+    /// Sales quote evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sales_quotes: Option<SalesQuoteEvaluation>,
+    /// Country pack evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country_packs: Option<CountryPackEvaluation>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -143,6 +189,12 @@ impl CoherenceEvaluation {
             sourcing: None,
             cross_process: None,
             audit: None,
+            tax: None,
+            treasury: None,
+            project_accounting: None,
+            esg: None,
+            sales_quotes: None,
+            country_packs: None,
             passes: true,
             failures: Vec::new(),
         }
@@ -258,6 +310,36 @@ impl CoherenceEvaluation {
             }
         }
         if let Some(ref eval) = self.audit {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.tax {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.treasury {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.project_accounting {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.esg {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.sales_quotes {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.country_packs {
             if !eval.passes {
                 self.failures.extend(eval.issues.clone());
             }
