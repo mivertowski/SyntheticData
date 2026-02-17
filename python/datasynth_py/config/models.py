@@ -1042,6 +1042,13 @@ class EsgConfig:
 
 
 @dataclass(frozen=True)
+class CountryPacksConfig:
+    """Country pack configuration for locale-specific data."""
+    external_dir: Optional[str] = None
+    overrides: Optional[Dict[str, Any]] = None
+
+
+@dataclass(frozen=True)
 class Config:
     """Root configuration container.
 
@@ -1086,6 +1093,7 @@ class Config:
     treasury: Optional[TreasuryConfig] = None
     project_accounting: Optional[ProjectAccountingConfig] = None
     esg: Optional[EsgConfig] = None
+    country_packs: Optional[CountryPacksConfig] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -1578,6 +1586,9 @@ class Config:
 
         if self.esg is not None:
             payload["esg"] = _strip_none(self.esg.__dict__)
+
+        if self.country_packs is not None:
+            payload["country_packs"] = _strip_none(self.country_packs.__dict__)
 
         # Merge extra fields
         payload.update(self.extra)
@@ -2086,6 +2097,7 @@ class Config:
             ProjectAccountingConfig, data.get("project_accounting")
         )
         esg = _build_dataclass(EsgConfig, data.get("esg"))
+        country_packs = _build_dataclass(CountryPacksConfig, data.get("country_packs"))
 
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
@@ -2097,6 +2109,7 @@ class Config:
             "sales_quotes", "vendor_network", "customer_segmentation",
             "relationship_strength", "cross_process_links",
             "tax", "treasury", "project_accounting", "esg",
+            "country_packs",
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -2139,6 +2152,7 @@ class Config:
             treasury=treasury,
             project_accounting=project_accounting,
             esg=esg,
+            country_packs=country_packs,
             extra=extra,
         )
 

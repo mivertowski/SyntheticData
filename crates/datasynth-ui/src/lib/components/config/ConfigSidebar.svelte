@@ -50,6 +50,7 @@
         { href: '/config/chart-of-accounts', label: 'Chart of Accounts', icon: 'chart' },
         { href: '/config/transactions', label: 'Transactions', icon: 'transactions' },
         { href: '/config/output', label: 'Output', icon: 'export' },
+        { href: '/config/country-packs', label: 'Country Packs', icon: 'country' },
       ],
     },
     {
@@ -201,6 +202,7 @@
       tax: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M9 13h6M9 17h4M12 9h.01',
       treasury: 'M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M8 10v11M12 10v11M16 10v11M20 10v11',
       project: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 14h.01M9 17h.01M13 14h2M13 17h2M9 11h6',
+      country: 'M4 15s1-1 4-1 4 2 8 0V3s-4 2-8 0v12zM4 22v-7',
       esg: 'M12 22c4-2.5 7-5.5 7-10a7 7 0 0 0-14 0c0 4.5 3 7.5 7 10zM12 8v4M12 16h.01',
     };
     return icons[name] || 'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0';

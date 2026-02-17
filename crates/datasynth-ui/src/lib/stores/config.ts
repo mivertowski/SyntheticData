@@ -1423,6 +1423,15 @@ export interface OrganizationalEventsConfig {
   events: OrgEvent[];
 }
 
+// =============================================================================
+// Country Packs Configuration
+// =============================================================================
+
+export interface CountryPacksConfig {
+  external_dir: string | null;
+  overrides: Record<string, Record<string, unknown>>;
+}
+
 // Full generator config
 export interface GeneratorConfig {
   global: GlobalConfig;
@@ -1476,6 +1485,8 @@ export interface GeneratorConfig {
   behavioral_drift: BehavioralDriftConfig;
   market_drift: MarketDriftConfig;
   organizational_events: OrganizationalEventsConfig;
+  // Country Packs
+  country_packs: CountryPacksConfig;
 }
 
 // Default configuration
@@ -2331,6 +2342,10 @@ export function createDefaultConfig(): GeneratorConfig {
     organizational_events: {
       enabled: false,
       events: [],
+    },
+    country_packs: {
+      external_dir: null,
+      overrides: {},
     },
   };
 }
