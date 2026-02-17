@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let protoc_available = Command::new("protoc").arg("--version").output().is_ok();
 
     // Check if generated file already exists
-    let generated_file = Path::new("src/grpc/synth.synth.rs");
+    let generated_file = Path::new("src/grpc/synth.rs");
     let generated_exists = generated_file.exists()
         && std::fs::metadata(generated_file)
             .map(|m| m.len() > 100) // More than just a stub comment
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    tonic_build::configure()
+    tonic_prost_build::configure()
         .build_server(true)
         .build_client(true)
         .out_dir("src/grpc")

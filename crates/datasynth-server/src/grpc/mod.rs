@@ -7,7 +7,7 @@ pub mod service;
 #[allow(clippy::all)]
 #[allow(warnings)]
 pub mod synth {
-    include!("synth.synth.rs");
+    include!("synth.rs");
 }
 
 pub use service::SynthService;

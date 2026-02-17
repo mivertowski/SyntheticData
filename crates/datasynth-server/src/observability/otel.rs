@@ -11,7 +11,7 @@ use opentelemetry::trace::TracerProvider as _;
 #[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
 #[cfg(feature = "otel")]
-use opentelemetry_sdk::trace::TracerProvider;
+use opentelemetry_sdk::trace::SdkTracerProvider;
 
 /// Initialize OpenTelemetry tracing and metrics.
 ///
@@ -25,7 +25,7 @@ use opentelemetry_sdk::trace::TracerProvider;
 pub fn init_otel_layer() -> Result<
     tracing_opentelemetry::OpenTelemetryLayer<
         tracing_subscriber::Registry,
-        opentelemetry_sdk::trace::Tracer,
+        opentelemetry_sdk::trace::SdkTracer,
     >,
     Box<dyn std::error::Error>,
 > {
@@ -37,8 +37,8 @@ pub fn init_otel_layer() -> Result<
         .with_endpoint(&endpoint)
         .build()?;
 
-    let tracer_provider = TracerProvider::builder()
-        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
+    let tracer_provider = SdkTracerProvider::builder()
+        .with_batch_exporter(exporter)
         .build();
 
     let tracer = tracer_provider.tracer("datasynth-server");
@@ -74,5 +74,8 @@ pub fn render_prometheus_metrics() -> String {
 /// Shutdown OpenTelemetry providers gracefully.
 #[cfg(feature = "otel")]
 pub fn shutdown_otel() {
-    global::shutdown_tracer_provider();
+    // In OTel SDK 0.31+, shutdown is handled by dropping the provider
+    // or calling provider.shutdown() on the stored instance.
+    // The global provider is shut down when it is dropped.
+    drop(global::tracer_provider());
 }
