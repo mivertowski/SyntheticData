@@ -886,6 +886,253 @@ export interface SalesQuoteConfig {
 }
 
 // =============================================================================
+// Tax Accounting Configuration
+// =============================================================================
+
+export interface VatGstConfig {
+  enabled: boolean;
+  reverse_charge: boolean;
+}
+
+export interface SalesTaxSchemaConfig {
+  enabled: boolean;
+}
+
+export interface WithholdingTaxConfig {
+  enabled: boolean;
+  treaty_network: boolean;
+  default_rate: number;
+  treaty_reduced_rate: number;
+}
+
+export interface TaxProvisionConfig {
+  enabled: boolean;
+  statutory_rate: number;
+  uncertain_positions: boolean;
+}
+
+export interface PayrollTaxConfig {
+  enabled: boolean;
+}
+
+export interface TaxConfig {
+  enabled: boolean;
+  vat_gst: VatGstConfig;
+  sales_tax: SalesTaxSchemaConfig;
+  withholding: WithholdingTaxConfig;
+  provisions: TaxProvisionConfig;
+  payroll_tax: PayrollTaxConfig;
+  anomaly_rate: number;
+}
+
+// =============================================================================
+// Treasury & Cash Management Configuration
+// =============================================================================
+
+export interface CashPositioningConfig {
+  enabled: boolean;
+  frequency: string;
+  minimum_balance_policy: number;
+}
+
+export interface CashForecastingConfig {
+  enabled: boolean;
+  horizon_days: number;
+  confidence_interval: number;
+}
+
+export interface CashPoolingConfig {
+  enabled: boolean;
+  pool_type: string;
+  sweep_time: string;
+}
+
+export interface HedgingConfig {
+  enabled: boolean;
+  hedge_ratio: number;
+  hedge_accounting: boolean;
+  effectiveness_method: string;
+}
+
+export interface DebtConfig {
+  enabled: boolean;
+}
+
+export interface NettingConfig {
+  enabled: boolean;
+  cycle: string;
+}
+
+export interface BankGuaranteeConfig {
+  enabled: boolean;
+  count: number;
+}
+
+export interface TreasuryConfig {
+  enabled: boolean;
+  cash_positioning: CashPositioningConfig;
+  cash_forecasting: CashForecastingConfig;
+  cash_pooling: CashPoolingConfig;
+  hedging: HedgingConfig;
+  debt: DebtConfig;
+  netting: NettingConfig;
+  bank_guarantees: BankGuaranteeConfig;
+  anomaly_rate: number;
+}
+
+// =============================================================================
+// Project Accounting Configuration
+// =============================================================================
+
+export interface ProjectTypeDistribution {
+  capital: number;
+  internal: number;
+  customer: number;
+  r_and_d: number;
+  maintenance: number;
+  technology: number;
+}
+
+export interface WbsConfig {
+  max_depth: number;
+  min_elements_per_level: number;
+  max_elements_per_level: number;
+}
+
+export interface CostAllocationConfig {
+  time_entry_project_rate: number;
+  expense_project_rate: number;
+  purchase_order_project_rate: number;
+  vendor_invoice_project_rate: number;
+}
+
+export interface ProjectRevenueConfig {
+  enabled: boolean;
+  method: string;
+  completion_measure: string;
+  avg_contract_value: number;
+}
+
+export interface MilestoneConfig {
+  enabled: boolean;
+  avg_per_project: number;
+  payment_milestone_rate: number;
+}
+
+export interface ChangeOrderConfig {
+  enabled: boolean;
+  probability: number;
+  max_per_project: number;
+  approval_rate: number;
+}
+
+export interface RetainageConfig {
+  enabled: boolean;
+  default_percentage: number;
+}
+
+export interface EarnedValueConfig {
+  enabled: boolean;
+  frequency: string;
+}
+
+export interface ProjectAccountingConfig {
+  enabled: boolean;
+  project_count: number;
+  project_types: ProjectTypeDistribution;
+  wbs: WbsConfig;
+  cost_allocation: CostAllocationConfig;
+  revenue_recognition: ProjectRevenueConfig;
+  milestones: MilestoneConfig;
+  change_orders: ChangeOrderConfig;
+  retainage: RetainageConfig;
+  earned_value: EarnedValueConfig;
+  anomaly_rate: number;
+}
+
+// =============================================================================
+// ESG / Sustainability Configuration
+// =============================================================================
+
+export interface EnergyConfig {
+  enabled: boolean;
+  facility_count: number;
+  renewable_target: number;
+}
+
+export interface WaterConfig {
+  enabled: boolean;
+}
+
+export interface WasteConfig {
+  enabled: boolean;
+  diversion_target: number;
+}
+
+export interface EnvironmentalConfig {
+  enabled: boolean;
+  scope1_enabled: boolean;
+  scope2_enabled: boolean;
+  scope3_enabled: boolean;
+  energy: EnergyConfig;
+  water: WaterConfig;
+  waste: WasteConfig;
+}
+
+export interface DiversityConfig {
+  enabled: boolean;
+}
+
+export interface PayEquityConfig {
+  enabled: boolean;
+  gap_threshold: number;
+}
+
+export interface SafetyConfig {
+  enabled: boolean;
+  target_trir: number;
+  incident_count: number;
+}
+
+export interface SocialConfig {
+  enabled: boolean;
+  diversity: DiversityConfig;
+  pay_equity: PayEquityConfig;
+  safety: SafetyConfig;
+}
+
+export interface GovernanceConfig {
+  enabled: boolean;
+  board_size: number;
+  independence_target: number;
+}
+
+export interface SupplyChainEsgConfig {
+  enabled: boolean;
+  assessment_coverage: number;
+}
+
+export interface EsgReportingConfig {
+  enabled: boolean;
+  materiality_assessment: boolean;
+}
+
+export interface ClimateScenarioConfig {
+  enabled: boolean;
+}
+
+export interface EsgConfig {
+  enabled: boolean;
+  environmental: EnvironmentalConfig;
+  social: SocialConfig;
+  governance: GovernanceConfig;
+  supply_chain_esg: SupplyChainEsgConfig;
+  reporting: EsgReportingConfig;
+  climate_scenarios: ClimateScenarioConfig;
+  anomaly_rate: number;
+}
+
+// =============================================================================
 // Vendor Network Configuration
 // =============================================================================
 
@@ -1209,6 +1456,11 @@ export interface GeneratorConfig {
   hr: HrConfig;
   manufacturing: ManufacturingProcessConfig;
   sales_quotes: SalesQuoteConfig;
+  // Enterprise v2
+  tax: TaxConfig;
+  treasury: TreasuryConfig;
+  project_accounting: ProjectAccountingConfig;
+  esg: EsgConfig;
   // Interconnectivity
   vendor_network: VendorNetworkConfig;
   customer_segmentation: CustomerSegmentationConfig;
@@ -1843,6 +2095,63 @@ export function createDefaultConfig(): GeneratorConfig {
       discount_rate: 0.10,
       revision_rate: 0.20,
     },
+    // Enterprise v2
+    tax: {
+      enabled: false,
+      vat_gst: { enabled: false, reverse_charge: true },
+      sales_tax: { enabled: false },
+      withholding: { enabled: false, treaty_network: true, default_rate: 0.30, treaty_reduced_rate: 0.15 },
+      provisions: { enabled: true, statutory_rate: 0.21, uncertain_positions: true },
+      payroll_tax: { enabled: false },
+      anomaly_rate: 0.03,
+    },
+    treasury: {
+      enabled: false,
+      cash_positioning: { enabled: true, frequency: 'daily', minimum_balance_policy: 100000 },
+      cash_forecasting: { enabled: true, horizon_days: 90, confidence_interval: 0.90 },
+      cash_pooling: { enabled: false, pool_type: 'zero_balancing', sweep_time: '16:00' },
+      hedging: { enabled: false, hedge_ratio: 0.75, hedge_accounting: true, effectiveness_method: 'regression' },
+      debt: { enabled: false },
+      netting: { enabled: false, cycle: 'monthly' },
+      bank_guarantees: { enabled: false, count: 5 },
+      anomaly_rate: 0.02,
+    },
+    project_accounting: {
+      enabled: false,
+      project_count: 10,
+      project_types: { capital: 0.25, internal: 0.20, customer: 0.30, r_and_d: 0.10, maintenance: 0.10, technology: 0.05 },
+      wbs: { max_depth: 3, min_elements_per_level: 2, max_elements_per_level: 6 },
+      cost_allocation: { time_entry_project_rate: 0.60, expense_project_rate: 0.30, purchase_order_project_rate: 0.40, vendor_invoice_project_rate: 0.35 },
+      revenue_recognition: { enabled: true, method: 'percentage_of_completion', completion_measure: 'cost_to_cost', avg_contract_value: 500000 },
+      milestones: { enabled: true, avg_per_project: 4, payment_milestone_rate: 0.50 },
+      change_orders: { enabled: true, probability: 0.40, max_per_project: 3, approval_rate: 0.75 },
+      retainage: { enabled: false, default_percentage: 0.10 },
+      earned_value: { enabled: true, frequency: 'monthly' },
+      anomaly_rate: 0.03,
+    },
+    esg: {
+      enabled: false,
+      environmental: {
+        enabled: true,
+        scope1_enabled: true,
+        scope2_enabled: true,
+        scope3_enabled: true,
+        energy: { enabled: true, facility_count: 5, renewable_target: 0.30 },
+        water: { enabled: true },
+        waste: { enabled: true, diversion_target: 0.50 },
+      },
+      social: {
+        enabled: true,
+        diversity: { enabled: true },
+        pay_equity: { enabled: true, gap_threshold: 0.05 },
+        safety: { enabled: true, target_trir: 2.5, incident_count: 20 },
+      },
+      governance: { enabled: true, board_size: 11, independence_target: 0.67 },
+      supply_chain_esg: { enabled: true, assessment_coverage: 0.80 },
+      reporting: { enabled: true, materiality_assessment: true },
+      climate_scenarios: { enabled: false },
+      anomaly_rate: 0.02,
+    },
     // Interconnectivity
     vendor_network: {
       enabled: false,
@@ -2356,6 +2665,124 @@ function validateConfig(config: GeneratorConfig): ValidationError[] {
       if (config.distributions.regime_changes.economic_cycle.recession_probability < 0 || config.distributions.regime_changes.economic_cycle.recession_probability > 1) {
         errors.push({ field: 'distributions.regime_changes.economic_cycle.recession_probability', message: 'Recession probability must be between 0 and 1' });
       }
+    }
+  }
+
+  // Tax validation
+  if (config.tax?.enabled) {
+    if (config.tax.anomaly_rate < 0 || config.tax.anomaly_rate > 1) {
+      errors.push({ field: 'tax.anomaly_rate', message: 'Tax anomaly rate must be between 0 and 1' });
+    }
+    if (config.tax.withholding.default_rate < 0 || config.tax.withholding.default_rate > 1) {
+      errors.push({ field: 'tax.withholding.default_rate', message: 'Withholding default rate must be between 0 and 1' });
+    }
+    if (config.tax.withholding.treaty_reduced_rate < 0 || config.tax.withholding.treaty_reduced_rate > 1) {
+      errors.push({ field: 'tax.withholding.treaty_reduced_rate', message: 'Withholding treaty rate must be between 0 and 1' });
+    }
+    if (config.tax.provisions.statutory_rate < 0 || config.tax.provisions.statutory_rate > 1) {
+      errors.push({ field: 'tax.provisions.statutory_rate', message: 'Statutory rate must be between 0 and 1' });
+    }
+  }
+
+  // Treasury validation
+  if (config.treasury?.enabled) {
+    if (config.treasury.anomaly_rate < 0 || config.treasury.anomaly_rate > 1) {
+      errors.push({ field: 'treasury.anomaly_rate', message: 'Treasury anomaly rate must be between 0 and 1' });
+    }
+    if (config.treasury.cash_positioning.minimum_balance_policy < 0) {
+      errors.push({ field: 'treasury.cash_positioning.minimum_balance_policy', message: 'Minimum balance cannot be negative' });
+    }
+    if (config.treasury.cash_forecasting.horizon_days < 1) {
+      errors.push({ field: 'treasury.cash_forecasting.horizon_days', message: 'Forecast horizon must be at least 1 day' });
+    }
+    if (config.treasury.cash_forecasting.confidence_interval < 0 || config.treasury.cash_forecasting.confidence_interval > 1) {
+      errors.push({ field: 'treasury.cash_forecasting.confidence_interval', message: 'Confidence interval must be between 0 and 1' });
+    }
+    if (config.treasury.hedging.hedge_ratio < 0 || config.treasury.hedging.hedge_ratio > 1) {
+      errors.push({ field: 'treasury.hedging.hedge_ratio', message: 'Hedge ratio must be between 0 and 1' });
+    }
+    if (config.treasury.bank_guarantees.count < 0) {
+      errors.push({ field: 'treasury.bank_guarantees.count', message: 'Guarantee count cannot be negative' });
+    }
+  }
+
+  // Project accounting validation
+  if (config.project_accounting?.enabled) {
+    if (config.project_accounting.anomaly_rate < 0 || config.project_accounting.anomaly_rate > 1) {
+      errors.push({ field: 'project_accounting.anomaly_rate', message: 'Project anomaly rate must be between 0 and 1' });
+    }
+    if (config.project_accounting.project_count < 1) {
+      errors.push({ field: 'project_accounting.project_count', message: 'Project count must be at least 1' });
+    }
+    // Validate project type distribution sums to 1.0
+    const pt = config.project_accounting.project_types;
+    const typeSum = pt.capital + pt.internal + pt.customer + pt.r_and_d + pt.maintenance + pt.technology;
+    if (Math.abs(typeSum - 1.0) > 0.01) {
+      errors.push({ field: 'project_accounting.project_types', message: 'Project type weights must sum to 100%' });
+    }
+    if (config.project_accounting.wbs.max_depth < 1) {
+      errors.push({ field: 'project_accounting.wbs.max_depth', message: 'WBS max depth must be at least 1' });
+    }
+    if (config.project_accounting.wbs.min_elements_per_level > config.project_accounting.wbs.max_elements_per_level) {
+      errors.push({ field: 'project_accounting.wbs.max_elements_per_level', message: 'WBS max elements must be >= min elements' });
+    }
+    // Validate cost allocation rates
+    for (const [key, label] of [
+      ['time_entry_project_rate', 'Time entry rate'],
+      ['expense_project_rate', 'Expense rate'],
+      ['purchase_order_project_rate', 'PO rate'],
+      ['vendor_invoice_project_rate', 'VI rate'],
+    ] as const) {
+      const val = config.project_accounting.cost_allocation[key];
+      if (val < 0 || val > 1) {
+        errors.push({ field: `project_accounting.cost_allocation.${key}`, message: `${label} must be between 0 and 1` });
+      }
+    }
+    if (config.project_accounting.change_orders.probability < 0 || config.project_accounting.change_orders.probability > 1) {
+      errors.push({ field: 'project_accounting.change_orders.probability', message: 'Change order probability must be between 0 and 1' });
+    }
+    if (config.project_accounting.change_orders.approval_rate < 0 || config.project_accounting.change_orders.approval_rate > 1) {
+      errors.push({ field: 'project_accounting.change_orders.approval_rate', message: 'Change order approval rate must be between 0 and 1' });
+    }
+    if (config.project_accounting.milestones.payment_milestone_rate < 0 || config.project_accounting.milestones.payment_milestone_rate > 1) {
+      errors.push({ field: 'project_accounting.milestones.payment_milestone_rate', message: 'Payment milestone rate must be between 0 and 1' });
+    }
+    if (config.project_accounting.retainage.default_percentage < 0 || config.project_accounting.retainage.default_percentage > 1) {
+      errors.push({ field: 'project_accounting.retainage.default_percentage', message: 'Retainage percentage must be between 0 and 1' });
+    }
+  }
+
+  // ESG validation
+  if (config.esg?.enabled) {
+    if (config.esg.anomaly_rate < 0 || config.esg.anomaly_rate > 1) {
+      errors.push({ field: 'esg.anomaly_rate', message: 'ESG anomaly rate must be between 0 and 1' });
+    }
+    if (config.esg.environmental.energy.facility_count < 0) {
+      errors.push({ field: 'esg.environmental.energy.facility_count', message: 'Facility count cannot be negative' });
+    }
+    if (config.esg.environmental.energy.renewable_target < 0 || config.esg.environmental.energy.renewable_target > 1) {
+      errors.push({ field: 'esg.environmental.energy.renewable_target', message: 'Renewable target must be between 0 and 1' });
+    }
+    if (config.esg.environmental.waste.diversion_target < 0 || config.esg.environmental.waste.diversion_target > 1) {
+      errors.push({ field: 'esg.environmental.waste.diversion_target', message: 'Waste diversion target must be between 0 and 1' });
+    }
+    if (config.esg.social.pay_equity.gap_threshold < 0 || config.esg.social.pay_equity.gap_threshold > 1) {
+      errors.push({ field: 'esg.social.pay_equity.gap_threshold', message: 'Pay equity gap threshold must be between 0 and 1' });
+    }
+    if (config.esg.social.safety.target_trir < 0) {
+      errors.push({ field: 'esg.social.safety.target_trir', message: 'Target TRIR cannot be negative' });
+    }
+    if (config.esg.social.safety.incident_count < 0) {
+      errors.push({ field: 'esg.social.safety.incident_count', message: 'Incident count cannot be negative' });
+    }
+    if (config.esg.governance.board_size < 1) {
+      errors.push({ field: 'esg.governance.board_size', message: 'Board size must be at least 1' });
+    }
+    if (config.esg.governance.independence_target < 0 || config.esg.governance.independence_target > 1) {
+      errors.push({ field: 'esg.governance.independence_target', message: 'Independence target must be between 0 and 1' });
+    }
+    if (config.esg.supply_chain_esg.assessment_coverage < 0 || config.esg.supply_chain_esg.assessment_coverage > 1) {
+      errors.push({ field: 'esg.supply_chain_esg.assessment_coverage', message: 'Assessment coverage must be between 0 and 1' });
     }
   }
 
