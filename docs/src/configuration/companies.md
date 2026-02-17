@@ -98,6 +98,7 @@ companies:
 ```
 
 **Affects:**
+- **Country pack resolution** — the `CountryPackRegistry` automatically loads the matching country pack (e.g., `US.json` for `country: US`), providing holidays, names, tax rates, address formats, phone formats, payroll rules, and banking configuration. See [Country Packs](country-packs.md).
 - Holiday calendars
 - Tax calculations
 - Regional templates

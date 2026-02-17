@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-17
+
+### Added
+
+- **Country Pack Pluggable Architecture** (`datasynth-core`): Runtime-loaded JSON country packs replacing ~7,500 lines of hardcoded country-specific data
+  - **CountryPackRegistry**: Layered merge system (`_default.json` → country pack → user overrides) with `include_str!` embedding for zero-config usage
+  - **Built-in packs**: US, DE, GB with comprehensive data for holidays, names, tax rates, phone formats, addresses, payroll rules, and legal entity formats
+  - **Holiday resolution**: 5 holiday types — fixed dates, Easter-relative, nth-weekday (with offset), last-weekday, and lunar calendar algorithms
+  - **CountryPack schema**: 16-section JSON structure covering locale, names, holidays, tax, address, phone, banking, business rules, legal entities, accounting, payroll, vendor/customer/material templates, and document texts
+  - **Deep merge**: Objects merge recursively, arrays/scalars replace — enables surgical per-country overrides
+  - **Easter & lunar extraction**: Extracted algorithmic holiday computation into reusable `country/easter.rs` and `country/lunar.rs` modules
+  - **External packs**: `country_packs.external_dir` config for loading custom/commercial country packs from disk
+
+- **Generator Country Pack Integration** (`datasynth-generators`, `datasynth-banking`, `datasynth-runtime`):
+  - `HolidayCalendar::from_country_pack()` — resolves all 5 holiday types with weekend observation rules; parity-tested against existing `for_region()` for US, DE, GB
+  - `MultiCultureNameGenerator::from_country_pack()` — culture-weighted name generation from JSON data
+  - `generate_from_country_pack()` on tax code generator — reads rates, jurisdictions, states from pack
+  - `generate_with_country_pack()` on payroll generator — reads statutory deduction rates from pack
+  - `spend_emission_factor_from_pack()` on emission generator — country multipliers from pack
+  - `generate_phone_from_pack()`, `generate_address_from_pack()`, `generate_national_id_from_pack()` on customer generator
+  - `EnhancedOrchestrator` wired with `CountryPackRegistry`, passes `&CountryPack` per company
+
+- **Country Pack Configuration** (`datasynth-config`): New `country_packs` section in `GeneratorConfig` with `external_dir` and `overrides` fields, validation for directory existence and override key format
+
+### Changed
+
+- Bumped all Rust crate versions to 0.8.0
+- `NamePool` fields changed from `Vec<&'static str>` to `Vec<String>` to support JSON-deserialized name data
+- Holiday `NthWeekdayHoliday` schema includes `offset_days` field for holidays like "Day after Thanksgiving"
+- Executive overview document updated to v0.8.0
+
 ## [0.7.0] - 2026-02-17
 
 ### Added

@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.7.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.8.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.7.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.8.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -318,6 +318,30 @@ ESG / Sustainability &
 Each chain defaults to \texttt{enabled: false} and integrates with the
 existing generation pipeline via new orchestrator phases. All new fields
 on existing structs use \texttt{Option<>} for backward compatibility.
+
+\subsection{Country Pack Architecture}
+
+\textit{New in v0.8.0} --- pluggable JSON-based country configuration replacing
+$\sim$7\,500 lines of hardcoded country-specific data:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Built-in packs}: US, DE, GB with 16-section JSON schema covering
+        locale, names, holidays, tax rates, addresses, phone formats, banking,
+        payroll rules, legal entity formats, and document texts.
+  \item \textbf{Layered merge}: \texttt{\_default.json} $\to$ country pack $\to$
+        user overrides --- objects merge recursively, arrays/scalars replace,
+        enabling surgical per-country customization.
+  \item \textbf{5 holiday types}: Fixed dates, Easter-relative, nth-weekday
+        (with offset), last-weekday, and lunar calendar algorithms
+        (Chinese New Year, Diwali, Eid al-Fitr, Chuseok).
+  \item \textbf{Generator integration}: \texttt{HolidayCalendar},
+        \texttt{MultiCultureNameGenerator}, tax code, payroll, emission, and
+        customer generators all consume country pack data --- wired through
+        \texttt{EnhancedOrchestrator} per company.
+  \item \textbf{Extensibility}: \texttt{country\_packs.external\_dir} config
+        loads custom or commercial packs from disk; no code changes required
+        to add a new country.
+\end{itemize}
 
 \subsection{Banking, KYC \& AML}
 
@@ -1170,7 +1194,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.7.0 \textbullet{}
+  DataSynth v0.8.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
