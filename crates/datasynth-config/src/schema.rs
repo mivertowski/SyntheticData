@@ -168,6 +168,18 @@ pub struct GeneratorConfig {
     /// Sales quote configuration (quote-to-order pipeline)
     #[serde(default)]
     pub sales_quotes: SalesQuoteConfig,
+    /// Tax accounting configuration (VAT/GST, sales tax, withholding, provisions, payroll tax)
+    #[serde(default)]
+    pub tax: TaxConfig,
+    /// Treasury and cash management configuration
+    #[serde(default)]
+    pub treasury: TreasuryConfig,
+    /// Project accounting configuration
+    #[serde(default)]
+    pub project_accounting: ProjectAccountingConfig,
+    /// ESG / Sustainability reporting configuration
+    #[serde(default)]
+    pub esg: EsgConfig,
 }
 
 /// LLM enrichment configuration.
@@ -10859,6 +10871,1362 @@ fn default_quote_validity_days() -> u32 {
     30
 }
 
+// =============================================================================
+// Tax Accounting Configuration
+// =============================================================================
+
+/// Tax accounting configuration.
+///
+/// Controls generation of tax-related data including VAT/GST, sales tax,
+/// withholding tax, tax provisions, and payroll tax across multiple jurisdictions.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxConfig {
+    /// Whether tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Tax jurisdiction configuration.
+    #[serde(default)]
+    pub jurisdictions: TaxJurisdictionConfig,
+    /// VAT/GST configuration.
+    #[serde(default)]
+    pub vat_gst: VatGstConfig,
+    /// Sales tax configuration.
+    #[serde(default)]
+    pub sales_tax: SalesTaxConfig,
+    /// Withholding tax configuration.
+    #[serde(default)]
+    pub withholding: WithholdingTaxSchemaConfig,
+    /// Tax provision configuration.
+    #[serde(default)]
+    pub provisions: TaxProvisionSchemaConfig,
+    /// Payroll tax configuration.
+    #[serde(default)]
+    pub payroll_tax: PayrollTaxSchemaConfig,
+    /// Anomaly injection rate for tax data (0.0 to 1.0).
+    #[serde(default = "default_tax_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_tax_anomaly_rate() -> f64 {
+    0.03
+}
+
+impl Default for TaxConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            jurisdictions: TaxJurisdictionConfig::default(),
+            vat_gst: VatGstConfig::default(),
+            sales_tax: SalesTaxConfig::default(),
+            withholding: WithholdingTaxSchemaConfig::default(),
+            provisions: TaxProvisionSchemaConfig::default(),
+            payroll_tax: PayrollTaxSchemaConfig::default(),
+            anomaly_rate: default_tax_anomaly_rate(),
+        }
+    }
+}
+
+/// Tax jurisdiction configuration.
+///
+/// Specifies which countries and subnational jurisdictions to include
+/// when generating tax data.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TaxJurisdictionConfig {
+    /// List of country codes to include (e.g., ["US", "DE", "GB"]).
+    #[serde(default)]
+    pub countries: Vec<String>,
+    /// Whether to include subnational jurisdictions (e.g., US states, Canadian provinces).
+    #[serde(default)]
+    pub include_subnational: bool,
+}
+
+/// VAT/GST configuration.
+///
+/// Controls generation of Value Added Tax / Goods and Services Tax data,
+/// including standard and reduced rates, exempt categories, and reverse charge.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VatGstConfig {
+    /// Whether VAT/GST generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Standard VAT/GST rates by country code (e.g., {"DE": 0.19, "GB": 0.20}).
+    #[serde(default)]
+    pub standard_rates: std::collections::HashMap<String, f64>,
+    /// Reduced VAT/GST rates by country code (e.g., {"DE": 0.07, "GB": 0.05}).
+    #[serde(default)]
+    pub reduced_rates: std::collections::HashMap<String, f64>,
+    /// Categories exempt from VAT/GST (e.g., ["financial_services", "healthcare"]).
+    #[serde(default)]
+    pub exempt_categories: Vec<String>,
+    /// Whether to apply reverse charge mechanism for cross-border B2B transactions.
+    #[serde(default = "default_true")]
+    pub reverse_charge: bool,
+}
+
+impl Default for VatGstConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            standard_rates: std::collections::HashMap::new(),
+            reduced_rates: std::collections::HashMap::new(),
+            exempt_categories: Vec::new(),
+            reverse_charge: true,
+        }
+    }
+}
+
+/// Sales tax configuration.
+///
+/// Controls generation of US-style sales tax data including nexus determination.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SalesTaxConfig {
+    /// Whether sales tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// US states where the company has nexus (e.g., ["CA", "NY", "TX"]).
+    #[serde(default)]
+    pub nexus_states: Vec<String>,
+}
+
+/// Withholding tax configuration.
+///
+/// Controls generation of withholding tax data for cross-border payments,
+/// including treaty network and rate overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WithholdingTaxSchemaConfig {
+    /// Whether withholding tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Whether to simulate a treaty network with reduced rates.
+    #[serde(default = "default_true")]
+    pub treaty_network: bool,
+    /// Default withholding tax rate for non-treaty countries (0.0 to 1.0).
+    #[serde(default = "default_withholding_rate")]
+    pub default_rate: f64,
+    /// Reduced withholding tax rate for treaty countries (0.0 to 1.0).
+    #[serde(default = "default_treaty_reduced_rate")]
+    pub treaty_reduced_rate: f64,
+}
+
+fn default_withholding_rate() -> f64 {
+    0.30
+}
+
+fn default_treaty_reduced_rate() -> f64 {
+    0.15
+}
+
+impl Default for WithholdingTaxSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            treaty_network: true,
+            default_rate: default_withholding_rate(),
+            treaty_reduced_rate: default_treaty_reduced_rate(),
+        }
+    }
+}
+
+/// Tax provision configuration.
+///
+/// Controls generation of tax provision data including statutory rates
+/// and uncertain tax positions (ASC 740 / IAS 12).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaxProvisionSchemaConfig {
+    /// Whether tax provision generation is enabled.
+    /// Defaults to true when tax is enabled, as provisions are typically required.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Statutory corporate tax rate (0.0 to 1.0).
+    #[serde(default = "default_statutory_rate")]
+    pub statutory_rate: f64,
+    /// Whether to generate uncertain tax positions (FIN 48 / IFRIC 23).
+    #[serde(default = "default_true")]
+    pub uncertain_positions: bool,
+}
+
+fn default_statutory_rate() -> f64 {
+    0.21
+}
+
+impl Default for TaxProvisionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            statutory_rate: default_statutory_rate(),
+            uncertain_positions: true,
+        }
+    }
+}
+
+/// Payroll tax configuration.
+///
+/// Controls generation of payroll tax data (employer/employee contributions,
+/// social security, Medicare, etc.).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PayrollTaxSchemaConfig {
+    /// Whether payroll tax generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Treasury & Cash Management Configuration
+// ---------------------------------------------------------------------------
+
+/// Treasury and cash management configuration.
+///
+/// Controls generation of cash positions, forecasts, pooling, hedging
+/// instruments (ASC 815 / IFRS 9), debt instruments with covenants,
+/// bank guarantees, and intercompany netting runs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TreasuryConfig {
+    /// Whether treasury generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Cash positioning configuration.
+    #[serde(default)]
+    pub cash_positioning: CashPositioningConfig,
+    /// Cash forecasting configuration.
+    #[serde(default)]
+    pub cash_forecasting: CashForecastingConfig,
+    /// Cash pooling configuration.
+    #[serde(default)]
+    pub cash_pooling: CashPoolingConfig,
+    /// Hedging configuration (FX forwards, IR swaps, etc.).
+    #[serde(default)]
+    pub hedging: HedgingSchemaConfig,
+    /// Debt instrument and covenant configuration.
+    #[serde(default)]
+    pub debt: DebtSchemaConfig,
+    /// Intercompany netting configuration.
+    #[serde(default)]
+    pub netting: NettingSchemaConfig,
+    /// Bank guarantee / letter of credit configuration.
+    #[serde(default)]
+    pub bank_guarantees: BankGuaranteeSchemaConfig,
+    /// Anomaly injection rate for treasury data (0.0 to 1.0).
+    #[serde(default = "default_treasury_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_treasury_anomaly_rate() -> f64 {
+    0.02
+}
+
+impl Default for TreasuryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cash_positioning: CashPositioningConfig::default(),
+            cash_forecasting: CashForecastingConfig::default(),
+            cash_pooling: CashPoolingConfig::default(),
+            hedging: HedgingSchemaConfig::default(),
+            debt: DebtSchemaConfig::default(),
+            netting: NettingSchemaConfig::default(),
+            bank_guarantees: BankGuaranteeSchemaConfig::default(),
+            anomaly_rate: default_treasury_anomaly_rate(),
+        }
+    }
+}
+
+/// Cash positioning configuration.
+///
+/// Controls daily cash position generation per entity/bank account.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashPositioningConfig {
+    /// Whether cash positioning is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Position generation frequency.
+    #[serde(default = "default_cash_frequency")]
+    pub frequency: String,
+    /// Minimum cash balance policy threshold.
+    #[serde(default = "default_minimum_balance_policy")]
+    pub minimum_balance_policy: f64,
+}
+
+fn default_cash_frequency() -> String {
+    "daily".to_string()
+}
+
+fn default_minimum_balance_policy() -> f64 {
+    100_000.0
+}
+
+impl Default for CashPositioningConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frequency: default_cash_frequency(),
+            minimum_balance_policy: default_minimum_balance_policy(),
+        }
+    }
+}
+
+/// Cash forecasting configuration.
+///
+/// Controls forward-looking cash forecast generation with probability-weighted items.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashForecastingConfig {
+    /// Whether cash forecasting is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of days to forecast into the future.
+    #[serde(default = "default_horizon_days")]
+    pub horizon_days: u32,
+    /// AR collection probability curve type ("aging" or "flat").
+    #[serde(default = "default_ar_probability_curve")]
+    pub ar_collection_probability_curve: String,
+    /// Confidence interval for the forecast (0.0 to 1.0).
+    #[serde(default = "default_confidence_interval")]
+    pub confidence_interval: f64,
+}
+
+fn default_horizon_days() -> u32 {
+    90
+}
+
+fn default_ar_probability_curve() -> String {
+    "aging".to_string()
+}
+
+fn default_confidence_interval() -> f64 {
+    0.90
+}
+
+impl Default for CashForecastingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            horizon_days: default_horizon_days(),
+            ar_collection_probability_curve: default_ar_probability_curve(),
+            confidence_interval: default_confidence_interval(),
+        }
+    }
+}
+
+/// Cash pooling configuration.
+///
+/// Controls cash pool structure generation (physical, notional, zero-balancing).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CashPoolingConfig {
+    /// Whether cash pooling is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Pool type: "physical_pooling", "notional_pooling", or "zero_balancing".
+    #[serde(default = "default_pool_type")]
+    pub pool_type: String,
+    /// Time of day when sweeps occur (HH:MM format).
+    #[serde(default = "default_sweep_time")]
+    pub sweep_time: String,
+}
+
+fn default_pool_type() -> String {
+    "zero_balancing".to_string()
+}
+
+fn default_sweep_time() -> String {
+    "16:00".to_string()
+}
+
+impl Default for CashPoolingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            pool_type: default_pool_type(),
+            sweep_time: default_sweep_time(),
+        }
+    }
+}
+
+/// Hedging configuration.
+///
+/// Controls generation of hedging instruments and hedge relationship designations
+/// under ASC 815 / IFRS 9.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HedgingSchemaConfig {
+    /// Whether hedging generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Target hedge ratio (0.0 to 1.0). Proportion of FX exposure to hedge.
+    #[serde(default = "default_hedge_ratio")]
+    pub hedge_ratio: f64,
+    /// Types of instruments to generate (e.g., ["fx_forward", "interest_rate_swap"]).
+    #[serde(default = "default_hedge_instruments")]
+    pub instruments: Vec<String>,
+    /// Whether to designate formal hedge accounting relationships.
+    #[serde(default = "default_true")]
+    pub hedge_accounting: bool,
+    /// Effectiveness testing method: "dollar_offset", "regression", or "critical_terms".
+    #[serde(default = "default_effectiveness_method")]
+    pub effectiveness_method: String,
+}
+
+fn default_hedge_ratio() -> f64 {
+    0.75
+}
+
+fn default_hedge_instruments() -> Vec<String> {
+    vec!["fx_forward".to_string(), "interest_rate_swap".to_string()]
+}
+
+fn default_effectiveness_method() -> String {
+    "regression".to_string()
+}
+
+impl Default for HedgingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            hedge_ratio: default_hedge_ratio(),
+            instruments: default_hedge_instruments(),
+            hedge_accounting: true,
+            effectiveness_method: default_effectiveness_method(),
+        }
+    }
+}
+
+/// Debt instrument configuration.
+///
+/// Controls generation of debt instruments (term loans, revolving credit, bonds)
+/// with amortization schedules and financial covenants.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DebtSchemaConfig {
+    /// Whether debt instrument generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Debt instrument definitions.
+    #[serde(default)]
+    pub instruments: Vec<DebtInstrumentDef>,
+    /// Covenant definitions.
+    #[serde(default)]
+    pub covenants: Vec<CovenantDef>,
+}
+
+/// Definition of a debt instrument in configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DebtInstrumentDef {
+    /// Instrument type: "term_loan", "revolving_credit", "bond", "commercial_paper", "bridge_loan".
+    #[serde(rename = "type")]
+    pub instrument_type: String,
+    /// Principal amount (for term loans, bonds).
+    #[serde(default)]
+    pub principal: Option<f64>,
+    /// Interest rate (annual, as decimal fraction).
+    #[serde(default)]
+    pub rate: Option<f64>,
+    /// Maturity in months.
+    #[serde(default)]
+    pub maturity_months: Option<u32>,
+    /// Facility limit (for revolving credit).
+    #[serde(default)]
+    pub facility: Option<f64>,
+}
+
+/// Definition of a debt covenant in configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CovenantDef {
+    /// Covenant type: "debt_to_equity", "interest_coverage", "current_ratio",
+    /// "net_worth", "debt_to_ebitda", "fixed_charge_coverage".
+    #[serde(rename = "type")]
+    pub covenant_type: String,
+    /// Covenant threshold value.
+    pub threshold: f64,
+}
+
+/// Intercompany netting configuration.
+///
+/// Controls generation of multilateral netting runs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NettingSchemaConfig {
+    /// Whether netting generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Netting cycle: "daily", "weekly", or "monthly".
+    #[serde(default = "default_netting_cycle")]
+    pub cycle: String,
+}
+
+fn default_netting_cycle() -> String {
+    "monthly".to_string()
+}
+
+impl Default for NettingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            cycle: default_netting_cycle(),
+        }
+    }
+}
+
+/// Bank guarantee and letter of credit configuration.
+///
+/// Controls generation of bank guarantees, standby LCs, and performance bonds.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BankGuaranteeSchemaConfig {
+    /// Whether bank guarantee generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of guarantees to generate.
+    #[serde(default = "default_guarantee_count")]
+    pub count: u32,
+}
+
+fn default_guarantee_count() -> u32 {
+    5
+}
+
+impl Default for BankGuaranteeSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            count: default_guarantee_count(),
+        }
+    }
+}
+
+// ===========================================================================
+// Project Accounting Configuration
+// ===========================================================================
+
+/// Project accounting configuration.
+///
+/// Controls generation of project cost lines, revenue recognition,
+/// milestones, change orders, retainage, and earned value metrics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectAccountingConfig {
+    /// Whether project accounting is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of projects to generate.
+    #[serde(default = "default_project_count")]
+    pub project_count: u32,
+    /// Distribution of project types (capital, internal, customer, r_and_d, maintenance, technology).
+    #[serde(default)]
+    pub project_types: ProjectTypeDistribution,
+    /// WBS structure configuration.
+    #[serde(default)]
+    pub wbs: WbsSchemaConfig,
+    /// Cost allocation rates (what % of source documents get project-tagged).
+    #[serde(default)]
+    pub cost_allocation: CostAllocationConfig,
+    /// Revenue recognition configuration for project accounting.
+    #[serde(default)]
+    pub revenue_recognition: ProjectRevenueRecognitionConfig,
+    /// Milestone configuration.
+    #[serde(default)]
+    pub milestones: MilestoneSchemaConfig,
+    /// Change order configuration.
+    #[serde(default)]
+    pub change_orders: ChangeOrderSchemaConfig,
+    /// Retainage configuration.
+    #[serde(default)]
+    pub retainage: RetainageSchemaConfig,
+    /// Earned value management configuration.
+    #[serde(default)]
+    pub earned_value: EarnedValueSchemaConfig,
+    /// Anomaly injection rate for project accounting data (0.0 to 1.0).
+    #[serde(default = "default_project_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_project_count() -> u32 {
+    10
+}
+
+fn default_project_anomaly_rate() -> f64 {
+    0.03
+}
+
+impl Default for ProjectAccountingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            project_count: default_project_count(),
+            project_types: ProjectTypeDistribution::default(),
+            wbs: WbsSchemaConfig::default(),
+            cost_allocation: CostAllocationConfig::default(),
+            revenue_recognition: ProjectRevenueRecognitionConfig::default(),
+            milestones: MilestoneSchemaConfig::default(),
+            change_orders: ChangeOrderSchemaConfig::default(),
+            retainage: RetainageSchemaConfig::default(),
+            earned_value: EarnedValueSchemaConfig::default(),
+            anomaly_rate: default_project_anomaly_rate(),
+        }
+    }
+}
+
+/// Distribution of project types by weight.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectTypeDistribution {
+    /// Weight for capital projects (default 0.25).
+    #[serde(default = "default_capital_weight")]
+    pub capital: f64,
+    /// Weight for internal projects (default 0.20).
+    #[serde(default = "default_internal_weight")]
+    pub internal: f64,
+    /// Weight for customer projects (default 0.30).
+    #[serde(default = "default_customer_weight")]
+    pub customer: f64,
+    /// Weight for R&D projects (default 0.10).
+    #[serde(default = "default_rnd_weight")]
+    pub r_and_d: f64,
+    /// Weight for maintenance projects (default 0.10).
+    #[serde(default = "default_maintenance_weight")]
+    pub maintenance: f64,
+    /// Weight for technology projects (default 0.05).
+    #[serde(default = "default_technology_weight")]
+    pub technology: f64,
+}
+
+fn default_capital_weight() -> f64 {
+    0.25
+}
+fn default_internal_weight() -> f64 {
+    0.20
+}
+fn default_customer_weight() -> f64 {
+    0.30
+}
+fn default_rnd_weight() -> f64 {
+    0.10
+}
+fn default_maintenance_weight() -> f64 {
+    0.10
+}
+fn default_technology_weight() -> f64 {
+    0.05
+}
+
+impl Default for ProjectTypeDistribution {
+    fn default() -> Self {
+        Self {
+            capital: default_capital_weight(),
+            internal: default_internal_weight(),
+            customer: default_customer_weight(),
+            r_and_d: default_rnd_weight(),
+            maintenance: default_maintenance_weight(),
+            technology: default_technology_weight(),
+        }
+    }
+}
+
+/// WBS structure configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WbsSchemaConfig {
+    /// Maximum depth of WBS hierarchy (default 3).
+    #[serde(default = "default_wbs_max_depth")]
+    pub max_depth: u32,
+    /// Minimum elements per level-1 WBS (default 2).
+    #[serde(default = "default_wbs_min_elements")]
+    pub min_elements_per_level: u32,
+    /// Maximum elements per level-1 WBS (default 6).
+    #[serde(default = "default_wbs_max_elements")]
+    pub max_elements_per_level: u32,
+}
+
+fn default_wbs_max_depth() -> u32 {
+    3
+}
+fn default_wbs_min_elements() -> u32 {
+    2
+}
+fn default_wbs_max_elements() -> u32 {
+    6
+}
+
+impl Default for WbsSchemaConfig {
+    fn default() -> Self {
+        Self {
+            max_depth: default_wbs_max_depth(),
+            min_elements_per_level: default_wbs_min_elements(),
+            max_elements_per_level: default_wbs_max_elements(),
+        }
+    }
+}
+
+/// Cost allocation rates — what fraction of each document type gets linked to a project.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CostAllocationConfig {
+    /// Fraction of time entries assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_time_entry_rate")]
+    pub time_entry_project_rate: f64,
+    /// Fraction of expense reports assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_expense_rate")]
+    pub expense_project_rate: f64,
+    /// Fraction of purchase orders assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_po_rate")]
+    pub purchase_order_project_rate: f64,
+    /// Fraction of vendor invoices assigned to projects (0.0 to 1.0).
+    #[serde(default = "default_vi_rate")]
+    pub vendor_invoice_project_rate: f64,
+}
+
+fn default_time_entry_rate() -> f64 {
+    0.60
+}
+fn default_expense_rate() -> f64 {
+    0.30
+}
+fn default_po_rate() -> f64 {
+    0.40
+}
+fn default_vi_rate() -> f64 {
+    0.35
+}
+
+impl Default for CostAllocationConfig {
+    fn default() -> Self {
+        Self {
+            time_entry_project_rate: default_time_entry_rate(),
+            expense_project_rate: default_expense_rate(),
+            purchase_order_project_rate: default_po_rate(),
+            vendor_invoice_project_rate: default_vi_rate(),
+        }
+    }
+}
+
+/// Revenue recognition configuration for project accounting.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRevenueRecognitionConfig {
+    /// Whether revenue recognition is enabled for customer projects.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Default method: "percentage_of_completion", "completed_contract", "milestone_based".
+    #[serde(default = "default_revenue_method")]
+    pub method: String,
+    /// Default completion measure: "cost_to_cost", "labor_hours", "physical_completion".
+    #[serde(default = "default_completion_measure")]
+    pub completion_measure: String,
+    /// Average contract value for customer projects.
+    #[serde(default = "default_avg_contract_value")]
+    pub avg_contract_value: f64,
+}
+
+fn default_revenue_method() -> String {
+    "percentage_of_completion".to_string()
+}
+fn default_completion_measure() -> String {
+    "cost_to_cost".to_string()
+}
+fn default_avg_contract_value() -> f64 {
+    500_000.0
+}
+
+impl Default for ProjectRevenueRecognitionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            method: default_revenue_method(),
+            completion_measure: default_completion_measure(),
+            avg_contract_value: default_avg_contract_value(),
+        }
+    }
+}
+
+/// Milestone configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MilestoneSchemaConfig {
+    /// Whether milestone generation is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Average number of milestones per project.
+    #[serde(default = "default_milestones_per_project")]
+    pub avg_per_project: u32,
+    /// Fraction of milestones that are payment milestones (0.0 to 1.0).
+    #[serde(default = "default_payment_milestone_rate")]
+    pub payment_milestone_rate: f64,
+}
+
+fn default_milestones_per_project() -> u32 {
+    4
+}
+fn default_payment_milestone_rate() -> f64 {
+    0.50
+}
+
+impl Default for MilestoneSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            avg_per_project: default_milestones_per_project(),
+            payment_milestone_rate: default_payment_milestone_rate(),
+        }
+    }
+}
+
+/// Change order configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangeOrderSchemaConfig {
+    /// Whether change order generation is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Probability that a project will have at least one change order (0.0 to 1.0).
+    #[serde(default = "default_change_order_probability")]
+    pub probability: f64,
+    /// Maximum change orders per project.
+    #[serde(default = "default_max_change_orders")]
+    pub max_per_project: u32,
+    /// Approval rate for change orders (0.0 to 1.0).
+    #[serde(default = "default_change_order_approval_rate")]
+    pub approval_rate: f64,
+}
+
+fn default_change_order_probability() -> f64 {
+    0.40
+}
+fn default_max_change_orders() -> u32 {
+    3
+}
+fn default_change_order_approval_rate() -> f64 {
+    0.75
+}
+
+impl Default for ChangeOrderSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            probability: default_change_order_probability(),
+            max_per_project: default_max_change_orders(),
+            approval_rate: default_change_order_approval_rate(),
+        }
+    }
+}
+
+/// Retainage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RetainageSchemaConfig {
+    /// Whether retainage is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Default retainage percentage (0.0 to 1.0, e.g., 0.10 for 10%).
+    #[serde(default = "default_retainage_pct")]
+    pub default_percentage: f64,
+}
+
+fn default_retainage_pct() -> f64 {
+    0.10
+}
+
+impl Default for RetainageSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            default_percentage: default_retainage_pct(),
+        }
+    }
+}
+
+/// Earned value management (EVM) configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EarnedValueSchemaConfig {
+    /// Whether EVM metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Measurement frequency: "weekly", "biweekly", "monthly".
+    #[serde(default = "default_evm_frequency")]
+    pub frequency: String,
+}
+
+fn default_evm_frequency() -> String {
+    "monthly".to_string()
+}
+
+impl Default for EarnedValueSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frequency: default_evm_frequency(),
+        }
+    }
+}
+
+// =============================================================================
+// ESG / Sustainability Configuration
+// =============================================================================
+
+/// Top-level ESG / sustainability reporting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EsgConfig {
+    /// Whether ESG generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Environmental metrics (emissions, energy, water, waste).
+    #[serde(default)]
+    pub environmental: EnvironmentalConfig,
+    /// Social metrics (diversity, pay equity, safety).
+    #[serde(default)]
+    pub social: SocialConfig,
+    /// Governance metrics (board composition, ethics, compliance).
+    #[serde(default)]
+    pub governance: GovernanceSchemaConfig,
+    /// Supply-chain ESG assessment settings.
+    #[serde(default)]
+    pub supply_chain_esg: SupplyChainEsgConfig,
+    /// ESG reporting / disclosure framework settings.
+    #[serde(default)]
+    pub reporting: EsgReportingConfig,
+    /// Climate scenario analysis settings.
+    #[serde(default)]
+    pub climate_scenarios: ClimateScenarioConfig,
+    /// Anomaly injection rate for ESG data (0.0 to 1.0).
+    #[serde(default = "default_esg_anomaly_rate")]
+    pub anomaly_rate: f64,
+}
+
+fn default_esg_anomaly_rate() -> f64 {
+    0.02
+}
+
+impl Default for EsgConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            environmental: EnvironmentalConfig::default(),
+            social: SocialConfig::default(),
+            governance: GovernanceSchemaConfig::default(),
+            supply_chain_esg: SupplyChainEsgConfig::default(),
+            reporting: EsgReportingConfig::default(),
+            climate_scenarios: ClimateScenarioConfig::default(),
+            anomaly_rate: default_esg_anomaly_rate(),
+        }
+    }
+}
+
+/// Environmental metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvironmentalConfig {
+    /// Whether environmental metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Scope 1 (direct) emission generation settings.
+    #[serde(default)]
+    pub scope1: EmissionScopeConfig,
+    /// Scope 2 (purchased energy) emission generation settings.
+    #[serde(default)]
+    pub scope2: EmissionScopeConfig,
+    /// Scope 3 (value chain) emission generation settings.
+    #[serde(default)]
+    pub scope3: Scope3Config,
+    /// Energy consumption tracking settings.
+    #[serde(default)]
+    pub energy: EnergySchemaConfig,
+    /// Water usage tracking settings.
+    #[serde(default)]
+    pub water: WaterSchemaConfig,
+    /// Waste management tracking settings.
+    #[serde(default)]
+    pub waste: WasteSchemaConfig,
+}
+
+impl Default for EnvironmentalConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            scope1: EmissionScopeConfig::default(),
+            scope2: EmissionScopeConfig::default(),
+            scope3: Scope3Config::default(),
+            energy: EnergySchemaConfig::default(),
+            water: WaterSchemaConfig::default(),
+            waste: WasteSchemaConfig::default(),
+        }
+    }
+}
+
+/// Configuration for a single emission scope (Scope 1 or 2).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmissionScopeConfig {
+    /// Whether this scope is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Emission factor region (e.g., "US", "EU", "global").
+    #[serde(default = "default_emission_region")]
+    pub factor_region: String,
+}
+
+fn default_emission_region() -> String {
+    "US".to_string()
+}
+
+impl Default for EmissionScopeConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            factor_region: default_emission_region(),
+        }
+    }
+}
+
+/// Scope 3 (value chain) emission configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Scope3Config {
+    /// Whether Scope 3 emissions are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Categories to include (e.g., "purchased_goods", "business_travel", "commuting").
+    #[serde(default = "default_scope3_categories")]
+    pub categories: Vec<String>,
+    /// Spend-based emission intensity (kg CO2e per USD).
+    #[serde(default = "default_spend_intensity")]
+    pub default_spend_intensity_kg_per_usd: f64,
+}
+
+fn default_scope3_categories() -> Vec<String> {
+    vec![
+        "purchased_goods".to_string(),
+        "business_travel".to_string(),
+        "employee_commuting".to_string(),
+    ]
+}
+
+fn default_spend_intensity() -> f64 {
+    0.5
+}
+
+impl Default for Scope3Config {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            categories: default_scope3_categories(),
+            default_spend_intensity_kg_per_usd: default_spend_intensity(),
+        }
+    }
+}
+
+/// Energy consumption configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnergySchemaConfig {
+    /// Whether energy consumption tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of facilities to generate.
+    #[serde(default = "default_facility_count")]
+    pub facility_count: u32,
+    /// Target percentage of energy from renewable sources (0.0 to 1.0).
+    #[serde(default = "default_renewable_target")]
+    pub renewable_target: f64,
+}
+
+fn default_facility_count() -> u32 {
+    5
+}
+
+fn default_renewable_target() -> f64 {
+    0.30
+}
+
+impl Default for EnergySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            facility_count: default_facility_count(),
+            renewable_target: default_renewable_target(),
+        }
+    }
+}
+
+/// Water usage configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WaterSchemaConfig {
+    /// Whether water usage tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of facilities with water tracking.
+    #[serde(default = "default_water_facility_count")]
+    pub facility_count: u32,
+}
+
+fn default_water_facility_count() -> u32 {
+    3
+}
+
+impl Default for WaterSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            facility_count: default_water_facility_count(),
+        }
+    }
+}
+
+/// Waste management configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WasteSchemaConfig {
+    /// Whether waste tracking is enabled.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Target diversion rate (0.0 to 1.0).
+    #[serde(default = "default_diversion_target")]
+    pub diversion_target: f64,
+}
+
+fn default_diversion_target() -> f64 {
+    0.50
+}
+
+impl Default for WasteSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            diversion_target: default_diversion_target(),
+        }
+    }
+}
+
+/// Social metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SocialConfig {
+    /// Whether social metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Workforce diversity tracking settings.
+    #[serde(default)]
+    pub diversity: DiversitySchemaConfig,
+    /// Pay equity analysis settings.
+    #[serde(default)]
+    pub pay_equity: PayEquitySchemaConfig,
+    /// Safety incident and metrics settings.
+    #[serde(default)]
+    pub safety: SafetySchemaConfig,
+}
+
+impl Default for SocialConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            diversity: DiversitySchemaConfig::default(),
+            pay_equity: PayEquitySchemaConfig::default(),
+            safety: SafetySchemaConfig::default(),
+        }
+    }
+}
+
+/// Workforce diversity configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiversitySchemaConfig {
+    /// Whether diversity metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Dimensions to track (e.g., "gender", "ethnicity", "age_group").
+    #[serde(default = "default_diversity_dimensions")]
+    pub dimensions: Vec<String>,
+}
+
+fn default_diversity_dimensions() -> Vec<String> {
+    vec![
+        "gender".to_string(),
+        "ethnicity".to_string(),
+        "age_group".to_string(),
+    ]
+}
+
+impl Default for DiversitySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            dimensions: default_diversity_dimensions(),
+        }
+    }
+}
+
+/// Pay equity analysis configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayEquitySchemaConfig {
+    /// Whether pay equity analysis is generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Target pay gap threshold for flagging (e.g., 0.05 = 5% gap).
+    #[serde(default = "default_pay_gap_threshold")]
+    pub gap_threshold: f64,
+}
+
+fn default_pay_gap_threshold() -> f64 {
+    0.05
+}
+
+impl Default for PayEquitySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            gap_threshold: default_pay_gap_threshold(),
+        }
+    }
+}
+
+/// Safety metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SafetySchemaConfig {
+    /// Whether safety metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Average annual recordable incidents per 200,000 hours.
+    #[serde(default = "default_trir_target")]
+    pub target_trir: f64,
+    /// Number of safety incidents to generate.
+    #[serde(default = "default_incident_count")]
+    pub incident_count: u32,
+}
+
+fn default_trir_target() -> f64 {
+    2.5
+}
+
+fn default_incident_count() -> u32 {
+    20
+}
+
+impl Default for SafetySchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            target_trir: default_trir_target(),
+            incident_count: default_incident_count(),
+        }
+    }
+}
+
+/// Governance metrics configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GovernanceSchemaConfig {
+    /// Whether governance metrics are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Number of board members.
+    #[serde(default = "default_board_size")]
+    pub board_size: u32,
+    /// Target independent director ratio (0.0 to 1.0).
+    #[serde(default = "default_independence_target")]
+    pub independence_target: f64,
+}
+
+fn default_board_size() -> u32 {
+    11
+}
+
+fn default_independence_target() -> f64 {
+    0.67
+}
+
+impl Default for GovernanceSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            board_size: default_board_size(),
+            independence_target: default_independence_target(),
+        }
+    }
+}
+
+/// Supply-chain ESG assessment configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupplyChainEsgConfig {
+    /// Whether supply chain ESG assessments are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Proportion of vendors to assess (0.0 to 1.0).
+    #[serde(default = "default_assessment_coverage")]
+    pub assessment_coverage: f64,
+    /// High-risk country codes for automatic flagging.
+    #[serde(default = "default_high_risk_countries")]
+    pub high_risk_countries: Vec<String>,
+}
+
+fn default_assessment_coverage() -> f64 {
+    0.80
+}
+
+fn default_high_risk_countries() -> Vec<String> {
+    vec!["CN".to_string(), "BD".to_string(), "MM".to_string()]
+}
+
+impl Default for SupplyChainEsgConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            assessment_coverage: default_assessment_coverage(),
+            high_risk_countries: default_high_risk_countries(),
+        }
+    }
+}
+
+/// ESG reporting / disclosure framework configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EsgReportingConfig {
+    /// Whether ESG disclosures are generated.
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Frameworks to generate disclosures for.
+    #[serde(default = "default_esg_frameworks")]
+    pub frameworks: Vec<String>,
+    /// Whether materiality assessment is performed.
+    #[serde(default = "default_true")]
+    pub materiality_assessment: bool,
+    /// Materiality threshold for impact dimension (0.0 to 1.0).
+    #[serde(default = "default_materiality_threshold")]
+    pub impact_threshold: f64,
+    /// Materiality threshold for financial dimension (0.0 to 1.0).
+    #[serde(default = "default_materiality_threshold")]
+    pub financial_threshold: f64,
+}
+
+fn default_esg_frameworks() -> Vec<String> {
+    vec!["GRI".to_string(), "ESRS".to_string()]
+}
+
+fn default_materiality_threshold() -> f64 {
+    0.6
+}
+
+impl Default for EsgReportingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            frameworks: default_esg_frameworks(),
+            materiality_assessment: true,
+            impact_threshold: default_materiality_threshold(),
+            financial_threshold: default_materiality_threshold(),
+        }
+    }
+}
+
+/// Climate scenario analysis configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClimateScenarioConfig {
+    /// Whether climate scenario analysis is generated.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Scenarios to model (e.g., "net_zero_2050", "stated_policies", "current_trajectory").
+    #[serde(default = "default_climate_scenarios")]
+    pub scenarios: Vec<String>,
+    /// Time horizons in years to project.
+    #[serde(default = "default_time_horizons")]
+    pub time_horizons: Vec<u32>,
+}
+
+fn default_climate_scenarios() -> Vec<String> {
+    vec![
+        "net_zero_2050".to_string(),
+        "stated_policies".to_string(),
+        "current_trajectory".to_string(),
+    ]
+}
+
+fn default_time_horizons() -> Vec<u32> {
+    vec![5, 10, 30]
+}
+
+impl Default for ClimateScenarioConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            scenarios: default_climate_scenarios(),
+            time_horizons: default_time_horizons(),
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -11694,5 +13062,160 @@ mod tests {
                 .yield_manipulation,
             0.02
         );
+    }
+
+    // ==========================================================================
+    // Tax Configuration Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_tax_config_defaults() {
+        let tax = TaxConfig::default();
+        assert!(!tax.enabled);
+        assert!(tax.jurisdictions.countries.is_empty());
+        assert!(!tax.jurisdictions.include_subnational);
+        assert!(!tax.vat_gst.enabled);
+        assert!(tax.vat_gst.standard_rates.is_empty());
+        assert!(tax.vat_gst.reduced_rates.is_empty());
+        assert!(tax.vat_gst.exempt_categories.is_empty());
+        assert!(tax.vat_gst.reverse_charge);
+        assert!(!tax.sales_tax.enabled);
+        assert!(tax.sales_tax.nexus_states.is_empty());
+        assert!(!tax.withholding.enabled);
+        assert!(tax.withholding.treaty_network);
+        assert_eq!(tax.withholding.default_rate, 0.30);
+        assert_eq!(tax.withholding.treaty_reduced_rate, 0.15);
+        assert!(tax.provisions.enabled);
+        assert_eq!(tax.provisions.statutory_rate, 0.21);
+        assert!(tax.provisions.uncertain_positions);
+        assert!(!tax.payroll_tax.enabled);
+        assert_eq!(tax.anomaly_rate, 0.03);
+    }
+
+    #[test]
+    fn test_tax_config_from_yaml() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 12
+              industry: retail
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+            tax:
+              enabled: true
+              anomaly_rate: 0.05
+              jurisdictions:
+                countries: ["US", "DE", "GB"]
+                include_subnational: true
+              vat_gst:
+                enabled: true
+                standard_rates:
+                  DE: 0.19
+                  GB: 0.20
+                reduced_rates:
+                  DE: 0.07
+                  GB: 0.05
+                exempt_categories:
+                  - financial_services
+                  - healthcare
+                reverse_charge: false
+              sales_tax:
+                enabled: true
+                nexus_states: ["CA", "NY", "TX"]
+              withholding:
+                enabled: true
+                treaty_network: false
+                default_rate: 0.25
+                treaty_reduced_rate: 0.10
+              provisions:
+                enabled: false
+                statutory_rate: 0.28
+                uncertain_positions: false
+              payroll_tax:
+                enabled: true
+        "#;
+
+        let config: GeneratorConfig = serde_yaml::from_str(yaml).expect("Failed to parse");
+        assert!(config.tax.enabled);
+        assert_eq!(config.tax.anomaly_rate, 0.05);
+
+        // Jurisdictions
+        assert_eq!(config.tax.jurisdictions.countries.len(), 3);
+        assert!(config
+            .tax
+            .jurisdictions
+            .countries
+            .contains(&"DE".to_string()));
+        assert!(config.tax.jurisdictions.include_subnational);
+
+        // VAT/GST
+        assert!(config.tax.vat_gst.enabled);
+        assert_eq!(config.tax.vat_gst.standard_rates.get("DE"), Some(&0.19));
+        assert_eq!(config.tax.vat_gst.standard_rates.get("GB"), Some(&0.20));
+        assert_eq!(config.tax.vat_gst.reduced_rates.get("DE"), Some(&0.07));
+        assert_eq!(config.tax.vat_gst.exempt_categories.len(), 2);
+        assert!(!config.tax.vat_gst.reverse_charge);
+
+        // Sales tax
+        assert!(config.tax.sales_tax.enabled);
+        assert_eq!(config.tax.sales_tax.nexus_states.len(), 3);
+        assert!(config
+            .tax
+            .sales_tax
+            .nexus_states
+            .contains(&"CA".to_string()));
+
+        // Withholding
+        assert!(config.tax.withholding.enabled);
+        assert!(!config.tax.withholding.treaty_network);
+        assert_eq!(config.tax.withholding.default_rate, 0.25);
+        assert_eq!(config.tax.withholding.treaty_reduced_rate, 0.10);
+
+        // Provisions
+        assert!(!config.tax.provisions.enabled);
+        assert_eq!(config.tax.provisions.statutory_rate, 0.28);
+        assert!(!config.tax.provisions.uncertain_positions);
+
+        // Payroll tax
+        assert!(config.tax.payroll_tax.enabled);
+    }
+
+    #[test]
+    fn test_generator_config_with_tax_default() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 12
+              industry: retail
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+        "#;
+
+        let config: GeneratorConfig =
+            serde_yaml::from_str(yaml).expect("Failed to parse config without tax section");
+        // Tax should be present with defaults when not specified in YAML
+        assert!(!config.tax.enabled);
+        assert!(config.tax.jurisdictions.countries.is_empty());
+        assert_eq!(config.tax.anomaly_rate, 0.03);
+        assert!(config.tax.provisions.enabled); // provisions default to enabled=true
+        assert_eq!(config.tax.provisions.statutory_rate, 0.21);
     }
 }

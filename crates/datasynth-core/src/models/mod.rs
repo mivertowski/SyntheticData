@@ -30,10 +30,16 @@ mod master_data;
 mod material;
 mod period_close;
 mod project;
+mod project_accounting;
 mod relationship;
 mod sod;
+mod tax;
 mod temporal;
+mod treasury;
 mod user;
+
+// ESG / Sustainability models
+mod esg;
 mod vendor_network;
 
 // Source-to-Contract models (S2C pipeline)
@@ -103,11 +109,17 @@ pub use master_data::*;
 pub use material::*;
 pub use period_close::*;
 pub use project::*;
+pub use project_accounting::*;
 pub use relationship::*;
 pub use sod::*;
+pub use tax::*;
 pub use temporal::*;
+pub use treasury::*;
 pub use user::*;
 pub use vendor_network::*;
+
+// ESG / Sustainability exports
+pub use esg::*;
 
 // Sourcing exports
 pub use sourcing::*;

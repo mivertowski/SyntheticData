@@ -1149,6 +1149,408 @@ impl ObjectType {
             Self::reconciling_item(),
         ]
     }
+
+    // ========== TAX Object Types ==========
+
+    /// Create a Tax Line object type.
+    pub fn tax_line() -> Self {
+        Self {
+            type_id: "tax_line".into(),
+            name: "Tax Line".into(),
+            business_process: BusinessProcess::Tax,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("created", "Created", true, false),
+                ObjectLifecycleState::new("calculated", "Calculated", false, false),
+                ObjectLifecycleState::new("posted", "Posted", false, true),
+                ObjectLifecycleState::new("reversed", "Reversed", false, true),
+            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "tax_return",
+                Cardinality::ManyToOne,
+                false,
+            )],
+            allowed_activities: vec![
+                "tax_determination".into(),
+                "tax_line_created".into(),
+            ],
+            attributes: HashMap::from([
+                ("tax_line_id".into(), AttributeType::String),
+                ("tax_code".into(), AttributeType::String),
+                ("tax_amount".into(), AttributeType::Decimal),
+                ("jurisdiction".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Create a Tax Return object type.
+    pub fn tax_return() -> Self {
+        Self {
+            type_id: "tax_return".into(),
+            name: "Tax Return".into(),
+            business_process: BusinessProcess::Tax,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("draft", "Draft", true, false),
+                ObjectLifecycleState::new("prepared", "Prepared", false, false),
+                ObjectLifecycleState::new("reviewed", "Reviewed", false, false),
+                ObjectLifecycleState::new("filed", "Filed", false, false),
+                ObjectLifecycleState::new("assessed", "Assessed", false, false),
+                ObjectLifecycleState::new("paid", "Paid", false, true),
+                ObjectLifecycleState::new("amended", "Amended", false, false),
+            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "has_lines",
+                "Has Lines",
+                "tax_line",
+                Cardinality::OneToMany,
+                false,
+            )],
+            allowed_activities: vec![
+                "tax_return_filed".into(),
+                "tax_return_assessed".into(),
+                "tax_paid".into(),
+            ],
+            attributes: HashMap::from([
+                ("return_id".into(), AttributeType::String),
+                ("return_type".into(), AttributeType::String),
+                ("period".into(), AttributeType::String),
+                ("total_tax".into(), AttributeType::Decimal),
+                ("jurisdiction".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Get all Tax object types.
+    pub fn tax_types() -> Vec<Self> {
+        vec![Self::tax_line(), Self::tax_return()]
+    }
+
+    // ========== TREASURY Object Types ==========
+
+    /// Create a Cash Position object type.
+    pub fn cash_position() -> Self {
+        Self {
+            type_id: "cash_position".into(),
+            name: "Cash Position".into(),
+            business_process: BusinessProcess::Treasury,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("snapshot", "Snapshot", true, false),
+                ObjectLifecycleState::new("confirmed", "Confirmed", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["cash_position_calculated".into()],
+            attributes: HashMap::from([
+                ("position_id".into(), AttributeType::String),
+                ("entity_id".into(), AttributeType::String),
+                ("currency".into(), AttributeType::String),
+                ("balance".into(), AttributeType::Decimal),
+                ("as_of_date".into(), AttributeType::Date),
+            ]),
+        }
+    }
+
+    /// Create a Cash Forecast object type.
+    pub fn cash_forecast() -> Self {
+        Self {
+            type_id: "cash_forecast".into(),
+            name: "Cash Forecast".into(),
+            business_process: BusinessProcess::Treasury,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("draft", "Draft", true, false),
+                ObjectLifecycleState::new("approved", "Approved", false, false),
+                ObjectLifecycleState::new("actual", "Actual", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["forecast_generated".into()],
+            attributes: HashMap::from([
+                ("forecast_id".into(), AttributeType::String),
+                ("entity_id".into(), AttributeType::String),
+                ("horizon_days".into(), AttributeType::Integer),
+                ("net_flow".into(), AttributeType::Decimal),
+            ]),
+        }
+    }
+
+    /// Create a Hedge Instrument object type.
+    pub fn hedge_instrument() -> Self {
+        Self {
+            type_id: "hedge_instrument".into(),
+            name: "Hedge Instrument".into(),
+            business_process: BusinessProcess::Treasury,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("designated", "Designated", true, false),
+                ObjectLifecycleState::new("effective", "Effective", false, false),
+                ObjectLifecycleState::new("matured", "Matured", false, true),
+                ObjectLifecycleState::new("dedesignated", "De-designated", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["hedge_designated".into()],
+            attributes: HashMap::from([
+                ("hedge_id".into(), AttributeType::String),
+                ("hedge_type".into(), AttributeType::String),
+                ("notional_amount".into(), AttributeType::Decimal),
+                ("currency_pair".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Create a Debt Instrument object type.
+    pub fn debt_instrument() -> Self {
+        Self {
+            type_id: "debt_instrument".into(),
+            name: "Debt Instrument".into(),
+            business_process: BusinessProcess::Treasury,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("active", "Active", true, false),
+                ObjectLifecycleState::new("drawn", "Drawn", false, false),
+                ObjectLifecycleState::new("repaid", "Repaid", false, true),
+                ObjectLifecycleState::new("matured", "Matured", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["covenant_measured".into()],
+            attributes: HashMap::from([
+                ("instrument_id".into(), AttributeType::String),
+                ("instrument_type".into(), AttributeType::String),
+                ("principal".into(), AttributeType::Decimal),
+                ("maturity_date".into(), AttributeType::Date),
+            ]),
+        }
+    }
+
+    /// Get all Treasury object types.
+    pub fn treasury_types() -> Vec<Self> {
+        vec![
+            Self::cash_position(),
+            Self::cash_forecast(),
+            Self::hedge_instrument(),
+            Self::debt_instrument(),
+        ]
+    }
+
+    // ========== PROJECT ACCOUNTING Object Types ==========
+
+    /// Create a Project object type.
+    pub fn project() -> Self {
+        Self {
+            type_id: "project".into(),
+            name: "Project".into(),
+            business_process: BusinessProcess::ProjectAccounting,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("created", "Created", true, false),
+                ObjectLifecycleState::new("active", "Active", false, false),
+                ObjectLifecycleState::new("on_hold", "On Hold", false, false),
+                ObjectLifecycleState::new("completed", "Completed", false, true),
+                ObjectLifecycleState::new("closed", "Closed", false, true),
+            ],
+            relationships: vec![
+                ObjectRelationshipType::new(
+                    "has_costs",
+                    "Has Costs",
+                    "project_cost_line",
+                    Cardinality::OneToMany,
+                    false,
+                ),
+                ObjectRelationshipType::new(
+                    "has_milestones",
+                    "Has Milestones",
+                    "project_milestone",
+                    Cardinality::OneToMany,
+                    false,
+                ),
+                ObjectRelationshipType::new(
+                    "has_change_orders",
+                    "Has Change Orders",
+                    "change_order",
+                    Cardinality::OneToMany,
+                    false,
+                ),
+            ],
+            allowed_activities: vec![
+                "project_created".into(),
+                "revenue_recognized".into(),
+            ],
+            attributes: HashMap::from([
+                ("project_id".into(), AttributeType::String),
+                ("project_name".into(), AttributeType::String),
+                ("budget".into(), AttributeType::Decimal),
+                ("method".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Create a Project Cost Line object type.
+    pub fn project_cost_line() -> Self {
+        Self {
+            type_id: "project_cost_line".into(),
+            name: "Project Cost Line".into(),
+            business_process: BusinessProcess::ProjectAccounting,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("posted", "Posted", true, false),
+                ObjectLifecycleState::new("allocated", "Allocated", false, true),
+                ObjectLifecycleState::new("reversed", "Reversed", false, true),
+            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "project",
+                Cardinality::ManyToOne,
+                true,
+            )],
+            allowed_activities: vec!["cost_posted".into()],
+            attributes: HashMap::from([
+                ("cost_line_id".into(), AttributeType::String),
+                ("cost_category".into(), AttributeType::String),
+                ("amount".into(), AttributeType::Decimal),
+            ]),
+        }
+    }
+
+    /// Create a Project Milestone object type.
+    pub fn project_milestone() -> Self {
+        Self {
+            type_id: "project_milestone".into(),
+            name: "Project Milestone".into(),
+            business_process: BusinessProcess::ProjectAccounting,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("pending", "Pending", true, false),
+                ObjectLifecycleState::new("achieved", "Achieved", false, true),
+                ObjectLifecycleState::new("cancelled", "Cancelled", false, true),
+            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "belongs_to",
+                "Belongs To",
+                "project",
+                Cardinality::ManyToOne,
+                true,
+            )],
+            allowed_activities: vec!["milestone_achieved".into()],
+            attributes: HashMap::from([
+                ("milestone_id".into(), AttributeType::String),
+                ("milestone_name".into(), AttributeType::String),
+                ("completion_pct".into(), AttributeType::Decimal),
+            ]),
+        }
+    }
+
+    /// Create a Change Order object type.
+    pub fn change_order() -> Self {
+        Self {
+            type_id: "change_order".into(),
+            name: "Change Order".into(),
+            business_process: BusinessProcess::ProjectAccounting,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("requested", "Requested", true, false),
+                ObjectLifecycleState::new("approved", "Approved", false, false),
+                ObjectLifecycleState::new("applied", "Applied", false, true),
+                ObjectLifecycleState::new("rejected", "Rejected", false, true),
+            ],
+            relationships: vec![ObjectRelationshipType::new(
+                "modifies",
+                "Modifies",
+                "project",
+                Cardinality::ManyToOne,
+                true,
+            )],
+            allowed_activities: vec!["change_order_processed".into()],
+            attributes: HashMap::from([
+                ("change_order_id".into(), AttributeType::String),
+                ("scope_change".into(), AttributeType::String),
+                ("cost_impact".into(), AttributeType::Decimal),
+            ]),
+        }
+    }
+
+    /// Get all Project Accounting object types.
+    pub fn project_accounting_types() -> Vec<Self> {
+        vec![
+            Self::project(),
+            Self::project_cost_line(),
+            Self::project_milestone(),
+            Self::change_order(),
+        ]
+    }
+
+    // ========== ESG Object Types ==========
+
+    /// Create an ESG Data Point object type.
+    pub fn esg_data_point() -> Self {
+        Self {
+            type_id: "esg_data_point".into(),
+            name: "ESG Data Point".into(),
+            business_process: BusinessProcess::Esg,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("collected", "Collected", true, false),
+                ObjectLifecycleState::new("validated", "Validated", false, false),
+                ObjectLifecycleState::new("reported", "Reported", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["esg_data_collected".into()],
+            attributes: HashMap::from([
+                ("data_point_id".into(), AttributeType::String),
+                ("metric_name".into(), AttributeType::String),
+                ("value".into(), AttributeType::Decimal),
+                ("unit".into(), AttributeType::String),
+                ("period".into(), AttributeType::Date),
+            ]),
+        }
+    }
+
+    /// Create an Emission Record object type.
+    pub fn emission_record() -> Self {
+        Self {
+            type_id: "emission_record".into(),
+            name: "Emission Record".into(),
+            business_process: BusinessProcess::Esg,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("calculated", "Calculated", true, false),
+                ObjectLifecycleState::new("verified", "Verified", false, false),
+                ObjectLifecycleState::new("assured", "Assured", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec![
+                "emission_calculated".into(),
+                "assurance_completed".into(),
+            ],
+            attributes: HashMap::from([
+                ("record_id".into(), AttributeType::String),
+                ("scope".into(), AttributeType::String),
+                ("co2e_tonnes".into(), AttributeType::Decimal),
+                ("source".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Create an ESG Disclosure object type.
+    pub fn esg_disclosure() -> Self {
+        Self {
+            type_id: "esg_disclosure".into(),
+            name: "ESG Disclosure".into(),
+            business_process: BusinessProcess::Esg,
+            lifecycle_states: vec![
+                ObjectLifecycleState::new("draft", "Draft", true, false),
+                ObjectLifecycleState::new("reviewed", "Reviewed", false, false),
+                ObjectLifecycleState::new("published", "Published", false, true),
+            ],
+            relationships: vec![],
+            allowed_activities: vec!["disclosure_prepared".into()],
+            attributes: HashMap::from([
+                ("disclosure_id".into(), AttributeType::String),
+                ("framework".into(), AttributeType::String),
+                ("topic".into(), AttributeType::String),
+                ("standard_id".into(), AttributeType::String),
+            ]),
+        }
+    }
+
+    /// Get all ESG object types.
+    pub fn esg_types() -> Vec<Self> {
+        vec![
+            Self::esg_data_point(),
+            Self::emission_record(),
+            Self::esg_disclosure(),
+        ]
+    }
 }
 
 /// State in an object's lifecycle.
@@ -1320,5 +1722,37 @@ mod tests {
         let types = ObjectType::bank_recon_types();
         assert_eq!(types.len(), 3);
         assert_eq!(types[0].type_id, "bank_reconciliation");
+    }
+
+    #[test]
+    fn test_tax_types() {
+        let types = ObjectType::tax_types();
+        assert_eq!(types.len(), 2);
+        assert_eq!(types[0].type_id, "tax_line");
+        assert_eq!(types[0].business_process, BusinessProcess::Tax);
+    }
+
+    #[test]
+    fn test_treasury_types() {
+        let types = ObjectType::treasury_types();
+        assert_eq!(types.len(), 4);
+        assert_eq!(types[0].type_id, "cash_position");
+        assert_eq!(types[0].business_process, BusinessProcess::Treasury);
+    }
+
+    #[test]
+    fn test_project_accounting_types() {
+        let types = ObjectType::project_accounting_types();
+        assert_eq!(types.len(), 4);
+        assert_eq!(types[0].type_id, "project");
+        assert_eq!(types[0].business_process, BusinessProcess::ProjectAccounting);
+    }
+
+    #[test]
+    fn test_esg_types() {
+        let types = ObjectType::esg_types();
+        assert_eq!(types.len(), 3);
+        assert_eq!(types[0].type_id, "esg_data_point");
+        assert_eq!(types[0].business_process, BusinessProcess::Esg);
     }
 }

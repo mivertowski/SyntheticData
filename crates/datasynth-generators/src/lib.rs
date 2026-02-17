@@ -47,6 +47,10 @@ pub mod manufacturing;
 pub mod sales_quote_generator;
 pub mod sourcing;
 pub mod standards;
+pub mod project_accounting;
+pub mod tax;
+pub mod treasury;
+pub mod esg;
 
 pub use anomaly::*;
 pub use audit::*;
@@ -79,3 +83,6 @@ pub use manufacturing::*;
 pub use sales_quote_generator::*;
 pub use sourcing::*;
 pub use standards::*;
+pub use project_accounting::*;
+pub use tax::*;
+pub use esg::*;

@@ -70,6 +70,8 @@ impl ReferenceType {
             BusinessProcess::Treasury => Self::PaymentReference,
             BusinessProcess::Tax => Self::InternalDocument,
             BusinessProcess::Intercompany => Self::InternalDocument,
+            BusinessProcess::ProjectAccounting => Self::ProjectNumber,
+            BusinessProcess::Esg => Self::InternalDocument,
         }
     }
 }
