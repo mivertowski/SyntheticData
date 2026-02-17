@@ -183,12 +183,12 @@ pub fn create_router_full_with_backend(
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -260,12 +260,12 @@ pub fn create_router_with_auth(
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -324,12 +324,12 @@ pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
