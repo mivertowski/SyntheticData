@@ -106,7 +106,7 @@ tower = "0.5"
 tower-http = { version = "0.5", features = ["cors", "trace", "timeout"] }
 
 # Data formats - Arrow/Parquet for analytics-ready output
-arrow = { version = "53", features = ["prettyprint"] }
+arrow = { version = "54", features = ["prettyprint"] }
 parquet = { version = "53", features = ["arrow", "async", "zstd", "lz4", "snap"] }
 csv = "1.3"
 
