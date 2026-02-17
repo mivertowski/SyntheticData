@@ -6,9 +6,7 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::CostAllocationConfig;
-use datasynth_core::models::{
-    CostCategory, CostSourceType, ProjectCostLine, ProjectPool,
-};
+use datasynth_core::models::{CostCategory, CostSourceType, ProjectCostLine, ProjectPool};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -204,13 +202,16 @@ mod tests {
         let linked_count = cost_lines.len();
         assert!(
             linked_count >= 40 && linked_count <= 80,
-            "Expected ~60 linked, got {}", linked_count
+            "Expected ~60 linked, got {}",
+            linked_count
         );
 
         // All linked entries should reference valid projects and WBS elements
         for line in &cost_lines {
             assert!(
-                pool.projects.iter().any(|p| p.project_id == line.project_id),
+                pool.projects
+                    .iter()
+                    .any(|p| p.project_id == line.project_id),
                 "Cost line should reference a valid project"
             );
             assert_eq!(line.cost_category, CostCategory::Labor);

@@ -81,7 +81,9 @@ impl RevenueGenerator {
                 let completion_pct = if estimated_total_cost.is_zero() {
                     dec!(0)
                 } else {
-                    (costs_to_date / estimated_total_cost).min(dec!(1.0)).round_dp(4)
+                    (costs_to_date / estimated_total_cost)
+                        .min(dec!(1.0))
+                        .round_dp(4)
                 };
 
                 let cumulative_revenue = (*contract_value * completion_pct).round_dp(2);
@@ -301,10 +303,22 @@ mod tests {
 
         let config = ProjectRevenueRecognitionConfig::default();
         let mut gen1 = RevenueGenerator::new(42, config.clone());
-        let rev1 = gen1.generate(&[project.clone()], &cost_lines, &contracts, d("2024-01-01"), d("2024-03-31"));
+        let rev1 = gen1.generate(
+            &[project.clone()],
+            &cost_lines,
+            &contracts,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
         let mut gen2 = RevenueGenerator::new(42, config);
-        let rev2 = gen2.generate(&[project], &cost_lines, &contracts, d("2024-01-01"), d("2024-03-31"));
+        let rev2 = gen2.generate(
+            &[project],
+            &cost_lines,
+            &contracts,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
         assert_eq!(rev1.len(), rev2.len());
         for (r1, r2) in rev1.iter().zip(rev2.iter()) {

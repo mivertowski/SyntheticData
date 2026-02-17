@@ -5,12 +5,10 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::{
-    ChangeOrderSchemaConfig, CostAllocationConfig, EarnedValueSchemaConfig,
-    MilestoneSchemaConfig, ProjectAccountingConfig, ProjectRevenueRecognitionConfig,
+    ChangeOrderSchemaConfig, CostAllocationConfig, EarnedValueSchemaConfig, MilestoneSchemaConfig,
+    ProjectAccountingConfig, ProjectRevenueRecognitionConfig,
 };
-use datasynth_core::models::{
-    CostCategory, CostSourceType, MilestoneStatus, ProjectType,
-};
+use datasynth_core::models::{CostCategory, CostSourceType, MilestoneStatus, ProjectType};
 use datasynth_generators::project_accounting::{
     ChangeOrderGenerator, EarnedValueGenerator, MilestoneGenerator, ProjectCostGenerator,
     ProjectGenerator, RevenueGenerator, SourceDocument,
@@ -152,7 +150,8 @@ fn test_project_accounting_full_pipeline() {
         assert!(
             pool.projects.iter().any(|p| p.project_id == cl.project_id),
             "Cost line {} references invalid project {}",
-            cl.id, cl.project_id
+            cl.id,
+            cl.project_id
         );
     }
 
@@ -190,7 +189,8 @@ fn test_cost_linking_rates_match_config() {
     let linked_rate = cost_lines.len() as f64 / time_entries.len() as f64;
     assert!(
         linked_rate >= 0.40 && linked_rate <= 0.80,
-        "Expected linking rate near 0.60, got {:.2}", linked_rate
+        "Expected linking rate near 0.60, got {:.2}",
+        linked_rate
     );
 }
 
@@ -267,7 +267,9 @@ fn test_revenue_increases_monotonically() {
             assert!(
                 rev.cumulative_revenue >= prev,
                 "Revenue should increase monotonically for {}: {} >= {}",
-                project.project_id, rev.cumulative_revenue, prev
+                project.project_id,
+                rev.cumulative_revenue,
+                prev
             );
             prev = rev.cumulative_revenue;
         }
@@ -384,7 +386,10 @@ fn test_change_order_impacts_positive() {
     assert!(!change_orders.is_empty());
 
     for co in &change_orders {
-        assert!(co.cost_impact > Decimal::ZERO, "Cost impact should be positive");
+        assert!(
+            co.cost_impact > Decimal::ZERO,
+            "Cost impact should be positive"
+        );
         assert!(co.estimated_cost_impact > Decimal::ZERO);
         assert!(co.schedule_impact_days >= 0);
     }
@@ -452,7 +457,8 @@ fn test_past_milestones_have_final_status() {
         assert!(
             ms.status == MilestoneStatus::Completed || ms.status == MilestoneStatus::Overdue,
             "Past milestone {:?} should be completed or overdue, got {:?}",
-            ms.id, ms.status
+            ms.id,
+            ms.status
         );
     }
 }
@@ -514,7 +520,10 @@ fn test_different_seeds_produce_different_results() {
 
     // Different seeds should (very likely) produce different counts
     // This is probabilistic but with 100 documents the odds of identical counts are low
-    assert_ne!(count1, count2, "Different seeds should produce different results");
+    assert_ne!(
+        count1, count2,
+        "Different seeds should produce different results"
+    );
 }
 
 // ===========================================================================
@@ -542,10 +551,22 @@ fn test_cost_lines_reference_valid_wbs() {
     // Every cost line's WBS ID should exist in its project
     for cl in &cost_lines {
         let project = pool.projects.iter().find(|p| p.project_id == cl.project_id);
-        assert!(project.is_some(), "Cost line references invalid project {}", cl.project_id);
+        assert!(
+            project.is_some(),
+            "Cost line references invalid project {}",
+            cl.project_id
+        );
 
-        let has_wbs = project.unwrap().wbs_elements.iter().any(|w| w.wbs_id == cl.wbs_id);
-        assert!(has_wbs, "Cost line references invalid WBS {} in project {}", cl.wbs_id, cl.project_id);
+        let has_wbs = project
+            .unwrap()
+            .wbs_elements
+            .iter()
+            .any(|w| w.wbs_id == cl.wbs_id);
+        assert!(
+            has_wbs,
+            "Cost line references invalid WBS {} in project {}",
+            cl.wbs_id, cl.project_id
+        );
     }
 }
 
@@ -571,7 +592,11 @@ fn test_evm_bac_equals_project_budget() {
     let metrics = evm_gen.generate(&pool.projects, &cost_lines, start, end);
 
     for metric in &metrics {
-        let project = pool.projects.iter().find(|p| p.project_id == metric.project_id).unwrap();
+        let project = pool
+            .projects
+            .iter()
+            .find(|p| p.project_id == metric.project_id)
+            .unwrap();
         assert_eq!(
             metric.bac, project.budget,
             "EVM BAC should equal project budget for {}",

@@ -119,16 +119,12 @@ impl CashPositionGenerator {
             // (pending transactions reduce available balance)
             let closing = pos.closing_balance;
             let pending_hold = self.random_hold_amount(closing);
-            pos = pos.with_available_balance(
-                (closing - pending_hold).max(Decimal::ZERO),
-            );
+            pos = pos.with_available_balance((closing - pending_hold).max(Decimal::ZERO));
 
             running_balance = pos.closing_balance;
             positions.push(pos);
 
-            current_date = current_date
-                .succ_opt()
-                .unwrap_or(current_date);
+            current_date = current_date.succ_opt().unwrap_or(current_date);
         }
 
         positions
@@ -356,27 +352,24 @@ mod tests {
             },
         ];
 
-        let positions = gen.generate_multi_account(
-            "C001",
-            &accounts,
-            &flows,
-            d("2025-01-01"),
-            d("2025-01-02"),
-        );
+        let positions =
+            gen.generate_multi_account("C001", &accounts, &flows, d("2025-01-01"), d("2025-01-02"));
 
         // 2 accounts * 2 days = 4 positions
         assert_eq!(positions.len(), 4);
 
         // BA-001 day 1: 10000 + 5000 = 15000
-        let ba001_day1 = positions.iter().find(|p| {
-            p.bank_account_id == "BA-001" && p.date == d("2025-01-01")
-        }).unwrap();
+        let ba001_day1 = positions
+            .iter()
+            .find(|p| p.bank_account_id == "BA-001" && p.date == d("2025-01-01"))
+            .unwrap();
         assert_eq!(ba001_day1.closing_balance, dec!(15000));
 
         // BA-002 day 1: 20000 - 3000 = 17000
-        let ba002_day1 = positions.iter().find(|p| {
-            p.bank_account_id == "BA-002" && p.date == d("2025-01-01")
-        }).unwrap();
+        let ba002_day1 = positions
+            .iter()
+            .find(|p| p.bank_account_id == "BA-002" && p.date == d("2025-01-01"))
+            .unwrap();
         assert_eq!(ba002_day1.closing_balance, dec!(17000));
     }
 
@@ -400,10 +393,26 @@ mod tests {
         }];
 
         let mut gen1 = CashPositionGenerator::new(42, CashPositioningConfig::default());
-        let pos1 = gen1.generate("C001", "BA-001", "USD", &flows, d("2025-01-01"), d("2025-01-01"), dec!(10000));
+        let pos1 = gen1.generate(
+            "C001",
+            "BA-001",
+            "USD",
+            &flows,
+            d("2025-01-01"),
+            d("2025-01-01"),
+            dec!(10000),
+        );
 
         let mut gen2 = CashPositionGenerator::new(42, CashPositioningConfig::default());
-        let pos2 = gen2.generate("C001", "BA-001", "USD", &flows, d("2025-01-01"), d("2025-01-01"), dec!(10000));
+        let pos2 = gen2.generate(
+            "C001",
+            "BA-001",
+            "USD",
+            &flows,
+            d("2025-01-01"),
+            d("2025-01-01"),
+            dec!(10000),
+        );
 
         assert_eq!(pos1[0].closing_balance, pos2[0].closing_balance);
         assert_eq!(pos1[0].available_balance, pos2[0].available_balance);

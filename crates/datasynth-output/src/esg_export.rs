@@ -12,8 +12,8 @@ use std::path::{Path, PathBuf};
 use datasynth_core::error::SynthResult;
 use datasynth_core::models::{
     ClimateScenario, EmissionRecord, EnergyConsumption, EsgDisclosure, GovernanceMetric,
-    MaterialityAssessment, PayEquityMetric, SafetyIncident, SafetyMetric,
-    SupplierEsgAssessment, WasteRecord, WaterUsage, WorkforceDiversityMetric,
+    MaterialityAssessment, PayEquityMetric, SafetyIncident, SafetyMetric, SupplierEsgAssessment,
+    WasteRecord, WaterUsage, WorkforceDiversityMetric,
 };
 
 // Re-export the anomaly label type from the generators crate
@@ -629,7 +629,19 @@ mod tests {
 
         let summary = exporter
             .export_all(
-                &[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &[], &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
             )
             .unwrap();
 
@@ -653,11 +665,7 @@ mod tests {
         ];
 
         for f in &expected_files {
-            assert!(
-                dir.path().join(f).exists(),
-                "Expected file {} to exist",
-                f
-            );
+            assert!(dir.path().join(f).exists(), "Expected file {} to exist", f);
         }
     }
 

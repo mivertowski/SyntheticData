@@ -41,16 +41,16 @@ pub mod user_generator;
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
 pub mod budget_generator;
+pub mod esg;
 pub mod hr;
 pub mod kpi_generator;
 pub mod manufacturing;
+pub mod project_accounting;
 pub mod sales_quote_generator;
 pub mod sourcing;
 pub mod standards;
-pub mod project_accounting;
 pub mod tax;
 pub mod treasury;
-pub mod esg;
 
 pub use anomaly::*;
 pub use audit::*;
@@ -77,12 +77,12 @@ pub use user_generator::*;
 // Enterprise process chain re-exports
 pub use bank_reconciliation_generator::*;
 pub use budget_generator::*;
+pub use esg::*;
 pub use hr::*;
 pub use kpi_generator::*;
 pub use manufacturing::*;
+pub use project_accounting::*;
 pub use sales_quote_generator::*;
 pub use sourcing::*;
 pub use standards::*;
-pub use project_accounting::*;
 pub use tax::*;
-pub use esg::*;

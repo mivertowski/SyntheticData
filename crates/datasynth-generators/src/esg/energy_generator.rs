@@ -6,7 +6,10 @@
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EnergySchemaConfig;
-use datasynth_core::models::{EnergyConsumption, EnergySourceType, WasteRecord, WasteType, DisposalMethod, WaterUsage, WaterSource};
+use datasynth_core::models::{
+    DisposalMethod, EnergyConsumption, EnergySourceType, WasteRecord, WasteType, WaterSource,
+    WaterUsage,
+};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -144,8 +147,8 @@ impl EnergyGenerator {
     /// Seasonal multiplier: higher in winter (Jan/Feb/Dec) and summer (Jul/Aug).
     fn seasonal_factor(&self, date: NaiveDate) -> f64 {
         match date.month() {
-            1 | 2 | 12 => 1.20,  // Winter heating
-            7 | 8 => 1.15,       // Summer cooling
+            1 | 2 | 12 => 1.20, // Winter heating
+            7 | 8 => 1.15,      // Summer cooling
             6 | 9 => 1.05,
             _ => 1.00,
         }
@@ -394,7 +397,10 @@ mod tests {
             .sum();
         let total: Decimal = records.iter().map(|r| r.consumption_kwh).sum();
 
-        assert!(renewable > Decimal::ZERO, "Should have some renewable energy");
+        assert!(
+            renewable > Decimal::ZERO,
+            "Should have some renewable energy"
+        );
         assert!(total > renewable, "Total should include non-renewable too");
     }
 
@@ -418,7 +424,10 @@ mod tests {
         assert!(!records.is_empty());
         for r in &records {
             assert!(r.withdrawal_m3 >= r.discharge_m3);
-            assert_eq!(r.consumption_m3, (r.withdrawal_m3 - r.discharge_m3).round_dp(2));
+            assert_eq!(
+                r.consumption_m3,
+                (r.withdrawal_m3 - r.discharge_m3).round_dp(2)
+            );
         }
     }
 
@@ -441,7 +450,10 @@ mod tests {
         let mut gen = WasteGenerator::new(42, 0.90, 3);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-06-01"));
 
-        let diverted = records.iter().filter(|r| r.is_diverted_from_landfill).count();
+        let diverted = records
+            .iter()
+            .filter(|r| r.is_diverted_from_landfill)
+            .count();
         let pct = diverted as f64 / records.len() as f64;
         assert!(
             pct > 0.50,

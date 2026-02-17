@@ -159,8 +159,9 @@ impl EsgAnomalyInjector {
                 severity: EsgAnomalySeverity::Medium,
                 record_type: "workforce_diversity_metric".to_string(),
                 record_id: metric.id.clone(),
-                description: "Diversity metric unchanged — potential stagnation or data fabrication"
-                    .to_string(),
+                description:
+                    "Diversity metric unchanged — potential stagnation or data fabrication"
+                        .to_string(),
                 original_value: Some(original.to_string()),
                 anomalous_value: Some(metric.percentage.to_string()),
             });

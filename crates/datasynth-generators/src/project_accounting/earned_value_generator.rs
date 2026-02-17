@@ -96,8 +96,8 @@ impl EarnedValueGenerator {
                 // Planned Value: linear schedule baseline
                 let elapsed_days = (measurement_date - proj_start).num_days().max(0) as f64;
                 let schedule_pct = (elapsed_days / total_days).min(1.0);
-                let pv = (bac * Decimal::from_f64_retain(schedule_pct).unwrap_or(dec!(0)))
-                    .round_dp(2);
+                let pv =
+                    (bac * Decimal::from_f64_retain(schedule_pct).unwrap_or(dec!(0))).round_dp(2);
 
                 // Earned Value: actual cost adjusted by efficiency factor
                 // Creates realistic SPI/CPI variations
@@ -153,9 +153,7 @@ fn next_month_start(date: NaiveDate) -> NaiveDate {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use datasynth_core::models::{
-        CostCategory, CostSourceType, ProjectType, WbsElement,
-    };
+    use datasynth_core::models::{CostCategory, CostSourceType, ProjectType, WbsElement};
 
     fn d(s: &str) -> NaiveDate {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
@@ -168,12 +166,10 @@ mod tests {
         project.start_date = Some("2024-01-01".to_string());
         project.end_date = Some("2024-12-31".to_string());
         project.add_wbs_element(
-            WbsElement::new("PRJ-001.01", "PRJ-001", "Phase 1")
-                .with_budget(dec!(500000)),
+            WbsElement::new("PRJ-001.01", "PRJ-001", "Phase 1").with_budget(dec!(500000)),
         );
         project.add_wbs_element(
-            WbsElement::new("PRJ-001.02", "PRJ-001", "Phase 2")
-                .with_budget(dec!(500000)),
+            WbsElement::new("PRJ-001.02", "PRJ-001", "Phase 2").with_budget(dec!(500000)),
         );
         project
     }
@@ -181,19 +177,40 @@ mod tests {
     fn test_cost_lines() -> Vec<ProjectCostLine> {
         vec![
             ProjectCostLine::new(
-                "PCL-001", "PRJ-001", "PRJ-001.01", "TEST",
-                d("2024-01-15"), CostCategory::Labor, CostSourceType::TimeEntry,
-                "TE-001", dec!(80000), "USD",
+                "PCL-001",
+                "PRJ-001",
+                "PRJ-001.01",
+                "TEST",
+                d("2024-01-15"),
+                CostCategory::Labor,
+                CostSourceType::TimeEntry,
+                "TE-001",
+                dec!(80000),
+                "USD",
             ),
             ProjectCostLine::new(
-                "PCL-002", "PRJ-001", "PRJ-001.01", "TEST",
-                d("2024-02-15"), CostCategory::Labor, CostSourceType::TimeEntry,
-                "TE-002", dec!(90000), "USD",
+                "PCL-002",
+                "PRJ-001",
+                "PRJ-001.01",
+                "TEST",
+                d("2024-02-15"),
+                CostCategory::Labor,
+                CostSourceType::TimeEntry,
+                "TE-002",
+                dec!(90000),
+                "USD",
             ),
             ProjectCostLine::new(
-                "PCL-003", "PRJ-001", "PRJ-001.02", "TEST",
-                d("2024-03-15"), CostCategory::Material, CostSourceType::PurchaseOrder,
-                "PO-001", dec!(120000), "USD",
+                "PCL-003",
+                "PRJ-001",
+                "PRJ-001.02",
+                "TEST",
+                d("2024-03-15"),
+                CostCategory::Material,
+                CostSourceType::PurchaseOrder,
+                "PO-001",
+                dec!(120000),
+                "USD",
             ),
         ]
     }
@@ -205,23 +222,28 @@ mod tests {
         let config = EarnedValueSchemaConfig::default();
 
         let mut gen = EarnedValueGenerator::new(42, config);
-        let metrics = gen.generate(
-            &[project],
-            &cost_lines,
-            d("2024-01-01"),
-            d("2024-03-31"),
-        );
+        let metrics = gen.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
 
-        assert_eq!(metrics.len(), 3, "Should have one metric per month with costs");
+        assert_eq!(
+            metrics.len(),
+            3,
+            "Should have one metric per month with costs"
+        );
 
         for metric in &metrics {
             assert_eq!(metric.project_id, "PRJ-001");
             assert_eq!(metric.bac, dec!(1000000));
             assert!(metric.actual_cost > Decimal::ZERO);
             // SV = EV - PV should be computed
-            assert_eq!(metric.schedule_variance, metric.earned_value - metric.planned_value);
+            assert_eq!(
+                metric.schedule_variance,
+                metric.earned_value - metric.planned_value
+            );
             // CV = EV - AC should be computed
-            assert_eq!(metric.cost_variance, metric.earned_value - metric.actual_cost);
+            assert_eq!(
+                metric.cost_variance,
+                metric.earned_value - metric.actual_cost
+            );
         }
     }
 
@@ -232,12 +254,7 @@ mod tests {
         let config = EarnedValueSchemaConfig::default();
 
         let mut gen = EarnedValueGenerator::new(42, config);
-        let metrics = gen.generate(
-            &[project],
-            &cost_lines,
-            d("2024-01-01"),
-            d("2024-03-31"),
-        );
+        let metrics = gen.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
 
         for metric in &metrics {
             // Verify SPI = EV / PV
@@ -254,7 +271,10 @@ mod tests {
 
             // Verify SV = EV - PV
             let expected_sv = (metric.earned_value - metric.planned_value).round_dp(2);
-            assert_eq!(metric.schedule_variance, expected_sv, "SV formula incorrect");
+            assert_eq!(
+                metric.schedule_variance, expected_sv,
+                "SV formula incorrect"
+            );
 
             // Verify CV = EV - AC
             let expected_cv = (metric.earned_value - metric.actual_cost).round_dp(2);
@@ -268,12 +288,7 @@ mod tests {
         let config = EarnedValueSchemaConfig::default();
 
         let mut gen = EarnedValueGenerator::new(42, config);
-        let metrics = gen.generate(
-            &[project],
-            &[],
-            d("2024-01-01"),
-            d("2024-03-31"),
-        );
+        let metrics = gen.generate(&[project], &[], d("2024-01-01"), d("2024-03-31"));
 
         assert!(metrics.is_empty(), "No costs should produce no EVM metrics");
     }
@@ -285,7 +300,12 @@ mod tests {
         let config = EarnedValueSchemaConfig::default();
 
         let mut gen1 = EarnedValueGenerator::new(42, config.clone());
-        let m1 = gen1.generate(&[project.clone()], &cost_lines, d("2024-01-01"), d("2024-03-31"));
+        let m1 = gen1.generate(
+            &[project.clone()],
+            &cost_lines,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
         let mut gen2 = EarnedValueGenerator::new(42, config);
         let m2 = gen2.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));

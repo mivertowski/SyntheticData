@@ -130,12 +130,24 @@ impl ChangeOrderGenerator {
 
     fn description_for(&self, reason: ChangeReason) -> String {
         match reason {
-            ChangeReason::ScopeChange => "Client-requested modification to deliverable scope".to_string(),
-            ChangeReason::UnforeseenConditions => "Unforeseen site conditions requiring additional work".to_string(),
-            ChangeReason::DesignError => "Design specification correction and remediation".to_string(),
-            ChangeReason::RegulatoryChange => "Regulatory compliance update requirement".to_string(),
-            ChangeReason::ValueEngineering => "Value engineering cost reduction opportunity".to_string(),
-            ChangeReason::ScheduleAcceleration => "Schedule acceleration to meet revised deadline".to_string(),
+            ChangeReason::ScopeChange => {
+                "Client-requested modification to deliverable scope".to_string()
+            }
+            ChangeReason::UnforeseenConditions => {
+                "Unforeseen site conditions requiring additional work".to_string()
+            }
+            ChangeReason::DesignError => {
+                "Design specification correction and remediation".to_string()
+            }
+            ChangeReason::RegulatoryChange => {
+                "Regulatory compliance update requirement".to_string()
+            }
+            ChangeReason::ValueEngineering => {
+                "Value engineering cost reduction opportunity".to_string()
+            }
+            ChangeReason::ScheduleAcceleration => {
+                "Schedule acceleration to meet revised deadline".to_string()
+            }
         }
     }
 }
@@ -211,8 +223,7 @@ impl MilestoneGenerator {
 
                 // Payment milestone?
                 if self.rng.gen::<f64>() < self.config.payment_milestone_rate {
-                    let payment_share = dec!(1)
-                        / Decimal::from(ms_count.max(1));
+                    let payment_share = dec!(1) / Decimal::from(ms_count.max(1));
                     let payment = (project.budget * payment_share).round_dp(2);
                     ms = ms.with_payment(payment);
                 }
@@ -288,8 +299,14 @@ mod tests {
                 projects.iter().any(|p| p.project_id == co.project_id),
                 "Change order should reference valid project"
             );
-            assert!(co.cost_impact > Decimal::ZERO, "Cost impact should be positive");
-            assert!(co.schedule_impact_days >= 0, "Schedule impact should be non-negative");
+            assert!(
+                co.cost_impact > Decimal::ZERO,
+                "Cost impact should be positive"
+            );
+            assert!(
+                co.schedule_impact_days >= 0,
+                "Schedule impact should be non-negative"
+            );
         }
     }
 
@@ -312,7 +329,9 @@ mod tests {
         assert!(
             approval_pct >= 0.70,
             "At 100% approval rate, most should be approved: {}/{} = {:.0}%",
-            approved, cos.len(), approval_pct * 100.0
+            approved,
+            cos.len(),
+            approval_pct * 100.0
         );
     }
 
@@ -329,7 +348,10 @@ mod tests {
         let mut gen = ChangeOrderGenerator::new(42, config);
         let cos = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
-        assert!(cos.is_empty(), "Zero probability should produce no change orders");
+        assert!(
+            cos.is_empty(),
+            "Zero probability should produce no change orders"
+        );
     }
 
     #[test]
@@ -342,12 +364,7 @@ mod tests {
         };
 
         let mut gen = MilestoneGenerator::new(42, config);
-        let milestones = gen.generate(
-            &projects,
-            d("2024-01-01"),
-            d("2024-12-31"),
-            d("2024-06-30"),
-        );
+        let milestones = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"), d("2024-06-30"));
 
         assert_eq!(milestones.len(), 20, "5 projects * 4 milestones each");
 
@@ -367,11 +384,9 @@ mod tests {
 
     #[test]
     fn test_milestone_status_progression() {
-        let projects = vec![
-            Project::new("PRJ-001", "Test", ProjectType::Customer)
-                .with_budget(dec!(500000))
-                .with_company("TEST"),
-        ];
+        let projects = vec![Project::new("PRJ-001", "Test", ProjectType::Customer)
+            .with_budget(dec!(500000))
+            .with_company("TEST")];
         let config = MilestoneSchemaConfig {
             enabled: true,
             avg_per_project: 4,
@@ -403,11 +418,9 @@ mod tests {
 
     #[test]
     fn test_milestone_payment_amounts() {
-        let projects = vec![
-            Project::new("PRJ-001", "Test", ProjectType::Customer)
-                .with_budget(dec!(1000000))
-                .with_company("TEST"),
-        ];
+        let projects = vec![Project::new("PRJ-001", "Test", ProjectType::Customer)
+            .with_budget(dec!(1000000))
+            .with_company("TEST")];
         let config = MilestoneSchemaConfig {
             enabled: true,
             avg_per_project: 4,
@@ -415,15 +428,14 @@ mod tests {
         };
 
         let mut gen = MilestoneGenerator::new(42, config);
-        let milestones = gen.generate(
-            &projects,
-            d("2024-01-01"),
-            d("2024-12-31"),
-            d("2024-01-01"),
-        );
+        let milestones = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"), d("2024-01-01"));
 
         let total_payments: Decimal = milestones.iter().map(|m| m.payment_amount).sum();
-        assert_eq!(total_payments, dec!(1000000), "Total payments should equal budget");
+        assert_eq!(
+            total_payments,
+            dec!(1000000),
+            "Total payments should equal budget"
+        );
     }
 
     #[test]

@@ -11,8 +11,8 @@ use datasynth_config::schema::{
 };
 use datasynth_generators::esg::{
     DisclosureGenerator, EmissionGenerator, EnergyGenerator, EnergyInput, EnergyInputType,
-    EsgAnomalyInjector, GovernanceGenerator, SupplierEsgGenerator, VendorInput,
-    VendorSpendInput, WasteGenerator, WaterGenerator, WorkforceGenerator,
+    EsgAnomalyInjector, GovernanceGenerator, SupplierEsgGenerator, VendorInput, VendorSpendInput,
+    WasteGenerator, WaterGenerator, WorkforceGenerator,
 };
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -87,8 +87,7 @@ fn test_full_esg_pipeline() {
     let mut workforce_gen = WorkforceGenerator::new(42, SocialConfig::default());
     let diversity = workforce_gen.generate_diversity(entity, 500, d("2025-06-30"));
     let _pay_equity = workforce_gen.generate_pay_equity(entity, d("2025-06-30"));
-    let incidents =
-        workforce_gen.generate_safety_incidents(entity, 3, start, d("2025-12-31"));
+    let incidents = workforce_gen.generate_safety_incidents(entity, 3, start, d("2025-12-31"));
     let safety_metric =
         workforce_gen.compute_safety_metrics(entity, &incidents, 1_000_000, d("2025-06-30"));
 
@@ -118,18 +117,27 @@ fn test_full_esg_pipeline() {
     let mut disc_gen = DisclosureGenerator::new(
         42,
         EsgReportingConfig::default(),
-        ClimateScenarioConfig { enabled: true, ..Default::default() },
+        ClimateScenarioConfig {
+            enabled: true,
+            ..Default::default()
+        },
     );
     let materiality = disc_gen.generate_materiality(entity, d("2025-01-01"));
     let disclosures = disc_gen.generate_disclosures(entity, &materiality, start, d("2025-12-31"));
     let scenarios = disc_gen.generate_climate_scenarios(entity);
 
     // Verify pipeline produced data across all categories
-    assert!(!scope1.is_empty() || !scope2.is_empty(), "Should have Scope 1 or 2 emissions");
+    assert!(
+        !scope1.is_empty() || !scope2.is_empty(),
+        "Should have Scope 1 or 2 emissions"
+    );
     assert!(!scope3.is_empty(), "Should have Scope 3 emissions");
     assert!(!diversity.is_empty(), "Should have diversity metrics");
     assert!(safety_metric.total_hours_worked > 0);
-    assert!(!materiality.is_empty(), "Should have materiality assessments");
+    assert!(
+        !materiality.is_empty(),
+        "Should have materiality assessments"
+    );
     assert!(!disclosures.is_empty(), "Should have disclosures");
     assert!(!scenarios.is_empty(), "Should have climate scenarios");
 }
@@ -195,8 +203,10 @@ fn test_higher_spend_produces_higher_scope3() {
         country: "US".into(),
     }];
 
-    let low_result = gen.generate_scope3_purchased_goods("C001", &low_spend, d("2025-01-01"), d("2025-12-31"));
-    let high_result = gen.generate_scope3_purchased_goods("C001", &high_spend, d("2025-01-01"), d("2025-12-31"));
+    let low_result =
+        gen.generate_scope3_purchased_goods("C001", &low_spend, d("2025-01-01"), d("2025-12-31"));
+    let high_result =
+        gen.generate_scope3_purchased_goods("C001", &high_spend, d("2025-01-01"), d("2025-12-31"));
 
     assert!(
         high_result[0].co2e_tonnes > low_result[0].co2e_tonnes,
@@ -244,7 +254,8 @@ fn test_all_material_topics_covered_by_disclosures() {
     );
 
     let materiality = gen.generate_materiality("C001", d("2025-01-01"));
-    let disclosures = gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
+    let disclosures =
+        gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
 
     let material_topics: Vec<&str> = materiality
         .iter()
@@ -253,8 +264,14 @@ fn test_all_material_topics_covered_by_disclosures() {
         .collect();
 
     for topic in &material_topics {
-        let found = disclosures.iter().any(|d| d.disclosure_topic.contains(topic));
-        assert!(found, "Material topic '{}' must have at least one disclosure", topic);
+        let found = disclosures
+            .iter()
+            .any(|d| d.disclosure_topic.contains(topic));
+        assert!(
+            found,
+            "Material topic '{}' must have at least one disclosure",
+            topic
+        );
     }
 }
 
@@ -321,10 +338,16 @@ fn test_deterministic_esg_pipeline() {
     assert_eq!(r1_s1.len(), r2_s1.len());
     assert_eq!(r1_s2.len(), r2_s2.len());
     for (a, b) in r1_s1.iter().zip(r2_s1.iter()) {
-        assert_eq!(a.co2e_tonnes, b.co2e_tonnes, "Scope 1 should be deterministic");
+        assert_eq!(
+            a.co2e_tonnes, b.co2e_tonnes,
+            "Scope 1 should be deterministic"
+        );
     }
     for (a, b) in r1_s2.iter().zip(r2_s2.iter()) {
-        assert_eq!(a.co2e_tonnes, b.co2e_tonnes, "Scope 2 should be deterministic");
+        assert_eq!(
+            a.co2e_tonnes, b.co2e_tonnes,
+            "Scope 2 should be deterministic"
+        );
     }
 }
 

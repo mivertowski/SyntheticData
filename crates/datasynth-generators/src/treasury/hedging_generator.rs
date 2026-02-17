@@ -134,7 +134,9 @@ impl HedgingGenerator {
                     method,
                     effectiveness,
                 )
-                .with_ineffectiveness_amount(self.generate_ineffectiveness(notional, effectiveness));
+                .with_ineffectiveness_amount(
+                    self.generate_ineffectiveness(notional, effectiveness),
+                );
 
                 relationships.push(relationship);
             }
@@ -152,8 +154,8 @@ impl HedgingGenerator {
         maturity_date: NaiveDate,
     ) -> HedgingInstrument {
         let counterparty = self.random_counterparty();
-        let fixed_rate = dec!(0.03) + Decimal::try_from(self.rng.gen_range(0.0f64..0.025))
-            .unwrap_or(Decimal::ZERO);
+        let fixed_rate = dec!(0.03)
+            + Decimal::try_from(self.rng.gen_range(0.0f64..0.025)).unwrap_or(Decimal::ZERO);
 
         self.instrument_counter += 1;
         HedgingInstrument::new(
@@ -260,8 +262,14 @@ mod tests {
 
         // Notional should be hedge_ratio * exposure
         let hedge_ratio = dec!(0.75);
-        assert_eq!(instruments[0].notional_amount, (dec!(1000000) * hedge_ratio).round_dp(2));
-        assert_eq!(instruments[1].notional_amount, (dec!(500000) * hedge_ratio).round_dp(2));
+        assert_eq!(
+            instruments[0].notional_amount,
+            (dec!(1000000) * hedge_ratio).round_dp(2)
+        );
+        assert_eq!(
+            instruments[1].notional_amount,
+            (dec!(500000) * hedge_ratio).round_dp(2)
+        );
 
         // All should be FX Forwards
         for instr in &instruments {

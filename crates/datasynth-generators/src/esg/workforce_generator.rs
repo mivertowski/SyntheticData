@@ -48,9 +48,17 @@ impl WorkforceGenerator {
         }
 
         let mut metrics = Vec::new();
-        let levels = [OrganizationLevel::Corporate, OrganizationLevel::Executive, OrganizationLevel::Board];
+        let levels = [
+            OrganizationLevel::Corporate,
+            OrganizationLevel::Executive,
+            OrganizationLevel::Board,
+        ];
 
-        for dimension in &[DiversityDimension::Gender, DiversityDimension::Ethnicity, DiversityDimension::Age] {
+        for dimension in &[
+            DiversityDimension::Gender,
+            DiversityDimension::Ethnicity,
+            DiversityDimension::Age,
+        ] {
             let categories = self.categories_for(*dimension);
             // Distribute headcount per level
             for level in &levels {
@@ -67,10 +75,7 @@ impl WorkforceGenerator {
                     let headcount = (Decimal::from(level_hc)
                         * Decimal::from_f64_retain(shares[i]).unwrap_or(Decimal::ZERO))
                     .round_dp(0);
-                    let hc = headcount
-                        .to_string()
-                        .parse::<u32>()
-                        .unwrap_or(0);
+                    let hc = headcount.to_string().parse::<u32>().unwrap_or(0);
 
                     let percentage = if level_hc > 0 {
                         (Decimal::from(hc) / Decimal::from(level_hc)).round_dp(4)
@@ -150,10 +155,12 @@ impl WorkforceGenerator {
                 let gap_factor: f64 = self.rng.gen_range(0.85..1.05);
                 let cmp_salary = ref_salary * gap_factor;
 
-                let ref_dec =
-                    Decimal::from_f64_retain(ref_salary).unwrap_or(dec!(90000)).round_dp(2);
-                let cmp_dec =
-                    Decimal::from_f64_retain(cmp_salary).unwrap_or(dec!(85000)).round_dp(2);
+                let ref_dec = Decimal::from_f64_retain(ref_salary)
+                    .unwrap_or(dec!(90000))
+                    .round_dp(2);
+                let cmp_dec = Decimal::from_f64_retain(cmp_salary)
+                    .unwrap_or(dec!(85000))
+                    .round_dp(2);
                 let ratio = if ref_dec.is_zero() {
                     dec!(1.00)
                 } else {
@@ -324,17 +331,12 @@ impl GovernanceGenerator {
     }
 
     /// Generate a governance metric for a period.
-    pub fn generate(
-        &mut self,
-        entity_id: &str,
-        period: NaiveDate,
-    ) -> GovernanceMetric {
+    pub fn generate(&mut self, entity_id: &str, period: NaiveDate) -> GovernanceMetric {
         self.counter += 1;
 
         // Independent directors: aim near target with some noise
         let ind_frac: f64 = self.rng.gen_range(
-            (self.independence_target - 0.10).max(0.0)
-                ..(self.independence_target + 0.10).min(1.0),
+            (self.independence_target - 0.10).max(0.0)..(self.independence_target + 0.10).min(1.0),
         );
         let independent = (self.board_size as f64 * ind_frac).round() as u32;
         let independent = independent.min(self.board_size);
@@ -393,8 +395,10 @@ mod tests {
         assert!(!metrics.is_empty());
 
         // Group by (dimension, level) and check percentages sum ≈ 1.0
-        let mut groups: std::collections::HashMap<(String, String), Vec<&WorkforceDiversityMetric>> =
-            std::collections::HashMap::new();
+        let mut groups: std::collections::HashMap<
+            (String, String),
+            Vec<&WorkforceDiversityMetric>,
+        > = std::collections::HashMap::new();
         for m in &metrics {
             let key = (format!("{:?}", m.dimension), format!("{:?}", m.level));
             groups.entry(key).or_default().push(m);

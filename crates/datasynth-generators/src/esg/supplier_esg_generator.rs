@@ -71,9 +71,15 @@ impl SupplierEsgGenerator {
             let soc_score = self.score_with_noise(base, &vendor.country, &vendor.industry, "soc");
             let gov_score = self.score_with_noise(base, &vendor.country, &vendor.industry, "gov");
 
-            let env_dec = Decimal::from_f64_retain(env_score).unwrap_or(dec!(50)).round_dp(2);
-            let soc_dec = Decimal::from_f64_retain(soc_score).unwrap_or(dec!(50)).round_dp(2);
-            let gov_dec = Decimal::from_f64_retain(gov_score).unwrap_or(dec!(50)).round_dp(2);
+            let env_dec = Decimal::from_f64_retain(env_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
+            let soc_dec = Decimal::from_f64_retain(soc_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
+            let gov_dec = Decimal::from_f64_retain(gov_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
             let overall = ((env_dec + soc_dec + gov_dec) / dec!(3)).round_dp(2);
 
             let is_high_risk_country = self
@@ -121,12 +127,7 @@ impl SupplierEsgGenerator {
         let mut score = base_quality + self.rng.gen_range(-15.0..15.0);
 
         // Country risk adjustment
-        if self
-            .config
-            .high_risk_countries
-            .iter()
-            .any(|c| c == country)
-        {
+        if self.config.high_risk_countries.iter().any(|c| c == country) {
             score -= self.rng.gen_range(5.0..20.0);
         }
 
@@ -221,7 +222,11 @@ mod tests {
         let mut gen = SupplierEsgGenerator::new(42, config);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
-        assert_eq!(assessments.len(), 5, "100% coverage should assess all vendors");
+        assert_eq!(
+            assessments.len(),
+            5,
+            "100% coverage should assess all vendors"
+        );
     }
 
     #[test]

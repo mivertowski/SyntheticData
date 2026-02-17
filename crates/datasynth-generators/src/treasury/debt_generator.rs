@@ -68,13 +68,8 @@ impl DebtGenerator {
 
         let mut instruments = Vec::new();
         for def in &defs {
-            let instrument = self.generate_from_def(
-                entity_id,
-                currency,
-                origination_date,
-                def,
-                &covenant_defs,
-            );
+            let instrument =
+                self.generate_from_def(entity_id, currency, origination_date, def, &covenant_defs);
             instruments.push(instrument);
         }
         instruments
@@ -93,8 +88,8 @@ impl DebtGenerator {
         let id = format!("DEBT-{:06}", self.instrument_counter);
         let lender = self.random_lender();
         let debt_type = self.parse_debt_type(&def.instrument_type);
-        let principal = Decimal::try_from(def.principal.unwrap_or(5_000_000.0))
-            .unwrap_or(dec!(5000000));
+        let principal =
+            Decimal::try_from(def.principal.unwrap_or(5_000_000.0)).unwrap_or(dec!(5000000));
         let rate = Decimal::try_from(def.rate.unwrap_or(0.055))
             .unwrap_or(dec!(0.055))
             .round_dp(4);
@@ -107,8 +102,8 @@ impl DebtGenerator {
             InterestRateType::Fixed
         };
 
-        let facility_limit = Decimal::try_from(def.facility.unwrap_or(0.0))
-            .unwrap_or(Decimal::ZERO);
+        let facility_limit =
+            Decimal::try_from(def.facility.unwrap_or(0.0)).unwrap_or(Decimal::ZERO);
 
         let mut instrument = DebtInstrument::new(
             id,
@@ -125,12 +120,8 @@ impl DebtGenerator {
 
         // Generate amortization schedule for term loans
         if matches!(debt_type, DebtType::TermLoan | DebtType::Bond) {
-            let schedule = self.generate_amortization(
-                principal,
-                rate,
-                origination_date,
-                maturity_months,
-            );
+            let schedule =
+                self.generate_amortization(principal, rate, origination_date, maturity_months);
             instrument = instrument.with_amortization_schedule(schedule);
         }
 
@@ -226,7 +217,11 @@ impl DebtGenerator {
     }
 
     /// Generates an actual value that is compliant with the covenant.
-    fn generate_compliant_value(&mut self, covenant_type: CovenantType, threshold: Decimal) -> Decimal {
+    fn generate_compliant_value(
+        &mut self,
+        covenant_type: CovenantType,
+        threshold: Decimal,
+    ) -> Decimal {
         match covenant_type {
             // Maximum covenants: actual < threshold
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
@@ -242,7 +237,11 @@ impl DebtGenerator {
     }
 
     /// Generates an actual value that breaches the covenant.
-    fn generate_breached_value(&mut self, covenant_type: CovenantType, threshold: Decimal) -> Decimal {
+    fn generate_breached_value(
+        &mut self,
+        covenant_type: CovenantType,
+        threshold: Decimal,
+    ) -> Decimal {
         match covenant_type {
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
                 let factor = self.rng.gen_range(1.05f64..1.30f64);

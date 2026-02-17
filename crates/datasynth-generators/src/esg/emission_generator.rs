@@ -53,10 +53,10 @@ pub struct VendorSpendInput {
 fn emission_factor_kg_per_kwh(energy_type: EnergyInputType) -> Decimal {
     match energy_type {
         // EPA GHG factors (approximate)
-        EnergyInputType::NaturalGas => dec!(0.181),  // kg CO2e / kWh
+        EnergyInputType::NaturalGas => dec!(0.181), // kg CO2e / kWh
         EnergyInputType::Diesel => dec!(0.253),
         EnergyInputType::Coal => dec!(0.341),
-        EnergyInputType::Electricity => dec!(0.417),  // US grid average
+        EnergyInputType::Electricity => dec!(0.417), // US grid average
     }
 }
 
@@ -156,7 +156,10 @@ impl EmissionGenerator {
                     emission_factor: Some(factor),
                     co2e_tonnes,
                     estimation_method: EstimationMethod::ActivityBased,
-                    source: Some(format!("EPA GHG factors ({})", self.config.scope1.factor_region)),
+                    source: Some(format!(
+                        "EPA GHG factors ({})",
+                        self.config.scope1.factor_region
+                    )),
                 }
             })
             .collect()
@@ -198,7 +201,10 @@ impl EmissionGenerator {
                     emission_factor: Some(factor),
                     co2e_tonnes,
                     estimation_method: EstimationMethod::ActivityBased,
-                    source: Some(format!("Grid average ({})", self.config.scope2.factor_region)),
+                    source: Some(format!(
+                        "Grid average ({})",
+                        self.config.scope2.factor_region
+                    )),
                 }
             })
             .collect()
@@ -342,7 +348,10 @@ mod tests {
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].scope, EmissionScope::Scope1);
         assert!(records[0].co2e_tonnes > Decimal::ZERO);
-        assert_eq!(records[0].estimation_method, EstimationMethod::ActivityBased);
+        assert_eq!(
+            records[0].estimation_method,
+            EstimationMethod::ActivityBased
+        );
         assert!(records[0].facility_id.is_some());
     }
 
@@ -367,7 +376,11 @@ mod tests {
         let mut gen = EmissionGenerator::new(42, config);
         let records = gen.generate_scope1("C001", &energy_data);
 
-        assert_eq!(records.len(), 1, "Electricity should be excluded from Scope 1");
+        assert_eq!(
+            records.len(),
+            1,
+            "Electricity should be excluded from Scope 1"
+        );
         assert_eq!(records[0].scope, EmissionScope::Scope1);
     }
 
@@ -431,7 +444,10 @@ mod tests {
         let records = gen.generate_scope3_business_travel("C001", dec!(100000), d("2025-01-01"));
 
         assert_eq!(records.len(), 1);
-        assert_eq!(records[0].scope3_category, Some(Scope3Category::BusinessTravel));
+        assert_eq!(
+            records[0].scope3_category,
+            Some(Scope3Category::BusinessTravel)
+        );
         assert!(records[0].co2e_tonnes > Decimal::ZERO);
     }
 

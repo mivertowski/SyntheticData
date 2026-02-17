@@ -171,8 +171,8 @@ impl CashForecastGenerator {
             _ => dec!(0.15),
         };
         // Add small random jitter (±5%)
-        let jitter = Decimal::try_from(self.rng.gen_range(-0.05f64..0.05f64))
-            .unwrap_or(Decimal::ZERO);
+        let jitter =
+            Decimal::try_from(self.rng.gen_range(-0.05f64..0.05f64)).unwrap_or(Decimal::ZERO);
         (base + jitter).max(dec!(0.05)).min(dec!(1.00)).round_dp(2)
     }
 }

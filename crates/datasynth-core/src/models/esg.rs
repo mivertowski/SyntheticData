@@ -212,7 +212,10 @@ pub struct WasteRecord {
 impl WasteRecord {
     /// Whether the waste was diverted from landfill.
     pub fn computed_diversion(&self) -> bool {
-        !matches!(self.disposal_method, DisposalMethod::Landfill | DisposalMethod::Incinerated)
+        !matches!(
+            self.disposal_method,
+            DisposalMethod::Landfill | DisposalMethod::Incinerated
+        )
     }
 }
 
@@ -376,9 +379,8 @@ impl SafetyMetric {
         if self.total_hours_worked == 0 {
             return Decimal::ZERO;
         }
-        (Decimal::from(self.days_away) * dec!(200000)
-            / Decimal::from(self.total_hours_worked))
-        .round_dp(4)
+        (Decimal::from(self.days_away) * dec!(200000) / Decimal::from(self.total_hours_worked))
+            .round_dp(4)
     }
 }
 
@@ -463,9 +465,8 @@ pub struct SupplierEsgAssessment {
 impl SupplierEsgAssessment {
     /// Computed overall score = average of E, S, G.
     pub fn computed_overall_score(&self) -> Decimal {
-        ((self.environmental_score + self.social_score + self.governance_score)
-            / dec!(3))
-        .round_dp(2)
+        ((self.environmental_score + self.social_score + self.governance_score) / dec!(3))
+            .round_dp(2)
     }
 }
 
