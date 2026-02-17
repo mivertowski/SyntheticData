@@ -98,7 +98,7 @@ tonic = "0.12"
 tonic-build = "0.12"
 prost = "0.13"
 prost-build = "0.13"
-prost-types = "0.13"
+prost-types = "0.14"
 
 # HTTP/REST
 axum = { version = "0.7", features = ["ws"] }
