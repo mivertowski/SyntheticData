@@ -2366,6 +2366,9 @@ impl EnhancedOrchestrator {
             datasynth_config::schema::AccountingFrameworkConfig::DualReporting => {
                 datasynth_standards::framework::AccountingFramework::DualReporting
             }
+            datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap => {
+                datasynth_standards::framework::AccountingFramework::FrenchGaap
+            }
         };
 
         let mut snapshot = AccountingStandardsSnapshot::default();
@@ -2647,11 +2650,18 @@ impl EnhancedOrchestrator {
     fn generate_coa(&mut self) -> SynthResult<Arc<ChartOfAccounts>> {
         let pb = self.create_progress_bar(1, "Generating Chart of Accounts");
 
+        let use_french_pcg = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap
+            );
+
         let mut gen = ChartOfAccountsGenerator::new(
             self.config.chart_of_accounts.complexity,
             self.config.global.industry,
             self.seed,
-        );
+        )
+        .with_french_pcg(use_french_pcg);
 
         let coa = Arc::new(gen.generate());
         self.coa = Some(Arc::clone(&coa));

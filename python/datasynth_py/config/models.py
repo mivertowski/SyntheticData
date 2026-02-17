@@ -709,15 +709,15 @@ class ImpairmentConfig:
 class AccountingStandardsConfig:
     """Accounting standards framework configuration.
 
-    Supports US GAAP and IFRS with dual reporting mode:
-    - ASC 606/IFRS 15: Revenue Recognition
-    - ASC 842/IFRS 16: Lease Accounting
-    - ASC 820/IFRS 13: Fair Value Measurement
-    - ASC 360/IAS 36: Impairment Testing
+    Supports US GAAP, IFRS, French GAAP (PCG), and dual reporting mode:
+    - ASC 606/IFRS 15/PCG: Revenue Recognition
+    - ASC 842/IFRS 16/PCG: Lease Accounting
+    - ASC 820/IFRS 13/PCG: Fair Value Measurement
+    - ASC 360/IAS 36/PCG: Impairment Testing
     """
 
     enabled: bool = False
-    framework: str = "us_gaap"  # us_gaap, ifrs, dual_reporting
+    framework: str = "us_gaap"  # us_gaap, ifrs, dual_reporting, french_gaap
     revenue_recognition: Optional[RevenueRecognitionConfig] = None
     leases: Optional[LeaseAccountingConfig] = None
     fair_value: Optional[FairValueConfig] = None

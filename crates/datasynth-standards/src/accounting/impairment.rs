@@ -127,9 +127,9 @@ impl ImpairmentTest {
     pub fn perform_test(&mut self) {
         match self.framework {
             AccountingFramework::UsGaap => self.perform_us_gaap_test(),
-            AccountingFramework::Ifrs | AccountingFramework::DualReporting => {
-                self.perform_ifrs_test()
-            }
+            AccountingFramework::Ifrs
+            | AccountingFramework::DualReporting
+            | AccountingFramework::FrenchGaap => self.perform_ifrs_test(),
         }
     }
 

@@ -21,6 +21,7 @@
     { value: 'us_gaap', label: 'US GAAP', description: 'United States Generally Accepted Accounting Principles' },
     { value: 'ifrs', label: 'IFRS', description: 'International Financial Reporting Standards' },
     { value: 'dual_reporting', label: 'Dual Reporting', description: 'Generate data compliant with both US GAAP and IFRS' },
+    { value: 'french_gaap', label: 'French GAAP (PCG)', description: 'Plan Comptable Général – French statutory reporting' },
   ];
 
   const testFrequencies = [
@@ -313,7 +314,7 @@
   .warning-text { font-family: var(--font-sans); margin-left: var(--space-2); }
   .loading { display: flex; align-items: center; justify-content: center; padding: var(--space-10); color: var(--color-text-secondary); }
 
-  .framework-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .framework-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2); }
   .framework-option {
     display: flex;
     flex-direction: column;

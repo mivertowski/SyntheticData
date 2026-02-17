@@ -231,7 +231,40 @@ impl Lease {
                 // For dual reporting, use US GAAP classification but note IFRS treatment
                 self.classify_us_gaap();
             }
+            AccountingFramework::FrenchGaap => self.classify_french_gaap(),
         }
+    }
+
+    /// French GAAP classification (PCG / ANC, principles-based, aligned with IFRS 16 for many entities).
+    fn classify_french_gaap(&mut self) {
+        // Transfer of ownership or bargain purchase → finance
+        if self.transfers_ownership || self.has_bargain_purchase_option {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
+
+        let term_ratio =
+            Decimal::from(self.lease_term_months) / Decimal::from(self.economic_life_months);
+        let pv = self.calculate_present_value_of_payments();
+        let pv_ratio = if self.fair_value_at_commencement > Decimal::ZERO {
+            pv / self.fair_value_at_commencement
+        } else {
+            Decimal::ZERO
+        };
+
+        if term_ratio >= Decimal::from_str_exact("0.75").expect("valid decimal literal")
+            || pv_ratio >= Decimal::from_str_exact("0.90").expect("valid decimal literal")
+        {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
+
+        if self.is_specialized_asset {
+            self.classification = LeaseClassification::Finance;
+            return;
+        }
+
+        self.classification = LeaseClassification::Operating;
     }
 
     /// US GAAP classification using bright-line tests (ASC 842).

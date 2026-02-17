@@ -40,6 +40,15 @@ pub enum AccountingFramework {
     /// Generates reconciliation data showing differences between
     /// the two frameworks for the same underlying transactions.
     DualReporting,
+
+    /// French GAAP (Plan Comptable Général – PCG).
+    ///
+    /// French statutory accounting framework:
+    /// - PCG chart of accounts (classes 1–9)
+    /// - LIFO prohibited (like IFRS)
+    /// - Impairment reversal permitted under French rules
+    /// - Principles-based lease classification (convergent with IFRS 16 for many entities)
+    FrenchGaap,
 }
 
 impl AccountingFramework {
@@ -49,6 +58,7 @@ impl AccountingFramework {
             Self::UsGaap => "ASC 606",
             Self::Ifrs => "IFRS 15",
             Self::DualReporting => "ASC 606 / IFRS 15",
+            Self::FrenchGaap => "PCG / ANC (IFRS 15 aligned)",
         }
     }
 
@@ -58,6 +68,7 @@ impl AccountingFramework {
             Self::UsGaap => "ASC 842",
             Self::Ifrs => "IFRS 16",
             Self::DualReporting => "ASC 842 / IFRS 16",
+            Self::FrenchGaap => "PCG / ANC (IFRS 16 aligned)",
         }
     }
 
@@ -67,6 +78,7 @@ impl AccountingFramework {
             Self::UsGaap => "ASC 820",
             Self::Ifrs => "IFRS 13",
             Self::DualReporting => "ASC 820 / IFRS 13",
+            Self::FrenchGaap => "PCG / ANC (IFRS 13 aligned)",
         }
     }
 
@@ -76,6 +88,7 @@ impl AccountingFramework {
             Self::UsGaap => "ASC 360",
             Self::Ifrs => "IAS 36",
             Self::DualReporting => "ASC 360 / IAS 36",
+            Self::FrenchGaap => "PCG / ANC (IAS 36 aligned)",
         }
     }
 
@@ -86,7 +99,7 @@ impl AccountingFramework {
 
     /// Returns whether development cost capitalization is required.
     pub fn requires_development_capitalization(&self) -> bool {
-        matches!(self, Self::Ifrs | Self::DualReporting)
+        matches!(self, Self::Ifrs | Self::DualReporting | Self::FrenchGaap)
     }
 
     /// Returns whether PPE revaluation above cost is permitted.
@@ -96,7 +109,7 @@ impl AccountingFramework {
 
     /// Returns whether impairment loss reversal is permitted.
     pub fn allows_impairment_reversal(&self) -> bool {
-        matches!(self, Self::Ifrs | Self::DualReporting)
+        matches!(self, Self::Ifrs | Self::DualReporting | Self::FrenchGaap)
     }
 
     /// Returns whether this framework uses bright-line lease tests.
@@ -111,6 +124,7 @@ impl std::fmt::Display for AccountingFramework {
             Self::UsGaap => write!(f, "US GAAP"),
             Self::Ifrs => write!(f, "IFRS"),
             Self::DualReporting => write!(f, "Dual Reporting (US GAAP & IFRS)"),
+            Self::FrenchGaap => write!(f, "French GAAP (PCG)"),
         }
     }
 }
@@ -247,10 +261,27 @@ impl FrameworkSettings {
         }
     }
 
+    /// Create settings for French GAAP (Plan Comptable Général).
+    pub fn french_gaap() -> Self {
+        Self {
+            framework: AccountingFramework::FrenchGaap,
+            use_lifo_inventory: false,          // LIFO prohibited under French GAAP
+            capitalize_development_costs: true, // Permitted when criteria met
+            use_ppe_revaluation: false,         // Cost model typical
+            allow_impairment_reversal: true,    // Permitted under French rules
+            ..Default::default()
+        }
+    }
+
     /// Validate settings are consistent with the selected framework.
     pub fn validate(&self) -> Result<(), FrameworkValidationError> {
-        // LIFO is only permitted under US GAAP
-        if self.use_lifo_inventory && self.framework == AccountingFramework::Ifrs {
+        // LIFO is only permitted under US GAAP (prohibited under IFRS and French GAAP)
+        if self.use_lifo_inventory
+            && matches!(
+                self.framework,
+                AccountingFramework::Ifrs | AccountingFramework::FrenchGaap
+            )
+        {
             return Err(FrameworkValidationError::LifoNotPermittedUnderIfrs);
         }
 
@@ -284,7 +315,7 @@ impl FrameworkSettings {
 /// Errors that can occur during framework settings validation.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum FrameworkValidationError {
-    #[error("LIFO inventory costing is not permitted under IFRS")]
+    #[error("LIFO inventory costing is not permitted under IFRS or French GAAP")]
     LifoNotPermittedUnderIfrs,
 
     #[error("PPE revaluation above cost is not permitted under US GAAP")]
@@ -392,18 +423,28 @@ mod tests {
         assert_eq!(AccountingFramework::Ifrs.revenue_standard(), "IFRS 15");
         assert_eq!(AccountingFramework::UsGaap.lease_standard(), "ASC 842");
         assert_eq!(AccountingFramework::Ifrs.lease_standard(), "IFRS 16");
+        assert!(AccountingFramework::FrenchGaap.revenue_standard().contains("PCG"));
     }
 
     #[test]
     fn test_framework_features() {
         assert!(AccountingFramework::UsGaap.allows_lifo());
         assert!(!AccountingFramework::Ifrs.allows_lifo());
+        assert!(!AccountingFramework::FrenchGaap.allows_lifo());
 
         assert!(!AccountingFramework::UsGaap.allows_ppe_revaluation());
         assert!(AccountingFramework::Ifrs.allows_ppe_revaluation());
 
         assert!(!AccountingFramework::UsGaap.allows_impairment_reversal());
         assert!(AccountingFramework::Ifrs.allows_impairment_reversal());
+        assert!(AccountingFramework::FrenchGaap.allows_impairment_reversal());
+    }
+
+    #[test]
+    fn test_french_gaap_settings() {
+        let settings = FrameworkSettings::french_gaap();
+        assert!(settings.validate().is_ok());
+        assert_eq!(settings.framework, AccountingFramework::FrenchGaap);
     }
 
     #[test]
