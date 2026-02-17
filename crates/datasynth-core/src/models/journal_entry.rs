@@ -72,6 +72,12 @@ pub enum BusinessProcess {
     Tax,
     /// Intercompany transactions
     Intercompany,
+    /// Project accounting lifecycle
+    #[serde(rename = "PROJECT")]
+    ProjectAccounting,
+    /// ESG / Sustainability reporting
+    #[serde(rename = "ESG")]
+    Esg,
 }
 
 /// Document type classification for journal entries.
