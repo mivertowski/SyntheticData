@@ -100,6 +100,10 @@
 - [Causal & Counterfactual Generation](advanced/causal-generation.md)
 - [Federated Fingerprinting](advanced/federated-fingerprinting.md)
 - [Synthetic Data Certificates](advanced/certificates.md)
+- [Tax Accounting](advanced/tax-accounting.md)
+- [Treasury & Cash Management](advanced/treasury.md)
+- [Project Accounting](advanced/project-accounting.md)
+- [ESG / Sustainability](advanced/esg-sustainability.md)
 
 ---
 

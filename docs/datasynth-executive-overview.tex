@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.6.2}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.7.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -105,14 +105,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.1 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.3 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.6.2}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.7.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -248,7 +248,7 @@ Period Close &
 \needspace{12\baselineskip}
 \subsection{Enterprise Process Chains}
 
-\textit{Updated in v0.6.2} --- seven end-to-end process chains with full
+\textit{Updated in v0.7.0} --- eleven end-to-end process chains with full
 referential integrity, temporal coherence, anomaly injection, and
 OCEL~2.0 process mining integration:
 
@@ -287,6 +287,28 @@ Audit Lifecycle &
   Engagement planning, risk assessment, workpaper creation and review,
   evidence collection, finding management, remediation tracking, and
   professional judgment documentation --- ISA-aligned OCPM events. \\
+Tax Accounting &
+  Tax jurisdictions (Federal/State/Local/Supranational), tax code master data,
+  tax line decoration on source documents (VI/CI/JE/Payment/Payroll),
+  VAT/GST/income/withholding tax returns, ASC\,740/IAS\,12 provision
+  computation with deferred tax, FIN\,48/IFRIC\,23 uncertain positions,
+  cross-border withholding with treaty benefits. \\
+Treasury \& Cash Mgmt &
+  Daily cash positions, probability-weighted forecasts, cash pooling
+  (physical/notional/zero-balance sweeps), FX forwards, IR swaps, and
+  options with ASC\,815/IFRS\,9 hedge effectiveness testing, debt instruments
+  with covenants \& amortization, bank guarantees, multilateral netting. \\
+Project Accounting &
+  WBS hierarchies, cost lines (labor/material/subcontractor/overhead/equipment/travel),
+  percentage-of-completion revenue recognition (ASC\,606), earned value
+  management (BCWS/BCWP/ACWP/SPI/CPI/EAC/ETC/TCPI), milestones with
+  payment tracking, change orders, retainage holds and releases. \\
+ESG / Sustainability &
+  GHG Protocol Scope\,1/2/3 emissions (activity-based \& spend-based),
+  energy consumption with renewable targets, water/waste management,
+  workforce diversity \& pay equity, safety incidents (TRIR/LTIR/DART),
+  governance metrics, GRI/SASB/TCFD disclosure frameworks, supplier ESG
+  assessments, climate scenario analysis. \\
 \bottomrule
 \end{tabularx}
 \renewcommand{\arraystretch}{1.0}
@@ -371,15 +393,15 @@ difference reconciliation.
 
 \subsection{Process Mining (OCEL 2.0 \& XES 2.0)}
 
-\textit{Major expansion in v0.6.2} --- Object-Centric Event Logs now cover
-all 8 enterprise process families with 88 activity types and 52 object types,
+\textit{Major expansion in v0.7.0} --- Object-Centric Event Logs now cover
+all 12 enterprise process families with 101+ activity types and 65+ object types,
 enabling cross-process conformance checking and end-to-end variant analysis.
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
   \item \textbf{OCEL 2.0}: JSON and XML export with objects, events, and object relationships.
   \item \textbf{XES 2.0}: IEEE standard format for ProM, Celonis, Disco, and pm4py.
-  \item \textbf{8 Process Families}: P2P~(9), O2C~(10), R2R/A2R~(17), S2C~(8), H2R~(8), MFG~(10), BANK~(8), AUDIT~(10) --- 88 activities total.
-  \item \textbf{52 Object Types}: Lifecycle states and relationships across all families --- from purchase orders through audit engagements.
+  \item \textbf{12 Process Families}: P2P~(9), O2C~(10), R2R/A2R~(17), S2C~(8), H2R~(8), MFG~(10), BANK~(8), AUDIT~(10), Tax~(8), Treasury~(4), ProjectAccounting~(5), ESG~(3) --- 101+ activities total.
+  \item \textbf{65+ Object Types}: Lifecycle states and relationships across all families --- from purchase orders through ESG disclosures.
   \item \textbf{3 Variant Types}: HappyPath (75\%), ExceptionPath (20\%), ErrorPath (5\%) per generator for realistic process deviation.
   \item \textbf{Deterministic UUIDs}: FNV-1a hash-based IDs with type discriminators for reproducible event logs.
 \end{itemize}
@@ -535,7 +557,7 @@ Comprehensive drift modeling for realistic temporal evolution:
 \end{tcolorbox}
 
 \noindent
-\textit{Expanded in v0.6.2} --- the multi-layer hypergraph now spans all 8
+\textit{Expanded in v0.7.0} --- the multi-layer hypergraph now spans all 8
 process families with 24 entity type codes (100--400), per-family document
 nodes (S2C, H2R, MFG, BANK, AUDIT, Bank Recon), and OCPM events as
 hyperedges connecting all participating objects when
@@ -781,9 +803,9 @@ Data Lineage &
   config$\to$generator$\to$output relationships, W3C PROV-JSON export,
   CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} 1.1 with blueprints (sourcing, HR, manufacturing,
-  financial reporting), pandas/polars integration, async client, and
-  WebSocket streaming support. \\
+  \texttt{datasynth-py} 1.3 with blueprints (sourcing, HR, manufacturing,
+  financial reporting, tax, treasury, project accounting, ESG),
+  pandas/polars integration, async client, and WebSocket streaming support. \\
 \bottomrule
 \end{tabularx}
 \renewcommand{\arraystretch}{1.0}
@@ -921,6 +943,22 @@ goodness-of-fit, chi-squared, and correlation matrix verification.
   \item[$\blacktriangleright$] \textbf{Pipeline Orchestration} ---
     Apache Airflow operators, dbt source generation, MLflow experiment
     tracking, and Spark DataFrame readers for end-to-end ML pipelines.
+
+  \item[$\blacktriangleright$] \textbf{Tax Compliance Testing} ---
+    Tax return filing simulation, ASC\,740/IAS\,12 provision computation,
+    uncertain tax position modeling, withholding tax treaty benefits.
+
+  \item[$\blacktriangleright$] \textbf{Treasury Operations} ---
+    Cash positioning, probability-weighted forecasting, hedge effectiveness
+    testing (ASC\,815/IFRS\,9), debt covenant monitoring, and multilateral netting.
+
+  \item[$\blacktriangleright$] \textbf{Project Cost Control} ---
+    WBS-based project costing, earned value management (EVM), change order
+    tracking, percentage-of-completion revenue recognition, retainage.
+
+  \item[$\blacktriangleright$] \textbf{ESG \& Sustainability Reporting} ---
+    GHG Protocol Scope\,1/2/3 emissions, diversity \& pay equity metrics,
+    GRI/SASB/TCFD disclosure preparation, supplier ESG assessments.
 
   \item[$\blacktriangleright$] \textbf{EU AI Act Compliance} ---
     Article 50 synthetic content marking with content credentials and
@@ -1132,7 +1170,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.6.2 \textbullet{}
+  DataSynth v0.7.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]

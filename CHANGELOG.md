@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-17
+
+### Added
+
+- **Tax Accounting Domain** (`datasynth-core`, `datasynth-generators`, `datasynth-config`, `datasynth-output`): Complete tax lifecycle simulation
+  - **Data Models**: `TaxJurisdiction` (Federal/State/Local/Municipal/Supranational), `TaxCode` with effective date ranges, `TaxLine` (attached to VI/CI/JE/Payment/PayrollRun), `TaxReturn` (VAT/GST/Income/Withholding/Payroll), `TaxProvision` (ASC 740/IAS 12 with deferred tax tracking), `UncertainTaxPosition` (FIN 48/IFRIC 23), `WithholdingTaxRecord` (cross-border with treaty benefits), `RateReconciliationItem`
+  - **Generators**: Tax code generator, tax line decorator (attaches tax lines to source documents), tax return aggregation by jurisdiction/period, ASC 740/IAS 12 provision computation, withholding tax on cross-border payments, tax anomaly injector with ground truth labels
+  - **Configuration**: `TaxConfig` with sub-sections for jurisdictions, VAT/GST (standard/reduced rates, exempt categories, reverse charge), US sales tax by nexus states, withholding (treaty network & rates), provisions (statutory rates & uncertain positions), payroll tax
+  - **Output**: 9 CSV files — `tax_jurisdictions`, `tax_codes`, `tax_lines`, `tax_returns`, `tax_provisions`, `rate_reconciliation`, `uncertain_tax_positions`, `withholding_records`, `tax_anomaly_labels`
+
+- **Treasury & Cash Management Domain** (`datasynth-core`, `datasynth-generators`, `datasynth-config`, `datasynth-output`): Full treasury operations simulation
+  - **Data Models**: `CashPosition` (daily balance by entity/account/currency), `CashForecast`/`CashForecastItem` (probability-weighted), `CashPool`/`CashPoolSweep` (physical/notional/zero-balance), `HedgingInstrument` (FX forwards, IR swaps, options), `HedgeRelationship` (ASC 815/IFRS 9 effectiveness testing), `DebtInstrument` (loans, bonds, credit facilities), `AmortizationPayment`, `DebtCovenant` (Debt/Equity, Interest Coverage), `BankGuarantee`, `NettingRun`/`NettingPosition`
+  - **Generators**: Cash position aggregation from payment flows, probability-weighted cash forecasts, cash pool sweep generation, hedging instruments with hedge designations, debt instruments with covenants & amortization, treasury anomaly injector
+  - **Configuration**: `TreasuryConfig` with sub-sections for cash positioning, forecasting, pooling, hedging (FX/IR instruments, effectiveness methods), debt (term loans, bonds, revolving facilities), netting (multilateral settlement), bank guarantees
+  - **Output**: 13 CSV files — `cash_positions`, `cash_forecasts`, `cash_forecast_items`, `cash_pool_sweeps`, `hedging_instruments`, `hedge_relationships`, `debt_instruments`, `debt_covenants`, `amortization_schedules`, `bank_guarantees`, `netting_runs`, `netting_positions`, `treasury_anomaly_labels`
+
+- **Project Accounting Domain** (`datasynth-core`, `datasynth-generators`, `datasynth-config`, `datasynth-output`): End-to-end project cost and revenue management
+  - **Data Models**: `ProjectCostLine` (Labor/Material/Subcontractor/Overhead/Equipment/Travel), `ProjectRevenue` (percentage-of-completion / ASC 606 with unbilled tracking), `ProjectMilestone` (payment milestones with status), `ChangeOrder` (scope/cost/schedule changes), `Retainage` (payment holds and releases), `EarnedValueMetrics` (BCWS/BCWP/ACWP/SPI/CPI/EAC/ETC/TCPI)
+  - **Generators**: Project creation with WBS hierarchies, cost linking from time entries/expenses/POs, PoC revenue recognition, EVM metrics computation, change order generation
+  - **Configuration**: `ProjectAccountingConfig` with project types distribution (Capital 25%, Internal 20%, Customer 30%, R&D 10%, Maintenance 10%, Technology 5%), WBS depth/elements, cost allocation from source documents, revenue recognition (PoC, cost-to-cost), milestones, change orders, retainage, earned value
+  - **Output**: 9 CSV files — `projects`, `wbs_elements`, `project_cost_lines`, `project_revenue`, `project_milestones`, `change_orders`, `retainage`, `earned_value_metrics`, `project_accounting_anomaly_labels`
+
+- **ESG / Sustainability Domain** (`datasynth-core`, `datasynth-generators`, `datasynth-config`, `datasynth-output`): Comprehensive environmental, social, and governance data
+  - **Environmental Models**: `EmissionRecord` (GHG Protocol Scope 1/2/3, CO2e tonnes), `EnergyConsumption` (by type with renewable flag), `WaterUsage` (withdrawal/discharge/consumption), `WasteRecord` (by type and disposal method)
+  - **Social Models**: `WorkforceDiversityMetric` (Gender/Ethnicity/Age/Disability/Veteran by org level), `PayEquityMetric` (pay gap analysis), `SafetyIncident` (Injury/Illness/NearMiss/Fatality), `SafetyMetric` (TRIR/LTIR/DART rates)
+  - **Governance Models**: `GovernanceMetric` (board composition, independence, diversity, ethics), `EsgDisclosure` (GRI/SASB/TCFD frameworks), `SupplierEsgAssessment` (supply chain ratings), `ClimateScenarioAnalysis`
+  - **Generators**: Scope 1/2/3 emission generator (activity-based & spend-based derivation), energy consumption tracker with renewable targets, workforce diversity & pay equity analysis, ESG disclosure/assurance generator, supplier ESG assessment, ESG anomaly injector
+  - **Configuration**: `EsgConfig` with environmental (emissions by scope, energy, water, waste), social (diversity, pay equity, safety), governance, supply chain ESG, reporting (GRI/SASB/TCFD), climate scenario analysis
+  - **Output**: 13 CSV files — `emission_records`, `energy_consumption`, `water_usage`, `waste_records`, `workforce_diversity_metrics`, `pay_equity_metrics`, `safety_incidents`, `safety_metrics`, `governance_metrics`, `esg_disclosures`, `supplier_esg_assessments`, `climate_scenarios`, `esg_anomaly_labels`
+
+- **OCPM Domain Expansion** (`datasynth-ocpm`): Process mining extended from 8 to 12 process families
+  - **Tax**: 2 object types (`tax_line`, `tax_return`), activities for determination, filing, assessment, payment
+  - **Treasury**: 4 object types (`cash_position`, `cash_forecast`, `hedge_instrument`, `debt_instrument`), activities for calculation, forecasting, designation, issuance
+  - **Project Accounting**: 4 object types (`project`, `project_cost_line`, `project_milestone`, `change_order`), activities for creation, cost posting, milestone completion, change approval
+  - **ESG**: 3 object types (`esg_data_point`, `emission_record`, `esg_disclosure`), activities for collection, calculation, submission
+  - Total: 101+ activities across 12 process families, 65+ object types
+
+- **Industry-Specific Presets** (`datasynth-config`): New presets for Tax, Treasury, Project Accounting, and ESG domains integrated into all industry configurations
+
+- **BusinessProcess Enum Extensions** (`datasynth-core`): Added `Tax`, `Treasury`, `ProjectAccounting`, `Esg` variants for process classification
+
+### Changed
+
+- Bumped all Rust crate versions to 0.7.0
+- Python wrapper version bumped to 1.3.0 with new domain configuration models
+- OCPM event log now covers 12 process families (P2P, O2C, S2C, H2R, MFG, R2R, BANK, AUDIT, Tax, Treasury, ProjectAccounting, ESG)
+- Executive overview document updated to v0.7.0 with new domain descriptions
+
 ## [0.6.2] - 2026-02-13
 
 ### Added
