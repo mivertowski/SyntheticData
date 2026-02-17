@@ -82,10 +82,10 @@ pub fn create_preset(
         hr: HrConfig::default(),
         manufacturing: ManufacturingProcessConfig::default(),
         sales_quotes: SalesQuoteConfig::default(),
-        tax: TaxConfig::default(),
-        treasury: TreasuryConfig::default(),
-        project_accounting: ProjectAccountingConfig::default(),
-        esg: EsgConfig::default(),
+        tax: get_tax_config(industry),
+        treasury: get_treasury_config(industry),
+        project_accounting: get_project_accounting_config(industry),
+        esg: get_esg_config(industry),
     }
 }
 
@@ -354,6 +354,244 @@ pub fn assuretwin_comprehensive_preset() -> GeneratorConfig {
     config.output.partition_by_company = true;
 
     config
+}
+
+/// Get industry-specific tax configuration.
+fn get_tax_config(industry: IndustrySector) -> TaxConfig {
+    match industry {
+        IndustrySector::Manufacturing => TaxConfig {
+            enabled: true,
+            jurisdictions: TaxJurisdictionConfig {
+                countries: vec!["US".into(), "DE".into(), "CN".into()],
+                include_subnational: true,
+            },
+            vat_gst: VatGstConfig { enabled: true, ..Default::default() },
+            withholding: WithholdingTaxSchemaConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Retail => TaxConfig {
+            enabled: true,
+            jurisdictions: TaxJurisdictionConfig {
+                countries: vec!["US".into(), "GB".into(), "FR".into()],
+                include_subnational: true,
+            },
+            sales_tax: SalesTaxConfig { enabled: true, ..Default::default() },
+            vat_gst: VatGstConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::FinancialServices => TaxConfig {
+            enabled: true,
+            jurisdictions: TaxJurisdictionConfig {
+                countries: vec!["US".into(), "CH".into(), "GB".into()],
+                include_subnational: false,
+            },
+            provisions: TaxProvisionSchemaConfig { enabled: true, ..Default::default() },
+            withholding: WithholdingTaxSchemaConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Healthcare => TaxConfig {
+            enabled: true,
+            jurisdictions: TaxJurisdictionConfig {
+                countries: vec!["US".into(), "DE".into()],
+                include_subnational: true,
+            },
+            sales_tax: SalesTaxConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Technology => TaxConfig {
+            enabled: true,
+            jurisdictions: TaxJurisdictionConfig {
+                countries: vec!["US".into(), "IE".into(), "JP".into()],
+                include_subnational: false,
+            },
+            provisions: TaxProvisionSchemaConfig { enabled: true, ..Default::default() },
+            withholding: WithholdingTaxSchemaConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        _ => TaxConfig::default(),
+    }
+}
+
+/// Get industry-specific treasury configuration.
+fn get_treasury_config(industry: IndustrySector) -> TreasuryConfig {
+    match industry {
+        IndustrySector::Manufacturing => TreasuryConfig {
+            enabled: true,
+            cash_positioning: CashPositioningConfig { enabled: true, ..Default::default() },
+            cash_forecasting: CashForecastingConfig { enabled: true, ..Default::default() },
+            hedging: HedgingSchemaConfig {
+                enabled: true,
+                hedge_ratio: 0.70,
+                ..Default::default()
+            },
+            debt: DebtSchemaConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Retail => TreasuryConfig {
+            enabled: true,
+            cash_positioning: CashPositioningConfig { enabled: true, ..Default::default() },
+            cash_forecasting: CashForecastingConfig { enabled: true, ..Default::default() },
+            cash_pooling: CashPoolingConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::FinancialServices => TreasuryConfig {
+            enabled: true,
+            cash_positioning: CashPositioningConfig { enabled: true, ..Default::default() },
+            cash_forecasting: CashForecastingConfig { enabled: true, ..Default::default() },
+            hedging: HedgingSchemaConfig {
+                enabled: true,
+                hedge_ratio: 0.90,
+                ..Default::default()
+            },
+            debt: DebtSchemaConfig { enabled: true, ..Default::default() },
+            netting: NettingSchemaConfig { enabled: true, ..Default::default() },
+            bank_guarantees: BankGuaranteeSchemaConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Healthcare => TreasuryConfig {
+            enabled: true,
+            cash_positioning: CashPositioningConfig { enabled: true, ..Default::default() },
+            cash_forecasting: CashForecastingConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Technology => TreasuryConfig {
+            enabled: true,
+            cash_positioning: CashPositioningConfig { enabled: true, ..Default::default() },
+            cash_forecasting: CashForecastingConfig { enabled: true, ..Default::default() },
+            hedging: HedgingSchemaConfig {
+                enabled: true,
+                hedge_ratio: 0.60,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        _ => TreasuryConfig::default(),
+    }
+}
+
+/// Get industry-specific project accounting configuration.
+fn get_project_accounting_config(industry: IndustrySector) -> ProjectAccountingConfig {
+    match industry {
+        IndustrySector::Manufacturing => ProjectAccountingConfig {
+            enabled: true,
+            project_count: 15,
+            project_types: ProjectTypeDistribution {
+                capital: 0.35,
+                internal: 0.15,
+                customer: 0.20,
+                r_and_d: 0.10,
+                maintenance: 0.15,
+                technology: 0.05,
+            },
+            ..Default::default()
+        },
+        IndustrySector::Retail => ProjectAccountingConfig {
+            enabled: true,
+            project_count: 8,
+            project_types: ProjectTypeDistribution {
+                capital: 0.20,
+                internal: 0.30,
+                customer: 0.10,
+                r_and_d: 0.05,
+                maintenance: 0.10,
+                technology: 0.25,
+            },
+            ..Default::default()
+        },
+        IndustrySector::FinancialServices => ProjectAccountingConfig {
+            enabled: true,
+            project_count: 12,
+            project_types: ProjectTypeDistribution {
+                capital: 0.10,
+                internal: 0.25,
+                customer: 0.15,
+                r_and_d: 0.10,
+                maintenance: 0.05,
+                technology: 0.35,
+            },
+            ..Default::default()
+        },
+        IndustrySector::Healthcare => ProjectAccountingConfig {
+            enabled: true,
+            project_count: 10,
+            project_types: ProjectTypeDistribution {
+                capital: 0.30,
+                internal: 0.10,
+                customer: 0.10,
+                r_and_d: 0.30,
+                maintenance: 0.15,
+                technology: 0.05,
+            },
+            ..Default::default()
+        },
+        IndustrySector::Technology => ProjectAccountingConfig {
+            enabled: true,
+            project_count: 20,
+            project_types: ProjectTypeDistribution {
+                capital: 0.05,
+                internal: 0.15,
+                customer: 0.30,
+                r_and_d: 0.30,
+                maintenance: 0.05,
+                technology: 0.15,
+            },
+            ..Default::default()
+        },
+        _ => ProjectAccountingConfig::default(),
+    }
+}
+
+/// Get industry-specific ESG configuration.
+fn get_esg_config(industry: IndustrySector) -> EsgConfig {
+    match industry {
+        IndustrySector::Manufacturing => EsgConfig {
+            enabled: true,
+            environmental: EnvironmentalConfig { enabled: true, ..Default::default() },
+            social: SocialConfig { ..Default::default() },
+            supply_chain_esg: SupplyChainEsgConfig {
+                enabled: true,
+                assessment_coverage: 0.90,
+                high_risk_countries: vec!["CN".into(), "BD".into(), "MM".into(), "VN".into()],
+            },
+            reporting: EsgReportingConfig { ..Default::default() },
+            climate_scenarios: ClimateScenarioConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Retail => EsgConfig {
+            enabled: true,
+            environmental: EnvironmentalConfig { enabled: true, ..Default::default() },
+            social: SocialConfig { ..Default::default() },
+            supply_chain_esg: SupplyChainEsgConfig {
+                enabled: true,
+                assessment_coverage: 0.85,
+                high_risk_countries: vec!["CN".into(), "BD".into(), "MM".into(), "KH".into()],
+            },
+            reporting: EsgReportingConfig { ..Default::default() },
+            climate_scenarios: ClimateScenarioConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::FinancialServices => EsgConfig {
+            enabled: true,
+            reporting: EsgReportingConfig { ..Default::default() },
+            climate_scenarios: ClimateScenarioConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Healthcare => EsgConfig {
+            enabled: true,
+            social: SocialConfig { ..Default::default() },
+            environmental: EnvironmentalConfig { enabled: true, ..Default::default() },
+            reporting: EsgReportingConfig { ..Default::default() },
+            ..Default::default()
+        },
+        IndustrySector::Technology => EsgConfig {
+            enabled: true,
+            environmental: EnvironmentalConfig { enabled: true, ..Default::default() },
+            reporting: EsgReportingConfig { ..Default::default() },
+            climate_scenarios: ClimateScenarioConfig { enabled: true, ..Default::default() },
+            ..Default::default()
+        },
+        _ => EsgConfig::default(),
+    }
 }
 
 #[cfg(test)]
