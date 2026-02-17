@@ -1,0 +1,303 @@
+{
+  "schema_version": "1.0",
+  "country_code": "_DEFAULT",
+  "country_name": "Default",
+  "region": "AMERICAS",
+
+  "locale": {
+    "language_code": "en",
+    "language_name": "English",
+    "default_currency": "USD",
+    "currency_symbol": "$",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "MM/DD/YYYY",
+      "long": "MMMM D, YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "America/New_York",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "western_us",
+        "weight": 1.0,
+        "male_first_names": ["James", "John", "Robert", "Michael", "David"],
+        "female_first_names": ["Mary", "Jennifer", "Linda", "Patricia", "Elizabeth"],
+        "last_names": ["Smith", "Johnson", "Williams", "Brown", "Jones"],
+        "name_order": "western",
+        "titles": { "male": ["Mr."], "female": ["Ms."] },
+        "academic_titles": ["Dr.", "Prof."]
+      }
+    ],
+    "email_domains": ["example.com", "company.com"],
+    "username_patterns": ["{first_initial}{last_name}", "{first_name}.{last_name}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "New Year's Day", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.05, "observe_weekend_rule": true },
+      { "name": "Christmas Day", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": true }
+    ],
+    "easter_relative": [],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": []
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.21,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.21,
+      "small_business_threshold": null
+    },
+    "vat": {
+      "standard_rate": 0.0,
+      "reduced_rates": [],
+      "zero_rated": [],
+      "exempt": [],
+      "registration_threshold": null,
+      "filing_frequency": "quarterly",
+      "reverse_charge_applicable": false
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.0,
+      "dividends_foreign_default": 0.30,
+      "interest": 0.0,
+      "royalties": 0.0,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [],
+      "social_security": {},
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": false,
+      "methods": [],
+      "safe_harbor_rules": false
+    },
+    "subnational": []
+  },
+
+  "address": {
+    "format_template": "{building_number} {street}\n{city}, {state} {postal_code}",
+    "components": {
+      "street_names": ["Main Street", "First Avenue", "Oak Drive", "Maple Lane", "Park Road"],
+      "city_names": ["Springfield", "Franklin", "Madison", "Georgetown", "Clinton"],
+      "state_names": [],
+      "state_codes": []
+    },
+    "postal_code": {
+      "format": "NNNNN",
+      "regex": "^[0-9]{5}$",
+      "ranges": [{ "from": "00000", "to": "99999" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 9999]
+    },
+    "country_calling_code": "+1"
+  },
+
+  "phone": {
+    "country_calling_code": "+1",
+    "formats": {
+      "landline": "+1-{area_code}-{n3}-{n4}",
+      "mobile": "+1-{area_code}-{n3}-{n4}",
+      "freephone": "+1-800-{n3}-{n4}"
+    },
+    "area_codes": ["212", "312", "415", "713", "305"],
+    "subscriber_length": { "min": 7, "max": 7 },
+    "display_format": "({area_code}) {n3}-{n4}"
+  },
+
+  "banking": {
+    "account_format": "domestic",
+    "iban": {
+      "country_prefix": "",
+      "length": 0,
+      "bban_structure": "",
+      "check_digit_algorithm": ""
+    },
+    "domestic_format": {
+      "routing_number_length": 9,
+      "account_number_length": 12,
+      "format_template": "{routing_number} / {account_number}"
+    },
+    "bank_names": ["First National Bank", "Central Bank", "Commerce Bank"],
+    "swift_prefix": "",
+    "payment_systems": ["ACH", "Wire"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 3,
+      "wire_cutoff_time": "14:00",
+      "direct_debit_lead_days": 2
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Passport", "Driver's License"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "INV-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["invoice_number", "date", "amount"],
+      "retention_years": 7,
+      "electronic_invoice_mandatory": false,
+      "e_invoice_format": ""
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [10, 30, 45, 60, 90],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.0, "base_rate_reference": "" }
+    },
+    "approval_thresholds": {
+      "currency": "USD",
+      "levels": [
+        { "up_to": 5000, "approver": "team_lead" },
+        { "up_to": 50000, "approver": "department_head" },
+        { "up_to": 250000, "approver": "director" },
+        { "above": 250000, "approver": "cfo" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "",
+      "pseudonymization_required": false,
+      "retention_limits": {
+        "employee_data_years": 7,
+        "financial_records_years": 7,
+        "tax_records_years": 7
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "LLC", "name": "Limited Liability Company", "name_en": "Limited Liability Company", "weight": 0.40 },
+      { "code": "Inc.", "name": "Incorporated", "name_en": "Incorporated", "weight": 0.35 },
+      { "code": "Corp.", "name": "Corporation", "name_en": "Corporation", "weight": 0.25 }
+    ],
+    "tax_id_format": {
+      "name": "Tax ID",
+      "format": "NN-NNNNNNN",
+      "regex": "^[0-9]{2}-[0-9]{7}$"
+    },
+    "vat_id_format": {
+      "name": "",
+      "prefix": "",
+      "format": "",
+      "regex": ""
+    },
+    "registration_authority": "",
+    "registration_format": ""
+  },
+
+  "accounting": {
+    "framework": "us_gaap",
+    "secondary_framework": null,
+    "local_gaap_name": "",
+    "chart_of_accounts": {
+      "standard": "generic",
+      "numbering_length": 4,
+      "account_ranges": {}
+    },
+    "audit_framework": "pcaob",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": [],
+      "filing_requirements": []
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "biweekly",
+    "currency": "USD",
+    "statutory_deductions": [],
+    "employer_contributions": [],
+    "minimum_wage": { "hourly": 7.25, "currency": "USD", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 0.0,
+      "statutory_annual_leave_days": 0,
+      "common_annual_leave_days": 15
+    },
+    "thirteenth_month": false,
+    "severance": { "statutory": false, "formula": "" }
+  },
+
+  "vendor_templates": {
+    "name_patterns": ["{industry_word} {entity_suffix}", "{city} {industry_word} {entity_suffix}"],
+    "industry_words": {
+      "manufacturing": ["Manufacturing", "Industrial", "Precision", "Engineering"],
+      "services": ["Consulting", "Services", "Solutions", "Partners"],
+      "technology": ["Systems", "Software", "Technologies", "Digital"],
+      "supplies": ["Supply", "Materials", "Wholesale", "Distribution"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": ["{industry_word} {entity_suffix}", "{city} {industry_word}"],
+    "industry_words": {
+      "retail": ["Retail", "Stores", "Market", "Trading"],
+      "enterprise": ["Group", "Holdings", "Corporation", "Enterprises"],
+      "public_sector": ["City of", "Department of", "Authority"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Steel Sheet", "Aluminum Profile", "Plastic Granulate", "Copper Wire"],
+      "components": ["Gear Assembly", "Hydraulic Cylinder", "Control Module", "Sensor Unit"],
+      "finished_goods": ["Machine Tool", "Conveyor System", "Test Bench"],
+      "consumables": ["Coolant", "Abrasive", "Gaskets", "Screws"],
+      "office_supplies": ["Printer Paper", "Toner", "Office Furniture"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Each",
+      "kg": "Kilogram",
+      "liter": "Liter",
+      "meter": "Meter",
+      "box": "Box"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": ["Purchase Order {po_number} — {vendor_name}"],
+      "line_descriptions": ["Delivery of {material} per specification", "Maintenance service for {asset}"],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": ["Invoice No. {invoice_number}"],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": ["Posting {doc_type} {doc_number}", "Accrual {period}", "Period close {period}"]
+    }
+  }
+}

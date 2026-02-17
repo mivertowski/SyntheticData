@@ -1,0 +1,421 @@
+{
+  "schema_version": "1.0",
+  "country_code": "GB",
+  "country_name": "United Kingdom",
+  "region": "EMEA",
+
+  "locale": {
+    "language_code": "en",
+    "language_name": "English",
+    "default_currency": "GBP",
+    "currency_symbol": "£",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "DD/MM/YYYY",
+      "long": "D MMMM YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Europe/London",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 4,
+      "start_day": 6,
+      "variant": "custom"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "british",
+        "weight": 0.85,
+        "male_first_names": [
+          "James", "John", "Robert", "Michael", "William", "David", "Richard",
+          "Joseph", "Thomas", "Christopher", "Charles", "Daniel", "Matthew",
+          "Anthony", "Mark", "Oliver", "Harry", "George", "Jack", "Alexander",
+          "Edward", "Henry", "Benjamin", "Samuel", "Andrew", "Nicholas",
+          "Patrick", "Peter", "Simon", "Stephen", "Timothy", "Philip",
+          "Nigel", "Colin", "Graham", "Ian", "Malcolm", "Alistair",
+          "Duncan", "Rupert", "Hugh", "Callum", "Liam", "Oscar", "Archie",
+          "Arthur", "Freddie", "Theo", "Noah", "Leo"
+        ],
+        "female_first_names": [
+          "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Susan",
+          "Jessica", "Sarah", "Karen", "Emma", "Charlotte", "Olivia",
+          "Amelia", "Isla", "Sophia", "Grace", "Florence", "Poppy",
+          "Isabella", "Daisy", "Margaret", "Dorothy", "Helen", "Catherine",
+          "Victoria", "Anne", "Louise", "Claire", "Fiona", "Nicola",
+          "Rachel", "Laura", "Rebecca", "Hannah", "Sophie", "Emily",
+          "Alice", "Eleanor", "Megan", "Lucy", "Chloe", "Abigail",
+          "Ruby", "Lily", "Rosie", "Harriet", "Imogen", "Phoebe",
+          "Jasmine", "Ava"
+        ],
+        "last_names": [
+          "Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans",
+          "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker",
+          "Robinson", "Wood", "Thompson", "White", "Watson", "Jackson",
+          "Wright", "Green", "Harris", "Cooper", "King", "Lee", "Martin",
+          "Clarke", "James", "Morgan", "Hughes", "Edwards", "Hill", "Moore",
+          "Clark", "Harrison", "Scott", "Young", "Morris", "Hall", "Ward",
+          "Turner", "Carter", "Phillips", "Mitchell", "Patel", "Adams",
+          "Campbell", "Anderson", "Allen", "Cook"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr"], "female": ["Ms", "Mrs"] },
+        "academic_titles": ["Dr", "Prof"]
+      },
+      {
+        "culture_id": "south_asian_british",
+        "weight": 0.15,
+        "male_first_names": [
+          "Mohammed", "Raj", "Amit", "Sanjay", "Vikram", "Ravi", "Arun",
+          "Deepak", "Suresh", "Nikhil"
+        ],
+        "female_first_names": [
+          "Priya", "Anita", "Sita", "Deepa", "Meera", "Lakshmi", "Kavita",
+          "Nisha", "Sunita", "Pooja"
+        ],
+        "last_names": [
+          "Patel", "Singh", "Khan", "Sharma", "Ali", "Begum", "Ahmed",
+          "Kumar", "Shah", "Hussain"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr"], "female": ["Ms"] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.co.uk", "company.co.uk", "firm.uk", "business.co.uk"],
+    "username_patterns": ["{first_initial}{last_name}", "{first_name}.{last_name}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "New Year's Day", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Christmas Day", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Boxing Day", "name_en": "Boxing Day", "month": 12, "day": 26, "activity_multiplier": 0.02, "observe_weekend_rule": true }
+    ],
+    "easter_relative": [
+      { "name": "Good Friday", "name_en": "Good Friday", "offset_days": -2, "activity_multiplier": 0.02 },
+      { "name": "Easter Monday", "name_en": "Easter Monday", "offset_days": 1, "activity_multiplier": 0.02 }
+    ],
+    "nth_weekday": [
+      { "name": "Early May Bank Holiday", "name_en": "Early May Bank Holiday", "month": 5, "weekday": "monday", "occurrence": 1, "activity_multiplier": 0.02 }
+    ],
+    "last_weekday": [
+      { "name": "Spring Bank Holiday", "name_en": "Spring Bank Holiday", "month": 5, "weekday": "monday", "activity_multiplier": 0.02 },
+      { "name": "Summer Bank Holiday", "name_en": "Summer Bank Holiday", "month": 8, "weekday": "monday", "activity_multiplier": 0.02 }
+    ],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": []
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.25,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.25,
+      "small_business_threshold": 50000.0
+    },
+    "vat": {
+      "standard_rate": 0.20,
+      "reduced_rates": [
+        { "rate": 0.05, "label": "reduced", "applies_to": ["home_energy", "children_car_seats", "sanitary_products"] }
+      ],
+      "zero_rated": ["food", "children_clothing", "books", "newspapers"],
+      "exempt": ["financial_services", "insurance", "education", "healthcare"],
+      "registration_threshold": 85000.0,
+      "filing_frequency": "quarterly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.0,
+      "dividends_foreign_default": 0.0,
+      "interest": 0.20,
+      "royalties": 0.20,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 12570, "rate": 0.0 },
+        { "up_to": 50270, "rate": 0.20 },
+        { "up_to": 125140, "rate": 0.40 },
+        { "above": 125140, "rate": 0.45 }
+      ],
+      "social_security": {
+        "national_insurance": {
+          "employee_rate": 0.08,
+          "employer_rate": 0.138,
+          "primary_threshold": 12570,
+          "upper_earnings_limit": 50270
+        }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": []
+  },
+
+  "address": {
+    "format_template": "{building_number} {street}\n{city}\n{postal_code}",
+    "components": {
+      "street_names": [
+        "High Street", "Church Road", "Station Road", "Victoria Road",
+        "Mill Lane", "King Street", "Queen Street", "Park Road",
+        "London Road", "Manor Road"
+      ],
+      "city_names": [
+        "London", "Birmingham", "Manchester", "Leeds", "Glasgow",
+        "Liverpool", "Bristol", "Sheffield", "Edinburgh", "Cardiff"
+      ],
+      "state_names": [
+        "England", "Scotland", "Wales", "Northern Ireland"
+      ],
+      "state_codes": ["ENG", "SCT", "WLS", "NIR"]
+    },
+    "postal_code": {
+      "format": "AN NAA",
+      "regex": "^[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}$",
+      "ranges": []
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 200]
+    },
+    "country_calling_code": "+44"
+  },
+
+  "phone": {
+    "country_calling_code": "+44",
+    "formats": {
+      "landline": "+44-{area_code}-{subscriber}",
+      "mobile": "+44-7{n3}-{n6}",
+      "freephone": "+44-800-{n7}"
+    },
+    "area_codes": ["20", "121", "131", "141", "151", "161", "113", "114", "117", "29"],
+    "subscriber_length": { "min": 7, "max": 8 },
+    "display_format": "0{area_code} {subscriber}"
+  },
+
+  "banking": {
+    "account_format": "both",
+    "iban": {
+      "country_prefix": "GB",
+      "length": 22,
+      "bban_structure": "{sort_code:6}{account_number:8}",
+      "check_digit_algorithm": "mod97"
+    },
+    "domestic_format": {
+      "routing_number_length": 6,
+      "account_number_length": 8,
+      "format_template": "{sort_code} / {account_number}"
+    },
+    "bank_names": [
+      "HSBC Holdings", "Barclays", "Lloyds Banking Group",
+      "NatWest Group", "Standard Chartered", "Santander UK"
+    ],
+    "swift_prefix": "GB",
+    "payment_systems": ["BACS", "CHAPS", "Faster Payments"],
+    "settlement_rules": {
+      "domestic_transfer_days": 0,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "15:30",
+      "direct_debit_lead_days": 3
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Passport", "Driving Licence", "Biometric Residence Permit"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "INV-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["company_number", "vat_number", "invoice_number", "date"],
+      "retention_years": 6,
+      "electronic_invoice_mandatory": false,
+      "e_invoice_format": "UBL"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [14, 30, 60],
+      "early_payment_discount": { "common_rate": 0.025, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.08, "base_rate_reference": "Bank of England" }
+    },
+    "approval_thresholds": {
+      "currency": "GBP",
+      "levels": [
+        { "up_to": 5000, "approver": "team_lead" },
+        { "up_to": 25000, "approver": "department_head" },
+        { "up_to": 100000, "approver": "director" },
+        { "above": 100000, "approver": "board" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "UK GDPR",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 6,
+        "financial_records_years": 6,
+        "tax_records_years": 6
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "Ltd", "name": "Private Limited Company", "name_en": "Private Limited Company", "weight": 0.50 },
+      { "code": "plc", "name": "Public Limited Company", "name_en": "Public Limited Company", "weight": 0.15 },
+      { "code": "LLP", "name": "Limited Liability Partnership", "name_en": "Limited Liability Partnership", "weight": 0.20 },
+      { "code": "CIC", "name": "Community Interest Company", "name_en": "Community Interest Company", "weight": 0.05 },
+      { "code": "Sole Trader", "name": "Sole Trader", "name_en": "Sole Trader", "weight": 0.10 }
+    ],
+    "tax_id_format": {
+      "name": "National Insurance Number",
+      "format": "AANNNNNNA",
+      "regex": "^[A-Z]{2}[0-9]{6}[A-D]$"
+    },
+    "vat_id_format": {
+      "name": "VAT Registration Number",
+      "prefix": "GB",
+      "format": "GB NNN NNNN NN",
+      "regex": "^GB[0-9]{9}$"
+    },
+    "registration_authority": "Companies House",
+    "registration_format": "{NNNNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": "local_gaap",
+    "local_gaap_name": "FRS 102",
+    "chart_of_accounts": {
+      "standard": "generic",
+      "numbering_length": 4,
+      "account_ranges": {}
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Companies Act 2006", "FRS 102"],
+      "filing_requirements": [
+        { "name": "Annual Accounts", "name_en": "Annual Accounts", "deadline_months_after_ye": 9 },
+        { "name": "Corporation Tax Return", "name_en": "Corporation Tax Return", "deadline_months_after_ye": 12 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "GBP",
+    "statutory_deductions": [
+      { "code": "PAYE", "name": "Pay As You Earn", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "NI_EE", "name": "National Insurance (Employee)", "name_en": "National Insurance", "type": "percentage", "rate": 0.08 }
+    ],
+    "employer_contributions": [
+      { "code": "NI_ER", "name": "National Insurance (Employer)", "name_en": "Employer NI", "type": "percentage", "rate": 0.138 },
+      { "code": "PENSION_ER", "name": "Pension (Employer)", "name_en": "Employer Pension", "type": "percentage", "rate": 0.03 }
+    ],
+    "minimum_wage": { "hourly": 11.44, "currency": "GBP", "effective_date": "2024-04-01" },
+    "working_hours": {
+      "standard_weekly": 37.5,
+      "max_daily": 0.0,
+      "statutory_annual_leave_days": 28,
+      "common_annual_leave_days": 28
+    },
+    "thirteenth_month": false,
+    "severance": {
+      "statutory": true,
+      "formula": "weeks_pay * years_of_service (capped)"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} & {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Engineering", "Manufacturing", "Precision", "Industrial"],
+      "services": ["Consulting", "Services", "Solutions", "Advisory"],
+      "technology": ["Systems", "Software", "Technologies", "Digital"],
+      "supplies": ["Supply", "Materials", "Wholesale", "Distribution"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Retail", "Stores", "Trading", "Merchants"],
+      "enterprise": ["Group", "Holdings", "Corporation", "Enterprises"],
+      "public_sector": ["Council", "Authority", "Trust"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Steel Sheet", "Aluminium Profile", "Plastic Granulate", "Copper Wire"],
+      "components": ["Gear Assembly", "Hydraulic Cylinder", "Control Module", "Sensor Unit"],
+      "finished_goods": ["Machine Tool", "Conveyor System", "Test Bench"],
+      "consumables": ["Coolant", "Abrasive", "Gaskets", "Screws"],
+      "office_supplies": ["Printer Paper", "Toner", "Office Furniture"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Each",
+      "kg": "Kilogramme",
+      "liter": "Litre",
+      "meter": "Metre",
+      "box": "Box"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Purchase Order {po_number} — {vendor_name}",
+        "Framework Order per Agreement {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Supply of {material} per specification",
+        "Maintenance service for {asset}",
+        "Consultancy services: {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Invoice No. {invoice_number}",
+        "Credit Note No. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "Posting {doc_type} {doc_number}",
+        "Accrual {period}",
+        "Period close {period}"
+      ]
+    }
+  }
+}

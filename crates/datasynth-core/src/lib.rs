@@ -17,6 +17,7 @@
 pub mod accounts;
 pub mod causal;
 pub mod compliance;
+pub mod country;
 pub mod cpu_monitor;
 pub mod degradation;
 pub mod diffusion;
@@ -34,6 +35,7 @@ pub mod templates;
 pub mod traits;
 pub mod uuid_factory;
 
+pub use country::{CountryCode, CountryPack, CountryPackError, CountryPackRegistry};
 pub use cpu_monitor::*;
 pub use degradation::*;
 pub use disk_guard::*;

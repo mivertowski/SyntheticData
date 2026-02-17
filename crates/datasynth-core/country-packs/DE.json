@@ -1,0 +1,456 @@
+{
+  "schema_version": "1.0",
+  "country_code": "DE",
+  "country_name": "Germany",
+  "region": "EMEA",
+
+  "locale": {
+    "language_code": "de",
+    "language_name": "German",
+    "default_currency": "EUR",
+    "currency_symbol": "€",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "DD.MM.YYYY",
+      "long": "D. MMMM YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Europe/Berlin",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "german",
+        "weight": 0.85,
+        "male_first_names": [
+          "Hans", "Klaus", "Wolfgang", "Dieter", "Jürgen", "Peter", "Michael",
+          "Thomas", "Andreas", "Stefan", "Markus", "Christian", "Martin", "Frank",
+          "Bernd", "Uwe", "Ralf", "Werner", "Heinz", "Helmut", "Gerhard",
+          "Manfred", "Horst", "Karl", "Heinrich", "Friedrich", "Wilhelm", "Otto",
+          "Matthias", "Tobias", "Sebastian", "Florian", "Alexander", "Maximilian",
+          "Felix", "Lukas", "Jonas", "Leon", "Paul", "Philipp", "Tim", "Jan",
+          "Nico", "Erik", "Lars", "Sven", "Kai", "Olaf", "Rainer"
+        ],
+        "female_first_names": [
+          "Anna", "Maria", "Elisabeth", "Ursula", "Helga", "Monika", "Petra",
+          "Sabine", "Karin", "Renate", "Ingrid", "Brigitte", "Gisela", "Erika",
+          "Christa", "Andrea", "Claudia", "Susanne", "Birgit", "Heike", "Martina",
+          "Nicole", "Stefanie", "Julia", "Katharina", "Christina", "Sandra",
+          "Melanie", "Daniela", "Anja", "Tanja", "Simone", "Silke", "Nadine",
+          "Yvonne", "Manuela", "Sonja", "Michaela", "Angelika", "Barbara",
+          "Gabriele", "Beate", "Doris", "Eva", "Franziska", "Lena", "Hannah",
+          "Sophie", "Leonie", "Laura"
+        ],
+        "last_names": [
+          "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner",
+          "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch", "Bauer", "Richter",
+          "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Zimmermann", "Braun",
+          "Krüger", "Hofmann", "Hartmann", "Lange", "Schmitt", "Werner", "Schmitz",
+          "Krause", "Meier", "Lehmann", "Schmid", "Schulze", "Maier", "Köhler",
+          "Herrmann", "König", "Walter", "Mayer", "Huber", "Kaiser", "Fuchs",
+          "Peters", "Lang", "Scholz", "Möller", "Weiß", "Jung", "Hahn", "Schubert"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Herr"], "female": ["Frau"] },
+        "academic_titles": ["Dr.", "Prof.", "Prof. Dr.", "Dipl.-Ing."]
+      },
+      {
+        "culture_id": "turkish_german",
+        "weight": 0.15,
+        "male_first_names": [
+          "Mehmet", "Ali", "Mustafa", "Ahmet", "Hasan", "Ibrahim", "Emre",
+          "Yusuf", "Kemal", "Burak"
+        ],
+        "female_first_names": [
+          "Ayşe", "Fatma", "Emine", "Hatice", "Zeynep", "Elif", "Meryem",
+          "Leyla", "Derya", "Gül"
+        ],
+        "last_names": [
+          "Yılmaz", "Kaya", "Demir", "Çelik", "Şahin", "Yıldız", "Öztürk",
+          "Aydın", "Özdemir", "Arslan"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Herr"], "female": ["Frau"] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.de", "firma.de", "unternehmen.de", "beispiel.de"],
+    "username_patterns": ["{first_initial}{last_name}", "{first_name}.{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "Neujahr", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Tag der Arbeit", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Tag der Deutschen Einheit", "name_en": "German Unity Day", "month": 10, "day": 3, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "1. Weihnachtstag", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "2. Weihnachtstag", "name_en": "St. Stephen's Day", "month": 12, "day": 26, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Silvester", "name_en": "New Year's Eve", "month": 12, "day": 31, "activity_multiplier": 0.1, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [
+      { "name": "Karfreitag", "name_en": "Good Friday", "offset_days": -2, "activity_multiplier": 0.02 },
+      { "name": "Ostermontag", "name_en": "Easter Monday", "offset_days": 1, "activity_multiplier": 0.02 },
+      { "name": "Christi Himmelfahrt", "name_en": "Ascension Day", "offset_days": 39, "activity_multiplier": 0.02 },
+      { "name": "Pfingstmontag", "name_en": "Whit Monday", "offset_days": 50, "activity_multiplier": 0.02 }
+    ],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Weihnachtszeit",
+        "name_en": "Christmas Season",
+        "start": { "month": 12, "day": 24 },
+        "end": { "month": 12, "day": 26 },
+        "activity_multiplier": 0.02,
+        "description": "Extended holiday period with near-zero business activity"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.15,
+      "trade_tax_rate": 0.14,
+      "solidarity_surcharge": 0.055,
+      "effective_combined_rate": 0.2975,
+      "small_business_threshold": null
+    },
+    "vat": {
+      "standard_rate": 0.19,
+      "reduced_rates": [
+        { "rate": 0.07, "label": "reduced", "applies_to": ["food", "books", "public_transport"] }
+      ],
+      "zero_rated": ["exports", "intra_eu_supplies"],
+      "exempt": ["financial_services", "insurance", "healthcare", "education"],
+      "registration_threshold": null,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.25,
+      "dividends_foreign_default": 0.2638,
+      "interest": 0.0,
+      "royalties": 0.15,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 11604, "rate": 0.0 },
+        { "up_to": 17005, "rate": 0.14 },
+        { "up_to": 66760, "rate": 0.2397 },
+        { "up_to": 277825, "rate": 0.42 },
+        { "above": 277825, "rate": 0.45 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.093, "employer_rate": 0.093, "ceiling_annual": 90600 },
+        "health": { "employee_rate": 0.073, "employer_rate": 0.073, "ceiling_annual": 62100 },
+        "unemployment": { "employee_rate": 0.013, "employer_rate": 0.013, "ceiling_annual": 90600 },
+        "long_term_care": { "employee_rate": 0.017, "employer_rate": 0.017, "ceiling_annual": 62100 }
+      },
+      "church_tax_rate": 0.08
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": [
+      { "code": "BW", "name": "Baden-Wuerttemberg", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "BY", "name": "Bavaria", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "BE", "name": "Berlin", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "BB", "name": "Brandenburg", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "HB", "name": "Bremen", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "HH", "name": "Hamburg", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "HE", "name": "Hesse", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "MV", "name": "Mecklenburg-Vorpommern", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "NI", "name": "Lower Saxony", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "NW", "name": "North Rhine-Westphalia", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "RP", "name": "Rhineland-Palatinate", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "SL", "name": "Saarland", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "SN", "name": "Saxony", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "ST", "name": "Saxony-Anhalt", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "SH", "name": "Schleswig-Holstein", "rate": 0.0, "tax_type": "trade_tax" },
+      { "code": "TH", "name": "Thuringia", "rate": 0.0, "tax_type": "trade_tax" }
+    ]
+  },
+
+  "address": {
+    "format_template": "{street} {building_number}\n{postal_code} {city}",
+    "components": {
+      "street_names": [
+        "Hauptstraße", "Bahnhofstraße", "Berliner Straße", "Industriestraße",
+        "Schulstraße", "Gartenstraße", "Kirchstraße", "Waldstraße",
+        "Lindenstraße", "Friedrichstraße"
+      ],
+      "city_names": [
+        "München", "Berlin", "Hamburg", "Frankfurt", "Stuttgart", "Düsseldorf",
+        "Köln", "Leipzig", "Dresden", "Hannover"
+      ],
+      "state_names": [
+        "Bayern", "Baden-Württemberg", "Nordrhein-Westfalen", "Hessen",
+        "Niedersachsen", "Sachsen", "Berlin", "Hamburg"
+      ],
+      "state_codes": ["BY", "BW", "NW", "HE", "NI", "SN", "BE", "HH"]
+    },
+    "postal_code": {
+      "format": "NNNNN",
+      "regex": "^[0-9]{5}$",
+      "ranges": [{ "from": "01000", "to": "99999" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 200]
+    },
+    "country_calling_code": "+49"
+  },
+
+  "phone": {
+    "country_calling_code": "+49",
+    "formats": {
+      "landline": "+49-{area_code}-{subscriber}",
+      "mobile": "+49-1{n2}-{n7}",
+      "freephone": "+49-800-{n7}"
+    },
+    "area_codes": ["30", "40", "69", "89", "211", "221", "341", "351", "511", "711"],
+    "subscriber_length": { "min": 6, "max": 8 },
+    "display_format": "0{area_code} {subscriber}"
+  },
+
+  "banking": {
+    "account_format": "IBAN",
+    "iban": {
+      "country_prefix": "DE",
+      "length": 22,
+      "bban_structure": "{bank_code:8}{account_number:10}",
+      "check_digit_algorithm": "mod97"
+    },
+    "domestic_format": null,
+    "bank_names": [
+      "Deutsche Bank AG", "Commerzbank AG", "DZ Bank AG",
+      "KfW Bankengruppe", "Bayerische Landesbank",
+      "Landesbank Baden-Württemberg"
+    ],
+    "swift_prefix": "DE",
+    "payment_systems": ["SEPA", "TARGET2"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "14:00",
+      "direct_debit_lead_days": 5
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Personalausweis", "Reisepass", "Aufenthaltserlaubnis"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "RE-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["tax_id", "vat_number", "sequential_number", "issue_date"],
+      "retention_years": 10,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "ZUGFeRD"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [14, 30, 45, 60, 90],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.0912, "base_rate_reference": "ECB" }
+    },
+    "approval_thresholds": {
+      "currency": "EUR",
+      "levels": [
+        { "up_to": 5000, "approver": "team_lead" },
+        { "up_to": 25000, "approver": "department_head" },
+        { "up_to": 100000, "approver": "director" },
+        { "above": 100000, "approver": "board" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "GDPR",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 3,
+        "financial_records_years": 10,
+        "tax_records_years": 10
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "GmbH", "name": "Gesellschaft mit beschränkter Haftung", "name_en": "Limited Liability Company", "weight": 0.40 },
+      { "code": "AG", "name": "Aktiengesellschaft", "name_en": "Stock Corporation", "weight": 0.15 },
+      { "code": "KG", "name": "Kommanditgesellschaft", "name_en": "Limited Partnership", "weight": 0.10 },
+      { "code": "OHG", "name": "Offene Handelsgesellschaft", "name_en": "General Partnership", "weight": 0.05 },
+      { "code": "e.K.", "name": "eingetragener Kaufmann", "name_en": "Registered Merchant", "weight": 0.15 },
+      { "code": "GmbH & Co. KG", "name": "GmbH & Co. Kommanditgesellschaft", "name_en": "Limited Partnership with GmbH as GP", "weight": 0.15 }
+    ],
+    "tax_id_format": {
+      "name": "Steuernummer",
+      "format": "NNN/NNN/NNNNN",
+      "regex": "^[0-9]{3}/[0-9]{3}/[0-9]{5}$"
+    },
+    "vat_id_format": {
+      "name": "Umsatzsteuer-Identifikationsnummer",
+      "prefix": "DE",
+      "format": "DE NNNNNNNNN",
+      "regex": "^DE[0-9]{9}$"
+    },
+    "registration_authority": "Handelsregister",
+    "registration_format": "HRB {NNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": "local_gaap",
+    "local_gaap_name": "HGB",
+    "chart_of_accounts": {
+      "standard": "SKR04",
+      "numbering_length": 4,
+      "account_ranges": {
+        "assets": { "from": "0", "to": "1" },
+        "liabilities": { "from": "2", "to": "3" },
+        "revenue": { "from": "4", "to": "4" },
+        "expenses": { "from": "5", "to": "7" },
+        "closing": { "from": "9", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["BilMoG", "HGB"],
+      "filing_requirements": [
+        { "name": "Jahresabschluss", "name_en": "Annual Financial Statements", "deadline_months_after_ye": 12 },
+        { "name": "Konzernabschluss", "name_en": "Consolidated Statements", "deadline_months_after_ye": 4 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "EUR",
+    "statutory_deductions": [
+      { "code": "LOHNST", "name": "Lohnsteuer", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "SOLI", "name": "Solidaritätszuschlag", "name_en": "Solidarity Surcharge", "type": "percentage", "rate": 0.055 },
+      { "code": "KiSt", "name": "Kirchensteuer", "name_en": "Church Tax", "type": "percentage", "rate": 0.08, "optional": true },
+      { "code": "RV", "name": "Rentenversicherung", "name_en": "Pension Insurance", "type": "percentage", "rate": 0.093 },
+      { "code": "KV", "name": "Krankenversicherung", "name_en": "Health Insurance", "type": "percentage", "rate": 0.073 },
+      { "code": "AV", "name": "Arbeitslosenversicherung", "name_en": "Unemployment Insurance", "type": "percentage", "rate": 0.013 },
+      { "code": "PV", "name": "Pflegeversicherung", "name_en": "Long-Term Care Insurance", "type": "percentage", "rate": 0.017 }
+    ],
+    "employer_contributions": [
+      { "code": "RV_AG", "name": "Rentenversicherung (AG)", "name_en": "Pension Insurance (Employer)", "type": "percentage", "rate": 0.093 },
+      { "code": "KV_AG", "name": "Krankenversicherung (AG)", "name_en": "Health Insurance (Employer)", "type": "percentage", "rate": 0.073 },
+      { "code": "AV_AG", "name": "Arbeitslosenversicherung (AG)", "name_en": "Unemployment Insurance (Employer)", "type": "percentage", "rate": 0.013 },
+      { "code": "PV_AG", "name": "Pflegeversicherung (AG)", "name_en": "Long-Term Care Insurance (Employer)", "type": "percentage", "rate": 0.017 },
+      { "code": "BG", "name": "Berufsgenossenschaft", "name_en": "Occupational Insurance", "type": "percentage", "rate": 0.013 }
+    ],
+    "minimum_wage": { "hourly": 12.41, "currency": "EUR", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 10.0,
+      "statutory_annual_leave_days": 20,
+      "common_annual_leave_days": 30
+    },
+    "thirteenth_month": false,
+    "severance": {
+      "statutory": true,
+      "formula": "0.5 * monthly_salary * years_of_service"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} & {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Maschinenbau", "Präzisionsteile", "Werkzeug", "Fertigungstechnik", "Metallverarbeitung"],
+      "services": ["Beratung", "Dienstleistungen", "Logistik", "Consulting"],
+      "technology": ["Systemtechnik", "Softwareentwicklung", "Datentechnik", "Digitale Lösungen"],
+      "supplies": ["Bürobedarf", "Industriebedarf", "Verbrauchsmaterial"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Handelsgesellschaft", "Warenhaus", "Einzelhandel", "Versandhaus"],
+      "enterprise": ["Konzern", "Holding", "Gruppe", "Unternehmensgruppe"],
+      "public_sector": ["Stadtverwaltung", "Landratsamt", "Behörde"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Stahlblech", "Aluminiumprofile", "Kunststoffgranulat", "Kupferdraht"],
+      "components": ["Getriebe", "Hydraulikzylinder", "Steuerungsmodul", "Sensoreinheit"],
+      "finished_goods": ["Werkzeugmaschine", "Förderanlage", "Prüfstand"],
+      "consumables": ["Kühlschmierstoff", "Schleifmittel", "Dichtungen", "Schrauben"],
+      "office_supplies": ["Druckerpapier", "Toner", "Büromöbel"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Stück",
+      "kg": "Kilogramm",
+      "liter": "Liter",
+      "meter": "Meter",
+      "box": "Karton"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Bestellung Nr. {po_number} — {vendor_name}",
+        "Rahmenbestellung gemäß Vertrag {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Lieferung {material} gemäß Spezifikation",
+        "Wartungsservice für {asset}",
+        "Beratungsleistung {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Rechnung Nr. {invoice_number}",
+        "Gutschrift Nr. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "Buchung {doc_type} {doc_number}",
+        "Abgrenzung {period}",
+        "Periodenabschluss {period}"
+      ]
+    }
+  }
+}
