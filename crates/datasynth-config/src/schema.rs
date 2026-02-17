@@ -180,6 +180,9 @@ pub struct GeneratorConfig {
     /// ESG / Sustainability reporting configuration
     #[serde(default)]
     pub esg: EsgConfig,
+    /// Country pack configuration (external packs directory, per-country overrides)
+    #[serde(default)]
+    pub country_packs: Option<CountryPacksSchemaConfig>,
 }
 
 /// LLM enrichment configuration.
@@ -11793,6 +11796,22 @@ impl Default for EsgConfig {
             anomaly_rate: default_esg_anomaly_rate(),
         }
     }
+}
+
+/// Country pack configuration.
+///
+/// Controls where to load additional country packs and per-country overrides.
+/// When omitted, only the built-in packs (_default, US, DE, GB) are used.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CountryPacksSchemaConfig {
+    /// Optional directory containing additional `*.json` country packs.
+    #[serde(default)]
+    pub external_dir: Option<PathBuf>,
+    /// Per-country overrides applied after loading.
+    /// Keys are ISO 3166-1 alpha-2 codes; values are partial JSON objects
+    /// that are deep-merged on top of the loaded pack.
+    #[serde(default)]
+    pub overrides: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Environmental metrics configuration.

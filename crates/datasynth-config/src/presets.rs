@@ -86,6 +86,7 @@ pub fn create_preset(
         treasury: get_treasury_config(industry),
         project_accounting: get_project_accounting_config(industry),
         esg: get_esg_config(industry),
+        country_packs: None,
     }
 }
 

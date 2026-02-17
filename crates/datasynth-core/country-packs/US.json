@@ -93,7 +93,7 @@
       { "name": "Labor Day", "name_en": "Labor Day", "month": 9, "weekday": "monday", "occurrence": 1, "activity_multiplier": 0.05 },
       { "name": "Columbus Day", "name_en": "Columbus Day", "month": 10, "weekday": "monday", "occurrence": 2, "activity_multiplier": 0.2 },
       { "name": "Thanksgiving", "name_en": "Thanksgiving Day", "month": 11, "weekday": "thursday", "occurrence": 4, "activity_multiplier": 0.02 },
-      { "name": "Day after Thanksgiving", "name_en": "Day after Thanksgiving", "month": 11, "weekday": "friday", "occurrence": 4, "activity_multiplier": 0.1 }
+      { "name": "Day after Thanksgiving", "name_en": "Day after Thanksgiving", "month": 11, "weekday": "thursday", "occurrence": 4, "offset_days": 1, "activity_multiplier": 0.1 }
     ],
     "last_weekday": [
       { "name": "Memorial Day", "name_en": "Memorial Day", "month": 5, "weekday": "monday", "activity_multiplier": 0.05 }

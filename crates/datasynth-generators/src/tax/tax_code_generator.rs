@@ -519,6 +519,295 @@ impl TaxCodeGenerator {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Country-pack-driven generation
+    // -----------------------------------------------------------------------
+
+    /// Generates tax jurisdictions and tax codes from a [`CountryPack`].
+    ///
+    /// This is an **alternative** to [`generate()`](Self::generate) that reads
+    /// tax rates and sub-national jurisdictions from a country pack instead of
+    /// using the hardcoded constants. If the pack carries no meaningful tax data
+    /// (e.g. `standard_rate == 0.0` and no sub-national entries), the method
+    /// returns empty vectors so the caller can fall back to `generate()`.
+    ///
+    /// # Arguments
+    ///
+    /// * `pack` - The country pack whose tax data should drive generation.
+    /// * `company_code` - Company code used to prefix generated IDs.
+    /// * `fiscal_year` - Fiscal year; used to derive the effective date
+    ///   (January 1 of that year).
+    pub fn generate_from_country_pack(
+        &mut self,
+        pack: &datasynth_core::CountryPack,
+        company_code: &str,
+        fiscal_year: i32,
+    ) -> (Vec<TaxJurisdiction>, Vec<TaxCode>) {
+        let tax = &pack.tax;
+        let country_code = pack.country_code.as_str();
+        let country_name = if pack.country_name.is_empty() {
+            country_code
+        } else {
+            pack.country_name.as_str()
+        };
+
+        // Guard: if the pack has no meaningful tax data, return empty.
+        let has_vat = tax.vat.standard_rate > 0.0;
+        let has_cit = tax.corporate_income_tax.standard_rate > 0.0;
+        let has_subnational = !tax.subnational.is_empty();
+
+        if !has_vat && !has_cit && !has_subnational {
+            return (Vec::new(), Vec::new());
+        }
+
+        let effective_date = NaiveDate::from_ymd_opt(fiscal_year, 1, 1)
+            .unwrap_or_else(default_effective_date);
+
+        let mut jurisdictions = Vec::new();
+        let mut codes = Vec::new();
+        let mut counter: u32 = 1;
+
+        // -------------------------------------------------------------------
+        // Federal jurisdiction
+        // -------------------------------------------------------------------
+        let federal_id = format!("JUR-{company_code}-{country_code}");
+
+        jurisdictions.push(
+            TaxJurisdiction::new(
+                &federal_id,
+                format!("{country_name} - Federal"),
+                country_code,
+                JurisdictionType::Federal,
+            )
+            .with_vat_registered(has_vat),
+        );
+
+        // -------------------------------------------------------------------
+        // VAT/GST codes from pack
+        // -------------------------------------------------------------------
+        if has_vat {
+            let std_rate = Decimal::try_from(tax.vat.standard_rate)
+                .unwrap_or_else(|_| dec!(0));
+
+            // Determine tax type: treat country packs as VAT by default,
+            // but use GST for known GST countries.
+            let tax_type = if is_gst_country(country_code) {
+                TaxType::Gst
+            } else {
+                TaxType::Vat
+            };
+
+            let type_label = if tax_type == TaxType::Gst {
+                "GST"
+            } else {
+                "VAT"
+            };
+
+            // Standard rate code
+            let std_code_id = format!("TC-{company_code}-{counter:04}");
+            let std_mnemonic = format!("{type_label}-STD-{country_code}");
+            let std_desc = format!(
+                "{country_name} {type_label} Standard {}",
+                format_rate_pct(std_rate)
+            );
+
+            let mut std_code = TaxCode::new(
+                std_code_id,
+                std_mnemonic,
+                std_desc,
+                tax_type,
+                std_rate,
+                &federal_id,
+                effective_date,
+            );
+
+            if tax.vat.reverse_charge_applicable {
+                std_code = std_code.with_reverse_charge(true);
+            }
+
+            codes.push(std_code);
+            counter += 1;
+
+            // Reduced rate codes
+            for reduced in &tax.vat.reduced_rates {
+                if reduced.rate <= 0.0 {
+                    continue;
+                }
+                let red_rate = Decimal::try_from(reduced.rate)
+                    .unwrap_or_else(|_| dec!(0));
+
+                let label_suffix = if reduced.label.is_empty() {
+                    format_rate_pct(red_rate)
+                } else {
+                    reduced.label.clone()
+                };
+
+                let red_code_id = format!("TC-{company_code}-{counter:04}");
+                let red_mnemonic = format!("{type_label}-RED-{country_code}-{counter}");
+                let red_desc = format!(
+                    "{country_name} {type_label} Reduced {label_suffix} {}",
+                    format_rate_pct(red_rate)
+                );
+
+                codes.push(TaxCode::new(
+                    red_code_id,
+                    red_mnemonic,
+                    red_desc,
+                    tax_type,
+                    red_rate,
+                    &federal_id,
+                    effective_date,
+                ));
+                counter += 1;
+            }
+
+            // Zero-rated code (if the pack lists zero-rated categories)
+            if !tax.vat.zero_rated.is_empty() {
+                let zero_code_id = format!("TC-{company_code}-{counter:04}");
+                codes.push(TaxCode::new(
+                    zero_code_id,
+                    format!("{type_label}-ZERO-{country_code}"),
+                    format!("{country_name} {type_label} Zero Rate"),
+                    tax_type,
+                    dec!(0),
+                    &federal_id,
+                    effective_date,
+                ));
+                counter += 1;
+            }
+
+            // Exempt code (if the pack lists exempt categories)
+            if !tax.vat.exempt.is_empty() {
+                let exempt_code_id = format!("TC-{company_code}-{counter:04}");
+                codes.push(
+                    TaxCode::new(
+                        exempt_code_id,
+                        format!("{type_label}-EX-{country_code}"),
+                        format!("{country_name} Tax Exempt"),
+                        tax_type,
+                        dec!(0),
+                        &federal_id,
+                        effective_date,
+                    )
+                    .with_exempt(true),
+                );
+                counter += 1;
+            }
+        }
+
+        // -------------------------------------------------------------------
+        // Corporate income tax code
+        // -------------------------------------------------------------------
+        if has_cit {
+            let cit_rate = Decimal::try_from(tax.corporate_income_tax.standard_rate)
+                .unwrap_or_else(|_| dec!(0));
+
+            let cit_code_id = format!("TC-{company_code}-{counter:04}");
+            codes.push(TaxCode::new(
+                cit_code_id,
+                format!("CIT-{country_code}"),
+                format!(
+                    "{country_name} Corporate Income Tax {}",
+                    format_rate_pct(cit_rate)
+                ),
+                TaxType::IncomeTax,
+                cit_rate,
+                &federal_id,
+                effective_date,
+            ));
+            counter += 1;
+        }
+
+        // -------------------------------------------------------------------
+        // Sub-national jurisdictions from pack
+        // -------------------------------------------------------------------
+        for sub in &tax.subnational {
+            if sub.code.is_empty() {
+                continue;
+            }
+
+            let jur_id = format!("JUR-{company_code}-{country_code}-{}", sub.code);
+
+            let sub_name = if sub.name.is_empty() {
+                &sub.code
+            } else {
+                &sub.name
+            };
+
+            jurisdictions.push(
+                TaxJurisdiction::new(
+                    &jur_id,
+                    sub_name,
+                    country_code,
+                    JurisdictionType::State,
+                )
+                .with_region_code(&sub.code)
+                .with_parent_jurisdiction_id(&federal_id)
+                .with_vat_registered(has_vat),
+            );
+
+            // Generate a tax code for this sub-national jurisdiction if it has a rate
+            if sub.rate > 0.0 {
+                let sub_rate = Decimal::try_from(sub.rate)
+                    .unwrap_or_else(|_| dec!(0));
+
+                let sub_tax_type = match sub.tax_type.as_str() {
+                    "sales_tax" | "SalesTax" => TaxType::SalesTax,
+                    "gst" | "Gst" | "GST" => TaxType::Gst,
+                    "vat" | "Vat" | "VAT" => TaxType::Vat,
+                    "income_tax" | "IncomeTax" => TaxType::IncomeTax,
+                    _ => {
+                        // Infer from country: US → SalesTax, else VAT/GST
+                        if country_code == "US" {
+                            TaxType::SalesTax
+                        } else if is_gst_country(country_code) {
+                            TaxType::Gst
+                        } else {
+                            TaxType::Vat
+                        }
+                    }
+                };
+
+                let type_label = match sub_tax_type {
+                    TaxType::SalesTax => "ST",
+                    TaxType::Gst => "GST",
+                    TaxType::Vat => "VAT",
+                    TaxType::IncomeTax => "CIT",
+                    _ => "TAX",
+                };
+
+                let sub_code_id = format!("TC-{company_code}-{counter:04}");
+                let sub_mnemonic = format!("{type_label}-{}", sub.code);
+                let sub_desc = format!(
+                    "{sub_name} {} {}",
+                    type_label,
+                    format_rate_pct(sub_rate)
+                );
+
+                codes.push(TaxCode::new(
+                    sub_code_id,
+                    sub_mnemonic,
+                    sub_desc,
+                    sub_tax_type,
+                    sub_rate,
+                    &jur_id,
+                    effective_date,
+                ));
+                counter += 1;
+            }
+        }
+
+        // Suppress unused-variable warning for the RNG (deterministic but unused
+        // in this path; kept for future jitter / randomised selection).
+        let _ = self.rng.gen::<u32>();
+
+        (jurisdictions, codes)
+    }
+
+    // -----------------------------------------------------------------------
+    // Internal helpers
+    // -----------------------------------------------------------------------
+
     /// Resolves the standard rate for a country, applying config overrides.
     fn resolve_standard_rate(&self, country_code: &str, default_str: &str) -> Decimal {
         if let Some(&override_rate) = self.config.vat_gst.standard_rates.get(country_code) {
@@ -583,6 +872,11 @@ fn is_eu_country(cc: &str) -> bool {
             | "EL"
             | "GR"
     )
+}
+
+/// Returns `true` for countries that use GST rather than VAT.
+fn is_gst_country(cc: &str) -> bool {
+    matches!(cc, "SG" | "AU" | "NZ" | "IN" | "CA" | "MY" | "JP")
 }
 
 /// Formats a decimal rate as a percentage string (e.g., 0.19 -> "19%").

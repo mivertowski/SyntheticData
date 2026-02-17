@@ -268,6 +268,9 @@ pub struct NthWeekdayHoliday {
     /// 1-based occurrence (1=first, 2=second, ..., 4=fourth)
     #[serde(default)]
     pub occurrence: u32,
+    /// Days to add after the computed date (e.g. 1 for "day after Thanksgiving").
+    #[serde(default)]
+    pub offset_days: i32,
     #[serde(default = "default_holiday_activity")]
     pub activity_multiplier: f64,
 }
@@ -642,6 +645,10 @@ pub struct BusinessRulesConfig {
     pub approval_thresholds: ApprovalThresholdsConfig,
     #[serde(default)]
     pub data_privacy: DataPrivacyConfig,
+    /// Country-level carbon intensity multiplier for spend-based Scope 3 emissions.
+    /// Defaults to 0.0 (unset); the generator treats 0.0 as 1.0.
+    #[serde(default)]
+    pub emission_country_multiplier: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

@@ -21,6 +21,7 @@ use datasynth_core::templates::{
 };
 use datasynth_core::traits::Generator;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::CountryPack;
 
 use crate::company_selector::WeightedCompanySelector;
 use crate::user_generator::{UserGenerator, UserGeneratorConfig};
@@ -318,6 +319,49 @@ impl JournalEntryGenerator {
         self
     }
 
+    /// Configure temporal patterns using a [`CountryPack`] for the holiday calendar.
+    ///
+    /// This is an alternative to [`with_temporal_patterns`] that derives the
+    /// holiday calendar from a country-pack definition rather than the built-in
+    /// region-based calendars.  All other temporal behaviour (business-day
+    /// adjustment, processing lags, period-end dynamics) is configured
+    /// identically.
+    pub fn with_country_pack_temporal(
+        mut self,
+        config: TemporalPatternsConfig,
+        seed: u64,
+        pack: &CountryPack,
+    ) -> Self {
+        // Create business day calculator using the country pack calendar
+        if config.business_days.enabled {
+            let calendar = HolidayCalendar::from_country_pack(pack, self.start_date.year());
+            self.business_day_calculator = Some(BusinessDayCalculator::new(calendar));
+        }
+
+        // Create processing lag calculator if enabled
+        if config.processing_lags.enabled {
+            let lag_config = Self::convert_processing_lag_config(&config.processing_lags);
+            self.processing_lag_calculator =
+                Some(ProcessingLagCalculator::with_config(seed, lag_config));
+        }
+
+        // Create period-end dynamics if configured
+        let model = config.period_end.model.as_deref().unwrap_or("flat");
+        if model != "flat"
+            || config
+                .period_end
+                .month_end
+                .as_ref()
+                .is_some_and(|m| m.peak_multiplier.unwrap_or(1.0) != 1.0)
+        {
+            let dynamics = Self::convert_period_end_config(&config.period_end);
+            self.temporal_sampler.set_period_end_dynamics(dynamics);
+        }
+
+        self.temporal_patterns_config = Some(config);
+        self
+    }
+
     /// Convert schema processing lag config to core config.
     fn convert_processing_lag_config(
         schema: &datasynth_config::schema::ProcessingLagSchemaConfig,
@@ -524,6 +568,27 @@ impl JournalEntryGenerator {
         self.with_vendors(vendors)
             .with_customers(customers)
             .with_materials(materials)
+    }
+
+    /// Replace the user pool with one generated from a [`CountryPack`].
+    ///
+    /// This is an alternative to the default name-culture distribution that
+    /// derives name pools and weights from the country-pack's `names` section.
+    /// The existing user pool (if any) is discarded and regenerated using
+    /// [`MultiCultureNameGenerator::from_country_pack`].
+    pub fn with_country_pack_names(mut self, pack: &CountryPack) -> Self {
+        let name_gen =
+            datasynth_core::templates::MultiCultureNameGenerator::from_country_pack(pack);
+        let config = UserGeneratorConfig {
+            // The culture distribution is embedded in the name generator
+            // itself, so we use an empty list here.
+            culture_distribution: Vec::new(),
+            email_domain: name_gen.email_domain().to_string(),
+            generate_realistic_names: true,
+        };
+        let mut user_gen = UserGenerator::with_name_generator(self.seed + 100, config, name_gen);
+        self.user_pool = Some(user_gen.generate_standard(&self.companies));
+        self
     }
 
     /// Check if the generator is using real master data.

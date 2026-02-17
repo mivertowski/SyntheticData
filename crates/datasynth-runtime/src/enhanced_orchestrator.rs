@@ -735,6 +735,8 @@ pub struct EnhancedOrchestrator {
     output_path: Option<PathBuf>,
     /// Copula generators for preserving correlations (from fingerprint)
     copula_generators: Vec<CopulaGeneratorSpec>,
+    /// Country pack registry for localized data generation
+    country_pack_registry: datasynth_core::CountryPackRegistry,
 }
 
 impl EnhancedOrchestrator {
@@ -747,6 +749,17 @@ impl EnhancedOrchestrator {
         // Build resource guard from config
         let resource_guard = Self::build_resource_guard(&config, None);
 
+        // Build country pack registry from config
+        let country_pack_registry = match &config.country_packs {
+            Some(cp) => datasynth_core::CountryPackRegistry::new(
+                cp.external_dir.as_deref(),
+                &cp.overrides,
+            )
+            .map_err(|e| SynthError::config(e.to_string()))?,
+            None => datasynth_core::CountryPackRegistry::builtin_only()
+                .map_err(|e| SynthError::config(e.to_string()))?,
+        };
+
         Ok(Self {
             config,
             phase_config,
@@ -757,6 +770,7 @@ impl EnhancedOrchestrator {
             resource_guard,
             output_path: None,
             copula_generators: Vec::new(),
+            country_pack_registry,
         })
     }
 
@@ -781,6 +795,16 @@ impl EnhancedOrchestrator {
         // Rebuild resource guard with the output path
         self.resource_guard = Self::build_resource_guard(&self.config, Some(path));
         self
+    }
+
+    /// Access the country pack registry.
+    pub fn country_pack_registry(&self) -> &datasynth_core::CountryPackRegistry {
+        &self.country_pack_registry
+    }
+
+    /// Look up a country pack by country code string.
+    pub fn country_pack_for(&self, country: &str) -> &datasynth_core::CountryPack {
+        self.country_pack_registry.get_by_str(country)
     }
 
     /// Check if copula generators are available.
@@ -2268,15 +2292,25 @@ impl EnhancedOrchestrator {
                 })
                 .collect();
 
+            // Look up country pack for payroll deductions
+            let primary_country = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.country.as_str())
+                .unwrap_or("US");
+            let payroll_pack = self.country_pack_registry.get_by_str(primary_country);
+
             for month in 0..self.config.global.period_months {
                 let period_start = start_date + chrono::Months::new(month);
                 let period_end = start_date + chrono::Months::new(month + 1) - chrono::Days::new(1);
-                let (run, items) = payroll_gen.generate(
+                let (run, items) = payroll_gen.generate_with_country_pack(
                     company_code,
                     &employees_with_salary,
                     period_start,
                     period_end,
                     currency,
+                    payroll_pack,
                 );
                 snapshot.payroll_runs.push(run);
                 snapshot.payroll_run_count += 1;
@@ -2909,12 +2943,21 @@ impl EnhancedOrchestrator {
         // Connect generated master data to ensure JEs reference real entities
         // Enable persona-based error injection for realistic human behavior
         // Pass fraud configuration for fraud injection
+        let primary_country = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.country.as_str())
+            .unwrap_or("US");
+        let je_pack = self.country_pack_registry.get_by_str(primary_country);
+
         let mut generator = generator
             .with_master_data(
                 &self.master_data.vendors,
                 &self.master_data.customers,
                 &self.master_data.materials,
             )
+            .with_country_pack_names(je_pack)
             .with_persona_errors(true)
             .with_fraud_config(self.config.fraud.clone());
 
@@ -4559,6 +4602,7 @@ mod tests {
             treasury: Default::default(),
             project_accounting: Default::default(),
             esg: Default::default(),
+            country_packs: None,
         }
     }
 

@@ -88,6 +88,40 @@ fn spend_emission_factor(category: &str, country: &str) -> Decimal {
     base * country_mult
 }
 
+/// Spend-based emission factor using a [`CountryPack`] for the country multiplier.
+///
+/// The category base factor is identical to [`spend_emission_factor`].  Instead
+/// of a hardcoded country match the multiplier is read from
+/// `pack.business_rules.emission_country_multiplier`.  A value of `0.0` (the
+/// serde default when the field is absent) is treated as `1.0` so that packs
+/// without emission data fall back gracefully.
+fn spend_emission_factor_from_pack(
+    category: &str,
+    pack: &datasynth_core::CountryPack,
+) -> Decimal {
+    let base = match category {
+        "manufacturing" => dec!(0.80),
+        "construction" => dec!(0.65),
+        "transportation" => dec!(0.55),
+        "chemicals" => dec!(0.70),
+        "agriculture" => dec!(0.60),
+        "mining" => dec!(0.90),
+        "office_supplies" => dec!(0.20),
+        "professional_services" => dec!(0.15),
+        "technology" => dec!(0.25),
+        _ => dec!(0.40), // generic EEIO factor
+    };
+
+    let raw = pack.business_rules.emission_country_multiplier;
+    let country_mult = if raw == 0.0 {
+        dec!(1.00)
+    } else {
+        Decimal::from_f64_retain(raw).unwrap_or(dec!(1.00))
+    };
+
+    base * country_mult
+}
+
 // ---------------------------------------------------------------------------
 // EmissionGenerator
 // ---------------------------------------------------------------------------

@@ -1520,6 +1520,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         treasury: Default::default(),
         project_accounting: Default::default(),
         esg: Default::default(),
+        country_packs: None,
     }
 }
 
