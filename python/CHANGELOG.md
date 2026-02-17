@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0 (2026-02-17)
+
+### Added
+
+- **Tax Accounting Config**: `TaxConfig` dataclass for tax jurisdictions, VAT/GST, withholding, provisions
+- **Treasury Config**: `TreasuryConfig` dataclass for cash positioning, hedging, debt, netting
+- **Project Accounting Config**: `ProjectAccountingConfig` dataclass for WBS, cost allocation, EVM, revenue recognition
+- **ESG Config**: `EsgConfig` dataclass for environmental, social, governance, and reporting settings
+- All four new domain configs added to `Config` class with `to_dict()` / `from_dict()` support
+
+### Changed
+
+- Bumped version to 1.3.0 to match Rust v0.7.0 release
+
 ## 1.0.0 (2026-02-11)
 
 ### Features

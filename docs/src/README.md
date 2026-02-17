@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -22,7 +22,11 @@ SyntheticData is a configurable synthetic data generator that produces realistic
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
 
-**New in v0.5.0:** LLM-augmented generation (vendor names, descriptions, anomaly explanations), diffusion model backend (statistical denoising, hybrid generation), causal & counterfactual generation (SCMs, do-calculus interventions), federated fingerprinting, synthetic data certificates, and ecosystem integrations (Airflow, dbt, MLflow, Spark).
+**New in v0.7.0:** Four new enterprise domains — Tax Accounting (ASC 740/IAS 12 provisions, VAT/GST, withholding), Treasury & Cash Management (cash positioning, hedging with ASC 815/IFRS 9, debt covenants), Project Accounting (WBS, earned value management, PoC revenue), and ESG/Sustainability (GHG Scope 1/2/3, diversity metrics, GRI/SASB/TCFD disclosures). OCPM expanded to 12 process families with 101+ activities and 65+ object types.
+
+**v0.6.x:** Enterprise process chains (S2C, H2R, MFG, R2R, O2C, BANK, AUDIT), universal OCPM generation across 8 process families, comprehensive evaluation framework with 23 evaluators.
+
+**v0.5.0:** LLM-augmented generation, diffusion model backend, causal & counterfactual generation, federated fingerprinting, synthetic data certificates, ecosystem integrations (Airflow, dbt, MLflow, Spark).
 
 **v0.3.0:** ACFE-aligned fraud taxonomy, collusion modeling, industry-specific transactions (Manufacturing, Retail, Healthcare), and ML benchmarks.
 

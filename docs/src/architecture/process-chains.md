@@ -15,6 +15,10 @@ SyntheticData models enterprise operations as interconnected process chains — 
 | **H2R** | Hire-to-Retire | 85% | Implemented (+ OCPM) | `hr/`, `master_data/employee`, `ocpm/h2r_generator` |
 | **MFG** | Plan-to-Produce | 85% | Implemented (+ OCPM) | `manufacturing/`, `ocpm/mfg_generator` |
 | **AUDIT** | Audit Lifecycle | 90% | Implemented (+ OCPM) | `audit/`, `ocpm/audit_generator` |
+| **TAX** | Tax Accounting | 90% | Implemented (v0.7.0) | `tax/`, `ocpm/tax` |
+| **TREASURY** | Treasury & Cash Mgmt | 90% | Implemented (v0.7.0) | `treasury/`, `ocpm/treasury` |
+| **PROJECT** | Project Accounting | 90% | Implemented (v0.7.0) | `project_accounting/`, `ocpm/project_accounting` |
+| **ESG** | ESG / Sustainability | 90% | Implemented (v0.7.0) | `esg/`, `ocpm/esg` |
 
 ---
 

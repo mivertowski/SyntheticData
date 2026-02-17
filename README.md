@@ -6,7 +6,7 @@
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml)
 
-A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, ML-ready graph exports, and complete enterprise process chains (S2C sourcing, HR/payroll, manufacturing, financial reporting) at scale.
+A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, ML-ready graph exports, and complete enterprise process chains (S2C sourcing, HR/payroll, manufacturing, financial reporting, tax accounting, treasury & cash management, project accounting, ESG/sustainability) at scale.
 
 **Developed by [Ernst & Young Ltd.](https://www.ey.com/ch), Zurich, Switzerland**
 
@@ -95,17 +95,21 @@ The generator produces statistically accurate data based on empirical research f
 - **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
 - **Bank Reconciliation**: Automated statement matching, outstanding checks, deposits in transit, net difference validation
 - **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
-- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships across 8 process families
+- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships across 12 process families
   - OCEL 2.0 JSON/XML export for object-centric process mining
   - XES 2.0 XML export for ProM, Celonis, Disco, pm4py compatibility
-  - 88 activity types across 8 process families: P2P, O2C, R2R/A2R, S2C, H2R, MFG, BANK, AUDIT
-  - 52 object types with lifecycle states and relationships
-  - 6 new OCPM generators: S2C (sourcing), H2R (payroll/time/expense), MFG (production/quality), BANK (customer/transactions), AUDIT (engagement lifecycle), Bank Recon (statement matching)
+  - 101+ activity types across 12 process families: P2P, O2C, R2R/A2R, S2C, H2R, MFG, BANK, AUDIT, Tax, Treasury, Project Accounting, ESG
+  - 65+ object types with lifecycle states and relationships
+  - 10 OCPM generators: S2C (sourcing), H2R (payroll/time/expense), MFG (production/quality), BANK (customer/transactions), AUDIT (engagement lifecycle), Bank Recon (statement matching), Tax (returns/lines), Treasury (positions/forecasts/hedges), Project Accounting (projects/costs/milestones), ESG (emissions/disclosures)
   - Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
 - **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
 - **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases with 5 bright-line tests), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
 - **Audit Standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance with deficiency classification
+- **Tax Accounting**: Tax jurisdictions (Federal/State/Local), tax codes with effective dates, tax line decoration on documents, VAT/GST/sales tax returns, ASC 740/IAS 12 provisions with deferred tax, FIN 48/IFRIC 23 uncertain positions, cross-border withholding with treaty benefits
+- **Treasury & Cash Management**: Daily cash positions, probability-weighted cash forecasts, cash pooling (physical/notional/zero-balance), hedging instruments (FX forwards, IR swaps, options) with ASC 815/IFRS 9 effectiveness, debt instruments with covenants & amortization, bank guarantees, intercompany netting
+- **Project Accounting**: Project WBS hierarchies, cost lines (labor/material/subcontractor/overhead), percentage-of-completion revenue recognition, earned value management (BCWS/BCWP/ACWP/SPI/CPI/EAC), milestones, change orders, retainage
+- **ESG / Sustainability**: GHG Protocol Scope 1/2/3 emissions, energy consumption with renewable tracking, water/waste management, workforce diversity & pay equity, safety incidents (TRIR/LTIR/DART), governance metrics, GRI/SASB/TCFD disclosures, supplier ESG assessments, climate scenario analysis
 
 ### Interconnectivity & Relationships
 
@@ -572,6 +576,50 @@ causal:
   sample_size: 500
   validate: true
 
+# Domain Extensions (v0.7.0)
+tax:
+  enabled: true
+  jurisdictions:
+    countries: [US, DE, GB]
+  vat_gst:
+    standard_rate: 0.19
+  provisions:
+    statutory_rate: 0.21
+
+treasury:
+  enabled: true
+  cash_positioning:
+    enabled: true
+  hedging:
+    enabled: true
+  debt:
+    enabled: true
+
+project_accounting:
+  enabled: true
+  project_count: 10
+  revenue_recognition:
+    method: percentage_of_completion
+  earned_value:
+    enabled: true
+
+esg:
+  enabled: true
+  environmental:
+    scope1:
+      enabled: true
+    scope2:
+      enabled: true
+    scope3:
+      enabled: true
+  social:
+    diversity:
+      enabled: true
+    safety:
+      enabled: true
+  reporting:
+    frameworks: [gri, sasb, tcfd]
+
 output:
   format: csv                       # csv, json, parquet
   compression: none                 # none, gzip, zstd (parquet uses zstd by default)
@@ -633,6 +681,35 @@ output/
 ├── graphs/               PyTorch Geometric, Neo4j, DGL, RustGraph exports
 │   └── hypergraph/       Multi-layer hypergraph (nodes.jsonl, edges.jsonl, hyperedges.jsonl)
 ├── labels/               Anomaly, fraud, and data quality labels for ML
+├── tax/                 Tax accounting outputs
+│   ├── tax_jurisdictions.csv
+│   ├── tax_codes.csv
+│   ├── tax_lines.csv
+│   ├── tax_returns.csv
+│   ├── tax_provisions.csv
+│   ├── uncertain_tax_positions.csv
+│   └── withholding_records.csv
+├── treasury/            Treasury & cash management outputs
+│   ├── cash_positions.csv
+│   ├── cash_forecasts.csv
+│   ├── hedging_instruments.csv
+│   ├── debt_instruments.csv
+│   ├── netting_runs.csv
+│   └── bank_guarantees.csv
+├── project_accounting/  Project accounting outputs
+│   ├── projects.csv
+│   ├── wbs_elements.csv
+│   ├── project_cost_lines.csv
+│   ├── project_revenue.csv
+│   ├── earned_value_metrics.csv
+│   └── change_orders.csv
+├── esg/                 ESG / sustainability outputs
+│   ├── emission_records.csv
+│   ├── energy_consumption.csv
+│   ├── workforce_diversity_metrics.csv
+│   ├── safety_metrics.csv
+│   ├── esg_disclosures.csv
+│   └── supplier_esg_assessments.csv
 ├── controls/             Internal controls, COSO mappings, SoD rules
 └── standards/            Accounting & audit standards outputs
     ├── accounting/       Contracts, leases, fair value, impairment tests
@@ -665,6 +742,10 @@ output/
 | **RustGraph Integration** | Stream data directly to RustAssureTwin knowledge graphs |
 | **Hypergraph Analytics** | 3-layer hypergraph export (Governance, Process, Accounting) for multi-relational GNN models |
 | **Causal Analysis** | Generate interventional and counterfactual datasets for causal ML research |
+| **Tax Compliance Testing** | Tax return filing, ASC 740/IAS 12 provisions, withholding tax, uncertain positions |
+| **Treasury Operations** | Cash positioning, forecasting, hedging effectiveness, debt covenant monitoring |
+| **Project Cost Control** | WBS-based costing, earned value management, change order tracking, PoC revenue |
+| **ESG Reporting** | GHG Scope 1/2/3 emissions, diversity metrics, GRI/SASB/TCFD disclosures |
 | **LLM Training Data** | LLM-enriched metadata with realistic vendor names, descriptions, and explanations |
 | **Pipeline Orchestration** | Airflow operators, dbt sources, MLflow tracking, Spark DataFrames |
 
@@ -791,7 +872,7 @@ See the [Fingerprinting Guide](docs/fingerprint/) for complete documentation.
 
 ## Python Wrapper
 
-A Python wrapper (v1.0.0) is available for programmatic access:
+A Python wrapper (v1.3.0) is available for programmatic access:
 
 ```bash
 cd python

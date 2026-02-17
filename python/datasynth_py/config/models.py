@@ -986,6 +986,62 @@ class CrossProcessLinksConfig:
 
 
 @dataclass(frozen=True)
+class TaxConfig:
+    """Tax accounting configuration."""
+    enabled: bool = False
+    jurisdictions: Optional[Dict[str, Any]] = None
+    vat_gst: Optional[Dict[str, Any]] = None
+    sales_tax: Optional[Dict[str, Any]] = None
+    withholding: Optional[Dict[str, Any]] = None
+    provisions: Optional[Dict[str, Any]] = None
+    payroll_tax: Optional[Dict[str, Any]] = None
+    anomaly_rate: float = 0.03
+
+
+@dataclass(frozen=True)
+class TreasuryConfig:
+    """Treasury & cash management configuration."""
+    enabled: bool = False
+    cash_positioning: Optional[Dict[str, Any]] = None
+    cash_forecasting: Optional[Dict[str, Any]] = None
+    cash_pooling: Optional[Dict[str, Any]] = None
+    hedging: Optional[Dict[str, Any]] = None
+    debt: Optional[Dict[str, Any]] = None
+    netting: Optional[Dict[str, Any]] = None
+    bank_guarantees: Optional[Dict[str, Any]] = None
+    anomaly_rate: float = 0.02
+
+
+@dataclass(frozen=True)
+class ProjectAccountingConfig:
+    """Project accounting configuration."""
+    enabled: bool = False
+    project_count: int = 10
+    project_types: Optional[Dict[str, Any]] = None
+    wbs: Optional[Dict[str, Any]] = None
+    cost_allocation: Optional[Dict[str, Any]] = None
+    revenue_recognition: Optional[Dict[str, Any]] = None
+    milestones: Optional[Dict[str, Any]] = None
+    change_orders: Optional[Dict[str, Any]] = None
+    retainage: Optional[Dict[str, Any]] = None
+    earned_value: Optional[Dict[str, Any]] = None
+    anomaly_rate: float = 0.03
+
+
+@dataclass(frozen=True)
+class EsgConfig:
+    """ESG / sustainability configuration."""
+    enabled: bool = False
+    environmental: Optional[Dict[str, Any]] = None
+    social: Optional[Dict[str, Any]] = None
+    governance: Optional[Dict[str, Any]] = None
+    supply_chain_esg: Optional[Dict[str, Any]] = None
+    reporting: Optional[Dict[str, Any]] = None
+    climate_scenarios: Optional[Dict[str, Any]] = None
+    anomaly_rate: float = 0.02
+
+
+@dataclass(frozen=True)
 class Config:
     """Root configuration container.
 
@@ -1026,6 +1082,10 @@ class Config:
     customer_segmentation: Optional[CustomerSegmentationConfig] = None
     relationship_strength: Optional[RelationshipStrengthConfig] = None
     cross_process_links: Optional[CrossProcessLinksConfig] = None
+    tax: Optional[TaxConfig] = None
+    treasury: Optional[TreasuryConfig] = None
+    project_accounting: Optional[ProjectAccountingConfig] = None
+    esg: Optional[EsgConfig] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -1506,6 +1566,18 @@ class Config:
 
         if self.cross_process_links is not None:
             payload["cross_process_links"] = _strip_none(self.cross_process_links.__dict__)
+
+        if self.tax is not None:
+            payload["tax"] = _strip_none(self.tax.__dict__)
+
+        if self.treasury is not None:
+            payload["treasury"] = _strip_none(self.treasury.__dict__)
+
+        if self.project_accounting is not None:
+            payload["project_accounting"] = _strip_none(self.project_accounting.__dict__)
+
+        if self.esg is not None:
+            payload["esg"] = _strip_none(self.esg.__dict__)
 
         # Merge extra fields
         payload.update(self.extra)
@@ -2008,6 +2080,12 @@ class Config:
         cross_process_links = _build_dataclass(
             CrossProcessLinksConfig, data.get("cross_process_links")
         )
+        tax = _build_dataclass(TaxConfig, data.get("tax"))
+        treasury = _build_dataclass(TreasuryConfig, data.get("treasury"))
+        project_accounting = _build_dataclass(
+            ProjectAccountingConfig, data.get("project_accounting")
+        )
+        esg = _build_dataclass(EsgConfig, data.get("esg"))
 
         known_keys = {
             "global", "companies", "chart_of_accounts", "transactions", "output",
@@ -2018,6 +2096,7 @@ class Config:
             "source_to_pay", "financial_reporting", "hr", "manufacturing",
             "sales_quotes", "vendor_network", "customer_segmentation",
             "relationship_strength", "cross_process_links",
+            "tax", "treasury", "project_accounting", "esg",
         }
         extra = {key: value for key, value in data.items() if key not in known_keys}
 
@@ -2056,6 +2135,10 @@ class Config:
             customer_segmentation=customer_segmentation,
             relationship_strength=relationship_strength,
             cross_process_links=cross_process_links,
+            tax=tax,
+            treasury=treasury,
+            project_accounting=project_accounting,
+            esg=esg,
             extra=extra,
         )
 

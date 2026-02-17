@@ -257,6 +257,11 @@ impl SodChecker {
                 SodConflictType::PreparerApprover,
                 SodConflictType::PaymentReleaser,
             ],
+            Some(BusinessProcess::ProjectAccounting) => vec![
+                SodConflictType::PreparerApprover,
+                SodConflictType::RequesterApprover,
+            ],
+            Some(BusinessProcess::Esg) => vec![SodConflictType::PreparerApprover],
             None => vec![
                 SodConflictType::PreparerApprover,
                 SodConflictType::SystemAccessConflict,
