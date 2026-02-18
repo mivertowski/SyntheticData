@@ -175,13 +175,13 @@ fn test_generated_json_is_valid() {
         .assert()
         .success();
 
-    // Find and validate sample_entries.json
-    let sample_path = output_dir.join("sample_entries.json");
-    assert!(sample_path.exists(), "Sample entries should be generated");
+    // Find and validate journal_entries.json
+    let je_path = output_dir.join("journal_entries.json");
+    assert!(je_path.exists(), "Journal entries JSON should be generated");
 
-    let content = fs::read_to_string(&sample_path).unwrap();
+    let content = fs::read_to_string(&je_path).unwrap();
     let parsed: Result<serde_json::Value, _> = serde_json::from_str(&content);
-    assert!(parsed.is_ok(), "Sample entries should be valid JSON");
+    assert!(parsed.is_ok(), "Journal entries should be valid JSON");
 }
 
 /// Test that generated output contains expected structure
@@ -211,10 +211,10 @@ fn test_generated_output_structure() {
 
     println!("Generated files: {:?}", files);
 
-    // Should have sample_entries.json
+    // Should have journal_entries.json
     assert!(
-        files.iter().any(|f| f == "sample_entries.json"),
-        "Should have sample_entries.json"
+        files.iter().any(|f| f == "journal_entries.json"),
+        "Should have journal_entries.json"
     );
 }
 
