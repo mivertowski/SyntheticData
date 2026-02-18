@@ -96,9 +96,6 @@ impl DescriptionContext {
 pub struct DescriptionGenerator {
     /// Header text patterns by business process
     header_patterns: Vec<HeaderTextPattern>,
-    /// Line text patterns
-    #[allow(dead_code)]
-    line_patterns: Vec<LineTextPattern>,
     /// Expense descriptions
     expense_descriptions: Vec<&'static str>,
     /// Revenue descriptions
@@ -130,7 +127,6 @@ impl DescriptionGenerator {
     pub fn new() -> Self {
         Self {
             header_patterns: Self::default_header_patterns(),
-            line_patterns: Self::default_line_patterns(),
             expense_descriptions: Self::default_expense_descriptions(),
             revenue_descriptions: Self::default_revenue_descriptions(),
             asset_descriptions: Self::default_asset_descriptions(),
@@ -448,20 +444,6 @@ impl DescriptionGenerator {
             HeaderTextPattern {
                 template: "IC Goods Transfer".to_string(),
                 business_process: BusinessProcess::Intercompany,
-            },
-        ]
-    }
-
-    fn default_line_patterns() -> Vec<LineTextPattern> {
-        vec![
-            // Generic patterns
-            LineTextPattern {
-                template: "See header".to_string(),
-                account_prefix: None,
-            },
-            LineTextPattern {
-                template: "Per attached documentation".to_string(),
-                account_prefix: None,
             },
         ]
     }

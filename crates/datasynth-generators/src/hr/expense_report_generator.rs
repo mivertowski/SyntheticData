@@ -71,7 +71,19 @@ impl ExpenseReportGenerator {
         period_end: NaiveDate,
         config: &ExpenseConfig,
     ) -> Vec<ExpenseReport> {
-        debug!(employee_count = employee_ids.len(), %period_start, %period_end, "Generating expense reports");
+        self.generate_with_currency(employee_ids, period_start, period_end, config, "USD")
+    }
+
+    /// Generate expense reports with a specific company currency.
+    pub fn generate_with_currency(
+        &mut self,
+        employee_ids: &[String],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        config: &ExpenseConfig,
+        currency: &str,
+    ) -> Vec<ExpenseReport> {
+        debug!(employee_count = employee_ids.len(), %period_start, %period_end, currency, "Generating expense reports");
         let mut reports = Vec::new();
 
         // Iterate over each month in the period
@@ -82,8 +94,13 @@ impl ExpenseReportGenerator {
             for employee_id in employee_ids {
                 // Only submission_rate fraction of employees submit per month
                 if self.rng.gen_bool(config.submission_rate.min(1.0)) {
-                    let report =
-                        self.generate_report(employee_id, current_month_start, month_end, config);
+                    let report = self.generate_report(
+                        employee_id,
+                        current_month_start,
+                        month_end,
+                        config,
+                        currency,
+                    );
                     reports.push(report);
                 }
             }
@@ -102,6 +119,7 @@ impl ExpenseReportGenerator {
         period_start: NaiveDate,
         period_end: NaiveDate,
         config: &ExpenseConfig,
+        currency: &str,
     ) -> ExpenseReport {
         let report_id = self.uuid_factory.next().to_string();
 
@@ -111,7 +129,7 @@ impl ExpenseReportGenerator {
         let mut total_amount = Decimal::ZERO;
 
         for _ in 0..item_count {
-            let item = self.generate_line_item(period_start, period_end);
+            let item = self.generate_line_item(period_start, period_end, currency);
             total_amount += item.amount;
             line_items.push(item);
         }
@@ -212,7 +230,7 @@ impl ExpenseReportGenerator {
             description,
             status,
             total_amount,
-            currency: "USD".to_string(),
+            currency: currency.to_string(),
             line_items,
             approved_by,
             approved_date,
@@ -228,6 +246,7 @@ impl ExpenseReportGenerator {
         &mut self,
         period_start: NaiveDate,
         period_end: NaiveDate,
+        currency: &str,
     ) -> ExpenseLineItem {
         let item_id = self.item_uuid_factory.next().to_string();
 
@@ -254,7 +273,7 @@ impl ExpenseReportGenerator {
             category,
             date,
             amount,
-            currency: "USD".to_string(),
+            currency: currency.to_string(),
             description: desc,
             receipt_attached,
             merchant,

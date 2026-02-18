@@ -116,6 +116,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AP three-way match variance**: Price and quantity variances now computed as ~3% and ~1.5% of line total respectively when `ThreeWayMatchFailed`, instead of hardcoded `Decimal::ZERO`
 - **Subledger vendor/customer names**: `DocumentFlowLinker` now receives vendor and customer name maps from master data, replacing placeholder `"Vendor {id}"` / `"Customer {id}"` strings with actual generated names
 - **DocumentFlowJeGenerator seed**: `with_config()` constructor no longer uses hardcoded seed; accepts seed parameter for deterministic generation
+- **OCPM S2C vendor fallback** (`datasynth-runtime`): Replaced hardcoded `"V000"` vendor ID with actual vendor from master data when no contract found for sourcing project
+- **OCPM cycle count matching** (`datasynth-runtime`): Manufacturing OCPM events now match cycle counts by `material_id` instead of always linking to the first cycle count
+- **OCPM determinism** (`datasynth-runtime`): Replaced 6 `Utc::now()` calls in OCPM event generation with config-derived deterministic base date for reproducible timestamps across S2C, H2R, MFG, Banking, Audit, and Bank Recon process families
+- **Trial balance determinism** (`datasynth-generators`): Replaced 4 `Utc::now()` calls in `TrialBalanceGenerator` with period-derived dates — `created_at` uses `as_of_date` end-of-day, `approved_at` uses next business day morning
+- **IC hardcoded currency** (`datasynth-generators`): Added `default_currency` to `ICGeneratorConfig`, replacing hardcoded `"USD"` in IC matched pairs and IC loans; orchestrator wires first company's currency
+- **Expense report hardcoded currency** (`datasynth-generators`): Added `generate_with_currency()` method to `ExpenseReportGenerator`, replacing hardcoded `"USD"` in reports and line items; orchestrator passes company currency
+- **IC account code panic risk** (`datasynth-generators`): Replaced byte-index slicing (`&company[..len.min(2)]`) with safe `chars().take(2).collect()` in IC receivable/payable account code generation to prevent UTF-8 boundary panics
+- **Banking customer cross-reference** (`datasynth-banking`, `datasynth-runtime`): Added `enterprise_customer_id: Option<String>` field to `BankingCustomer`, populated during cross-referencing to link banking customers to core enterprise customer IDs
+- **S2C→P2P contract linkage** (`datasynth-runtime`): Purchase orders now linked to S2C procurement contracts by vendor ID match after sourcing data generation, populating `PurchaseOrder.contract_id`
+- **Dead code cleanup — Round 4** (`datasynth-generators`, `datasynth-core`, `datasynth-eval`, `datasynth-fingerprint`): Removed dead `spend_emission_factor_from_pack()` function, dead `line_patterns` field and `LineTextPattern` type from description generator, orphaned doc comment; wired `LastDotFirst` and `FirstOnly` email patterns into pattern pool; added `GaussianMechanism::epsilon()` getter matching `LaplaceMechanism` API
 
 ## [0.7.0] - 2026-02-17
 

@@ -41,6 +41,8 @@ pub struct ICGeneratorConfig {
     pub loan_amount_range: (Decimal, Decimal),
     /// Loan interest rate range.
     pub loan_interest_rate_range: (Decimal, Decimal),
+    /// Default currency for IC transactions.
+    pub default_currency: String,
 }
 
 impl Default for ICGeneratorConfig {
@@ -65,6 +67,7 @@ impl Default for ICGeneratorConfig {
             generate_loans: true,
             loan_amount_range: (dec!(100000), dec!(10000000)),
             loan_interest_rate_range: (dec!(2), dec!(8)),
+            default_currency: "USD".to_string(),
         }
     }
 }
@@ -221,7 +224,7 @@ impl ICGenerator {
             seller.clone(),
             buyer.clone(),
             transfer_price,
-            "USD".to_string(), // Could be parameterized
+            self.config.default_currency.clone(),
             date,
         );
 
@@ -389,7 +392,8 @@ impl ICGenerator {
 
     /// Get IC receivable account for seller.
     fn get_seller_receivable_account(&self, buyer_company: &str) -> String {
-        format!("1310{}", &buyer_company[..buyer_company.len().min(2)])
+        let suffix: String = buyer_company.chars().take(2).collect();
+        format!("1310{}", suffix)
     }
 
     /// Get IC revenue account for seller.
@@ -420,7 +424,8 @@ impl ICGenerator {
 
     /// Get IC payable account for buyer.
     fn get_buyer_payable_account(&self, seller_company: &str) -> String {
-        format!("2110{}", &seller_company[..seller_company.len().min(2)])
+        let suffix: String = seller_company.chars().take(2).collect();
+        format!("2110{}", suffix)
     }
 
     /// Generate an IC loan.
@@ -456,7 +461,7 @@ impl ICGenerator {
             lender,
             borrower,
             principal,
-            "USD".to_string(),
+            self.config.default_currency.clone(),
             interest_rate,
             start_date,
             maturity_date,

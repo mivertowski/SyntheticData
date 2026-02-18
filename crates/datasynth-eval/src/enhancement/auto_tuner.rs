@@ -167,7 +167,7 @@ enum ComputeStrategy {
     DecreaseByGap,
     /// Set to target value directly.
     SetToTarget,
-    /// Multiply current by factor based on gap.
+    /// Multiply current by factor based on gap (available for future tuning rules).
     #[allow(dead_code)]
     MultiplyByGapFactor,
 }

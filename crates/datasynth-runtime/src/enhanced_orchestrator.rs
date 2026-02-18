@@ -1375,7 +1375,7 @@ impl EnhancedOrchestrator {
         self.phase_master_data(&mut stats)?;
 
         // Phase 3: Document Flows + Subledger Linking
-        let (document_flows, subledger, fa_journal_entries) =
+        let (mut document_flows, subledger, fa_journal_entries) =
             self.phase_document_flows(&mut stats)?;
 
         // Phase 3b: Opening Balances (before JE generation)
@@ -1404,6 +1404,29 @@ impl EnhancedOrchestrator {
 
         // Phase 5: S2C Sourcing Data (before anomaly injection, since it's standalone)
         let sourcing = self.phase_sourcing_data(&mut stats)?;
+
+        // Phase 5a: Link S2C contracts to P2P purchase orders by matching vendor IDs
+        if !sourcing.contracts.is_empty() {
+            let mut linked_count = 0usize;
+            for chain in &mut document_flows.p2p_chains {
+                if chain.purchase_order.contract_id.is_none() {
+                    if let Some(contract) = sourcing
+                        .contracts
+                        .iter()
+                        .find(|c| c.vendor_id == chain.purchase_order.vendor_id)
+                    {
+                        chain.purchase_order.contract_id = Some(contract.contract_id.clone());
+                        linked_count += 1;
+                    }
+                }
+            }
+            if linked_count > 0 {
+                debug!(
+                    "Linked {} purchase orders to S2C contracts by vendor match",
+                    linked_count
+                );
+            }
+        }
 
         // Phase 5b: Intercompany Transactions + Matching + Eliminations
         let intercompany = self.phase_intercompany(&mut stats)?;
@@ -2608,6 +2631,12 @@ impl EnhancedOrchestrator {
         };
 
         // Build IC generator config from schema config
+        let ic_currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.clone())
+            .unwrap_or_else(|| "USD".to_string());
         let ic_gen_config = datasynth_generators::ICGeneratorConfig {
             ic_transaction_rate: self.config.intercompany.ic_transaction_rate,
             transfer_pricing_method: tp_method,
@@ -2616,6 +2645,7 @@ impl EnhancedOrchestrator {
             )
             .unwrap_or(rust_decimal::Decimal::from(5)),
             generate_matched_pairs: self.config.intercompany.generate_matched_pairs,
+            default_currency: ic_currency,
             ..Default::default()
         };
 
@@ -3530,11 +3560,18 @@ impl EnhancedOrchestrator {
         // Generate expense reports
         if self.config.hr.expenses.enabled {
             let mut expense_gen = datasynth_generators::ExpenseReportGenerator::new(seed + 32);
-            let reports = expense_gen.generate(
+            let company_currency = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.currency.as_str())
+                .unwrap_or("USD");
+            let reports = expense_gen.generate_with_currency(
                 &employee_ids,
                 start_date,
                 end_date,
                 &self.config.hr.expenses,
+                company_currency,
             );
             snapshot.expense_report_count = reports.len();
             snapshot.expense_reports = reports;
@@ -5361,6 +5398,17 @@ impl EnhancedOrchestrator {
             .map(|e| e.user_id.clone())
             .collect();
 
+        // Deterministic base date from config (avoids Utc::now() non-determinism)
+        let fallback_date =
+            NaiveDate::from_ymd_opt(2024, 1, 1).expect("static date 2024-01-01 is always valid");
+        let base_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .unwrap_or(fallback_date);
+        let base_midnight = base_date
+            .and_hms_opt(0, 0, 0)
+            .expect("midnight is always valid");
+        let base_datetime =
+            chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(base_midnight, chrono::Utc);
+
         // Helper closure to add case results to event log
         let add_result = |event_log: &mut OcpmEventLog,
                           result: datasynth_ocpm::CaseGenerationResult| {
@@ -5477,6 +5525,12 @@ impl EnhancedOrchestrator {
                 .find(|c| c.sourcing_project_id.as_deref() == Some(&project.project_id))
                 .map(|c| c.vendor_id.clone())
                 .or_else(|| sourcing.qualifications.first().map(|q| q.vendor_id.clone()))
+                .or_else(|| {
+                    self.master_data
+                        .vendors
+                        .first()
+                        .map(|v| v.vendor_id.clone())
+                })
                 .unwrap_or_else(|| "V000".to_string());
             let mut docs = S2cDocuments::new(
                 &project.project_id,
@@ -5508,7 +5562,7 @@ impl EnhancedOrchestrator {
             {
                 docs = docs.with_contract(&contract.contract_id, &ocpm_uuid_factory);
             }
-            let start_time = chrono::Utc::now() - chrono::Duration::days(90);
+            let start_time = base_datetime - chrono::Duration::days(90);
             let result = ocpm_gen.generate_s2c_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -5541,7 +5595,7 @@ impl EnhancedOrchestrator {
                     .map(|t| t.entry_id.as_str())
                     .collect(),
             );
-            let start_time = chrono::Utc::now() - chrono::Duration::days(30);
+            let start_time = base_datetime - chrono::Duration::days(30);
             let result = ocpm_gen.generate_h2r_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -5577,11 +5631,15 @@ impl EnhancedOrchestrator {
             {
                 docs = docs.with_inspection(&insp.inspection_id, &ocpm_uuid_factory);
             }
-            // Link cycle count if available (via items matching the material)
-            if let Some(cc) = manufacturing.cycle_counts.first() {
+            // Link cycle count if available (match by material_id in items)
+            if let Some(cc) = manufacturing.cycle_counts.iter().find(|cc| {
+                cc.items
+                    .iter()
+                    .any(|item| item.material_id == order.material_id)
+            }) {
                 docs = docs.with_cycle_count(&cc.count_id, &ocpm_uuid_factory);
             }
-            let start_time = chrono::Utc::now() - chrono::Duration::days(60);
+            let start_time = base_datetime - chrono::Duration::days(60);
             let result = ocpm_gen.generate_mfg_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -5622,7 +5680,7 @@ impl EnhancedOrchestrator {
                     docs = docs.with_transactions(txn_ids, txn_amounts);
                 }
             }
-            let start_time = chrono::Utc::now() - chrono::Duration::days(180);
+            let start_time = base_datetime - chrono::Duration::days(180);
             let result = ocpm_gen.generate_bank_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -5699,7 +5757,7 @@ impl EnhancedOrchestrator {
                     .map(|s| s.as_str())
                     .collect(),
             );
-            let start_time = chrono::Utc::now() - chrono::Duration::days(120);
+            let start_time = base_datetime - chrono::Duration::days(120);
             let result = ocpm_gen.generate_audit_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -5733,7 +5791,7 @@ impl EnhancedOrchestrator {
                     .map(|i| i.item_id.as_str())
                     .collect(),
             );
-            let start_time = chrono::Utc::now() - chrono::Duration::days(30);
+            let start_time = base_datetime - chrono::Duration::days(30);
             let result = ocpm_gen.generate_bank_recon_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
 
@@ -6799,6 +6857,7 @@ impl EnhancedOrchestrator {
                 let core = &core_customers[i % core_customers.len()];
                 bc.name = CustomerName::business(&core.name);
                 bc.residence_country = core.country.clone();
+                bc.enterprise_customer_id = Some(core.customer_id.clone());
             }
             debug!(
                 "Cross-referenced {} banking customers with {} core customers",

@@ -505,8 +505,7 @@ fn main() -> Result<()> {
                         generate_ocpm_events: cfg.ocpm.enabled,
                         show_progress: true,
                         // Wire up anomaly and data quality injection from config
-                        inject_anomalies: cfg.fraud.enabled
-                            || cfg.anomaly_injection.enabled,
+                        inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
                         inject_data_quality: cfg.data_quality.enabled,
                         // Use conservative defaults for document generation
                         p2p_chains: 50,

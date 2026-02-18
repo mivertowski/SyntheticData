@@ -179,7 +179,10 @@ impl TrialBalanceGenerator {
             is_equation_valid: false,           // Will be calculated below
             equation_difference: Decimal::ZERO, // Will be calculated below
             category_summary,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: snapshot
+                .as_of_date
+                .and_hms_opt(23, 59, 59)
+                .unwrap_or_default(),
             created_by: "TrialBalanceGenerator".to_string(),
             approved_by: None,
             approved_at: None,
@@ -300,12 +303,17 @@ impl TrialBalanceGenerator {
             .map(|(_, s)| s.currency.clone())
             .unwrap_or_else(|| "USD".to_string());
 
+        let created_at = snapshots
+            .last()
+            .map(|(date, _)| date.and_hms_opt(23, 59, 59).unwrap_or_default())
+            .unwrap_or_default();
+
         ComparativeTrialBalance {
             company_code,
             currency,
             periods,
             lines,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at,
         }
     }
 
@@ -397,7 +405,7 @@ impl TrialBalanceGenerator {
             is_equation_valid: false,           // Will be calculated below
             equation_difference: Decimal::ZERO, // Will be calculated below
             category_summary,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: as_of_date.and_hms_opt(23, 59, 59).unwrap_or_default(),
             created_by: format!(
                 "TrialBalanceGenerator (Consolidated from {} companies)",
                 trial_balances.len()
@@ -554,7 +562,14 @@ impl TrialBalanceGenerator {
     pub fn approve(&self, mut trial_balance: TrialBalance, approver: &str) -> TrialBalance {
         trial_balance.status = TrialBalanceStatus::Approved;
         trial_balance.approved_by = Some(approver.to_string());
-        trial_balance.approved_at = Some(chrono::Utc::now().naive_utc());
+        trial_balance.approved_at = Some(
+            trial_balance
+                .as_of_date
+                .succ_opt()
+                .unwrap_or(trial_balance.as_of_date)
+                .and_hms_opt(9, 0, 0)
+                .unwrap_or_default(),
+        );
         trial_balance
     }
 }
