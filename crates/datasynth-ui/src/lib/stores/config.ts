@@ -1273,7 +1273,7 @@ export interface ImpairmentConfig {
 
 export interface AccountingStandardsConfig {
   enabled: boolean;
-  framework: string;
+  framework: string | null;
   revenue_recognition: RevenueRecognitionConfig;
   leases: LeaseConfig;
   fair_value: FairValueConfig;
@@ -2232,7 +2232,7 @@ export function createDefaultConfig(): GeneratorConfig {
     // Standards
     accounting_standards: {
       enabled: false,
-      framework: 'us_gaap',
+      framework: null,
       revenue_recognition: {
         enabled: true,
         generate_contracts: true,

@@ -717,7 +717,7 @@ class AccountingStandardsConfig:
     """
 
     enabled: bool = False
-    framework: str = "us_gaap"  # us_gaap, ifrs, dual_reporting
+    framework: Optional[str] = None  # us_gaap, ifrs, dual_reporting; None = country pack default
     revenue_recognition: Optional[RevenueRecognitionConfig] = None
     leases: Optional[LeaseAccountingConfig] = None
     fair_value: Optional[FairValueConfig] = None
@@ -1256,9 +1256,10 @@ class Config:
         if self.accounting_standards is not None:
             acct_dict: Dict[str, Any] = {
                 "enabled": self.accounting_standards.enabled,
-                "framework": self.accounting_standards.framework,
                 "generate_differences": self.accounting_standards.generate_differences,
             }
+            if self.accounting_standards.framework is not None:
+                acct_dict["framework"] = self.accounting_standards.framework
             if self.accounting_standards.revenue_recognition is not None:
                 acct_dict["revenue_recognition"] = _strip_none(
                     self.accounting_standards.revenue_recognition.__dict__
@@ -1769,7 +1770,7 @@ class Config:
         if acct_data is not None:
             accounting_standards = AccountingStandardsConfig(
                 enabled=acct_data.get("enabled", False),
-                framework=acct_data.get("framework", "us_gaap"),
+                framework=acct_data.get("framework"),
                 revenue_recognition=_build_dataclass(
                     RevenueRecognitionConfig, acct_data.get("revenue_recognition")
                 ),

@@ -1,9 +1,23 @@
 //! Industry presets for quick configuration.
+//!
+//! Each preset creates companies with ISO 3166-1 alpha-2 country codes and
+//! matching ISO 4217 currencies. The country pack system provides locale-aware
+//! data (holidays, names, tax rules, address formats, etc.) for each company's
+//! country. Built-in packs exist for US, DE, and GB; all other country codes
+//! fall back to the `_default` pack automatically via `CountryPackRegistry`.
+//!
+//! The preset tax jurisdictions are kept in sync with preset company countries
+//! so that generated tax data is consistent with company locations.
 
 use crate::schema::*;
 use datasynth_core::models::{CoAComplexity, IndustrySector};
 
 /// Create a preset configuration for a specific industry.
+///
+/// Companies are assigned country codes that match the industry's typical
+/// geographic footprint. The country pack system will automatically load
+/// the appropriate pack for each company's country (US, DE, GB have dedicated
+/// packs; others fall back to `_default`).
 pub fn create_preset(
     industry: IndustrySector,
     company_count: usize,
@@ -86,44 +100,63 @@ pub fn create_preset(
         treasury: get_treasury_config(industry),
         project_accounting: get_project_accounting_config(industry),
         esg: get_esg_config(industry),
+        // Country packs use built-in defaults (US, DE, GB + _default fallback).
+        // Set to None so the runtime loads only embedded packs without
+        // requiring an external directory. Companies with countries that lack
+        // a dedicated pack (e.g. CN, FR, CH, IE, JP) gracefully fall back to
+        // the _default pack which provides sensible baseline data.
         country_packs: None,
     }
 }
 
 /// Generate company configurations based on industry.
+///
+/// Each industry preset defines a realistic geographic footprint with companies
+/// in different regions. Country codes are ISO 3166-1 alpha-2 and currencies are
+/// ISO 4217, paired appropriately (e.g. "DE" with "EUR", "JP" with "JPY").
+///
+/// Country pack coverage:
+/// - **Built-in packs** (US, DE, GB): Full locale data including holidays,
+///   names, tax rules, addresses, banking formats, payroll rules.
+/// - **Fallback countries** (CN, FR, CH, IE, JP): Use the `_default` pack
+///   which provides English-language baseline data. Users can supply external
+///   country pack JSON files for full locale support.
 fn generate_companies(
     industry: IndustrySector,
     count: usize,
     volume: TransactionVolume,
 ) -> Vec<CompanyConfig> {
+    // Each tuple: (company_code, name, currency, country_code)
+    // Countries with built-in packs: US, DE, GB
+    // Countries using _default fallback: CN, FR, CH, IE, JP
     let regions = match industry {
         IndustrySector::Manufacturing => vec![
-            ("1000", "US Manufacturing", "USD", "US"),
-            ("2000", "EU Manufacturing", "EUR", "DE"),
-            ("3000", "APAC Manufacturing", "CNY", "CN"),
+            ("1000", "US Manufacturing", "USD", "US"), // built-in pack
+            ("2000", "EU Manufacturing", "EUR", "DE"), // built-in pack
+            ("3000", "APAC Manufacturing", "CNY", "CN"), // _default fallback
         ],
         IndustrySector::Retail => vec![
-            ("1000", "US Retail", "USD", "US"),
-            ("2000", "UK Retail", "GBP", "GB"),
-            ("3000", "EU Retail", "EUR", "FR"),
+            ("1000", "US Retail", "USD", "US"), // built-in pack
+            ("2000", "UK Retail", "GBP", "GB"), // built-in pack
+            ("3000", "EU Retail", "EUR", "FR"), // _default fallback
         ],
         IndustrySector::FinancialServices => vec![
-            ("1000", "US Banking", "USD", "US"),
-            ("2000", "Swiss Banking", "CHF", "CH"),
-            ("3000", "UK Banking", "GBP", "GB"),
+            ("1000", "US Banking", "USD", "US"),    // built-in pack
+            ("2000", "Swiss Banking", "CHF", "CH"), // _default fallback
+            ("3000", "UK Banking", "GBP", "GB"),    // built-in pack
         ],
         IndustrySector::Healthcare => vec![
-            ("1000", "US Healthcare", "USD", "US"),
-            ("2000", "EU Healthcare", "EUR", "DE"),
+            ("1000", "US Healthcare", "USD", "US"), // built-in pack
+            ("2000", "EU Healthcare", "EUR", "DE"), // built-in pack
         ],
         IndustrySector::Technology => vec![
-            ("1000", "US Tech", "USD", "US"),
-            ("2000", "EU Tech", "EUR", "IE"),
-            ("3000", "APAC Tech", "JPY", "JP"),
+            ("1000", "US Tech", "USD", "US"),   // built-in pack
+            ("2000", "EU Tech", "EUR", "IE"),   // _default fallback
+            ("3000", "APAC Tech", "JPY", "JP"), // _default fallback
         ],
         _ => vec![
-            ("1000", "HQ", "USD", "US"),
-            ("2000", "Subsidiary", "EUR", "DE"),
+            ("1000", "HQ", "USD", "US"),         // built-in pack
+            ("2000", "Subsidiary", "EUR", "DE"), // built-in pack
         ],
     };
 
@@ -220,6 +253,10 @@ pub fn stress_test_preset() -> GeneratorConfig {
 ///
 /// Use this preset for AssureTwin platform demonstrations showcasing
 /// fraud detection, process mining, and audit analytics capabilities.
+///
+/// Companies use Manufacturing preset countries (US, DE, CN). The US and DE
+/// companies benefit from built-in country packs; the APAC (CN) company uses
+/// the `_default` fallback pack.
 pub fn assuretwin_comprehensive_preset() -> GeneratorConfig {
     let mut config = create_preset(
         IndustrySector::Manufacturing,
@@ -358,6 +395,9 @@ pub fn assuretwin_comprehensive_preset() -> GeneratorConfig {
 }
 
 /// Get industry-specific tax configuration.
+///
+/// Tax jurisdictions are kept in sync with the company countries defined in
+/// `generate_companies` for each industry sector.
 fn get_tax_config(industry: IndustrySector) -> TaxConfig {
     match industry {
         IndustrySector::Manufacturing => TaxConfig {
@@ -712,12 +752,60 @@ fn get_esg_config(industry: IndustrySector) -> EsgConfig {
 mod tests {
     use super::*;
 
+    /// All ISO 3166-1 alpha-2 codes used by any preset.
+    const ALL_PRESET_COUNTRIES: &[&str] = &["US", "DE", "CN", "GB", "FR", "CH", "IE", "JP"];
+
+    /// Countries with built-in country packs (no external files needed).
+    const BUILTIN_PACK_COUNTRIES: &[&str] = &["US", "DE", "GB"];
+
+    /// Helper: verify that every company has a valid 2-letter country code
+    /// and that company countries are a subset of the tax jurisdictions.
+    fn assert_country_tax_consistency(config: &GeneratorConfig) {
+        let company_countries: Vec<&str> = config
+            .companies
+            .iter()
+            .map(|c| c.country.as_str())
+            .collect();
+        let tax_countries = &config.tax.jurisdictions.countries;
+
+        for cc in &company_countries {
+            assert_eq!(cc.len(), 2, "country code '{cc}' must be 2 characters");
+            assert!(
+                cc.chars().all(|c| c.is_ascii_uppercase()),
+                "country code '{cc}' must be uppercase ASCII"
+            );
+        }
+
+        // Every company country should appear in the tax jurisdictions
+        if config.tax.enabled {
+            for cc in &company_countries {
+                assert!(
+                    tax_countries.iter().any(|tc| tc == cc),
+                    "company country '{cc}' missing from tax jurisdictions {:?}",
+                    tax_countries
+                );
+            }
+        }
+    }
+
+    /// Helper: verify that country codes used in presets are recognized.
+    fn assert_valid_preset_countries(config: &GeneratorConfig) {
+        for company in &config.companies {
+            assert!(
+                ALL_PRESET_COUNTRIES.contains(&company.country.as_str()),
+                "unexpected country '{}' in preset; update ALL_PRESET_COUNTRIES if intentional",
+                company.country
+            );
+        }
+    }
+
     #[test]
     fn test_demo_preset() {
         let config = demo_preset();
         assert_eq!(config.companies.len(), 1);
         assert_eq!(config.global.period_months, 3);
         assert_eq!(config.chart_of_accounts.complexity, CoAComplexity::Small);
+        assert_valid_preset_countries(&config);
     }
 
     #[test]
@@ -726,6 +814,101 @@ mod tests {
         assert_eq!(config.companies.len(), 3);
         assert_eq!(config.global.period_months, 12);
         assert_eq!(config.chart_of_accounts.complexity, CoAComplexity::Large);
+        assert_valid_preset_countries(&config);
+    }
+
+    #[test]
+    fn test_all_industries_have_valid_countries() {
+        let industries = [
+            IndustrySector::Manufacturing,
+            IndustrySector::Retail,
+            IndustrySector::FinancialServices,
+            IndustrySector::Healthcare,
+            IndustrySector::Technology,
+        ];
+        for industry in industries {
+            let config = create_preset(
+                industry,
+                10, // request more than available to get all
+                12,
+                CoAComplexity::Medium,
+                TransactionVolume::HundredK,
+            );
+            assert_valid_preset_countries(&config);
+            assert_country_tax_consistency(&config);
+        }
+    }
+
+    #[test]
+    fn test_preset_country_currency_pairs() {
+        // Verify that country-currency pairs are correct across all presets
+        let expected_pairs: &[(&str, &str)] = &[
+            ("US", "USD"),
+            ("DE", "EUR"),
+            ("CN", "CNY"),
+            ("GB", "GBP"),
+            ("FR", "EUR"),
+            ("CH", "CHF"),
+            ("IE", "EUR"),
+            ("JP", "JPY"),
+        ];
+        let industries = [
+            IndustrySector::Manufacturing,
+            IndustrySector::Retail,
+            IndustrySector::FinancialServices,
+            IndustrySector::Healthcare,
+            IndustrySector::Technology,
+        ];
+        for industry in industries {
+            let config = create_preset(
+                industry,
+                10,
+                12,
+                CoAComplexity::Medium,
+                TransactionVolume::HundredK,
+            );
+            for company in &config.companies {
+                let matching = expected_pairs.iter().find(|(cc, _)| *cc == company.country);
+                assert!(
+                    matching.is_some(),
+                    "no expected currency pair for country '{}' in {:?}",
+                    company.country,
+                    industry
+                );
+                let (_, expected_currency) = matching.unwrap();
+                assert_eq!(
+                    company.currency, *expected_currency,
+                    "country '{}' should use currency '{}' but got '{}' in {:?}",
+                    company.country, expected_currency, company.currency, industry
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_builtin_pack_coverage() {
+        // Verify which preset companies have built-in country packs vs fallback
+        let config = create_preset(
+            IndustrySector::Manufacturing,
+            3,
+            12,
+            CoAComplexity::Medium,
+            TransactionVolume::HundredK,
+        );
+        let builtin: Vec<_> = config
+            .companies
+            .iter()
+            .filter(|c| BUILTIN_PACK_COUNTRIES.contains(&c.country.as_str()))
+            .collect();
+        let fallback: Vec<_> = config
+            .companies
+            .iter()
+            .filter(|c| !BUILTIN_PACK_COUNTRIES.contains(&c.country.as_str()))
+            .collect();
+        // Manufacturing: US (builtin), DE (builtin), CN (fallback)
+        assert_eq!(builtin.len(), 2);
+        assert_eq!(fallback.len(), 1);
+        assert_eq!(fallback[0].country, "CN");
     }
 
     #[test]
@@ -807,6 +990,14 @@ mod tests {
         // Verify ML training configuration
         assert!(config.scenario.ml_training);
         assert_eq!(config.scenario.target_anomaly_ratio, Some(0.02));
+
+        // Verify company countries are set correctly
+        assert_eq!(config.companies[0].country, "US");
+        assert_eq!(config.companies[1].country, "DE");
+        assert_eq!(config.companies[2].country, "CN");
+
+        // Verify country-tax consistency
+        assert_country_tax_consistency(&config);
     }
 
     #[test]

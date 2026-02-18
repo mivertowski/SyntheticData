@@ -947,6 +947,21 @@ pub struct DocumentTextsConfig {
     #[serde(default)]
     pub purchase_order: DocumentTextGroup,
     #[serde(default)]
+    pub goods_receipt: DocumentTextGroup,
+    #[serde(default)]
+    pub vendor_invoice: DocumentTextGroup,
+    #[serde(default)]
+    pub payment: DocumentTextGroup,
+    #[serde(default)]
+    pub sales_order: DocumentTextGroup,
+    #[serde(default)]
+    pub delivery: DocumentTextGroup,
+    #[serde(default)]
+    pub customer_invoice: DocumentTextGroup,
+    #[serde(default)]
+    pub customer_receipt: DocumentTextGroup,
+    /// Legacy field kept for backward compatibility with existing packs.
+    #[serde(default)]
     pub invoice: DocumentTextGroup,
     #[serde(default)]
     pub journal_entry: DocumentTextGroup,
@@ -954,6 +969,9 @@ pub struct DocumentTextsConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DocumentTextGroup {
+    /// Optional prefix for document IDs (e.g. "PO", "GR", "VI").
+    #[serde(default)]
+    pub reference_prefix: String,
     #[serde(default)]
     pub header_templates: Vec<String>,
     #[serde(default)]

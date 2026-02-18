@@ -41,6 +41,8 @@ pub struct P2pDocuments {
     pub amount: Decimal,
     /// Currency
     pub currency: String,
+    /// Country code (ISO 3166-1 alpha-2) of the company.
+    pub country_code: Option<String>,
 }
 
 impl P2pDocuments {
@@ -65,7 +67,14 @@ impl P2pDocuments {
             company_code: company_code.into(),
             amount,
             currency: currency.into(),
+            country_code: None,
         }
+    }
+
+    /// Set country code for the company.
+    pub fn with_country_code(mut self, country_code: &str) -> Self {
+        self.country_code = Some(country_code.into());
+        self
     }
 
     /// Set goods receipt info.
@@ -146,6 +155,13 @@ impl OcpmEventGenerator {
             "vendor_id",
             ObjectAttributeValue::String(documents.vendor_id.clone()),
         );
+        if let Some(ref cc) = documents.country_code {
+            Self::add_event_attribute(
+                &mut event,
+                "country_code",
+                ObjectAttributeValue::String(cc.clone()),
+            );
+        }
         events.push(event);
 
         // Activity: Approve PO

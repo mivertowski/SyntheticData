@@ -77,6 +77,8 @@ use datasynth_generators::{
     // Subledger linker
     DocumentFlowLinker,
     EmployeeGenerator,
+    // ESG anomaly labels
+    EsgAnomalyLabel,
     EvidenceGenerator,
     // Financial statement generator
     FinancialStatementGenerator,
@@ -258,6 +260,10 @@ pub struct PhaseConfig {
     pub generate_manufacturing: bool,
     /// Generate sales quotes, management KPIs, and budgets.
     pub generate_sales_kpi_budgets: bool,
+    /// Generate tax jurisdictions and tax codes.
+    pub generate_tax: bool,
+    /// Generate ESG data (emissions, energy, water, waste, social, governance).
+    pub generate_esg: bool,
 }
 
 impl Default for PhaseConfig {
@@ -293,6 +299,8 @@ impl Default for PhaseConfig {
             generate_accounting_standards: false, // Off by default
             generate_manufacturing: false,        // Off by default
             generate_sales_kpi_budgets: false,    // Off by default
+            generate_tax: false,                  // Off by default
+            generate_esg: false,                  // Off by default
         }
     }
 }
@@ -558,6 +566,56 @@ pub struct BalanceValidationResult {
     pub has_unbalanced_entries: bool,
 }
 
+/// Tax data snapshot (jurisdictions and codes).
+#[derive(Debug, Clone, Default)]
+pub struct TaxSnapshot {
+    /// Tax jurisdictions.
+    pub jurisdictions: Vec<TaxJurisdiction>,
+    /// Tax codes.
+    pub codes: Vec<TaxCode>,
+    /// Jurisdiction count.
+    pub jurisdiction_count: usize,
+    /// Code count.
+    pub code_count: usize,
+}
+
+/// ESG data snapshot (emissions, energy, water, waste, social, governance, supply chain, disclosures).
+#[derive(Debug, Clone, Default)]
+pub struct EsgSnapshot {
+    /// Emission records (scope 1, 2, 3).
+    pub emissions: Vec<EmissionRecord>,
+    /// Energy consumption records.
+    pub energy: Vec<EnergyConsumption>,
+    /// Water usage records.
+    pub water: Vec<WaterUsage>,
+    /// Waste records.
+    pub waste: Vec<WasteRecord>,
+    /// Workforce diversity metrics.
+    pub diversity: Vec<WorkforceDiversityMetric>,
+    /// Pay equity metrics.
+    pub pay_equity: Vec<PayEquityMetric>,
+    /// Safety incidents.
+    pub safety_incidents: Vec<SafetyIncident>,
+    /// Safety metrics.
+    pub safety_metrics: Vec<SafetyMetric>,
+    /// Governance metrics.
+    pub governance: Vec<GovernanceMetric>,
+    /// Supplier ESG assessments.
+    pub supplier_assessments: Vec<SupplierEsgAssessment>,
+    /// Materiality assessments.
+    pub materiality: Vec<MaterialityAssessment>,
+    /// ESG disclosures.
+    pub disclosures: Vec<EsgDisclosure>,
+    /// Climate scenarios.
+    pub climate_scenarios: Vec<ClimateScenario>,
+    /// ESG anomaly labels.
+    pub anomaly_labels: Vec<EsgAnomalyLabel>,
+    /// Total emission record count.
+    pub emission_count: usize,
+    /// Total disclosure count.
+    pub disclosure_count: usize,
+}
+
 /// Complete result of enhanced generation run.
 #[derive(Debug)]
 pub struct EnhancedGenerationResult {
@@ -589,6 +647,10 @@ pub struct EnhancedGenerationResult {
     pub manufacturing: ManufacturingSnapshot,
     /// Sales, KPI, and budget snapshot.
     pub sales_kpi_budgets: SalesKpiBudgetsSnapshot,
+    /// Tax data snapshot (jurisdictions and codes).
+    pub tax: TaxSnapshot,
+    /// ESG data snapshot (emissions, energy, social, governance, disclosures).
+    pub esg: EsgSnapshot,
     /// Generated journal entries.
     pub journal_entries: Vec<JournalEntry>,
     /// Anomaly labels (if injection enabled).
@@ -719,6 +781,16 @@ pub struct EnhancedGenerationStatistics {
     pub kpi_count: usize,
     #[serde(default)]
     pub budget_line_count: usize,
+    /// Tax counts.
+    #[serde(default)]
+    pub tax_jurisdiction_count: usize,
+    #[serde(default)]
+    pub tax_code_count: usize,
+    /// ESG counts.
+    #[serde(default)]
+    pub esg_emission_count: usize,
+    #[serde(default)]
+    pub esg_disclosure_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -804,6 +876,21 @@ impl EnhancedOrchestrator {
     /// Look up a country pack by country code string.
     pub fn country_pack_for(&self, country: &str) -> &datasynth_core::CountryPack {
         self.country_pack_registry.get_by_str(country)
+    }
+
+    /// Returns the ISO 3166-1 alpha-2 country code for the primary (first)
+    /// company, defaulting to `"US"` if no companies are configured.
+    fn primary_country_code(&self) -> &str {
+        self.config
+            .companies
+            .first()
+            .map(|c| c.country.as_str())
+            .unwrap_or("US")
+    }
+
+    /// Resolve the country pack for the primary (first) company.
+    fn primary_pack(&self) -> &datasynth_core::CountryPack {
+        self.country_pack_for(self.primary_country_code())
     }
 
     /// Check if copula generators are available.
@@ -1187,6 +1274,12 @@ impl EnhancedOrchestrator {
         // Phase 19: Sales Quotes, Management KPIs, Budgets
         let sales_kpi_budgets = self.phase_sales_kpi_budgets(&coa, &mut stats)?;
 
+        // Phase 20: Tax Generation
+        let tax = self.phase_tax_generation(&mut stats)?;
+
+        // Phase 21: ESG Data Generation
+        let esg_snap = self.phase_esg_generation(&mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1229,6 +1322,8 @@ impl EnhancedOrchestrator {
             accounting_standards,
             manufacturing: manufacturing_snap,
             sales_kpi_budgets,
+            tax,
+            esg: esg_snap,
             journal_entries: entries,
             anomaly_labels,
             balance_validation,
@@ -2272,6 +2367,14 @@ impl EnhancedOrchestrator {
         // Generate payroll runs (one per month)
         if self.config.hr.payroll.enabled {
             let mut payroll_gen = datasynth_generators::PayrollGenerator::new(seed + 30);
+
+            // Look up country pack for payroll deductions and labels
+            let payroll_pack = self.primary_pack();
+
+            // Store the pack on the generator so both generate() and
+            // generate_with_country_pack() produce localized deduction labels.
+            payroll_gen.set_country_pack(payroll_pack.clone());
+
             let employees_with_salary: Vec<(
                 String,
                 rust_decimal::Decimal,
@@ -2290,15 +2393,6 @@ impl EnhancedOrchestrator {
                     )
                 })
                 .collect();
-
-            // Look up country pack for payroll deductions
-            let primary_country = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.country.as_str())
-                .unwrap_or("US");
-            let payroll_pack = self.country_pack_registry.get_by_str(primary_country);
 
             for month in 0..self.config.global.period_months {
                 let period_start = start_date + chrono::Months::new(month);
@@ -2388,16 +2482,32 @@ impl EnhancedOrchestrator {
             .map(|c| c.currency.as_str())
             .unwrap_or("USD");
 
-        // Convert config framework to standards framework
+        // Convert config framework to standards framework.
+        // If the user explicitly set a framework in the YAML config, use that.
+        // Otherwise, fall back to the country pack's accounting.framework field,
+        // and if that is also absent or unrecognised, default to US GAAP.
         let framework = match self.config.accounting_standards.framework {
-            datasynth_config::schema::AccountingFrameworkConfig::UsGaap => {
+            Some(datasynth_config::schema::AccountingFrameworkConfig::UsGaap) => {
                 datasynth_standards::framework::AccountingFramework::UsGaap
             }
-            datasynth_config::schema::AccountingFrameworkConfig::Ifrs => {
+            Some(datasynth_config::schema::AccountingFrameworkConfig::Ifrs) => {
                 datasynth_standards::framework::AccountingFramework::Ifrs
             }
-            datasynth_config::schema::AccountingFrameworkConfig::DualReporting => {
+            Some(datasynth_config::schema::AccountingFrameworkConfig::DualReporting) => {
                 datasynth_standards::framework::AccountingFramework::DualReporting
+            }
+            None => {
+                // Derive framework from the primary company's country pack
+                let pack = self.primary_pack();
+                let pack_fw = pack.accounting.framework.as_str();
+                match pack_fw {
+                    "ifrs" => datasynth_standards::framework::AccountingFramework::Ifrs,
+                    "dual_reporting" => {
+                        datasynth_standards::framework::AccountingFramework::DualReporting
+                    }
+                    // "us_gaap" or any other/unrecognised value falls back to US GAAP
+                    _ => datasynth_standards::framework::AccountingFramework::UsGaap,
+                }
             }
         };
 
@@ -2676,6 +2786,259 @@ impl EnhancedOrchestrator {
         Ok(snapshot)
     }
 
+    /// Phase 20: Generate tax jurisdictions and tax codes.
+    fn phase_tax_generation(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<TaxSnapshot> {
+        if !self.phase_config.generate_tax || !self.config.tax.enabled {
+            debug!("Phase 20: Skipped (tax generation disabled)");
+            return Ok(TaxSnapshot::default());
+        }
+        info!("Phase 20: Generating Tax Data");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let fiscal_year = start_date.year();
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        let mut gen =
+            datasynth_generators::TaxCodeGenerator::with_config(seed + 70, self.config.tax.clone());
+
+        let pack = self.primary_pack().clone();
+        let (jurisdictions, codes) =
+            gen.generate_from_country_pack(&pack, company_code, fiscal_year);
+
+        let snapshot = TaxSnapshot {
+            jurisdiction_count: jurisdictions.len(),
+            code_count: codes.len(),
+            jurisdictions,
+            codes,
+        };
+
+        stats.tax_jurisdiction_count = snapshot.jurisdiction_count;
+        stats.tax_code_count = snapshot.code_count;
+
+        info!(
+            "Tax data generated: {} jurisdictions, {} codes",
+            snapshot.jurisdiction_count, snapshot.code_count
+        );
+        self.check_resources_with_log("post-tax")?;
+
+        Ok(snapshot)
+    }
+
+    /// Phase 21: Generate ESG data (emissions, energy, water, waste, social, governance, disclosures).
+    fn phase_esg_generation(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<EsgSnapshot> {
+        if !self.phase_config.generate_esg || !self.config.esg.enabled {
+            debug!("Phase 21: Skipped (ESG generation disabled)");
+            return Ok(EsgSnapshot::default());
+        }
+        info!("Phase 21: Generating ESG Data");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        let entity_id = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        let esg_cfg = &self.config.esg;
+        let mut snapshot = EsgSnapshot::default();
+
+        // Energy consumption (feeds into scope 1 & 2 emissions)
+        let mut energy_gen = datasynth_generators::EnergyGenerator::new(
+            seed + 80,
+            esg_cfg.environmental.energy.clone(),
+        );
+        let energy_records = energy_gen.generate(entity_id, start_date, end_date);
+
+        // Water usage
+        let facility_count = esg_cfg.environmental.energy.facility_count;
+        let mut water_gen = datasynth_generators::WaterGenerator::new(seed + 81, facility_count);
+        snapshot.water = water_gen.generate(entity_id, start_date, end_date);
+
+        // Waste
+        let mut waste_gen = datasynth_generators::WasteGenerator::new(
+            seed + 82,
+            esg_cfg.environmental.waste.diversion_target,
+            facility_count,
+        );
+        snapshot.waste = waste_gen.generate(entity_id, start_date, end_date);
+
+        // Emissions (scope 1, 2, 3)
+        let mut emission_gen =
+            datasynth_generators::EmissionGenerator::new(seed + 83, esg_cfg.environmental.clone());
+
+        // Build EnergyInput from energy_records
+        let energy_inputs: Vec<datasynth_generators::EnergyInput> = energy_records
+            .iter()
+            .map(|e| datasynth_generators::EnergyInput {
+                facility_id: e.facility_id.clone(),
+                energy_type: match e.energy_source {
+                    EnergySourceType::NaturalGas => {
+                        datasynth_generators::EnergyInputType::NaturalGas
+                    }
+                    EnergySourceType::Diesel => datasynth_generators::EnergyInputType::Diesel,
+                    EnergySourceType::Coal => datasynth_generators::EnergyInputType::Coal,
+                    _ => datasynth_generators::EnergyInputType::Electricity,
+                },
+                consumption_kwh: e.consumption_kwh,
+                period: e.period,
+            })
+            .collect();
+
+        let mut emissions = Vec::new();
+        emissions.extend(emission_gen.generate_scope1(entity_id, &energy_inputs));
+        emissions.extend(emission_gen.generate_scope2(entity_id, &energy_inputs));
+
+        // Scope 3: use vendor spend data if available
+        let vendor_spend: Vec<datasynth_generators::VendorSpendInput> = self
+            .master_data
+            .vendors
+            .iter()
+            .map(|v| datasynth_generators::VendorSpendInput {
+                vendor_id: v.vendor_id.clone(),
+                category: format!("{:?}", v.vendor_type).to_lowercase(),
+                spend: rust_decimal::Decimal::new(50000, 0),
+                country: v.country.clone(),
+            })
+            .collect();
+        if !vendor_spend.is_empty() {
+            emissions.extend(emission_gen.generate_scope3_purchased_goods(
+                entity_id,
+                &vendor_spend,
+                start_date,
+                end_date,
+            ));
+        }
+
+        // Business travel & commuting (scope 3)
+        let headcount = self.master_data.employees.len() as u32;
+        if headcount > 0 {
+            let travel_spend = rust_decimal::Decimal::new(headcount as i64 * 2000, 0);
+            emissions.extend(emission_gen.generate_scope3_business_travel(
+                entity_id,
+                travel_spend,
+                start_date,
+            ));
+            emissions
+                .extend(emission_gen.generate_scope3_commuting(entity_id, headcount, start_date));
+        }
+
+        snapshot.emission_count = emissions.len();
+        snapshot.emissions = emissions;
+        snapshot.energy = energy_records;
+
+        // Social: Workforce diversity, pay equity, safety
+        let mut workforce_gen =
+            datasynth_generators::WorkforceGenerator::new(seed + 84, esg_cfg.social.clone());
+        let total_headcount = headcount.max(100);
+        snapshot.diversity =
+            workforce_gen.generate_diversity(entity_id, total_headcount, start_date);
+        snapshot.pay_equity = workforce_gen.generate_pay_equity(entity_id, start_date);
+        snapshot.safety_incidents = workforce_gen.generate_safety_incidents(
+            entity_id,
+            facility_count,
+            start_date,
+            end_date,
+        );
+
+        // Compute safety metrics
+        let total_hours = total_headcount as u64 * 2000; // ~2000 hours/employee/year
+        let safety_metric = workforce_gen.compute_safety_metrics(
+            entity_id,
+            &snapshot.safety_incidents,
+            total_hours,
+            start_date,
+        );
+        snapshot.safety_metrics = vec![safety_metric];
+
+        // Governance
+        let mut gov_gen = datasynth_generators::GovernanceGenerator::new(
+            seed + 85,
+            esg_cfg.governance.board_size,
+            esg_cfg.governance.independence_target,
+        );
+        snapshot.governance = vec![gov_gen.generate(entity_id, start_date)];
+
+        // Supplier ESG assessments
+        let mut supplier_gen = datasynth_generators::SupplierEsgGenerator::new(
+            seed + 86,
+            esg_cfg.supply_chain_esg.clone(),
+        );
+        let vendor_inputs: Vec<datasynth_generators::VendorInput> = self
+            .master_data
+            .vendors
+            .iter()
+            .map(|v| datasynth_generators::VendorInput {
+                vendor_id: v.vendor_id.clone(),
+                country: v.country.clone(),
+                industry: format!("{:?}", v.vendor_type).to_lowercase(),
+                quality_score: None,
+            })
+            .collect();
+        snapshot.supplier_assessments =
+            supplier_gen.generate(entity_id, &vendor_inputs, start_date);
+
+        // Disclosures
+        let mut disclosure_gen = datasynth_generators::DisclosureGenerator::new(
+            seed + 87,
+            esg_cfg.reporting.clone(),
+            esg_cfg.climate_scenarios.clone(),
+        );
+        snapshot.materiality = disclosure_gen.generate_materiality(entity_id, start_date);
+        snapshot.disclosures = disclosure_gen.generate_disclosures(
+            entity_id,
+            &snapshot.materiality,
+            start_date,
+            end_date,
+        );
+        snapshot.climate_scenarios = disclosure_gen.generate_climate_scenarios(entity_id);
+        snapshot.disclosure_count = snapshot.disclosures.len();
+
+        // Anomaly injection
+        if esg_cfg.anomaly_rate > 0.0 {
+            let mut anomaly_injector =
+                datasynth_generators::EsgAnomalyInjector::new(seed + 88, esg_cfg.anomaly_rate);
+            let mut labels = Vec::new();
+            labels.extend(anomaly_injector.inject_greenwashing(&mut snapshot.emissions));
+            labels.extend(anomaly_injector.inject_diversity_stagnation(&mut snapshot.diversity));
+            labels.extend(
+                anomaly_injector.inject_supply_chain_risk(&mut snapshot.supplier_assessments),
+            );
+            labels.extend(anomaly_injector.inject_data_quality_gaps(&mut snapshot.safety_metrics));
+            labels.extend(anomaly_injector.inject_missing_disclosures(&mut snapshot.materiality));
+            snapshot.anomaly_labels = labels;
+        }
+
+        stats.esg_emission_count = snapshot.emission_count;
+        stats.esg_disclosure_count = snapshot.disclosure_count;
+
+        info!(
+            "ESG data generated: {} emissions, {} disclosures, {} supplier assessments",
+            snapshot.emission_count,
+            snapshot.disclosure_count,
+            snapshot.supplier_assessments.len()
+        );
+        self.check_resources_with_log("post-esg")?;
+
+        Ok(snapshot)
+    }
+
     /// Generate the chart of accounts.
     fn generate_coa(&mut self) -> SynthResult<Arc<ChartOfAccounts>> {
         let pb = self.create_progress_bar(1, "Generating Chart of Accounts");
@@ -2788,6 +3151,7 @@ impl EnhancedOrchestrator {
         // Convert P2P config from schema to generator config
         let p2p_config = convert_p2p_config(&self.config.document_flows.p2p);
         let mut p2p_gen = P2PGenerator::with_config(self.seed + 1000, p2p_config);
+        p2p_gen.set_country_pack(self.primary_pack().clone());
 
         for i in 0..p2p_count {
             let vendor = &self.master_data.vendors[i % self.master_data.vendors.len()];
@@ -2853,6 +3217,7 @@ impl EnhancedOrchestrator {
         // Convert O2C config from schema to generator config
         let o2c_config = convert_o2c_config(&self.config.document_flows.o2c);
         let mut o2c_gen = O2CGenerator::with_config(self.seed + 2000, o2c_config);
+        o2c_gen.set_country_pack(self.primary_pack().clone());
 
         for i in 0..o2c_count {
             let customer = &self.master_data.customers[i % self.master_data.customers.len()];
@@ -2942,13 +3307,7 @@ impl EnhancedOrchestrator {
         // Connect generated master data to ensure JEs reference real entities
         // Enable persona-based error injection for realistic human behavior
         // Pass fraud configuration for fraud injection
-        let primary_country = self
-            .config
-            .companies
-            .first()
-            .map(|c| c.country.as_str())
-            .unwrap_or("US");
-        let je_pack = self.country_pack_registry.get_by_str(primary_country);
+        let je_pack = self.primary_pack();
 
         let mut generator = generator
             .with_master_data(
@@ -2957,6 +3316,11 @@ impl EnhancedOrchestrator {
                 &self.master_data.materials,
             )
             .with_country_pack_names(je_pack)
+            .with_country_pack_temporal(
+                self.config.temporal_patterns.clone(),
+                self.seed + 200,
+                je_pack,
+            )
             .with_persona_errors(true)
             .with_fraud_config(self.config.fraud.clone());
 
@@ -3668,6 +4032,9 @@ impl EnhancedOrchestrator {
         let config = DataQualityConfig::minimal();
         let mut injector = DataQualityInjector::new(config);
 
+        // Wire country pack for locale-aware format baselines
+        injector.set_country_pack(self.primary_pack().clone());
+
         // Build context for missing value decisions
         let context = HashMap::new();
 
@@ -4329,6 +4696,7 @@ impl EnhancedOrchestrator {
         let orchestrator = BankingOrchestratorBuilder::new()
             .config(self.config.banking.clone())
             .seed(self.seed + 9000)
+            .country_pack(self.primary_pack().clone())
             .build();
 
         if let Some(pb) = &pb {

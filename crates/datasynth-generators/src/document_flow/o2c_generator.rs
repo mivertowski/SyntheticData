@@ -15,6 +15,7 @@ use datasynth_core::models::{
     },
     CreditRating, Customer, CustomerPool, Material, MaterialPool, PaymentTerms,
 };
+use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -159,6 +160,7 @@ pub struct O2CGenerator {
     short_payment_counter: usize,
     on_account_counter: usize,
     correction_counter: usize,
+    country_pack: Option<CountryPack>,
 }
 
 impl O2CGenerator {
@@ -180,7 +182,61 @@ impl O2CGenerator {
             short_payment_counter: 0,
             on_account_counter: 0,
             correction_counter: 0,
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware document texts.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
+    }
+
+    /// Build a document ID, preferring the country pack `reference_prefix` when set.
+    fn make_doc_id(
+        &self,
+        default_prefix: &str,
+        pack_key: &str,
+        company_code: &str,
+        counter: usize,
+    ) -> String {
+        let prefix = self
+            .country_pack
+            .as_ref()
+            .map(|p| {
+                let grp = match pack_key {
+                    "sales_order" => &p.document_texts.sales_order,
+                    "delivery" => &p.document_texts.delivery,
+                    "customer_invoice" => &p.document_texts.customer_invoice,
+                    "customer_receipt" => &p.document_texts.customer_receipt,
+                    _ => return default_prefix.to_string(),
+                };
+                if grp.reference_prefix.is_empty() {
+                    default_prefix.to_string()
+                } else {
+                    grp.reference_prefix.clone()
+                }
+            })
+            .unwrap_or_else(|| default_prefix.to_string());
+        format!("{}-{}-{:010}", prefix, company_code, counter)
+    }
+
+    /// Pick a random line description from the country pack for the given
+    /// document type, falling back to the provided default.
+    fn pick_line_description(&mut self, pack_key: &str, default: &str) -> String {
+        if let Some(pack) = &self.country_pack {
+            let descriptions = match pack_key {
+                "sales_order" => &pack.document_texts.sales_order.line_descriptions,
+                "delivery" => &pack.document_texts.delivery.line_descriptions,
+                "customer_invoice" => &pack.document_texts.customer_invoice.line_descriptions,
+                "customer_receipt" => &pack.document_texts.customer_receipt.line_descriptions,
+                _ => return default.to_string(),
+            };
+            if !descriptions.is_empty() {
+                let idx = self.rng.gen_range(0..descriptions.len());
+                return descriptions[idx].clone();
+            }
+        }
+        default.to_string()
     }
 
     /// Generate a complete O2C chain.
@@ -416,7 +472,7 @@ impl O2CGenerator {
     ) -> SalesOrder {
         self.so_counter += 1;
 
-        let so_id = format!("SO-{}-{:010}", company_code, self.so_counter);
+        let so_id = self.make_doc_id("SO", "sales_order", company_code, self.so_counter);
 
         let requested_delivery =
             so_date + chrono::Duration::days(self.config.avg_days_so_to_delivery as i64);
@@ -437,13 +493,10 @@ impl O2CGenerator {
             let quantity = Decimal::from(self.rng.gen_range(1..50));
             let unit_price = material.list_price;
 
-            let mut item = SalesOrderItem::new(
-                (idx + 1) as u16 * 10,
-                &material.description,
-                quantity,
-                unit_price,
-            )
-            .with_material(&material.material_id);
+            let description = self.pick_line_description("sales_order", &material.description);
+            let mut item =
+                SalesOrderItem::new((idx + 1) as u16 * 10, &description, quantity, unit_price)
+                    .with_material(&material.material_id);
 
             // Add schedule line
             item.add_schedule_line(requested_delivery, quantity);
@@ -532,7 +585,7 @@ impl O2CGenerator {
     ) -> Delivery {
         self.dlv_counter += 1;
 
-        let dlv_id = format!("DLV-{}-{:010}", company_code, self.dlv_counter);
+        let dlv_id = self.make_doc_id("DLV", "delivery", company_code, self.dlv_counter);
 
         let mut delivery = Delivery::from_sales_order(
             dlv_id,
@@ -561,9 +614,11 @@ impl O2CGenerator {
                         .unwrap_or(Decimal::from_f64_retain(0.65).expect("valid decimal literal")))
                 .round_dp(2);
 
+                let dlv_description =
+                    self.pick_line_description("delivery", &so_item.base.description);
                 let mut item = DeliveryItem::from_sales_order(
                     so_item.base.line_number,
-                    &so_item.base.description,
+                    &dlv_description,
                     ship_qty,
                     so_item.base.unit_price,
                     &so.header.document_id,
@@ -605,7 +660,7 @@ impl O2CGenerator {
     ) -> CustomerInvoice {
         self.ci_counter += 1;
 
-        let invoice_id = format!("CI-{}-{:010}", company_code, self.ci_counter);
+        let invoice_id = self.make_doc_id("CI", "customer_invoice", company_code, self.ci_counter);
 
         // Calculate due date based on payment terms
         let due_date = self.calculate_due_date(invoice_date, &customer.payment_terms);
@@ -644,9 +699,11 @@ impl O2CGenerator {
         // Add invoice items based on delivered quantities
         for so_item in &so.items {
             if let Some(&(qty, cogs)) = delivered_quantities.get(&so_item.base.line_number) {
+                let ci_description =
+                    self.pick_line_description("customer_invoice", &so_item.base.description);
                 let item = CustomerInvoiceItem::from_delivery(
                     so_item.base.line_number,
-                    &so_item.base.description,
+                    &ci_description,
                     qty,
                     so_item.base.unit_price,
                     &deliveries[0].header.document_id,
@@ -702,7 +759,8 @@ impl O2CGenerator {
     ) -> Payment {
         self.rec_counter += 1;
 
-        let receipt_id = format!("REC-{}-{:010}", company_code, self.rec_counter);
+        let receipt_id =
+            self.make_doc_id("REC", "customer_receipt", company_code, self.rec_counter);
 
         // Determine if cash discount taken
         let take_discount = invoice.discount_date_1.is_some_and(|disc_date| {
@@ -940,7 +998,8 @@ impl O2CGenerator {
     ) -> (Payment, Decimal, Option<NaiveDate>) {
         self.rec_counter += 1;
 
-        let receipt_id = format!("REC-{}-{:010}", company_code, self.rec_counter);
+        let receipt_id =
+            self.make_doc_id("REC", "customer_receipt", company_code, self.rec_counter);
 
         let full_amount = invoice.amount_open;
         let payment_amount = (full_amount
@@ -1008,7 +1067,8 @@ impl O2CGenerator {
         self.rec_counter += 1;
         self.short_payment_counter += 1;
 
-        let receipt_id = format!("REC-{}-{:010}", company_code, self.rec_counter);
+        let receipt_id =
+            self.make_doc_id("REC", "customer_receipt", company_code, self.rec_counter);
         let short_id = format!("SHORT-{}-{:06}", company_code, self.short_payment_counter);
 
         let full_amount = invoice.amount_open;
@@ -1088,7 +1148,8 @@ impl O2CGenerator {
         self.rec_counter += 1;
         self.on_account_counter += 1;
 
-        let receipt_id = format!("REC-{}-{:010}", company_code, self.rec_counter);
+        let receipt_id =
+            self.make_doc_id("REC", "customer_receipt", company_code, self.rec_counter);
         let on_account_id = format!("OA-{}-{:06}", company_code, self.on_account_counter);
 
         let mut receipt = Payment::new_ar_receipt(

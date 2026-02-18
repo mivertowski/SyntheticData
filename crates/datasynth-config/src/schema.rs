@@ -4648,9 +4648,11 @@ pub struct AccountingStandardsConfig {
     #[serde(default)]
     pub enabled: bool,
 
-    /// Accounting framework to use
-    #[serde(default)]
-    pub framework: AccountingFrameworkConfig,
+    /// Accounting framework to use.
+    /// When `None`, the country pack's `accounting.framework` is used as fallback;
+    /// if that is also absent the orchestrator defaults to US GAAP.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub framework: Option<AccountingFrameworkConfig>,
 
     /// Revenue recognition configuration (ASC 606/IFRS 15)
     #[serde(default)]
@@ -12667,10 +12669,7 @@ mod tests {
     fn test_accounting_standards_config_defaults() {
         let config = AccountingStandardsConfig::default();
         assert!(!config.enabled);
-        assert!(matches!(
-            config.framework,
-            AccountingFrameworkConfig::UsGaap
-        ));
+        assert!(config.framework.is_none());
         assert!(!config.revenue_recognition.enabled);
         assert!(!config.leases.enabled);
         assert!(!config.fair_value.enabled);
@@ -12701,7 +12700,10 @@ mod tests {
         let config: AccountingStandardsConfig =
             serde_yaml::from_str(yaml).expect("Failed to parse");
         assert!(config.enabled);
-        assert!(matches!(config.framework, AccountingFrameworkConfig::Ifrs));
+        assert!(matches!(
+            config.framework,
+            Some(AccountingFrameworkConfig::Ifrs)
+        ));
         assert!(config.revenue_recognition.enabled);
         assert_eq!(config.revenue_recognition.contract_count, 150);
         assert_eq!(config.revenue_recognition.avg_obligations_per_contract, 2.5);
@@ -12911,7 +12913,7 @@ mod tests {
         assert!(config.accounting_standards.enabled);
         assert!(matches!(
             config.accounting_standards.framework,
-            AccountingFrameworkConfig::UsGaap
+            Some(AccountingFrameworkConfig::UsGaap)
         ));
         assert!(config.accounting_standards.revenue_recognition.enabled);
         assert!(config.accounting_standards.leases.enabled);

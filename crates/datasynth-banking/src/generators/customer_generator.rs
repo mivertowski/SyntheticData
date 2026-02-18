@@ -23,6 +23,8 @@ pub struct CustomerGenerator {
     uuid_factory: DeterministicUuidFactory,
     start_date: NaiveDate,
     end_date: NaiveDate,
+    /// Optional country pack for locale-aware phone, address, and ID generation.
+    country_pack: Option<CountryPack>,
 }
 
 impl CustomerGenerator {
@@ -41,7 +43,16 @@ impl CustomerGenerator {
             ),
             start_date,
             end_date,
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware data generation.
+    ///
+    /// When set, phone numbers, addresses, and national IDs will be generated
+    /// using country-pack-specific formats and templates.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate all customers.
@@ -100,20 +111,33 @@ impl CustomerGenerator {
             customer.risk_tier = RiskTier::High;
         }
 
-        // Generate contact info
+        // Generate contact info — use country pack methods when available
         customer.email = Some(self.generate_email(&first_name, &last_name));
-        customer.phone = Some(self.generate_phone(&country));
+        let pack_clone = self.country_pack.clone();
+        customer.phone = Some(if let Some(ref pack) = pack_clone {
+            self.generate_phone_from_pack(pack)
+        } else {
+            self.generate_phone(&country)
+        });
         customer.date_of_birth = Some(self.generate_birth_date(persona));
 
         // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);
         customer.postal_code = Some(postal);
 
         // Generate identification documents
-        customer.national_id = Some(self.generate_national_id(&country));
+        customer.national_id = Some(if let Some(ref pack) = pack_clone {
+            self.generate_national_id_from_pack(pack)
+        } else {
+            self.generate_national_id(&country)
+        });
         if self.rng.gen::<f64>() < 0.4 {
             customer.passport_number = Some(self.generate_passport_number(&country));
         }
@@ -140,15 +164,24 @@ impl CustomerGenerator {
         // Generate KYC profile
         customer.kyc_profile = self.generate_business_kyc_profile(persona);
 
-        // Generate contact info
+        // Generate contact info — use country pack methods when available
         customer.email = Some(format!("info@{}.com", name.to_lowercase().replace(' ', "")));
-        customer.phone = Some(self.generate_phone(&country));
+        let pack_clone = self.country_pack.clone();
+        customer.phone = Some(if let Some(ref pack) = pack_clone {
+            self.generate_phone_from_pack(pack)
+        } else {
+            self.generate_phone(&country)
+        });
 
         // Set industry
         customer.industry_description = Some(self.get_industry_description(persona));
 
         // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);
@@ -202,8 +235,13 @@ impl CustomerGenerator {
         customer.kyc_profile = KycProfile::high_net_worth()
             .with_turnover(datasynth_core::models::banking::TurnoverBand::VeryHigh);
 
-        // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        // Generate address — use country pack when available
+        let pack_clone = self.country_pack.clone();
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);

@@ -4,6 +4,7 @@
 //! data quality issues into synthetic data.
 
 use chrono::NaiveDate;
+use datasynth_core::CountryPack;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -248,6 +249,14 @@ impl DataQualityInjector {
             issues: Vec::new(),
             next_issue_id: 1,
         }
+    }
+
+    /// Set the country pack for locale-aware format variation baselines.
+    ///
+    /// Propagates to the internal `FormatVariationInjector` so that date and
+    /// amount baselines reflect the country's locale conventions.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.format_injector.set_country_pack(pack);
     }
 
     /// Processes a text field, potentially introducing quality issues.

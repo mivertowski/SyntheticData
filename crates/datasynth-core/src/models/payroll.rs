@@ -110,4 +110,24 @@ pub struct PayrollLineItem {
     pub cost_center: Option<String>,
     /// Department allocation
     pub department: Option<String>,
+
+    // -- Country-pack deduction labels ----------------------------------------
+    // When a country pack is available these carry the localized deduction names
+    // (e.g. "Lohnsteuer" instead of "Federal Income Tax"). When no pack is set
+    // the fields are `None` and the implicit US-centric names apply.
+    /// Localized label for the tax withholding deduction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tax_withholding_label: Option<String>,
+    /// Localized label for the social security / FICA deduction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_security_label: Option<String>,
+    /// Localized label for the health insurance deduction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub health_insurance_label: Option<String>,
+    /// Localized label for the retirement / pension contribution.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retirement_contribution_label: Option<String>,
+    /// Localized label(s) for employer contributions (semicolon-separated).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employer_contribution_label: Option<String>,
 }
