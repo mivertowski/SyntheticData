@@ -52,37 +52,83 @@ pub mod standards;
 pub mod tax;
 pub mod treasury;
 
-pub use anomaly::*;
-pub use audit::*;
-pub use balance::*;
+// ---------------------------------------------------------------------------
+// Root-level re-exports
+//
+// Modules consumed by datasynth-runtime or internal tests from the crate root
+// keep glob re-exports so that `use datasynth_generators::SomeType;` works.
+// Modules that are only accessed via qualified paths (e.g.
+// `datasynth_generators::fraud::RedFlagGenerator`) expose their types through
+// `pub mod` above and do NOT pollute the crate root namespace.
+// ---------------------------------------------------------------------------
+
+// Core generators
 pub use coa_generator::*;
-pub use company_selector::*;
-pub use control_generator::*;
-pub use counterfactual::*;
-pub use data_quality::*;
-pub use disruption::*;
-pub use document_flow::*;
-pub use fraud::*;
-pub use fx::*;
-pub use industry::*;
-pub use intercompany::*;
 pub use je_generator::*;
-pub use master_data::*;
-pub use period_close::*;
-pub use relationships::*;
-pub use subledger::*;
-pub use temporal::*;
 pub use user_generator::*;
 
-// Enterprise process chain re-exports
-pub use bank_reconciliation_generator::*;
-pub use budget_generator::*;
-pub use esg::*;
-pub use hr::*;
-pub use kpi_generator::*;
-pub use manufacturing::*;
-pub use project_accounting::*;
-pub use sales_quote_generator::*;
+// Master data generators
+pub use master_data::*;
+
+// Document flow generators
+pub use document_flow::*;
+
+// Anomaly injection
+pub use anomaly::*;
+
+// Data quality
+pub use data_quality::*;
+
+// Audit generators
+pub use audit::*;
+
+// Balance validation
+pub use balance::*;
+
+// Subledger generators
+pub use subledger::*;
+
+// Sourcing generators (S2C)
 pub use sourcing::*;
+
+// Period close / financial statements
+pub use period_close::*;
+
+// Bank reconciliation generator
+pub use bank_reconciliation_generator::*;
+
+// ESG generators
+pub use esg::*;
+
+// Intercompany generators
+pub use intercompany::*;
+
+// HR generators (payroll, time entry, expense report)
+pub use hr::*;
+
+// Manufacturing generators
+pub use manufacturing::*;
+
+// Accounting standards generators
 pub use standards::*;
+
+// Enterprise process chain generators
+pub use budget_generator::*;
+pub use kpi_generator::*;
+pub use sales_quote_generator::*;
 pub use tax::*;
+
+// ---------------------------------------------------------------------------
+// Modules below are accessible via qualified paths only:
+//   datasynth_generators::company_selector::WeightedCompanySelector
+//   datasynth_generators::control_generator::ControlGenerator
+//   datasynth_generators::counterfactual::CounterfactualGenerator
+//   datasynth_generators::disruption::DisruptionManager
+//   datasynth_generators::fraud::{RedFlagGenerator, CollusionNetwork, ...}
+//   datasynth_generators::fx::{FxRateService, CurrencyTranslator, ...}
+//   datasynth_generators::industry::{IndustryTransactionGenerator, ...}
+//   datasynth_generators::relationships::{EntityGraphGenerator, ...}
+//   datasynth_generators::temporal::TemporalAttributeGenerator
+//   datasynth_generators::project_accounting::{ProjectGenerator, ...}
+//   datasynth_generators::treasury::{CashPositionGenerator, ...}
+// ---------------------------------------------------------------------------

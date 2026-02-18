@@ -18,7 +18,7 @@ pub mod unified;
 
 pub use common::*;
 pub use dgl::*;
-pub use hypergraph::*;
+pub use hypergraph::{HypergraphExportConfig, HypergraphExporter};
 pub use neo4j::*;
 pub use pytorch_geometric::*;
 pub use rustgraph::*;

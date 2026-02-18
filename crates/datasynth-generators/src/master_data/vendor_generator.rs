@@ -232,39 +232,6 @@ impl Default for VendorNetworkConfig {
     }
 }
 
-/// Legacy vendor name templates by category (kept for backward compatibility).
-/// New code should use VendorNameGenerator from the realism module.
-#[allow(dead_code)]
-const VENDOR_NAME_TEMPLATES_LEGACY: &[(&str, &[&str])] = &[
-    (
-        "Manufacturing",
-        &[
-            "Global Manufacturing Solutions",
-            "Precision Parts Inc.",
-            "Industrial Components Ltd.",
-            "Advanced Materials Corp.",
-        ],
-    ),
-    (
-        "Services",
-        &[
-            "Professional Services Group",
-            "Consulting Partners LLC",
-            "Business Solutions Inc.",
-            "Technical Services Corp.",
-        ],
-    ),
-    (
-        "Technology",
-        &[
-            "Tech Solutions Inc.",
-            "Digital Systems Corp.",
-            "Software Innovations LLC",
-            "Cloud Services Partners",
-        ],
-    ),
-];
-
 /// Bank name templates.
 const BANK_NAMES: &[&str] = &[
     "First National Bank",
@@ -525,14 +492,6 @@ impl VendorGenerator {
             holder_name: format!("Vendor {}", vendor_id),
             is_primary: self.vendor_counter == 1,
         }
-    }
-
-    /// Generate an address using the enhanced address generator.
-    #[allow(dead_code)]
-    fn generate_address(&mut self) -> String {
-        use datasynth_core::templates::AddressStyle;
-        let address = self.address_gen.generate_commercial(&mut self.rng);
-        address.format(AddressStyle::SingleLine)
     }
 
     /// Reset the generator.

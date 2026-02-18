@@ -21,8 +21,6 @@
 //! - **Neo4j**: CSV files with Cypher import scripts
 //! - **DGL**: Compatible format for Deep Graph Library
 
-#![allow(ambiguous_glob_reexports)]
-
 pub mod builders;
 pub mod exporters;
 pub mod ml;
@@ -32,7 +30,33 @@ pub mod models;
 #[allow(clippy::unwrap_used)]
 pub(crate) mod test_helpers;
 
-pub use builders::*;
-pub use exporters::*;
+// Re-export builder types
+pub use builders::{
+    ApprovalGraphBuilder, ApprovalGraphConfig, BankingGraphBuilder, BankingGraphConfig,
+    EntityGraphBuilder, EntityGraphConfig, HypergraphBuilder, HypergraphConfig,
+    OwnershipHierarchy, OwnershipHierarchyNode, SimpleApproval, TransactionGraphBuilder,
+    TransactionGraphConfig,
+};
+
+// Re-export exporter types
+pub use exporters::{
+    CommonExportConfig, CommonGraphMetadata, CypherQueryBuilder, DGLExportConfig, DGLExporter,
+    DGLMetadata, HypergraphExportConfig, HypergraphExporter, Neo4jExportConfig, Neo4jExporter,
+    Neo4jMetadata, PyGExportConfig, PyGExporter, PyGMetadata, RawUnifiedEdge, RawUnifiedHyperedge,
+    RawUnifiedNode, RustGraphEdgeMetadata, RustGraphEdgeOutput, RustGraphExportConfig,
+    RustGraphExporter, RustGraphMetadata, RustGraphNodeMetadata, RustGraphNodeOutput,
+    RustGraphOutputFormat, RustGraphUnifiedExporter, UnifiedExportConfig,
+    UnifiedHypergraphMetadata,
+};
+
+// Re-export ML types
 pub use ml::*;
-pub use models::*;
+
+// Re-export model types
+pub use models::{
+    AccountNode, AggregationStrategy, ApprovalEdge, CompanyNode, CrossLayerEdge, EdgeDirection,
+    EdgeId, EdgeProperty, EdgeType, Graph, GraphEdge, GraphMetadata, GraphNode, GraphType,
+    HeterogeneousGraph, Hyperedge, HyperedgeParticipant, Hypergraph, HypergraphLayer,
+    HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport, NodeId, NodeProperty,
+    NodeType, OwnershipEdge, TransactionEdge, UserNode,
+};

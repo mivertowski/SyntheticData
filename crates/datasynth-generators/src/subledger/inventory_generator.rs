@@ -44,8 +44,6 @@ pub struct InventoryGenerator {
     config: InventoryGeneratorConfig,
     rng: ChaCha8Rng,
     movement_counter: u64,
-    #[allow(dead_code)]
-    position_counter: u64,
 }
 
 impl InventoryGenerator {
@@ -55,7 +53,6 @@ impl InventoryGenerator {
             config,
             rng,
             movement_counter: 0,
-            position_counter: 0,
         }
     }
 

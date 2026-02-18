@@ -92,9 +92,6 @@ pub struct DriftLabelRecorder {
     event_counter: u64,
     /// Track previous drift state for delta detection.
     previous_drift: Option<DriftAdjustments>,
-    /// Track active regime changes (reserved for future use).
-    #[allow(dead_code)]
-    active_regimes: HashMap<String, u32>,
     /// Track if in recession (for recession end detection).
     was_in_recession: bool,
 }
@@ -108,7 +105,6 @@ impl DriftLabelRecorder {
             start_date,
             event_counter: 0,
             previous_drift: None,
-            active_regimes: HashMap::new(),
             was_in_recession: false,
         }
     }

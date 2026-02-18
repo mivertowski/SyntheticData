@@ -130,7 +130,6 @@ pub struct InjectionBatchResult {
 }
 
 /// Main anomaly injection engine.
-#[allow(dead_code)]
 pub struct AnomalyInjector {
     config: AnomalyInjectorConfig,
     rng: ChaCha8Rng,
