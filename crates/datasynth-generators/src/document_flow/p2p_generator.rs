@@ -4,6 +4,7 @@
 //! PurchaseOrder → GoodsReceipt → VendorInvoice → Payment
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -177,7 +178,7 @@ impl P2PGenerator {
     /// Create a new P2P generator with custom configuration.
     pub fn with_config(seed: u64, config: P2PGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             po_counter: 0,
@@ -880,7 +881,7 @@ impl P2PGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.po_counter = 0;
         self.gr_counter = 0;
         self.vi_counter = 0;

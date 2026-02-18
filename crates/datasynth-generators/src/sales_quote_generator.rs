@@ -7,6 +7,7 @@ use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::SalesQuoteConfig;
 use datasynth_core::models::{QuoteLineItem, QuoteStatus, SalesQuote};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -23,7 +24,7 @@ impl SalesQuoteGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SalesQuote),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -126,15 +127,18 @@ impl SalesQuoteGenerator {
             let mat_idx = self.rng.gen_range(0..material_ids.len());
             let (material_id, description) = &material_ids[mat_idx];
 
-            let unit_price_raw: f64 = self.rng.gen_range(50.0..5000.0);
-            let quantity_raw: f64 = self.rng.gen_range(1.0..100.0);
-
-            let unit_price = Decimal::from_f64_retain(unit_price_raw)
-                .unwrap_or(Decimal::ZERO)
-                .round_dp(2);
-            let quantity = Decimal::from_f64_retain(quantity_raw)
-                .unwrap_or(Decimal::ONE)
-                .round_dp(0);
+            let unit_price = sample_decimal_range(
+                &mut self.rng,
+                Decimal::from(50),
+                Decimal::from(5000),
+            )
+            .round_dp(2);
+            let quantity = sample_decimal_range(
+                &mut self.rng,
+                Decimal::ONE,
+                Decimal::from(100),
+            )
+            .round_dp(0);
             let line_amount = (unit_price * quantity).round_dp(2);
             total_amount += line_amount;
 

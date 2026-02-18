@@ -16,6 +16,7 @@ use datasynth_core::models::{
     CreditRating, Customer, CustomerPool, Material, MaterialPool, PaymentTerms,
 };
 use datasynth_core::CountryPack;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -172,7 +173,7 @@ impl O2CGenerator {
     /// Create a new O2C generator with custom configuration.
     pub fn with_config(seed: u64, config: O2CGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             so_counter: 0,
@@ -974,7 +975,7 @@ impl O2CGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.so_counter = 0;
         self.dlv_counter = 0;
         self.ci_counter = 0;

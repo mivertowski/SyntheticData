@@ -8,6 +8,7 @@ use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ExpenseConfig;
 use datasynth_core::models::{ExpenseCategory, ExpenseLineItem, ExpenseReport, ExpenseStatus};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -24,7 +25,7 @@ impl ExpenseReportGenerator {
     /// Create a new expense report generator with default configuration.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ExpenseReport),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -38,7 +39,7 @@ impl ExpenseReportGenerator {
     /// Create an expense report generator with custom configuration.
     pub fn with_config(seed: u64, config: ExpenseConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ExpenseReport),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -229,10 +230,12 @@ impl ExpenseReportGenerator {
         // Pick a category and generate an appropriate amount range
         let (category, amount_min, amount_max, desc, merchant) = self.pick_category();
 
-        let raw_amount = self.rng.gen_range(amount_min..=amount_max);
-        let amount = Decimal::from_f64_retain(raw_amount)
-            .unwrap_or(Decimal::ONE)
-            .round_dp(2);
+        let amount = sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(amount_min).unwrap_or(Decimal::ONE),
+            Decimal::from_f64_retain(amount_max).unwrap_or(Decimal::ONE),
+        )
+        .round_dp(2);
 
         // Date within the period
         let days_in_period = (period_end - period_start).num_days().max(1);

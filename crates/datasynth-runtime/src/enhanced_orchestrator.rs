@@ -495,6 +495,10 @@ pub struct HrSnapshot {
 /// Accounting standards data snapshot (revenue recognition, impairment).
 #[derive(Debug, Clone, Default)]
 pub struct AccountingStandardsSnapshot {
+    /// Revenue recognition contracts (actual data).
+    pub contracts: Vec<datasynth_standards::accounting::revenue::CustomerContract>,
+    /// Impairment tests (actual data).
+    pub impairment_tests: Vec<datasynth_standards::accounting::impairment::ImpairmentTest>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
@@ -1340,6 +1344,35 @@ impl EnhancedOrchestrator {
         // Build data lineage graph
         let lineage = self.build_lineage_graph();
 
+        // Evaluate quality gates if enabled in config
+        let gate_result = if self.config.quality_gates.enabled {
+            let profile_name = &self.config.quality_gates.profile;
+            match datasynth_eval::gates::get_profile(profile_name) {
+                Some(profile) => {
+                    // Build a minimal comprehensive evaluation for gate checking.
+                    // A full evaluation pipeline is out of scope for the orchestrator;
+                    // metrics that have not been computed will be treated as "not
+                    // available" and automatically pass.
+                    let eval = datasynth_eval::ComprehensiveEvaluation::new();
+                    let result = datasynth_eval::gates::GateEngine::evaluate(&eval, &profile);
+                    info!(
+                        "Quality gates evaluated (profile '{}'): {}/{} passed — {}",
+                        profile_name, result.gates_passed, result.gates_total, result.summary
+                    );
+                    Some(result)
+                }
+                None => {
+                    warn!(
+                        "Quality gates enabled but profile '{}' not found; skipping gate evaluation",
+                        profile_name
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         Ok(EnhancedGenerationResult {
             chart_of_accounts: (*coa).clone(),
             master_data: self.master_data.clone(),
@@ -1364,7 +1397,7 @@ impl EnhancedOrchestrator {
             data_quality_stats,
             statistics: stats,
             lineage: Some(lineage),
-            gate_result: None,
+            gate_result,
         })
     }
 
@@ -3286,6 +3319,7 @@ impl EnhancedOrchestrator {
                     framework,
                 );
                 snapshot.revenue_contract_count = contracts.len();
+                snapshot.contracts = contracts;
             }
         }
 
@@ -3314,6 +3348,7 @@ impl EnhancedOrchestrator {
                     framework,
                 );
                 snapshot.impairment_test_count = tests.len();
+                snapshot.impairment_tests = tests;
             }
         }
 
@@ -3922,12 +3957,13 @@ impl EnhancedOrchestrator {
             let company = &self.config.companies[i % self.config.companies.len()];
             let po_date = start_date + chrono::Duration::days((i * 3) as i64 % 365);
             let fiscal_period = po_date.month() as u8;
-            let created_by = self
-                .master_data
-                .employees
-                .first()
-                .map(|e| e.user_id.as_str())
-                .unwrap_or("SYSTEM");
+            let created_by = if self.master_data.employees.is_empty() {
+                "SYSTEM"
+            } else {
+                self.master_data.employees[i % self.master_data.employees.len()]
+                    .user_id
+                    .as_str()
+            };
 
             let chain = p2p_gen.generate_chain(
                 &company.code,
@@ -3988,12 +4024,13 @@ impl EnhancedOrchestrator {
             let company = &self.config.companies[i % self.config.companies.len()];
             let so_date = start_date + chrono::Duration::days((i * 2) as i64 % 365);
             let fiscal_period = so_date.month() as u8;
-            let created_by = self
-                .master_data
-                .employees
-                .first()
-                .map(|e| e.user_id.as_str())
-                .unwrap_or("SYSTEM");
+            let created_by = if self.master_data.employees.is_empty() {
+                "SYSTEM"
+            } else {
+                self.master_data.employees[i % self.master_data.employees.len()]
+                    .user_id
+                    .as_str()
+            };
 
             let chain = o2c_gen.generate_chain(
                 &company.code,

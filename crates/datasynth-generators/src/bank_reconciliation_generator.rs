@@ -15,6 +15,7 @@ use datasynth_core::models::{
     ReconcilingItem, ReconcilingItemType,
 };
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -77,7 +78,7 @@ impl BankReconciliationGenerator {
     /// Create a new generator with default configuration.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::BankReconciliation),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -96,7 +97,7 @@ impl BankReconciliationGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: BankReconciliationConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::BankReconciliation),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -304,12 +305,12 @@ impl BankReconciliationGenerator {
 
     /// Generate a random opening balance using the configured range.
     fn random_opening_balance(&mut self) -> Decimal {
-        let raw: f64 = self
-            .rng
-            .gen_range(self.config.min_opening_balance..=self.config.max_opening_balance);
-        Decimal::from_f64_retain(raw)
-            .unwrap_or(Decimal::ZERO)
-            .round_dp(2)
+        sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(self.config.min_opening_balance).unwrap_or(Decimal::ZERO),
+            Decimal::from_f64_retain(self.config.max_opening_balance).unwrap_or(Decimal::ZERO),
+        )
+        .round_dp(2)
     }
 
     /// Convert an internal payment reference into a bank statement line.
@@ -419,10 +420,12 @@ impl BankReconciliationGenerator {
             }
         };
 
-        let raw_amount: f64 = self.rng.gen_range(amount_range.0..=amount_range.1);
-        let amount = Decimal::from_f64_retain(raw_amount)
-            .unwrap_or(Decimal::ONE)
-            .round_dp(2);
+        let amount = sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(amount_range.0).unwrap_or(Decimal::ONE),
+            Decimal::from_f64_retain(amount_range.1).unwrap_or(Decimal::ONE),
+        )
+        .round_dp(2);
 
         let bank_ref = format!(
             "BNK-{}-{:06}",
