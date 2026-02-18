@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Master Data Country Pack Support** (`datasynth-generators`): `set_country_pack()` method added to `VendorGenerator`, `CustomerGenerator`, and `MaterialGenerator` with orchestrator wiring
 
+- **Generator Tracing** (`datasynth-generators`): `tracing::debug!` instrumentation added to P2P, O2C, KPI, Budget, and Sourcing Project generators for structured logging of generation parameters
+
+- **Deterministic UUID Discriminators** (`datasynth-core`): `GeneratorType::SupplierQualification` and `GeneratorType::SupplierScorecard` discriminators added for collision-free UUID generation in sourcing module
+
+- **`with_seed()` Constructors** (`datasynth-generators`): Standardized `with_seed(config, seed)` constructor added to `ARGenerator`, `APGenerator`, `FAGenerator`, `InventoryGenerator`, `OpeningBalanceGenerator`, `FxRateService`, and `FxRateGenerator`
+
 ### Changed
 
 - Bumped all Rust crate versions to 0.8.0
@@ -67,8 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Country pack API unified** to setter pattern; removed redundant `generate_with_country_pack()` per-call usage in orchestrator
 - **Shared utilities** (`datasynth-core::utils`): `seeded_rng()` replaces `ChaCha8Rng::seed_from_u64()` in 9 generators; `sample_decimal_range()` replaces manual Decimal sampling in 4 generators; `weighted_select()` migrated across 9 generator files
 - **Re-export cleanup**: Explicit type lists replace glob `pub use *` re-exports in `datasynth-core`, `datasynth-generators`, and `datasynth-graph` lib.rs files; removed `#![allow(ambiguous_glob_reexports)]`
-- **Dead code removed**: Unused `active_regimes` field, `VENDOR_NAME_TEMPLATES_LEGACY` constant, `generate_address()` method, `position_counter` field, and redundant `#[allow(dead_code)]` annotation
+- **Dead code removed** (round 1): Unused `active_regimes` field, `VENDOR_NAME_TEMPLATES_LEGACY` constant, `generate_address()` method, `position_counter` field, and redundant `#[allow(dead_code)]` annotation
+- **Dead code removed** (round 2): Legacy trial balance builder, `GenericParquetRecord`, `BaselineComparer`, unused `ComputeStrategy` variants, dead server route field; blanket `#![allow(dead_code)]` removed from `datasynth-generators` with targeted per-item fixes; "reserved-for-future" `#[allow(dead_code)]` annotations removed from eval/core fields
+- **Unused dependencies removed**: `statrs`, `nalgebra`, `askama`, `ndarray`, `plotters` from `datasynth-fingerprint` and `datasynth-eval`
+- **Uuid::new_v4() replaced** with `DeterministicUuidFactory` across 16 generator files (anomaly strategies, injector, schemes, fraud collusion/management override, relationships, counterfactual, data quality labels, error cascade) for full deterministic reproducibility
 - **`AccountingStandardsSnapshot`** now persists actual `Vec<CustomerContract>` and `Vec<ImpairmentTest>` data (previously only stored counts)
+- **Output pipeline expanded** (`datasynth-cli`, `datasynth-runtime`): Treasury (6 generators), project accounting (5 generators), tax generators, period-close generators, accounting standards, internal controls, banking AML labels, IC journal entries, period-close trial balances, process mining events, and graph export warnings all wired to output writer with manifest registration
+- **Quality gate evaluation** now receives actual balance sheet evaluation, coherence pass/fail, and statistical/quality scores instead of stub data
+- **KPIs derived from actual data**: Gross Margin, Operating Margin, and Current Ratio overridden with values computed from generated financial statements
+- **Sourcing project cross-references**: `rfx_ids`, `contract_id`, and `spend_analysis_id` back-populated from generated data after sourcing generation completes
+- **Audit team linked to real employees**: `engagement_partner_id`, `engagement_manager_id`, and `team_member_ids` replaced with actual employee IDs from master data
 - **`created_by` field** rotated across employees via round-robin in P2P/O2C document flow loops (previously always used first employee)
 - **OCPM UUID generation** centralized via `DeterministicUuidFactory` with sub-discriminators, replacing hand-rolled FNV-1a hash and `Uuid::new_v4()` calls
 - **Banking seed offsets** replaced with named constants for deterministic sub-generator seeding
@@ -84,6 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`InjectorStats` fields** made public for external consumers
 - **`CountryPack` clone** eliminated in payroll generator hot path via `as_ref()` borrowing
 - **E2e tests** updated to expect `journal_entries.json` output filename
+- **AP three-way match variance**: Price and quantity variances now computed as ~3% and ~1.5% of line total respectively when `ThreeWayMatchFailed`, instead of hardcoded `Decimal::ZERO`
+- **Subledger vendor/customer names**: `DocumentFlowLinker` now receives vendor and customer name maps from master data, replacing placeholder `"Vendor {id}"` / `"Customer {id}"` strings with actual generated names
+- **DocumentFlowJeGenerator seed**: `with_config()` constructor no longer uses hardcoded seed; accepts seed parameter for deterministic generation
 
 ## [0.7.0] - 2026-02-17
 
