@@ -7,8 +7,8 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ExpenseConfig;
 use datasynth_core::models::{ExpenseCategory, ExpenseLineItem, ExpenseReport, ExpenseStatus};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_core::utils::{sample_decimal_range, seeded_rng};
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;

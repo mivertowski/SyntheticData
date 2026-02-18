@@ -7,9 +7,9 @@
 use chrono::NaiveDate;
 use datasynth_config::schema::PayrollConfig;
 use datasynth_core::models::{PayrollLineItem, PayrollRun, PayrollRunStatus};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_core::CountryPack;
-use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -477,12 +477,8 @@ impl PayrollGenerator {
 
             // Small random other deductions (garnishments, etc.): ~3% chance
             let other_deductions = if self.rng.gen_bool(0.03) {
-                sample_decimal_range(
-                    &mut self.rng,
-                    Decimal::from(50),
-                    Decimal::from(500),
-                )
-                .round_dp(2)
+                sample_decimal_range(&mut self.rng, Decimal::from(50), Decimal::from(500))
+                    .round_dp(2)
             } else {
                 Decimal::ZERO
             };

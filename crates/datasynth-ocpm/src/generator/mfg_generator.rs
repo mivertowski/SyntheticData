@@ -9,9 +9,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
-};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// MFG document references for event generation.
@@ -41,7 +39,13 @@ pub struct MfgDocuments {
 
 impl MfgDocuments {
     /// Create new MFG documents.
-    pub fn new(order_id: &str, material_id: &str, company_code: &str, quantity: Decimal, factory: &OcpmUuidFactory) -> Self {
+    pub fn new(
+        order_id: &str,
+        material_id: &str,
+        company_code: &str,
+        quantity: Decimal,
+        factory: &OcpmUuidFactory,
+    ) -> Self {
         Self {
             order_id: order_id.into(),
             order_uuid: factory.next_document_id(),
@@ -406,10 +410,16 @@ mod tests {
     fn test_mfg_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
         let factory = OcpmUuidFactory::new(42);
-        let documents = MfgDocuments::new("PO-MFG-001", "MAT-001", "1000", Decimal::new(100, 0), &factory)
-            .with_operations(vec!["OP-010", "OP-020"])
-            .with_inspection("QI-001", &factory)
-            .with_cycle_count("CC-001", &factory);
+        let documents = MfgDocuments::new(
+            "PO-MFG-001",
+            "MAT-001",
+            "1000",
+            Decimal::new(100, 0),
+            &factory,
+        )
+        .with_operations(vec!["OP-010", "OP-020"])
+        .with_inspection("QI-001", &factory)
+        .with_cycle_count("CC-001", &factory);
 
         let result = generator.generate_mfg_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -431,8 +441,14 @@ mod tests {
         );
 
         let factory = OcpmUuidFactory::new(123);
-        let documents = MfgDocuments::new("PO-MFG-002", "MAT-001", "1000", Decimal::new(50, 0), &factory)
-            .with_operations(vec!["OP-010"]);
+        let documents = MfgDocuments::new(
+            "PO-MFG-002",
+            "MAT-001",
+            "1000",
+            Decimal::new(50, 0),
+            &factory,
+        )
+        .with_operations(vec!["OP-010"]);
 
         let result = generator.generate_mfg_case(&documents, Utc::now(), &[]);
 

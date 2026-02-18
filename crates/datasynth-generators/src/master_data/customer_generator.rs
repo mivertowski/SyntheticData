@@ -411,6 +411,8 @@ pub struct CustomerGenerator {
     customer_counter: usize,
     /// Segmentation configuration
     segmentation_config: CustomerSegmentationConfig,
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl CustomerGenerator {
@@ -427,6 +429,7 @@ impl CustomerGenerator {
             config,
             customer_counter: 0,
             segmentation_config: CustomerSegmentationConfig::default(),
+            country_pack: None,
         }
     }
 
@@ -442,12 +445,18 @@ impl CustomerGenerator {
             config,
             customer_counter: 0,
             segmentation_config,
+            country_pack: None,
         }
     }
 
     /// Set segmentation configuration.
     pub fn set_segmentation_config(&mut self, segmentation_config: CustomerSegmentationConfig) {
         self.segmentation_config = segmentation_config;
+    }
+
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single customer.

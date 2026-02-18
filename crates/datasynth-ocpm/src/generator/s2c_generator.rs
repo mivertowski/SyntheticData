@@ -395,11 +395,16 @@ mod tests {
     fn test_s2c_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
         let factory = OcpmUuidFactory::new(42);
-        let documents =
-            S2cDocuments::new("SP-000001", "V000001", "1000", Decimal::new(50000, 0), &factory)
-                .with_rfx("RFX-000001", &factory)
-                .with_winning_bid("BID-000001", &factory)
-                .with_contract("CTR-000001", &factory);
+        let documents = S2cDocuments::new(
+            "SP-000001",
+            "V000001",
+            "1000",
+            Decimal::new(50000, 0),
+            &factory,
+        )
+        .with_rfx("RFX-000001", &factory)
+        .with_winning_bid("BID-000001", &factory)
+        .with_contract("CTR-000001", &factory);
 
         let result = generator.generate_s2c_case(
             &documents,
@@ -425,10 +430,15 @@ mod tests {
         );
 
         let factory = OcpmUuidFactory::new(123);
-        let documents =
-            S2cDocuments::new("SP-000002", "V000001", "1000", Decimal::new(25000, 0), &factory)
-                .with_rfx("RFX-000002", &factory)
-                .with_contract("CTR-000002", &factory);
+        let documents = S2cDocuments::new(
+            "SP-000002",
+            "V000001",
+            "1000",
+            Decimal::new(25000, 0),
+            &factory,
+        )
+        .with_rfx("RFX-000002", &factory)
+        .with_contract("CTR-000002", &factory);
 
         let result = generator.generate_s2c_case(&documents, Utc::now(), &[]);
 

@@ -6,8 +6,8 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::SalesQuoteConfig;
 use datasynth_core::models::{QuoteLineItem, QuoteStatus, SalesQuote};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_core::utils::{sample_decimal_range, seeded_rng};
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -127,18 +127,11 @@ impl SalesQuoteGenerator {
             let mat_idx = self.rng.gen_range(0..material_ids.len());
             let (material_id, description) = &material_ids[mat_idx];
 
-            let unit_price = sample_decimal_range(
-                &mut self.rng,
-                Decimal::from(50),
-                Decimal::from(5000),
-            )
-            .round_dp(2);
-            let quantity = sample_decimal_range(
-                &mut self.rng,
-                Decimal::ONE,
-                Decimal::from(100),
-            )
-            .round_dp(0);
+            let unit_price =
+                sample_decimal_range(&mut self.rng, Decimal::from(50), Decimal::from(5000))
+                    .round_dp(2);
+            let quantity =
+                sample_decimal_range(&mut self.rng, Decimal::ONE, Decimal::from(100)).round_dp(0);
             let line_amount = (unit_price * quantity).round_dp(2);
             total_amount += line_amount;
 

@@ -14,8 +14,8 @@ use datasynth_core::models::{
     BankReconciliation, BankStatementLine, Direction, MatchStatus, ReconciliationStatus,
     ReconcilingItem, ReconcilingItemType,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_core::utils::{sample_decimal_range, seeded_rng};
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;

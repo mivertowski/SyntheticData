@@ -491,10 +491,16 @@ mod tests {
         );
 
         let factory = OcpmUuidFactory::new(123);
-        let documents =
-            P2pDocuments::new("PO-000002", "V000001", "1000", Decimal::new(5000, 0), "USD", &factory)
-                .with_goods_receipt("GR-000002", &factory)
-                .with_invoice("INV-000002", &factory);
+        let documents = P2pDocuments::new(
+            "PO-000002",
+            "V000001",
+            "1000",
+            Decimal::new(5000, 0),
+            "USD",
+            &factory,
+        )
+        .with_goods_receipt("GR-000002", &factory)
+        .with_invoice("INV-000002", &factory);
 
         let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 

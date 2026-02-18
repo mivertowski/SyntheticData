@@ -24,6 +24,7 @@ use std::sync::Arc;
 
 use chrono::{Datelike, NaiveDate};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
@@ -366,6 +367,12 @@ pub struct SubledgerSnapshot {
     pub ap_invoices: Vec<APInvoice>,
     /// AR invoices linked from document flow customer invoices.
     pub ar_invoices: Vec<ARInvoice>,
+    /// FA subledger records (asset acquisitions from FA generator).
+    pub fa_records: Vec<datasynth_core::models::subledger::fa::FixedAssetRecord>,
+    /// Inventory positions from inventory generator.
+    pub inventory_positions: Vec<datasynth_core::models::subledger::inventory::InventoryPosition>,
+    /// Inventory movements from inventory generator.
+    pub inventory_movements: Vec<datasynth_core::models::subledger::inventory::InventoryMovement>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -1299,11 +1306,25 @@ impl EnhancedOrchestrator {
         // Phase 16: HR Data (Payroll, Time Entries, Expenses)
         let hr = self.phase_hr_data(&mut stats)?;
 
+        // Phase 16b: Generate JEs from payroll runs
+        if !hr.payroll_runs.is_empty() {
+            let payroll_jes = Self::generate_payroll_jes(&hr.payroll_runs);
+            debug!("Generated {} JEs from payroll runs", payroll_jes.len());
+            entries.extend(payroll_jes);
+        }
+
         // Phase 17: Accounting Standards (Revenue Recognition, Impairment)
         let accounting_standards = self.phase_accounting_standards(&mut stats)?;
 
         // Phase 18: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
         let manufacturing_snap = self.phase_manufacturing(&mut stats)?;
+
+        // Phase 18a: Generate JEs from production orders
+        if !manufacturing_snap.production_orders.is_empty() {
+            let mfg_jes = Self::generate_manufacturing_jes(&manufacturing_snap.production_orders);
+            debug!("Generated {} JEs from production orders", mfg_jes.len());
+            entries.extend(mfg_jes);
+        }
 
         // Phase 18b: OCPM Events (after all process data is available)
         let ocpm = self.phase_ocpm_events(
@@ -1483,6 +1504,92 @@ impl EnhancedOrchestrator {
             self.check_resources_with_log("post-document-flows")?;
         } else {
             debug!("Phase 3: Skipped (document flow generation disabled or no master data)");
+        }
+
+        // Generate FA subledger records from master data fixed assets
+        if !self.master_data.assets.is_empty() {
+            debug!("Generating FA subledger records");
+            let company_code = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.code.as_str())
+                .unwrap_or("1000");
+            let currency = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.currency.as_str())
+                .unwrap_or("USD");
+
+            let mut fa_gen = datasynth_generators::FAGenerator::new(
+                datasynth_generators::FAGeneratorConfig::default(),
+                rand_chacha::ChaCha8Rng::seed_from_u64(self.seed + 70),
+            );
+
+            for asset in &self.master_data.assets {
+                let (record, _je) = fa_gen.generate_asset_acquisition(
+                    company_code,
+                    &format!("{:?}", asset.asset_class),
+                    &asset.description,
+                    asset.acquisition_date,
+                    currency,
+                    asset.cost_center.as_deref(),
+                );
+                subledger.fa_records.push(record);
+            }
+
+            stats.fa_subledger_count = subledger.fa_records.len();
+            debug!(
+                "FA subledger records generated: {}",
+                stats.fa_subledger_count
+            );
+        }
+
+        // Generate Inventory subledger records from master data materials
+        if !self.master_data.materials.is_empty() {
+            debug!("Generating Inventory subledger records");
+            let company_code = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.code.as_str())
+                .unwrap_or("1000");
+
+            let mut inv_gen = datasynth_generators::InventoryGenerator::new(
+                datasynth_generators::InventoryGeneratorConfig::default(),
+                rand_chacha::ChaCha8Rng::seed_from_u64(self.seed + 71),
+            );
+
+            for (i, material) in self.master_data.materials.iter().enumerate() {
+                let plant = format!("PLANT{:02}", (i % 3) + 1);
+                let storage_loc = format!("SL-{:03}", (i % 10) + 1);
+                let initial_qty = rust_decimal::Decimal::from(
+                    material
+                        .safety_stock
+                        .to_string()
+                        .parse::<i64>()
+                        .unwrap_or(100),
+                );
+
+                let position = inv_gen.generate_position(
+                    company_code,
+                    &plant,
+                    &storage_loc,
+                    &material.material_id,
+                    &material.description,
+                    initial_qty,
+                    Some(material.standard_cost),
+                    "USD",
+                );
+                subledger.inventory_positions.push(position);
+            }
+
+            stats.inventory_subledger_count = subledger.inventory_positions.len();
+            debug!(
+                "Inventory subledger records generated: {}",
+                stats.inventory_subledger_count
+            );
         }
 
         Ok((document_flows, subledger))
@@ -3867,11 +3974,15 @@ impl EnhancedOrchestrator {
         let total = self.config.companies.len() as u64 * 5; // 5 entity types
         let pb = self.create_progress_bar(total, "Generating Master Data");
 
+        // Resolve country pack once for all companies (uses primary company's country)
+        let pack = self.primary_pack().clone();
+
         for (i, company) in self.config.companies.iter().enumerate() {
             let company_seed = self.seed.wrapping_add(i as u64 * 1000);
 
             // Generate vendors
             let mut vendor_gen = VendorGenerator::new(company_seed);
+            vendor_gen.set_country_pack(pack.clone());
             let vendor_pool = vendor_gen.generate_vendor_pool(
                 self.phase_config.vendors_per_company,
                 &company.code,
@@ -3884,6 +3995,7 @@ impl EnhancedOrchestrator {
 
             // Generate customers
             let mut customer_gen = CustomerGenerator::new(company_seed + 100);
+            customer_gen.set_country_pack(pack.clone());
             let customer_pool = customer_gen.generate_customer_pool(
                 self.phase_config.customers_per_company,
                 &company.code,
@@ -3896,6 +4008,7 @@ impl EnhancedOrchestrator {
 
             // Generate materials
             let mut material_gen = MaterialGenerator::new(company_seed + 200);
+            material_gen.set_country_pack(pack.clone());
             let material_pool = material_gen.generate_material_pool(
                 self.phase_config.materials_per_company,
                 &company.code,
@@ -4204,6 +4317,112 @@ impl EnhancedOrchestrator {
         Ok(entries)
     }
 
+    /// Generate journal entries from payroll runs.
+    ///
+    /// Creates one JE per payroll run:
+    /// - DR Salaries & Wages (6100) for gross pay
+    /// - CR Payroll Clearing (9100) for gross pay
+    fn generate_payroll_jes(payroll_runs: &[PayrollRun]) -> Vec<JournalEntry> {
+        use datasynth_core::accounts::{expense_accounts, suspense_accounts};
+
+        let mut jes = Vec::with_capacity(payroll_runs.len());
+
+        for run in payroll_runs {
+            let mut je = JournalEntry::new_simple(
+                format!("JE-PAYROLL-{}", run.payroll_id),
+                run.company_code.clone(),
+                run.run_date,
+                format!("Payroll {}", run.payroll_id),
+            );
+
+            // Debit Salaries & Wages for gross pay
+            je.add_line(JournalEntryLine {
+                line_number: 1,
+                gl_account: expense_accounts::SALARIES_WAGES.to_string(),
+                debit_amount: run.total_gross,
+                reference: Some(run.payroll_id.clone()),
+                text: Some(format!(
+                    "Payroll {} ({} employees)",
+                    run.payroll_id, run.employee_count
+                )),
+                ..Default::default()
+            });
+
+            // Credit Payroll Clearing for gross pay
+            je.add_line(JournalEntryLine {
+                line_number: 2,
+                gl_account: suspense_accounts::PAYROLL_CLEARING.to_string(),
+                credit_amount: run.total_gross,
+                reference: Some(run.payroll_id.clone()),
+                ..Default::default()
+            });
+
+            jes.push(je);
+        }
+
+        jes
+    }
+
+    /// Generate journal entries from production orders.
+    ///
+    /// Creates one JE per completed production order:
+    /// - DR Raw Materials (5100) for material consumption (actual_cost)
+    /// - CR Inventory (1200) for material consumption
+    fn generate_manufacturing_jes(production_orders: &[ProductionOrder]) -> Vec<JournalEntry> {
+        use datasynth_core::accounts::{control_accounts, expense_accounts};
+        use datasynth_core::models::ProductionOrderStatus;
+
+        let mut jes = Vec::new();
+
+        for order in production_orders {
+            // Only generate JEs for completed or closed orders
+            if !matches!(
+                order.status,
+                ProductionOrderStatus::Completed | ProductionOrderStatus::Closed
+            ) {
+                continue;
+            }
+
+            let mut je = JournalEntry::new_simple(
+                format!("JE-MFG-{}", order.order_id),
+                order.company_code.clone(),
+                order.actual_end.unwrap_or(order.planned_end),
+                format!(
+                    "Production Order {} - {}",
+                    order.order_id, order.material_description
+                ),
+            );
+
+            // Debit Raw Materials / Manufacturing expense for actual cost
+            je.add_line(JournalEntryLine {
+                line_number: 1,
+                gl_account: expense_accounts::RAW_MATERIALS.to_string(),
+                debit_amount: order.actual_cost,
+                reference: Some(order.order_id.clone()),
+                text: Some(format!(
+                    "Material consumption for {}",
+                    order.material_description
+                )),
+                quantity: Some(order.actual_quantity),
+                unit: Some("EA".to_string()),
+                ..Default::default()
+            });
+
+            // Credit Inventory for material consumption
+            je.add_line(JournalEntryLine {
+                line_number: 2,
+                gl_account: control_accounts::INVENTORY.to_string(),
+                credit_amount: order.actual_cost,
+                reference: Some(order.order_id.clone()),
+                ..Default::default()
+            });
+
+            jes.push(je);
+        }
+
+        jes
+    }
+
     /// Link document flows to subledger records.
     ///
     /// Creates AP invoices from vendor invoices and AR invoices from customer invoices,
@@ -4240,6 +4459,9 @@ impl EnhancedOrchestrator {
         Ok(SubledgerSnapshot {
             ap_invoices,
             ar_invoices,
+            fa_records: Vec::new(),
+            inventory_positions: Vec::new(),
+            inventory_movements: Vec::new(),
         })
     }
 

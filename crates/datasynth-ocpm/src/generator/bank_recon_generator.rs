@@ -9,9 +9,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
-};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// Bank Reconciliation document references for event generation.
@@ -326,10 +324,15 @@ mod tests {
     fn test_bank_recon_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
         let factory = OcpmUuidFactory::new(42);
-        let documents =
-            BankReconDocuments::new("BR-000001", "BA-001", "1000", Decimal::new(100000, 0), &factory)
-                .with_statement_lines(vec!["BSL-001", "BSL-002", "BSL-003"])
-                .with_reconciling_items(vec!["RI-001"]);
+        let documents = BankReconDocuments::new(
+            "BR-000001",
+            "BA-001",
+            "1000",
+            Decimal::new(100000, 0),
+            &factory,
+        )
+        .with_statement_lines(vec!["BSL-001", "BSL-002", "BSL-003"])
+        .with_reconciling_items(vec!["RI-001"]);
 
         let result =
             generator.generate_bank_recon_case(&documents, Utc::now(), &["user001".into()]);

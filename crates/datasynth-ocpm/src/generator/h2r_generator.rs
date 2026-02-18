@@ -9,9 +9,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
-};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// H2R document references for event generation.
@@ -337,9 +335,15 @@ mod tests {
     fn test_h2r_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
         let factory = OcpmUuidFactory::new(42);
-        let documents = H2rDocuments::new("PR-000001", "EMP001", "1000", Decimal::new(5000, 0), &factory)
-            .with_time_entries(vec!["TE-001", "TE-002"])
-            .with_expense_report("ER-001", &factory);
+        let documents = H2rDocuments::new(
+            "PR-000001",
+            "EMP001",
+            "1000",
+            Decimal::new(5000, 0),
+            &factory,
+        )
+        .with_time_entries(vec!["TE-001", "TE-002"])
+        .with_expense_report("ER-001", &factory);
 
         let result = generator.generate_h2r_case(
             &documents,

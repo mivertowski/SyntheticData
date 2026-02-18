@@ -15,8 +15,8 @@ use datasynth_core::models::{
     },
     CreditRating, Customer, CustomerPool, Material, MaterialPool, PaymentTerms,
 };
-use datasynth_core::CountryPack;
 use datasynth_core::utils::seeded_rng;
+use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;

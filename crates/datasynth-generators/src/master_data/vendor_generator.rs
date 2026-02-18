@@ -258,6 +258,8 @@ pub struct VendorGenerator {
     address_gen: AddressGenerator,
     /// Network configuration
     network_config: VendorNetworkConfig,
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl VendorGenerator {
@@ -276,6 +278,7 @@ impl VendorGenerator {
             config,
             vendor_counter: 0,
             network_config: VendorNetworkConfig::default(),
+            country_pack: None,
         }
     }
 
@@ -293,12 +296,18 @@ impl VendorGenerator {
             config,
             vendor_counter: 0,
             network_config,
+            country_pack: None,
         }
     }
 
     /// Set network configuration.
     pub fn set_network_config(&mut self, network_config: VendorNetworkConfig) {
         self.network_config = network_config;
+    }
+
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single vendor.

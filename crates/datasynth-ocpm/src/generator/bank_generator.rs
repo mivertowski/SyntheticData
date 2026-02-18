@@ -8,9 +8,7 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
-};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// Banking document references for event generation.

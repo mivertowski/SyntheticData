@@ -8,9 +8,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
-};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// Audit document references for event generation.

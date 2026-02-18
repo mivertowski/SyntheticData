@@ -153,6 +153,8 @@ pub struct MaterialGenerator {
     config: MaterialGeneratorConfig,
     material_counter: usize,
     created_materials: Vec<String>, // Track for BOM references
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl MaterialGenerator {
@@ -169,7 +171,13 @@ impl MaterialGenerator {
             config,
             material_counter: 0,
             created_materials: Vec::new(),
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single material.

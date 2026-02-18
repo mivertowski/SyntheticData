@@ -6,8 +6,8 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::TimeAttendanceConfig;
 use datasynth_core::models::{TimeApprovalStatus, TimeEntry};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_core::utils::seeded_rng;
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
