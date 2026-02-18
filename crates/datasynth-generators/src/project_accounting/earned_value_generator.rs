@@ -2,8 +2,6 @@
 //!
 //! Computes EVM metrics (SPI, CPI, EAC, ETC, TCPI) for projects based on
 //! WBS budgets, actual costs, and schedule progress.
-#![allow(dead_code)]
-
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EarnedValueSchemaConfig;
 use datasynth_core::models::{EarnedValueMetric, Project, ProjectCostLine};
@@ -16,7 +14,11 @@ use rust_decimal_macros::dec;
 /// Generates [`EarnedValueMetric`] records for projects.
 pub struct EarnedValueGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
+    // Stored for future configurable thresholds (e.g., schedule variance tolerance).
+    #[allow(dead_code)]
     config: EarnedValueSchemaConfig,
     counter: u64,
 }

@@ -507,6 +507,26 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Balance: Opening Balances + GL-Subledger Reconciliation
+    // ========================================================================
+    if !result.opening_balances.is_empty() || !result.subledger_reconciliation.is_empty() {
+        let balance_dir = output_dir.join("balance");
+        std::fs::create_dir_all(&balance_dir)?;
+        info!("Writing balance data...");
+
+        write_json_safe(
+            &result.opening_balances,
+            &balance_dir.join("opening_balances.json"),
+            "Opening balances",
+        );
+        write_json_safe(
+            &result.subledger_reconciliation,
+            &balance_dir.join("subledger_reconciliation.json"),
+            "Subledger reconciliation",
+        );
+    }
+
+    // ========================================================================
     // HR (Payroll, Time Entries, Expense Reports)
     // ========================================================================
     let hr_dir = output_dir.join("hr");
@@ -999,6 +1019,24 @@ pub fn write_all_output(
             &pa_dir.join("milestones.json"),
             "Project milestones",
         );
+    }
+
+    // ========================================================================
+    // Graph Export Summary
+    // ========================================================================
+    if result.graph_export.exported {
+        let graph_dir = output_dir.join("graph_export");
+        std::fs::create_dir_all(&graph_dir).ok();
+        match serde_json::to_string_pretty(&result.graph_export) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(graph_dir.join("graph_export_summary.json"), json) {
+                    warn!("Failed to write graph export summary: {}", e);
+                } else {
+                    info!("  Graph export summary written");
+                }
+            }
+            Err(e) => warn!("Failed to serialize graph export summary: {}", e),
+        }
     }
 
     // ========================================================================

@@ -7,6 +7,7 @@ use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::balance::{
     AccountBalance, AccountPeriodActivity, AccountType, BalanceSnapshot,
@@ -275,6 +276,13 @@ impl RunningBalanceTracker {
 
     /// Applies a batch of entries.
     pub fn apply_entries(&mut self, entries: &[JournalEntry]) -> Vec<ValidationError> {
+        debug!(
+            entry_count = entries.len(),
+            companies_tracked = self.stats.companies_tracked,
+            accounts_tracked = self.stats.accounts_tracked,
+            "Applying entries to balance tracker"
+        );
+
         let mut errors = Vec::new();
 
         for entry in entries {
@@ -287,6 +295,8 @@ impl RunningBalanceTracker {
     }
 
     /// Applies a single journal entry line.
+    // Useful for future per-line balance tracking; currently entries are applied
+    // in bulk via apply_journal_entry.
     #[allow(dead_code)]
     fn apply_line(
         &mut self,

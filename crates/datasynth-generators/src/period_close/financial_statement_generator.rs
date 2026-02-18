@@ -18,6 +18,7 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::debug;
 
 /// Generates financial statements from trial balance data.
 pub struct FinancialStatementGenerator {
@@ -73,6 +74,14 @@ impl FinancialStatementGenerator {
         prior_trial_balance: Option<&[TrialBalanceEntry]>,
         preparer_id: &str,
     ) -> Vec<FinancialStatement> {
+        debug!(
+            company_code,
+            currency,
+            fiscal_year,
+            fiscal_period,
+            tb_entries = trial_balance.len(),
+            "Generating financial statements"
+        );
         let mut statements = Vec::new();
 
         if self.config.generate_balance_sheet {

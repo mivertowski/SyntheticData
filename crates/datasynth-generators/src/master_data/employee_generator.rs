@@ -8,6 +8,7 @@ use datasynth_core::templates::{MultiCultureNameGenerator, NameCulture};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for employee generation.
 #[derive(Debug, Clone)]
@@ -388,6 +389,7 @@ impl EmployeeGenerator {
         company_code: &str,
         hire_date_range: (NaiveDate, NaiveDate),
     ) -> EmployeePool {
+        debug!(company_code, "Generating employee company pool");
         let mut pool = EmployeePool::new();
 
         let (start_date, end_date) = hire_date_range;

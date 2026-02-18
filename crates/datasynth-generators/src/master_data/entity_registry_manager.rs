@@ -77,6 +77,7 @@ pub struct GeneratedMasterData {
 
 /// Entity Registry Manager for coordinated master data generation.
 pub struct EntityRegistryManager {
+    // Retained for future use (e.g., reseed after reset, config-driven generation).
     #[allow(dead_code)]
     seed: u64,
     #[allow(dead_code)]

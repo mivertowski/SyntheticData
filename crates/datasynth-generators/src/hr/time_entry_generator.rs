@@ -10,6 +10,7 @@ use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
+use tracing::debug;
 
 /// Default PTO rate (probability that an employee takes PTO on a given business day).
 const DEFAULT_PTO_RATE: f64 = 0.03;
@@ -47,6 +48,7 @@ impl TimeEntryGenerator {
         period_end: NaiveDate,
         config: &TimeAttendanceConfig,
     ) -> Vec<TimeEntry> {
+        debug!(employee_count = employee_ids.len(), %period_start, %period_end, "Generating time entries");
         let mut entries = Vec::new();
         let business_days = self.collect_business_days(period_start, period_end);
 

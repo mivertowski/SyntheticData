@@ -125,7 +125,9 @@ use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
 use datasynth_core::causal::{CausalGraph, CausalValidator, StructuralCausalModel};
 use datasynth_core::diffusion::{DiffusionBackend, DiffusionConfig, StatisticalDiffusionBackend};
 use datasynth_core::llm::MockLlmProvider;
+use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
+use datasynth_core::models::IndustrySector;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 
 // ============================================================================
@@ -432,7 +434,7 @@ pub struct BankingSnapshot {
 }
 
 /// Graph export snapshot containing exported graph metadata.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct GraphExportSnapshot {
     /// Whether graph export was performed.
     pub exported: bool,
@@ -443,7 +445,7 @@ pub struct GraphExportSnapshot {
 }
 
 /// Information about an exported graph.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GraphExportInfo {
     /// Graph name.
     pub name: String,
@@ -782,6 +784,10 @@ pub struct EnhancedGenerationResult {
     pub gate_result: Option<datasynth_eval::gates::GateResult>,
     /// Internal controls (if controls generation enabled).
     pub internal_controls: Vec<InternalControl>,
+    /// Opening balances (if opening balance generation enabled).
+    pub opening_balances: Vec<GeneratedOpeningBalance>,
+    /// GL-to-subledger reconciliation results (if reconciliation enabled).
+    pub subledger_reconciliation: Vec<datasynth_generators::ReconciliationResult>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -937,6 +943,21 @@ pub struct EnhancedGenerationStatistics {
     /// Tax provision count.
     #[serde(default)]
     pub tax_provision_count: usize,
+    /// Opening balance count.
+    #[serde(default)]
+    pub opening_balance_count: usize,
+    /// Subledger reconciliation count.
+    #[serde(default)]
+    pub subledger_reconciliation_count: usize,
+    /// Tax line count.
+    #[serde(default)]
+    pub tax_line_count: usize,
+    /// Project cost line count.
+    #[serde(default)]
+    pub project_cost_line_count: usize,
+    /// Cash position count.
+    #[serde(default)]
+    pub cash_position_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1356,6 +1377,9 @@ impl EnhancedOrchestrator {
         // Phase 3: Document Flows + Subledger Linking
         let (document_flows, subledger) = self.phase_document_flows(&mut stats)?;
 
+        // Phase 3b: Opening Balances (before JE generation)
+        let opening_balances = self.phase_opening_balances(&coa, &mut stats)?;
+
         // Phase 4: Journal Entries
         let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
 
@@ -1408,6 +1432,10 @@ impl EnhancedOrchestrator {
         // Phase 9: Balance Validation (after all JEs including payroll, manufacturing, IC)
         let balance_validation = self.phase_balance_validation(&entries)?;
 
+        // Phase 9b: GL-to-Subledger Reconciliation
+        let subledger_reconciliation =
+            self.phase_subledger_reconciliation(&subledger, &entries, &mut stats)?;
+
         // Phase 10: Data Quality Injection
         let data_quality_stats =
             self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
@@ -1454,16 +1482,16 @@ impl EnhancedOrchestrator {
             self.phase_sales_kpi_budgets(&coa, &financial_reporting, &mut stats)?;
 
         // Phase 20: Tax Generation
-        let tax = self.phase_tax_generation(&mut stats)?;
+        let tax = self.phase_tax_generation(&document_flows, &mut stats)?;
 
         // Phase 21: ESG Data Generation
-        let esg_snap = self.phase_esg_generation(&mut stats)?;
+        let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
 
         // Phase 22: Treasury Data Generation
-        let treasury = self.phase_treasury_data(&mut stats)?;
+        let treasury = self.phase_treasury_data(&document_flows, &mut stats)?;
 
         // Phase 23: Project Accounting Data Generation
-        let project_accounting = self.phase_project_accounting(&mut stats)?;
+        let project_accounting = self.phase_project_accounting(&document_flows, &hr, &mut stats)?;
 
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
@@ -1606,6 +1634,8 @@ impl EnhancedOrchestrator {
             lineage: Some(lineage),
             gate_result,
             internal_controls,
+            opening_balances,
+            subledger_reconciliation,
         })
     }
 
@@ -3917,9 +3947,10 @@ impl EnhancedOrchestrator {
         Ok(snapshot)
     }
 
-    /// Phase 20: Generate tax jurisdictions and tax codes.
+    /// Phase 20: Generate tax jurisdictions, tax codes, and tax lines from invoices.
     fn phase_tax_generation(
         &mut self,
+        document_flows: &DocumentFlowSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TaxSnapshot> {
         if !self.phase_config.generate_tax || !self.config.tax.enabled {
@@ -3966,13 +3997,58 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Generate tax lines from document invoices
+        let mut tax_lines = Vec::new();
+        if !codes.is_empty() {
+            let mut tax_line_gen = datasynth_generators::TaxLineGenerator::new(
+                datasynth_generators::TaxLineGeneratorConfig::default(),
+                codes.clone(),
+                seed + 72,
+            );
+
+            // Tax lines from vendor invoices (input tax)
+            // Use the first company's country as buyer country
+            let buyer_country = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.country.as_str())
+                .unwrap_or("US");
+            for vi in &document_flows.vendor_invoices {
+                let lines = tax_line_gen.generate_for_document(
+                    datasynth_core::models::TaxableDocumentType::VendorInvoice,
+                    &vi.header.document_id,
+                    buyer_country, // seller approx same country
+                    buyer_country,
+                    vi.payable_amount,
+                    vi.header.document_date,
+                    None,
+                );
+                tax_lines.extend(lines);
+            }
+
+            // Tax lines from customer invoices (output tax)
+            for ci in &document_flows.customer_invoices {
+                let lines = tax_line_gen.generate_for_document(
+                    datasynth_core::models::TaxableDocumentType::CustomerInvoice,
+                    &ci.header.document_id,
+                    buyer_country, // seller is the company
+                    buyer_country,
+                    ci.total_gross_amount,
+                    ci.header.document_date,
+                    None,
+                );
+                tax_lines.extend(lines);
+            }
+        }
+
         let snapshot = TaxSnapshot {
             jurisdiction_count: jurisdictions.len(),
             code_count: codes.len(),
             jurisdictions,
             codes,
             tax_provisions: provisions,
-            tax_lines: Vec::new(),
+            tax_lines,
             tax_returns: Vec::new(),
             withholding_records: Vec::new(),
             tax_anomaly_labels: Vec::new(),
@@ -3981,6 +4057,7 @@ impl EnhancedOrchestrator {
         stats.tax_jurisdiction_count = snapshot.jurisdiction_count;
         stats.tax_code_count = snapshot.code_count;
         stats.tax_provision_count = snapshot.tax_provisions.len();
+        stats.tax_line_count = snapshot.tax_lines.len();
 
         info!(
             "Tax data generated: {} jurisdictions, {} codes, {} provisions",
@@ -3996,6 +4073,7 @@ impl EnhancedOrchestrator {
     /// Phase 21: Generate ESG data (emissions, energy, water, waste, social, governance, disclosures).
     fn phase_esg_generation(
         &mut self,
+        document_flows: &DocumentFlowSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<EsgSnapshot> {
         if !self.phase_config.generate_esg || !self.config.esg.enabled {
@@ -4064,16 +4142,33 @@ impl EnhancedOrchestrator {
         emissions.extend(emission_gen.generate_scope1(entity_id, &energy_inputs));
         emissions.extend(emission_gen.generate_scope2(entity_id, &energy_inputs));
 
-        // Scope 3: use vendor spend data if available
+        // Scope 3: use vendor spend data from actual payments
+        let vendor_payment_totals: HashMap<String, rust_decimal::Decimal> = {
+            let mut totals: HashMap<String, rust_decimal::Decimal> = HashMap::new();
+            for payment in &document_flows.payments {
+                if payment.is_vendor {
+                    *totals
+                        .entry(payment.business_partner_id.clone())
+                        .or_default() += payment.amount;
+                }
+            }
+            totals
+        };
         let vendor_spend: Vec<datasynth_generators::VendorSpendInput> = self
             .master_data
             .vendors
             .iter()
-            .map(|v| datasynth_generators::VendorSpendInput {
-                vendor_id: v.vendor_id.clone(),
-                category: format!("{:?}", v.vendor_type).to_lowercase(),
-                spend: rust_decimal::Decimal::new(50000, 0),
-                country: v.country.clone(),
+            .map(|v| {
+                let spend = vendor_payment_totals
+                    .get(&v.vendor_id)
+                    .copied()
+                    .unwrap_or_else(|| rust_decimal::Decimal::new(10000, 0));
+                datasynth_generators::VendorSpendInput {
+                    vendor_id: v.vendor_id.clone(),
+                    category: format!("{:?}", v.vendor_type).to_lowercase(),
+                    spend,
+                    country: v.country.clone(),
+                }
             })
             .collect();
         if !vendor_spend.is_empty() {
@@ -4201,6 +4296,7 @@ impl EnhancedOrchestrator {
     /// Phase 22: Generate Treasury data (cash management, hedging, debt, pooling).
     fn phase_treasury_data(
         &mut self,
+        document_flows: &DocumentFlowSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TreasurySnapshot> {
         if !self.config.treasury.enabled {
@@ -4264,13 +4360,59 @@ impl EnhancedOrchestrator {
             snapshot.treasury_anomaly_labels = labels;
         }
 
+        // Generate cash positions from payment flows
+        if self.config.treasury.cash_positioning.enabled {
+            let mut cash_flows: Vec<datasynth_generators::treasury::CashFlow> = Vec::new();
+
+            // AP payments as outflows
+            for payment in &document_flows.payments {
+                cash_flows.push(datasynth_generators::treasury::CashFlow {
+                    date: payment.header.document_date,
+                    account_id: format!("{}-MAIN", entity_id),
+                    amount: payment.amount,
+                    direction: datasynth_generators::treasury::CashFlowDirection::Outflow,
+                });
+            }
+
+            // Customer receipts (from O2C chains) as inflows
+            for chain in &document_flows.o2c_chains {
+                if let Some(ref receipt) = chain.customer_receipt {
+                    cash_flows.push(datasynth_generators::treasury::CashFlow {
+                        date: receipt.header.document_date,
+                        account_id: format!("{}-MAIN", entity_id),
+                        amount: receipt.amount,
+                        direction: datasynth_generators::treasury::CashFlowDirection::Inflow,
+                    });
+                }
+            }
+
+            if !cash_flows.is_empty() {
+                let mut cash_gen = datasynth_generators::treasury::CashPositionGenerator::new(
+                    self.config.treasury.cash_positioning.clone(),
+                    seed + 93,
+                );
+                let account_id = format!("{}-MAIN", entity_id);
+                snapshot.cash_positions = cash_gen.generate(
+                    entity_id,
+                    &account_id,
+                    currency,
+                    &cash_flows,
+                    start_date,
+                    start_date + chrono::Months::new(self.config.global.period_months),
+                    rust_decimal::Decimal::new(1_000_000, 0), // Default opening balance
+                );
+            }
+        }
+
         stats.treasury_debt_instrument_count = snapshot.debt_instruments.len();
         stats.treasury_hedging_instrument_count = snapshot.hedging_instruments.len();
+        stats.cash_position_count = snapshot.cash_positions.len();
 
         info!(
-            "Treasury data generated: {} debt instruments, {} hedging instruments",
+            "Treasury data generated: {} debt instruments, {} hedging instruments, {} cash positions",
             snapshot.debt_instruments.len(),
-            snapshot.hedging_instruments.len()
+            snapshot.hedging_instruments.len(),
+            snapshot.cash_positions.len()
         );
         self.check_resources_with_log("post-treasury")?;
 
@@ -4280,6 +4422,8 @@ impl EnhancedOrchestrator {
     /// Phase 23: Generate Project Accounting data (projects, costs, revenue, EVM, milestones).
     fn phase_project_accounting(
         &mut self,
+        document_flows: &DocumentFlowSnapshot,
+        hr: &HrSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<ProjectAccountingSnapshot> {
         if !self.config.project_accounting.enabled {
@@ -4308,6 +4452,76 @@ impl EnhancedOrchestrator {
         );
         let pool = project_gen.generate(company_code, start_date, end_date);
         snapshot.projects = pool.projects.clone();
+
+        // Link source documents to projects for cost allocation
+        {
+            let mut source_docs: Vec<datasynth_generators::project_accounting::SourceDocument> =
+                Vec::new();
+
+            // Time entries
+            for te in &hr.time_entries {
+                let total_hours = te.hours_regular + te.hours_overtime;
+                if total_hours > 0.0 {
+                    source_docs.push(datasynth_generators::project_accounting::SourceDocument {
+                        id: te.entry_id.clone(),
+                        entity_id: company_code.to_string(),
+                        date: te.date,
+                        amount: rust_decimal::Decimal::from_f64_retain(total_hours * 75.0)
+                            .unwrap_or(rust_decimal::Decimal::ZERO),
+                        source_type: CostSourceType::TimeEntry,
+                        hours: Some(
+                            rust_decimal::Decimal::from_f64_retain(total_hours)
+                                .unwrap_or(rust_decimal::Decimal::ZERO),
+                        ),
+                    });
+                }
+            }
+
+            // Expense reports
+            for er in &hr.expense_reports {
+                source_docs.push(datasynth_generators::project_accounting::SourceDocument {
+                    id: er.report_id.clone(),
+                    entity_id: company_code.to_string(),
+                    date: er.submission_date,
+                    amount: er.total_amount,
+                    source_type: CostSourceType::ExpenseReport,
+                    hours: None,
+                });
+            }
+
+            // Purchase orders
+            for po in &document_flows.purchase_orders {
+                source_docs.push(datasynth_generators::project_accounting::SourceDocument {
+                    id: po.header.document_id.clone(),
+                    entity_id: company_code.to_string(),
+                    date: po.header.document_date,
+                    amount: po.total_net_amount,
+                    source_type: CostSourceType::PurchaseOrder,
+                    hours: None,
+                });
+            }
+
+            // Vendor invoices
+            for vi in &document_flows.vendor_invoices {
+                source_docs.push(datasynth_generators::project_accounting::SourceDocument {
+                    id: vi.header.document_id.clone(),
+                    entity_id: company_code.to_string(),
+                    date: vi.header.document_date,
+                    amount: vi.payable_amount,
+                    source_type: CostSourceType::VendorInvoice,
+                    hours: None,
+                });
+            }
+
+            if !source_docs.is_empty() && !pool.projects.is_empty() {
+                let mut cost_gen =
+                    datasynth_generators::project_accounting::ProjectCostGenerator::new(
+                        self.config.project_accounting.cost_allocation.clone(),
+                        seed + 99,
+                    );
+                snapshot.cost_lines = cost_gen.link_documents(&pool, &source_docs);
+            }
+        }
 
         // Generate change orders
         if self.config.project_accounting.change_orders.enabled {
@@ -4339,6 +4553,7 @@ impl EnhancedOrchestrator {
 
         stats.project_count = snapshot.projects.len();
         stats.project_change_order_count = snapshot.change_orders.len();
+        stats.project_cost_line_count = snapshot.cost_lines.len();
 
         info!(
             "Project accounting generated: {} projects, {} change orders, {} milestones, {} EVM records",
@@ -4350,6 +4565,177 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-project-accounting")?;
 
         Ok(snapshot)
+    }
+
+    /// Phase 3b: Generate opening balances for each company.
+    fn phase_opening_balances(
+        &mut self,
+        coa: &Arc<ChartOfAccounts>,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<GeneratedOpeningBalance>> {
+        if !self.config.balance.generate_opening_balances {
+            debug!("Phase 3b: Skipped (opening balance generation disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 3b: Generating Opening Balances");
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let fiscal_year = start_date.year();
+
+        let industry = match self.config.global.industry {
+            IndustrySector::Manufacturing => IndustryType::Manufacturing,
+            IndustrySector::Retail => IndustryType::Retail,
+            IndustrySector::FinancialServices => IndustryType::Financial,
+            IndustrySector::Healthcare => IndustryType::Healthcare,
+            IndustrySector::Technology => IndustryType::Technology,
+            _ => IndustryType::Manufacturing,
+        };
+
+        let config = datasynth_generators::OpeningBalanceConfig {
+            industry,
+            ..Default::default()
+        };
+        let mut gen =
+            datasynth_generators::OpeningBalanceGenerator::with_seed(config, self.seed + 200);
+
+        let mut results = Vec::new();
+        for company in &self.config.companies {
+            let spec = OpeningBalanceSpec::new(
+                company.code.clone(),
+                start_date,
+                fiscal_year,
+                company.currency.clone(),
+                rust_decimal::Decimal::new(10_000_000, 0),
+                industry,
+            );
+            let ob = gen.generate(&spec, coa, start_date, &company.code);
+            results.push(ob);
+        }
+
+        stats.opening_balance_count = results.len();
+        info!("Opening balances generated: {} companies", results.len());
+        self.check_resources_with_log("post-opening-balances")?;
+
+        Ok(results)
+    }
+
+    /// Phase 9b: Reconcile GL control accounts to subledger balances.
+    fn phase_subledger_reconciliation(
+        &mut self,
+        subledger: &SubledgerSnapshot,
+        entries: &[JournalEntry],
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<datasynth_generators::ReconciliationResult>> {
+        if !self.config.balance.reconcile_subledgers {
+            debug!("Phase 9b: Skipped (subledger reconciliation disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 9b: Reconciling GL to subledger balances");
+
+        let end_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map(|d| d + chrono::Months::new(self.config.global.period_months))
+            .unwrap_or_else(|_| chrono::Local::now().date_naive());
+
+        // Build GL balance map from journal entries using a balance tracker
+        let tracker_config = BalanceTrackerConfig {
+            validate_on_each_entry: false,
+            track_history: false,
+            fail_on_validation_error: false,
+            ..Default::default()
+        };
+        let mut tracker = RunningBalanceTracker::new(tracker_config);
+        let _ = tracker.apply_entries(entries);
+
+        let mut engine = datasynth_generators::ReconciliationEngine::new(
+            datasynth_generators::ReconciliationConfig::default(),
+        );
+
+        let mut results = Vec::new();
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        // Reconcile AR
+        if !subledger.ar_invoices.is_empty() {
+            let gl_balance = tracker
+                .get_account_balance(
+                    company_code,
+                    datasynth_core::accounts::control_accounts::AR_CONTROL,
+                )
+                .map(|b| b.closing_balance)
+                .unwrap_or_default();
+            let ar_refs: Vec<&ARInvoice> = subledger.ar_invoices.iter().collect();
+            results.push(engine.reconcile_ar(company_code, end_date, gl_balance, &ar_refs));
+        }
+
+        // Reconcile AP
+        if !subledger.ap_invoices.is_empty() {
+            let gl_balance = tracker
+                .get_account_balance(
+                    company_code,
+                    datasynth_core::accounts::control_accounts::AP_CONTROL,
+                )
+                .map(|b| b.closing_balance)
+                .unwrap_or_default();
+            let ap_refs: Vec<&APInvoice> = subledger.ap_invoices.iter().collect();
+            results.push(engine.reconcile_ap(company_code, end_date, gl_balance, &ap_refs));
+        }
+
+        // Reconcile FA
+        if !subledger.fa_records.is_empty() {
+            let gl_asset_balance = tracker
+                .get_account_balance(
+                    company_code,
+                    datasynth_core::accounts::control_accounts::FIXED_ASSETS,
+                )
+                .map(|b| b.closing_balance)
+                .unwrap_or_default();
+            let gl_accum_depr_balance = tracker
+                .get_account_balance(
+                    company_code,
+                    datasynth_core::accounts::control_accounts::ACCUMULATED_DEPRECIATION,
+                )
+                .map(|b| b.closing_balance)
+                .unwrap_or_default();
+            let fa_refs: Vec<&datasynth_core::models::subledger::fa::FixedAssetRecord> =
+                subledger.fa_records.iter().collect();
+            let (asset_recon, depr_recon) = engine.reconcile_fa(
+                company_code,
+                end_date,
+                gl_asset_balance,
+                gl_accum_depr_balance,
+                &fa_refs,
+            );
+            results.push(asset_recon);
+            results.push(depr_recon);
+        }
+
+        // Reconcile Inventory
+        if !subledger.inventory_positions.is_empty() {
+            let gl_balance = tracker
+                .get_account_balance(
+                    company_code,
+                    datasynth_core::accounts::control_accounts::INVENTORY,
+                )
+                .map(|b| b.closing_balance)
+                .unwrap_or_default();
+            let inv_refs: Vec<&datasynth_core::models::subledger::inventory::InventoryPosition> =
+                subledger.inventory_positions.iter().collect();
+            results.push(engine.reconcile_inventory(company_code, end_date, gl_balance, &inv_refs));
+        }
+
+        stats.subledger_reconciliation_count = results.len();
+        info!(
+            "Subledger reconciliation complete: {} reconciliations",
+            results.len()
+        );
+        self.check_resources_with_log("post-subledger-reconciliation")?;
+
+        Ok(results)
     }
 
     /// Generate the chart of accounts.

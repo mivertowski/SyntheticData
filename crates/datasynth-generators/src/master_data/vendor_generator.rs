@@ -22,6 +22,7 @@ use datasynth_core::templates::{
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for vendor generation.
 #[derive(Debug, Clone)]
@@ -380,6 +381,7 @@ impl VendorGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> VendorPool {
+        debug!(count, company_code, %effective_date, "Generating vendor pool");
         let mut pool = VendorPool::new();
 
         for _ in 0..count {

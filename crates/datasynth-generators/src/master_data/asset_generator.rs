@@ -8,6 +8,7 @@ use datasynth_core::models::{
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for asset generation.
 #[derive(Debug, Clone)]
@@ -316,6 +317,7 @@ impl AssetGenerator {
         company_code: &str,
         date_range: (NaiveDate, NaiveDate),
     ) -> FixedAssetPool {
+        debug!(count, company_code, "Generating fixed asset pool");
         let mut pool = FixedAssetPool::new();
 
         let (start_date, end_date) = date_range;

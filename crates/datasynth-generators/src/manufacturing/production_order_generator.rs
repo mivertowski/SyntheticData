@@ -13,6 +13,7 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Work center identifiers used in routing operations.
 const WORK_CENTERS: &[&str] = &["WC-100", "WC-200", "WC-300", "WC-400", "WC-500"];
@@ -68,6 +69,7 @@ impl ProductionOrderGenerator {
         costing: &ManufacturingCostingConfig,
         routing: &RoutingConfig,
     ) -> Vec<ProductionOrder> {
+        debug!(company_code, material_count = material_ids.len(), %period_start, %period_end, orders_per_month = config.orders_per_month, "Generating production orders");
         if material_ids.is_empty() {
             return Vec::new();
         }

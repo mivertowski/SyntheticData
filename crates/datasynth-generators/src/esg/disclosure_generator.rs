@@ -1,8 +1,6 @@
 //! ESG disclosure and materiality generator — maps calculated metrics
 //! to framework-specific standard IDs (GRI, ESRS, SASB, TCFD, ISSB)
 //! and performs double-materiality assessments.
-#![allow(dead_code)]
-
 use chrono::NaiveDate;
 use datasynth_config::schema::{ClimateScenarioConfig, EsgReportingConfig};
 use datasynth_core::models::{
@@ -88,6 +86,8 @@ const DISCLOSURE_TOPICS: &[DisclosureTopic] = &[
 /// Generates [`EsgDisclosure`] and [`MaterialityAssessment`] records.
 pub struct DisclosureGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: EsgReportingConfig,
     climate_config: ClimateScenarioConfig,

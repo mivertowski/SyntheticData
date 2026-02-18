@@ -10,6 +10,7 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::intercompany::{
     ICLoan, ICMatchedPair, ICTransactionType, OwnershipStructure, RecurringFrequency,
@@ -555,6 +556,7 @@ impl ICGenerator {
         end_date: NaiveDate,
         transactions_per_day: usize,
     ) -> Vec<ICMatchedPair> {
+        debug!(%start_date, %end_date, transactions_per_day, "Generating intercompany transactions");
         let mut pairs = Vec::new();
         let mut current_date = start_date;
 

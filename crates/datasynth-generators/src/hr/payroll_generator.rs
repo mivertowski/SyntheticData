@@ -13,6 +13,7 @@ use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Resolved payroll deduction rates used during generation.
 #[derive(Debug, Clone)]
@@ -112,6 +113,7 @@ impl PayrollGenerator {
         period_end: NaiveDate,
         currency: &str,
     ) -> (PayrollRun, Vec<PayrollLineItem>) {
+        debug!(company_code, employee_count = employees.len(), %period_start, %period_end, currency, "Generating payroll run");
         if let Some(pack) = self.country_pack.as_ref() {
             let rates = self.rates_from_country_pack(pack);
             let labels = Self::labels_from_country_pack(pack);

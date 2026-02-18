@@ -2,8 +2,6 @@
 //! from operational data (energy consumption, vendor spend, headcount).
 //!
 //! Uses EPA/DEFRA-style emission factors to convert activity data to CO2e tonnes.
-#![allow(dead_code)]
-
 use chrono::NaiveDate;
 use datasynth_config::schema::EnvironmentalConfig;
 use datasynth_core::models::{EmissionRecord, EmissionScope, EstimationMethod, Scope3Category};
@@ -96,6 +94,8 @@ fn spend_emission_factor(category: &str, country: &str) -> Decimal {
 /// `pack.business_rules.emission_country_multiplier`.  A value of `0.0` (the
 /// serde default when the field is absent) is treated as `1.0` so that packs
 /// without emission data fall back gracefully.
+// Ready for use when generate_scope3_spend switches to CountryPack-aware path.
+#[allow(dead_code)]
 fn spend_emission_factor_from_pack(category: &str, pack: &datasynth_core::CountryPack) -> Decimal {
     let base = match category {
         "manufacturing" => dec!(0.80),
@@ -131,6 +131,8 @@ fn spend_emission_factor_from_pack(category: &str, pack: &datasynth_core::Countr
 /// Scope 3: vendor spend → spend-based, business travel → average-data
 pub struct EmissionGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: EnvironmentalConfig,
     counter: u64,

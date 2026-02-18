@@ -6,6 +6,8 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
+use tracing::debug;
+
 use datasynth_core::models::subledger::ap::{
     APDebitMemo, APDebitMemoLine, APInvoice, APInvoiceLine, APPayment, APPaymentMethod,
     DebitMemoReason, MatchStatus,
@@ -87,6 +89,7 @@ impl APGenerator {
         line_count: usize,
         po_number: Option<&str>,
     ) -> (APInvoice, JournalEntry) {
+        debug!(company_code, vendor_id, %invoice_date, line_count, "Generating AP invoice");
         self.invoice_counter += 1;
         let invoice_number = format!("APINV{:08}", self.invoice_counter);
 

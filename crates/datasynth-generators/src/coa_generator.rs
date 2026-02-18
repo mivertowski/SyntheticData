@@ -1,5 +1,7 @@
 //! Chart of Accounts generator.
 
+use tracing::debug;
+
 use datasynth_core::accounts::{
     cash_accounts, control_accounts, equity_accounts, expense_accounts, liability_accounts,
     revenue_accounts, suspense_accounts, tax_accounts,
@@ -32,6 +34,13 @@ impl ChartOfAccountsGenerator {
 
     /// Generate a complete chart of accounts.
     pub fn generate(&mut self) -> ChartOfAccounts {
+        debug!(
+            complexity = ?self.complexity,
+            industry = ?self.industry,
+            seed = self.seed,
+            "Generating chart of accounts"
+        );
+
         self.count += 1;
         let target_count = self.complexity.target_count();
 

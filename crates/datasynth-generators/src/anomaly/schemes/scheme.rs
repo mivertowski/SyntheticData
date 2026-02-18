@@ -212,8 +212,26 @@ impl SchemeAction {
         action_type: SchemeActionType,
         target_date: NaiveDate,
     ) -> Self {
+        // Derive deterministic action_id from scheme_id + stage using FNV-1a hash
+        let action_id = {
+            let scheme_bytes = scheme_id.as_bytes();
+            let stage_bytes = stage.to_le_bytes();
+            let mut hash: u64 = 0xcbf29ce484222325;
+            for &b in scheme_bytes.iter().chain(stage_bytes.iter()) {
+                hash ^= b as u64;
+                hash = hash.wrapping_mul(0x100000001b3);
+            }
+            let bytes = hash.to_le_bytes();
+            let mut uuid_bytes = [0u8; 16];
+            uuid_bytes[..8].copy_from_slice(&bytes);
+            uuid_bytes[8..16].copy_from_slice(&bytes);
+            // Set version 4 bits for compatibility
+            uuid_bytes[6] = (uuid_bytes[6] & 0x0f) | 0x40;
+            uuid_bytes[8] = (uuid_bytes[8] & 0x3f) | 0x80;
+            Uuid::from_bytes(uuid_bytes)
+        };
         Self {
-            action_id: Uuid::new_v4(),
+            action_id,
             scheme_id,
             stage,
             action_type,

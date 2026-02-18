@@ -3,8 +3,6 @@
 //! Generates monthly energy consumption data per facility with a mix of
 //! renewable and non-renewable sources. For manufacturing entities, consumption
 //! can be correlated with production volume.
-#![allow(dead_code)]
-
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EnergySchemaConfig;
 use datasynth_core::models::{
@@ -20,6 +18,8 @@ use rust_decimal_macros::dec;
 /// Generates [`EnergyConsumption`] records for facilities.
 pub struct EnergyGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: EnergySchemaConfig,
     counter: u64,

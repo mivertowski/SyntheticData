@@ -11,6 +11,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::balance::{
     AccountBalance, AccountCategory, AccountType, BalanceSnapshot, CategorySummary,
@@ -99,6 +100,14 @@ impl TrialBalanceGenerator {
         fiscal_year: i32,
         fiscal_period: u32,
     ) -> TrialBalance {
+        debug!(
+            company_code = %snapshot.company_code,
+            fiscal_year,
+            fiscal_period,
+            balance_count = snapshot.balances.len(),
+            "Generating trial balance from snapshot"
+        );
+
         let mut lines = Vec::new();
         let mut total_debits = Decimal::ZERO;
         let mut total_credits = Decimal::ZERO;
@@ -486,6 +495,8 @@ impl TrialBalanceGenerator {
     }
 
     /// Calculates variances between periods.
+    // Analytical helper for period-over-period variance reports; not yet called
+    // from the generation pipeline.
     #[allow(dead_code)]
     fn calculate_period_variances(
         &self,

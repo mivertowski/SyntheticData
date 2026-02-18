@@ -7,6 +7,8 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use std::sync::Arc;
 
+use tracing::debug;
+
 use datasynth_config::schema::{
     FraudConfig, GeneratorConfig, TemplateConfig, TemporalPatternsConfig, TransactionConfig,
 };
@@ -76,10 +78,6 @@ pub struct JournalEntryGenerator {
 #[derive(Clone)]
 struct BatchState {
     /// The base entry template to vary
-    #[allow(dead_code)]
-    base_vendor: Option<String>,
-    #[allow(dead_code)]
-    base_customer: Option<String>,
     base_account_number: String,
     base_amount: rust_decimal::Decimal,
     base_business_process: Option<BusinessProcess>,
@@ -740,6 +738,14 @@ impl JournalEntryGenerator {
 
     /// Generate a single journal entry.
     pub fn generate(&mut self) -> JournalEntry {
+        debug!(
+            count = self.count,
+            companies = self.companies.len(),
+            start_date = %self.start_date,
+            end_date = %self.end_date,
+            "Generating journal entry"
+        );
+
         // Check if we're in a batch - if so, generate a batched entry
         if let Some(ref state) = self.batch_state {
             if state.remaining > 0 {
@@ -1005,8 +1011,6 @@ impl JournalEntryGenerator {
         let base_amount = entry.total_debit();
 
         self.batch_state = Some(BatchState {
-            base_vendor: None, // Would need vendor from context
-            base_customer: None,
             base_account_number: base_account,
             base_amount,
             base_business_process: entry.header.business_process,

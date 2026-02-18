@@ -8,6 +8,7 @@ use datasynth_core::models::{
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for material generation.
 #[derive(Debug, Clone)]
@@ -131,20 +132,6 @@ const MATERIAL_DESCRIPTIONS: &[(MaterialType, &[&str])] = &[
             "Tape Industrial",
         ],
     ),
-];
-
-/// Material group templates.
-#[allow(dead_code)]
-const MATERIAL_GROUPS: &[(MaterialGroup, &str)] = &[
-    (MaterialGroup::Electronics, "ELEC"),
-    (MaterialGroup::Mechanical, "MECH"),
-    (MaterialGroup::Chemical, "CHEM"),
-    (MaterialGroup::PackagingMaterials, "PACK"),
-    (MaterialGroup::Chemicals, "RAWM"),
-    (MaterialGroup::FinishedGoods, "FING"),
-    (MaterialGroup::Tools, "TOOL"),
-    (MaterialGroup::Consumables, "CONS"),
-    (MaterialGroup::Services, "SERV"),
 ];
 
 /// Generator for material master data.
@@ -319,6 +306,7 @@ impl MaterialGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> MaterialPool {
+        debug!(count, company_code, %effective_date, "Generating material pool");
         let mut pool = MaterialPool::new();
 
         for _ in 0..count {

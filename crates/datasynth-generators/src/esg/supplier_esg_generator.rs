@@ -1,7 +1,5 @@
 //! Supplier ESG assessment generator — derives ESG scores for vendors
 //! correlated with quality and flags high-risk suppliers by country/industry.
-#![allow(dead_code)]
-
 use chrono::NaiveDate;
 use datasynth_config::schema::SupplyChainEsgConfig;
 use datasynth_core::models::{AssessmentMethod, EsgRiskFlag, SupplierEsgAssessment};
@@ -24,6 +22,8 @@ pub struct VendorInput {
 /// Generates [`SupplierEsgAssessment`] records for vendors.
 pub struct SupplierEsgGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: SupplyChainEsgConfig,
     counter: u64,

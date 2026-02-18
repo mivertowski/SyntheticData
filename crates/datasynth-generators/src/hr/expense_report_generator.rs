@@ -12,12 +12,14 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Generates [`ExpenseReport`] records for employees over a period.
 pub struct ExpenseReportGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     item_uuid_factory: DeterministicUuidFactory,
+    // Stored for future use by with_config(); generate() currently takes config as a parameter.
     #[allow(dead_code)]
     config: ExpenseConfig,
 }
@@ -69,6 +71,7 @@ impl ExpenseReportGenerator {
         period_end: NaiveDate,
         config: &ExpenseConfig,
     ) -> Vec<ExpenseReport> {
+        debug!(employee_count = employee_ids.len(), %period_start, %period_end, "Generating expense reports");
         let mut reports = Vec::new();
 
         // Iterate over each month in the period

@@ -15,6 +15,7 @@ use datasynth_core::models::{
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for customer generation.
 #[derive(Debug, Clone)]
@@ -555,6 +556,7 @@ impl CustomerGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> CustomerPool {
+        debug!(count, company_code, %effective_date, "Generating customer pool");
         let mut pool = CustomerPool::new();
 
         for _ in 0..count {
@@ -700,70 +702,6 @@ impl CustomerGenerator {
         }
 
         PaymentTerms::Net30
-    }
-
-    /// Generate an address.
-    #[allow(dead_code)]
-    fn generate_address(&mut self) -> String {
-        let street_num = self.rng.gen_range(1..9999);
-        let streets = [
-            "Corporate Dr",
-            "Business Center",
-            "Commerce Way",
-            "Executive Plaza",
-            "Industry Park",
-            "Trade Center",
-        ];
-        let cities = [
-            "New York",
-            "Los Angeles",
-            "Chicago",
-            "Houston",
-            "Phoenix",
-            "Philadelphia",
-            "San Antonio",
-            "San Diego",
-        ];
-        let states = ["NY", "CA", "IL", "TX", "AZ", "PA", "TX", "CA"];
-
-        let idx = self.rng.gen_range(0..cities.len());
-        let street_idx = self.rng.gen_range(0..streets.len());
-        let zip = self.rng.gen_range(10000..99999);
-
-        format!(
-            "{} {}, {}, {} {}",
-            street_num, streets[street_idx], cities[idx], states[idx], zip
-        )
-    }
-
-    /// Generate a contact name.
-    #[allow(dead_code)]
-    fn generate_contact_name(&mut self) -> String {
-        let first_names = [
-            "John", "Jane", "Michael", "Sarah", "David", "Emily", "Robert", "Lisa",
-        ];
-        let last_names = [
-            "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-        ];
-
-        let first = first_names[self.rng.gen_range(0..first_names.len())];
-        let last = last_names[self.rng.gen_range(0..last_names.len())];
-
-        format!("{} {}", first, last)
-    }
-
-    /// Generate a contact email.
-    #[allow(dead_code)]
-    fn generate_contact_email(&mut self, company_name: &str) -> String {
-        let domain = company_name
-            .to_lowercase()
-            .replace([' ', '.', ','], "")
-            .chars()
-            .filter(|c| c.is_alphanumeric())
-            .take(15)
-            .collect::<String>();
-
-        format!("contact@{}.com", domain)
     }
 
     /// Reset the generator.

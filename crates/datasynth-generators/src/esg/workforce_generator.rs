@@ -1,7 +1,5 @@
 //! Workforce ESG generator — derives diversity metrics, pay equity ratios,
 //! safety incidents, and aggregate safety metrics from employee data.
-#![allow(dead_code)]
-
 use chrono::NaiveDate;
 use datasynth_config::schema::SocialConfig;
 use datasynth_core::models::{
@@ -17,6 +15,8 @@ use rust_decimal_macros::dec;
 /// Generates workforce diversity, pay equity, and safety metrics.
 pub struct WorkforceGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: SocialConfig,
     counter: u64,

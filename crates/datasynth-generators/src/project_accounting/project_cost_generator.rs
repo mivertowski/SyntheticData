@@ -3,7 +3,6 @@
 //! Probabilistically links existing source documents (time entries, expense reports,
 //! purchase orders, vendor invoices) to project WBS elements, creating
 //! [`ProjectCostLine`] records based on configurable allocation rates.
-#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::CostAllocationConfig;
@@ -33,6 +32,8 @@ pub struct SourceDocument {
 /// Generates [`ProjectCostLine`] records by linking source documents to projects.
 pub struct ProjectCostGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: CostAllocationConfig,
     counter: u64,

@@ -17,6 +17,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::{
     AnomalyCausalReason, AnomalyDetectionDifficulty, AnomalyRateConfig, AnomalySummary,
@@ -138,6 +139,8 @@ pub struct AnomalyInjector {
     type_selector: AnomalyTypeSelector,
     strategies: StrategyCollection,
     cluster_manager: ClusterManager,
+    // Constructed from config; will be consumed when entity-aware injection
+    // patterns are integrated into the main inject loop.
     #[allow(dead_code)]
     entity_targeting: EntityTargetingManager,
     /// Tracking which documents already have anomalies.
@@ -153,10 +156,10 @@ pub struct AnomalyInjector {
     near_miss_generator: Option<NearMissGenerator>,
     /// Near-miss labels generated.
     near_miss_labels: Vec<NearMissLabel>,
-    /// Co-occurrence pattern handler.
+    // Constructed when correlated_injection_enabled; pending integration.
     #[allow(dead_code)]
     co_occurrence_handler: Option<AnomalyCoOccurrence>,
-    /// Temporal cluster generator.
+    // Constructed when temporal_clustering_enabled; pending integration.
     #[allow(dead_code)]
     temporal_cluster_generator: Option<TemporalClusterGenerator>,
     /// Difficulty calculator.
@@ -299,6 +302,13 @@ impl AnomalyInjector {
 
     /// Processes a batch of journal entries, potentially injecting anomalies.
     pub fn process_entries(&mut self, entries: &mut [JournalEntry]) -> InjectionBatchResult {
+        debug!(
+            entry_count = entries.len(),
+            total_rate = self.config.rates.total_rate,
+            seed = self.config.seed,
+            "Injecting anomalies into journal entries"
+        );
+
         let mut modified_documents = Vec::new();
         let mut duplicates = Vec::new();
 

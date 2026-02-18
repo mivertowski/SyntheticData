@@ -12,6 +12,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Characteristic names used in quality inspections.
 const CHARACTERISTIC_NAMES: &[&str] = &[
@@ -61,6 +62,7 @@ impl QualityInspectionGenerator {
         production_orders: &[(String, String, String)],
         inspection_date: NaiveDate,
     ) -> Vec<QualityInspection> {
+        debug!(company_code, order_count = production_orders.len(), %inspection_date, "Generating quality inspections");
         production_orders
             .iter()
             .map(|(order_id, material_id, material_desc)| {

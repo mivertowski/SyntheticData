@@ -6,6 +6,7 @@
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 use datasynth_core::models::{
     BusinessProcess, ChartOfAccounts, ControlMappingRegistry, ControlStatus, InternalControl,
@@ -72,6 +73,13 @@ impl ControlGenerator {
     /// - Control status (effective, exception, not tested)
     /// - SoD violation flag and conflict type
     pub fn apply_controls(&mut self, entry: &mut JournalEntry, coa: &ChartOfAccounts) {
+        debug!(
+            document_id = %entry.header.document_id,
+            company_code = %entry.header.company_code,
+            exception_rate = self.config.exception_rate,
+            "Applying controls to journal entry"
+        );
+
         // Determine applicable controls from all line items
         let mut all_control_ids = Vec::new();
 

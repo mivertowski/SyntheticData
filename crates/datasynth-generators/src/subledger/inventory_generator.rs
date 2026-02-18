@@ -6,6 +6,8 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
+use tracing::debug;
+
 use datasynth_core::models::subledger::inventory::{
     InventoryMovement, InventoryPosition, MovementType, PositionValuation, ReferenceDocType,
     ValuationMethod,
@@ -73,6 +75,7 @@ impl InventoryGenerator {
         unit_cost: Option<Decimal>,
         _currency: &str,
     ) -> InventoryPosition {
+        debug!(company_code, plant, material_id, %initial_quantity, "Generating inventory position");
         let cost = unit_cost.unwrap_or_else(|| self.generate_unit_cost());
         let total_value = (initial_quantity * cost).round_dp(2);
 

@@ -6,6 +6,8 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
+use tracing::debug;
+
 use datasynth_core::accounts::{cash_accounts, control_accounts, revenue_accounts, tax_accounts};
 use datasynth_core::models::subledger::ar::{
     ARCreditMemo, ARCreditMemoLine, ARInvoice, ARInvoiceLine, ARReceipt, CreditMemoReason,
@@ -213,6 +215,7 @@ impl ARGenerator {
         invoices_per_day: u32,
         currency: &str,
     ) -> ARPeriodTransactions {
+        debug!(company_code, customer_count = customers.len(), %start_date, %end_date, invoices_per_day, "Generating AR period transactions");
         let mut invoices = Vec::new();
         let mut receipts = Vec::new();
         let mut credit_memos = Vec::new();

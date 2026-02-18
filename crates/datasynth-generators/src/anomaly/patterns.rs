@@ -278,7 +278,8 @@ struct ActiveCluster {
     size: usize,
     /// Start date.
     start_date: NaiveDate,
-    /// Fraud category.
+    /// Fraud category (clusters are keyed by category in the HashMap; retained
+    /// here for debug/display and future per-cluster analytics).
     #[allow(dead_code)]
     category: FraudCategory,
     /// Time window for this cluster.

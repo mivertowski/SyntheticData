@@ -3,8 +3,6 @@
 //! Creates [`Project`] records with [`WbsElement`] hierarchies based on
 //! [`ProjectAccountingConfig`] settings, distributing project types according
 //! to configured weights.
-#![allow(dead_code)]
-
 use chrono::NaiveDate;
 use datasynth_config::schema::{ProjectAccountingConfig, WbsSchemaConfig};
 use datasynth_core::models::{Project, ProjectPool, ProjectStatus, ProjectType, WbsElement};
@@ -16,6 +14,8 @@ use rust_decimal::Decimal;
 /// Generates [`Project`] records with WBS hierarchies.
 pub struct ProjectGenerator {
     rng: ChaCha8Rng,
+    // Reserved for deterministic record IDs; currently using counter-based IDs.
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
     config: ProjectAccountingConfig,
 }
