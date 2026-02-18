@@ -60,6 +60,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`with_seed()` Constructors** (`datasynth-generators`): Standardized `with_seed(config, seed)` constructor added to `ARGenerator`, `APGenerator`, `FAGenerator`, `InventoryGenerator`, `OpeningBalanceGenerator`, `FxRateService`, and `FxRateGenerator`
 
+- **Orchestrator Pipeline Wiring — Round 3** (`datasynth-runtime`):
+  - **Opening balance generation** (phase 3b): `OpeningBalanceGenerator` wired per company with industry-typed specs, opening balances exported to `balance/opening_balances.json`
+  - **GL-to-subledger reconciliation** (phase 9b): `ReconciliationEngine` reconciles AR, AP, FA, and Inventory control accounts against subledger totals, exported to `balance/subledger_reconciliation.json`
+  - **Tax line generation**: `TaxLineGenerator` produces tax lines from vendor invoices (input VAT) and customer invoices (output VAT) using actual document flow data
+  - **Project cost allocation**: `ProjectCostGenerator` links time entries, expense reports, POs, and vendor invoices as `SourceDocument` records for cost allocation
+  - **ESG vendor spend**: ESG spend calculations now use actual payment data (filtered by `payment.is_vendor`) instead of stub values
+  - **Treasury cash positions**: `CashPositionGenerator` aggregates P2P payment outflows and O2C customer receipt inflows into daily cash positions
+  - **Graph export summary**: `graph_export_summary.json` exported when graph export is enabled
+
+- **Determinism Fix** (`datasynth-generators`): `Uuid::new_v4()` in `SchemeAction::new` replaced with FNV-1a hash-based deterministic UUID construction for reproducible anomaly scheme generation
+
+- **Generator Tracing — Round 3** (`datasynth-generators`): `tracing::debug!` instrumentation added to ~25 generator entry points across core (JE, CoA, control, injector), master data (vendor, customer, material, employee, asset), subledger (AR, AP, FA, inventory), period close (close engine, accruals, depreciation, financial statements), HR (payroll, time entry, expense report), manufacturing (production order, quality inspection), and intercompany modules
+
+- **Dead Code Cleanup — Round 3** (`datasynth-generators`): Removed `#![allow(dead_code)]` from 8 ESG and project accounting generator files; deleted unused `base_vendor`/`base_customer` from JE generator, `MATERIAL_GROUPS` from material generator, `calculate_monthly_depreciation` from FA generator, and 3 unused helpers from customer generator; added targeted `#[allow(dead_code)]` with explanatory comments for legitimately pre-wired items
+
 ### Changed
 
 - Bumped all Rust crate versions to 0.8.0
