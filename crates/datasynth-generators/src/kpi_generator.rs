@@ -126,6 +126,7 @@ impl KpiGenerator {
         period_end: NaiveDate,
         config: &ManagementKpisConfig,
     ) -> Vec<ManagementKpi> {
+        tracing::debug!(company_code, %period_start, %period_end, "Generating management KPIs");
         let mut kpis = Vec::new();
         let is_quarterly = config.frequency.to_lowercase() == "quarterly";
 

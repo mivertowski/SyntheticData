@@ -23,6 +23,7 @@ use datasynth_core::models::{
     AnomalyType, ErrorType, FraudType, JournalEntry, LabeledAnomaly, NearMissLabel,
     RelationalAnomalyType,
 };
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 use super::context::{
     AccountContext, BehavioralBaseline, BehavioralBaselineConfig, EmployeeContext,
@@ -133,9 +134,11 @@ pub struct InjectionBatchResult {
 pub struct AnomalyInjector {
     config: AnomalyInjectorConfig,
     rng: ChaCha8Rng,
+    uuid_factory: DeterministicUuidFactory,
     type_selector: AnomalyTypeSelector,
     strategies: StrategyCollection,
     cluster_manager: ClusterManager,
+    #[allow(dead_code)]
     entity_targeting: EntityTargetingManager,
     /// Tracking which documents already have anomalies.
     document_anomaly_counts: HashMap<String, usize>,
@@ -151,8 +154,10 @@ pub struct AnomalyInjector {
     /// Near-miss labels generated.
     near_miss_labels: Vec<NearMissLabel>,
     /// Co-occurrence pattern handler.
+    #[allow(dead_code)]
     co_occurrence_handler: Option<AnomalyCoOccurrence>,
     /// Temporal cluster generator.
+    #[allow(dead_code)]
     temporal_cluster_generator: Option<TemporalClusterGenerator>,
     /// Difficulty calculator.
     difficulty_calculator: Option<DifficultyCalculator>,
@@ -263,9 +268,12 @@ impl AnomalyInjector {
             None
         };
 
+        let uuid_factory = DeterministicUuidFactory::new(config.seed, GeneratorType::Anomaly);
+
         Self {
             config,
             rng,
+            uuid_factory,
             type_selector: AnomalyTypeSelector::new(),
             strategies: StrategyCollection::default(),
             cluster_manager,
@@ -410,7 +418,8 @@ impl AnomalyInjector {
                     )
                 {
                     let dup_strategy = DuplicationStrategy::default();
-                    let duplicate = dup_strategy.duplicate(entry, &mut self.rng);
+                    let duplicate =
+                        dup_strategy.duplicate(entry, &mut self.rng, &self.uuid_factory);
                     duplicates.push(duplicate);
                 }
             }

@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+
 use datasynth_core::{AcfeFraudCategory, AnomalyDetectionDifficulty, ConcealmentTechnique};
 
 /// Type of collusion ring based on participant composition.
@@ -194,8 +196,9 @@ impl Conspirator {
         role: ConspiratorRole,
         join_date: NaiveDate,
     ) -> Self {
+        let uuid_factory = DeterministicUuidFactory::new(0, GeneratorType::Anomaly);
         Self {
-            conspirator_id: Uuid::new_v4(),
+            conspirator_id: uuid_factory.next(),
             entity_id: entity_id.into(),
             entity_type,
             role,
@@ -431,8 +434,9 @@ impl CollusionRing {
         fraud_category: AcfeFraudCategory,
         formation_date: NaiveDate,
     ) -> Self {
+        let uuid_factory = DeterministicUuidFactory::new(0, GeneratorType::Anomaly);
         Self {
-            ring_id: Uuid::new_v4(),
+            ring_id: uuid_factory.next(),
             ring_type,
             fraud_category,
             members: Vec::new(),

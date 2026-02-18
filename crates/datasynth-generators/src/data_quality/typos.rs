@@ -9,10 +9,11 @@
 
 use datasynth_core::utils::weighted_select;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Type of typo/error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypoType {
     /// Substitution with nearby key.
     Substitution,
@@ -289,7 +290,7 @@ pub struct TypoGenerator {
 }
 
 /// Statistics for typo generation.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypoStats {
     pub total_characters: usize,
     pub total_typos: usize,

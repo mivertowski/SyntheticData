@@ -746,6 +746,7 @@ impl P2PGenerator {
         fiscal_year: u16,
         created_by: &str,
     ) -> Vec<P2PDocumentChain> {
+        tracing::debug!(count, company_code, "Generating P2P document chains");
         let mut chains = Vec::new();
 
         let (start_date, end_date) = date_range;

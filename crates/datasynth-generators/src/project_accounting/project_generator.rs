@@ -3,6 +3,7 @@
 //! Creates [`Project`] records with [`WbsElement`] hierarchies based on
 //! [`ProjectAccountingConfig`] settings, distributing project types according
 //! to configured weights.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::{ProjectAccountingConfig, WbsSchemaConfig};

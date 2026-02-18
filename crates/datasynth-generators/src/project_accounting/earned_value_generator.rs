@@ -2,6 +2,7 @@
 //!
 //! Computes EVM metrics (SPI, CPI, EAC, ETC, TCPI) for projects based on
 //! WBS budgets, actual costs, and schedule progress.
+#![allow(dead_code)]
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EarnedValueSchemaConfig;

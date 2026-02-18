@@ -495,6 +495,7 @@ impl ICMatchingEngine {
 #[derive(Debug, Clone)]
 struct UnmatchedItem {
     /// Company code.
+    #[allow(dead_code)]
     company: String,
     /// Counterparty company code.
     counterparty: String,

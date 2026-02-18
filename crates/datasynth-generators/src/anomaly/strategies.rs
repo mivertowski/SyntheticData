@@ -10,6 +10,7 @@ use datasynth_core::models::{
     AnomalyType, ControlStatus, ErrorType, FraudType, JournalEntry, ProcessIssueType,
     RelationalAnomalyType, StatisticalAnomalyType,
 };
+use datasynth_core::uuid_factory::DeterministicUuidFactory;
 
 /// Base trait for injection strategies.
 pub trait InjectionStrategy {
@@ -319,12 +320,17 @@ impl Default for DuplicationStrategy {
 
 impl DuplicationStrategy {
     /// Creates a duplicate of the entry.
-    pub fn duplicate<R: Rng>(&self, entry: &JournalEntry, rng: &mut R) -> JournalEntry {
+    pub fn duplicate<R: Rng>(
+        &self,
+        entry: &JournalEntry,
+        rng: &mut R,
+        uuid_factory: &DeterministicUuidFactory,
+    ) -> JournalEntry {
         let mut duplicate = entry.clone();
 
         if self.change_doc_number {
             // Generate a new UUID for the duplicate
-            duplicate.header.document_id = uuid::Uuid::new_v4();
+            duplicate.header.document_id = uuid_factory.next();
             // Update line items to reference the new document ID
             for line in &mut duplicate.lines {
                 line.document_id = duplicate.header.document_id;

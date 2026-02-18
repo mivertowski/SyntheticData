@@ -825,6 +825,7 @@ impl O2CGenerator {
         fiscal_year: u16,
         created_by: &str,
     ) -> Vec<O2CDocumentChain> {
+        tracing::debug!(count, company_code, "Generating O2C document chains");
         let mut chains = Vec::new();
 
         let (start_date, end_date) = date_range;

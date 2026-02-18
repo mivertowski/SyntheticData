@@ -2,6 +2,7 @@
 //! from operational data (energy consumption, vendor spend, headcount).
 //!
 //! Uses EPA/DEFRA-style emission factors to convert activity data to CO2e tonnes.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::EnvironmentalConfig;

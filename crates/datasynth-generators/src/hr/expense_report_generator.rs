@@ -18,6 +18,7 @@ pub struct ExpenseReportGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     item_uuid_factory: DeterministicUuidFactory,
+    #[allow(dead_code)]
     config: ExpenseConfig,
 }
 

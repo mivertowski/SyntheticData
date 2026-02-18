@@ -3,6 +3,7 @@
 //! Probabilistically links existing source documents (time entries, expense reports,
 //! purchase orders, vendor invoices) to project WBS elements, creating
 //! [`ProjectCostLine`] records based on configurable allocation rates.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::CostAllocationConfig;

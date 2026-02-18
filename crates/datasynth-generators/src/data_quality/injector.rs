@@ -9,6 +9,7 @@ use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::duplicates::{DuplicateConfig, DuplicateGenerator, DuplicateStats};
@@ -123,7 +124,7 @@ impl DataQualityConfig {
 }
 
 /// Combined statistics for all data quality issues.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DataQualityStats {
     /// Missing value statistics.
     pub missing_values: MissingValueStats,

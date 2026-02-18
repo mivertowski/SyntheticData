@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use datasynth_core::models::AnomalyType;
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 /// Configuration for cascade generation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,9 +106,10 @@ impl ErrorCascade {
         trigger: AnomalyType,
         trigger_document_id: impl Into<String>,
         trigger_date: NaiveDate,
+        uuid_factory: &DeterministicUuidFactory,
     ) -> Self {
         Self {
-            cascade_id: Uuid::new_v4(),
+            cascade_id: uuid_factory.next(),
             trigger,
             trigger_document_id: trigger_document_id.into(),
             trigger_date,
@@ -162,6 +164,8 @@ impl ErrorCascade {
 /// Generator for error cascades.
 pub struct CascadeGenerator {
     config: CascadeConfig,
+    /// Deterministic UUID factory for cascade IDs.
+    uuid_factory: DeterministicUuidFactory,
     /// Active cascades.
     active_cascades: Vec<ErrorCascade>,
     /// Completed cascades.
@@ -223,6 +227,7 @@ impl CascadeGenerator {
     pub fn new(config: CascadeConfig) -> Self {
         Self {
             config,
+            uuid_factory: DeterministicUuidFactory::new(0, GeneratorType::Anomaly),
             active_cascades: Vec::new(),
             completed_cascades: Vec::new(),
             templates: Self::default_templates(),
@@ -318,7 +323,7 @@ impl CascadeGenerator {
         // Find matching template
         let template = self.templates.iter().find(|t| t.trigger == *trigger)?;
 
-        let mut cascade = ErrorCascade::new(trigger.clone(), document_id, date);
+        let mut cascade = ErrorCascade::new(trigger.clone(), document_id, date, &self.uuid_factory);
 
         // Generate steps from template
         let mut step_num = 0u32;
@@ -452,10 +457,12 @@ mod tests {
 
     #[test]
     fn test_error_cascade() {
+        let uuid_factory = DeterministicUuidFactory::new(42, GeneratorType::Anomaly);
         let mut cascade = ErrorCascade::new(
             AnomalyType::Error(ErrorType::MisclassifiedAccount),
             "JE001",
             NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            &uuid_factory,
         );
 
         cascade.add_step(CascadeStep::new(

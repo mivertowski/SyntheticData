@@ -155,7 +155,6 @@ struct MetricConfigMapping {
 }
 
 /// Strategy for computing suggested config values.
-#[allow(dead_code)] // Variants reserved for future tuning strategies
 #[derive(Debug, Clone, Copy)]
 enum ComputeStrategy {
     /// Enable a boolean flag.
@@ -169,6 +168,7 @@ enum ComputeStrategy {
     /// Set to target value directly.
     SetToTarget,
     /// Multiply current by factor based on gap.
+    #[allow(dead_code)]
     MultiplyByGapFactor,
 }
 

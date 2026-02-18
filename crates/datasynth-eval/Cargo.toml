@@ -19,7 +19,6 @@ rust_decimal_macros = { workspace = true }
 
 # Statistics
 statrs = "0.18"
-ndarray = "0.16"
 
 # Date/Time
 chrono = { workspace = true }
@@ -34,12 +33,6 @@ thiserror = { workspace = true }
 # Logging
 tracing = { workspace = true }
 
-# Report generation
-askama = "0.12"
-
-# Chart generation (optional feature)
-plotters = { version = "0.3", optional = true }
-
 # Parallel processing
 rayon = { workspace = true }
 
@@ -47,11 +40,8 @@ rayon = { workspace = true }
 datasynth-test-utils = { workspace = true }
 tempfile = { workspace = true }
 proptest = { workspace = true }
-rust_decimal_macros = "1.35"
+rust_decimal_macros = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 rand_distr = { workspace = true }
 
-[features]
-default = ["charts"]
-charts = ["plotters"]

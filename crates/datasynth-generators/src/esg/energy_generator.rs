@@ -3,6 +3,7 @@
 //! Generates monthly energy consumption data per facility with a mix of
 //! renewable and non-renewable sources. For manufacturing entities, consumption
 //! can be correlated with production volume.
+#![allow(dead_code)]
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EnergySchemaConfig;

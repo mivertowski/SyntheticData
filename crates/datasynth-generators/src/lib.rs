@@ -6,8 +6,6 @@
 //! subledger transactions, FX rates, period close processes, anomaly injection,
 //! and data quality variations.
 
-// Allow dead code for methods that are part of the public API but not yet used internally
-#![allow(dead_code)]
 // Allow complex types for return types that model business domain complexity
 #![allow(clippy::type_complexity)]
 // Allow functions with many arguments for domain-specific operations

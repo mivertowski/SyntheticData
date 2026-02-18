@@ -735,6 +735,168 @@ fn main() -> Result<()> {
                 });
             }
 
+            // Register additional output subdirectories in manifest
+            // Helper to add a manifest entry for a JSON file
+            let mut register = |path: &str, count: usize| {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: path.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            };
+
+            // Subledger
+            register(
+                "subledger/ar_invoices.json",
+                result.subledger.ar_invoices.len(),
+            );
+            register(
+                "subledger/ap_invoices.json",
+                result.subledger.ap_invoices.len(),
+            );
+            register(
+                "subledger/fa_records.json",
+                result.subledger.fa_records.len(),
+            );
+            register(
+                "subledger/inventory_positions.json",
+                result.subledger.inventory_positions.len(),
+            );
+            register(
+                "subledger/inventory_movements.json",
+                result.subledger.inventory_movements.len(),
+            );
+
+            // Audit
+            register(
+                "audit/audit_engagements.json",
+                result.audit.engagements.len(),
+            );
+
+            // Banking
+            register(
+                "banking/banking_customers.json",
+                result.banking.customers.len(),
+            );
+            register(
+                "banking/bank_transactions.json",
+                result.banking.transactions.len(),
+            );
+
+            // Sourcing (S2C)
+            register(
+                "sourcing/sourcing_projects.json",
+                result.sourcing.sourcing_projects.len(),
+            );
+
+            // Intercompany
+            register(
+                "intercompany/ic_matched_pairs.json",
+                result.intercompany.matched_pairs.len(),
+            );
+            register(
+                "intercompany/ic_elimination_entries.json",
+                result.intercompany.elimination_entries.len(),
+            );
+
+            // Financial Reporting
+            register(
+                "financial_reporting/financial_statements.json",
+                result.financial_reporting.financial_statements.len(),
+            );
+            register(
+                "financial_reporting/bank_reconciliations.json",
+                result.financial_reporting.bank_reconciliations.len(),
+            );
+
+            // Period Close
+            register(
+                "period_close/trial_balances.json",
+                result.financial_reporting.trial_balances.len(),
+            );
+
+            // HR
+            register("hr/payroll_runs.json", result.hr.payroll_runs.len());
+            register("hr/time_entries.json", result.hr.time_entries.len());
+            register("hr/expense_reports.json", result.hr.expense_reports.len());
+
+            // Manufacturing
+            register(
+                "manufacturing/production_orders.json",
+                result.manufacturing.production_orders.len(),
+            );
+            register(
+                "manufacturing/quality_inspections.json",
+                result.manufacturing.quality_inspections.len(),
+            );
+            register(
+                "manufacturing/cycle_counts.json",
+                result.manufacturing.cycle_counts.len(),
+            );
+
+            // Sales / KPI / Budgets
+            register(
+                "sales_kpi_budgets/sales_quotes.json",
+                result.sales_kpi_budgets.sales_quotes.len(),
+            );
+            register(
+                "sales_kpi_budgets/management_kpis.json",
+                result.sales_kpi_budgets.kpis.len(),
+            );
+            register(
+                "sales_kpi_budgets/budgets.json",
+                result.sales_kpi_budgets.budgets.len(),
+            );
+
+            // Internal Controls
+            register(
+                "internal_controls/internal_controls.json",
+                result.internal_controls.len(),
+            );
+
+            // Accounting Standards
+            register(
+                "accounting_standards/customer_contracts.json",
+                result.accounting_standards.contracts.len(),
+            );
+            register(
+                "accounting_standards/impairment_tests.json",
+                result.accounting_standards.impairment_tests.len(),
+            );
+
+            // Treasury
+            register(
+                "treasury/debt_instruments.json",
+                result.treasury.debt_instruments.len(),
+            );
+            register(
+                "treasury/hedging_instruments.json",
+                result.treasury.hedging_instruments.len(),
+            );
+
+            // Project Accounting
+            register(
+                "project_accounting/projects.json",
+                result.project_accounting.projects.len(),
+            );
+            register(
+                "project_accounting/change_orders.json",
+                result.project_accounting.change_orders.len(),
+            );
+            register(
+                "project_accounting/milestones.json",
+                result.project_accounting.milestones.len(),
+            );
+
+            // Tax (extended)
+            register("tax/tax_provisions.json", result.tax.tax_provisions.len());
+
             // Attach lineage graph to manifest and write separate file
             if let Some(ref lineage) = result.lineage {
                 manifest.lineage = Some(lineage.clone());

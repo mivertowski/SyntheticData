@@ -1,6 +1,7 @@
 //! ESG disclosure and materiality generator — maps calculated metrics
 //! to framework-specific standard IDs (GRI, ESRS, SASB, TCFD, ISSB)
 //! and performs double-materiality assessments.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::{ClimateScenarioConfig, EsgReportingConfig};

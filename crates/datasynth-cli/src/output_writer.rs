@@ -257,7 +257,11 @@ pub fn write_all_output(
     // Subledger
     // ========================================================================
     let sl_dir = output_dir.join("subledger");
-    if !result.subledger.ap_invoices.is_empty() || !result.subledger.ar_invoices.is_empty() {
+    if !result.subledger.ap_invoices.is_empty()
+        || !result.subledger.ar_invoices.is_empty()
+        || !result.subledger.fa_records.is_empty()
+        || !result.subledger.inventory_positions.is_empty()
+    {
         std::fs::create_dir_all(&sl_dir)?;
         info!("Writing subledger data...");
 
@@ -270,6 +274,21 @@ pub fn write_all_output(
             &result.subledger.ar_invoices,
             &sl_dir.join("ar_invoices.json"),
             "AR invoices",
+        );
+        write_json_safe(
+            &result.subledger.fa_records,
+            &sl_dir.join("fa_records.json"),
+            "FA records",
+        );
+        write_json_safe(
+            &result.subledger.inventory_positions,
+            &sl_dir.join("inventory_positions.json"),
+            "Inventory positions",
+        );
+        write_json_safe(
+            &result.subledger.inventory_movements,
+            &sl_dir.join("inventory_movements.json"),
+            "Inventory movements",
         );
     }
 
@@ -335,6 +354,31 @@ pub fn write_all_output(
             &result.banking.transactions,
             &banking_dir.join("banking_transactions.json"),
             "Banking transactions",
+        );
+        write_json_safe(
+            &result.banking.transaction_labels,
+            &banking_dir.join("aml_transaction_labels.json"),
+            "AML transaction labels",
+        );
+        write_json_safe(
+            &result.banking.customer_labels,
+            &banking_dir.join("aml_customer_labels.json"),
+            "AML customer labels",
+        );
+        write_json_safe(
+            &result.banking.account_labels,
+            &banking_dir.join("aml_account_labels.json"),
+            "AML account labels",
+        );
+        write_json_safe(
+            &result.banking.relationship_labels,
+            &banking_dir.join("aml_relationship_labels.json"),
+            "AML relationship labels",
+        );
+        write_json_safe(
+            &result.banking.narratives,
+            &banking_dir.join("aml_narratives.json"),
+            "AML narratives",
         );
     }
 
@@ -446,6 +490,23 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Period-Close Trial Balances
+    // ========================================================================
+    if !result.financial_reporting.trial_balances.is_empty() {
+        let pc_dir = output_dir.join("period_close");
+        std::fs::create_dir_all(&pc_dir)?;
+        info!(
+            "Writing {} period-close trial balances...",
+            result.financial_reporting.trial_balances.len()
+        );
+        write_json_safe(
+            &result.financial_reporting.trial_balances,
+            &pc_dir.join("trial_balances.json"),
+            "Period-close trial balances",
+        );
+    }
+
+    // ========================================================================
     // HR (Payroll, Time Entries, Expense Reports)
     // ========================================================================
     let hr_dir = output_dir.join("hr");
@@ -538,7 +599,10 @@ pub fn write_all_output(
     // Tax
     // ========================================================================
     let tax_dir = output_dir.join("tax");
-    if !result.tax.jurisdictions.is_empty() || !result.tax.codes.is_empty() {
+    if !result.tax.jurisdictions.is_empty()
+        || !result.tax.codes.is_empty()
+        || !result.tax.tax_provisions.is_empty()
+    {
         std::fs::create_dir_all(&tax_dir)?;
         info!("Writing tax data...");
 
@@ -552,6 +616,33 @@ pub fn write_all_output(
             &tax_dir.join("tax_codes.json"),
             "Tax codes",
         );
+        write_json_safe(
+            &result.tax.tax_provisions,
+            &tax_dir.join("tax_provisions.json"),
+            "Tax provisions",
+        );
+        write_json_safe(
+            &result.tax.tax_lines,
+            &tax_dir.join("tax_lines.json"),
+            "Tax lines",
+        );
+        write_json_safe(
+            &result.tax.tax_returns,
+            &tax_dir.join("tax_returns.json"),
+            "Tax returns",
+        );
+        write_json_safe(
+            &result.tax.withholding_records,
+            &tax_dir.join("withholding_records.json"),
+            "Withholding tax records",
+        );
+        if !result.tax.tax_anomaly_labels.is_empty() {
+            write_json_safe(
+                &result.tax.tax_anomaly_labels,
+                &tax_dir.join("tax_anomaly_labels.json"),
+                "Tax anomaly labels",
+            );
+        }
     }
 
     // ========================================================================
@@ -662,6 +753,20 @@ pub fn write_all_output(
                 Err(e) => warn!("Failed to serialize OCPM event log: {}", e),
             }
 
+            // Write events separately for easy consumption
+            if !event_log.events.is_empty() {
+                match serde_json::to_string_pretty(&event_log.events) {
+                    Ok(json) => {
+                        if let Err(e) = std::fs::write(pm_dir.join("events.json"), json) {
+                            warn!("Failed to write OCPM events: {}", e);
+                        } else {
+                            info!("  Events written: {} records", event_log.events.len());
+                        }
+                    }
+                    Err(e) => warn!("Failed to serialize OCPM events: {}", e),
+                }
+            }
+
             // Write objects separately for easy consumption
             if !event_log.objects.is_empty() {
                 let objects: Vec<&_> = event_log.objects.iter().collect();
@@ -730,33 +835,170 @@ pub fn write_all_output(
     }
 
     // ========================================================================
-    // Data Quality Statistics (create serializable summary since the type
-    // does not derive Serialize)
+    // Data Quality Statistics (now serializable directly via Serialize derives)
     // ========================================================================
     {
-        let dq = &result.data_quality_stats;
-        let summary = DataQualitySummary {
-            total_records: dq.total_records,
-            records_with_issues: dq.records_with_issues,
-            missing_values_injected: dq.missing_values.total_missing,
-            format_variations_injected: dq.format_variations.date_variations
-                + dq.format_variations.amount_variations
-                + dq.format_variations.identifier_variations
-                + dq.format_variations.text_variations,
-            duplicates_created: dq.duplicates.total_duplicates,
-            typos_injected: dq.typos.total_typos,
-            encoding_issues: dq.encoding_issues,
-        };
-        match serde_json::to_string_pretty(&summary) {
+        match serde_json::to_string_pretty(&result.data_quality_stats) {
             Ok(json) => {
                 if let Err(e) = std::fs::write(output_dir.join("data_quality_stats.json"), json) {
                     warn!("Failed to write data quality stats: {}", e);
                 } else {
-                    info!("  Data quality stats written");
+                    info!("  Data quality stats written (full detail)");
                 }
             }
             Err(e) => warn!("Failed to serialize data quality stats: {}", e),
         }
+    }
+
+    // ========================================================================
+    // Internal Controls
+    // ========================================================================
+    if !result.internal_controls.is_empty() {
+        let ctrl_dir = output_dir.join("internal_controls");
+        std::fs::create_dir_all(&ctrl_dir)?;
+        info!("Writing internal controls data...");
+
+        write_json_safe(
+            &result.internal_controls,
+            &ctrl_dir.join("internal_controls.json"),
+            "Internal controls",
+        );
+    }
+
+    // ========================================================================
+    // Accounting Standards
+    // ========================================================================
+    if !result.accounting_standards.contracts.is_empty()
+        || !result.accounting_standards.impairment_tests.is_empty()
+    {
+        let acct_dir = output_dir.join("accounting_standards");
+        std::fs::create_dir_all(&acct_dir)?;
+        info!("Writing accounting standards data...");
+
+        write_json_safe(
+            &result.accounting_standards.contracts,
+            &acct_dir.join("customer_contracts.json"),
+            "Customer contracts",
+        );
+        write_json_safe(
+            &result.accounting_standards.impairment_tests,
+            &acct_dir.join("impairment_tests.json"),
+            "Impairment tests",
+        );
+    }
+
+    // ========================================================================
+    // Quality Gate Results
+    // ========================================================================
+    if let Some(ref gate_result) = result.gate_result {
+        match serde_json::to_string_pretty(gate_result) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(output_dir.join("quality_gate_result.json"), json) {
+                    warn!("Failed to write quality gate result: {}", e);
+                } else {
+                    info!(
+                        "  Quality gate result written (passed={})",
+                        gate_result.passed
+                    );
+                }
+            }
+            Err(e) => warn!("Failed to serialize quality gate result: {}", e),
+        }
+    }
+
+    // ========================================================================
+    // Treasury
+    // ========================================================================
+    if !result.treasury.debt_instruments.is_empty()
+        || !result.treasury.cash_positions.is_empty()
+        || !result.treasury.hedging_instruments.is_empty()
+    {
+        let treasury_dir = output_dir.join("treasury");
+        std::fs::create_dir_all(&treasury_dir)?;
+        info!("Writing treasury data...");
+
+        write_json_safe(
+            &result.treasury.debt_instruments,
+            &treasury_dir.join("debt_instruments.json"),
+            "Debt instruments",
+        );
+        write_json_safe(
+            &result.treasury.hedging_instruments,
+            &treasury_dir.join("hedging_instruments.json"),
+            "Hedging instruments",
+        );
+        write_json_safe(
+            &result.treasury.hedge_relationships,
+            &treasury_dir.join("hedge_relationships.json"),
+            "Hedge relationships",
+        );
+        write_json_safe(
+            &result.treasury.cash_positions,
+            &treasury_dir.join("cash_positions.json"),
+            "Cash positions",
+        );
+        write_json_safe(
+            &result.treasury.cash_forecasts,
+            &treasury_dir.join("cash_forecasts.json"),
+            "Cash forecasts",
+        );
+        write_json_safe(
+            &result.treasury.cash_pools,
+            &treasury_dir.join("cash_pools.json"),
+            "Cash pools",
+        );
+        write_json_safe(
+            &result.treasury.cash_pool_sweeps,
+            &treasury_dir.join("cash_pool_sweeps.json"),
+            "Cash pool sweeps",
+        );
+        if !result.treasury.treasury_anomaly_labels.is_empty() {
+            write_json_safe(
+                &result.treasury.treasury_anomaly_labels,
+                &treasury_dir.join("treasury_anomaly_labels.json"),
+                "Treasury anomaly labels",
+            );
+        }
+    }
+
+    // ========================================================================
+    // Project Accounting
+    // ========================================================================
+    if !result.project_accounting.projects.is_empty() {
+        let pa_dir = output_dir.join("project_accounting");
+        std::fs::create_dir_all(&pa_dir)?;
+        info!("Writing project accounting data...");
+
+        write_json_safe(
+            &result.project_accounting.projects,
+            &pa_dir.join("projects.json"),
+            "Projects",
+        );
+        write_json_safe(
+            &result.project_accounting.cost_lines,
+            &pa_dir.join("cost_lines.json"),
+            "Project cost lines",
+        );
+        write_json_safe(
+            &result.project_accounting.revenue_records,
+            &pa_dir.join("revenue_records.json"),
+            "Project revenue records",
+        );
+        write_json_safe(
+            &result.project_accounting.earned_value_metrics,
+            &pa_dir.join("earned_value_metrics.json"),
+            "Earned value metrics",
+        );
+        write_json_safe(
+            &result.project_accounting.change_orders,
+            &pa_dir.join("change_orders.json"),
+            "Change orders",
+        );
+        write_json_safe(
+            &result.project_accounting.milestones,
+            &pa_dir.join("milestones.json"),
+            "Project milestones",
+        );
     }
 
     // ========================================================================
@@ -813,17 +1055,4 @@ impl BalanceValidationSummary {
             validation_error_count: v.validation_errors.len(),
         }
     }
-}
-
-/// Serializable summary of data quality statistics (the `DataQualityStats` type
-/// and its sub-types do not derive Serialize).
-#[derive(serde::Serialize)]
-struct DataQualitySummary {
-    total_records: usize,
-    records_with_issues: usize,
-    missing_values_injected: usize,
-    format_variations_injected: usize,
-    duplicates_created: usize,
-    typos_injected: usize,
-    encoding_issues: usize,
 }

@@ -16,6 +16,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Generates financial statements from trial balance data.
@@ -26,6 +27,7 @@ pub struct FinancialStatementGenerator {
 }
 
 /// Trial balance entry for statement generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrialBalanceEntry {
     /// GL account code
     pub account_code: String,

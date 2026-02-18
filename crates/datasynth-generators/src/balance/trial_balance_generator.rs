@@ -486,6 +486,7 @@ impl TrialBalanceGenerator {
     }
 
     /// Calculates variances between periods.
+    #[allow(dead_code)]
     fn calculate_period_variances(
         &self,
         periods: &[TrialBalance],

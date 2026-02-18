@@ -1,5 +1,6 @@
 //! Workforce ESG generator — derives diversity metrics, pay equity ratios,
 //! safety incidents, and aggregate safety metrics from employee data.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::SocialConfig;

@@ -38,11 +38,6 @@ anyhow = { workspace = true }
 # Random & Statistics
 rand = { workspace = true }
 rand_chacha = { workspace = true }
-rand_distr = "0.4"
-statrs = "0.18"
-
-# Matrix operations for correlations
-nalgebra = "0.33"
 
 # Checksums
 sha2 = { workspace = true }

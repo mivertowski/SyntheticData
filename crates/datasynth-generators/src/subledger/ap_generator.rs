@@ -1,7 +1,7 @@
 //! AP (Accounts Payable) generator.
 
 use chrono::NaiveDate;
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -68,6 +68,11 @@ impl APGenerator {
             payment_counter: 0,
             debit_memo_counter: 0,
         }
+    }
+
+    /// Creates a new AP generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: APGeneratorConfig, seed: u64) -> Self {
+        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
     }
 
     /// Generates an AP invoice.

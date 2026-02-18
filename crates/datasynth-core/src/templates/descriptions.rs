@@ -96,7 +96,7 @@ impl DescriptionContext {
 pub struct DescriptionGenerator {
     /// Header text patterns by business process
     header_patterns: Vec<HeaderTextPattern>,
-    /// Line text patterns (reserved for future use)
+    /// Line text patterns
     #[allow(dead_code)]
     line_patterns: Vec<LineTextPattern>,
     /// Expense descriptions

@@ -76,7 +76,9 @@ pub struct JournalEntryGenerator {
 #[derive(Clone)]
 struct BatchState {
     /// The base entry template to vary
+    #[allow(dead_code)]
     base_vendor: Option<String>,
+    #[allow(dead_code)]
     base_customer: Option<String>,
     base_account_number: String,
     base_amount: rust_decimal::Decimal,

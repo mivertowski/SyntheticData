@@ -2,6 +2,7 @@
 //!
 //! Takes project cost lines and project contract values to compute revenue
 //! recognition using the cost-to-cost PoC method (ASC 606 input method).
+#![allow(dead_code)]
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ProjectRevenueRecognitionConfig;

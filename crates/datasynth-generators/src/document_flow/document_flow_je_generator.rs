@@ -66,15 +66,9 @@ pub struct DocumentFlowJeGenerator {
 }
 
 impl DocumentFlowJeGenerator {
-    /// Create a new document flow JE generator.
+    /// Create a new document flow JE generator with default config and seed 0.
     pub fn new() -> Self {
-        Self::with_config(DocumentFlowJeConfig::default())
-    }
-
-    /// Create with custom account configuration.
-    pub fn with_config(config: DocumentFlowJeConfig) -> Self {
-        // Use a fixed seed for document flow JE generator (can be made configurable)
-        Self::with_config_and_seed(config, 0)
+        Self::with_config_and_seed(DocumentFlowJeConfig::default(), 0)
     }
 
     /// Create with custom account configuration and seed.

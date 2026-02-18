@@ -15,7 +15,8 @@ use chrono::{NaiveDateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use uuid::Uuid;
+
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 use datasynth_core::models::{
     AnomalyCausalReason, AnomalyType, ErrorType, FraudType, InjectionStrategy, JournalEntry,
@@ -57,8 +58,9 @@ impl CounterfactualPair {
         modified: JournalEntry,
         anomaly_label: LabeledAnomaly,
         injection_strategy: InjectionStrategy,
+        uuid_factory: &DeterministicUuidFactory,
     ) -> Self {
-        let pair_id = Uuid::new_v4().to_string();
+        let pair_id = uuid_factory.next().to_string();
         let change_description = injection_strategy.description();
 
         Self {
@@ -270,12 +272,18 @@ pub struct CounterfactualGenerator {
     seed: u64,
     /// Counter for generating unique IDs.
     counter: u64,
+    /// Deterministic UUID factory for pair IDs.
+    uuid_factory: DeterministicUuidFactory,
 }
 
 impl CounterfactualGenerator {
     /// Create a new counterfactual generator.
     pub fn new(seed: u64) -> Self {
-        Self { seed, counter: 0 }
+        Self {
+            seed,
+            counter: 0,
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Anomaly),
+        }
     }
 
     /// Generate a counterfactual pair by applying a specification to an entry.
@@ -307,6 +315,7 @@ impl CounterfactualGenerator {
             modified,
             anomaly_label,
             injection_strategy,
+            &self.uuid_factory,
         )
     }
 

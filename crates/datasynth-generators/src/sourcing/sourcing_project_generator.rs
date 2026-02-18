@@ -54,6 +54,12 @@ impl SourcingProjectGenerator {
         period_start: NaiveDate,
         period_months: u32,
     ) -> Vec<SourcingProject> {
+        tracing::debug!(
+            company_code,
+            categories = categories.len(),
+            period_months,
+            "Generating sourcing projects"
+        );
         let mut projects = Vec::new();
         let years = (period_months as f64 / 12.0).ceil() as u32;
         let target_count = self.config.projects_per_year * years;

@@ -2,6 +2,7 @@
 //!
 //! Probabilistically injects change orders with cost/schedule/revenue impacts
 //! and generates milestones with payment and completion tracking.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::{ChangeOrderSchemaConfig, MilestoneSchemaConfig};

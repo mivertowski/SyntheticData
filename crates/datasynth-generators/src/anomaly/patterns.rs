@@ -279,6 +279,7 @@ struct ActiveCluster {
     /// Start date.
     start_date: NaiveDate,
     /// Fraud category.
+    #[allow(dead_code)]
     category: FraudCategory,
     /// Time window for this cluster.
     time_window_days: i64,

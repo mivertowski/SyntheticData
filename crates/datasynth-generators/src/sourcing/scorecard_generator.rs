@@ -22,7 +22,7 @@ impl ScorecardGenerator {
     pub fn new(seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierScorecard),
             config: ScorecardConfig::default(),
         }
     }
@@ -31,7 +31,7 @@ impl ScorecardGenerator {
     pub fn with_config(seed: u64, config: ScorecardConfig) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierScorecard),
             config,
         }
     }

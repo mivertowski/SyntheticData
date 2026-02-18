@@ -134,6 +134,7 @@ const MATERIAL_DESCRIPTIONS: &[(MaterialType, &[&str])] = &[
 ];
 
 /// Material group templates.
+#[allow(dead_code)]
 const MATERIAL_GROUPS: &[(MaterialGroup, &str)] = &[
     (MaterialGroup::Electronics, "ELEC"),
     (MaterialGroup::Mechanical, "MECH"),

@@ -21,7 +21,7 @@ impl QualificationGenerator {
     pub fn new(seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierQualification),
             config: QualificationConfig::default(),
         }
     }
@@ -30,7 +30,7 @@ impl QualificationGenerator {
     pub fn with_config(seed: u64, config: QualificationConfig) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierQualification),
             config,
         }
     }

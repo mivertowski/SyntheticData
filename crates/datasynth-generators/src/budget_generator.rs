@@ -55,6 +55,12 @@ impl BudgetGenerator {
         account_codes: &[(String, String)],
         config: &BudgetConfig,
     ) -> Budget {
+        tracing::debug!(
+            company_code,
+            fiscal_year,
+            accounts = account_codes.len(),
+            "Generating budget"
+        );
         let budget_id = self.uuid_factory.next().to_string();
 
         let mut line_items = Vec::new();

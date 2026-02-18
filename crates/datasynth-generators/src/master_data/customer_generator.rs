@@ -703,6 +703,7 @@ impl CustomerGenerator {
     }
 
     /// Generate an address.
+    #[allow(dead_code)]
     fn generate_address(&mut self) -> String {
         let street_num = self.rng.gen_range(1..9999);
         let streets = [
@@ -736,6 +737,7 @@ impl CustomerGenerator {
     }
 
     /// Generate a contact name.
+    #[allow(dead_code)]
     fn generate_contact_name(&mut self) -> String {
         let first_names = [
             "John", "Jane", "Michael", "Sarah", "David", "Emily", "Robert", "Lisa",
@@ -751,6 +753,7 @@ impl CustomerGenerator {
     }
 
     /// Generate a contact email.
+    #[allow(dead_code)]
     fn generate_contact_email(&mut self, company_name: &str) -> String {
         let domain = company_name
             .to_lowercase()

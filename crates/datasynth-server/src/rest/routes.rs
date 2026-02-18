@@ -24,8 +24,6 @@ use super::websocket;
 /// Application state shared across handlers.
 #[derive(Clone)]
 pub struct AppState {
-    #[allow(dead_code)] // Reserved for future use
-    pub service: Arc<SynthService>,
     pub server_state: Arc<ServerState>,
     pub job_queue: Option<Arc<JobQueue>>,
 }
@@ -140,7 +138,6 @@ pub fn create_router_full_with_backend(
 ) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };
@@ -217,7 +214,6 @@ pub fn create_router_with_auth(
 ) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };
@@ -279,7 +275,6 @@ pub fn create_router_with_auth(
 pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };

@@ -238,6 +238,7 @@ impl DepreciationRunGenerator {
 
 /// Simulated asset state for forecasting.
 struct SimulatedAsset {
+    #[allow(dead_code)]
     asset_number: String,
     net_book_value: Decimal,
     salvage_value: Decimal,

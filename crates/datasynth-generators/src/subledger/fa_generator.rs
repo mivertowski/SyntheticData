@@ -1,7 +1,7 @@
 //! Fixed Assets (FA) generator.
 
 use chrono::NaiveDate;
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -62,6 +62,11 @@ impl FAGenerator {
             depreciation_run_counter: 0,
             disposal_counter: 0,
         }
+    }
+
+    /// Creates a new FA generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: FAGeneratorConfig, seed: u64) -> Self {
+        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
     }
 
     /// Maps a string asset class to the enum.
@@ -228,6 +233,7 @@ impl FAGenerator {
             .round_dp(2)
     }
 
+    #[allow(dead_code)]
     fn calculate_monthly_depreciation(&self, asset: &FixedAssetRecord) -> Decimal {
         // Get the first depreciation area (Book depreciation)
         let area = match asset.depreciation_areas.first() {

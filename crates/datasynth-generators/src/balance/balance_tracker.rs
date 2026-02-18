@@ -287,6 +287,7 @@ impl RunningBalanceTracker {
     }
 
     /// Applies a single journal entry line.
+    #[allow(dead_code)]
     fn apply_line(
         &mut self,
         company_balances: &mut HashMap<String, AccountBalance>,

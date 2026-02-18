@@ -1,5 +1,6 @@
 //! Supplier ESG assessment generator — derives ESG scores for vendors
 //! correlated with quality and flags high-risk suppliers by country/industry.
+#![allow(dead_code)]
 
 use chrono::NaiveDate;
 use datasynth_config::schema::SupplyChainEsgConfig;

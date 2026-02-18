@@ -10,6 +10,7 @@ use chrono::NaiveDate;
 use datasynth_core::CountryPack;
 use rand::Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 /// Date format variations.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -438,7 +439,7 @@ pub struct FormatVariationInjector {
 }
 
 /// Statistics for format variations.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormatVariationStats {
     pub date_variations: usize,
     pub amount_variations: usize,

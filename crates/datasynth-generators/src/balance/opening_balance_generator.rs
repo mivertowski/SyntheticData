@@ -7,7 +7,7 @@
 //! - Provide realistic starting positions for simulation
 
 use chrono::{Datelike, NaiveDate};
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -62,6 +62,11 @@ impl OpeningBalanceGenerator {
     /// Creates a new opening balance generator.
     pub fn new(config: OpeningBalanceConfig, rng: ChaCha8Rng) -> Self {
         Self { config, rng }
+    }
+
+    /// Creates a new opening balance generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: OpeningBalanceConfig, seed: u64) -> Self {
+        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
     }
 
     /// Creates a generator with default configuration.
