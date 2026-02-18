@@ -1,5 +1,7 @@
 //! CLI for synthetic accounting data generation.
 
+mod output_writer;
+
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -563,45 +565,10 @@ fn main() -> Result<()> {
                 tracing::warn!("Memory limit reached, writing minimal output");
             }
 
-            // Write sample output (limited to 1000 entries for safety)
-            let sample_path = output.join("sample_entries.json");
-            let sample_entries: Vec<_> = result.journal_entries.iter().take(1000).collect();
-            let json = serde_json::to_string_pretty(&sample_entries)?;
-            std::fs::write(&sample_path, json)?;
-            tracing::info!(
-                "Sample entries written to: {} ({} entries)",
-                sample_path.display(),
-                sample_entries.len()
-            );
-
-            // Write banking output if generated
-            if banking && !result.banking.customers.is_empty() {
-                let banking_dir = output.join("banking");
-                std::fs::create_dir_all(&banking_dir)?;
-
-                // Write banking customers
-                let customers_path = banking_dir.join("banking_customers.json");
-                let json = serde_json::to_string_pretty(&result.banking.customers)?;
-                std::fs::write(&customers_path, json)?;
-
-                // Write banking accounts
-                let accounts_path = banking_dir.join("banking_accounts.json");
-                let json = serde_json::to_string_pretty(&result.banking.accounts)?;
-                std::fs::write(&accounts_path, json)?;
-
-                // Write banking transactions (limited for safety)
-                let transactions_path = banking_dir.join("banking_transactions.json");
-                let limited_txns: Vec<_> = result.banking.transactions.iter().take(10000).collect();
-                let json = serde_json::to_string_pretty(&limited_txns)?;
-                std::fs::write(&transactions_path, json)?;
-
-                tracing::info!(
-                    "Banking data written to: {} ({} customers, {} accounts, {} transactions)",
-                    banking_dir.display(),
-                    result.banking.customers.len(),
-                    result.banking.accounts.len(),
-                    limited_txns.len()
-                );
+            // Write all generated data (journal entries, master data, document flows,
+            // subledgers, HR, manufacturing, sourcing, banking, audit, tax, ESG, etc.)
+            if let Err(e) = output_writer::write_all_output(&result, &output) {
+                tracing::warn!("Some output files may not have been written: {}", e);
             }
 
             // ========================================
@@ -655,16 +622,106 @@ fn main() -> Result<()> {
             manifest.set_output_directory(&output);
             manifest.complete(result.statistics.clone());
 
-            // Add output file info
-            manifest.add_output_file(OutputFileInfo {
-                path: "sample_entries.json".to_string(),
-                format: "json".to_string(),
-                record_count: Some(sample_entries.len()),
-                size_bytes: None,
-                sha256_checksum: None,
-                first_record_index: None,
-                last_record_index: None,
-            });
+            // Add output file info for journal entries
+            if !result.journal_entries.is_empty() {
+                let total_lines: usize =
+                    result.journal_entries.iter().map(|je| je.lines.len()).sum();
+                manifest.add_output_file(OutputFileInfo {
+                    path: "journal_entries.csv".to_string(),
+                    format: "csv".to_string(),
+                    record_count: Some(total_lines),
+                    size_bytes: None,
+                    sha256_checksum: None,
+                    first_record_index: None,
+                    last_record_index: None,
+                });
+                manifest.add_output_file(OutputFileInfo {
+                    path: "journal_entries.json".to_string(),
+                    format: "json".to_string(),
+                    record_count: Some(result.journal_entries.len()),
+                    size_bytes: None,
+                    sha256_checksum: None,
+                    first_record_index: None,
+                    last_record_index: None,
+                });
+            }
+
+            // Add master data file info
+            for (name, count) in [
+                ("master_data/vendors.json", result.master_data.vendors.len()),
+                (
+                    "master_data/customers.json",
+                    result.master_data.customers.len(),
+                ),
+                (
+                    "master_data/materials.json",
+                    result.master_data.materials.len(),
+                ),
+                (
+                    "master_data/fixed_assets.json",
+                    result.master_data.assets.len(),
+                ),
+                (
+                    "master_data/employees.json",
+                    result.master_data.employees.len(),
+                ),
+            ] {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: name.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            }
+
+            // Add document flow file info
+            for (name, count) in [
+                (
+                    "document_flows/purchase_orders.json",
+                    result.document_flows.purchase_orders.len(),
+                ),
+                (
+                    "document_flows/goods_receipts.json",
+                    result.document_flows.goods_receipts.len(),
+                ),
+                (
+                    "document_flows/vendor_invoices.json",
+                    result.document_flows.vendor_invoices.len(),
+                ),
+                (
+                    "document_flows/payments.json",
+                    result.document_flows.payments.len(),
+                ),
+                (
+                    "document_flows/sales_orders.json",
+                    result.document_flows.sales_orders.len(),
+                ),
+                (
+                    "document_flows/deliveries.json",
+                    result.document_flows.deliveries.len(),
+                ),
+                (
+                    "document_flows/customer_invoices.json",
+                    result.document_flows.customer_invoices.len(),
+                ),
+            ] {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: name.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            }
 
             if !result.anomaly_labels.labels.is_empty() {
                 manifest.add_output_file(OutputFileInfo {

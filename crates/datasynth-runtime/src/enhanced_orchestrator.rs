@@ -1248,7 +1248,8 @@ impl EnhancedOrchestrator {
         let sourcing = self.phase_sourcing_data(&mut stats)?;
 
         // Phase 15: Bank Reconciliation + Financial Statements
-        let financial_reporting = self.phase_financial_reporting(&document_flows, &mut stats)?;
+        let financial_reporting =
+            self.phase_financial_reporting(&document_flows, &entries, &coa, &mut stats)?;
 
         // Phase 16: HR Data (Payroll, Time Entries, Expenses)
         let hr = self.phase_hr_data(&mut stats)?;
@@ -2099,6 +2100,8 @@ impl EnhancedOrchestrator {
     fn phase_financial_reporting(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
+        journal_entries: &[JournalEntry],
+        coa: &Arc<ChartOfAccounts>,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<FinancialReportingSnapshot> {
         let fs_enabled = self.phase_config.generate_financial_statements
@@ -2143,8 +2146,14 @@ impl EnhancedOrchestrator {
                 let fiscal_year = period_end.year() as u16;
                 let fiscal_period = period_end.month() as u8;
 
-                // Build simplified trial balance entries from document flow aggregates
-                let tb_entries = self.build_trial_balance_from_flows(document_flows, &period_end);
+                // Build trial balance entries from actual journal entries for coherence
+                let tb_entries = Self::build_trial_balance_from_entries(
+                    journal_entries,
+                    coa,
+                    company_code,
+                    fiscal_year,
+                    fiscal_period,
+                );
 
                 let stmts = fs_gen.generate(
                     company_code,
@@ -2232,8 +2241,128 @@ impl EnhancedOrchestrator {
         })
     }
 
+    /// Build trial balance entries by aggregating actual journal entry debits and credits per account.
+    ///
+    /// This ensures the trial balance is coherent with the JEs: every debit and credit
+    /// posted in the journal entries flows through to the trial balance, using the real
+    /// GL account numbers from the CoA.
+    fn build_trial_balance_from_entries(
+        journal_entries: &[JournalEntry],
+        coa: &ChartOfAccounts,
+        company_code: &str,
+        fiscal_year: u16,
+        fiscal_period: u8,
+    ) -> Vec<datasynth_generators::TrialBalanceEntry> {
+        use rust_decimal::Decimal;
+
+        // Accumulate total debits and credits per GL account
+        let mut account_debits: HashMap<String, Decimal> = HashMap::new();
+        let mut account_credits: HashMap<String, Decimal> = HashMap::new();
+
+        for je in journal_entries {
+            // Filter to matching company, fiscal year, and period
+            if je.header.company_code != company_code
+                || je.header.fiscal_year != fiscal_year
+                || je.header.fiscal_period != fiscal_period
+            {
+                continue;
+            }
+
+            for line in &je.lines {
+                let acct = &line.gl_account;
+                *account_debits.entry(acct.clone()).or_insert(Decimal::ZERO) += line.debit_amount;
+                *account_credits.entry(acct.clone()).or_insert(Decimal::ZERO) += line.credit_amount;
+            }
+        }
+
+        // Build a TrialBalanceEntry for each account that had activity
+        let mut all_accounts: Vec<&String> = account_debits
+            .keys()
+            .chain(account_credits.keys())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+        all_accounts.sort();
+
+        let mut entries = Vec::new();
+
+        for acct_number in all_accounts {
+            let debit = account_debits
+                .get(acct_number)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
+            let credit = account_credits
+                .get(acct_number)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
+
+            if debit.is_zero() && credit.is_zero() {
+                continue;
+            }
+
+            // Look up account name from CoA, fall back to "Account {code}"
+            let account_name = coa
+                .get_account(acct_number)
+                .map(|gl| gl.short_description.clone())
+                .unwrap_or_else(|| format!("Account {}", acct_number));
+
+            // Map account code prefix to the category strings expected by
+            // FinancialStatementGenerator (Cash, Receivables, Inventory,
+            // FixedAssets, Payables, AccruedLiabilities, Revenue, CostOfSales,
+            // OperatingExpenses).
+            let category = Self::category_from_account_code(acct_number);
+
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: acct_number.clone(),
+                account_name,
+                category,
+                debit_balance: debit,
+                credit_balance: credit,
+            });
+        }
+
+        entries
+    }
+
+    /// Map a GL account code to the category string expected by FinancialStatementGenerator.
+    ///
+    /// Uses the first two digits of the account code to classify into the categories
+    /// that the financial statement generator aggregates on: Cash, Receivables, Inventory,
+    /// FixedAssets, Payables, AccruedLiabilities, Revenue, CostOfSales, OperatingExpenses,
+    /// Equity, OtherIncome, OtherExpenses.
+    fn category_from_account_code(code: &str) -> String {
+        let prefix: String = code.chars().take(2).collect();
+        match prefix.as_str() {
+            "10" => "Cash",
+            "11" => "Receivables",
+            "12" | "13" | "14" => "Inventory",
+            "15" | "16" | "17" | "18" | "19" => "FixedAssets",
+            "20" => "Payables",
+            "21" | "22" | "23" | "24" => "AccruedLiabilities",
+            "25" | "26" | "27" | "28" | "29" => "LongTermLiabilities",
+            "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" => "Equity",
+            "40" | "41" | "42" | "43" | "44" => "Revenue",
+            "50" | "51" | "52" => "CostOfSales",
+            "60" | "61" | "62" | "63" | "64" | "65" | "66" | "67" | "68" | "69" => {
+                "OperatingExpenses"
+            }
+            "70" | "71" | "72" | "73" | "74" => "OtherIncome",
+            "80" | "81" | "82" | "83" | "84" | "85" | "86" | "87" | "88" | "89" => "OtherExpenses",
+            _ => "OperatingExpenses",
+        }
+        .to_string()
+    }
+
     /// Build simplified trial balance entries from document flow data for financial statement generation.
-    fn build_trial_balance_from_flows(
+    ///
+    /// **Deprecated**: Use `build_trial_balance_from_entries` instead, which derives the trial
+    /// balance from actual journal entries for proper coherence. This legacy method uses hardcoded
+    /// account codes and only covers a few categories (AR, AP, Revenue, COGS, Cash).
+    #[allow(dead_code)]
+    #[deprecated(
+        note = "Use build_trial_balance_from_entries instead for JE-coherent trial balances"
+    )]
+    fn build_trial_balance_from_flows_legacy(
         &self,
         flows: &DocumentFlowSnapshot,
         _period_end: &NaiveDate,
