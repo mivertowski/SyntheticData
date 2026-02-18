@@ -42,6 +42,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Country Pack Configuration** (`datasynth-config`): New `country_packs` section in `GeneratorConfig` with `external_dir` and `overrides` fields, validation for directory existence and override key format
 
+- **FA/Inventory Subledger Generation** (`datasynth-runtime`): `FAGenerator` and `InventoryGenerator` wired into orchestrator subledger phase, generating fixed asset acquisition records from master data assets and inventory positions from materials
+
+- **Payroll & Manufacturing Journal Entries** (`datasynth-runtime`): JE generation from payroll runs (DR Salaries & Wages 6100 / CR Payroll Clearing 9100) and completed production orders (DR Raw Materials 5100 / CR Inventory 1200)
+
+- **Quality Gate Evaluation** (`datasynth-runtime`): `GateEngine::evaluate()` wired into generation result when `quality_gates.enabled` is true, resolving named profiles (strict/default/lenient) and logging pass/fail counts
+
+- **Banking Customer Coherence** (`datasynth-runtime`): Banking customers cross-referenced with core master data, overlaying names and countries for consistent identity across modules
+
+- **Statistics Tracking** (`datasynth-runtime`): `EnhancedGenerationStatistics` extended with `ic_transaction_count`, `fa_subledger_count`, `inventory_subledger_count`
+
+- **Master Data Country Pack Support** (`datasynth-generators`): `set_country_pack()` method added to `VendorGenerator`, `CustomerGenerator`, and `MaterialGenerator` with orchestrator wiring
+
 ### Changed
 
 - Bumped all Rust crate versions to 0.8.0
@@ -51,6 +63,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EnhancedOrchestrator` now runs 21 generation phases (previously 19), adding Tax (Phase 20) and ESG (Phase 21)
 - `EnhancedGenerationResult` now includes `tax: TaxSnapshot` and `esg: EsgSnapshot` fields
 - `EnhancedGenerationStatistics` tracks `tax_jurisdiction_count`, `tax_code_count`, `esg_emission_count`, `esg_disclosure_count`
+- **Constructor ordering standardized** to `(config, seed)` across 16 generators in ESG, project accounting, treasury, and tax modules
+- **Country pack API unified** to setter pattern; removed redundant `generate_with_country_pack()` per-call usage in orchestrator
+- **Shared utilities** (`datasynth-core::utils`): `seeded_rng()` replaces `ChaCha8Rng::seed_from_u64()` in 9 generators; `sample_decimal_range()` replaces manual Decimal sampling in 4 generators; `weighted_select()` migrated across 9 generator files
+- **Re-export cleanup**: Explicit type lists replace glob `pub use *` re-exports in `datasynth-core`, `datasynth-generators`, and `datasynth-graph` lib.rs files; removed `#![allow(ambiguous_glob_reexports)]`
+- **Dead code removed**: Unused `active_regimes` field, `VENDOR_NAME_TEMPLATES_LEGACY` constant, `generate_address()` method, `position_counter` field, and redundant `#[allow(dead_code)]` annotation
+- **`AccountingStandardsSnapshot`** now persists actual `Vec<CustomerContract>` and `Vec<ImpairmentTest>` data (previously only stored counts)
+- **`created_by` field** rotated across employees via round-robin in P2P/O2C document flow loops (previously always used first employee)
+- **OCPM UUID generation** centralized via `DeterministicUuidFactory` with sub-discriminators, replacing hand-rolled FNV-1a hash and `Uuid::new_v4()` calls
+- **Banking seed offsets** replaced with named constants for deterministic sub-generator seeding
+
+### Fixed
+
+- **Account numbering unified** across document flow JEs (`DocumentFlowJeConfig`), CoA generator, and `accounts.rs` constants — all modules now reference the same 4-digit account codes
+- **Trial balance** derived from actual JE data by aggregating debit/credit amounts per account, replacing hardcoded document-flow aggregates
+- **Financial statements** derived from JE trial balances with proper cumulative balance sheet accounts and comparative prior-period amounts; cash flow statement built via indirect method from working capital changes
+- **CLI output pipeline** now exports all generated data (master data, document flows, subledgers, financial statements, controls, banking, process mining, audit, standards) via `datasynth-output` sinks, replacing the truncated `sample_entries.json`
+- **Intercompany module** wired into orchestrator with IC transaction generation, matching engine, and elimination entries
+- **OCPM event log** persisted to output directory as `event_log.json` (OCEL 2.0 format)
+- **`InjectorStats` fields** made public for external consumers
+- **`CountryPack` clone** eliminated in payroll generator hot path via `as_ref()` borrowing
+- **E2e tests** updated to expect `journal_entries.json` output filename
 
 ## [0.7.0] - 2026-02-17
 
