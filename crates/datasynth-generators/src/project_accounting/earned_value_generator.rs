@@ -22,7 +22,7 @@ pub struct EarnedValueGenerator {
 
 impl EarnedValueGenerator {
     /// Create a new earned value generator.
-    pub fn new(seed: u64, config: EarnedValueSchemaConfig) -> Self {
+    pub fn new(config: EarnedValueSchemaConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
@@ -221,7 +221,7 @@ mod tests {
         let cost_lines = test_cost_lines();
         let config = EarnedValueSchemaConfig::default();
 
-        let mut gen = EarnedValueGenerator::new(42, config);
+        let mut gen = EarnedValueGenerator::new(config, 42);
         let metrics = gen.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
 
         assert_eq!(
@@ -253,7 +253,7 @@ mod tests {
         let cost_lines = test_cost_lines();
         let config = EarnedValueSchemaConfig::default();
 
-        let mut gen = EarnedValueGenerator::new(42, config);
+        let mut gen = EarnedValueGenerator::new(config, 42);
         let metrics = gen.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
 
         for metric in &metrics {
@@ -287,7 +287,7 @@ mod tests {
         let project = test_project();
         let config = EarnedValueSchemaConfig::default();
 
-        let mut gen = EarnedValueGenerator::new(42, config);
+        let mut gen = EarnedValueGenerator::new(config, 42);
         let metrics = gen.generate(&[project], &[], d("2024-01-01"), d("2024-03-31"));
 
         assert!(metrics.is_empty(), "No costs should produce no EVM metrics");
@@ -299,7 +299,7 @@ mod tests {
         let cost_lines = test_cost_lines();
         let config = EarnedValueSchemaConfig::default();
 
-        let mut gen1 = EarnedValueGenerator::new(42, config.clone());
+        let mut gen1 = EarnedValueGenerator::new(config.clone(), 42);
         let m1 = gen1.generate(
             &[project.clone()],
             &cost_lines,
@@ -307,7 +307,7 @@ mod tests {
             d("2024-03-31"),
         );
 
-        let mut gen2 = EarnedValueGenerator::new(42, config);
+        let mut gen2 = EarnedValueGenerator::new(config, 42);
         let m2 = gen2.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
 
         assert_eq!(m1.len(), m2.len());

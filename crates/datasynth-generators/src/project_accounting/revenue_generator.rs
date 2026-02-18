@@ -24,7 +24,7 @@ pub struct RevenueGenerator {
 
 impl RevenueGenerator {
     /// Create a new revenue generator.
-    pub fn new(seed: u64, config: ProjectRevenueRecognitionConfig) -> Self {
+    pub fn new(config: ProjectRevenueRecognitionConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
@@ -205,7 +205,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -235,7 +235,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -260,7 +260,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -283,7 +283,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &[], // No cost lines
@@ -302,7 +302,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen1 = RevenueGenerator::new(42, config.clone());
+        let mut gen1 = RevenueGenerator::new(config.clone(), 42);
         let rev1 = gen1.generate(
             &[project.clone()],
             &cost_lines,
@@ -311,7 +311,7 @@ mod tests {
             d("2024-03-31"),
         );
 
-        let mut gen2 = RevenueGenerator::new(42, config);
+        let mut gen2 = RevenueGenerator::new(config, 42);
         let rev2 = gen2.generate(
             &[project],
             &cost_lines,

@@ -24,7 +24,7 @@ pub struct ChangeOrderGenerator {
 
 impl ChangeOrderGenerator {
     /// Create a new change order generator.
-    pub fn new(seed: u64, config: ChangeOrderSchemaConfig) -> Self {
+    pub fn new(config: ChangeOrderSchemaConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
@@ -162,7 +162,7 @@ pub struct MilestoneGenerator {
 
 impl MilestoneGenerator {
     /// Create a new milestone generator.
-    pub fn new(seed: u64, config: MilestoneSchemaConfig) -> Self {
+    pub fn new(config: MilestoneSchemaConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
@@ -289,7 +289,7 @@ mod tests {
             approval_rate: 0.75,
         };
 
-        let mut gen = ChangeOrderGenerator::new(42, config);
+        let mut gen = ChangeOrderGenerator::new(config, 42);
         let cos = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
         assert!(!cos.is_empty(), "Should generate change orders");
@@ -320,7 +320,7 @@ mod tests {
             approval_rate: 1.0, // All approved (subject to date constraints)
         };
 
-        let mut gen = ChangeOrderGenerator::new(42, config);
+        let mut gen = ChangeOrderGenerator::new(config, 42);
         let cos = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
         let approved = cos.iter().filter(|co| co.is_approved()).count();
@@ -345,7 +345,7 @@ mod tests {
             approval_rate: 0.75,
         };
 
-        let mut gen = ChangeOrderGenerator::new(42, config);
+        let mut gen = ChangeOrderGenerator::new(config, 42);
         let cos = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
         assert!(
@@ -363,7 +363,7 @@ mod tests {
             payment_milestone_rate: 0.50,
         };
 
-        let mut gen = MilestoneGenerator::new(42, config);
+        let mut gen = MilestoneGenerator::new(config, 42);
         let milestones = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"), d("2024-06-30"));
 
         assert_eq!(milestones.len(), 20, "5 projects * 4 milestones each");
@@ -393,7 +393,7 @@ mod tests {
             payment_milestone_rate: 0.50,
         };
 
-        let mut gen = MilestoneGenerator::new(42, config);
+        let mut gen = MilestoneGenerator::new(config, 42);
         let milestones = gen.generate(
             &projects,
             d("2024-01-01"),
@@ -427,7 +427,7 @@ mod tests {
             payment_milestone_rate: 1.0, // All are payment milestones
         };
 
-        let mut gen = MilestoneGenerator::new(42, config);
+        let mut gen = MilestoneGenerator::new(config, 42);
         let milestones = gen.generate(&projects, d("2024-01-01"), d("2024-12-31"), d("2024-01-01"));
 
         let total_payments: Decimal = milestones.iter().map(|m| m.payment_amount).sum();
@@ -443,10 +443,10 @@ mod tests {
         let projects = test_projects();
         let config = ChangeOrderSchemaConfig::default();
 
-        let mut gen1 = ChangeOrderGenerator::new(42, config.clone());
+        let mut gen1 = ChangeOrderGenerator::new(config.clone(), 42);
         let cos1 = gen1.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
-        let mut gen2 = ChangeOrderGenerator::new(42, config);
+        let mut gen2 = ChangeOrderGenerator::new(config, 42);
         let cos2 = gen2.generate(&projects, d("2024-01-01"), d("2024-12-31"));
 
         assert_eq!(cos1.len(), cos2.len());

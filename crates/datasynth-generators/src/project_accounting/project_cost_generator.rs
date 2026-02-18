@@ -39,7 +39,7 @@ pub struct ProjectCostGenerator {
 
 impl ProjectCostGenerator {
     /// Create a new project cost generator.
-    pub fn new(seed: u64, config: CostAllocationConfig) -> Self {
+    pub fn new(config: CostAllocationConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
@@ -195,7 +195,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &time_entries);
 
         // ~60% of 100 time entries should be linked (with variance)
@@ -231,7 +231,7 @@ mod tests {
             vendor_invoice_project_rate: 0.0,
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &docs);
         assert!(cost_lines.is_empty(), "Zero rate should produce no links");
     }
@@ -245,7 +245,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &docs);
         assert_eq!(cost_lines.len(), 50, "100% rate should link all documents");
     }
@@ -269,7 +269,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &expenses);
 
         assert_eq!(cost_lines.len(), 50);
@@ -286,10 +286,10 @@ mod tests {
         let docs = test_time_entries(100);
         let config = CostAllocationConfig::default();
 
-        let mut gen1 = ProjectCostGenerator::new(42, config.clone());
+        let mut gen1 = ProjectCostGenerator::new(config.clone(), 42);
         let lines1 = gen1.link_documents(&pool, &docs);
 
-        let mut gen2 = ProjectCostGenerator::new(42, config);
+        let mut gen2 = ProjectCostGenerator::new(config, 42);
         let lines2 = gen2.link_documents(&pool, &docs);
 
         assert_eq!(lines1.len(), lines2.len());

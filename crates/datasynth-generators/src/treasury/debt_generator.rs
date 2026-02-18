@@ -47,7 +47,7 @@ pub struct DebtGenerator {
 
 impl DebtGenerator {
     /// Creates a new debt generator.
-    pub fn new(seed: u64, config: DebtSchemaConfig) -> Self {
+    pub fn new(config: DebtSchemaConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             config,
@@ -332,7 +332,7 @@ mod tests {
             }],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 1);
@@ -361,7 +361,7 @@ mod tests {
             }],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 1);
@@ -397,7 +397,7 @@ mod tests {
                 },
             ],
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         let debt = &instruments[0];
@@ -437,7 +437,7 @@ mod tests {
             ],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 2);
@@ -456,7 +456,7 @@ mod tests {
     #[test]
     fn test_empty_config_no_instruments() {
         let config = DebtSchemaConfig::default();
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
         assert!(instruments.is_empty());
     }

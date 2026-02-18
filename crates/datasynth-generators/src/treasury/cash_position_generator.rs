@@ -55,7 +55,7 @@ pub struct CashPositionGenerator {
 
 impl CashPositionGenerator {
     /// Creates a new cash position generator.
-    pub fn new(seed: u64, config: CashPositioningConfig) -> Self {
+    pub fn new(config: CashPositioningConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             config,
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_cash_positions_from_payment_flows() {
-        let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let flows = vec![
             CashFlow {
                 date: d("2025-01-15"),
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_no_flows_produces_flat_positions() {
-        let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let positions = gen.generate(
             "C001",
             "BA-001",
@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_balance_carries_forward() {
-        let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let flows = vec![
             CashFlow {
                 date: d("2025-01-01"),
@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn test_available_balance_less_than_or_equal_to_closing() {
-        let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let positions = gen.generate(
             "C001",
             "BA-001",
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_multi_account_generation() {
-        let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let accounts = vec![
             ("BA-001".to_string(), "USD".to_string(), dec!(10000)),
             ("BA-002".to_string(), "EUR".to_string(), dec!(20000)),
@@ -379,7 +379,7 @@ mod tests {
             minimum_balance_policy: 250_000.0,
             ..CashPositioningConfig::default()
         };
-        let gen = CashPositionGenerator::new(42, config);
+        let gen = CashPositionGenerator::new(config, 42);
         assert_eq!(gen.minimum_balance_policy(), dec!(250000));
     }
 
@@ -392,7 +392,7 @@ mod tests {
             direction: CashFlowDirection::Inflow,
         }];
 
-        let mut gen1 = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen1 = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let pos1 = gen1.generate(
             "C001",
             "BA-001",
@@ -403,7 +403,7 @@ mod tests {
             dec!(10000),
         );
 
-        let mut gen2 = CashPositionGenerator::new(42, CashPositioningConfig::default());
+        let mut gen2 = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
         let pos2 = gen2.generate(
             "C001",
             "BA-001",

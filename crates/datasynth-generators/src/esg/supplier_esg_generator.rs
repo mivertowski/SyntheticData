@@ -30,7 +30,7 @@ pub struct SupplierEsgGenerator {
 
 impl SupplierEsgGenerator {
     /// Create a new supplier ESG generator.
-    pub fn new(seed: u64, config: SupplyChainEsgConfig) -> Self {
+    pub fn new(config: SupplyChainEsgConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
@@ -219,7 +219,7 @@ mod tests {
             high_risk_countries: vec!["CN".into(), "BD".into()],
         };
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         assert_eq!(
@@ -233,7 +233,7 @@ mod tests {
     fn test_scores_in_range() {
         let config = SupplyChainEsgConfig::default();
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         for a in &assessments {
@@ -257,7 +257,7 @@ mod tests {
             industry: "manufacturing".into(),
             quality_score: Some(40.0),
         }];
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         assert_eq!(assessments.len(), 1);
@@ -280,7 +280,7 @@ mod tests {
             high_risk_countries: vec!["CN".into(), "BD".into()],
         };
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         for a in &assessments {
@@ -297,7 +297,7 @@ mod tests {
         let mut config = SupplyChainEsgConfig::default();
         config.enabled = false;
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
         assert!(assessments.is_empty());
     }

@@ -137,7 +137,7 @@ pub struct EmissionGenerator {
 
 impl EmissionGenerator {
     /// Create a new emission generator.
-    pub fn new(seed: u64, config: EnvironmentalConfig) -> Self {
+    pub fn new(config: EnvironmentalConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
@@ -373,7 +373,7 @@ mod tests {
         }];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
 
         assert_eq!(records.len(), 1);
@@ -404,7 +404,7 @@ mod tests {
         ];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
 
         assert_eq!(
@@ -425,7 +425,7 @@ mod tests {
         }];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope2("C001", &energy_data);
 
         assert_eq!(records.len(), 1);
@@ -451,7 +451,7 @@ mod tests {
         ];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_purchased_goods(
             "C001",
             &vendor_spend,
@@ -471,7 +471,7 @@ mod tests {
     #[test]
     fn test_scope3_business_travel() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_business_travel("C001", dec!(100000), d("2025-01-01"));
 
         assert_eq!(records.len(), 1);
@@ -485,7 +485,7 @@ mod tests {
     #[test]
     fn test_scope3_commuting() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_commuting("C001", 500, d("2025-06-01"));
 
         assert_eq!(records.len(), 1);
@@ -510,7 +510,7 @@ mod tests {
             period: d("2025-01-01"),
         }];
 
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
         assert!(records.is_empty());
     }
@@ -526,10 +526,10 @@ mod tests {
 
         let config = EnvironmentalConfig::default();
 
-        let mut gen1 = EmissionGenerator::new(42, config.clone());
+        let mut gen1 = EmissionGenerator::new(config.clone(), 42);
         let r1 = gen1.generate_scope1("C001", &energy_data);
 
-        let mut gen2 = EmissionGenerator::new(42, config);
+        let mut gen2 = EmissionGenerator::new(config, 42);
         let r2 = gen2.generate_scope1("C001", &energy_data);
 
         assert_eq!(r1.len(), r2.len());
@@ -539,7 +539,7 @@ mod tests {
     #[test]
     fn test_zero_spend_scope3() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_business_travel("C001", Decimal::ZERO, d("2025-01-01"));
         assert!(records.is_empty());
     }
@@ -547,7 +547,7 @@ mod tests {
     #[test]
     fn test_zero_headcount_commuting() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_commuting("C001", 0, d("2025-01-01"));
         assert!(records.is_empty());
     }

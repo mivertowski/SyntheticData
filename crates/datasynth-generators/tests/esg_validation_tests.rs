@@ -32,12 +32,12 @@ fn test_full_esg_pipeline() {
     let end = d("2025-12-01");
 
     // 1. Energy
-    let mut energy_gen = EnergyGenerator::new(42, EnvironmentalConfig::default().energy);
+    let mut energy_gen = EnergyGenerator::new(EnvironmentalConfig::default().energy, 42);
     let energy_records = energy_gen.generate(entity, start, end);
     assert!(!energy_records.is_empty(), "Should generate energy records");
 
     // 2. Emissions from energy
-    let mut emission_gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut emission_gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
     let energy_inputs: Vec<EnergyInput> = energy_records
         .iter()
         .map(|e| EnergyInput {
@@ -84,7 +84,7 @@ fn test_full_esg_pipeline() {
     let _waste = waste_gen.generate(entity, start, end);
 
     // 5. Workforce
-    let mut workforce_gen = WorkforceGenerator::new(42, SocialConfig::default());
+    let mut workforce_gen = WorkforceGenerator::new(SocialConfig::default(), 42);
     let diversity = workforce_gen.generate_diversity(entity, 500, d("2025-06-30"));
     let _pay_equity = workforce_gen.generate_pay_equity(entity, d("2025-06-30"));
     let incidents = workforce_gen.generate_safety_incidents(entity, 3, start, d("2025-12-31"));
@@ -110,7 +110,7 @@ fn test_full_esg_pipeline() {
             quality_score: Some(70.0),
         },
     ];
-    let mut supplier_gen = SupplierEsgGenerator::new(42, SupplyChainEsgConfig::default());
+    let mut supplier_gen = SupplierEsgGenerator::new(SupplyChainEsgConfig::default(), 42);
     let _assessments = supplier_gen.generate(entity, &vendors, d("2025-06-01"));
 
     // 8. Disclosures
@@ -148,7 +148,7 @@ fn test_full_esg_pipeline() {
 
 #[test]
 fn test_scope1_scope2_scope3_totals_coherent() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
 
     let fuel_inputs = vec![
         EnergyInput {
@@ -188,7 +188,7 @@ fn test_scope1_scope2_scope3_totals_coherent() {
 
 #[test]
 fn test_higher_spend_produces_higher_scope3() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
 
     let low_spend = vec![VendorSpendInput {
         vendor_id: "V-001".into(),
@@ -220,7 +220,7 @@ fn test_higher_spend_produces_higher_scope3() {
 
 #[test]
 fn test_trir_formula_matches_computed() {
-    let mut gen = WorkforceGenerator::new(42, SocialConfig::default());
+    let mut gen = WorkforceGenerator::new(SocialConfig::default(), 42);
     let incidents = gen.generate_safety_incidents("C001", 5, d("2025-01-01"), d("2025-12-31"));
     let metric = gen.compute_safety_metrics("C001", &incidents, 2_000_000, d("2025-06-30"));
 
@@ -281,7 +281,7 @@ fn test_all_material_topics_covered_by_disclosures() {
 
 #[test]
 fn test_greenwashing_reduces_emissions() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
     let inputs = vec![EnergyInput {
         facility_id: "F-001".into(),
         energy_type: EnergyInputType::NaturalGas,
@@ -311,8 +311,8 @@ fn test_greenwashing_reduces_emissions() {
 fn test_deterministic_esg_pipeline() {
     let config = EnvironmentalConfig::default();
 
-    let mut gen1 = EmissionGenerator::new(42, config.clone());
-    let mut gen2 = EmissionGenerator::new(42, config);
+    let mut gen1 = EmissionGenerator::new(config.clone(), 42);
+    let mut gen2 = EmissionGenerator::new(config, 42);
 
     let inputs = vec![
         EnergyInput {
@@ -372,7 +372,7 @@ fn test_supplier_scores_in_valid_range() {
         high_risk_countries: vec!["CN".into()],
     };
 
-    let mut gen = SupplierEsgGenerator::new(42, config);
+    let mut gen = SupplierEsgGenerator::new(config, 42);
     let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
     assert_eq!(assessments.len(), 20);

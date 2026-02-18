@@ -69,7 +69,7 @@ fn test_project_accounting_full_pipeline() {
     let mut config = ProjectAccountingConfig::default();
     config.enabled = true;
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start_date, end_date);
     assert_eq!(pool.projects.len(), 5);
 
@@ -83,7 +83,7 @@ fn test_project_accounting_full_pipeline() {
         expense_project_rate: 0.30,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
 
     let mut all_docs = time_entries.clone();
     all_docs.extend(expenses.clone());
@@ -106,7 +106,7 @@ fn test_project_accounting_full_pipeline() {
         .collect();
 
     let rev_config = ProjectRevenueRecognitionConfig::default();
-    let mut rev_gen = RevenueGenerator::new(44, rev_config);
+    let mut rev_gen = RevenueGenerator::new(rev_config, 44);
     let _revenues = rev_gen.generate(
         &pool.projects,
         &cost_lines,
@@ -117,7 +117,7 @@ fn test_project_accounting_full_pipeline() {
 
     // 5. Calculate earned value
     let evm_config = EarnedValueSchemaConfig::default();
-    let mut evm_gen = EarnedValueGenerator::new(45, evm_config);
+    let mut evm_gen = EarnedValueGenerator::new(evm_config, 45);
     let evm_metrics = evm_gen.generate(&pool.projects, &cost_lines, start_date, end_date);
 
     // 6. Generate change orders
@@ -127,7 +127,7 @@ fn test_project_accounting_full_pipeline() {
         max_per_project: 2,
         approval_rate: 0.75,
     };
-    let mut co_gen = ChangeOrderGenerator::new(46, co_config);
+    let mut co_gen = ChangeOrderGenerator::new(co_config, 46);
     let _change_orders = co_gen.generate(&pool.projects, start_date, end_date);
 
     // 7. Generate milestones
@@ -136,7 +136,7 @@ fn test_project_accounting_full_pipeline() {
         avg_per_project: 3,
         payment_milestone_rate: 0.50,
     };
-    let mut ms_gen = MilestoneGenerator::new(47, ms_config);
+    let mut ms_gen = MilestoneGenerator::new(ms_config, 47);
     let milestones = ms_gen.generate(&pool.projects, start_date, end_date, d("2024-03-31"));
 
     // VERIFY: All data was produced
@@ -175,7 +175,7 @@ fn test_cost_linking_rates_match_config() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 10;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let time_entries = generate_test_time_entries(200);
@@ -183,7 +183,7 @@ fn test_cost_linking_rates_match_config() {
         time_entry_project_rate: 0.60,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
     let linked_rate = cost_lines.len() as f64 / time_entries.len() as f64;
@@ -201,7 +201,7 @@ fn test_cost_categories_match_source_types() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let mut docs = generate_test_time_entries(50);
@@ -211,7 +211,7 @@ fn test_cost_categories_match_source_types() {
         expense_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &docs);
 
     for cl in &cost_lines {
@@ -234,7 +234,7 @@ fn test_revenue_increases_monotonically() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 3;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     // Create cost lines spread over months
@@ -243,7 +243,7 @@ fn test_revenue_increases_monotonically() {
         time_entry_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
     let contracts: Vec<_> = pool
@@ -252,7 +252,7 @@ fn test_revenue_increases_monotonically() {
         .map(|p| (p.project_id.clone(), p.budget * dec!(1.20), p.budget))
         .collect();
 
-    let mut rev_gen = RevenueGenerator::new(44, ProjectRevenueRecognitionConfig::default());
+    let mut rev_gen = RevenueGenerator::new(ProjectRevenueRecognitionConfig::default(), 44);
     let revenues = rev_gen.generate(&pool.projects, &cost_lines, &contracts, start, end);
 
     // Check monotonicity per project
@@ -283,7 +283,7 @@ fn test_unbilled_revenue_equals_recognized_minus_billed() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 2;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let time_entries = generate_test_time_entries(50);
@@ -291,7 +291,7 @@ fn test_unbilled_revenue_equals_recognized_minus_billed() {
         time_entry_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
     let contracts: Vec<_> = pool
@@ -300,7 +300,7 @@ fn test_unbilled_revenue_equals_recognized_minus_billed() {
         .map(|p| (p.project_id.clone(), p.budget * dec!(1.20), p.budget))
         .collect();
 
-    let mut rev_gen = RevenueGenerator::new(44, ProjectRevenueRecognitionConfig::default());
+    let mut rev_gen = RevenueGenerator::new(ProjectRevenueRecognitionConfig::default(), 44);
     let revenues = rev_gen.generate(&pool.projects, &cost_lines, &contracts, start, end);
 
     for rev in &revenues {
@@ -323,7 +323,7 @@ fn test_evm_formulas_correct() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 3;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let time_entries = generate_test_time_entries(100);
@@ -331,10 +331,10 @@ fn test_evm_formulas_correct() {
         time_entry_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
-    let mut evm_gen = EarnedValueGenerator::new(45, EarnedValueSchemaConfig::default());
+    let mut evm_gen = EarnedValueGenerator::new(EarnedValueSchemaConfig::default(), 45);
     let metrics = evm_gen.generate(&pool.projects, &cost_lines, start, end);
 
     for metric in &metrics {
@@ -371,7 +371,7 @@ fn test_change_order_impacts_positive() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 10;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let co_config = ChangeOrderSchemaConfig {
@@ -380,7 +380,7 @@ fn test_change_order_impacts_positive() {
         max_per_project: 3,
         approval_rate: 0.75,
     };
-    let mut co_gen = ChangeOrderGenerator::new(46, co_config);
+    let mut co_gen = ChangeOrderGenerator::new(co_config, 46);
     let change_orders = co_gen.generate(&pool.projects, start, end);
 
     assert!(!change_orders.is_empty());
@@ -406,7 +406,7 @@ fn test_milestone_sequence_and_count() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let ms_config = MilestoneSchemaConfig {
@@ -414,7 +414,7 @@ fn test_milestone_sequence_and_count() {
         avg_per_project: 4,
         payment_milestone_rate: 0.50,
     };
-    let mut ms_gen = MilestoneGenerator::new(47, ms_config);
+    let mut ms_gen = MilestoneGenerator::new(ms_config, 47);
     let milestones = ms_gen.generate(&pool.projects, start, end, d("2024-06-30"));
 
     assert_eq!(milestones.len(), 20, "5 projects * 4 milestones");
@@ -441,11 +441,11 @@ fn test_past_milestones_have_final_status() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let ms_config = MilestoneSchemaConfig::default();
-    let mut ms_gen = MilestoneGenerator::new(47, ms_config);
+    let mut ms_gen = MilestoneGenerator::new(ms_config, 47);
     let milestones = ms_gen.generate(&pool.projects, start, end, reference);
 
     let past_ms: Vec<_> = milestones
@@ -476,14 +476,14 @@ fn test_full_pipeline_determinism() {
     let run = |seed: u64| {
         let mut config = ProjectAccountingConfig::default();
         config.project_count = 5;
-        let mut proj_gen = ProjectGenerator::new(seed, config);
+        let mut proj_gen = ProjectGenerator::new(config, seed);
         let pool = proj_gen.generate("TEST", start, end);
 
         let cost_config = CostAllocationConfig::default();
-        let mut cost_gen = ProjectCostGenerator::new(seed + 1, cost_config);
+        let mut cost_gen = ProjectCostGenerator::new(cost_config, seed + 1);
         let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
-        let mut evm_gen = EarnedValueGenerator::new(seed + 2, EarnedValueSchemaConfig::default());
+        let mut evm_gen = EarnedValueGenerator::new(EarnedValueSchemaConfig::default(), seed + 2);
         let metrics = evm_gen.generate(&pool.projects, &cost_lines, start, end);
 
         (pool.projects.len(), cost_lines.len(), metrics.len())
@@ -506,11 +506,11 @@ fn test_different_seeds_produce_different_results() {
     let run = |seed: u64| {
         let mut config = ProjectAccountingConfig::default();
         config.project_count = 10;
-        let mut proj_gen = ProjectGenerator::new(seed, config);
+        let mut proj_gen = ProjectGenerator::new(config, seed);
         let pool = proj_gen.generate("TEST", start, end);
 
         let cost_config = CostAllocationConfig::default();
-        let mut cost_gen = ProjectCostGenerator::new(seed + 1, cost_config);
+        let mut cost_gen = ProjectCostGenerator::new(cost_config, seed + 1);
         let cost_lines = cost_gen.link_documents(&pool, &time_entries);
         cost_lines.len()
     };
@@ -537,7 +537,7 @@ fn test_cost_lines_reference_valid_wbs() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let time_entries = generate_test_time_entries(100);
@@ -545,7 +545,7 @@ fn test_cost_lines_reference_valid_wbs() {
         time_entry_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
     // Every cost line's WBS ID should exist in its project
@@ -577,7 +577,7 @@ fn test_evm_bac_equals_project_budget() {
 
     let mut config = ProjectAccountingConfig::default();
     config.project_count = 5;
-    let mut proj_gen = ProjectGenerator::new(42, config);
+    let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
     let time_entries = generate_test_time_entries(100);
@@ -585,10 +585,10 @@ fn test_evm_bac_equals_project_budget() {
         time_entry_project_rate: 1.0,
         ..Default::default()
     };
-    let mut cost_gen = ProjectCostGenerator::new(43, cost_config);
+    let mut cost_gen = ProjectCostGenerator::new(cost_config, 43);
     let cost_lines = cost_gen.link_documents(&pool, &time_entries);
 
-    let mut evm_gen = EarnedValueGenerator::new(45, EarnedValueSchemaConfig::default());
+    let mut evm_gen = EarnedValueGenerator::new(EarnedValueSchemaConfig::default(), 45);
     let metrics = evm_gen.generate(&pool.projects, &cost_lines, start, end);
 
     for metric in &metrics {

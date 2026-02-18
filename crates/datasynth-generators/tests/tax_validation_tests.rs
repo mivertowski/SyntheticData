@@ -63,7 +63,7 @@ fn filing_deadline() -> NaiveDate {
 /// resulting tax lines from the TaxLineGenerator.
 fn generate_mixed_tax_lines(codes: Vec<datasynth_core::models::TaxCode>) -> Vec<TaxLine> {
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, codes, 42);
     let date = test_date();
 
     let mut all_lines = Vec::new();
@@ -386,7 +386,7 @@ fn test_cross_generator_tax_code_active_on_date() {
 fn test_vendor_invoice_lines_are_deductible() {
     let setup = setup_tax_codes();
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, setup.codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, setup.codes, 42);
 
     // Domestic vendor invoices should be deductible
     for i in 0..5 {
@@ -613,7 +613,7 @@ fn run_deterministic_pipeline(seed: u64) -> PipelineResult {
 
     // Step 2: Tax lines
     let line_config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(seed, codes.clone(), line_config);
+    let mut line_gen = TaxLineGenerator::new(line_config, codes.clone(), seed);
 
     let mut tax_lines = Vec::new();
     for i in 0..5 {
@@ -802,7 +802,7 @@ fn test_return_net_payable_sign() {
     // When input tax > output tax, net_payable should be negative (refund).
     let setup = setup_tax_codes();
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, setup.codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, setup.codes, 42);
     let date = test_date();
 
     // Scenario: lots of output tax, no input tax

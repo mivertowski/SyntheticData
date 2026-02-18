@@ -3169,8 +3169,8 @@ impl EnhancedOrchestrator {
             // Look up country pack for payroll deductions and labels
             let payroll_pack = self.primary_pack();
 
-            // Store the pack on the generator so both generate() and
-            // generate_with_country_pack() produce localized deduction labels.
+            // Store the pack on the generator so generate() resolves
+            // localized deduction rates and labels from it.
             payroll_gen.set_country_pack(payroll_pack.clone());
 
             let employees_with_salary: Vec<(
@@ -3195,13 +3195,12 @@ impl EnhancedOrchestrator {
             for month in 0..self.config.global.period_months {
                 let period_start = start_date + chrono::Months::new(month);
                 let period_end = start_date + chrono::Months::new(month + 1) - chrono::Days::new(1);
-                let (run, items) = payroll_gen.generate_with_country_pack(
+                let (run, items) = payroll_gen.generate(
                     company_code,
                     &employees_with_salary,
                     period_start,
                     period_end,
                     currency,
-                    payroll_pack,
                 );
                 snapshot.payroll_runs.push(run);
                 snapshot.payroll_run_count += 1;
@@ -3661,8 +3660,8 @@ impl EnhancedOrchestrator {
 
         // Energy consumption (feeds into scope 1 & 2 emissions)
         let mut energy_gen = datasynth_generators::EnergyGenerator::new(
-            seed + 80,
             esg_cfg.environmental.energy.clone(),
+            seed + 80,
         );
         let energy_records = energy_gen.generate(entity_id, start_date, end_date);
 
@@ -3681,7 +3680,7 @@ impl EnhancedOrchestrator {
 
         // Emissions (scope 1, 2, 3)
         let mut emission_gen =
-            datasynth_generators::EmissionGenerator::new(seed + 83, esg_cfg.environmental.clone());
+            datasynth_generators::EmissionGenerator::new(esg_cfg.environmental.clone(), seed + 83);
 
         // Build EnergyInput from energy_records
         let energy_inputs: Vec<datasynth_generators::EnergyInput> = energy_records
@@ -3745,7 +3744,7 @@ impl EnhancedOrchestrator {
 
         // Social: Workforce diversity, pay equity, safety
         let mut workforce_gen =
-            datasynth_generators::WorkforceGenerator::new(seed + 84, esg_cfg.social.clone());
+            datasynth_generators::WorkforceGenerator::new(esg_cfg.social.clone(), seed + 84);
         let total_headcount = headcount.max(100);
         snapshot.diversity =
             workforce_gen.generate_diversity(entity_id, total_headcount, start_date);
@@ -3777,8 +3776,8 @@ impl EnhancedOrchestrator {
 
         // Supplier ESG assessments
         let mut supplier_gen = datasynth_generators::SupplierEsgGenerator::new(
-            seed + 86,
             esg_cfg.supply_chain_esg.clone(),
+            seed + 86,
         );
         let vendor_inputs: Vec<datasynth_generators::VendorInput> = self
             .master_data

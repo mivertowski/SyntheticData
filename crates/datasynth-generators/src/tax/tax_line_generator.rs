@@ -95,7 +95,7 @@ impl Default for TaxLineGeneratorConfig {
 /// let mut code_gen = TaxCodeGenerator::new(42);
 /// let (_jurisdictions, codes) = code_gen.generate();
 ///
-/// let mut gen = TaxLineGenerator::new(42, codes, TaxLineGeneratorConfig::default());
+/// let mut gen = TaxLineGenerator::new(TaxLineGeneratorConfig::default(), codes, 42);
 /// ```
 pub struct TaxLineGenerator {
     rng: ChaCha8Rng,
@@ -109,7 +109,7 @@ impl TaxLineGenerator {
     /// Creates a new tax line generator.
     ///
     /// `tax_codes` are indexed by their `jurisdiction_id` for O(1) lookup.
-    pub fn new(seed: u64, tax_codes: Vec<TaxCode>, config: TaxLineGeneratorConfig) -> Self {
+    pub fn new(config: TaxLineGeneratorConfig, tax_codes: Vec<TaxCode>, seed: u64) -> Self {
         let mut tax_codes_by_jurisdiction: HashMap<String, Vec<TaxCode>> = HashMap::new();
         for code in tax_codes {
             tax_codes_by_jurisdiction
@@ -380,7 +380,7 @@ mod tests {
     fn test_domestic_vendor_invoice() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         let lines = gen.generate_for_document(
             TaxableDocumentType::VendorInvoice,
@@ -408,7 +408,7 @@ mod tests {
     fn test_domestic_customer_invoice() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         let lines = gen.generate_for_document(
             TaxableDocumentType::CustomerInvoice,
@@ -437,7 +437,7 @@ mod tests {
     fn test_eu_cross_border_reverse_charge() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         let lines = gen.generate_for_document(
             TaxableDocumentType::VendorInvoice,
@@ -470,7 +470,7 @@ mod tests {
             exempt_categories: vec!["financial_services".into(), "education".into()],
             ..Default::default()
         };
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         let lines = gen.generate_for_document(
             TaxableDocumentType::VendorInvoice,
@@ -507,7 +507,7 @@ mod tests {
     fn test_non_eu_cross_border() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         // US seller -> DE buyer: NOT EU cross-border, no reverse charge
         // For VendorInvoice, jurisdiction = seller = US
@@ -535,7 +535,7 @@ mod tests {
     fn test_us_sales_tax() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         // Customer invoice: destination-based, buyer is in US-CA
         let lines = gen.generate_for_document(
@@ -560,7 +560,7 @@ mod tests {
     fn test_no_matching_code() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
 
         // Unknown jurisdiction -> no tax codes -> empty result
         let lines = gen.generate_for_document(
@@ -583,7 +583,7 @@ mod tests {
     fn test_batch_generation() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
         let date = test_date();
 
         let documents = vec![
@@ -642,8 +642,8 @@ mod tests {
         let config2 = TaxLineGeneratorConfig::default();
         let date = test_date();
 
-        let mut gen1 = TaxLineGenerator::new(999, codes1, config1);
-        let mut gen2 = TaxLineGenerator::new(999, codes2, config2);
+        let mut gen1 = TaxLineGenerator::new(config1, codes1, 999);
+        let mut gen2 = TaxLineGenerator::new(config2, codes2, 999);
 
         let lines1 = gen1.generate_for_document(
             TaxableDocumentType::VendorInvoice,
@@ -679,7 +679,7 @@ mod tests {
     fn test_line_counter_increments() {
         let codes = make_tax_codes();
         let config = TaxLineGeneratorConfig::default();
-        let mut gen = TaxLineGenerator::new(42, codes, config);
+        let mut gen = TaxLineGenerator::new(config, codes, 42);
         let date = test_date();
 
         let lines1 = gen.generate_for_document(

@@ -69,7 +69,7 @@ pub struct CashForecastGenerator {
 
 impl CashForecastGenerator {
     /// Creates a new cash forecast generator.
-    pub fn new(seed: u64, config: CashForecastingConfig) -> Self {
+    pub fn new(config: CashForecastingConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             config,
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_forecast_from_ar_ap() {
-        let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+        let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
         let ar = vec![ArAgingItem {
             expected_date: d("2025-02-15"),
             amount: dec!(50000),
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_overdue_ar_lower_probability() {
-        let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+        let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
         let ar = vec![
             ArAgingItem {
                 expected_date: d("2025-02-15"),
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_disbursements_included() {
-        let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+        let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
         let disbursements = vec![
             ScheduledDisbursement {
                 date: d("2025-02-28"),
@@ -292,7 +292,7 @@ mod tests {
             horizon_days: 30,
             ..CashForecastingConfig::default()
         };
-        let mut gen = CashForecastGenerator::new(42, config);
+        let mut gen = CashForecastGenerator::new(config, 42);
         let ar = vec![ArAgingItem {
             expected_date: d("2025-06-15"), // way beyond 30-day horizon
             amount: dec!(10000),
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn test_net_position_computed() {
-        let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+        let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
         let ar = vec![ArAgingItem {
             expected_date: d("2025-02-15"),
             amount: dec!(100000),

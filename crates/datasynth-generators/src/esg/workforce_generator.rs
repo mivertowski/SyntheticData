@@ -23,7 +23,7 @@ pub struct WorkforceGenerator {
 
 impl WorkforceGenerator {
     /// Create a new workforce generator.
-    pub fn new(seed: u64, config: SocialConfig) -> Self {
+    pub fn new(config: SocialConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
@@ -389,7 +389,7 @@ mod tests {
     #[test]
     fn test_diversity_percentages_sum_to_one() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_diversity("C001", 1000, d("2025-01-01"));
 
         assert!(!metrics.is_empty());
@@ -421,7 +421,7 @@ mod tests {
     #[test]
     fn test_pay_equity_ratios() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_pay_equity("C001", d("2025-01-01"));
 
         assert_eq!(metrics.len(), 4, "Should have 4 comparison pairs");
@@ -443,7 +443,7 @@ mod tests {
             },
             ..Default::default()
         };
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let incidents = gen.generate_safety_incidents("C001", 3, d("2025-01-01"), d("2025-12-31"));
 
         assert_eq!(incidents.len(), 30);
@@ -460,7 +460,7 @@ mod tests {
     #[test]
     fn test_safety_metric_trir_computation() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
 
         let incidents = vec![
             SafetyIncident {
@@ -512,7 +512,7 @@ mod tests {
     fn test_disabled_diversity() {
         let mut config = SocialConfig::default();
         config.diversity.enabled = false;
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_diversity("C001", 1000, d("2025-01-01"));
         assert!(metrics.is_empty());
     }

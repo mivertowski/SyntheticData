@@ -26,7 +26,7 @@ pub struct EnergyGenerator {
 
 impl EnergyGenerator {
     /// Create a new energy generator.
-    pub fn new(seed: u64, config: EnergySchemaConfig) -> Self {
+    pub fn new(config: EnergySchemaConfig, seed: u64) -> Self {
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
@@ -371,7 +371,7 @@ mod tests {
             facility_count: 2,
             renewable_target: 0.50,
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-03-01"));
 
         assert!(!records.is_empty());
@@ -387,7 +387,7 @@ mod tests {
             facility_count: 3,
             renewable_target: 1.0, // Force renewables
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-01-01"));
 
         let renewable: Decimal = records
@@ -411,7 +411,7 @@ mod tests {
             facility_count: 5,
             renewable_target: 0.50,
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-12-01"));
         assert!(records.is_empty());
     }
