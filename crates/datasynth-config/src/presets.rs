@@ -94,7 +94,7 @@ pub fn create_preset(
         source_to_pay: SourceToPayConfig::default(),
         financial_reporting: FinancialReportingConfig::default(),
         hr: HrConfig::default(),
-        manufacturing: ManufacturingProcessConfig::default(),
+        manufacturing: get_manufacturing_config(industry),
         sales_quotes: SalesQuoteConfig::default(),
         tax: get_tax_config(industry),
         treasury: get_treasury_config(industry),
@@ -651,6 +651,17 @@ fn get_project_accounting_config(industry: IndustrySector) -> ProjectAccountingC
             ..Default::default()
         },
         _ => ProjectAccountingConfig::default(),
+    }
+}
+
+/// Get industry-specific manufacturing configuration.
+fn get_manufacturing_config(industry: IndustrySector) -> ManufacturingProcessConfig {
+    match industry {
+        IndustrySector::Manufacturing => ManufacturingProcessConfig {
+            enabled: true,
+            ..Default::default()
+        },
+        _ => ManufacturingProcessConfig::default(),
     }
 }
 

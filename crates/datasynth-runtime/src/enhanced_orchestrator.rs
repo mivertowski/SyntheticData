@@ -1375,13 +1375,29 @@ impl EnhancedOrchestrator {
         self.phase_master_data(&mut stats)?;
 
         // Phase 3: Document Flows + Subledger Linking
-        let (document_flows, subledger) = self.phase_document_flows(&mut stats)?;
+        let (document_flows, subledger, fa_journal_entries) =
+            self.phase_document_flows(&mut stats)?;
 
         // Phase 3b: Opening Balances (before JE generation)
         let opening_balances = self.phase_opening_balances(&coa, &mut stats)?;
 
+        // Note: Opening balances are exported as balance/opening_balances.json but are not
+        // converted to journal entries. Converting to JEs requires richer type information
+        // (GeneratedOpeningBalance.balances loses AccountType, making contra-asset accounts
+        // like Accumulated Depreciation indistinguishable from regular assets by code prefix).
+        // A future enhancement could store (Decimal, AccountType) in the balances map.
+
         // Phase 4: Journal Entries
         let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
+
+        // Phase 4b: Append FA acquisition journal entries to main entries
+        if !fa_journal_entries.is_empty() {
+            debug!(
+                "Appending {} FA acquisition JEs to main entries",
+                fa_journal_entries.len()
+            );
+            entries.extend(fa_journal_entries);
+        }
 
         // Get current degradation actions for optional phases
         let actions = self.get_degradation_actions();
@@ -1424,6 +1440,17 @@ impl EnhancedOrchestrator {
             let mfg_jes = Self::generate_manufacturing_jes(&manufacturing_snap.production_orders);
             debug!("Generated {} JEs from production orders", mfg_jes.len());
             entries.extend(mfg_jes);
+        }
+
+        // Update final entry/line-item stats after all JE-generating phases
+        // (FA acquisition, IC, payroll, manufacturing JEs have all been appended)
+        if !entries.is_empty() {
+            stats.total_entries = entries.len() as u64;
+            stats.total_line_items = entries.iter().map(|e| e.line_count() as u64).sum();
+            debug!(
+                "Final entry count: {}, line items: {} (after all JE-generating phases)",
+                stats.total_entries, stats.total_line_items
+            );
         }
 
         // Phase 8: Anomaly Injection (after all JE-generating phases)
@@ -1685,7 +1712,7 @@ impl EnhancedOrchestrator {
     fn phase_document_flows(
         &mut self,
         stats: &mut EnhancedGenerationStatistics,
-    ) -> SynthResult<(DocumentFlowSnapshot, SubledgerSnapshot)> {
+    ) -> SynthResult<(DocumentFlowSnapshot, SubledgerSnapshot, Vec<JournalEntry>)> {
         let mut document_flows = DocumentFlowSnapshot::default();
         let mut subledger = SubledgerSnapshot::default();
 
@@ -1714,7 +1741,8 @@ impl EnhancedOrchestrator {
             debug!("Phase 3: Skipped (document flow generation disabled or no master data)");
         }
 
-        // Generate FA subledger records from master data fixed assets
+        // Generate FA subledger records (and acquisition JEs) from master data fixed assets
+        let mut fa_journal_entries = Vec::new();
         if !self.master_data.assets.is_empty() {
             debug!("Generating FA subledger records");
             let company_code = self
@@ -1736,7 +1764,7 @@ impl EnhancedOrchestrator {
             );
 
             for asset in &self.master_data.assets {
-                let (record, _je) = fa_gen.generate_asset_acquisition(
+                let (record, je) = fa_gen.generate_asset_acquisition(
                     company_code,
                     &format!("{:?}", asset.asset_class),
                     &asset.description,
@@ -1745,12 +1773,14 @@ impl EnhancedOrchestrator {
                     asset.cost_center.as_deref(),
                 );
                 subledger.fa_records.push(record);
+                fa_journal_entries.push(je);
             }
 
             stats.fa_subledger_count = subledger.fa_records.len();
             debug!(
-                "FA subledger records generated: {}",
-                stats.fa_subledger_count
+                "FA subledger records generated: {} (with {} acquisition JEs)",
+                stats.fa_subledger_count,
+                fa_journal_entries.len()
             );
         }
 
@@ -1800,7 +1830,7 @@ impl EnhancedOrchestrator {
             );
         }
 
-        Ok((document_flows, subledger))
+        Ok((document_flows, subledger, fa_journal_entries))
     }
 
     /// Phase 3c: Generate OCPM events from document flows.
@@ -5736,9 +5766,40 @@ impl EnhancedOrchestrator {
     fn inject_anomalies(&mut self, entries: &mut [JournalEntry]) -> SynthResult<AnomalyLabels> {
         let pb = self.create_progress_bar(entries.len() as u64, "Injecting Anomalies");
 
+        // Read anomaly rates from config instead of using hardcoded values.
+        // Priority: anomaly_injection config > fraud config > default 0.02
+        let total_rate = if self.config.anomaly_injection.enabled {
+            self.config.anomaly_injection.rates.total_rate
+        } else if self.config.fraud.enabled {
+            self.config.fraud.fraud_rate
+        } else {
+            0.02
+        };
+
+        let fraud_rate = if self.config.anomaly_injection.enabled {
+            self.config.anomaly_injection.rates.fraud_rate
+        } else {
+            AnomalyRateConfig::default().fraud_rate
+        };
+
+        let error_rate = if self.config.anomaly_injection.enabled {
+            self.config.anomaly_injection.rates.error_rate
+        } else {
+            AnomalyRateConfig::default().error_rate
+        };
+
+        let process_issue_rate = if self.config.anomaly_injection.enabled {
+            self.config.anomaly_injection.rates.process_rate
+        } else {
+            AnomalyRateConfig::default().process_issue_rate
+        };
+
         let anomaly_config = AnomalyInjectorConfig {
             rates: AnomalyRateConfig {
-                total_rate: 0.02,
+                total_rate,
+                fraud_rate,
+                error_rate,
+                process_issue_rate,
                 ..Default::default()
             },
             seed: self.seed + 5000,

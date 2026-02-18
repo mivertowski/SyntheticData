@@ -487,12 +487,26 @@ fn main() -> Result<()> {
                 }
                 ConfigOrOrchestrator::Config(cfg) => {
                     let phase_config = PhaseConfig {
+                        // Wire CLI flags OR config-enabled sections
+                        // Note: banking defaults to enabled=true in its crate, so only
+                        // use the explicit CLI --banking flag to avoid unexpected generation
                         generate_banking: banking,
-                        generate_audit: audit,
-                        generate_graph_export: graph_export,
+                        generate_audit: audit || cfg.audit.enabled,
+                        generate_graph_export: graph_export || cfg.graph_export.enabled,
+                        generate_manufacturing: cfg.manufacturing.enabled,
+                        generate_sourcing: cfg.source_to_pay.enabled,
+                        generate_tax: cfg.tax.enabled,
+                        generate_esg: cfg.esg.enabled,
+                        generate_intercompany: cfg.intercompany.enabled,
+                        generate_accounting_standards: cfg.accounting_standards.enabled,
+                        generate_financial_statements: cfg.financial_reporting.enabled,
+                        generate_sales_kpi_budgets: cfg.sales_quotes.enabled,
+                        generate_bank_reconciliation: cfg.financial_reporting.enabled,
+                        generate_ocpm_events: cfg.ocpm.enabled,
                         show_progress: true,
                         // Wire up anomaly and data quality injection from config
-                        inject_anomalies: cfg.fraud.enabled,
+                        inject_anomalies: cfg.fraud.enabled
+                            || cfg.anomaly_injection.enabled,
                         inject_data_quality: cfg.data_quality.enabled,
                         // Use conservative defaults for document generation
                         p2p_chains: 50,
@@ -785,7 +799,7 @@ fn main() -> Result<()> {
                 result.banking.customers.len(),
             );
             register(
-                "banking/bank_transactions.json",
+                "banking/banking_transactions.json",
                 result.banking.transactions.len(),
             );
 
