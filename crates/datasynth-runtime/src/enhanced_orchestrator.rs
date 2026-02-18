@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use datasynth_banking::{
-    models::{BankAccount, BankTransaction, BankingCustomer},
+    models::{BankAccount, BankTransaction, BankingCustomer, CustomerName},
     BankingOrchestratorBuilder,
 };
 use datasynth_config::schema::GeneratorConfig;
@@ -824,6 +824,15 @@ pub struct EnhancedGenerationStatistics {
     pub ic_matched_pair_count: usize,
     #[serde(default)]
     pub ic_elimination_count: usize,
+    /// Number of intercompany journal entries (seller + buyer side).
+    #[serde(default)]
+    pub ic_transaction_count: usize,
+    /// Number of fixed asset subledger records.
+    #[serde(default)]
+    pub fa_subledger_count: usize,
+    /// Number of inventory subledger records.
+    #[serde(default)]
+    pub inventory_subledger_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -2316,10 +2325,14 @@ impl EnhancedOrchestrator {
 
         stats.ic_matched_pair_count = matched_pair_count;
         stats.ic_elimination_count = elimination_entry_count;
+        stats.ic_transaction_count = seller_entries.len() + buyer_entries.len();
 
         info!(
-            "Intercompany data generated: {} matched pairs, {} elimination entries, {:.1}% match rate",
+            "Intercompany data generated: {} matched pairs, {} JEs ({} seller + {} buyer), {} elimination entries, {:.1}% match rate",
             matched_pair_count,
+            stats.ic_transaction_count,
+            seller_entries.len(),
+            buyer_entries.len(),
             elimination_entry_count,
             match_rate * 100.0
         );
@@ -5521,8 +5534,27 @@ impl EnhancedOrchestrator {
             ));
         }
 
+        // Cross-reference banking customers with core master data so that
+        // banking customer names align with the enterprise customer list.
+        // We rotate through core customers, overlaying their name and country
+        // onto the generated banking customers where possible.
+        let mut banking_customers = result.customers;
+        let core_customers = &self.master_data.customers;
+        if !core_customers.is_empty() {
+            for (i, bc) in banking_customers.iter_mut().enumerate() {
+                let core = &core_customers[i % core_customers.len()];
+                bc.name = CustomerName::business(&core.name);
+                bc.residence_country = core.country.clone();
+            }
+            debug!(
+                "Cross-referenced {} banking customers with {} core customers",
+                banking_customers.len(),
+                core_customers.len()
+            );
+        }
+
         Ok(BankingSnapshot {
-            customers: result.customers,
+            customers: banking_customers,
             accounts: result.accounts,
             transactions: result.transactions,
             suspicious_count: result.stats.suspicious_count,
