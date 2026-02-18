@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 (2026-02-18)
+
+### Added
+
+- **Country Pack Config**: `country_packs` field on `Config` with `external_dir` and `overrides` support
+- **Accounting Framework Config**: `framework` field (`us_gaap`, `ifrs`, `dual_reporting`) on accounting standards settings
+
+### Changed
+
+- Bumped version to 1.4.0 to match Rust v0.8.0 country pack wiring release
+
 ## 1.3.0 (2026-02-17)
 
 ### Added

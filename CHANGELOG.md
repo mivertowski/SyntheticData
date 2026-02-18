@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2026-02-17
+## [0.8.0] - 2026-02-18
 
 ### Added
 
@@ -27,6 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `generate_phone_from_pack()`, `generate_address_from_pack()`, `generate_national_id_from_pack()` on customer generator
   - `EnhancedOrchestrator` wired with `CountryPackRegistry`, passes `&CountryPack` per company
 
+- **Country Pack Wiring Across All Modules** (`datasynth-runtime`, `datasynth-banking`, `datasynth-ocpm`, `datasynth-graph`, `datasynth-fingerprint`):
+  - **Orchestrator Phase 20 — Tax Generation**: `phase_tax_generation()` calls `TaxCodeGenerator::generate_from_country_pack()` using the primary company's country pack to produce locale-specific jurisdictions and tax codes
+  - **Orchestrator Phase 21 — ESG Generation**: `phase_esg_generation()` runs the full 9-generator ESG pipeline (EmissionGenerator scope 1/2/3, EnergyGenerator, WaterGenerator, WasteGenerator, WorkforceGenerator, GovernanceGenerator, SupplierEsgGenerator, DisclosureGenerator, EsgAnomalyInjector) with country pack emission factors
+  - **Banking**: `BankingOrchestrator` passes country pack to `CustomerGenerator` for locale-aware phone, address, and national ID generation
+  - **Document Flows (P2P/O2C)**: Country-specific document texts (PO headers, invoice terms, payment notices) from country packs
+  - **Payroll**: Localized deduction labels (tax, social security, health insurance) from country packs
+  - **OCPM**: `country_code` attribute on P2P and O2C process mining events for cross-country process analysis
+  - **Data Quality**: Locale-aware format variation baselines (date/number/phone formats) from country packs
+  - **Graph**: `country` field on `AccountNode` for ML feature enrichment
+  - **Fingerprint**: `country_code` on `SourceMetadata` for provenance tracking
+  - **Presets**: Country pack awareness in all industry preset configurations
+  - **Orchestrator Helpers**: `primary_pack()` and `primary_country_code()` convenience methods replacing repeated boilerplate
+
 - **Country Pack Configuration** (`datasynth-config`): New `country_packs` section in `GeneratorConfig` with `external_dir` and `overrides` fields, validation for directory existence and override key format
 
 ### Changed
@@ -35,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NamePool` fields changed from `Vec<&'static str>` to `Vec<String>` to support JSON-deserialized name data
 - Holiday `NthWeekdayHoliday` schema includes `offset_days` field for holidays like "Day after Thanksgiving"
 - Executive overview document updated to v0.8.0
+- `EnhancedOrchestrator` now runs 21 generation phases (previously 19), adding Tax (Phase 20) and ESG (Phase 21)
+- `EnhancedGenerationResult` now includes `tax: TaxSnapshot` and `esg: EsgSnapshot` fields
+- `EnhancedGenerationStatistics` tracks `tax_jurisdiction_count`, `tax_code_count`, `esg_emission_count`, `esg_disclosure_count`
 
 ## [0.7.0] - 2026-02-17
 
