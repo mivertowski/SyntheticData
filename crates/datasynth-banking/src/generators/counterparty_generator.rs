@@ -10,6 +10,7 @@ use crate::models::{
     CounterpartyPool, Employer, GovernmentAgency, GovernmentAgencyType, Merchant, PayFrequency,
     UtilityCompany, UtilityType,
 };
+use crate::seed_offsets::COUNTERPARTY_GENERATOR_SEED_OFFSET;
 
 /// Generator for counterparty data.
 pub struct CounterpartyGenerator {
@@ -20,7 +21,7 @@ impl CounterpartyGenerator {
     /// Create a new counterparty generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            _rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(3000)),
+            _rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(COUNTERPARTY_GENERATOR_SEED_OFFSET)),
         }
     }
 

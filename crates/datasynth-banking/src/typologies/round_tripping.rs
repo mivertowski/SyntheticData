@@ -13,6 +13,7 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
 use crate::models::{BankAccount, BankTransaction, BankingCustomer, CounterpartyRef};
+use crate::seed_offsets::ROUND_TRIPPING_INJECTOR_SEED_OFFSET;
 
 /// Round-tripping pattern injector.
 ///
@@ -30,7 +31,7 @@ impl RoundTrippingInjector {
     /// Create a new round-tripping injector.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(7100)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(ROUND_TRIPPING_INJECTOR_SEED_OFFSET)),
             uuid_factory: DeterministicUuidFactory::new(
                 seed,
                 datasynth_core::GeneratorType::Anomaly,

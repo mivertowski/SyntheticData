@@ -33,6 +33,7 @@ pub mod resource_guard;
 pub mod streaming;
 pub mod templates;
 pub mod traits;
+pub mod utils;
 pub mod uuid_factory;
 
 pub use country::{CountryCode, CountryPack, CountryPackError, CountryPackRegistry};

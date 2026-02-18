@@ -394,6 +394,36 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Intercompany
+    // ========================================================================
+    let ic_dir = output_dir.join("intercompany");
+    if !result.intercompany.matched_pairs.is_empty() {
+        std::fs::create_dir_all(&ic_dir)?;
+        info!("Writing intercompany data...");
+
+        write_json_safe(
+            &result.intercompany.matched_pairs,
+            &ic_dir.join("ic_matched_pairs.json"),
+            "IC matched pairs",
+        );
+        write_json_safe(
+            &result.intercompany.seller_journal_entries,
+            &ic_dir.join("ic_seller_journal_entries.json"),
+            "IC seller journal entries",
+        );
+        write_json_safe(
+            &result.intercompany.buyer_journal_entries,
+            &ic_dir.join("ic_buyer_journal_entries.json"),
+            "IC buyer journal entries",
+        );
+        write_json_safe(
+            &result.intercompany.elimination_entries,
+            &ic_dir.join("ic_elimination_entries.json"),
+            "IC elimination entries",
+        );
+    }
+
+    // ========================================================================
     // Financial Reporting
     // ========================================================================
     let fin_dir = output_dir.join("financial_reporting");

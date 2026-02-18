@@ -11,6 +11,7 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
 use crate::models::{BankAccount, BankTransaction, BankingCustomer, CounterpartyRef};
+use crate::seed_offsets::MULE_INJECTOR_SEED_OFFSET;
 
 /// Money mule pattern injector.
 ///
@@ -29,7 +30,7 @@ impl MuleInjector {
     /// Create a new mule injector.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(6300)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(MULE_INJECTOR_SEED_OFFSET)),
             uuid_factory: DeterministicUuidFactory::new(
                 seed,
                 datasynth_core::GeneratorType::Anomaly,

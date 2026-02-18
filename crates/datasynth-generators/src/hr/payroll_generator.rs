@@ -111,9 +111,9 @@ impl PayrollGenerator {
         period_end: NaiveDate,
         currency: &str,
     ) -> (PayrollRun, Vec<PayrollLineItem>) {
-        if let Some(pack) = self.country_pack.clone() {
-            let rates = self.rates_from_country_pack(&pack);
-            let labels = Self::labels_from_country_pack(&pack);
+        if let Some(pack) = self.country_pack.as_ref() {
+            let rates = self.rates_from_country_pack(pack);
+            let labels = Self::labels_from_country_pack(pack);
             self.generate_with_rates_and_labels(
                 company_code,
                 employees,

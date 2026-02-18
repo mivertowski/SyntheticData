@@ -8,6 +8,7 @@ use rust_decimal::Decimal;
 
 use crate::config::SpoofingConfig;
 use crate::models::{BankTransaction, BankingCustomer};
+use crate::seed_offsets::SPOOFING_ENGINE_SEED_OFFSET;
 
 /// Spoofing engine for adversarial mode.
 ///
@@ -27,7 +28,7 @@ impl SpoofingEngine {
     pub fn new(config: SpoofingConfig, seed: u64) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(6400)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(SPOOFING_ENGINE_SEED_OFFSET)),
         }
     }
 

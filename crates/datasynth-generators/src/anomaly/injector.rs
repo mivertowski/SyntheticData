@@ -174,19 +174,27 @@ pub struct AnomalyInjector {
     account_contexts: HashMap<String, AccountContext>,
 }
 
-/// Internal statistics tracking.
+/// Injection statistics tracking.
 #[derive(Debug, Clone, Default)]
-#[allow(dead_code)]
 pub struct InjectorStats {
-    total_processed: usize,
-    total_injected: usize,
-    by_category: HashMap<String, usize>,
-    by_type: HashMap<String, usize>,
-    by_company: HashMap<String, usize>,
-    skipped_rate: usize,
-    skipped_date: usize,
-    skipped_company: usize,
-    skipped_max_per_doc: usize,
+    /// Total number of entries processed.
+    pub total_processed: usize,
+    /// Total number of anomalies injected.
+    pub total_injected: usize,
+    /// Anomalies injected by category (e.g., "Fraud", "Error").
+    pub by_category: HashMap<String, usize>,
+    /// Anomalies injected by specific type name.
+    pub by_type: HashMap<String, usize>,
+    /// Anomalies injected by company code.
+    pub by_company: HashMap<String, usize>,
+    /// Entries skipped due to rate check.
+    pub skipped_rate: usize,
+    /// Entries skipped due to date range filter.
+    pub skipped_date: usize,
+    /// Entries skipped due to company filter.
+    pub skipped_company: usize,
+    /// Entries skipped due to max-anomalies-per-document limit.
+    pub skipped_max_per_doc: usize,
 }
 
 impl AnomalyInjector {

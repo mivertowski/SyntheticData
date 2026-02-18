@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::{
     AmlScenario, CaseNarrative, CaseRecommendation, RedFlag, RedFlagCategory, ViolatedExpectation,
 };
+use crate::seed_offsets::NARRATIVE_GENERATOR_SEED_OFFSET;
 
 /// Narrative generator for AML cases.
 pub struct NarrativeGenerator {
@@ -19,7 +20,7 @@ impl NarrativeGenerator {
     /// Create a new narrative generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(7000)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(NARRATIVE_GENERATOR_SEED_OFFSET)),
         }
     }
 

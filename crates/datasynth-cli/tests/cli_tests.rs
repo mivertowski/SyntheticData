@@ -291,8 +291,7 @@ fn test_generate_demo_creates_output() {
     // Verify JSON is valid if it exists
     if je_json_path.exists() {
         let content = fs::read_to_string(&je_json_path).unwrap();
-        let _: serde_json::Value =
-            serde_json::from_str(&content).expect("Should be valid JSON");
+        let _: serde_json::Value = serde_json::from_str(&content).expect("Should be valid JSON");
     }
 }
 

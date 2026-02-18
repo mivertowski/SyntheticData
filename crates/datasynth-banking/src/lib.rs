@@ -54,6 +54,7 @@ pub mod generators;
 pub mod labels;
 pub mod models;
 pub mod personas;
+pub mod seed_offsets;
 pub mod typologies;
 
 mod config;

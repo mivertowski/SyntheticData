@@ -264,6 +264,8 @@ pub struct PhaseConfig {
     pub generate_tax: bool,
     /// Generate ESG data (emissions, energy, water, waste, social, governance).
     pub generate_esg: bool,
+    /// Generate intercompany transactions and eliminations.
+    pub generate_intercompany: bool,
 }
 
 impl Default for PhaseConfig {
@@ -301,6 +303,7 @@ impl Default for PhaseConfig {
             generate_sales_kpi_budgets: false,    // Off by default
             generate_tax: false,                  // Off by default
             generate_esg: false,                  // Off by default
+            generate_intercompany: false,         // Off by default
         }
     }
 }
@@ -579,6 +582,25 @@ pub struct TaxSnapshot {
     pub code_count: usize,
 }
 
+/// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct IntercompanySnapshot {
+    /// IC matched pairs (transaction pairs between related entities).
+    pub matched_pairs: Vec<datasynth_core::models::intercompany::ICMatchedPair>,
+    /// IC journal entries generated from matched pairs (seller side).
+    pub seller_journal_entries: Vec<JournalEntry>,
+    /// IC journal entries generated from matched pairs (buyer side).
+    pub buyer_journal_entries: Vec<JournalEntry>,
+    /// Elimination entries for consolidation.
+    pub elimination_entries: Vec<datasynth_core::models::intercompany::EliminationEntry>,
+    /// IC matched pair count.
+    pub matched_pair_count: usize,
+    /// IC elimination entry count.
+    pub elimination_entry_count: usize,
+    /// IC matching rate (0.0 to 1.0).
+    pub match_rate: f64,
+}
+
 /// ESG data snapshot (emissions, energy, water, waste, social, governance, supply chain, disclosures).
 #[derive(Debug, Clone, Default)]
 pub struct EsgSnapshot {
@@ -651,6 +673,8 @@ pub struct EnhancedGenerationResult {
     pub tax: TaxSnapshot,
     /// ESG data snapshot (emissions, energy, social, governance, disclosures).
     pub esg: EsgSnapshot,
+    /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
+    pub intercompany: IntercompanySnapshot,
     /// Generated journal entries.
     pub journal_entries: Vec<JournalEntry>,
     /// Anomaly labels (if injection enabled).
@@ -791,6 +815,11 @@ pub struct EnhancedGenerationStatistics {
     pub esg_emission_count: usize,
     #[serde(default)]
     pub esg_disclosure_count: usize,
+    /// Intercompany counts.
+    #[serde(default)]
+    pub ic_matched_pair_count: usize,
+    #[serde(default)]
+    pub ic_elimination_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1247,6 +1276,9 @@ impl EnhancedOrchestrator {
         // Phase 14: S2C Sourcing Data
         let sourcing = self.phase_sourcing_data(&mut stats)?;
 
+        // Phase 14b: Intercompany Transactions + Matching + Eliminations
+        let intercompany = self.phase_intercompany(&mut stats)?;
+
         // Phase 15: Bank Reconciliation + Financial Statements
         let financial_reporting =
             self.phase_financial_reporting(&document_flows, &entries, &coa, &mut stats)?;
@@ -1325,6 +1357,7 @@ impl EnhancedOrchestrator {
             sales_kpi_budgets,
             tax,
             esg: esg_snap,
+            intercompany,
             journal_entries: entries,
             anomaly_labels,
             balance_validation,
@@ -2093,6 +2126,180 @@ impl EnhancedOrchestrator {
             contracts,
             catalog_items,
             scorecards,
+        })
+    }
+
+    /// Phase 14b: Generate intercompany transactions, matching, and eliminations.
+    fn phase_intercompany(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<IntercompanySnapshot> {
+        // Skip if intercompany is disabled in config
+        if !self.phase_config.generate_intercompany && !self.config.intercompany.enabled {
+            debug!("Phase 14b: Skipped (intercompany generation disabled)");
+            return Ok(IntercompanySnapshot::default());
+        }
+
+        // Intercompany requires at least 2 companies
+        if self.config.companies.len() < 2 {
+            debug!(
+                "Phase 14b: Skipped (intercompany requires 2+ companies, found {})",
+                self.config.companies.len()
+            );
+            return Ok(IntercompanySnapshot::default());
+        }
+
+        info!("Phase 14b: Generating Intercompany Transactions");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+
+        // Build ownership structure from company configs
+        // First company is treated as the parent, remaining are subsidiaries
+        let parent_code = self.config.companies[0].code.clone();
+        let mut ownership_structure =
+            datasynth_core::models::intercompany::OwnershipStructure::new(parent_code.clone());
+
+        for (i, company) in self.config.companies.iter().skip(1).enumerate() {
+            let relationship = datasynth_core::models::intercompany::IntercompanyRelationship::new(
+                format!("REL{:03}", i + 1),
+                parent_code.clone(),
+                company.code.clone(),
+                rust_decimal::Decimal::from(100), // Default 100% ownership
+                start_date,
+            );
+            ownership_structure.add_relationship(relationship);
+        }
+
+        // Convert config transfer pricing method to core model enum
+        let tp_method = match self.config.intercompany.transfer_pricing_method {
+            datasynth_config::schema::TransferPricingMethod::CostPlus => {
+                datasynth_core::models::intercompany::TransferPricingMethod::CostPlus
+            }
+            datasynth_config::schema::TransferPricingMethod::ComparableUncontrolled => {
+                datasynth_core::models::intercompany::TransferPricingMethod::ComparableUncontrolled
+            }
+            datasynth_config::schema::TransferPricingMethod::ResalePrice => {
+                datasynth_core::models::intercompany::TransferPricingMethod::ResalePrice
+            }
+            datasynth_config::schema::TransferPricingMethod::TransactionalNetMargin => {
+                datasynth_core::models::intercompany::TransferPricingMethod::TransactionalNetMargin
+            }
+            datasynth_config::schema::TransferPricingMethod::ProfitSplit => {
+                datasynth_core::models::intercompany::TransferPricingMethod::ProfitSplit
+            }
+        };
+
+        // Build IC generator config from schema config
+        let ic_gen_config = datasynth_generators::ICGeneratorConfig {
+            ic_transaction_rate: self.config.intercompany.ic_transaction_rate,
+            transfer_pricing_method: tp_method,
+            markup_percent: rust_decimal::Decimal::from_f64_retain(
+                self.config.intercompany.markup_percent,
+            )
+            .unwrap_or(rust_decimal::Decimal::from(5)),
+            generate_matched_pairs: self.config.intercompany.generate_matched_pairs,
+            ..Default::default()
+        };
+
+        // Create IC generator
+        let mut ic_generator = datasynth_generators::ICGenerator::new(
+            ic_gen_config,
+            ownership_structure.clone(),
+            seed + 50,
+        );
+
+        // Generate IC transactions for the period
+        // Use ~3 transactions per day as a reasonable default
+        let transactions_per_day = 3;
+        let matched_pairs = ic_generator.generate_transactions_for_period(
+            start_date,
+            end_date,
+            transactions_per_day,
+        );
+
+        // Generate journal entries from matched pairs
+        let mut seller_entries = Vec::new();
+        let mut buyer_entries = Vec::new();
+        let fiscal_year = start_date.year();
+
+        for pair in &matched_pairs {
+            let fiscal_period = pair.posting_date.month();
+            let (seller_je, buyer_je) =
+                ic_generator.generate_journal_entries(pair, fiscal_year, fiscal_period);
+            seller_entries.push(seller_je);
+            buyer_entries.push(buyer_je);
+        }
+
+        // Run matching engine
+        let matching_config = datasynth_generators::ICMatchingConfig::default();
+        let mut matching_engine = datasynth_generators::ICMatchingEngine::new(matching_config);
+        matching_engine.load_matched_pairs(&matched_pairs);
+        let matching_result = matching_engine.run_matching(end_date);
+
+        // Generate elimination entries if configured
+        let mut elimination_entries = Vec::new();
+        if self.config.intercompany.generate_eliminations {
+            let elim_config = datasynth_generators::EliminationConfig {
+                consolidation_entity: "GROUP".to_string(),
+                base_currency: self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.currency.clone())
+                    .unwrap_or_else(|| "USD".to_string()),
+                ..Default::default()
+            };
+
+            let mut elim_generator =
+                datasynth_generators::EliminationGenerator::new(elim_config, ownership_structure);
+
+            let fiscal_period = format!("{}{:02}", fiscal_year, end_date.month());
+            let all_balances: Vec<datasynth_core::models::intercompany::ICAggregatedBalance> =
+                matching_result
+                    .matched_balances
+                    .iter()
+                    .chain(matching_result.unmatched_balances.iter())
+                    .cloned()
+                    .collect();
+
+            let journal = elim_generator.generate_eliminations(
+                &fiscal_period,
+                end_date,
+                &all_balances,
+                &matched_pairs,
+                &std::collections::HashMap::new(), // investment amounts (simplified)
+                &std::collections::HashMap::new(), // equity amounts (simplified)
+            );
+
+            elimination_entries = journal.entries.clone();
+        }
+
+        let matched_pair_count = matched_pairs.len();
+        let elimination_entry_count = elimination_entries.len();
+        let match_rate = matching_result.match_rate;
+
+        stats.ic_matched_pair_count = matched_pair_count;
+        stats.ic_elimination_count = elimination_entry_count;
+
+        info!(
+            "Intercompany data generated: {} matched pairs, {} elimination entries, {:.1}% match rate",
+            matched_pair_count,
+            elimination_entry_count,
+            match_rate * 100.0
+        );
+        self.check_resources_with_log("post-intercompany")?;
+
+        Ok(IntercompanySnapshot {
+            matched_pairs,
+            seller_journal_entries: seller_entries,
+            buyer_journal_entries: buyer_entries,
+            elimination_entries,
+            matched_pair_count,
+            elimination_entry_count,
+            match_rate,
         })
     }
 
