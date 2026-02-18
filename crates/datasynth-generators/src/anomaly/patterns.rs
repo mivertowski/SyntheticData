@@ -4,6 +4,7 @@
 //! including clustering behavior and temporal patterns.
 
 use chrono::{Datelike, NaiveDate, Weekday};
+use datasynth_core::utils::weighted_select;
 use rand::Rng;
 use std::collections::HashMap;
 
@@ -586,15 +587,7 @@ impl EntityTargetingManager {
                 if weighted.is_empty() {
                     candidates[rng.gen_range(0..candidates.len())].clone()
                 } else {
-                    let total: f64 = weighted.iter().map(|(_, w)| w).sum();
-                    let mut r = rng.gen::<f64>() * total;
-                    for (entity, weight) in &weighted {
-                        r -= weight;
-                        if r <= 0.0 {
-                            return Some(entity.clone());
-                        }
-                    }
-                    weighted[0].0.clone()
+                    weighted_select(rng, &weighted).clone()
                 }
             }
             EntityTargetingPattern::RepeatOffender { repeat_probability } => {

@@ -57,6 +57,12 @@ impl ObjectRelationship {
         }
     }
 
+    /// Set a specific relationship ID (for deterministic generation).
+    pub fn with_id(mut self, id: Uuid) -> Self {
+        self.relationship_id = id;
+        self
+    }
+
     /// Set the established timestamp.
     pub fn with_timestamp(mut self, timestamp: DateTime<Utc>) -> Self {
         self.established_at = timestamp;

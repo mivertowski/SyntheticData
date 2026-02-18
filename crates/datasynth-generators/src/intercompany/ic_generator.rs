@@ -4,6 +4,7 @@
 //! between related entities.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::weighted_select;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -130,17 +131,18 @@ impl ICGenerator {
 
     /// Select a random IC transaction type based on weights.
     fn select_transaction_type(&mut self) -> ICTransactionType {
-        let total_weight: f64 = self.config.transaction_type_weights.values().sum();
-        let mut roll: f64 = self.rng.gen::<f64>() * total_weight;
+        let options: Vec<(ICTransactionType, f64)> = self
+            .config
+            .transaction_type_weights
+            .iter()
+            .map(|(&tx_type, &weight)| (tx_type, weight))
+            .collect();
 
-        for (tx_type, weight) in &self.config.transaction_type_weights {
-            roll -= weight;
-            if roll <= 0.0 {
-                return *tx_type;
-            }
+        if options.is_empty() {
+            return ICTransactionType::GoodsSale;
         }
 
-        ICTransactionType::GoodsSale
+        *weighted_select(&mut self.rng, &options)
     }
 
     /// Select a random pair of related companies.

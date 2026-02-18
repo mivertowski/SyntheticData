@@ -7,9 +7,9 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
 use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
+    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
 };
 use datasynth_core::models::BusinessProcess;
 
@@ -34,10 +34,10 @@ pub struct BankDocuments {
 
 impl BankDocuments {
     /// Create new Banking documents.
-    pub fn new(customer_id: &str, company_code: &str) -> Self {
+    pub fn new(customer_id: &str, company_code: &str, factory: &OcpmUuidFactory) -> Self {
         Self {
             customer_id: customer_id.into(),
-            customer_uuid: Uuid::new_v4(),
+            customer_uuid: factory.next_document_id(),
             account_id: None,
             account_uuid: None,
             transaction_ids: Vec::new(),
@@ -47,9 +47,9 @@ impl BankDocuments {
     }
 
     /// Set account info.
-    pub fn with_account(mut self, account_id: &str) -> Self {
+    pub fn with_account(mut self, account_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.account_id = Some(account_id.into());
-        self.account_uuid = Some(Uuid::new_v4());
+        self.account_uuid = Some(factory.next_document_id());
         self
     }
 
@@ -163,7 +163,7 @@ impl OcpmEventGenerator {
             );
             objects.push(account_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "owned_by",
                 account_object.object_id,
                 &account_type.type_id,
@@ -200,7 +200,7 @@ impl OcpmEventGenerator {
                     self.create_object(&txn_type, txn_id, &documents.company_code, current_time);
                 objects.push(txn_object.clone());
 
-                relationships.push(ObjectRelationship::new(
+                relationships.push(self.create_relationship(
                     "on_account",
                     txn_object.object_id,
                     &txn_type.type_id,
@@ -352,8 +352,9 @@ mod tests {
     #[test]
     fn test_bank_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = BankDocuments::new("BC-001", "1000")
-            .with_account("BA-001")
+        let factory = OcpmUuidFactory::new(42);
+        let documents = BankDocuments::new("BC-001", "1000", &factory)
+            .with_account("BA-001", &factory)
             .with_transactions(
                 vec!["TXN-001", "TXN-002"],
                 vec![Decimal::new(5000, 0), Decimal::new(3000, 0)],
@@ -378,8 +379,9 @@ mod tests {
             },
         );
 
-        let documents = BankDocuments::new("BC-002", "1000")
-            .with_account("BA-002")
+        let factory = OcpmUuidFactory::new(123);
+        let documents = BankDocuments::new("BC-002", "1000", &factory)
+            .with_account("BA-002", &factory)
             .with_transactions(vec!["TXN-003"], vec![Decimal::new(1000, 0)]);
 
         let result = generator.generate_bank_case(&documents, Utc::now(), &[]);

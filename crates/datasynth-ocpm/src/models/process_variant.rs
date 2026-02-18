@@ -216,6 +216,12 @@ impl CaseTrace {
         }
     }
 
+    /// Set a specific case ID (for deterministic generation).
+    pub fn with_id(mut self, id: Uuid) -> Self {
+        self.case_id = id;
+        self
+    }
+
     /// Add an event to the trace.
     pub fn add_event(&mut self, event_id: Uuid, activity_id: &str, timestamp: DateTime<Utc>) {
         self.event_ids.push(event_id);

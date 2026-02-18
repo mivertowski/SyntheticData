@@ -7,9 +7,9 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
 use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
+    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
 };
 use datasynth_core::models::BusinessProcess;
 
@@ -36,10 +36,10 @@ pub struct AuditDocuments {
 
 impl AuditDocuments {
     /// Create new Audit documents.
-    pub fn new(engagement_id: &str, company_code: &str) -> Self {
+    pub fn new(engagement_id: &str, company_code: &str, factory: &OcpmUuidFactory) -> Self {
         Self {
             engagement_id: engagement_id.into(),
-            engagement_uuid: Uuid::new_v4(),
+            engagement_uuid: factory.next_document_id(),
             workpaper_ids: Vec::new(),
             finding_ids: Vec::new(),
             evidence_ids: Vec::new(),
@@ -175,7 +175,7 @@ impl OcpmEventGenerator {
                 self.create_object(&risk_type, risk_id, &documents.company_code, current_time);
             objects.push(risk_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 risk_object.object_id,
                 &risk_type.type_id,
@@ -219,7 +219,7 @@ impl OcpmEventGenerator {
             objects.push(wp_object.clone());
             workpaper_objects.push(wp_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 wp_object.object_id,
                 &workpaper_type.type_id,
@@ -260,7 +260,7 @@ impl OcpmEventGenerator {
                 );
                 objects.push(ev_object.clone());
 
-                relationships.push(ObjectRelationship::new(
+                relationships.push(self.create_relationship(
                     "supports",
                     ev_object.object_id,
                     &evidence_type.type_id,
@@ -321,7 +321,7 @@ impl OcpmEventGenerator {
             );
             objects.push(finding_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 finding_object.object_id,
                 &finding_type.type_id,
@@ -453,7 +453,8 @@ mod tests {
     #[test]
     fn test_audit_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = AuditDocuments::new("AE-001", "1000")
+        let factory = OcpmUuidFactory::new(42);
+        let documents = AuditDocuments::new("AE-001", "1000", &factory)
             .with_workpapers(vec!["WP-001", "WP-002"])
             .with_evidence(vec!["EV-001", "EV-002"])
             .with_risks(vec!["RA-001"])
@@ -483,7 +484,8 @@ mod tests {
             },
         );
 
-        let documents = AuditDocuments::new("AE-002", "1000")
+        let factory = OcpmUuidFactory::new(123);
+        let documents = AuditDocuments::new("AE-002", "1000", &factory)
             .with_workpapers(vec!["WP-003"])
             .with_findings(vec!["AF-002"]);
 

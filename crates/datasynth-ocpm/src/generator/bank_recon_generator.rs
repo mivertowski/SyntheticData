@@ -8,9 +8,9 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
 use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
+    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType,
 };
 use datasynth_core::models::BusinessProcess;
 
@@ -40,10 +40,11 @@ impl BankReconDocuments {
         bank_account_id: &str,
         company_code: &str,
         total_amount: Decimal,
+        factory: &OcpmUuidFactory,
     ) -> Self {
         Self {
             reconciliation_id: reconciliation_id.into(),
-            reconciliation_uuid: Uuid::new_v4(),
+            reconciliation_uuid: factory.next_document_id(),
             bank_account_id: bank_account_id.into(),
             company_code: company_code.into(),
             statement_line_ids: Vec::new(),
@@ -127,7 +128,7 @@ impl OcpmEventGenerator {
         for line_id in &documents.statement_line_ids {
             let line_object =
                 self.create_object(&line_type, line_id, &documents.company_code, current_time);
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 line_object.object_id,
                 &line_type.type_id,
@@ -173,7 +174,7 @@ impl OcpmEventGenerator {
             for item_id in &documents.reconciling_item_ids {
                 let item_object =
                     self.create_object(&item_type, item_id, &documents.company_code, current_time);
-                relationships.push(ObjectRelationship::new(
+                relationships.push(self.create_relationship(
                     "belongs_to",
                     item_object.object_id,
                     &item_type.type_id,
@@ -324,8 +325,9 @@ mod tests {
     #[test]
     fn test_bank_recon_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
+        let factory = OcpmUuidFactory::new(42);
         let documents =
-            BankReconDocuments::new("BR-000001", "BA-001", "1000", Decimal::new(100000, 0))
+            BankReconDocuments::new("BR-000001", "BA-001", "1000", Decimal::new(100000, 0), &factory)
                 .with_statement_lines(vec!["BSL-001", "BSL-002", "BSL-003"])
                 .with_reconciling_items(vec!["RI-001"]);
 

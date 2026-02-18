@@ -2,7 +2,8 @@
 //!
 //! Generates OCPM events from document flows and business processes.
 //!
-//! Uses deterministic UUID generation for reproducible event logs.
+//! Uses the centralized `DeterministicUuidFactory` from `datasynth-core`
+//! for reproducible, collision-free UUID generation.
 
 use chrono::{DateTime, Duration, Utc};
 use rand::{Rng, SeedableRng};
@@ -14,122 +15,104 @@ use crate::models::{
     ObjectQualifier, ObjectRelationship, ObjectType, OcpmEvent,
 };
 use datasynth_core::models::BusinessProcess;
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
-/// UUID generator discriminator for OCPM entities.
+/// Sub-discriminator values for OCPM UUID streams.
 ///
-/// We use a custom hash-based approach similar to DeterministicUuidFactory
-/// but with OCPM-specific discriminators.
-#[derive(Debug, Clone, Copy)]
-pub enum OcpmUuidType {
-    /// OCPM Case ID
-    Case,
-    /// OCPM Event ID
-    Event,
-    /// OCPM Object Instance ID
-    Object,
-}
+/// These separate the OCPM UUID namespaces (Case, Event, Object, Document, Relationship)
+/// while reusing the `DocumentFlow` generator type from the centralized factory.
+const OCPM_SUB_DISC_CASE: u8 = 0xC0;
+const OCPM_SUB_DISC_EVENT: u8 = 0xE0;
+const OCPM_SUB_DISC_OBJECT: u8 = 0xB0;
+/// Sub-discriminator for document-level UUIDs (used in document struct builders).
+const OCPM_SUB_DISC_DOCUMENT: u8 = 0xD0;
+/// Sub-discriminator for relationship UUIDs.
+const OCPM_SUB_DISC_RELATIONSHIP: u8 = 0xA0;
 
-impl OcpmUuidType {
-    fn discriminator(&self) -> u8 {
-        match self {
-            OcpmUuidType::Case => 0xC0,
-            OcpmUuidType::Event => 0xE0,
-            OcpmUuidType::Object => 0xB0,
-        }
-    }
-}
-
-/// Deterministic UUID factory for OCPM.
+/// Deterministic UUID factory for OCPM, wrapping the centralized
+/// `DeterministicUuidFactory` from `datasynth-core`.
+///
+/// Maintains separate UUID streams (Case, Event, Object, Document, Relationship)
+/// via sub-discriminators to prevent collisions between different entity types.
 #[derive(Debug, Clone)]
 pub struct OcpmUuidFactory {
-    seed: u64,
-    case_counter: u64,
-    event_counter: u64,
-    object_counter: u64,
+    case_factory: DeterministicUuidFactory,
+    event_factory: DeterministicUuidFactory,
+    object_factory: DeterministicUuidFactory,
+    document_factory: DeterministicUuidFactory,
+    relationship_factory: DeterministicUuidFactory,
 }
 
 impl OcpmUuidFactory {
     /// Create a new OCPM UUID factory with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            seed,
-            case_counter: 0,
-            event_counter: 0,
-            object_counter: 0,
+            case_factory: DeterministicUuidFactory::with_sub_discriminator(
+                seed,
+                GeneratorType::DocumentFlow,
+                OCPM_SUB_DISC_CASE,
+            ),
+            event_factory: DeterministicUuidFactory::with_sub_discriminator(
+                seed,
+                GeneratorType::DocumentFlow,
+                OCPM_SUB_DISC_EVENT,
+            ),
+            object_factory: DeterministicUuidFactory::with_sub_discriminator(
+                seed,
+                GeneratorType::DocumentFlow,
+                OCPM_SUB_DISC_OBJECT,
+            ),
+            document_factory: DeterministicUuidFactory::with_sub_discriminator(
+                seed,
+                GeneratorType::DocumentFlow,
+                OCPM_SUB_DISC_DOCUMENT,
+            ),
+            relationship_factory: DeterministicUuidFactory::with_sub_discriminator(
+                seed,
+                GeneratorType::DocumentFlow,
+                OCPM_SUB_DISC_RELATIONSHIP,
+            ),
         }
     }
 
     /// Generate the next case UUID.
-    pub fn next_case_id(&mut self) -> Uuid {
-        self.case_counter += 1;
-        self.generate_uuid(OcpmUuidType::Case, self.case_counter)
+    pub fn next_case_id(&self) -> Uuid {
+        self.case_factory.next()
     }
 
     /// Generate the next event UUID.
-    pub fn next_event_id(&mut self) -> Uuid {
-        self.event_counter += 1;
-        self.generate_uuid(OcpmUuidType::Event, self.event_counter)
+    pub fn next_event_id(&self) -> Uuid {
+        self.event_factory.next()
     }
 
     /// Generate the next object UUID.
-    pub fn next_object_id(&mut self) -> Uuid {
-        self.object_counter += 1;
-        self.generate_uuid(OcpmUuidType::Object, self.object_counter)
+    pub fn next_object_id(&self) -> Uuid {
+        self.object_factory.next()
     }
 
-    /// Generate a UUID from seed, type discriminator, and counter.
-    fn generate_uuid(&self, uuid_type: OcpmUuidType, counter: u64) -> Uuid {
-        // FNV-1a hash
-        let mut hash: u64 = 14695981039346656037;
+    /// Generate the next document UUID (for document struct builders).
+    pub fn next_document_id(&self) -> Uuid {
+        self.document_factory.next()
+    }
 
-        // Mix in seed
-        for byte in self.seed.to_le_bytes() {
-            hash ^= byte as u64;
-            hash = hash.wrapping_mul(1099511628211);
-        }
-
-        // Mix in type discriminator
-        hash ^= uuid_type.discriminator() as u64;
-        hash = hash.wrapping_mul(1099511628211);
-
-        // Mix in counter
-        for byte in counter.to_le_bytes() {
-            hash ^= byte as u64;
-            hash = hash.wrapping_mul(1099511628211);
-        }
-
-        // Create second hash for remaining bytes
-        let mut hash2: u64 = hash;
-        hash2 ^= self.seed.rotate_left(32);
-        hash2 = hash2.wrapping_mul(1099511628211);
-        hash2 ^= counter.rotate_left(32);
-        hash2 = hash2.wrapping_mul(1099511628211);
-
-        let mut bytes = [0u8; 16];
-        bytes[0..8].copy_from_slice(&hash.to_le_bytes());
-        bytes[8..16].copy_from_slice(&hash2.to_le_bytes());
-
-        // Set UUID version 4
-        bytes[6] = (bytes[6] & 0x0f) | 0x40;
-        // Set variant to RFC 4122
-        bytes[8] = (bytes[8] & 0x3f) | 0x80;
-
-        Uuid::from_bytes(bytes)
+    /// Generate the next relationship UUID.
+    pub fn next_relationship_id(&self) -> Uuid {
+        self.relationship_factory.next()
     }
 
     /// Get the current case counter.
     pub fn case_count(&self) -> u64 {
-        self.case_counter
+        self.case_factory.current_counter()
     }
 
     /// Get the current event counter.
     pub fn event_count(&self) -> u64 {
-        self.event_counter
+        self.event_factory.current_counter()
     }
 
     /// Get the current object counter.
     pub fn object_count(&self) -> u64 {
-        self.object_counter
+        self.object_factory.current_counter()
     }
 }
 
@@ -246,18 +229,28 @@ impl OcpmEventGenerator {
     }
 
     /// Generate a new deterministic case ID.
-    pub fn new_case_id(&mut self) -> Uuid {
+    pub fn new_case_id(&self) -> Uuid {
         self.uuid_factory.next_case_id()
     }
 
     /// Generate a new deterministic event ID.
-    pub fn new_event_id(&mut self) -> Uuid {
+    pub fn new_event_id(&self) -> Uuid {
         self.uuid_factory.next_event_id()
     }
 
     /// Generate a new deterministic object ID.
-    pub fn new_object_id(&mut self) -> Uuid {
+    pub fn new_object_id(&self) -> Uuid {
         self.uuid_factory.next_object_id()
+    }
+
+    /// Generate a new deterministic document UUID (for document struct builders).
+    pub fn next_document_id(&self) -> Uuid {
+        self.uuid_factory.next_document_id()
+    }
+
+    /// Generate a new deterministic relationship UUID.
+    pub fn next_relationship_id(&self) -> Uuid {
+        self.uuid_factory.next_relationship_id()
     }
 
     /// Get access to the UUID factory for advanced use cases.
@@ -299,7 +292,7 @@ impl OcpmEventGenerator {
         }
     }
 
-    /// Create an event from an activity type.
+    /// Create an event from an activity type, using the deterministic UUID factory.
     pub fn create_event(
         &mut self,
         activity: &ActivityType,
@@ -308,6 +301,7 @@ impl OcpmEventGenerator {
         company_code: &str,
         case_id: Uuid,
     ) -> OcpmEvent {
+        let event_id = self.uuid_factory.next_event_id();
         OcpmEvent::new(
             &activity.activity_id,
             &activity.name,
@@ -315,6 +309,7 @@ impl OcpmEventGenerator {
             resource_id,
             company_code,
         )
+        .with_id(event_id)
         .with_case(case_id)
         .with_lifecycle(if activity.is_automated {
             EventLifecycle::Atomic
@@ -323,7 +318,7 @@ impl OcpmEventGenerator {
         })
     }
 
-    /// Create an object instance for a document.
+    /// Create an object instance for a document, using the deterministic UUID factory.
     pub fn create_object(
         &self,
         object_type: &ObjectType,
@@ -331,9 +326,31 @@ impl OcpmEventGenerator {
         company_code: &str,
         created_at: DateTime<Utc>,
     ) -> ObjectInstance {
+        let object_id = self.uuid_factory.next_object_id();
         ObjectInstance::new(&object_type.type_id, external_id, company_code)
+            .with_id(object_id)
             .with_state("active")
             .with_created_at(created_at)
+    }
+
+    /// Create an object relationship with a deterministic UUID.
+    pub fn create_relationship(
+        &self,
+        relationship_type: &str,
+        source_object_id: Uuid,
+        source_type_id: &str,
+        target_object_id: Uuid,
+        target_type_id: &str,
+    ) -> ObjectRelationship {
+        let rel_id = self.uuid_factory.next_relationship_id();
+        ObjectRelationship::new(
+            relationship_type,
+            source_object_id,
+            source_type_id,
+            target_object_id,
+            target_type_id,
+        )
+        .with_id(rel_id)
     }
 
     /// Create object reference for an event.
@@ -351,7 +368,7 @@ impl OcpmEventGenerator {
         event.attributes.insert(key.into(), value);
     }
 
-    /// Generate a complete case trace from events.
+    /// Generate a complete case trace from events, using the deterministic UUID factory.
     pub fn create_case_trace(
         &self,
         _case_id: Uuid,
@@ -366,12 +383,14 @@ impl OcpmEventGenerator {
         let start_time = events.first().map(|e| e.timestamp).unwrap_or_else(Utc::now);
         let end_time = events.last().map(|e| e.timestamp);
 
+        let case_trace_id = self.uuid_factory.next_case_id();
         let mut trace = CaseTrace::new(
             business_process,
             primary_object_id,
             primary_object_type,
             company_code,
-        );
+        )
+        .with_id(case_trace_id);
         trace.activity_sequence = activity_sequence;
         trace.event_ids = events.iter().map(|e| e.event_id).collect();
         trace.start_time = start_time;
@@ -535,7 +554,7 @@ mod tests {
 
     #[test]
     fn test_case_id_generation() {
-        let mut generator = OcpmEventGenerator::new(42);
+        let generator = OcpmEventGenerator::new(42);
         let id1 = generator.new_case_id();
         let id2 = generator.new_case_id();
         assert_ne!(id1, id2);
@@ -544,8 +563,8 @@ mod tests {
     #[test]
     fn test_deterministic_uuid_generation() {
         // Two generators with the same seed should produce identical UUIDs
-        let mut gen1 = OcpmEventGenerator::new(12345);
-        let mut gen2 = OcpmEventGenerator::new(12345);
+        let gen1 = OcpmEventGenerator::new(12345);
+        let gen2 = OcpmEventGenerator::new(12345);
 
         // Case IDs should be identical
         assert_eq!(gen1.new_case_id(), gen2.new_case_id());
@@ -560,8 +579,8 @@ mod tests {
 
     #[test]
     fn test_different_seeds_produce_different_uuids() {
-        let mut gen1 = OcpmEventGenerator::new(12345);
-        let mut gen2 = OcpmEventGenerator::new(67890);
+        let gen1 = OcpmEventGenerator::new(12345);
+        let gen2 = OcpmEventGenerator::new(67890);
 
         assert_ne!(gen1.new_case_id(), gen2.new_case_id());
         assert_ne!(gen1.new_event_id(), gen2.new_event_id());
@@ -570,7 +589,7 @@ mod tests {
 
     #[test]
     fn test_uuid_factory_counters() {
-        let mut generator = OcpmEventGenerator::new(42);
+        let generator = OcpmEventGenerator::new(42);
 
         assert_eq!(generator.uuid_factory().case_count(), 0);
         generator.new_case_id();

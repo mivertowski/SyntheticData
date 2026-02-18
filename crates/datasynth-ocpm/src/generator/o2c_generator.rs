@@ -1,17 +1,15 @@
 //! O2C (Order-to-Cash) process event generator.
 //!
 //! Generates OCPM events for the complete O2C flow:
-//! Create SO → Check Credit → Release SO → Create Delivery → Pick → Pack →
-//! Ship → Create Invoice → Post Invoice → Receive Payment
+//! Create SO -> Check Credit -> Release SO -> Create Delivery -> Pick -> Pack ->
+//! Ship -> Create Invoice -> Post Invoice -> Receive Payment
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
-};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// O2C document references for event generation.
@@ -46,17 +44,18 @@ pub struct O2cDocuments {
 }
 
 impl O2cDocuments {
-    /// Create new O2C documents.
+    /// Create new O2C documents with deterministic UUIDs from the given factory.
     pub fn new(
         so_number: &str,
         customer_id: &str,
         company_code: &str,
         amount: Decimal,
         currency: &str,
+        factory: &OcpmUuidFactory,
     ) -> Self {
         Self {
             so_number: so_number.into(),
-            so_id: Uuid::new_v4(),
+            so_id: factory.next_document_id(),
             delivery_number: None,
             delivery_id: None,
             invoice_number: None,
@@ -77,24 +76,24 @@ impl O2cDocuments {
         self
     }
 
-    /// Set delivery info.
-    pub fn with_delivery(mut self, delivery_number: &str) -> Self {
+    /// Set delivery info with deterministic UUID from the given factory.
+    pub fn with_delivery(mut self, delivery_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.delivery_number = Some(delivery_number.into());
-        self.delivery_id = Some(Uuid::new_v4());
+        self.delivery_id = Some(factory.next_document_id());
         self
     }
 
-    /// Set invoice info.
-    pub fn with_invoice(mut self, invoice_number: &str) -> Self {
+    /// Set invoice info with deterministic UUID from the given factory.
+    pub fn with_invoice(mut self, invoice_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.invoice_number = Some(invoice_number.into());
-        self.invoice_id = Some(Uuid::new_v4());
+        self.invoice_id = Some(factory.next_document_id());
         self
     }
 
-    /// Set receipt info.
-    pub fn with_receipt(mut self, receipt_number: &str) -> Self {
+    /// Set receipt info with deterministic UUID from the given factory.
+    pub fn with_receipt(mut self, receipt_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.receipt_number = Some(receipt_number.into());
-        self.receipt_id = Some(Uuid::new_v4());
+        self.receipt_id = Some(factory.next_document_id());
         self
     }
 }
@@ -238,7 +237,7 @@ impl OcpmEventGenerator {
             objects.push(delivery_object.clone());
 
             // Add relationship: Delivery references SO
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "references",
                 delivery_object.object_id,
                 &delivery_type.type_id,
@@ -337,7 +336,7 @@ impl OcpmEventGenerator {
             objects.push(invoice_object.clone());
 
             // Add relationship: Invoice references SO
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "references",
                 invoice_object.object_id,
                 &invoice_type.type_id,
@@ -449,16 +448,18 @@ mod tests {
     #[test]
     fn test_o2c_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
+        let factory = OcpmUuidFactory::new(42);
         let documents = O2cDocuments::new(
             "SO-000001",
             "C000001",
             "1000",
             Decimal::new(15000, 0),
             "USD",
+            &factory,
         )
-        .with_delivery("DEL-000001")
-        .with_invoice("INV-000001")
-        .with_receipt("REC-000001");
+        .with_delivery("DEL-000001", &factory)
+        .with_invoice("INV-000001", &factory)
+        .with_receipt("REC-000001", &factory);
 
         let result = generator.generate_o2c_case(
             &documents,

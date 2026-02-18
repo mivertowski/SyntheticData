@@ -116,7 +116,7 @@ use datasynth_graph::{
 use datasynth_ocpm::{
     AuditDocuments, BankDocuments, BankReconDocuments, EventLogMetadata, H2rDocuments,
     MfgDocuments, O2cDocuments, OcpmEventGenerator, OcpmEventLog, OcpmGeneratorConfig,
-    P2pDocuments, S2cDocuments,
+    OcpmUuidFactory, P2pDocuments, S2cDocuments,
 };
 
 use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
@@ -2329,7 +2329,13 @@ impl EnhancedOrchestrator {
         let mut financial_statements = Vec::new();
         let mut bank_reconciliations = Vec::new();
 
-        // Generate financial statements from document flow data
+        // Generate financial statements from JE-derived trial balances.
+        //
+        // When journal entries are available, we use cumulative trial balances for
+        // balance sheet accounts and current-period trial balances for income
+        // statement accounts. We also track prior-period trial balances so the
+        // generator can produce comparative amounts, and we build a proper
+        // cash flow statement from working capital changes rather than random data.
         if fs_enabled {
             let company_code = self
                 .config
@@ -2343,7 +2349,15 @@ impl EnhancedOrchestrator {
                 .first()
                 .map(|c| c.currency.as_str())
                 .unwrap_or("USD");
+            let has_journal_entries = !journal_entries.is_empty();
+
+            // Use FinancialStatementGenerator for balance sheet and income statement,
+            // but build cash flow ourselves from TB data when JEs are available.
             let mut fs_gen = FinancialStatementGenerator::new(seed + 20);
+
+            // Track prior-period cumulative TB for comparative amounts and cash flow
+            let mut prior_cumulative_tb: Option<Vec<datasynth_generators::TrialBalanceEntry>> =
+                None;
 
             // Generate one set of statements per period
             for period in 0..self.config.global.period_months {
@@ -2353,32 +2367,84 @@ impl EnhancedOrchestrator {
                 let fiscal_year = period_end.year() as u16;
                 let fiscal_period = period_end.month() as u8;
 
-                // Build trial balance entries from actual journal entries for coherence
-                let tb_entries = Self::build_trial_balance_from_entries(
-                    journal_entries,
-                    coa,
-                    company_code,
-                    fiscal_year,
-                    fiscal_period,
-                );
+                if has_journal_entries {
+                    // Build cumulative trial balance from actual JEs for coherent
+                    // balance sheet (cumulative) and income statement (current period)
+                    let tb_entries = Self::build_cumulative_trial_balance(
+                        journal_entries,
+                        coa,
+                        company_code,
+                        start_date,
+                        period_end,
+                        fiscal_year,
+                        fiscal_period,
+                    );
 
-                let stmts = fs_gen.generate(
-                    company_code,
-                    currency,
-                    &tb_entries,
-                    period_start,
-                    period_end,
-                    fiscal_year,
-                    fiscal_period,
-                    None,
-                    "SYS-AUTOCLOSE",
-                );
-                financial_statements.extend(stmts);
+                    // Generate balance sheet and income statement via the generator,
+                    // passing prior-period TB for comparative amounts
+                    let prior_ref = prior_cumulative_tb.as_deref();
+                    let stmts = fs_gen.generate(
+                        company_code,
+                        currency,
+                        &tb_entries,
+                        period_start,
+                        period_end,
+                        fiscal_year,
+                        fiscal_period,
+                        prior_ref,
+                        "SYS-AUTOCLOSE",
+                    );
+
+                    // Replace the generator's random cash flow with our TB-derived one
+                    for stmt in stmts {
+                        if stmt.statement_type == StatementType::CashFlowStatement {
+                            // Build a coherent cash flow from trial balance changes
+                            let net_income = Self::calculate_net_income_from_tb(&tb_entries);
+                            let cf_items = Self::build_cash_flow_from_trial_balances(
+                                &tb_entries,
+                                prior_ref,
+                                net_income,
+                            );
+                            financial_statements.push(FinancialStatement {
+                                cash_flow_items: cf_items,
+                                ..stmt
+                            });
+                        } else {
+                            financial_statements.push(stmt);
+                        }
+                    }
+
+                    // Store current TB as prior for next period
+                    prior_cumulative_tb = Some(tb_entries);
+                } else {
+                    // Fallback: no JEs available, use single-period TB from entries
+                    // (which will be empty, producing zero-valued statements)
+                    let tb_entries = Self::build_trial_balance_from_entries(
+                        journal_entries,
+                        coa,
+                        company_code,
+                        fiscal_year,
+                        fiscal_period,
+                    );
+
+                    let stmts = fs_gen.generate(
+                        company_code,
+                        currency,
+                        &tb_entries,
+                        period_start,
+                        period_end,
+                        fiscal_year,
+                        fiscal_period,
+                        None,
+                        "SYS-AUTOCLOSE",
+                    );
+                    financial_statements.extend(stmts);
+                }
             }
             stats.financial_statement_count = financial_statements.len();
             info!(
-                "Financial statements generated: {} statements",
-                stats.financial_statement_count
+                "Financial statements generated: {} statements (JE-derived: {})",
+                stats.financial_statement_count, has_journal_entries
             );
         }
 
@@ -2531,12 +2597,362 @@ impl EnhancedOrchestrator {
         entries
     }
 
+    /// Build a cumulative trial balance by aggregating all JEs from the start up to
+    /// (and including) the given period end date.
+    ///
+    /// Balance sheet accounts (assets, liabilities, equity) use cumulative balances
+    /// while income statement accounts (revenue, expenses) show only the current period.
+    /// The two are merged into a single Vec for the FinancialStatementGenerator.
+    fn build_cumulative_trial_balance(
+        journal_entries: &[JournalEntry],
+        coa: &ChartOfAccounts,
+        company_code: &str,
+        start_date: NaiveDate,
+        period_end: NaiveDate,
+        fiscal_year: u16,
+        fiscal_period: u8,
+    ) -> Vec<datasynth_generators::TrialBalanceEntry> {
+        use rust_decimal::Decimal;
+
+        // Accumulate debits/credits for balance sheet accounts (cumulative from start)
+        let mut bs_debits: HashMap<String, Decimal> = HashMap::new();
+        let mut bs_credits: HashMap<String, Decimal> = HashMap::new();
+
+        // Accumulate debits/credits for income statement accounts (current period only)
+        let mut is_debits: HashMap<String, Decimal> = HashMap::new();
+        let mut is_credits: HashMap<String, Decimal> = HashMap::new();
+
+        for je in journal_entries {
+            if je.header.company_code != company_code {
+                continue;
+            }
+
+            for line in &je.lines {
+                let acct = &line.gl_account;
+                let category = Self::category_from_account_code(acct);
+                let is_bs_account = matches!(
+                    category.as_str(),
+                    "Cash"
+                        | "Receivables"
+                        | "Inventory"
+                        | "FixedAssets"
+                        | "Payables"
+                        | "AccruedLiabilities"
+                        | "LongTermDebt"
+                        | "Equity"
+                );
+
+                if is_bs_account {
+                    // Balance sheet: accumulate from start through period_end
+                    if je.header.document_date <= period_end
+                        && je.header.document_date >= start_date
+                    {
+                        *bs_debits.entry(acct.clone()).or_insert(Decimal::ZERO) +=
+                            line.debit_amount;
+                        *bs_credits.entry(acct.clone()).or_insert(Decimal::ZERO) +=
+                            line.credit_amount;
+                    }
+                } else {
+                    // Income statement: current period only
+                    if je.header.fiscal_year == fiscal_year
+                        && je.header.fiscal_period == fiscal_period
+                    {
+                        *is_debits.entry(acct.clone()).or_insert(Decimal::ZERO) +=
+                            line.debit_amount;
+                        *is_credits.entry(acct.clone()).or_insert(Decimal::ZERO) +=
+                            line.credit_amount;
+                    }
+                }
+            }
+        }
+
+        // Merge all accounts
+        let mut all_accounts: std::collections::HashSet<String> = std::collections::HashSet::new();
+        all_accounts.extend(bs_debits.keys().cloned());
+        all_accounts.extend(bs_credits.keys().cloned());
+        all_accounts.extend(is_debits.keys().cloned());
+        all_accounts.extend(is_credits.keys().cloned());
+
+        let mut sorted_accounts: Vec<String> = all_accounts.into_iter().collect();
+        sorted_accounts.sort();
+
+        let mut entries = Vec::new();
+
+        for acct_number in &sorted_accounts {
+            let category = Self::category_from_account_code(acct_number);
+            let is_bs_account = matches!(
+                category.as_str(),
+                "Cash"
+                    | "Receivables"
+                    | "Inventory"
+                    | "FixedAssets"
+                    | "Payables"
+                    | "AccruedLiabilities"
+                    | "LongTermDebt"
+                    | "Equity"
+            );
+
+            let (debit, credit) = if is_bs_account {
+                (
+                    bs_debits.get(acct_number).copied().unwrap_or(Decimal::ZERO),
+                    bs_credits
+                        .get(acct_number)
+                        .copied()
+                        .unwrap_or(Decimal::ZERO),
+                )
+            } else {
+                (
+                    is_debits.get(acct_number).copied().unwrap_or(Decimal::ZERO),
+                    is_credits
+                        .get(acct_number)
+                        .copied()
+                        .unwrap_or(Decimal::ZERO),
+                )
+            };
+
+            if debit.is_zero() && credit.is_zero() {
+                continue;
+            }
+
+            let account_name = coa
+                .get_account(acct_number)
+                .map(|gl| gl.short_description.clone())
+                .unwrap_or_else(|| format!("Account {}", acct_number));
+
+            entries.push(datasynth_generators::TrialBalanceEntry {
+                account_code: acct_number.clone(),
+                account_name,
+                category,
+                debit_balance: debit,
+                credit_balance: credit,
+            });
+        }
+
+        entries
+    }
+
+    /// Build a JE-derived cash flow statement using the indirect method.
+    ///
+    /// Compares current and prior cumulative trial balances to derive working capital
+    /// changes, producing a coherent cash flow statement tied to actual journal entries.
+    fn build_cash_flow_from_trial_balances(
+        current_tb: &[datasynth_generators::TrialBalanceEntry],
+        prior_tb: Option<&[datasynth_generators::TrialBalanceEntry]>,
+        net_income: rust_decimal::Decimal,
+    ) -> Vec<CashFlowItem> {
+        use rust_decimal::Decimal;
+
+        // Helper: aggregate a TB by category and return net (debit - credit)
+        let aggregate =
+            |tb: &[datasynth_generators::TrialBalanceEntry]| -> HashMap<String, Decimal> {
+                let mut map: HashMap<String, Decimal> = HashMap::new();
+                for entry in tb {
+                    let net = entry.debit_balance - entry.credit_balance;
+                    *map.entry(entry.category.clone()).or_default() += net;
+                }
+                map
+            };
+
+        let current = aggregate(current_tb);
+        let prior = prior_tb.map(aggregate);
+
+        // Get balance for a category, defaulting to zero
+        let get = |map: &HashMap<String, Decimal>, key: &str| -> Decimal {
+            *map.get(key).unwrap_or(&Decimal::ZERO)
+        };
+
+        // Compute change: current - prior (or current if no prior)
+        let change = |key: &str| -> Decimal {
+            let curr = get(&current, key);
+            match &prior {
+                Some(p) => curr - get(p, key),
+                None => curr,
+            }
+        };
+
+        // Operating activities (indirect method)
+        // Depreciation add-back: approximate from FixedAssets decrease
+        let fixed_asset_change = change("FixedAssets");
+        let depreciation_addback = if fixed_asset_change < Decimal::ZERO {
+            -fixed_asset_change
+        } else {
+            Decimal::ZERO
+        };
+
+        // Working capital changes (increase in assets = cash outflow, increase in liabilities = cash inflow)
+        let ar_change = change("Receivables");
+        let inventory_change = change("Inventory");
+        // AP and AccruedLiabilities are credit-normal: negative net means larger balance = cash inflow
+        let ap_change = change("Payables");
+        let accrued_change = change("AccruedLiabilities");
+
+        let operating_cf = net_income + depreciation_addback - ar_change - inventory_change
+            + (-ap_change)
+            + (-accrued_change);
+
+        // Investing activities
+        let capex = if fixed_asset_change > Decimal::ZERO {
+            -fixed_asset_change
+        } else {
+            Decimal::ZERO
+        };
+        let investing_cf = capex;
+
+        // Financing activities
+        let debt_change = -change("LongTermDebt");
+        let equity_change = -change("Equity");
+        let financing_cf = debt_change + equity_change;
+
+        let net_change = operating_cf + investing_cf + financing_cf;
+
+        vec![
+            CashFlowItem {
+                item_code: "CF-NI".to_string(),
+                label: "Net Income".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: net_income,
+                amount_prior: None,
+                sort_order: 1,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-DEP".to_string(),
+                label: "Depreciation & Amortization".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: depreciation_addback,
+                amount_prior: None,
+                sort_order: 2,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-AR".to_string(),
+                label: "Change in Accounts Receivable".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: -ar_change,
+                amount_prior: None,
+                sort_order: 3,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-AP".to_string(),
+                label: "Change in Accounts Payable".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: -ap_change,
+                amount_prior: None,
+                sort_order: 4,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-INV".to_string(),
+                label: "Change in Inventory".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: -inventory_change,
+                amount_prior: None,
+                sort_order: 5,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-OP".to_string(),
+                label: "Net Cash from Operating Activities".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: operating_cf,
+                amount_prior: None,
+                sort_order: 6,
+                is_total: true,
+            },
+            CashFlowItem {
+                item_code: "CF-CAPEX".to_string(),
+                label: "Capital Expenditures".to_string(),
+                category: CashFlowCategory::Investing,
+                amount: capex,
+                amount_prior: None,
+                sort_order: 7,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-INV-T".to_string(),
+                label: "Net Cash from Investing Activities".to_string(),
+                category: CashFlowCategory::Investing,
+                amount: investing_cf,
+                amount_prior: None,
+                sort_order: 8,
+                is_total: true,
+            },
+            CashFlowItem {
+                item_code: "CF-DEBT".to_string(),
+                label: "Net Borrowings / (Repayments)".to_string(),
+                category: CashFlowCategory::Financing,
+                amount: debt_change,
+                amount_prior: None,
+                sort_order: 9,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-EQ".to_string(),
+                label: "Equity Changes".to_string(),
+                category: CashFlowCategory::Financing,
+                amount: equity_change,
+                amount_prior: None,
+                sort_order: 10,
+                is_total: false,
+            },
+            CashFlowItem {
+                item_code: "CF-FIN-T".to_string(),
+                label: "Net Cash from Financing Activities".to_string(),
+                category: CashFlowCategory::Financing,
+                amount: financing_cf,
+                amount_prior: None,
+                sort_order: 11,
+                is_total: true,
+            },
+            CashFlowItem {
+                item_code: "CF-NET".to_string(),
+                label: "Net Change in Cash".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: net_change,
+                amount_prior: None,
+                sort_order: 12,
+                is_total: true,
+            },
+        ]
+    }
+
+    /// Calculate net income from a set of trial balance entries.
+    ///
+    /// Revenue is credit-normal (negative net = positive revenue), expenses are debit-normal.
+    fn calculate_net_income_from_tb(
+        tb: &[datasynth_generators::TrialBalanceEntry],
+    ) -> rust_decimal::Decimal {
+        use rust_decimal::Decimal;
+
+        let mut aggregated: HashMap<String, Decimal> = HashMap::new();
+        for entry in tb {
+            let net = entry.debit_balance - entry.credit_balance;
+            *aggregated.entry(entry.category.clone()).or_default() += net;
+        }
+
+        let revenue = *aggregated.get("Revenue").unwrap_or(&Decimal::ZERO);
+        let cogs = *aggregated.get("CostOfSales").unwrap_or(&Decimal::ZERO);
+        let opex = *aggregated
+            .get("OperatingExpenses")
+            .unwrap_or(&Decimal::ZERO);
+        let other_income = *aggregated.get("OtherIncome").unwrap_or(&Decimal::ZERO);
+        let other_expenses = *aggregated.get("OtherExpenses").unwrap_or(&Decimal::ZERO);
+
+        // revenue is negative (credit-normal), expenses are positive (debit-normal)
+        // other_income is typically negative (credit), other_expenses is typically positive
+        let operating_income = revenue - cogs - opex - other_expenses - other_income;
+        let tax_rate = Decimal::from_f64_retain(0.25).unwrap_or(Decimal::ZERO);
+        let tax = operating_income * tax_rate;
+        operating_income - tax
+    }
+
     /// Map a GL account code to the category string expected by FinancialStatementGenerator.
     ///
     /// Uses the first two digits of the account code to classify into the categories
     /// that the financial statement generator aggregates on: Cash, Receivables, Inventory,
-    /// FixedAssets, Payables, AccruedLiabilities, Revenue, CostOfSales, OperatingExpenses,
-    /// Equity, OtherIncome, OtherExpenses.
+    /// FixedAssets, Payables, AccruedLiabilities, LongTermDebt, Equity, Revenue, CostOfSales,
+    /// OperatingExpenses, OtherIncome, OtherExpenses.
     fn category_from_account_code(code: &str) -> String {
         let prefix: String = code.chars().take(2).collect();
         match prefix.as_str() {
@@ -2546,7 +2962,7 @@ impl EnhancedOrchestrator {
             "15" | "16" | "17" | "18" | "19" => "FixedAssets",
             "20" => "Payables",
             "21" | "22" | "23" | "24" => "AccruedLiabilities",
-            "25" | "26" | "27" | "28" | "29" => "LongTermLiabilities",
+            "25" | "26" | "27" | "28" | "29" => "LongTermDebt",
             "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" => "Equity",
             "40" | "41" | "42" | "43" | "44" => "Revenue",
             "50" | "51" | "52" => "CostOfSales",
@@ -3824,6 +4240,7 @@ impl EnhancedOrchestrator {
             duration_std_dev_factor: 0.3,
         };
         let mut ocpm_gen = OcpmEventGenerator::with_config(self.seed + 3000, ocpm_config);
+        let ocpm_uuid_factory = OcpmUuidFactory::new(self.seed + 3001);
 
         // Get available users for resource assignment
         let available_users: Vec<String> = self
@@ -3858,6 +4275,7 @@ impl EnhancedOrchestrator {
                 &po.header.company_code,
                 po.total_net_amount,
                 &po.header.currency,
+                &ocpm_uuid_factory,
             )
             .with_goods_receipt(
                 chain
@@ -3865,6 +4283,7 @@ impl EnhancedOrchestrator {
                     .first()
                     .map(|gr| gr.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             )
             .with_invoice(
                 chain
@@ -3872,6 +4291,7 @@ impl EnhancedOrchestrator {
                     .as_ref()
                     .map(|vi| vi.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             )
             .with_payment(
                 chain
@@ -3879,6 +4299,7 @@ impl EnhancedOrchestrator {
                     .as_ref()
                     .map(|p| p.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             );
 
             let start_time =
@@ -3900,6 +4321,7 @@ impl EnhancedOrchestrator {
                 &so.header.company_code,
                 so.total_net_amount,
                 &so.header.currency,
+                &ocpm_uuid_factory,
             )
             .with_delivery(
                 chain
@@ -3907,6 +4329,7 @@ impl EnhancedOrchestrator {
                     .first()
                     .map(|d| d.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             )
             .with_invoice(
                 chain
@@ -3914,6 +4337,7 @@ impl EnhancedOrchestrator {
                     .as_ref()
                     .map(|ci| ci.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             )
             .with_receipt(
                 chain
@@ -3921,6 +4345,7 @@ impl EnhancedOrchestrator {
                     .as_ref()
                     .map(|r| r.header.document_id.as_str())
                     .unwrap_or(""),
+                &ocpm_uuid_factory,
             );
 
             let start_time =
@@ -3948,6 +4373,7 @@ impl EnhancedOrchestrator {
                 &vendor_id,
                 &project.company_code,
                 project.estimated_annual_spend,
+                &ocpm_uuid_factory,
             );
             // Link RFx if available
             if let Some(rfx) = sourcing
@@ -3955,13 +4381,13 @@ impl EnhancedOrchestrator {
                 .iter()
                 .find(|r| r.sourcing_project_id == project.project_id)
             {
-                docs = docs.with_rfx(&rfx.rfx_id);
+                docs = docs.with_rfx(&rfx.rfx_id, &ocpm_uuid_factory);
                 // Link winning bid (status == Accepted)
                 if let Some(bid) = sourcing.bids.iter().find(|b| {
                     b.rfx_id == rfx.rfx_id
                         && b.status == datasynth_core::models::sourcing::BidStatus::Accepted
                 }) {
-                    docs = docs.with_winning_bid(&bid.bid_id);
+                    docs = docs.with_winning_bid(&bid.bid_id, &ocpm_uuid_factory);
                 }
             }
             // Link contract
@@ -3970,7 +4396,7 @@ impl EnhancedOrchestrator {
                 .iter()
                 .find(|c| c.sourcing_project_id.as_deref() == Some(&project.project_id))
             {
-                docs = docs.with_contract(&contract.contract_id);
+                docs = docs.with_contract(&contract.contract_id, &ocpm_uuid_factory);
             }
             let start_time = chrono::Utc::now() - chrono::Duration::days(90);
             let result = ocpm_gen.generate_s2c_case(&docs, start_time, &available_users);
@@ -3995,6 +4421,7 @@ impl EnhancedOrchestrator {
                 employee_id,
                 &run.company_code,
                 run.total_gross,
+                &ocpm_uuid_factory,
             )
             .with_time_entries(
                 hr.time_entries
@@ -4020,6 +4447,7 @@ impl EnhancedOrchestrator {
                 &order.material_id,
                 &order.company_code,
                 order.planned_quantity,
+                &ocpm_uuid_factory,
             )
             .with_operations(
                 order
@@ -4037,11 +4465,11 @@ impl EnhancedOrchestrator {
                 .iter()
                 .find(|i| i.reference_id == order.order_id)
             {
-                docs = docs.with_inspection(&insp.inspection_id);
+                docs = docs.with_inspection(&insp.inspection_id, &ocpm_uuid_factory);
             }
             // Link cycle count if available (via items matching the material)
             if let Some(cc) = manufacturing.cycle_counts.first() {
-                docs = docs.with_cycle_count(&cc.count_id);
+                docs = docs.with_cycle_count(&cc.count_id, &ocpm_uuid_factory);
             }
             let start_time = chrono::Utc::now() - chrono::Duration::days(60);
             let result = ocpm_gen.generate_mfg_case(&docs, start_time, &available_users);
@@ -4055,7 +4483,7 @@ impl EnhancedOrchestrator {
         // Generate events from Banking customers
         for customer in &banking.customers {
             let customer_id_str = customer.customer_id.to_string();
-            let mut docs = BankDocuments::new(&customer_id_str, "1000");
+            let mut docs = BankDocuments::new(&customer_id_str, "1000", &ocpm_uuid_factory);
             // Link accounts (primary_owner_id matches customer_id)
             if let Some(account) = banking
                 .accounts
@@ -4063,7 +4491,7 @@ impl EnhancedOrchestrator {
                 .find(|a| a.primary_owner_id == customer.customer_id)
             {
                 let account_id_str = account.account_id.to_string();
-                docs = docs.with_account(&account_id_str);
+                docs = docs.with_account(&account_id_str, &ocpm_uuid_factory);
                 // Link transactions for this account
                 let txn_strs: Vec<String> = banking
                     .transactions
@@ -4096,67 +4524,71 @@ impl EnhancedOrchestrator {
         // Generate events from Audit engagements
         for engagement in &audit.engagements {
             let engagement_id_str = engagement.engagement_id.to_string();
-            let docs = AuditDocuments::new(&engagement_id_str, &engagement.client_entity_id)
-                .with_workpapers(
-                    audit
-                        .workpapers
-                        .iter()
-                        .filter(|w| w.engagement_id == engagement.engagement_id)
-                        .take(10)
-                        .map(|w| w.workpaper_id.to_string())
-                        .collect::<Vec<_>>()
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
-                .with_evidence(
-                    audit
-                        .evidence
-                        .iter()
-                        .filter(|e| e.engagement_id == engagement.engagement_id)
-                        .take(10)
-                        .map(|e| e.evidence_id.to_string())
-                        .collect::<Vec<_>>()
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
-                .with_risks(
-                    audit
-                        .risk_assessments
-                        .iter()
-                        .filter(|r| r.engagement_id == engagement.engagement_id)
-                        .take(5)
-                        .map(|r| r.risk_id.to_string())
-                        .collect::<Vec<_>>()
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
-                .with_findings(
-                    audit
-                        .findings
-                        .iter()
-                        .filter(|f| f.engagement_id == engagement.engagement_id)
-                        .take(5)
-                        .map(|f| f.finding_id.to_string())
-                        .collect::<Vec<_>>()
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                )
-                .with_judgments(
-                    audit
-                        .judgments
-                        .iter()
-                        .filter(|j| j.engagement_id == engagement.engagement_id)
-                        .take(5)
-                        .map(|j| j.judgment_id.to_string())
-                        .collect::<Vec<_>>()
-                        .iter()
-                        .map(|s| s.as_str())
-                        .collect(),
-                );
+            let docs = AuditDocuments::new(
+                &engagement_id_str,
+                &engagement.client_entity_id,
+                &ocpm_uuid_factory,
+            )
+            .with_workpapers(
+                audit
+                    .workpapers
+                    .iter()
+                    .filter(|w| w.engagement_id == engagement.engagement_id)
+                    .take(10)
+                    .map(|w| w.workpaper_id.to_string())
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            )
+            .with_evidence(
+                audit
+                    .evidence
+                    .iter()
+                    .filter(|e| e.engagement_id == engagement.engagement_id)
+                    .take(10)
+                    .map(|e| e.evidence_id.to_string())
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            )
+            .with_risks(
+                audit
+                    .risk_assessments
+                    .iter()
+                    .filter(|r| r.engagement_id == engagement.engagement_id)
+                    .take(5)
+                    .map(|r| r.risk_id.to_string())
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            )
+            .with_findings(
+                audit
+                    .findings
+                    .iter()
+                    .filter(|f| f.engagement_id == engagement.engagement_id)
+                    .take(5)
+                    .map(|f| f.finding_id.to_string())
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            )
+            .with_judgments(
+                audit
+                    .judgments
+                    .iter()
+                    .filter(|j| j.engagement_id == engagement.engagement_id)
+                    .take(5)
+                    .map(|j| j.judgment_id.to_string())
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect(),
+            );
             let start_time = chrono::Utc::now() - chrono::Duration::days(120);
             let result = ocpm_gen.generate_audit_case(&docs, start_time, &available_users);
             add_result(&mut event_log, result);
@@ -4173,6 +4605,7 @@ impl EnhancedOrchestrator {
                 &recon.bank_account_id,
                 &recon.company_code,
                 recon.bank_ending_balance,
+                &ocpm_uuid_factory,
             )
             .with_statement_lines(
                 recon

@@ -639,25 +639,61 @@ pub fn write_all_output(
     }
 
     // ========================================================================
-    // OCPM Event Log
+    // Process Mining (OCPM)
     // ========================================================================
     if let Some(ref event_log) = result.ocpm.event_log {
-        let ocpm_dir = output_dir.join("ocpm");
-        std::fs::create_dir_all(&ocpm_dir)?;
-        info!("Writing OCPM event log...");
+        if !event_log.events.is_empty() || !event_log.objects.is_empty() {
+            let pm_dir = output_dir.join("process_mining");
+            std::fs::create_dir_all(&pm_dir)?;
+            info!("Writing process mining (OCPM) data...");
 
-        match serde_json::to_string_pretty(event_log) {
-            Ok(json) => {
-                if let Err(e) = std::fs::write(ocpm_dir.join("event_log.json"), json) {
-                    warn!("Failed to write OCPM event log: {}", e);
-                } else {
-                    info!(
-                        "  OCPM event log written: {} events, {} objects",
-                        result.ocpm.event_count, result.ocpm.object_count
-                    );
+            // Write the full OCEL 2.0 event log
+            match serde_json::to_string_pretty(event_log) {
+                Ok(json) => {
+                    if let Err(e) = std::fs::write(pm_dir.join("event_log.json"), json) {
+                        warn!("Failed to write OCPM event log: {}", e);
+                    } else {
+                        info!(
+                            "  Event log written: {} events, {} objects",
+                            result.ocpm.event_count, result.ocpm.object_count
+                        );
+                    }
+                }
+                Err(e) => warn!("Failed to serialize OCPM event log: {}", e),
+            }
+
+            // Write objects separately for easy consumption
+            if !event_log.objects.is_empty() {
+                let objects: Vec<&_> = event_log.objects.iter().collect();
+                match serde_json::to_string_pretty(&objects) {
+                    Ok(json) => {
+                        if let Err(e) = std::fs::write(pm_dir.join("objects.json"), json) {
+                            warn!("Failed to write OCPM objects: {}", e);
+                        } else {
+                            info!("  Objects written: {} records", event_log.objects.len());
+                        }
+                    }
+                    Err(e) => warn!("Failed to serialize OCPM objects: {}", e),
                 }
             }
-            Err(e) => warn!("Failed to serialize OCPM event log: {}", e),
+
+            // Write process variants if any were computed
+            if !event_log.variants.is_empty() {
+                let variants: Vec<&_> = event_log.variants.values().collect();
+                match serde_json::to_string_pretty(&variants) {
+                    Ok(json) => {
+                        if let Err(e) = std::fs::write(pm_dir.join("process_variants.json"), json) {
+                            warn!("Failed to write process variants: {}", e);
+                        } else {
+                            info!(
+                                "  Process variants written: {} variants",
+                                event_log.variants.len()
+                            );
+                        }
+                    }
+                    Err(e) => warn!("Failed to serialize process variants: {}", e),
+                }
+            }
         }
     }
 

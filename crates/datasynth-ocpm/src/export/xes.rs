@@ -427,13 +427,14 @@ fn escape_xml(s: &str) -> String {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+    use crate::generator::OcpmUuidFactory;
     use chrono::Utc;
-    use uuid::Uuid;
 
     fn create_test_log() -> OcpmEventLog {
         let mut log = OcpmEventLog::new().with_standard_types();
 
-        let case_id = Uuid::new_v4();
+        let factory = OcpmUuidFactory::new(42);
+        let case_id = factory.next_case_id();
 
         let event1 = OcpmEvent::new(
             "create_po",
