@@ -4911,7 +4911,7 @@ impl EnhancedOrchestrator {
         let use_french_pcg = self.config.accounting_standards.enabled
             && matches!(
                 self.config.accounting_standards.framework,
-                datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
             );
 
         let mut gen = ChartOfAccountsGenerator::new(

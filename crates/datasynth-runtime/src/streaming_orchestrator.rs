@@ -360,7 +360,7 @@ impl StreamingOrchestrator {
         let use_french_pcg = config.accounting_standards.enabled
             && matches!(
                 config.accounting_standards.framework,
-                datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
             );
 
         let mut coa_gen = ChartOfAccountsGenerator::new(complexity, industry, seed)

@@ -257,6 +257,7 @@ impl ChartOfAccountsGenerator {
             AccountType::Asset,
             AccountSubType::SuspenseClearing,
         ));
+    }
 
     /// Insert all canonical accounts from `datasynth_core::accounts` into the CoA.
     ///
