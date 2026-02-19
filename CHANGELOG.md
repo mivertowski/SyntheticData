@@ -101,6 +101,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`created_by` field** rotated across employees via round-robin in P2P/O2C document flow loops (previously always used first employee)
 - **OCPM UUID generation** centralized via `DeterministicUuidFactory` with sub-discriminators, replacing hand-rolled FNV-1a hash and `Uuid::new_v4()` calls
 - **Banking seed offsets** replaced with named constants for deterministic sub-generator seeding
+- **FA acquisition JEs collected** (`datasynth-runtime`): Fixed variable shadowing (`_je` → `je`) that silently discarded fixed asset acquisition journal entries
+- **Statistics recalculated** (`datasynth-runtime`): `total_entries` and `total_line_items` now recomputed after all JE-generating phases (FA, IC, payroll, manufacturing) instead of freezing before them
+- **Anomaly injection rates from config** (`datasynth-runtime`): Wired `config.anomaly_injection.rates` into anomaly injector instead of hardcoding `0.02`; falls back to `config.fraud.fraud_rate` then default
+- **CLI PhaseConfig wiring** (`datasynth-cli`): 11 config-enabled sections (manufacturing, sourcing, tax, ESG, intercompany, accounting_standards, financial_statements, sales_kpi_budgets, bank_reconciliation, OCPM, audit/graph) now wired from YAML into `PhaseConfig`
+- **Manufacturing preset fix** (`datasynth-config`): Manufacturing preset now enables manufacturing generation via `get_manufacturing_config()` helper
+- **Treasury hedge relationships** (`datasynth-runtime`): `HedgingGenerator` wired with FX exposure data from actual FX rate service, replacing stub generation
+- **Non-deterministic `Local::now()` fallbacks** (`datasynth-generators`): Replaced remaining `Local::now()` calls in balance tracker and opening balance generator with config-derived dates
+- **`TransactionSource` Display impl** (`datasynth-core`): Added `Display` trait for `TransactionSource` enum, ensuring consistent CSV serialization
+- **DataQualityConfig wiring** (`datasynth-runtime`): `data_quality` YAML section now parsed and passed to data quality injector instead of using defaults
+- **Hardcoded USD replaced** (`datasynth-generators`): Inventory generator, opening balance generator, and balance tracker now accept company currency parameter instead of hardcoding `"USD"`
+- **HR pool-based ID selection** (`datasynth-generators`): Payroll, time entry, and expense report generators draw employee IDs and cost center codes from master data pools instead of fabricating `EMP-{n}` / `CC-{n}` strings
+- **`exchange_rate` serde annotation** (`datasynth-core`): Added `#[serde(serialize_with = "str")]` to `FxRate.exchange_rate` for consistent decimal string serialization
+- **Manifest completeness** (`datasynth-cli`): ~50 missing output files registered in run manifest across treasury, project accounting, tax, ESG, audit, standards, quality labels, and graph export modules
+- **`seeded_rng()` standardized** (`datasynth-generators`): Replaced `ChaCha8Rng::seed_from_u64()` with canonical `seeded_rng(seed, 0)` utility across ~50 production generator files for consistent RNG construction
+- **Clippy fixes** (`datasynth-generators`, `datasynth-eval`, `datasynth-test-utils`): Replaced `#[allow(clippy::derivable_impls)]` with `#[derive(Default)]` on `DocumentFlowLinker`; fixed `field_reassign_with_default` in healthcare settings, red flag statistics, and test server config; removed duplicate `rust_decimal_macros` dependency
 
 ### Fixed
 
@@ -126,6 +141,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Banking customer cross-reference** (`datasynth-banking`, `datasynth-runtime`): Added `enterprise_customer_id: Option<String>` field to `BankingCustomer`, populated during cross-referencing to link banking customers to core enterprise customer IDs
 - **S2C→P2P contract linkage** (`datasynth-runtime`): Purchase orders now linked to S2C procurement contracts by vendor ID match after sourcing data generation, populating `PurchaseOrder.contract_id`
 - **Dead code cleanup — Round 4** (`datasynth-generators`, `datasynth-core`, `datasynth-eval`, `datasynth-fingerprint`): Removed dead `spend_emission_factor_from_pack()` function, dead `line_patterns` field and `LineTextPattern` type from description generator, orphaned doc comment; wired `LastDotFirst` and `FirstOnly` email patterns into pattern pool; added `GaussianMechanism::epsilon()` getter matching `LaplaceMechanism` API
+- **Banking manifest filename** (`datasynth-cli`): Fixed mismatch `bank_transactions` → `banking_transactions` in output manifest
+- **GL account collisions — year_end.rs** (`datasynth-generators`): Fixed 4 GL code collisions in `YearEndCloseConfig::default()` — income_summary `"3500"` → `"3600"` (was CTA), current_tax_payable `"2300"` → `"2100"` (was UNEARNED_REVENUE), deferred_tax_liability `"2350"` → `"2500"`, tax_expense `"7100"` → `"8000"` (was INTEREST_EXPENSE)
+- **GL account — depreciation.rs** (`datasynth-generators`): Fixed depreciation expense posted to `"6100"` (SALARIES_WAGES) instead of `"6000"` (DEPRECIATION constant)
+- **GL account — AR credit memo** (`datasynth-generators`): Fixed credit memo tax JE using `"2300"` (UNEARNED_REVENUE) instead of `SALES_TAX_PAYABLE` (`"2100"`); replaced all hardcoded GL strings in AR/AP generators with `accounts.rs` constants
+- **New GL constants** (`datasynth-core`): Added `INCOME_SUMMARY`, `DIVIDENDS_PAID`, `TAX_RECEIVABLE`, `PURCHASE_DISCOUNT_INCOME` to `accounts.rs`
+- **SalesQuoteGenerator pools** (`datasynth-generators`, `datasynth-runtime`): Wired company currency, employee pool (for sales_rep_id), and customer pool (for customer_id) replacing hardcoded `"USD"` and fabricated `SR-{n}` / `CUST-{n}` IDs
+- **BankReconciliationGenerator pool** (`datasynth-generators`, `datasynth-runtime`): Wired employee pool for preparer/reviewer IDs, replacing fabricated `USR-{n}` strings
+- **CycleCountGenerator pool** (`datasynth-generators`, `datasynth-runtime`): Wired employee pool for counter/supervisor IDs, replacing fabricated `WH-{n}` / `SUP-{n}` strings
+- **Dead code cleanup — Rounds 5-6** (`datasynth-eval`, `datasynth-generators`): Removed `BaselineComparer` (~220 lines), dead `uuid_factory` fields from 10 structs across 9 ESG/project-accounting generators, `calculate_period_variances` function, `apply_line` method, `MultiplyByGapFactor` variant, unused vendor `_spend_category` binding, and unused imports
 
 ## [0.7.0] - 2026-02-17
 
