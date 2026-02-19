@@ -3,11 +3,10 @@
 //! Creates [`Project`] records with [`WbsElement`] hierarchies based on
 //! [`ProjectAccountingConfig`] settings, distributing project types according
 //! to configured weights.
-
 use chrono::NaiveDate;
 use datasynth_config::schema::{ProjectAccountingConfig, WbsSchemaConfig};
 use datasynth_core::models::{Project, ProjectPool, ProjectStatus, ProjectType, WbsElement};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -15,16 +14,14 @@ use rust_decimal::Decimal;
 /// Generates [`Project`] records with WBS hierarchies.
 pub struct ProjectGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: ProjectAccountingConfig,
 }
 
 impl ProjectGenerator {
     /// Create a new project generator.
-    pub fn new(seed: u64, config: ProjectAccountingConfig) -> Self {
+    pub fn new(config: ProjectAccountingConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
         }
     }
@@ -303,7 +300,7 @@ mod tests {
         config.enabled = true;
         config.project_count = 10;
 
-        let mut gen = ProjectGenerator::new(42, config);
+        let mut gen = ProjectGenerator::new(config, 42);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
         assert_eq!(pool.projects.len(), 10);
@@ -323,7 +320,7 @@ mod tests {
         config.enabled = true;
         config.project_count = 100;
 
-        let mut gen = ProjectGenerator::new(42, config);
+        let mut gen = ProjectGenerator::new(config, 42);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
         let customer_count = pool
@@ -347,7 +344,7 @@ mod tests {
         config.project_count = 5;
         config.wbs.max_depth = 2;
 
-        let mut gen = ProjectGenerator::new(42, config);
+        let mut gen = ProjectGenerator::new(config, 42);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
         for project in &pool.projects {
@@ -362,10 +359,10 @@ mod tests {
     #[test]
     fn test_deterministic_generation() {
         let config = ProjectAccountingConfig::default();
-        let mut gen1 = ProjectGenerator::new(42, config.clone());
+        let mut gen1 = ProjectGenerator::new(config.clone(), 42);
         let pool1 = gen1.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
-        let mut gen2 = ProjectGenerator::new(42, config);
+        let mut gen2 = ProjectGenerator::new(config, 42);
         let pool2 = gen2.generate("TEST", d("2024-01-01"), d("2024-12-31"));
 
         assert_eq!(pool1.projects.len(), pool2.projects.len());

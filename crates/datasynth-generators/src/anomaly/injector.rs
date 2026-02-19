@@ -12,17 +12,19 @@
 //! - **Context-aware injection**: Entity-specific anomaly patterns
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::{
     AnomalyCausalReason, AnomalyDetectionDifficulty, AnomalyRateConfig, AnomalySummary,
     AnomalyType, ErrorType, FraudType, JournalEntry, LabeledAnomaly, NearMissLabel,
     RelationalAnomalyType,
 };
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 use super::context::{
     AccountContext, BehavioralBaseline, BehavioralBaselineConfig, EmployeeContext,
@@ -130,13 +132,16 @@ pub struct InjectionBatchResult {
 }
 
 /// Main anomaly injection engine.
-#[allow(dead_code)]
 pub struct AnomalyInjector {
     config: AnomalyInjectorConfig,
     rng: ChaCha8Rng,
+    uuid_factory: DeterministicUuidFactory,
     type_selector: AnomalyTypeSelector,
     strategies: StrategyCollection,
     cluster_manager: ClusterManager,
+    // Constructed from config; will be consumed when entity-aware injection
+    // patterns are integrated into the main inject loop.
+    #[allow(dead_code)]
     entity_targeting: EntityTargetingManager,
     /// Tracking which documents already have anomalies.
     document_anomaly_counts: HashMap<String, usize>,
@@ -151,9 +156,11 @@ pub struct AnomalyInjector {
     near_miss_generator: Option<NearMissGenerator>,
     /// Near-miss labels generated.
     near_miss_labels: Vec<NearMissLabel>,
-    /// Co-occurrence pattern handler.
+    // Constructed when correlated_injection_enabled; pending integration.
+    #[allow(dead_code)]
     co_occurrence_handler: Option<AnomalyCoOccurrence>,
-    /// Temporal cluster generator.
+    // Constructed when temporal_clustering_enabled; pending integration.
+    #[allow(dead_code)]
     temporal_cluster_generator: Option<TemporalClusterGenerator>,
     /// Difficulty calculator.
     difficulty_calculator: Option<DifficultyCalculator>,
@@ -174,25 +181,33 @@ pub struct AnomalyInjector {
     account_contexts: HashMap<String, AccountContext>,
 }
 
-/// Internal statistics tracking.
+/// Injection statistics tracking.
 #[derive(Debug, Clone, Default)]
-#[allow(dead_code)]
 pub struct InjectorStats {
-    total_processed: usize,
-    total_injected: usize,
-    by_category: HashMap<String, usize>,
-    by_type: HashMap<String, usize>,
-    by_company: HashMap<String, usize>,
-    skipped_rate: usize,
-    skipped_date: usize,
-    skipped_company: usize,
-    skipped_max_per_doc: usize,
+    /// Total number of entries processed.
+    pub total_processed: usize,
+    /// Total number of anomalies injected.
+    pub total_injected: usize,
+    /// Anomalies injected by category (e.g., "Fraud", "Error").
+    pub by_category: HashMap<String, usize>,
+    /// Anomalies injected by specific type name.
+    pub by_type: HashMap<String, usize>,
+    /// Anomalies injected by company code.
+    pub by_company: HashMap<String, usize>,
+    /// Entries skipped due to rate check.
+    pub skipped_rate: usize,
+    /// Entries skipped due to date range filter.
+    pub skipped_date: usize,
+    /// Entries skipped due to company filter.
+    pub skipped_company: usize,
+    /// Entries skipped due to max-anomalies-per-document limit.
+    pub skipped_max_per_doc: usize,
 }
 
 impl AnomalyInjector {
     /// Creates a new anomaly injector.
     pub fn new(config: AnomalyInjectorConfig) -> Self {
-        let mut rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let mut rng = seeded_rng(config.seed, 0);
         let cluster_manager = ClusterManager::new(config.patterns.clustering.clone());
         let entity_targeting =
             EntityTargetingManager::new(config.patterns.entity_targeting.clone());
@@ -256,9 +271,12 @@ impl AnomalyInjector {
             None
         };
 
+        let uuid_factory = DeterministicUuidFactory::new(config.seed, GeneratorType::Anomaly);
+
         Self {
             config,
             rng,
+            uuid_factory,
             type_selector: AnomalyTypeSelector::new(),
             strategies: StrategyCollection::default(),
             cluster_manager,
@@ -284,6 +302,13 @@ impl AnomalyInjector {
 
     /// Processes a batch of journal entries, potentially injecting anomalies.
     pub fn process_entries(&mut self, entries: &mut [JournalEntry]) -> InjectionBatchResult {
+        debug!(
+            entry_count = entries.len(),
+            total_rate = self.config.rates.total_rate,
+            seed = self.config.seed,
+            "Injecting anomalies into journal entries"
+        );
+
         let mut modified_documents = Vec::new();
         let mut duplicates = Vec::new();
 
@@ -403,7 +428,8 @@ impl AnomalyInjector {
                     )
                 {
                     let dup_strategy = DuplicationStrategy::default();
-                    let duplicate = dup_strategy.duplicate(entry, &mut self.rng);
+                    let duplicate =
+                        dup_strategy.duplicate(entry, &mut self.rng, &self.uuid_factory);
                     duplicates.push(duplicate);
                 }
             }

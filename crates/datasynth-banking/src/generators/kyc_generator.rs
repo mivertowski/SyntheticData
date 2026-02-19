@@ -9,6 +9,7 @@ use rand_chacha::ChaCha8Rng;
 
 use crate::config::BankingConfig;
 use crate::models::{BankingCustomer, ExpectedCategory, KycProfile, PersonaVariant};
+use crate::seed_offsets::KYC_GENERATOR_SEED_OFFSET;
 
 /// Generator for KYC profiles.
 pub struct KycGenerator {
@@ -19,7 +20,7 @@ impl KycGenerator {
     /// Create a new KYC generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(4000)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(KYC_GENERATOR_SEED_OFFSET)),
         }
     }
 

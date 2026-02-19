@@ -6,6 +6,7 @@
 //! - Systematic missing values (MNAR - Missing Not At Random)
 
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 /// Strategy for missing value injection.
@@ -160,7 +161,7 @@ impl MissingValueConfig {
 }
 
 /// Statistics about missing values.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MissingValueStats {
     /// Total fields processed.
     pub total_fields: usize,

@@ -915,7 +915,9 @@ impl DebtInstrument {
 
     /// Returns `true` if all covenants are compliant.
     pub fn all_covenants_compliant(&self) -> bool {
-        self.covenants.iter().all(|c| c.is_compliant || c.waiver_obtained)
+        self.covenants
+            .iter()
+            .all(|c| c.is_compliant || c.waiver_obtained)
     }
 }
 
@@ -999,7 +1001,9 @@ impl BankGuarantee {
 
     /// Returns `true` if the guarantee is active on the given date.
     pub fn is_active_on(&self, date: NaiveDate) -> bool {
-        self.status == GuaranteeStatus::Active && date >= self.issue_date && date <= self.expiry_date
+        self.status == GuaranteeStatus::Active
+            && date >= self.issue_date
+            && date <= self.expiry_date
     }
 
     /// Returns the remaining validity in days from the given date.

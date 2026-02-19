@@ -4,11 +4,13 @@
 //! between related entities.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::{seeded_rng, weighted_select};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::intercompany::{
     ICLoan, ICMatchedPair, ICTransactionType, OwnershipStructure, RecurringFrequency,
@@ -39,6 +41,8 @@ pub struct ICGeneratorConfig {
     pub loan_amount_range: (Decimal, Decimal),
     /// Loan interest rate range.
     pub loan_interest_rate_range: (Decimal, Decimal),
+    /// Default currency for IC transactions.
+    pub default_currency: String,
 }
 
 impl Default for ICGeneratorConfig {
@@ -63,6 +67,7 @@ impl Default for ICGeneratorConfig {
             generate_loans: true,
             loan_amount_range: (dec!(100000), dec!(10000000)),
             loan_interest_rate_range: (dec!(2), dec!(8)),
+            default_currency: "USD".to_string(),
         }
     }
 }
@@ -96,7 +101,7 @@ impl ICGenerator {
     ) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             ownership_structure,
             transfer_pricing_policies: HashMap::new(),
             active_loans: Vec::new(),
@@ -130,17 +135,18 @@ impl ICGenerator {
 
     /// Select a random IC transaction type based on weights.
     fn select_transaction_type(&mut self) -> ICTransactionType {
-        let total_weight: f64 = self.config.transaction_type_weights.values().sum();
-        let mut roll: f64 = self.rng.gen::<f64>() * total_weight;
+        let options: Vec<(ICTransactionType, f64)> = self
+            .config
+            .transaction_type_weights
+            .iter()
+            .map(|(&tx_type, &weight)| (tx_type, weight))
+            .collect();
 
-        for (tx_type, weight) in &self.config.transaction_type_weights {
-            roll -= weight;
-            if roll <= 0.0 {
-                return *tx_type;
-            }
+        if options.is_empty() {
+            return ICTransactionType::GoodsSale;
         }
 
-        ICTransactionType::GoodsSale
+        *weighted_select(&mut self.rng, &options)
     }
 
     /// Select a random pair of related companies.
@@ -218,7 +224,7 @@ impl ICGenerator {
             seller.clone(),
             buyer.clone(),
             transfer_price,
-            "USD".to_string(), // Could be parameterized
+            self.config.default_currency.clone(),
             date,
         );
 
@@ -386,7 +392,8 @@ impl ICGenerator {
 
     /// Get IC receivable account for seller.
     fn get_seller_receivable_account(&self, buyer_company: &str) -> String {
-        format!("1310{}", &buyer_company[..buyer_company.len().min(2)])
+        let suffix: String = buyer_company.chars().take(2).collect();
+        format!("1310{}", suffix)
     }
 
     /// Get IC revenue account for seller.
@@ -417,7 +424,8 @@ impl ICGenerator {
 
     /// Get IC payable account for buyer.
     fn get_buyer_payable_account(&self, seller_company: &str) -> String {
-        format!("2110{}", &seller_company[..seller_company.len().min(2)])
+        let suffix: String = seller_company.chars().take(2).collect();
+        format!("2110{}", suffix)
     }
 
     /// Generate an IC loan.
@@ -453,7 +461,7 @@ impl ICGenerator {
             lender,
             borrower,
             principal,
-            "USD".to_string(),
+            self.config.default_currency.clone(),
             interest_rate,
             start_date,
             maturity_date,
@@ -553,6 +561,7 @@ impl ICGenerator {
         end_date: NaiveDate,
         transactions_per_day: usize,
     ) -> Vec<ICMatchedPair> {
+        debug!(%start_date, %end_date, transactions_per_day, "Generating intercompany transactions");
         let mut pairs = Vec::new();
         let mut current_date = start_date;
 

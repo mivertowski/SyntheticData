@@ -1,0 +1,114 @@
+% DataSynth: A Comprehensive Framework for Generating Realistic Synthetic
+% Enterprise Accounting Data with Provable Statistical Properties
+%
+% arXiv preprint — compile with: pdflatex main && bibtex main && pdflatex main && pdflatex main
+
+\documentclass[11pt,a4paper]{article}
+
+% ── Core packages ──────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ── Math ───────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% ── Layout ─────────────────────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Figures / tables ───────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{float}
+
+% ── Algorithms ─────────────────────────────────────────────────────────
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+% ── Code listings ──────────────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black},
+  stringstyle=\color{red!60!black},
+}
+
+% ── Colors / hyperlinks ───────────────────────────────────────────────
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black,urlcolor=blue!70!black]{hyperref}
+\usepackage{cleveref}
+
+% ── Bibliography ───────────────────────────────────────────────────────
+\usepackage[numbers,sort&compress]{natbib}
+
+% ── Theorem environments ──────────────────────────────────────────────
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+% ── Custom commands ───────────────────────────────────────────────────
+\newcommand{\system}{\textsc{DataSynth}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\MAD}{\operatorname{MAD}}
+
+% ═══════════════════════════════════════════════════════════════════════
+\title{%
+  \textsc{DataSynth}: A Comprehensive Framework for Generating\\
+  Realistic Synthetic Enterprise Accounting Data\\
+  with Provable Statistical Properties%
+}
+
+\author{%
+  % Author list placeholder — fill before submission
+  Anonymous Authors\\
+  \textit{Institution}\\
+  \texttt{contact@example.com}
+}
+
+\date{\today}
+
+% ═══════════════════════════════════════════════════════════════════════
+\begin{document}
+\maketitle
+
+% ── Abstract ──────────────────────────────────────────────────────────
+\input{sections/abstract}
+
+% ── Main body ─────────────────────────────────────────────────────────
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/architecture}
+\input{sections/statistical_foundations}
+\input{sections/generation_pipeline}
+\input{sections/anomaly_injection}
+\input{sections/evaluation}
+\input{sections/privacy}
+\input{sections/experiments}
+\input{sections/conclusion}
+
+% ── References ────────────────────────────────────────────────────────
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+% ── Appendices ────────────────────────────────────────────────────────
+\appendix
+\input{sections/appendix}
+
+\end{document}

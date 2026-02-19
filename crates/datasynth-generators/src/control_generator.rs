@@ -3,9 +3,11 @@
 //! Implements control application, SOX relevance determination, and
 //! Segregation of Duties (SoD) violation detection.
 
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 use datasynth_core::models::{
     BusinessProcess, ChartOfAccounts, ControlMappingRegistry, ControlStatus, InternalControl,
@@ -55,7 +57,7 @@ impl ControlGenerator {
     /// Create a new control generator with custom configuration.
     pub fn with_config(seed: u64, config: ControlGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config: config.clone(),
             registry: ControlMappingRegistry::standard(),
@@ -72,6 +74,13 @@ impl ControlGenerator {
     /// - Control status (effective, exception, not tested)
     /// - SoD violation flag and conflict type
     pub fn apply_controls(&mut self, entry: &mut JournalEntry, coa: &ChartOfAccounts) {
+        debug!(
+            document_id = %entry.header.document_id,
+            company_code = %entry.header.company_code,
+            exception_rate = self.config.exception_rate,
+            "Applying controls to journal entry"
+        );
+
         // Determine applicable controls from all line items
         let mut all_control_ids = Vec::new();
 
@@ -174,7 +183,7 @@ impl ControlGenerator {
 
     /// Reset the generator to its initial state.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.sod_checker.reset();
     }
 }
@@ -191,7 +200,7 @@ impl SodChecker {
     /// Create a new SoD checker.
     pub fn new(seed: u64, violation_rate: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             violation_rate,
             conflict_pairs: SodConflictPair::standard_conflicts(),
@@ -379,7 +388,7 @@ impl SodChecker {
 
     /// Reset the checker to its initial state.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
     }
 }
 

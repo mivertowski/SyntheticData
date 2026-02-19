@@ -7,5 +7,8 @@ mod nodes;
 
 pub use edges::*;
 pub use graph::*;
-pub use hypergraph::*;
+pub use hypergraph::{
+    AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
+    HypergraphLayer, HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport,
+};
 pub use nodes::*;

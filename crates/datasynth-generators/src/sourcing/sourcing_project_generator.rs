@@ -7,6 +7,7 @@ use datasynth_config::schema::SourcingConfig;
 use datasynth_core::models::sourcing::{
     SourcingProject, SourcingProjectStatus, SourcingProjectType,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -23,7 +24,7 @@ impl SourcingProjectGenerator {
     /// Create a new sourcing project generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
             config: SourcingConfig::default(),
         }
@@ -32,7 +33,7 @@ impl SourcingProjectGenerator {
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: SourcingConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SourcingProject),
             config,
         }
@@ -54,6 +55,12 @@ impl SourcingProjectGenerator {
         period_start: NaiveDate,
         period_months: u32,
     ) -> Vec<SourcingProject> {
+        tracing::debug!(
+            company_code,
+            categories = categories.len(),
+            period_months,
+            "Generating sourcing projects"
+        );
         let mut projects = Vec::new();
         let years = (period_months as f64 / 12.0).ceil() as u32;
         let target_count = self.config.projects_per_year * years;

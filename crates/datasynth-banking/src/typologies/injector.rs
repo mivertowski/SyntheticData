@@ -11,6 +11,7 @@ use crate::models::{
 };
 
 use super::{FunnelInjector, LayeringInjector, MuleInjector, SpoofingEngine, StructuringInjector};
+use crate::seed_offsets::TYPOLOGY_INJECTOR_SEED_OFFSET;
 
 /// Main AML typology injector.
 pub struct TypologyInjector {
@@ -30,7 +31,7 @@ impl TypologyInjector {
     pub fn new(config: BankingConfig, seed: u64) -> Self {
         Self {
             config: config.clone(),
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(5000)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(TYPOLOGY_INJECTOR_SEED_OFFSET)),
             structuring_injector: StructuringInjector::new(seed),
             funnel_injector: FunnelInjector::new(seed),
             layering_injector: LayeringInjector::new(seed),

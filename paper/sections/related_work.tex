@@ -1,0 +1,137 @@
+% sections/related_work.tex — Related Work
+\section{Related Work}
+\label{sec:related_work}
+
+We position \system{} at the intersection of four research streams:
+synthetic tabular data generation, accounting-domain data synthesis,
+anomaly injection for fraud detection, and privacy-preserving data sharing.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{General-Purpose Tabular Data Generation}
+\label{sec:rw_tabular}
+
+Deep generative models have become the dominant paradigm for synthetic
+tabular data.  CTGAN~\citep{xu2019modeling} introduced mode-specific
+normalization and conditional training for mixed-type columns.
+TVAE~\citep{xu2019modeling} applies variational autoencoders with the same
+preprocessing.  Subsequent work has refined these approaches:
+CopulaGAN~\citep{patki2016synthetic} combines copula transformations with
+GAN training, REaLTabFormer~\citep{solatorio2023realtabformer} leverages
+autoregressive transformers for relational tables, and
+TabDDPM~\citep{kotelnikov2023tabddpm} adapts diffusion models to tabular
+settings.
+
+While these methods excel at preserving marginal distributions and pairwise
+correlations, they treat tables as independent collections of rows and do not
+enforce cross-table referential integrity, temporal ordering constraints, or
+domain-specific algebraic invariants (e.g., balanced entries).  \system{}
+addresses this gap by embedding accounting axioms directly into the
+generation process.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Accounting-Domain Data Synthesis}
+\label{sec:rw_accounting}
+
+Domain-specific synthetic data for accounting has received comparatively
+little attention.  The GL.ai dataset~\citep{schreyer2022federated} provides
+federated synthetic journal entries but lacks document-flow linkage and
+subledger coherence.  The SAFD (Simulated Accounting Fraud
+Dataset)~\citep{sharma2023synthetic} generates entries with injected
+anomalies, yet uses uniform random amounts that violate Benford's law.
+BankSim~\citep{lopez2018banksim} focuses narrowly on payment transactions
+for fraud research.
+
+In contrast, \system{} generates a full enterprise data stack: chart of
+accounts, master data, multi-process document flows with three-way matching,
+subledgers, trial balances, financial statements, intercompany eliminations,
+period-close entries, and OCEL~2.0 event logs---all mutually consistent.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Anomaly Injection and Fraud Simulation}
+\label{sec:rw_anomaly}
+
+Fraud detection benchmarks typically rely on post-hoc label injection
+or manual scenario creation.  The IEEE-CIS fraud dataset~\citep{ieee_cis2019}
+provides real transaction labels but lacks accounting context.
+\citet{pourhabibi2020fraud} survey fraud detection methods and note the
+scarcity of labeled multi-dimensional accounting fraud data.
+\citet{dbouk2023anomaly} inject statistical anomalies into time series but
+do not model multi-stage fraud schemes that evolve over time.
+
+\system{} introduces a \emph{scheme-based} injection model where fraud
+evolves through state-machine stages (e.g., vendor kickback schemes that
+escalate over months), producing temporally correlated, multi-transaction
+anomaly patterns with ground-truth difficulty and severity labels.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Privacy-Preserving Data Sharing}
+\label{sec:rw_privacy}
+
+Differential privacy~\citep{dwork2006calibrating} provides formal guarantees
+for statistical queries.  DPGAN~\citep{xie2018differentially} and
+PATE-GAN~\citep{jordon2019pate} train generative models under DP constraints
+but are computationally expensive and may degrade statistical fidelity.
+The synthetic data vault (SDV)~\citep{patki2016synthetic} framework supports
+metadata-driven generation but does not provide formal privacy guarantees on
+the metadata itself.
+
+\system{}'s fingerprint module takes a different approach: it extracts
+distributional summaries (not raw data) under $\varepsilon$-DP with explicit
+$\varepsilon$-budget tracking and $k$-anonymity suppression, producing a
+compact \texttt{.dsf} archive from which a fully configured generator can be
+instantiated.  This decouples the privacy boundary (extraction) from the
+generation process (synthesis), enabling auditability and composability.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Process Mining and Event Logs}
+\label{sec:rw_process_mining}
+
+Object-centric event logs (OCEL~2.0)~\citep{ghahfarokhi2021ocel} generalize
+traditional single-case-ID event logs by associating events with multiple
+typed objects.  While tools such as PM4Py~\citep{berti2019process} support
+OCEL~2.0 import/export, generating realistic synthetic OCEL~2.0 logs with
+consistent underlying business data has not been addressed.  \system{}
+produces OCEL~2.0 event logs that are traceable to the same journal entries,
+document flows, and master-data records that constitute the rest of the
+synthetic dataset.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Summary of Gaps}
+\label{sec:rw_summary}
+
+\Cref{tab:related_comparison} summarizes feature coverage across related
+systems.
+
+\begin{table}[t]
+\centering
+\caption{Feature comparison with related systems. Columns:
+  \textbf{Bal}~=~balanced entries,
+  \textbf{Ben}~=~Benford compliance,
+  \textbf{Doc}~=~document-flow chains,
+  \textbf{Sub}~=~subledger coherence,
+  \textbf{FS}~=~financial statements,
+  \textbf{Anom}~=~anomaly injection with labels,
+  \textbf{Priv}~=~formal privacy guarantees,
+  \textbf{OCEL}~=~process mining logs,
+  \textbf{Graph}~=~graph export for GNNs.}
+\label{tab:related_comparison}
+\small
+\begin{tabular}{l ccccccccc}
+\toprule
+\textbf{System} & \textbf{Bal} & \textbf{Ben} & \textbf{Doc} & \textbf{Sub}
+  & \textbf{FS} & \textbf{Anom} & \textbf{Priv} & \textbf{OCEL}
+  & \textbf{Graph} \\
+\midrule
+CTGAN / TVAE          & -- & -- & -- & -- & -- & -- & -- & -- & -- \\
+SDV / CopulaGAN       & -- & -- & \checkmark$^*$ & -- & -- & -- & -- & -- & -- \\
+REaLTabFormer         & -- & -- & \checkmark & -- & -- & -- & -- & -- & -- \\
+GL.ai                 & \checkmark & -- & -- & -- & -- & \checkmark & \checkmark$^*$ & -- & -- \\
+BankSim               & -- & -- & -- & -- & -- & \checkmark & -- & -- & -- \\
+SAFD                  & \checkmark & -- & -- & -- & -- & \checkmark & -- & -- & -- \\
+\midrule
+\textbf{\system{}}    & \checkmark & \checkmark & \checkmark & \checkmark
+  & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\multicolumn{10}{l}{\footnotesize $^*$Partial support.}
+\end{tabular}
+\end{table}

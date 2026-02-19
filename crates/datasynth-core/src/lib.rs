@@ -19,6 +19,7 @@ pub mod causal;
 pub mod pcg;
 pub mod pcg_loader;
 pub mod compliance;
+pub mod country;
 pub mod cpu_monitor;
 pub mod degradation;
 pub mod diffusion;
@@ -34,18 +35,44 @@ pub mod resource_guard;
 pub mod streaming;
 pub mod templates;
 pub mod traits;
+pub mod utils;
 pub mod uuid_factory;
 
-pub use cpu_monitor::*;
-pub use degradation::*;
-pub use disk_guard::*;
+// -- Explicit re-exports for commonly used infrastructure types --
+
+pub use country::{CountryCode, CountryPack, CountryPackError, CountryPackRegistry};
+
+pub use cpu_monitor::{CpuMonitor, CpuMonitorConfig, CpuOverloaded, CpuStats};
+
+pub use degradation::{
+    DegradationActions, DegradationConfig, DegradationController, DegradationLevel, ResourceStatus,
+};
+
+pub use disk_guard::{
+    check_sufficient_disk_space, estimate_output_size_mb, get_available_space_mb, get_disk_space,
+    DiskSpaceExhausted, DiskSpaceGuard, DiskSpaceGuardConfig, DiskStats, OutputFormat,
+};
+
+pub use error::{SynthError, SynthResult};
+
+pub use memory_guard::{
+    check_sufficient_memory, estimate_memory_mb, get_memory_usage_mb, MemoryGuard,
+    MemoryGuardConfig, MemoryLimitExceeded, MemoryStats,
+};
+
+pub use resource_guard::{
+    PreCheckResult, ResourceGuard, ResourceGuardBuilder, ResourceGuardConfig, ResourceStats,
+};
+
+pub use uuid_factory::{DeterministicUuidFactory, GeneratorType, UuidFactoryRegistry};
+
+// -- Glob re-exports for large, widely-consumed modules --
+// These modules expose many types that are used broadly across the workspace.
+// Converting them to explicit re-exports would be high-risk with limited benefit.
+
 pub use distributions::*;
-pub use error::*;
-pub use memory_guard::*;
 pub use models::*;
 pub use rate_limit::*;
-pub use resource_guard::*;
 pub use streaming::*;
 pub use templates::*;
 pub use traits::*;
-pub use uuid_factory::*;

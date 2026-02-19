@@ -8,10 +8,12 @@ use chrono::NaiveDate;
 use datasynth_core::models::{
     InspectionCharacteristic, InspectionResult, InspectionType, QualityInspection,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Characteristic names used in quality inspections.
 const CHARACTERISTIC_NAMES: &[&str] = &[
@@ -43,7 +45,7 @@ impl QualityInspectionGenerator {
     /// Create a new quality inspection generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::QualityInspection),
         }
     }
@@ -61,6 +63,7 @@ impl QualityInspectionGenerator {
         production_orders: &[(String, String, String)],
         inspection_date: NaiveDate,
     ) -> Vec<QualityInspection> {
+        debug!(company_code, order_count = production_orders.len(), %inspection_date, "Generating quality inspections");
         production_orders
             .iter()
             .map(|(order_id, material_id, material_desc)| {

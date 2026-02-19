@@ -15,6 +15,9 @@
 
 use rust_decimal::Decimal;
 
+use datasynth_core::accounts::{
+    cash_accounts, control_accounts, expense_accounts, revenue_accounts,
+};
 use datasynth_core::models::{
     documents::{CustomerInvoice, Delivery, GoodsReceipt, Payment, VendorInvoice},
     BusinessProcess, JournalEntry, JournalEntryHeader, JournalEntryLine, TransactionSource,
@@ -26,32 +29,32 @@ use super::{O2CDocumentChain, P2PDocumentChain};
 /// Configuration for document flow JE generation.
 #[derive(Debug, Clone)]
 pub struct DocumentFlowJeConfig {
-    /// Inventory account (default: 140000)
+    /// Inventory account (default: 1200 from control_accounts::INVENTORY)
     pub inventory_account: String,
-    /// GR/IR clearing account (default: 290000)
+    /// GR/IR clearing account (default: 2900 from control_accounts::GR_IR_CLEARING)
     pub gr_ir_clearing_account: String,
-    /// Accounts payable control account (default: 210000)
+    /// Accounts payable control account (default: 2000 from control_accounts::AP_CONTROL)
     pub ap_account: String,
-    /// Cash/bank account (default: 110000)
+    /// Cash/bank account (default: 1000 from cash_accounts::OPERATING_CASH)
     pub cash_account: String,
-    /// Accounts receivable control account (default: 120000)
+    /// Accounts receivable control account (default: 1100 from control_accounts::AR_CONTROL)
     pub ar_account: String,
-    /// Revenue account (default: 400000)
+    /// Revenue account (default: 4000 from revenue_accounts::PRODUCT_REVENUE)
     pub revenue_account: String,
-    /// COGS account (default: 500000)
+    /// COGS account (default: 5000 from expense_accounts::COGS)
     pub cogs_account: String,
 }
 
 impl Default for DocumentFlowJeConfig {
     fn default() -> Self {
         Self {
-            inventory_account: "140000".to_string(),
-            gr_ir_clearing_account: "290000".to_string(),
-            ap_account: "210000".to_string(),
-            cash_account: "110000".to_string(),
-            ar_account: "120000".to_string(),
-            revenue_account: "400000".to_string(),
-            cogs_account: "500000".to_string(),
+            inventory_account: control_accounts::INVENTORY.to_string(),
+            gr_ir_clearing_account: control_accounts::GR_IR_CLEARING.to_string(),
+            ap_account: control_accounts::AP_CONTROL.to_string(),
+            cash_account: cash_accounts::OPERATING_CASH.to_string(),
+            ar_account: control_accounts::AR_CONTROL.to_string(),
+            revenue_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
+            cogs_account: expense_accounts::COGS.to_string(),
         }
     }
 }
@@ -63,15 +66,9 @@ pub struct DocumentFlowJeGenerator {
 }
 
 impl DocumentFlowJeGenerator {
-    /// Create a new document flow JE generator.
+    /// Create a new document flow JE generator with default config and seed 0.
     pub fn new() -> Self {
-        Self::with_config(DocumentFlowJeConfig::default())
-    }
-
-    /// Create with custom account configuration.
-    pub fn with_config(config: DocumentFlowJeConfig) -> Self {
-        // Use a fixed seed for document flow JE generator (can be made configurable)
-        Self::with_config_and_seed(config, 0)
+        Self::with_config_and_seed(DocumentFlowJeConfig::default(), 0)
     }
 
     /// Create with custom account configuration and seed.

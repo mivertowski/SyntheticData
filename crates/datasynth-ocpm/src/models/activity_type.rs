@@ -1534,19 +1534,31 @@ impl ActivityType {
 
     /// Tax Determination activity.
     pub fn tax_determination() -> Self {
-        Self::new("tax_determination", "Tax Determination", BusinessProcess::Tax)
-            .with_object_types(vec!["tax_line"])
-            .with_transitions(vec![ActivityStateTransition::new("tax_line", None, "calculated")])
-            .with_duration(2.0, 1.0)
-            .automated()
-            .creates()
+        Self::new(
+            "tax_determination",
+            "Tax Determination",
+            BusinessProcess::Tax,
+        )
+        .with_object_types(vec!["tax_line"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "tax_line",
+            None,
+            "calculated",
+        )])
+        .with_duration(2.0, 1.0)
+        .automated()
+        .creates()
     }
 
     /// Tax Line Created activity.
     pub fn tax_line_created() -> Self {
         Self::new("tax_line_created", "Tax Line Created", BusinessProcess::Tax)
             .with_object_types(vec!["tax_line"])
-            .with_transitions(vec![ActivityStateTransition::new("tax_line", Some("calculated"), "posted")])
+            .with_transitions(vec![ActivityStateTransition::new(
+                "tax_line",
+                Some("calculated"),
+                "posted",
+            )])
             .with_duration(1.0, 0.5)
             .automated()
     }
@@ -1555,23 +1567,39 @@ impl ActivityType {
     pub fn tax_return_filed() -> Self {
         Self::new("tax_return_filed", "Tax Return Filed", BusinessProcess::Tax)
             .with_object_types(vec!["tax_return"])
-            .with_transitions(vec![ActivityStateTransition::new("tax_return", Some("prepared"), "filed")])
+            .with_transitions(vec![ActivityStateTransition::new(
+                "tax_return",
+                Some("prepared"),
+                "filed",
+            )])
             .with_duration(30.0, 15.0)
     }
 
     /// Tax Return Assessed activity.
     pub fn tax_return_assessed() -> Self {
-        Self::new("tax_return_assessed", "Tax Return Assessed", BusinessProcess::Tax)
-            .with_object_types(vec!["tax_return"])
-            .with_transitions(vec![ActivityStateTransition::new("tax_return", Some("filed"), "assessed")])
-            .with_duration(60.0, 30.0)
+        Self::new(
+            "tax_return_assessed",
+            "Tax Return Assessed",
+            BusinessProcess::Tax,
+        )
+        .with_object_types(vec!["tax_return"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "tax_return",
+            Some("filed"),
+            "assessed",
+        )])
+        .with_duration(60.0, 30.0)
     }
 
     /// Tax Paid activity.
     pub fn tax_paid() -> Self {
         Self::new("tax_paid", "Tax Paid", BusinessProcess::Tax)
             .with_object_types(vec!["tax_return"])
-            .with_transitions(vec![ActivityStateTransition::new("tax_return", Some("assessed"), "paid")])
+            .with_transitions(vec![ActivityStateTransition::new(
+                "tax_return",
+                Some("assessed"),
+                "paid",
+            )])
             .with_duration(10.0, 5.0)
             .completes()
     }
@@ -1591,38 +1619,70 @@ impl ActivityType {
 
     /// Cash Position Calculated activity.
     pub fn cash_position_calculated() -> Self {
-        Self::new("cash_position_calculated", "Cash Position Calculated", BusinessProcess::Treasury)
-            .with_object_types(vec!["cash_position"])
-            .with_transitions(vec![ActivityStateTransition::new("cash_position", None, "current")])
-            .with_duration(5.0, 2.0)
-            .automated()
-            .creates()
+        Self::new(
+            "cash_position_calculated",
+            "Cash Position Calculated",
+            BusinessProcess::Treasury,
+        )
+        .with_object_types(vec!["cash_position"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "cash_position",
+            None,
+            "current",
+        )])
+        .with_duration(5.0, 2.0)
+        .automated()
+        .creates()
     }
 
     /// Forecast Generated activity.
     pub fn forecast_generated() -> Self {
-        Self::new("forecast_generated", "Forecast Generated", BusinessProcess::Treasury)
-            .with_object_types(vec!["cash_forecast"])
-            .with_transitions(vec![ActivityStateTransition::new("cash_forecast", None, "draft")])
-            .with_duration(30.0, 15.0)
-            .creates()
+        Self::new(
+            "forecast_generated",
+            "Forecast Generated",
+            BusinessProcess::Treasury,
+        )
+        .with_object_types(vec!["cash_forecast"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "cash_forecast",
+            None,
+            "draft",
+        )])
+        .with_duration(30.0, 15.0)
+        .creates()
     }
 
     /// Hedge Designated activity.
     pub fn hedge_designated() -> Self {
-        Self::new("hedge_designated", "Hedge Designated", BusinessProcess::Treasury)
-            .with_object_types(vec!["hedge_instrument"])
-            .with_transitions(vec![ActivityStateTransition::new("hedge_instrument", Some("pending"), "designated")])
-            .with_duration(45.0, 20.0)
+        Self::new(
+            "hedge_designated",
+            "Hedge Designated",
+            BusinessProcess::Treasury,
+        )
+        .with_object_types(vec!["hedge_instrument"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "hedge_instrument",
+            Some("pending"),
+            "designated",
+        )])
+        .with_duration(45.0, 20.0)
     }
 
     /// Covenant Measured activity.
     pub fn covenant_measured() -> Self {
-        Self::new("covenant_measured", "Covenant Measured", BusinessProcess::Treasury)
-            .with_object_types(vec!["debt_instrument"])
-            .with_transitions(vec![ActivityStateTransition::new("debt_instrument", Some("active"), "measured")])
-            .with_duration(60.0, 30.0)
-            .completes()
+        Self::new(
+            "covenant_measured",
+            "Covenant Measured",
+            BusinessProcess::Treasury,
+        )
+        .with_object_types(vec!["debt_instrument"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "debt_instrument",
+            Some("active"),
+            "measured",
+        )])
+        .with_duration(60.0, 30.0)
+        .completes()
     }
 
     /// Get all Treasury activities.
@@ -1639,46 +1699,84 @@ impl ActivityType {
 
     /// Project Created activity.
     pub fn project_created() -> Self {
-        Self::new("project_created", "Project Created", BusinessProcess::ProjectAccounting)
-            .with_object_types(vec!["project"])
-            .with_transitions(vec![ActivityStateTransition::new("project", None, "active")])
-            .with_duration(60.0, 20.0)
-            .creates()
+        Self::new(
+            "project_created",
+            "Project Created",
+            BusinessProcess::ProjectAccounting,
+        )
+        .with_object_types(vec!["project"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "project", None, "active",
+        )])
+        .with_duration(60.0, 20.0)
+        .creates()
     }
 
     /// Cost Posted activity.
     pub fn cost_posted() -> Self {
-        Self::new("cost_posted", "Cost Posted", BusinessProcess::ProjectAccounting)
-            .with_object_types(vec!["project", "project_cost_line"])
-            .with_transitions(vec![ActivityStateTransition::new("project_cost_line", None, "posted")])
-            .with_duration(5.0, 2.0)
-            .automated()
-            .creates()
+        Self::new(
+            "cost_posted",
+            "Cost Posted",
+            BusinessProcess::ProjectAccounting,
+        )
+        .with_object_types(vec!["project", "project_cost_line"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "project_cost_line",
+            None,
+            "posted",
+        )])
+        .with_duration(5.0, 2.0)
+        .automated()
+        .creates()
     }
 
     /// Milestone Achieved activity.
     pub fn milestone_achieved() -> Self {
-        Self::new("milestone_achieved", "Milestone Achieved", BusinessProcess::ProjectAccounting)
-            .with_object_types(vec!["project_milestone"])
-            .with_transitions(vec![ActivityStateTransition::new("project_milestone", Some("in_progress"), "completed")])
-            .with_duration(15.0, 10.0)
+        Self::new(
+            "milestone_achieved",
+            "Milestone Achieved",
+            BusinessProcess::ProjectAccounting,
+        )
+        .with_object_types(vec!["project_milestone"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "project_milestone",
+            Some("in_progress"),
+            "completed",
+        )])
+        .with_duration(15.0, 10.0)
     }
 
     /// Revenue Recognized activity.
     pub fn revenue_recognized() -> Self {
-        Self::new("revenue_recognized", "Revenue Recognized", BusinessProcess::ProjectAccounting)
-            .with_object_types(vec!["project"])
-            .with_transitions(vec![ActivityStateTransition::new("project", Some("active"), "active")])
-            .with_duration(30.0, 15.0)
+        Self::new(
+            "revenue_recognized",
+            "Revenue Recognized",
+            BusinessProcess::ProjectAccounting,
+        )
+        .with_object_types(vec!["project"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "project",
+            Some("active"),
+            "active",
+        )])
+        .with_duration(30.0, 15.0)
     }
 
     /// Change Order Processed activity.
     pub fn change_order_processed() -> Self {
-        Self::new("change_order_processed", "Change Order Processed", BusinessProcess::ProjectAccounting)
-            .with_object_types(vec!["change_order"])
-            .with_transitions(vec![ActivityStateTransition::new("change_order", Some("submitted"), "approved")])
-            .with_duration(120.0, 60.0)
-            .completes()
+        Self::new(
+            "change_order_processed",
+            "Change Order Processed",
+            BusinessProcess::ProjectAccounting,
+        )
+        .with_object_types(vec!["change_order"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "change_order",
+            Some("submitted"),
+            "approved",
+        )])
+        .with_duration(120.0, 60.0)
+        .completes()
     }
 
     /// Get all Project Accounting activities.
@@ -1696,39 +1794,71 @@ impl ActivityType {
 
     /// Data Collected activity.
     pub fn esg_data_collected() -> Self {
-        Self::new("esg_data_collected", "ESG Data Collected", BusinessProcess::Esg)
-            .with_object_types(vec!["esg_data_point"])
-            .with_transitions(vec![ActivityStateTransition::new("esg_data_point", None, "collected")])
-            .with_duration(20.0, 10.0)
-            .creates()
+        Self::new(
+            "esg_data_collected",
+            "ESG Data Collected",
+            BusinessProcess::Esg,
+        )
+        .with_object_types(vec!["esg_data_point"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "esg_data_point",
+            None,
+            "collected",
+        )])
+        .with_duration(20.0, 10.0)
+        .creates()
     }
 
     /// Emission Calculated activity.
     pub fn emission_calculated() -> Self {
-        Self::new("emission_calculated", "Emission Calculated", BusinessProcess::Esg)
-            .with_object_types(vec!["emission_record"])
-            .with_transitions(vec![ActivityStateTransition::new("emission_record", None, "calculated")])
-            .with_duration(10.0, 5.0)
-            .automated()
-            .creates()
+        Self::new(
+            "emission_calculated",
+            "Emission Calculated",
+            BusinessProcess::Esg,
+        )
+        .with_object_types(vec!["emission_record"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "emission_record",
+            None,
+            "calculated",
+        )])
+        .with_duration(10.0, 5.0)
+        .automated()
+        .creates()
     }
 
     /// Disclosure Prepared activity.
     pub fn disclosure_prepared() -> Self {
-        Self::new("disclosure_prepared", "Disclosure Prepared", BusinessProcess::Esg)
-            .with_object_types(vec!["esg_disclosure"])
-            .with_transitions(vec![ActivityStateTransition::new("esg_disclosure", None, "draft")])
-            .with_duration(120.0, 60.0)
-            .creates()
+        Self::new(
+            "disclosure_prepared",
+            "Disclosure Prepared",
+            BusinessProcess::Esg,
+        )
+        .with_object_types(vec!["esg_disclosure"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "esg_disclosure",
+            None,
+            "draft",
+        )])
+        .with_duration(120.0, 60.0)
+        .creates()
     }
 
     /// Assurance Completed activity.
     pub fn assurance_completed() -> Self {
-        Self::new("assurance_completed", "Assurance Completed", BusinessProcess::Esg)
-            .with_object_types(vec!["esg_disclosure"])
-            .with_transitions(vec![ActivityStateTransition::new("esg_disclosure", Some("draft"), "assured")])
-            .with_duration(240.0, 120.0)
-            .completes()
+        Self::new(
+            "assurance_completed",
+            "Assurance Completed",
+            BusinessProcess::Esg,
+        )
+        .with_object_types(vec!["esg_disclosure"])
+        .with_transitions(vec![ActivityStateTransition::new(
+            "esg_disclosure",
+            Some("draft"),
+            "assured",
+        )])
+        .with_duration(240.0, 120.0)
+        .completes()
     }
 
     /// Get all ESG activities.

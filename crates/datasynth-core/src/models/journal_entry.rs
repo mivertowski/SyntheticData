@@ -34,6 +34,19 @@ pub enum TransactionSource {
     Statistical,
 }
 
+impl std::fmt::Display for TransactionSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Manual => write!(f, "manual"),
+            Self::Automated => write!(f, "automated"),
+            Self::Recurring => write!(f, "recurring"),
+            Self::Reversal => write!(f, "reversal"),
+            Self::Adjustment => write!(f, "adjustment"),
+            Self::Statistical => write!(f, "statistical"),
+        }
+    }
+}
+
 // Note: FraudType is defined in anomaly.rs and re-exported from mod.rs
 // Use `crate::models::FraudType` for fraud type classification.
 
@@ -201,6 +214,7 @@ pub struct JournalEntryHeader {
     pub currency: String,
 
     /// Exchange rate to local currency (1.0 if same currency)
+    #[serde(with = "rust_decimal::serde::str")]
     pub exchange_rate: Decimal,
 
     /// Reference document number (external reference)

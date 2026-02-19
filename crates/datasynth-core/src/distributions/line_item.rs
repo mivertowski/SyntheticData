@@ -151,7 +151,7 @@ impl Default for DebitCreditDistributionConfig {
 pub struct LineItemSampler {
     /// RNG for sampling
     rng: ChaCha8Rng,
-    /// Line item distribution config (retained for potential resets/reconfiguration)
+    /// Line item distribution config
     #[allow(dead_code)]
     line_config: LineItemDistributionConfig,
     /// Even/odd distribution config

@@ -5,6 +5,8 @@
 //! - P2P document flow (VendorInvoice) -> AP subledger (APInvoice)
 //! - O2C document flow (CustomerInvoice) -> AR subledger (ARInvoice)
 
+use std::collections::HashMap;
+
 use rust_decimal::Decimal;
 
 use datasynth_core::models::documents::{CustomerInvoice, VendorInvoice};
@@ -13,9 +15,14 @@ use datasynth_core::models::subledger::ar::{ARInvoice, ARInvoiceLine};
 use datasynth_core::models::subledger::PaymentTerms;
 
 /// Links document flow invoices to subledger records.
+#[derive(Default)]
 pub struct DocumentFlowLinker {
     ap_counter: u64,
     ar_counter: u64,
+    /// Vendor ID → vendor name lookup for realistic AP invoice names.
+    vendor_names: HashMap<String, String>,
+    /// Customer ID → customer name lookup for realistic AR invoice names.
+    customer_names: HashMap<String, String>,
 }
 
 impl DocumentFlowLinker {
@@ -24,7 +31,21 @@ impl DocumentFlowLinker {
         Self {
             ap_counter: 0,
             ar_counter: 0,
+            vendor_names: HashMap::new(),
+            customer_names: HashMap::new(),
         }
+    }
+
+    /// Set vendor name lookup map for realistic AP invoice vendor names.
+    pub fn with_vendor_names(mut self, names: HashMap<String, String>) -> Self {
+        self.vendor_names = names;
+        self
+    }
+
+    /// Set customer name lookup map for realistic AR invoice customer names.
+    pub fn with_customer_names(mut self, names: HashMap<String, String>) -> Self {
+        self.customer_names = names;
+        self
     }
 
     /// Convert a document flow VendorInvoice to an AP subledger APInvoice.
@@ -46,7 +67,10 @@ impl DocumentFlowLinker {
             vendor_invoice.vendor_invoice_number.clone(),
             vendor_invoice.header.company_code.clone(),
             vendor_invoice.vendor_id.clone(),
-            format!("Vendor {}", vendor_invoice.vendor_id), // Vendor name
+            self.vendor_names
+                .get(&vendor_invoice.vendor_id)
+                .cloned()
+                .unwrap_or_else(|| format!("Vendor {}", vendor_invoice.vendor_id)),
             vendor_invoice.invoice_date,
             parse_payment_terms(&vendor_invoice.payment_terms),
             vendor_invoice.header.currency.clone(),
@@ -60,9 +84,20 @@ impl DocumentFlowLinker {
                     MatchStatus::Matched
                 }
                 datasynth_core::models::documents::InvoiceVerificationStatus::ThreeWayMatchFailed => {
+                    // Compute non-zero variance from invoice line items.
+                    // When three-way match fails, there is a meaningful price/quantity difference.
+                    let total_line_amount: Decimal = vendor_invoice
+                        .items
+                        .iter()
+                        .map(|item| item.base.unit_price * item.base.quantity)
+                        .sum();
+                    // Price variance: ~2-5% of invoice total
+                    let price_var = (total_line_amount * Decimal::new(3, 2)).round_dp(2);
+                    // Quantity variance: ~1-3% of invoice total
+                    let qty_var = (total_line_amount * Decimal::new(15, 3)).round_dp(2);
                     MatchStatus::MatchedWithVariance {
-                        price_variance: Decimal::ZERO,
-                        quantity_variance: Decimal::ZERO,
+                        price_variance: price_var,
+                        quantity_variance: qty_var,
                     }
                 }
                 _ => MatchStatus::NotRequired,
@@ -111,7 +146,10 @@ impl DocumentFlowLinker {
             invoice_number,
             customer_invoice.header.company_code.clone(),
             customer_invoice.customer_id.clone(),
-            format!("Customer {}", customer_invoice.customer_id), // Customer name
+            self.customer_names
+                .get(&customer_invoice.customer_id)
+                .cloned()
+                .unwrap_or_else(|| format!("Customer {}", customer_invoice.customer_id)),
             customer_invoice.header.document_date,
             parse_payment_terms(&customer_invoice.payment_terms),
             customer_invoice.header.currency.clone(),
@@ -157,12 +195,6 @@ impl DocumentFlowLinker {
             .iter()
             .map(|ci| self.create_ar_invoice_from_customer_invoice(ci))
             .collect()
-    }
-}
-
-impl Default for DocumentFlowLinker {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

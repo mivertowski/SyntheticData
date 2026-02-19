@@ -1,13 +1,12 @@
 //! Workforce ESG generator — derives diversity metrics, pay equity ratios,
 //! safety incidents, and aggregate safety metrics from employee data.
-
 use chrono::NaiveDate;
 use datasynth_config::schema::SocialConfig;
 use datasynth_core::models::{
     DiversityDimension, GovernanceMetric, IncidentType, OrganizationLevel, PayEquityMetric,
     SafetyIncident, SafetyMetric, WorkforceDiversityMetric,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -16,17 +15,15 @@ use rust_decimal_macros::dec;
 /// Generates workforce diversity, pay equity, and safety metrics.
 pub struct WorkforceGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: SocialConfig,
     counter: u64,
 }
 
 impl WorkforceGenerator {
     /// Create a new workforce generator.
-    pub fn new(seed: u64, config: SocialConfig) -> Self {
+    pub fn new(config: SocialConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -48,9 +45,17 @@ impl WorkforceGenerator {
         }
 
         let mut metrics = Vec::new();
-        let levels = [OrganizationLevel::Corporate, OrganizationLevel::Executive, OrganizationLevel::Board];
+        let levels = [
+            OrganizationLevel::Corporate,
+            OrganizationLevel::Executive,
+            OrganizationLevel::Board,
+        ];
 
-        for dimension in &[DiversityDimension::Gender, DiversityDimension::Ethnicity, DiversityDimension::Age] {
+        for dimension in &[
+            DiversityDimension::Gender,
+            DiversityDimension::Ethnicity,
+            DiversityDimension::Age,
+        ] {
             let categories = self.categories_for(*dimension);
             // Distribute headcount per level
             for level in &levels {
@@ -67,10 +72,7 @@ impl WorkforceGenerator {
                     let headcount = (Decimal::from(level_hc)
                         * Decimal::from_f64_retain(shares[i]).unwrap_or(Decimal::ZERO))
                     .round_dp(0);
-                    let hc = headcount
-                        .to_string()
-                        .parse::<u32>()
-                        .unwrap_or(0);
+                    let hc = headcount.to_string().parse::<u32>().unwrap_or(0);
 
                     let percentage = if level_hc > 0 {
                         (Decimal::from(hc) / Decimal::from(level_hc)).round_dp(4)
@@ -150,10 +152,12 @@ impl WorkforceGenerator {
                 let gap_factor: f64 = self.rng.gen_range(0.85..1.05);
                 let cmp_salary = ref_salary * gap_factor;
 
-                let ref_dec =
-                    Decimal::from_f64_retain(ref_salary).unwrap_or(dec!(90000)).round_dp(2);
-                let cmp_dec =
-                    Decimal::from_f64_retain(cmp_salary).unwrap_or(dec!(85000)).round_dp(2);
+                let ref_dec = Decimal::from_f64_retain(ref_salary)
+                    .unwrap_or(dec!(90000))
+                    .round_dp(2);
+                let cmp_dec = Decimal::from_f64_retain(cmp_salary)
+                    .unwrap_or(dec!(85000))
+                    .round_dp(2);
                 let ratio = if ref_dec.is_zero() {
                     dec!(1.00)
                 } else {
@@ -316,7 +320,7 @@ impl GovernanceGenerator {
     /// Create a new governance generator.
     pub fn new(seed: u64, board_size: u32, independence_target: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             board_size: board_size.max(3),
             independence_target,
@@ -324,17 +328,12 @@ impl GovernanceGenerator {
     }
 
     /// Generate a governance metric for a period.
-    pub fn generate(
-        &mut self,
-        entity_id: &str,
-        period: NaiveDate,
-    ) -> GovernanceMetric {
+    pub fn generate(&mut self, entity_id: &str, period: NaiveDate) -> GovernanceMetric {
         self.counter += 1;
 
         // Independent directors: aim near target with some noise
         let ind_frac: f64 = self.rng.gen_range(
-            (self.independence_target - 0.10).max(0.0)
-                ..(self.independence_target + 0.10).min(1.0),
+            (self.independence_target - 0.10).max(0.0)..(self.independence_target + 0.10).min(1.0),
         );
         let independent = (self.board_size as f64 * ind_frac).round() as u32;
         let independent = independent.min(self.board_size);
@@ -387,14 +386,16 @@ mod tests {
     #[test]
     fn test_diversity_percentages_sum_to_one() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_diversity("C001", 1000, d("2025-01-01"));
 
         assert!(!metrics.is_empty());
 
         // Group by (dimension, level) and check percentages sum ≈ 1.0
-        let mut groups: std::collections::HashMap<(String, String), Vec<&WorkforceDiversityMetric>> =
-            std::collections::HashMap::new();
+        let mut groups: std::collections::HashMap<
+            (String, String),
+            Vec<&WorkforceDiversityMetric>,
+        > = std::collections::HashMap::new();
         for m in &metrics {
             let key = (format!("{:?}", m.dimension), format!("{:?}", m.level));
             groups.entry(key).or_default().push(m);
@@ -417,7 +418,7 @@ mod tests {
     #[test]
     fn test_pay_equity_ratios() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_pay_equity("C001", d("2025-01-01"));
 
         assert_eq!(metrics.len(), 4, "Should have 4 comparison pairs");
@@ -439,7 +440,7 @@ mod tests {
             },
             ..Default::default()
         };
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let incidents = gen.generate_safety_incidents("C001", 3, d("2025-01-01"), d("2025-12-31"));
 
         assert_eq!(incidents.len(), 30);
@@ -456,7 +457,7 @@ mod tests {
     #[test]
     fn test_safety_metric_trir_computation() {
         let config = SocialConfig::default();
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
 
         let incidents = vec![
             SafetyIncident {
@@ -508,7 +509,7 @@ mod tests {
     fn test_disabled_diversity() {
         let mut config = SocialConfig::default();
         config.diversity.enabled = false;
-        let mut gen = WorkforceGenerator::new(42, config);
+        let mut gen = WorkforceGenerator::new(config, 42);
         let metrics = gen.generate_diversity("C001", 1000, d("2025-01-01"));
         assert!(metrics.is_empty());
     }

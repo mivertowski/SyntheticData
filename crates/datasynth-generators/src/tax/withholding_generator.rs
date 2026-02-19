@@ -5,6 +5,7 @@
 //! and vendor country, or falling back to a configurable default withholding
 //! rate.
 
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -49,7 +50,7 @@ impl WithholdingGenerator {
     /// country pair. A common value is `0.30` (30%).
     pub fn new(seed: u64, default_rate: Decimal) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             treaty_rates: HashMap::new(),
             default_rate,
             counter: 0,

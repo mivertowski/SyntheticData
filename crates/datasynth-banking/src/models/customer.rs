@@ -212,6 +212,9 @@ pub struct BankingCustomer {
     pub last_kyc_review: Option<NaiveDate>,
     /// Next scheduled KYC review
     pub next_kyc_review: Option<NaiveDate>,
+    /// Cross-reference to core enterprise customer ID (from master data)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enterprise_customer_id: Option<String>,
 
     // Ground truth labels (for ML)
     /// Whether this is a mule account (ground truth)
@@ -263,6 +266,7 @@ impl BankingCustomer {
             household_id: None,
             last_kyc_review: Some(onboarding_date),
             next_kyc_review: None,
+            enterprise_customer_id: None,
             is_mule: false,
             kyc_truthful: true,
             true_source_of_funds: None,
@@ -308,6 +312,7 @@ impl BankingCustomer {
             household_id: None,
             last_kyc_review: Some(onboarding_date),
             next_kyc_review: None,
+            enterprise_customer_id: None,
             is_mule: false,
             kyc_truthful: true,
             true_source_of_funds: None,

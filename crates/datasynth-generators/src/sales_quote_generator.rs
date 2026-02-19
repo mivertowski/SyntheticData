@@ -6,6 +6,7 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::SalesQuoteConfig;
 use datasynth_core::models::{QuoteLineItem, QuoteStatus, SalesQuote};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -16,24 +17,46 @@ use rust_decimal::Decimal;
 pub struct SalesQuoteGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
+    // Reserved for deterministic line-item IDs when QuoteLineItem gains a UUID field.
+    #[allow(dead_code)]
     item_uuid_factory: DeterministicUuidFactory,
+    /// Pool of real employee IDs for sales rep assignment.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real customer IDs for customer assignment.
+    customer_ids_pool: Vec<String>,
 }
 
 impl SalesQuoteGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SalesQuote),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
                 GeneratorType::SalesQuote,
                 1,
             ),
+            employee_ids_pool: Vec::new(),
+            customer_ids_pool: Vec::new(),
         }
     }
 
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `sales_rep_id` from
+    /// `employee_ids` and `customer_id` from `customer_ids` instead of
+    /// fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, customer_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.customer_ids_pool = customer_ids;
+        self
+    }
+
     /// Generate sales quotes for the given period and configuration.
+    ///
+    /// Uses `"USD"` as the default currency. See [`generate_with_currency`](Self::generate_with_currency)
+    /// for explicit currency control.
     ///
     /// # Arguments
     ///
@@ -51,6 +74,28 @@ impl SalesQuoteGenerator {
         period_start: NaiveDate,
         period_end: NaiveDate,
         config: &SalesQuoteConfig,
+    ) -> Vec<SalesQuote> {
+        self.generate_with_currency(
+            company_code,
+            customer_ids,
+            material_ids,
+            period_start,
+            period_end,
+            config,
+            "USD",
+        )
+    }
+
+    /// Generate sales quotes with a specific company currency.
+    pub fn generate_with_currency(
+        &mut self,
+        company_code: &str,
+        customer_ids: &[(String, String)],
+        material_ids: &[(String, String)],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        config: &SalesQuoteConfig,
+        currency: &str,
     ) -> Vec<SalesQuote> {
         if customer_ids.is_empty() || material_ids.is_empty() {
             return Vec::new();
@@ -74,6 +119,7 @@ impl SalesQuoteGenerator {
                     year,
                     month,
                     config,
+                    currency,
                 );
                 quotes.push(quote);
             }
@@ -101,12 +147,25 @@ impl SalesQuoteGenerator {
         year: i32,
         month: u32,
         config: &SalesQuoteConfig,
+        currency: &str,
     ) -> SalesQuote {
         let quote_id = self.uuid_factory.next().to_string();
 
-        // Random customer
-        let customer_idx = self.rng.gen_range(0..customer_ids.len());
-        let (customer_id, customer_name) = &customer_ids[customer_idx];
+        // Random customer — prefer pool when available
+        let (customer_id, customer_name) = if !self.customer_ids_pool.is_empty() {
+            let pool_idx = self.rng.gen_range(0..self.customer_ids_pool.len());
+            let pool_id = &self.customer_ids_pool[pool_idx];
+            // Try to find matching name from customer_ids tuples
+            customer_ids
+                .iter()
+                .find(|(id, _)| id == pool_id)
+                .map(|(id, name)| (id.clone(), name.clone()))
+                .unwrap_or_else(|| (pool_id.clone(), pool_id.clone()))
+        } else {
+            let customer_idx = self.rng.gen_range(0..customer_ids.len());
+            let (id, name) = &customer_ids[customer_idx];
+            (id.clone(), name.clone())
+        };
 
         // Random quote date within the month
         let last_day = last_day_of_month(year, month);
@@ -126,15 +185,11 @@ impl SalesQuoteGenerator {
             let mat_idx = self.rng.gen_range(0..material_ids.len());
             let (material_id, description) = &material_ids[mat_idx];
 
-            let unit_price_raw: f64 = self.rng.gen_range(50.0..5000.0);
-            let quantity_raw: f64 = self.rng.gen_range(1.0..100.0);
-
-            let unit_price = Decimal::from_f64_retain(unit_price_raw)
-                .unwrap_or(Decimal::ZERO)
-                .round_dp(2);
-            let quantity = Decimal::from_f64_retain(quantity_raw)
-                .unwrap_or(Decimal::ONE)
-                .round_dp(0);
+            let unit_price =
+                sample_decimal_range(&mut self.rng, Decimal::from(50), Decimal::from(5000))
+                    .round_dp(2);
+            let quantity =
+                sample_decimal_range(&mut self.rng, Decimal::ONE, Decimal::from(100)).round_dp(0);
             let line_amount = (unit_price * quantity).round_dp(2);
             total_amount += line_amount;
 
@@ -204,21 +259,26 @@ impl SalesQuoteGenerator {
             None
         };
 
-        // Sales rep: "SR-{01-20}"
-        let rep_num = self.rng.gen_range(1..=20u32);
-        let sales_rep_id = Some(format!("SR-{:02}", rep_num));
+        // Sales rep — prefer employee pool when available
+        let sales_rep_id = if !self.employee_ids_pool.is_empty() {
+            let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+            Some(self.employee_ids_pool[idx].clone())
+        } else {
+            let rep_num = self.rng.gen_range(1..=20u32);
+            Some(format!("SR-{:02}", rep_num))
+        };
 
         SalesQuote {
             quote_id,
             company_code: company_code.to_string(),
-            customer_id: customer_id.clone(),
-            customer_name: customer_name.clone(),
+            customer_id,
+            customer_name,
             quote_date,
             valid_until,
             status,
             line_items,
             total_amount,
-            currency: "USD".to_string(),
+            currency: currency.to_string(),
             discount_percent,
             discount_amount,
             sales_rep_id,

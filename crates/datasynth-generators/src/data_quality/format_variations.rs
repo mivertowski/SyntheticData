@@ -7,8 +7,10 @@
 //! - Text formats (case, whitespace, encoding)
 
 use chrono::NaiveDate;
+use datasynth_core::CountryPack;
 use rand::Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 /// Date format variations.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -51,6 +53,35 @@ impl DateFormat {
             DateFormat::ShortYear,
             DateFormat::Compact,
         ]
+    }
+
+    /// Infer the baseline `DateFormat` from a country pack's short date format
+    /// string (e.g. "MM/DD/YYYY", "DD.MM.YYYY", "DD/MM/YYYY").
+    /// Falls back to `DateFormat::ISO` for unrecognised patterns.
+    pub fn from_locale_short(short: &str) -> Self {
+        let s = short.to_uppercase();
+        if s.starts_with("YYYY") {
+            // ISO family (year-first)
+            DateFormat::ISO
+        } else if s.starts_with("MM") {
+            // Month-first (US family)
+            if s.contains('-') {
+                DateFormat::USDash
+            } else {
+                DateFormat::US
+            }
+        } else if s.starts_with("DD") {
+            // Day-first (European family)
+            if s.contains('.') {
+                DateFormat::EUDot
+            } else if s.contains('-') {
+                DateFormat::EUDash
+            } else {
+                DateFormat::EU
+            }
+        } else {
+            DateFormat::ISO
+        }
     }
 
     /// Formats a date using this format.
@@ -118,6 +149,30 @@ impl AmountFormat {
             AmountFormat::Accounting,
             AmountFormat::NoDecimals,
         ]
+    }
+
+    /// Infer the baseline `AmountFormat` from a country pack's locale settings.
+    ///
+    /// Uses the `decimal_separator`, `thousands_separator`, `currency_symbol`,
+    /// and `default_currency` to pick the most appropriate "correct" format.
+    pub fn from_locale(
+        decimal_sep: &str,
+        thousands_sep: &str,
+        currency_symbol: &str,
+        _default_currency: &str,
+    ) -> Self {
+        match (decimal_sep, thousands_sep) {
+            (",", ".") => AmountFormat::EUFormat,
+            (".", " ") => AmountFormat::SpaceSeparator,
+            (".", ",") => {
+                if !currency_symbol.is_empty() {
+                    AmountFormat::CurrencyPrefix(currency_symbol.to_string())
+                } else {
+                    AmountFormat::USComma
+                }
+            }
+            _ => AmountFormat::Plain,
+        }
     }
 
     /// Formats a decimal using this format.
@@ -379,10 +434,12 @@ impl Default for FormatVariationConfig {
 pub struct FormatVariationInjector {
     config: FormatVariationConfig,
     stats: FormatVariationStats,
+    /// Optional country pack for locale-aware baseline formats.
+    country_pack: Option<CountryPack>,
 }
 
 /// Statistics for format variations.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormatVariationStats {
     pub date_variations: usize,
     pub amount_variations: usize,
@@ -397,10 +454,60 @@ impl FormatVariationInjector {
         Self {
             config,
             stats: FormatVariationStats::default(),
+            country_pack: None,
+        }
+    }
+
+    /// Set the country pack for locale-aware format baselines.
+    ///
+    /// When a country pack is set, the "correct" (non-varied) format for dates
+    /// and amounts is derived from the pack's locale settings instead of
+    /// defaulting to ISO/Plain.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
+    }
+
+    /// Returns the baseline date format derived from the country pack (if set)
+    /// or `DateFormat::ISO` as the default.
+    fn baseline_date_format(&self) -> DateFormat {
+        match &self.country_pack {
+            Some(pack) => {
+                let short = &pack.locale.date_format.short;
+                if short.is_empty() {
+                    DateFormat::ISO
+                } else {
+                    DateFormat::from_locale_short(short)
+                }
+            }
+            None => DateFormat::ISO,
+        }
+    }
+
+    /// Returns the baseline amount format derived from the country pack (if set)
+    /// or `AmountFormat::Plain` as the default.
+    fn baseline_amount_format(&self) -> AmountFormat {
+        match &self.country_pack {
+            Some(pack) => {
+                let locale = &pack.locale;
+                let dec_sep = &locale.number_format.decimal_separator;
+                let thou_sep = &locale.number_format.thousands_separator;
+                let symbol = &locale.currency_symbol;
+                let currency = &locale.default_currency;
+                if dec_sep.is_empty() && thou_sep.is_empty() {
+                    AmountFormat::Plain
+                } else {
+                    AmountFormat::from_locale(dec_sep, thou_sep, symbol, currency)
+                }
+            }
+            None => AmountFormat::Plain,
         }
     }
 
     /// Potentially applies a date format variation.
+    ///
+    /// When a country pack is set, the baseline (non-varied) format is derived
+    /// from the pack's locale `date_format.short` field. Otherwise ISO 8601 is
+    /// used as the default.
     pub fn vary_date<R: Rng>(&mut self, date: NaiveDate, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
@@ -410,11 +517,15 @@ impl FormatVariationInjector {
                 [rng.gen_range(0..self.config.allowed_date_formats.len())];
             format.format(date)
         } else {
-            DateFormat::ISO.format(date)
+            self.baseline_date_format().format(date)
         }
     }
 
     /// Potentially applies an amount format variation.
+    ///
+    /// When a country pack is set, the baseline (non-varied) format is derived
+    /// from the pack's locale number/currency settings. Otherwise plain format
+    /// is used as the default.
     pub fn vary_amount<R: Rng>(&mut self, amount: Decimal, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
@@ -424,7 +535,7 @@ impl FormatVariationInjector {
                 [rng.gen_range(0..self.config.allowed_amount_formats.len())];
             format.format(amount)
         } else {
-            AmountFormat::Plain.format(amount)
+            self.baseline_amount_format().format(amount)
         }
     }
 
@@ -554,5 +665,137 @@ mod tests {
         // Formatted date should not be empty and stats should be updated
         assert!(!formatted.is_empty());
         assert_eq!(injector.stats().date_variations, 1);
+    }
+
+    #[test]
+    fn test_date_format_from_locale_short() {
+        assert_eq!(DateFormat::from_locale_short("MM/DD/YYYY"), DateFormat::US);
+        assert_eq!(
+            DateFormat::from_locale_short("MM-DD-YYYY"),
+            DateFormat::USDash
+        );
+        assert_eq!(DateFormat::from_locale_short("DD/MM/YYYY"), DateFormat::EU);
+        assert_eq!(
+            DateFormat::from_locale_short("DD-MM-YYYY"),
+            DateFormat::EUDash
+        );
+        assert_eq!(
+            DateFormat::from_locale_short("DD.MM.YYYY"),
+            DateFormat::EUDot
+        );
+        assert_eq!(DateFormat::from_locale_short("YYYY-MM-DD"), DateFormat::ISO);
+        assert_eq!(DateFormat::from_locale_short(""), DateFormat::ISO);
+    }
+
+    #[test]
+    fn test_amount_format_from_locale() {
+        // German: comma decimal, dot thousands
+        assert_eq!(
+            AmountFormat::from_locale(",", ".", "\u{20ac}", "EUR"),
+            AmountFormat::EUFormat
+        );
+        // US: dot decimal, comma thousands, dollar symbol
+        assert_eq!(
+            AmountFormat::from_locale(".", ",", "$", "USD"),
+            AmountFormat::CurrencyPrefix("$".to_string())
+        );
+        // Space-separated thousands
+        assert_eq!(
+            AmountFormat::from_locale(".", " ", "", "CHF"),
+            AmountFormat::SpaceSeparator
+        );
+        // Plain fallback
+        assert_eq!(
+            AmountFormat::from_locale("X", "Y", "", "XYZ"),
+            AmountFormat::Plain
+        );
+    }
+
+    #[test]
+    fn test_injector_with_country_pack_date_baseline() {
+        use datasynth_core::country::schema::{DateFormatConfig, LocaleConfig};
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
+
+        // German pack: DD.MM.YYYY
+        let mut pack = CountryPack::default();
+        pack.locale = LocaleConfig {
+            date_format: DateFormatConfig {
+                short: "DD.MM.YYYY".to_string(),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let config = FormatVariationConfig {
+            date_variation_rate: 0.0, // Never vary -> always use baseline
+            ..Default::default()
+        };
+        let mut injector = FormatVariationInjector::new(config);
+        injector.set_country_pack(pack);
+
+        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+        let formatted = injector.vary_date(date, &mut rng);
+
+        // Baseline should be EU dot: 15.01.2024
+        assert_eq!(formatted, "15.01.2024");
+    }
+
+    #[test]
+    fn test_injector_with_country_pack_amount_baseline() {
+        use datasynth_core::country::schema::{LocaleConfig, NumberFormatConfig};
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
+
+        // German pack: comma decimal, dot thousands
+        let mut pack = CountryPack::default();
+        pack.locale = LocaleConfig {
+            number_format: NumberFormatConfig {
+                decimal_separator: ",".to_string(),
+                thousands_separator: ".".to_string(),
+                ..Default::default()
+            },
+            currency_symbol: "\u{20ac}".to_string(),
+            default_currency: "EUR".to_string(),
+            ..Default::default()
+        };
+
+        let config = FormatVariationConfig {
+            amount_variation_rate: 0.0, // Never vary -> always use baseline
+            ..Default::default()
+        };
+        let mut injector = FormatVariationInjector::new(config);
+        injector.set_country_pack(pack);
+
+        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let amount = dec!(1234.56);
+        let formatted = injector.vary_amount(amount, &mut rng);
+
+        // Baseline should be EU format: 1.234,56
+        assert_eq!(formatted, "1.234,56");
+    }
+
+    #[test]
+    fn test_injector_without_country_pack_uses_defaults() {
+        use rand::SeedableRng;
+        use rand_chacha::ChaCha8Rng;
+
+        let config = FormatVariationConfig {
+            date_variation_rate: 0.0,
+            amount_variation_rate: 0.0,
+            ..Default::default()
+        };
+        let mut injector = FormatVariationInjector::new(config);
+        // No country pack set
+
+        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let date = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+        let formatted_date = injector.vary_date(date, &mut rng);
+        assert_eq!(formatted_date, "2024-01-15"); // ISO default
+
+        let amount = dec!(1234.56);
+        let formatted_amount = injector.vary_amount(amount, &mut rng);
+        assert_eq!(formatted_amount, "1234.56"); // Plain default
     }
 }

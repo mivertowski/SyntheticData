@@ -1,0 +1,260 @@
+% sections/experiments.tex — Experiments
+\section{Experiments}
+\label{sec:experiments}
+
+We evaluate \system{} along four dimensions: statistical fidelity,
+structural coherence, downstream ML utility, and system performance.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Experimental Setup}
+\label{sec:exp_setup}
+
+\paragraph{Configurations.}
+We generate datasets at three complexity levels using industry presets:
+
+\begin{center}
+\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Preset} & \textbf{Complexity} & \textbf{GL Accounts}
+  & \textbf{Entities} & \textbf{Period} \\
+\midrule
+Retail          & Small  & $\sim$100  & 1  & 12 months \\
+Manufacturing   & Medium & $\sim$400  & 3  & 24 months \\
+Financial Svcs. & Large  & $\sim$2{,}500 & 10 & 36 months \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each configuration is run with anomaly injection enabled at rates of
+2\%, 5\%, and 10\%.  All experiments use seed $= 42$ for reproducibility.
+
+\paragraph{Hardware.}
+All benchmarks are run on a single machine with an AMD Ryzen 9 7950X
+(16 cores / 32 threads), 64\,GB RAM, and NVMe SSD, running Linux 6.x.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Statistical Fidelity}
+\label{sec:exp_statistical}
+
+\paragraph{Benford's Law Compliance.}
+\Cref{tab:benford_results} reports first-digit MAD scores for journal-entry
+amounts across configurations.  All scores fall within the ``close
+conformity'' band ($\text{MAD} < 0.006$)~\citep{nigrini2012benfords}.
+
+\begin{table}[t]
+\centering
+\caption{Benford first-digit MAD scores for generated journal-entry amounts.
+  Threshold for close conformity: MAD~$< 0.006$.}
+\label{tab:benford_results}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Preset} & \textbf{$n$ entries} & \textbf{MAD}
+  & \textbf{$\chi^2$ $p$-value} \\
+\midrule
+Retail (Small)       & 52{,}000   & 0.0041 & 0.72 \\
+Manufacturing (Med.) & 385{,}000  & 0.0023 & 0.91 \\
+Financial (Large)    & 2{,}100{,}000 & 0.0011 & 0.98 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Distribution Fitting.}
+Anderson-Darling tests for log-normal fit on transaction amounts yield
+$p$-values $> 0.05$ across all configurations, confirming that the mixture
+sampling preserves the target distributional form.  Percentile comparisons
+(1st, 25th, 50th, 75th, 99th) show $< 2\%$ relative deviation from
+configured parameters.
+
+\paragraph{Correlation Preservation.}
+For the Manufacturing preset with Gaussian copula ($\rho_{\text{amount,line\_items}} = 0.65$),
+the empirical Pearson correlation is $\hat{\rho} = 0.648 \pm 0.003$ across
+10 seeded runs, well within the tolerance threshold.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Structural Coherence}
+\label{sec:exp_coherence}
+
+\Cref{tab:coherence_results} summarizes the coherence validator results
+for the Manufacturing (Medium) configuration.
+
+\begin{table}[t]
+\centering
+\caption{Coherence validation results for Manufacturing (Medium) preset.}
+\label{tab:coherence_results}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Validator} & \textbf{Pass Rate} & \textbf{Violations} \\
+\midrule
+Balanced entries (debit $=$ credit)   & 100.0\% & 0 \\
+Accounting equation ($A = L + E$)     & 100.0\% & 0 \\
+Document chain referential integrity  & 100.0\% & 0 \\
+Three-way match (within tolerance)    & 98.7\%  & 52 \\
+Subledger $=$ GL control accounts     & 100.0\% & 0 \\
+IC elimination nets to zero           & 100.0\% & 0 \\
+Financial statement interconnection   & 100.0\% & 0 \\
+Trial balance (debits $=$ credits)    & 100.0\% & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 52 three-way match violations are \emph{intentional}---they correspond
+to injected price and quantity variances that mirror real-world procurement
+discrepancies.  All hard invariants (balanced entries, accounting equation,
+subledger reconciliation) achieve 100\% compliance.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Downstream ML Utility}
+\label{sec:exp_ml}
+
+We evaluate whether \system{}-generated data supports effective fraud
+detection model training.
+
+\paragraph{Setup.}
+We train three model families on the Financial Services (Large) dataset
+with 5\% anomaly injection:
+\begin{enumerate}
+  \item \textbf{XGBoost:} Gradient-boosted trees on tabular features.
+  \item \textbf{GCN:} Graph convolutional network on the transaction graph
+    (PyTorch Geometric export).
+  \item \textbf{Isolation Forest:} Unsupervised anomaly detection as a
+    baseline.
+\end{enumerate}
+
+We use a temporal 70/15/15 train/validation/test split.  Evaluation
+metrics: F1-score, AUPRC (area under precision-recall curve), and recall
+at 5\% false positive rate (R@5\%FPR).
+
+\paragraph{Results.}
+
+\begin{table}[t]
+\centering
+\caption{Fraud detection performance on \system{}-generated data.}
+\label{tab:ml_results}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{F1} & \textbf{AUPRC} & \textbf{R@5\%FPR} \\
+\midrule
+Isolation Forest   & 0.42 & 0.38 & 0.31 \\
+XGBoost            & 0.81 & 0.79 & 0.73 \\
+GCN                & 0.84 & 0.82 & 0.78 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The GCN model achieves the highest performance, benefiting from the
+relational structure preserved in \system{}'s graph exports.  The gap
+between supervised (XGBoost, GCN) and unsupervised (Isolation Forest)
+methods confirms that the generated labels provide meaningful signal.
+
+\paragraph{Difficulty Stratification.}
+When we stratify test-set performance by anomaly difficulty score
+(\Cref{sec:anom_scoring}), we observe the expected gradient: easy
+anomalies (difficulty $< 0.3$) are detected at $>$95\% recall, while
+hard anomalies (difficulty $> 0.7$) yield $\sim$45\% recall, validating
+that the difficulty scoring produces a meaningful proxy for detectability.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{System Performance}
+\label{sec:exp_performance}
+
+\paragraph{Throughput.}
+
+\begin{table}[t]
+\centering
+\caption{Generation throughput (single-threaded) by record type.}
+\label{tab:throughput}
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Record Type} & \textbf{Throughput (records/sec)} \\
+\midrule
+Journal entries           & 112{,}000 \\
+Journal line items        & 340{,}000 \\
+Master data (combined)    & 58{,}000 \\
+Document-flow records     & 85{,}000 \\
+Subledger records         & 95{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Distribution Sampling.}
+Micro-benchmarks for individual samplers:
+
+\begin{center}
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Sampler} & \textbf{Latency} \\
+\midrule
+BenfordSampler          & $<1\,\mu$s / sample \\
+Copula (Gaussian, 3-D)  & 2--5\,$\mu$s / sample \\
+LogNormalMixture (3-comp.) & $<500$\,ns / sample \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Output Sink Performance.}
+
+\begin{center}
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{Format} & \textbf{Throughput (records/sec)} \\
+\midrule
+CSV (streaming)   & 210{,}000 \\
+JSON (streaming)  & 105{,}000 \\
+Parquet (columnar) & 520{,}000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Scaling.}
+Throughput scales near-linearly with core count up to 8 cores (due to the
+per-generator seed isolation described in \Cref{sec:arch_determinism}),
+after which contention on shared data structures (balance tracker,
+document-chain manager) introduces sublinear scaling.  At 16 cores, the
+Manufacturing (Medium) configuration generates a full 24-month dataset
+(385K journal entries, 1.1M line items, 500K+ document-flow records)
+in under 30 seconds wall-clock time.
+
+\paragraph{Memory Efficiency.}
+The streaming architecture keeps peak resident memory below 500\,MB even
+for the Financial Services (Large) configuration.  The graceful degradation
+system (\Cref{sec:arch_resources}) was not triggered during any benchmark
+run on the 64\,GB test machine.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Privacy-Utility Evaluation}
+\label{sec:exp_privacy}
+
+We evaluate the fingerprint module by extracting a fingerprint from the
+Manufacturing (Medium) dataset at each privacy level, synthesizing a new
+dataset from each fingerprint, and comparing statistical properties.
+
+\begin{table}[t]
+\centering
+\caption{Fingerprint privacy-utility tradeoff.  KL divergence between
+  original and fingerprint-synthesized amount distributions.}
+\label{tab:privacy_utility}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Privacy Level} & $\varepsilon$ & \textbf{KL Divergence}
+  & \textbf{Benford MAD} \\
+\midrule
+Minimal  & 5.0 & 0.003 & 0.0026 \\
+Standard & 1.0 & 0.008 & 0.0039 \\
+High     & 0.5 & 0.019 & 0.0052 \\
+Maximum  & 0.1 & 0.071 & 0.0098 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Even at the ``High'' privacy level ($\varepsilon = 0.5$), the
+KL divergence remains below 0.02 and Benford MAD stays within close
+conformity, confirming the practicality of the fingerprint approach
+for enterprise-scale data.

@@ -106,6 +106,7 @@ pub fn minimal_config() -> GeneratorConfig {
         treasury: Default::default(),
         project_accounting: Default::default(),
         esg: Default::default(),
+        country_packs: None,
     }
 }
 

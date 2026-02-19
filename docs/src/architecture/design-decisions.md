@@ -304,6 +304,27 @@ impl Generator<JournalEntry> for JournalEntryGenerator {
 - No shared mutable state during generation
 - Rayon for parallel iteration
 
+## 13. Country Pack Architecture
+
+**Decision:** Replace hardcoded country-specific data with pluggable JSON country packs loaded at runtime.
+
+**Rationale:**
+- ~7,500 lines of hardcoded country data (holidays, names, tax rates, addresses) were scattered across generators
+- Adding a new country required code changes in multiple crates
+- JSON format enables non-developers to contribute country data
+- Layered merge (`_default.json` → country → user overrides) provides flexibility without duplication
+
+**Implementation:**
+- 16-section JSON schema covering locale, names, holidays, tax, address, phone, banking, payroll, and more
+- `include_str!` embeds built-in packs (US, DE, GB) for zero-config usage
+- `CountryPackRegistry` resolves packs by country code with fallback to defaults
+- `deep_merge()` recursively merges objects while replacing arrays/scalars
+- `NamePool` fields changed from `Vec<&'static str>` to `Vec<String>` to support deserialized data
+
+**Trade-off:** JSON parsing adds a one-time startup cost (~2ms per pack), but eliminates the maintenance burden of hardcoded data and enables external/commercial country packs via `country_packs.external_dir`.
+
+---
+
 ## See Also
 
 - [Architecture Overview](README.md)

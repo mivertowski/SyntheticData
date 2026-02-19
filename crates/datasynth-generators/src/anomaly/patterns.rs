@@ -4,6 +4,7 @@
 //! including clustering behavior and temporal patterns.
 
 use chrono::{Datelike, NaiveDate, Weekday};
+use datasynth_core::utils::weighted_select;
 use rand::Rng;
 use std::collections::HashMap;
 
@@ -277,7 +278,9 @@ struct ActiveCluster {
     size: usize,
     /// Start date.
     start_date: NaiveDate,
-    /// Fraud category.
+    /// Fraud category (clusters are keyed by category in the HashMap; retained
+    /// here for debug/display and future per-cluster analytics).
+    #[allow(dead_code)]
     category: FraudCategory,
     /// Time window for this cluster.
     time_window_days: i64,
@@ -586,15 +589,7 @@ impl EntityTargetingManager {
                 if weighted.is_empty() {
                     candidates[rng.gen_range(0..candidates.len())].clone()
                 } else {
-                    let total: f64 = weighted.iter().map(|(_, w)| w).sum();
-                    let mut r = rng.gen::<f64>() * total;
-                    for (entity, weight) in &weighted {
-                        r -= weight;
-                        if r <= 0.0 {
-                            return Some(entity.clone());
-                        }
-                    }
-                    weighted[0].0.clone()
+                    weighted_select(rng, &weighted).clone()
                 }
             }
             EntityTargetingPattern::RepeatOffender { repeat_probability } => {

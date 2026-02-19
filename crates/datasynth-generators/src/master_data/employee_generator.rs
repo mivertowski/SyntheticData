@@ -5,9 +5,11 @@ use datasynth_core::models::{
     Employee, EmployeePool, EmployeeStatus, JobLevel, SystemRole, TransactionCodeAuth,
 };
 use datasynth_core::templates::{MultiCultureNameGenerator, NameCulture};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for employee generation.
 #[derive(Debug, Clone)]
@@ -205,7 +207,7 @@ impl EmployeeGenerator {
         name_gen.set_email_domain(&config.email_domain);
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             name_generator: name_gen,
             config,
@@ -388,6 +390,7 @@ impl EmployeeGenerator {
         company_code: &str,
         hire_date_range: (NaiveDate, NaiveDate),
     ) -> EmployeePool {
+        debug!(company_code, "Generating employee company pool");
         let mut pool = EmployeePool::new();
 
         let (start_date, end_date) = hire_date_range;
@@ -540,7 +543,7 @@ impl EmployeeGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.employee_counter = 0;
     }
 }

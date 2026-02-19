@@ -1,0 +1,98 @@
+% sections/introduction.tex — Introduction
+\section{Introduction}
+\label{sec:introduction}
+
+The digitization of enterprise resource planning (ERP) systems has produced
+vast repositories of financial transaction data that underpin modern
+accounting, auditing, and regulatory compliance.  Machine-learning approaches
+to fraud detection~\citep{west2016intelligent,hilal2022financial},
+continuous auditing~\citep{vasarhelyi2004principles}, and anomaly
+analytics~\citep{schreyer2017detection} have shown considerable promise,
+yet they face a persistent data-access challenge: real accounting data is
+proprietary, regulated under frameworks such as SOX~\citep{sox2002} and
+GDPR~\citep{gdpr2016}, and rarely available for open research.
+
+Synthetic data generation offers a path forward, but existing approaches fall
+short in several dimensions:
+
+\begin{enumerate}
+  \item \textbf{Statistical fidelity.}  General-purpose tabular generators
+    (GANs, VAEs, CTGAN~\citep{xu2019modeling}) do not enforce domain-specific
+    invariants such as balanced double-entry bookkeeping, Benford's-law
+    compliance~\citep{benford1938law,nigrini2012benfords}, or accounting
+    equation coherence ($A = L + E$).
+
+  \item \textbf{Relational completeness.}  Enterprise data is inherently
+    multi-table and multi-process.  A purchase order triggers goods receipts,
+    vendor invoices, and payments; these in turn affect subledgers, trial
+    balances, and financial statements.  Generating tables in isolation
+    destroys these referential chains.
+
+  \item \textbf{Anomaly realism.}  Injecting fraud and error patterns post hoc
+    often produces anomalies that are trivially detectable or statistically
+    implausible, limiting the usefulness of generated data for training robust
+    detection models.
+
+  \item \textbf{Privacy guarantees.}  When real data characteristics must be
+    preserved, na\"ive summary statistics may leak sensitive information.
+    Formal privacy mechanisms are needed to bridge the gap between real-data
+    fidelity and confidentiality.
+\end{enumerate}
+
+\paragraph{Contributions.}
+We present \system{}, a comprehensive open-source framework that addresses
+all four challenges simultaneously.  Our contributions are:
+
+\begin{itemize}
+  \item A \textbf{layered generation architecture} (\Cref{sec:architecture})
+    comprising 15 Rust crates that separate domain models, statistical
+    distributions, business-process generators, output sinks, and evaluation
+    into composable modules.
+
+  \item A \textbf{statistically grounded sampling engine}
+    (\Cref{sec:statistical_foundations}) featuring log-normal mixture models,
+    five copula families for dependency modeling, and first- and second-digit
+    Benford compliance with provable mean-absolute-deviation bounds.
+
+  \item A \textbf{multi-process generation pipeline}
+    (\Cref{sec:generation_pipeline}) that produces coherent data spanning
+    Procure-to-Pay (P2P), Order-to-Cash (O2C), Record-to-Report (R2R),
+    Source-to-Contract (S2C), hire-to-retire (HR), and manufacturing processes,
+    with three-way matching, intercompany elimination, and period-close
+    procedures.
+
+  \item A \textbf{multi-stage anomaly injection framework}
+    (\Cref{sec:anomaly_injection}) with 33 anomaly types, progressive fraud
+    schemes, temporal clustering, cascade propagation, difficulty scoring, and
+    ground-truth labels suitable for supervised and semi-supervised learning.
+
+  \item A \textbf{privacy-preserving fingerprint module}
+    (\Cref{sec:privacy}) that extracts distributional profiles under
+    $\varepsilon$-differential privacy and $k$-anonymity, enabling
+    generation of synthetic data that mirrors real-world characteristics
+    without exposing individual records.
+
+  \item A \textbf{comprehensive evaluation suite}
+    (\Cref{sec:evaluation}) with 15 coherence validators, statistical
+    goodness-of-fit tests, ML-readiness metrics, and an auto-tuning engine
+    that generates configuration patches from evaluation gaps.
+\end{itemize}
+
+\paragraph{Scope and audience.}
+\system{} targets three communities: (a)~ML researchers needing realistic
+labeled accounting datasets for fraud detection and anomaly analytics,
+(b)~auditors and regulators seeking synthetic test environments for continuous
+auditing tools, and (c)~ERP vendors requiring high-volume test data for system
+integration and stress testing.
+
+The remainder of this paper is organized as follows.
+\Cref{sec:related_work} surveys related work.
+\Cref{sec:architecture} presents the system architecture.
+\Cref{sec:statistical_foundations} formalizes the statistical
+foundations.
+\Cref{sec:generation_pipeline} details the generation pipeline.
+\Cref{sec:anomaly_injection} describes the anomaly injection framework.
+\Cref{sec:evaluation} covers the evaluation suite.
+\Cref{sec:privacy} discusses the privacy-preserving fingerprint module.
+\Cref{sec:experiments} reports experimental results.
+\Cref{sec:conclusion} concludes.

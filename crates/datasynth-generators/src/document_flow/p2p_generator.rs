@@ -4,6 +4,7 @@
 //! PurchaseOrder → GoodsReceipt → VendorInvoice → Payment
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -16,6 +17,7 @@ use datasynth_core::models::{
     },
     Material, MaterialPool, PaymentTerms, Vendor, VendorPool,
 };
+use datasynth_core::CountryPack;
 
 use super::three_way_match::ThreeWayMatcher;
 
@@ -164,6 +166,7 @@ pub struct P2PGenerator {
     vi_counter: usize,
     pay_counter: usize,
     three_way_matcher: ThreeWayMatcher,
+    country_pack: Option<CountryPack>,
 }
 
 impl P2PGenerator {
@@ -175,7 +178,7 @@ impl P2PGenerator {
     /// Create a new P2P generator with custom configuration.
     pub fn with_config(seed: u64, config: P2PGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             po_counter: 0,
@@ -183,7 +186,61 @@ impl P2PGenerator {
             vi_counter: 0,
             pay_counter: 0,
             three_way_matcher: ThreeWayMatcher::new(),
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware document texts.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
+    }
+
+    /// Build a document ID, preferring the country pack `reference_prefix` when set.
+    fn make_doc_id(
+        &self,
+        default_prefix: &str,
+        pack_key: &str,
+        company_code: &str,
+        counter: usize,
+    ) -> String {
+        let prefix = self
+            .country_pack
+            .as_ref()
+            .map(|p| {
+                let grp = match pack_key {
+                    "purchase_order" => &p.document_texts.purchase_order,
+                    "goods_receipt" => &p.document_texts.goods_receipt,
+                    "vendor_invoice" => &p.document_texts.vendor_invoice,
+                    "payment" => &p.document_texts.payment,
+                    _ => return default_prefix.to_string(),
+                };
+                if grp.reference_prefix.is_empty() {
+                    default_prefix.to_string()
+                } else {
+                    grp.reference_prefix.clone()
+                }
+            })
+            .unwrap_or_else(|| default_prefix.to_string());
+        format!("{}-{}-{:010}", prefix, company_code, counter)
+    }
+
+    /// Pick a random line description from the country pack for the given
+    /// document type, falling back to the provided default.
+    fn pick_line_description(&mut self, pack_key: &str, default: &str) -> String {
+        if let Some(pack) = &self.country_pack {
+            let descriptions = match pack_key {
+                "purchase_order" => &pack.document_texts.purchase_order.line_descriptions,
+                "goods_receipt" => &pack.document_texts.goods_receipt.line_descriptions,
+                "vendor_invoice" => &pack.document_texts.vendor_invoice.line_descriptions,
+                "payment" => &pack.document_texts.payment.line_descriptions,
+                _ => return default.to_string(),
+            };
+            if !descriptions.is_empty() {
+                let idx = self.rng.gen_range(0..descriptions.len());
+                return descriptions[idx].clone();
+            }
+        }
+        default.to_string()
     }
 
     /// Generate a complete P2P chain.
@@ -322,7 +379,7 @@ impl P2PGenerator {
     ) -> PurchaseOrder {
         self.po_counter += 1;
 
-        let po_id = format!("PO-{}-{:010}", company_code, self.po_counter);
+        let po_id = self.make_doc_id("PO", "purchase_order", company_code, self.po_counter);
 
         let mut po = PurchaseOrder::new(
             po_id,
@@ -340,13 +397,10 @@ impl P2PGenerator {
             let quantity = Decimal::from(self.rng.gen_range(1..100));
             let unit_price = material.standard_cost;
 
-            let item = PurchaseOrderItem::new(
-                (idx + 1) as u16 * 10,
-                &material.description,
-                quantity,
-                unit_price,
-            )
-            .with_material(&material.material_id);
+            let description = self.pick_line_description("purchase_order", &material.description);
+            let item =
+                PurchaseOrderItem::new((idx + 1) as u16 * 10, &description, quantity, unit_price)
+                    .with_material(&material.material_id);
 
             po.add_item(item);
         }
@@ -435,7 +489,7 @@ impl P2PGenerator {
     ) -> GoodsReceipt {
         self.gr_counter += 1;
 
-        let gr_id = format!("GR-{}-{:010}", company_code, self.gr_counter);
+        let gr_id = self.make_doc_id("GR", "goods_receipt", company_code, self.gr_counter);
 
         let mut gr = GoodsReceipt::from_purchase_order(
             gr_id,
@@ -457,9 +511,11 @@ impl P2PGenerator {
             .round_dp(0);
 
             if received_qty > Decimal::ZERO {
+                let description =
+                    self.pick_line_description("goods_receipt", &po_item.base.description);
                 let gr_item = GoodsReceiptItem::from_po(
                     po_item.base.line_number,
-                    &po_item.base.description,
+                    &description,
                     received_qty,
                     po_item.base.unit_price,
                     &po.header.document_id,
@@ -496,7 +552,7 @@ impl P2PGenerator {
 
         self.vi_counter += 1;
 
-        let invoice_id = format!("VI-{}-{:010}", company_code, self.vi_counter);
+        let invoice_id = self.make_doc_id("VI", "vendor_invoice", company_code, self.vi_counter);
         let vendor_invoice_number = format!("INV-{:08}", self.rng.gen_range(10000000..99999999));
 
         // Calculate due date based on payment terms
@@ -554,9 +610,11 @@ impl P2PGenerator {
                     po_item.base.unit_price
                 };
 
+                let vi_description =
+                    self.pick_line_description("vendor_invoice", &po_item.base.description);
                 let item = VendorInvoiceItem::from_po_gr(
                     po_item.base.line_number,
-                    &po_item.base.description,
+                    &vi_description,
                     qty,
                     unit_price,
                     &po.header.document_id,
@@ -619,7 +677,7 @@ impl P2PGenerator {
     ) -> Payment {
         self.pay_counter += 1;
 
-        let payment_id = format!("PAY-{}-{:010}", company_code, self.pay_counter);
+        let payment_id = self.make_doc_id("PAY", "payment", company_code, self.pay_counter);
 
         // Determine if early payment discount applies
         let take_discount = invoice.discount_due_date.is_some_and(|disc_date| {
@@ -688,6 +746,7 @@ impl P2PGenerator {
         fiscal_year: u16,
         created_by: &str,
     ) -> Vec<P2PDocumentChain> {
+        tracing::debug!(count, company_code, "Generating P2P document chains");
         let mut chains = Vec::new();
 
         let (start_date, end_date) = date_range;
@@ -823,7 +882,7 @@ impl P2PGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.po_counter = 0;
         self.gr_counter = 0;
         self.vi_counter = 0;

@@ -4,7 +4,8 @@
 //! results, and review sign-offs per ISA 230.
 
 use chrono::{Duration, NaiveDate};
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 
 use datasynth_core::models::audit::{
@@ -59,7 +60,7 @@ impl WorkpaperGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config: WorkpaperGeneratorConfig::default(),
             section_counters: std::collections::HashMap::new(),
         }
@@ -68,7 +69,7 @@ impl WorkpaperGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: WorkpaperGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             section_counters: std::collections::HashMap::new(),
         }

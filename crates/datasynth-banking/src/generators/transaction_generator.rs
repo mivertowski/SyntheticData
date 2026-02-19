@@ -15,6 +15,7 @@ use crate::models::{
     BankAccount, BankTransaction, BankingCustomer, CounterpartyPool, CounterpartyRef,
     PersonaVariant,
 };
+use crate::seed_offsets::TRANSACTION_GENERATOR_SEED_OFFSET;
 
 /// Generator for banking transactions.
 pub struct TransactionGenerator {
@@ -35,7 +36,7 @@ impl TransactionGenerator {
 
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(2000)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(TRANSACTION_GENERATOR_SEED_OFFSET)),
             uuid_factory: DeterministicUuidFactory::new(
                 seed,
                 datasynth_core::GeneratorType::JournalEntry,

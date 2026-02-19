@@ -494,7 +494,8 @@ impl ICMatchingEngine {
 /// An unmatched IC item for detailed matching.
 #[derive(Debug, Clone)]
 struct UnmatchedItem {
-    /// Company code.
+    /// Company code (stored for diagnostics; matching uses counterparty + amount).
+    #[allow(dead_code)]
     company: String,
     /// Counterparty company code.
     counterparty: String,

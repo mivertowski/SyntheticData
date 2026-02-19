@@ -2,11 +2,10 @@
 //! from operational data (energy consumption, vendor spend, headcount).
 //!
 //! Uses EPA/DEFRA-style emission factors to convert activity data to CO2e tonnes.
-
 use chrono::NaiveDate;
 use datasynth_config::schema::EnvironmentalConfig;
 use datasynth_core::models::{EmissionRecord, EmissionScope, EstimationMethod, Scope3Category};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -53,10 +52,10 @@ pub struct VendorSpendInput {
 fn emission_factor_kg_per_kwh(energy_type: EnergyInputType) -> Decimal {
     match energy_type {
         // EPA GHG factors (approximate)
-        EnergyInputType::NaturalGas => dec!(0.181),  // kg CO2e / kWh
+        EnergyInputType::NaturalGas => dec!(0.181), // kg CO2e / kWh
         EnergyInputType::Diesel => dec!(0.253),
         EnergyInputType::Coal => dec!(0.341),
-        EnergyInputType::Electricity => dec!(0.417),  // US grid average
+        EnergyInputType::Electricity => dec!(0.417), // US grid average
     }
 }
 
@@ -99,17 +98,15 @@ fn spend_emission_factor(category: &str, country: &str) -> Decimal {
 /// Scope 3: vendor spend → spend-based, business travel → average-data
 pub struct EmissionGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: EnvironmentalConfig,
     counter: u64,
 }
 
 impl EmissionGenerator {
     /// Create a new emission generator.
-    pub fn new(seed: u64, config: EnvironmentalConfig) -> Self {
+    pub fn new(config: EnvironmentalConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -156,7 +153,10 @@ impl EmissionGenerator {
                     emission_factor: Some(factor),
                     co2e_tonnes,
                     estimation_method: EstimationMethod::ActivityBased,
-                    source: Some(format!("EPA GHG factors ({})", self.config.scope1.factor_region)),
+                    source: Some(format!(
+                        "EPA GHG factors ({})",
+                        self.config.scope1.factor_region
+                    )),
                 }
             })
             .collect()
@@ -198,7 +198,10 @@ impl EmissionGenerator {
                     emission_factor: Some(factor),
                     co2e_tonnes,
                     estimation_method: EstimationMethod::ActivityBased,
-                    source: Some(format!("Grid average ({})", self.config.scope2.factor_region)),
+                    source: Some(format!(
+                        "Grid average ({})",
+                        self.config.scope2.factor_region
+                    )),
                 }
             })
             .collect()
@@ -336,13 +339,16 @@ mod tests {
         }];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
 
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].scope, EmissionScope::Scope1);
         assert!(records[0].co2e_tonnes > Decimal::ZERO);
-        assert_eq!(records[0].estimation_method, EstimationMethod::ActivityBased);
+        assert_eq!(
+            records[0].estimation_method,
+            EstimationMethod::ActivityBased
+        );
         assert!(records[0].facility_id.is_some());
     }
 
@@ -364,10 +370,14 @@ mod tests {
         ];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
 
-        assert_eq!(records.len(), 1, "Electricity should be excluded from Scope 1");
+        assert_eq!(
+            records.len(),
+            1,
+            "Electricity should be excluded from Scope 1"
+        );
         assert_eq!(records[0].scope, EmissionScope::Scope1);
     }
 
@@ -381,7 +391,7 @@ mod tests {
         }];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope2("C001", &energy_data);
 
         assert_eq!(records.len(), 1);
@@ -407,7 +417,7 @@ mod tests {
         ];
 
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_purchased_goods(
             "C001",
             &vendor_spend,
@@ -427,18 +437,21 @@ mod tests {
     #[test]
     fn test_scope3_business_travel() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_business_travel("C001", dec!(100000), d("2025-01-01"));
 
         assert_eq!(records.len(), 1);
-        assert_eq!(records[0].scope3_category, Some(Scope3Category::BusinessTravel));
+        assert_eq!(
+            records[0].scope3_category,
+            Some(Scope3Category::BusinessTravel)
+        );
         assert!(records[0].co2e_tonnes > Decimal::ZERO);
     }
 
     #[test]
     fn test_scope3_commuting() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_commuting("C001", 500, d("2025-06-01"));
 
         assert_eq!(records.len(), 1);
@@ -463,7 +476,7 @@ mod tests {
             period: d("2025-01-01"),
         }];
 
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope1("C001", &energy_data);
         assert!(records.is_empty());
     }
@@ -479,10 +492,10 @@ mod tests {
 
         let config = EnvironmentalConfig::default();
 
-        let mut gen1 = EmissionGenerator::new(42, config.clone());
+        let mut gen1 = EmissionGenerator::new(config.clone(), 42);
         let r1 = gen1.generate_scope1("C001", &energy_data);
 
-        let mut gen2 = EmissionGenerator::new(42, config);
+        let mut gen2 = EmissionGenerator::new(config, 42);
         let r2 = gen2.generate_scope1("C001", &energy_data);
 
         assert_eq!(r1.len(), r2.len());
@@ -492,7 +505,7 @@ mod tests {
     #[test]
     fn test_zero_spend_scope3() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_business_travel("C001", Decimal::ZERO, d("2025-01-01"));
         assert!(records.is_empty());
     }
@@ -500,7 +513,7 @@ mod tests {
     #[test]
     fn test_zero_headcount_commuting() {
         let config = EnvironmentalConfig::default();
-        let mut gen = EmissionGenerator::new(42, config);
+        let mut gen = EmissionGenerator::new(config, 42);
         let records = gen.generate_scope3_commuting("C001", 0, d("2025-01-01"));
         assert!(records.is_empty());
     }

@@ -5,6 +5,7 @@
 //! under ASC 815 / IFRS 9 and tests effectiveness (80-125% corridor).
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -66,9 +67,9 @@ pub struct HedgingGenerator {
 
 impl HedgingGenerator {
     /// Creates a new hedging generator.
-    pub fn new(seed: u64, config: HedgingSchemaConfig) -> Self {
+    pub fn new(config: HedgingSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             instrument_counter: 0,
             relationship_counter: 0,
@@ -134,7 +135,9 @@ impl HedgingGenerator {
                     method,
                     effectiveness,
                 )
-                .with_ineffectiveness_amount(self.generate_ineffectiveness(notional, effectiveness));
+                .with_ineffectiveness_amount(
+                    self.generate_ineffectiveness(notional, effectiveness),
+                );
 
                 relationships.push(relationship);
             }
@@ -152,8 +155,8 @@ impl HedgingGenerator {
         maturity_date: NaiveDate,
     ) -> HedgingInstrument {
         let counterparty = self.random_counterparty();
-        let fixed_rate = dec!(0.03) + Decimal::try_from(self.rng.gen_range(0.0f64..0.025))
-            .unwrap_or(Decimal::ZERO);
+        let fixed_rate = dec!(0.03)
+            + Decimal::try_from(self.rng.gen_range(0.0f64..0.025)).unwrap_or(Decimal::ZERO);
 
         self.instrument_counter += 1;
         HedgingInstrument::new(
@@ -235,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_generates_fx_forwards_from_exposures() {
-        let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let exposures = vec![
             FxExposure {
                 currency_pair: "EUR/USD".to_string(),
@@ -260,8 +263,14 @@ mod tests {
 
         // Notional should be hedge_ratio * exposure
         let hedge_ratio = dec!(0.75);
-        assert_eq!(instruments[0].notional_amount, (dec!(1000000) * hedge_ratio).round_dp(2));
-        assert_eq!(instruments[1].notional_amount, (dec!(500000) * hedge_ratio).round_dp(2));
+        assert_eq!(
+            instruments[0].notional_amount,
+            (dec!(1000000) * hedge_ratio).round_dp(2)
+        );
+        assert_eq!(
+            instruments[1].notional_amount,
+            (dec!(500000) * hedge_ratio).round_dp(2)
+        );
 
         // All should be FX Forwards
         for instr in &instruments {
@@ -273,7 +282,7 @@ mod tests {
 
     #[test]
     fn test_hedge_relationships_effectiveness() {
-        let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let exposures = vec![FxExposure {
             currency_pair: "EUR/USD".to_string(),
             foreign_currency: "EUR".to_string(),
@@ -297,7 +306,7 @@ mod tests {
             hedge_accounting: false,
             ..HedgingSchemaConfig::default()
         };
-        let mut gen = HedgingGenerator::new(42, config);
+        let mut gen = HedgingGenerator::new(config, 42);
         let exposures = vec![FxExposure {
             currency_pair: "EUR/USD".to_string(),
             foreign_currency: "EUR".to_string(),
@@ -313,7 +322,7 @@ mod tests {
 
     #[test]
     fn test_zero_exposure_skipped() {
-        let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let exposures = vec![FxExposure {
             currency_pair: "EUR/USD".to_string(),
             foreign_currency: "EUR".to_string(),
@@ -328,7 +337,7 @@ mod tests {
 
     #[test]
     fn test_ir_swap_generation() {
-        let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let swap = gen.generate_ir_swap("USD", dec!(5000000), d("2025-01-01"), d("2030-01-01"));
 
         assert_eq!(swap.instrument_type, HedgeInstrumentType::InterestRateSwap);
@@ -348,10 +357,10 @@ mod tests {
             description: "EUR receivables".to_string(),
         }];
 
-        let mut gen1 = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen1 = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let (i1, r1) = gen1.generate(d("2025-01-15"), &exposures);
 
-        let mut gen2 = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+        let mut gen2 = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
         let (i2, r2) = gen2.generate(d("2025-01-15"), &exposures);
 
         assert_eq!(i1[0].notional_amount, i2[0].notional_amount);

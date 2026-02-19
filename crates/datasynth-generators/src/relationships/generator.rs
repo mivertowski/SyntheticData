@@ -6,11 +6,13 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use uuid::Uuid;
+
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 use super::rules::{
     CardinalityRule, PropertyGenerator, PropertyValueType, RelationshipConfig,
@@ -104,6 +106,8 @@ pub struct RelationshipGenerator {
     config: RelationshipConfig,
     /// Random number generator.
     rng: ChaCha8Rng,
+    /// Deterministic UUID factory.
+    uuid_factory: DeterministicUuidFactory,
     /// Generation count.
     count: u64,
     /// Track relationships by source ID for cardinality validation.
@@ -119,7 +123,8 @@ impl RelationshipGenerator {
     pub fn new(config: RelationshipConfig, seed: u64) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
+            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Customer),
             count: 0,
             relationships_by_source: HashMap::new(),
             relationships_by_target: HashMap::new(),
@@ -269,7 +274,8 @@ impl RelationshipGenerator {
 
     /// Resets the generator.
     pub fn reset(&mut self, seed: u64) {
-        self.rng = ChaCha8Rng::seed_from_u64(seed);
+        self.rng = seeded_rng(seed, 0);
+        self.uuid_factory = DeterministicUuidFactory::new(seed, GeneratorType::Customer);
         self.count = 0;
         self.relationships_by_source.clear();
         self.relationships_by_target.clear();
@@ -392,7 +398,7 @@ impl RelationshipGenerator {
     ) -> GeneratedRelationship {
         self.count += 1;
 
-        let id = Uuid::new_v4().to_string();
+        let id = self.uuid_factory.next().to_string();
         let properties = self.generate_properties(source, target, &rel_type.properties);
 
         let metadata = RelationshipMetadata {
@@ -479,7 +485,7 @@ impl RelationshipGenerator {
                 .cloned()
                 .unwrap_or(Value::Null),
 
-            PropertyGenerator::Uuid => Value::String(Uuid::new_v4().to_string()),
+            PropertyGenerator::Uuid => Value::String(self.uuid_factory.next().to_string()),
 
             PropertyGenerator::Timestamp => Value::String(Utc::now().to_rfc3339()),
         }

@@ -1,5 +1,7 @@
 //! CLI for synthetic accounting data generation.
 
+mod output_writer;
+
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -487,12 +489,25 @@ fn main() -> Result<()> {
                 }
                 ConfigOrOrchestrator::Config(cfg) => {
                     let phase_config = PhaseConfig {
+                        // Wire CLI flags OR config-enabled sections
+                        // Note: banking defaults to enabled=true in its crate, so only
+                        // use the explicit CLI --banking flag to avoid unexpected generation
                         generate_banking: banking,
-                        generate_audit: audit,
-                        generate_graph_export: graph_export,
+                        generate_audit: audit || cfg.audit.enabled,
+                        generate_graph_export: graph_export || cfg.graph_export.enabled,
+                        generate_manufacturing: cfg.manufacturing.enabled,
+                        generate_sourcing: cfg.source_to_pay.enabled,
+                        generate_tax: cfg.tax.enabled,
+                        generate_esg: cfg.esg.enabled,
+                        generate_intercompany: cfg.intercompany.enabled,
+                        generate_accounting_standards: cfg.accounting_standards.enabled,
+                        generate_financial_statements: cfg.financial_reporting.enabled,
+                        generate_sales_kpi_budgets: cfg.sales_quotes.enabled,
+                        generate_bank_reconciliation: cfg.financial_reporting.enabled,
+                        generate_ocpm_events: cfg.ocpm.enabled,
                         show_progress: true,
                         // Wire up anomaly and data quality injection from config
-                        inject_anomalies: cfg.fraud.enabled,
+                        inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
                         inject_data_quality: cfg.data_quality.enabled,
                         // Use conservative defaults for document generation
                         p2p_chains: 50,
@@ -565,21 +580,16 @@ fn main() -> Result<()> {
                 tracing::warn!("Memory limit reached, writing minimal output");
             }
 
-            // Write sample output (limited to 1000 entries for safety)
-            let sample_path = output.join("sample_entries.json");
-            let sample_entries: Vec<_> = result.journal_entries.iter().take(1000).collect();
-            let json = serde_json::to_string_pretty(&sample_entries)?;
-            std::fs::write(&sample_path, json)?;
-            tracing::info!(
-                "Sample entries written to: {} ({} entries)",
-                sample_path.display(),
-                sample_entries.len()
-            );
+            // Write all generated data (journal entries, master data, document flows,
+            // subledgers, HR, manufacturing, sourcing, banking, audit, tax, ESG, etc.)
+            if let Err(e) = output_writer::write_all_output(&result, &output) {
+                tracing::warn!("Some output files may not have been written: {}", e);
+            }
 
             // Write FEC (Fichier des Écritures Comptables) when French GAAP – 18 mandatory columns
             if matches!(
                 config_for_manifest.accounting_standards.framework,
-                AccountingFrameworkConfig::FrenchGaap
+                Some(AccountingFrameworkConfig::FrenchGaap)
             ) && !result.journal_entries.is_empty()
             {
                 let fec_path = output.join("fec.csv");
@@ -600,36 +610,6 @@ fn main() -> Result<()> {
                     ),
                     Err(e) => tracing::warn!("Could not write FEC file: {}", e),
                 }
-            }
-
-            // Write banking output if generated
-            if banking && !result.banking.customers.is_empty() {
-                let banking_dir = output.join("banking");
-                std::fs::create_dir_all(&banking_dir)?;
-
-                // Write banking customers
-                let customers_path = banking_dir.join("banking_customers.json");
-                let json = serde_json::to_string_pretty(&result.banking.customers)?;
-                std::fs::write(&customers_path, json)?;
-
-                // Write banking accounts
-                let accounts_path = banking_dir.join("banking_accounts.json");
-                let json = serde_json::to_string_pretty(&result.banking.accounts)?;
-                std::fs::write(&accounts_path, json)?;
-
-                // Write banking transactions (limited for safety)
-                let transactions_path = banking_dir.join("banking_transactions.json");
-                let limited_txns: Vec<_> = result.banking.transactions.iter().take(10000).collect();
-                let json = serde_json::to_string_pretty(&limited_txns)?;
-                std::fs::write(&transactions_path, json)?;
-
-                tracing::info!(
-                    "Banking data written to: {} ({} customers, {} accounts, {} transactions)",
-                    banking_dir.display(),
-                    result.banking.customers.len(),
-                    result.banking.accounts.len(),
-                    limited_txns.len()
-                );
             }
 
             // ========================================
@@ -683,16 +663,106 @@ fn main() -> Result<()> {
             manifest.set_output_directory(&output);
             manifest.complete(result.statistics.clone());
 
-            // Add output file info
-            manifest.add_output_file(OutputFileInfo {
-                path: "sample_entries.json".to_string(),
-                format: "json".to_string(),
-                record_count: Some(sample_entries.len()),
-                size_bytes: None,
-                sha256_checksum: None,
-                first_record_index: None,
-                last_record_index: None,
-            });
+            // Add output file info for journal entries
+            if !result.journal_entries.is_empty() {
+                let total_lines: usize =
+                    result.journal_entries.iter().map(|je| je.lines.len()).sum();
+                manifest.add_output_file(OutputFileInfo {
+                    path: "journal_entries.csv".to_string(),
+                    format: "csv".to_string(),
+                    record_count: Some(total_lines),
+                    size_bytes: None,
+                    sha256_checksum: None,
+                    first_record_index: None,
+                    last_record_index: None,
+                });
+                manifest.add_output_file(OutputFileInfo {
+                    path: "journal_entries.json".to_string(),
+                    format: "json".to_string(),
+                    record_count: Some(result.journal_entries.len()),
+                    size_bytes: None,
+                    sha256_checksum: None,
+                    first_record_index: None,
+                    last_record_index: None,
+                });
+            }
+
+            // Add master data file info
+            for (name, count) in [
+                ("master_data/vendors.json", result.master_data.vendors.len()),
+                (
+                    "master_data/customers.json",
+                    result.master_data.customers.len(),
+                ),
+                (
+                    "master_data/materials.json",
+                    result.master_data.materials.len(),
+                ),
+                (
+                    "master_data/fixed_assets.json",
+                    result.master_data.assets.len(),
+                ),
+                (
+                    "master_data/employees.json",
+                    result.master_data.employees.len(),
+                ),
+            ] {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: name.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            }
+
+            // Add document flow file info
+            for (name, count) in [
+                (
+                    "document_flows/purchase_orders.json",
+                    result.document_flows.purchase_orders.len(),
+                ),
+                (
+                    "document_flows/goods_receipts.json",
+                    result.document_flows.goods_receipts.len(),
+                ),
+                (
+                    "document_flows/vendor_invoices.json",
+                    result.document_flows.vendor_invoices.len(),
+                ),
+                (
+                    "document_flows/payments.json",
+                    result.document_flows.payments.len(),
+                ),
+                (
+                    "document_flows/sales_orders.json",
+                    result.document_flows.sales_orders.len(),
+                ),
+                (
+                    "document_flows/deliveries.json",
+                    result.document_flows.deliveries.len(),
+                ),
+                (
+                    "document_flows/customer_invoices.json",
+                    result.document_flows.customer_invoices.len(),
+                ),
+            ] {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: name.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            }
 
             if !result.anomaly_labels.labels.is_empty() {
                 manifest.add_output_file(OutputFileInfo {
@@ -705,6 +775,331 @@ fn main() -> Result<()> {
                     last_record_index: None,
                 });
             }
+
+            // Register additional output subdirectories in manifest
+            // Helper to add a manifest entry for a JSON file
+            let mut register = |path: &str, count: usize| {
+                if count > 0 {
+                    manifest.add_output_file(OutputFileInfo {
+                        path: path.to_string(),
+                        format: "json".to_string(),
+                        record_count: Some(count),
+                        size_bytes: None,
+                        sha256_checksum: None,
+                        first_record_index: None,
+                        last_record_index: None,
+                    });
+                }
+            };
+
+            // Subledger
+            register(
+                "subledger/ar_invoices.json",
+                result.subledger.ar_invoices.len(),
+            );
+            register(
+                "subledger/ap_invoices.json",
+                result.subledger.ap_invoices.len(),
+            );
+            register(
+                "subledger/fa_records.json",
+                result.subledger.fa_records.len(),
+            );
+            register(
+                "subledger/inventory_positions.json",
+                result.subledger.inventory_positions.len(),
+            );
+            register(
+                "subledger/inventory_movements.json",
+                result.subledger.inventory_movements.len(),
+            );
+
+            // Audit
+            register(
+                "audit/audit_engagements.json",
+                result.audit.engagements.len(),
+            );
+            register("audit/audit_workpapers.json", result.audit.workpapers.len());
+            register("audit/audit_evidence.json", result.audit.evidence.len());
+            register(
+                "audit/audit_risk_assessments.json",
+                result.audit.risk_assessments.len(),
+            );
+            register("audit/audit_findings.json", result.audit.findings.len());
+            register("audit/audit_judgments.json", result.audit.judgments.len());
+
+            // Banking
+            register(
+                "banking/banking_customers.json",
+                result.banking.customers.len(),
+            );
+            register(
+                "banking/banking_transactions.json",
+                result.banking.transactions.len(),
+            );
+            register(
+                "banking/banking_accounts.json",
+                result.banking.accounts.len(),
+            );
+            register(
+                "banking/aml_transaction_labels.json",
+                result.banking.transaction_labels.len(),
+            );
+            register(
+                "banking/aml_customer_labels.json",
+                result.banking.customer_labels.len(),
+            );
+            register(
+                "banking/aml_account_labels.json",
+                result.banking.account_labels.len(),
+            );
+            register(
+                "banking/aml_relationship_labels.json",
+                result.banking.relationship_labels.len(),
+            );
+            register(
+                "banking/aml_narratives.json",
+                result.banking.narratives.len(),
+            );
+
+            // Sourcing (S2C)
+            register(
+                "sourcing/sourcing_projects.json",
+                result.sourcing.sourcing_projects.len(),
+            );
+            register(
+                "sourcing/spend_analyses.json",
+                result.sourcing.spend_analyses.len(),
+            );
+            register(
+                "sourcing/supplier_qualifications.json",
+                result.sourcing.qualifications.len(),
+            );
+            register("sourcing/rfx_events.json", result.sourcing.rfx_events.len());
+            register("sourcing/supplier_bids.json", result.sourcing.bids.len());
+            register(
+                "sourcing/bid_evaluations.json",
+                result.sourcing.bid_evaluations.len(),
+            );
+            register(
+                "sourcing/procurement_contracts.json",
+                result.sourcing.contracts.len(),
+            );
+            register(
+                "sourcing/catalog_items.json",
+                result.sourcing.catalog_items.len(),
+            );
+            register(
+                "sourcing/supplier_scorecards.json",
+                result.sourcing.scorecards.len(),
+            );
+
+            // Intercompany
+            register(
+                "intercompany/ic_matched_pairs.json",
+                result.intercompany.matched_pairs.len(),
+            );
+            register(
+                "intercompany/ic_elimination_entries.json",
+                result.intercompany.elimination_entries.len(),
+            );
+            register(
+                "intercompany/ic_seller_journal_entries.json",
+                result.intercompany.seller_journal_entries.len(),
+            );
+            register(
+                "intercompany/ic_buyer_journal_entries.json",
+                result.intercompany.buyer_journal_entries.len(),
+            );
+
+            // Financial Reporting
+            register(
+                "financial_reporting/financial_statements.json",
+                result.financial_reporting.financial_statements.len(),
+            );
+            register(
+                "financial_reporting/bank_reconciliations.json",
+                result.financial_reporting.bank_reconciliations.len(),
+            );
+
+            // Period Close
+            register(
+                "period_close/trial_balances.json",
+                result.financial_reporting.trial_balances.len(),
+            );
+
+            // HR
+            register("hr/payroll_runs.json", result.hr.payroll_runs.len());
+            register("hr/time_entries.json", result.hr.time_entries.len());
+            register("hr/expense_reports.json", result.hr.expense_reports.len());
+            register(
+                "hr/payroll_line_items.json",
+                result.hr.payroll_line_items.len(),
+            );
+
+            // Manufacturing
+            register(
+                "manufacturing/production_orders.json",
+                result.manufacturing.production_orders.len(),
+            );
+            register(
+                "manufacturing/quality_inspections.json",
+                result.manufacturing.quality_inspections.len(),
+            );
+            register(
+                "manufacturing/cycle_counts.json",
+                result.manufacturing.cycle_counts.len(),
+            );
+
+            // Sales / KPI / Budgets
+            register(
+                "sales_kpi_budgets/sales_quotes.json",
+                result.sales_kpi_budgets.sales_quotes.len(),
+            );
+            register(
+                "sales_kpi_budgets/management_kpis.json",
+                result.sales_kpi_budgets.kpis.len(),
+            );
+            register(
+                "sales_kpi_budgets/budgets.json",
+                result.sales_kpi_budgets.budgets.len(),
+            );
+
+            // Internal Controls
+            register(
+                "internal_controls/internal_controls.json",
+                result.internal_controls.len(),
+            );
+
+            // Accounting Standards
+            register(
+                "accounting_standards/customer_contracts.json",
+                result.accounting_standards.contracts.len(),
+            );
+            register(
+                "accounting_standards/impairment_tests.json",
+                result.accounting_standards.impairment_tests.len(),
+            );
+
+            // Treasury
+            register(
+                "treasury/debt_instruments.json",
+                result.treasury.debt_instruments.len(),
+            );
+            register(
+                "treasury/hedging_instruments.json",
+                result.treasury.hedging_instruments.len(),
+            );
+            register(
+                "treasury/hedge_relationships.json",
+                result.treasury.hedge_relationships.len(),
+            );
+            register(
+                "treasury/cash_positions.json",
+                result.treasury.cash_positions.len(),
+            );
+            register(
+                "treasury/cash_forecasts.json",
+                result.treasury.cash_forecasts.len(),
+            );
+            register("treasury/cash_pools.json", result.treasury.cash_pools.len());
+            register(
+                "treasury/cash_pool_sweeps.json",
+                result.treasury.cash_pool_sweeps.len(),
+            );
+            register(
+                "treasury/treasury_anomaly_labels.json",
+                result.treasury.treasury_anomaly_labels.len(),
+            );
+
+            // Project Accounting
+            register(
+                "project_accounting/projects.json",
+                result.project_accounting.projects.len(),
+            );
+            register(
+                "project_accounting/change_orders.json",
+                result.project_accounting.change_orders.len(),
+            );
+            register(
+                "project_accounting/milestones.json",
+                result.project_accounting.milestones.len(),
+            );
+            register(
+                "project_accounting/cost_lines.json",
+                result.project_accounting.cost_lines.len(),
+            );
+            register(
+                "project_accounting/revenue_records.json",
+                result.project_accounting.revenue_records.len(),
+            );
+            register(
+                "project_accounting/earned_value_metrics.json",
+                result.project_accounting.earned_value_metrics.len(),
+            );
+
+            // Tax (extended)
+            register("tax/tax_provisions.json", result.tax.tax_provisions.len());
+            register("tax/tax_jurisdictions.json", result.tax.jurisdictions.len());
+            register("tax/tax_codes.json", result.tax.codes.len());
+            register("tax/tax_lines.json", result.tax.tax_lines.len());
+            register("tax/tax_returns.json", result.tax.tax_returns.len());
+            register(
+                "tax/withholding_records.json",
+                result.tax.withholding_records.len(),
+            );
+            register(
+                "tax/tax_anomaly_labels.json",
+                result.tax.tax_anomaly_labels.len(),
+            );
+
+            // ESG
+            register("esg/emission_records.json", result.esg.emissions.len());
+            register("esg/energy_consumption.json", result.esg.energy.len());
+            register("esg/water_usage.json", result.esg.water.len());
+            register("esg/waste_records.json", result.esg.waste.len());
+            register("esg/workforce_diversity.json", result.esg.diversity.len());
+            register("esg/pay_equity.json", result.esg.pay_equity.len());
+            register(
+                "esg/safety_incidents.json",
+                result.esg.safety_incidents.len(),
+            );
+            register("esg/safety_metrics.json", result.esg.safety_metrics.len());
+            register("esg/governance_metrics.json", result.esg.governance.len());
+            register(
+                "esg/supplier_esg_assessments.json",
+                result.esg.supplier_assessments.len(),
+            );
+            register(
+                "esg/materiality_assessments.json",
+                result.esg.materiality.len(),
+            );
+            register("esg/esg_disclosures.json", result.esg.disclosures.len());
+            register(
+                "esg/climate_scenarios.json",
+                result.esg.climate_scenarios.len(),
+            );
+            register(
+                "esg/esg_anomaly_labels.json",
+                result.esg.anomaly_labels.len(),
+            );
+
+            // Balance
+            register(
+                "balance/opening_balances.json",
+                result.opening_balances.len(),
+            );
+            register(
+                "balance/subledger_reconciliation.json",
+                result.subledger_reconciliation.len(),
+            );
+
+            // Process Mining
+            register("process_mining/event_log.json", result.ocpm.event_count);
+
+            // Root-level files
+            register("chart_of_accounts.json", 1);
+            register("generation_statistics.json", 1);
 
             // Attach lineage graph to manifest and write separate file
             if let Some(ref lineage) = result.lineage {
@@ -1548,6 +1943,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         treasury: Default::default(),
         project_accounting: Default::default(),
         esg: Default::default(),
+        country_packs: None,
     }
 }
 

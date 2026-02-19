@@ -5,9 +5,11 @@ use datasynth_core::models::{
     BomComponent, Material, MaterialAccountDetermination, MaterialGroup, MaterialPool,
     MaterialType, UnitOfMeasure, ValuationMethod,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for material generation.
 #[derive(Debug, Clone)]
@@ -133,19 +135,6 @@ const MATERIAL_DESCRIPTIONS: &[(MaterialType, &[&str])] = &[
     ),
 ];
 
-/// Material group templates.
-const MATERIAL_GROUPS: &[(MaterialGroup, &str)] = &[
-    (MaterialGroup::Electronics, "ELEC"),
-    (MaterialGroup::Mechanical, "MECH"),
-    (MaterialGroup::Chemical, "CHEM"),
-    (MaterialGroup::PackagingMaterials, "PACK"),
-    (MaterialGroup::Chemicals, "RAWM"),
-    (MaterialGroup::FinishedGoods, "FING"),
-    (MaterialGroup::Tools, "TOOL"),
-    (MaterialGroup::Consumables, "CONS"),
-    (MaterialGroup::Services, "SERV"),
-];
-
 /// Generator for material master data.
 pub struct MaterialGenerator {
     rng: ChaCha8Rng,
@@ -153,6 +142,8 @@ pub struct MaterialGenerator {
     config: MaterialGeneratorConfig,
     material_counter: usize,
     created_materials: Vec<String>, // Track for BOM references
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl MaterialGenerator {
@@ -164,12 +155,18 @@ impl MaterialGenerator {
     /// Create a new material generator with custom configuration.
     pub fn with_config(seed: u64, config: MaterialGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             material_counter: 0,
             created_materials: Vec::new(),
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single material.
@@ -310,6 +307,7 @@ impl MaterialGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> MaterialPool {
+        debug!(count, company_code, %effective_date, "Generating material pool");
         let mut pool = MaterialPool::new();
 
         for _ in 0..count {
@@ -547,7 +545,7 @@ impl MaterialGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.material_counter = 0;
         self.created_materials.clear();
     }

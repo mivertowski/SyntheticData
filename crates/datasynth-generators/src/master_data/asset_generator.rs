@@ -5,9 +5,11 @@ use datasynth_core::models::{
     AssetAccountDetermination, AssetClass, AssetStatus, DepreciationMethod, FixedAsset,
     FixedAssetPool,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for asset generation.
 #[derive(Debug, Clone)]
@@ -176,7 +178,7 @@ impl AssetGenerator {
     /// Create a new asset generator with custom configuration.
     pub fn with_config(seed: u64, config: AssetGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             asset_counter: 0,
@@ -316,6 +318,7 @@ impl AssetGenerator {
         company_code: &str,
         date_range: (NaiveDate, NaiveDate),
     ) -> FixedAssetPool {
+        debug!(count, company_code, "Generating fixed asset pool");
         let mut pool = FixedAssetPool::new();
 
         let (start_date, end_date) = date_range;
@@ -628,7 +631,7 @@ impl AssetGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.asset_counter = 0;
     }
 }

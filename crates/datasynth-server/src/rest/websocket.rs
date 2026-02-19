@@ -70,7 +70,7 @@ pub async fn handle_metrics_socket(socket: WebSocket, state: AppState) {
 
                 match serde_json::to_string(&update) {
                     Ok(json) => {
-                        if sender.send(Message::Text(json)).await.is_err() {
+                        if sender.send(Message::Text(json.into())).await.is_err() {
                             info!("Metrics WebSocket client disconnected");
                             break;
                         }
@@ -216,7 +216,7 @@ pub async fn handle_events_socket(socket: WebSocket, state: AppState) {
 
                     match serde_json::to_string(&event) {
                         Ok(json) => {
-                            if sender.send(Message::Text(json)).await.is_err() {
+                            if sender.send(Message::Text(json.into())).await.is_err() {
                                 info!("Events WebSocket client disconnected");
                                 break;
                             }

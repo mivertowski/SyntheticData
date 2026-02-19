@@ -1,6 +1,7 @@
 //! Period close engine for orchestrating the close process.
 
 use rust_decimal::Decimal;
+use tracing::debug;
 
 use datasynth_core::models::{
     CloseSchedule, CloseTask, CloseTaskResult, CloseTaskStatus, FiscalPeriod, JournalEntry,
@@ -54,6 +55,13 @@ impl CloseEngine {
         schedule: &CloseSchedule,
         context: &mut CloseContext,
     ) -> PeriodCloseRun {
+        debug!(
+            company_code,
+            period = fiscal_period.period,
+            year = fiscal_period.year,
+            task_count = schedule.tasks.len(),
+            "Executing period close"
+        );
         self.run_counter += 1;
         let run_id = format!("CLOSE-{:08}", self.run_counter);
 

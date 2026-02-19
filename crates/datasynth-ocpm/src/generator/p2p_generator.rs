@@ -1,17 +1,15 @@
 //! P2P (Procure-to-Pay) process event generator.
 //!
 //! Generates OCPM events for the complete P2P flow:
-//! Create PO → Approve PO → Release PO → Create GR → Post GR →
-//! Receive Invoice → Verify Invoice → Post Invoice → Execute Payment
+//! Create PO -> Approve PO -> Release PO -> Create GR -> Post GR ->
+//! Receive Invoice -> Verify Invoice -> Post Invoice -> Execute Payment
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
-};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// P2P document references for event generation.
@@ -41,20 +39,23 @@ pub struct P2pDocuments {
     pub amount: Decimal,
     /// Currency
     pub currency: String,
+    /// Country code (ISO 3166-1 alpha-2) of the company.
+    pub country_code: Option<String>,
 }
 
 impl P2pDocuments {
-    /// Create new P2P documents.
+    /// Create new P2P documents with deterministic UUIDs from the given factory.
     pub fn new(
         po_number: &str,
         vendor_id: &str,
         company_code: &str,
         amount: Decimal,
         currency: &str,
+        factory: &OcpmUuidFactory,
     ) -> Self {
         Self {
             po_number: po_number.into(),
-            po_id: Uuid::new_v4(),
+            po_id: factory.next_document_id(),
             gr_number: None,
             gr_id: None,
             invoice_number: None,
@@ -65,27 +66,34 @@ impl P2pDocuments {
             company_code: company_code.into(),
             amount,
             currency: currency.into(),
+            country_code: None,
         }
     }
 
-    /// Set goods receipt info.
-    pub fn with_goods_receipt(mut self, gr_number: &str) -> Self {
+    /// Set country code for the company.
+    pub fn with_country_code(mut self, country_code: &str) -> Self {
+        self.country_code = Some(country_code.into());
+        self
+    }
+
+    /// Set goods receipt info with deterministic UUID from the given factory.
+    pub fn with_goods_receipt(mut self, gr_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.gr_number = Some(gr_number.into());
-        self.gr_id = Some(Uuid::new_v4());
+        self.gr_id = Some(factory.next_document_id());
         self
     }
 
-    /// Set invoice info.
-    pub fn with_invoice(mut self, invoice_number: &str) -> Self {
+    /// Set invoice info with deterministic UUID from the given factory.
+    pub fn with_invoice(mut self, invoice_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.invoice_number = Some(invoice_number.into());
-        self.invoice_id = Some(Uuid::new_v4());
+        self.invoice_id = Some(factory.next_document_id());
         self
     }
 
-    /// Set payment info.
-    pub fn with_payment(mut self, payment_number: &str) -> Self {
+    /// Set payment info with deterministic UUID from the given factory.
+    pub fn with_payment(mut self, payment_number: &str, factory: &OcpmUuidFactory) -> Self {
         self.payment_number = Some(payment_number.into());
-        self.payment_id = Some(Uuid::new_v4());
+        self.payment_id = Some(factory.next_document_id());
         self
     }
 }
@@ -146,6 +154,13 @@ impl OcpmEventGenerator {
             "vendor_id",
             ObjectAttributeValue::String(documents.vendor_id.clone()),
         );
+        if let Some(ref cc) = documents.country_code {
+            Self::add_event_attribute(
+                &mut event,
+                "country_code",
+                ObjectAttributeValue::String(cc.clone()),
+            );
+        }
         events.push(event);
 
         // Activity: Approve PO
@@ -218,7 +233,7 @@ impl OcpmEventGenerator {
             objects.push(gr_object.clone());
 
             // Add relationship: GR references PO
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "references",
                 gr_object.object_id,
                 &gr_type.type_id,
@@ -282,7 +297,7 @@ impl OcpmEventGenerator {
             objects.push(invoice_object.clone());
 
             // Add relationship: Invoice references PO
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "references",
                 invoice_object.object_id,
                 &invoice_type.type_id,
@@ -435,16 +450,18 @@ mod tests {
     #[test]
     fn test_p2p_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
+        let factory = OcpmUuidFactory::new(42);
         let documents = P2pDocuments::new(
             "PO-000001",
             "V000001",
             "1000",
             Decimal::new(10000, 0),
             "USD",
+            &factory,
         )
-        .with_goods_receipt("GR-000001")
-        .with_invoice("INV-000001")
-        .with_payment("PAY-000001");
+        .with_goods_receipt("GR-000001", &factory)
+        .with_invoice("INV-000001", &factory)
+        .with_payment("PAY-000001", &factory);
 
         let result = generator.generate_p2p_case(
             &documents,
@@ -473,10 +490,17 @@ mod tests {
             },
         );
 
-        let documents =
-            P2pDocuments::new("PO-000002", "V000001", "1000", Decimal::new(5000, 0), "USD")
-                .with_goods_receipt("GR-000002")
-                .with_invoice("INV-000002");
+        let factory = OcpmUuidFactory::new(123);
+        let documents = P2pDocuments::new(
+            "PO-000002",
+            "V000001",
+            "1000",
+            Decimal::new(5000, 0),
+            "USD",
+            &factory,
+        )
+        .with_goods_receipt("GR-000002", &factory)
+        .with_invoice("INV-000002", &factory);
 
         let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 

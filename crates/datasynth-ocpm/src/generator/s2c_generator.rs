@@ -1,17 +1,15 @@
 //! S2C (Source-to-Contract) process event generator.
 //!
 //! Generates OCPM events for the complete S2C flow:
-//! Create Project → Qualify Suppliers → Publish RFx → Submit Bids →
-//! Evaluate Bids → Award Contract → Activate Contract → Complete Sourcing
+//! Create Project -> Qualify Suppliers -> Publish RFx -> Submit Bids ->
+//! Evaluate Bids -> Award Contract -> Activate Contract -> Complete Sourcing
 
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
-};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// S2C document references for event generation.
@@ -42,11 +40,17 @@ pub struct S2cDocuments {
 }
 
 impl S2cDocuments {
-    /// Create new S2C documents.
-    pub fn new(project_id: &str, vendor_id: &str, company_code: &str, amount: Decimal) -> Self {
+    /// Create new S2C documents with deterministic UUIDs from the given factory.
+    pub fn new(
+        project_id: &str,
+        vendor_id: &str,
+        company_code: &str,
+        amount: Decimal,
+        factory: &OcpmUuidFactory,
+    ) -> Self {
         Self {
             project_id: project_id.into(),
-            project_uuid: Uuid::new_v4(),
+            project_uuid: factory.next_document_id(),
             rfx_id: None,
             rfx_uuid: None,
             winning_bid_id: None,
@@ -59,24 +63,24 @@ impl S2cDocuments {
         }
     }
 
-    /// Set RFx info.
-    pub fn with_rfx(mut self, rfx_id: &str) -> Self {
+    /// Set RFx info with deterministic UUID from the given factory.
+    pub fn with_rfx(mut self, rfx_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.rfx_id = Some(rfx_id.into());
-        self.rfx_uuid = Some(Uuid::new_v4());
+        self.rfx_uuid = Some(factory.next_document_id());
         self
     }
 
-    /// Set winning bid info.
-    pub fn with_winning_bid(mut self, bid_id: &str) -> Self {
+    /// Set winning bid info with deterministic UUID from the given factory.
+    pub fn with_winning_bid(mut self, bid_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.winning_bid_id = Some(bid_id.into());
-        self.winning_bid_uuid = Some(Uuid::new_v4());
+        self.winning_bid_uuid = Some(factory.next_document_id());
         self
     }
 
-    /// Set contract info.
-    pub fn with_contract(mut self, contract_id: &str) -> Self {
+    /// Set contract info with deterministic UUID from the given factory.
+    pub fn with_contract(mut self, contract_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.contract_id = Some(contract_id.into());
-        self.contract_uuid = Some(Uuid::new_v4());
+        self.contract_uuid = Some(factory.next_document_id());
         self
     }
 }
@@ -183,7 +187,7 @@ impl OcpmEventGenerator {
                 self.create_object(&rfx_type, rfx_id, &documents.company_code, current_time);
             objects.push(rfx_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 rfx_object.object_id,
                 &rfx_type.type_id,
@@ -221,7 +225,7 @@ impl OcpmEventGenerator {
                     self.create_object(&bid_type, bid_id, &documents.company_code, current_time);
                 objects.push(bid_object.clone());
 
-                relationships.push(ObjectRelationship::new(
+                relationships.push(self.create_relationship(
                     "responds_to",
                     bid_object.object_id,
                     &bid_type.type_id,
@@ -290,7 +294,7 @@ impl OcpmEventGenerator {
                 );
                 objects.push(contract_object.clone());
 
-                relationships.push(ObjectRelationship::new(
+                relationships.push(self.create_relationship(
                     "awarded_from",
                     contract_object.object_id,
                     &contract_type.type_id,
@@ -390,10 +394,17 @@ mod tests {
     #[test]
     fn test_s2c_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = S2cDocuments::new("SP-000001", "V000001", "1000", Decimal::new(50000, 0))
-            .with_rfx("RFX-000001")
-            .with_winning_bid("BID-000001")
-            .with_contract("CTR-000001");
+        let factory = OcpmUuidFactory::new(42);
+        let documents = S2cDocuments::new(
+            "SP-000001",
+            "V000001",
+            "1000",
+            Decimal::new(50000, 0),
+            &factory,
+        )
+        .with_rfx("RFX-000001", &factory)
+        .with_winning_bid("BID-000001", &factory)
+        .with_contract("CTR-000001", &factory);
 
         let result = generator.generate_s2c_case(
             &documents,
@@ -418,9 +429,16 @@ mod tests {
             },
         );
 
-        let documents = S2cDocuments::new("SP-000002", "V000001", "1000", Decimal::new(25000, 0))
-            .with_rfx("RFX-000002")
-            .with_contract("CTR-000002");
+        let factory = OcpmUuidFactory::new(123);
+        let documents = S2cDocuments::new(
+            "SP-000002",
+            "V000001",
+            "1000",
+            Decimal::new(25000, 0),
+            &factory,
+        )
+        .with_rfx("RFX-000002", &factory)
+        .with_contract("CTR-000002", &factory);
 
         let result = generator.generate_s2c_case(&documents, Utc::now(), &[]);
 

@@ -11,6 +11,8 @@ use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+
 use datasynth_core::models::{
     AnomalyDetectionDifficulty, ConcealmentTechnique, SchemeDetectionStatus, SchemeType,
 };
@@ -107,8 +109,10 @@ impl RevenueManipulationScheme {
             .with_technique(ConcealmentTechnique::Collusion),
         ];
 
+        let uuid_factory = DeterministicUuidFactory::new(0, GeneratorType::Anomaly);
+
         Self {
-            scheme_id: Uuid::new_v4(),
+            scheme_id: uuid_factory.next(),
             perpetrator_id: perpetrator_id.into(),
             start_date: None,
             current_stage_index: 0,

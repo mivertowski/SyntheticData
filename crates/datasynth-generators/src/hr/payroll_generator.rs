@@ -7,10 +7,38 @@
 use chrono::NaiveDate;
 use datasynth_config::schema::PayrollConfig;
 use datasynth_core::models::{PayrollLineItem, PayrollRun, PayrollRunStatus};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
+
+/// Resolved payroll deduction rates used during generation.
+#[derive(Debug, Clone)]
+struct PayrollRates {
+    /// Combined income tax rate (federal + state, or equivalent).
+    income_tax_rate: Decimal,
+    /// Social security / FICA rate.
+    fica_rate: Decimal,
+    /// Employee health insurance rate.
+    health_rate: Decimal,
+    /// Employee retirement / pension rate.
+    retirement_rate: Decimal,
+    /// Employer-side social security matching rate.
+    employer_fica_rate: Decimal,
+}
+
+/// Country-pack-derived deduction labels applied to every line item in a run.
+#[derive(Debug, Clone, Default)]
+struct DeductionLabels {
+    tax_withholding: Option<String>,
+    social_security: Option<String>,
+    health_insurance: Option<String>,
+    retirement_contribution: Option<String>,
+    employer_contribution: Option<String>,
+}
 
 /// Generates [`PayrollRun`] and [`PayrollLineItem`] records from employee data.
 pub struct PayrollGenerator {
@@ -18,13 +46,19 @@ pub struct PayrollGenerator {
     uuid_factory: DeterministicUuidFactory,
     line_uuid_factory: DeterministicUuidFactory,
     config: PayrollConfig,
+    country_pack: Option<CountryPack>,
+    /// Pool of real employee IDs for approved_by / posted_by references.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real cost center IDs (unused directly here since cost_center
+    /// comes from the employee tuple, but kept for consistency).
+    cost_center_ids_pool: Vec<String>,
 }
 
 impl PayrollGenerator {
     /// Create a new payroll generator with default configuration.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::PayrollRun),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -32,13 +66,16 @@ impl PayrollGenerator {
                 1,
             ),
             config: PayrollConfig::default(),
+            country_pack: None,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
     }
 
     /// Create a payroll generator with custom configuration.
     pub fn with_config(seed: u64, config: PayrollConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::PayrollRun),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -46,10 +83,39 @@ impl PayrollGenerator {
                 1,
             ),
             config,
+            country_pack: None,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
     }
 
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `approved_by` and
+    /// `posted_by` from `employee_ids` instead of fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.cost_center_ids_pool = cost_center_ids;
+        self
+    }
+
+    /// Set the country pack for localized deduction labels.
+    ///
+    /// When a country pack is set, generated [`PayrollLineItem`] records will
+    /// carry localized deduction labels derived from the pack's
+    /// `payroll.statutory_deductions` and `payroll.employer_contributions`.
+    /// The stored pack is also used by [`generate`] to resolve deduction rates,
+    /// so callers no longer need to pass the pack explicitly.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
+    }
+
     /// Generate a payroll run and line items for the given employees and period.
+    ///
+    /// Uses tax rates from the [`PayrollConfig`] (defaults: 22% federal, 5% state,
+    /// 7.65% FICA, 3% health, 5% retirement).  If a country pack has been set via
+    /// [`set_country_pack`], the stored pack is used to resolve both rates and
+    /// localized deduction labels automatically.
     ///
     /// # Arguments
     ///
@@ -66,15 +132,81 @@ impl PayrollGenerator {
         period_end: NaiveDate,
         currency: &str,
     ) -> (PayrollRun, Vec<PayrollLineItem>) {
-        let payroll_id = self.uuid_factory.next().to_string();
+        debug!(company_code, employee_count = employees.len(), %period_start, %period_end, currency, "Generating payroll run");
+        if let Some(pack) = self.country_pack.as_ref() {
+            let rates = self.rates_from_country_pack(pack);
+            let labels = Self::labels_from_country_pack(pack);
+            self.generate_with_rates_and_labels(
+                company_code,
+                employees,
+                period_start,
+                period_end,
+                currency,
+                &rates,
+                &labels,
+            )
+        } else {
+            let rates = self.rates_from_config();
+            self.generate_with_rates_and_labels(
+                company_code,
+                employees,
+                period_start,
+                period_end,
+                currency,
+                &rates,
+                &DeductionLabels::default(),
+            )
+        }
+    }
 
-        let mut line_items = Vec::with_capacity(employees.len());
-        let mut total_gross = Decimal::ZERO;
-        let mut total_deductions = Decimal::ZERO;
-        let mut total_net = Decimal::ZERO;
-        let mut total_employer_cost = Decimal::ZERO;
+    /// Generate a payroll run using statutory deduction rates from a country pack.
+    ///
+    /// Iterates over `pack.payroll.statutory_deductions` to resolve rates by
+    /// deduction code / English name.  Any rate not found in the pack falls back
+    /// to the corresponding value from the generator's [`PayrollConfig`].
+    ///
+    /// # Deduction mapping
+    ///
+    /// | Pack code / `name_en` pattern              | Resolves to         |
+    /// |--------------------------------------------|---------------------|
+    /// | `FIT`, `LOHNST`, or `*Income Tax*` (not state) | federal income tax  |
+    /// | `SIT` or `*State Income Tax*`              | state income tax    |
+    /// | `FICA` or `*Social Security*`              | FICA / social security |
+    /// | `*Health Insurance*`                       | health insurance    |
+    /// | `*Pension*` or `*Retirement*`              | retirement / pension |
+    ///
+    /// For packs that have many small deductions (e.g. DE with pension, health,
+    /// unemployment, long-term care, solidarity surcharge, church tax), the rates
+    /// are summed into the closest category. Deductions not matching any category
+    /// above are accumulated into the FICA/social-security bucket.
+    pub fn generate_with_country_pack(
+        &mut self,
+        company_code: &str,
+        employees: &[(String, Decimal, Option<String>, Option<String>)],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        currency: &str,
+        pack: &CountryPack,
+    ) -> (PayrollRun, Vec<PayrollLineItem>) {
+        let rates = self.rates_from_country_pack(pack);
+        let labels = Self::labels_from_country_pack(pack);
+        self.generate_with_rates_and_labels(
+            company_code,
+            employees,
+            period_start,
+            period_end,
+            currency,
+            &rates,
+            &labels,
+        )
+    }
 
-        // Tax rates from config
+    // ------------------------------------------------------------------
+    // Private helpers
+    // ------------------------------------------------------------------
+
+    /// Build [`PayrollRates`] from the generator's config (original behaviour).
+    fn rates_from_config(&self) -> PayrollRates {
         let federal_rate = Decimal::from_f64_retain(self.config.tax_rates.federal_effective)
             .unwrap_or(Decimal::ZERO);
         let state_rate = Decimal::from_f64_retain(self.config.tax_rates.state_effective)
@@ -82,12 +214,238 @@ impl PayrollGenerator {
         let fica_rate =
             Decimal::from_f64_retain(self.config.tax_rates.fica).unwrap_or(Decimal::ZERO);
 
-        // Combined income tax rate (federal + state)
-        let income_tax_rate = federal_rate + state_rate;
+        PayrollRates {
+            income_tax_rate: federal_rate + state_rate,
+            fica_rate,
+            health_rate: Decimal::from_f64_retain(0.03).unwrap_or(Decimal::ZERO),
+            retirement_rate: Decimal::from_f64_retain(0.05).unwrap_or(Decimal::ZERO),
+            employer_fica_rate: fica_rate,
+        }
+    }
 
-        // Standard deduction rates for health and retirement
-        let health_rate = Decimal::from_f64_retain(0.03).unwrap_or(Decimal::ZERO);
-        let retirement_rate = Decimal::from_f64_retain(0.05).unwrap_or(Decimal::ZERO);
+    /// Build [`PayrollRates`] from a [`CountryPack`], falling back to config
+    /// values for any category not found.
+    fn rates_from_country_pack(&self, pack: &CountryPack) -> PayrollRates {
+        let fallback = self.rates_from_config();
+
+        // Accumulators – start at zero; we only use the fallback when a
+        // category has *no* matching deduction in the pack at all.
+        let mut federal_tax = Decimal::ZERO;
+        let mut state_tax = Decimal::ZERO;
+        let mut fica = Decimal::ZERO;
+        let mut health = Decimal::ZERO;
+        let mut retirement = Decimal::ZERO;
+
+        // Track which categories were populated from the pack.
+        let mut found_federal = false;
+        let mut found_state = false;
+        let mut found_fica = false;
+        let mut found_health = false;
+        let mut found_retirement = false;
+
+        for ded in &pack.payroll.statutory_deductions {
+            let code_upper = ded.code.to_uppercase();
+            let name_en_lower = ded.name_en.to_lowercase();
+            let rate = Decimal::from_f64_retain(ded.rate).unwrap_or(Decimal::ZERO);
+
+            // Skip progressive (bracket-based) income taxes that have rate 0.0
+            // in the pack — these are placeholders indicating bracket lookup is
+            // needed. We will fall back to the config's effective rate instead.
+            if (ded.deduction_type == "progressive" || ded.type_field == "progressive")
+                && ded.rate == 0.0
+            {
+                continue;
+            }
+
+            if code_upper == "FIT"
+                || code_upper == "LOHNST"
+                || (name_en_lower.contains("income tax") && !name_en_lower.contains("state"))
+            {
+                federal_tax += rate;
+                found_federal = true;
+            } else if code_upper == "SIT" || name_en_lower.contains("state income tax") {
+                state_tax += rate;
+                found_state = true;
+            } else if code_upper == "FICA" || name_en_lower.contains("social security") {
+                fica += rate;
+                found_fica = true;
+            } else if name_en_lower.contains("health insurance") {
+                health += rate;
+                found_health = true;
+            } else if name_en_lower.contains("pension") || name_en_lower.contains("retirement") {
+                retirement += rate;
+                found_retirement = true;
+            } else {
+                // Unrecognised statutory deductions (solidarity surcharge,
+                // church tax, unemployment insurance, long-term care, etc.)
+                // are accumulated into the social-security / FICA bucket so
+                // that total deductions still reflect the country's burden.
+                fica += rate;
+                found_fica = true;
+            }
+        }
+
+        PayrollRates {
+            income_tax_rate: if found_federal || found_state {
+                let f = if found_federal {
+                    federal_tax
+                } else {
+                    fallback.income_tax_rate
+                        - Decimal::from_f64_retain(self.config.tax_rates.state_effective)
+                            .unwrap_or(Decimal::ZERO)
+                };
+                let s = if found_state {
+                    state_tax
+                } else {
+                    Decimal::from_f64_retain(self.config.tax_rates.state_effective)
+                        .unwrap_or(Decimal::ZERO)
+                };
+                f + s
+            } else {
+                fallback.income_tax_rate
+            },
+            fica_rate: if found_fica { fica } else { fallback.fica_rate },
+            health_rate: if found_health {
+                health
+            } else {
+                fallback.health_rate
+            },
+            retirement_rate: if found_retirement {
+                retirement
+            } else {
+                fallback.retirement_rate
+            },
+            employer_fica_rate: if found_fica {
+                fica
+            } else {
+                fallback.employer_fica_rate
+            },
+        }
+    }
+
+    /// Build [`DeductionLabels`] from a country pack.
+    ///
+    /// Walks the pack's `statutory_deductions` and `employer_contributions` and
+    /// picks the matching deduction's localized `name` (falling back to
+    /// `name_en` when `name` is empty) for each category.  The matching logic
+    /// mirrors [`rates_from_country_pack`] so labels and rates stay consistent.
+    fn labels_from_country_pack(pack: &CountryPack) -> DeductionLabels {
+        let mut labels = DeductionLabels::default();
+
+        for ded in &pack.payroll.statutory_deductions {
+            let code_upper = ded.code.to_uppercase();
+            let name_en_lower = ded.name_en.to_lowercase();
+
+            // Pick the best human-readable label: prefer localized `name`, fall
+            // back to `name_en`.
+            let label = if ded.name.is_empty() {
+                ded.name_en.clone()
+            } else {
+                ded.name.clone()
+            };
+            if label.is_empty() {
+                continue;
+            }
+
+            // For progressive placeholders (rate 0), still capture the label
+            // since the config-fallback rate will be used for the amount.
+            if (ded.deduction_type == "progressive" || ded.type_field == "progressive")
+                && ded.rate == 0.0
+            {
+                if code_upper == "FIT"
+                    || code_upper == "LOHNST"
+                    || (name_en_lower.contains("income tax") && !name_en_lower.contains("state"))
+                {
+                    if labels.tax_withholding.is_none() {
+                        labels.tax_withholding = Some(label);
+                    }
+                } else if code_upper == "SIT" || name_en_lower.contains("state income tax") {
+                    labels.tax_withholding = Some(match labels.tax_withholding.take() {
+                        Some(existing) => format!("{existing}; {label}"),
+                        None => label,
+                    });
+                }
+                continue;
+            }
+
+            if code_upper == "FIT"
+                || code_upper == "LOHNST"
+                || code_upper == "SIT"
+                || name_en_lower.contains("income tax")
+                || name_en_lower.contains("state income tax")
+            {
+                // All income-tax-related deductions (federal, state, combined)
+                // are grouped under the tax_withholding label.
+                labels.tax_withholding = Some(match labels.tax_withholding.take() {
+                    Some(existing) => format!("{existing}; {label}"),
+                    None => label,
+                });
+            } else if code_upper == "FICA" || name_en_lower.contains("social security") {
+                labels.social_security = Some(match labels.social_security.take() {
+                    Some(existing) => format!("{existing}; {label}"),
+                    None => label,
+                });
+            } else if name_en_lower.contains("health insurance") {
+                if labels.health_insurance.is_none() {
+                    labels.health_insurance = Some(label);
+                }
+            } else if name_en_lower.contains("pension") || name_en_lower.contains("retirement") {
+                if labels.retirement_contribution.is_none() {
+                    labels.retirement_contribution = Some(label);
+                }
+            } else {
+                // Misc deductions (unemployment, church tax, etc.) — append to
+                // social_security label since those rates go into that bucket.
+                labels.social_security = Some(match labels.social_security.take() {
+                    Some(existing) => format!("{existing}; {label}"),
+                    None => label,
+                });
+            }
+        }
+
+        // Employer contributions
+        let emp_labels: Vec<String> = pack
+            .payroll
+            .employer_contributions
+            .iter()
+            .filter_map(|c| {
+                let l = if c.name.is_empty() {
+                    c.name_en.clone()
+                } else {
+                    c.name.clone()
+                };
+                if l.is_empty() {
+                    None
+                } else {
+                    Some(l)
+                }
+            })
+            .collect();
+        if !emp_labels.is_empty() {
+            labels.employer_contribution = Some(emp_labels.join("; "));
+        }
+
+        labels
+    }
+
+    /// Core generation logic parameterised on resolved rates and labels.
+    fn generate_with_rates_and_labels(
+        &mut self,
+        company_code: &str,
+        employees: &[(String, Decimal, Option<String>, Option<String>)],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        currency: &str,
+        rates: &PayrollRates,
+        labels: &DeductionLabels,
+    ) -> (PayrollRun, Vec<PayrollLineItem>) {
+        let payroll_id = self.uuid_factory.next().to_string();
+
+        let mut line_items = Vec::with_capacity(employees.len());
+        let mut total_gross = Decimal::ZERO;
+        let mut total_deductions = Decimal::ZERO;
+        let mut total_net = Decimal::ZERO;
+        let mut total_employer_cost = Decimal::ZERO;
 
         let benefits_enrolled = self.config.benefits_enrollment_rate;
         let retirement_participating = self.config.retirement_participation_rate;
@@ -123,26 +481,24 @@ impl PayrollGenerator {
             let gross_pay = monthly_base + overtime_pay + bonus;
 
             // Deductions
-            let tax_withholding = (gross_pay * income_tax_rate).round_dp(2);
-            let social_security = (gross_pay * fica_rate).round_dp(2);
+            let tax_withholding = (gross_pay * rates.income_tax_rate).round_dp(2);
+            let social_security = (gross_pay * rates.fica_rate).round_dp(2);
 
             let health_insurance = if self.rng.gen_bool(benefits_enrolled) {
-                (gross_pay * health_rate).round_dp(2)
+                (gross_pay * rates.health_rate).round_dp(2)
             } else {
                 Decimal::ZERO
             };
 
             let retirement_contribution = if self.rng.gen_bool(retirement_participating) {
-                (gross_pay * retirement_rate).round_dp(2)
+                (gross_pay * rates.retirement_rate).round_dp(2)
             } else {
                 Decimal::ZERO
             };
 
             // Small random other deductions (garnishments, etc.): ~3% chance
             let other_deductions = if self.rng.gen_bool(0.03) {
-                let raw = self.rng.gen_range(50.0..=500.0);
-                Decimal::from_f64_retain(raw)
-                    .unwrap_or(Decimal::ZERO)
+                sample_decimal_range(&mut self.rng, Decimal::from(50), Decimal::from(500))
                     .round_dp(2)
             } else {
                 Decimal::ZERO
@@ -158,9 +514,9 @@ impl PayrollGenerator {
             // Standard 160 regular hours per month (8h * 20 business days)
             let hours_worked = 160.0;
 
-            // Employer-side cost: gross + employer FICA match
-            let employer_fica = (gross_pay * fica_rate).round_dp(2);
-            let employer_cost = gross_pay + employer_fica;
+            // Employer-side cost: gross + employer contribution match
+            let employer_contrib = (gross_pay * rates.employer_fica_rate).round_dp(2);
+            let employer_cost = gross_pay + employer_contrib;
 
             total_gross += gross_pay;
             total_deductions += total_ded;
@@ -186,6 +542,11 @@ impl PayrollGenerator {
                 pay_date: period_end,
                 cost_center: cost_center.clone(),
                 department: department.clone(),
+                tax_withholding_label: labels.tax_withholding.clone(),
+                social_security_label: labels.social_security.clone(),
+                health_insurance_label: labels.health_insurance.clone(),
+                retirement_contribution_label: labels.retirement_contribution.clone(),
+                employer_contribution_label: labels.employer_contribution.clone(),
             });
         }
 
@@ -205,13 +566,23 @@ impl PayrollGenerator {
             status,
             PayrollRunStatus::Approved | PayrollRunStatus::Posted
         ) {
-            Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            }
         } else {
             None
         };
 
         let posted_by = if status == PayrollRunStatus::Posted {
-            Some(format!("USR-{:04}", self.rng.gen_range(401..=500)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("USR-{:04}", self.rng.gen_range(401..=500)))
+            }
         } else {
             None
         };
@@ -292,6 +663,9 @@ mod tests {
             assert!(item.net_pay < item.gross_pay);
             assert!(item.base_salary > Decimal::ZERO);
             assert_eq!(item.pay_date, period_end);
+            // Without country pack, labels should be None
+            assert!(item.tax_withholding_label.is_none());
+            assert!(item.social_security_label.is_none());
         }
     }
 
@@ -351,5 +725,320 @@ mod tests {
         // Tax withholding should be reasonable (22% federal + 5% state = 27% of gross)
         assert!(item.tax_withholding > Decimal::ZERO);
         assert!(item.social_security > Decimal::ZERO);
+    }
+
+    // ---------------------------------------------------------------
+    // Country-pack tests
+    // ---------------------------------------------------------------
+
+    /// Helper: build a US-like country pack with explicit statutory deductions.
+    fn us_country_pack() -> CountryPack {
+        use datasynth_core::country::schema::{PayrollCountryConfig, PayrollDeduction};
+        CountryPack {
+            country_code: "US".to_string(),
+            payroll: PayrollCountryConfig {
+                statutory_deductions: vec![
+                    PayrollDeduction {
+                        code: "FICA".to_string(),
+                        name_en: "Federal Insurance Contributions Act".to_string(),
+                        deduction_type: "percentage".to_string(),
+                        rate: 0.0765,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "FIT".to_string(),
+                        name_en: "Federal Income Tax".to_string(),
+                        deduction_type: "progressive".to_string(),
+                        rate: 0.0, // progressive placeholder
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "SIT".to_string(),
+                        name_en: "State Income Tax".to_string(),
+                        deduction_type: "percentage".to_string(),
+                        rate: 0.05,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+
+    /// Helper: build a DE-like country pack.
+    fn de_country_pack() -> CountryPack {
+        use datasynth_core::country::schema::{PayrollCountryConfig, PayrollDeduction};
+        CountryPack {
+            country_code: "DE".to_string(),
+            payroll: PayrollCountryConfig {
+                pay_frequency: "monthly".to_string(),
+                currency: "EUR".to_string(),
+                statutory_deductions: vec![
+                    PayrollDeduction {
+                        code: "LOHNST".to_string(),
+                        name_en: "Income Tax".to_string(),
+                        type_field: "progressive".to_string(),
+                        rate: 0.0, // progressive placeholder
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "SOLI".to_string(),
+                        name_en: "Solidarity Surcharge".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.055,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "KiSt".to_string(),
+                        name_en: "Church Tax".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.08,
+                        optional: true,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "RV".to_string(),
+                        name_en: "Pension Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.093,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "KV".to_string(),
+                        name_en: "Health Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.073,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "AV".to_string(),
+                        name_en: "Unemployment Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.013,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "PV".to_string(),
+                        name_en: "Long-Term Care Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.017,
+                        ..Default::default()
+                    },
+                ],
+                employer_contributions: vec![
+                    PayrollDeduction {
+                        code: "AG-RV".to_string(),
+                        name_en: "Employer Pension Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.093,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "AG-KV".to_string(),
+                        name_en: "Employer Health Insurance".to_string(),
+                        type_field: "percentage".to_string(),
+                        rate: 0.073,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_generate_with_us_country_pack() {
+        let mut gen = PayrollGenerator::new(42);
+        let employees = test_employees();
+        let period_start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let period_end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();
+        let pack = us_country_pack();
+
+        let (run, items) = gen.generate_with_country_pack(
+            "C001",
+            &employees,
+            period_start,
+            period_end,
+            "USD",
+            &pack,
+        );
+
+        assert_eq!(run.company_code, "C001");
+        assert_eq!(run.employee_count, 3);
+        assert_eq!(items.len(), 3);
+        assert_eq!(run.total_net, run.total_gross - run.total_deductions);
+
+        for item in &items {
+            assert!(item.gross_pay > Decimal::ZERO);
+            assert!(item.net_pay > Decimal::ZERO);
+            assert!(item.net_pay < item.gross_pay);
+            // FICA deduction should be present
+            assert!(item.social_security > Decimal::ZERO);
+            // US pack should produce labels
+            assert!(item.tax_withholding_label.is_some());
+            assert!(item.social_security_label.is_some());
+        }
+    }
+
+    #[test]
+    fn test_generate_with_de_country_pack() {
+        let mut gen = PayrollGenerator::new(42);
+        let employees = test_employees();
+        let period_start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let period_end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();
+        let pack = de_country_pack();
+
+        let (run, items) = gen.generate_with_country_pack(
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
+        );
+
+        assert_eq!(run.company_code, "DE01");
+        assert_eq!(items.len(), 3);
+        assert_eq!(run.total_net, run.total_gross - run.total_deductions);
+
+        // DE pack should use pension rate 0.093 for retirement
+        // and health insurance rate 0.073
+        let rates = gen.rates_from_country_pack(&pack);
+        assert_eq!(
+            rates.retirement_rate,
+            Decimal::from_f64_retain(0.093).unwrap()
+        );
+        assert_eq!(rates.health_rate, Decimal::from_f64_retain(0.073).unwrap());
+
+        // Check DE labels are populated
+        let item = &items[0];
+        assert_eq!(
+            item.health_insurance_label.as_deref(),
+            Some("Health Insurance")
+        );
+        assert_eq!(
+            item.retirement_contribution_label.as_deref(),
+            Some("Pension Insurance")
+        );
+        // Employer contribution labels should include both AG-RV and AG-KV
+        assert!(item.employer_contribution_label.is_some());
+        let ec = item.employer_contribution_label.as_ref().unwrap();
+        assert!(ec.contains("Employer Pension Insurance"));
+        assert!(ec.contains("Employer Health Insurance"));
+    }
+
+    #[test]
+    fn test_country_pack_falls_back_to_config_for_missing_categories() {
+        // Empty pack: no statutory deductions => all rates fall back to config
+        let pack = CountryPack::default();
+        let gen = PayrollGenerator::new(42);
+        let rates_pack = gen.rates_from_country_pack(&pack);
+        let rates_cfg = gen.rates_from_config();
+
+        assert_eq!(rates_pack.income_tax_rate, rates_cfg.income_tax_rate);
+        assert_eq!(rates_pack.fica_rate, rates_cfg.fica_rate);
+        assert_eq!(rates_pack.health_rate, rates_cfg.health_rate);
+        assert_eq!(rates_pack.retirement_rate, rates_cfg.retirement_rate);
+    }
+
+    #[test]
+    fn test_country_pack_deterministic() {
+        let employees = test_employees();
+        let period_start = NaiveDate::from_ymd_opt(2024, 3, 1).unwrap();
+        let period_end = NaiveDate::from_ymd_opt(2024, 3, 31).unwrap();
+        let pack = de_country_pack();
+
+        let mut gen1 = PayrollGenerator::new(42);
+        let (run1, items1) = gen1.generate_with_country_pack(
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
+        );
+
+        let mut gen2 = PayrollGenerator::new(42);
+        let (run2, items2) = gen2.generate_with_country_pack(
+            "DE01",
+            &employees,
+            period_start,
+            period_end,
+            "EUR",
+            &pack,
+        );
+
+        assert_eq!(run1.payroll_id, run2.payroll_id);
+        assert_eq!(run1.total_gross, run2.total_gross);
+        assert_eq!(run1.total_net, run2.total_net);
+        for (a, b) in items1.iter().zip(items2.iter()) {
+            assert_eq!(a.net_pay, b.net_pay);
+        }
+    }
+
+    #[test]
+    fn test_de_rates_differ_from_default() {
+        // With the DE pack, the resolved rates should differ from config defaults
+        let gen = PayrollGenerator::new(42);
+        let pack = de_country_pack();
+        let rates_cfg = gen.rates_from_config();
+        let rates_de = gen.rates_from_country_pack(&pack);
+
+        // DE has no non-progressive income tax in pack -> income_tax_rate falls
+        // back to config default for federal part.
+        // But health (0.073 vs 0.03) and retirement (0.093 vs 0.05) should differ.
+        assert_ne!(rates_de.health_rate, rates_cfg.health_rate);
+        assert_ne!(rates_de.retirement_rate, rates_cfg.retirement_rate);
+    }
+
+    #[test]
+    fn test_set_country_pack_uses_labels() {
+        let mut gen = PayrollGenerator::new(42);
+        let pack = de_country_pack();
+        gen.set_country_pack(pack);
+
+        let employees = test_employees();
+        let period_start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let period_end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();
+
+        // generate() should now use the stored pack for rates + labels
+        let (_run, items) = gen.generate("DE01", &employees, period_start, period_end, "EUR");
+
+        let item = &items[0];
+        // Labels should be populated from the DE pack
+        assert!(item.tax_withholding_label.is_some());
+        assert!(item.health_insurance_label.is_some());
+        assert!(item.retirement_contribution_label.is_some());
+        assert!(item.employer_contribution_label.is_some());
+    }
+
+    #[test]
+    fn test_empty_pack_labels_are_none() {
+        let pack = CountryPack::default();
+        let labels = PayrollGenerator::labels_from_country_pack(&pack);
+        assert!(labels.tax_withholding.is_none());
+        assert!(labels.social_security.is_none());
+        assert!(labels.health_insurance.is_none());
+        assert!(labels.retirement_contribution.is_none());
+        assert!(labels.employer_contribution.is_none());
+    }
+
+    #[test]
+    fn test_us_pack_labels() {
+        let pack = us_country_pack();
+        let labels = PayrollGenerator::labels_from_country_pack(&pack);
+        // FIT is a progressive placeholder but label is still captured
+        assert!(labels.tax_withholding.is_some());
+        let tw = labels.tax_withholding.unwrap();
+        assert!(tw.contains("Federal Income Tax"));
+        assert!(tw.contains("State Income Tax"));
+        // FICA label
+        assert!(labels.social_security.is_some());
+        assert!(labels
+            .social_security
+            .unwrap()
+            .contains("Federal Insurance Contributions Act"));
     }
 }

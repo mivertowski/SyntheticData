@@ -112,6 +112,10 @@ pub enum GeneratorType {
     ProjectAccounting = 0x3B,
     /// ESG / Sustainability (emissions, energy, water, waste, diversity, safety)
     Esg = 0x3C,
+    /// Supplier qualification generator
+    SupplierQualification = 0x3D,
+    /// Supplier scorecard generator
+    SupplierScorecard = 0x3E,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

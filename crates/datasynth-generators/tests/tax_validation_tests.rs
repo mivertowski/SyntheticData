@@ -27,12 +27,7 @@ use datasynth_generators::tax::{
 /// Generates tax codes and jurisdictions with subnational data for US, DE, GB, FR.
 fn setup_tax_codes() -> SetupResult {
     let mut config = TaxConfig::default();
-    config.jurisdictions.countries = vec![
-        "US".into(),
-        "DE".into(),
-        "GB".into(),
-        "FR".into(),
-    ];
+    config.jurisdictions.countries = vec!["US".into(), "DE".into(), "GB".into(), "FR".into()];
     config.jurisdictions.include_subnational = true;
 
     let mut gen = TaxCodeGenerator::with_config(42, config);
@@ -68,7 +63,7 @@ fn filing_deadline() -> NaiveDate {
 /// resulting tax lines from the TaxLineGenerator.
 fn generate_mixed_tax_lines(codes: Vec<datasynth_core::models::TaxCode>) -> Vec<TaxLine> {
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, codes, 42);
     let date = test_date();
 
     let mut all_lines = Vec::new();
@@ -347,8 +342,10 @@ fn test_cross_generator_consistency() {
         filing_deadline(),
     );
 
-    let line_jurisdiction_ids: HashSet<String> =
-        tax_lines.iter().map(|l| l.jurisdiction_id.clone()).collect();
+    let line_jurisdiction_ids: HashSet<String> = tax_lines
+        .iter()
+        .map(|l| l.jurisdiction_id.clone())
+        .collect();
 
     for ret in &returns {
         assert!(
@@ -389,7 +386,7 @@ fn test_cross_generator_tax_code_active_on_date() {
 fn test_vendor_invoice_lines_are_deductible() {
     let setup = setup_tax_codes();
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, setup.codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, setup.codes, 42);
 
     // Domestic vendor invoices should be deductible
     for i in 0..5 {
@@ -493,14 +490,8 @@ fn test_deterministic_pipeline() {
     );
     for (l1, l2) in r1.tax_lines.iter().zip(r2.tax_lines.iter()) {
         assert_eq!(l1.id, l2.id, "Tax line IDs should match");
-        assert_eq!(
-            l1.document_id, l2.document_id,
-            "Document IDs should match"
-        );
-        assert_eq!(
-            l1.tax_code_id, l2.tax_code_id,
-            "Tax code IDs should match"
-        );
+        assert_eq!(l1.document_id, l2.document_id, "Document IDs should match");
+        assert_eq!(l1.tax_code_id, l2.tax_code_id, "Tax code IDs should match");
         assert_eq!(
             l1.jurisdiction_id, l2.jurisdiction_id,
             "Jurisdiction IDs should match"
@@ -509,10 +500,7 @@ fn test_deterministic_pipeline() {
             l1.taxable_amount, l2.taxable_amount,
             "Taxable amounts should match"
         );
-        assert_eq!(
-            l1.tax_amount, l2.tax_amount,
-            "Tax amounts should match"
-        );
+        assert_eq!(l1.tax_amount, l2.tax_amount, "Tax amounts should match");
         assert_eq!(
             l1.is_deductible, l2.is_deductible,
             "Deductible flags should match"
@@ -625,7 +613,7 @@ fn run_deterministic_pipeline(seed: u64) -> PipelineResult {
 
     // Step 2: Tax lines
     let line_config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(seed, codes.clone(), line_config);
+    let mut line_gen = TaxLineGenerator::new(line_config, codes.clone(), seed);
 
     let mut tax_lines = Vec::new();
     for i in 0..5 {
@@ -792,8 +780,10 @@ fn test_return_covers_all_jurisdictions_in_lines() {
     );
 
     // Every jurisdiction present in tax lines should have a corresponding return
-    let line_jurisdictions: HashSet<String> =
-        tax_lines.iter().map(|l| l.jurisdiction_id.clone()).collect();
+    let line_jurisdictions: HashSet<String> = tax_lines
+        .iter()
+        .map(|l| l.jurisdiction_id.clone())
+        .collect();
     let return_jurisdictions: HashSet<String> =
         returns.iter().map(|r| r.jurisdiction_id.clone()).collect();
 
@@ -812,7 +802,7 @@ fn test_return_net_payable_sign() {
     // When input tax > output tax, net_payable should be negative (refund).
     let setup = setup_tax_codes();
     let config = TaxLineGeneratorConfig::default();
-    let mut line_gen = TaxLineGenerator::new(42, setup.codes, config);
+    let mut line_gen = TaxLineGenerator::new(config, setup.codes, 42);
     let date = test_date();
 
     // Scenario: lots of output tax, no input tax
@@ -845,11 +835,7 @@ fn test_return_net_payable_sign() {
             "With only output tax, net_payable {} should be non-negative",
             ret.net_payable
         );
-        assert_eq!(
-            ret.total_input_tax,
-            Decimal::ZERO,
-            "No input tax expected"
-        );
+        assert_eq!(ret.total_input_tax, Decimal::ZERO, "No input tax expected");
     }
 }
 
@@ -961,14 +947,19 @@ fn test_anomaly_injection_preserves_non_anomalous_lines() {
     // Capture original state
     let original_ids: Vec<String> = tax_lines.iter().map(|l| l.id.clone()).collect();
     let original_amounts: Vec<Decimal> = tax_lines.iter().map(|l| l.tax_amount).collect();
-    let original_jurisdictions: Vec<String> =
-        tax_lines.iter().map(|l| l.jurisdiction_id.clone()).collect();
+    let original_jurisdictions: Vec<String> = tax_lines
+        .iter()
+        .map(|l| l.jurisdiction_id.clone())
+        .collect();
     let original_count = tax_lines.len();
 
     let mut injector = TaxAnomalyInjector::new(42, 0.0);
     let labels = injector.inject_into_tax_lines(&mut tax_lines);
 
-    assert!(labels.is_empty(), "No anomalies should be injected at 0% rate");
+    assert!(
+        labels.is_empty(),
+        "No anomalies should be injected at 0% rate"
+    );
     assert_eq!(
         tax_lines.len(),
         original_count,

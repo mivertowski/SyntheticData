@@ -274,7 +274,6 @@ pub struct EmailGenerator {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 enum EmailPattern {
     FirstDotLast,
     FirstInitialLast,
@@ -300,6 +299,8 @@ impl EmailGenerator {
                 EmailPattern::FirstDotLast, // Weight toward common pattern
                 EmailPattern::FirstInitialLast,
                 EmailPattern::FirstUnderscoreLast,
+                EmailPattern::LastDotFirst,
+                EmailPattern::FirstOnly,
             ],
         }
     }

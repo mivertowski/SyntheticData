@@ -180,6 +180,9 @@ pub struct GeneratorConfig {
     /// ESG / Sustainability reporting configuration
     #[serde(default)]
     pub esg: EsgConfig,
+    /// Country pack configuration (external packs directory, per-country overrides)
+    #[serde(default)]
+    pub country_packs: Option<CountryPacksSchemaConfig>,
 }
 
 /// LLM enrichment configuration.
@@ -4645,9 +4648,11 @@ pub struct AccountingStandardsConfig {
     #[serde(default)]
     pub enabled: bool,
 
-    /// Accounting framework to use
-    #[serde(default)]
-    pub framework: AccountingFrameworkConfig,
+    /// Accounting framework to use.
+    /// When `None`, the country pack's `accounting.framework` is used as fallback;
+    /// if that is also absent the orchestrator defaults to US GAAP.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub framework: Option<AccountingFrameworkConfig>,
 
     /// Revenue recognition configuration (ASC 606/IFRS 15)
     #[serde(default)]
@@ -11797,6 +11802,22 @@ impl Default for EsgConfig {
     }
 }
 
+/// Country pack configuration.
+///
+/// Controls where to load additional country packs and per-country overrides.
+/// When omitted, only the built-in packs (_default, US, DE, GB) are used.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CountryPacksSchemaConfig {
+    /// Optional directory containing additional `*.json` country packs.
+    #[serde(default)]
+    pub external_dir: Option<PathBuf>,
+    /// Per-country overrides applied after loading.
+    /// Keys are ISO 3166-1 alpha-2 codes; values are partial JSON objects
+    /// that are deep-merged on top of the loaded pack.
+    #[serde(default)]
+    pub overrides: std::collections::HashMap<String, serde_json::Value>,
+}
+
 /// Environmental metrics configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnvironmentalConfig {
@@ -12650,10 +12671,7 @@ mod tests {
     fn test_accounting_standards_config_defaults() {
         let config = AccountingStandardsConfig::default();
         assert!(!config.enabled);
-        assert!(matches!(
-            config.framework,
-            AccountingFrameworkConfig::UsGaap
-        ));
+        assert!(config.framework.is_none());
         assert!(!config.revenue_recognition.enabled);
         assert!(!config.leases.enabled);
         assert!(!config.fair_value.enabled);
@@ -12684,7 +12702,10 @@ mod tests {
         let config: AccountingStandardsConfig =
             serde_yaml::from_str(yaml).expect("Failed to parse");
         assert!(config.enabled);
-        assert!(matches!(config.framework, AccountingFrameworkConfig::Ifrs));
+        assert!(matches!(
+            config.framework,
+            Some(AccountingFrameworkConfig::Ifrs)
+        ));
         assert!(config.revenue_recognition.enabled);
         assert_eq!(config.revenue_recognition.contract_count, 150);
         assert_eq!(config.revenue_recognition.avg_obligations_per_contract, 2.5);
@@ -12895,7 +12916,7 @@ mod tests {
         assert!(config.accounting_standards.enabled);
         assert!(matches!(
             config.accounting_standards.framework,
-            AccountingFrameworkConfig::UsGaap
+            Some(AccountingFrameworkConfig::UsGaap)
         ));
         assert!(config.accounting_standards.revenue_recognition.enabled);
         assert!(config.accounting_standards.leases.enabled);

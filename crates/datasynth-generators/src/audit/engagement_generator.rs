@@ -4,7 +4,8 @@
 //! workpapers, evidence, findings, and professional judgments.
 
 use chrono::{Duration, NaiveDate};
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
@@ -68,7 +69,7 @@ impl AuditEngagementGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config: AuditEngagementConfig::default(),
             engagement_counter: 0,
         }
@@ -77,7 +78,7 @@ impl AuditEngagementGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: AuditEngagementConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             engagement_counter: 0,
         }

@@ -9,14 +9,14 @@
 //! - Milestones with payment and completion tracking
 //! - Retainage hold and release
 
-mod project_generator;
-mod project_cost_generator;
-mod revenue_generator;
-mod earned_value_generator;
 mod change_order_generator;
+mod earned_value_generator;
+mod project_cost_generator;
+mod project_generator;
+mod revenue_generator;
 
-pub use project_generator::*;
-pub use project_cost_generator::*;
-pub use revenue_generator::*;
-pub use earned_value_generator::*;
 pub use change_order_generator::*;
+pub use earned_value_generator::*;
+pub use project_cost_generator::*;
+pub use project_generator::*;
+pub use revenue_generator::*;

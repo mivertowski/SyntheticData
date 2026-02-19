@@ -94,13 +94,18 @@ impl PersonName {
 #[derive(Debug, Clone)]
 pub struct NamePool {
     /// Male first names
-    pub first_names_male: Vec<&'static str>,
+    pub first_names_male: Vec<String>,
     /// Female first names
-    pub first_names_female: Vec<&'static str>,
+    pub first_names_female: Vec<String>,
     /// Last names / family names
-    pub last_names: Vec<&'static str>,
+    pub last_names: Vec<String>,
     /// The culture this pool represents
     pub culture: NameCulture,
+}
+
+/// Helper to convert `&[&str]` to `Vec<String>` concisely in factory methods.
+fn sv(items: &[&str]) -> Vec<String> {
+    items.iter().map(|s| (*s).to_string()).collect()
 }
 
 impl NamePool {
@@ -108,7 +113,7 @@ impl NamePool {
     pub fn western_us() -> Self {
         Self {
             culture: NameCulture::WesternUs,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "James",
                 "John",
                 "Robert",
@@ -164,8 +169,8 @@ impl NamePool {
                 "Jose",
                 "Adam",
                 "Nathan",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Mary",
                 "Patricia",
                 "Jennifer",
@@ -219,8 +224,8 @@ impl NamePool {
                 "Diane",
                 "Ruth",
                 "Julie",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Smith",
                 "Johnson",
                 "Williams",
@@ -277,7 +282,7 @@ impl NamePool {
                 "Parker",
                 "Edwards",
                 "Collins",
-            ],
+            ]),
         }
     }
 
@@ -285,7 +290,7 @@ impl NamePool {
     pub fn german() -> Self {
         Self {
             culture: NameCulture::German,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "Hans",
                 "Klaus",
                 "Wolfgang",
@@ -335,8 +340,8 @@ impl NamePool {
                 "Kai",
                 "Olaf",
                 "Rainer",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Anna",
                 "Maria",
                 "Elisabeth",
@@ -387,8 +392,8 @@ impl NamePool {
                 "Sophie",
                 "Leonie",
                 "Laura",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Müller",
                 "Schmidt",
                 "Schneider",
@@ -439,7 +444,7 @@ impl NamePool {
                 "Jung",
                 "Hahn",
                 "Schubert",
-            ],
+            ]),
         }
     }
 
@@ -447,7 +452,7 @@ impl NamePool {
     pub fn french() -> Self {
         Self {
             culture: NameCulture::French,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "Jean",
                 "Pierre",
                 "Michel",
@@ -498,8 +503,8 @@ impl NamePool {
                 "Charles",
                 "Emmanuel",
                 "Raphaël",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Marie",
                 "Jeanne",
                 "Françoise",
@@ -550,8 +555,8 @@ impl NamePool {
                 "Élise",
                 "Juliette",
                 "Marguerite",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Martin",
                 "Bernard",
                 "Dubois",
@@ -602,7 +607,7 @@ impl NamePool {
                 "Fontaine",
                 "Chevalier",
                 "Robin",
-            ],
+            ]),
         }
     }
 
@@ -610,27 +615,27 @@ impl NamePool {
     pub fn chinese() -> Self {
         Self {
             culture: NameCulture::Chinese,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "Wei", "Fang", "Lei", "Jun", "Jian", "Hao", "Chen", "Yang", "Ming", "Tao", "Long",
                 "Feng", "Bin", "Qiang", "Gang", "Hui", "Peng", "Xiang", "Bo", "Chao", "Dong",
                 "Liang", "Ning", "Kai", "Jie", "Yong", "Hai", "Lin", "Wen", "Zheng", "Hong", "Xin",
                 "Da", "Zhi", "Guang", "Cheng", "Yi", "Sheng", "Biao", "Ping", "Yun", "Song",
                 "Chang", "Kang", "Rui", "Nan", "Jia", "Xiao", "Yu", "Hua",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Fang", "Min", "Jing", "Li", "Yan", "Hong", "Juan", "Mei", "Ying", "Xia", "Hui",
                 "Lin", "Ling", "Ping", "Dan", "Yun", "Na", "Qian", "Xin", "Ya", "Wei", "Wen",
                 "Jie", "Qing", "Yu", "Hua", "Yue", "Xue", "Lan", "Zhen", "Rong", "Shu", "Fei",
                 "Lei", "Shan", "Ting", "Ni", "Ying", "Chen", "Huan", "Lu", "Ai", "Xiao", "Xiang",
                 "Yao", "Meng", "Qi", "Jun", "Bei", "Zhi",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Wang", "Li", "Zhang", "Liu", "Chen", "Yang", "Huang", "Zhao", "Wu", "Zhou", "Xu",
                 "Sun", "Ma", "Zhu", "Hu", "Guo", "He", "Lin", "Gao", "Luo", "Zheng", "Liang",
                 "Xie", "Tang", "Song", "Xu", "Han", "Deng", "Feng", "Cao", "Peng", "Xiao", "Cheng",
                 "Yuan", "Tian", "Dong", "Pan", "Cai", "Jiang", "Wei", "Yu", "Du", "Ye", "Shi",
                 "Lu", "Shen", "Su", "Jia", "Fan", "Jin",
-            ],
+            ]),
         }
     }
 
@@ -638,23 +643,23 @@ impl NamePool {
     pub fn japanese() -> Self {
         Self {
             culture: NameCulture::Japanese,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "Hiroshi", "Takeshi", "Kenji", "Yuki", "Kazuki", "Ryota", "Daiki", "Shota", "Yuto",
                 "Kenta", "Haruto", "Sota", "Riku", "Yuma", "Kaito", "Ren", "Hayato", "Takumi",
                 "Kouki", "Ryuu", "Naoki", "Tsubasa", "Yuuki", "Akira", "Satoshi", "Makoto",
                 "Tetsuya", "Masaki", "Shin", "Kei", "Daisuke", "Shunsuke", "Tomoya", "Yusuke",
                 "Tatsuya", "Katsuki", "Shun", "Yamato", "Koji", "Hideo", "Takahiro", "Noboru",
                 "Shinji", "Osamu", "Minoru", "Hideki", "Jun", "Masaru", "Ken", "Ryo",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Yuki", "Sakura", "Hana", "Yui", "Mio", "Rin", "Aoi", "Mei", "Saki", "Miku",
                 "Nanami", "Ayaka", "Misaki", "Haruka", "Momoka", "Rina", "Yuna", "Hinata",
                 "Koharu", "Miyu", "Akari", "Hikari", "Kaede", "Natsuki", "Mai", "Ami", "Aya",
                 "Emi", "Kana", "Megumi", "Tomoko", "Yoko", "Keiko", "Naomi", "Mayumi", "Chika",
                 "Nana", "Risa", "Asuka", "Fumiko", "Kyoko", "Reiko", "Noriko", "Sachiko", "Mariko",
                 "Shiori", "Midori", "Kanako", "Minami", "Eriko",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Sato",
                 "Suzuki",
                 "Takahashi",
@@ -705,7 +710,7 @@ impl NamePool {
                 "Nakagawa",
                 "Fujiwara",
                 "Kawamura",
-            ],
+            ]),
         }
     }
 
@@ -713,15 +718,15 @@ impl NamePool {
     pub fn indian() -> Self {
         Self {
             culture: NameCulture::Indian,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "Raj", "Amit", "Vikram", "Rahul", "Sanjay", "Arun", "Suresh", "Rajesh", "Deepak",
                 "Vijay", "Prakash", "Manoj", "Sunil", "Anil", "Ravi", "Ashok", "Ramesh", "Mukesh",
                 "Sandeep", "Ajay", "Naveen", "Pradeep", "Sachin", "Nitin", "Vinod", "Rakesh",
                 "Srinivas", "Ganesh", "Krishna", "Mohan", "Kiran", "Venkat", "Hari", "Shankar",
                 "Dinesh", "Mahesh", "Satish", "Girish", "Naresh", "Harish", "Pavan", "Arjun",
                 "Anand", "Vivek", "Rohit", "Gaurav", "Kunal", "Vishal", "Akhil", "Dev",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "Priya",
                 "Anita",
                 "Sunita",
@@ -772,8 +777,8 @@ impl NamePool {
                 "Komal",
                 "Madhuri",
                 "Parul",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "Sharma",
                 "Patel",
                 "Singh",
@@ -824,7 +829,7 @@ impl NamePool {
                 "Shukla",
                 "Prasad",
                 "Murthy",
-            ],
+            ]),
         }
     }
 
@@ -832,7 +837,7 @@ impl NamePool {
     pub fn hispanic() -> Self {
         Self {
             culture: NameCulture::Hispanic,
-            first_names_male: vec![
+            first_names_male: sv(&[
                 "José",
                 "Juan",
                 "Carlos",
@@ -883,8 +888,8 @@ impl NamePool {
                 "Mateo",
                 "Sebastián",
                 "Nicolás",
-            ],
-            first_names_female: vec![
+            ]),
+            first_names_female: sv(&[
                 "María",
                 "Carmen",
                 "Ana",
@@ -935,8 +940,8 @@ impl NamePool {
                 "Liliana",
                 "Angela",
                 "Inés",
-            ],
-            last_names: vec![
+            ]),
+            last_names: sv(&[
                 "García",
                 "Rodríguez",
                 "Martínez",
@@ -987,7 +992,7 @@ impl NamePool {
                 "Cortés",
                 "Salazar",
                 "Luna",
-            ],
+            ]),
         }
     }
 
@@ -1021,11 +1026,24 @@ impl NamePool {
         let last_name = self.last_names.choose(rng).expect("non-empty name list");
 
         PersonName {
-            first_name: (*first_name).to_string(),
-            last_name: (*last_name).to_string(),
+            first_name: first_name.clone(),
+            last_name: last_name.clone(),
             display_name: format!("{} {}", first_name, last_name),
             culture: self.culture,
             is_male,
+        }
+    }
+
+    /// Create a `NamePool` from a `CultureConfig` loaded from a country pack.
+    pub fn from_culture_config(
+        config: &crate::country::schema::CultureConfig,
+        culture: NameCulture,
+    ) -> Self {
+        Self {
+            culture,
+            first_names_male: config.male_first_names.clone(),
+            first_names_female: config.female_first_names.clone(),
+            last_names: config.last_names.clone(),
         }
     }
 }
@@ -1135,6 +1153,48 @@ impl MultiCultureNameGenerator {
     /// Generate an email from a name.
     pub fn generate_email(&self, name: &PersonName) -> String {
         name.to_email(&self.email_domain)
+    }
+
+    /// Create a name generator from a country pack's names configuration.
+    pub fn from_country_pack(pack: &crate::country::schema::CountryPack) -> Self {
+        let mut pools = HashMap::new();
+        let mut distribution = Vec::new();
+
+        for culture_config in &pack.names.cultures {
+            // Map culture_id to NameCulture enum; default to WesternUs for unknown.
+            let culture = match culture_config.culture_id.as_str() {
+                "western_us" | "western" => NameCulture::WesternUs,
+                "german" | "deutsch" => NameCulture::German,
+                "french" | "français" => NameCulture::French,
+                "chinese" | "中文" => NameCulture::Chinese,
+                "japanese" | "日本語" => NameCulture::Japanese,
+                "indian" | "hindi" => NameCulture::Indian,
+                "hispanic" | "latino" | "español" => NameCulture::Hispanic,
+                _ => NameCulture::WesternUs,
+            };
+
+            let pool = NamePool::from_culture_config(culture_config, culture);
+            pools.insert(culture, pool);
+            distribution.push((culture, culture_config.weight));
+        }
+
+        // Fallback: if no cultures were configured, use default pools.
+        if pools.is_empty() {
+            return Self::new();
+        }
+
+        let email_domain = pack
+            .names
+            .email_domains
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "company.com".to_string());
+
+        Self {
+            pools,
+            distribution,
+            email_domain,
+        }
     }
 }
 

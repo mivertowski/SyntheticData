@@ -8,10 +8,8 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
-};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// MFG document references for event generation.
@@ -41,10 +39,16 @@ pub struct MfgDocuments {
 
 impl MfgDocuments {
     /// Create new MFG documents.
-    pub fn new(order_id: &str, material_id: &str, company_code: &str, quantity: Decimal) -> Self {
+    pub fn new(
+        order_id: &str,
+        material_id: &str,
+        company_code: &str,
+        quantity: Decimal,
+        factory: &OcpmUuidFactory,
+    ) -> Self {
         Self {
             order_id: order_id.into(),
-            order_uuid: Uuid::new_v4(),
+            order_uuid: factory.next_document_id(),
             material_id: material_id.into(),
             company_code: company_code.into(),
             quantity,
@@ -63,16 +67,16 @@ impl MfgDocuments {
     }
 
     /// Set inspection info.
-    pub fn with_inspection(mut self, inspection_id: &str) -> Self {
+    pub fn with_inspection(mut self, inspection_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.inspection_id = Some(inspection_id.into());
-        self.inspection_uuid = Some(Uuid::new_v4());
+        self.inspection_uuid = Some(factory.next_document_id());
         self
     }
 
-    /// Set cycle count info.
-    pub fn with_cycle_count(mut self, count_id: &str) -> Self {
+    /// Set cycle count info with deterministic UUID from the given factory.
+    pub fn with_cycle_count(mut self, count_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.cycle_count_id = Some(count_id.into());
-        self.cycle_count_uuid = Some(Uuid::new_v4());
+        self.cycle_count_uuid = Some(factory.next_document_id());
         self
     }
 }
@@ -181,7 +185,7 @@ impl OcpmEventGenerator {
                 self.create_object(&op_type, op_id, &documents.company_code, current_time);
             objects.push(op_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "belongs_to",
                 op_object.object_id,
                 &op_type.type_id,
@@ -242,7 +246,7 @@ impl OcpmEventGenerator {
             );
             objects.push(insp_object.clone());
 
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "inspects",
                 insp_object.object_id,
                 &inspection_type.type_id,
@@ -405,10 +409,17 @@ mod tests {
     #[test]
     fn test_mfg_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = MfgDocuments::new("PO-MFG-001", "MAT-001", "1000", Decimal::new(100, 0))
-            .with_operations(vec!["OP-010", "OP-020"])
-            .with_inspection("QI-001")
-            .with_cycle_count("CC-001");
+        let factory = OcpmUuidFactory::new(42);
+        let documents = MfgDocuments::new(
+            "PO-MFG-001",
+            "MAT-001",
+            "1000",
+            Decimal::new(100, 0),
+            &factory,
+        )
+        .with_operations(vec!["OP-010", "OP-020"])
+        .with_inspection("QI-001", &factory)
+        .with_cycle_count("CC-001", &factory);
 
         let result = generator.generate_mfg_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -429,8 +440,15 @@ mod tests {
             },
         );
 
-        let documents = MfgDocuments::new("PO-MFG-002", "MAT-001", "1000", Decimal::new(50, 0))
-            .with_operations(vec!["OP-010"]);
+        let factory = OcpmUuidFactory::new(123);
+        let documents = MfgDocuments::new(
+            "PO-MFG-002",
+            "MAT-001",
+            "1000",
+            Decimal::new(50, 0),
+            &factory,
+        )
+        .with_operations(vec!["OP-010"]);
 
         let result = generator.generate_mfg_case(&documents, Utc::now(), &[]);
 

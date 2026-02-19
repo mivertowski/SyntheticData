@@ -4,6 +4,7 @@ use datasynth_core::models::{
     Department, OrganizationStructure, User, UserPersona, UserPool, WorkingHoursPattern,
 };
 use datasynth_core::templates::{MultiCultureNameGenerator, NameCulture, PersonName};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -58,7 +59,26 @@ impl UserGenerator {
         name_gen.set_email_domain(&config.email_domain);
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
+            seed,
+            name_generator: name_gen,
+            config,
+            user_counter: 0,
+        }
+    }
+
+    /// Create a new user generator with a pre-built name generator.
+    ///
+    /// This is useful when the name generator has been constructed from a
+    /// [`CountryPack`] and the caller wants full control over its pools
+    /// and distribution weights.
+    pub fn with_name_generator(
+        seed: u64,
+        config: UserGeneratorConfig,
+        name_gen: MultiCultureNameGenerator,
+    ) -> Self {
+        Self {
+            rng: seeded_rng(seed, 0),
             seed,
             name_generator: name_gen,
             config,
@@ -260,7 +280,7 @@ impl UserGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.user_counter = 0;
     }
 }

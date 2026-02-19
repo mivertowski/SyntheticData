@@ -3,6 +3,7 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::Serialize;
 use std::collections::HashMap;
 
 use datasynth_core::accounts::control_accounts;
@@ -13,7 +14,7 @@ use datasynth_core::models::subledger::inventory::InventoryPosition;
 use datasynth_core::models::subledger::SubledgerType;
 
 /// Local status enum for reconciliation results.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum ReconStatus {
     /// Fully reconciled within tolerance.
     Reconciled,
@@ -26,7 +27,7 @@ pub enum ReconStatus {
 }
 
 /// An item that doesn't reconcile.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct UnreconciledEntry {
     /// Type of discrepancy.
     pub entry_type: String,
@@ -39,7 +40,7 @@ pub struct UnreconciledEntry {
 }
 
 /// Result of a GL-to-subledger reconciliation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ReconciliationResult {
     /// Reconciliation ID.
     pub reconciliation_id: String,

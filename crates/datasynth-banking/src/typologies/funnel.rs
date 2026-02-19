@@ -11,6 +11,7 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
 use crate::models::{BankAccount, BankTransaction, BankingCustomer, CounterpartyRef};
+use crate::seed_offsets::FUNNEL_INJECTOR_SEED_OFFSET;
 
 /// Funnel account pattern injector.
 ///
@@ -28,7 +29,7 @@ impl FunnelInjector {
     /// Create a new funnel injector.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(6100)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(FUNNEL_INJECTOR_SEED_OFFSET)),
             uuid_factory: DeterministicUuidFactory::new(
                 seed,
                 datasynth_core::GeneratorType::Anomaly,

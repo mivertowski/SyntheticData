@@ -175,29 +175,26 @@ impl Default for HealthcareSettings {
 
 impl HealthcareSettings {
     /// Creates settings for a specific facility type.
-    #[allow(clippy::field_reassign_with_default)]
     pub fn for_facility(facility_type: FacilityType) -> Self {
-        let mut settings = Self::default();
-        settings.facility_type = facility_type;
+        let (avg_daily_encounters, avg_charges_per_encounter) = match facility_type {
+            FacilityType::PhysicianPractice => (30, 3),
+            FacilityType::AmbulatorySurgery => (20, 15),
+            FacilityType::SkilledNursing => (100, 5),
+            _ => {
+                let defaults = Self::default();
+                (
+                    defaults.avg_daily_encounters,
+                    defaults.avg_charges_per_encounter,
+                )
+            }
+        };
 
-        // Adjust based on facility type
-        match facility_type {
-            FacilityType::PhysicianPractice => {
-                settings.avg_daily_encounters = 30;
-                settings.avg_charges_per_encounter = 3;
-            }
-            FacilityType::AmbulatorySurgery => {
-                settings.avg_daily_encounters = 20;
-                settings.avg_charges_per_encounter = 15;
-            }
-            FacilityType::SkilledNursing => {
-                settings.avg_daily_encounters = 100;
-                settings.avg_charges_per_encounter = 5;
-            }
-            _ => {}
+        Self {
+            facility_type,
+            avg_daily_encounters,
+            avg_charges_per_encounter,
+            ..Self::default()
         }
-
-        settings
     }
 }
 

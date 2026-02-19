@@ -150,6 +150,97 @@ impl HolidayCalendar {
         self.holidays.iter().map(|h| h.date).collect()
     }
 
+    /// Build a holiday calendar from a [`CountryPack`].
+    ///
+    /// Resolves fixed, easter-relative, nth-weekday, last-weekday, and
+    /// lunar holiday types defined in the pack's `holidays` section.
+    /// The `region` field is set to `Region::US` as a default; callers
+    /// that need a specific `Region` value should set it afterwards.
+    pub fn from_country_pack(pack: &crate::country::schema::CountryPack, year: i32) -> Self {
+        // Try to map the pack's country_code to a Region for backward compat.
+        let region = match pack.country_code.as_str() {
+            "US" => Region::US,
+            "DE" => Region::DE,
+            "GB" => Region::GB,
+            "CN" => Region::CN,
+            "JP" => Region::JP,
+            "IN" => Region::IN,
+            "BR" => Region::BR,
+            "MX" => Region::MX,
+            "AU" => Region::AU,
+            "SG" => Region::SG,
+            "KR" => Region::KR,
+            _ => Region::US,
+        };
+
+        let mut cal = Self::new(region, year);
+        let holidays = &pack.holidays;
+
+        // --- Fixed holidays ---
+        for h in &holidays.fixed {
+            if let Some(date) = NaiveDate::from_ymd_opt(year, h.month, h.day) {
+                let date = if h.observe_weekend_rule {
+                    Self::observe_weekend(date)
+                } else {
+                    date
+                };
+                cal.add_holiday(Holiday::new(&h.name, date, h.activity_multiplier));
+            }
+        }
+
+        // --- Easter-relative holidays ---
+        if let Some(easter) = crate::country::easter::compute_easter(year) {
+            for h in &holidays.easter_relative {
+                let date = easter + Duration::days(h.offset_days as i64);
+                cal.add_holiday(Holiday::new(&h.name, date, h.activity_multiplier));
+            }
+        }
+
+        // --- Nth-weekday holidays ---
+        for h in &holidays.nth_weekday {
+            if let Some(weekday) = Self::parse_weekday(&h.weekday) {
+                let date = Self::nth_weekday_of_month(year, h.month, weekday, h.occurrence);
+                let date = date + Duration::days(h.offset_days as i64);
+                cal.add_holiday(Holiday::new(&h.name, date, h.activity_multiplier));
+            }
+        }
+
+        // --- Last-weekday holidays ---
+        for h in &holidays.last_weekday {
+            if let Some(weekday) = Self::parse_weekday(&h.weekday) {
+                let date = Self::last_weekday_of_month(year, h.month, weekday);
+                cal.add_holiday(Holiday::new(&h.name, date, h.activity_multiplier));
+            }
+        }
+
+        // --- Lunar holidays ---
+        for h in &holidays.lunar {
+            if let Some(dates) =
+                crate::country::lunar::resolve_lunar_holiday(&h.algorithm, year, h.duration_days)
+            {
+                for date in dates {
+                    cal.add_holiday(Holiday::new(&h.name, date, h.activity_multiplier));
+                }
+            }
+        }
+
+        cal
+    }
+
+    /// Parse a weekday string (e.g. "monday") into a `chrono::Weekday`.
+    fn parse_weekday(s: &str) -> Option<Weekday> {
+        match s.to_lowercase().as_str() {
+            "monday" | "mon" => Some(Weekday::Mon),
+            "tuesday" | "tue" => Some(Weekday::Tue),
+            "wednesday" | "wed" => Some(Weekday::Wed),
+            "thursday" | "thu" => Some(Weekday::Thu),
+            "friday" | "fri" => Some(Weekday::Fri),
+            "saturday" | "sat" => Some(Weekday::Sat),
+            "sunday" | "sun" => Some(Weekday::Sun),
+            _ => None,
+        }
+    }
+
     /// US Federal Holidays.
     fn us_holidays(year: i32) -> Self {
         let mut cal = Self::new(Region::US, year);
@@ -1452,5 +1543,143 @@ mod tests {
         // Check Golden Week holidays
         let kodomo = NaiveDate::from_ymd_opt(2024, 5, 5).unwrap();
         assert!(cal.is_holiday(kodomo));
+    }
+
+    // -----------------------------------------------------------------
+    // Parity tests: for_region() vs from_country_pack()
+    // -----------------------------------------------------------------
+
+    /// Extract sorted unique dates from a holiday calendar.
+    fn sorted_dates(cal: &HolidayCalendar) -> Vec<NaiveDate> {
+        let mut dates = cal.all_dates();
+        dates.sort();
+        dates.dedup();
+        dates
+    }
+
+    #[test]
+    fn test_us_country_pack_parity_2024() {
+        let reg = crate::CountryPackRegistry::builtin_only().expect("builtin registry");
+        let us_pack = reg.get_by_str("US");
+
+        let legacy = HolidayCalendar::for_region(Region::US, 2024);
+        let pack_cal = HolidayCalendar::from_country_pack(us_pack, 2024);
+
+        let legacy_dates = sorted_dates(&legacy);
+        let pack_dates = sorted_dates(&pack_cal);
+
+        // Every legacy date must appear in the pack-derived calendar.
+        for date in &legacy_dates {
+            assert!(
+                pack_cal.is_holiday(*date),
+                "US pack calendar missing legacy holiday on {date}"
+            );
+        }
+
+        // Every pack date must appear in the legacy calendar.
+        for date in &pack_dates {
+            assert!(
+                legacy.is_holiday(*date),
+                "Legacy US calendar missing pack holiday on {date}"
+            );
+        }
+
+        assert_eq!(
+            legacy_dates.len(),
+            pack_dates.len(),
+            "US holiday count mismatch: legacy={}, pack={}",
+            legacy_dates.len(),
+            pack_dates.len()
+        );
+    }
+
+    #[test]
+    fn test_us_country_pack_parity_2025() {
+        let reg = crate::CountryPackRegistry::builtin_only().expect("builtin registry");
+        let us_pack = reg.get_by_str("US");
+
+        let legacy = HolidayCalendar::for_region(Region::US, 2025);
+        let pack_cal = HolidayCalendar::from_country_pack(us_pack, 2025);
+
+        let legacy_dates = sorted_dates(&legacy);
+        let pack_dates = sorted_dates(&pack_cal);
+
+        for date in &legacy_dates {
+            assert!(
+                pack_cal.is_holiday(*date),
+                "US 2025 pack calendar missing legacy holiday on {date}"
+            );
+        }
+        for date in &pack_dates {
+            assert!(
+                legacy.is_holiday(*date),
+                "Legacy US 2025 calendar missing pack holiday on {date}"
+            );
+        }
+        assert_eq!(legacy_dates.len(), pack_dates.len());
+    }
+
+    #[test]
+    fn test_de_country_pack_parity_2024() {
+        let reg = crate::CountryPackRegistry::builtin_only().expect("builtin registry");
+        let de_pack = reg.get_by_str("DE");
+
+        let legacy = HolidayCalendar::for_region(Region::DE, 2024);
+        let pack_cal = HolidayCalendar::from_country_pack(de_pack, 2024);
+
+        let legacy_dates = sorted_dates(&legacy);
+        let pack_dates = sorted_dates(&pack_cal);
+
+        for date in &legacy_dates {
+            assert!(
+                pack_cal.is_holiday(*date),
+                "DE pack calendar missing legacy holiday on {date}"
+            );
+        }
+        for date in &pack_dates {
+            assert!(
+                legacy.is_holiday(*date),
+                "Legacy DE calendar missing pack holiday on {date}"
+            );
+        }
+        assert_eq!(
+            legacy_dates.len(),
+            pack_dates.len(),
+            "DE holiday count mismatch: legacy={}, pack={}",
+            legacy_dates.len(),
+            pack_dates.len()
+        );
+    }
+
+    #[test]
+    fn test_gb_country_pack_parity_2024() {
+        let reg = crate::CountryPackRegistry::builtin_only().expect("builtin registry");
+        let gb_pack = reg.get_by_str("GB");
+
+        let legacy = HolidayCalendar::for_region(Region::GB, 2024);
+        let pack_cal = HolidayCalendar::from_country_pack(gb_pack, 2024);
+
+        let legacy_dates = sorted_dates(&legacy);
+        let pack_dates = sorted_dates(&pack_cal);
+
+        for date in &legacy_dates {
+            assert!(
+                pack_cal.is_holiday(*date),
+                "GB pack calendar missing legacy holiday on {date}"
+            );
+        }
+        for date in &pack_dates {
+            assert!(
+                legacy.is_holiday(*date),
+                "Legacy GB calendar missing pack holiday on {date}"
+            );
+        }
+        assert_eq!(
+            legacy_dates.len(),
+            pack_dates.len(),
+            "GB holiday count mismatch: legacy={}, pack={}",
+            legacy_dates.len(),
+            pack_dates.len()
+        );
     }
 }

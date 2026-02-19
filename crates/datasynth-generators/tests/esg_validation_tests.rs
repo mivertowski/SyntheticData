@@ -11,8 +11,8 @@ use datasynth_config::schema::{
 };
 use datasynth_generators::esg::{
     DisclosureGenerator, EmissionGenerator, EnergyGenerator, EnergyInput, EnergyInputType,
-    EsgAnomalyInjector, GovernanceGenerator, SupplierEsgGenerator, VendorInput,
-    VendorSpendInput, WasteGenerator, WaterGenerator, WorkforceGenerator,
+    EsgAnomalyInjector, GovernanceGenerator, SupplierEsgGenerator, VendorInput, VendorSpendInput,
+    WasteGenerator, WaterGenerator, WorkforceGenerator,
 };
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -32,12 +32,12 @@ fn test_full_esg_pipeline() {
     let end = d("2025-12-01");
 
     // 1. Energy
-    let mut energy_gen = EnergyGenerator::new(42, EnvironmentalConfig::default().energy);
+    let mut energy_gen = EnergyGenerator::new(EnvironmentalConfig::default().energy, 42);
     let energy_records = energy_gen.generate(entity, start, end);
     assert!(!energy_records.is_empty(), "Should generate energy records");
 
     // 2. Emissions from energy
-    let mut emission_gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut emission_gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
     let energy_inputs: Vec<EnergyInput> = energy_records
         .iter()
         .map(|e| EnergyInput {
@@ -84,11 +84,10 @@ fn test_full_esg_pipeline() {
     let _waste = waste_gen.generate(entity, start, end);
 
     // 5. Workforce
-    let mut workforce_gen = WorkforceGenerator::new(42, SocialConfig::default());
+    let mut workforce_gen = WorkforceGenerator::new(SocialConfig::default(), 42);
     let diversity = workforce_gen.generate_diversity(entity, 500, d("2025-06-30"));
     let _pay_equity = workforce_gen.generate_pay_equity(entity, d("2025-06-30"));
-    let incidents =
-        workforce_gen.generate_safety_incidents(entity, 3, start, d("2025-12-31"));
+    let incidents = workforce_gen.generate_safety_incidents(entity, 3, start, d("2025-12-31"));
     let safety_metric =
         workforce_gen.compute_safety_metrics(entity, &incidents, 1_000_000, d("2025-06-30"));
 
@@ -111,25 +110,34 @@ fn test_full_esg_pipeline() {
             quality_score: Some(70.0),
         },
     ];
-    let mut supplier_gen = SupplierEsgGenerator::new(42, SupplyChainEsgConfig::default());
+    let mut supplier_gen = SupplierEsgGenerator::new(SupplyChainEsgConfig::default(), 42);
     let _assessments = supplier_gen.generate(entity, &vendors, d("2025-06-01"));
 
     // 8. Disclosures
     let mut disc_gen = DisclosureGenerator::new(
         42,
         EsgReportingConfig::default(),
-        ClimateScenarioConfig { enabled: true, ..Default::default() },
+        ClimateScenarioConfig {
+            enabled: true,
+            ..Default::default()
+        },
     );
     let materiality = disc_gen.generate_materiality(entity, d("2025-01-01"));
     let disclosures = disc_gen.generate_disclosures(entity, &materiality, start, d("2025-12-31"));
     let scenarios = disc_gen.generate_climate_scenarios(entity);
 
     // Verify pipeline produced data across all categories
-    assert!(!scope1.is_empty() || !scope2.is_empty(), "Should have Scope 1 or 2 emissions");
+    assert!(
+        !scope1.is_empty() || !scope2.is_empty(),
+        "Should have Scope 1 or 2 emissions"
+    );
     assert!(!scope3.is_empty(), "Should have Scope 3 emissions");
     assert!(!diversity.is_empty(), "Should have diversity metrics");
     assert!(safety_metric.total_hours_worked > 0);
-    assert!(!materiality.is_empty(), "Should have materiality assessments");
+    assert!(
+        !materiality.is_empty(),
+        "Should have materiality assessments"
+    );
     assert!(!disclosures.is_empty(), "Should have disclosures");
     assert!(!scenarios.is_empty(), "Should have climate scenarios");
 }
@@ -140,7 +148,7 @@ fn test_full_esg_pipeline() {
 
 #[test]
 fn test_scope1_scope2_scope3_totals_coherent() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
 
     let fuel_inputs = vec![
         EnergyInput {
@@ -180,7 +188,7 @@ fn test_scope1_scope2_scope3_totals_coherent() {
 
 #[test]
 fn test_higher_spend_produces_higher_scope3() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
 
     let low_spend = vec![VendorSpendInput {
         vendor_id: "V-001".into(),
@@ -195,8 +203,10 @@ fn test_higher_spend_produces_higher_scope3() {
         country: "US".into(),
     }];
 
-    let low_result = gen.generate_scope3_purchased_goods("C001", &low_spend, d("2025-01-01"), d("2025-12-31"));
-    let high_result = gen.generate_scope3_purchased_goods("C001", &high_spend, d("2025-01-01"), d("2025-12-31"));
+    let low_result =
+        gen.generate_scope3_purchased_goods("C001", &low_spend, d("2025-01-01"), d("2025-12-31"));
+    let high_result =
+        gen.generate_scope3_purchased_goods("C001", &high_spend, d("2025-01-01"), d("2025-12-31"));
 
     assert!(
         high_result[0].co2e_tonnes > low_result[0].co2e_tonnes,
@@ -210,7 +220,7 @@ fn test_higher_spend_produces_higher_scope3() {
 
 #[test]
 fn test_trir_formula_matches_computed() {
-    let mut gen = WorkforceGenerator::new(42, SocialConfig::default());
+    let mut gen = WorkforceGenerator::new(SocialConfig::default(), 42);
     let incidents = gen.generate_safety_incidents("C001", 5, d("2025-01-01"), d("2025-12-31"));
     let metric = gen.compute_safety_metrics("C001", &incidents, 2_000_000, d("2025-06-30"));
 
@@ -244,7 +254,8 @@ fn test_all_material_topics_covered_by_disclosures() {
     );
 
     let materiality = gen.generate_materiality("C001", d("2025-01-01"));
-    let disclosures = gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
+    let disclosures =
+        gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
 
     let material_topics: Vec<&str> = materiality
         .iter()
@@ -253,8 +264,14 @@ fn test_all_material_topics_covered_by_disclosures() {
         .collect();
 
     for topic in &material_topics {
-        let found = disclosures.iter().any(|d| d.disclosure_topic.contains(topic));
-        assert!(found, "Material topic '{}' must have at least one disclosure", topic);
+        let found = disclosures
+            .iter()
+            .any(|d| d.disclosure_topic.contains(topic));
+        assert!(
+            found,
+            "Material topic '{}' must have at least one disclosure",
+            topic
+        );
     }
 }
 
@@ -264,7 +281,7 @@ fn test_all_material_topics_covered_by_disclosures() {
 
 #[test]
 fn test_greenwashing_reduces_emissions() {
-    let mut gen = EmissionGenerator::new(42, EnvironmentalConfig::default());
+    let mut gen = EmissionGenerator::new(EnvironmentalConfig::default(), 42);
     let inputs = vec![EnergyInput {
         facility_id: "F-001".into(),
         energy_type: EnergyInputType::NaturalGas,
@@ -294,8 +311,8 @@ fn test_greenwashing_reduces_emissions() {
 fn test_deterministic_esg_pipeline() {
     let config = EnvironmentalConfig::default();
 
-    let mut gen1 = EmissionGenerator::new(42, config.clone());
-    let mut gen2 = EmissionGenerator::new(42, config);
+    let mut gen1 = EmissionGenerator::new(config.clone(), 42);
+    let mut gen2 = EmissionGenerator::new(config, 42);
 
     let inputs = vec![
         EnergyInput {
@@ -321,10 +338,16 @@ fn test_deterministic_esg_pipeline() {
     assert_eq!(r1_s1.len(), r2_s1.len());
     assert_eq!(r1_s2.len(), r2_s2.len());
     for (a, b) in r1_s1.iter().zip(r2_s1.iter()) {
-        assert_eq!(a.co2e_tonnes, b.co2e_tonnes, "Scope 1 should be deterministic");
+        assert_eq!(
+            a.co2e_tonnes, b.co2e_tonnes,
+            "Scope 1 should be deterministic"
+        );
     }
     for (a, b) in r1_s2.iter().zip(r2_s2.iter()) {
-        assert_eq!(a.co2e_tonnes, b.co2e_tonnes, "Scope 2 should be deterministic");
+        assert_eq!(
+            a.co2e_tonnes, b.co2e_tonnes,
+            "Scope 2 should be deterministic"
+        );
     }
 }
 
@@ -349,7 +372,7 @@ fn test_supplier_scores_in_valid_range() {
         high_risk_countries: vec!["CN".into()],
     };
 
-    let mut gen = SupplierEsgGenerator::new(42, config);
+    let mut gen = SupplierEsgGenerator::new(config, 42);
     let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
     assert_eq!(assessments.len(), 20);

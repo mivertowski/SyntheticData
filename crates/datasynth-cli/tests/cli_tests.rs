@@ -280,16 +280,19 @@ fn test_generate_demo_creates_output() {
 
     assert!(output_dir.exists(), "Output directory should be created");
 
-    // Check for sample_entries.json
-    let sample_path = output_dir.join("sample_entries.json");
+    // Check for journal entries output files
+    let je_csv_path = output_dir.join("journal_entries.csv");
+    let je_json_path = output_dir.join("journal_entries.json");
     assert!(
-        sample_path.exists(),
-        "Sample entries file should be created"
+        je_csv_path.exists() || je_json_path.exists(),
+        "Journal entries output file should be created"
     );
 
-    // Verify it's valid JSON
-    let content = fs::read_to_string(&sample_path).unwrap();
-    let _: serde_json::Value = serde_json::from_str(&content).expect("Should be valid JSON");
+    // Verify JSON is valid if it exists
+    if je_json_path.exists() {
+        let content = fs::read_to_string(&je_json_path).unwrap();
+        let _: serde_json::Value = serde_json::from_str(&content).expect("Should be valid JSON");
+    }
 }
 
 #[test]

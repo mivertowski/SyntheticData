@@ -87,6 +87,10 @@ pub struct SourceMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub industry: Option<String>,
 
+    /// Country code (ISO 3166-1 alpha-2) of the source data.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country_code: Option<String>,
+
     /// Additional metadata key-value pairs.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub metadata: HashMap<String, String>,
@@ -102,6 +106,7 @@ impl SourceMetadata {
             tables,
             date_range: None,
             industry: None,
+            country_code: None,
             metadata: HashMap::new(),
         }
     }

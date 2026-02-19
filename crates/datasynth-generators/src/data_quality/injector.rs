@@ -4,10 +4,12 @@
 //! data quality issues into synthetic data.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
+use datasynth_core::CountryPack;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::duplicates::{DuplicateConfig, DuplicateGenerator, DuplicateStats};
@@ -122,7 +124,7 @@ impl DataQualityConfig {
 }
 
 /// Combined statistics for all data quality issues.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DataQualityStats {
     /// Missing value statistics.
     pub missing_values: MissingValueStats,
@@ -231,7 +233,7 @@ pub struct DataQualityInjector {
 impl DataQualityInjector {
     /// Creates a new data quality injector.
     pub fn new(config: DataQualityConfig) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let rng = seeded_rng(config.seed, 0);
         let missing_value_injector = MissingValueInjector::new(config.missing_values.clone());
         let format_injector = FormatVariationInjector::new(config.format_variations.clone());
         let duplicate_generator = DuplicateGenerator::new(config.duplicates.clone());
@@ -248,6 +250,14 @@ impl DataQualityInjector {
             issues: Vec::new(),
             next_issue_id: 1,
         }
+    }
+
+    /// Set the country pack for locale-aware format variation baselines.
+    ///
+    /// Propagates to the internal `FormatVariationInjector` so that date and
+    /// amount baselines reflect the country's locale conventions.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.format_injector.set_country_pack(pack);
     }
 
     /// Processes a text field, potentially introducing quality issues.

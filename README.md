@@ -74,7 +74,7 @@ The generator produces statistically accurate data based on empirical research f
 | **Industry Presets** | Manufacturing, Retail, Financial Services, Healthcare, Technology, and more |
 | **Chart of Accounts** | Small (~100), Medium (~400), Large (~2500) account structures |
 | **Temporal Patterns** | Month-end, quarter-end, year-end volume spikes with working hour modeling |
-| **Regional Calendars** | Holiday calendars for US, DE, GB, CN, JP, IN with lunar calendar support |
+| **Country Packs** | Pluggable JSON country packs (US, DE, GB built-in) with holidays, names, tax, address, phone, payroll — extensible via external directory |
 
 ### Enterprise Simulation
 
@@ -94,6 +94,7 @@ The generator produces statistically accurate data based on empirical research f
 - **Currency & FX**: Realistic exchange rates, currency translation, CTA generation
 - **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
 - **Bank Reconciliation**: Automated statement matching, outstanding checks, deposits in transit, net difference validation
+- **Country Pack Architecture**: Pluggable JSON-based country configuration with `_default.json` → country → override layering; built-in US/DE/GB packs; external pack directory for custom/commercial locales
 - **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
 - **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships across 12 process families
   - OCEL 2.0 JSON/XML export for object-centric process mining

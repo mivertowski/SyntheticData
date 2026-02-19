@@ -1,0 +1,161 @@
+% sections/evaluation.tex — Evaluation Framework
+\section{Evaluation Framework}
+\label{sec:evaluation}
+
+\system{} includes a built-in evaluation suite that validates the statistical,
+structural, and domain-specific quality of generated data.  This section
+describes the evaluation dimensions and the auto-tuning mechanism.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Statistical Validation}
+\label{sec:eval_statistical}
+
+\paragraph{Benford's Law Tests.}
+First-digit and first-two-digit distributions are tested against theoretical
+Benford probabilities using:
+\begin{itemize}
+  \item \textbf{Mean Absolute Deviation (MAD):}
+    $\MAD = \frac{1}{K}\sum_{k=1}^{K}|\hat{p}_k - p_k|$, with conformity
+    thresholds from~\citet{nigrini2012benfords}: close ($<0.006$), acceptable
+    ($<0.012$), marginally acceptable ($<0.015$).
+  \item \textbf{Chi-squared test:}
+    $\chi^2 = n\sum_{k} (\hat{p}_k - p_k)^2 / p_k$.
+  \item \textbf{Kolmogorov-Smirnov test} for the continuous approximation.
+\end{itemize}
+
+\paragraph{Distribution Fitting.}
+Amount distributions are tested for log-normal fit using the
+Anderson-Darling statistic at configurable significance levels (default
+$\alpha = 0.05$).
+
+\paragraph{Correlation Verification.}
+The Pearson correlation matrix of generated fields is compared to the
+configured target matrix.  Per-pair deviations exceeding the significance
+threshold are flagged.
+
+\paragraph{Temporal Pattern Analysis.}
+Intraday activity profiles, day-of-week seasonality, and month-end
+concentration ratios are compared against configured targets.  CUSUM and
+EWMA control charts detect unexpected drift or regime changes.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Coherence Validators}
+\label{sec:eval_coherence}
+
+\system{} implements 15 domain-specific coherence validators, each verifying
+cross-table consistency within a business domain:
+
+\begin{table}[H]
+\centering
+\caption{Coherence validators and the invariants they enforce.}
+\label{tab:validators}
+\small
+\begin{tabular}{p{3.2cm}p{9cm}}
+\toprule
+\textbf{Validator} & \textbf{Key Invariants} \\
+\midrule
+Balance Sheet &
+  Assets $=$ Liabilities $+$ Equity; period-over-period consistency \\
+Document Chain &
+  PO$\to$GR$\to$Invoice$\to$Payment referential integrity; timestamp
+  ordering \\
+Subledger Reconciliation &
+  AR/AP/FA/Inventory subledger totals $=$ GL control accounts \\
+Intercompany Elimination &
+  IC receivables $=$ IC payables; elimination entries net to zero \\
+HR / Payroll &
+  Gross $=$ Net $+$ Deductions; tax withholding rates within bounds \\
+Manufacturing &
+  BOM costing $\leq$ production order cost; scrap accounting \\
+Sales Quotes &
+  Quote$\to$order conversion consistency; discount limit adherence \\
+Sourcing &
+  Bid evaluation completeness; scorecard metric ranges \\
+Bank Reconciliation &
+  Book balance $+$ outstanding items $=$ bank balance \\
+Financial Reporting &
+  Statement interconnection (IS $\to$ BS via retained earnings;
+  BS $\to$ CF via working capital changes) \\
+Standards (IFRS/GAAP) &
+  ASC 606 obligation satisfaction; ASC 842 ROU asset amortization;
+  Fair value level 1+2+3 $=$ total \\
+Network Analysis &
+  Vendor concentration $\leq$ configured max; customer segment
+  revenue shares within tolerance \\
+Tax &
+  Tax rate application; withholding accuracy \\
+Treasury &
+  Cash position flow consistency; covenant compliance \\
+Project Accounting &
+  Budget vs.\ actual variance within thresholds \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each validator returns a structured result with pass/fail status, violation
+count, violation details, and suggested remediation.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{ML-Readiness Assessment}
+\label{sec:eval_ml}
+
+For datasets intended for machine learning, \system{} evaluates:
+
+\paragraph{Feature Quality.}
+Distribution matching between original fingerprint (if available) and
+synthetic data using Wasserstein distance.  Categorical cardinality
+verification.  Missing-data pattern analysis (MCAR/MAR/MNAR).
+
+\paragraph{Label Quality.}
+Anomaly label distribution across categories.  Label-feature correlation
+analysis to verify that labels are predictable from features.  Ground-truth
+completeness metrics.
+
+\paragraph{Split Metrics.}
+When temporal train/validation/test splits are applied, the evaluator checks
+that: (a)~class distributions are balanced across splits, (b)~no future
+data leaks into training, (c)~stratification preserves minority class
+representation.
+
+\paragraph{GNN Readiness.}
+For graph exports, additional metrics assess:
+\begin{itemize}
+  \item Node feature dimensionality and scaling properties.
+  \item Edge density and sparsity level.
+  \item Graph connectivity (number of connected components, average degree).
+  \item Heterogeneity: number of node types, edge types, and cross-type
+    edges.
+\end{itemize}
+
+\paragraph{Scheme Detectability.}
+For AML typology data, the evaluator computes per-typology detection scores
+assessing whether the generated patterns have sufficient salience for ML
+models while remaining realistic.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{AutoTuner}
+\label{sec:eval_autotuner}
+
+The AutoTuner closes the loop between evaluation and generation.  Given
+evaluation results with identified gaps, it:
+
+\begin{enumerate}
+  \item Analyzes each gap to determine root cause (insufficient samples,
+    distribution mismatch, weak correlations, etc.).
+  \item Generates a prioritized list of \texttt{TuningOpportunity} records,
+    each specifying a configuration patch.
+  \item Ranks opportunities as Critical, Important, or Nice-to-have.
+\end{enumerate}
+
+Supported tuning actions include:
+\texttt{IncreaseTransactionVolume},
+\texttt{AdjustDistributionParameters},
+\texttt{EnhanceAnomalyInjection},
+\texttt{ImproveTemporalPatterns},
+\texttt{BalanceFeatureDistributions},
+\texttt{EnhanceGraphConnectivity}, and
+\texttt{AdjustCorrelationMatrix}.
+
+The output is a YAML patch that can be merged with the original
+configuration for a subsequent generation run, enabling iterative
+refinement toward quality targets.

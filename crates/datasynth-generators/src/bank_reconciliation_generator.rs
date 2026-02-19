@@ -14,6 +14,7 @@ use datasynth_core::models::{
     BankReconciliation, BankStatementLine, Direction, MatchStatus, ReconciliationStatus,
     ReconcilingItem, ReconcilingItemType,
 };
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -71,13 +72,15 @@ pub struct BankReconciliationGenerator {
     line_uuid_factory: DeterministicUuidFactory,
     recon_item_uuid_factory: DeterministicUuidFactory,
     config: BankReconciliationConfig,
+    /// Pool of real employee IDs for preparer/reviewer references.
+    employee_ids_pool: Vec<String>,
 }
 
 impl BankReconciliationGenerator {
     /// Create a new generator with default configuration.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::BankReconciliation),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -90,13 +93,14 @@ impl BankReconciliationGenerator {
                 2,
             ),
             config: BankReconciliationConfig::default(),
+            employee_ids_pool: Vec::new(),
         }
     }
 
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: BankReconciliationConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::BankReconciliation),
             line_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -109,7 +113,17 @@ impl BankReconciliationGenerator {
                 2,
             ),
             config,
+            employee_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set the employee ID pool used for preparer and reviewer IDs.
+    ///
+    /// When non-empty, `preparer_id` and `reviewer_id` are picked from this
+    /// pool instead of fabricated `USR-{:04}` strings.
+    pub fn with_employee_pool(mut self, employee_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self
     }
 
     /// Generate a bank reconciliation for the given account and period.
@@ -273,10 +287,21 @@ impl BankReconciliationGenerator {
         // Net difference should be zero when fully reconciled.
         let net_difference = adjusted_bank_balance - (book_ending_balance + book_adjustment);
 
-        // Preparer / reviewer
-        let preparer_id = format!("USR-{:04}", self.rng.gen_range(1..=200));
+        // Preparer / reviewer – use real employee IDs when available
+        let preparer_id = if self.employee_ids_pool.is_empty() {
+            format!("USR-{:04}", self.rng.gen_range(1..=200))
+        } else {
+            self.employee_ids_pool
+                .choose(&mut self.rng)
+                .cloned()
+                .unwrap_or_else(|| format!("USR-{:04}", self.rng.gen_range(1..=200)))
+        };
         let reviewer_id = if status == ReconciliationStatus::Completed {
-            Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            if self.employee_ids_pool.is_empty() {
+                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            } else {
+                self.employee_ids_pool.choose(&mut self.rng).cloned()
+            }
         } else {
             None
         };
@@ -304,12 +329,12 @@ impl BankReconciliationGenerator {
 
     /// Generate a random opening balance using the configured range.
     fn random_opening_balance(&mut self) -> Decimal {
-        let raw: f64 = self
-            .rng
-            .gen_range(self.config.min_opening_balance..=self.config.max_opening_balance);
-        Decimal::from_f64_retain(raw)
-            .unwrap_or(Decimal::ZERO)
-            .round_dp(2)
+        sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(self.config.min_opening_balance).unwrap_or(Decimal::ZERO),
+            Decimal::from_f64_retain(self.config.max_opening_balance).unwrap_or(Decimal::ZERO),
+        )
+        .round_dp(2)
     }
 
     /// Convert an internal payment reference into a bank statement line.
@@ -419,10 +444,12 @@ impl BankReconciliationGenerator {
             }
         };
 
-        let raw_amount: f64 = self.rng.gen_range(amount_range.0..=amount_range.1);
-        let amount = Decimal::from_f64_retain(raw_amount)
-            .unwrap_or(Decimal::ONE)
-            .round_dp(2);
+        let amount = sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(amount_range.0).unwrap_or(Decimal::ONE),
+            Decimal::from_f64_retain(amount_range.1).unwrap_or(Decimal::ONE),
+        )
+        .round_dp(2);
 
         let bank_ref = format!(
             "BNK-{}-{:06}",

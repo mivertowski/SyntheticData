@@ -5,6 +5,152 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-18
+
+### Added
+
+- **Country Pack Pluggable Architecture** (`datasynth-core`): Runtime-loaded JSON country packs replacing ~7,500 lines of hardcoded country-specific data
+  - **CountryPackRegistry**: Layered merge system (`_default.json` → country pack → user overrides) with `include_str!` embedding for zero-config usage
+  - **Built-in packs**: US, DE, GB with comprehensive data for holidays, names, tax rates, phone formats, addresses, payroll rules, and legal entity formats
+  - **Holiday resolution**: 5 holiday types — fixed dates, Easter-relative, nth-weekday (with offset), last-weekday, and lunar calendar algorithms
+  - **CountryPack schema**: 16-section JSON structure covering locale, names, holidays, tax, address, phone, banking, business rules, legal entities, accounting, payroll, vendor/customer/material templates, and document texts
+  - **Deep merge**: Objects merge recursively, arrays/scalars replace — enables surgical per-country overrides
+  - **Easter & lunar extraction**: Extracted algorithmic holiday computation into reusable `country/easter.rs` and `country/lunar.rs` modules
+  - **External packs**: `country_packs.external_dir` config for loading custom/commercial country packs from disk
+
+- **Generator Country Pack Integration** (`datasynth-generators`, `datasynth-banking`, `datasynth-runtime`):
+  - `HolidayCalendar::from_country_pack()` — resolves all 5 holiday types with weekend observation rules; parity-tested against existing `for_region()` for US, DE, GB
+  - `MultiCultureNameGenerator::from_country_pack()` — culture-weighted name generation from JSON data
+  - `generate_from_country_pack()` on tax code generator — reads rates, jurisdictions, states from pack
+  - `generate_with_country_pack()` on payroll generator — reads statutory deduction rates from pack
+  - `spend_emission_factor_from_pack()` on emission generator — country multipliers from pack
+  - `generate_phone_from_pack()`, `generate_address_from_pack()`, `generate_national_id_from_pack()` on customer generator
+  - `EnhancedOrchestrator` wired with `CountryPackRegistry`, passes `&CountryPack` per company
+
+- **Country Pack Wiring Across All Modules** (`datasynth-runtime`, `datasynth-banking`, `datasynth-ocpm`, `datasynth-graph`, `datasynth-fingerprint`):
+  - **Orchestrator Phase 20 — Tax Generation**: `phase_tax_generation()` calls `TaxCodeGenerator::generate_from_country_pack()` using the primary company's country pack to produce locale-specific jurisdictions and tax codes
+  - **Orchestrator Phase 21 — ESG Generation**: `phase_esg_generation()` runs the full 9-generator ESG pipeline (EmissionGenerator scope 1/2/3, EnergyGenerator, WaterGenerator, WasteGenerator, WorkforceGenerator, GovernanceGenerator, SupplierEsgGenerator, DisclosureGenerator, EsgAnomalyInjector) with country pack emission factors
+  - **Banking**: `BankingOrchestrator` passes country pack to `CustomerGenerator` for locale-aware phone, address, and national ID generation
+  - **Document Flows (P2P/O2C)**: Country-specific document texts (PO headers, invoice terms, payment notices) from country packs
+  - **Payroll**: Localized deduction labels (tax, social security, health insurance) from country packs
+  - **OCPM**: `country_code` attribute on P2P and O2C process mining events for cross-country process analysis
+  - **Data Quality**: Locale-aware format variation baselines (date/number/phone formats) from country packs
+  - **Graph**: `country` field on `AccountNode` for ML feature enrichment
+  - **Fingerprint**: `country_code` on `SourceMetadata` for provenance tracking
+  - **Presets**: Country pack awareness in all industry preset configurations
+  - **Orchestrator Helpers**: `primary_pack()` and `primary_country_code()` convenience methods replacing repeated boilerplate
+
+- **Country Pack Configuration** (`datasynth-config`): New `country_packs` section in `GeneratorConfig` with `external_dir` and `overrides` fields, validation for directory existence and override key format
+
+- **FA/Inventory Subledger Generation** (`datasynth-runtime`): `FAGenerator` and `InventoryGenerator` wired into orchestrator subledger phase, generating fixed asset acquisition records from master data assets and inventory positions from materials
+
+- **Payroll & Manufacturing Journal Entries** (`datasynth-runtime`): JE generation from payroll runs (DR Salaries & Wages 6100 / CR Payroll Clearing 9100) and completed production orders (DR Raw Materials 5100 / CR Inventory 1200)
+
+- **Quality Gate Evaluation** (`datasynth-runtime`): `GateEngine::evaluate()` wired into generation result when `quality_gates.enabled` is true, resolving named profiles (strict/default/lenient) and logging pass/fail counts
+
+- **Banking Customer Coherence** (`datasynth-runtime`): Banking customers cross-referenced with core master data, overlaying names and countries for consistent identity across modules
+
+- **Statistics Tracking** (`datasynth-runtime`): `EnhancedGenerationStatistics` extended with `ic_transaction_count`, `fa_subledger_count`, `inventory_subledger_count`
+
+- **Master Data Country Pack Support** (`datasynth-generators`): `set_country_pack()` method added to `VendorGenerator`, `CustomerGenerator`, and `MaterialGenerator` with orchestrator wiring
+
+- **Generator Tracing** (`datasynth-generators`): `tracing::debug!` instrumentation added to P2P, O2C, KPI, Budget, and Sourcing Project generators for structured logging of generation parameters
+
+- **Deterministic UUID Discriminators** (`datasynth-core`): `GeneratorType::SupplierQualification` and `GeneratorType::SupplierScorecard` discriminators added for collision-free UUID generation in sourcing module
+
+- **`with_seed()` Constructors** (`datasynth-generators`): Standardized `with_seed(config, seed)` constructor added to `ARGenerator`, `APGenerator`, `FAGenerator`, `InventoryGenerator`, `OpeningBalanceGenerator`, `FxRateService`, and `FxRateGenerator`
+
+- **Orchestrator Pipeline Wiring — Round 3** (`datasynth-runtime`):
+  - **Opening balance generation** (phase 3b): `OpeningBalanceGenerator` wired per company with industry-typed specs, opening balances exported to `balance/opening_balances.json`
+  - **GL-to-subledger reconciliation** (phase 9b): `ReconciliationEngine` reconciles AR, AP, FA, and Inventory control accounts against subledger totals, exported to `balance/subledger_reconciliation.json`
+  - **Tax line generation**: `TaxLineGenerator` produces tax lines from vendor invoices (input VAT) and customer invoices (output VAT) using actual document flow data
+  - **Project cost allocation**: `ProjectCostGenerator` links time entries, expense reports, POs, and vendor invoices as `SourceDocument` records for cost allocation
+  - **ESG vendor spend**: ESG spend calculations now use actual payment data (filtered by `payment.is_vendor`) instead of stub values
+  - **Treasury cash positions**: `CashPositionGenerator` aggregates P2P payment outflows and O2C customer receipt inflows into daily cash positions
+  - **Graph export summary**: `graph_export_summary.json` exported when graph export is enabled
+
+- **Determinism Fix** (`datasynth-generators`): `Uuid::new_v4()` in `SchemeAction::new` replaced with FNV-1a hash-based deterministic UUID construction for reproducible anomaly scheme generation
+
+- **Generator Tracing — Round 3** (`datasynth-generators`): `tracing::debug!` instrumentation added to ~25 generator entry points across core (JE, CoA, control, injector), master data (vendor, customer, material, employee, asset), subledger (AR, AP, FA, inventory), period close (close engine, accruals, depreciation, financial statements), HR (payroll, time entry, expense report), manufacturing (production order, quality inspection), and intercompany modules
+
+- **Dead Code Cleanup — Round 3** (`datasynth-generators`): Removed `#![allow(dead_code)]` from 8 ESG and project accounting generator files; deleted unused `base_vendor`/`base_customer` from JE generator, `MATERIAL_GROUPS` from material generator, `calculate_monthly_depreciation` from FA generator, and 3 unused helpers from customer generator; added targeted `#[allow(dead_code)]` with explanatory comments for legitimately pre-wired items
+
+### Changed
+
+- Bumped all Rust crate versions to 0.8.0
+- `NamePool` fields changed from `Vec<&'static str>` to `Vec<String>` to support JSON-deserialized name data
+- Holiday `NthWeekdayHoliday` schema includes `offset_days` field for holidays like "Day after Thanksgiving"
+- Executive overview document updated to v0.8.0
+- `EnhancedOrchestrator` now runs 21 generation phases (previously 19), adding Tax (Phase 20) and ESG (Phase 21)
+- `EnhancedGenerationResult` now includes `tax: TaxSnapshot` and `esg: EsgSnapshot` fields
+- `EnhancedGenerationStatistics` tracks `tax_jurisdiction_count`, `tax_code_count`, `esg_emission_count`, `esg_disclosure_count`
+- **Constructor ordering standardized** to `(config, seed)` across 16 generators in ESG, project accounting, treasury, and tax modules
+- **Country pack API unified** to setter pattern; removed redundant `generate_with_country_pack()` per-call usage in orchestrator
+- **Shared utilities** (`datasynth-core::utils`): `seeded_rng()` replaces `ChaCha8Rng::seed_from_u64()` in 9 generators; `sample_decimal_range()` replaces manual Decimal sampling in 4 generators; `weighted_select()` migrated across 9 generator files
+- **Re-export cleanup**: Explicit type lists replace glob `pub use *` re-exports in `datasynth-core`, `datasynth-generators`, and `datasynth-graph` lib.rs files; removed `#![allow(ambiguous_glob_reexports)]`
+- **Dead code removed** (round 1): Unused `active_regimes` field, `VENDOR_NAME_TEMPLATES_LEGACY` constant, `generate_address()` method, `position_counter` field, and redundant `#[allow(dead_code)]` annotation
+- **Dead code removed** (round 2): Legacy trial balance builder, `GenericParquetRecord`, `BaselineComparer`, unused `ComputeStrategy` variants, dead server route field; blanket `#![allow(dead_code)]` removed from `datasynth-generators` with targeted per-item fixes; "reserved-for-future" `#[allow(dead_code)]` annotations removed from eval/core fields
+- **Unused dependencies removed**: `statrs`, `nalgebra`, `askama`, `ndarray`, `plotters` from `datasynth-fingerprint` and `datasynth-eval`
+- **Uuid::new_v4() replaced** with `DeterministicUuidFactory` across 16 generator files (anomaly strategies, injector, schemes, fraud collusion/management override, relationships, counterfactual, data quality labels, error cascade) for full deterministic reproducibility
+- **`AccountingStandardsSnapshot`** now persists actual `Vec<CustomerContract>` and `Vec<ImpairmentTest>` data (previously only stored counts)
+- **Output pipeline expanded** (`datasynth-cli`, `datasynth-runtime`): Treasury (6 generators), project accounting (5 generators), tax generators, period-close generators, accounting standards, internal controls, banking AML labels, IC journal entries, period-close trial balances, process mining events, and graph export warnings all wired to output writer with manifest registration
+- **Quality gate evaluation** now receives actual balance sheet evaluation, coherence pass/fail, and statistical/quality scores instead of stub data
+- **KPIs derived from actual data**: Gross Margin, Operating Margin, and Current Ratio overridden with values computed from generated financial statements
+- **Sourcing project cross-references**: `rfx_ids`, `contract_id`, and `spend_analysis_id` back-populated from generated data after sourcing generation completes
+- **Audit team linked to real employees**: `engagement_partner_id`, `engagement_manager_id`, and `team_member_ids` replaced with actual employee IDs from master data
+- **`created_by` field** rotated across employees via round-robin in P2P/O2C document flow loops (previously always used first employee)
+- **OCPM UUID generation** centralized via `DeterministicUuidFactory` with sub-discriminators, replacing hand-rolled FNV-1a hash and `Uuid::new_v4()` calls
+- **Banking seed offsets** replaced with named constants for deterministic sub-generator seeding
+- **FA acquisition JEs collected** (`datasynth-runtime`): Fixed variable shadowing (`_je` → `je`) that silently discarded fixed asset acquisition journal entries
+- **Statistics recalculated** (`datasynth-runtime`): `total_entries` and `total_line_items` now recomputed after all JE-generating phases (FA, IC, payroll, manufacturing) instead of freezing before them
+- **Anomaly injection rates from config** (`datasynth-runtime`): Wired `config.anomaly_injection.rates` into anomaly injector instead of hardcoding `0.02`; falls back to `config.fraud.fraud_rate` then default
+- **CLI PhaseConfig wiring** (`datasynth-cli`): 11 config-enabled sections (manufacturing, sourcing, tax, ESG, intercompany, accounting_standards, financial_statements, sales_kpi_budgets, bank_reconciliation, OCPM, audit/graph) now wired from YAML into `PhaseConfig`
+- **Manufacturing preset fix** (`datasynth-config`): Manufacturing preset now enables manufacturing generation via `get_manufacturing_config()` helper
+- **Treasury hedge relationships** (`datasynth-runtime`): `HedgingGenerator` wired with FX exposure data from actual FX rate service, replacing stub generation
+- **Non-deterministic `Local::now()` fallbacks** (`datasynth-generators`): Replaced remaining `Local::now()` calls in balance tracker and opening balance generator with config-derived dates
+- **`TransactionSource` Display impl** (`datasynth-core`): Added `Display` trait for `TransactionSource` enum, ensuring consistent CSV serialization
+- **DataQualityConfig wiring** (`datasynth-runtime`): `data_quality` YAML section now parsed and passed to data quality injector instead of using defaults
+- **Hardcoded USD replaced** (`datasynth-generators`): Inventory generator, opening balance generator, and balance tracker now accept company currency parameter instead of hardcoding `"USD"`
+- **HR pool-based ID selection** (`datasynth-generators`): Payroll, time entry, and expense report generators draw employee IDs and cost center codes from master data pools instead of fabricating `EMP-{n}` / `CC-{n}` strings
+- **`exchange_rate` serde annotation** (`datasynth-core`): Added `#[serde(serialize_with = "str")]` to `FxRate.exchange_rate` for consistent decimal string serialization
+- **Manifest completeness** (`datasynth-cli`): ~50 missing output files registered in run manifest across treasury, project accounting, tax, ESG, audit, standards, quality labels, and graph export modules
+- **`seeded_rng()` standardized** (`datasynth-generators`): Replaced `ChaCha8Rng::seed_from_u64()` with canonical `seeded_rng(seed, 0)` utility across ~50 production generator files for consistent RNG construction
+- **Clippy fixes** (`datasynth-generators`, `datasynth-eval`, `datasynth-test-utils`): Replaced `#[allow(clippy::derivable_impls)]` with `#[derive(Default)]` on `DocumentFlowLinker`; fixed `field_reassign_with_default` in healthcare settings, red flag statistics, and test server config; removed duplicate `rust_decimal_macros` dependency
+
+### Fixed
+
+- **Account numbering unified** across document flow JEs (`DocumentFlowJeConfig`), CoA generator, and `accounts.rs` constants — all modules now reference the same 4-digit account codes
+- **Trial balance** derived from actual JE data by aggregating debit/credit amounts per account, replacing hardcoded document-flow aggregates
+- **Financial statements** derived from JE trial balances with proper cumulative balance sheet accounts and comparative prior-period amounts; cash flow statement built via indirect method from working capital changes
+- **CLI output pipeline** now exports all generated data (master data, document flows, subledgers, financial statements, controls, banking, process mining, audit, standards) via `datasynth-output` sinks, replacing the truncated `sample_entries.json`
+- **Intercompany module** wired into orchestrator with IC transaction generation, matching engine, and elimination entries
+- **OCPM event log** persisted to output directory as `event_log.json` (OCEL 2.0 format)
+- **`InjectorStats` fields** made public for external consumers
+- **`CountryPack` clone** eliminated in payroll generator hot path via `as_ref()` borrowing
+- **E2e tests** updated to expect `journal_entries.json` output filename
+- **AP three-way match variance**: Price and quantity variances now computed as ~3% and ~1.5% of line total respectively when `ThreeWayMatchFailed`, instead of hardcoded `Decimal::ZERO`
+- **Subledger vendor/customer names**: `DocumentFlowLinker` now receives vendor and customer name maps from master data, replacing placeholder `"Vendor {id}"` / `"Customer {id}"` strings with actual generated names
+- **DocumentFlowJeGenerator seed**: `with_config()` constructor no longer uses hardcoded seed; accepts seed parameter for deterministic generation
+- **OCPM S2C vendor fallback** (`datasynth-runtime`): Replaced hardcoded `"V000"` vendor ID with actual vendor from master data when no contract found for sourcing project
+- **OCPM cycle count matching** (`datasynth-runtime`): Manufacturing OCPM events now match cycle counts by `material_id` instead of always linking to the first cycle count
+- **OCPM determinism** (`datasynth-runtime`): Replaced 6 `Utc::now()` calls in OCPM event generation with config-derived deterministic base date for reproducible timestamps across S2C, H2R, MFG, Banking, Audit, and Bank Recon process families
+- **Trial balance determinism** (`datasynth-generators`): Replaced 4 `Utc::now()` calls in `TrialBalanceGenerator` with period-derived dates — `created_at` uses `as_of_date` end-of-day, `approved_at` uses next business day morning
+- **IC hardcoded currency** (`datasynth-generators`): Added `default_currency` to `ICGeneratorConfig`, replacing hardcoded `"USD"` in IC matched pairs and IC loans; orchestrator wires first company's currency
+- **Expense report hardcoded currency** (`datasynth-generators`): Added `generate_with_currency()` method to `ExpenseReportGenerator`, replacing hardcoded `"USD"` in reports and line items; orchestrator passes company currency
+- **IC account code panic risk** (`datasynth-generators`): Replaced byte-index slicing (`&company[..len.min(2)]`) with safe `chars().take(2).collect()` in IC receivable/payable account code generation to prevent UTF-8 boundary panics
+- **Banking customer cross-reference** (`datasynth-banking`, `datasynth-runtime`): Added `enterprise_customer_id: Option<String>` field to `BankingCustomer`, populated during cross-referencing to link banking customers to core enterprise customer IDs
+- **S2C→P2P contract linkage** (`datasynth-runtime`): Purchase orders now linked to S2C procurement contracts by vendor ID match after sourcing data generation, populating `PurchaseOrder.contract_id`
+- **Dead code cleanup — Round 4** (`datasynth-generators`, `datasynth-core`, `datasynth-eval`, `datasynth-fingerprint`): Removed dead `spend_emission_factor_from_pack()` function, dead `line_patterns` field and `LineTextPattern` type from description generator, orphaned doc comment; wired `LastDotFirst` and `FirstOnly` email patterns into pattern pool; added `GaussianMechanism::epsilon()` getter matching `LaplaceMechanism` API
+- **Banking manifest filename** (`datasynth-cli`): Fixed mismatch `bank_transactions` → `banking_transactions` in output manifest
+- **GL account collisions — year_end.rs** (`datasynth-generators`): Fixed 4 GL code collisions in `YearEndCloseConfig::default()` — income_summary `"3500"` → `"3600"` (was CTA), current_tax_payable `"2300"` → `"2100"` (was UNEARNED_REVENUE), deferred_tax_liability `"2350"` → `"2500"`, tax_expense `"7100"` → `"8000"` (was INTEREST_EXPENSE)
+- **GL account — depreciation.rs** (`datasynth-generators`): Fixed depreciation expense posted to `"6100"` (SALARIES_WAGES) instead of `"6000"` (DEPRECIATION constant)
+- **GL account — AR credit memo** (`datasynth-generators`): Fixed credit memo tax JE using `"2300"` (UNEARNED_REVENUE) instead of `SALES_TAX_PAYABLE` (`"2100"`); replaced all hardcoded GL strings in AR/AP generators with `accounts.rs` constants
+- **New GL constants** (`datasynth-core`): Added `INCOME_SUMMARY`, `DIVIDENDS_PAID`, `TAX_RECEIVABLE`, `PURCHASE_DISCOUNT_INCOME` to `accounts.rs`
+- **SalesQuoteGenerator pools** (`datasynth-generators`, `datasynth-runtime`): Wired company currency, employee pool (for sales_rep_id), and customer pool (for customer_id) replacing hardcoded `"USD"` and fabricated `SR-{n}` / `CUST-{n}` IDs
+- **BankReconciliationGenerator pool** (`datasynth-generators`, `datasynth-runtime`): Wired employee pool for preparer/reviewer IDs, replacing fabricated `USR-{n}` strings
+- **CycleCountGenerator pool** (`datasynth-generators`, `datasynth-runtime`): Wired employee pool for counter/supervisor IDs, replacing fabricated `WH-{n}` / `SUP-{n}` strings
+- **Dead code cleanup — Rounds 5-6** (`datasynth-eval`, `datasynth-generators`): Removed `BaselineComparer` (~220 lines), dead `uuid_factory` fields from 10 structs across 9 ESG/project-accounting generators, `calculate_period_variances` function, `apply_line` method, `MultiplyByGapFactor` variant, unused vendor `_spend_category` binding, and unused imports
+
 ## [0.7.0] - 2026-02-17
 
 ### Added

@@ -1,10 +1,9 @@
 //! Supplier ESG assessment generator — derives ESG scores for vendors
 //! correlated with quality and flags high-risk suppliers by country/industry.
-
 use chrono::NaiveDate;
 use datasynth_config::schema::SupplyChainEsgConfig;
 use datasynth_core::models::{AssessmentMethod, EsgRiskFlag, SupplierEsgAssessment};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -23,17 +22,15 @@ pub struct VendorInput {
 /// Generates [`SupplierEsgAssessment`] records for vendors.
 pub struct SupplierEsgGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: SupplyChainEsgConfig,
     counter: u64,
 }
 
 impl SupplierEsgGenerator {
     /// Create a new supplier ESG generator.
-    pub fn new(seed: u64, config: SupplyChainEsgConfig) -> Self {
+    pub fn new(config: SupplyChainEsgConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -71,9 +68,15 @@ impl SupplierEsgGenerator {
             let soc_score = self.score_with_noise(base, &vendor.country, &vendor.industry, "soc");
             let gov_score = self.score_with_noise(base, &vendor.country, &vendor.industry, "gov");
 
-            let env_dec = Decimal::from_f64_retain(env_score).unwrap_or(dec!(50)).round_dp(2);
-            let soc_dec = Decimal::from_f64_retain(soc_score).unwrap_or(dec!(50)).round_dp(2);
-            let gov_dec = Decimal::from_f64_retain(gov_score).unwrap_or(dec!(50)).round_dp(2);
+            let env_dec = Decimal::from_f64_retain(env_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
+            let soc_dec = Decimal::from_f64_retain(soc_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
+            let gov_dec = Decimal::from_f64_retain(gov_score)
+                .unwrap_or(dec!(50))
+                .round_dp(2);
             let overall = ((env_dec + soc_dec + gov_dec) / dec!(3)).round_dp(2);
 
             let is_high_risk_country = self
@@ -121,12 +124,7 @@ impl SupplierEsgGenerator {
         let mut score = base_quality + self.rng.gen_range(-15.0..15.0);
 
         // Country risk adjustment
-        if self
-            .config
-            .high_risk_countries
-            .iter()
-            .any(|c| c == country)
-        {
+        if self.config.high_risk_countries.iter().any(|c| c == country) {
             score -= self.rng.gen_range(5.0..20.0);
         }
 
@@ -218,17 +216,21 @@ mod tests {
             high_risk_countries: vec!["CN".into(), "BD".into()],
         };
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
-        assert_eq!(assessments.len(), 5, "100% coverage should assess all vendors");
+        assert_eq!(
+            assessments.len(),
+            5,
+            "100% coverage should assess all vendors"
+        );
     }
 
     #[test]
     fn test_scores_in_range() {
         let config = SupplyChainEsgConfig::default();
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         for a in &assessments {
@@ -252,7 +254,7 @@ mod tests {
             industry: "manufacturing".into(),
             quality_score: Some(40.0),
         }];
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         assert_eq!(assessments.len(), 1);
@@ -275,7 +277,7 @@ mod tests {
             high_risk_countries: vec!["CN".into(), "BD".into()],
         };
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
 
         for a in &assessments {
@@ -292,7 +294,7 @@ mod tests {
         let mut config = SupplyChainEsgConfig::default();
         config.enabled = false;
         let vendors = test_vendors();
-        let mut gen = SupplierEsgGenerator::new(42, config);
+        let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));
         assert!(assessments.is_empty());
     }

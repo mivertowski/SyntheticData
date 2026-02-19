@@ -5,6 +5,7 @@
 //! vectors that sum to principal and computes covenant compliance with headroom.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -47,9 +48,9 @@ pub struct DebtGenerator {
 
 impl DebtGenerator {
     /// Creates a new debt generator.
-    pub fn new(seed: u64, config: DebtSchemaConfig) -> Self {
+    pub fn new(config: DebtSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             instrument_counter: 0,
             covenant_counter: 0,
@@ -68,13 +69,8 @@ impl DebtGenerator {
 
         let mut instruments = Vec::new();
         for def in &defs {
-            let instrument = self.generate_from_def(
-                entity_id,
-                currency,
-                origination_date,
-                def,
-                &covenant_defs,
-            );
+            let instrument =
+                self.generate_from_def(entity_id, currency, origination_date, def, &covenant_defs);
             instruments.push(instrument);
         }
         instruments
@@ -93,8 +89,8 @@ impl DebtGenerator {
         let id = format!("DEBT-{:06}", self.instrument_counter);
         let lender = self.random_lender();
         let debt_type = self.parse_debt_type(&def.instrument_type);
-        let principal = Decimal::try_from(def.principal.unwrap_or(5_000_000.0))
-            .unwrap_or(dec!(5000000));
+        let principal =
+            Decimal::try_from(def.principal.unwrap_or(5_000_000.0)).unwrap_or(dec!(5000000));
         let rate = Decimal::try_from(def.rate.unwrap_or(0.055))
             .unwrap_or(dec!(0.055))
             .round_dp(4);
@@ -107,8 +103,8 @@ impl DebtGenerator {
             InterestRateType::Fixed
         };
 
-        let facility_limit = Decimal::try_from(def.facility.unwrap_or(0.0))
-            .unwrap_or(Decimal::ZERO);
+        let facility_limit =
+            Decimal::try_from(def.facility.unwrap_or(0.0)).unwrap_or(Decimal::ZERO);
 
         let mut instrument = DebtInstrument::new(
             id,
@@ -125,12 +121,8 @@ impl DebtGenerator {
 
         // Generate amortization schedule for term loans
         if matches!(debt_type, DebtType::TermLoan | DebtType::Bond) {
-            let schedule = self.generate_amortization(
-                principal,
-                rate,
-                origination_date,
-                maturity_months,
-            );
+            let schedule =
+                self.generate_amortization(principal, rate, origination_date, maturity_months);
             instrument = instrument.with_amortization_schedule(schedule);
         }
 
@@ -226,7 +218,11 @@ impl DebtGenerator {
     }
 
     /// Generates an actual value that is compliant with the covenant.
-    fn generate_compliant_value(&mut self, covenant_type: CovenantType, threshold: Decimal) -> Decimal {
+    fn generate_compliant_value(
+        &mut self,
+        covenant_type: CovenantType,
+        threshold: Decimal,
+    ) -> Decimal {
         match covenant_type {
             // Maximum covenants: actual < threshold
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
@@ -242,7 +238,11 @@ impl DebtGenerator {
     }
 
     /// Generates an actual value that breaches the covenant.
-    fn generate_breached_value(&mut self, covenant_type: CovenantType, threshold: Decimal) -> Decimal {
+    fn generate_breached_value(
+        &mut self,
+        covenant_type: CovenantType,
+        threshold: Decimal,
+    ) -> Decimal {
         match covenant_type {
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
                 let factor = self.rng.gen_range(1.05f64..1.30f64);
@@ -333,7 +333,7 @@ mod tests {
             }],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 1);
@@ -362,7 +362,7 @@ mod tests {
             }],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 1);
@@ -398,7 +398,7 @@ mod tests {
                 },
             ],
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         let debt = &instruments[0];
@@ -438,7 +438,7 @@ mod tests {
             ],
             covenants: Vec::new(),
         };
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
         assert_eq!(instruments.len(), 2);
@@ -457,7 +457,7 @@ mod tests {
     #[test]
     fn test_empty_config_no_instruments() {
         let config = DebtSchemaConfig::default();
-        let mut gen = DebtGenerator::new(42, config);
+        let mut gen = DebtGenerator::new(config, 42);
         let instruments = gen.generate("C001", "USD", d("2025-01-01"));
         assert!(instruments.is_empty());
     }

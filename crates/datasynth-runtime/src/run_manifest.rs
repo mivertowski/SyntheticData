@@ -449,6 +449,7 @@ mod tests {
             treasury: Default::default(),
             project_accounting: Default::default(),
             esg: Default::default(),
+            country_packs: None,
         }
     }
 

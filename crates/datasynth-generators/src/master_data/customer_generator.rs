@@ -12,9 +12,11 @@ use datasynth_core::models::{
     CustomerPaymentBehavior, CustomerPool, CustomerValueSegment, PaymentTerms, RiskTrigger,
     SegmentedCustomer, SegmentedCustomerPool,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for customer generation.
 #[derive(Debug, Clone)]
@@ -411,6 +413,8 @@ pub struct CustomerGenerator {
     customer_counter: usize,
     /// Segmentation configuration
     segmentation_config: CustomerSegmentationConfig,
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl CustomerGenerator {
@@ -422,11 +426,12 @@ impl CustomerGenerator {
     /// Create a new customer generator with custom configuration.
     pub fn with_config(seed: u64, config: CustomerGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             customer_counter: 0,
             segmentation_config: CustomerSegmentationConfig::default(),
+            country_pack: None,
         }
     }
 
@@ -437,17 +442,23 @@ impl CustomerGenerator {
         segmentation_config: CustomerSegmentationConfig,
     ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             customer_counter: 0,
             segmentation_config,
+            country_pack: None,
         }
     }
 
     /// Set segmentation configuration.
     pub fn set_segmentation_config(&mut self, segmentation_config: CustomerSegmentationConfig) {
         self.segmentation_config = segmentation_config;
+    }
+
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single customer.
@@ -546,6 +557,7 @@ impl CustomerGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> CustomerPool {
+        debug!(count, company_code, %effective_date, "Generating customer pool");
         let mut pool = CustomerPool::new();
 
         for _ in 0..count {
@@ -693,70 +705,9 @@ impl CustomerGenerator {
         PaymentTerms::Net30
     }
 
-    /// Generate an address.
-    fn generate_address(&mut self) -> String {
-        let street_num = self.rng.gen_range(1..9999);
-        let streets = [
-            "Corporate Dr",
-            "Business Center",
-            "Commerce Way",
-            "Executive Plaza",
-            "Industry Park",
-            "Trade Center",
-        ];
-        let cities = [
-            "New York",
-            "Los Angeles",
-            "Chicago",
-            "Houston",
-            "Phoenix",
-            "Philadelphia",
-            "San Antonio",
-            "San Diego",
-        ];
-        let states = ["NY", "CA", "IL", "TX", "AZ", "PA", "TX", "CA"];
-
-        let idx = self.rng.gen_range(0..cities.len());
-        let street_idx = self.rng.gen_range(0..streets.len());
-        let zip = self.rng.gen_range(10000..99999);
-
-        format!(
-            "{} {}, {}, {} {}",
-            street_num, streets[street_idx], cities[idx], states[idx], zip
-        )
-    }
-
-    /// Generate a contact name.
-    fn generate_contact_name(&mut self) -> String {
-        let first_names = [
-            "John", "Jane", "Michael", "Sarah", "David", "Emily", "Robert", "Lisa",
-        ];
-        let last_names = [
-            "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-        ];
-
-        let first = first_names[self.rng.gen_range(0..first_names.len())];
-        let last = last_names[self.rng.gen_range(0..last_names.len())];
-
-        format!("{} {}", first, last)
-    }
-
-    /// Generate a contact email.
-    fn generate_contact_email(&mut self, company_name: &str) -> String {
-        let domain = company_name
-            .to_lowercase()
-            .replace([' ', '.', ','], "")
-            .chars()
-            .filter(|c| c.is_alphanumeric())
-            .take(15)
-            .collect::<String>();
-
-        format!("contact@{}.com", domain)
-    }
-
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.customer_counter = 0;
     }
 

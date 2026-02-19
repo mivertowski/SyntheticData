@@ -65,7 +65,6 @@ impl LaplaceMechanism {
 /// Gaussian mechanism for differential privacy.
 pub struct GaussianMechanism {
     /// Global epsilon budget.
-    #[allow(dead_code)]
     epsilon: f64,
     /// Delta parameter.
     delta: f64,
@@ -89,6 +88,11 @@ impl GaussianMechanism {
         let sigma = sensitivity * (2.0 * (1.25 / self.delta).ln()).sqrt() / epsilon;
         let noise = self.sample_gaussian(sigma);
         value + noise
+    }
+
+    /// Get the global epsilon budget.
+    pub fn epsilon(&self) -> f64 {
+        self.epsilon
     }
 
     /// Sample from Gaussian distribution with standard deviation sigma.

@@ -5,6 +5,7 @@
 //! header gets net), physical pooling, and notional pooling.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -42,9 +43,9 @@ pub struct CashPoolGenerator {
 
 impl CashPoolGenerator {
     /// Creates a new cash pool generator.
-    pub fn new(seed: u64, config: CashPoolingConfig) -> Self {
+    pub fn new(config: CashPoolingConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             pool_counter: 0,
             sweep_counter: 0,
@@ -213,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_zero_balancing_sweeps() {
-        let mut gen = CashPoolGenerator::new(42, CashPoolingConfig::default());
+        let mut gen = CashPoolGenerator::new(CashPoolingConfig::default(), 42);
         let pool = gen
             .create_pool(
                 "EUR Pool",
@@ -266,7 +267,7 @@ mod tests {
             pool_type: "physical_pooling".to_string(),
             ..CashPoolingConfig::default()
         };
-        let mut gen = CashPoolGenerator::new(42, config);
+        let mut gen = CashPoolGenerator::new(config, 42);
         let pool = gen
             .create_pool(
                 "USD Pool",
@@ -301,7 +302,7 @@ mod tests {
             pool_type: "notional_pooling".to_string(),
             ..CashPoolingConfig::default()
         };
-        let mut gen = CashPoolGenerator::new(42, config);
+        let mut gen = CashPoolGenerator::new(config, 42);
         let pool = gen
             .create_pool(
                 "EUR Pool",
@@ -321,7 +322,7 @@ mod tests {
 
     #[test]
     fn test_pool_creation() {
-        let mut gen = CashPoolGenerator::new(42, CashPoolingConfig::default());
+        let mut gen = CashPoolGenerator::new(CashPoolingConfig::default(), 42);
         let pool = gen
             .create_pool(
                 "Test Pool",
@@ -342,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_pool_requires_minimum_accounts() {
-        let mut gen = CashPoolGenerator::new(42, CashPoolingConfig::default());
+        let mut gen = CashPoolGenerator::new(CashPoolingConfig::default(), 42);
         // Single account should return None
         let pool = gen.create_pool("Bad Pool", "USD", &["BA-001".to_string()]);
         assert!(pool.is_none());
@@ -354,7 +355,7 @@ mod tests {
 
     #[test]
     fn test_header_account_excluded_from_sweeps() {
-        let mut gen = CashPoolGenerator::new(42, CashPoolingConfig::default());
+        let mut gen = CashPoolGenerator::new(CashPoolingConfig::default(), 42);
         let pool = gen
             .create_pool(
                 "Pool",

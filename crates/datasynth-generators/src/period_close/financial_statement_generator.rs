@@ -12,11 +12,14 @@ use datasynth_core::models::{
     CashFlowCategory, CashFlowItem, FinancialStatement, FinancialStatementLineItem, StatementBasis,
     StatementType,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::debug;
 
 /// Generates financial statements from trial balance data.
 pub struct FinancialStatementGenerator {
@@ -26,6 +29,7 @@ pub struct FinancialStatementGenerator {
 }
 
 /// Trial balance entry for statement generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrialBalanceEntry {
     /// GL account code
     pub account_code: String,
@@ -43,7 +47,7 @@ impl FinancialStatementGenerator {
     /// Create a new financial statement generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::FinancialStatement),
             config: FinancialReportingConfig::default(),
         }
@@ -52,7 +56,7 @@ impl FinancialStatementGenerator {
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: FinancialReportingConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::FinancialStatement),
             config,
         }
@@ -71,6 +75,14 @@ impl FinancialStatementGenerator {
         prior_trial_balance: Option<&[TrialBalanceEntry]>,
         preparer_id: &str,
     ) -> Vec<FinancialStatement> {
+        debug!(
+            company_code,
+            currency,
+            fiscal_year,
+            fiscal_period,
+            tb_entries = trial_balance.len(),
+            "Generating financial statements"
+        );
         let mut statements = Vec::new();
 
         if self.config.generate_balance_sheet {

@@ -24,6 +24,8 @@ use crate::typologies::TypologyInjector;
 pub struct BankingOrchestrator {
     config: BankingConfig,
     seed: u64,
+    /// Optional country pack for locale-aware customer data generation.
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 /// Generated banking data result.
@@ -79,7 +81,16 @@ pub struct GenerationStats {
 impl BankingOrchestrator {
     /// Create a new banking orchestrator.
     pub fn new(config: BankingConfig, seed: u64) -> Self {
-        Self { config, seed }
+        Self {
+            config,
+            seed,
+            country_pack: None,
+        }
+    }
+
+    /// Set the country pack for locale-aware customer data generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate all banking data.
@@ -92,6 +103,9 @@ impl BankingOrchestrator {
 
         // Phase 2: Generate customers with KYC profiles
         let mut customer_gen = CustomerGenerator::new(self.config.clone(), self.seed);
+        if let Some(ref pack) = self.country_pack {
+            customer_gen.set_country_pack(pack.clone());
+        }
         let mut customers = customer_gen.generate_all();
 
         // Phase 3: Generate KYC profiles
@@ -230,6 +244,7 @@ impl BankingOrchestrator {
 pub struct BankingOrchestratorBuilder {
     config: Option<BankingConfig>,
     seed: u64,
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl Default for BankingOrchestratorBuilder {
@@ -237,6 +252,7 @@ impl Default for BankingOrchestratorBuilder {
         Self {
             config: None,
             seed: 42,
+            country_pack: None,
         }
     }
 }
@@ -259,9 +275,19 @@ impl BankingOrchestratorBuilder {
         self
     }
 
+    /// Set the country pack for locale-aware data generation.
+    pub fn country_pack(mut self, pack: datasynth_core::CountryPack) -> Self {
+        self.country_pack = Some(pack);
+        self
+    }
+
     /// Build the orchestrator.
     pub fn build(self) -> BankingOrchestrator {
-        BankingOrchestrator::new(self.config.unwrap_or_default(), self.seed)
+        let mut orch = BankingOrchestrator::new(self.config.unwrap_or_default(), self.seed);
+        if let Some(pack) = self.country_pack {
+            orch.set_country_pack(pack);
+        }
+        orch
     }
 }
 

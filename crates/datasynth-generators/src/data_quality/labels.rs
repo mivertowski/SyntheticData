@@ -5,7 +5,8 @@
 //! ML models for data quality detection.
 
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 /// Type of data quality issue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -132,8 +133,9 @@ impl QualityIssueLabel {
         field_name: impl Into<String>,
         processor: impl Into<String>,
     ) -> Self {
+        let uuid_factory = DeterministicUuidFactory::new(0, GeneratorType::Anomaly);
         Self {
-            issue_id: Uuid::new_v4().to_string(),
+            issue_id: uuid_factory.next().to_string(),
             issue_type,
             subtype: None,
             document_id: document_id.into(),

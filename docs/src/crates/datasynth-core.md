@@ -42,7 +42,20 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `BenfordSampler` | First-digit distribution following P(d) = log10(1 + 1/d) |
 | `FraudAmountGenerator` | Suspicious amount patterns |
 | `IndustrySeasonality` | Industry-specific volume patterns |
-| `HolidayCalendar` | Regional holidays for US, DE, GB, CN, JP, IN |
+| `HolidayCalendar` | Regional holidays for US, DE, GB, CN, JP, IN; `from_country_pack()` resolves 5 holiday types from JSON packs |
+
+### Country Pack System (`country/`)
+
+| Module | Description |
+|--------|-------------|
+| `mod.rs` | `CountryPackRegistry` — layered loading (`_default.json` → country → overrides) with `include_str!` embedding |
+| `schema.rs` | `CountryPack` struct with 16 sections (locale, names, holidays, tax, address, phone, banking, payroll, etc.) |
+| `merge.rs` | `deep_merge()` — recursive object merge, array/scalar replace for surgical overrides |
+| `easter.rs` | Anonymous Gregorian Easter algorithm for Easter-relative holiday computation |
+| `lunar.rs` | Lunar calendar algorithms (Chinese New Year, Diwali, Eid al-Fitr, Chuseok, etc.) |
+| `error.rs` | `CountryPackError` — invalid codes, parse errors, schema version mismatches |
+
+Built-in packs: `_default.json`, `US.json`, `DE.json`, `GB.json`. External packs loaded from `country_packs.external_dir`.
 
 ### Infrastructure
 

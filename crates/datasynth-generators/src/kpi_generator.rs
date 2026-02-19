@@ -6,6 +6,7 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ManagementKpisConfig;
 use datasynth_core::models::{KpiCategory, KpiTrend, ManagementKpi};
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -105,7 +106,7 @@ impl KpiGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Kpi),
         }
     }
@@ -125,6 +126,7 @@ impl KpiGenerator {
         period_end: NaiveDate,
         config: &ManagementKpisConfig,
     ) -> Vec<ManagementKpi> {
+        tracing::debug!(company_code, %period_start, %period_end, "Generating management KPIs");
         let mut kpis = Vec::new();
         let is_quarterly = config.frequency.to_lowercase() == "quarterly";
 

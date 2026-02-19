@@ -9,6 +9,7 @@
 use chrono::{Duration, NaiveDate};
 use rand::Rng;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 /// Type of duplicate.
 #[derive(Debug, Clone, PartialEq)]
@@ -121,7 +122,7 @@ pub struct DuplicateGenerator {
 }
 
 /// Statistics for duplicate generation.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DuplicateStats {
     /// Total records processed.
     pub total_processed: usize,

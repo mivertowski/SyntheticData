@@ -24,8 +24,6 @@ use super::websocket;
 /// Application state shared across handlers.
 #[derive(Clone)]
 pub struct AppState {
-    #[allow(dead_code)] // Reserved for future use
-    pub service: Arc<SynthService>,
     pub server_state: Arc<ServerState>,
     pub job_queue: Option<Arc<JobQueue>>,
 }
@@ -140,7 +138,6 @@ pub fn create_router_full_with_backend(
 ) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };
@@ -183,12 +180,12 @@ pub fn create_router_full_with_backend(
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -217,7 +214,6 @@ pub fn create_router_with_auth(
 ) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };
@@ -260,12 +256,12 @@ pub fn create_router_with_auth(
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))
@@ -279,7 +275,6 @@ pub fn create_router_with_auth(
 pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -> Router {
     let server_state = service.state.clone();
     let state = AppState {
-        service: Arc::new(service),
         server_state,
         job_queue: None,
     };
@@ -324,12 +319,12 @@ pub fn create_router_with_cors(service: SynthService, cors_config: CorsConfig) -
         .route("/api/stream/stop", post(stop_stream))
         .route("/api/stream/pause", post(pause_stream))
         .route("/api/stream/resume", post(resume_stream))
-        .route("/api/stream/trigger/:pattern", post(trigger_pattern))
+        .route("/api/stream/trigger/{pattern}", post(trigger_pattern))
         // Jobs
         .route("/api/jobs/submit", post(submit_job))
         .route("/api/jobs", get(list_jobs))
-        .route("/api/jobs/:id", get(get_job))
-        .route("/api/jobs/:id/cancel", post(cancel_job))
+        .route("/api/jobs/{id}", get(get_job))
+        .route("/api/jobs/{id}/cancel", post(cancel_job))
         // WebSocket
         .route("/ws/metrics", get(websocket_metrics))
         .route("/ws/events", get(websocket_events))

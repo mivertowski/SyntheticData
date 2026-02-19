@@ -7,6 +7,7 @@
 //! - Interest and charge calculations
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -89,7 +90,7 @@ impl DunningGenerator {
     pub fn with_config(seed: u64, config: DunningGeneratorConfig) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             run_counter: 0,
             letter_counter: 0,
@@ -458,7 +459,7 @@ impl DunningGenerator {
 
     /// Resets the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.run_counter = 0;
         self.letter_counter = 0;
     }

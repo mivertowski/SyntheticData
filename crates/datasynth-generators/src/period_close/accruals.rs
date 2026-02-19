@@ -4,6 +4,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::{
     AccrualCalculationMethod, AccrualDefinition, AccrualFrequency, AccrualType, FiscalPeriod,
@@ -53,6 +54,12 @@ impl AccrualGenerator {
         fiscal_period: &FiscalPeriod,
         account_balances: &HashMap<String, Decimal>,
     ) -> AccrualGenerationResult {
+        debug!(
+            definition_count = definitions.len(),
+            period = fiscal_period.period,
+            year = fiscal_period.year,
+            "Generating accruals"
+        );
         let mut result = AccrualGenerationResult {
             period: fiscal_period.clone(),
             accrual_entries: Vec::new(),

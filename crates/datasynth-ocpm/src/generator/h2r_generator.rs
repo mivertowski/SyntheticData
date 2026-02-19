@@ -8,10 +8,8 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use super::{CaseGenerationResult, OcpmEventGenerator, VariantType};
-use crate::models::{
-    ActivityType, EventObjectRef, ObjectAttributeValue, ObjectRelationship, ObjectType,
-};
+use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
+use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
 use datasynth_core::models::BusinessProcess;
 
 /// H2R document references for event generation.
@@ -42,10 +40,11 @@ impl H2rDocuments {
         employee_id: &str,
         company_code: &str,
         gross_amount: Decimal,
+        factory: &OcpmUuidFactory,
     ) -> Self {
         Self {
             payroll_id: payroll_id.into(),
-            payroll_uuid: Uuid::new_v4(),
+            payroll_uuid: factory.next_document_id(),
             employee_id: employee_id.into(),
             company_code: company_code.into(),
             gross_amount,
@@ -62,9 +61,9 @@ impl H2rDocuments {
     }
 
     /// Set expense report info.
-    pub fn with_expense_report(mut self, report_id: &str) -> Self {
+    pub fn with_expense_report(mut self, report_id: &str, factory: &OcpmUuidFactory) -> Self {
         self.expense_report_id = Some(report_id.into());
-        self.expense_report_uuid = Some(Uuid::new_v4());
+        self.expense_report_uuid = Some(factory.next_document_id());
         self
     }
 }
@@ -298,7 +297,7 @@ impl OcpmEventGenerator {
         );
         // Link time entries to payroll
         for time_obj in objects.iter().filter(|o| o.object_type_id == "time_entry") {
-            relationships.push(ObjectRelationship::new(
+            relationships.push(self.create_relationship(
                 "feeds_into",
                 time_obj.object_id,
                 &time_type.type_id,
@@ -335,9 +334,16 @@ mod tests {
     #[test]
     fn test_h2r_case_generation() {
         let mut generator = OcpmEventGenerator::new(42);
-        let documents = H2rDocuments::new("PR-000001", "EMP001", "1000", Decimal::new(5000, 0))
-            .with_time_entries(vec!["TE-001", "TE-002"])
-            .with_expense_report("ER-001");
+        let factory = OcpmUuidFactory::new(42);
+        let documents = H2rDocuments::new(
+            "PR-000001",
+            "EMP001",
+            "1000",
+            Decimal::new(5000, 0),
+            &factory,
+        )
+        .with_time_entries(vec!["TE-001", "TE-002"])
+        .with_expense_report("ER-001", &factory);
 
         let result = generator.generate_h2r_case(
             &documents,

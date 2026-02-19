@@ -1,11 +1,14 @@
 //! Journal Entry generator with statistical distributions.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 use std::sync::Arc;
+
+use tracing::debug;
 
 use datasynth_config::schema::{
     FraudConfig, GeneratorConfig, TemplateConfig, TemporalPatternsConfig, TransactionConfig,
@@ -21,6 +24,7 @@ use datasynth_core::templates::{
 };
 use datasynth_core::traits::Generator;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::CountryPack;
 
 use crate::company_selector::WeightedCompanySelector;
 use crate::user_generator::{UserGenerator, UserGeneratorConfig};
@@ -75,8 +79,6 @@ pub struct JournalEntryGenerator {
 #[derive(Clone)]
 struct BatchState {
     /// The base entry template to vary
-    base_vendor: Option<String>,
-    base_customer: Option<String>,
     base_account_number: String,
     base_amount: rust_decimal::Decimal,
     base_business_process: Option<BusinessProcess>,
@@ -185,7 +187,7 @@ impl JournalEntryGenerator {
         let company_selector = WeightedCompanySelector::uniform(companies.clone());
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config: config.clone(),
             coa,
@@ -291,6 +293,49 @@ impl JournalEntryGenerator {
                 .unwrap_or(Region::US);
 
             let calendar = HolidayCalendar::new(region, self.start_date.year());
+            self.business_day_calculator = Some(BusinessDayCalculator::new(calendar));
+        }
+
+        // Create processing lag calculator if enabled
+        if config.processing_lags.enabled {
+            let lag_config = Self::convert_processing_lag_config(&config.processing_lags);
+            self.processing_lag_calculator =
+                Some(ProcessingLagCalculator::with_config(seed, lag_config));
+        }
+
+        // Create period-end dynamics if configured
+        let model = config.period_end.model.as_deref().unwrap_or("flat");
+        if model != "flat"
+            || config
+                .period_end
+                .month_end
+                .as_ref()
+                .is_some_and(|m| m.peak_multiplier.unwrap_or(1.0) != 1.0)
+        {
+            let dynamics = Self::convert_period_end_config(&config.period_end);
+            self.temporal_sampler.set_period_end_dynamics(dynamics);
+        }
+
+        self.temporal_patterns_config = Some(config);
+        self
+    }
+
+    /// Configure temporal patterns using a [`CountryPack`] for the holiday calendar.
+    ///
+    /// This is an alternative to [`with_temporal_patterns`] that derives the
+    /// holiday calendar from a country-pack definition rather than the built-in
+    /// region-based calendars.  All other temporal behaviour (business-day
+    /// adjustment, processing lags, period-end dynamics) is configured
+    /// identically.
+    pub fn with_country_pack_temporal(
+        mut self,
+        config: TemporalPatternsConfig,
+        seed: u64,
+        pack: &CountryPack,
+    ) -> Self {
+        // Create business day calculator using the country pack calendar
+        if config.business_days.enabled {
+            let calendar = HolidayCalendar::from_country_pack(pack, self.start_date.year());
             self.business_day_calculator = Some(BusinessDayCalculator::new(calendar));
         }
 
@@ -526,6 +571,27 @@ impl JournalEntryGenerator {
             .with_materials(materials)
     }
 
+    /// Replace the user pool with one generated from a [`CountryPack`].
+    ///
+    /// This is an alternative to the default name-culture distribution that
+    /// derives name pools and weights from the country-pack's `names` section.
+    /// The existing user pool (if any) is discarded and regenerated using
+    /// [`MultiCultureNameGenerator::from_country_pack`].
+    pub fn with_country_pack_names(mut self, pack: &CountryPack) -> Self {
+        let name_gen =
+            datasynth_core::templates::MultiCultureNameGenerator::from_country_pack(pack);
+        let config = UserGeneratorConfig {
+            // The culture distribution is embedded in the name generator
+            // itself, so we use an empty list here.
+            culture_distribution: Vec::new(),
+            email_domain: name_gen.email_domain().to_string(),
+            generate_realistic_names: true,
+        };
+        let mut user_gen = UserGenerator::with_name_generator(self.seed + 100, config, name_gen);
+        self.user_pool = Some(user_gen.generate_standard(&self.companies));
+        self
+    }
+
     /// Check if the generator is using real master data.
     pub fn is_using_real_master_data(&self) -> bool {
         self.using_real_master_data
@@ -673,6 +739,14 @@ impl JournalEntryGenerator {
 
     /// Generate a single journal entry.
     pub fn generate(&mut self) -> JournalEntry {
+        debug!(
+            count = self.count,
+            companies = self.companies.len(),
+            start_date = %self.start_date,
+            end_date = %self.end_date,
+            "Generating journal entry"
+        );
+
         // Check if we're in a batch - if so, generate a batched entry
         if let Some(ref state) = self.batch_state {
             if state.remaining > 0 {
@@ -938,8 +1012,6 @@ impl JournalEntryGenerator {
         let base_amount = entry.total_debit();
 
         self.batch_state = Some(BatchState {
-            base_vendor: None, // Would need vendor from context
-            base_customer: None,
             base_account_number: base_account,
             base_amount,
             base_business_process: entry.header.business_process,
@@ -1690,7 +1762,7 @@ impl Generator for JournalEntryGenerator {
     }
 
     fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.line_sampler.reset(self.seed + 1);
         self.amount_sampler.reset(self.seed + 2);
         self.temporal_sampler.reset(self.seed + 3);

@@ -4,7 +4,8 @@
 //! source classifications, and cross-references per ISA 500.
 
 use chrono::{Duration, NaiveDate};
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use uuid::Uuid;
 
@@ -51,7 +52,7 @@ impl EvidenceGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config: EvidenceGeneratorConfig::default(),
             evidence_counter: 0,
         }
@@ -60,7 +61,7 @@ impl EvidenceGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: EvidenceGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             evidence_counter: 0,
         }

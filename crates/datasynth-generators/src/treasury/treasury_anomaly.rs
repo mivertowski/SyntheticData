@@ -5,6 +5,7 @@
 //! Each injected anomaly produces a [`TreasuryAnomalyLabel`] that records the
 //! anomaly type, severity, affected document, and original vs. anomalous values.
 
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -86,7 +87,7 @@ impl TreasuryAnomalyInjector {
     /// Creates a new treasury anomaly injector.
     pub fn new(seed: u64, anomaly_rate: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             anomaly_rate: anomaly_rate.clamp(0.0, 1.0),
             counter: 0,
         }
@@ -167,8 +168,8 @@ impl TreasuryAnomalyInjector {
     fn inject_unusual_cash_movement(&mut self, pos: &mut CashPosition) -> TreasuryAnomalyLabel {
         let original_outflows = pos.outflows;
         // Inject a large unexpected outflow (50-200% of current closing balance)
-        let spike_pct = Decimal::try_from(self.rng.gen_range(0.50f64..2.00f64))
-            .unwrap_or(dec!(1.0));
+        let spike_pct =
+            Decimal::try_from(self.rng.gen_range(0.50f64..2.00f64)).unwrap_or(dec!(1.0));
         let spike = (pos.closing_balance.abs() * spike_pct).round_dp(2);
         pos.outflows += spike;
         let new_closing = (pos.opening_balance + pos.inflows - pos.outflows).round_dp(2);
@@ -186,10 +187,7 @@ impl TreasuryAnomalyInjector {
             },
             document_type: "cash_position".to_string(),
             document_id: pos.id.clone(),
-            description: format!(
-                "Unusual cash outflow of {} on {}",
-                spike, pos.date
-            ),
+            description: format!("Unusual cash outflow of {} on {}", spike, pos.date),
             original_value: Some(original_outflows.to_string()),
             anomalous_value: Some(pos.outflows.to_string()),
         }
@@ -202,8 +200,8 @@ impl TreasuryAnomalyInjector {
     ) -> TreasuryAnomalyLabel {
         let original_available = pos.available_balance;
         // Drop available balance below the minimum policy
-        let target_pct = Decimal::try_from(self.rng.gen_range(0.10f64..0.80f64))
-            .unwrap_or(dec!(0.50));
+        let target_pct =
+            Decimal::try_from(self.rng.gen_range(0.10f64..0.80f64)).unwrap_or(dec!(0.50));
         pos.available_balance = (minimum_balance * target_pct).round_dp(2);
 
         self.counter += 1;
@@ -234,12 +232,10 @@ impl TreasuryAnomalyInjector {
         // Push ratio outside the 80-125% corridor
         let new_ratio = if self.rng.gen_bool(0.5) {
             // Below 80%
-            Decimal::try_from(self.rng.gen_range(0.50f64..0.79f64))
-                .unwrap_or(dec!(0.65))
+            Decimal::try_from(self.rng.gen_range(0.50f64..0.79f64)).unwrap_or(dec!(0.65))
         } else {
             // Above 125%
-            Decimal::try_from(self.rng.gen_range(1.26f64..1.60f64))
-                .unwrap_or(dec!(1.40))
+            Decimal::try_from(self.rng.gen_range(1.26f64..1.60f64)).unwrap_or(dec!(1.40))
         };
         rel.effectiveness_ratio = new_ratio.round_dp(4);
         rel.update_effectiveness();
@@ -263,8 +259,8 @@ impl TreasuryAnomalyInjector {
     fn inject_covenant_breach_risk(&mut self, cov: &mut DebtCovenant) -> TreasuryAnomalyLabel {
         let original_value = cov.actual_value;
         // Push actual value past the threshold
-        let breach_factor = Decimal::try_from(self.rng.gen_range(1.05f64..1.25f64))
-            .unwrap_or(dec!(1.10));
+        let breach_factor =
+            Decimal::try_from(self.rng.gen_range(1.05f64..1.25f64)).unwrap_or(dec!(1.10));
         cov.actual_value = (cov.threshold * breach_factor).round_dp(2);
         cov.update_compliance();
 
@@ -353,7 +349,10 @@ mod tests {
         let labels = injector.inject_into_hedge_relationships(&mut relationships);
 
         assert_eq!(labels.len(), 1);
-        assert_eq!(labels[0].anomaly_type, TreasuryAnomalyType::HedgeIneffectiveness);
+        assert_eq!(
+            labels[0].anomaly_type,
+            TreasuryAnomalyType::HedgeIneffectiveness
+        );
         // Relationship should now be marked as ineffective
         assert!(!relationships[0].is_effective);
     }
@@ -373,7 +372,10 @@ mod tests {
         let labels = injector.inject_into_debt_covenants(&mut covenants);
 
         assert_eq!(labels.len(), 1);
-        assert_eq!(labels[0].anomaly_type, TreasuryAnomalyType::CovenantBreachRisk);
+        assert_eq!(
+            labels[0].anomaly_type,
+            TreasuryAnomalyType::CovenantBreachRisk
+        );
         // For DebtToEbitda (max covenant), injected value should exceed threshold
         // The breach_factor pushes actual_value = threshold * 1.05..1.25
         // So it will be above threshold, making it non-compliant
@@ -414,7 +416,10 @@ mod tests {
 
         let json = serde_json::to_string(&label).unwrap();
         let deserialized: TreasuryAnomalyLabel = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.anomaly_type, TreasuryAnomalyType::CashForecastMiss);
+        assert_eq!(
+            deserialized.anomaly_type,
+            TreasuryAnomalyType::CashForecastMiss
+        );
         assert_eq!(deserialized.document_id, "CF-001");
     }
 }

@@ -1,0 +1,213 @@
+% sections/anomaly_injection.tex — Anomaly Injection Framework
+\section{Anomaly Injection Framework}
+\label{sec:anomaly_injection}
+
+A primary use case for \system{} is generating labeled datasets for fraud
+detection and anomaly analytics.  This section describes the multi-dimensional
+anomaly injection framework.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Anomaly Taxonomy}
+\label{sec:anom_taxonomy}
+
+\system{} defines 33 anomaly types organized into five categories:
+
+\begin{table}[t]
+\centering
+\caption{Anomaly taxonomy with representative types per category.}
+\label{tab:anomaly_types}
+\small
+\begin{tabular}{p{2.4cm}cp{7.5cm}}
+\toprule
+\textbf{Category} & \textbf{Count} & \textbf{Representative Types} \\
+\midrule
+Fraud & 10 & FictitiousEntry, RoundDollarManipulation,
+  JustBelowThreshold, SelfApproval, DuplicatePayment,
+  FictitiousVendor, RevenueManipulation \\
+Error & 8 & DuplicateEntry, ReversedAmount, WrongPeriod,
+  WrongAccount, MissingReference \\
+Process & 5 & LatePosting, SkippedApproval,
+  ThresholdManipulation \\
+Statistical & 5 & UnusualAmount, TrendBreak,
+  BenfordViolation \\
+Relational & 5 & CircularTransaction,
+  DormantAccountActivity \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each anomaly type is parameterized by:
+\begin{itemize}
+  \item \textbf{Weight:} Relative injection probability (e.g., 2.5 for
+    JustBelowThreshold vs.\ 0.5 for FictitiousVendor).
+  \item \textbf{Amount range:} Domain-specific bounds (e.g.,
+    \$10K--\$500K for FictitiousEntry, \$100K--\$5M for
+    RevenueManipulation).
+  \item \textbf{Conditionality:} Some types require specific preconditions
+    (e.g., SelfApproval requires matching approver and preparer).
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Multi-Stage Fraud Schemes}
+\label{sec:anom_schemes}
+
+Simple anomalies are injected as independent point events.  However, real
+fraud often evolves through stages over extended time horizons.  \system{}
+implements three multi-stage \emph{fraud schemes}:
+
+\paragraph{1. Vendor Kickback Scheme.}
+A buyer routes payments to a shell company they control.  The scheme
+progresses through stages: (a)~establish shell vendor, (b)~route initial
+small invoices, (c)~gradually increase amounts, (d)~introduce collusion
+patterns across transactions.  Stage transitions are governed by
+probability-weighted state machines.
+
+\paragraph{2. Gradual Embezzlement Scheme.}
+Small, individually undetectable amounts are siphoned over time.  The scheme
+models: (a)~initial testing with minimal amounts, (b)~establishment of a
+regular extraction pattern, (c)~acceleration in amount and frequency,
+(d)~period-end concentration where oversight is reduced.
+
+\paragraph{3. Revenue Manipulation Scheme.}
+Fictitious customers are created and revenue is prematurely recognized.
+Stages include: (a)~customer creation, (b)~fictitious order entry,
+(c)~premature revenue recognition, (d)~channel stuffing patterns with
+period-end concentration.
+
+The \texttt{SchemeAdvancer} tracks each scheme's state, selecting
+context-aware actions at each stage and maintaining cumulative impact
+metadata.  Each transaction within a scheme receives a
+\texttt{MultiStageAnomalyLabel} that links it to the scheme instance,
+stage, and causal chain.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Anomaly Correlation Patterns}
+\label{sec:anom_correlation}
+
+Anomalies in real data are not independently distributed.  \system{} models
+three correlation mechanisms:
+
+\paragraph{Temporal Clustering.}
+Anomalies concentrate in time windows (e.g., period-end, after management
+changes).  The \texttt{TemporalClusterGenerator} defines windows with
+configurable intensity multipliers:
+
+\begin{equation}
+P(\text{anomaly at } t) = p_0 \cdot
+  \prod_{w \in \mathcal{W}} \left(1 + (m_w - 1) \cdot
+  \mathbb{1}_{t \in w}\right)
+\end{equation}
+
+where $p_0$ is the base anomaly rate and $m_w$ is the multiplier for window $w$.
+
+\paragraph{Cascade Propagation.}
+One anomaly triggers follow-on anomalies in dependent processes.  A
+\texttt{CascadeStep} defines the trigger condition, dependent anomaly type,
+propagation probability, and expected delay.  For example, a three-way
+match variance (trigger) may cascade to a payment delay (dependent) with
+probability 0.7 and a 5-day lag.
+
+\paragraph{Co-Occurrence.}
+Multiple anomaly types appear on the same transaction.  The
+\texttt{CoOccurrencePattern} defines allowed combinations and prevents
+unrealistic pairings (e.g., a FictitiousEntry cannot simultaneously be a
+DuplicateEntry).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Difficulty, Severity, and Confidence Scoring}
+\label{sec:anom_scoring}
+
+Each injected anomaly receives three scores that characterize its
+detectability:
+
+\paragraph{Difficulty.}
+A composite score $d \in [0, 1]$ (0 = easy to detect, 1 = hard) computed
+from five factor groups:
+
+\begin{equation}
+d = \sum_{f \in \mathcal{F}} w_f \cdot s_f, \quad
+\mathcal{F} = \{\text{amount}, \text{blending}, \text{collusion},
+  \text{concealment}, \text{temporal}\}
+\label{eq:difficulty}
+\end{equation}
+
+\begin{itemize}
+  \item \textbf{Amount factors:} Larger amounts are easier to detect
+    ($s_{\text{amount}}$ decreases with magnitude).
+  \item \textbf{Blending factors:} How well the anomaly blends with normal
+    data ($s_{\text{blending}} \in [0,1]$).
+  \item \textbf{Collusion factors:} Multi-party schemes are harder to detect.
+  \item \textbf{Concealment factors:} Obfuscation techniques (round-tripping,
+    split transactions) increase difficulty.
+  \item \textbf{Temporal factors:} Night/weekend postings, period-end timing
+    reduce oversight.
+\end{itemize}
+
+\paragraph{Severity.}
+A five-component model assessing organizational impact:
+
+\begin{equation}
+\text{severity} = 0.25 \cdot s_{\text{type}} + 0.30 \cdot s_{\text{monetary}}
+  + 0.20 \cdot s_{\text{frequency}} + 0.15 \cdot s_{\text{scope}}
+  + 0.10 \cdot s_{\text{timing}}
+\label{eq:severity}
+\end{equation}
+
+where $s_{\text{type}}$ is the inherent risk per anomaly category,
+$s_{\text{monetary}}$ normalizes monetary impact against materiality,
+$s_{\text{frequency}}$ escalates for repeated patterns,
+$s_{\text{scope}}$ captures the number of affected entities, and
+$s_{\text{timing}}$ penalizes period-end and audit-period timing.
+
+\paragraph{Confidence.}
+Detection confidence $c \in [0,1]$ estimates the strength of evidence
+available to an auditor or ML model.  It combines pattern-match confidence
+(statistical correlation with known anomaly signatures), rule-violation
+confidence (policy breaches), behavioral-deviation confidence (distance from
+baseline), and contextual modifiers (co-occurring anomalies, scheme
+membership).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Ground-Truth Labels}
+\label{sec:anom_labels}
+
+Every anomaly produces a structured label record containing:
+
+\begin{itemize}
+  \item Anomaly type, category, and subcategory.
+  \item Affected transaction IDs and account codes.
+  \item Difficulty, severity, and confidence scores.
+  \item Scheme identifier and stage (for multi-stage schemes).
+  \item Contributing factors with individual impact and reliability scores.
+  \item Temporal context (posting timestamp, detection window).
+\end{itemize}
+
+Labels are exported as separate CSV/JSON files (\texttt{anomaly\_labels},
+\texttt{fraud\_labels}, \texttt{quality\_labels}), enabling supervised,
+semi-supervised, and unsupervised evaluation protocols.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Banking-Specific Anomalies: AML Typologies}
+\label{sec:anom_aml}
+
+The banking module extends the anomaly framework with five Anti-Money
+Laundering (AML) typologies:
+
+\begin{enumerate}
+  \item \textbf{Structuring (Smurfing):} Multiple deposits below the
+    reporting threshold (\$10{,}000 in the US), distributed across accounts
+    and time windows.
+  \item \textbf{Funnel Accounts:} Rapid aggregation of funds from multiple
+    sources into a single intermediary account.
+  \item \textbf{Layering:} Complex chains of wire transfers across
+    jurisdictions to obscure the origin of funds.
+  \item \textbf{Mule Networks:} Coordinated account networks receiving and
+    forwarding stolen funds.
+  \item \textbf{Round Tripping:} Funds exit and re-enter the same entity
+    disguised as legitimate commerce, with 30--60 day delays.
+\end{enumerate}
+
+Each typology generates persona-based transaction patterns with risk-tier
+profiles (Low, Medium, High, Very High) and sophistication levels (Basic,
+Intermediate, Advanced).  Ground-truth AML labels are exported alongside
+transaction data.

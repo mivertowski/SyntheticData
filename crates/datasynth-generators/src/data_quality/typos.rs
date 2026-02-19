@@ -7,11 +7,13 @@
 //! - Character deletion (missed keys)
 //! - Encoding issues (character corruption)
 
+use datasynth_core::utils::weighted_select;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Type of typo/error.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypoType {
     /// Substitution with nearby key.
     Substitution,
@@ -288,7 +290,7 @@ pub struct TypoGenerator {
 }
 
 /// Statistics for typo generation.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypoStats {
     pub total_characters: usize,
     pub total_typos: usize,
@@ -503,17 +505,18 @@ impl TypoGenerator {
 
     /// Selects a typo type based on weights.
     fn select_typo_type<R: Rng>(&self, rng: &mut R) -> TypoType {
-        let total_weight: f64 = self.config.type_weights.values().sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(TypoType, f64)> = self
+            .config
+            .type_weights
+            .iter()
+            .map(|(&typo_type, &weight)| (typo_type, weight))
+            .collect();
 
-        for (typo_type, weight) in &self.config.type_weights {
-            random_weight -= weight;
-            if random_weight <= 0.0 {
-                return *typo_type;
-            }
+        if options.is_empty() {
+            return TypoType::Substitution;
         }
 
-        TypoType::Substitution // Default fallback
+        *weighted_select(rng, &options)
     }
 
     /// Checks if a field is protected.
@@ -596,8 +599,7 @@ pub fn introduce_encoding_issue<R: Rng>(text: &str, issue: EncodingIssue, rng: &
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
+    use datasynth_core::utils::seeded_rng;
 
     #[test]
     fn test_keyboard_nearby_keys() {
@@ -617,7 +619,7 @@ mod tests {
         };
 
         let mut generator = TypoGenerator::new(config);
-        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let mut rng = seeded_rng(42, 0);
 
         let text = "Hello World";
         let _with_typos = generator.introduce_typos(text, &mut rng);
@@ -628,7 +630,7 @@ mod tests {
 
     #[test]
     fn test_encoding_issues() {
-        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let mut rng = seeded_rng(42, 0);
 
         let text = "Héllo & Wörld";
         let mojibake = introduce_encoding_issue(text, EncodingIssue::Mojibake, &mut rng);

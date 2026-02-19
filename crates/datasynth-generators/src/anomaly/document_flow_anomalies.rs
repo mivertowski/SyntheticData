@@ -8,6 +8,7 @@
 //! - Unauthorized disbursements (Payment without Invoice)
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -164,7 +165,7 @@ impl DocumentFlowAnomalyInjector {
     pub fn new(config: DocumentFlowAnomalyConfig, seed: u64) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             results: Vec::new(),
         }
     }

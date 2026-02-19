@@ -1,10 +1,13 @@
 //! Fixed Assets (FA) generator.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+
+use tracing::debug;
 
 use datasynth_core::models::subledger::fa::{
     AssetClass, AssetDisposal, AssetStatus, DepreciationArea, DepreciationAreaType,
@@ -64,6 +67,11 @@ impl FAGenerator {
         }
     }
 
+    /// Creates a new FA generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: FAGeneratorConfig, seed: u64) -> Self {
+        Self::new(config, seeded_rng(seed, 0))
+    }
+
     /// Maps a string asset class to the enum.
     fn parse_asset_class(class_str: &str) -> AssetClass {
         match class_str.to_uppercase().as_str() {
@@ -89,6 +97,7 @@ impl FAGenerator {
         currency: &str,
         cost_center: Option<&str>,
     ) -> (FixedAssetRecord, JournalEntry) {
+        debug!(company_code, asset_class_str, %acquisition_date, "Generating FA asset acquisition");
         self.asset_counter += 1;
         let asset_number = format!("FA{:08}", self.asset_counter);
         let asset_class = Self::parse_asset_class(asset_class_str);
@@ -226,17 +235,6 @@ impl FAGenerator {
         (base + variation * Decimal::try_from(random).unwrap_or_default())
             .max(dec!(1000))
             .round_dp(2)
-    }
-
-    fn calculate_monthly_depreciation(&self, asset: &FixedAssetRecord) -> Decimal {
-        // Get the first depreciation area (Book depreciation)
-        let area = match asset.depreciation_areas.first() {
-            Some(a) => a,
-            None => return Decimal::ZERO,
-        };
-
-        // Use the depreciation area's calculate method
-        area.calculate_monthly_depreciation()
     }
 
     fn random_disposal_reason(&mut self) -> DisposalReason {

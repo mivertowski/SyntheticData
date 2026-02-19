@@ -19,9 +19,11 @@ use datasynth_core::models::{
 use datasynth_core::templates::{
     AddressGenerator, AddressRegion, SpendCategory, VendorNameGenerator,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Configuration for vendor generation.
 #[derive(Debug, Clone)]
@@ -232,39 +234,6 @@ impl Default for VendorNetworkConfig {
     }
 }
 
-/// Legacy vendor name templates by category (kept for backward compatibility).
-/// New code should use VendorNameGenerator from the realism module.
-#[allow(dead_code)]
-const VENDOR_NAME_TEMPLATES_LEGACY: &[(&str, &[&str])] = &[
-    (
-        "Manufacturing",
-        &[
-            "Global Manufacturing Solutions",
-            "Precision Parts Inc.",
-            "Industrial Components Ltd.",
-            "Advanced Materials Corp.",
-        ],
-    ),
-    (
-        "Services",
-        &[
-            "Professional Services Group",
-            "Consulting Partners LLC",
-            "Business Solutions Inc.",
-            "Technical Services Corp.",
-        ],
-    ),
-    (
-        "Technology",
-        &[
-            "Tech Solutions Inc.",
-            "Digital Systems Corp.",
-            "Software Innovations LLC",
-            "Cloud Services Partners",
-        ],
-    ),
-];
-
 /// Bank name templates.
 const BANK_NAMES: &[&str] = &[
     "First National Bank",
@@ -291,6 +260,8 @@ pub struct VendorGenerator {
     address_gen: AddressGenerator,
     /// Network configuration
     network_config: VendorNetworkConfig,
+    /// Optional country pack for locale-aware generation
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl VendorGenerator {
@@ -302,13 +273,14 @@ impl VendorGenerator {
     /// Create a new vendor generator with custom configuration.
     pub fn with_config(seed: u64, config: VendorGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             vendor_name_gen: VendorNameGenerator::new(),
             address_gen: AddressGenerator::for_region(config.primary_region),
             config,
             vendor_counter: 0,
             network_config: VendorNetworkConfig::default(),
+            country_pack: None,
         }
     }
 
@@ -319,13 +291,14 @@ impl VendorGenerator {
         network_config: VendorNetworkConfig,
     ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             vendor_name_gen: VendorNameGenerator::new(),
             address_gen: AddressGenerator::for_region(config.primary_region),
             config,
             vendor_counter: 0,
             network_config,
+            country_pack: None,
         }
     }
 
@@ -334,17 +307,19 @@ impl VendorGenerator {
         self.network_config = network_config;
     }
 
+    /// Set the country pack for locale-aware generation.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
+    }
+
     /// Generate a single vendor.
     pub fn generate_vendor(&mut self, company_code: &str, _effective_date: NaiveDate) -> Vendor {
         self.vendor_counter += 1;
 
         let vendor_id = format!("V-{:06}", self.vendor_counter);
-        let (category, name) = self.select_vendor_name();
+        let (_category, name) = self.select_vendor_name();
         let tax_id = self.generate_tax_id();
         let _address = self.address_gen.generate_commercial(&mut self.rng);
-
-        // Store the spend category for potential future use
-        let _spend_category = category;
 
         let mut vendor = Vendor::new(
             &vendor_id,
@@ -404,6 +379,7 @@ impl VendorGenerator {
         company_code: &str,
         effective_date: NaiveDate,
     ) -> VendorPool {
+        debug!(count, company_code, %effective_date, "Generating vendor pool");
         let mut pool = VendorPool::new();
 
         for _ in 0..count {
@@ -527,17 +503,9 @@ impl VendorGenerator {
         }
     }
 
-    /// Generate an address using the enhanced address generator.
-    #[allow(dead_code)]
-    fn generate_address(&mut self) -> String {
-        use datasynth_core::templates::AddressStyle;
-        let address = self.address_gen.generate_commercial(&mut self.rng);
-        address.format(AddressStyle::SingleLine)
-    }
-
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.vendor_counter = 0;
         self.vendor_name_gen = VendorNameGenerator::new();
         self.address_gen = AddressGenerator::for_region(self.config.primary_region);

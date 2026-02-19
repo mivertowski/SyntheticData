@@ -50,6 +50,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_fingerprint_privacy(config)?;
     validate_quality_gates(config)?;
     validate_compliance(config)?;
+    validate_country_packs(config)?;
     Ok(())
 }
 
@@ -2133,6 +2134,29 @@ fn validate_compliance(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate country packs configuration.
+fn validate_country_packs(config: &GeneratorConfig) -> SynthResult<()> {
+    if let Some(ref cp) = config.country_packs {
+        if let Some(ref dir) = cp.external_dir {
+            if !dir.as_os_str().is_empty() && !dir.exists() {
+                return Err(SynthError::config(format!(
+                    "country_packs.external_dir '{}' does not exist",
+                    dir.display()
+                )));
+            }
+        }
+        for code in cp.overrides.keys() {
+            let upper = code.trim().to_uppercase();
+            if upper.len() != 2 || !upper.chars().all(|c| c.is_ascii_uppercase()) {
+                return Err(SynthError::config(format!(
+                    "country_packs.overrides key '{code}' is not a valid ISO 3166-1 alpha-2 code"
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -2224,6 +2248,7 @@ mod tests {
             treasury: TreasuryConfig::default(),
             project_accounting: ProjectAccountingConfig::default(),
             esg: EsgConfig::default(),
+            country_packs: None,
         }
     }
 

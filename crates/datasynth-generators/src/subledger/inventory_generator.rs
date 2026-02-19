@@ -1,10 +1,13 @@
 //! Inventory generator.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+
+use tracing::debug;
 
 use datasynth_core::models::subledger::inventory::{
     InventoryMovement, InventoryPosition, MovementType, PositionValuation, ReferenceDocType,
@@ -44,19 +47,33 @@ pub struct InventoryGenerator {
     config: InventoryGeneratorConfig,
     rng: ChaCha8Rng,
     movement_counter: u64,
-    #[allow(dead_code)]
-    position_counter: u64,
+    /// Currency code for generated movements and journal entries.
+    currency: String,
 }
 
 impl InventoryGenerator {
-    /// Creates a new inventory generator.
-    pub fn new(config: InventoryGeneratorConfig, rng: ChaCha8Rng) -> Self {
+    /// Creates a new inventory generator with the specified currency.
+    pub fn new_with_currency(
+        config: InventoryGeneratorConfig,
+        rng: ChaCha8Rng,
+        currency: String,
+    ) -> Self {
         Self {
             config,
             rng,
             movement_counter: 0,
-            position_counter: 0,
+            currency,
         }
+    }
+
+    /// Creates a new inventory generator (defaults to USD).
+    pub fn new(config: InventoryGeneratorConfig, rng: ChaCha8Rng) -> Self {
+        Self::new_with_currency(config, rng, "USD".to_string())
+    }
+
+    /// Creates a new inventory generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: InventoryGeneratorConfig, seed: u64) -> Self {
+        Self::new(config, seeded_rng(seed, 0))
     }
 
     /// Generates an initial inventory position.
@@ -71,6 +88,7 @@ impl InventoryGenerator {
         unit_cost: Option<Decimal>,
         _currency: &str,
     ) -> InventoryPosition {
+        debug!(company_code, plant, material_id, %initial_quantity, "Generating inventory position");
         let cost = unit_cost.unwrap_or_else(|| self.generate_unit_cost());
         let total_value = (initial_quantity * cost).round_dp(2);
 
@@ -126,7 +144,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
 
@@ -168,7 +186,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
 
@@ -215,7 +233,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         issue.reference_doc_type = Some(ReferenceDocType::MaterialDocument);
@@ -235,7 +253,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         receipt.reference_doc_type = Some(ReferenceDocType::MaterialDocument);
@@ -283,7 +301,7 @@ impl InventoryGenerator {
             quantity_change.abs(),
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         movement.reference_doc_type = Some(ReferenceDocType::PhysicalInventoryDoc);

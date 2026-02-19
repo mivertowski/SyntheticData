@@ -10,7 +10,8 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use datasynth_ocpm::{
-    OcpmEventGenerator, OcpmEventLog, OcpmGeneratorConfig, P2pDocuments, VariantType,
+    OcpmEventGenerator, OcpmEventLog, OcpmGeneratorConfig, OcpmUuidFactory, P2pDocuments,
+    VariantType,
 };
 
 // =============================================================================
@@ -63,16 +64,18 @@ fn test_ocel2_schema_compliance() {
 #[test]
 fn test_event_required_fields() {
     let mut generator = OcpmEventGenerator::new(42);
+    let factory = OcpmUuidFactory::new(42);
     let documents = P2pDocuments::new(
         "PO-000001",
         "V000001",
         "1000",
         Decimal::new(10000, 0),
         "USD",
+        &factory,
     )
-    .with_goods_receipt("GR-000001")
-    .with_invoice("INV-000001")
-    .with_payment("PAY-000001");
+    .with_goods_receipt("GR-000001", &factory)
+    .with_invoice("INV-000001", &factory)
+    .with_payment("PAY-000001", &factory);
 
     let result = generator.generate_p2p_case(
         &documents,
@@ -115,9 +118,17 @@ fn test_event_required_fields() {
 #[test]
 fn test_object_required_fields() {
     let mut generator = OcpmEventGenerator::new(42);
-    let documents = P2pDocuments::new("PO-000002", "V000002", "1000", Decimal::new(5000, 0), "EUR")
-        .with_goods_receipt("GR-000002")
-        .with_invoice("INV-000002");
+    let factory = OcpmUuidFactory::new(42);
+    let documents = P2pDocuments::new(
+        "PO-000002",
+        "V000002",
+        "1000",
+        Decimal::new(5000, 0),
+        "EUR",
+        &factory,
+    )
+    .with_goods_receipt("GR-000002", &factory)
+    .with_invoice("INV-000002", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -155,10 +166,18 @@ fn test_object_required_fields() {
 #[test]
 fn test_event_object_reference_integrity() {
     let mut generator = OcpmEventGenerator::new(42);
-    let documents = P2pDocuments::new("PO-000003", "V000003", "1000", Decimal::new(7500, 0), "USD")
-        .with_goods_receipt("GR-000003")
-        .with_invoice("INV-000003")
-        .with_payment("PAY-000003");
+    let factory = OcpmUuidFactory::new(42);
+    let documents = P2pDocuments::new(
+        "PO-000003",
+        "V000003",
+        "1000",
+        Decimal::new(7500, 0),
+        "USD",
+        &factory,
+    )
+    .with_goods_receipt("GR-000003", &factory)
+    .with_invoice("INV-000003", &factory)
+    .with_payment("PAY-000003", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -194,16 +213,18 @@ fn test_event_object_reference_integrity() {
 #[test]
 fn test_object_lifecycle_qualifiers() {
     let mut generator = OcpmEventGenerator::new(42);
+    let factory = OcpmUuidFactory::new(42);
     let documents = P2pDocuments::new(
         "PO-000004",
         "V000004",
         "1000",
         Decimal::new(15000, 0),
         "USD",
+        &factory,
     )
-    .with_goods_receipt("GR-000004")
-    .with_invoice("INV-000004")
-    .with_payment("PAY-000004");
+    .with_goods_receipt("GR-000004", &factory)
+    .with_invoice("INV-000004", &factory)
+    .with_payment("PAY-000004", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -256,9 +277,17 @@ fn test_object_lifecycle_qualifiers() {
 #[test]
 fn test_many_to_many_relationships() {
     let mut generator = OcpmEventGenerator::new(42);
-    let documents = P2pDocuments::new("PO-000005", "V000005", "1000", Decimal::new(8000, 0), "USD")
-        .with_goods_receipt("GR-000005")
-        .with_invoice("INV-000005");
+    let factory = OcpmUuidFactory::new(42);
+    let documents = P2pDocuments::new(
+        "PO-000005",
+        "V000005",
+        "1000",
+        Decimal::new(8000, 0),
+        "USD",
+        &factory,
+    )
+    .with_goods_receipt("GR-000005", &factory)
+    .with_invoice("INV-000005", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -294,16 +323,18 @@ fn test_p2p_activity_transitions() {
 
     // Test multiple cases
     for i in 0..10 {
+        let factory = OcpmUuidFactory::new(42 + i as u64);
         let documents = P2pDocuments::new(
             &format!("PO-T{:04}", i),
             "V000001",
             "1000",
             Decimal::new(5000, 0),
             "USD",
+            &factory,
         )
-        .with_goods_receipt(&format!("GR-T{:04}", i))
-        .with_invoice(&format!("INV-T{:04}", i))
-        .with_payment(&format!("PAY-T{:04}", i));
+        .with_goods_receipt(&format!("GR-T{:04}", i), &factory)
+        .with_invoice(&format!("INV-T{:04}", i), &factory)
+        .with_payment(&format!("PAY-T{:04}", i), &factory);
 
         let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 
@@ -346,16 +377,18 @@ fn test_p2p_activity_transitions() {
 #[test]
 fn test_event_chronological_order() {
     let mut generator = OcpmEventGenerator::new(42);
+    let factory = OcpmUuidFactory::new(42);
     let documents = P2pDocuments::new(
         "PO-CHRONO1",
         "V000001",
         "1000",
         Decimal::new(10000, 0),
         "USD",
+        &factory,
     )
-    .with_goods_receipt("GR-CHRONO1")
-    .with_invoice("INV-CHRONO1")
-    .with_payment("PAY-CHRONO1");
+    .with_goods_receipt("GR-CHRONO1", &factory)
+    .with_invoice("INV-CHRONO1", &factory)
+    .with_payment("PAY-CHRONO1", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &["user001".into()]);
 
@@ -380,10 +413,18 @@ fn test_event_chronological_order() {
 #[test]
 fn test_object_relationship_integrity() {
     let mut generator = OcpmEventGenerator::new(42);
-    let documents = P2pDocuments::new("PO-REL1", "V000001", "1000", Decimal::new(12000, 0), "USD")
-        .with_goods_receipt("GR-REL1")
-        .with_invoice("INV-REL1")
-        .with_payment("PAY-REL1");
+    let factory = OcpmUuidFactory::new(42);
+    let documents = P2pDocuments::new(
+        "PO-REL1",
+        "V000001",
+        "1000",
+        Decimal::new(12000, 0),
+        "USD",
+        &factory,
+    )
+    .with_goods_receipt("GR-REL1", &factory)
+    .with_invoice("INV-REL1", &factory)
+    .with_payment("PAY-REL1", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 
@@ -511,16 +552,18 @@ fn test_custom_variant_config() {
 #[test]
 fn test_case_trace_generation() {
     let mut generator = OcpmEventGenerator::new(42);
+    let factory = OcpmUuidFactory::new(42);
     let documents = P2pDocuments::new(
         "PO-TRACE1",
         "V000001",
         "1000",
         Decimal::new(10000, 0),
         "USD",
+        &factory,
     )
-    .with_goods_receipt("GR-TRACE1")
-    .with_invoice("INV-TRACE1")
-    .with_payment("PAY-TRACE1");
+    .with_goods_receipt("GR-TRACE1", &factory)
+    .with_invoice("INV-TRACE1", &factory)
+    .with_payment("PAY-TRACE1", &factory);
 
     let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 
@@ -557,12 +600,20 @@ fn test_case_trace_generation() {
 #[test]
 fn test_case_trace_timing() {
     let mut generator = OcpmEventGenerator::new(42);
+    let factory = OcpmUuidFactory::new(42);
     let start = Utc::now();
 
-    let documents = P2pDocuments::new("PO-TIME1", "V000001", "1000", Decimal::new(10000, 0), "USD")
-        .with_goods_receipt("GR-TIME1")
-        .with_invoice("INV-TIME1")
-        .with_payment("PAY-TIME1");
+    let documents = P2pDocuments::new(
+        "PO-TIME1",
+        "V000001",
+        "1000",
+        Decimal::new(10000, 0),
+        "USD",
+        &factory,
+    )
+    .with_goods_receipt("GR-TIME1", &factory)
+    .with_invoice("INV-TIME1", &factory)
+    .with_payment("PAY-TIME1", &factory);
 
     let result = generator.generate_p2p_case(&documents, start, &[]);
 
@@ -595,15 +646,17 @@ fn test_event_log_summary() {
 
     // Generate some cases
     for i in 0..5 {
+        let factory = OcpmUuidFactory::new(42 + i as u64);
         let documents = P2pDocuments::new(
             &format!("PO-SUM{:04}", i),
             "V000001",
             "1000",
             Decimal::new(5000, 0),
             "USD",
+            &factory,
         )
-        .with_goods_receipt(&format!("GR-SUM{:04}", i))
-        .with_invoice(&format!("INV-SUM{:04}", i));
+        .with_goods_receipt(&format!("GR-SUM{:04}", i), &factory)
+        .with_invoice(&format!("INV-SUM{:04}", i), &factory);
 
         let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 
@@ -648,7 +701,15 @@ fn test_event_log_metadata() {
 
     // Add an event
     let mut generator = OcpmEventGenerator::new(42);
-    let documents = P2pDocuments::new("PO-META1", "V000001", "1000", Decimal::new(5000, 0), "USD");
+    let factory = OcpmUuidFactory::new(42);
+    let documents = P2pDocuments::new(
+        "PO-META1",
+        "V000001",
+        "1000",
+        Decimal::new(5000, 0),
+        "USD",
+        &factory,
+    );
     let result = generator.generate_p2p_case(&documents, Utc::now(), &[]);
 
     for obj in result.objects {

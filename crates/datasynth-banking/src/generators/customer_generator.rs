@@ -4,6 +4,7 @@ use chrono::{Datelike, NaiveDate};
 use datasynth_core::models::banking::{
     BankingCustomerType, BusinessPersona, RetailPersona, RiskTier, TrustPersona,
 };
+use datasynth_core::CountryPack;
 use datasynth_core::DeterministicUuidFactory;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -22,6 +23,8 @@ pub struct CustomerGenerator {
     uuid_factory: DeterministicUuidFactory,
     start_date: NaiveDate,
     end_date: NaiveDate,
+    /// Optional country pack for locale-aware phone, address, and ID generation.
+    country_pack: Option<CountryPack>,
 }
 
 impl CustomerGenerator {
@@ -40,7 +43,16 @@ impl CustomerGenerator {
             ),
             start_date,
             end_date,
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware data generation.
+    ///
+    /// When set, phone numbers, addresses, and national IDs will be generated
+    /// using country-pack-specific formats and templates.
+    pub fn set_country_pack(&mut self, pack: CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate all customers.
@@ -99,20 +111,33 @@ impl CustomerGenerator {
             customer.risk_tier = RiskTier::High;
         }
 
-        // Generate contact info
+        // Generate contact info — use country pack methods when available
         customer.email = Some(self.generate_email(&first_name, &last_name));
-        customer.phone = Some(self.generate_phone(&country));
+        let pack_clone = self.country_pack.clone();
+        customer.phone = Some(if let Some(ref pack) = pack_clone {
+            self.generate_phone_from_pack(pack)
+        } else {
+            self.generate_phone(&country)
+        });
         customer.date_of_birth = Some(self.generate_birth_date(persona));
 
         // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);
         customer.postal_code = Some(postal);
 
         // Generate identification documents
-        customer.national_id = Some(self.generate_national_id(&country));
+        customer.national_id = Some(if let Some(ref pack) = pack_clone {
+            self.generate_national_id_from_pack(pack)
+        } else {
+            self.generate_national_id(&country)
+        });
         if self.rng.gen::<f64>() < 0.4 {
             customer.passport_number = Some(self.generate_passport_number(&country));
         }
@@ -139,15 +164,24 @@ impl CustomerGenerator {
         // Generate KYC profile
         customer.kyc_profile = self.generate_business_kyc_profile(persona);
 
-        // Generate contact info
+        // Generate contact info — use country pack methods when available
         customer.email = Some(format!("info@{}.com", name.to_lowercase().replace(' ', "")));
-        customer.phone = Some(self.generate_phone(&country));
+        let pack_clone = self.country_pack.clone();
+        customer.phone = Some(if let Some(ref pack) = pack_clone {
+            self.generate_phone_from_pack(pack)
+        } else {
+            self.generate_phone(&country)
+        });
 
         // Set industry
         customer.industry_description = Some(self.get_industry_description(persona));
 
         // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);
@@ -201,8 +235,13 @@ impl CustomerGenerator {
         customer.kyc_profile = KycProfile::high_net_worth()
             .with_turnover(datasynth_core::models::banking::TurnoverBand::VeryHigh);
 
-        // Generate address
-        let (addr, city, state, postal) = self.generate_address(&country);
+        // Generate address — use country pack when available
+        let pack_clone = self.country_pack.clone();
+        let (addr, city, state, postal) = if let Some(ref pack) = pack_clone {
+            self.generate_address_from_pack(pack)
+        } else {
+            self.generate_address(&country)
+        };
         customer.address_line1 = Some(addr);
         customer.city = Some(city);
         customer.state = Some(state);
@@ -760,6 +799,216 @@ impl CustomerGenerator {
             "GB" => format!("AB{:06}C", self.rng.gen_range(100000..=999999)),
             _ => format!("ID-{:010}", self.rng.gen_range(1000000000_u64..=9999999999)),
         }
+    }
+
+    /// Generate a phone number from a country pack's phone configuration.
+    ///
+    /// Reads `pack.phone.formats` (landline / mobile / freephone) and picks one
+    /// at random to use as a template.  Inside the template every `{xxx…}`
+    /// placeholder is replaced with the corresponding number of random digits.
+    ///
+    /// Falls back to [`Self::generate_phone`] when no format templates are
+    /// configured in the pack.
+    pub fn generate_phone_from_pack(&self, pack: &CountryPack) -> String {
+        // Collect all non-empty format strings from the pack.
+        let mut formats: Vec<&str> = Vec::new();
+        if !pack.phone.formats.landline.is_empty() {
+            formats.push(&pack.phone.formats.landline);
+        }
+        if !pack.phone.formats.mobile.is_empty() {
+            formats.push(&pack.phone.formats.mobile);
+        }
+        if !pack.phone.formats.freephone.is_empty() {
+            formats.push(&pack.phone.formats.freephone);
+        }
+
+        if formats.is_empty() {
+            // No formats configured -- delegate to hardcoded logic.
+            return self.generate_phone(&pack.country_code);
+        }
+
+        // Pick a random format template.
+        let mut thread_rng = rand::thread_rng();
+        let template = *formats.choose(&mut thread_rng).expect("non-empty vec");
+
+        // Replace every `{x…}` placeholder with random digits.
+        let mut result = String::with_capacity(template.len());
+        let mut chars = template.chars().peekable();
+        while let Some(ch) = chars.next() {
+            if ch == '{' {
+                // Count the 'x' characters inside the braces.
+                let mut digit_count: usize = 0;
+                for inner in chars.by_ref() {
+                    if inner == '}' {
+                        break;
+                    }
+                    if inner == 'x' || inner == 'X' {
+                        digit_count += 1;
+                    }
+                }
+                // Emit that many random digits.
+                for _ in 0..digit_count {
+                    let d = rand::random::<u8>() % 10;
+                    result.push((b'0' + d) as char);
+                }
+            } else {
+                result.push(ch);
+            }
+        }
+        result
+    }
+
+    /// Generate a realistic address from a country pack's address configuration.
+    ///
+    /// Reads cities from `pack.address.components.city_names`, states from
+    /// `pack.address.components.state_names` / `state_codes`, streets from
+    /// `pack.address.components.street_names`, and generates a postal code
+    /// matching `pack.address.postal_code.format` (where `X` becomes a random
+    /// digit and `A` becomes a random uppercase letter).
+    ///
+    /// Returns `(address_line, city, state, postal_code)`.
+    ///
+    /// Falls back to [`Self::generate_address`] when the pack has no address
+    /// data configured.
+    pub fn generate_address_from_pack(
+        &mut self,
+        pack: &CountryPack,
+    ) -> (String, String, String, String) {
+        let cities = &pack.address.components.city_names;
+        let postal_format = &pack.address.postal_code.format;
+
+        // If neither cities nor postal format are available, fall back.
+        if cities.is_empty() && postal_format.is_empty() {
+            return self.generate_address(&pack.country_code);
+        }
+
+        // --- Street address ---
+        let number: u32 = self.rng.gen_range(1..=9999);
+        let street_names = &pack.address.components.street_names;
+        let street = if street_names.is_empty() {
+            let default_streets = [
+                "Main St",
+                "Oak Ave",
+                "Maple Dr",
+                "Broadway",
+                "Park Ave",
+                "Cedar Ln",
+                "Elm St",
+                "Washington Blvd",
+                "Market St",
+                "High St",
+            ];
+            default_streets
+                .choose(&mut self.rng)
+                .expect("non-empty array")
+                .to_string()
+        } else {
+            street_names
+                .choose(&mut self.rng)
+                .expect("non-empty vec")
+                .clone()
+        };
+        let addr = format!("{} {}", number, street);
+
+        // --- City ---
+        let city = if cities.is_empty() {
+            "City".to_string()
+        } else {
+            cities.choose(&mut self.rng).expect("non-empty vec").clone()
+        };
+
+        // --- State ---
+        let state_codes = &pack.address.components.state_codes;
+        let state_names = &pack.address.components.state_names;
+        let state = if !state_codes.is_empty() {
+            state_codes
+                .choose(&mut self.rng)
+                .expect("non-empty vec")
+                .clone()
+        } else if !state_names.is_empty() {
+            state_names
+                .choose(&mut self.rng)
+                .expect("non-empty vec")
+                .clone()
+        } else {
+            "State".to_string()
+        };
+
+        // --- Postal code ---
+        let postal = if postal_format.is_empty() {
+            let zip: u32 = self.rng.gen_range(10000..=99999);
+            format!("{}", zip)
+        } else {
+            self.expand_postal_format(postal_format)
+        };
+
+        (addr, city, state, postal)
+    }
+
+    /// Generate a national ID number from a country pack's legal-entities
+    /// configuration.
+    ///
+    /// Reads `pack.legal_entities.tax_id_format.format` (e.g. `"xxx-xx-xxxx"`
+    /// or `"ABxxxxxxC"`).  In the format string every lowercase `x` is replaced
+    /// with a random digit and every uppercase letter (`A`-`Z`) is replaced
+    /// with a random uppercase letter.
+    ///
+    /// Falls back to [`Self::generate_national_id`] when the format is empty.
+    pub fn generate_national_id_from_pack(&mut self, pack: &CountryPack) -> String {
+        let fmt = &pack.legal_entities.tax_id_format.format;
+        if fmt.is_empty() {
+            return self.generate_national_id(&pack.country_code);
+        }
+        self.expand_id_format(fmt)
+    }
+
+    // ------------------------------------------------------------------
+    // Private helpers for country-pack expansion
+    // ------------------------------------------------------------------
+
+    /// Expand a postal-code format string.
+    ///
+    /// `X` (uppercase) is replaced with a random digit (0-9).
+    /// `A` (uppercase) is replaced with a random uppercase letter (A-Z).
+    /// All other characters are kept verbatim.
+    fn expand_postal_format(&mut self, format: &str) -> String {
+        let mut result = String::with_capacity(format.len());
+        for ch in format.chars() {
+            match ch {
+                'X' => {
+                    let d: u8 = self.rng.gen_range(0..10);
+                    result.push((b'0' + d) as char);
+                }
+                'A' => {
+                    let l: u8 = self.rng.gen_range(0..26);
+                    result.push((b'A' + l) as char);
+                }
+                other => result.push(other),
+            }
+        }
+        result
+    }
+
+    /// Expand a national-ID format string.
+    ///
+    /// `x` (lowercase) is replaced with a random digit (0-9).
+    /// Any uppercase letter (`A`-`Z`) is replaced with a random uppercase
+    /// letter.
+    /// All other characters (dashes, spaces, etc.) are kept verbatim.
+    fn expand_id_format(&mut self, format: &str) -> String {
+        let mut result = String::with_capacity(format.len());
+        for ch in format.chars() {
+            if ch == 'x' {
+                let d: u8 = self.rng.gen_range(0..10);
+                result.push((b'0' + d) as char);
+            } else if ch.is_ascii_uppercase() {
+                let l: u8 = self.rng.gen_range(0..26);
+                result.push((b'A' + l) as char);
+            } else {
+                result.push(ch);
+            }
+        }
+        result
     }
 
     /// Generate a passport number.

@@ -188,6 +188,24 @@ pub struct CoherenceConfig {
     /// Enable audit evaluation.
     #[serde(default)]
     pub audit_enabled: bool,
+    /// Enable tax evaluation.
+    #[serde(default)]
+    pub tax_enabled: bool,
+    /// Enable treasury evaluation.
+    #[serde(default)]
+    pub treasury_enabled: bool,
+    /// Enable project accounting evaluation.
+    #[serde(default)]
+    pub project_accounting_enabled: bool,
+    /// Enable ESG evaluation.
+    #[serde(default)]
+    pub esg_enabled: bool,
+    /// Enable sales quote evaluation.
+    #[serde(default)]
+    pub sales_quotes_enabled: bool,
+    /// Enable country pack evaluation.
+    #[serde(default)]
+    pub country_packs_enabled: bool,
 }
 
 impl Default for CoherenceConfig {
@@ -206,6 +224,12 @@ impl Default for CoherenceConfig {
             sourcing_enabled: false,
             cross_process_enabled: false,
             audit_enabled: false,
+            tax_enabled: false,
+            treasury_enabled: false,
+            project_accounting_enabled: false,
+            esg_enabled: false,
+            sales_quotes_enabled: false,
+            country_packs_enabled: false,
         }
     }
 }

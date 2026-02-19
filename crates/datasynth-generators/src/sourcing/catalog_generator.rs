@@ -2,6 +2,7 @@
 
 use datasynth_config::schema::CatalogConfig;
 use datasynth_core::models::sourcing::{CatalogItem, ProcurementContract};
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -17,7 +18,7 @@ impl CatalogGenerator {
     /// Create a new catalog generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::CatalogItem),
             config: CatalogConfig::default(),
         }
@@ -26,7 +27,7 @@ impl CatalogGenerator {
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: CatalogConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::CatalogItem),
             config,
         }

@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+
 use datasynth_core::{
     AcfeFraudCategory, AnomalyDetectionDifficulty, FraudTriangle, OpportunityFactor, PressureType,
     Rationalization,
@@ -381,8 +383,10 @@ impl ManagementOverrideScheme {
             Rationalization::ForTheCompanyGood,
         );
 
+        let uuid_factory = DeterministicUuidFactory::new(0, GeneratorType::Anomaly);
+
         Self {
-            scheme_id: Uuid::new_v4(),
+            scheme_id: uuid_factory.next(),
             perpetrator_level,
             perpetrator_id: perpetrator_id.into(),
             override_type,

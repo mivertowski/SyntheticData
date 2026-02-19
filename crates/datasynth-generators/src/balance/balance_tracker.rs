@@ -7,11 +7,12 @@ use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::balance::{
     AccountBalance, AccountPeriodActivity, AccountType, BalanceSnapshot,
 };
-use datasynth_core::models::{JournalEntry, JournalEntryLine};
+use datasynth_core::models::JournalEntry;
 
 /// Configuration for the balance tracker.
 #[derive(Debug, Clone)]
@@ -50,6 +51,8 @@ pub struct RunningBalanceTracker {
     validation_errors: Vec<ValidationError>,
     /// Statistics.
     stats: TrackerStatistics,
+    /// Default currency for new account balances and snapshots.
+    currency: String,
 }
 
 /// Entry in balance history.
@@ -102,8 +105,8 @@ pub struct TrackerStatistics {
 }
 
 impl RunningBalanceTracker {
-    /// Creates a new balance tracker.
-    pub fn new(config: BalanceTrackerConfig) -> Self {
+    /// Creates a new balance tracker with the specified currency.
+    pub fn new_with_currency(config: BalanceTrackerConfig, currency: String) -> Self {
         Self {
             config,
             balances: HashMap::new(),
@@ -111,7 +114,13 @@ impl RunningBalanceTracker {
             history: HashMap::new(),
             validation_errors: Vec::new(),
             stats: TrackerStatistics::default(),
+            currency,
         }
+    }
+
+    /// Creates a new balance tracker (defaults to USD).
+    pub fn new(config: BalanceTrackerConfig) -> Self {
+        Self::new_with_currency(config, "USD".to_string())
     }
 
     /// Creates a tracker with default configuration.
@@ -215,7 +224,7 @@ impl RunningBalanceTracker {
                         company_code.clone(),
                         line.account_code.clone(),
                         *account_type,
-                        "USD".to_string(),
+                        self.currency.clone(),
                         posting_date.year(),
                         posting_date.month(),
                     )
@@ -275,6 +284,13 @@ impl RunningBalanceTracker {
 
     /// Applies a batch of entries.
     pub fn apply_entries(&mut self, entries: &[JournalEntry]) -> Vec<ValidationError> {
+        debug!(
+            entry_count = entries.len(),
+            companies_tracked = self.stats.companies_tracked,
+            accounts_tracked = self.stats.accounts_tracked,
+            "Applying entries to balance tracker"
+        );
+
         let mut errors = Vec::new();
 
         for entry in entries {
@@ -284,57 +300,6 @@ impl RunningBalanceTracker {
         }
 
         errors
-    }
-
-    /// Applies a single journal entry line.
-    fn apply_line(
-        &mut self,
-        company_balances: &mut HashMap<String, AccountBalance>,
-        line: &JournalEntryLine,
-        entry_id: &str,
-        date: NaiveDate,
-        company_code: &str,
-    ) {
-        let account_type = self.determine_account_type(&line.account_code);
-
-        // Get or create account balance
-        let balance = company_balances
-            .entry(line.account_code.clone())
-            .or_insert_with(|| {
-                AccountBalance::new(
-                    company_code.to_string(),
-                    line.account_code.clone(),
-                    account_type,
-                    "USD".to_string(), // Default currency
-                    date.year(),
-                    date.month(),
-                )
-            });
-
-        let previous_balance = balance.closing_balance;
-
-        // Apply debit or credit based on account type
-        if line.debit_amount > Decimal::ZERO {
-            balance.apply_debit(line.debit_amount);
-        }
-        if line.credit_amount > Decimal::ZERO {
-            balance.apply_credit(line.credit_amount);
-        }
-
-        let new_balance = balance.closing_balance;
-
-        // Record history if configured
-        if self.config.track_history {
-            let history_entries = self.history.entry(company_code.to_string()).or_default();
-            history_entries.push(BalanceHistoryEntry {
-                date,
-                entry_id: entry_id.to_string(),
-                account_code: line.account_code.clone(),
-                previous_balance,
-                change: new_balance - previous_balance,
-                new_balance,
-            });
-        }
     }
 
     /// Determines account type from code prefix.
@@ -435,6 +400,7 @@ impl RunningBalanceTracker {
         as_of_date: NaiveDate,
     ) -> Option<BalanceSnapshot> {
         use chrono::Datelike;
+        let currency = self.currency.clone();
         self.balances.get(company_code).map(|balances| {
             let mut snapshot = BalanceSnapshot::new(
                 format!("SNAP-{}-{}", company_code, as_of_date),
@@ -442,7 +408,7 @@ impl RunningBalanceTracker {
                 as_of_date,
                 as_of_date.year(),
                 as_of_date.month(),
-                "USD".to_string(),
+                currency,
             );
             for (account, balance) in balances {
                 snapshot.balances.insert(account.clone(), balance.clone());
@@ -464,7 +430,7 @@ impl RunningBalanceTracker {
                     as_of_date,
                     as_of_date.year(),
                     as_of_date.month(),
-                    "USD".to_string(),
+                    self.currency.clone(),
                 );
                 for (account, balance) in balances {
                     snapshot.balances.insert(account.clone(), balance.clone());
@@ -582,7 +548,7 @@ impl RunningBalanceTracker {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use datasynth_core::models::JournalEntry;
+    use datasynth_core::models::{JournalEntry, JournalEntryLine};
 
     fn create_test_entry(
         company: &str,

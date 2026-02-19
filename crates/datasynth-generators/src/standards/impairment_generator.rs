@@ -9,6 +9,7 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::ImpairmentConfig;
+use datasynth_core::utils::{seeded_rng, weighted_select};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_standards::accounting::impairment::{
     CashFlowProjection, ImpairmentAssetType, ImpairmentIndicator, ImpairmentTest,
@@ -21,24 +22,24 @@ use rust_decimal::prelude::*;
 use rust_decimal::Decimal;
 
 /// All non-goodwill asset types with their approximate probability weights.
-const ASSET_TYPE_WEIGHTS_NO_GOODWILL: [(ImpairmentAssetType, u32); 6] = [
-    (ImpairmentAssetType::PropertyPlantEquipment, 40),
-    (ImpairmentAssetType::IntangibleFinite, 20),
-    (ImpairmentAssetType::IntangibleIndefinite, 15),
-    (ImpairmentAssetType::RightOfUseAsset, 10),
-    (ImpairmentAssetType::EquityInvestment, 10),
-    (ImpairmentAssetType::CashGeneratingUnit, 5),
+const ASSET_TYPE_WEIGHTS_NO_GOODWILL: [(ImpairmentAssetType, f64); 6] = [
+    (ImpairmentAssetType::PropertyPlantEquipment, 40.0),
+    (ImpairmentAssetType::IntangibleFinite, 20.0),
+    (ImpairmentAssetType::IntangibleIndefinite, 15.0),
+    (ImpairmentAssetType::RightOfUseAsset, 10.0),
+    (ImpairmentAssetType::EquityInvestment, 10.0),
+    (ImpairmentAssetType::CashGeneratingUnit, 5.0),
 ];
 
 /// Asset types with goodwill included (redistributed weights).
-const ASSET_TYPE_WEIGHTS_WITH_GOODWILL: [(ImpairmentAssetType, u32); 7] = [
-    (ImpairmentAssetType::PropertyPlantEquipment, 30),
-    (ImpairmentAssetType::IntangibleFinite, 15),
-    (ImpairmentAssetType::IntangibleIndefinite, 12),
-    (ImpairmentAssetType::Goodwill, 15),
-    (ImpairmentAssetType::RightOfUseAsset, 10),
-    (ImpairmentAssetType::EquityInvestment, 10),
-    (ImpairmentAssetType::CashGeneratingUnit, 8),
+const ASSET_TYPE_WEIGHTS_WITH_GOODWILL: [(ImpairmentAssetType, f64); 7] = [
+    (ImpairmentAssetType::PropertyPlantEquipment, 30.0),
+    (ImpairmentAssetType::IntangibleFinite, 15.0),
+    (ImpairmentAssetType::IntangibleIndefinite, 12.0),
+    (ImpairmentAssetType::Goodwill, 15.0),
+    (ImpairmentAssetType::RightOfUseAsset, 10.0),
+    (ImpairmentAssetType::EquityInvestment, 10.0),
+    (ImpairmentAssetType::CashGeneratingUnit, 8.0),
 ];
 
 /// Indicators that can be randomly assigned to any asset test.
@@ -68,7 +69,7 @@ impl ImpairmentGenerator {
     /// Create a new impairment generator with a deterministic seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ImpairmentTest),
         }
     }
@@ -170,24 +171,10 @@ impl ImpairmentGenerator {
     /// Pick an asset type using the configured weight tables.
     fn pick_asset_type(&mut self, include_goodwill: bool) -> ImpairmentAssetType {
         if include_goodwill {
-            self.weighted_pick(&ASSET_TYPE_WEIGHTS_WITH_GOODWILL)
+            *weighted_select(&mut self.rng, &ASSET_TYPE_WEIGHTS_WITH_GOODWILL)
         } else {
-            self.weighted_pick(&ASSET_TYPE_WEIGHTS_NO_GOODWILL)
+            *weighted_select(&mut self.rng, &ASSET_TYPE_WEIGHTS_NO_GOODWILL)
         }
-    }
-
-    /// Generic weighted random selection from a `(T, weight)` slice.
-    fn weighted_pick<T: Copy>(&mut self, items: &[(T, u32)]) -> T {
-        let total_weight: u32 = items.iter().map(|(_, w)| w).sum();
-        let mut roll = self.rng.gen_range(0..total_weight);
-        for &(item, weight) in items {
-            if roll < weight {
-                return item;
-            }
-            roll -= weight;
-        }
-        // Fallback (should be unreachable with valid weights).
-        items[0].0
     }
 
     /// Add 1-3 impairment indicators to a test.

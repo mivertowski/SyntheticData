@@ -6,6 +6,7 @@
 //! severity, affected document, and original vs. anomalous values.
 
 use chrono::Duration;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -77,12 +78,12 @@ pub struct TaxAnomalyLabel {
 
 /// Known low-tax jurisdictions used for rate-arbitrage injection.
 const LOW_TAX_JURISDICTIONS: &[&str] = &[
-    "JUR-IE",  // Ireland (12.5%)
-    "JUR-SG",  // Singapore (17%)
-    "JUR-HK",  // Hong Kong (16.5%)
-    "JUR-BM",  // Bermuda (0%)
-    "JUR-KY",  // Cayman Islands (0%)
-    "JUR-LU",  // Luxembourg (varies, favorable regimes)
+    "JUR-IE", // Ireland (12.5%)
+    "JUR-SG", // Singapore (17%)
+    "JUR-HK", // Hong Kong (16.5%)
+    "JUR-BM", // Bermuda (0%)
+    "JUR-KY", // Cayman Islands (0%)
+    "JUR-LU", // Luxembourg (varies, favorable regimes)
 ];
 
 /// Injects tax anomalies into generated data.
@@ -101,7 +102,7 @@ impl TaxAnomalyInjector {
     /// * `anomaly_rate` - Probability (0.0 to 1.0) that any given record is anomalous.
     pub fn new(seed: u64, anomaly_rate: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             anomaly_rate: anomaly_rate.clamp(0.0, 1.0),
             counter: 0,
         }
@@ -443,9 +444,7 @@ impl TaxAnomalyInjector {
 mod tests {
     use super::*;
     use chrono::NaiveDate;
-    use datasynth_core::models::{
-        TaxReturnType, TaxableDocumentType, WithholdingType,
-    };
+    use datasynth_core::models::{TaxReturnType, TaxableDocumentType, WithholdingType};
 
     /// Helper: create a test tax line.
     fn make_tax_line(id: &str, taxable: Decimal, tax: Decimal) -> TaxLine {
@@ -696,10 +695,7 @@ mod tests {
                 "Label {} should have a non-empty description",
                 label.id
             );
-            assert!(
-                !label.id.is_empty(),
-                "Label should have a non-empty ID"
-            );
+            assert!(!label.id.is_empty(), "Label should have a non-empty ID");
             assert!(
                 !label.document_type.is_empty(),
                 "Label {} should have a non-empty document_type",
@@ -730,15 +726,28 @@ mod tests {
         let labels2 = injector2.inject_into_tax_lines(&mut lines2);
 
         assert_eq!(labels1.len(), labels2.len(), "Label counts should match");
-        assert_eq!(lines1.len(), lines2.len(), "Remaining line counts should match");
+        assert_eq!(
+            lines1.len(),
+            lines2.len(),
+            "Remaining line counts should match"
+        );
 
         for (l1, l2) in labels1.iter().zip(labels2.iter()) {
             assert_eq!(l1.id, l2.id, "Label IDs should match");
-            assert_eq!(l1.anomaly_type, l2.anomaly_type, "Anomaly types should match");
+            assert_eq!(
+                l1.anomaly_type, l2.anomaly_type,
+                "Anomaly types should match"
+            );
             assert_eq!(l1.severity, l2.severity, "Severities should match");
             assert_eq!(l1.document_id, l2.document_id, "Document IDs should match");
-            assert_eq!(l1.original_value, l2.original_value, "Original values should match");
-            assert_eq!(l1.anomalous_value, l2.anomalous_value, "Anomalous values should match");
+            assert_eq!(
+                l1.original_value, l2.original_value,
+                "Original values should match"
+            );
+            assert_eq!(
+                l1.anomalous_value, l2.anomalous_value,
+                "Anomalous values should match"
+            );
         }
 
         for (ln1, ln2) in lines1.iter().zip(lines2.iter()) {

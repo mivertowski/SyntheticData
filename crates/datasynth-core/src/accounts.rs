@@ -57,6 +57,9 @@ pub mod revenue_accounts {
     /// Intercompany revenue account
     pub const IC_REVENUE: &str = "4500";
 
+    /// Purchase discount income account
+    pub const PURCHASE_DISCOUNT_INCOME: &str = "4800";
+
     /// Other revenue account
     pub const OTHER_REVENUE: &str = "4900";
 
@@ -135,6 +138,9 @@ pub mod tax_accounts {
     /// Input VAT (VAT receivable) account
     pub const INPUT_VAT: &str = "1160";
 
+    /// Tax receivable account (AP input tax)
+    pub const TAX_RECEIVABLE: &str = "1400";
+
     /// Tax expense account
     pub const TAX_EXPENSE: &str = "8000";
 
@@ -188,6 +194,12 @@ pub mod equity_accounts {
 
     /// Currency translation adjustment account
     pub const CTA: &str = "3500";
+
+    /// Income summary account (used for year-end close)
+    pub const INCOME_SUMMARY: &str = "3600";
+
+    /// Dividends paid account
+    pub const DIVIDENDS_PAID: &str = "3700";
 }
 
 /// Suspense and clearing accounts.

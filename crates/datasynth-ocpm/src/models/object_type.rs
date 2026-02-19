@@ -1171,10 +1171,7 @@ impl ObjectType {
                 Cardinality::ManyToOne,
                 false,
             )],
-            allowed_activities: vec![
-                "tax_determination".into(),
-                "tax_line_created".into(),
-            ],
+            allowed_activities: vec!["tax_determination".into(), "tax_line_created".into()],
             attributes: HashMap::from([
                 ("tax_line_id".into(), AttributeType::String),
                 ("tax_code".into(), AttributeType::String),
@@ -1366,10 +1363,7 @@ impl ObjectType {
                     false,
                 ),
             ],
-            allowed_activities: vec![
-                "project_created".into(),
-                "revenue_recognized".into(),
-            ],
+            allowed_activities: vec!["project_created".into(), "revenue_recognized".into()],
             attributes: HashMap::from([
                 ("project_id".into(), AttributeType::String),
                 ("project_name".into(), AttributeType::String),
@@ -1508,10 +1502,7 @@ impl ObjectType {
                 ObjectLifecycleState::new("assured", "Assured", false, true),
             ],
             relationships: vec![],
-            allowed_activities: vec![
-                "emission_calculated".into(),
-                "assurance_completed".into(),
-            ],
+            allowed_activities: vec!["emission_calculated".into(), "assurance_completed".into()],
             attributes: HashMap::from([
                 ("record_id".into(), AttributeType::String),
                 ("scope".into(), AttributeType::String),
@@ -1745,7 +1736,10 @@ mod tests {
         let types = ObjectType::project_accounting_types();
         assert_eq!(types.len(), 4);
         assert_eq!(types[0].type_id, "project");
-        assert_eq!(types[0].business_process, BusinessProcess::ProjectAccounting);
+        assert_eq!(
+            types[0].business_process,
+            BusinessProcess::ProjectAccounting
+        );
     }
 
     #[test]

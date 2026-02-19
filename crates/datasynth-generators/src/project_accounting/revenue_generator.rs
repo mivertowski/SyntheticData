@@ -2,12 +2,17 @@
 //!
 //! Takes project cost lines and project contract values to compute revenue
 //! recognition using the cost-to-cost PoC method (ASC 606 input method).
+// allow(dead_code): RevenueGenerator is pub-exported and tested but not yet
+// wired into the runtime orchestrator; will be integrated alongside project
+// revenue recognition support.
+#![allow(dead_code)]
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ProjectRevenueRecognitionConfig;
 use datasynth_core::models::{
     CompletionMeasure, Project, ProjectCostLine, ProjectRevenue, RevenueMethod,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -24,9 +29,9 @@ pub struct RevenueGenerator {
 
 impl RevenueGenerator {
     /// Create a new revenue generator.
-    pub fn new(seed: u64, config: ProjectRevenueRecognitionConfig) -> Self {
+    pub fn new(config: ProjectRevenueRecognitionConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
             config,
             counter: 0,
@@ -81,7 +86,9 @@ impl RevenueGenerator {
                 let completion_pct = if estimated_total_cost.is_zero() {
                     dec!(0)
                 } else {
-                    (costs_to_date / estimated_total_cost).min(dec!(1.0)).round_dp(4)
+                    (costs_to_date / estimated_total_cost)
+                        .min(dec!(1.0))
+                        .round_dp(4)
                 };
 
                 let cumulative_revenue = (*contract_value * completion_pct).round_dp(2);
@@ -203,7 +210,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -233,7 +240,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -258,7 +265,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &cost_lines,
@@ -281,7 +288,7 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen = RevenueGenerator::new(42, config);
+        let mut gen = RevenueGenerator::new(config, 42);
         let revenues = gen.generate(
             &[project],
             &[], // No cost lines
@@ -300,11 +307,23 @@ mod tests {
         let contracts = vec![("PRJ-001".to_string(), dec!(1000000), dec!(800000))];
 
         let config = ProjectRevenueRecognitionConfig::default();
-        let mut gen1 = RevenueGenerator::new(42, config.clone());
-        let rev1 = gen1.generate(&[project.clone()], &cost_lines, &contracts, d("2024-01-01"), d("2024-03-31"));
+        let mut gen1 = RevenueGenerator::new(config.clone(), 42);
+        let rev1 = gen1.generate(
+            &[project.clone()],
+            &cost_lines,
+            &contracts,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
-        let mut gen2 = RevenueGenerator::new(42, config);
-        let rev2 = gen2.generate(&[project], &cost_lines, &contracts, d("2024-01-01"), d("2024-03-31"));
+        let mut gen2 = RevenueGenerator::new(config, 42);
+        let rev2 = gen2.generate(
+            &[project],
+            &cost_lines,
+            &contracts,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
         assert_eq!(rev1.len(), rev2.len());
         for (r1, r2) in rev1.iter().zip(rev2.iter()) {

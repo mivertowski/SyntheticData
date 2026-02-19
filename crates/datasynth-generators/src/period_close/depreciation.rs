@@ -2,7 +2,9 @@
 
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::debug;
 
+use datasynth_core::accounts::{control_accounts, expense_accounts};
 use datasynth_core::models::subledger::fa::{
     AssetStatus, DepreciationAreaType, DepreciationEntry, DepreciationRun, DepreciationRunStatus,
     FixedAssetRecord,
@@ -25,8 +27,8 @@ pub struct DepreciationRunConfig {
 impl Default for DepreciationRunConfig {
     fn default() -> Self {
         Self {
-            default_expense_account: "6100".to_string(),
-            default_accum_depr_account: "1510".to_string(),
+            default_expense_account: expense_accounts::DEPRECIATION.to_string(),
+            default_accum_depr_account: control_accounts::ACCUMULATED_DEPRECIATION.to_string(),
             post_zero_entries: false,
             minimum_amount: dec!(0.01),
         }
@@ -55,6 +57,13 @@ impl DepreciationRunGenerator {
         assets: &mut [FixedAssetRecord],
         fiscal_period: &FiscalPeriod,
     ) -> DepreciationRunResult {
+        debug!(
+            company_code,
+            asset_count = assets.len(),
+            period = fiscal_period.period,
+            year = fiscal_period.year,
+            "Executing depreciation run"
+        );
         self.run_counter += 1;
         let run_id = format!("DEPR-{}-{:08}", company_code, self.run_counter);
 
@@ -238,6 +247,8 @@ impl DepreciationRunGenerator {
 
 /// Simulated asset state for forecasting.
 struct SimulatedAsset {
+    // Retained for debugging/tracing individual asset forecast lines.
+    #[allow(dead_code)]
     asset_number: String,
     net_book_value: Decimal,
     salvage_value: Decimal,

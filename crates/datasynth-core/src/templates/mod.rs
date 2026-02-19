@@ -18,7 +18,7 @@ pub mod provider;
 pub mod realism;
 pub mod references;
 
-pub use descriptions::{DescriptionGenerator, HeaderTextPattern, LineTextPattern};
+pub use descriptions::{DescriptionGenerator, HeaderTextPattern};
 pub use loader::{
     AssetDescriptionTemplates, CultureNames, CustomerNameTemplates, HeaderTextTemplates,
     LineItemDescriptionTemplates, MaterialDescriptionTemplates, MergeStrategy, PersonNameTemplates,

@@ -6,10 +6,8 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::CostAllocationConfig;
-use datasynth_core::models::{
-    CostCategory, CostSourceType, ProjectCostLine, ProjectPool,
-};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::models::{CostCategory, CostSourceType, ProjectCostLine, ProjectPool};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -34,17 +32,15 @@ pub struct SourceDocument {
 /// Generates [`ProjectCostLine`] records by linking source documents to projects.
 pub struct ProjectCostGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: CostAllocationConfig,
     counter: u64,
 }
 
 impl ProjectCostGenerator {
     /// Create a new project cost generator.
-    pub fn new(seed: u64, config: CostAllocationConfig) -> Self {
+    pub fn new(config: CostAllocationConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -197,20 +193,23 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &time_entries);
 
         // ~60% of 100 time entries should be linked (with variance)
         let linked_count = cost_lines.len();
         assert!(
             linked_count >= 40 && linked_count <= 80,
-            "Expected ~60 linked, got {}", linked_count
+            "Expected ~60 linked, got {}",
+            linked_count
         );
 
         // All linked entries should reference valid projects and WBS elements
         for line in &cost_lines {
             assert!(
-                pool.projects.iter().any(|p| p.project_id == line.project_id),
+                pool.projects
+                    .iter()
+                    .any(|p| p.project_id == line.project_id),
                 "Cost line should reference a valid project"
             );
             assert_eq!(line.cost_category, CostCategory::Labor);
@@ -230,7 +229,7 @@ mod tests {
             vendor_invoice_project_rate: 0.0,
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &docs);
         assert!(cost_lines.is_empty(), "Zero rate should produce no links");
     }
@@ -244,7 +243,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &docs);
         assert_eq!(cost_lines.len(), 50, "100% rate should link all documents");
     }
@@ -268,7 +267,7 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gen = ProjectCostGenerator::new(42, config);
+        let mut gen = ProjectCostGenerator::new(config, 42);
         let cost_lines = gen.link_documents(&pool, &expenses);
 
         assert_eq!(cost_lines.len(), 50);
@@ -285,10 +284,10 @@ mod tests {
         let docs = test_time_entries(100);
         let config = CostAllocationConfig::default();
 
-        let mut gen1 = ProjectCostGenerator::new(42, config.clone());
+        let mut gen1 = ProjectCostGenerator::new(config.clone(), 42);
         let lines1 = gen1.link_documents(&pool, &docs);
 
-        let mut gen2 = ProjectCostGenerator::new(42, config);
+        let mut gen2 = ProjectCostGenerator::new(config, 42);
         let lines2 = gen2.link_documents(&pool, &docs);
 
         assert_eq!(lines1.len(), lines2.len());

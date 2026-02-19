@@ -11,6 +11,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::debug;
 
 use datasynth_core::models::balance::{
     AccountBalance, AccountCategory, AccountType, BalanceSnapshot, CategorySummary,
@@ -99,6 +100,14 @@ impl TrialBalanceGenerator {
         fiscal_year: i32,
         fiscal_period: u32,
     ) -> TrialBalance {
+        debug!(
+            company_code = %snapshot.company_code,
+            fiscal_year,
+            fiscal_period,
+            balance_count = snapshot.balances.len(),
+            "Generating trial balance from snapshot"
+        );
+
         let mut lines = Vec::new();
         let mut total_debits = Decimal::ZERO;
         let mut total_credits = Decimal::ZERO;
@@ -170,7 +179,10 @@ impl TrialBalanceGenerator {
             is_equation_valid: false,           // Will be calculated below
             equation_difference: Decimal::ZERO, // Will be calculated below
             category_summary,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: snapshot
+                .as_of_date
+                .and_hms_opt(23, 59, 59)
+                .unwrap_or_default(),
             created_by: "TrialBalanceGenerator".to_string(),
             approved_by: None,
             approved_at: None,
@@ -291,12 +303,17 @@ impl TrialBalanceGenerator {
             .map(|(_, s)| s.currency.clone())
             .unwrap_or_else(|| "USD".to_string());
 
+        let created_at = snapshots
+            .last()
+            .map(|(date, _)| date.and_hms_opt(23, 59, 59).unwrap_or_default())
+            .unwrap_or_default();
+
         ComparativeTrialBalance {
             company_code,
             currency,
             periods,
             lines,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at,
         }
     }
 
@@ -388,7 +405,7 @@ impl TrialBalanceGenerator {
             is_equation_valid: false,           // Will be calculated below
             equation_difference: Decimal::ZERO, // Will be calculated below
             category_summary,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: as_of_date.and_hms_opt(23, 59, 59).unwrap_or_default(),
             created_by: format!(
                 "TrialBalanceGenerator (Consolidated from {} companies)",
                 trial_balances.len()
@@ -485,53 +502,6 @@ impl TrialBalanceGenerator {
         summaries
     }
 
-    /// Calculates variances between periods.
-    fn calculate_period_variances(
-        &self,
-        periods: &[TrialBalance],
-    ) -> HashMap<String, Vec<Decimal>> {
-        let mut variances: HashMap<String, Vec<Decimal>> = HashMap::new();
-
-        if periods.len() < 2 {
-            return variances;
-        }
-
-        // Collect all account codes
-        let mut all_accounts: Vec<String> = periods
-            .iter()
-            .flat_map(|p| p.lines.iter().map(|l| l.account_code.clone()))
-            .collect();
-        all_accounts.sort();
-        all_accounts.dedup();
-
-        // Calculate period-over-period variances
-        for account in all_accounts {
-            let mut period_variances = Vec::new();
-
-            for i in 1..periods.len() {
-                let current = periods[i]
-                    .lines
-                    .iter()
-                    .find(|l| l.account_code == account)
-                    .map(|l| l.closing_balance)
-                    .unwrap_or_default();
-
-                let previous = periods[i - 1]
-                    .lines
-                    .iter()
-                    .find(|l| l.account_code == account)
-                    .map(|l| l.closing_balance)
-                    .unwrap_or_default();
-
-                period_variances.push(current - previous);
-            }
-
-            variances.insert(account, period_variances);
-        }
-
-        variances
-    }
-
     /// Finalizes a trial balance (changes status to Final).
     pub fn finalize(&self, mut trial_balance: TrialBalance) -> TrialBalance {
         trial_balance.status = TrialBalanceStatus::Final;
@@ -542,7 +512,14 @@ impl TrialBalanceGenerator {
     pub fn approve(&self, mut trial_balance: TrialBalance, approver: &str) -> TrialBalance {
         trial_balance.status = TrialBalanceStatus::Approved;
         trial_balance.approved_by = Some(approver.to_string());
-        trial_balance.approved_at = Some(chrono::Utc::now().naive_utc());
+        trial_balance.approved_at = Some(
+            trial_balance
+                .as_of_date
+                .succ_opt()
+                .unwrap_or(trial_balance.as_of_date)
+                .and_hms_opt(9, 0, 0)
+                .unwrap_or_default(),
+        );
         trial_balance
     }
 }

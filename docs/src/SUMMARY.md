@@ -44,6 +44,7 @@
 - [Compliance](configuration/compliance.md)
 - [Output Settings](configuration/output-settings.md)
 - [AI & ML Features](configuration/ai-ml-features.md)
+- [Country Packs](configuration/country-packs.md)
 
 ---
 

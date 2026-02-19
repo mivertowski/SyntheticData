@@ -9,6 +9,7 @@ use rust_decimal::Decimal;
 
 use crate::config::BankingConfig;
 use crate::models::{BankAccount, BankingCustomer, PersonaVariant};
+use crate::seed_offsets::ACCOUNT_GENERATOR_SEED_OFFSET;
 
 /// Generator for bank accounts.
 pub struct AccountGenerator {
@@ -23,7 +24,7 @@ impl AccountGenerator {
     pub fn new(config: BankingConfig, seed: u64) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(1000)),
+            rng: ChaCha8Rng::seed_from_u64(seed.wrapping_add(ACCOUNT_GENERATOR_SEED_OFFSET)),
             uuid_factory: DeterministicUuidFactory::new(
                 seed,
                 datasynth_core::GeneratorType::ARSubledger,

@@ -1,5 +1,6 @@
 //! Anomaly type definitions and configurations for injection.
 
+use datasynth_core::utils::weighted_select;
 use rand::Rng;
 use rust_decimal::Decimal;
 
@@ -117,17 +118,14 @@ impl FraudTypeConfig {
 
     /// Selects a fraud type based on weights.
     pub fn select_weighted<'a, R: Rng>(configs: &'a [Self], rng: &mut R) -> &'a Self {
-        let total_weight: f64 = configs.iter().map(|c| c.weight).sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(usize, f64)> = configs
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.weight))
+            .collect();
 
-        for config in configs {
-            random_weight -= config.weight;
-            if random_weight <= 0.0 {
-                return config;
-            }
-        }
-
-        &configs[0]
+        let &idx = weighted_select(rng, &options);
+        &configs[idx]
     }
 }
 
@@ -237,17 +235,14 @@ impl ErrorTypeConfig {
 
     /// Selects an error type based on weights.
     pub fn select_weighted<'a, R: Rng>(configs: &'a [Self], rng: &mut R) -> &'a Self {
-        let total_weight: f64 = configs.iter().map(|c| c.weight).sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(usize, f64)> = configs
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.weight))
+            .collect();
 
-        for config in configs {
-            random_weight -= config.weight;
-            if random_weight <= 0.0 {
-                return config;
-            }
-        }
-
-        &configs[0]
+        let &idx = weighted_select(rng, &options);
+        &configs[idx]
     }
 }
 
@@ -321,17 +316,14 @@ impl ProcessIssueConfig {
 
     /// Selects a process issue type based on weights.
     pub fn select_weighted<'a, R: Rng>(configs: &'a [Self], rng: &mut R) -> &'a Self {
-        let total_weight: f64 = configs.iter().map(|c| c.weight).sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(usize, f64)> = configs
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.weight))
+            .collect();
 
-        for config in configs {
-            random_weight -= config.weight;
-            if random_weight <= 0.0 {
-                return config;
-            }
-        }
-
-        &configs[0]
+        let &idx = weighted_select(rng, &options);
+        &configs[idx]
     }
 }
 
@@ -420,17 +412,14 @@ impl StatisticalAnomalyConfig {
 
     /// Selects a statistical anomaly type based on weights.
     pub fn select_weighted<'a, R: Rng>(configs: &'a [Self], rng: &mut R) -> &'a Self {
-        let total_weight: f64 = configs.iter().map(|c| c.weight).sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(usize, f64)> = configs
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.weight))
+            .collect();
 
-        for config in configs {
-            random_weight -= config.weight;
-            if random_weight <= 0.0 {
-                return config;
-            }
-        }
-
-        &configs[0]
+        let &idx = weighted_select(rng, &options);
+        &configs[idx]
     }
 }
 
@@ -499,17 +488,14 @@ impl RelationalAnomalyConfig {
 
     /// Selects a relational anomaly type based on weights.
     pub fn select_weighted<'a, R: Rng>(configs: &'a [Self], rng: &mut R) -> &'a Self {
-        let total_weight: f64 = configs.iter().map(|c| c.weight).sum();
-        let mut random_weight = rng.gen::<f64>() * total_weight;
+        let options: Vec<(usize, f64)> = configs
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.weight))
+            .collect();
 
-        for config in configs {
-            random_weight -= config.weight;
-            if random_weight <= 0.0 {
-                return config;
-            }
-        }
-
-        &configs[0]
+        let &idx = weighted_select(rng, &options);
+        &configs[idx]
     }
 }
 

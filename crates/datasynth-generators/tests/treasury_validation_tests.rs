@@ -20,10 +20,9 @@ use datasynth_core::models::{
     TreasuryCashFlowCategory,
 };
 use datasynth_generators::treasury::{
-    AccountBalance, ApAgingItem, ArAgingItem, CashFlow, CashFlowDirection,
-    CashForecastGenerator, CashPoolGenerator, CashPositionGenerator, DebtGenerator,
-    FxExposure, HedgingGenerator, ScheduledDisbursement, TreasuryAnomalyInjector,
-    TreasuryAnomalyType,
+    AccountBalance, ApAgingItem, ArAgingItem, CashFlow, CashFlowDirection, CashForecastGenerator,
+    CashPoolGenerator, CashPositionGenerator, DebtGenerator, FxExposure, HedgingGenerator,
+    ScheduledDisbursement, TreasuryAnomalyInjector, TreasuryAnomalyType,
 };
 
 // =============================================================================
@@ -125,18 +124,10 @@ fn test_full_treasury_pipeline() {
         ("BA-001".to_string(), "USD".to_string(), dec!(100000)),
         ("BA-002".to_string(), "EUR".to_string(), dec!(50000)),
     ];
-    let mut pos_gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
-    let positions = pos_gen.generate_multi_account(
-        "C001",
-        &accounts,
-        &flows,
-        d("2025-01-01"),
-        d("2025-01-31"),
-    );
-    assert!(
-        !positions.is_empty(),
-        "Should produce cash positions"
-    );
+    let mut pos_gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
+    let positions =
+        pos_gen.generate_multi_account("C001", &accounts, &flows, d("2025-01-01"), d("2025-01-31"));
+    assert!(!positions.is_empty(), "Should produce cash positions");
 
     // Step 2: Generate cash forecasts from AR/AP aging
     let ar_items = vec![
@@ -178,7 +169,7 @@ fn test_full_treasury_pipeline() {
         description: "February payroll".to_string(),
     }];
 
-    let mut forecast_gen = CashForecastGenerator::new(43, CashForecastingConfig::default());
+    let mut forecast_gen = CashForecastGenerator::new(CashForecastingConfig::default(), 43);
     let forecast = forecast_gen.generate(
         "C001",
         "USD",
@@ -187,10 +178,7 @@ fn test_full_treasury_pipeline() {
         &ap_items,
         &disbursements,
     );
-    assert!(
-        !forecast.items.is_empty(),
-        "Should produce forecast items"
-    );
+    assert!(!forecast.items.is_empty(), "Should produce forecast items");
 
     // Step 3: Generate hedging instruments from FX exposures
     let exposures = vec![
@@ -209,18 +197,18 @@ fn test_full_treasury_pipeline() {
             description: "GBP payables Q2".to_string(),
         },
     ];
-    let mut hedge_gen = HedgingGenerator::new(44, HedgingSchemaConfig::default());
+    let mut hedge_gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 44);
     let (instruments, relationships) = hedge_gen.generate(d("2025-01-15"), &exposures);
     assert_eq!(instruments.len(), 2);
     assert_eq!(relationships.len(), 2);
 
     // Step 4: Generate debt instruments with covenants
-    let mut debt_gen = DebtGenerator::new(45, test_debt_config());
+    let mut debt_gen = DebtGenerator::new(test_debt_config(), 45);
     let debt_instruments = debt_gen.generate("C001", "USD", d("2025-01-01"));
     assert_eq!(debt_instruments.len(), 2);
 
     // Step 5: Generate cash pool sweeps
-    let mut pool_gen = CashPoolGenerator::new(46, CashPoolingConfig::default());
+    let mut pool_gen = CashPoolGenerator::new(CashPoolingConfig::default(), 46);
     let pool = pool_gen
         .create_pool(
             "USD Master Pool",
@@ -304,7 +292,7 @@ fn test_full_treasury_pipeline() {
 #[test]
 fn test_position_balances_chain_day_to_day() {
     let flows = generate_mock_cash_flows();
-    let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+    let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
     let positions = gen.generate(
         "C001",
         "BA-001",
@@ -332,7 +320,7 @@ fn test_position_balances_chain_day_to_day() {
 #[test]
 fn test_position_closing_balance_formula() {
     let flows = generate_mock_cash_flows();
-    let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+    let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
     let positions = gen.generate(
         "C001",
         "BA-001",
@@ -356,7 +344,7 @@ fn test_position_closing_balance_formula() {
 #[test]
 fn test_position_available_balance_bounded() {
     let flows = generate_mock_cash_flows();
-    let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+    let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
     let positions = gen.generate(
         "C001",
         "BA-001",
@@ -371,12 +359,15 @@ fn test_position_available_balance_bounded() {
         assert!(
             pos.available_balance <= pos.closing_balance,
             "Day {}: available {} should be <= closing {}",
-            pos.date, pos.available_balance, pos.closing_balance
+            pos.date,
+            pos.available_balance,
+            pos.closing_balance
         );
         assert!(
             pos.available_balance >= Decimal::ZERO,
             "Day {}: available {} should be >= 0",
-            pos.date, pos.available_balance
+            pos.date,
+            pos.available_balance
         );
     }
 }
@@ -387,7 +378,7 @@ fn test_position_available_balance_bounded() {
 
 #[test]
 fn test_forecast_probability_decays_with_aging() {
-    let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+    let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
 
     // Create AR items at different aging buckets
     let ar_items = vec![
@@ -445,12 +436,14 @@ fn test_forecast_probability_decays_with_aging() {
     assert!(
         prob_current > prob_60,
         "Current ({}) should have higher probability than 60 DPD ({})",
-        prob_current, prob_60
+        prob_current,
+        prob_60
     );
     assert!(
         prob_60 > prob_120,
         "60 DPD ({}) should have higher probability than 120 DPD ({})",
-        prob_60, prob_120
+        prob_60,
+        prob_120
     );
 
     // Most overdue items should have much lower probability than current
@@ -470,14 +463,15 @@ fn test_forecast_probability_decays_with_aging() {
         assert!(
             item.probability >= dec!(0.05) && item.probability <= dec!(1.00),
             "Probability {} out of valid range for item {}",
-            item.probability, item.id
+            item.probability,
+            item.id
         );
     }
 }
 
 #[test]
 fn test_forecast_ap_payments_near_certain() {
-    let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+    let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
     let ap_items = vec![
         ApAgingItem {
             payment_date: d("2025-02-10"),
@@ -494,10 +488,7 @@ fn test_forecast_ap_payments_near_certain() {
     let forecast = gen.generate("C001", "USD", d("2025-01-31"), &[], &ap_items, &[]);
 
     for item in &forecast.items {
-        assert_eq!(
-            item.category,
-            TreasuryCashFlowCategory::ApPayment,
-        );
+        assert_eq!(item.category, TreasuryCashFlowCategory::ApPayment,);
         assert_eq!(
             item.probability,
             dec!(0.95),
@@ -514,7 +505,7 @@ fn test_forecast_ap_payments_near_certain() {
 
 #[test]
 fn test_forecast_net_position_coherent() {
-    let mut gen = CashForecastGenerator::new(42, CashForecastingConfig::default());
+    let mut gen = CashForecastGenerator::new(CashForecastingConfig::default(), 42);
     let ar_items = vec![ArAgingItem {
         expected_date: d("2025-02-15"),
         amount: dec!(100000),
@@ -540,7 +531,7 @@ fn test_forecast_net_position_coherent() {
 #[test]
 fn test_hedge_effectiveness_within_corridor() {
     // Generate many hedge relationships and verify most are within 80-125% corridor
-    let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+    let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
 
     let mut all_relationships = Vec::new();
     for i in 0..20 {
@@ -557,10 +548,7 @@ fn test_hedge_effectiveness_within_corridor() {
 
     assert_eq!(all_relationships.len(), 20);
 
-    let effective_count = all_relationships
-        .iter()
-        .filter(|r| r.is_effective)
-        .count();
+    let effective_count = all_relationships.iter().filter(|r| r.is_effective).count();
 
     // At least 70% should be effective (generator targets 90%)
     assert!(
@@ -584,7 +572,7 @@ fn test_hedge_effectiveness_within_corridor() {
 #[test]
 fn test_hedge_instrument_covers_exposure() {
     let hedge_ratio = dec!(0.75);
-    let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+    let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
     let exposures = vec![FxExposure {
         currency_pair: "EUR/USD".to_string(),
         foreign_currency: "EUR".to_string(),
@@ -606,7 +594,7 @@ fn test_hedge_instrument_covers_exposure() {
 
 #[test]
 fn test_hedge_relationship_type_is_cash_flow() {
-    let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+    let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
     let exposures = vec![FxExposure {
         currency_pair: "GBP/USD".to_string(),
         foreign_currency: "GBP".to_string(),
@@ -630,7 +618,7 @@ fn test_hedge_relationship_type_is_cash_flow() {
 
 #[test]
 fn test_debt_amortization_sums_to_principal() {
-    let mut gen = DebtGenerator::new(42, test_debt_config());
+    let mut gen = DebtGenerator::new(test_debt_config(), 42);
     let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
     let term_loan = instruments
@@ -655,7 +643,7 @@ fn test_debt_amortization_sums_to_principal() {
 
 #[test]
 fn test_revolving_credit_has_available_capacity() {
-    let mut gen = DebtGenerator::new(42, test_debt_config());
+    let mut gen = DebtGenerator::new(test_debt_config(), 42);
     let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
     let revolver = instruments
@@ -668,7 +656,8 @@ fn test_revolving_credit_has_available_capacity() {
     assert!(
         revolver.drawn_amount < revolver.facility_limit,
         "Drawn amount {} should be less than facility limit {}",
-        revolver.drawn_amount, revolver.facility_limit
+        revolver.drawn_amount,
+        revolver.facility_limit
     );
     assert!(
         revolver.available_capacity() > Decimal::ZERO,
@@ -682,7 +671,7 @@ fn test_revolving_credit_has_available_capacity() {
 
 #[test]
 fn test_covenant_compliance_logic() {
-    let mut gen = DebtGenerator::new(42, test_debt_config());
+    let mut gen = DebtGenerator::new(test_debt_config(), 42);
     let instruments = gen.generate("C001", "USD", d("2025-01-01"));
 
     for instrument in &instruments {
@@ -696,13 +685,15 @@ fn test_covenant_compliance_logic() {
                 assert!(
                     cov.headroom > Decimal::ZERO,
                     "Covenant {}: compliant but headroom {} is not positive",
-                    cov.id, cov.headroom
+                    cov.id,
+                    cov.headroom
                 );
             } else {
                 assert!(
                     cov.headroom < Decimal::ZERO,
                     "Covenant {}: non-compliant but headroom {} is not negative",
-                    cov.id, cov.headroom
+                    cov.id,
+                    cov.headroom
                 );
             }
         }
@@ -715,7 +706,7 @@ fn test_covenant_compliance_logic() {
 
 #[test]
 fn test_zero_balancing_net_effect() {
-    let mut gen = CashPoolGenerator::new(42, CashPoolingConfig::default());
+    let mut gen = CashPoolGenerator::new(CashPoolingConfig::default(), 42);
     let pool = gen
         .create_pool(
             "Test Pool",
@@ -771,7 +762,7 @@ fn test_zero_balancing_net_effect() {
 #[test]
 fn test_anomaly_injection_modifies_positions() {
     let flows = generate_mock_cash_flows();
-    let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+    let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
     let mut positions = gen.generate(
         "C001",
         "BA-001",
@@ -813,7 +804,7 @@ fn test_anomaly_injection_modifies_positions() {
 #[test]
 fn test_no_anomalies_at_zero_rate() {
     let flows = generate_mock_cash_flows();
-    let mut gen = CashPositionGenerator::new(42, CashPositioningConfig::default());
+    let mut gen = CashPositionGenerator::new(CashPositioningConfig::default(), 42);
     let mut positions = gen.generate(
         "C001",
         "BA-001",
@@ -842,7 +833,7 @@ fn test_no_anomalies_at_zero_rate() {
 
 #[test]
 fn test_hedge_anomaly_makes_ineffective() {
-    let mut gen = HedgingGenerator::new(42, HedgingSchemaConfig::default());
+    let mut gen = HedgingGenerator::new(HedgingSchemaConfig::default(), 42);
     let exposures = vec![FxExposure {
         currency_pair: "EUR/USD".to_string(),
         foreign_currency: "EUR".to_string(),
@@ -901,12 +892,9 @@ fn test_covenant_anomaly_causes_breach() {
         ],
     };
 
-    let mut gen = DebtGenerator::new(42, config);
+    let mut gen = DebtGenerator::new(config, 42);
     let instruments = gen.generate("C001", "USD", d("2025-01-01"));
-    let mut covenants: Vec<_> = instruments
-        .into_iter()
-        .flat_map(|d| d.covenants)
-        .collect();
+    let mut covenants: Vec<_> = instruments.into_iter().flat_map(|d| d.covenants).collect();
 
     // Inject at 100% rate to guarantee anomaly
     let mut injector = TreasuryAnomalyInjector::new(42, 1.0);
@@ -970,7 +958,10 @@ fn test_deterministic_treasury_pipeline() {
     for (d1, d2) in r1.debt_instruments.iter().zip(r2.debt_instruments.iter()) {
         assert_eq!(d1.principal, d2.principal);
         assert_eq!(d1.interest_rate, d2.interest_rate);
-        assert_eq!(d1.amortization_schedule.len(), d2.amortization_schedule.len());
+        assert_eq!(
+            d1.amortization_schedule.len(),
+            d2.amortization_schedule.len()
+        );
         assert_eq!(d1.covenants.len(), d2.covenants.len());
     }
 }
@@ -1026,7 +1017,7 @@ struct PipelineResult {
 
 fn run_deterministic_pipeline(seed: u64) -> PipelineResult {
     let flows = generate_mock_cash_flows();
-    let mut pos_gen = CashPositionGenerator::new(seed, CashPositioningConfig::default());
+    let mut pos_gen = CashPositionGenerator::new(CashPositioningConfig::default(), seed);
     let positions = pos_gen.generate(
         "C001",
         "BA-001",
@@ -1048,7 +1039,7 @@ fn run_deterministic_pipeline(seed: u64) -> PipelineResult {
         amount: dec!(30000),
         document_id: "VI-001".to_string(),
     }];
-    let mut forecast_gen = CashForecastGenerator::new(seed, CashForecastingConfig::default());
+    let mut forecast_gen = CashForecastGenerator::new(CashForecastingConfig::default(), seed);
     let forecast = forecast_gen.generate("C001", "USD", d("2025-01-31"), &ar_items, &ap_items, &[]);
 
     let exposures = vec![FxExposure {
@@ -1058,10 +1049,10 @@ fn run_deterministic_pipeline(seed: u64) -> PipelineResult {
         settlement_date: d("2025-06-30"),
         description: "EUR receivables".to_string(),
     }];
-    let mut hedge_gen = HedgingGenerator::new(seed, HedgingSchemaConfig::default());
+    let mut hedge_gen = HedgingGenerator::new(HedgingSchemaConfig::default(), seed);
     let (instruments, relationships) = hedge_gen.generate(d("2025-01-15"), &exposures);
 
-    let mut debt_gen = DebtGenerator::new(seed, test_debt_config());
+    let mut debt_gen = DebtGenerator::new(test_debt_config(), seed);
     let debt_instruments = debt_gen.generate("C001", "USD", d("2025-01-01"));
 
     PipelineResult {

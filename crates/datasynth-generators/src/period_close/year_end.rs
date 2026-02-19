@@ -5,6 +5,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
 
+use datasynth_core::accounts::{equity_accounts, tax_accounts};
 use datasynth_core::models::{
     JournalEntry, JournalEntryLine, TaxAdjustment, TaxProvisionInput, TaxProvisionResult,
     YearEndClosingSpec,
@@ -34,13 +35,13 @@ pub struct YearEndCloseConfig {
 impl Default for YearEndCloseConfig {
     fn default() -> Self {
         Self {
-            income_summary_account: "3500".to_string(),
-            retained_earnings_account: "3300".to_string(),
-            dividend_account: "3400".to_string(),
-            current_tax_payable_account: "2300".to_string(),
-            deferred_tax_liability_account: "2350".to_string(),
-            deferred_tax_asset_account: "1600".to_string(),
-            tax_expense_account: "7100".to_string(),
+            income_summary_account: equity_accounts::INCOME_SUMMARY.to_string(),
+            retained_earnings_account: equity_accounts::RETAINED_EARNINGS.to_string(),
+            dividend_account: equity_accounts::DIVIDENDS_PAID.to_string(),
+            current_tax_payable_account: tax_accounts::SALES_TAX_PAYABLE.to_string(),
+            deferred_tax_liability_account: tax_accounts::DEFERRED_TAX_LIABILITY.to_string(),
+            deferred_tax_asset_account: tax_accounts::DEFERRED_TAX_ASSET.to_string(),
+            tax_expense_account: tax_accounts::TAX_EXPENSE.to_string(),
             statutory_tax_rate: dec!(21),
         }
     }

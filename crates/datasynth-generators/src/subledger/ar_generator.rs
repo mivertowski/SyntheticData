@@ -1,10 +1,13 @@
 //! AR (Accounts Receivable) generator.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+
+use tracing::debug;
 
 use datasynth_core::accounts::{cash_accounts, control_accounts, revenue_accounts, tax_accounts};
 use datasynth_core::models::subledger::ar::{
@@ -68,6 +71,11 @@ impl ARGenerator {
         }
     }
 
+    /// Creates a new AR generator from a seed, constructing the RNG internally.
+    pub fn with_seed(config: ARGeneratorConfig, seed: u64) -> Self {
+        Self::new(config, seeded_rng(seed, 0))
+    }
+
     /// Generates an AR invoice.
     pub fn generate_invoice(
         &mut self,
@@ -100,7 +108,7 @@ impl ARGenerator {
                 dec!(1),
                 "EA".to_string(),
                 amount,
-                "4000".to_string(),
+                revenue_accounts::PRODUCT_REVENUE.to_string(),
             )
             .with_tax("VAT".to_string(), self.config.tax_rate);
 
@@ -138,7 +146,7 @@ impl ARGenerator {
             net_payment,
             invoice.gross_amount.document_currency.clone(),
             payment_method,
-            "1000".to_string(), // Bank account
+            cash_accounts::OPERATING_CASH.to_string(),
         );
 
         receipt.apply_to_invoice(invoice.invoice_number.clone(), payment_amount, discount);
@@ -208,6 +216,7 @@ impl ARGenerator {
         invoices_per_day: u32,
         currency: &str,
     ) -> ARPeriodTransactions {
+        debug!(company_code, customer_count = customers.len(), %start_date, %end_date, invoices_per_day, "Generating AR period transactions");
         let mut invoices = Vec::new();
         let mut receipts = Vec::new();
         let mut credit_memos = Vec::new();
@@ -410,7 +419,7 @@ impl ARGenerator {
         // Debit Revenue
         je.add_line(JournalEntryLine {
             line_number: 1,
-            gl_account: "4000".to_string(),
+            gl_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
             debit_amount: memo.net_amount.document_amount,
             reference: Some(memo.credit_memo_number.clone()),
             ..Default::default()
@@ -420,7 +429,7 @@ impl ARGenerator {
         if memo.tax_amount.document_amount > Decimal::ZERO {
             je.add_line(JournalEntryLine {
                 line_number: 2,
-                gl_account: "2300".to_string(),
+                gl_account: tax_accounts::SALES_TAX_PAYABLE.to_string(),
                 debit_amount: memo.tax_amount.document_amount,
                 reference: Some(memo.credit_memo_number.clone()),
                 tax_code: Some("VAT".to_string()),
@@ -431,7 +440,7 @@ impl ARGenerator {
         // Credit AR
         je.add_line(JournalEntryLine {
             line_number: 3,
-            gl_account: "1100".to_string(),
+            gl_account: control_accounts::AR_CONTROL.to_string(),
             credit_amount: memo.gross_amount.document_amount,
             reference: Some(memo.credit_memo_number.clone()),
             assignment: Some(memo.customer_id.clone()),

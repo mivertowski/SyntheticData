@@ -220,10 +220,11 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::field_reassign_with_default)]
     fn test_server_config_urls() {
-        let mut config = TestServerConfig::default();
-        config.port = 3000;
+        let config = TestServerConfig {
+            port: 3000,
+            ..TestServerConfig::default()
+        };
 
         assert_eq!(config.rest_url(), "http://127.0.0.1:3000");
         assert_eq!(config.grpc_url(), "http://127.0.0.1:3000");

@@ -6,6 +6,7 @@
 
 use chrono::NaiveDate;
 use datasynth_core::models::{CountVarianceType, CycleCount, CycleCountItem, CycleCountStatus};
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -28,15 +29,26 @@ const ADJUSTMENT_REASONS: &[&str] = &[
 pub struct CycleCountGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
+    employee_ids_pool: Vec<String>,
 }
 
 impl CycleCountGenerator {
     /// Create a new cycle count generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::CycleCount),
+            employee_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set the employee ID pool used for counter and supervisor IDs.
+    ///
+    /// When non-empty, `counter_id` and `supervisor_id` are picked from this
+    /// pool instead of fabricated `WH-{:02}` / `SUP-{:02}` strings.
+    pub fn with_employee_pool(mut self, employee_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self
     }
 
     /// Generate a single cycle count event covering the specified materials.
@@ -86,9 +98,17 @@ impl CycleCountGenerator {
         // Status: 40% Reconciled, 30% Closed, 20% Counted, 10% InProgress
         let status = self.pick_status();
 
-        // Counter and supervisor
-        let counter_id = Some(format!("WH-{:02}", self.rng.gen_range(1..=10)));
-        let supervisor_id = Some(format!("SUP-{:02}", self.rng.gen_range(1..=5)));
+        // Counter and supervisor – use real employee IDs when available
+        let counter_id = if self.employee_ids_pool.is_empty() {
+            Some(format!("WH-{:02}", self.rng.gen_range(1..=10)))
+        } else {
+            self.employee_ids_pool.choose(&mut self.rng).cloned()
+        };
+        let supervisor_id = if self.employee_ids_pool.is_empty() {
+            Some(format!("SUP-{:02}", self.rng.gen_range(1..=5)))
+        } else {
+            self.employee_ids_pool.choose(&mut self.rng).cloned()
+        };
 
         // Warehouse ID
         let warehouse_id = format!("WH-{:03}", self.rng.gen_range(1..=10));

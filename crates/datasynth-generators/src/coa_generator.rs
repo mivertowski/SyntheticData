@@ -1,9 +1,15 @@
 //! Chart of Accounts generator.
 
+use tracing::debug;
+
+use datasynth_core::accounts::{
+    cash_accounts, control_accounts, equity_accounts, expense_accounts, liability_accounts,
+    revenue_accounts, suspense_accounts, tax_accounts,
+};
 use datasynth_core::models::*;
 use datasynth_core::pcg_loader;
 use datasynth_core::traits::Generator;
-use rand::prelude::*;
+use datasynth_core::utils::seeded_rng;
 use rand_chacha::ChaCha8Rng;
 
 /// Generator for Chart of Accounts.
@@ -21,7 +27,7 @@ impl ChartOfAccountsGenerator {
     /// Create a new CoA generator.
     pub fn new(complexity: CoAComplexity, industry: IndustrySector, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             complexity,
             industry,
@@ -38,6 +44,13 @@ impl ChartOfAccountsGenerator {
 
     /// Generate a complete chart of accounts.
     pub fn generate(&mut self) -> ChartOfAccounts {
+        debug!(
+            complexity = ?self.complexity,
+            industry = ?self.industry,
+            seed = self.seed,
+            "Generating chart of accounts"
+        );
+
         self.count += 1;
         if self.use_french_pcg {
             self.generate_pcg()
@@ -56,6 +69,11 @@ impl ChartOfAccountsGenerator {
             self.industry,
             self.complexity,
         );
+
+        // Seed canonical accounts first so other generators can find them
+        Self::seed_canonical_accounts(&mut coa);
+
+        // Generate additional accounts by type
         self.generate_asset_accounts(&mut coa, target_count / 5);
         self.generate_liability_accounts(&mut coa, target_count / 6);
         self.generate_equity_accounts(&mut coa, target_count / 10);
@@ -239,6 +257,492 @@ impl ChartOfAccountsGenerator {
             AccountType::Asset,
             AccountSubType::SuspenseClearing,
         ));
+
+    /// Insert all canonical accounts from `datasynth_core::accounts` into the CoA.
+    ///
+    /// These are the well-known account numbers (4-digit, 1000-9300 range) that
+    /// other generators reference. They are added before auto-generated accounts
+    /// (which start at 100000+) so there are no collisions.
+    fn seed_canonical_accounts(coa: &mut ChartOfAccounts) {
+        // --- Cash accounts (1000-series, Asset / Cash) ---
+        coa.add_account(GLAccount::new(
+            cash_accounts::OPERATING_CASH.to_string(),
+            "Operating Cash".to_string(),
+            AccountType::Asset,
+            AccountSubType::Cash,
+        ));
+        coa.add_account(GLAccount::new(
+            cash_accounts::BANK_ACCOUNT.to_string(),
+            "Bank Account".to_string(),
+            AccountType::Asset,
+            AccountSubType::Cash,
+        ));
+        coa.add_account(GLAccount::new(
+            cash_accounts::PETTY_CASH.to_string(),
+            "Petty Cash".to_string(),
+            AccountType::Asset,
+            AccountSubType::Cash,
+        ));
+        coa.add_account(GLAccount::new(
+            cash_accounts::WIRE_CLEARING.to_string(),
+            "Wire Transfer Clearing".to_string(),
+            AccountType::Asset,
+            AccountSubType::BankClearing,
+        ));
+
+        // --- Control accounts (Asset side) ---
+        {
+            let mut acct = GLAccount::new(
+                control_accounts::AR_CONTROL.to_string(),
+                "Accounts Receivable Control".to_string(),
+                AccountType::Asset,
+                AccountSubType::AccountsReceivable,
+            );
+            acct.is_control_account = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                control_accounts::IC_AR_CLEARING.to_string(),
+                "Intercompany AR Clearing".to_string(),
+                AccountType::Asset,
+                AccountSubType::AccountsReceivable,
+            );
+            acct.is_control_account = true;
+            coa.add_account(acct);
+        }
+        coa.add_account(GLAccount::new(
+            control_accounts::INVENTORY.to_string(),
+            "Inventory".to_string(),
+            AccountType::Asset,
+            AccountSubType::Inventory,
+        ));
+        coa.add_account(GLAccount::new(
+            control_accounts::FIXED_ASSETS.to_string(),
+            "Fixed Assets".to_string(),
+            AccountType::Asset,
+            AccountSubType::FixedAssets,
+        ));
+        coa.add_account(GLAccount::new(
+            control_accounts::ACCUMULATED_DEPRECIATION.to_string(),
+            "Accumulated Depreciation".to_string(),
+            AccountType::Asset,
+            AccountSubType::AccumulatedDepreciation,
+        ));
+
+        // --- Tax asset accounts ---
+        coa.add_account(GLAccount::new(
+            tax_accounts::INPUT_VAT.to_string(),
+            "Input VAT".to_string(),
+            AccountType::Asset,
+            AccountSubType::OtherReceivables,
+        ));
+        coa.add_account(GLAccount::new(
+            tax_accounts::DEFERRED_TAX_ASSET.to_string(),
+            "Deferred Tax Asset".to_string(),
+            AccountType::Asset,
+            AccountSubType::OtherAssets,
+        ));
+
+        // --- Liability / Control accounts (2000-series) ---
+        {
+            let mut acct = GLAccount::new(
+                control_accounts::AP_CONTROL.to_string(),
+                "Accounts Payable Control".to_string(),
+                AccountType::Liability,
+                AccountSubType::AccountsPayable,
+            );
+            acct.is_control_account = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                control_accounts::IC_AP_CLEARING.to_string(),
+                "Intercompany AP Clearing".to_string(),
+                AccountType::Liability,
+                AccountSubType::AccountsPayable,
+            );
+            acct.is_control_account = true;
+            coa.add_account(acct);
+        }
+        coa.add_account(GLAccount::new(
+            tax_accounts::SALES_TAX_PAYABLE.to_string(),
+            "Sales Tax Payable".to_string(),
+            AccountType::Liability,
+            AccountSubType::TaxLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            tax_accounts::VAT_PAYABLE.to_string(),
+            "VAT Payable".to_string(),
+            AccountType::Liability,
+            AccountSubType::TaxLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            tax_accounts::WITHHOLDING_TAX_PAYABLE.to_string(),
+            "Withholding Tax Payable".to_string(),
+            AccountType::Liability,
+            AccountSubType::TaxLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::ACCRUED_EXPENSES.to_string(),
+            "Accrued Expenses".to_string(),
+            AccountType::Liability,
+            AccountSubType::AccruedLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::ACCRUED_SALARIES.to_string(),
+            "Accrued Salaries".to_string(),
+            AccountType::Liability,
+            AccountSubType::AccruedLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::ACCRUED_BENEFITS.to_string(),
+            "Accrued Benefits".to_string(),
+            AccountType::Liability,
+            AccountSubType::AccruedLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::UNEARNED_REVENUE.to_string(),
+            "Unearned Revenue".to_string(),
+            AccountType::Liability,
+            AccountSubType::DeferredRevenue,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::SHORT_TERM_DEBT.to_string(),
+            "Short-Term Debt".to_string(),
+            AccountType::Liability,
+            AccountSubType::ShortTermDebt,
+        ));
+        coa.add_account(GLAccount::new(
+            tax_accounts::DEFERRED_TAX_LIABILITY.to_string(),
+            "Deferred Tax Liability".to_string(),
+            AccountType::Liability,
+            AccountSubType::TaxLiabilities,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::LONG_TERM_DEBT.to_string(),
+            "Long-Term Debt".to_string(),
+            AccountType::Liability,
+            AccountSubType::LongTermDebt,
+        ));
+        coa.add_account(GLAccount::new(
+            liability_accounts::IC_PAYABLE.to_string(),
+            "Intercompany Payable".to_string(),
+            AccountType::Liability,
+            AccountSubType::OtherLiabilities,
+        ));
+        {
+            let mut acct = GLAccount::new(
+                control_accounts::GR_IR_CLEARING.to_string(),
+                "GR/IR Clearing".to_string(),
+                AccountType::Liability,
+                AccountSubType::GoodsReceivedClearing,
+            );
+            acct.is_suspense_account = true;
+            coa.add_account(acct);
+        }
+
+        // --- Equity accounts (3000-series) ---
+        coa.add_account(GLAccount::new(
+            equity_accounts::COMMON_STOCK.to_string(),
+            "Common Stock".to_string(),
+            AccountType::Equity,
+            AccountSubType::CommonStock,
+        ));
+        coa.add_account(GLAccount::new(
+            equity_accounts::APIC.to_string(),
+            "Additional Paid-In Capital".to_string(),
+            AccountType::Equity,
+            AccountSubType::AdditionalPaidInCapital,
+        ));
+        coa.add_account(GLAccount::new(
+            equity_accounts::RETAINED_EARNINGS.to_string(),
+            "Retained Earnings".to_string(),
+            AccountType::Equity,
+            AccountSubType::RetainedEarnings,
+        ));
+        coa.add_account(GLAccount::new(
+            equity_accounts::CURRENT_YEAR_EARNINGS.to_string(),
+            "Current Year Earnings".to_string(),
+            AccountType::Equity,
+            AccountSubType::NetIncome,
+        ));
+        coa.add_account(GLAccount::new(
+            equity_accounts::TREASURY_STOCK.to_string(),
+            "Treasury Stock".to_string(),
+            AccountType::Equity,
+            AccountSubType::TreasuryStock,
+        ));
+        coa.add_account(GLAccount::new(
+            equity_accounts::CTA.to_string(),
+            "Currency Translation Adjustment".to_string(),
+            AccountType::Equity,
+            AccountSubType::OtherComprehensiveIncome,
+        ));
+
+        // --- Revenue accounts (4000-series) ---
+        coa.add_account(GLAccount::new(
+            revenue_accounts::PRODUCT_REVENUE.to_string(),
+            "Product Revenue".to_string(),
+            AccountType::Revenue,
+            AccountSubType::ProductRevenue,
+        ));
+        coa.add_account(GLAccount::new(
+            revenue_accounts::SALES_DISCOUNTS.to_string(),
+            "Sales Discounts".to_string(),
+            AccountType::Revenue,
+            AccountSubType::ProductRevenue,
+        ));
+        coa.add_account(GLAccount::new(
+            revenue_accounts::SALES_RETURNS.to_string(),
+            "Sales Returns and Allowances".to_string(),
+            AccountType::Revenue,
+            AccountSubType::ProductRevenue,
+        ));
+        coa.add_account(GLAccount::new(
+            revenue_accounts::SERVICE_REVENUE.to_string(),
+            "Service Revenue".to_string(),
+            AccountType::Revenue,
+            AccountSubType::ServiceRevenue,
+        ));
+        coa.add_account(GLAccount::new(
+            revenue_accounts::IC_REVENUE.to_string(),
+            "Intercompany Revenue".to_string(),
+            AccountType::Revenue,
+            AccountSubType::OtherIncome,
+        ));
+        coa.add_account(GLAccount::new(
+            revenue_accounts::OTHER_REVENUE.to_string(),
+            "Other Revenue".to_string(),
+            AccountType::Revenue,
+            AccountSubType::OtherIncome,
+        ));
+
+        // --- Expense accounts (5000-7xxx series) ---
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::COGS.to_string(),
+                "Cost of Goods Sold".to_string(),
+                AccountType::Expense,
+                AccountSubType::CostOfGoodsSold,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::RAW_MATERIALS.to_string(),
+                "Raw Materials".to_string(),
+                AccountType::Expense,
+                AccountSubType::CostOfGoodsSold,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::DIRECT_LABOR.to_string(),
+                "Direct Labor".to_string(),
+                AccountType::Expense,
+                AccountSubType::CostOfGoodsSold,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::MANUFACTURING_OVERHEAD.to_string(),
+                "Manufacturing Overhead".to_string(),
+                AccountType::Expense,
+                AccountSubType::CostOfGoodsSold,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::DEPRECIATION.to_string(),
+                "Depreciation Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::DepreciationExpense,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::SALARIES_WAGES.to_string(),
+                "Salaries and Wages".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::BENEFITS.to_string(),
+                "Benefits Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::RENT.to_string(),
+                "Rent Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::UTILITIES.to_string(),
+                "Utilities Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::OFFICE_SUPPLIES.to_string(),
+                "Office Supplies".to_string(),
+                AccountType::Expense,
+                AccountSubType::AdministrativeExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::TRAVEL_ENTERTAINMENT.to_string(),
+                "Travel and Entertainment".to_string(),
+                AccountType::Expense,
+                AccountSubType::SellingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::PROFESSIONAL_FEES.to_string(),
+                "Professional Fees".to_string(),
+                AccountType::Expense,
+                AccountSubType::AdministrativeExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::INSURANCE.to_string(),
+                "Insurance Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::BAD_DEBT.to_string(),
+                "Bad Debt Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::INTEREST_EXPENSE.to_string(),
+                "Interest Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::InterestExpense,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::PURCHASE_DISCOUNTS.to_string(),
+                "Purchase Discounts".to_string(),
+                AccountType::Expense,
+                AccountSubType::OtherExpenses,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                expense_accounts::FX_GAIN_LOSS.to_string(),
+                "FX Gain/Loss".to_string(),
+                AccountType::Expense,
+                AccountSubType::ForeignExchangeLoss,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+
+        // --- Tax expense (8000-series) ---
+        {
+            let mut acct = GLAccount::new(
+                tax_accounts::TAX_EXPENSE.to_string(),
+                "Tax Expense".to_string(),
+                AccountType::Expense,
+                AccountSubType::TaxExpense,
+            );
+            acct.requires_cost_center = true;
+            coa.add_account(acct);
+        }
+
+        // --- Suspense / Clearing accounts (9000-series) ---
+        {
+            let mut acct = GLAccount::new(
+                suspense_accounts::GENERAL_SUSPENSE.to_string(),
+                "General Suspense".to_string(),
+                AccountType::Asset,
+                AccountSubType::SuspenseClearing,
+            );
+            acct.is_suspense_account = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                suspense_accounts::PAYROLL_CLEARING.to_string(),
+                "Payroll Clearing".to_string(),
+                AccountType::Asset,
+                AccountSubType::SuspenseClearing,
+            );
+            acct.is_suspense_account = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                suspense_accounts::BANK_RECONCILIATION_SUSPENSE.to_string(),
+                "Bank Reconciliation Suspense".to_string(),
+                AccountType::Asset,
+                AccountSubType::BankClearing,
+            );
+            acct.is_suspense_account = true;
+            coa.add_account(acct);
+        }
+        {
+            let mut acct = GLAccount::new(
+                suspense_accounts::IC_ELIMINATION_SUSPENSE.to_string(),
+                "IC Elimination Suspense".to_string(),
+                AccountType::Asset,
+                AccountSubType::IntercompanyClearing,
+            );
+            acct.is_suspense_account = true;
+            coa.add_account(acct);
+        }
     }
 
     fn generate_asset_accounts(&mut self, coa: &mut ChartOfAccounts, count: usize) {
@@ -430,7 +934,7 @@ impl Generator for ChartOfAccountsGenerator {
     }
 
     fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.count = 0;
     }
 

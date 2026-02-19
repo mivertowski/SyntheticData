@@ -3,11 +3,13 @@
 //! Generates monthly energy consumption data per facility with a mix of
 //! renewable and non-renewable sources. For manufacturing entities, consumption
 //! can be correlated with production volume.
-
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EnergySchemaConfig;
-use datasynth_core::models::{EnergyConsumption, EnergySourceType, WasteRecord, WasteType, DisposalMethod, WaterUsage, WaterSource};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::models::{
+    DisposalMethod, EnergyConsumption, EnergySourceType, WasteRecord, WasteType, WaterSource,
+    WaterUsage,
+};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -16,17 +18,15 @@ use rust_decimal_macros::dec;
 /// Generates [`EnergyConsumption`] records for facilities.
 pub struct EnergyGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: EnergySchemaConfig,
     counter: u64,
 }
 
 impl EnergyGenerator {
     /// Create a new energy generator.
-    pub fn new(seed: u64, config: EnergySchemaConfig) -> Self {
+    pub fn new(config: EnergySchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -144,8 +144,8 @@ impl EnergyGenerator {
     /// Seasonal multiplier: higher in winter (Jan/Feb/Dec) and summer (Jul/Aug).
     fn seasonal_factor(&self, date: NaiveDate) -> f64 {
         match date.month() {
-            1 | 2 | 12 => 1.20,  // Winter heating
-            7 | 8 => 1.15,       // Summer cooling
+            1 | 2 | 12 => 1.20, // Winter heating
+            7 | 8 => 1.15,      // Summer cooling
             6 | 9 => 1.05,
             _ => 1.00,
         }
@@ -177,7 +177,7 @@ impl WaterGenerator {
     /// Create a new water generator.
     pub fn new(seed: u64, facility_count: u32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             facility_count: facility_count.max(1),
         }
@@ -256,7 +256,7 @@ impl WasteGenerator {
     /// Create a new waste generator.
     pub fn new(seed: u64, diversion_target: f64, facility_count: u32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             diversion_target,
             facility_count: facility_count.max(1),
@@ -368,7 +368,7 @@ mod tests {
             facility_count: 2,
             renewable_target: 0.50,
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-03-01"));
 
         assert!(!records.is_empty());
@@ -384,7 +384,7 @@ mod tests {
             facility_count: 3,
             renewable_target: 1.0, // Force renewables
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-01-01"));
 
         let renewable: Decimal = records
@@ -394,7 +394,10 @@ mod tests {
             .sum();
         let total: Decimal = records.iter().map(|r| r.consumption_kwh).sum();
 
-        assert!(renewable > Decimal::ZERO, "Should have some renewable energy");
+        assert!(
+            renewable > Decimal::ZERO,
+            "Should have some renewable energy"
+        );
         assert!(total > renewable, "Total should include non-renewable too");
     }
 
@@ -405,7 +408,7 @@ mod tests {
             facility_count: 5,
             renewable_target: 0.50,
         };
-        let mut gen = EnergyGenerator::new(42, config);
+        let mut gen = EnergyGenerator::new(config, 42);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-12-01"));
         assert!(records.is_empty());
     }
@@ -418,7 +421,10 @@ mod tests {
         assert!(!records.is_empty());
         for r in &records {
             assert!(r.withdrawal_m3 >= r.discharge_m3);
-            assert_eq!(r.consumption_m3, (r.withdrawal_m3 - r.discharge_m3).round_dp(2));
+            assert_eq!(
+                r.consumption_m3,
+                (r.withdrawal_m3 - r.discharge_m3).round_dp(2)
+            );
         }
     }
 
@@ -441,7 +447,10 @@ mod tests {
         let mut gen = WasteGenerator::new(42, 0.90, 3);
         let records = gen.generate("C001", d("2025-01-01"), d("2025-06-01"));
 
-        let diverted = records.iter().filter(|r| r.is_diverted_from_landfill).count();
+        let diverted = records
+            .iter()
+            .filter(|r| r.is_diverted_from_landfill)
+            .count();
         let pct = diverted as f64 / records.len() as f64;
         assert!(
             pct > 0.50,

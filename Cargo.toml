@@ -22,7 +22,7 @@ exclude = ["fuzz"]
 # Root package for workspace-level benchmarks
 [package]
 name = "datasynth-workspace"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 publish = false
 
@@ -42,7 +42,7 @@ tempfile = { workspace = true }
 serde_json = { workspace = true }
 
 [workspace.package]
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 license = "Apache-2.0"
 rust-version = "1.88"
@@ -56,19 +56,19 @@ categories = ["simulation", "finance", "data-structures"]
 
 [workspace.dependencies]
 # Internal crates - version required for crates.io publishing
-datasynth-core = { version = "0.7.0", path = "crates/datasynth-core" }
-datasynth-config = { version = "0.7.0", path = "crates/datasynth-config" }
-datasynth-generators = { version = "0.7.0", path = "crates/datasynth-generators" }
-datasynth-output = { version = "0.7.0", path = "crates/datasynth-output" }
-datasynth-runtime = { version = "0.7.0", path = "crates/datasynth-runtime" }
-datasynth-graph = { version = "0.7.0", path = "crates/datasynth-graph" }
-datasynth-server = { version = "0.7.0", path = "crates/datasynth-server" }
-datasynth-test-utils = { version = "0.7.0", path = "crates/datasynth-test-utils" }
-datasynth-eval = { version = "0.7.0", path = "crates/datasynth-eval" }
-datasynth-ocpm = { version = "0.7.0", path = "crates/datasynth-ocpm" }
-datasynth-banking = { version = "0.7.0", path = "crates/datasynth-banking" }
-datasynth-fingerprint = { version = "0.7.0", path = "crates/datasynth-fingerprint" }
-datasynth-standards = { version = "0.7.0", path = "crates/datasynth-standards" }
+datasynth-core = { version = "0.8.0", path = "crates/datasynth-core" }
+datasynth-config = { version = "0.8.0", path = "crates/datasynth-config" }
+datasynth-generators = { version = "0.8.0", path = "crates/datasynth-generators" }
+datasynth-output = { version = "0.8.0", path = "crates/datasynth-output" }
+datasynth-runtime = { version = "0.8.0", path = "crates/datasynth-runtime" }
+datasynth-graph = { version = "0.8.0", path = "crates/datasynth-graph" }
+datasynth-server = { version = "0.8.0", path = "crates/datasynth-server" }
+datasynth-test-utils = { version = "0.8.0", path = "crates/datasynth-test-utils" }
+datasynth-eval = { version = "0.8.0", path = "crates/datasynth-eval" }
+datasynth-ocpm = { version = "0.8.0", path = "crates/datasynth-ocpm" }
+datasynth-banking = { version = "0.8.0", path = "crates/datasynth-banking" }
+datasynth-fingerprint = { version = "0.8.0", path = "crates/datasynth-fingerprint" }
+datasynth-standards = { version = "0.8.0", path = "crates/datasynth-standards" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -94,20 +94,20 @@ async-trait = "0.1"
 futures = "0.3"
 
 # gRPC
-tonic = "0.12"
-tonic-build = "0.12"
-prost = "0.13"
-prost-build = "0.13"
-prost-types = "0.13"
+tonic = "0.14"
+tonic-build = "0.14"
+prost = "0.14"
+prost-build = "0.14"
+prost-types = "0.14"
 
 # HTTP/REST
-axum = { version = "0.7", features = ["ws"] }
+axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.5", features = ["cors", "trace", "timeout"] }
 
 # Data formats - Arrow/Parquet for analytics-ready output
-arrow = { version = "53", features = ["prettyprint"] }
-parquet = { version = "53", features = ["arrow", "async", "zstd", "lz4", "snap"] }
+arrow = { version = "54", features = ["prettyprint"] }
+parquet = { version = "54", features = ["arrow", "async", "zstd", "lz4", "snap"] }
 csv = "1.3"
 
 # Date/Time
@@ -115,7 +115,7 @@ chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
 
 # UUID for document identifiers
-uuid = { version = "1.11", features = ["v4", "v7", "serde"] }
+uuid = { version = "1.21", features = ["v4", "v7", "serde"] }
 
 # CLI
 clap = { version = "4.5", features = ["derive", "env", "string"] }
@@ -134,12 +134,12 @@ argon2 = "0.5"
 subtle = "2.6"
 
 # OpenTelemetry (optional)
-opentelemetry = "0.27"
-opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", features = ["tonic"] }
-opentelemetry-prometheus = "0.27"
-prometheus = "0.13"
-tracing-opentelemetry = "0.28"
+opentelemetry = "0.31"
+opentelemetry_sdk = { version = "0.31", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic"] }
+opentelemetry-prometheus = "0.31"
+prometheus = "0.14"
+tracing-opentelemetry = "0.32"
 
 # Parallel processing
 rayon = "1.10"

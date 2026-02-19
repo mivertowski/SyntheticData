@@ -7,24 +7,32 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ExpenseConfig;
 use datasynth_core::models::{ExpenseCategory, ExpenseLineItem, ExpenseReport, ExpenseStatus};
+use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::debug;
 
 /// Generates [`ExpenseReport`] records for employees over a period.
 pub struct ExpenseReportGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     item_uuid_factory: DeterministicUuidFactory,
+    // Stored for future use by with_config(); generate() currently takes config as a parameter.
+    #[allow(dead_code)]
     config: ExpenseConfig,
+    /// Pool of real employee IDs for approved_by references.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real cost center IDs.
+    cost_center_ids_pool: Vec<String>,
 }
 
 impl ExpenseReportGenerator {
     /// Create a new expense report generator with default configuration.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ExpenseReport),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -32,13 +40,15 @@ impl ExpenseReportGenerator {
                 1,
             ),
             config: ExpenseConfig::default(),
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
     }
 
     /// Create an expense report generator with custom configuration.
     pub fn with_config(seed: u64, config: ExpenseConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ExpenseReport),
             item_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,
@@ -46,7 +56,20 @@ impl ExpenseReportGenerator {
                 1,
             ),
             config,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `approved_by` from
+    /// `employee_ids` and `cost_center` from `cost_center_ids` instead of
+    /// fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.cost_center_ids_pool = cost_center_ids;
+        self
     }
 
     /// Generate expense reports for employees over the given period.
@@ -67,6 +90,19 @@ impl ExpenseReportGenerator {
         period_end: NaiveDate,
         config: &ExpenseConfig,
     ) -> Vec<ExpenseReport> {
+        self.generate_with_currency(employee_ids, period_start, period_end, config, "USD")
+    }
+
+    /// Generate expense reports with a specific company currency.
+    pub fn generate_with_currency(
+        &mut self,
+        employee_ids: &[String],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        config: &ExpenseConfig,
+        currency: &str,
+    ) -> Vec<ExpenseReport> {
+        debug!(employee_count = employee_ids.len(), %period_start, %period_end, currency, "Generating expense reports");
         let mut reports = Vec::new();
 
         // Iterate over each month in the period
@@ -77,8 +113,13 @@ impl ExpenseReportGenerator {
             for employee_id in employee_ids {
                 // Only submission_rate fraction of employees submit per month
                 if self.rng.gen_bool(config.submission_rate.min(1.0)) {
-                    let report =
-                        self.generate_report(employee_id, current_month_start, month_end, config);
+                    let report = self.generate_report(
+                        employee_id,
+                        current_month_start,
+                        month_end,
+                        config,
+                        currency,
+                    );
                     reports.push(report);
                 }
             }
@@ -97,6 +138,7 @@ impl ExpenseReportGenerator {
         period_start: NaiveDate,
         period_end: NaiveDate,
         config: &ExpenseConfig,
+        currency: &str,
     ) -> ExpenseReport {
         let report_id = self.uuid_factory.next().to_string();
 
@@ -106,7 +148,7 @@ impl ExpenseReportGenerator {
         let mut total_amount = Decimal::ZERO;
 
         for _ in 0..item_count {
-            let item = self.generate_line_item(period_start, period_end);
+            let item = self.generate_line_item(period_start, period_end, currency);
             total_amount += item.amount;
             line_items.push(item);
         }
@@ -148,7 +190,12 @@ impl ExpenseReportGenerator {
         };
 
         let approved_by = if matches!(status, ExpenseStatus::Approved | ExpenseStatus::Paid) {
-            Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            }
         } else {
             None
         };
@@ -168,7 +215,12 @@ impl ExpenseReportGenerator {
 
         // Cost center and department
         let cost_center = if self.rng.gen_bool(0.70) {
-            Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            if !self.cost_center_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.cost_center_ids_pool.len());
+                Some(self.cost_center_ids_pool[idx].clone())
+            } else {
+                Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            }
         } else {
             None
         };
@@ -207,7 +259,7 @@ impl ExpenseReportGenerator {
             description,
             status,
             total_amount,
-            currency: "USD".to_string(),
+            currency: currency.to_string(),
             line_items,
             approved_by,
             approved_date,
@@ -223,16 +275,19 @@ impl ExpenseReportGenerator {
         &mut self,
         period_start: NaiveDate,
         period_end: NaiveDate,
+        currency: &str,
     ) -> ExpenseLineItem {
         let item_id = self.item_uuid_factory.next().to_string();
 
         // Pick a category and generate an appropriate amount range
         let (category, amount_min, amount_max, desc, merchant) = self.pick_category();
 
-        let raw_amount = self.rng.gen_range(amount_min..=amount_max);
-        let amount = Decimal::from_f64_retain(raw_amount)
-            .unwrap_or(Decimal::ONE)
-            .round_dp(2);
+        let amount = sample_decimal_range(
+            &mut self.rng,
+            Decimal::from_f64_retain(amount_min).unwrap_or(Decimal::ONE),
+            Decimal::from_f64_retain(amount_max).unwrap_or(Decimal::ONE),
+        )
+        .round_dp(2);
 
         // Date within the period
         let days_in_period = (period_end - period_start).num_days().max(1);
@@ -247,7 +302,7 @@ impl ExpenseReportGenerator {
             category,
             date,
             amount,
-            currency: "USD".to_string(),
+            currency: currency.to_string(),
             description: desc,
             receipt_attached,
             merchant,

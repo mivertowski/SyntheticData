@@ -204,6 +204,8 @@ pub struct AccountNode {
     pub normal_balance: String,
     /// Company code.
     pub company_code: String,
+    /// Country code (ISO 3166-1 alpha-2) of the owning company.
+    pub country: Option<String>,
 }
 
 impl AccountNode {
@@ -231,6 +233,7 @@ impl AccountNode {
             is_balance_sheet: false,
             normal_balance: "Debit".to_string(),
             company_code,
+            country: None,
         }
     }
 
@@ -271,6 +274,11 @@ impl AccountNode {
         self.node
             .categorical_features
             .insert("company_code".to_string(), self.company_code.clone());
+        if let Some(ref country) = self.country {
+            self.node
+                .categorical_features
+                .insert("country".to_string(), country.clone());
+        }
     }
 }
 

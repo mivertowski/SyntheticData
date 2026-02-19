@@ -1,14 +1,13 @@
 //! ESG disclosure and materiality generator — maps calculated metrics
 //! to framework-specific standard IDs (GRI, ESRS, SASB, TCFD, ISSB)
 //! and performs double-materiality assessments.
-
 use chrono::NaiveDate;
 use datasynth_config::schema::{ClimateScenarioConfig, EsgReportingConfig};
 use datasynth_core::models::{
     AssuranceLevel, ClimateScenario, EsgDisclosure, EsgFramework, MaterialityAssessment,
     ScenarioType, TimeHorizon,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -22,24 +21,71 @@ struct DisclosureTopic {
 }
 
 const DISCLOSURE_TOPICS: &[DisclosureTopic] = &[
-    DisclosureTopic { topic: "GHG Emissions - Scope 1", gri_id: "GRI 305-1", esrs_id: "ESRS E1-6" },
-    DisclosureTopic { topic: "GHG Emissions - Scope 2", gri_id: "GRI 305-2", esrs_id: "ESRS E1-6" },
-    DisclosureTopic { topic: "GHG Emissions - Scope 3", gri_id: "GRI 305-3", esrs_id: "ESRS E1-6" },
-    DisclosureTopic { topic: "Energy Consumption", gri_id: "GRI 302-1", esrs_id: "ESRS E1-5" },
-    DisclosureTopic { topic: "Water Withdrawal", gri_id: "GRI 303-3", esrs_id: "ESRS E3-4" },
-    DisclosureTopic { topic: "Waste Generation", gri_id: "GRI 306-3", esrs_id: "ESRS E5-5" },
-    DisclosureTopic { topic: "Workforce Diversity", gri_id: "GRI 405-1", esrs_id: "ESRS S1-12" },
-    DisclosureTopic { topic: "Pay Equity", gri_id: "GRI 405-2", esrs_id: "ESRS S1-16" },
-    DisclosureTopic { topic: "Occupational Safety", gri_id: "GRI 403-9", esrs_id: "ESRS S1-14" },
-    DisclosureTopic { topic: "Board Composition", gri_id: "GRI 405-1", esrs_id: "ESRS G1-1" },
-    DisclosureTopic { topic: "Anti-Corruption", gri_id: "GRI 205-3", esrs_id: "ESRS G1-4" },
-    DisclosureTopic { topic: "Supply Chain Assessment", gri_id: "GRI 308-1", esrs_id: "ESRS S2-1" },
+    DisclosureTopic {
+        topic: "GHG Emissions - Scope 1",
+        gri_id: "GRI 305-1",
+        esrs_id: "ESRS E1-6",
+    },
+    DisclosureTopic {
+        topic: "GHG Emissions - Scope 2",
+        gri_id: "GRI 305-2",
+        esrs_id: "ESRS E1-6",
+    },
+    DisclosureTopic {
+        topic: "GHG Emissions - Scope 3",
+        gri_id: "GRI 305-3",
+        esrs_id: "ESRS E1-6",
+    },
+    DisclosureTopic {
+        topic: "Energy Consumption",
+        gri_id: "GRI 302-1",
+        esrs_id: "ESRS E1-5",
+    },
+    DisclosureTopic {
+        topic: "Water Withdrawal",
+        gri_id: "GRI 303-3",
+        esrs_id: "ESRS E3-4",
+    },
+    DisclosureTopic {
+        topic: "Waste Generation",
+        gri_id: "GRI 306-3",
+        esrs_id: "ESRS E5-5",
+    },
+    DisclosureTopic {
+        topic: "Workforce Diversity",
+        gri_id: "GRI 405-1",
+        esrs_id: "ESRS S1-12",
+    },
+    DisclosureTopic {
+        topic: "Pay Equity",
+        gri_id: "GRI 405-2",
+        esrs_id: "ESRS S1-16",
+    },
+    DisclosureTopic {
+        topic: "Occupational Safety",
+        gri_id: "GRI 403-9",
+        esrs_id: "ESRS S1-14",
+    },
+    DisclosureTopic {
+        topic: "Board Composition",
+        gri_id: "GRI 405-1",
+        esrs_id: "ESRS G1-1",
+    },
+    DisclosureTopic {
+        topic: "Anti-Corruption",
+        gri_id: "GRI 205-3",
+        esrs_id: "ESRS G1-4",
+    },
+    DisclosureTopic {
+        topic: "Supply Chain Assessment",
+        gri_id: "GRI 308-1",
+        esrs_id: "ESRS S2-1",
+    },
 ];
 
 /// Generates [`EsgDisclosure`] and [`MaterialityAssessment`] records.
 pub struct DisclosureGenerator {
     rng: ChaCha8Rng,
-    uuid_factory: DeterministicUuidFactory,
     config: EsgReportingConfig,
     climate_config: ClimateScenarioConfig,
     counter: u64,
@@ -47,10 +93,13 @@ pub struct DisclosureGenerator {
 
 impl DisclosureGenerator {
     /// Create a new disclosure generator.
-    pub fn new(seed: u64, config: EsgReportingConfig, climate_config: ClimateScenarioConfig) -> Self {
+    pub fn new(
+        seed: u64,
+        config: EsgReportingConfig,
+        climate_config: ClimateScenarioConfig,
+    ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             climate_config,
             counter: 0,
@@ -169,19 +218,32 @@ impl DisclosureGenerator {
     // ----- Climate Scenarios -----
 
     /// Generate climate scenario analysis records.
-    pub fn generate_climate_scenarios(
-        &mut self,
-        entity_id: &str,
-    ) -> Vec<ClimateScenario> {
+    pub fn generate_climate_scenarios(&mut self, entity_id: &str) -> Vec<ClimateScenario> {
         if !self.climate_config.enabled {
             return Vec::new();
         }
 
         let scenarios = [
-            (ScenarioType::WellBelow2C, "Paris-aligned net zero by 2050", dec!(1.5)),
-            (ScenarioType::Orderly, "Orderly transition with moderate carbon pricing", dec!(2.0)),
-            (ScenarioType::Disorderly, "Delayed policy action with abrupt transition", dec!(2.5)),
-            (ScenarioType::HotHouse, "Business as usual with severe physical risks", dec!(4.0)),
+            (
+                ScenarioType::WellBelow2C,
+                "Paris-aligned net zero by 2050",
+                dec!(1.5),
+            ),
+            (
+                ScenarioType::Orderly,
+                "Orderly transition with moderate carbon pricing",
+                dec!(2.0),
+            ),
+            (
+                ScenarioType::Disorderly,
+                "Delayed policy action with abrupt transition",
+                dec!(2.5),
+            ),
+            (
+                ScenarioType::HotHouse,
+                "Business as usual with severe physical risks",
+                dec!(4.0),
+            ),
         ];
 
         let horizons = [
@@ -294,7 +356,10 @@ impl DisclosureGenerator {
             }
             "Board Composition" => {
                 let val: f64 = self.rng.gen_range(0.50..0.80);
-                (format!("{:.1}%", val * 100.0), "percent independent".to_string())
+                (
+                    format!("{:.1}%", val * 100.0),
+                    "percent independent".to_string(),
+                )
             }
             "Anti-Corruption" => {
                 let val: u32 = self.rng.gen_range(0..3);
@@ -344,12 +409,8 @@ mod tests {
         let mut gen = DisclosureGenerator::new(42, config, climate);
 
         let materiality = gen.generate_materiality("C001", d("2025-01-01"));
-        let disclosures = gen.generate_disclosures(
-            "C001",
-            &materiality,
-            d("2025-01-01"),
-            d("2025-12-31"),
-        );
+        let disclosures =
+            gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
 
         let material_topics: Vec<_> = materiality
             .iter()
@@ -377,12 +438,8 @@ mod tests {
         let mut gen = DisclosureGenerator::new(42, config, climate);
 
         let materiality = gen.generate_materiality("C001", d("2025-01-01"));
-        let disclosures = gen.generate_disclosures(
-            "C001",
-            &materiality,
-            d("2025-01-01"),
-            d("2025-12-31"),
-        );
+        let disclosures =
+            gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
 
         for d in &disclosures {
             // Should contain a framework-specific ID like "GRI 305-1" or "ESRS E1-6"
@@ -442,12 +499,8 @@ mod tests {
         let mut gen = DisclosureGenerator::new(42, config, climate);
 
         let materiality = gen.generate_materiality("C001", d("2025-01-01"));
-        let disclosures = gen.generate_disclosures(
-            "C001",
-            &materiality,
-            d("2025-01-01"),
-            d("2025-12-31"),
-        );
+        let disclosures =
+            gen.generate_disclosures("C001", &materiality, d("2025-01-01"), d("2025-12-31"));
 
         // Check is_assured matches assurance_level
         for d in &disclosures {
