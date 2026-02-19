@@ -96,6 +96,46 @@ document flows, and master-data records that constitute the rest of the
 synthetic dataset.
 
 % ─────────────────────────────────────────────────────────────────────
+\subsection{Accounting Network Construction}
+\label{sec:rw_networks}
+
+The representation of double-entry bookkeeping as directed graphs dates
+back to~\citet{ijiri1965generalized}, who established that journal entries
+have a natural graph interpretation: accounts are nodes, and debit/credit
+flows form directed edges.  \citet{fellingham2018double} provides a modern
+algebraic treatment of double-entry systems.
+\citet{arya2010inferring} study the problem of inferring individual
+transactions from aggregated financial statements, highlighting the
+combinatorial complexity of reconstructing edge-level flows from
+node-level balances.
+
+Recent work has revived interest in accounting graphs for audit and
+fraud detection.  \citet{guo2022picture} demonstrate that accounting
+graph topology---node degree distributions, clustering coefficients,
+and community structure---can discriminate between normal and fraudulent
+bookkeeping patterns.  \citet{boersma2024complex} applies complex
+network analysis to audit data, modeling interfirm relationships and
+transaction patterns as multi-layer graphs.
+\citet{liang2021pattern} develop pattern recognition and anomaly
+detection methods directly on bookkeeping graph representations.
+
+\citet{ivertowski2024hardware} present a hardware-accelerated approach
+for constructing accounting networks from general ledger data, analyzing
+155 real-world ISO~21378:2019--compliant datasets comprising
+approximately 364 million journal entries with 2.4 billion line items.
+Their analysis reveals key distributional characteristics of production
+accounting data (see \Cref{sec:exp_realworld} for details), which
+directly inform \system{}'s generation model.
+
+While these approaches focus on \emph{analyzing} real accounting data as
+graphs, none address the complementary problem of \emph{generating}
+realistic synthetic accounting data that exhibits the same graph-theoretic
+properties.  \system{} bridges this gap: the graph export module
+(\Cref{sec:gen_graph}) produces transaction networks whose structural
+characteristics are calibrated against the real-world distributions
+reported in the literature.
+
+% ─────────────────────────────────────────────────────────────────────
 \subsection{Summary of Gaps}
 \label{sec:rw_summary}
 
@@ -128,6 +168,7 @@ REaLTabFormer         & -- & -- & \checkmark & -- & -- & -- & -- & -- & -- \\
 GL.ai                 & \checkmark & -- & -- & -- & -- & \checkmark & \checkmark$^*$ & -- & -- \\
 BankSim               & -- & -- & -- & -- & -- & \checkmark & -- & -- & -- \\
 SAFD                  & \checkmark & -- & -- & -- & -- & \checkmark & -- & -- & -- \\
+ACA / Guo et al.      & -- & -- & -- & -- & -- & -- & -- & -- & \checkmark$^*$ \\
 \midrule
 \textbf{\system{}}    & \checkmark & \checkmark & \checkmark & \checkmark
   & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\

@@ -83,7 +83,18 @@ We identify several directions for future research:
 
   \item \textbf{Expanded graph analytics.}  Incorporating temporal graph
     networks (TGN) and dynamic graph export to support research on
-    time-evolving fraud patterns.
+    time-evolving fraud patterns.  The temporal accounting network
+    formalism of~\citet{ivertowski2024temporal}, where
+    $G(t_0,t_1) = A(t_0,t_1) \times E(t_0,t_1)$ defines the graph as a
+    function of time, could be integrated to enable cross-correlation and
+    auto-correlation analysis on synthesized accounting networks.
+
+  \item \textbf{Hardware-accelerated graph construction.}  Coupling
+    \system{}'s output with GPU-accelerated accounting network
+    generation~\citep{ivertowski2024hardware} would enable close-to-realtime
+    construction of transaction graphs from synthesized journal entries,
+    supporting interactive audit analytics and streaming fraud detection
+    scenarios.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────

@@ -1,0 +1,222 @@
+\begin{thebibliography}{34}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Arya et~al.(2010)Arya, Fellingham, Glover, Schroeder, and
+  Strang]{arya2010inferring}
+Anil Arya, John~C. Fellingham, Jonathan~C. Glover, Douglas~A. Schroeder, and
+  Gilbert Strang.
+\newblock Inferring transactions from financial statements.
+\newblock \emph{Contemporary Accounting Research}, 17:\penalty0 366--385, 2010.
+\newblock \doi{10.1506/L0LW-NX5L-4WUR-9JKL}.
+
+\bibitem[Benford(1938)]{benford1938law}
+Frank Benford.
+\newblock The law of anomalous numbers.
+\newblock \emph{Proceedings of the American Philosophical Society}, 78\penalty0
+  (4):\penalty0 551--572, 1938.
+
+\bibitem[Bernstein(2008)]{bernstein2008chacha}
+Daniel~J. Bernstein.
+\newblock {ChaCha}, a variant of {Salsa20}.
+\newblock In \emph{Workshop Record of SASC}, volume~8, pages 3--5, 2008.
+
+\bibitem[Berti et~al.(2019)Berti, van Zelst, and van~der
+  Aalst]{berti2019process}
+Alessandro Berti, Sebastiaan~J. van Zelst, and Wil~M.P. van~der Aalst.
+\newblock {PM4Py}: A process mining library for {Python}.
+\newblock In \emph{BPM Demonstration Track}, 2019.
+
+\bibitem[Boersma(2024)]{boersma2024complex}
+Matthijs Boersma.
+\newblock \emph{Complex Networks in Audit: A Data-Driven Modelling Approach}.
+\newblock PhD thesis, Universiteit van Amsterdam, 2024.
+
+\bibitem[Dbouk and Jamali(2023)]{dbouk2023anomaly}
+Wassim Dbouk and Ibrahim Jamali.
+\newblock Anomaly detection in financial time series by principal component
+  analysis and neural network classifiers.
+\newblock \emph{AIMS Mathematics}, 8\penalty0 (6):\penalty0 13016--13040, 2023.
+
+\bibitem[Dwork et~al.(2006)Dwork, McSherry, Nissim, and
+  Smith]{dwork2006calibrating}
+Cynthia Dwork, Frank McSherry, Kobbi Nissim, and Adam Smith.
+\newblock Calibrating noise to sensitivity in private data analysis.
+\newblock In \emph{Theory of Cryptography Conference (TCC)}, pages 265--284.
+  Springer, 2006.
+
+\bibitem[{European Parliament and Council of the European
+  Union}(2016)]{gdpr2016}
+{European Parliament and Council of the European Union}.
+\newblock General data protection regulation ({GDPR}).
+\newblock Regulation (EU) 2016/679, 2016.
+
+\bibitem[Fellingham(2018)]{fellingham2018double}
+John Fellingham.
+\newblock The double entry system of accounting.
+\newblock \emph{Accounting, Economics, and Law: A Convivium}, 8\penalty0
+  (1):\penalty0 20180001, 2018.
+\newblock \doi{10.1515/AEL-2018-0001}.
+
+\bibitem[Ghahfarokhi et~al.(2021)Ghahfarokhi, Park, Berti, and van~der
+  Aalst]{ghahfarokhi2021ocel}
+Anahita~Farhang Ghahfarokhi, Gyunam Park, Alessandro Berti, and Wil~M.P.
+  van~der Aalst.
+\newblock {OCEL}: A standard for object-centric event logs.
+\newblock \emph{European Conference on Advances in Databases and Information
+  Systems (ADBIS)}, pages 169--175, 2021.
+
+\bibitem[Guo et~al.(2022)Guo, Yu, and Wilkin]{guo2022picture}
+Ken~H. Guo, Xiaoting Yu, and Carla Wilkin.
+\newblock A picture is worth a thousand journal entries: Accounting graph
+  topology for auditing and fraud detection.
+\newblock \emph{Journal of Information Systems}, 36\penalty0 (2):\penalty0
+  53--81, 2022.
+\newblock \doi{10.2308/ISYS-2021-003}.
+
+\bibitem[Hilal et~al.(2022)Hilal, Gadsden, and Yawney]{hilal2022financial}
+Waleed Hilal, S.~Andrew Gadsden, and John Yawney.
+\newblock Financial fraud: A review of anomaly detection techniques and recent
+  advances.
+\newblock \emph{Expert Systems with Applications}, 193:\penalty0 116429, 2022.
+
+\bibitem[{IEEE Computational Intelligence Society}(2019)]{ieee_cis2019}
+{IEEE Computational Intelligence Society}.
+\newblock {IEEE-CIS} fraud detection dataset.
+\newblock Kaggle Competition, 2019.
+
+\bibitem[Ijiri(1965)]{ijiri1965generalized}
+Yuji Ijiri.
+\newblock On the generalized inverse of an incidence matrix.
+\newblock \emph{Journal of the Society for Industrial and Applied Mathematics},
+  13:\penalty0 827--836, 1965.
+\newblock \doi{10.1137/0113053}.
+
+\bibitem[{International Organization for Standardization}(2019)]{iso21378}
+{International Organization for Standardization}.
+\newblock {ISO} 21378:2019 --- audit data collection.
+\newblock International Standard, 2019.
+
+\bibitem[Ivertowski(2024)]{ivertowski2024temporal}
+Michael Ivertowski.
+\newblock Empowering financial analysis: A dynamic system for merging temporal
+  accounting and {OCPM} networks.
+\newblock Unpublished, 2024.
+
+\bibitem[Ivertowski et~al.(2024)Ivertowski, Barnard, and
+  Braun]{ivertowski2024hardware}
+Michael Ivertowski, Mouritz Barnard, and Ina Braun.
+\newblock Hardware accelerated method for accounting network generation.
+\newblock In \emph{Preprint}, 2024.
+\newblock Ernst \& Young Ltd., Zurich.
+
+\bibitem[Jordon et~al.(2019)Jordon, Yoon, and van~der Schaar]{jordon2019pate}
+James Jordon, Jinsung Yoon, and Mihaela van~der Schaar.
+\newblock {PATE-GAN}: Generating synthetic data with differential privacy
+  guarantees.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2019.
+
+\bibitem[Kotelnikov et~al.(2023)Kotelnikov, Baranchuk, Rubachev, and
+  Babenko]{kotelnikov2023tabddpm}
+Akim Kotelnikov, Dmitry Baranchuk, Ivan Rubachev, and Artem Babenko.
+\newblock {TabDDPM}: Modelling tabular data with diffusion models.
+\newblock \emph{Proceedings of the 40th International Conference on Machine
+  Learning (ICML)}, 2023.
+
+\bibitem[Liang et~al.(2021)Liang, Wang, Akoglu, and
+  Faloutsos]{liang2021pattern}
+Pierre~Jinghong Liang, Andi Wang, Leman Akoglu, and Christos Faloutsos.
+\newblock Pattern recognition and anomaly detection in bookkeeping data.
+\newblock Carnegie Mellon University, 2021.
+
+\bibitem[Lopez-Rojas et~al.(2018)Lopez-Rojas, Elmir, and
+  Axelsson]{lopez2018banksim}
+Edgar~Alonso Lopez-Rojas, Ahmad Elmir, and Stefan Axelsson.
+\newblock {BankSim}: A bank payments simulator for fraud detection research.
+\newblock In \emph{26th European Modeling and Simulation Symposium (EMSS)},
+  2018.
+
+\bibitem[Nelsen(2006)]{nelsen2006introduction}
+Roger~B. Nelsen.
+\newblock \emph{An Introduction to Copulas}.
+\newblock Springer, 2nd edition, 2006.
+
+\bibitem[Nigrini(2012)]{nigrini2012benfords}
+Mark~J. Nigrini.
+\newblock \emph{Benford's Law: Applications for Forensic Accounting, Auditing,
+  and Fraud Detection}.
+\newblock John Wiley \& Sons, 2012.
+
+\bibitem[Patki et~al.(2016)Patki, Wedge, and
+  Veeramachaneni]{patki2016synthetic}
+Neha Patki, Roy Wedge, and Kalyan Veeramachaneni.
+\newblock The synthetic data vault.
+\newblock In \emph{IEEE International Conference on Data Science and Advanced
+  Analytics (DSAA)}, pages 399--410, 2016.
+
+\bibitem[Pourhabibi et~al.(2020)Pourhabibi, Ong, Kam, and
+  Boo]{pourhabibi2020fraud}
+Tahereh Pourhabibi, Kok-Leong Ong, Booi~H. Kam, and Yee~Ling Boo.
+\newblock Fraud detection: A systematic literature review of graph-based
+  anomaly detection approaches.
+\newblock \emph{Decision Support Systems}, 133:\penalty0 113303, 2020.
+
+\bibitem[Schreyer et~al.(2017)Schreyer, Sattarov, Borth, Dengel, and
+  Reimer]{schreyer2017detection}
+Marco Schreyer, Timur Sattarov, Damian Borth, Andreas Dengel, and Bernd Reimer.
+\newblock Detection of anomalies in large scale accounting data using deep
+  autoencoder networks.
+\newblock In \emph{arXiv preprint arXiv:1709.05254}, 2017.
+
+\bibitem[Schreyer et~al.(2022)Schreyer, Sattarov, Reimer, and
+  Borth]{schreyer2022federated}
+Marco Schreyer, Timur Sattarov, Bernd Reimer, and Damian Borth.
+\newblock Federated and privacy-preserving learning of accounting data in
+  financial statement audits.
+\newblock \emph{arXiv preprint arXiv:2208.12708}, 2022.
+
+\bibitem[Sharma and Kumar(2023)]{sharma2023synthetic}
+Rohit Sharma and Ajay Kumar.
+\newblock Synthetic accounting fraud datasets: A survey and benchmark.
+\newblock \emph{Journal of Forensic Accounting Research}, 2023.
+
+\bibitem[Solatorio and Dupriez(2023)]{solatorio2023realtabformer}
+Aivin~V. Solatorio and Olivier Dupriez.
+\newblock {REaLTabFormer}: Generating realistic relational and tabular data
+  using transformers.
+\newblock \emph{arXiv preprint arXiv:2302.02041}, 2023.
+
+\bibitem[{United States Congress}(2002)]{sox2002}
+{United States Congress}.
+\newblock Sarbanes-oxley act of 2002.
+\newblock Public Law 107-204, 2002.
+
+\bibitem[Vasarhelyi et~al.(2004)Vasarhelyi, Alles, and
+  Kogan]{vasarhelyi2004principles}
+Miklos~A. Vasarhelyi, Michael~G. Alles, and Alexander Kogan.
+\newblock Principles of analytic monitoring for continuous assurance.
+\newblock \emph{Journal of Emerging Technologies in Accounting}, 1\penalty0
+  (1):\penalty0 1--21, 2004.
+
+\bibitem[West and Bhattacharya(2016)]{west2016intelligent}
+Jarrod West and Maumita Bhattacharya.
+\newblock Intelligent financial fraud detection: A comprehensive review.
+\newblock \emph{Computers \& Security}, 57:\penalty0 47--66, 2016.
+
+\bibitem[Xie et~al.(2018)Xie, Lin, Wang, Wang, and Zhou]{xie2018differentially}
+Liyang Xie, Kaixiang Lin, Shu Wang, Fei Wang, and Jiayu Zhou.
+\newblock Differentially private generative adversarial network.
+\newblock In \emph{arXiv preprint arXiv:1802.06739}, 2018.
+
+\bibitem[Xu et~al.(2019)Xu, Skoularidou, Cuesta-Infante, and
+  Veeramachaneni]{xu2019modeling}
+Lei Xu, Maria Skoularidou, Alfredo Cuesta-Infante, and Kalyan Veeramachaneni.
+\newblock Modeling tabular data using conditional {GAN}.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~32, 2019.
+
+\end{thebibliography}

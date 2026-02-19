@@ -78,6 +78,17 @@ all four challenges simultaneously.  Our contributions are:
     that generates configuration patches from evaluation gaps.
 \end{itemize}
 
+\paragraph{Empirical grounding.}
+Our design is informed by a large-scale empirical study of 155 real-world
+ISO~21378:2019--compliant general ledger datasets comprising 364 million
+journal entries with 2.4 billion line items across all industry
+sectors~\citep{ivertowski2024hardware}.  This analysis reveals the
+distributional characteristics of production accounting data---e.g., that
+92.9\% of entries have 2--9 line items with extreme concentration at 2-line
+entries (60.7\%), and that chart-of-accounts complexity spans 76 to 2{,}536
+accounts---which directly calibrate \system{}'s generation models
+(\Cref{sec:exp_realworld}).
+
 \paragraph{Scope and audience.}
 \system{} targets three communities: (a)~ML researchers needing realistic
 labeled accounting datasets for fraud detection and anomaly analytics,

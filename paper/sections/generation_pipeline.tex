@@ -187,6 +187,21 @@ revenue/expense, and unrealized profit in inventory.
 \subsection{Graph Export}
 \label{sec:gen_graph}
 
+Double-entry bookkeeping has a natural directed-graph
+representation~\citep{ijiri1965generalized}: each distinct GL account
+forms a node, credit entries produce outgoing edges, and debit entries
+produce incoming edges.  Following~\citet{ivertowski2024hardware}, we
+adopt a temporal formulation:
+\begin{equation}
+G(t_0, t_1) = A(t_0, t_1) \times E(t_0, t_1)
+\label{eq:temporal_graph}
+\end{equation}
+where $A(t_0,t_1)$ is the set of account nodes with monetary state over
+$[t_0, t_1]$, and each edge $E_i(t_0,t_1) = \sum_{n=1}^{|\Omega_{A_i}|}
+\omega_n$ aggregates all transactions $\omega_n$ affecting node $A_i$ in
+that period.  This temporal definition enables system-theoretic analyses
+such as cross-correlation and auto-correlation on account flows.
+
 \system{} constructs heterogeneous graphs from the generated data and
 exports them in formats suitable for graph neural network (GNN) research:
 

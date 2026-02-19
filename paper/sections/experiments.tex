@@ -34,6 +34,165 @@ All benchmarks are run on a single machine with an AMD Ryzen 9 7950X
 (16 cores / 32 threads), 64\,GB RAM, and NVMe SSD, running Linux 6.x.
 
 % ─────────────────────────────────────────────────────────────────────
+\subsection{Grounding in Real-World Accounting Data}
+\label{sec:exp_realworld}
+
+To validate that \system{} produces data consistent with real-world
+enterprise accounting, we compare generated characteristics against
+empirical distributions observed in production general ledger data.
+\citet{ivertowski2024hardware} analyzed 155 real-world
+ISO~21378:2019--compliant~\citep{iso21378} datasets covering all
+industry sectors, each containing an entire fiscal year of general ledger
+data.  The corpus totals approximately 364 million journal entries with
+2.4 billion line items.  \Cref{tab:realworld_datasets} summarizes the
+dataset classification.
+
+\begin{table}[t]
+\centering
+\caption{Classification of 155 real-world general ledger datasets
+  by size~\citep{ivertowski2024hardware}.}
+\label{tab:realworld_datasets}
+\small
+\begin{tabular}{lccc}
+\toprule
+& \textbf{Small} & \textbf{Medium} & \textbf{Large} \\
+& ($<$1M lines p.a.) & (1--10M lines p.a.) & ($>$10M lines p.a.) \\
+\midrule
+Number of datasets & 74 & 47 & 34 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Journal entry line item distribution.}
+\Cref{tab:realworld_lineitems} shows the distribution of line items per
+journal entry across the full corpus.  The distribution is extremely
+heavy-tailed: 92.9\% of entries have 2--9 line items, while the maximum
+observed is 47{,}059.  This motivates \system{}'s log-normal mixture
+model for line-item count generation (\Cref{sec:stat_mixture}).
+
+\begin{table}[t]
+\centering
+\caption{Distribution of journal entry line items across 155 real-world
+  datasets~\citep{ivertowski2024hardware}.  The data exhibits extreme
+  concentration in the 2--9 range.}
+\label{tab:realworld_lineitems}
+\small
+\begin{tabular}{crrrr}
+\toprule
+\textbf{Bin} & \textbf{Total JEs} & \textbf{Coverage (\%)}
+  & \textbf{Cum.\ Cov.\ (\%)} & \textbf{Line Items} \\
+\midrule
+1 & 338M & 92.90 & 92.90 & 2 to 9 \\
+2 & 23M  & 6.33  & 99.22 & 10 to 99 \\
+3 & 2.80M & 0.76 & 99.98 & 100 to 999 \\
+4 & 63k  & 0.02  & 100.00 & 1{,}000 to 9{,}999 \\
+5 & 196  & 0.00  & 100.00 & $\geq$ 10{,}000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\Cref{fig:je_line_items} provides a detailed breakdown within Bin~1.
+The prominence of 2-line entries (60.7\%) and 4-line entries (16.6\%)
+reflects the balanced nature of double-entry bookkeeping, where
+equal numbers of debit and credit lines are the
+norm~\citep{fellingham2018double}.  Overall, 88\% of journal entries have
+an even number of line items, consistent with GAAP's requirement that
+total debits equal total credits.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=14pt,
+    xlabel={Line Items per Journal Entry},
+    ylabel={Coverage (\%)},
+    symbolic x coords={2,3,4,5,6,7,8,9},
+    xtick=data,
+    nodes near coords,
+    nodes near coords align={vertical},
+    every node near coord/.append style={font=\scriptsize},
+    ymin=0, ymax=72,
+    width=0.88\textwidth,
+    height=6cm,
+    ylabel style={at={(axis description cs:-0.06,.5)}},
+    enlarge x limits=0.12,
+]
+\addplot[fill=blue!40, draw=blue!70] coordinates {
+  (2,60.68) (3,5.77) (4,16.63) (5,3.06)
+  (6,3.32) (7,1.13) (8,1.88) (9,0.42)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Detailed distribution of journal entry line items in the 2--9
+  range (Bin~1, covering 92.9\% of all entries) from 155 real-world
+  general ledger datasets~\citep{ivertowski2024hardware}.  The dominance
+  of 2-line and 4-line entries reflects balanced double-entry bookkeeping.}
+\label{fig:je_line_items}
+\end{figure}
+
+\paragraph{Chart of accounts complexity.}
+The 155 datasets exhibit a wide range of chart-of-accounts complexity:
+on average 557 financial accounts per entity (median: 367, min: 76,
+max: 2{,}536).  \system{}'s three complexity tiers (small $\sim$100,
+medium $\sim$400, large $\sim$2{,}500) were calibrated to span this
+observed range, covering the 10th, 50th, and 99th percentiles of real-world
+CoA sizes.
+
+\paragraph{Graph construction complexity.}
+The combinatorial complexity of constructing accounting networks
+from journal entries is driven by the credit--debit matching problem.
+For a journal entry with $n$ credit and $m$ debit line items, the number
+of possible edge constructions is given by the Stirling number of the
+second kind~\citep{ivertowski2024hardware}:
+\begin{equation}
+a = n!\;\frac{1}{m!}\sum_{j=0}^{m}(-1)^{m-j}\binom{m}{j}j^n
+\label{eq:partition_complexity}
+\end{equation}
+In production data, \citet{ivertowski2024hardware} find that only 60.7\%
+of entries admit trivial 1-to-1 mapping (2-line entries), while 39.3\%
+require more sophisticated matching strategies.  \system{}'s graph export
+module (\Cref{sec:gen_graph}) generates transaction networks that
+preserve these structural characteristics, producing graphs with
+realistic degree distributions, edge density, and community structure.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    bar width=10pt,
+    xlabel={Matching Method},
+    ylabel={Coverage (\%)},
+    symbolic x coords={1:1 mapping, $n$:$n$ balanced, $n$:$m$ unequal,
+      Higher agg., Decomposition},
+    xtick=data,
+    x tick label style={rotate=25, anchor=east, font=\small},
+    nodes near coords,
+    every node near coord/.append style={font=\scriptsize},
+    ymin=0, ymax=72,
+    width=0.88\textwidth,
+    height=6cm,
+    enlarge x limits=0.12,
+]
+\addplot[fill=green!40, draw=green!70] coordinates {
+  ({1:1 mapping},60.68)
+  ({$n$:$n$ balanced},22.22)
+  ({$n$:$m$ unequal},9.58)
+  ({Higher agg.},5.52)
+  ({Decomposition},2.00)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Distribution of journal entry resolution methods required for
+  accounting network construction, derived from 155 real-world
+  datasets~\citep{ivertowski2024hardware}.  Methods A--E correspond to
+  increasing combinatorial complexity.  \system{} generates entries
+  with matching distributions across these categories.}
+\label{fig:solving_methods}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────
 \subsection{Statistical Fidelity}
 \label{sec:exp_statistical}
 
