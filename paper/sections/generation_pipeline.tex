@@ -1,0 +1,217 @@
+% sections/generation_pipeline.tex — Generation Pipeline
+\section{Generation Pipeline}
+\label{sec:generation_pipeline}
+
+\system{}'s generation pipeline transforms a declarative YAML configuration
+into a complete, internally consistent enterprise dataset.  This section
+details the pipeline stages and the business-process generators that produce
+coherent multi-table output.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Orchestration Workflow}
+\label{sec:gen_orchestration}
+
+The \texttt{GenerationOrchestrator} executes the following stages in order:
+
+\begin{enumerate}
+  \item \textbf{Configuration loading and validation.}  Parse YAML, apply
+    industry preset defaults, validate invariants (balanced weights,
+    ascending thresholds, valid date ranges).
+
+  \item \textbf{Chart of Accounts (CoA) initialization.}  Generate a GL
+    account structure at the configured complexity level (small: $\sim$100,
+    medium: $\sim$400, large: $\sim$2{,}500 accounts) with proper account
+    hierarchies, types (Asset, Liability, Equity, Revenue, Expense), and
+    control accounts (AR~$=$ 1100, AP~$=$ 2000).
+
+  \item \textbf{Master data generation.}  Produce vendors, customers,
+    materials, fixed assets, employees, and cost centers with
+    cross-referenced relationships (e.g., vendor bank details, customer
+    credit limits, material-vendor linkages).
+
+  \item \textbf{Opening balance generation.}  Establish period-start balances
+    satisfying the accounting equation $A = L + E$.  The balance tracker
+    maintains running account-level balances throughout subsequent stages.
+
+  \item \textbf{Document-flow generation.}  Execute P2P, O2C, S2C, HR,
+    and manufacturing process generators that produce linked document chains
+    and corresponding journal entries.
+
+  \item \textbf{Period-close processing.}  Run accruals, depreciation,
+    FX translation, intercompany elimination, and year-end closing entries.
+    Generate trial balances and financial statements.
+
+  \item \textbf{Anomaly injection.}  Apply configured fraud, error, process,
+    statistical, and relational anomalies with ground-truth labels.
+
+  \item \textbf{Data quality variation.}  Optionally inject missing values,
+    format variations, typos, and encoding issues.
+
+  \item \textbf{Evaluation.}  Run coherence validators, statistical tests,
+    and ML-readiness checks.  The auto-tuner may propose configuration
+    patches.
+
+  \item \textbf{Output.}  Stream results to configured sinks (CSV, JSON,
+    Parquet) with optional compression.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Journal Entry Generation}
+\label{sec:gen_journal}
+
+Journal entries are the atomic unit of accounting data.  Each entry consists
+of a header (ID, date, posting date, company code, user, description) and
+one or more line items (account, amount, debit/credit indicator, cost center,
+profit center).
+
+\begin{definition}[Balanced Entry]
+A journal entry $j$ with line items $\{l_1, \ldots, l_n\}$ is
+\emph{balanced} iff:
+\begin{equation}
+\sum_{i : l_i.\text{debit}} l_i.\text{amount}
+  = \sum_{i : \neg l_i.\text{debit}} l_i.\text{amount}.
+\label{eq:balanced}
+\end{equation}
+\end{definition}
+
+\system{} enforces \Cref{eq:balanced} at construction time: the
+\texttt{JournalEntry} constructor returns an error if the debit-credit
+difference exceeds a configurable tolerance (default: \$0.01).  This
+invariant is maintained across all generators---no unbalanced entry can
+enter the output pipeline.
+
+Line-item amounts are drawn from the configured mixture distribution
+(\Cref{eq:lognormal_mixture}).  The number of line items per entry follows
+a correlated draw from the copula model (\Cref{sec:stat_copula}), ensuring
+that higher-amount entries tend to have more line items and require higher
+approval levels.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Document Flow Generation}
+\label{sec:gen_docflow}
+
+Enterprise transactions span multiple documents with strict sequencing
+and referential integrity.
+
+\paragraph{Procure-to-Pay (P2P).}
+The P2P generator produces the chain:
+\[
+\text{Purchase Order} \to \text{Goods Receipt} \to \text{Vendor Invoice}
+\to \text{Payment}
+\]
+Each stage creates the corresponding document record, updates the
+document-chain manager with forward/backward references, and posts
+journal entries to the appropriate GL accounts (inventory, GR/IR clearing,
+AP, cash).
+
+\paragraph{Three-Way Matching.}
+The three-way matcher validates consistency across PO, GR, and invoice:
+
+\begin{itemize}
+  \item \textbf{Quantity tolerance:} $|q_{\text{PO}} - q_{\text{GR}}| \leq
+    \epsilon_q \cdot q_{\text{PO}}$ (default $\epsilon_q = 2\%$).
+  \item \textbf{Price tolerance:} $|p_{\text{PO}} - p_{\text{inv}}| \leq
+    \epsilon_p \cdot p_{\text{PO}}$ (default $\epsilon_p = 5\%$).
+  \item \textbf{Over-delivery:} Permitted up to $\delta_{\max} = 10\%$
+    above PO quantity.
+\end{itemize}
+
+Variance types (quantity PO-GR, quantity GR-invoice, price PO-invoice,
+total amount, missing line, extra line) are tracked and available as
+evaluation targets.
+
+\paragraph{Order-to-Cash (O2C).}
+The O2C generator produces:
+\[
+\text{Sales Order} \to \text{Delivery} \to \text{Customer Invoice}
+\to \text{Customer Receipt}
+\]
+with corresponding revenue recognition entries, AR postings, and cash
+receipts.  Partial deliveries and split invoicing are supported.
+
+\paragraph{Source-to-Contract (S2C).}
+A full sourcing lifecycle: sourcing projects, supplier qualifications,
+RFx events, supplier bids, bid evaluations, procurement contracts,
+catalog items, and supplier scorecards.
+
+\paragraph{HR/Payroll.}
+Payroll runs with line items (base pay, overtime, deductions, taxes),
+time entries, and expense reports with configurable approval workflows.
+
+\paragraph{Manufacturing.}
+Production orders, routing operations, quality inspections with
+characteristics, and cycle counts.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Subledger and Period-Close Processing}
+\label{sec:gen_subledger}
+
+\paragraph{Subledger generation.}
+Four subledger generators maintain detailed subsidiary records:
+\begin{itemize}
+  \item \textbf{AR subledger:} Customer invoices, receipts, aging buckets,
+    credit memos, adjustments.
+  \item \textbf{AP subledger:} Vendor invoices, payments, aging, credit
+    notes, prepayments.
+  \item \textbf{FA subledger:} Asset capitalization, depreciation schedules
+    (straight-line, declining balance), disposals, impairment.
+  \item \textbf{Inventory subledger:} Receipts, issues, valuation
+    (FIFO/LIFO/weighted average), write-downs.
+\end{itemize}
+
+Each subledger reconciles to its control account in the GL (e.g., AR
+subledger total $=$ GL account 1100).
+
+\paragraph{Period-close engine.}
+The close engine executes:
+(i)~accrual entries for unbilled revenue/expenses,
+(ii)~depreciation postings from the FA subledger,
+(iii)~FX translation using period-end spot rates with CTA postings,
+(iv)~intercompany matching and elimination,
+(v)~year-end income-to-equity reclassification,
+and (vi)~financial statement generation (balance sheet, income statement,
+cash flow, changes in equity).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Intercompany Processing}
+\label{sec:gen_intercompany}
+
+Multi-entity datasets require intercompany (IC) transaction matching and
+elimination for consolidated reporting.  The IC generator creates bilateral
+transaction pairs between related entities.  The matching engine identifies
+matched pairs within configurable tolerances.  The elimination generator
+produces consolidation entries that net IC receivables/payables, IC
+revenue/expense, and unrealized profit in inventory.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Graph Export}
+\label{sec:gen_graph}
+
+\system{} constructs heterogeneous graphs from the generated data and
+exports them in formats suitable for graph neural network (GNN) research:
+
+\begin{itemize}
+  \item \textbf{Transaction graph:} Nodes are accounts/entities; edges are
+    transactions with amount, date, and process-type features.
+  \item \textbf{Approval network:} Nodes are users; edges are approval
+    relationships with threshold attributes.  Segregation-of-duties
+    conflicts are detectable as structural motifs.
+  \item \textbf{Entity relationship graph:} Nodes are legal entities,
+    vendors, customers; edges represent ownership, control, and supply-chain
+    relationships.
+\end{itemize}
+
+Export formats: PyTorch Geometric (\texttt{.pt} tensors), Neo4j (CSV +
+Cypher scripts), and DGL (heterograph with typed nodes/edges).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Process Mining (OCEL 2.0)}
+\label{sec:gen_ocel}
+
+The OCPM module generates Object-Centric Event Logs conforming to the
+OCEL~2.0 standard~\citep{ghahfarokhi2021ocel}.  Events are linked to
+multiple typed objects (Order, Invoice, Shipment, Payment) via many-to-many
+relationships.  Process variants (standard P2P, P2P with three-way match
+variance, full O2C, O2C with returns) are generated with empirically
+calibrated frequency distributions.  The resulting logs are directly
+importable into process mining tools such as PM4Py and Celonis.

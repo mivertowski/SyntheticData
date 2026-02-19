@@ -1,0 +1,170 @@
+% sections/architecture.tex — System Architecture
+\section{System Architecture}
+\label{sec:architecture}
+
+\system{} is implemented as a Rust workspace comprising 15 crates organized
+into five architectural layers (\Cref{fig:architecture}).  The layered design
+enforces separation of concerns: domain models and statistical primitives live
+in the foundation layer, generators in the process layer, and evaluation,
+privacy, and export capabilities in the analytics layer.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Layered Crate Organization}
+\label{sec:arch_layers}
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.92\textwidth}{%
+\small
+\begin{verbatim}
+Layer 5  UI / Interfaces
+         datasynth-cli | datasynth-server | datasynth-ui
+
+Layer 4  Analytics & Export
+         datasynth-eval | datasynth-graph | datasynth-fingerprint
+
+Layer 3  Domain Generators
+         datasynth-generators | datasynth-banking | datasynth-ocpm
+         datasynth-standards
+
+Layer 2  Orchestration & Output
+         datasynth-runtime | datasynth-output | datasynth-config
+
+Layer 1  Foundation
+         datasynth-core (models, distributions, resource guards)
+         datasynth-test-utils
+\end{verbatim}
+}}
+\caption{Layered crate architecture of \system{}.  Dependency arrows
+  point downward; each layer depends only on layers below it.}
+\label{fig:architecture}
+\end{figure}
+
+\paragraph{Layer 1: Foundation.}
+\texttt{datasynth-core} defines over 120 domain model types (journal entries,
+master data, document flows, subledgers, financial statements, controls,
+relationships), statistical distribution samplers (Benford, copula, mixture,
+Pareto, Weibull, Beta, zero-inflated), and resource-management primitives
+(memory guard, CPU monitor, disk guard, degradation controller).  All models
+use \texttt{rust\_decimal::Decimal} for exact arithmetic, eliminating
+IEEE~754 rounding errors in financial calculations.
+
+\paragraph{Layer 2: Orchestration.}
+\texttt{datasynth-runtime} houses the \texttt{GenerationOrchestrator} that
+coordinates the full generation workflow: configuration loading, company
+initialization, generator sequencing, anomaly injection, evaluation, and
+output.  \texttt{datasynth-config} provides schema validation, industry
+presets, and complexity-level mappings.  \texttt{datasynth-output} implements
+streaming sinks for CSV, JSON, Parquet, and Apache Arrow formats.
+
+\paragraph{Layer 3: Domain Generators.}
+\texttt{datasynth-generators} contains 50+ specialized generators organized
+by business process: P2P document flows, O2C chains, S2C sourcing,
+HR/payroll, manufacturing, period-close, intercompany, and anomaly injection.
+\texttt{datasynth-banking} adds KYC/AML-specific generation with five money
+laundering typologies.  \texttt{datasynth-ocpm} produces OCEL~2.0 compliant
+event logs.  \texttt{datasynth-standards} implements IFRS, US~GAAP, ISA, SOX,
+and PCAOB accounting and audit standard models.
+
+\paragraph{Layer 4: Analytics.}
+\texttt{datasynth-eval} provides the evaluation framework (15 coherence
+validators, statistical tests, ML-readiness metrics, auto-tuner).
+\texttt{datasynth-graph} exports heterogeneous transaction graphs in
+PyTorch Geometric, Neo4j, and DGL formats.
+\texttt{datasynth-fingerprint} implements privacy-preserving extraction and
+synthesis.
+
+\paragraph{Layer 5: Interfaces.}
+A CLI binary (\texttt{datasynth-data}) supports \texttt{generate},
+\texttt{validate}, \texttt{init}, \texttt{info}, and \texttt{fingerprint}
+subcommands.  A REST/gRPC/WebSocket server enables streaming generation with
+API-key authentication and rate limiting.  A Tauri + SvelteKit desktop UI
+provides visual configuration and monitoring.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Deterministic Reproducibility}
+\label{sec:arch_determinism}
+
+All randomness flows from a single \texttt{u64} seed through the ChaCha8
+cryptographic PRNG~\citep{bernstein2008chacha}.  Each generator receives a
+derived seed computed as $\texttt{base\_seed} + \texttt{offset}(g)$ where
+$\texttt{offset}(g)$ is a fixed constant per generator type $g$.  This
+guarantees:
+
+\begin{enumerate}
+  \item \textbf{Bitwise reproducibility:} identical seed $\Rightarrow$
+    identical output across runs and platforms.
+  \item \textbf{Generator independence:} modifying one generator's parameters
+    does not perturb another's output stream.
+  \item \textbf{Parallel safety:} each thread maintains a local RNG instance;
+    no global state is shared.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Collision-Free UUID Generation}
+\label{sec:arch_uuid}
+
+Synthetic records require globally unique identifiers that are deterministic
+yet collision-free across generator types.  \system{} employs an FNV-1a
+hash-based UUID factory with a 16-byte structure:
+
+\begin{equation}
+\underbrace{\texttt{seed}[0{:}5]}_{\text{6 bytes}}
+\;\|\;
+\underbrace{\texttt{gen\_type}}_{\text{1 byte}}
+\;\|\;
+\underbrace{\texttt{0x4} \| \texttt{sub}}_{\text{1 byte}}
+\;\|\;
+\underbrace{\texttt{counter}}_{\text{8 bytes}}
+\label{eq:uuid_structure}
+\end{equation}
+
+The \texttt{gen\_type} discriminator byte (39 values, $\texttt{0x01}$--$\texttt{0x3E}$)
+partitions the UUID space by generator, ensuring that journal-entry IDs can
+never collide with vendor IDs or document-flow IDs regardless of counter
+values.  The counter uses \texttt{AtomicU64} with relaxed ordering for
+thread-safe monotonic increment.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Resource Management and Graceful Degradation}
+\label{sec:arch_resources}
+
+Large-scale generation runs may stress system resources.  \system{} implements
+a unified resource guard that monitors memory (via \texttt{/proc/self/statm}
+on Linux), disk space (via \texttt{statvfs}), and CPU utilization with
+configurable thresholds.  When thresholds are breached, the system
+transitions through four degradation levels:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Level} & \textbf{Memory} & \textbf{Batch Size} & \textbf{Features Disabled} \\
+\midrule
+Normal     & $<70\%$  & $100\%$ & None \\
+Reduced    & $70{-}85\%$ & $50\%$  & Data quality injection \\
+Minimal    & $85{-}95\%$ & $25\%$  & Anomaly injection \\
+Emergency  & $>95\%$  & Flush   & Optional fields \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A 5\% hysteresis band prevents oscillation between levels.  The system
+logs all transitions and resumes full generation automatically when resources
+recover.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Configuration System}
+\label{sec:arch_config}
+
+\system{} uses a hierarchical YAML configuration with 30+ sections covering
+global settings, companies, chart of accounts, transactions, document flows,
+distributions, temporal patterns, anomaly injection, internal controls,
+intercompany, banking, standards, and more.  Industry presets
+(manufacturing, retail, financial services, healthcare, technology) provide
+complete default configurations.  Three complexity levels (small $\sim$100
+accounts, medium $\sim$400, large $\sim$2500) control chart-of-accounts
+granularity and transaction volume.
+
+Configuration validation enforces invariants such as ascending approval
+thresholds, distribution weights summing to 1.0 ($\pm 0.01$),
+period lengths in $[1, 120]$ months, and rates in $[0, 1]$.
