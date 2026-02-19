@@ -4,6 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tracing::debug;
 
+use datasynth_core::accounts::{control_accounts, expense_accounts};
 use datasynth_core::models::subledger::fa::{
     AssetStatus, DepreciationAreaType, DepreciationEntry, DepreciationRun, DepreciationRunStatus,
     FixedAssetRecord,
@@ -26,8 +27,8 @@ pub struct DepreciationRunConfig {
 impl Default for DepreciationRunConfig {
     fn default() -> Self {
         Self {
-            default_expense_account: "6100".to_string(),
-            default_accum_depr_account: "1510".to_string(),
+            default_expense_account: expense_accounts::DEPRECIATION.to_string(),
+            default_accum_depr_account: control_accounts::ACCUMULATED_DEPRECIATION.to_string(),
             post_zero_entries: false,
             minimum_amount: dec!(0.01),
         }

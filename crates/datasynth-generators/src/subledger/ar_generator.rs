@@ -107,7 +107,7 @@ impl ARGenerator {
                 dec!(1),
                 "EA".to_string(),
                 amount,
-                "4000".to_string(),
+                revenue_accounts::PRODUCT_REVENUE.to_string(),
             )
             .with_tax("VAT".to_string(), self.config.tax_rate);
 
@@ -145,7 +145,7 @@ impl ARGenerator {
             net_payment,
             invoice.gross_amount.document_currency.clone(),
             payment_method,
-            "1000".to_string(), // Bank account
+            cash_accounts::OPERATING_CASH.to_string(),
         );
 
         receipt.apply_to_invoice(invoice.invoice_number.clone(), payment_amount, discount);
@@ -418,7 +418,7 @@ impl ARGenerator {
         // Debit Revenue
         je.add_line(JournalEntryLine {
             line_number: 1,
-            gl_account: "4000".to_string(),
+            gl_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
             debit_amount: memo.net_amount.document_amount,
             reference: Some(memo.credit_memo_number.clone()),
             ..Default::default()
@@ -428,7 +428,7 @@ impl ARGenerator {
         if memo.tax_amount.document_amount > Decimal::ZERO {
             je.add_line(JournalEntryLine {
                 line_number: 2,
-                gl_account: "2300".to_string(),
+                gl_account: tax_accounts::SALES_TAX_PAYABLE.to_string(),
                 debit_amount: memo.tax_amount.document_amount,
                 reference: Some(memo.credit_memo_number.clone()),
                 tax_code: Some("VAT".to_string()),
@@ -439,7 +439,7 @@ impl ARGenerator {
         // Credit AR
         je.add_line(JournalEntryLine {
             line_number: 3,
-            gl_account: "1100".to_string(),
+            gl_account: control_accounts::AR_CONTROL.to_string(),
             credit_amount: memo.gross_amount.document_amount,
             reference: Some(memo.credit_memo_number.clone()),
             assignment: Some(memo.customer_id.clone()),

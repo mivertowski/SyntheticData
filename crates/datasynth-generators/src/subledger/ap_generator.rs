@@ -8,6 +8,9 @@ use rust_decimal_macros::dec;
 
 use tracing::debug;
 
+use datasynth_core::accounts::{
+    cash_accounts, control_accounts, expense_accounts, revenue_accounts, tax_accounts,
+};
 use datasynth_core::models::subledger::ap::{
     APDebitMemo, APDebitMemoLine, APInvoice, APInvoiceLine, APPayment, APPaymentMethod,
     DebitMemoReason, MatchStatus,
@@ -126,7 +129,7 @@ impl APGenerator {
                 dec!(1),
                 "EA".to_string(),
                 amount,
-                "5000".to_string(),
+                expense_accounts::COGS.to_string(),
             )
             .with_tax("VAT".to_string(), self.config.tax_rate);
 
@@ -259,7 +262,7 @@ impl APGenerator {
         // Debit Expense
         je.add_line(JournalEntryLine {
             line_number: 1,
-            gl_account: "5000".to_string(),
+            gl_account: expense_accounts::COGS.to_string(),
             debit_amount: invoice.net_amount.document_amount,
             reference: Some(invoice.invoice_number.clone()),
             ..Default::default()
@@ -269,7 +272,7 @@ impl APGenerator {
         if invoice.tax_amount.document_amount > Decimal::ZERO {
             je.add_line(JournalEntryLine {
                 line_number: 2,
-                gl_account: "1400".to_string(),
+                gl_account: tax_accounts::TAX_RECEIVABLE.to_string(),
                 debit_amount: invoice.tax_amount.document_amount,
                 reference: Some(invoice.invoice_number.clone()),
                 tax_code: Some("VAT".to_string()),
@@ -280,7 +283,7 @@ impl APGenerator {
         // Credit AP
         je.add_line(JournalEntryLine {
             line_number: 3,
-            gl_account: "2000".to_string(),
+            gl_account: control_accounts::AP_CONTROL.to_string(),
             credit_amount: invoice.gross_amount.document_amount,
             reference: Some(invoice.invoice_number.clone()),
             assignment: Some(invoice.vendor_id.clone()),
@@ -302,7 +305,7 @@ impl APGenerator {
         let ap_debit = payment.net_payment + payment.discount_taken;
         je.add_line(JournalEntryLine {
             line_number: 1,
-            gl_account: "2000".to_string(),
+            gl_account: control_accounts::AP_CONTROL.to_string(),
             debit_amount: ap_debit,
             reference: Some(payment.payment_number.clone()),
             assignment: Some(payment.vendor_id.clone()),
@@ -312,7 +315,7 @@ impl APGenerator {
         // Credit Cash
         je.add_line(JournalEntryLine {
             line_number: 2,
-            gl_account: "1000".to_string(),
+            gl_account: cash_accounts::OPERATING_CASH.to_string(),
             credit_amount: payment.net_payment,
             reference: Some(payment.payment_number.clone()),
             ..Default::default()
@@ -322,7 +325,7 @@ impl APGenerator {
         if payment.discount_taken > Decimal::ZERO {
             je.add_line(JournalEntryLine {
                 line_number: 3,
-                gl_account: "4800".to_string(),
+                gl_account: revenue_accounts::PURCHASE_DISCOUNT_INCOME.to_string(),
                 credit_amount: payment.discount_taken,
                 reference: Some(payment.payment_number.clone()),
                 ..Default::default()
@@ -343,7 +346,7 @@ impl APGenerator {
         // Debit AP
         je.add_line(JournalEntryLine {
             line_number: 1,
-            gl_account: "2000".to_string(),
+            gl_account: control_accounts::AP_CONTROL.to_string(),
             debit_amount: memo.gross_amount.document_amount,
             reference: Some(memo.debit_memo_number.clone()),
             assignment: Some(memo.vendor_id.clone()),
@@ -353,7 +356,7 @@ impl APGenerator {
         // Credit Expense
         je.add_line(JournalEntryLine {
             line_number: 2,
-            gl_account: "5000".to_string(),
+            gl_account: expense_accounts::COGS.to_string(),
             credit_amount: memo.net_amount.document_amount,
             reference: Some(memo.debit_memo_number.clone()),
             ..Default::default()
@@ -363,7 +366,7 @@ impl APGenerator {
         if memo.tax_amount.document_amount > Decimal::ZERO {
             je.add_line(JournalEntryLine {
                 line_number: 3,
-                gl_account: "1400".to_string(),
+                gl_account: tax_accounts::TAX_RECEIVABLE.to_string(),
                 credit_amount: memo.tax_amount.document_amount,
                 reference: Some(memo.debit_memo_number.clone()),
                 tax_code: Some("VAT".to_string()),
