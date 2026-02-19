@@ -22,6 +22,10 @@ pub struct ExpenseReportGenerator {
     // Stored for future use by with_config(); generate() currently takes config as a parameter.
     #[allow(dead_code)]
     config: ExpenseConfig,
+    /// Pool of real employee IDs for approved_by references.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real cost center IDs.
+    cost_center_ids_pool: Vec<String>,
 }
 
 impl ExpenseReportGenerator {
@@ -36,6 +40,8 @@ impl ExpenseReportGenerator {
                 1,
             ),
             config: ExpenseConfig::default(),
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
     }
 
@@ -50,7 +56,20 @@ impl ExpenseReportGenerator {
                 1,
             ),
             config,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `approved_by` from
+    /// `employee_ids` and `cost_center` from `cost_center_ids` instead of
+    /// fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.cost_center_ids_pool = cost_center_ids;
+        self
     }
 
     /// Generate expense reports for employees over the given period.
@@ -171,7 +190,12 @@ impl ExpenseReportGenerator {
         };
 
         let approved_by = if matches!(status, ExpenseStatus::Approved | ExpenseStatus::Paid) {
-            Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            }
         } else {
             None
         };
@@ -191,7 +215,12 @@ impl ExpenseReportGenerator {
 
         // Cost center and department
         let cost_center = if self.rng.gen_bool(0.70) {
-            Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            if !self.cost_center_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.cost_center_ids_pool.len());
+                Some(self.cost_center_ids_pool[idx].clone())
+            } else {
+                Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            }
         } else {
             None
         };

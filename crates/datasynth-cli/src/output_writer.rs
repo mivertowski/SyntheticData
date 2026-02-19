@@ -61,7 +61,7 @@ fn write_journal_entries_csv(
         for line in &je.lines {
             writeln!(
                 w,
-                "{},{},{},{},{},{},{},{},{},{},{},{},{:?},{},{},{},{},{},{},{},{},{},{},{},{}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
                 h.document_id,
                 csv_escape(&h.company_code),
                 h.fiscal_year,
@@ -76,7 +76,7 @@ fn write_journal_entries_csv(
                 csv_escape(&h.created_by),
                 h.source,
                 h.business_process
-                    .map(|bp| format!("{:?}", bp))
+                    .map(|bp| format!("{bp:?}"))
                     .unwrap_or_default(),
                 csv_escape(&h.ledger),
                 h.is_fraud,

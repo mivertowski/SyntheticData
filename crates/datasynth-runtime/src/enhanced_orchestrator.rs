@@ -1810,16 +1810,16 @@ impl EnhancedOrchestrator {
         // Generate Inventory subledger records from master data materials
         if !self.master_data.materials.is_empty() {
             debug!("Generating Inventory subledger records");
-            let company_code = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.code.as_str())
-                .unwrap_or("1000");
+            let first_company = self.config.companies.first();
+            let company_code = first_company.map(|c| c.code.as_str()).unwrap_or("1000");
+            let inv_currency = first_company
+                .map(|c| c.currency.clone())
+                .unwrap_or_else(|| "USD".to_string());
 
-            let mut inv_gen = datasynth_generators::InventoryGenerator::new(
+            let mut inv_gen = datasynth_generators::InventoryGenerator::new_with_currency(
                 datasynth_generators::InventoryGeneratorConfig::default(),
                 rand_chacha::ChaCha8Rng::seed_from_u64(self.seed + 71),
+                inv_currency.clone(),
             );
 
             for (i, material) in self.master_data.materials.iter().enumerate() {
@@ -1841,7 +1841,7 @@ impl EnhancedOrchestrator {
                     &material.description,
                     initial_qty,
                     Some(material.standard_cost),
-                    "USD",
+                    &inv_currency,
                 );
                 subledger.inventory_positions.push(position);
             }
@@ -1900,7 +1900,7 @@ impl EnhancedOrchestrator {
         &mut self,
         coa: &Arc<ChartOfAccounts>,
         document_flows: &DocumentFlowSnapshot,
-        stats: &mut EnhancedGenerationStatistics,
+        _stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<Vec<JournalEntry>> {
         let mut entries = Vec::new();
 
@@ -1923,12 +1923,8 @@ impl EnhancedOrchestrator {
         }
 
         if !entries.is_empty() {
-            stats.total_entries = entries.len() as u64;
-            stats.total_line_items = entries.iter().map(|e| e.line_count() as u64).sum();
-            info!(
-                "Total entries: {}, total line items: {}",
-                stats.total_entries, stats.total_line_items
-            );
+            // Note: stats.total_entries/total_line_items are set in generate()
+            // after all JE-generating phases (FA, IC, payroll, mfg) complete.
             self.check_resources_with_log("post-journal-entries")?;
         }
 
@@ -2679,7 +2675,15 @@ impl EnhancedOrchestrator {
         }
 
         // Run matching engine
-        let matching_config = datasynth_generators::ICMatchingConfig::default();
+        let matching_config = datasynth_generators::ICMatchingConfig {
+            base_currency: self
+                .config
+                .companies
+                .first()
+                .map(|c| c.currency.clone())
+                .unwrap_or_else(|| "USD".to_string()),
+            ..Default::default()
+        };
         let mut matching_engine = datasynth_generators::ICMatchingEngine::new(matching_config);
         matching_engine.load_matched_pairs(&matched_pairs);
         let matching_result = matching_engine.run_matching(end_date);
@@ -3495,11 +3499,23 @@ impl EnhancedOrchestrator {
             return Ok(HrSnapshot::default());
         }
 
+        // Extract cost-center pool from master data employees for cross-reference
+        // coherence. Fabricated IDs (e.g. "CC-123") are replaced by real values.
+        let cost_center_ids: Vec<String> = self
+            .master_data
+            .employees
+            .iter()
+            .filter_map(|e| e.cost_center.clone())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+
         let mut snapshot = HrSnapshot::default();
 
         // Generate payroll runs (one per month)
         if self.config.hr.payroll.enabled {
-            let mut payroll_gen = datasynth_generators::PayrollGenerator::new(seed + 30);
+            let mut payroll_gen = datasynth_generators::PayrollGenerator::new(seed + 30)
+                .with_pools(employee_ids.clone(), cost_center_ids.clone());
 
             // Look up country pack for payroll deductions and labels
             let payroll_pack = self.primary_pack();
@@ -3546,7 +3562,8 @@ impl EnhancedOrchestrator {
 
         // Generate time entries
         if self.config.hr.time_attendance.enabled {
-            let mut time_gen = datasynth_generators::TimeEntryGenerator::new(seed + 31);
+            let mut time_gen = datasynth_generators::TimeEntryGenerator::new(seed + 31)
+                .with_pools(employee_ids.clone(), cost_center_ids.clone());
             let entries = time_gen.generate(
                 &employee_ids,
                 start_date,
@@ -3559,7 +3576,8 @@ impl EnhancedOrchestrator {
 
         // Generate expense reports
         if self.config.hr.expenses.enabled {
-            let mut expense_gen = datasynth_generators::ExpenseReportGenerator::new(seed + 32);
+            let mut expense_gen = datasynth_generators::ExpenseReportGenerator::new(seed + 32)
+                .with_pools(employee_ids.clone(), cost_center_ids.clone());
             let company_currency = self
                 .config
                 .companies
@@ -4414,6 +4432,42 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Build FX exposures from foreign-currency payments and generate
+        // FX forwards + hedge relationship designations via generate() API.
+        {
+            let mut fx_map: HashMap<String, (rust_decimal::Decimal, NaiveDate)> = HashMap::new();
+            for payment in &document_flows.payments {
+                if payment.currency != currency {
+                    let entry = fx_map
+                        .entry(payment.currency.clone())
+                        .or_insert((rust_decimal::Decimal::ZERO, payment.header.document_date));
+                    entry.0 += payment.amount;
+                    // Use the latest settlement date among grouped payments
+                    if payment.header.document_date > entry.1 {
+                        entry.1 = payment.header.document_date;
+                    }
+                }
+            }
+            if !fx_map.is_empty() {
+                let fx_exposures: Vec<datasynth_generators::treasury::FxExposure> = fx_map
+                    .into_iter()
+                    .map(|(foreign_ccy, (net_amount, settlement_date))| {
+                        datasynth_generators::treasury::FxExposure {
+                            currency_pair: format!("{}/{}", foreign_ccy, currency),
+                            foreign_currency: foreign_ccy,
+                            net_amount,
+                            settlement_date,
+                            description: "AP payment FX exposure".to_string(),
+                        }
+                    })
+                    .collect();
+                let (fx_instruments, fx_relationships) =
+                    hedge_gen.generate(start_date, &fx_exposures);
+                snapshot.hedging_instruments.extend(fx_instruments);
+                snapshot.hedge_relationships.extend(fx_relationships);
+            }
+        }
+
         // Inject anomalies if configured
         if self.config.treasury.anomaly_rate > 0.0 {
             let mut anomaly_injector = datasynth_generators::treasury::TreasuryAnomalyInjector::new(
@@ -4702,7 +4756,7 @@ impl EnhancedOrchestrator {
 
         let end_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map(|d| d + chrono::Months::new(self.config.global.period_months))
-            .unwrap_or_else(|_| chrono::Local::now().date_naive());
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
         // Build GL balance map from journal entries using a balance tracker
         let tracker_config = BalanceTrackerConfig {
@@ -4711,7 +4765,13 @@ impl EnhancedOrchestrator {
             fail_on_validation_error: false,
             ..Default::default()
         };
-        let mut tracker = RunningBalanceTracker::new(tracker_config);
+        let recon_currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.clone())
+            .unwrap_or_else(|| "USD".to_string());
+        let mut tracker = RunningBalanceTracker::new_with_currency(tracker_config, recon_currency);
         let _ = tracker.apply_entries(entries);
 
         let mut engine = datasynth_generators::ReconciliationEngine::new(
@@ -5919,8 +5979,14 @@ impl EnhancedOrchestrator {
             fail_on_validation_error: false, // Collect errors, don't fail
             ..Default::default()
         };
+        let validation_currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.clone())
+            .unwrap_or_else(|| "USD".to_string());
 
-        let mut tracker = RunningBalanceTracker::new(config);
+        let mut tracker = RunningBalanceTracker::new_with_currency(config, validation_currency);
 
         // Apply clean entries (without human errors)
         let clean_refs: Vec<JournalEntry> = clean_entries.into_iter().cloned().collect();
@@ -5950,7 +6016,7 @@ impl EnhancedOrchestrator {
 
         let end_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map(|d| d + chrono::Months::new(self.config.global.period_months))
-            .unwrap_or_else(|_| chrono::Local::now().date_naive());
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
         for company_code in &company_codes {
             if let Err(e) = tracker.validate_balance_sheet(company_code, end_date, None) {
@@ -5996,8 +6062,41 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<DataQualityStats> {
         let pb = self.create_progress_bar(entries.len() as u64, "Injecting Data Quality Issues");
 
-        // Use minimal configuration by default for realistic but not overwhelming issues
-        let config = DataQualityConfig::minimal();
+        // Build config from user-specified schema settings when data_quality is enabled;
+        // otherwise fall back to the low-rate minimal() preset.
+        let config = if self.config.data_quality.enabled {
+            let dq = &self.config.data_quality;
+            DataQualityConfig {
+                enable_missing_values: dq.missing_values.enabled,
+                missing_values: datasynth_generators::MissingValueConfig {
+                    global_rate: dq.effective_missing_rate(),
+                    ..Default::default()
+                },
+                enable_format_variations: dq.format_variations.enabled,
+                format_variations: datasynth_generators::FormatVariationConfig {
+                    date_variation_rate: dq.format_variations.dates.rate,
+                    amount_variation_rate: dq.format_variations.amounts.rate,
+                    identifier_variation_rate: dq.format_variations.identifiers.rate,
+                    ..Default::default()
+                },
+                enable_duplicates: dq.duplicates.enabled,
+                duplicates: datasynth_generators::DuplicateConfig {
+                    duplicate_rate: dq.effective_duplicate_rate(),
+                    ..Default::default()
+                },
+                enable_typos: dq.typos.enabled,
+                typos: datasynth_generators::TypoConfig {
+                    char_error_rate: dq.effective_typo_rate(),
+                    ..Default::default()
+                },
+                enable_encoding_issues: dq.encoding_issues.enabled,
+                encoding_issue_rate: dq.encoding_issues.rate,
+                seed: self.seed.wrapping_add(77), // deterministic offset for DQ phase
+                track_statistics: true,
+            }
+        } else {
+            DataQualityConfig::minimal()
+        };
         let mut injector = DataQualityInjector::new(config);
 
         // Wire country pack for locale-aware format baselines

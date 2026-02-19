@@ -47,6 +47,11 @@ pub struct PayrollGenerator {
     line_uuid_factory: DeterministicUuidFactory,
     config: PayrollConfig,
     country_pack: Option<CountryPack>,
+    /// Pool of real employee IDs for approved_by / posted_by references.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real cost center IDs (unused directly here since cost_center
+    /// comes from the employee tuple, but kept for consistency).
+    cost_center_ids_pool: Vec<String>,
 }
 
 impl PayrollGenerator {
@@ -62,6 +67,8 @@ impl PayrollGenerator {
             ),
             config: PayrollConfig::default(),
             country_pack: None,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
     }
 
@@ -77,7 +84,19 @@ impl PayrollGenerator {
             ),
             config,
             country_pack: None,
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `approved_by` and
+    /// `posted_by` from `employee_ids` instead of fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.cost_center_ids_pool = cost_center_ids;
+        self
     }
 
     /// Set the country pack for localized deduction labels.
@@ -547,13 +566,23 @@ impl PayrollGenerator {
             status,
             PayrollRunStatus::Approved | PayrollRunStatus::Posted
         ) {
-            Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            }
         } else {
             None
         };
 
         let posted_by = if status == PayrollRunStatus::Posted {
-            Some(format!("USR-{:04}", self.rng.gen_range(401..=500)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("USR-{:04}", self.rng.gen_range(401..=500)))
+            }
         } else {
             None
         };

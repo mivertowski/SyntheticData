@@ -22,6 +22,10 @@ const DEFAULT_SICK_RATE: f64 = 0.01;
 pub struct TimeEntryGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
+    /// Pool of real employee IDs for approved_by references.
+    employee_ids_pool: Vec<String>,
+    /// Pool of real cost center IDs.
+    cost_center_ids_pool: Vec<String>,
 }
 
 impl TimeEntryGenerator {
@@ -30,7 +34,20 @@ impl TimeEntryGenerator {
         Self {
             rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::TimeEntry),
+            employee_ids_pool: Vec::new(),
+            cost_center_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set ID pools for cross-reference coherence.
+    ///
+    /// When pools are non-empty, the generator selects `approved_by` from
+    /// `employee_ids` and `cost_center` from `cost_center_ids` instead of
+    /// fabricating placeholder IDs.
+    pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self.cost_center_ids_pool = cost_center_ids;
+        self
     }
 
     /// Generate time entries for a set of employees over a date range.
@@ -118,7 +135,12 @@ impl TimeEntryGenerator {
 
         // Cost center: ~70% of entries have a cost center
         let cost_center = if self.rng.gen_bool(0.70) {
-            Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            if !self.cost_center_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.cost_center_ids_pool.len());
+                Some(self.cost_center_ids_pool[idx].clone())
+            } else {
+                Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+            }
         } else {
             None
         };
@@ -145,7 +167,12 @@ impl TimeEntryGenerator {
         };
 
         let approved_by = if approval_status == TimeApprovalStatus::Approved {
-            Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            if !self.employee_ids_pool.is_empty() {
+                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                Some(self.employee_ids_pool[idx].clone())
+            } else {
+                Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+            }
         } else {
             None
         };

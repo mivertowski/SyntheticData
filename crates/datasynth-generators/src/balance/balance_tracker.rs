@@ -51,6 +51,8 @@ pub struct RunningBalanceTracker {
     validation_errors: Vec<ValidationError>,
     /// Statistics.
     stats: TrackerStatistics,
+    /// Default currency for new account balances and snapshots.
+    currency: String,
 }
 
 /// Entry in balance history.
@@ -103,8 +105,8 @@ pub struct TrackerStatistics {
 }
 
 impl RunningBalanceTracker {
-    /// Creates a new balance tracker.
-    pub fn new(config: BalanceTrackerConfig) -> Self {
+    /// Creates a new balance tracker with the specified currency.
+    pub fn new_with_currency(config: BalanceTrackerConfig, currency: String) -> Self {
         Self {
             config,
             balances: HashMap::new(),
@@ -112,7 +114,13 @@ impl RunningBalanceTracker {
             history: HashMap::new(),
             validation_errors: Vec::new(),
             stats: TrackerStatistics::default(),
+            currency,
         }
+    }
+
+    /// Creates a new balance tracker (defaults to USD).
+    pub fn new(config: BalanceTrackerConfig) -> Self {
+        Self::new_with_currency(config, "USD".to_string())
     }
 
     /// Creates a tracker with default configuration.
@@ -216,7 +224,7 @@ impl RunningBalanceTracker {
                         company_code.clone(),
                         line.account_code.clone(),
                         *account_type,
-                        "USD".to_string(),
+                        self.currency.clone(),
                         posting_date.year(),
                         posting_date.month(),
                     )
@@ -316,7 +324,7 @@ impl RunningBalanceTracker {
                     company_code.to_string(),
                     line.account_code.clone(),
                     account_type,
-                    "USD".to_string(), // Default currency
+                    self.currency.clone(),
                     date.year(),
                     date.month(),
                 )
@@ -446,6 +454,7 @@ impl RunningBalanceTracker {
         as_of_date: NaiveDate,
     ) -> Option<BalanceSnapshot> {
         use chrono::Datelike;
+        let currency = self.currency.clone();
         self.balances.get(company_code).map(|balances| {
             let mut snapshot = BalanceSnapshot::new(
                 format!("SNAP-{}-{}", company_code, as_of_date),
@@ -453,7 +462,7 @@ impl RunningBalanceTracker {
                 as_of_date,
                 as_of_date.year(),
                 as_of_date.month(),
-                "USD".to_string(),
+                currency,
             );
             for (account, balance) in balances {
                 snapshot.balances.insert(account.clone(), balance.clone());
@@ -475,7 +484,7 @@ impl RunningBalanceTracker {
                     as_of_date,
                     as_of_date.year(),
                     as_of_date.month(),
-                    "USD".to_string(),
+                    self.currency.clone(),
                 );
                 for (account, balance) in balances {
                     snapshot.balances.insert(account.clone(), balance.clone());

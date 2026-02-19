@@ -83,6 +83,7 @@ impl OpeningBalanceGenerator {
         company_code: &str,
     ) -> GeneratedOpeningBalance {
         let mut balances = HashMap::new();
+        let currency = &spec.currency;
 
         // Get effective compositions and structures
         let asset_comp = spec.asset_composition.clone();
@@ -145,6 +146,7 @@ impl OpeningBalanceGenerator {
             cash,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -154,6 +156,7 @@ impl OpeningBalanceGenerator {
             accounts_receivable,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -163,6 +166,7 @@ impl OpeningBalanceGenerator {
             inventory,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -172,6 +176,7 @@ impl OpeningBalanceGenerator {
             prepaid_expenses,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -181,6 +186,7 @@ impl OpeningBalanceGenerator {
             ppe_gross,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -190,6 +196,7 @@ impl OpeningBalanceGenerator {
             accumulated_depreciation,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -199,6 +206,7 @@ impl OpeningBalanceGenerator {
             intangible_assets,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -208,6 +216,7 @@ impl OpeningBalanceGenerator {
             other_assets,
             as_of_date,
             company_code,
+            currency,
         );
 
         // Liabilities (credit balances)
@@ -218,6 +227,7 @@ impl OpeningBalanceGenerator {
             accounts_payable,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -227,6 +237,7 @@ impl OpeningBalanceGenerator {
             accrued_expenses,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -236,6 +247,7 @@ impl OpeningBalanceGenerator {
             short_term_debt,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -245,6 +257,7 @@ impl OpeningBalanceGenerator {
             other_current_liabilities,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -254,6 +267,7 @@ impl OpeningBalanceGenerator {
             long_term_debt,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -263,6 +277,7 @@ impl OpeningBalanceGenerator {
             other_long_term_liabilities,
             as_of_date,
             company_code,
+            currency,
         );
 
         // Equity (credit balances)
@@ -273,6 +288,7 @@ impl OpeningBalanceGenerator {
             common_stock,
             as_of_date,
             company_code,
+            currency,
         );
 
         self.add_balance(
@@ -282,6 +298,7 @@ impl OpeningBalanceGenerator {
             retained_earnings,
             as_of_date,
             company_code,
+            currency,
         );
 
         // Calculate totals from balances
@@ -437,6 +454,7 @@ impl OpeningBalanceGenerator {
         amount: Decimal,
         as_of_date: NaiveDate,
         company_code: &str,
+        currency: &str,
     ) {
         use chrono::Datelike;
 
@@ -448,7 +466,7 @@ impl OpeningBalanceGenerator {
             company_code.to_string(),
             account_code.to_string(),
             account_type,
-            "USD".to_string(),
+            currency.to_string(),
             as_of_date.year(),
             as_of_date.month(),
         );

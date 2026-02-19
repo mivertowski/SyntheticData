@@ -791,6 +791,14 @@ fn main() -> Result<()> {
                 "audit/audit_engagements.json",
                 result.audit.engagements.len(),
             );
+            register("audit/audit_workpapers.json", result.audit.workpapers.len());
+            register("audit/audit_evidence.json", result.audit.evidence.len());
+            register(
+                "audit/audit_risk_assessments.json",
+                result.audit.risk_assessments.len(),
+            );
+            register("audit/audit_findings.json", result.audit.findings.len());
+            register("audit/audit_judgments.json", result.audit.judgments.len());
 
             // Banking
             register(
@@ -801,11 +809,61 @@ fn main() -> Result<()> {
                 "banking/banking_transactions.json",
                 result.banking.transactions.len(),
             );
+            register(
+                "banking/banking_accounts.json",
+                result.banking.accounts.len(),
+            );
+            register(
+                "banking/aml_transaction_labels.json",
+                result.banking.transaction_labels.len(),
+            );
+            register(
+                "banking/aml_customer_labels.json",
+                result.banking.customer_labels.len(),
+            );
+            register(
+                "banking/aml_account_labels.json",
+                result.banking.account_labels.len(),
+            );
+            register(
+                "banking/aml_relationship_labels.json",
+                result.banking.relationship_labels.len(),
+            );
+            register(
+                "banking/aml_narratives.json",
+                result.banking.narratives.len(),
+            );
 
             // Sourcing (S2C)
             register(
                 "sourcing/sourcing_projects.json",
                 result.sourcing.sourcing_projects.len(),
+            );
+            register(
+                "sourcing/spend_analyses.json",
+                result.sourcing.spend_analyses.len(),
+            );
+            register(
+                "sourcing/supplier_qualifications.json",
+                result.sourcing.qualifications.len(),
+            );
+            register("sourcing/rfx_events.json", result.sourcing.rfx_events.len());
+            register("sourcing/supplier_bids.json", result.sourcing.bids.len());
+            register(
+                "sourcing/bid_evaluations.json",
+                result.sourcing.bid_evaluations.len(),
+            );
+            register(
+                "sourcing/procurement_contracts.json",
+                result.sourcing.contracts.len(),
+            );
+            register(
+                "sourcing/catalog_items.json",
+                result.sourcing.catalog_items.len(),
+            );
+            register(
+                "sourcing/supplier_scorecards.json",
+                result.sourcing.scorecards.len(),
             );
 
             // Intercompany
@@ -816,6 +874,14 @@ fn main() -> Result<()> {
             register(
                 "intercompany/ic_elimination_entries.json",
                 result.intercompany.elimination_entries.len(),
+            );
+            register(
+                "intercompany/ic_seller_journal_entries.json",
+                result.intercompany.seller_journal_entries.len(),
+            );
+            register(
+                "intercompany/ic_buyer_journal_entries.json",
+                result.intercompany.buyer_journal_entries.len(),
             );
 
             // Financial Reporting
@@ -838,6 +904,10 @@ fn main() -> Result<()> {
             register("hr/payroll_runs.json", result.hr.payroll_runs.len());
             register("hr/time_entries.json", result.hr.time_entries.len());
             register("hr/expense_reports.json", result.hr.expense_reports.len());
+            register(
+                "hr/payroll_line_items.json",
+                result.hr.payroll_line_items.len(),
+            );
 
             // Manufacturing
             register(
@@ -892,6 +962,27 @@ fn main() -> Result<()> {
                 "treasury/hedging_instruments.json",
                 result.treasury.hedging_instruments.len(),
             );
+            register(
+                "treasury/hedge_relationships.json",
+                result.treasury.hedge_relationships.len(),
+            );
+            register(
+                "treasury/cash_positions.json",
+                result.treasury.cash_positions.len(),
+            );
+            register(
+                "treasury/cash_forecasts.json",
+                result.treasury.cash_forecasts.len(),
+            );
+            register("treasury/cash_pools.json", result.treasury.cash_pools.len());
+            register(
+                "treasury/cash_pool_sweeps.json",
+                result.treasury.cash_pool_sweeps.len(),
+            );
+            register(
+                "treasury/treasury_anomaly_labels.json",
+                result.treasury.treasury_anomaly_labels.len(),
+            );
 
             // Project Accounting
             register(
@@ -906,9 +997,81 @@ fn main() -> Result<()> {
                 "project_accounting/milestones.json",
                 result.project_accounting.milestones.len(),
             );
+            register(
+                "project_accounting/cost_lines.json",
+                result.project_accounting.cost_lines.len(),
+            );
+            register(
+                "project_accounting/revenue_records.json",
+                result.project_accounting.revenue_records.len(),
+            );
+            register(
+                "project_accounting/earned_value_metrics.json",
+                result.project_accounting.earned_value_metrics.len(),
+            );
 
             // Tax (extended)
             register("tax/tax_provisions.json", result.tax.tax_provisions.len());
+            register("tax/tax_jurisdictions.json", result.tax.jurisdictions.len());
+            register("tax/tax_codes.json", result.tax.codes.len());
+            register("tax/tax_lines.json", result.tax.tax_lines.len());
+            register("tax/tax_returns.json", result.tax.tax_returns.len());
+            register(
+                "tax/withholding_records.json",
+                result.tax.withholding_records.len(),
+            );
+            register(
+                "tax/tax_anomaly_labels.json",
+                result.tax.tax_anomaly_labels.len(),
+            );
+
+            // ESG
+            register("esg/emission_records.json", result.esg.emissions.len());
+            register("esg/energy_consumption.json", result.esg.energy.len());
+            register("esg/water_usage.json", result.esg.water.len());
+            register("esg/waste_records.json", result.esg.waste.len());
+            register("esg/workforce_diversity.json", result.esg.diversity.len());
+            register("esg/pay_equity.json", result.esg.pay_equity.len());
+            register(
+                "esg/safety_incidents.json",
+                result.esg.safety_incidents.len(),
+            );
+            register("esg/safety_metrics.json", result.esg.safety_metrics.len());
+            register("esg/governance_metrics.json", result.esg.governance.len());
+            register(
+                "esg/supplier_esg_assessments.json",
+                result.esg.supplier_assessments.len(),
+            );
+            register(
+                "esg/materiality_assessments.json",
+                result.esg.materiality.len(),
+            );
+            register("esg/esg_disclosures.json", result.esg.disclosures.len());
+            register(
+                "esg/climate_scenarios.json",
+                result.esg.climate_scenarios.len(),
+            );
+            register(
+                "esg/esg_anomaly_labels.json",
+                result.esg.anomaly_labels.len(),
+            );
+
+            // Balance
+            register(
+                "balance/opening_balances.json",
+                result.opening_balances.len(),
+            );
+            register(
+                "balance/subledger_reconciliation.json",
+                result.subledger_reconciliation.len(),
+            );
+
+            // Process Mining
+            register("process_mining/event_log.json", result.ocpm.event_count);
+
+            // Root-level files
+            register("chart_of_accounts.json", 1);
+            register("generation_statistics.json", 1);
 
             // Attach lineage graph to manifest and write separate file
             if let Some(ref lineage) = result.lineage {

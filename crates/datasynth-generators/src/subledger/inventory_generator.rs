@@ -46,16 +46,28 @@ pub struct InventoryGenerator {
     config: InventoryGeneratorConfig,
     rng: ChaCha8Rng,
     movement_counter: u64,
+    /// Currency code for generated movements and journal entries.
+    currency: String,
 }
 
 impl InventoryGenerator {
-    /// Creates a new inventory generator.
-    pub fn new(config: InventoryGeneratorConfig, rng: ChaCha8Rng) -> Self {
+    /// Creates a new inventory generator with the specified currency.
+    pub fn new_with_currency(
+        config: InventoryGeneratorConfig,
+        rng: ChaCha8Rng,
+        currency: String,
+    ) -> Self {
         Self {
             config,
             rng,
             movement_counter: 0,
+            currency,
         }
+    }
+
+    /// Creates a new inventory generator (defaults to USD).
+    pub fn new(config: InventoryGeneratorConfig, rng: ChaCha8Rng) -> Self {
+        Self::new_with_currency(config, rng, "USD".to_string())
     }
 
     /// Creates a new inventory generator from a seed, constructing the RNG internally.
@@ -131,7 +143,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
 
@@ -173,7 +185,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
 
@@ -220,7 +232,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         issue.reference_doc_type = Some(ReferenceDocType::MaterialDocument);
@@ -240,7 +252,7 @@ impl InventoryGenerator {
             quantity,
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         receipt.reference_doc_type = Some(ReferenceDocType::MaterialDocument);
@@ -288,7 +300,7 @@ impl InventoryGenerator {
             quantity_change.abs(),
             position.unit.clone(),
             unit_cost,
-            "USD".to_string(),
+            self.currency.clone(),
             "SYSTEM".to_string(),
         );
         movement.reference_doc_type = Some(ReferenceDocType::PhysicalInventoryDoc);
