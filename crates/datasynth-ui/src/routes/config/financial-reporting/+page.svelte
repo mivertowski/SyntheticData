@@ -107,7 +107,7 @@
         <div class="info-card">
           <h4>Financial Statements</h4>
           <p>
-            Generates GAAP/IFRS-compliant financial statements derived from
+            Generates GAAP / IFRS / PCG compliant financial statements derived from
             the generated journal entries and trial balances. Statements are
             internally consistent with the underlying transaction data.
           </p>
