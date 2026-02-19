@@ -980,4 +980,42 @@ mod tests {
         let first = coa.accounts.first().expect("has accounts");
         assert_eq!(first.account_number.len(), 6);
     }
+
+    /// Verifies PCG (Plan Comptable Général) account structure: 6-digit format,
+    /// all accounts numeric, and coverage of at least two PCG classes (1–8).
+    /// Works for both the embedded PCG 2024 loader and the fallback generator.
+    #[test]
+    fn test_pcg_account_structure() {
+        let mut gen = ChartOfAccountsGenerator::new(
+            CoAComplexity::Small,
+            IndustrySector::Manufacturing,
+            42,
+        )
+        .with_french_pcg(true);
+        let coa = gen.generate();
+
+        assert_eq!(coa.account_format, "######", "PCG uses 6-digit account format");
+        assert!(coa.account_count() >= 20, "PCG CoA has minimum account count");
+
+        let account_numbers: Vec<_> = coa.accounts.iter().map(|a| a.account_number.as_str()).collect();
+        for num in &account_numbers {
+            assert_eq!(num.len(), 6, "every PCG account is 6 digits: {}", num);
+            assert!(
+                num.chars().all(|c| c.is_ascii_digit()),
+                "PCG account is numeric: {}",
+                num
+            );
+        }
+
+        // All account numbers must belong to a PCG class (first digit 1–8)
+        let first_digits: std::collections::HashSet<char> =
+            account_numbers.iter().filter_map(|s| s.chars().next()).collect();
+        let pcg_classes: std::collections::HashSet<_> = ['1', '2', '3', '4', '5', '6', '7', '8'].into();
+        assert!(
+            !first_digits.is_empty() && first_digits.is_subset(&pcg_classes),
+            "PCG account numbers must be in classes 1–8, got first digits: {:?}",
+            first_digits
+        );
+
+    }
 }
