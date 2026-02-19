@@ -5,6 +5,7 @@ use datasynth_core::models::{
     BomComponent, Material, MaterialAccountDetermination, MaterialGroup, MaterialPool,
     MaterialType, UnitOfMeasure, ValuationMethod,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -154,7 +155,7 @@ impl MaterialGenerator {
     /// Create a new material generator with custom configuration.
     pub fn with_config(seed: u64, config: MaterialGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             material_counter: 0,
@@ -544,7 +545,7 @@ impl MaterialGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.material_counter = 0;
         self.created_materials.clear();
     }

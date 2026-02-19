@@ -4,7 +4,8 @@
 //! and cross-references per ISA 315 and ISA 330.
 
 use chrono::Duration;
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 
 use datasynth_core::models::audit::{
@@ -51,7 +52,7 @@ impl RiskAssessmentGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config: RiskAssessmentGeneratorConfig::default(),
             risk_counter: 0,
         }
@@ -60,7 +61,7 @@ impl RiskAssessmentGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: RiskAssessmentGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             risk_counter: 0,
         }

@@ -6,6 +6,7 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -122,7 +123,7 @@ impl RelationshipGenerator {
     pub fn new(config: RelationshipConfig, seed: u64) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Customer),
             count: 0,
             relationships_by_source: HashMap::new(),
@@ -273,7 +274,7 @@ impl RelationshipGenerator {
 
     /// Resets the generator.
     pub fn reset(&mut self, seed: u64) {
-        self.rng = ChaCha8Rng::seed_from_u64(seed);
+        self.rng = seeded_rng(seed, 0);
         self.uuid_factory = DeterministicUuidFactory::new(seed, GeneratorType::Customer);
         self.count = 0;
         self.relationships_by_source.clear();

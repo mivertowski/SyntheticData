@@ -7,7 +7,7 @@ use datasynth_core::models::{
     AssuranceLevel, ClimateScenario, EsgDisclosure, EsgFramework, MaterialityAssessment,
     ScenarioType, TimeHorizon,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -86,9 +86,6 @@ const DISCLOSURE_TOPICS: &[DisclosureTopic] = &[
 /// Generates [`EsgDisclosure`] and [`MaterialityAssessment`] records.
 pub struct DisclosureGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: EsgReportingConfig,
     climate_config: ClimateScenarioConfig,
     counter: u64,
@@ -102,8 +99,7 @@ impl DisclosureGenerator {
         climate_config: ClimateScenarioConfig,
     ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             climate_config,
             counter: 0,

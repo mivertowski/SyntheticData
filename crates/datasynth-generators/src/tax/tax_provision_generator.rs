@@ -6,6 +6,7 @@
 //! balances from temporary differences.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -80,7 +81,7 @@ impl TaxProvisionGenerator {
     /// Creates a new tax provision generator with the given deterministic seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
         }
     }

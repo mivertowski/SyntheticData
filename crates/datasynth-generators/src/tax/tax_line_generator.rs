@@ -6,6 +6,7 @@
 //! category exemptions, and EU reverse-charge rules.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -119,7 +120,7 @@ impl TaxLineGenerator {
         }
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             tax_codes_by_jurisdiction,
             config,
             counter: 0,

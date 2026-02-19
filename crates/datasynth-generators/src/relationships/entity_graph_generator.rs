@@ -12,6 +12,7 @@ use datasynth_core::models::{
     GraphEntityType, GraphMetadata, RelationshipEdge, RelationshipStrengthCalculator,
     RelationshipType, VendorNetwork,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -195,7 +196,7 @@ impl EntityGraphGenerator {
         };
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             strength_calculator,
@@ -479,7 +480,7 @@ impl EntityGraphGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
     }
 }
 

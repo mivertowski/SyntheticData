@@ -3,7 +3,7 @@
 use chrono::NaiveDate;
 use datasynth_config::schema::SupplyChainEsgConfig;
 use datasynth_core::models::{AssessmentMethod, EsgRiskFlag, SupplierEsgAssessment};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -22,9 +22,6 @@ pub struct VendorInput {
 /// Generates [`SupplierEsgAssessment`] records for vendors.
 pub struct SupplierEsgGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: SupplyChainEsgConfig,
     counter: u64,
 }
@@ -33,8 +30,7 @@ impl SupplierEsgGenerator {
     /// Create a new supplier ESG generator.
     pub fn new(config: SupplyChainEsgConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }

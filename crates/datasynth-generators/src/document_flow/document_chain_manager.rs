@@ -8,7 +8,7 @@ use chrono::NaiveDate;
 use datasynth_core::models::{
     documents::DocumentReference, CustomerPool, MaterialPool, VendorPool,
 };
-use rand::prelude::*;
+use datasynth_core::utils::seeded_rng;
 use rand_chacha::ChaCha8Rng;
 
 use super::{
@@ -101,7 +101,7 @@ impl DocumentChainManager {
     /// Create a new document chain manager with custom configuration.
     pub fn with_config(seed: u64, config: DocumentChainManagerConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             p2p_generator: P2PGenerator::with_config(seed, config.p2p_config.clone()),
             o2c_generator: O2CGenerator::with_config(seed + 1000, config.o2c_config.clone()),
@@ -386,7 +386,7 @@ impl DocumentChainManager {
 
     /// Reset all generators.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.p2p_generator.reset();
         self.o2c_generator.reset();
     }

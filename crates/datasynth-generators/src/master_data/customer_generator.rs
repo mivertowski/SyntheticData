@@ -12,6 +12,7 @@ use datasynth_core::models::{
     CustomerPaymentBehavior, CustomerPool, CustomerValueSegment, PaymentTerms, RiskTrigger,
     SegmentedCustomer, SegmentedCustomerPool,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -425,7 +426,7 @@ impl CustomerGenerator {
     /// Create a new customer generator with custom configuration.
     pub fn with_config(seed: u64, config: CustomerGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             customer_counter: 0,
@@ -441,7 +442,7 @@ impl CustomerGenerator {
         segmentation_config: CustomerSegmentationConfig,
     ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config,
             customer_counter: 0,
@@ -706,7 +707,7 @@ impl CustomerGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.customer_counter = 0;
     }
 

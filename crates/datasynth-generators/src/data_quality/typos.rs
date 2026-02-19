@@ -599,8 +599,7 @@ pub fn introduce_encoding_issue<R: Rng>(text: &str, issue: EncodingIssue, rng: &
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
+    use datasynth_core::utils::seeded_rng;
 
     #[test]
     fn test_keyboard_nearby_keys() {
@@ -620,7 +619,7 @@ mod tests {
         };
 
         let mut generator = TypoGenerator::new(config);
-        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let mut rng = seeded_rng(42, 0);
 
         let text = "Hello World";
         let _with_typos = generator.introduce_typos(text, &mut rng);
@@ -631,7 +630,7 @@ mod tests {
 
     #[test]
     fn test_encoding_issues() {
-        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let mut rng = seeded_rng(42, 0);
 
         let text = "Héllo & Wörld";
         let mojibake = introduce_encoding_issue(text, EncodingIssue::Mojibake, &mut rng);

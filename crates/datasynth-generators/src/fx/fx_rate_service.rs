@@ -4,7 +4,8 @@
 //! occasional fat-tail moves.
 
 use chrono::{Datelike, NaiveDate};
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, Normal};
 use rust_decimal::prelude::ToPrimitive;
@@ -92,7 +93,7 @@ impl FxRateService {
 
     /// Creates a new FX rate service from a seed, constructing the RNG internally.
     pub fn with_seed(config: FxRateServiceConfig, seed: u64) -> Self {
-        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
+        Self::new(config, seeded_rng(seed, 0))
     }
 
     /// Generates daily FX rates for a date range.
@@ -293,7 +294,7 @@ impl FxRateGenerator {
 
     /// Creates a new FX rate generator from a seed, constructing the RNG internally.
     pub fn with_seed(config: FxRateServiceConfig, seed: u64) -> Self {
-        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
+        Self::new(config, seeded_rng(seed, 0))
     }
 
     /// Generates all rates (daily, closing, average) for a date range.

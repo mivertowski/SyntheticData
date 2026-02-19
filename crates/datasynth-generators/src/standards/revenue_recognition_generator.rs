@@ -11,6 +11,7 @@
 //! 5. Recognize revenue when (or as) obligations are satisfied
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::LogNormal;
@@ -164,7 +165,7 @@ impl RevenueRecognitionGenerator {
     /// * `seed` - Seed for deterministic generation.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::RevenueRecognition),
             obligation_uuid_factory: DeterministicUuidFactory::with_sub_discriminator(
                 seed,

@@ -506,10 +506,11 @@ pub struct RedFlagStatistics {
 
 impl RedFlagStatistics {
     /// Creates statistics from a list of flags.
-    #[allow(clippy::field_reassign_with_default)]
     pub fn from_flags(flags: &[RedFlag]) -> Self {
-        let mut stats = Self::default();
-        stats.total_flags = flags.len();
+        let mut stats = Self {
+            total_flags: flags.len(),
+            ..Self::default()
+        };
 
         for flag in flags {
             if flag.is_fraudulent {

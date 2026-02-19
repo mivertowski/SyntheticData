@@ -1,7 +1,8 @@
 //! AR (Accounts Receivable) generator.
 
 use chrono::NaiveDate;
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -72,7 +73,7 @@ impl ARGenerator {
 
     /// Creates a new AR generator from a seed, constructing the RNG internally.
     pub fn with_seed(config: ARGeneratorConfig, seed: u64) -> Self {
-        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
+        Self::new(config, seeded_rng(seed, 0))
     }
 
     /// Generates an AR invoice.

@@ -4,7 +4,7 @@
 //! between related entities.
 
 use chrono::{Datelike, NaiveDate};
-use datasynth_core::utils::weighted_select;
+use datasynth_core::utils::{seeded_rng, weighted_select};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -101,7 +101,7 @@ impl ICGenerator {
     ) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             ownership_structure,
             transfer_pricing_policies: HashMap::new(),
             active_loans: Vec::new(),

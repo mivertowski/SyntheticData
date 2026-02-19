@@ -628,8 +628,7 @@ mod tests {
 
     #[test]
     fn test_get_random_vendor() {
-        use rand::SeedableRng;
-        use rand_chacha::ChaCha8Rng;
+        use datasynth_core::utils::seeded_rng;
 
         let mut manager = EntityRegistryManager::new(42);
         let counts = MasterDataCounts {
@@ -647,7 +646,7 @@ mod tests {
             ),
         );
 
-        let mut rng = ChaCha8Rng::seed_from_u64(42);
+        let mut rng = seeded_rng(42, 0);
         let vendor = manager.get_random_vendor(
             "1000",
             NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),

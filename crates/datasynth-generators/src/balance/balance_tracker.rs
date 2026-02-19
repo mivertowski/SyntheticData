@@ -12,7 +12,7 @@ use tracing::debug;
 use datasynth_core::models::balance::{
     AccountBalance, AccountPeriodActivity, AccountType, BalanceSnapshot,
 };
-use datasynth_core::models::{JournalEntry, JournalEntryLine};
+use datasynth_core::models::JournalEntry;
 
 /// Configuration for the balance tracker.
 #[derive(Debug, Clone)]
@@ -302,60 +302,6 @@ impl RunningBalanceTracker {
         errors
     }
 
-    /// Applies a single journal entry line.
-    // Useful for future per-line balance tracking; currently entries are applied
-    // in bulk via apply_journal_entry.
-    #[allow(dead_code)]
-    fn apply_line(
-        &mut self,
-        company_balances: &mut HashMap<String, AccountBalance>,
-        line: &JournalEntryLine,
-        entry_id: &str,
-        date: NaiveDate,
-        company_code: &str,
-    ) {
-        let account_type = self.determine_account_type(&line.account_code);
-
-        // Get or create account balance
-        let balance = company_balances
-            .entry(line.account_code.clone())
-            .or_insert_with(|| {
-                AccountBalance::new(
-                    company_code.to_string(),
-                    line.account_code.clone(),
-                    account_type,
-                    self.currency.clone(),
-                    date.year(),
-                    date.month(),
-                )
-            });
-
-        let previous_balance = balance.closing_balance;
-
-        // Apply debit or credit based on account type
-        if line.debit_amount > Decimal::ZERO {
-            balance.apply_debit(line.debit_amount);
-        }
-        if line.credit_amount > Decimal::ZERO {
-            balance.apply_credit(line.credit_amount);
-        }
-
-        let new_balance = balance.closing_balance;
-
-        // Record history if configured
-        if self.config.track_history {
-            let history_entries = self.history.entry(company_code.to_string()).or_default();
-            history_entries.push(BalanceHistoryEntry {
-                date,
-                entry_id: entry_id.to_string(),
-                account_code: line.account_code.clone(),
-                previous_balance,
-                change: new_balance - previous_balance,
-                new_balance,
-            });
-        }
-    }
-
     /// Determines account type from code prefix.
     fn determine_account_type(&self, account_code: &str) -> AccountType {
         // Check registered types first (exact match or prefix)
@@ -602,7 +548,7 @@ impl RunningBalanceTracker {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use datasynth_core::models::JournalEntry;
+    use datasynth_core::models::{JournalEntry, JournalEntryLine};
 
     fn create_test_entry(
         company: &str,

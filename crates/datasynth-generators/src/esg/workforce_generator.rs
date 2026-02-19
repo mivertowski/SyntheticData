@@ -6,7 +6,7 @@ use datasynth_core::models::{
     DiversityDimension, GovernanceMetric, IncidentType, OrganizationLevel, PayEquityMetric,
     SafetyIncident, SafetyMetric, WorkforceDiversityMetric,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -15,9 +15,6 @@ use rust_decimal_macros::dec;
 /// Generates workforce diversity, pay equity, and safety metrics.
 pub struct WorkforceGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: SocialConfig,
     counter: u64,
 }
@@ -26,8 +23,7 @@ impl WorkforceGenerator {
     /// Create a new workforce generator.
     pub fn new(config: SocialConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -324,7 +320,7 @@ impl GovernanceGenerator {
     /// Create a new governance generator.
     pub fn new(seed: u64, board_size: u32, independence_target: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             board_size: board_size.max(3),
             independence_target,

@@ -7,7 +7,7 @@ use datasynth_config::schema::{ChangeOrderSchemaConfig, MilestoneSchemaConfig};
 use datasynth_core::models::{
     ChangeOrder, ChangeOrderStatus, ChangeReason, MilestoneStatus, Project, ProjectMilestone,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -16,9 +16,6 @@ use rust_decimal_macros::dec;
 /// Generates [`ChangeOrder`] records for projects.
 pub struct ChangeOrderGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: ChangeOrderSchemaConfig,
     counter: u64,
 }
@@ -27,8 +24,7 @@ impl ChangeOrderGenerator {
     /// Create a new change order generator.
     pub fn new(config: ChangeOrderSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -156,9 +152,6 @@ impl ChangeOrderGenerator {
 /// Generates [`ProjectMilestone`] records for projects.
 pub struct MilestoneGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: MilestoneSchemaConfig,
     counter: u64,
 }
@@ -167,8 +160,7 @@ impl MilestoneGenerator {
     /// Create a new milestone generator.
     pub fn new(config: MilestoneSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }

@@ -5,7 +5,7 @@
 use chrono::NaiveDate;
 use datasynth_config::schema::EnvironmentalConfig;
 use datasynth_core::models::{EmissionRecord, EmissionScope, EstimationMethod, Scope3Category};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -98,9 +98,6 @@ fn spend_emission_factor(category: &str, country: &str) -> Decimal {
 /// Scope 3: vendor spend → spend-based, business travel → average-data
 pub struct EmissionGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: EnvironmentalConfig,
     counter: u64,
 }
@@ -109,8 +106,7 @@ impl EmissionGenerator {
     /// Create a new emission generator.
     pub fn new(config: EnvironmentalConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }

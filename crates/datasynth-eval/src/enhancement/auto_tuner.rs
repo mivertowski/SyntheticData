@@ -167,9 +167,6 @@ enum ComputeStrategy {
     DecreaseByGap,
     /// Set to target value directly.
     SetToTarget,
-    /// Multiply current by factor based on gap (available for future tuning rules).
-    #[allow(dead_code)]
-    MultiplyByGapFactor,
 }
 
 impl AutoTuner {
@@ -733,14 +730,6 @@ impl AutoTuner {
                 format!("{:.4}", (gap.current_value - gap.gap * 1.2).max(0.0))
             }
             ComputeStrategy::SetToTarget => format!("{:.4}", gap.target_value),
-            ComputeStrategy::MultiplyByGapFactor => {
-                let factor = if gap.is_minimum {
-                    1.0 + gap.severity() * 0.5
-                } else {
-                    1.0 / (1.0 + gap.severity() * 0.5)
-                };
-                format!("{:.4}", gap.current_value * factor)
-            }
         };
 
         let confidence = mapping.influence * (1.0 - gap.severity() * 0.3);

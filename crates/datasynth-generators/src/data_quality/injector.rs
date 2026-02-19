@@ -4,9 +4,9 @@
 //! data quality issues into synthetic data.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::CountryPack;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -233,7 +233,7 @@ pub struct DataQualityInjector {
 impl DataQualityInjector {
     /// Creates a new data quality injector.
     pub fn new(config: DataQualityConfig) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let rng = seeded_rng(config.seed, 0);
         let missing_value_injector = MissingValueInjector::new(config.missing_values.clone());
         let format_injector = FormatVariationInjector::new(config.format_variations.clone());
         let duplicate_generator = DuplicateGenerator::new(config.duplicates.clone());

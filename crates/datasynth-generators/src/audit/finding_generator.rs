@@ -4,7 +4,8 @@
 //! remediation plans, and cross-references per ISA 265.
 
 use chrono::Duration;
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
@@ -58,7 +59,7 @@ impl FindingGenerator {
     /// Create a new generator with the given seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config: FindingGeneratorConfig::default(),
             finding_counter: 0,
             fiscal_year: 2025,
@@ -68,7 +69,7 @@ impl FindingGenerator {
     /// Create a new generator with custom configuration.
     pub fn with_config(seed: u64, config: FindingGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             finding_counter: 0,
             fiscal_year: 2025,

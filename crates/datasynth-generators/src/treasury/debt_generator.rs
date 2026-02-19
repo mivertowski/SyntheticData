@@ -5,6 +5,7 @@
 //! vectors that sum to principal and computes covenant compliance with headroom.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -49,7 +50,7 @@ impl DebtGenerator {
     /// Creates a new debt generator.
     pub fn new(config: DebtSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             instrument_counter: 0,
             covenant_counter: 0,

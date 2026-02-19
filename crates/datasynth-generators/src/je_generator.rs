@@ -1,6 +1,7 @@
 //! Journal Entry generator with statistical distributions.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::prelude::*;
@@ -186,7 +187,7 @@ impl JournalEntryGenerator {
         let company_selector = WeightedCompanySelector::uniform(companies.clone());
 
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             config: config.clone(),
             coa,
@@ -1761,7 +1762,7 @@ impl Generator for JournalEntryGenerator {
     }
 
     fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.line_sampler.reset(self.seed + 1);
         self.amount_sampler.reset(self.seed + 2);
         self.temporal_sampler.reset(self.seed + 3);

@@ -2924,7 +2924,14 @@ impl EnhancedOrchestrator {
 
         // Generate bank reconciliations from payment data
         if br_enabled && !document_flows.payments.is_empty() {
-            let mut br_gen = BankReconciliationGenerator::new(seed + 25);
+            let employee_ids: Vec<String> = self
+                .master_data
+                .employees
+                .iter()
+                .map(|e| e.employee_id.clone())
+                .collect();
+            let mut br_gen =
+                BankReconciliationGenerator::new(seed + 25).with_employee_pool(employee_ids);
 
             // Group payments by company code and period
             for company in &self.config.companies {
@@ -3813,7 +3820,14 @@ impl EnhancedOrchestrator {
             .map(|(i, (mid, _))| (mid.clone(), format!("SL-{:03}", (i % 10) + 1)))
             .collect();
 
-        let mut cc_gen = datasynth_generators::CycleCountGenerator::new(seed + 52);
+        let employee_ids: Vec<String> = self
+            .master_data
+            .employees
+            .iter()
+            .map(|e| e.employee_id.clone())
+            .collect();
+        let mut cc_gen = datasynth_generators::CycleCountGenerator::new(seed + 52)
+            .with_employee_pool(employee_ids);
         let mut cycle_count_total = 0usize;
         for month in 0..self.config.global.period_months {
             let count_date = start_date + chrono::Months::new(month);
@@ -3884,14 +3898,35 @@ impl EnhancedOrchestrator {
                 .collect();
 
             if !customer_data.is_empty() && !material_data.is_empty() {
-                let mut quote_gen = datasynth_generators::SalesQuoteGenerator::new(seed + 60);
-                let quotes = quote_gen.generate(
+                let employee_ids: Vec<String> = self
+                    .master_data
+                    .employees
+                    .iter()
+                    .map(|e| e.employee_id.clone())
+                    .collect();
+                let customer_ids: Vec<String> = self
+                    .master_data
+                    .customers
+                    .iter()
+                    .map(|c| c.customer_id.clone())
+                    .collect();
+                let company_currency = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.currency.as_str())
+                    .unwrap_or("USD");
+
+                let mut quote_gen = datasynth_generators::SalesQuoteGenerator::new(seed + 60)
+                    .with_pools(employee_ids, customer_ids);
+                let quotes = quote_gen.generate_with_currency(
                     company_code,
                     &customer_data,
                     &material_data,
                     start_date,
                     end_date,
                     &self.config.sales_quotes,
+                    company_currency,
                 );
                 snapshot.sales_quote_count = quotes.len();
                 snapshot.sales_quotes = quotes;

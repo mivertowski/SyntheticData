@@ -72,6 +72,8 @@ pub struct BankReconciliationGenerator {
     line_uuid_factory: DeterministicUuidFactory,
     recon_item_uuid_factory: DeterministicUuidFactory,
     config: BankReconciliationConfig,
+    /// Pool of real employee IDs for preparer/reviewer references.
+    employee_ids_pool: Vec<String>,
 }
 
 impl BankReconciliationGenerator {
@@ -91,6 +93,7 @@ impl BankReconciliationGenerator {
                 2,
             ),
             config: BankReconciliationConfig::default(),
+            employee_ids_pool: Vec::new(),
         }
     }
 
@@ -110,7 +113,17 @@ impl BankReconciliationGenerator {
                 2,
             ),
             config,
+            employee_ids_pool: Vec::new(),
         }
+    }
+
+    /// Set the employee ID pool used for preparer and reviewer IDs.
+    ///
+    /// When non-empty, `preparer_id` and `reviewer_id` are picked from this
+    /// pool instead of fabricated `USR-{:04}` strings.
+    pub fn with_employee_pool(mut self, employee_ids: Vec<String>) -> Self {
+        self.employee_ids_pool = employee_ids;
+        self
     }
 
     /// Generate a bank reconciliation for the given account and period.
@@ -274,10 +287,21 @@ impl BankReconciliationGenerator {
         // Net difference should be zero when fully reconciled.
         let net_difference = adjusted_bank_balance - (book_ending_balance + book_adjustment);
 
-        // Preparer / reviewer
-        let preparer_id = format!("USR-{:04}", self.rng.gen_range(1..=200));
+        // Preparer / reviewer – use real employee IDs when available
+        let preparer_id = if self.employee_ids_pool.is_empty() {
+            format!("USR-{:04}", self.rng.gen_range(1..=200))
+        } else {
+            self.employee_ids_pool
+                .choose(&mut self.rng)
+                .cloned()
+                .unwrap_or_else(|| format!("USR-{:04}", self.rng.gen_range(1..=200)))
+        };
         let reviewer_id = if status == ReconciliationStatus::Completed {
-            Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            if self.employee_ids_pool.is_empty() {
+                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+            } else {
+                self.employee_ids_pool.choose(&mut self.rng).cloned()
+            }
         } else {
             None
         };

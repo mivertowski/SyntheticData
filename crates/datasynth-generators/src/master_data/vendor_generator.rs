@@ -19,6 +19,7 @@ use datasynth_core::models::{
 use datasynth_core::templates::{
     AddressGenerator, AddressRegion, SpendCategory, VendorNameGenerator,
 };
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -272,7 +273,7 @@ impl VendorGenerator {
     /// Create a new vendor generator with custom configuration.
     pub fn with_config(seed: u64, config: VendorGeneratorConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             vendor_name_gen: VendorNameGenerator::new(),
             address_gen: AddressGenerator::for_region(config.primary_region),
@@ -290,7 +291,7 @@ impl VendorGenerator {
         network_config: VendorNetworkConfig,
     ) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             vendor_name_gen: VendorNameGenerator::new(),
             address_gen: AddressGenerator::for_region(config.primary_region),
@@ -316,12 +317,9 @@ impl VendorGenerator {
         self.vendor_counter += 1;
 
         let vendor_id = format!("V-{:06}", self.vendor_counter);
-        let (category, name) = self.select_vendor_name();
+        let (_category, name) = self.select_vendor_name();
         let tax_id = self.generate_tax_id();
         let _address = self.address_gen.generate_commercial(&mut self.rng);
-
-        // Store the spend category for potential future use
-        let _spend_category = category;
 
         let mut vendor = Vendor::new(
             &vendor_id,
@@ -507,7 +505,7 @@ impl VendorGenerator {
 
     /// Reset the generator.
     pub fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.vendor_counter = 0;
         self.vendor_name_gen = VendorNameGenerator::new();
         self.address_gen = AddressGenerator::for_region(self.config.primary_region);

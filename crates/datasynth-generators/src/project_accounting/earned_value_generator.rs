@@ -5,7 +5,7 @@
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::EarnedValueSchemaConfig;
 use datasynth_core::models::{EarnedValueMetric, Project, ProjectCostLine};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -14,9 +14,6 @@ use rust_decimal_macros::dec;
 /// Generates [`EarnedValueMetric`] records for projects.
 pub struct EarnedValueGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     // Stored for future configurable thresholds (e.g., schedule variance tolerance).
     #[allow(dead_code)]
     config: EarnedValueSchemaConfig,
@@ -27,8 +24,7 @@ impl EarnedValueGenerator {
     /// Create a new earned value generator.
     pub fn new(config: EarnedValueSchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }

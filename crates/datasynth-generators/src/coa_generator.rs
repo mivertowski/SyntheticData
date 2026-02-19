@@ -8,7 +8,7 @@ use datasynth_core::accounts::{
 };
 use datasynth_core::models::*;
 use datasynth_core::traits::Generator;
-use rand::prelude::*;
+use datasynth_core::utils::seeded_rng;
 use rand_chacha::ChaCha8Rng;
 
 /// Generator for Chart of Accounts.
@@ -24,7 +24,7 @@ impl ChartOfAccountsGenerator {
     /// Create a new CoA generator.
     pub fn new(complexity: CoAComplexity, industry: IndustrySector, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             seed,
             complexity,
             industry,
@@ -742,7 +742,7 @@ impl Generator for ChartOfAccountsGenerator {
     }
 
     fn reset(&mut self) {
-        self.rng = ChaCha8Rng::seed_from_u64(self.seed);
+        self.rng = seeded_rng(self.seed, 0);
         self.count = 0;
     }
 

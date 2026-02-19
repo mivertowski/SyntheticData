@@ -9,7 +9,7 @@ use datasynth_core::models::{
     DisposalMethod, EnergyConsumption, EnergySourceType, WasteRecord, WasteType, WaterSource,
     WaterUsage,
 };
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -18,9 +18,6 @@ use rust_decimal_macros::dec;
 /// Generates [`EnergyConsumption`] records for facilities.
 pub struct EnergyGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: EnergySchemaConfig,
     counter: u64,
 }
@@ -29,8 +26,7 @@ impl EnergyGenerator {
     /// Create a new energy generator.
     pub fn new(config: EnergySchemaConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::Esg),
+            rng: seeded_rng(seed, 0),
             config,
             counter: 0,
         }
@@ -181,7 +177,7 @@ impl WaterGenerator {
     /// Create a new water generator.
     pub fn new(seed: u64, facility_count: u32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             facility_count: facility_count.max(1),
         }
@@ -260,7 +256,7 @@ impl WasteGenerator {
     /// Create a new waste generator.
     pub fn new(seed: u64, diversion_target: f64, facility_count: u32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             counter: 0,
             diversion_target,
             facility_count: facility_count.max(1),

@@ -12,8 +12,8 @@
 //! - **Context-aware injection**: Entity-specific anomaly patterns
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -207,7 +207,7 @@ pub struct InjectorStats {
 impl AnomalyInjector {
     /// Creates a new anomaly injector.
     pub fn new(config: AnomalyInjectorConfig) -> Self {
-        let mut rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let mut rng = seeded_rng(config.seed, 0);
         let cluster_manager = ClusterManager::new(config.patterns.clustering.clone());
         let entity_targeting =
             EntityTargetingManager::new(config.patterns.entity_targeting.clone());

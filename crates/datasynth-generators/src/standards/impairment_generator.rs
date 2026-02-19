@@ -9,7 +9,7 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::ImpairmentConfig;
-use datasynth_core::utils::weighted_select;
+use datasynth_core::utils::{seeded_rng, weighted_select};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use datasynth_standards::accounting::impairment::{
     CashFlowProjection, ImpairmentAssetType, ImpairmentIndicator, ImpairmentTest,
@@ -69,7 +69,7 @@ impl ImpairmentGenerator {
     /// Create a new impairment generator with a deterministic seed.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ImpairmentTest),
         }
     }

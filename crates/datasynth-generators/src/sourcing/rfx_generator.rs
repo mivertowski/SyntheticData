@@ -5,6 +5,7 @@ use datasynth_config::schema::RfxConfig;
 use datasynth_core::models::sourcing::{
     RfxEvaluationCriterion, RfxEvent, RfxLineItem, RfxStatus, RfxType, ScoringMethod,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -21,7 +22,7 @@ impl RfxGenerator {
     /// Create a new RFx generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::RfxEvent),
             config: RfxConfig::default(),
         }
@@ -30,7 +31,7 @@ impl RfxGenerator {
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: RfxConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::RfxEvent),
             config,
         }

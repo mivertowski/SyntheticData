@@ -12,6 +12,7 @@ use datasynth_config::schema::ProjectRevenueRecognitionConfig;
 use datasynth_core::models::{
     CompletionMeasure, Project, ProjectCostLine, ProjectRevenue, RevenueMethod,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -30,7 +31,7 @@ impl RevenueGenerator {
     /// Create a new revenue generator.
     pub fn new(config: ProjectRevenueRecognitionConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
             config,
             counter: 0,

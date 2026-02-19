@@ -5,6 +5,7 @@
 //! payment records.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -57,7 +58,7 @@ impl CashPositionGenerator {
     /// Creates a new cash position generator.
     pub fn new(config: CashPositioningConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             config,
             id_counter: 0,
         }

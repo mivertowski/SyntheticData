@@ -5,6 +5,7 @@ use datasynth_config::schema::QualificationConfig;
 use datasynth_core::models::sourcing::{
     QualificationScore, QualificationStatus, SupplierCertification, SupplierQualification,
 };
+use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -20,7 +21,7 @@ impl QualificationGenerator {
     /// Create a new qualification generator.
     pub fn new(seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierQualification),
             config: QualificationConfig::default(),
         }
@@ -29,7 +30,7 @@ impl QualificationGenerator {
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: QualificationConfig) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::SupplierQualification),
             config,
         }

@@ -4,6 +4,7 @@
 //! bi-temporal data models.
 
 use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, Utc};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -100,7 +101,7 @@ impl TemporalAttributeGenerator {
     pub fn new(config: TemporalAttributeConfig, seed: u64, base_date: NaiveDate) -> Self {
         Self {
             config,
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             base_date,
             count: 0,
         }
@@ -282,7 +283,7 @@ impl TemporalAttributeGenerator {
 
     /// Resets the generator.
     pub fn reset(&mut self, seed: u64) {
-        self.rng = ChaCha8Rng::seed_from_u64(seed);
+        self.rng = seeded_rng(seed, 0);
         self.count = 0;
     }
 

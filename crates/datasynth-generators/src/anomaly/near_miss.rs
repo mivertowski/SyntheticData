@@ -4,8 +4,8 @@
 //! legitimate, useful for training models to reduce false positives.
 
 use chrono::{Datelike, NaiveDate};
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -79,7 +79,7 @@ struct RecentTransaction {
 impl NearMissGenerator {
     /// Creates a new near-miss generator.
     pub fn new(config: NearMissConfig) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let rng = seeded_rng(config.seed, 0);
         Self {
             config,
             rng,
@@ -366,7 +366,7 @@ impl NearMissGenerator {
     pub fn reset(&mut self) {
         self.labels.clear();
         self.recent_transactions.clear();
-        self.rng = ChaCha8Rng::seed_from_u64(self.config.seed);
+        self.rng = seeded_rng(self.config.seed, 0);
     }
 
     /// Returns statistics about generated near-misses.

@@ -4,6 +4,7 @@
 //! Each injected anomaly produces an [`EsgAnomalyLabel`] that records the
 //! anomaly type, severity, affected record, and original vs. anomalous values.
 
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -87,7 +88,7 @@ impl EsgAnomalyInjector {
     /// Create a new ESG anomaly injector.
     pub fn new(seed: u64, anomaly_rate: f64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
+            rng: seeded_rng(seed, 0),
             anomaly_rate: anomaly_rate.clamp(0.0, 1.0),
             counter: 0,
         }

@@ -1,7 +1,8 @@
 //! Fixed Assets (FA) generator.
 
 use chrono::NaiveDate;
-use rand::{Rng, SeedableRng};
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -68,7 +69,7 @@ impl FAGenerator {
 
     /// Creates a new FA generator from a seed, constructing the RNG internally.
     pub fn with_seed(config: FAGeneratorConfig, seed: u64) -> Self {
-        Self::new(config, ChaCha8Rng::seed_from_u64(seed))
+        Self::new(config, seeded_rng(seed, 0))
     }
 
     /// Maps a string asset class to the enum.

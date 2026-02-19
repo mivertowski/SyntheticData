@@ -4,8 +4,8 @@
 //! handling scheme creation, advancement, and completion.
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
 use rand::Rng;
-use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -113,7 +113,7 @@ pub struct SchemeAdvancer {
 impl SchemeAdvancer {
     /// Creates a new scheme advancer.
     pub fn new(config: SchemeAdvancerConfig) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(config.seed);
+        let rng = seeded_rng(config.seed, 0);
         Self {
             config,
             rng,
@@ -217,11 +217,7 @@ impl SchemeAdvancer {
 
         for (idx, scheme) in self.active_schemes.iter_mut().enumerate() {
             // Create a local RNG for each scheme to ensure determinism
-            let mut scheme_rng = ChaCha8Rng::seed_from_u64(
-                self.config
-                    .seed
-                    .wrapping_add(scheme.scheme_id().as_u128() as u64),
-            );
+            let mut scheme_rng = seeded_rng(self.config.seed, scheme.scheme_id().as_u128() as u64);
 
             let actions = scheme.advance(context, &mut scheme_rng);
             all_actions.extend(actions);
@@ -325,7 +321,7 @@ impl SchemeAdvancer {
         self.active_perpetrators.clear();
         self.active_vendors.clear();
         self.labels.clear();
-        self.rng = ChaCha8Rng::seed_from_u64(self.config.seed);
+        self.rng = seeded_rng(self.config.seed, 0);
     }
 
     /// Returns statistics about schemes.

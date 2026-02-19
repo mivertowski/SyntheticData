@@ -6,7 +6,7 @@
 use chrono::NaiveDate;
 use datasynth_config::schema::{ProjectAccountingConfig, WbsSchemaConfig};
 use datasynth_core::models::{Project, ProjectPool, ProjectStatus, ProjectType, WbsElement};
-use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -14,9 +14,6 @@ use rust_decimal::Decimal;
 /// Generates [`Project`] records with WBS hierarchies.
 pub struct ProjectGenerator {
     rng: ChaCha8Rng,
-    // Reserved for deterministic record IDs; currently using counter-based IDs.
-    #[allow(dead_code)]
-    uuid_factory: DeterministicUuidFactory,
     config: ProjectAccountingConfig,
 }
 
@@ -24,8 +21,7 @@ impl ProjectGenerator {
     /// Create a new project generator.
     pub fn new(config: ProjectAccountingConfig, seed: u64) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(seed),
-            uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
+            rng: seeded_rng(seed, 0),
             config,
         }
     }

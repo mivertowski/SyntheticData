@@ -15,6 +15,7 @@ use datasynth_core::models::subledger::ar::{ARInvoice, ARInvoiceLine};
 use datasynth_core::models::subledger::PaymentTerms;
 
 /// Links document flow invoices to subledger records.
+#[derive(Default)]
 pub struct DocumentFlowLinker {
     ap_counter: u64,
     ar_counter: u64,
@@ -194,13 +195,6 @@ impl DocumentFlowLinker {
             .iter()
             .map(|ci| self.create_ar_invoice_from_customer_invoice(ci))
             .collect()
-    }
-}
-
-#[allow(clippy::derivable_impls)]
-impl Default for DocumentFlowLinker {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
