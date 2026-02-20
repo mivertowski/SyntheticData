@@ -152,6 +152,9 @@ signal-hook = "0.3"
 # HTTP client (streaming export)
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "blocking"] }
 
+# RustGraph shared API types (canonical wire-format types)
+rustgraph-api-types = { path = "../../RustGraph/RustGraph/crates/rustgraph-api-types" }
+
 # Regex
 regex = "1.11"
 
