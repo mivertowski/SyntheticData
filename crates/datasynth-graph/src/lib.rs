@@ -42,11 +42,14 @@ pub use exporters::{
     CommonExportConfig, CommonGraphMetadata, CypherQueryBuilder, DGLExportConfig, DGLExporter,
     DGLMetadata, HypergraphExportConfig, HypergraphExporter, Neo4jExportConfig, Neo4jExporter,
     Neo4jMetadata, PyGExportConfig, PyGExporter, PyGMetadata, RawUnifiedEdge, RawUnifiedHyperedge,
-    RawUnifiedNode, RustGraphBulkExport, RustGraphEdgeMetadata, RustGraphEdgeOutput,
-    RustGraphExportConfig, RustGraphExporter, RustGraphMetadata, RustGraphNodeMetadata,
-    RustGraphNodeOutput, RustGraphOutputFormat, RustGraphUnifiedExporter, UnifiedExportConfig,
+    RawUnifiedNode, RustGraphEdgeMetadata, RustGraphEdgeOutput, RustGraphExportConfig,
+    RustGraphExporter, RustGraphMetadata, RustGraphNodeMetadata, RustGraphNodeOutput,
+    RustGraphOutputFormat, RustGraphUnifiedExporter, UnifiedExportConfig,
     UnifiedHypergraphMetadata,
 };
+
+#[cfg(feature = "rustgraph")]
+pub use exporters::RustGraphBulkExport;
 
 // Re-export ML types
 pub use ml::*;

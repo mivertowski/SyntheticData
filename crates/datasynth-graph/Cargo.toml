@@ -8,6 +8,10 @@ repository.workspace = true
 homepage.workspace = true
 description = "Graph/network export for synthetic accounting data - supports PyTorch Geometric, Neo4j, and DGL formats"
 
+[features]
+default = []
+rustgraph = ["dep:rustgraph-api-types"]
+
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-banking = { workspace = true }
@@ -16,7 +20,7 @@ chrono = { workspace = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rustgraph-api-types = { workspace = true }
+rustgraph-api-types = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -14,7 +14,6 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 
 use chrono::NaiveDate;
-use rustgraph_api_types::bulk::{BulkEdgeData, BulkNodeData};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -361,119 +360,128 @@ impl RustGraphUnifiedExporter {
     }
 }
 
-/// Result of converting a `Hypergraph` to RustGraph bulk import types.
-///
-/// Contains the canonical `BulkNodeData`/`BulkEdgeData` types from
-/// `rustgraph-api-types` that the RustGraph server accepts directly.
-/// Hyperedges are returned separately (no bulk API for them yet).
-#[derive(Debug, Clone)]
-pub struct RustGraphBulkExport {
-    /// Nodes in canonical bulk import format (u64 IDs, u32 type codes).
-    pub nodes: Vec<BulkNodeData>,
-    /// Edges in canonical bulk import format (u64 source/target).
-    pub edges: Vec<BulkEdgeData>,
-    /// Hyperedges (not part of the bulk import API, handled separately).
-    pub hyperedges: Vec<RawUnifiedHyperedge>,
-    /// Mapping from original string IDs to assigned u64 IDs.
-    pub id_map: HashMap<String, u64>,
-}
+#[cfg(feature = "rustgraph")]
+mod bulk_export {
+    use super::*;
+    use rustgraph_api_types::bulk::{BulkEdgeData, BulkNodeData};
 
-impl RustGraphUnifiedExporter {
-    /// Convert a `Hypergraph` to RustGraph bulk import types.
+    /// Result of converting a `Hypergraph` to RustGraph bulk import types.
     ///
-    /// Assigns sequential u64 IDs to nodes (starting at 1) and maps
-    /// edge source/target string IDs to u64 via the returned `id_map`.
-    /// Properties include the original string ID as `"entity_id"` and
-    /// the type name as `"node_type_name"` for reverse lookups.
-    pub fn to_bulk_import(&self, hypergraph: &Hypergraph) -> RustGraphBulkExport {
-        let mut id_map: HashMap<String, u64> = HashMap::with_capacity(hypergraph.nodes.len());
-        let mut nodes = Vec::with_capacity(hypergraph.nodes.len());
+    /// Contains the canonical `BulkNodeData`/`BulkEdgeData` types from
+    /// `rustgraph-api-types` that the RustGraph server accepts directly.
+    /// Hyperedges are returned separately (no bulk API for them yet).
+    #[derive(Debug, Clone)]
+    pub struct RustGraphBulkExport {
+        /// Nodes in canonical bulk import format (u64 IDs, u32 type codes).
+        pub nodes: Vec<BulkNodeData>,
+        /// Edges in canonical bulk import format (u64 source/target).
+        pub edges: Vec<BulkEdgeData>,
+        /// Hyperedges (not part of the bulk import API, handled separately).
+        pub hyperedges: Vec<RawUnifiedHyperedge>,
+        /// Mapping from original string IDs to assigned u64 IDs.
+        pub id_map: HashMap<String, u64>,
+    }
 
-        // Convert nodes: assign sequential u64 IDs
-        for (idx, hg_node) in hypergraph.nodes.iter().enumerate() {
-            let id = (idx as u64) + 1; // 1-based IDs
-            id_map.insert(hg_node.id.clone(), id);
+    impl RustGraphUnifiedExporter {
+        /// Convert a `Hypergraph` to RustGraph bulk import types.
+        ///
+        /// Assigns sequential u64 IDs to nodes (starting at 1) and maps
+        /// edge source/target string IDs to u64 via the returned `id_map`.
+        /// Properties include the original string ID as `"entity_id"` and
+        /// the type name as `"node_type_name"` for reverse lookups.
+        pub fn to_bulk_import(&self, hypergraph: &Hypergraph) -> RustGraphBulkExport {
+            let mut id_map: HashMap<String, u64> = HashMap::with_capacity(hypergraph.nodes.len());
+            let mut nodes = Vec::with_capacity(hypergraph.nodes.len());
 
-            let mut properties = hg_node.properties.clone();
-            properties.insert("entity_id".to_string(), Value::String(hg_node.id.clone()));
-            properties.insert(
-                "node_type_name".to_string(),
-                Value::String(hg_node.entity_type.clone()),
-            );
-            properties.insert(
-                "external_id".to_string(),
-                Value::String(hg_node.external_id.clone()),
-            );
-            if hg_node.is_anomaly {
-                properties.insert("is_anomaly".to_string(), Value::Bool(true));
-                if let Some(ref at) = hg_node.anomaly_type {
-                    properties.insert("anomaly_type".to_string(), Value::String(at.clone()));
-                }
-            }
-            if !hg_node.features.is_empty() {
+            // Convert nodes: assign sequential u64 IDs
+            for (idx, hg_node) in hypergraph.nodes.iter().enumerate() {
+                let id = (idx as u64) + 1; // 1-based IDs
+                id_map.insert(hg_node.id.clone(), id);
+
+                let mut properties = hg_node.properties.clone();
+                properties.insert("entity_id".to_string(), Value::String(hg_node.id.clone()));
                 properties.insert(
-                    "features".to_string(),
-                    Value::Array(
-                        hg_node
-                            .features
-                            .iter()
-                            .map(|f| serde_json::json!(f))
-                            .collect(),
-                    ),
+                    "node_type_name".to_string(),
+                    Value::String(hg_node.entity_type.clone()),
                 );
+                properties.insert(
+                    "external_id".to_string(),
+                    Value::String(hg_node.external_id.clone()),
+                );
+                if hg_node.is_anomaly {
+                    properties.insert("is_anomaly".to_string(), Value::Bool(true));
+                    if let Some(ref at) = hg_node.anomaly_type {
+                        properties.insert("anomaly_type".to_string(), Value::String(at.clone()));
+                    }
+                }
+                if !hg_node.features.is_empty() {
+                    properties.insert(
+                        "features".to_string(),
+                        Value::Array(
+                            hg_node
+                                .features
+                                .iter()
+                                .map(|f| serde_json::json!(f))
+                                .collect(),
+                        ),
+                    );
+                }
+
+                nodes.push(BulkNodeData {
+                    id: Some(id),
+                    node_type: hg_node.entity_type_code,
+                    layer: Some(hg_node.layer.index()),
+                    labels: vec![hg_node.label.clone()],
+                    properties,
+                });
             }
 
-            nodes.push(BulkNodeData {
-                id: Some(id),
-                node_type: hg_node.entity_type_code,
-                layer: Some(hg_node.layer.index()),
-                labels: vec![hg_node.label.clone()],
-                properties,
-            });
-        }
+            // Convert edges: resolve String IDs to u64 via id_map
+            let mut edges = Vec::with_capacity(hypergraph.edges.len());
+            for edge in &hypergraph.edges {
+                let source = match id_map.get(&edge.source_id) {
+                    Some(&id) => id,
+                    None => continue, // Skip edges with unknown source
+                };
+                let target = match id_map.get(&edge.target_id) {
+                    Some(&id) => id,
+                    None => continue, // Skip edges with unknown target
+                };
 
-        // Convert edges: resolve String IDs to u64 via id_map
-        let mut edges = Vec::with_capacity(hypergraph.edges.len());
-        for edge in &hypergraph.edges {
-            let source = match id_map.get(&edge.source_id) {
-                Some(&id) => id,
-                None => continue, // Skip edges with unknown source
-            };
-            let target = match id_map.get(&edge.target_id) {
-                Some(&id) => id,
-                None => continue, // Skip edges with unknown target
-            };
+                let mut properties = edge.properties.clone();
+                properties.insert(
+                    "edge_type_name".to_string(),
+                    Value::String(edge.edge_type.clone()),
+                );
 
-            let mut properties = edge.properties.clone();
-            properties.insert(
-                "edge_type_name".to_string(),
-                Value::String(edge.edge_type.clone()),
-            );
+                edges.push(BulkEdgeData {
+                    source,
+                    target,
+                    edge_type: edge.edge_type_code,
+                    weight: 1.0,
+                    properties,
+                });
+            }
 
-            edges.push(BulkEdgeData {
-                source,
-                target,
-                edge_type: edge.edge_type_code,
-                weight: 1.0,
-                properties,
-            });
-        }
+            // Convert hyperedges (not part of bulk import API)
+            let hyperedges: Vec<RawUnifiedHyperedge> = hypergraph
+                .hyperedges
+                .iter()
+                .map(RawUnifiedHyperedge::from_hyperedge)
+                .collect();
 
-        // Convert hyperedges (not part of bulk import API)
-        let hyperedges: Vec<RawUnifiedHyperedge> = hypergraph
-            .hyperedges
-            .iter()
-            .map(RawUnifiedHyperedge::from_hyperedge)
-            .collect();
-
-        RustGraphBulkExport {
-            nodes,
-            edges,
-            hyperedges,
-            id_map,
+            RustGraphBulkExport {
+                nodes,
+                edges,
+                hyperedges,
+                id_map,
+            }
         }
     }
 }
+
+#[cfg(feature = "rustgraph")]
+pub use bulk_export::RustGraphBulkExport;
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
@@ -656,6 +664,7 @@ mod tests {
         assert_eq!(metadata.source, "datasynth");
     }
 
+    #[cfg(feature = "rustgraph")]
     #[test]
     fn test_to_bulk_import_nodes() {
         let hypergraph = build_test_hypergraph();
@@ -676,6 +685,7 @@ mod tests {
         assert!(first.properties.contains_key("node_type_name"));
     }
 
+    #[cfg(feature = "rustgraph")]
     #[test]
     fn test_to_bulk_import_edges() {
         let hypergraph = build_test_hypergraph();
@@ -693,6 +703,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "rustgraph")]
     #[test]
     fn test_to_bulk_import_id_mapping() {
         let hypergraph = build_test_hypergraph();

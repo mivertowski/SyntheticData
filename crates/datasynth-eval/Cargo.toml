@@ -11,7 +11,6 @@ description = "Evaluation framework for synthetic financial data quality and coh
 datasynth-core = { workspace = true }
 datasynth-config = { workspace = true }
 datasynth-generators = { workspace = true }
-datasynth-graph = { workspace = true }
 
 # Numeric
 rust_decimal = { workspace = true }

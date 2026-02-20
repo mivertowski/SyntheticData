@@ -1477,7 +1477,6 @@ dependencies = [
  "datasynth-config",
  "datasynth-core",
  "datasynth-generators",
- "datasynth-graph",
  "datasynth-test-utils",
  "proptest",
  "rand 0.8.5",
