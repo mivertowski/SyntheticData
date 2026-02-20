@@ -10,7 +10,9 @@ description = "Graph/network export for synthetic accounting data - supports PyT
 
 [features]
 default = []
-rustgraph = ["dep:rustgraph-api-types"]
+# Enable RustGraph bulk export support. Requires local rustgraph-api-types crate.
+# To activate: uncomment the dep below and change this to: rustgraph = ["dep:rustgraph-api-types"]
+rustgraph = []
 
 [dependencies]
 datasynth-core = { workspace = true }
@@ -20,7 +22,6 @@ chrono = { workspace = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rustgraph-api-types = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

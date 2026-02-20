@@ -1554,7 +1554,6 @@ dependencies = [
  "datasynth-ocpm",
  "rust_decimal",
  "rust_decimal_macros",
- "rustgraph-api-types",
  "serde",
  "serde_json",
  "tempfile",
@@ -5243,14 +5242,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
-]
-
-[[package]]
-name = "rustgraph-api-types"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]
