@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-02-20
+
+### Added
+
+- French GAAP (PCG) accounting framework support with Plan Comptable Général 2024 chart of accounts (`datasynth-core`, `datasynth-generators`)
+- FEC (Fichier des Écritures Comptables) export — Article A47 A-1 compliant 18-column format (`datasynth-output`)
+- French GAAP lease classification aligned with IFRS 16 / ANC 2019 (`datasynth-standards`)
+
+### Fixed
+
+- PCG account type classification now handles multi-digit account numbers correctly — previously accounts like 1011 (Capital souscrit) were misclassified as liabilities (`datasynth-core`)
+- Account 421 (Personnel) removed from Class 1 fallback generator — was incorrectly placed with Class 1 equity accounts and mislabeled as "Fournisseurs" (`datasynth-generators`)
+- FEC `format_decimal` now uses native `rust_decimal` formatting instead of lossy f64 conversion (`datasynth-output`)
+- French GAAP lease classification delegates to IFRS 16 logic, fixing inconsistency with `uses_brightline_lease_tests()` returning false (`datasynth-standards`)
+- PCG constant `PETTY_CASH` corrected from 516000 (internal transfers) to 531000 (caisse) (`datasynth-core`)
+- PCG constant `ACCRUED_EXPENSES` moved out of `equity_liability_accounts` — was a Class 4 account in a Class 1 module (`datasynth-core`)
+- FEC field escaping: removed dead code branch that checked for semicolons after already replacing them (`datasynth-output`)
+
 ## [0.8.0] - 2026-02-18
 
 ### Added

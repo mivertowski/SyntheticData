@@ -52,7 +52,7 @@ pub mod control_accounts {
 pub mod cash_accounts {
     pub const OPERATING_CASH: &str = "530000";
     pub const BANK_ACCOUNT: &str = "512000";
-    pub const PETTY_CASH: &str = "516000";
+    pub const PETTY_CASH: &str = "531000";
 }
 
 /// Revenue – Class 7 (produits)
@@ -76,9 +76,14 @@ pub mod expense_accounts {
 pub mod equity_liability_accounts {
     pub const COMMON_STOCK: &str = "101000";
     pub const RETAINED_EARNINGS: &str = "129000";
-    pub const ACCRUED_EXPENSES: &str = "421000";
+    pub const PROVISIONS: &str = "151000";
     pub const SHORT_TERM_DEBT: &str = "164000";
     pub const LONG_TERM_DEBT: &str = "163000";
+}
+
+/// Personnel – Class 4 (sub-class 42)
+pub mod personnel_accounts {
+    pub const WAGES_PAYABLE: &str = "421000";
 }
 
 /// Return the PCG class (1–9) from a 6-digit account number.

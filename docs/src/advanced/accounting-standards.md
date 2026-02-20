@@ -8,7 +8,7 @@ The `datasynth-standards` crate provides domain models and generation logic for:
 
 | Category | Standards |
 |----------|-----------|
-| **Accounting** | US GAAP (ASC), IFRS |
+| **Accounting** | US GAAP (ASC), IFRS, French GAAP (PCG) |
 | **Auditing** | ISA (International Standards on Auditing), PCAOB |
 | **Regulatory** | SOX (Sarbanes-Oxley Act) |
 
@@ -19,26 +19,27 @@ The `datasynth-standards` crate provides domain models and generation logic for:
 ```yaml
 accounting_standards:
   enabled: true
-  framework: us_gaap  # Options: us_gaap, ifrs, dual_reporting
+  framework: us_gaap  # Options: us_gaap, ifrs, french_gaap, dual_reporting
 ```
 
 | Framework | Description |
 |-----------|-------------|
 | `us_gaap` | United States Generally Accepted Accounting Principles |
 | `ifrs` | International Financial Reporting Standards |
+| `french_gaap` | French Generally Accepted Accounting Principles (Plan Comptable Général) |
 | `dual_reporting` | Generate data for both frameworks with reconciliation |
 
 ### Key Framework Differences
 
 The generator automatically handles framework-specific rules:
 
-| Area | US GAAP | IFRS |
-|------|---------|------|
-| Inventory costing | LIFO permitted | LIFO prohibited |
-| Development costs | Generally expensed | Capitalized when criteria met |
-| PPE revaluation | Cost model only | Revaluation model permitted |
-| Impairment reversal | Not permitted | Permitted (except goodwill) |
-| Lease classification | Bright-line tests (75%/90%) | Principles-based |
+| Area | US GAAP | IFRS | French GAAP (PCG) |
+|------|---------|------|-------------------|
+| Inventory costing | LIFO permitted | LIFO prohibited | LIFO prohibited |
+| Development costs | Generally expensed | Capitalized when criteria met | Capitalized when criteria met |
+| PPE revaluation | Cost model only | Revaluation model permitted | Revaluation permitted |
+| Impairment reversal | Not permitted | Permitted (except goodwill) | Permitted |
+| Lease classification | Bright-line tests (75%/90%) | Principles-based | Principles-based (IFRS 16 aligned) |
 
 ## Revenue Recognition (ASC 606 / IFRS 15)
 
@@ -97,6 +98,7 @@ accounting_standards:
 
 - **US GAAP**: Bright-line tests (75% term, 90% PV)
 - **IFRS**: All leases (except short-term/low-value) recognized on balance sheet
+- **French GAAP**: Delegates to IFRS 16 principles-based classification (ANC règlement 2019-01)
 
 ## Fair Value Measurement (ASC 820 / IFRS 13)
 
@@ -139,6 +141,7 @@ accounting_standards:
 
 - **US GAAP**: Two-step test (recoverability then measurement)
 - **IFRS**: One-step test comparing to recoverable amount
+- **French GAAP**: Follows IFRS approach (one-step test); reversal of impairment permitted
 
 ## ISA Compliance (Audit Standards)
 

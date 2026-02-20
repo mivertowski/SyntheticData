@@ -137,10 +137,10 @@ impl ChartOfAccountsGenerator {
                 AccountSubType::LongTermDebt,
             ),
             (
-                421,
-                "Fournisseurs",
+                151,
+                "Provisions pour risques",
                 AccountType::Liability,
-                AccountSubType::AccountsPayable,
+                AccountSubType::AccruedLiabilities,
             ),
         ];
         for (base, name, acc_type, sub_type) in items {
@@ -218,7 +218,11 @@ impl ChartOfAccountsGenerator {
     }
 
     fn generate_pcg_class_5(&mut self, coa: &mut ChartOfAccounts, count: usize) {
-        let bases = [(512, "Banque"), (530, "Caisse"), (516, "Chèques")];
+        let bases = [
+            (512, "Banque"),
+            (530, "Caisse"),
+            (511, "Valeurs à l'encaissement"),
+        ];
         for (base, name) in bases {
             for i in 0..(count / 3).max(1) {
                 let num = base * 1000 + (i as u32 % 100);

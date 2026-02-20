@@ -82,6 +82,24 @@ fn normalize_pcg_account_number(number: u32) -> String {
     format!("{:06}", number * factor)
 }
 
+/// Extract 2-digit PCG subclass: 1011→10, 164→16, 4111→41
+fn pcg_subclass(number: u32) -> u32 {
+    let mut n = number;
+    while n >= 100 {
+        n /= 10;
+    }
+    n
+}
+
+/// Extract 3-digit PCG account group: 1011→101, 164→164, 4111→411
+fn pcg_account_group(number: u32) -> u32 {
+    let mut n = number;
+    while n >= 1000 {
+        n /= 10;
+    }
+    n
+}
+
 /// Map PCG class and account number to our AccountType and AccountSubType.
 fn pcg_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType) {
     use AccountSubType::{
@@ -90,23 +108,26 @@ fn pcg_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType) 
         OtherLiabilities, ProductRevenue, RetainedEarnings, SuspenseClearing,
     };
     use AccountType::{Asset, Equity, Expense, Liability, Revenue};
+    let sub = pcg_subclass(number);
     match class {
         1 => {
-            let is_equity = (10..13).contains(&number) || (100..130).contains(&number);
-            if is_equity {
-                if (101..=109).contains(&number) {
+            if (10..=14).contains(&sub) {
+                let group = pcg_account_group(number);
+                if (101..=109).contains(&group) {
                     (Equity, CommonStock)
                 } else {
                     (Equity, RetainedEarnings)
                 }
-            } else if (16..=169).contains(&number) {
+            } else if sub == 15 {
+                (Liability, AccruedLiabilities)
+            } else if (16..=17).contains(&sub) {
                 (Liability, LongTermDebt)
             } else {
-                (Liability, AccruedLiabilities)
+                (Liability, OtherLiabilities)
             }
         }
         2 => {
-            if (28..=282).contains(&number) || (29..=297).contains(&number) {
+            if (28..=29).contains(&sub) {
                 (Asset, AccumulatedDepreciation)
             } else {
                 (Asset, FixedAssets)
@@ -114,11 +135,11 @@ fn pcg_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType) 
         }
         3 => (Asset, Inventory),
         4 => {
-            if (41..=419).contains(&number) {
-                (Asset, AccountsReceivable)
-            } else if (40..=409).contains(&number) {
+            if sub == 40 {
                 (Liability, AccountsPayable)
-            } else if (42..=428).contains(&number) {
+            } else if sub == 41 {
+                (Asset, AccountsReceivable)
+            } else if sub == 42 {
                 (Liability, AccruedLiabilities)
             } else {
                 (Liability, OtherLiabilities)
@@ -176,6 +197,70 @@ mod tests {
         assert_eq!(root.len(), 8); // Classes 1-8
         assert_eq!(root[0].number, 1);
         assert_eq!(root[0].label, "Comptes de capitaux");
+    }
+
+    #[test]
+    fn test_pcg_subclass() {
+        assert_eq!(super::pcg_subclass(10), 10);
+        assert_eq!(super::pcg_subclass(101), 10);
+        assert_eq!(super::pcg_subclass(1011), 10);
+        assert_eq!(super::pcg_subclass(164), 16);
+        assert_eq!(super::pcg_subclass(4111), 41);
+        assert_eq!(super::pcg_subclass(28), 28);
+        assert_eq!(super::pcg_subclass(281), 28);
+    }
+
+    #[test]
+    fn test_pcg_account_group() {
+        assert_eq!(super::pcg_account_group(101), 101);
+        assert_eq!(super::pcg_account_group(1011), 101);
+        assert_eq!(super::pcg_account_group(10131), 101);
+        assert_eq!(super::pcg_account_group(164), 164);
+        assert_eq!(super::pcg_account_group(4111), 411);
+    }
+
+    #[test]
+    fn test_pcg_to_account_type_multidigit() {
+        use crate::models::{AccountSubType, AccountType};
+        // Class 1: 1011 (Capital souscrit) should be Equity/CommonStock, not AccruedLiabilities
+        let (ty, sub) = super::pcg_to_account_type(1, 1011);
+        assert_eq!(ty, AccountType::Equity);
+        assert_eq!(sub, AccountSubType::CommonStock);
+
+        // 129 (Résultat) should be Equity/RetainedEarnings
+        let (ty, sub) = super::pcg_to_account_type(1, 129);
+        assert_eq!(ty, AccountType::Equity);
+        assert_eq!(sub, AccountSubType::RetainedEarnings);
+
+        // 1641 (Emprunts) should be Liability/LongTermDebt
+        let (ty, sub) = super::pcg_to_account_type(1, 1641);
+        assert_eq!(ty, AccountType::Liability);
+        assert_eq!(sub, AccountSubType::LongTermDebt);
+
+        // 151 (Provisions) should be Liability/AccruedLiabilities
+        let (ty, sub) = super::pcg_to_account_type(1, 151);
+        assert_eq!(ty, AccountType::Liability);
+        assert_eq!(sub, AccountSubType::AccruedLiabilities);
+
+        // Class 2: 2815 (Amort. immob.) should be AccumulatedDepreciation
+        let (ty, sub) = super::pcg_to_account_type(2, 2815);
+        assert_eq!(ty, AccountType::Asset);
+        assert_eq!(sub, AccountSubType::AccumulatedDepreciation);
+
+        // Class 4: 4111 (Clients) should be AccountsReceivable
+        let (ty, sub) = super::pcg_to_account_type(4, 4111);
+        assert_eq!(ty, AccountType::Asset);
+        assert_eq!(sub, AccountSubType::AccountsReceivable);
+
+        // 4011 (Fournisseurs) should be AccountsPayable
+        let (ty, sub) = super::pcg_to_account_type(4, 4011);
+        assert_eq!(ty, AccountType::Liability);
+        assert_eq!(sub, AccountSubType::AccountsPayable);
+
+        // 421 (Personnel) should be AccruedLiabilities
+        let (ty, sub) = super::pcg_to_account_type(4, 421);
+        assert_eq!(ty, AccountType::Liability);
+        assert_eq!(sub, AccountSubType::AccruedLiabilities);
     }
 
     #[test]

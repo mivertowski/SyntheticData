@@ -105,7 +105,7 @@ The generator produces statistically accurate data based on empirical research f
   - Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
 - **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
 - **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
-- **Accounting Standards**: US GAAP and IFRS support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases with 5 bright-line tests), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
+- **Accounting Standards**: US GAAP, IFRS, and French GAAP (PCG) support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases with 5 bright-line tests), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment)
 - **Audit Standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance with deficiency classification
 - **Tax Accounting**: Tax jurisdictions (Federal/State/Local), tax codes with effective dates, tax line decoration on documents, VAT/GST/sales tax returns, ASC 740/IAS 12 provisions with deferred tax, FIN 48/IFRIC 23 uncertain positions, cross-border withholding with treaty benefits
 - **Treasury & Cash Management**: Daily cash positions, probability-weighted cash forecasts, cash pooling (physical/notional/zero-balance), hedging instruments (FX forwards, IR swaps, options) with ASC 815/IFRS 9 effectiveness, debt instruments with covenants & amortization, bank guarantees, intercompany netting
@@ -263,7 +263,7 @@ datasynth-generators   Data generators (JE, documents, subledgers, anomalies, au
 datasynth-banking      KYC/AML banking transaction generator
 datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, 8 process families)
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
-datasynth-standards    Accounting/audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
+datasynth-standards    Accounting/audit standards (IFRS, US GAAP, French GAAP, ISA, SOX, PCAOB)
     │
 datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL, RustGraph Multi-Layer Hypergraph)
 datasynth-eval         Evaluation framework with auto-tuning
@@ -311,7 +311,7 @@ The binary is available at `target/release/datasynth-data`.
 | [`datasynth-generators`](https://crates.io/crates/datasynth-generators) | Data generators |
 | [`datasynth-banking`](https://crates.io/crates/datasynth-banking) | KYC/AML banking transactions |
 | [`datasynth-fingerprint`](https://crates.io/crates/datasynth-fingerprint) | Privacy-preserving fingerprint extraction |
-| [`datasynth-standards`](https://crates.io/crates/datasynth-standards) | Accounting/audit standards (IFRS, US GAAP, ISA, SOX, PCAOB) |
+| [`datasynth-standards`](https://crates.io/crates/datasynth-standards) | Accounting/audit standards (IFRS, US GAAP, French GAAP, ISA, SOX, PCAOB) |
 | [`datasynth-graph`](https://crates.io/crates/datasynth-graph) | Graph/network export |
 | [`datasynth-eval`](https://crates.io/crates/datasynth-eval) | Evaluation framework |
 | [`datasynth-runtime`](https://crates.io/crates/datasynth-runtime) | Orchestration layer |

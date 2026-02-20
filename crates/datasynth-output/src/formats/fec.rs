@@ -16,7 +16,7 @@ const FEC_HEADER: &str = "Code journal;Libellé journal;Numéro de l'écriture;D
 
 fn escape_fec_field(s: &str) -> String {
     let t = s.replace(';', ",").replace(['\n', '\r'], " ");
-    if t.contains(';') || t.contains('"') || t.contains('\n') {
+    if t.contains('"') {
         format!("\"{}\"", t.replace('"', "\"\""))
     } else {
         t
@@ -24,9 +24,7 @@ fn escape_fec_field(s: &str) -> String {
 }
 
 fn format_decimal(d: rust_decimal::Decimal) -> String {
-    use rust_decimal::prelude::ToPrimitive;
-    let f = d.to_f64().unwrap_or(0.0);
-    format!("{:.2}", f)
+    format!("{:.2}", d)
 }
 
 /// Write journal entries to a FEC-compliant CSV file (semicolon-separated, UTF-8).
@@ -113,10 +111,92 @@ pub fn write_fec_csv(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use datasynth_core::models::{
+        AccountSubType, AccountType, CoAComplexity, GLAccount, IndustrySector, JournalEntryHeader,
+        JournalEntryLine,
+    };
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_fec_header_has_18_columns() {
         let cols: Vec<&str> = FEC_HEADER.split(';').collect();
         assert_eq!(cols.len(), 18, "FEC must have 18 columns");
+    }
+
+    #[test]
+    fn test_fec_data_row_round_trip() {
+        let date = chrono::NaiveDate::from_ymd_opt(2024, 6, 15).unwrap();
+
+        // Build a minimal CoA with one account
+        let mut coa = ChartOfAccounts::new(
+            "TEST".to_string(),
+            "Test CoA".to_string(),
+            "FR".to_string(),
+            IndustrySector::Manufacturing,
+            CoAComplexity::Small,
+        );
+        coa.add_account(GLAccount::new(
+            "411000".to_string(),
+            "Clients".to_string(),
+            AccountType::Asset,
+            AccountSubType::AccountsReceivable,
+        ));
+        coa.add_account(GLAccount::new(
+            "701000".to_string(),
+            "Ventes".to_string(),
+            AccountType::Revenue,
+            AccountSubType::ProductRevenue,
+        ));
+
+        // Build a journal entry with two lines
+        let mut header = JournalEntryHeader::new("C001".to_string(), date);
+        header.currency = "EUR".to_string();
+        header.header_text = Some("Test sale".to_string());
+        header.reference = Some("REF001".to_string());
+        let mut je = JournalEntry::new(header);
+        je.add_line(JournalEntryLine::debit(
+            je.header.document_id,
+            1,
+            "411000".to_string(),
+            dec!(1000.50),
+        ));
+        je.add_line(JournalEntryLine::credit(
+            je.header.document_id,
+            2,
+            "701000".to_string(),
+            dec!(1000.50),
+        ));
+
+        // Write to temp file and read back
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("fec.csv");
+        write_fec_csv(&path, &[je], &coa).unwrap();
+
+        let content = std::fs::read_to_string(&path).unwrap();
+        let lines: Vec<&str> = content.lines().collect();
+
+        // Header + 2 data rows
+        assert_eq!(lines.len(), 3, "expected header + 2 data rows");
+
+        // Every data row must have exactly 18 semicolon-separated columns
+        for (i, line) in lines.iter().enumerate() {
+            let cols: Vec<&str> = line.split(';').collect();
+            assert_eq!(
+                cols.len(),
+                18,
+                "row {} has {} columns, expected 18",
+                i,
+                cols.len()
+            );
+        }
+
+        // Verify debit/credit amounts in data rows (columns 12 and 13, 1-indexed)
+        let row1_cols: Vec<&str> = lines[1].split(';').collect();
+        assert_eq!(row1_cols[11], "1000.50", "debit amount");
+        assert_eq!(row1_cols[12], "0.00", "credit amount on debit line");
+
+        let row2_cols: Vec<&str> = lines[2].split(';').collect();
+        assert_eq!(row2_cols[11], "0.00", "debit amount on credit line");
+        assert_eq!(row2_cols[12], "1000.50", "credit amount");
     }
 }
