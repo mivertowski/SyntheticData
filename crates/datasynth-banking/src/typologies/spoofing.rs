@@ -297,7 +297,7 @@ mod tests {
             chrono::Utc::now(),
         );
 
-        txn.spoofing_intensity = Some(0.8);
+        txn.spoofing_intensity = Some(1.0);
 
         engine.apply(&mut txn, &customer);
 
