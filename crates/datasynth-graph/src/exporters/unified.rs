@@ -413,7 +413,13 @@ impl RustGraphUnifiedExporter {
             if !hg_node.features.is_empty() {
                 properties.insert(
                     "features".to_string(),
-                    Value::Array(hg_node.features.iter().map(|f| serde_json::json!(f)).collect()),
+                    Value::Array(
+                        hg_node
+                            .features
+                            .iter()
+                            .map(|f| serde_json::json!(f))
+                            .collect(),
+                    ),
                 );
             }
 

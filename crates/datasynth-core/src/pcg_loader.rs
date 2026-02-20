@@ -85,28 +85,28 @@ fn normalize_pcg_account_number(number: u32) -> String {
 /// Map PCG class and account number to our AccountType and AccountSubType.
 fn pcg_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType) {
     use AccountSubType::{
-        AccruedLiabilities, AccountsPayable, AccountsReceivable, AccumulatedDepreciation, Cash,
+        AccountsPayable, AccountsReceivable, AccruedLiabilities, AccumulatedDepreciation, Cash,
         CommonStock, FixedAssets, Inventory, LongTermDebt, OperatingExpenses, OtherAssets,
         OtherLiabilities, ProductRevenue, RetainedEarnings, SuspenseClearing,
     };
     use AccountType::{Asset, Equity, Expense, Liability, Revenue};
     match class {
         1 => {
-            let is_equity = (number >= 10 && number < 13) || (number >= 100 && number < 130);
+            let is_equity = (10..13).contains(&number) || (100..130).contains(&number);
             if is_equity {
-                if number >= 101 && number <= 109 {
+                if (101..=109).contains(&number) {
                     (Equity, CommonStock)
                 } else {
                     (Equity, RetainedEarnings)
                 }
-            } else if number >= 16 && number <= 169 {
+            } else if (16..=169).contains(&number) {
                 (Liability, LongTermDebt)
             } else {
                 (Liability, AccruedLiabilities)
             }
         }
         2 => {
-            if (number >= 28 && number <= 282) || (number >= 29 && number <= 297) {
+            if (28..=282).contains(&number) || (29..=297).contains(&number) {
                 (Asset, AccumulatedDepreciation)
             } else {
                 (Asset, FixedAssets)
@@ -114,11 +114,11 @@ fn pcg_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType) 
         }
         3 => (Asset, Inventory),
         4 => {
-            if number >= 41 && number <= 419 {
+            if (41..=419).contains(&number) {
                 (Asset, AccountsReceivable)
-            } else if number >= 40 && number <= 409 {
+            } else if (40..=409).contains(&number) {
                 (Liability, AccountsPayable)
-            } else if number >= 42 && number <= 428 {
+            } else if (42..=428).contains(&number) {
                 (Liability, AccruedLiabilities)
             } else {
                 (Liability, OtherLiabilities)
@@ -148,13 +148,7 @@ pub fn build_chart_of_accounts_from_pcg_2024(
 
     let coa_id = format!("COA_PCG_2024_{:?}_{}", industry, max_accounts);
     let name = format!("Plan Comptable Général 2024 – {:?}", industry);
-    let mut coa = ChartOfAccounts::new(
-        coa_id,
-        name,
-        "FR".to_string(),
-        industry,
-        complexity,
-    );
+    let mut coa = ChartOfAccounts::new(coa_id, name, "FR".to_string(), industry, complexity);
     coa.account_format = "######".to_string();
 
     for (number, label, class) in flat {

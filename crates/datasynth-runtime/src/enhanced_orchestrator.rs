@@ -3672,7 +3672,9 @@ impl EnhancedOrchestrator {
                     "dual_reporting" => {
                         datasynth_standards::framework::AccountingFramework::DualReporting
                     }
-                    "french_gaap" => datasynth_standards::framework::AccountingFramework::FrenchGaap,
+                    "french_gaap" => {
+                        datasynth_standards::framework::AccountingFramework::FrenchGaap
+                    }
                     // "us_gaap" or any other/unrecognised value falls back to US GAAP
                     _ => datasynth_standards::framework::AccountingFramework::UsGaap,
                 }

@@ -15,7 +15,7 @@ use datasynth_core::models::{ChartOfAccounts, JournalEntry};
 const FEC_HEADER: &str = "Code journal;Libellé journal;Numéro de l'écriture;Date de comptabilisation;Numéro de compte;Libellé de compte;Numéro de compte auxiliaire;Libellé de compte auxiliaire;Référence de la pièce justificative;Date d'émission de la pièce justificative;Libellé de l'écriture comptable;Montant au débit;Montant au crédit;Lettrage;Date de lettrage;Date de validation de l'écriture;Montant en devise;Identifiant de la devise";
 
 fn escape_fec_field(s: &str) -> String {
-    let t = s.replace(';', ",").replace('\n', " ").replace('\r', " ");
+    let t = s.replace(';', ",").replace(['\n', '\r'], " ");
     if t.contains(';') || t.contains('"') || t.contains('\n') {
         format!("\"{}\"", t.replace('"', "\"\""))
     } else {
@@ -54,12 +54,7 @@ pub fn write_fec_csv(
             .unwrap_or(je.header.document_type.as_str());
         let libelle_journal = escape_fec_field(libelle_journal);
         let date_compta = je.header.posting_date.format("%Y%m%d").to_string();
-        let ref_piece = je
-            .header
-            .reference
-            .as_deref()
-            .unwrap_or("")
-            .to_string();
+        let ref_piece = je.header.reference.as_deref().unwrap_or("").to_string();
         let ref_piece = escape_fec_field(&ref_piece);
         let date_piece = je.header.document_date.format("%Y%m%d").to_string();
         let date_validation = je.header.posting_date.format("%Y%m%d").to_string();
@@ -89,22 +84,20 @@ pub fn write_fec_csv(
 
             writeln!(
                 w,
-                "{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                "{};{};{};{};{};{};;;{};{};{};{};{};;;{};{};{}",
                 code_journal,
                 libelle_journal,
                 ecriture_num,
                 date_compta,
                 escape_fec_field(&line.gl_account),
                 libelle_compte,
-                "",  // 7. Numéro de compte auxiliaire
-                "",  // 8. Libellé de compte auxiliaire
+                // columns 7-8 (auxiliaire) left empty above
                 ref_piece,
                 date_piece,
                 libelle_ecriture,
                 debit,
                 credit,
-                "",  // 14. Lettrage
-                "",  // 15. Date de lettrage
+                // columns 14-15 (lettrage) left empty above
                 date_validation,
                 montant_devise,
                 currency,

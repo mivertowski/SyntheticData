@@ -16,8 +16,6 @@
 
 pub mod accounts;
 pub mod causal;
-pub mod pcg;
-pub mod pcg_loader;
 pub mod compliance;
 pub mod country;
 pub mod cpu_monitor;
@@ -29,6 +27,8 @@ pub mod error;
 pub mod llm;
 pub mod memory_guard;
 pub mod models;
+pub mod pcg;
+pub mod pcg_loader;
 pub mod plugins;
 pub mod rate_limit;
 pub mod resource_guard;

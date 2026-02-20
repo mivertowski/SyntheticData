@@ -118,10 +118,30 @@ impl ChartOfAccountsGenerator {
 
     fn generate_pcg_class_1(&mut self, coa: &mut ChartOfAccounts, count: usize) {
         let items = [
-            (101, "Capital", AccountType::Equity, AccountSubType::CommonStock),
-            (129, "Résultat", AccountType::Equity, AccountSubType::RetainedEarnings),
-            (164, "Emprunts", AccountType::Liability, AccountSubType::LongTermDebt),
-            (421, "Fournisseurs", AccountType::Liability, AccountSubType::AccountsPayable),
+            (
+                101,
+                "Capital",
+                AccountType::Equity,
+                AccountSubType::CommonStock,
+            ),
+            (
+                129,
+                "Résultat",
+                AccountType::Equity,
+                AccountSubType::RetainedEarnings,
+            ),
+            (
+                164,
+                "Emprunts",
+                AccountType::Liability,
+                AccountSubType::LongTermDebt,
+            ),
+            (
+                421,
+                "Fournisseurs",
+                AccountType::Liability,
+                AccountSubType::AccountsPayable,
+            ),
         ];
         for (base, name, acc_type, sub_type) in items {
             for i in 0..count.max(1) {
@@ -236,7 +256,11 @@ impl ChartOfAccountsGenerator {
     }
 
     fn generate_pcg_class_7(&mut self, coa: &mut ChartOfAccounts, count: usize) {
-        let bases = [(701, "Ventes"), (706, "Prestations"), (758, "Produits divers")];
+        let bases = [
+            (701, "Ventes"),
+            (706, "Prestations"),
+            (758, "Produits divers"),
+        ];
         for (base, name) in bases {
             for i in 0..(count / 3).max(1) {
                 let num = base * 1000 + (i as u32 % 100);
@@ -965,12 +989,9 @@ mod tests {
 
     #[test]
     fn test_generate_pcg_coa() {
-        let mut gen = ChartOfAccountsGenerator::new(
-            CoAComplexity::Small,
-            IndustrySector::Manufacturing,
-            42,
-        )
-        .with_french_pcg(true);
+        let mut gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42)
+                .with_french_pcg(true);
         let coa = gen.generate();
 
         assert_eq!(coa.country, "FR");
@@ -986,18 +1007,25 @@ mod tests {
     /// Works for both the embedded PCG 2024 loader and the fallback generator.
     #[test]
     fn test_pcg_account_structure() {
-        let mut gen = ChartOfAccountsGenerator::new(
-            CoAComplexity::Small,
-            IndustrySector::Manufacturing,
-            42,
-        )
-        .with_french_pcg(true);
+        let mut gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42)
+                .with_french_pcg(true);
         let coa = gen.generate();
 
-        assert_eq!(coa.account_format, "######", "PCG uses 6-digit account format");
-        assert!(coa.account_count() >= 20, "PCG CoA has minimum account count");
+        assert_eq!(
+            coa.account_format, "######",
+            "PCG uses 6-digit account format"
+        );
+        assert!(
+            coa.account_count() >= 20,
+            "PCG CoA has minimum account count"
+        );
 
-        let account_numbers: Vec<_> = coa.accounts.iter().map(|a| a.account_number.as_str()).collect();
+        let account_numbers: Vec<_> = coa
+            .accounts
+            .iter()
+            .map(|a| a.account_number.as_str())
+            .collect();
         for num in &account_numbers {
             assert_eq!(num.len(), 6, "every PCG account is 6 digits: {}", num);
             assert!(
@@ -1008,14 +1036,16 @@ mod tests {
         }
 
         // All account numbers must belong to a PCG class (first digit 1–8)
-        let first_digits: std::collections::HashSet<char> =
-            account_numbers.iter().filter_map(|s| s.chars().next()).collect();
-        let pcg_classes: std::collections::HashSet<_> = ['1', '2', '3', '4', '5', '6', '7', '8'].into();
+        let first_digits: std::collections::HashSet<char> = account_numbers
+            .iter()
+            .filter_map(|s| s.chars().next())
+            .collect();
+        let pcg_classes: std::collections::HashSet<_> =
+            ['1', '2', '3', '4', '5', '6', '7', '8'].into();
         assert!(
             !first_digits.is_empty() && first_digits.is_subset(&pcg_classes),
             "PCG account numbers must be in classes 1–8, got first digits: {:?}",
             first_digits
         );
-
     }
 }

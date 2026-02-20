@@ -13,16 +13,15 @@
 
 /// PCG control and main account ranges (6-digit base).
 /// First digit = class; next two = subclass; last three = account.
-
-// L’idée de base
-// Un bail peut être compté de deux façons :
-// Bail en « exploitation » (operating)
-// On enregistre surtout les loyers en charges au fil du temps. Pas (ou peu) d’actif ni de grosse dette au bilan.
-// Bail « finance » (finance)
-// On considère qu’on « possède presque » l’actif : on met un actif (droit d’utilisation) et une dette au bilan, comme un crédit.
-// La question est : comment décider si un bail est « exploitation » ou « finance » ?
-// La réponse dépend du référentiel (US GAAP, IFRS, French GAAP). Le code fait ce choix dans classify ci-dessous().
-
+///
+/// L’idée de base:
+/// Un bail peut être compté de deux façons :
+/// - Bail en « exploitation » (operating) —
+///   On enregistre surtout les loyers en charges au fil du temps.
+/// - Bail « finance » (finance) —
+///   On considère qu’on « possède presque » l’actif.
+///
+/// La classification dépend du référentiel (US GAAP, IFRS, French GAAP).
 pub mod control_accounts {
     /// Clients (Accounts Receivable) – Class 4
     pub const AR_CONTROL: &str = "411000";

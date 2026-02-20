@@ -82,7 +82,9 @@ fn test_framework_serialization() {
 fn test_framework_standard_names() {
     assert_eq!(AccountingFramework::UsGaap.revenue_standard(), "ASC 606");
     assert_eq!(AccountingFramework::Ifrs.revenue_standard(), "IFRS 15");
-    assert!(AccountingFramework::FrenchGaap.revenue_standard().contains("PCG"));
+    assert!(AccountingFramework::FrenchGaap
+        .revenue_standard()
+        .contains("PCG"));
 
     assert_eq!(AccountingFramework::UsGaap.lease_standard(), "ASC 842");
     assert_eq!(AccountingFramework::Ifrs.lease_standard(), "IFRS 16");

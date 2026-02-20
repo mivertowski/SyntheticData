@@ -14,7 +14,6 @@ use datasynth_config::schema::AccountingFrameworkConfig;
 use datasynth_config::{presets, GeneratorConfig};
 use datasynth_core::memory_guard::{MemoryGuard, MemoryGuardConfig};
 use datasynth_core::models::{CoAComplexity, IndustrySector};
-use datasynth_output::write_fec_csv;
 use datasynth_fingerprint::{
     evaluation::FidelityEvaluator,
     extraction::{CsvDataSource, DataSource, ExtractionConfig, FingerprintExtractor},
@@ -22,6 +21,7 @@ use datasynth_fingerprint::{
     models::PrivacyLevel,
     privacy::PrivacyConfig,
 };
+use datasynth_output::write_fec_csv;
 use datasynth_runtime::{
     export_labels_all_formats, EnhancedOrchestrator, LabelExportConfig, LabelExportSummary,
     OutputFileInfo, PhaseConfig, RunManifest,

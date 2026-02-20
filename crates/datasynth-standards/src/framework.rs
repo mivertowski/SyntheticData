@@ -265,10 +265,10 @@ impl FrameworkSettings {
     pub fn french_gaap() -> Self {
         Self {
             framework: AccountingFramework::FrenchGaap,
-            use_lifo_inventory: false,          // LIFO prohibited under French GAAP
+            use_lifo_inventory: false, // LIFO prohibited under French GAAP
             capitalize_development_costs: true, // Permitted when criteria met
-            use_ppe_revaluation: false,         // Cost model typical
-            allow_impairment_reversal: true,    // Permitted under French rules
+            use_ppe_revaluation: false, // Cost model typical
+            allow_impairment_reversal: true, // Permitted under French rules
             ..Default::default()
         }
     }
@@ -423,7 +423,9 @@ mod tests {
         assert_eq!(AccountingFramework::Ifrs.revenue_standard(), "IFRS 15");
         assert_eq!(AccountingFramework::UsGaap.lease_standard(), "ASC 842");
         assert_eq!(AccountingFramework::Ifrs.lease_standard(), "IFRS 16");
-        assert!(AccountingFramework::FrenchGaap.revenue_standard().contains("PCG"));
+        assert!(AccountingFramework::FrenchGaap
+            .revenue_standard()
+            .contains("PCG"));
     }
 
     #[test]
