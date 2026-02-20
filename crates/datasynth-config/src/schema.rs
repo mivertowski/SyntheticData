@@ -4637,11 +4637,11 @@ pub struct SinkQualityOverride {
 
 /// Accounting standards framework configuration for generating standards-compliant data.
 ///
-/// Supports US GAAP and IFRS frameworks with specific standards:
-/// - ASC 606/IFRS 15: Revenue Recognition
-/// - ASC 842/IFRS 16: Leases
-/// - ASC 820/IFRS 13: Fair Value Measurement
-/// - ASC 360/IAS 36: Impairment
+/// Supports US GAAP, IFRS, and French GAAP (PCG) frameworks with specific standards:
+/// - ASC 606/IFRS 15/PCG: Revenue Recognition
+/// - ASC 842/IFRS 16/PCG: Leases
+/// - ASC 820/IFRS 13/PCG: Fair Value Measurement
+/// - ASC 360/IAS 36/PCG: Impairment
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountingStandardsConfig {
     /// Enable accounting standards generation
@@ -4686,6 +4686,8 @@ pub enum AccountingFrameworkConfig {
     Ifrs,
     /// Generate data for both frameworks with reconciliation
     DualReporting,
+    /// French GAAP (Plan Comptable Général – PCG)
+    FrenchGaap,
 }
 
 /// Revenue recognition configuration (ASC 606/IFRS 15).
@@ -12719,6 +12721,7 @@ mod tests {
             AccountingFrameworkConfig::UsGaap,
             AccountingFrameworkConfig::Ifrs,
             AccountingFrameworkConfig::DualReporting,
+            AccountingFrameworkConfig::FrenchGaap,
         ];
 
         for framework in frameworks {

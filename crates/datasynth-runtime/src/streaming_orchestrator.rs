@@ -357,8 +357,14 @@ impl StreamingOrchestrator {
         let seed = config.global.seed.unwrap_or(42);
         let complexity = config.chart_of_accounts.complexity;
         let industry = config.global.industry;
+        let use_french_pcg = config.accounting_standards.enabled
+            && matches!(
+                config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
 
-        let mut coa_gen = ChartOfAccountsGenerator::new(complexity, industry, seed);
+        let mut coa_gen = ChartOfAccountsGenerator::new(complexity, industry, seed)
+            .with_french_pcg(use_french_pcg);
         let coa = coa_gen.generate();
 
         let account_count = coa.account_count() as u64;

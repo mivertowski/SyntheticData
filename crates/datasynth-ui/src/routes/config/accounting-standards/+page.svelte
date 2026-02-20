@@ -21,6 +21,7 @@
     { value: 'us_gaap', label: 'US GAAP', description: 'United States Generally Accepted Accounting Principles' },
     { value: 'ifrs', label: 'IFRS', description: 'International Financial Reporting Standards' },
     { value: 'dual_reporting', label: 'Dual Reporting', description: 'Generate data compliant with both US GAAP and IFRS' },
+    { value: 'french_gaap', label: 'PCG (French GAAP)', description: 'Plan Comptable Général – French statutory reporting' },
   ];
 
   const testFrequencies = [
@@ -41,7 +42,7 @@
             <Toggle
               bind:checked={$config.accounting_standards.enabled}
               label="Enable Accounting Standards"
-              description="Generate data that conforms to accounting framework requirements (ASC/IFRS)"
+              description="Generate data that conforms to accounting framework requirements (ASC / IFRS / PCG)"
             />
 
             {#if $config.accounting_standards.enabled}
@@ -74,7 +75,7 @@
       </FormSection>
 
       {#if $config.accounting_standards.enabled}
-        <FormSection title="Revenue Recognition" description="ASC 606 / IFRS 15 revenue recognition standards">
+        <FormSection title="Revenue Recognition" description="ASC 606 / IFRS 15 / PCG revenue recognition standards">
           {#snippet children()}
             <div class="form-stack">
               <Toggle
@@ -116,7 +117,7 @@
           {/snippet}
         </FormSection>
 
-        <FormSection title="Leases" description="ASC 842 / IFRS 16 lease accounting standards">
+        <FormSection title="Leases" description="ASC 842 / IFRS 16 / PCG lease accounting standards">
           {#snippet children()}
             <div class="form-stack">
               <Toggle
@@ -170,7 +171,7 @@
           {/snippet}
         </FormSection>
 
-        <FormSection title="Fair Value" description="ASC 820 / IFRS 13 fair value measurement hierarchy">
+        <FormSection title="Fair Value" description="ASC 820 / IFRS 13 / PCG fair value measurement hierarchy">
           {#snippet children()}
             <div class="form-stack">
               <Toggle
@@ -235,7 +236,7 @@
           {/snippet}
         </FormSection>
 
-        <FormSection title="Impairment" description="ASC 360 / IAS 36 asset impairment testing">
+        <FormSection title="Impairment" description="ASC 360 / IAS 36 / PCG asset impairment testing">
           {#snippet children()}
             <div class="form-stack">
               <Toggle
@@ -267,19 +268,19 @@
 
       <div class="info-cards">
         <div class="info-card">
-          <h4>Revenue Recognition (ASC 606 / IFRS 15)</h4>
+          <h4>Revenue Recognition (ASC 606 / IFRS 15 / PCG)</h4>
           <p>Customer contracts with multi-element arrangements and performance obligations. Generates recognition schedules based on delivery milestones and time-based allocation.</p>
         </div>
         <div class="info-card">
-          <h4>Lease Accounting (ASC 842 / IFRS 16)</h4>
+          <h4>Lease Accounting (ASC 842 / IFRS 16 / PCG)</h4>
           <p>Right-of-use assets and lease liabilities with finance vs. operating lease classification. Includes amortization schedules and interest expense calculations.</p>
         </div>
         <div class="info-card">
-          <h4>Fair Value Hierarchy (ASC 820 / IFRS 13)</h4>
+          <h4>Fair Value Hierarchy (ASC 820 / IFRS 13 / PCG)</h4>
           <p>Three-level measurement hierarchy: Level 1 (quoted market prices), Level 2 (observable inputs), and Level 3 (unobservable model-based inputs).</p>
         </div>
         <div class="info-card">
-          <h4>Impairment Testing (ASC 360 / IAS 36)</h4>
+          <h4>Impairment Testing (ASC 360 / IAS 36 / PCG)</h4>
           <p>Periodic asset impairment assessments with recoverable amount calculations comparing carrying value to fair value less costs to sell or value in use.</p>
         </div>
       </div>
@@ -313,7 +314,7 @@
   .warning-text { font-family: var(--font-sans); margin-left: var(--space-2); }
   .loading { display: flex; align-items: center; justify-content: center; padding: var(--space-10); color: var(--color-text-secondary); }
 
-  .framework-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .framework-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2); }
   .framework-option {
     display: flex;
     flex-direction: column;

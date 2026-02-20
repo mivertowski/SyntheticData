@@ -183,6 +183,27 @@ test.describe('Config Pages: Form Sections', () => {
 	});
 });
 
+test.describe('Config Pages: PCG (French GAAP) in UI', () => {
+	test('accounting-standards page shows PCG framework and standards labels', async ({ page }) => {
+		await page.goto('/config/accounting-standards');
+		await page.waitForLoadState('domcontentloaded');
+		await page.waitForSelector('.loading', { state: 'hidden', timeout: 10000 }).catch(() => {});
+
+		// At least one PCG mention (toggle description or info cards)
+		await expect(page.getByText('PCG', { exact: false }).first()).toBeVisible();
+		await expect(page.getByText('ASC / IFRS / PCG', { exact: false })).toBeVisible();
+		await expect(page.getByText('ASC 606 / IFRS 15 / PCG', { exact: false })).toBeVisible();
+	});
+
+	test('financial-reporting page shows PCG in compliance text', async ({ page }) => {
+		await page.goto('/config/financial-reporting');
+		await page.waitForLoadState('domcontentloaded');
+		await page.waitForSelector('.loading', { state: 'hidden', timeout: 10000 }).catch(() => {});
+
+		await expect(page.getByText('GAAP / IFRS / PCG compliant', { exact: false })).toBeVisible();
+	});
+});
+
 test.describe('Config Pages: Distribution Validation', () => {
 	test('distribution sum indicator shows on compliance page', async ({ page }) => {
 		await page.goto('/config/compliance');

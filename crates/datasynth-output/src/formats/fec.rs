@@ -1,0 +1,129 @@
+//! FEC (Fichier des Écritures Comptables) export for French GAAP.
+//!
+//! Exports journal entries in the mandatory 18-column format required by
+//! Article A47 A-1 of the Livre des Procédures Fiscales (LPF).
+//! See: https://www.cegid.com/fr/glossaire/glossaire-fec-comptable/
+
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::Path;
+
+use datasynth_core::error::SynthResult;
+use datasynth_core::models::{ChartOfAccounts, JournalEntry};
+
+/// FEC 18 mandatory columns (Article A47 A-1 LPF), in order.
+const FEC_HEADER: &str = "Code journal;Libellé journal;Numéro de l'écriture;Date de comptabilisation;Numéro de compte;Libellé de compte;Numéro de compte auxiliaire;Libellé de compte auxiliaire;Référence de la pièce justificative;Date d'émission de la pièce justificative;Libellé de l'écriture comptable;Montant au débit;Montant au crédit;Lettrage;Date de lettrage;Date de validation de l'écriture;Montant en devise;Identifiant de la devise";
+
+fn escape_fec_field(s: &str) -> String {
+    let t = s.replace(';', ",").replace('\n', " ").replace('\r', " ");
+    if t.contains(';') || t.contains('"') || t.contains('\n') {
+        format!("\"{}\"", t.replace('"', "\"\""))
+    } else {
+        t
+    }
+}
+
+fn format_decimal(d: rust_decimal::Decimal) -> String {
+    use rust_decimal::prelude::ToPrimitive;
+    let f = d.to_f64().unwrap_or(0.0);
+    format!("{:.2}", f)
+}
+
+/// Write journal entries to a FEC-compliant CSV file (semicolon-separated, UTF-8).
+///
+/// One row per journal line. Columns 1–18 follow the official order.
+/// Uses `coa` for "Libellé de compte" (column 6). Blank fields for
+/// auxiliaire, lettrage, and optional devise when not used.
+pub fn write_fec_csv(
+    path: &Path,
+    entries: &[JournalEntry],
+    coa: &ChartOfAccounts,
+) -> SynthResult<()> {
+    let file = File::create(path)?;
+    let mut w = BufWriter::new(file);
+
+    writeln!(w, "{}", FEC_HEADER)?;
+
+    let mut ecriture_num: u64 = 1;
+    for je in entries {
+        let code_journal = escape_fec_field(je.header.document_type.as_str());
+        let libelle_journal = je
+            .header
+            .header_text
+            .as_deref()
+            .unwrap_or(je.header.document_type.as_str());
+        let libelle_journal = escape_fec_field(libelle_journal);
+        let date_compta = je.header.posting_date.format("%Y%m%d").to_string();
+        let ref_piece = je
+            .header
+            .reference
+            .as_deref()
+            .unwrap_or("")
+            .to_string();
+        let ref_piece = escape_fec_field(&ref_piece);
+        let date_piece = je.header.document_date.format("%Y%m%d").to_string();
+        let date_validation = je.header.posting_date.format("%Y%m%d").to_string();
+        let currency = escape_fec_field(je.header.currency.as_str());
+
+        for line in &je.lines {
+            let libelle_compte = coa
+                .get_account(&line.gl_account)
+                .map(|a| a.short_description.as_str())
+                .unwrap_or(line.gl_account.as_str());
+            let libelle_compte = escape_fec_field(libelle_compte);
+            let libelle_ecriture = line
+                .line_text
+                .as_deref()
+                .or(je.header.header_text.as_deref())
+                .unwrap_or("")
+                .to_string();
+            let libelle_ecriture = escape_fec_field(&libelle_ecriture);
+
+            let debit = format_decimal(line.debit_amount);
+            let credit = format_decimal(line.credit_amount);
+            let montant_devise = if line.debit_amount > rust_decimal::Decimal::ZERO {
+                format_decimal(line.debit_amount)
+            } else {
+                format_decimal(line.credit_amount)
+            };
+
+            writeln!(
+                w,
+                "{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
+                code_journal,
+                libelle_journal,
+                ecriture_num,
+                date_compta,
+                escape_fec_field(&line.gl_account),
+                libelle_compte,
+                "",  // 7. Numéro de compte auxiliaire
+                "",  // 8. Libellé de compte auxiliaire
+                ref_piece,
+                date_piece,
+                libelle_ecriture,
+                debit,
+                credit,
+                "",  // 14. Lettrage
+                "",  // 15. Date de lettrage
+                date_validation,
+                montant_devise,
+                currency,
+            )?;
+        }
+        ecriture_num += 1;
+    }
+
+    w.flush()?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fec_header_has_18_columns() {
+        let cols: Vec<&str> = FEC_HEADER.split(';').collect();
+        assert_eq!(cols.len(), 18, "FEC must have 18 columns");
+    }
+}

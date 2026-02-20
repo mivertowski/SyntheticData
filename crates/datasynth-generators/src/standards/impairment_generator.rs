@@ -313,10 +313,12 @@ impl ImpairmentGenerator {
                         Decimal::from_f64_retain(reduction_factor).unwrap_or(Decimal::ONE);
                     test.fair_value_less_costs = test.carrying_amount * factor_dec;
 
-                    // Also lower value_in_use for IFRS.
+                    // Also lower value_in_use for IFRS and French GAAP (one-step test).
                     if matches!(
                         framework,
-                        AccountingFramework::Ifrs | AccountingFramework::DualReporting
+                        AccountingFramework::Ifrs
+                            | AccountingFramework::DualReporting
+                            | AccountingFramework::FrenchGaap
                     ) {
                         test.value_in_use = test.fair_value_less_costs
                             - Decimal::from_f64_retain(self.rng.gen_range(1000.0..=10000.0))

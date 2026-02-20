@@ -82,6 +82,7 @@ fn test_framework_serialization() {
 fn test_framework_standard_names() {
     assert_eq!(AccountingFramework::UsGaap.revenue_standard(), "ASC 606");
     assert_eq!(AccountingFramework::Ifrs.revenue_standard(), "IFRS 15");
+    assert!(AccountingFramework::FrenchGaap.revenue_standard().contains("PCG"));
 
     assert_eq!(AccountingFramework::UsGaap.lease_standard(), "ASC 842");
     assert_eq!(AccountingFramework::Ifrs.lease_standard(), "IFRS 16");
@@ -106,6 +107,17 @@ fn test_framework_features() {
     assert!(AccountingFramework::Ifrs.allows_ppe_revaluation());
     assert!(AccountingFramework::Ifrs.allows_impairment_reversal());
     assert!(!AccountingFramework::Ifrs.uses_brightline_lease_tests());
+
+    // French GAAP (PCG) features
+    assert!(!AccountingFramework::FrenchGaap.allows_lifo());
+    assert!(AccountingFramework::FrenchGaap.allows_impairment_reversal());
+}
+
+#[test]
+fn test_french_gaap_settings() {
+    let settings = FrameworkSettings::french_gaap();
+    assert!(settings.validate().is_ok());
+    assert_eq!(settings.framework, AccountingFramework::FrenchGaap);
 }
 
 #[test]

@@ -19,8 +19,8 @@ pub use control_export::*;
 pub use csv_sink::*;
 pub use esg_export::*;
 pub use formats::{
-    NetSuiteExporter, NetSuiteJournalEntry, NetSuiteJournalLine, OracleExporter, OracleJeHeader,
-    OracleJeLine, SapExportConfig, SapExporter, SapTableType,
+    write_fec_csv, NetSuiteExporter, NetSuiteJournalEntry, NetSuiteJournalLine, OracleExporter,
+    OracleJeHeader, OracleJeLine, SapExportConfig, SapExporter, SapTableType,
 };
 pub use json_sink::*;
 pub use parquet_sink::*;

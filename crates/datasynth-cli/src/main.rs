@@ -10,9 +10,11 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use datasynth_config::schema::AccountingFrameworkConfig;
 use datasynth_config::{presets, GeneratorConfig};
 use datasynth_core::memory_guard::{MemoryGuard, MemoryGuardConfig};
 use datasynth_core::models::{CoAComplexity, IndustrySector};
+use datasynth_output::write_fec_csv;
 use datasynth_fingerprint::{
     evaluation::FidelityEvaluator,
     extraction::{CsvDataSource, DataSource, ExtractionConfig, FingerprintExtractor},
@@ -582,6 +584,32 @@ fn main() -> Result<()> {
             // subledgers, HR, manufacturing, sourcing, banking, audit, tax, ESG, etc.)
             if let Err(e) = output_writer::write_all_output(&result, &output) {
                 tracing::warn!("Some output files may not have been written: {}", e);
+            }
+
+            // Write FEC (Fichier des Écritures Comptables) when French GAAP – 18 mandatory columns
+            if matches!(
+                config_for_manifest.accounting_standards.framework,
+                Some(AccountingFrameworkConfig::FrenchGaap)
+            ) && !result.journal_entries.is_empty()
+            {
+                let fec_path = output.join("fec.csv");
+                match write_fec_csv(
+                    &fec_path,
+                    &result.journal_entries,
+                    &result.chart_of_accounts,
+                ) {
+                    Ok(()) => tracing::info!(
+                        "FEC (18 columns) written to: {} ({} entries, {} lines)",
+                        fec_path.display(),
+                        result.journal_entries.len(),
+                        result
+                            .journal_entries
+                            .iter()
+                            .map(|e| e.lines.len())
+                            .sum::<usize>()
+                    ),
+                    Err(e) => tracing::warn!("Could not write FEC file: {}", e),
+                }
             }
 
             // ========================================
