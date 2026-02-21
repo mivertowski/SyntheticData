@@ -69,6 +69,20 @@ Key reforms:
 - **BilRUG (2015)**: Bilanzrichtlinie-Umsetzungsgesetz — implemented EU Accounting Directive 2013/34/EU. Changed revenue definition, size thresholds, notes requirements.
 - **DiRUG (2022)**: Digitalization directive — electronic Handelsregister filing via Unternehmensregister.
 - **MoPeG (2024)**: Modernization of partnership law — affects OHG/KG accounting obligations.
+- **BEG IV (Oct 2024)**: Viertes Bürokratieentlastungsgesetz — reduced retention periods for Buchungsbelege from 10 to **8 years** (§257 Abs. 4 HGB).
+- **Wachstumschancengesetz (Mar 2024)**: Introduced mandatory B2B e-invoicing (phased 2025–2028), improved loss carryforward rules, expanded partnership taxation options.
+- **Annual Tax Act 2024 (Dec 2024)**: Raised §267 HGB size thresholds by ~25%, introduced income tax information report (§§342 ff. HGB).
+
+**Updated Company Size Thresholds (§267 HGB, effective 2025):**
+
+| Category | Balance Sheet Total | Annual Revenue | Employees |
+|---|---|---|---|
+| Micro (§267a) | ≤ EUR 450,000 | ≤ EUR 900,000 | ≤ 10 |
+| Small | ≤ EUR 7,500,000 | ≤ EUR 15,000,000 | ≤ 50 |
+| Medium | ≤ EUR 25,000,000 | ≤ EUR 50,000,000 | ≤ 250 |
+| Large | Exceeds medium thresholds | | |
+
+**Pending:** CSRD transposition into HGB (sustainability reporting in Lagebericht) — delayed by EU "Stop the Clock" directive to fiscal year 2027 (Wave 2) and 2028 (Wave 3).
 
 ### 2.2 SKR04 Chart of Accounts Structure
 
@@ -123,7 +137,11 @@ HGB requires provisions for:
 - Warranty without legal obligation (§249(1) S.2 Nr.2 HGB)
 - Internal obligation expenses (Aufwandsrückstellungen) — **prohibited since BilMoG** (§249(2) HGB old version removed)
 
-Discount rate: Provisions with >1 year maturity must be discounted using Bundesbank average market rate (§253(2) HGB). This differs from IFRS (entity-specific pre-tax rate).
+**Key differences from IFRS (IAS 37):**
+- **Probability threshold**: HGB allows recognition at probability **below 50%** (prudence principle); IFRS requires **>50%** probability
+- **Expense provisions (Aufwandsrückstellungen)**: Restricted but still possible under HGB; **prohibited under IFRS**
+- **Discounting**: §253(2) HGB requires provisions with >1 year maturity to be discounted using Bundesbank average market rate over past **7 years** (10 years for pension provisions). IFRS uses entity-specific pre-tax rate.
+- **Overall effect**: Provision levels under HGB are generally **higher** than under IFRS
 
 #### 2.3.2 Self-Created Intangible Assets — §248(2) HGB
 
@@ -133,14 +151,21 @@ BilMoG introduced an **optional** capitalization of self-created intangible fixe
 - **Never for research costs** (§255(2a) HGB — only development costs eligible)
 - If capitalized, a distribution restriction applies (§268(8) HGB — blocked for dividends)
 
-#### 2.3.3 Impairment — §253(3)-(5) HGB
+#### 2.3.3 Goodwill (Geschäfts- oder Firmenwert)
+
+- **HGB**: Mandatory amortization over useful economic life (max 10 years if life cannot be reliably estimated, §253(3) S.4 HGB)
+- **IFRS**: No amortization; annual impairment testing under IAS 36 (IASB discussing reintroduction of amortization)
+
+**Impact on DataSynth**: When `GermanGaap` is selected, goodwill should amortize over a configurable period (default 5 years), unlike IFRS where it remains on the balance sheet indefinitely.
+
+#### 2.3.4 Impairment — §253(3)-(5) HGB
 
 - **Write-down obligation**: Permanent impairment → mandatory write-down for all assets (§253(3) S.5 HGB)
 - **Temporary impairment**: Only mandatory for financial fixed assets (Finanzanlagen) and current assets; optional for other fixed assets
 - **Reversal (Wertaufholung)**: **Mandatory** under HGB (§253(5) HGB) — you must reverse write-downs when reasons no longer exist. Under IFRS, reversal is permitted but for goodwill. Under US GAAP, reversal is generally prohibited.
 - **No goodwill exception**: Unlike IFRS, HGB requires reversal of goodwill impairment too (unless purchased goodwill is written off over useful life per §253(3) S.3 HGB)
 
-#### 2.3.4 Leases — HGB vs IFRS 16
+#### 2.3.5 Leases — HGB vs IFRS 16
 
 HGB has **no dedicated lease standard**. Lease classification follows tax guidance (Steuerliche Leasingerlasse, BMF 1971/2001):
 - **Operating lease**: Off-balance-sheet for lessee (expense recognition only)
@@ -151,20 +176,26 @@ This differs fundamentally from IFRS 16 (all leases on-balance for lessee) and U
 
 **Impact on DataSynth**: When `GermanGaap` is selected, most leases should remain off-balance (operating), generating only rent expense entries rather than ROU assets and lease liabilities.
 
-#### 2.3.5 Low-Value Assets (GWG) — §6(2) EStG
+#### 2.3.6 Low-Value Assets (GWG) — §6(2) EStG
 
 Unique to German tax/commercial law:
 - Assets with acquisition cost ≤ **800 EUR** (net): Immediate full expense in year of acquisition (Sofortabschreibung)
 - Assets 250.01–1,000 EUR: Option for **pool depreciation** (Sammelposten) over 5 years
 - This is a **tax rule** (EStG) but commonly applied in HGB accounts due to Maßgeblichkeitsprinzip
 
-#### 2.3.6 Depreciation — HGB-Specific Methods
+#### 2.3.7 Depreciation — HGB-Specific Methods
 
-- **Declining balance (degressiv)**: Allowed under HGB (§253(3) S.2 HGB). Tax law intermittently allows/disallows it (currently allowed again per §7(2) EStG with max 25% or 2.5x straight-line rate)
+- **Straight-line (linear, §7(1) EStG)**: Standard method. Building rates: 3% for post-2022 completions, 2% for post-1924, 2.5% pre-1925. Movable assets per AfA-Tabellen.
+- **Declining balance (degressiv, §7(2) EStG)**: Tax law intermittently allows/disallows. Current rules:
+  - 2020–2022 (Corona): max 2.5x linear, capped at 25%
+  - 01.04.2024–31.12.2024: max 2x linear, capped at 20%
+  - **01.07.2025–31.12.2027: max 3x linear, capped at 30%**
+- **Sonderabschreibung (§7g(5) EStG)**: Special depreciation for SMEs (profit < EUR 200,000) — up to **40%** additional in first 5 years (increased from 20% for post-2023 acquisitions). Combinable with degressive for up to 60% in Year 1.
+- **Degressive building AfA (§7(5a) EStG)**: 5–6% declining balance for residential buildings (construction start Oct 2023 – Sep 2029).
 - **Useful life**: Follows the official **AfA-Tabellen** (depreciation tables) published by the Bundesfinanzministerium
 - **Component approach**: Not required under HGB (unlike IFRS IAS 16)
 
-#### 2.3.7 Revenue Definition — §277(1) HGB (post-BilRUG)
+#### 2.3.8 Revenue Definition — §277(1) HGB (post-BilRUG)
 
 Since BilRUG (2016), HGB revenue (Umsatzerlöse) includes:
 - Revenue from sale of products and goods
@@ -172,13 +203,69 @@ Since BilRUG (2016), HGB revenue (Umsatzerlöse) includes:
 - Revenue from rental of assets
 This is now aligned with IFRS 15 scope (previously HGB excluded some of these).
 
-### 2.4 GoBD Audit Export (German FEC Equivalent)
+### 2.4 German Financial Statement Formats
 
-The **GoBD** (Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern, Aufzeichnungen und Unterlagen in elektronischer Form, BMF 2019-11-28) replaces the older GDPdU and defines requirements for:
+#### Bilanz (Balance Sheet) — §266 HGB
 
-1. **Digital bookkeeping**: Completeness, correctness, timely recording, ordering, immutability
-2. **Data retention**: 10 years for accounting records, 6 years for business correspondence
-3. **Data access for tax audits**: Three levels — Z1 (read-only access), Z2 (machine-readable export), Z3 (data carrier handover)
+Must be prepared in **Kontoform** (account form): Aktiva left, Passiva right.
+
+**Aktiva (Assets):**
+```
+A. Anlagevermögen (Fixed Assets)
+   I.   Immaterielle Vermögensgegenstände
+   II.  Sachanlagen
+   III. Finanzanlagen
+B. Umlaufvermögen (Current Assets)
+   I.   Vorräte
+   II.  Forderungen und sonstige Vermögensgegenstände
+   III. Wertpapiere
+   IV.  Kassenbestand, Bankguthaben
+C. Rechnungsabgrenzungsposten (Prepaid expenses)
+D. Aktive latente Steuern
+```
+
+**Passiva (Equity & Liabilities):**
+```
+A. Eigenkapital
+   I.   Gezeichnetes Kapital
+   II.  Kapitalrücklage
+   III. Gewinnrücklagen
+   IV.  Gewinnvortrag / Verlustvortrag
+   V.   Jahresüberschuss / Jahresfehlbetrag
+B. Rückstellungen (Provisions)
+C. Verbindlichkeiten (Liabilities)
+D. Rechnungsabgrenzungsposten (Deferred income)
+E. Passive latente Steuern
+```
+
+Small corporations (§267(1)): only letters + Roman numerals. Micro corporations (§267a): only letters.
+
+#### Gewinn- und Verlustrechnung (GuV / Income Statement) — §275 HGB
+
+Prepared in **Staffelform** (vertical format). Two methods available:
+
+**Gesamtkostenverfahren (GKV, §275(2)) — Nature of Expense Method** (~90% of German companies):
+1. Umsatzerlöse → 2. Bestandsveränderungen → 3. Aktivierte Eigenleistungen → 4. Sonstige betriebliche Erträge → 5. **Materialaufwand** → 6. **Personalaufwand** → 7. **Abschreibungen** → 8. Sonstige betriebliche Aufwendungen → 9–13. Finanzergebnis → 14. Steuern → 17. Jahresüberschuss/-fehlbetrag
+
+**Umsatzkostenverfahren (UKV, §275(3)) — Cost of Sales Method:**
+1. Umsatzerlöse → 2. **Herstellungskosten** (COGS) → 3. Bruttoergebnis → 4. **Vertriebskosten** → 5. **Verwaltungskosten** → 6–7. Sonstige → 8–12. Finanzergebnis → 13. Steuern → 16. Jahresüberschuss/-fehlbetrag
+
+When using UKV, §285 Nr. 8 HGB requires Materialaufwand and Personalaufwand disclosure in notes (Anhang).
+
+**Impact on DataSynth**: The financial statement generator should support both formats; default to GKV. SKR04 account structure maps directly to GKV line items.
+
+### 2.5 GoBD Audit Export (German FEC Equivalent)
+
+The **GoBD** (Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern, Aufzeichnungen und Unterlagen in elektronischer Form) replaces the older GDPdU and defines requirements for:
+
+1. **Digital bookkeeping**: Completeness, correctness, timely recording, ordering, immutability (Unveränderbarkeit)
+2. **Data retention**: 10 years for financial statements, **8 years** for Buchungsbelege (reduced from 10 by BEG IV, effective 2025), 6 years for business correspondence
+3. **Data access for tax audits**: Three levels — Z1 (direct read-only access), Z2 (indirect/query-based), Z3 (data carrier handover)
+4. **Procedural documentation (Verfahrensdokumentation)**: Every IT system must document content, structure, process flow, and controls
+
+**Version history:** First published 2014 (replaced GDPdU/GoBS), updated 2020, editorially amended Mar 2024, **second amendment 14 Jul 2025** (aligned with mandatory B2B e-invoicing — clarifies XML archiving for ZUGFeRD, removes mandatory separate PDF storage).
+
+**Non-compliance penalties:** Up to EUR 250,000 for failure to provide data during audit; potential criminal tax law consequences.
 
 #### GoBD Export Format (Z3 — Datenträgerüberlassung)
 
@@ -214,15 +301,29 @@ The `index.xml` follows the **IDEA/AIS TaxAudit** schema (or the newer **DSFinV-
 
 ### 2.5 E-Bilanz (Electronic Tax Balance Sheet)
 
-Since 2013, all German taxpayers must electronically submit their tax balance sheet to the Finanzamt using **XBRL** (eXtensible Business Reporting Language) via the ELSTER system. The E-Bilanz taxonomy is maintained by the Bundesfinanzministerium and maps SKR account numbers to XBRL line items.
+Since 2013 (§5b EStG), all German taxpayers must electronically submit their tax balance sheet to the Finanzamt using **XBRL** via the ELSTER/ERiC infrastructure:
+
+- **Current taxonomy**: Version 6.8 (fiscal years after 31.12.2024), Version 6.9 (after 31.12.2025)
+- **Mandatory submissions**: Commercial/tax balance sheet, P&L, tax-to-commercial reconciliation (Überleitungsrechnung), profit appropriation, capital account development (partnerships)
+- **Industry taxonomies**: Core + supplements for banking, insurance, housing, agriculture, hospitals
 
 **Impact on DataSynth**: The SKR04 account structure should be designed so that accounts map cleanly to E-Bilanz taxonomy positions. This is a metadata concern (not a generation concern) but the account hierarchy should reflect it.
 
 ### 2.6 E-Invoicing: ZUGFeRD and XRechnung
 
-- **ZUGFeRD** (Zentraler User Guide des Forums elektronische Rechnung Deutschland): Hybrid PDF/A-3 + XML format. Current version: ZUGFeRD 2.3 (based on EN 16931 / CII syntax). Mandatory for B2G (business-to-government) since 2020.
-- **XRechnung**: The official German e-invoicing standard for B2G, based on EN 16931 / UBL 2.1 syntax. Mandatory for all federal government suppliers.
-- **B2B e-invoicing mandate**: From **January 2025**, all German businesses must be able to **receive** e-invoices. From 2027/2028 (phased by company size), mandatory **sending** of e-invoices for domestic B2B transactions.
+- **ZUGFeRD** (Zentraler User Guide des Forums elektronische Rechnung Deutschland): Hybrid PDF/A-3 + XML format (EN 16931 / CII syntax). ZUGFeRD 2.2+ includes an XRECHNUNG profile for B2G compatibility.
+- **XRechnung**: Pure XML format (EN 16931 / UBL 2.1) maintained by KoSIT. Mandatory for B2G at federal level since Nov 2020. Transmitted via E-Rechnungsportal Bund (Peppol-enabled).
+
+**B2B E-Invoicing Mandate Timeline (Wachstumschancengesetz):**
+
+| Date | Requirement |
+|---|---|
+| **1 Jan 2025** | All businesses must be able to **receive** e-invoices |
+| 2025–2026 | Transition: paper/PDF still allowed with recipient consent |
+| **1 Jan 2027** | Companies with turnover > EUR 800,000 must **issue** e-invoices |
+| **1 Jan 2028** | **All** businesses must issue e-invoices for domestic B2B |
+
+**GoBD 2025 amendment impact**: Only the XML component of ZUGFeRD invoices must be archived (separate PDF storage no longer mandatory). Plain PDF is no longer a valid e-invoice.
 
 **Impact on DataSynth**: The existing `DE.json` country pack already declares `"e_invoice_format": "ZUGFeRD"`. No additional code needed, but document generation should be aware of the format when producing invoice-like outputs.
 
@@ -734,14 +835,25 @@ if matches!(
 - Assets 250–1,000 EUR → optionally generate pool depreciation (Sammelposten) over 5 years
 - Tag these in the fixed asset register with `gwg: true`
 
-#### Task 5.5: Depreciation — German methods and AfA tables
+#### Task 5.5: Goodwill amortization — HGB mandatory
+
+**File:**
+- `crates/datasynth-generators/src/period_close/depreciation.rs` (or a new goodwill module)
+
+**Changes:** When `GermanGaap`:
+- Goodwill must amortize over useful life (§253(3) S.4 HGB, max 10 years if life unestimable)
+- Default to 5 years straight-line
+- Unlike IFRS (impairment-only, no amortization)
+
+#### Task 5.6: Depreciation — German methods and AfA tables
 
 **File:**
 - `crates/datasynth-generators/src/period_close/depreciation.rs`
 
 **Changes:** When `GermanGaap`:
-- Support declining balance (degressiv) depreciation at max 25% or 2.5x straight-line
-- Default useful lives from AfA-Tabellen (e.g., office equipment 13 years, computers 3 years, vehicles 6 years)
+- Support declining balance (degressiv) depreciation: max 3x linear, capped at 30% (Jul 2025–Dec 2027 per §7(2) EStG)
+- Support Sonderabschreibung for SMEs: up to 40% additional in first 5 years (§7g(5) EStG)
+- Default useful lives from AfA-Tabellen (e.g., office equipment 13 years, computers 3 years, vehicles 6 years, buildings 33 years)
 - No component approach (unlike IFRS)
 
 ---
@@ -955,3 +1067,54 @@ output/
 - [ ] Python wrapper accepts `"german_gaap"` as framework value
 - [ ] `AccountingFramework::GermanGaap` serializes/deserializes as `"german_gaap"`
 - [ ] All HGB-specific methods (`requires_pending_loss_provisions()`, `allows_low_value_asset_expensing()`, `operating_leases_off_balance()`) return correct values
+
+---
+
+## 8. Key HGB Section Reference
+
+| Section | Topic |
+|---|---|
+| §238–263 HGB | General bookkeeping and accounting obligations |
+| §242 HGB | Obligation to prepare Bilanz and GuV |
+| §246 HGB | Completeness, prohibition of offsetting |
+| §247 HGB | Content of the balance sheet (fixed/current assets) |
+| §248 HGB | Self-created intangible assets (capitalization option) |
+| §249 HGB | Provisions (Rückstellungen) |
+| §252 HGB | General valuation principles (GoB, prudence, going concern) |
+| §253 HGB | Valuation at acquisition/production cost, depreciation, discounting |
+| §255 HGB | Definitions: acquisition cost, production cost |
+| §256a HGB | Foreign currency translation |
+| §257 HGB | Document retention periods (8/10 years) |
+| §264 HGB | Annual financial statements of Kapitalgesellschaften |
+| §266 HGB | Balance sheet format (Bilanz) |
+| §267 HGB | Size classification (micro/small/medium/large) |
+| §274 HGB | Deferred taxes |
+| §275 HGB | GuV format (GKV and UKV methods) |
+| §277 HGB | Revenue definition (post-BilRUG) |
+| §285 HGB | Notes disclosure requirements |
+| §5b EStG | E-Bilanz requirement |
+| §6(2) EStG | GWG (low-value assets) |
+| §7 EStG | Depreciation methods (AfA) |
+| §7g(5) EStG | Sonderabschreibung for SMEs |
+| §§146–147 AO | Electronic bookkeeping and retention (GoBD basis) |
+
+---
+
+## 9. References
+
+- [HGB Official English Translation (PDF)](https://www.gesetze-im-internet.de/englisch_hgb/englisch_hgb.pdf)
+- [IFRS vs German GAAP — EY Scout Comparison (2022)](https://www.ey.com/content/dam/ey-unified-site/ey-com/de-de/technical/ifrs-ver%C3%B6ffentlichungen/documents/ey-de-ifrs-vs-german-gaap-march-2022.pdf)
+- [IFRS compared to German GAAP and Dutch GAAP — KPMG (2024)](https://assets.kpmg.com/content/dam/kpmg/nl/pdf/2024/services/IFRS-dutch-german-GAAP.pdf)
+- [German GAAP (HGB) vs IFRS Overview — GlobalConnect](https://globalconnectadmin.com/german-gaap-handelsgesetzbuch-hgb-vs-ifrs-understanding-germanys-accounting-framework-3/)
+- [New HGB Thresholds 2025 — Mauer WPG](https://www.mauer-wpg.com/en/insights/new-thresholds-in-the-german-commercial-code-hgb-implications-for-your-corporation)
+- [Changes in German Tax and Commercial Law 2025 — Ebner Stolz](https://www.ebnerstolz.de/en/insights/changes-german-tax-and-commercial-law-2025-72775.html)
+- [SKR03 and SKR04 Differences — Ralf100M](https://ralf100m.de/en/chart-of-accounts-skr-03-and-skr-04-what-are-the-differences/)
+- [GoBD Explained — Fiskaly](https://www.fiskaly.com/blog/understanding-gobd-compliant-archiving)
+- [Germany Updates GoBD Rules for 2025 E-Invoicing — Dynatos](https://www.dynatos.com/blog/germany-updates-gobd-rules-for-2025-e-invoicing-mandate/)
+- [GDPdU File Structure — MindBridge](https://support.mindbridge.ai/hc/en-us/articles/16638376071831-Formatting-GDPdU-How-do-GDPdU-Files-Work)
+- [German Audit File (GDPdU/GoBD) — Microsoft Dynamics 365](https://learn.microsoft.com/en-us/dynamics365/finance/localizations/germany/emea-deu-gdpdu-audit-data-export)
+- [E-Bilanz Overview — firma.de](https://www.firma.de/en/accountancy/e-bilanz-what-is-the-e-balance-sheet-in-germany/)
+- [Germany E-Invoicing B2B Mandate Timeline — VATupdate](https://www.vatupdate.com/2025/11/12/germany-e-invoicing-b2b-mandate-timeline-and-compliance/)
+- [XRechnung Guide — Invoice-Converter](https://www.invoice-converter.com/en/blog/xrechnung-guide-2025)
+- [German Lease Accounting under HGB — Nakisa](https://nakisa.com/blog/know-your-local-gaap-accounting-for-leases-under-german-gaap-bilanzrechtsmodernisierungsgesetz-bilmog/)
+- [Impairment Test under IFRS & HGB — Rödl & Partner](https://www.roedl.com/insights/reporting-trends-solutions/2024-1/pressure-is-on-impairment-test-according-to-ifrs-hgb)
