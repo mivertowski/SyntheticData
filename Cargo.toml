@@ -156,7 +156,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 regex = "1.11"
 
 # JWT (optional - OIDC token validation)
-jsonwebtoken = "9"
+jsonwebtoken = "10"
 
 # Redis (optional - distributed rate limiting)
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
