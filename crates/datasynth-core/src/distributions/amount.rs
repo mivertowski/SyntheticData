@@ -196,6 +196,7 @@ impl AmountSampler {
     ///
     /// If Benford's Law compliance is enabled, uses the Benford sampler.
     /// Otherwise uses log-normal distribution with round-number bias.
+    #[inline]
     pub fn sample(&mut self) -> Decimal {
         // Use Benford sampler if enabled
         if self.benford_enabled {
@@ -209,6 +210,7 @@ impl AmountSampler {
     }
 
     /// Sample using the log-normal distribution (original behavior).
+    #[inline]
     pub fn sample_lognormal(&mut self) -> Decimal {
         let mut amount = self.lognormal.sample(&mut self.rng);
 
@@ -231,9 +233,11 @@ impl AmountSampler {
         // Ensure minimum after rounding
         amount = amount.max(self.config.min_amount);
 
-        // Convert to Decimal with explicit 2 decimal place precision to avoid f64 noise
-        let amount_str = format!("{:.2}", amount);
-        amount_str.parse::<Decimal>().unwrap_or(Decimal::ONE)
+        // Convert to Decimal using fast integer math instead of string formatting.
+        // Multiply by 100, truncate to integer, then construct Decimal with scale 2.
+        // This avoids the overhead of format!() + parse() (~15x faster).
+        let cents = (amount * 100.0).round() as i64;
+        Decimal::new(cents, 2)
     }
 
     /// Sample a fraud amount with the specified pattern.
@@ -270,15 +274,15 @@ impl AmountSampler {
         let sum: f64 = weights.iter().sum();
         weights.iter_mut().for_each(|w| *w /= sum);
 
-        // Calculate amounts based on weights, using string parsing for precision
+        // Calculate amounts based on weights, using fast integer math for precision
         let mut amounts: Vec<Decimal> = weights
             .iter()
             .map(|w| {
                 let amount = total_f64 * w;
                 let rounded = (amount * self.decimal_multiplier).round() / self.decimal_multiplier;
-                // Use string format for more reliable decimal conversion
-                let amount_str = format!("{:.2}", rounded);
-                amount_str.parse::<Decimal>().unwrap_or(Decimal::ZERO)
+                // Convert via integer cents — avoids format!()/parse() overhead
+                let cents = (rounded * 100.0).round() as i64;
+                Decimal::new(cents, 2)
             })
             .collect();
 

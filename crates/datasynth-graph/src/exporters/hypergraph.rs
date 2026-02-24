@@ -47,7 +47,7 @@ impl HypergraphExporter {
         // Export nodes
         let nodes_path = output_dir.join("nodes.jsonl");
         let file = File::create(&nodes_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for node in &hypergraph.nodes {
             serde_json::to_writer(&mut writer, node)?;
             writeln!(writer)?;
@@ -57,7 +57,7 @@ impl HypergraphExporter {
         // Export edges
         let edges_path = output_dir.join("edges.jsonl");
         let file = File::create(&edges_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for edge in &hypergraph.edges {
             serde_json::to_writer(&mut writer, edge)?;
             writeln!(writer)?;
@@ -67,7 +67,7 @@ impl HypergraphExporter {
         // Export hyperedges
         let hyperedges_path = output_dir.join("hyperedges.jsonl");
         let file = File::create(&hyperedges_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for he in &hypergraph.hyperedges {
             serde_json::to_writer(&mut writer, he)?;
             writeln!(writer)?;

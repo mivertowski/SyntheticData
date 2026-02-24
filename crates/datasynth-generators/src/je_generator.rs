@@ -733,6 +733,7 @@ impl JournalEntryGenerator {
     }
 
     /// Generate a deterministic UUID using the factory.
+    #[inline]
     fn generate_deterministic_uuid(&self) -> uuid::Uuid {
         self.uuid_factory.next()
     }
@@ -1636,6 +1637,7 @@ impl JournalEntryGenerator {
     }
 
     /// Select a user from the pool or generate a generic user ID.
+    #[inline]
     fn select_user(&mut self, is_automated: bool) -> (String, String) {
         if let Some(ref pool) = self.user_pool {
             let persona = if is_automated {
@@ -1677,6 +1679,7 @@ impl JournalEntryGenerator {
     }
 
     /// Select transaction source based on configuration weights.
+    #[inline]
     fn select_source(&mut self) -> TransactionSource {
         let roll: f64 = self.rng.random();
         let dist = &self.config.source_distribution;
@@ -1693,6 +1696,7 @@ impl JournalEntryGenerator {
     }
 
     /// Select a business process based on configuration weights.
+    #[inline]
     fn select_business_process(&mut self) -> BusinessProcess {
         let roll: f64 = self.rng.random();
 
@@ -1710,6 +1714,7 @@ impl JournalEntryGenerator {
         }
     }
 
+    #[inline]
     fn select_debit_account(&mut self) -> &GLAccount {
         let accounts = self.coa.get_accounts_by_type(AccountType::Asset);
         let expense_accounts = self.coa.get_accounts_by_type(AccountType::Expense);
@@ -1726,6 +1731,7 @@ impl JournalEntryGenerator {
             .unwrap_or_else(|| &self.coa.accounts[0])
     }
 
+    #[inline]
     fn select_credit_account(&mut self) -> &GLAccount {
         let liability_accounts = self.coa.get_accounts_by_type(AccountType::Liability);
         let revenue_accounts = self.coa.get_accounts_by_type(AccountType::Revenue);

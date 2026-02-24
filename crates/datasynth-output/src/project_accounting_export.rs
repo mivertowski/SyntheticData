@@ -65,7 +65,7 @@ impl ProjectAccountingExporter {
     pub fn export_projects(&self, data: &[Project]) -> SynthResult<usize> {
         let path = self.output_dir.join("projects.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -98,7 +98,7 @@ impl ProjectAccountingExporter {
     pub fn export_wbs_elements(&self, data: &[Project]) -> SynthResult<usize> {
         let path = self.output_dir.join("wbs_elements.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -133,7 +133,7 @@ impl ProjectAccountingExporter {
     pub fn export_cost_lines(&self, data: &[ProjectCostLine]) -> SynthResult<usize> {
         let path = self.output_dir.join("project_cost_lines.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -167,7 +167,7 @@ impl ProjectAccountingExporter {
     pub fn export_revenue(&self, data: &[ProjectRevenue]) -> SynthResult<usize> {
         let path = self.output_dir.join("project_revenue.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -205,7 +205,7 @@ impl ProjectAccountingExporter {
     pub fn export_milestones(&self, data: &[ProjectMilestone]) -> SynthResult<usize> {
         let path = self.output_dir.join("project_milestones.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -237,7 +237,7 @@ impl ProjectAccountingExporter {
     pub fn export_change_orders(&self, data: &[ChangeOrder]) -> SynthResult<usize> {
         let path = self.output_dir.join("change_orders.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -270,7 +270,7 @@ impl ProjectAccountingExporter {
     pub fn export_retainage(&self, data: &[Retainage]) -> SynthResult<usize> {
         let path = self.output_dir.join("retainage.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -302,7 +302,7 @@ impl ProjectAccountingExporter {
     pub fn export_earned_value(&self, data: &[EarnedValueMetric]) -> SynthResult<usize> {
         let path = self.output_dir.join("earned_value_metrics.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,

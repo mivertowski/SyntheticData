@@ -44,7 +44,7 @@ fn write_journal_entries_csv(
 
     let path = output_dir.join("journal_entries.csv");
     let file = std::fs::File::create(&path)?;
-    let mut w = std::io::BufWriter::new(file);
+    let mut w = std::io::BufWriter::with_capacity(256 * 1024, file);
 
     // Write header
     writeln!(

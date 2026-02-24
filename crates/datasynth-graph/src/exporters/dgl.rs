@@ -367,7 +367,7 @@ impl DGLExporter {
     /// Writes a 1D array of i64 in NPY format.
     fn write_npy_1d_i64(&self, path: &Path, data: &[i64]) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // NPY header
         let shape = format!("({},)", data.len());
@@ -384,7 +384,7 @@ impl DGLExporter {
     /// Writes a 1D array of bool in NPY format.
     fn write_npy_1d_bool(&self, path: &Path, data: &[bool]) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // NPY header
         let shape = format!("({},)", data.len());
@@ -401,7 +401,7 @@ impl DGLExporter {
     /// Writes a 2D array of i64 in NPY format.
     fn write_npy_2d_i64(&self, path: &Path, data: &[Vec<i64>]) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         let rows = data.len();
         let cols = data.first().map(|r| r.len()).unwrap_or(0);
@@ -427,7 +427,7 @@ impl DGLExporter {
     /// Writes a 2D array of f64 in NPY format.
     fn write_npy_2d_f64(&self, path: &Path, data: &[Vec<f64>]) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         let rows = data.len();
         let cols = data.first().map(|r| r.len()).unwrap_or(0);

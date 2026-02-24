@@ -93,7 +93,7 @@ impl TreasuryExporter {
     pub fn export_cash_positions(&self, data: &[CashPosition]) -> SynthResult<usize> {
         let path = self.output_dir.join("cash_positions.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -126,7 +126,7 @@ impl TreasuryExporter {
     pub fn export_cash_forecasts(&self, data: &[CashForecast]) -> SynthResult<usize> {
         let path = self.output_dir.join("cash_forecasts.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -156,7 +156,7 @@ impl TreasuryExporter {
     pub fn export_cash_forecast_items(&self, data: &[CashForecast]) -> SynthResult<usize> {
         let path = self.output_dir.join("cash_forecast_items.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -190,7 +190,7 @@ impl TreasuryExporter {
     pub fn export_cash_pool_sweeps(&self, data: &[CashPoolSweep]) -> SynthResult<usize> {
         let path = self.output_dir.join("cash_pool_sweeps.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -219,7 +219,7 @@ impl TreasuryExporter {
     pub fn export_hedging_instruments(&self, data: &[HedgingInstrument]) -> SynthResult<usize> {
         let path = self.output_dir.join("hedging_instruments.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -254,7 +254,7 @@ impl TreasuryExporter {
     pub fn export_hedge_relationships(&self, data: &[HedgeRelationship]) -> SynthResult<usize> {
         let path = self.output_dir.join("hedge_relationships.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -286,7 +286,7 @@ impl TreasuryExporter {
     pub fn export_debt_instruments(&self, data: &[DebtInstrument]) -> SynthResult<usize> {
         let path = self.output_dir.join("debt_instruments.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -320,7 +320,7 @@ impl TreasuryExporter {
     pub fn export_debt_covenants(&self, instruments: &[DebtInstrument]) -> SynthResult<usize> {
         let path = self.output_dir.join("debt_covenants.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -359,7 +359,7 @@ impl TreasuryExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("amortization_schedules.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -391,7 +391,7 @@ impl TreasuryExporter {
     pub fn export_bank_guarantees(&self, data: &[BankGuarantee]) -> SynthResult<usize> {
         let path = self.output_dir.join("bank_guarantees.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -425,7 +425,7 @@ impl TreasuryExporter {
     pub fn export_netting_runs(&self, data: &[NettingRun]) -> SynthResult<usize> {
         let path = self.output_dir.join("netting_runs.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -457,7 +457,7 @@ impl TreasuryExporter {
     pub fn export_netting_positions(&self, data: &[NettingRun]) -> SynthResult<usize> {
         let path = self.output_dir.join("netting_positions.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -489,7 +489,7 @@ impl TreasuryExporter {
     pub fn export_anomaly_labels(&self, data: &[TreasuryAnomalyLabelRow]) -> SynthResult<usize> {
         let path = self.output_dir.join("treasury_anomaly_labels.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,

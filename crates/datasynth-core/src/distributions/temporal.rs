@@ -243,6 +243,18 @@ pub struct TemporalSampler {
     use_period_end_dynamics: bool,
     /// Intra-day patterns for time-of-day activity variation.
     intra_day_patterns: Option<IntraDayPatterns>,
+    /// Cached cumulative distribution for date sampling.
+    /// Pre-computed on first `sample_date` call with a given date range.
+    /// Avoids recomputing 365+ weights per call.
+    cached_date_cdf: Option<CachedDateCdf>,
+}
+
+/// Pre-computed CDF for date sampling, avoiding per-call allocation.
+struct CachedDateCdf {
+    start: NaiveDate,
+    end: NaiveDate,
+    /// Cumulative distribution function (pre-normalized)
+    cdf: Vec<f64>,
 }
 
 impl TemporalSampler {
@@ -273,6 +285,7 @@ impl TemporalSampler {
             period_end_dynamics: None,
             use_period_end_dynamics: false,
             intra_day_patterns: None,
+            cached_date_cdf: None,
         }
     }
 
@@ -296,6 +309,7 @@ impl TemporalSampler {
             period_end_dynamics: None,
             use_period_end_dynamics: false,
             intra_day_patterns: None,
+            cached_date_cdf: None,
         }
     }
 
@@ -320,6 +334,7 @@ impl TemporalSampler {
             period_end_dynamics: Some(period_end_dynamics),
             use_period_end_dynamics: true,
             intra_day_patterns: None,
+            cached_date_cdf: None,
         }
     }
 
@@ -630,38 +645,62 @@ impl TemporalSampler {
     }
 
     /// Sample a posting date within a range based on seasonality.
+    ///
+    /// Uses a cached cumulative distribution function (CDF) to avoid
+    /// recomputing date weights on every call. The CDF is computed once
+    /// for a given (start, end) range and reused for subsequent calls.
+    #[inline]
     pub fn sample_date(&mut self, start: NaiveDate, end: NaiveDate) -> NaiveDate {
         let days = (end - start).num_days() as usize;
         if days == 0 {
             return start;
         }
 
-        // Build weighted distribution based on activity levels
-        let mut weights: Vec<f64> = (0..=days)
-            .map(|d| {
+        // Check if we have a cached CDF for this range
+        let need_rebuild = match &self.cached_date_cdf {
+            Some(cached) => cached.start != start || cached.end != end,
+            None => true,
+        };
+
+        if need_rebuild {
+            // Build weighted CDF based on activity levels
+            let mut cdf = Vec::with_capacity(days + 1);
+            let mut cumulative = 0.0;
+            for d in 0..=days {
                 let date = start + Duration::days(d as i64);
-                self.get_date_multiplier(date)
-            })
-            .collect();
-
-        // Normalize weights
-        let total: f64 = weights.iter().sum();
-        weights.iter_mut().for_each(|w| *w /= total);
-
-        // Sample using weights
-        let p: f64 = self.rng.random();
-        let mut cumulative = 0.0;
-        for (i, weight) in weights.iter().enumerate() {
-            cumulative += weight;
-            if p < cumulative {
-                return start + Duration::days(i as i64);
+                cumulative += self.get_date_multiplier(date);
+                cdf.push(cumulative);
             }
+
+            // Normalize to [0, 1]
+            let total = cumulative;
+            if total > 0.0 {
+                cdf.iter_mut().for_each(|w| *w /= total);
+            }
+            // Ensure last entry is exactly 1.0
+            if let Some(last) = cdf.last_mut() {
+                *last = 1.0;
+            }
+
+            self.cached_date_cdf = Some(CachedDateCdf { start, end, cdf });
         }
 
-        end
+        // Sample using binary search over the cached CDF
+        let p: f64 = self.rng.random();
+        // SAFETY: cached_date_cdf is guaranteed to be Some — we just set it above
+        let cdf = &self
+            .cached_date_cdf
+            .as_ref()
+            .expect("CDF was just computed")
+            .cdf;
+        let idx = cdf.partition_point(|&w| w < p);
+        let idx = idx.min(days);
+
+        start + Duration::days(idx as i64)
     }
 
     /// Sample a posting time based on working hours.
+    #[inline]
     pub fn sample_time(&mut self, is_human: bool) -> NaiveTime {
         if !is_human {
             // Automated systems can post any time, but prefer off-hours
@@ -722,6 +761,7 @@ impl TemporalSampler {
     /// Reset the sampler with a new seed.
     pub fn reset(&mut self, seed: u64) {
         self.rng = ChaCha8Rng::seed_from_u64(seed);
+        self.cached_date_cdf = None;
     }
 }
 

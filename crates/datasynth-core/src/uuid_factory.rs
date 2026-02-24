@@ -199,6 +199,7 @@ impl DeterministicUuidFactory {
     /// Generate the next UUID in the sequence.
     ///
     /// This method is thread-safe and can be called from multiple threads.
+    #[inline]
     pub fn next(&self) -> Uuid {
         let counter = self.counter.fetch_add(1, Ordering::Relaxed);
         self.generate_uuid(counter)
@@ -231,6 +232,7 @@ impl DeterministicUuidFactory {
     /// Uses a simple hash-based approach to ensure uniqueness while maintaining
     /// determinism. The hash function is designed to spread entropy across all
     /// bytes while preserving the UUID v4 format.
+    #[inline]
     fn generate_uuid(&self, counter: u64) -> Uuid {
         // Create a unique input by combining all distinguishing factors
         // Use FNV-1a style hashing for simplicity and determinism

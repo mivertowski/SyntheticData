@@ -65,7 +65,7 @@ impl ControlExporter {
     pub fn export_controls(&self, controls: &[InternalControl]) -> SynthResult<usize> {
         let path = self.output_dir.join("internal_controls.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(
@@ -112,7 +112,7 @@ impl ControlExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("control_account_mappings.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(writer, "control_id,account_numbers,account_sub_types")?;
@@ -145,7 +145,7 @@ impl ControlExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("control_process_mappings.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(writer, "control_id,business_processes")?;
@@ -176,7 +176,7 @@ impl ControlExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("control_threshold_mappings.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(
@@ -209,7 +209,7 @@ impl ControlExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("control_doctype_mappings.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(writer, "control_id,document_types")?;
@@ -231,7 +231,7 @@ impl ControlExporter {
     pub fn export_sod_conflicts(&self, conflicts: &[SodConflictPair]) -> SynthResult<usize> {
         let path = self.output_dir.join("sod_conflict_pairs.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(writer, "conflict_type,role_a,role_b,description,severity")?;
@@ -256,7 +256,7 @@ impl ControlExporter {
     pub fn export_sod_rules(&self, rules: &[SodRule]) -> SynthResult<usize> {
         let path = self.output_dir.join("sod_rules.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(
@@ -288,7 +288,7 @@ impl ControlExporter {
     pub fn export_coso_mapping(&self, controls: &[InternalControl]) -> SynthResult<usize> {
         let path = self.output_dir.join("coso_control_mapping.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Header
         writeln!(

@@ -131,7 +131,7 @@ impl TaxExporter {
     pub fn export_jurisdictions(&self, data: &[TaxJurisdiction]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_jurisdictions.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -160,7 +160,7 @@ impl TaxExporter {
     pub fn export_tax_codes(&self, data: &[TaxCode]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_codes.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -192,7 +192,7 @@ impl TaxExporter {
     pub fn export_tax_lines(&self, data: &[TaxLine]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_lines.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -226,7 +226,7 @@ impl TaxExporter {
     pub fn export_tax_returns(&self, data: &[TaxReturn]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_returns.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -264,7 +264,7 @@ impl TaxExporter {
     pub fn export_tax_provisions(&self, data: &[TaxProvision]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_provisions.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -298,7 +298,7 @@ impl TaxExporter {
     pub fn export_rate_reconciliation(&self, provisions: &[TaxProvision]) -> SynthResult<usize> {
         let path = self.output_dir.join("rate_reconciliation.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(writer, "provision_id,description,rate_impact")?;
 
@@ -324,7 +324,7 @@ impl TaxExporter {
     pub fn export_uncertain_positions(&self, data: &[UncertainTaxPosition]) -> SynthResult<usize> {
         let path = self.output_dir.join("uncertain_tax_positions.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -354,7 +354,7 @@ impl TaxExporter {
     pub fn export_withholding_records(&self, data: &[WithholdingTaxRecord]) -> SynthResult<usize> {
         let path = self.output_dir.join("withholding_records.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -387,7 +387,7 @@ impl TaxExporter {
     pub fn export_anomaly_labels(&self, data: &[TaxAnomalyLabelRow]) -> SynthResult<usize> {
         let path = self.output_dir.join("tax_anomaly_labels.csv");
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,

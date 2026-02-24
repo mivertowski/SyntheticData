@@ -26,7 +26,7 @@ impl JsonLinesSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             disk_guard: None,
@@ -41,7 +41,7 @@ impl JsonLinesSink {
         let disk_guard = Arc::new(DiskSpaceGuard::new(disk_config));
 
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             disk_guard: Some(disk_guard),

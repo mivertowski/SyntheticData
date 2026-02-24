@@ -259,7 +259,7 @@ impl RustGraphUnifiedExporter {
         // Export nodes
         let nodes_path = output_dir.join("nodes.jsonl");
         let file = File::create(nodes_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for node in &hypergraph.nodes {
             let unified = RawUnifiedNode::from_hypergraph_node(node);
             serde_json::to_writer(&mut writer, &unified)?;
@@ -270,7 +270,7 @@ impl RustGraphUnifiedExporter {
         // Export edges
         let edges_path = output_dir.join("edges.jsonl");
         let file = File::create(edges_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for edge in &hypergraph.edges {
             let unified = RawUnifiedEdge::from_cross_layer_edge(edge);
             serde_json::to_writer(&mut writer, &unified)?;
@@ -281,7 +281,7 @@ impl RustGraphUnifiedExporter {
         // Export hyperedges
         let hyperedges_path = output_dir.join("hyperedges.jsonl");
         let file = File::create(hyperedges_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         for he in &hypergraph.hyperedges {
             let unified = RawUnifiedHyperedge::from_hyperedge(he);
             serde_json::to_writer(&mut writer, &unified)?;

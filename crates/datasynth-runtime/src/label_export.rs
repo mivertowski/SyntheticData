@@ -157,7 +157,7 @@ pub fn export_labels_csv(
     _config: &LabelExportConfig,
 ) -> LabelExportResult<usize> {
     let file = File::create(path)?;
-    let mut writer = csv::Writer::from_writer(BufWriter::new(file));
+    let mut writer = csv::Writer::from_writer(BufWriter::with_capacity(256 * 1024, file));
 
     for label in labels {
         let flat: FlatAnomalyLabel = label.into();
@@ -175,7 +175,7 @@ pub fn export_labels_json(
     config: &LabelExportConfig,
 ) -> LabelExportResult<usize> {
     let file = File::create(path)?;
-    let writer = BufWriter::new(file);
+    let writer = BufWriter::with_capacity(256 * 1024, file);
 
     if config.pretty_json {
         serde_json::to_writer_pretty(writer, labels)?;
@@ -193,7 +193,7 @@ pub fn export_labels_jsonl(
     _config: &LabelExportConfig,
 ) -> LabelExportResult<usize> {
     let file = File::create(path)?;
-    let mut writer = BufWriter::new(file);
+    let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
     for label in labels {
         let json = serde_json::to_string(label)?;
@@ -289,7 +289,7 @@ impl LabelExportSummary {
     /// Writes the summary to a JSON file.
     pub fn write_to_file(&self, path: &Path) -> LabelExportResult<()> {
         let file = File::create(path)?;
-        let writer = BufWriter::new(file);
+        let writer = BufWriter::with_capacity(256 * 1024, file);
         serde_json::to_writer_pretty(writer, self)?;
         Ok(())
     }

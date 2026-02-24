@@ -357,10 +357,10 @@ impl NetSuiteExporter {
         let lines_path = output_dir.join("netsuite_journal_lines.csv");
 
         let je_file = File::create(&je_path)?;
-        let mut je_writer = BufWriter::new(je_file);
+        let mut je_writer = BufWriter::with_capacity(256 * 1024, je_file);
 
         let lines_file = File::create(&lines_path)?;
-        let mut lines_writer = BufWriter::new(lines_file);
+        let mut lines_writer = BufWriter::with_capacity(256 * 1024, lines_file);
 
         // Write headers
         let mut je_header = "Internal ID,External ID,Tran ID,Tran Date,Posting Period,Subsidiary,\
@@ -490,7 +490,7 @@ impl NetSuiteExporter {
     /// Export account mapping.
     fn export_accounts(&self, filepath: &Path) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(writer, "Internal ID,Account Number,External ID")?;
 
@@ -530,7 +530,7 @@ impl NetSuiteExporter {
 
         let json_path = output_dir.join("netsuite_journal_entries.json");
         let file = File::create(&json_path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         let mut records = Vec::new();
         for je in entries {

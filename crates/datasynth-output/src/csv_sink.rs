@@ -30,7 +30,7 @@ impl CsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             header_written: false,
@@ -46,7 +46,7 @@ impl CsvSink {
         let disk_guard = Arc::new(DiskSpaceGuard::new(disk_config));
 
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             header_written: false,
@@ -171,7 +171,7 @@ impl DunningRunCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })
@@ -250,7 +250,7 @@ impl DunningLetterCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })
@@ -334,7 +334,7 @@ impl DunningItemCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })
@@ -401,7 +401,7 @@ impl PaymentCorrectionCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })
@@ -484,7 +484,7 @@ impl ShortPaymentCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })
@@ -570,7 +570,7 @@ impl OnAccountPaymentCsvSink {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             header_written: false,
         })

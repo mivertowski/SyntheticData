@@ -53,7 +53,7 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             header_written: false,
@@ -70,7 +70,7 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
     /// * `header` - The header line (without newline)
     pub fn with_header(path: PathBuf, header: &str) -> SynthResult<Self> {
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         let header_line = format!("{}\n", header);
         writer.write_all(header_line.as_bytes())?;
         let bytes_written = header_line.len() as u64;

@@ -7,6 +7,7 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use uuid::Uuid;
 
 use super::anomaly::FraudType;
@@ -498,6 +499,7 @@ pub struct JournalEntryLine {
 
 impl JournalEntryLine {
     /// Create a new debit line item.
+    #[inline]
     pub fn debit(document_id: Uuid, line_number: u32, gl_account: String, amount: Decimal) -> Self {
         Self {
             document_id,
@@ -531,6 +533,7 @@ impl JournalEntryLine {
     }
 
     /// Create a new credit line item.
+    #[inline]
     pub fn credit(
         document_id: Uuid,
         line_number: u32,
@@ -569,16 +572,19 @@ impl JournalEntryLine {
     }
 
     /// Check if this is a debit posting.
+    #[inline]
     pub fn is_debit(&self) -> bool {
         self.debit_amount > Decimal::ZERO
     }
 
     /// Check if this is a credit posting.
+    #[inline]
     pub fn is_credit(&self) -> bool {
         self.credit_amount > Decimal::ZERO
     }
 
     /// Get the signed amount (positive for debit, negative for credit).
+    #[inline]
     pub fn signed_amount(&self) -> Decimal {
         self.debit_amount - self.credit_amount
     }
@@ -636,12 +642,18 @@ impl Default for JournalEntryLine {
 ///
 /// Represents a balanced double-entry bookkeeping transaction where
 /// total debits must equal total credits.
+///
+/// Uses `SmallVec<[JournalEntryLine; 4]>` for line items: entries with
+/// 4 or fewer lines (the common case) are stored inline on the stack,
+/// avoiding heap allocation. Entries with more lines spill to the heap
+/// transparently.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntry {
     /// Header with document metadata
     pub header: JournalEntryHeader,
-    /// Line items (debit and credit postings)
-    pub lines: Vec<JournalEntryLine>,
+    /// Line items (debit and credit postings).
+    /// Inline for ≤4 lines (common case), heap-allocated for >4.
+    pub lines: SmallVec<[JournalEntryLine; 4]>,
 }
 
 impl JournalEntry {
@@ -649,7 +661,7 @@ impl JournalEntry {
     pub fn new(header: JournalEntryHeader) -> Self {
         Self {
             header,
-            lines: Vec::new(),
+            lines: SmallVec::new(),
         }
     }
 
@@ -668,11 +680,12 @@ impl JournalEntry {
         header.header_text = Some(description);
         Self {
             header,
-            lines: Vec::new(),
+            lines: SmallVec::new(),
         }
     }
 
     /// Add a line item to the journal entry.
+    #[inline]
     pub fn add_line(&mut self, line: JournalEntryLine) {
         self.lines.push(line);
     }

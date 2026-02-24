@@ -57,7 +57,7 @@ impl<T: Serialize + Send> JsonStreamingSink<T> {
     /// Creates a JSON streaming sink with configurable options.
     fn with_options(path: PathBuf, pretty_print: bool) -> SynthResult<Self> {
         let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Write opening bracket
         let opening = if pretty_print { "[\n" } else { "[" };
@@ -195,7 +195,7 @@ impl<T: Serialize + Send> NdjsonStreamingSink<T> {
     pub fn new(path: PathBuf) -> SynthResult<Self> {
         let file = File::create(&path)?;
         Ok(Self {
-            writer: BufWriter::new(file),
+            writer: BufWriter::with_capacity(256 * 1024, file),
             items_written: 0,
             bytes_written: 0,
             path,

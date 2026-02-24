@@ -297,7 +297,7 @@ impl RustGraphExporter {
         files.push(filename.to_string());
 
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         match self.config.output_format {
             RustGraphOutputFormat::JsonLines => {
@@ -358,7 +358,7 @@ impl RustGraphExporter {
         files.push(filename.to_string());
 
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         match self.config.output_format {
             RustGraphOutputFormat::JsonLines => {

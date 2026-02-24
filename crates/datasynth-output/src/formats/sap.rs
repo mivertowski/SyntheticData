@@ -268,7 +268,7 @@ impl SapExporter {
     /// Export BKPF (document headers).
     fn export_bkpf(&mut self, entries: &[JournalEntry], filepath: &Path) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Write header
         writeln!(
@@ -325,7 +325,7 @@ impl SapExporter {
     /// Export BSEG (document segments).
     fn export_bseg(&mut self, entries: &[JournalEntry], filepath: &Path) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Write header
         writeln!(
@@ -371,7 +371,7 @@ impl SapExporter {
     /// Export ACDOCA (Universal Journal).
     fn export_acdoca(&mut self, entries: &[JournalEntry], filepath: &Path) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         // Write header - includes extension fields if configured
         let mut header =
@@ -472,7 +472,7 @@ impl SapExporter {
         filepath: &Path,
     ) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,
@@ -510,7 +510,7 @@ impl SapExporter {
         filepath: &Path,
     ) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,

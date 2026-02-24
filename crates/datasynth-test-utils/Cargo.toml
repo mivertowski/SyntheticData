@@ -27,6 +27,9 @@ chrono = { workspace = true }
 # Decimal
 rust_decimal = { workspace = true }
 
+# Data structures
+smallvec = { workspace = true }
+
 # UUID
 uuid = { workspace = true }
 
