@@ -417,7 +417,8 @@ impl VendorGenerator {
         }
 
         for partner in partner_company_codes {
-            let mut vendor = self.generate_intercompany_vendor(company_code, partner, effective_date);
+            let mut vendor =
+                self.generate_intercompany_vendor(company_code, partner, effective_date);
             let name = std::mem::take(&mut vendor.name);
             let unique_name = Self::dedupe_name(&name, &vendor.vendor_id, &mut used_names);
             vendor.name = unique_name;

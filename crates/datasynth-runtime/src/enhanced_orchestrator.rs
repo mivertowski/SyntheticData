@@ -127,17 +127,17 @@ use datasynth_core::accounts::{
     suspense_accounts as us_suspense,
 };
 use datasynth_core::causal::{CausalGraph, CausalValidator, StructuralCausalModel};
-use datasynth_core::pcg::{
-    control_accounts as pcg_control, expense_accounts as pcg_expense,
-    fixed_asset_accounts as pcg_fa, revenue_accounts as pcg_revenue,
-    suspense_accounts as pcg_suspense, tax_accounts as pcg_tax,
-};
-use datasynth_core::pcg::cash_accounts as pcg_cash;
 use datasynth_core::diffusion::{DiffusionBackend, DiffusionConfig, StatisticalDiffusionBackend};
 use datasynth_core::llm::MockLlmProvider;
 use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
+use datasynth_core::pcg::cash_accounts as pcg_cash;
+use datasynth_core::pcg::{
+    control_accounts as pcg_control, expense_accounts as pcg_expense,
+    fixed_asset_accounts as pcg_fa, revenue_accounts as pcg_revenue,
+    suspense_accounts as pcg_suspense, tax_accounts as pcg_tax,
+};
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 
 // ============================================================================
@@ -5380,8 +5380,18 @@ impl EnhancedOrchestrator {
                 .goods_receipts
                 .first()
                 .and_then(|gr| gr.vendor_id.as_deref())
-                .or_else(|| chain.vendor_invoice.as_ref().map(|vi| vi.vendor_id.as_str()))
-                .or_else(|| chain.payment.as_ref().map(|p| p.business_partner_id.as_str()))
+                .or_else(|| {
+                    chain
+                        .vendor_invoice
+                        .as_ref()
+                        .map(|vi| vi.vendor_id.as_str())
+                })
+                .or_else(|| {
+                    chain
+                        .payment
+                        .as_ref()
+                        .map(|p| p.business_partner_id.as_str())
+                })
                 .unwrap_or("");
 
             if use_french_gaap {
@@ -5548,8 +5558,9 @@ impl EnhancedOrchestrator {
         }
         // Control and common accounts (in case any generator still uses US constants)
         use datasynth_core::accounts::{
-            cash_accounts as us_cash, control_accounts as us_control, expense_accounts as us_expense,
-            revenue_accounts as us_revenue, suspense_accounts as us_suspense,
+            cash_accounts as us_cash, control_accounts as us_control,
+            expense_accounts as us_expense, revenue_accounts as us_revenue,
+            suspense_accounts as us_suspense,
         };
         if s == us_control::AR_CONTROL {
             return Some(pcg_control::AR_CONTROL);
@@ -5569,7 +5580,9 @@ impl EnhancedOrchestrator {
         if s == us_control::GR_IR_CLEARING {
             return Some(pcg_control::GR_IR_CLEARING);
         }
-        if s == us_cash::OPERATING_CASH || s == us_cash::BANK_ACCOUNT || s == us_cash::PETTY_CASH
+        if s == us_cash::OPERATING_CASH
+            || s == us_cash::BANK_ACCOUNT
+            || s == us_cash::PETTY_CASH
             || s == us_cash::WIRE_CLEARING
         {
             return Some(pcg_cash::OPERATING_CASH);
@@ -5666,7 +5679,10 @@ impl EnhancedOrchestrator {
     /// Generate journal entries from production orders.
     ///
     /// Uses COA accounts only (PCG when French): DR Raw Materials, CR Inventory.
-    fn generate_manufacturing_jes(&self, production_orders: &[ProductionOrder]) -> Vec<JournalEntry> {
+    fn generate_manufacturing_jes(
+        &self,
+        production_orders: &[ProductionOrder],
+    ) -> Vec<JournalEntry> {
         use datasynth_core::models::ProductionOrderStatus;
 
         let acc = self.coa_accounts();

@@ -565,7 +565,8 @@ impl CustomerGenerator {
         for _ in 0..count {
             let mut customer = self.generate_customer(company_code, effective_date);
             let name = std::mem::take(&mut customer.name);
-            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            let unique_name =
+                Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
             customer.name = unique_name;
             pool.add_customer(customer);
         }
@@ -589,7 +590,8 @@ impl CustomerGenerator {
         for _ in 0..regular_count {
             let mut customer = self.generate_customer(company_code, effective_date);
             let name = std::mem::take(&mut customer.name);
-            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            let unique_name =
+                Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
             customer.name = unique_name;
             pool.add_customer(customer);
         }
@@ -598,7 +600,8 @@ impl CustomerGenerator {
             let mut customer =
                 self.generate_intercompany_customer(company_code, partner, effective_date);
             let name = std::mem::take(&mut customer.name);
-            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            let unique_name =
+                Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
             customer.name = unique_name;
             pool.add_customer(customer);
         }
@@ -638,7 +641,8 @@ impl CustomerGenerator {
                     effective_date,
                 );
                 let name = std::mem::take(&mut customer.name);
-                let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+                let unique_name =
+                    Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
                 customer.name = unique_name;
                 pool.add_customer(customer);
             }
@@ -647,7 +651,8 @@ impl CustomerGenerator {
         while pool.customers.len() < count {
             let mut customer = self.generate_customer(company_code, effective_date);
             let name = std::mem::take(&mut customer.name);
-            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            let unique_name =
+                Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
             customer.name = unique_name;
             pool.add_customer(customer);
         }
@@ -675,7 +680,10 @@ impl CustomerGenerator {
             }
             remaining -= names.len();
         }
-        (CUSTOMER_NAME_TEMPLATES[0].0, CUSTOMER_NAME_TEMPLATES[0].1[0])
+        (
+            CUSTOMER_NAME_TEMPLATES[0].0,
+            CUSTOMER_NAME_TEMPLATES[0].1[0],
+        )
     }
 
     /// Return a unique name: if `name` is already in `used_names`, append ` (id)` so it is unique.

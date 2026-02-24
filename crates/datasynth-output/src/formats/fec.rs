@@ -72,14 +72,8 @@ pub fn write_fec_csv(
                 .to_string();
             let libelle_ecriture = escape_fec_field(&libelle_ecriture);
 
-            let num_auxiliaire = line
-                .auxiliary_account_number
-                .as_deref()
-                .unwrap_or("");
-            let libelle_auxiliaire = line
-                .auxiliary_account_label
-                .as_deref()
-                .unwrap_or("");
+            let num_auxiliaire = line.auxiliary_account_number.as_deref().unwrap_or("");
+            let libelle_auxiliaire = line.auxiliary_account_label.as_deref().unwrap_or("");
             let lettrage = line.lettrage.as_deref().unwrap_or("");
             let date_lettrage = line
                 .lettrage_date
