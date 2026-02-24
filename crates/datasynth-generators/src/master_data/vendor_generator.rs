@@ -373,6 +373,7 @@ impl VendorGenerator {
     }
 
     /// Generate a vendor pool with specified count.
+    /// Ensures unique vendor names by appending vendor ID when a duplicate would occur.
     pub fn generate_vendor_pool(
         &mut self,
         count: usize,
@@ -381,9 +382,13 @@ impl VendorGenerator {
     ) -> VendorPool {
         debug!(count, company_code, %effective_date, "Generating vendor pool");
         let mut pool = VendorPool::new();
+        let mut used_names = std::collections::HashSet::new();
 
         for _ in 0..count {
-            let vendor = self.generate_vendor(company_code, effective_date);
+            let mut vendor = self.generate_vendor(company_code, effective_date);
+            let name = std::mem::take(&mut vendor.name);
+            let unique_name = Self::dedupe_name(&name, &vendor.vendor_id, &mut used_names);
+            vendor.name = unique_name;
             pool.add_vendor(vendor);
         }
 
@@ -391,6 +396,7 @@ impl VendorGenerator {
     }
 
     /// Generate a vendor pool with intercompany vendors.
+    /// Ensures unique vendor names by appending vendor ID when a duplicate would occur.
     pub fn generate_vendor_pool_with_ic(
         &mut self,
         count: usize,
@@ -399,21 +405,41 @@ impl VendorGenerator {
         effective_date: NaiveDate,
     ) -> VendorPool {
         let mut pool = VendorPool::new();
+        let mut used_names = std::collections::HashSet::new();
 
-        // Generate regular vendors
         let regular_count = count.saturating_sub(partner_company_codes.len());
         for _ in 0..regular_count {
-            let vendor = self.generate_vendor(company_code, effective_date);
+            let mut vendor = self.generate_vendor(company_code, effective_date);
+            let name = std::mem::take(&mut vendor.name);
+            let unique_name = Self::dedupe_name(&name, &vendor.vendor_id, &mut used_names);
+            vendor.name = unique_name;
             pool.add_vendor(vendor);
         }
 
-        // Generate IC vendors for each partner
         for partner in partner_company_codes {
-            let vendor = self.generate_intercompany_vendor(company_code, partner, effective_date);
+            let mut vendor = self.generate_intercompany_vendor(company_code, partner, effective_date);
+            let name = std::mem::take(&mut vendor.name);
+            let unique_name = Self::dedupe_name(&name, &vendor.vendor_id, &mut used_names);
+            vendor.name = unique_name;
             pool.add_vendor(vendor);
         }
 
         pool
+    }
+
+    /// Return a unique name: if `name` is already in `used_names`, append ` (id)` so it is unique.
+    fn dedupe_name(
+        name: &str,
+        id: &str,
+        used_names: &mut std::collections::HashSet<String>,
+    ) -> String {
+        let candidate = if used_names.contains(name) {
+            format!("{} ({})", name, id)
+        } else {
+            name.to_string()
+        };
+        used_names.insert(candidate.clone());
+        candidate
     }
 
     /// Select a spend category based on distribution.

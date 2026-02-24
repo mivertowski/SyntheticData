@@ -122,13 +122,67 @@ use datasynth_ocpm::{
 };
 
 use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
+use datasynth_core::accounts::{
+    control_accounts as us_control, expense_accounts as us_expense,
+    suspense_accounts as us_suspense,
+};
 use datasynth_core::causal::{CausalGraph, CausalValidator, StructuralCausalModel};
+use datasynth_core::pcg::{
+    control_accounts as pcg_control, expense_accounts as pcg_expense,
+    fixed_asset_accounts as pcg_fa, revenue_accounts as pcg_revenue,
+    suspense_accounts as pcg_suspense, tax_accounts as pcg_tax,
+};
+use datasynth_core::pcg::cash_accounts as pcg_cash;
 use datasynth_core::diffusion::{DiffusionBackend, DiffusionConfig, StatisticalDiffusionBackend};
 use datasynth_core::llm::MockLlmProvider;
 use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
+
+// ============================================================================
+// COA account names (US vs French PCG) so all JEs use only COA accounts
+// ============================================================================
+
+/// Resolved account names from COA: US defaults or PCG when French GAAP.
+struct CoaAccountNames {
+    pub ar_control: &'static str,
+    pub ap_control: &'static str,
+    pub inventory: &'static str,
+    pub fixed_assets: &'static str,
+    pub accumulated_depreciation: &'static str,
+    pub salaries_wages: &'static str,
+    pub payroll_clearing: &'static str,
+    pub raw_materials: &'static str,
+}
+
+impl CoaAccountNames {
+    fn us() -> Self {
+        Self {
+            ar_control: us_control::AR_CONTROL,
+            ap_control: us_control::AP_CONTROL,
+            inventory: us_control::INVENTORY,
+            fixed_assets: us_control::FIXED_ASSETS,
+            accumulated_depreciation: us_control::ACCUMULATED_DEPRECIATION,
+            salaries_wages: us_expense::SALARIES_WAGES,
+            payroll_clearing: us_suspense::PAYROLL_CLEARING,
+            raw_materials: us_expense::RAW_MATERIALS,
+        }
+    }
+
+    fn pcg() -> Self {
+        Self {
+            ar_control: pcg_control::AR_CONTROL,
+            ap_control: pcg_control::AP_CONTROL,
+            inventory: pcg_control::INVENTORY,
+            fixed_assets: pcg_control::FIXED_ASSETS,
+            accumulated_depreciation: pcg_control::ACCUMULATED_DEPRECIATION,
+            salaries_wages: pcg_expense::SALARIES_WAGES,
+            payroll_clearing: pcg_suspense::PAYROLL_CLEARING,
+            raw_materials: pcg_expense::RAW_MATERIALS,
+        }
+    }
+}
 
 // ============================================================================
 // Configuration Conversion Functions
@@ -1448,9 +1502,9 @@ impl EnhancedOrchestrator {
         // Phase 6: HR Data (Payroll, Time Entries, Expenses)
         let hr = self.phase_hr_data(&mut stats)?;
 
-        // Phase 6b: Generate JEs from payroll runs
+        // Phase 6b: Generate JEs from payroll runs (use COA accounts only; PCG when French)
         if !hr.payroll_runs.is_empty() {
-            let payroll_jes = Self::generate_payroll_jes(&hr.payroll_runs);
+            let payroll_jes = self.generate_payroll_jes(&hr.payroll_runs);
             debug!("Generated {} JEs from payroll runs", payroll_jes.len());
             entries.extend(payroll_jes);
         }
@@ -1458,12 +1512,15 @@ impl EnhancedOrchestrator {
         // Phase 7: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
         let manufacturing_snap = self.phase_manufacturing(&mut stats)?;
 
-        // Phase 7a: Generate JEs from production orders
+        // Phase 7a: Generate JEs from production orders (use COA accounts only; PCG when French)
         if !manufacturing_snap.production_orders.is_empty() {
-            let mfg_jes = Self::generate_manufacturing_jes(&manufacturing_snap.production_orders);
+            let mfg_jes = self.generate_manufacturing_jes(&manufacturing_snap.production_orders);
             debug!("Generated {} JEs from production orders", mfg_jes.len());
             entries.extend(mfg_jes);
         }
+
+        // When French GAAP, ensure every JE line uses only PCG (COA) accounts (e.g. FA JEs from US 15xx -> 215000/281000).
+        self.normalize_entries_to_pcg(&mut entries);
 
         // Update final entry/line-item stats after all JE-generating phases
         // (FA acquisition, IC, payroll, manufacturing JEs have all been appended)
@@ -4827,13 +4884,12 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.as_str())
             .unwrap_or("1000");
 
+        let acc = self.coa_accounts();
+
         // Reconcile AR
         if !subledger.ar_invoices.is_empty() {
             let gl_balance = tracker
-                .get_account_balance(
-                    company_code,
-                    datasynth_core::accounts::control_accounts::AR_CONTROL,
-                )
+                .get_account_balance(company_code, acc.ar_control)
                 .map(|b| b.closing_balance)
                 .unwrap_or_default();
             let ar_refs: Vec<&ARInvoice> = subledger.ar_invoices.iter().collect();
@@ -4843,10 +4899,7 @@ impl EnhancedOrchestrator {
         // Reconcile AP
         if !subledger.ap_invoices.is_empty() {
             let gl_balance = tracker
-                .get_account_balance(
-                    company_code,
-                    datasynth_core::accounts::control_accounts::AP_CONTROL,
-                )
+                .get_account_balance(company_code, acc.ap_control)
                 .map(|b| b.closing_balance)
                 .unwrap_or_default();
             let ap_refs: Vec<&APInvoice> = subledger.ap_invoices.iter().collect();
@@ -4856,17 +4909,11 @@ impl EnhancedOrchestrator {
         // Reconcile FA
         if !subledger.fa_records.is_empty() {
             let gl_asset_balance = tracker
-                .get_account_balance(
-                    company_code,
-                    datasynth_core::accounts::control_accounts::FIXED_ASSETS,
-                )
+                .get_account_balance(company_code, acc.fixed_assets)
                 .map(|b| b.closing_balance)
                 .unwrap_or_default();
             let gl_accum_depr_balance = tracker
-                .get_account_balance(
-                    company_code,
-                    datasynth_core::accounts::control_accounts::ACCUMULATED_DEPRECIATION,
-                )
+                .get_account_balance(company_code, acc.accumulated_depreciation)
                 .map(|b| b.closing_balance)
                 .unwrap_or_default();
             let fa_refs: Vec<&datasynth_core::models::subledger::fa::FixedAssetRecord> =
@@ -4885,10 +4932,7 @@ impl EnhancedOrchestrator {
         // Reconcile Inventory
         if !subledger.inventory_positions.is_empty() {
             let gl_balance = tracker
-                .get_account_balance(
-                    company_code,
-                    datasynth_core::accounts::control_accounts::INVENTORY,
-                )
+                .get_account_balance(company_code, acc.inventory)
                 .map(|b| b.closing_balance)
                 .unwrap_or_default();
             let inv_refs: Vec<&datasynth_core::models::subledger::inventory::InventoryPosition> =
@@ -5013,7 +5057,38 @@ impl EnhancedOrchestrator {
             pb.finish_with_message("Master data generation complete");
         }
 
+        // French GAAP: set country=FR and assign auxiliary GL accounts (401XXXX vendors, 411XXXX customers)
+        let use_french_gaap = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
+        if use_french_gaap {
+            self.apply_french_gaap_master_data();
+        }
+
         Ok(())
+    }
+
+    /// Apply French GAAP to master data: country=FR, auxiliary_gl_account 401XXXX (vendors) and 411XXXX (customers).
+    fn apply_french_gaap_master_data(&mut self) {
+        for (i, vendor) in self.master_data.vendors.iter_mut().enumerate() {
+            vendor.country = "FR".to_string();
+            // 401 + 4 digits (PCG tier account): 4010001..4019999
+            let suffix = (i % 9999) + 1;
+            vendor.auxiliary_gl_account = Some(format!("401{:04}", suffix));
+        }
+        for (i, customer) in self.master_data.customers.iter_mut().enumerate() {
+            customer.country = "FR".to_string();
+            // 411 + 4 digits (PCG tier account): 4110001..4119999
+            let suffix = (i % 9999) + 1;
+            customer.auxiliary_gl_account = Some(format!("411{:04}", suffix));
+        }
+        info!(
+            "French GAAP: set country=FR and auxiliary accounts for {} vendors, {} customers",
+            self.master_data.vendors.len(),
+            self.master_data.customers.len()
+        );
     }
 
     /// Generate document flows (P2P and O2C).
@@ -5242,33 +5317,131 @@ impl EnhancedOrchestrator {
 
     /// Generate journal entries from document flows.
     ///
-    /// This creates proper GL entries for each document in the P2P and O2C flows,
-    /// ensuring that document activity is reflected in the general ledger.
+    /// When French GAAP: uses PCG accounts, assigns one lettrage (5-letter) per chain,
+    /// and sets compte auxiliaire (401XXXX/411XXXX) on AP/AR lines from vendor/customer.
     fn generate_jes_from_document_flows(
         &mut self,
         flows: &DocumentFlowSnapshot,
     ) -> SynthResult<Vec<JournalEntry>> {
+        let use_french_gaap = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
+
+        let config = if use_french_gaap {
+            DocumentFlowJeConfig::french_gaap()
+        } else {
+            DocumentFlowJeConfig::default()
+        };
+
         let total_chains = flows.p2p_chains.len() + flows.o2c_chains.len();
         let pb = self.create_progress_bar(total_chains as u64, "Generating Document Flow JEs");
 
-        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
-            DocumentFlowJeConfig::default(),
-            self.seed,
-        );
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(config.clone(), self.seed);
+
+        let (vendor_aux, customer_aux) = if use_french_gaap {
+            let v: HashMap<String, (String, String)> = self
+                .master_data
+                .vendors
+                .iter()
+                .filter_map(|v| {
+                    v.auxiliary_gl_account
+                        .as_ref()
+                        .map(|a| (v.vendor_id.clone(), (a.clone(), v.name.clone())))
+                })
+                .collect();
+            let c: HashMap<String, (String, String)> = self
+                .master_data
+                .customers
+                .iter()
+                .filter_map(|c| {
+                    c.auxiliary_gl_account
+                        .as_ref()
+                        .map(|a| (c.customer_id.clone(), (a.clone(), c.name.clone())))
+                })
+                .collect();
+            (v, c)
+        } else {
+            (HashMap::new(), HashMap::new())
+        };
+
+        let mut lettrage_counter: u32 = 0;
         let mut entries = Vec::new();
 
-        // Generate JEs from P2P chains
+        let ap_account = config.ap_account.clone();
+        let gr_ir_account = config.gr_ir_clearing_account.clone();
+        let ar_account = config.ar_account.clone();
+
         for chain in &flows.p2p_chains {
-            let chain_entries = generator.generate_from_p2p_chain(chain);
+            let mut chain_entries = generator.generate_from_p2p_chain(chain);
+            let vendor_id = chain
+                .goods_receipts
+                .first()
+                .and_then(|gr| gr.vendor_id.as_deref())
+                .or_else(|| chain.vendor_invoice.as_ref().map(|vi| vi.vendor_id.as_str()))
+                .or_else(|| chain.payment.as_ref().map(|p| p.business_partner_id.as_str()))
+                .unwrap_or("");
+
+            if use_french_gaap {
+                let lettrage = Self::next_lettrage(&mut lettrage_counter);
+                if let Some((aux_num, aux_label)) = vendor_aux.get(vendor_id) {
+                    for entry in &mut chain_entries {
+                        let posting = entry.header.posting_date;
+                        for line in &mut entry.lines {
+                            line.lettrage = Some(lettrage.clone());
+                            line.lettrage_date = Some(posting);
+                            if line.gl_account == ap_account || line.gl_account == gr_ir_account {
+                                line.auxiliary_account_number = Some(aux_num.clone());
+                                line.auxiliary_account_label = Some(aux_label.clone());
+                            }
+                        }
+                    }
+                }
+            }
             entries.extend(chain_entries);
             if let Some(pb) = &pb {
                 pb.inc(1);
             }
         }
 
-        // Generate JEs from O2C chains
         for chain in &flows.o2c_chains {
-            let chain_entries = generator.generate_from_o2c_chain(chain);
+            let mut chain_entries = generator.generate_from_o2c_chain(chain);
+            let customer_id = chain
+                .deliveries
+                .first()
+                .map(|d| d.customer_id.as_str())
+                .or_else(|| {
+                    chain
+                        .customer_invoice
+                        .as_ref()
+                        .map(|ci| ci.customer_id.as_str())
+                })
+                .or_else(|| {
+                    chain
+                        .customer_receipt
+                        .as_ref()
+                        .map(|r| r.business_partner_id.as_str())
+                })
+                .unwrap_or("");
+
+            if use_french_gaap {
+                let lettrage = Self::next_lettrage(&mut lettrage_counter);
+                if let Some((aux_num, aux_label)) = customer_aux.get(customer_id) {
+                    for entry in &mut chain_entries {
+                        let posting = entry.header.posting_date;
+                        for line in &mut entry.lines {
+                            line.lettrage = Some(lettrage.clone());
+                            line.lettrage_date = Some(posting);
+                            if line.gl_account == ar_account {
+                                line.auxiliary_account_number = Some(aux_num.clone());
+                                line.auxiliary_account_label = Some(aux_label.clone());
+                            }
+                        }
+                    }
+                }
+            }
             entries.extend(chain_entries);
             if let Some(pb) = &pb {
                 pb.inc(1);
@@ -5285,13 +5458,174 @@ impl EnhancedOrchestrator {
         Ok(entries)
     }
 
+    /// Five-letter incremental lettrage (AAAAA, AAAAB, ...) for FEC document flow matching.
+    fn next_lettrage(counter: &mut u32) -> String {
+        const BASE: u32 = 26;
+        let n = *counter;
+        *counter = counter.saturating_add(1);
+        let mut s = String::with_capacity(5);
+        let mut x = n % (BASE * BASE * BASE * BASE * BASE);
+        for _ in 0..5 {
+            let c = (x % BASE) as u8;
+            s.insert(0, (b'A' + c) as char);
+            x /= BASE;
+        }
+        s
+    }
+
+    /// Resolve control/expense account names from COA: use PCG when French GAAP, else US accounts.
+    fn coa_accounts(&self) -> CoaAccountNames {
+        let use_french = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
+        if use_french {
+            CoaAccountNames::pcg()
+        } else {
+            CoaAccountNames::us()
+        }
+    }
+
+    /// Map a US-style GL account to PCG when French GAAP so all JEs use only COA (PCG) accounts.
+    /// Covers FA (15xx, 16xx, 1599), depreciation/gain/loss, cash, WHT, and other common US constants.
+    /// Aligned with PCG 2024: granular FA (211/213/215/2182/2183/2184), 404 for FA clearing, 675/775/6811/4421.
+    fn us_to_pcg_account(us: &str) -> Option<&'static str> {
+        let s = us.trim();
+        // Fixed assets (acquisition) – granular mapping per PCG 2024
+        if s == "1510" {
+            return Some(pcg_fa::TERRAINS); // Land → Terrains (211)
+        }
+        if s == "1520" || s == "1525" {
+            return Some(pcg_fa::CONSTRUCTIONS); // Buildings → Constructions (213)
+        }
+        if s == "1530" || s == "1590" {
+            return Some(pcg_fa::INDUSTRIAL); // Machinery / Other → Industrial (215)
+        }
+        if s == "1540" {
+            return Some(pcg_fa::TRANSPORT); // Vehicles → Matériel de transport (2182)
+        }
+        if s == "1550" || s == "1555" || s == "1560" || s == "1595" {
+            return Some(pcg_fa::OFFICE_IT); // Office/IT/Software/LowValue → Matériel de bureau et informatique (2183)
+        }
+        if s == "1570" {
+            return Some(pcg_fa::FURNITURE); // Furniture → Mobilier (2184)
+        }
+        if s == "1580" {
+            return Some(pcg_fa::LEASEHOLD); // Leasehold → Installations générales (2181)
+        }
+        if s == "1600" {
+            return Some(pcg_fa::CIP); // Construction in progress → Immobilisations en cours (231)
+        }
+        // FA clearing (credit on acquisition) – Fournisseurs d'immobilisations (404), not Caisse (53)
+        if s == "1599" {
+            return Some(pcg_fa::SUPPLIERS_IMMO);
+        }
+        // Accumulated depreciation (15x9, 16x9)
+        if (s.starts_with("15") || s.starts_with("16")) && s.len() == 4 && s.ends_with('9') {
+            return Some(pcg_control::ACCUMULATED_DEPRECIATION);
+        }
+        // Depreciation expense (7100) → 6811 operating; loss on disposal (7900) → 675 (valeurs comptables cédés)
+        if s == "7100" {
+            return Some(pcg_expense::DEPRECIATION_OPERATING);
+        }
+        if s == "7900" {
+            return Some(pcg_expense::DISPOSAL_VALUE);
+        }
+        // Gain on sale of assets (4900) → 775 Produits des cessions (capital gains tracking)
+        if s == "4900" {
+            return Some(pcg_revenue::ASSET_DISPOSAL_PROCEEDS);
+        }
+        // Cash and bank
+        if s == "1000" {
+            return Some(pcg_cash::OPERATING_CASH);
+        }
+        if s == "1010" {
+            return Some(pcg_cash::BANK_ACCOUNT);
+        }
+        if s == "1020" || s == "1030" {
+            return Some(pcg_cash::PETTY_CASH);
+        }
+        // Control and common accounts (in case any generator still uses US constants)
+        use datasynth_core::accounts::{
+            cash_accounts as us_cash, control_accounts as us_control, expense_accounts as us_expense,
+            revenue_accounts as us_revenue, suspense_accounts as us_suspense,
+        };
+        if s == us_control::AR_CONTROL {
+            return Some(pcg_control::AR_CONTROL);
+        }
+        if s == us_control::AP_CONTROL {
+            return Some(pcg_control::AP_CONTROL);
+        }
+        if s == us_control::INVENTORY {
+            return Some(pcg_control::INVENTORY);
+        }
+        if s == us_control::FIXED_ASSETS {
+            return Some(pcg_control::FIXED_ASSETS);
+        }
+        if s == us_control::ACCUMULATED_DEPRECIATION {
+            return Some(pcg_control::ACCUMULATED_DEPRECIATION);
+        }
+        if s == us_control::GR_IR_CLEARING {
+            return Some(pcg_control::GR_IR_CLEARING);
+        }
+        if s == us_cash::OPERATING_CASH || s == us_cash::BANK_ACCOUNT || s == us_cash::PETTY_CASH
+            || s == us_cash::WIRE_CLEARING
+        {
+            return Some(pcg_cash::OPERATING_CASH);
+        }
+        if s == us_expense::SALARIES_WAGES {
+            return Some(pcg_expense::SALARIES_WAGES);
+        }
+        if s == us_suspense::PAYROLL_CLEARING {
+            return Some(pcg_suspense::PAYROLL_CLEARING);
+        }
+        if s == us_expense::RAW_MATERIALS {
+            return Some(pcg_expense::RAW_MATERIALS);
+        }
+        if s == us_expense::COGS {
+            return Some(pcg_expense::COGS);
+        }
+        if s == us_expense::DEPRECIATION {
+            return Some(pcg_expense::DEPRECIATION);
+        }
+        if s == us_revenue::PRODUCT_REVENUE {
+            return Some(pcg_revenue::PRODUCT_REVENUE);
+        }
+        if s == us_revenue::OTHER_REVENUE {
+            return Some(pcg_revenue::OTHER_REVENUE);
+        }
+        // Withholding tax (2180) → 4421 Prélèvements à la source, not 445 (VAT)
+        if s == "2180" {
+            return Some(pcg_tax::WHT);
+        }
+        None
+    }
+
+    /// When French GAAP is enabled, replace any remaining US account codes in JE lines with PCG so only COA accounts appear.
+    fn normalize_entries_to_pcg(&self, entries: &mut [JournalEntry]) {
+        let use_french = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
+        if !use_french {
+            return;
+        }
+        for entry in entries.iter_mut() {
+            for line in &mut entry.lines {
+                if let Some(pcg) = Self::us_to_pcg_account(line.gl_account.as_str()) {
+                    line.gl_account = pcg.to_string();
+                }
+            }
+        }
+    }
+
     /// Generate journal entries from payroll runs.
     ///
-    /// Creates one JE per payroll run:
-    /// - DR Salaries & Wages (6100) for gross pay
-    /// - CR Payroll Clearing (9100) for gross pay
-    fn generate_payroll_jes(payroll_runs: &[PayrollRun]) -> Vec<JournalEntry> {
-        use datasynth_core::accounts::{expense_accounts, suspense_accounts};
+    /// Uses COA accounts only (PCG when French): DR Salaries & Wages, CR Payroll Clearing / Wages Payable.
+    fn generate_payroll_jes(&self, payroll_runs: &[PayrollRun]) -> Vec<JournalEntry> {
+        let acc = self.coa_accounts();
 
         let mut jes = Vec::with_capacity(payroll_runs.len());
 
@@ -5303,10 +5637,9 @@ impl EnhancedOrchestrator {
                 format!("Payroll {}", run.payroll_id),
             );
 
-            // Debit Salaries & Wages for gross pay
             je.add_line(JournalEntryLine {
                 line_number: 1,
-                gl_account: expense_accounts::SALARIES_WAGES.to_string(),
+                gl_account: acc.salaries_wages.to_string(),
                 debit_amount: run.total_gross,
                 reference: Some(run.payroll_id.clone()),
                 text: Some(format!(
@@ -5316,10 +5649,9 @@ impl EnhancedOrchestrator {
                 ..Default::default()
             });
 
-            // Credit Payroll Clearing for gross pay
             je.add_line(JournalEntryLine {
                 line_number: 2,
-                gl_account: suspense_accounts::PAYROLL_CLEARING.to_string(),
+                gl_account: acc.payroll_clearing.to_string(),
                 credit_amount: run.total_gross,
                 reference: Some(run.payroll_id.clone()),
                 ..Default::default()
@@ -5333,17 +5665,14 @@ impl EnhancedOrchestrator {
 
     /// Generate journal entries from production orders.
     ///
-    /// Creates one JE per completed production order:
-    /// - DR Raw Materials (5100) for material consumption (actual_cost)
-    /// - CR Inventory (1200) for material consumption
-    fn generate_manufacturing_jes(production_orders: &[ProductionOrder]) -> Vec<JournalEntry> {
-        use datasynth_core::accounts::{control_accounts, expense_accounts};
+    /// Uses COA accounts only (PCG when French): DR Raw Materials, CR Inventory.
+    fn generate_manufacturing_jes(&self, production_orders: &[ProductionOrder]) -> Vec<JournalEntry> {
         use datasynth_core::models::ProductionOrderStatus;
 
+        let acc = self.coa_accounts();
         let mut jes = Vec::new();
 
         for order in production_orders {
-            // Only generate JEs for completed or closed orders
             if !matches!(
                 order.status,
                 ProductionOrderStatus::Completed | ProductionOrderStatus::Closed
@@ -5361,10 +5690,9 @@ impl EnhancedOrchestrator {
                 ),
             );
 
-            // Debit Raw Materials / Manufacturing expense for actual cost
             je.add_line(JournalEntryLine {
                 line_number: 1,
-                gl_account: expense_accounts::RAW_MATERIALS.to_string(),
+                gl_account: acc.raw_materials.to_string(),
                 debit_amount: order.actual_cost,
                 reference: Some(order.order_id.clone()),
                 text: Some(format!(
@@ -5376,10 +5704,9 @@ impl EnhancedOrchestrator {
                 ..Default::default()
             });
 
-            // Credit Inventory for material consumption
             je.add_line(JournalEntryLine {
                 line_number: 2,
-                gl_account: control_accounts::INVENTORY.to_string(),
+                gl_account: acc.inventory.to_string(),
                 credit_amount: order.actual_cost,
                 reference: Some(order.order_id.clone()),
                 ..Default::default()

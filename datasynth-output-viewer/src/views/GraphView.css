@@ -1,0 +1,356 @@
+.graph-view {
+  padding: 1rem 0;
+}
+
+.graph-view h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.graph-desc {
+  margin-bottom: 1rem;
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+  max-width: 72ch;
+}
+
+.graph-desc strong {
+  color: var(--text, #eee);
+}
+
+.graph-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.graph-actions-primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.graph-btn-inmemory {
+  background: var(--accent-bg, #2a4a7c);
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-btn-inmemory:hover:not(:disabled) {
+  background: #3a5a8c;
+  border-color: #5a8cff;
+}
+
+.graph-actions-hint {
+  font-size: 0.85rem;
+  color: var(--muted, #888);
+}
+
+.graph-connect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 8px;
+}
+
+.graph-connect-label {
+  width: 100%;
+  font-size: 0.9rem;
+  color: var(--muted, #888);
+  margin-bottom: -0.5rem;
+}
+
+.graph-connect-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.graph-connect-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.graph-connect-fields label span {
+  font-size: 0.85rem;
+  color: var(--muted, #888);
+}
+
+.graph-connect-fields input[type="text"],
+.graph-connect-fields input[type="password"],
+.graph-connect-fields input[type="number"] {
+  padding: 0.4rem 0.6rem;
+  min-width: 180px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-primary, #1e1e1e);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.graph-connect-fields input:focus {
+  outline: none;
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-connect-fields input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.graph-connect-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.graph-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-tertiary, #1a1a1a);
+  color: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.graph-btn:hover:not(:disabled) {
+  background: var(--bg-secondary, #333);
+  border-color: var(--muted, #666);
+}
+
+.graph-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.graph-btn-connect {
+  background: var(--accent-bg, #2a4a7c);
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-btn-connect:hover:not(:disabled) {
+  background: #3a5a8c;
+  border-color: #5a8cff;
+}
+
+.graph-btn-load {
+  background: var(--accent-bg, #2a4a7c);
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-btn-load:hover:not(:disabled) {
+  background: #3a5a8c;
+  border-color: #5a8cff;
+}
+
+.graph-btn-disconnect {
+  color: var(--muted, #888);
+}
+
+.graph-limit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted, #888);
+}
+
+.graph-limit input {
+  width: 80px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-primary, #1e1e1e);
+  color: inherit;
+}
+
+.graph-error {
+  color: var(--error, #c55);
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.graph-whitelist-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.graph-whitelist-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted, #888);
+  margin-bottom: 0.25rem;
+}
+
+.graph-whitelist-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-secondary, #2a2a2a);
+  color: inherit;
+  resize: vertical;
+  min-height: 52px;
+}
+
+.graph-whitelist-input::placeholder {
+  color: var(--muted, #666);
+}
+
+.graph-whitelist-input:focus {
+  outline: none;
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-whitelist-hint {
+  font-size: 0.82rem;
+  color: var(--muted, #888);
+}
+
+.graph-max-depth-wrap {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.graph-max-depth-label {
+  font-size: 0.9rem;
+  color: var(--muted, #888);
+}
+
+.graph-max-depth-input {
+  width: 3rem;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  background: var(--bg-secondary, #2a2a2a);
+  color: inherit;
+}
+
+.graph-max-depth-input:focus {
+  outline: none;
+  border-color: var(--accent, #4a7cff);
+}
+
+.graph-max-depth-hint {
+  font-size: 0.82rem;
+  color: var(--muted, #888);
+}
+
+.graph-auxiliary-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.graph-auxiliary-wrap label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.graph-auxiliary-wrap input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.graph-auxiliary-hint {
+  font-size: 0.82rem;
+  color: var(--muted, #888);
+  margin: 0.25rem 0 0 1.5rem;
+  margin: 0.25rem 0 0;
+}
+
+.graph-stats {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.graph-canvas {
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-primary, #1e1e1e);
+}
+
+/* Force-graph canvas: ensure it follows theme (canvas may render on top of container) */
+[data-theme="light"] .graph-canvas {
+  background: #ffffff;
+}
+[data-theme="dark"] .graph-canvas {
+  background: #1e1e1e;
+}
+
+.graph-hint {
+  margin-top: 1rem;
+  color: var(--muted, #666);
+  font-size: 0.9rem;
+}
+
+.graph-hint code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+@media (prefers-color-scheme: light) {
+  .graph-connect {
+    background: #f5f5f5;
+    border-color: #ddd;
+  }
+  .graph-connect-fields input[type="text"],
+  .graph-connect-fields input[type="password"],
+  .graph-connect-fields input[type="number"] {
+    background: #fff;
+    border-color: #ccc;
+  }
+  .graph-btn {
+    background: #eee;
+    border-color: #ccc;
+  }
+  .graph-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+    border-color: #999;
+  }
+  .graph-btn-inmemory,
+  .graph-btn-connect,
+  .graph-btn-load {
+    background: #2a4a7c;
+    border-color: #1a3a6c;
+    color: #fff;
+  }
+  .graph-btn-inmemory:hover:not(:disabled),
+  .graph-btn-connect:hover:not(:disabled),
+  .graph-btn-load:hover:not(:disabled) {
+    background: #3a5a8c;
+  }
+  .graph-whitelist-input,
+  .graph-max-depth-input {
+    background: #fff;
+    border-color: #ccc;
+  }
+  .graph-canvas {
+    background: #fff;
+    border-color: #ddd;
+  }
+  .graph-hint code {
+    background: #e8e8e8;
+  }
+}

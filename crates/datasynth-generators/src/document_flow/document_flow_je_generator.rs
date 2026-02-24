@@ -18,6 +18,10 @@ use rust_decimal::Decimal;
 use datasynth_core::accounts::{
     cash_accounts, control_accounts, expense_accounts, revenue_accounts,
 };
+use datasynth_core::pcg::{
+    cash_accounts as pcg_cash, control_accounts as pcg_control,
+    expense_accounts as pcg_expense, revenue_accounts as pcg_revenue,
+};
 use datasynth_core::models::{
     documents::{CustomerInvoice, Delivery, GoodsReceipt, Payment, VendorInvoice},
     BusinessProcess, JournalEntry, JournalEntryHeader, JournalEntryLine, TransactionSource,
@@ -55,6 +59,21 @@ impl Default for DocumentFlowJeConfig {
             ar_account: control_accounts::AR_CONTROL.to_string(),
             revenue_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
             cogs_account: expense_accounts::COGS.to_string(),
+        }
+    }
+}
+
+/// French GAAP (PCG 2024): use only PCG accounts, no extra accounts.
+impl DocumentFlowJeConfig {
+    pub fn french_gaap() -> Self {
+        Self {
+            inventory_account: pcg_control::INVENTORY.to_string(),
+            gr_ir_clearing_account: pcg_control::GR_IR_CLEARING.to_string(),
+            ap_account: pcg_control::AP_CONTROL.to_string(),
+            cash_account: pcg_cash::OPERATING_CASH.to_string(),
+            ar_account: pcg_control::AR_CONTROL.to_string(),
+            revenue_account: pcg_revenue::PRODUCT_REVENUE.to_string(),
+            cogs_account: pcg_expense::COGS.to_string(),
         }
     }
 }

@@ -1,0 +1,60 @@
+.master-data-view {
+  padding: 1rem 0;
+}
+
+.master-data-view.loading,
+.master-data-view.error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted, #888);
+}
+
+.master-data-view.error {
+  color: var(--error, #c55);
+}
+
+.master-data-view h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.master-data-desc {
+  margin-bottom: 1rem;
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.master-data-desc code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.master-data-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.master-data-tabs button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  background: var(--bg-secondary, #333);
+  border: 1px solid var(--border-color, #555);
+  color: inherit;
+  cursor: pointer;
+}
+
+.master-data-tabs button.active {
+  background: var(--accent, #4a7cff);
+  border-color: var(--accent, #4a7cff);
+  color: #fff;
+}
+
+.master-data-empty {
+  color: var(--muted, #888);
+  padding: 2rem;
+}

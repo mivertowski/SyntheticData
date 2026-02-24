@@ -1,0 +1,119 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark theme (default and explicit) */
+[data-theme="dark"] {
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+  --bg-primary: #1e1e1e;
+  --bg-tertiary: #1a1a1a;
+  --accent-bg: #2a4a7c;
+  --border-color: #444;
+  --muted: #aaa;
+  --bg-secondary: #2a2a2a;
+  --header-bg: #2a2a2a;
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --row-selected: rgba(74, 124, 255, 0.2);
+  --accent: #4a7cff;
+  --code-bg: #2a2a2a;
+  --input-bg: #2a2a2a;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --error: #c55;
+  --text: #eee;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  color: #213547;
+  background-color: #ffffff;
+  --bg-primary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  --accent-bg: #2a4a7c;
+  --border-color: #ddd;
+  --muted: #666;
+  --bg-secondary: #f5f5f5;
+  --header-bg: #f0f0f0;
+  --row-hover: rgba(0, 0, 0, 0.04);
+  --row-selected: rgba(74, 124, 255, 0.2);
+  --accent: #4a7cff;
+  --code-bg: #eee;
+  --input-bg: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --error: #b44;
+  --text: #213547;
+}
+[data-theme="light"] a:hover {
+  color: #747bff;
+}
+[data-theme="light"] button {
+  background-color: #f9f9f9;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Initial paint: use system preference until JS sets data-theme */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  :root:not([data-theme]) a:hover {
+    color: #747bff;
+  }
+  :root:not([data-theme]) button {
+    background-color: #f9f9f9;
+  }
+}

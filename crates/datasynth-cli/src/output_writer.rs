@@ -46,22 +46,26 @@ fn write_journal_entries_csv(
     let file = std::fs::File::create(&path)?;
     let mut w = std::io::BufWriter::new(file);
 
-    // Write header
+    // Write header (includes auxiliary account and lettrage for FEC/GL)
     writeln!(
         w,
         "document_id,company_code,fiscal_year,fiscal_period,posting_date,document_date,\
          document_type,currency,exchange_rate,reference,header_text,created_by,source,\
          business_process,ledger,is_fraud,is_anomaly,\
          line_number,gl_account,debit_amount,credit_amount,local_amount,\
-         cost_center,profit_center,line_text"
+         cost_center,profit_center,line_text,auxiliary_account_number,auxiliary_account_label,lettrage,lettrage_date"
     )?;
 
     for je in &result.journal_entries {
         let h = &je.header;
         for line in &je.lines {
+            let lettrage_date = line
+                .lettrage_date
+                .map(|d| d.to_string())
+                .unwrap_or_default();
             writeln!(
                 w,
-                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
                 h.document_id,
                 csv_escape(&h.company_code),
                 h.fiscal_year,
@@ -89,6 +93,10 @@ fn write_journal_entries_csv(
                 csv_opt_str(&line.cost_center),
                 csv_opt_str(&line.profit_center),
                 csv_opt_str(&line.line_text),
+                csv_opt_str(&line.auxiliary_account_number),
+                csv_opt_str(&line.auxiliary_account_label),
+                csv_opt_str(&line.lettrage),
+                csv_escape(&lettrage_date),
             )?;
         }
     }

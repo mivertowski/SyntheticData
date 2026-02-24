@@ -72,6 +72,20 @@ pub fn write_fec_csv(
                 .to_string();
             let libelle_ecriture = escape_fec_field(&libelle_ecriture);
 
+            let num_auxiliaire = line
+                .auxiliary_account_number
+                .as_deref()
+                .unwrap_or("");
+            let libelle_auxiliaire = line
+                .auxiliary_account_label
+                .as_deref()
+                .unwrap_or("");
+            let lettrage = line.lettrage.as_deref().unwrap_or("");
+            let date_lettrage = line
+                .lettrage_date
+                .map(|d| d.format("%Y%m%d").to_string())
+                .unwrap_or_default();
+
             let debit = format_decimal(line.debit_amount);
             let credit = format_decimal(line.credit_amount);
             let montant_devise = if line.debit_amount > rust_decimal::Decimal::ZERO {
@@ -82,20 +96,22 @@ pub fn write_fec_csv(
 
             writeln!(
                 w,
-                "{};{};{};{};{};{};;;{};{};{};{};{};;;{};{};{}",
+                "{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{};{}",
                 code_journal,
                 libelle_journal,
                 ecriture_num,
                 date_compta,
                 escape_fec_field(&line.gl_account),
                 libelle_compte,
-                // columns 7-8 (auxiliaire) left empty above
+                escape_fec_field(num_auxiliaire),
+                escape_fec_field(libelle_auxiliaire),
                 ref_piece,
                 date_piece,
                 libelle_ecriture,
                 debit,
                 credit,
-                // columns 14-15 (lettrage) left empty above
+                lettrage,
+                date_lettrage,
                 date_validation,
                 montant_devise,
                 currency,

@@ -1,0 +1,256 @@
+.fraud-anomaly-view {
+  padding: 1rem 0;
+}
+
+.fraud-anomaly-view.loading,
+.fraud-anomaly-view.error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted, #888);
+}
+
+.fraud-anomaly-view.error {
+  color: var(--error, #c55);
+}
+
+.fraud-anomaly-view h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.fraud-anomaly-view h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.fraud-anomaly-desc {
+  margin-bottom: 1rem;
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.fraud-anomaly-desc code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.fraud-anomaly-empty {
+  color: var(--muted, #888);
+  padding: 2rem;
+}
+
+.fraud-anomaly-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.fraud-anomaly-filter label {
+  font-weight: 500;
+}
+
+.fraud-anomaly-filter select {
+  min-width: 180px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-secondary, #2a2a2a);
+  color: inherit;
+}
+
+.fraud-anomaly-filter-count {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.fraud-anomaly-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-box {
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 320px;
+}
+
+.chart-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.chart-box-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chart-expand-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+  background: var(--bg-tertiary, #1a1a1a);
+  color: var(--muted, #888);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.chart-expand-btn:hover {
+  color: var(--text, #eee);
+  background: var(--bg-secondary, #333);
+  border-color: var(--muted, #666);
+}
+
+.chart-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.chart-modal {
+  background: var(--bg-primary, #1e1e1e);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  width: min(90vw, 720px);
+  min-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chart-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color, #444);
+}
+
+.chart-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.chart-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted, #888);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.chart-modal-close:hover {
+  color: var(--text, #eee);
+  background: var(--bg-secondary, #333);
+}
+
+.chart-modal-body {
+  padding: 1.25rem;
+  min-height: 400px;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fraud-anomaly-concerned {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary, #1e1e1e);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 8px;
+}
+
+.fraud-anomaly-concerned h3 {
+  margin: 0 0 0.5rem;
+}
+
+.fraud-anomaly-concerned-desc {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.fraud-anomaly-concerned-desc code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.fraud-anomaly-concerned-empty {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.fraud-anomaly-concerned-chart {
+  margin-bottom: 1rem;
+  min-height: 220px;
+}
+
+@media (prefers-color-scheme: light) {
+  .chart-box {
+    background: #f8f8f8;
+    border-color: #ddd;
+  }
+  .chart-expand-btn {
+    background: #eee;
+    border-color: #ccc;
+    color: #555;
+  }
+  .chart-expand-btn:hover {
+    background: #e0e0e0;
+    color: #333;
+    border-color: #999;
+  }
+  .chart-modal {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+  .chart-modal-header {
+    border-bottom-color: #ddd;
+  }
+  .chart-modal-close {
+    color: #666;
+  }
+  .chart-modal-close:hover {
+    color: #333;
+    background: #eee;
+  }
+  .fraud-anomaly-concerned {
+    background: #f5f5f5;
+    border-color: #ddd;
+  }
+}

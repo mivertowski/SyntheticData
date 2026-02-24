@@ -48,6 +48,34 @@ pub mod control_accounts {
     pub const IC_AP_CLEARING: &str = "401800";
 }
 
+/// Fixed asset subclass accounts (PCG 2024) for granular US→PCG mapping.
+pub mod fixed_asset_accounts {
+    /// Terrains (211)
+    pub const TERRAINS: &str = "211000";
+    /// Constructions (213)
+    pub const CONSTRUCTIONS: &str = "213000";
+    /// Installations techniques, matériel et outillage industriels (215)
+    pub const INDUSTRIAL: &str = "215000";
+    /// Matériel de transport (2182)
+    pub const TRANSPORT: &str = "218200";
+    /// Matériel de bureau et matériel informatique (2183)
+    pub const OFFICE_IT: &str = "218300";
+    /// Mobilier (2184)
+    pub const FURNITURE: &str = "218400";
+    /// Installations générales, agencements (2181)
+    pub const LEASEHOLD: &str = "218100";
+    /// Immobilisations corporelles en cours (231)
+    pub const CIP: &str = "231000";
+    /// Fournisseurs d'immobilisations (404) – liability/clearing for FA acquisition
+    pub const SUPPLIERS_IMMO: &str = "404000";
+}
+
+/// Tax accounts (PCG 2024).
+pub mod tax_accounts {
+    /// Prélèvements à la source / Withholding tax (4421) – not VAT (445)
+    pub const WHT: &str = "442100";
+}
+
 /// Cash and bank – Class 5
 pub mod cash_accounts {
     pub const OPERATING_CASH: &str = "530000";
@@ -61,12 +89,21 @@ pub mod revenue_accounts {
     pub const SERVICE_REVENUE: &str = "706000";
     pub const OTHER_REVENUE: &str = "758000";
     pub const SALES_DISCOUNTS: &str = "709000";
+    /// Produits des cessions d'éléments d'actif (775) – gain on sale of assets, for capital gains
+    pub const ASSET_DISPOSAL_PROCEEDS: &str = "775000";
 }
 
 /// Expenses – Class 6 (charges)
 pub mod expense_accounts {
     pub const COGS: &str = "603000";
+    /// Achats stockés / raw materials (Class 6)
+    pub const RAW_MATERIALS: &str = "601000";
+    /// Dotations aux amortissements (681) – generic
     pub const DEPRECIATION: &str = "681000";
+    /// Dotations aux amortissements sur immobilisations (6811) – operating
+    pub const DEPRECIATION_OPERATING: &str = "681100";
+    /// Valeurs comptables des éléments d'actif cédés (675) – disposal, not recurring depreciation
+    pub const DISPOSAL_VALUE: &str = "675000";
     pub const SALARIES_WAGES: &str = "641100";
     pub const RENT: &str = "613000";
     pub const INTEREST_EXPENSE: &str = "661000";
@@ -84,6 +121,12 @@ pub mod equity_liability_accounts {
 /// Personnel – Class 4 (sub-class 42)
 pub mod personnel_accounts {
     pub const WAGES_PAYABLE: &str = "421000";
+}
+
+/// PCG has no class 9 suspense; use personnel (421) for payroll credit.
+pub mod suspense_accounts {
+    /// Payroll: credit wages payable (421000) instead of a clearing account
+    pub const PAYROLL_CLEARING: &str = "421000";
 }
 
 /// Return the PCG class (1–9) from a 6-digit account number.

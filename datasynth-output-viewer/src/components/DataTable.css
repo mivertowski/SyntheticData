@@ -1,0 +1,103 @@
+.data-table-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.data-table-scroll {
+  overflow: auto;
+  border: 1px solid var(--border-color, #444);
+  border-radius: 6px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #333);
+  white-space: nowrap;
+}
+
+.data-table th {
+  background: var(--header-bg, #2a2a2a);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-table tbody tr:hover {
+  background: var(--row-hover, rgba(255, 255, 255, 0.05));
+}
+
+.data-table-row-selectable {
+  cursor: pointer;
+}
+
+.data-table-row-selected {
+  background: var(--row-selected, rgba(74, 124, 255, 0.2)) !important;
+}
+
+.data-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.data-table-page-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-table-page-size label {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.data-table-page-size select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-secondary, #2a2a2a);
+  color: inherit;
+  font-size: 0.9rem;
+}
+
+.data-table-pagination button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.data-table-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: light) {
+  .data-table-scroll {
+    border-color: #ccc;
+  }
+  .data-table th,
+  .data-table td {
+    border-color: #eee;
+  }
+  .data-table th {
+    background: #f5f5f5;
+  }
+  .data-table tbody tr:hover {
+    background: #f9f9f9;
+  }
+}

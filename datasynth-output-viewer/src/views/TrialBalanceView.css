@@ -1,0 +1,60 @@
+.trial-balance-view {
+  padding: 1rem 0;
+}
+
+.trial-balance-view.loading,
+.trial-balance-view.error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted, #888);
+}
+
+.trial-balance-view.error {
+  color: var(--error, #c55);
+}
+
+.trial-balance-view h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.trial-balance-desc,
+.trial-balance-empty {
+  margin-bottom: 1rem;
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.trial-balance-desc code,
+.trial-balance-empty code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.trial-balance-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.trial-balance-selector label {
+  font-weight: 500;
+}
+
+.trial-balance-selector select {
+  padding: 0.4rem 0.8rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #555);
+  background: var(--input-bg, #2a2a2a);
+  color: inherit;
+  min-width: 160px;
+}
+
+.trial-balance-meta {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}

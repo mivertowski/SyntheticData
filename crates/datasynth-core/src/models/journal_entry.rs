@@ -494,6 +494,22 @@ pub struct JournalEntryLine {
     /// Project code
     #[serde(default)]
     pub project_code: Option<String>,
+
+    /// Compte auxiliaire (FEC / French GAAP): tier-specific account number (e.g. 4010001, 4110001).
+    #[serde(default)]
+    pub auxiliary_account_number: Option<String>,
+
+    /// Compte auxiliaire label (FEC column 8): e.g. vendor or customer name.
+    #[serde(default)]
+    pub auxiliary_account_label: Option<String>,
+
+    /// Lettrage (FEC): shared identifier within a document flow for matching entries.
+    #[serde(default)]
+    pub lettrage: Option<String>,
+
+    /// Date de lettrage (FEC column 15).
+    #[serde(default)]
+    pub lettrage_date: Option<NaiveDate>,
 }
 
 impl JournalEntryLine {
@@ -527,6 +543,10 @@ impl JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 
@@ -565,6 +585,10 @@ impl JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 
@@ -628,6 +652,10 @@ impl Default for JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 }

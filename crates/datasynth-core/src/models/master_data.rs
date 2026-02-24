@@ -395,6 +395,10 @@ pub struct Vendor {
 
     /// Purchasing organization
     pub purchasing_org: Option<String>,
+
+    /// French GAAP: compte auxiliaire (tier-specific) e.g. 4010001, 4010002.
+    #[serde(default)]
+    pub auxiliary_gl_account: Option<String>,
 }
 
 impl Vendor {
@@ -421,6 +425,7 @@ impl Vendor {
             withholding_tax_rate: None,
             is_one_time: false,
             purchasing_org: None,
+            auxiliary_gl_account: None,
         }
     }
 
@@ -623,6 +628,10 @@ pub struct Customer {
 
     /// Dunning level (0-4)
     pub dunning_level: u8,
+
+    /// French GAAP: compte auxiliaire (tier-specific) e.g. 4110001, 4110002.
+    #[serde(default)]
+    pub auxiliary_gl_account: Option<String>,
 }
 
 impl Customer {
@@ -654,6 +663,7 @@ impl Customer {
             dunning_procedure: None,
             last_dunning_date: None,
             dunning_level: 0,
+            auxiliary_gl_account: None,
         }
     }
 

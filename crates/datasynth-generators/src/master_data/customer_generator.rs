@@ -551,6 +551,7 @@ impl CustomerGenerator {
     }
 
     /// Generate a customer pool with specified count.
+    /// Uses counter-based name selection for variety and appends customer ID when a duplicate would occur.
     pub fn generate_customer_pool(
         &mut self,
         count: usize,
@@ -559,9 +560,13 @@ impl CustomerGenerator {
     ) -> CustomerPool {
         debug!(count, company_code, %effective_date, "Generating customer pool");
         let mut pool = CustomerPool::new();
+        let mut used_names = std::collections::HashSet::new();
 
         for _ in 0..count {
-            let customer = self.generate_customer(company_code, effective_date);
+            let mut customer = self.generate_customer(company_code, effective_date);
+            let name = std::mem::take(&mut customer.name);
+            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            customer.name = unique_name;
             pool.add_customer(customer);
         }
 
@@ -569,6 +574,7 @@ impl CustomerGenerator {
     }
 
     /// Generate a customer pool with intercompany customers.
+    /// Ensures unique customer names by appending customer ID when a duplicate would occur.
     pub fn generate_customer_pool_with_ic(
         &mut self,
         count: usize,
@@ -577,18 +583,23 @@ impl CustomerGenerator {
         effective_date: NaiveDate,
     ) -> CustomerPool {
         let mut pool = CustomerPool::new();
+        let mut used_names = std::collections::HashSet::new();
 
-        // Generate regular customers
         let regular_count = count.saturating_sub(partner_company_codes.len());
         for _ in 0..regular_count {
-            let customer = self.generate_customer(company_code, effective_date);
+            let mut customer = self.generate_customer(company_code, effective_date);
+            let name = std::mem::take(&mut customer.name);
+            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            customer.name = unique_name;
             pool.add_customer(customer);
         }
 
-        // Generate IC customers for each partner
         for partner in partner_company_codes {
-            let customer =
+            let mut customer =
                 self.generate_intercompany_customer(company_code, partner, effective_date);
+            let name = std::mem::take(&mut customer.name);
+            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            customer.name = unique_name;
             pool.add_customer(customer);
         }
 
@@ -596,6 +607,7 @@ impl CustomerGenerator {
     }
 
     /// Generate a diverse customer pool with various credit profiles.
+    /// Ensures unique customer names by appending customer ID when a duplicate would occur.
     pub fn generate_diverse_pool(
         &mut self,
         count: usize,
@@ -603,8 +615,8 @@ impl CustomerGenerator {
         effective_date: NaiveDate,
     ) -> CustomerPool {
         let mut pool = CustomerPool::new();
+        let mut used_names = std::collections::HashSet::new();
 
-        // Generate customers with varied credit ratings ensuring coverage
         let rating_counts = [
             (CreditRating::AAA, (count as f64 * 0.05) as usize),
             (CreditRating::AA, (count as f64 * 0.10) as usize),
@@ -619,31 +631,66 @@ impl CustomerGenerator {
         for (rating, rating_count) in rating_counts {
             for _ in 0..rating_count {
                 let credit_limit = self.generate_credit_limit(&rating);
-                let customer = self.generate_customer_with_credit(
+                let mut customer = self.generate_customer_with_credit(
                     company_code,
                     rating,
                     credit_limit,
                     effective_date,
                 );
+                let name = std::mem::take(&mut customer.name);
+                let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+                customer.name = unique_name;
                 pool.add_customer(customer);
             }
         }
 
-        // Fill any remaining slots
         while pool.customers.len() < count {
-            let customer = self.generate_customer(company_code, effective_date);
+            let mut customer = self.generate_customer(company_code, effective_date);
+            let name = std::mem::take(&mut customer.name);
+            let unique_name = Self::dedupe_customer_name(&name, &customer.customer_id, &mut used_names);
+            customer.name = unique_name;
             pool.add_customer(customer);
         }
 
         pool
     }
 
-    /// Select a customer name from templates.
+    /// Total number of distinct customer names across all industries (for cycling).
+    fn total_customer_name_slots() -> usize {
+        CUSTOMER_NAME_TEMPLATES
+            .iter()
+            .map(|(_, names)| names.len())
+            .sum()
+    }
+
+    /// Select a customer name from templates. Uses customer_counter to cycle through all names
+    /// so the first N customers get unique names (N = total names across industries).
     fn select_customer_name(&mut self) -> (&'static str, &'static str) {
-        let industry_idx = self.rng.gen_range(0..CUSTOMER_NAME_TEMPLATES.len());
-        let (industry, names) = CUSTOMER_NAME_TEMPLATES[industry_idx];
-        let name_idx = self.rng.gen_range(0..names.len());
-        (industry, names[name_idx])
+        let total = Self::total_customer_name_slots();
+        let idx = (self.customer_counter - 1) % total;
+        let mut remaining = idx;
+        for (industry, names) in CUSTOMER_NAME_TEMPLATES {
+            if remaining < names.len() {
+                return (industry, names[remaining]);
+            }
+            remaining -= names.len();
+        }
+        (CUSTOMER_NAME_TEMPLATES[0].0, CUSTOMER_NAME_TEMPLATES[0].1[0])
+    }
+
+    /// Return a unique name: if `name` is already in `used_names`, append ` (id)` so it is unique.
+    fn dedupe_customer_name(
+        name: &str,
+        id: &str,
+        used_names: &mut std::collections::HashSet<String>,
+    ) -> String {
+        let candidate = if used_names.contains(name) {
+            format!("{} ({})", name, id)
+        } else {
+            name.to_string()
+        };
+        used_names.insert(candidate.clone());
+        candidate
     }
 
     /// Select credit rating based on distribution.

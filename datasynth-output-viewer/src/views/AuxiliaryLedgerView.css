@@ -1,0 +1,70 @@
+.auxiliary-ledger-view {
+  padding: 1rem 0;
+}
+
+.auxiliary-ledger-view.loading,
+.auxiliary-ledger-view.error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted, #888);
+}
+
+.auxiliary-ledger-view.error {
+  color: var(--error, #c55);
+}
+
+.auxiliary-ledger-view h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.auxiliary-ledger-desc,
+.auxiliary-ledger-empty {
+  margin-bottom: 1rem;
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
+
+.auxiliary-ledger-desc code,
+.auxiliary-ledger-empty code {
+  background: var(--code-bg, #2a2a2a);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.auxiliary-ledger-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.auxiliary-ledger-selector label {
+  font-weight: 500;
+}
+
+.auxiliary-ledger-selector select {
+  padding: 0.4rem 0.8rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #555);
+  background: var(--input-bg, #2a2a2a);
+  color: inherit;
+  min-width: 200px;
+}
+
+.auxiliary-ledger-account-label {
+  color: var(--muted, #aaa);
+  font-size: 0.9rem;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auxiliary-ledger-count {
+  color: var(--muted, #888);
+  font-size: 0.9rem;
+}
