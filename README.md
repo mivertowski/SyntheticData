@@ -38,6 +38,7 @@ A high-performance, configurable synthetic data generator for enterprise financi
   - [Performance](#performance)
   - [Server Usage](#server-usage)
   - [Desktop UI](#desktop-ui)
+  - [Output Viewer](#output-viewer)
   - [Documentation](#documentation)
   - [License](#license)
   - [Support](#support)
@@ -828,6 +829,22 @@ The desktop application provides visual configuration, real-time streaming, and 
 - **Sidebar navigation** with collapsible sections and scroll indicator for 10 section groups
 - **Web preview mode** — run `npm run dev` for config editing without Tauri; dashboard requires `npm run tauri dev`
 - **Visual regression testing** — 56 Playwright screenshot baselines for UI consistency
+
+---
+
+## Output Viewer
+
+A separate **web-based Output Viewer** lets you explore generated data in the browser: journal entries (including French FEC), master data, fraud & anomaly labels, trial balance, general/auxiliary ledgers, subledgers, and an interactive graph (in-memory from JEs or Neo4j).
+
+```bash
+cd datasynth-output-viewer
+npm install
+npm run dev
+```
+
+Use **Load data** in the app to point at your output directory (path or URL). To bundle a local output folder into the app for dev, run `OUTPUT_DIR=../output npm run load-data` then `npm run dev`.
+
+See **[datasynth-output-viewer/README.md](datasynth-output-viewer/README.md)** for full documentation (data source, scripts, graph view, production build). Screenshots are in [docs/src/datasynth-output-viewer](docs/src/datasynth-output-viewer).
 
 ---
 
