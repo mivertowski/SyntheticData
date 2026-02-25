@@ -1804,6 +1804,81 @@ impl Generator for JournalEntryGenerator {
     }
 }
 
+use datasynth_core::traits::ParallelGenerator;
+
+impl ParallelGenerator for JournalEntryGenerator {
+    /// Split this generator into `parts` independent sub-generators.
+    ///
+    /// Each sub-generator gets a deterministic seed derived from the parent seed
+    /// and its partition index, plus a partitioned UUID factory to avoid contention.
+    /// The results are deterministic for a given partition count.
+    fn split(self, parts: usize) -> Vec<Self> {
+        let parts = parts.max(1);
+        (0..parts)
+            .map(|i| {
+                // Derive a unique seed per partition using a golden-ratio constant
+                let sub_seed = self
+                    .seed
+                    .wrapping_add((i as u64).wrapping_mul(0x9E3779B97F4A7C15));
+
+                let mut gen = JournalEntryGenerator::new_with_full_config(
+                    self.config.clone(),
+                    Arc::clone(&self.coa),
+                    self.companies.clone(),
+                    self.start_date,
+                    self.end_date,
+                    sub_seed,
+                    self.template_config.clone(),
+                    self.user_pool.clone(),
+                );
+
+                // Copy over configuration state
+                gen.company_selector = self.company_selector.clone();
+                gen.vendor_pool = self.vendor_pool.clone();
+                gen.customer_pool = self.customer_pool.clone();
+                gen.material_pool = self.material_pool.clone();
+                gen.using_real_master_data = self.using_real_master_data;
+                gen.fraud_config = self.fraud_config.clone();
+                gen.persona_errors_enabled = self.persona_errors_enabled;
+                gen.approval_enabled = self.approval_enabled;
+                gen.approval_threshold = self.approval_threshold;
+
+                // Use partitioned UUID factory to eliminate atomic contention
+                gen.uuid_factory = DeterministicUuidFactory::for_partition(
+                    sub_seed,
+                    GeneratorType::JournalEntry,
+                    i as u8,
+                );
+
+                // Copy temporal patterns if configured
+                if let Some(ref config) = self.temporal_patterns_config {
+                    gen.temporal_patterns_config = Some(config.clone());
+                    // Rebuild business day calculator from the stored config
+                    if config.business_days.enabled {
+                        if let Some(ref bdc) = self.business_day_calculator {
+                            gen.business_day_calculator = Some(bdc.clone());
+                        }
+                    }
+                    // Rebuild processing lag calculator with partition seed
+                    if config.processing_lags.enabled {
+                        let lag_config =
+                            Self::convert_processing_lag_config(&config.processing_lags);
+                        gen.processing_lag_calculator =
+                            Some(ProcessingLagCalculator::with_config(sub_seed, lag_config));
+                    }
+                }
+
+                // Copy drift controller if present
+                if let Some(ref dc) = self.drift_controller {
+                    gen.drift_controller = Some(dc.clone());
+                }
+
+                gen
+            })
+            .collect()
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

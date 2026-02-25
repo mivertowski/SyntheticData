@@ -14,6 +14,7 @@ use datasynth_config::schema::CompanyConfig;
 /// Selects companies with probability proportional to their volume_weight.
 /// For example, companies with weights [1.0, 0.5, 0.5] will be selected
 /// with probabilities [50%, 25%, 25%].
+#[derive(Clone)]
 pub struct WeightedCompanySelector {
     /// Company codes in selection order.
     company_codes: Vec<String>,

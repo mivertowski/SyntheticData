@@ -44,6 +44,7 @@ use datasynth_core::models::sourcing::{
 use datasynth_core::models::subledger::ap::APInvoice;
 use datasynth_core::models::subledger::ar::ARInvoice;
 use datasynth_core::models::*;
+use datasynth_core::traits::Generator;
 use datasynth_core::{DegradationActions, DegradationLevel, ResourceGuard, ResourceGuardBuilder};
 use datasynth_fingerprint::{
     io::FingerprintReader,
@@ -129,6 +130,7 @@ use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, Ope
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
+use rayon::prelude::*;
 
 // ============================================================================
 // Configuration Conversion Functions
@@ -4945,70 +4947,82 @@ impl EnhancedOrchestrator {
         // Resolve country pack once for all companies (uses primary company's country)
         let pack = self.primary_pack().clone();
 
-        for (i, company) in self.config.companies.iter().enumerate() {
-            let company_seed = self.seed.wrapping_add(i as u64 * 1000);
+        // Capture config values needed inside the parallel closure
+        let vendors_per_company = self.phase_config.vendors_per_company;
+        let customers_per_company = self.phase_config.customers_per_company;
+        let materials_per_company = self.phase_config.materials_per_company;
+        let assets_per_company = self.phase_config.assets_per_company;
 
-            // Generate vendors
-            let mut vendor_gen = VendorGenerator::new(company_seed);
-            vendor_gen.set_country_pack(pack.clone());
-            let vendor_pool = vendor_gen.generate_vendor_pool(
-                self.phase_config.vendors_per_company,
-                &company.code,
-                start_date,
-            );
-            self.master_data.vendors.extend(vendor_pool.vendors);
-            if let Some(pb) = &pb {
-                pb.inc(1);
-            }
+        // Generate all master data in parallel across companies.
+        // Each company's data is independent, making this embarrassingly parallel.
+        let per_company_results: Vec<_> = self
+            .config
+            .companies
+            .par_iter()
+            .enumerate()
+            .map(|(i, company)| {
+                let company_seed = self.seed.wrapping_add(i as u64 * 1000);
+                let pack = pack.clone();
 
-            // Generate customers
-            let mut customer_gen = CustomerGenerator::new(company_seed + 100);
-            customer_gen.set_country_pack(pack.clone());
-            let customer_pool = customer_gen.generate_customer_pool(
-                self.phase_config.customers_per_company,
-                &company.code,
-                start_date,
-            );
-            self.master_data.customers.extend(customer_pool.customers);
-            if let Some(pb) = &pb {
-                pb.inc(1);
-            }
+                // Generate vendors
+                let mut vendor_gen = VendorGenerator::new(company_seed);
+                vendor_gen.set_country_pack(pack.clone());
+                let vendor_pool =
+                    vendor_gen.generate_vendor_pool(vendors_per_company, &company.code, start_date);
 
-            // Generate materials
-            let mut material_gen = MaterialGenerator::new(company_seed + 200);
-            material_gen.set_country_pack(pack.clone());
-            let material_pool = material_gen.generate_material_pool(
-                self.phase_config.materials_per_company,
-                &company.code,
-                start_date,
-            );
-            self.master_data.materials.extend(material_pool.materials);
-            if let Some(pb) = &pb {
-                pb.inc(1);
-            }
+                // Generate customers
+                let mut customer_gen = CustomerGenerator::new(company_seed + 100);
+                customer_gen.set_country_pack(pack.clone());
+                let customer_pool = customer_gen.generate_customer_pool(
+                    customers_per_company,
+                    &company.code,
+                    start_date,
+                );
 
-            // Generate fixed assets
-            let mut asset_gen = AssetGenerator::new(company_seed + 300);
-            let asset_pool = asset_gen.generate_asset_pool(
-                self.phase_config.assets_per_company,
-                &company.code,
-                (start_date, end_date),
-            );
-            self.master_data.assets.extend(asset_pool.assets);
-            if let Some(pb) = &pb {
-                pb.inc(1);
-            }
+                // Generate materials
+                let mut material_gen = MaterialGenerator::new(company_seed + 200);
+                material_gen.set_country_pack(pack);
+                let material_pool = material_gen.generate_material_pool(
+                    materials_per_company,
+                    &company.code,
+                    start_date,
+                );
 
-            // Generate employees
-            let mut employee_gen = EmployeeGenerator::new(company_seed + 400);
-            let employee_pool =
-                employee_gen.generate_company_pool(&company.code, (start_date, end_date));
-            self.master_data.employees.extend(employee_pool.employees);
-            if let Some(pb) = &pb {
-                pb.inc(1);
-            }
+                // Generate fixed assets
+                let mut asset_gen = AssetGenerator::new(company_seed + 300);
+                let asset_pool = asset_gen.generate_asset_pool(
+                    assets_per_company,
+                    &company.code,
+                    (start_date, end_date),
+                );
+
+                // Generate employees
+                let mut employee_gen = EmployeeGenerator::new(company_seed + 400);
+                let employee_pool =
+                    employee_gen.generate_company_pool(&company.code, (start_date, end_date));
+
+                (
+                    vendor_pool.vendors,
+                    customer_pool.customers,
+                    material_pool.materials,
+                    asset_pool.assets,
+                    employee_pool.employees,
+                )
+            })
+            .collect();
+
+        // Aggregate results from all companies
+        for (vendors, customers, materials, assets, employees) in per_company_results {
+            self.master_data.vendors.extend(vendors);
+            self.master_data.customers.extend(customers);
+            self.master_data.materials.extend(materials);
+            self.master_data.assets.extend(assets);
+            self.master_data.employees.extend(employees);
         }
 
+        if let Some(pb) = &pb {
+            pb.inc(total);
+        }
         if let Some(pb) = pb {
             pb.finish_with_message("Master data generation complete");
         }
@@ -5158,11 +5172,13 @@ impl EnhancedOrchestrator {
         Ok(())
     }
 
-    /// Generate journal entries.
+    /// Generate journal entries using parallel generation across multiple cores.
     fn generate_journal_entries(
         &mut self,
         coa: &Arc<ChartOfAccounts>,
     ) -> SynthResult<Vec<JournalEntry>> {
+        use datasynth_core::traits::ParallelGenerator;
+
         let total = self.calculate_total_transactions();
         let pb = self.create_progress_bar(total, "Generating Journal Entries");
 
@@ -5212,26 +5228,50 @@ impl EnhancedOrchestrator {
             generator = generator.with_drift_config(drift_config, self.seed + 100);
         }
 
-        let mut entries = Vec::with_capacity(total as usize);
-
         // Check memory limit at start
         self.check_memory_limit()?;
 
-        // Check every 1000 entries to avoid overhead
-        const MEMORY_CHECK_INTERVAL: u64 = 1000;
+        // Determine parallelism: use available cores, but cap at total entries
+        let num_threads = num_cpus::get().max(1).min(total as usize).max(1);
 
-        for i in 0..total {
-            let entry = generator.generate();
-            entries.push(entry);
+        // Use parallel generation for datasets with 10K+ entries.
+        // Below this threshold, the statistical properties of a single-seeded
+        // generator (e.g. Benford compliance) are better preserved.
+        let entries = if total >= 10_000 && num_threads > 1 {
+            // Parallel path: split the generator across cores and generate in parallel.
+            // Each sub-generator gets a unique seed for deterministic, independent generation.
+            let sub_generators = generator.split(num_threads);
+            let entries_per_thread = total as usize / num_threads;
+            let remainder = total as usize % num_threads;
+
+            let batches: Vec<Vec<JournalEntry>> = sub_generators
+                .into_par_iter()
+                .enumerate()
+                .map(|(i, mut gen)| {
+                    let count = entries_per_thread + if i < remainder { 1 } else { 0 };
+                    gen.generate_batch(count)
+                })
+                .collect();
+
+            // Merge all batches into a single Vec
+            let entries = JournalEntryGenerator::merge_results(batches);
+
             if let Some(pb) = &pb {
-                pb.inc(1);
+                pb.inc(total);
             }
-
-            // Periodic memory limit check
-            if (i + 1) % MEMORY_CHECK_INTERVAL == 0 {
-                self.check_memory_limit()?;
+            entries
+        } else {
+            // Sequential path for small datasets (< 1000 entries)
+            let mut entries = Vec::with_capacity(total as usize);
+            for _ in 0..total {
+                let entry = generator.generate();
+                entries.push(entry);
+                if let Some(pb) = &pb {
+                    pb.inc(1);
+                }
             }
-        }
+            entries
+        };
 
         if let Some(pb) = pb {
             pb.finish_with_message("Journal entries complete");

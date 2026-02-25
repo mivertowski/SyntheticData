@@ -186,13 +186,28 @@ impl DeterministicUuidFactory {
 
     /// Create a factory starting from a specific counter value.
     ///
-    /// Useful for resuming generation from a checkpoint.
+    /// Useful for resuming generation from a checkpoint or for partitioned
+    /// parallel generation where each thread gets a non-overlapping counter range.
     pub fn with_counter(seed: u64, generator_type: GeneratorType, start_counter: u64) -> Self {
         Self {
             seed,
             generator_type,
             counter: AtomicU64::new(start_counter),
             sub_discriminator: 0,
+        }
+    }
+
+    /// Create a factory for a specific partition in parallel generation.
+    ///
+    /// Each partition gets a unique sub-discriminator so that counters starting
+    /// from 0 in each partition still produce globally unique UUIDs. This avoids
+    /// atomic contention between threads since each partition has its own factory.
+    pub fn for_partition(seed: u64, generator_type: GeneratorType, partition_index: u8) -> Self {
+        Self {
+            seed,
+            generator_type,
+            counter: AtomicU64::new(0),
+            sub_discriminator: partition_index,
         }
     }
 

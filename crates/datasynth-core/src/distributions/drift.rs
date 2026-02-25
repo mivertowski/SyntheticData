@@ -407,6 +407,7 @@ impl DriftAdjustments {
 }
 
 /// Controller for computing and applying temporal drift.
+#[derive(Clone)]
 pub struct DriftController {
     config: DriftConfig,
     rng: ChaCha8Rng,

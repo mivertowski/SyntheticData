@@ -7,8 +7,10 @@ use std::time::Duration;
 use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::*;
+use datasynth_core::traits::{Generator, ParallelGenerator};
 use datasynth_generators::{ChartOfAccountsGenerator, JournalEntryGenerator};
 use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 
 /// Result of a generation run.
 pub struct GenerationResult {
@@ -162,18 +164,38 @@ impl GenerationOrchestrator {
         )
         .with_fraud_config(self.config.fraud.clone());
 
-        let mut entries = Vec::with_capacity(total as usize);
-        let mut total_lines = 0u64;
+        // Parallel generation: split across available cores for large datasets
+        let num_threads = num_cpus::get().max(1).min(total as usize).max(1);
 
-        for _ in 0..total {
-            // Check and wait if paused
-            self.wait_while_paused(&pb);
+        let entries = if total >= 10_000 && num_threads > 1 {
+            let sub_generators = generator.split(num_threads);
+            let entries_per_thread = total as usize / num_threads;
+            let remainder = total as usize % num_threads;
 
-            let entry = generator.generate();
-            total_lines += entry.line_count() as u64;
-            entries.push(entry);
-            pb.inc(1);
-        }
+            let batches: Vec<Vec<JournalEntry>> = sub_generators
+                .into_par_iter()
+                .enumerate()
+                .map(|(i, mut gen)| {
+                    let count = entries_per_thread + if i < remainder { 1 } else { 0 };
+                    gen.generate_batch(count)
+                })
+                .collect();
+
+            let entries = JournalEntryGenerator::merge_results(batches);
+            pb.inc(total);
+            entries
+        } else {
+            let mut entries = Vec::with_capacity(total as usize);
+            for _ in 0..total {
+                self.wait_while_paused(&pb);
+                let entry = generator.generate();
+                entries.push(entry);
+                pb.inc(1);
+            }
+            entries
+        };
+
+        let total_lines: u64 = entries.iter().map(|e| e.line_count() as u64).sum();
 
         pb.finish_with_message("Generation complete");
 
