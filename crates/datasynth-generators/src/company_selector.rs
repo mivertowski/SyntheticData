@@ -14,6 +14,7 @@ use datasynth_config::schema::CompanyConfig;
 /// Selects companies with probability proportional to their volume_weight.
 /// For example, companies with weights [1.0, 0.5, 0.5] will be selected
 /// with probabilities [50%, 25%, 25%].
+#[derive(Clone)]
 pub struct WeightedCompanySelector {
     /// Company codes in selection order.
     company_codes: Vec<String>,
@@ -87,20 +88,25 @@ impl WeightedCompanySelector {
     }
 
     /// Select a company code using the weighted distribution.
+    ///
+    /// Uses binary search over the pre-computed CDF for O(log n) selection
+    /// instead of O(n) linear scan.
+    #[inline]
     pub fn select(&self, rng: &mut ChaCha8Rng) -> &str {
         let p: f64 = rng.random();
 
-        for (i, &cum_weight) in self.cumulative_weights.iter().enumerate() {
-            if p < cum_weight {
-                return &self.company_codes[i];
-            }
-        }
+        // Binary search: find the first index where cumulative_weight >= p
+        let idx = self.cumulative_weights.partition_point(|&w| w < p);
 
-        // Fallback to last company (should rarely happen due to floating point)
-        self.company_codes
-            .last()
-            .map(|s| s.as_str())
-            .unwrap_or("1000")
+        if idx < self.company_codes.len() {
+            &self.company_codes[idx]
+        } else {
+            // Fallback to last company (should rarely happen due to floating point)
+            self.company_codes
+                .last()
+                .map(|s| s.as_str())
+                .unwrap_or("1000")
+        }
     }
 
     /// Get the probability of selecting a specific company.

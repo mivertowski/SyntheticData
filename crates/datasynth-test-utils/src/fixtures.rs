@@ -194,7 +194,7 @@ pub fn balanced_journal_entry(amount: Decimal) -> JournalEntry {
             anomaly_id: None,
             anomaly_type: None,
         },
-        lines: vec![
+        lines: smallvec::smallvec![
             JournalEntryLine::debit(doc_id, 1, "100000".to_string(), amount),
             JournalEntryLine::credit(doc_id, 2, "200000".to_string(), amount),
         ],

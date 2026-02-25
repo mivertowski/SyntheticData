@@ -97,7 +97,7 @@ impl XesExporter {
         path: P,
     ) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
         self.write_xes(log, &mut writer)?;
         writer.flush()?;
         Ok(())

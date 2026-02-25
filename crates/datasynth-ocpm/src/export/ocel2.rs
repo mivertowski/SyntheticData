@@ -436,7 +436,7 @@ impl Ocel2Exporter {
     ) -> std::io::Result<()> {
         let ocel2_log = self.convert(log);
         let file = File::create(path)?;
-        let writer = BufWriter::new(file);
+        let writer = BufWriter::with_capacity(256 * 1024, file);
 
         if self.pretty_print {
             serde_json::to_writer_pretty(writer, &ocel2_log)?;

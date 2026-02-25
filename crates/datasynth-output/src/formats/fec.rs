@@ -38,7 +38,7 @@ pub fn write_fec_csv(
     coa: &ChartOfAccounts,
 ) -> SynthResult<()> {
     let file = File::create(path)?;
-    let mut w = BufWriter::new(file);
+    let mut w = BufWriter::with_capacity(256 * 1024, file);
 
     writeln!(w, "{}", FEC_HEADER)?;
 

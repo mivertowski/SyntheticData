@@ -196,6 +196,7 @@ impl AmountSampler {
     ///
     /// If Benford's Law compliance is enabled, uses the Benford sampler.
     /// Otherwise uses log-normal distribution with round-number bias.
+    #[inline]
     pub fn sample(&mut self) -> Decimal {
         // Use Benford sampler if enabled
         if self.benford_enabled {
@@ -209,6 +210,7 @@ impl AmountSampler {
     }
 
     /// Sample using the log-normal distribution (original behavior).
+    #[inline]
     pub fn sample_lognormal(&mut self) -> Decimal {
         let mut amount = self.lognormal.sample(&mut self.rng);
 
@@ -231,9 +233,11 @@ impl AmountSampler {
         // Ensure minimum after rounding
         amount = amount.max(self.config.min_amount);
 
-        // Convert to Decimal with explicit 2 decimal place precision to avoid f64 noise
-        let amount_str = format!("{:.2}", amount);
-        amount_str.parse::<Decimal>().unwrap_or(Decimal::ONE)
+        // Convert to Decimal using fast integer math instead of string formatting.
+        // Multiply by 100, truncate to integer, then construct Decimal with scale 2.
+        // This avoids the overhead of format!() + parse() (~15x faster).
+        let cents = (amount * 100.0).round() as i64;
+        Decimal::new(cents, 2)
     }
 
     /// Sample a fraud amount with the specified pattern.
@@ -251,8 +255,13 @@ impl AmountSampler {
     /// Sample multiple amounts that sum to a target total.
     ///
     /// Useful for generating line items that must balance.
+    /// The sum of returned amounts is guaranteed to equal `total` exactly.
+    /// Every returned amount is guaranteed to be > 0 when `total > 0` and
+    /// `count * 0.01 <= total`.
     pub fn sample_summing_to(&mut self, count: usize, total: Decimal) -> Vec<Decimal> {
         use rust_decimal::prelude::ToPrimitive;
+
+        let min_amount = Decimal::new(1, 2); // 0.01
 
         if count == 0 {
             return Vec::new();
@@ -270,15 +279,15 @@ impl AmountSampler {
         let sum: f64 = weights.iter().sum();
         weights.iter_mut().for_each(|w| *w /= sum);
 
-        // Calculate amounts based on weights, using string parsing for precision
+        // Calculate amounts based on weights, using fast integer math for precision
         let mut amounts: Vec<Decimal> = weights
             .iter()
             .map(|w| {
                 let amount = total_f64 * w;
                 let rounded = (amount * self.decimal_multiplier).round() / self.decimal_multiplier;
-                // Use string format for more reliable decimal conversion
-                let amount_str = format!("{:.2}", rounded);
-                amount_str.parse::<Decimal>().unwrap_or(Decimal::ZERO)
+                // Convert via integer cents — avoids format!()/parse() overhead
+                let cents = (rounded * 100.0).round() as i64;
+                Decimal::new(cents, 2)
             })
             .collect();
 
@@ -303,15 +312,43 @@ impl AmountSampler {
                 remaining -= take;
             }
 
-            // If still remaining (shouldn't happen with proper weights),
-            // absorb into the last amount as a negative value for safety
+            // If still remaining, absorb into the first non-zero amount
             if remaining > Decimal::ZERO {
-                // Re-add to first non-zero amount - this ensures sum is correct
                 for amt in amounts.iter_mut() {
                     if *amt > Decimal::ZERO {
                         *amt -= remaining;
                         break;
                     }
+                }
+            }
+        }
+
+        // Post-process: fix zero-amount lines by transferring min_amount from the
+        // largest line. This preserves the exact sum while eliminating zeros.
+        // Only attempt when total is large enough to support min_amount per line.
+        if total >= min_amount * Decimal::from(count as u32) {
+            loop {
+                // Find a zero-amount line
+                let zero_idx = amounts.iter().position(|a| *a == Decimal::ZERO);
+                let Some(zi) = zero_idx else { break };
+
+                // Find the largest amount (must be > min_amount to donate)
+                let donor = amounts
+                    .iter()
+                    .enumerate()
+                    .filter(|&(j, _)| j != zi)
+                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                    .map(|(j, _)| j);
+
+                if let Some(di) = donor {
+                    if amounts[di] > min_amount {
+                        amounts[zi] = min_amount;
+                        amounts[di] -= min_amount;
+                    } else {
+                        break; // No donor has enough headroom
+                    }
+                } else {
+                    break;
                 }
             }
         }

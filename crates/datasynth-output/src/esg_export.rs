@@ -81,7 +81,7 @@ impl EsgExporter {
     pub fn export_emissions(&self, data: &[EmissionRecord]) -> SynthResult<usize> {
         let path = self.output_dir.join("emission_records.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -115,7 +115,7 @@ impl EsgExporter {
     pub fn export_energy(&self, data: &[EnergyConsumption]) -> SynthResult<usize> {
         let path = self.output_dir.join("energy_consumption.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -146,7 +146,7 @@ impl EsgExporter {
     pub fn export_water(&self, data: &[WaterUsage]) -> SynthResult<usize> {
         let path = self.output_dir.join("water_usage.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -177,7 +177,7 @@ impl EsgExporter {
     pub fn export_waste(&self, data: &[WasteRecord]) -> SynthResult<usize> {
         let path = self.output_dir.join("waste_records.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -207,7 +207,7 @@ impl EsgExporter {
     pub fn export_diversity(&self, data: &[WorkforceDiversityMetric]) -> SynthResult<usize> {
         let path = self.output_dir.join("workforce_diversity.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -238,7 +238,7 @@ impl EsgExporter {
     pub fn export_pay_equity(&self, data: &[PayEquityMetric]) -> SynthResult<usize> {
         let path = self.output_dir.join("pay_equity_metrics.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -270,7 +270,7 @@ impl EsgExporter {
     pub fn export_safety_incidents(&self, data: &[SafetyIncident]) -> SynthResult<usize> {
         let path = self.output_dir.join("safety_incidents.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -300,7 +300,7 @@ impl EsgExporter {
     pub fn export_safety_metrics(&self, data: &[SafetyMetric]) -> SynthResult<usize> {
         let path = self.output_dir.join("safety_metrics.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -334,7 +334,7 @@ impl EsgExporter {
     pub fn export_governance(&self, data: &[GovernanceMetric]) -> SynthResult<usize> {
         let path = self.output_dir.join("governance_metrics.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -370,7 +370,7 @@ impl EsgExporter {
     ) -> SynthResult<usize> {
         let path = self.output_dir.join("supplier_esg_assessments.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -403,7 +403,7 @@ impl EsgExporter {
     pub fn export_disclosures(&self, data: &[EsgDisclosure]) -> SynthResult<usize> {
         let path = self.output_dir.join("esg_disclosures.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -435,7 +435,7 @@ impl EsgExporter {
     pub fn export_materiality(&self, data: &[MaterialityAssessment]) -> SynthResult<usize> {
         let path = self.output_dir.join("materiality_assessments.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,
@@ -465,7 +465,7 @@ impl EsgExporter {
     pub fn export_climate_scenarios(&self, data: &[ClimateScenario]) -> SynthResult<usize> {
         let path = self.output_dir.join("climate_scenarios.csv");
         let file = File::create(&path)?;
-        let mut w = BufWriter::new(file);
+        let mut w = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             w,

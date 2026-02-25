@@ -131,7 +131,7 @@ impl ReferenceProcessModel {
     /// Export the model to a JSON file.
     pub fn export_to_file<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
         let file = File::create(path)?;
-        let writer = BufWriter::new(file);
+        let writer = BufWriter::with_capacity(256 * 1024, file);
         serde_json::to_writer_pretty(writer, self)?;
         Ok(())
     }

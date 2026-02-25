@@ -21,6 +21,7 @@ thiserror = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 rand_distr = { workspace = true }
+smallvec = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 

@@ -141,6 +141,16 @@ opentelemetry-prometheus = "0.31"
 prometheus = "0.14"
 tracing-opentelemetry = "0.32"
 
+# Fast number formatting
+itoa = "1.0"
+ryu = "1.0"
+
+# Compression
+zstd = "0.13"
+
+# Data structures
+smallvec = { version = "1.13", features = ["serde"] }
+
 # Parallel processing
 rayon = "1.10"
 num_cpus = "1.16"

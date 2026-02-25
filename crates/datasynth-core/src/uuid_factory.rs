@@ -186,7 +186,8 @@ impl DeterministicUuidFactory {
 
     /// Create a factory starting from a specific counter value.
     ///
-    /// Useful for resuming generation from a checkpoint.
+    /// Useful for resuming generation from a checkpoint or for partitioned
+    /// parallel generation where each thread gets a non-overlapping counter range.
     pub fn with_counter(seed: u64, generator_type: GeneratorType, start_counter: u64) -> Self {
         Self {
             seed,
@@ -196,9 +197,24 @@ impl DeterministicUuidFactory {
         }
     }
 
+    /// Create a factory for a specific partition in parallel generation.
+    ///
+    /// Each partition gets a unique sub-discriminator so that counters starting
+    /// from 0 in each partition still produce globally unique UUIDs. This avoids
+    /// atomic contention between threads since each partition has its own factory.
+    pub fn for_partition(seed: u64, generator_type: GeneratorType, partition_index: u8) -> Self {
+        Self {
+            seed,
+            generator_type,
+            counter: AtomicU64::new(0),
+            sub_discriminator: partition_index,
+        }
+    }
+
     /// Generate the next UUID in the sequence.
     ///
     /// This method is thread-safe and can be called from multiple threads.
+    #[inline]
     pub fn next(&self) -> Uuid {
         let counter = self.counter.fetch_add(1, Ordering::Relaxed);
         self.generate_uuid(counter)
@@ -231,6 +247,7 @@ impl DeterministicUuidFactory {
     /// Uses a simple hash-based approach to ensure uniqueness while maintaining
     /// determinism. The hash function is designed to spread entropy across all
     /// bytes while preserving the UUID v4 format.
+    #[inline]
     fn generate_uuid(&self, counter: u64) -> Uuid {
         // Create a unique input by combining all distinguishing factors
         // Use FNV-1a style hashing for simplicity and determinism

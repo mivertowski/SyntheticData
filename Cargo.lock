@@ -1374,10 +1374,12 @@ dependencies = [
  "datasynth-output",
  "datasynth-runtime",
  "indicatif",
+ "itoa",
  "num_cpus",
  "predicates",
  "rayon",
  "reqwest 0.12.28",
+ "ryu",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1422,6 +1424,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha2",
+ "smallvec",
  "tempfile",
  "thiserror 2.0.18",
  "uuid",
@@ -1543,16 +1546,19 @@ dependencies = [
  "crossbeam-channel",
  "csv",
  "datasynth-core",
+ "itoa",
  "parquet",
  "proptest",
  "rust_decimal",
  "rust_decimal_macros",
+ "ryu",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "uuid",
+ "zstd",
 ]
 
 [[package]]
@@ -1672,6 +1678,7 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
+ "smallvec",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
@@ -5703,6 +5710,9 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "snap"

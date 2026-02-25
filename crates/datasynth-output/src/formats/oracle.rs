@@ -491,10 +491,10 @@ impl OracleExporter {
         let lines_path = output_dir.join("gl_je_lines.csv");
 
         let header_file = File::create(&header_path)?;
-        let mut header_writer = BufWriter::new(header_file);
+        let mut header_writer = BufWriter::with_capacity(256 * 1024, header_file);
 
         let lines_file = File::create(&lines_path)?;
-        let mut lines_writer = BufWriter::new(lines_file);
+        let mut lines_writer = BufWriter::with_capacity(256 * 1024, lines_file);
 
         // Write header row
         writeln!(
@@ -589,7 +589,7 @@ impl OracleExporter {
     /// Export code combinations mapping.
     fn export_code_combinations(&self, filepath: &Path) -> SynthResult<()> {
         let file = File::create(filepath)?;
-        let mut writer = BufWriter::new(file);
+        let mut writer = BufWriter::with_capacity(256 * 1024, file);
 
         writeln!(
             writer,

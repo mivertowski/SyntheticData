@@ -21,6 +21,9 @@ tokio = { workspace = true }
 crossbeam-channel = { workspace = true }
 rust_decimal = { workspace = true }
 uuid = { workspace = true }
+itoa = { workspace = true }
+ryu = { workspace = true }
+zstd = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
