@@ -119,7 +119,7 @@ uuid = { version = "1.21", features = ["v4", "v7", "serde"] }
 
 # CLI
 clap = { version = "4.5", features = ["derive", "env", "string"] }
-indicatif = { version = "0.17", features = ["rayon"] }
+indicatif = { version = "0.18", features = ["rayon"] }
 
 # Error handling
 thiserror = "2.0"
@@ -156,13 +156,13 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 regex = "1.11"
 
 # JWT (optional - OIDC token validation)
-jsonwebtoken = "9"
+jsonwebtoken = "10"
 
 # Redis (optional - distributed rate limiting)
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "1.0", features = ["tokio-comp", "connection-manager"] }
 
 # TLS
-axum-server = { version = "0.7", features = ["tls-rustls"] }
+axum-server = { version = "0.8", features = ["tls-rustls"] }
 
 # Testing
 proptest = "1.5"
