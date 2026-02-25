@@ -16,7 +16,7 @@ impl LaplaceMechanism {
     pub fn new(epsilon: f64) -> Self {
         Self {
             epsilon,
-            rng: ChaCha8Rng::from_entropy(),
+            rng: ChaCha8Rng::from_os_rng(),
         }
     }
 
@@ -50,7 +50,7 @@ impl LaplaceMechanism {
     fn sample_laplace(&mut self, scale: f64) -> f64 {
         // Laplace(0, b) = sign(U-0.5) * b * ln(1 - 2|U-0.5|)
         // where U ~ Uniform(0, 1)
-        let u: f64 = self.rng.gen();
+        let u: f64 = self.rng.random();
         let sign = if u < 0.5 { -1.0 } else { 1.0 };
         let abs_u = (u - 0.5).abs();
         sign * scale * (1.0 - 2.0 * abs_u).ln()
@@ -78,7 +78,7 @@ impl GaussianMechanism {
         Self {
             epsilon,
             delta,
-            rng: ChaCha8Rng::from_entropy(),
+            rng: ChaCha8Rng::from_os_rng(),
         }
     }
 
@@ -98,8 +98,8 @@ impl GaussianMechanism {
     /// Sample from Gaussian distribution with standard deviation sigma.
     fn sample_gaussian(&mut self, sigma: f64) -> f64 {
         // Box-Muller transform
-        let u1: f64 = self.rng.gen();
-        let u2: f64 = self.rng.gen();
+        let u1: f64 = self.rng.random();
+        let u2: f64 = self.rng.random();
         let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
         z * sigma
     }

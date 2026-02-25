@@ -68,7 +68,7 @@ impl ConditionalDistributionParams {
                 dist.sample(rng)
             }
             Self::Uniform { min, max } => {
-                let dist = Uniform::new(*min, *max);
+                let dist = Uniform::new(*min, *max).expect("valid uniform params");
                 dist.sample(rng)
             }
             Self::Beta {
@@ -93,7 +93,7 @@ impl ConditionalDistributionParams {
                 }
                 // Weighted selection
                 let total: f64 = weights.iter().sum();
-                let mut p: f64 = rng.gen::<f64>() * total;
+                let mut p: f64 = rng.random::<f64>() * total;
                 for (i, w) in weights.iter().enumerate() {
                     p -= w;
                     if p <= 0.0 {

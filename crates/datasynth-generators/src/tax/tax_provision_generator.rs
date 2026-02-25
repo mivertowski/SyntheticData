@@ -105,7 +105,7 @@ impl TaxProvisionGenerator {
         let provision_id = format!("TXPROV-{:06}", self.counter);
 
         // Select 2-5 reconciliation items
-        let num_items = self.rng.gen_range(2..=5);
+        let num_items = self.rng.random_range(2..=5);
         let mut selected_indices: Vec<usize> = (0..CANDIDATES.len()).collect();
         selected_indices.shuffle(&mut self.rng);
         selected_indices.truncate(num_items);
@@ -155,7 +155,7 @@ impl TaxProvisionGenerator {
     fn random_decimal(&mut self, min: Decimal, max: Decimal) -> Decimal {
         let range_f64 = (max - min).to_string().parse::<f64>().unwrap_or(0.0);
         let min_f64 = min.to_string().parse::<f64>().unwrap_or(0.0);
-        let val = min_f64 + self.rng.gen::<f64>() * range_f64;
+        let val = min_f64 + self.rng.random::<f64>() * range_f64;
         Decimal::try_from(val).unwrap_or(min).round_dp(6)
     }
 }

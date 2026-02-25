@@ -150,7 +150,7 @@ impl DuplicateGenerator {
 
     /// Determines if a record should be duplicated.
     pub fn should_duplicate<R: Rng>(&self, rng: &mut R) -> bool {
-        rng.gen::<f64>() < self.config.duplicate_rate
+        rng.random::<f64>() < self.config.duplicate_rate
     }
 
     /// Creates a duplicate of a record.
@@ -213,7 +213,7 @@ impl DuplicateGenerator {
 
     /// Selects the type of duplicate to create.
     fn select_duplicate_type<R: Rng>(&self, rng: &mut R) -> DuplicateType {
-        let r = rng.gen::<f64>();
+        let r = rng.random::<f64>();
 
         if r < self.config.exact_rate {
             DuplicateType::Exact
@@ -223,7 +223,7 @@ impl DuplicateGenerator {
             }
         } else {
             DuplicateType::Fuzzy {
-                similarity: rng.gen_range(0.8..0.95),
+                similarity: rng.random_range(0.8..0.95),
             }
         }
     }
@@ -239,7 +239,7 @@ impl DuplicateGenerator {
             match field.as_str() {
                 "entry_date" | "date" => {
                     if let Some(date) = record.get_date() {
-                        let offset = rng.gen_range(
+                        let offset = rng.random_range(
                             -self.config.max_date_offset_days..=self.config.max_date_offset_days,
                         );
                         record.set_date(date + Duration::days(offset));
@@ -248,7 +248,7 @@ impl DuplicateGenerator {
                 "amount" | "debit_amount" | "credit_amount" => {
                     if let Some(amount) = record.get_amount() {
                         let variance = 1.0
-                            + rng.gen_range(
+                            + rng.random_range(
                                 -self.config.amount_variance..self.config.amount_variance,
                             );
                         let new_amount =
@@ -265,7 +265,7 @@ impl DuplicateGenerator {
                             desc.to_uppercase(),
                             desc.to_lowercase(),
                         ];
-                        let variation = &variations[rng.gen_range(0..variations.len())];
+                        let variation = &variations[rng.random_range(0..variations.len())];
                         record.set_field("description", variation);
                     }
                 }
@@ -290,9 +290,9 @@ impl DuplicateGenerator {
         let change_probability = 1.0 - similarity;
 
         // Amount variation
-        if rng.gen::<f64>() < change_probability {
+        if rng.random::<f64>() < change_probability {
             if let Some(amount) = record.get_amount() {
-                let variance = 1.0 + rng.gen_range(-0.1..0.1); // Up to 10% variation
+                let variance = 1.0 + rng.random_range(-0.1..0.1); // Up to 10% variation
                 let new_amount =
                     amount * Decimal::from_f64_retain(variance).unwrap_or(Decimal::ONE);
                 record.set_amount(new_amount.round_dp(2));
@@ -301,16 +301,16 @@ impl DuplicateGenerator {
         }
 
         // Date variation
-        if rng.gen::<f64>() < change_probability {
+        if rng.random::<f64>() < change_probability {
             if let Some(date) = record.get_date() {
-                let offset = rng.gen_range(-30..=30);
+                let offset = rng.random_range(-30..=30);
                 record.set_date(date + Duration::days(offset));
                 varied_fields.push("date".to_string());
             }
         }
 
         // Description variation
-        if rng.gen::<f64>() < change_probability {
+        if rng.random::<f64>() < change_probability {
             if let Some(desc) = record.get_field("description") {
                 // Introduce typos or abbreviations
                 let abbreviated = abbreviate_text(&desc);

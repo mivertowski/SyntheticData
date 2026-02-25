@@ -49,7 +49,7 @@ impl RfxGenerator {
         estimated_spend: f64,
     ) -> RfxEvent {
         let rfx_type = if estimated_spend > self.config.rfi_threshold {
-            if self.rng.gen_bool(0.3) {
+            if self.rng.random_bool(0.3) {
                 RfxType::Rfi
             } else {
                 RfxType::Rfp
@@ -60,7 +60,7 @@ impl RfxGenerator {
 
         let invited_count = self
             .rng
-            .gen_range(self.config.min_invited_vendors..=self.config.max_invited_vendors)
+            .random_range(self.config.min_invited_vendors..=self.config.max_invited_vendors)
             .min(qualified_vendor_ids.len() as u32) as usize;
 
         let invited_vendors: Vec<String> = qualified_vendor_ids
@@ -68,7 +68,8 @@ impl RfxGenerator {
             .cloned()
             .collect();
 
-        let response_deadline = publish_date + chrono::Duration::days(self.rng.gen_range(14..=45));
+        let response_deadline =
+            publish_date + chrono::Duration::days(self.rng.random_range(14..=45));
 
         let bid_count = (invited_vendors.len() as f64 * self.config.response_rate).round() as u32;
 
@@ -90,15 +91,15 @@ impl RfxGenerator {
             },
         ];
 
-        let line_count = self.rng.gen_range(1u16..=5);
+        let line_count = self.rng.random_range(1u16..=5);
         let line_items: Vec<RfxLineItem> = (1..=line_count)
             .map(|i| RfxLineItem {
                 item_number: i,
                 description: format!("Item {}", i),
                 material_id: None,
-                quantity: Decimal::from(self.rng.gen_range(10..=1000)),
+                quantity: Decimal::from(self.rng.random_range(10..=1000)),
                 uom: "EA".to_string(),
-                target_price: Some(Decimal::from(self.rng.gen_range(10..=5000))),
+                target_price: Some(Decimal::from(self.rng.random_range(10..=5000))),
             })
             .collect();
 

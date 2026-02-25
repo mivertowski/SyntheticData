@@ -383,7 +383,7 @@ impl OpeningBalanceGenerator {
         }
 
         let variation_range = amount * self.config.variation_percent;
-        let random_factor: f64 = self.rng.gen_range(-1.0..1.0);
+        let random_factor: f64 = self.rng.random_range(-1.0..1.0);
         let variation = variation_range * Decimal::try_from(random_factor).unwrap_or_default();
 
         (amount + variation).max(Decimal::ZERO)

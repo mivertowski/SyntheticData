@@ -649,7 +649,7 @@ impl TemporalSampler {
         weights.iter_mut().for_each(|w| *w /= total);
 
         // Sample using weights
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         let mut cumulative = 0.0;
         for (i, weight) in weights.iter().enumerate() {
             cumulative += weight;
@@ -665,34 +665,35 @@ impl TemporalSampler {
     pub fn sample_time(&mut self, is_human: bool) -> NaiveTime {
         if !is_human {
             // Automated systems can post any time, but prefer off-hours
-            let hour = if self.rng.gen::<f64>() < 0.7 {
+            let hour = if self.rng.random::<f64>() < 0.7 {
                 // 70% off-peak hours (night batch processing)
-                self.rng.gen_range(22..=23).clamp(0, 23)
-                    + if self.rng.gen_bool(0.5) {
+                self.rng.random_range(22..=23).clamp(0, 23)
+                    + if self.rng.random_bool(0.5) {
                         0
                     } else {
-                        self.rng.gen_range(0..=5)
+                        self.rng.random_range(0..=5)
                     }
             } else {
-                self.rng.gen_range(0..24)
+                self.rng.random_range(0..24)
             };
-            let minute = self.rng.gen_range(0..60);
-            let second = self.rng.gen_range(0..60);
+            let minute = self.rng.random_range(0..60);
+            let second = self.rng.random_range(0..60);
             return NaiveTime::from_hms_opt(hour.clamp(0, 23) as u32, minute, second)
                 .expect("valid date/time components");
         }
 
         // Human users follow working hours
-        let hour = if self.rng.gen::<f64>() < self.working_hours_config.after_hours_probability {
+        let hour = if self.rng.random::<f64>() < self.working_hours_config.after_hours_probability {
             // After hours
-            if self.rng.gen_bool(0.5) {
-                self.rng.gen_range(6..self.working_hours_config.day_start)
+            if self.rng.random_bool(0.5) {
+                self.rng
+                    .random_range(6..self.working_hours_config.day_start)
             } else {
-                self.rng.gen_range(self.working_hours_config.day_end..22)
+                self.rng.random_range(self.working_hours_config.day_end..22)
             }
         } else {
             // Normal working hours with peak weighting
-            let is_peak = self.rng.gen::<f64>() < 0.6; // 60% during peak
+            let is_peak = self.rng.random::<f64>() < 0.6; // 60% during peak
             if is_peak && !self.working_hours_config.peak_hours.is_empty() {
                 *self
                     .working_hours_config
@@ -700,14 +701,14 @@ impl TemporalSampler {
                     .choose(&mut self.rng)
                     .expect("valid date/time components")
             } else {
-                self.rng.gen_range(
+                self.rng.random_range(
                     self.working_hours_config.day_start..self.working_hours_config.day_end,
                 )
             }
         };
 
-        let minute = self.rng.gen_range(0..60);
-        let second = self.rng.gen_range(0..60);
+        let minute = self.rng.random_range(0..60);
+        let second = self.rng.random_range(0..60);
 
         NaiveTime::from_hms_opt(hour as u32, minute, second).expect("valid date/time components")
     }

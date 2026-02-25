@@ -443,7 +443,7 @@ impl ApprovalWorkflowGenerator {
         rng: &mut impl Rng,
     ) -> DateTime<Utc> {
         // Add delay (exponential distribution around average)
-        let delay_hours = self.average_delay_hours * (-rng.gen::<f64>().ln());
+        let delay_hours = self.average_delay_hours * (-rng.random::<f64>().ln());
         let delay_hours = delay_hours.min(48.0); // Cap at 48 hours
 
         let mut result = base_timestamp + Duration::hours(delay_hours as i64);
@@ -462,7 +462,7 @@ impl ApprovalWorkflowGenerator {
             // After 6 PM, move to next day 9 AM
             result = (result.date_naive() + Duration::days(1))
                 .and_time(
-                    NaiveTime::from_hms_opt(9, rng.gen_range(0..59), 0)
+                    NaiveTime::from_hms_opt(9, rng.random_range(0..59), 0)
                         .expect("valid time components"),
                 )
                 .and_utc();
@@ -481,7 +481,7 @@ impl ApprovalWorkflowGenerator {
 
     /// Determine the outcome of an approval action.
     pub fn determine_outcome(&self, rng: &mut impl Rng) -> ApprovalActionType {
-        let roll: f64 = rng.gen();
+        let roll: f64 = rng.random();
 
         if roll < self.rejection_rate {
             ApprovalActionType::Reject

@@ -252,7 +252,7 @@ impl ReferenceGenerator {
                 // Generate random alphanumeric suffix
                 let suffix: String = (0..config.sequence_digits)
                     .map(|_| {
-                        let idx = rand::thread_rng().gen_range(0..36);
+                        let idx = rand::rng().random_range(0..36);
                         if idx < 10 {
                             (b'0' + idx) as char
                         } else {
@@ -292,27 +292,29 @@ impl ReferenceGenerator {
         // External references often have different formats
         let formats = [
             // Vendor invoice formats
-            |rng: &mut dyn rand::RngCore| format!("INV{:08}", rng.gen_range(10000000u64..99999999)),
             |rng: &mut dyn rand::RngCore| {
-                format!("{:010}", rng.gen_range(1000000000u64..9999999999))
+                format!("INV{:08}", rng.random_range(10000000u64..99999999))
+            },
+            |rng: &mut dyn rand::RngCore| {
+                format!("{:010}", rng.random_range(1000000000u64..9999999999))
             },
             |rng: &mut dyn rand::RngCore| {
                 format!(
                     "V{}-{:06}",
-                    rng.gen_range(100..999),
-                    rng.gen_range(1..999999)
+                    rng.random_range(100..999),
+                    rng.random_range(1..999999)
                 )
             },
             |rng: &mut dyn rand::RngCore| {
                 format!(
                     "{}{:07}",
-                    (b'A' + rng.gen_range(0..26)) as char,
-                    rng.gen_range(1000000..9999999)
+                    (b'A' + rng.random_range(0..26)) as char,
+                    rng.random_range(1000000..9999999)
                 )
             },
         ];
 
-        let idx = rng.gen_range(0..formats.len());
+        let idx = rng.random_range(0..formats.len());
         formats[idx](rng)
     }
 }

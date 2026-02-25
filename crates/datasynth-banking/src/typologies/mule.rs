@@ -58,8 +58,8 @@ impl MuleInjector {
             Sophistication::StateLevel => (6..15, 50_000.0..200_000.0, 0.15..0.30),
         };
 
-        let cycles = self.rng.gen_range(num_cycles);
-        let scenario_id = format!("MUL-{:06}", self.rng.gen::<u32>());
+        let cycles = self.rng.random_range(num_cycles);
+        let scenario_id = format!("MUL-{:06}", self.rng.random::<u32>());
 
         let available_days = (end_date - start_date).num_days().max(1);
         let days_per_cycle = (available_days / cycles as i64).max(2);
@@ -68,14 +68,14 @@ impl MuleInjector {
 
         for cycle in 0..cycles {
             let cycle_start = start_date + chrono::Duration::days(cycle as i64 * days_per_cycle);
-            let amount: f64 = self.rng.gen_range(amount_per_cycle.clone());
-            let mule_cut: f64 = self.rng.gen_range(retention_pct.clone());
+            let amount: f64 = self.rng.random_range(amount_per_cycle.clone());
+            let mule_cut: f64 = self.rng.random_range(retention_pct.clone());
 
             // Phase 1: Inbound transfer(s)
             let num_inbound = match sophistication {
                 Sophistication::Basic => 1,
-                Sophistication::Standard => self.rng.gen_range(1..3),
-                _ => self.rng.gen_range(2..4),
+                Sophistication::Standard => self.rng.random_range(1..3),
+                _ => self.rng.random_range(2..4),
             };
 
             let mut total_received = 0.0;
@@ -87,7 +87,7 @@ impl MuleInjector {
                 };
                 total_received += portion;
 
-                let in_day = self.rng.gen_range(0..2) as i64;
+                let in_day = self.rng.random_range(0..2) as i64;
                 let in_date = cycle_start + chrono::Duration::days(in_day);
                 let in_timestamp = self.random_timestamp(in_date);
 
@@ -114,7 +114,7 @@ impl MuleInjector {
             }
 
             // Phase 2: Rapid cash-out (within 1-3 days)
-            let cashout_delay = self.rng.gen_range(1..4) as i64;
+            let cashout_delay = self.rng.random_range(1..4) as i64;
             let cashout_date = cycle_start + chrono::Duration::days(cashout_delay);
 
             let amount_to_forward = total_received * (1.0 - mule_cut);
@@ -148,18 +148,18 @@ impl MuleInjector {
                 _ => 2..4,
             };
 
-            let cashout_count = self.rng.gen_range(num_cashouts);
+            let cashout_count = self.rng.random_range(num_cashouts);
             let mut remaining = amount_to_forward;
 
             for i in 0..cashout_count {
                 let cashout_amount = if i == cashout_count - 1 {
                     remaining
                 } else {
-                    remaining / ((cashout_count - i) as f64) * self.rng.gen_range(0.8..1.2)
+                    remaining / ((cashout_count - i) as f64) * self.rng.random_range(0.8..1.2)
                 };
                 remaining -= cashout_amount;
 
-                let method = cashout_methods[self.rng.gen_range(0..cashout_methods.len())];
+                let method = cashout_methods[self.rng.random_range(0..cashout_methods.len())];
                 let (channel, category, counterparty, description) = self.cashout_details(method);
 
                 let out_timestamp = self.random_timestamp(cashout_date);
@@ -201,26 +201,26 @@ impl MuleInjector {
 
     /// Generate random mule source.
     fn random_mule_source(&mut self) -> (TransactionChannel, CounterpartyRef) {
-        let source_type = self.rng.gen_range(0..4);
+        let source_type = self.rng.random_range(0..4);
         match source_type {
             0 => (
                 TransactionChannel::Ach,
-                CounterpartyRef::person(&format!("Unknown Sender {}", self.rng.gen::<u16>())),
+                CounterpartyRef::person(&format!("Unknown Sender {}", self.rng.random::<u16>())),
             ),
             1 => (
                 TransactionChannel::Ach,
-                CounterpartyRef::business(&format!("Dubious LLC {}", self.rng.gen::<u16>())),
+                CounterpartyRef::business(&format!("Dubious LLC {}", self.rng.random::<u16>())),
             ),
             2 => (
                 TransactionChannel::Swift,
                 CounterpartyRef::international(&format!(
                     "Foreign Account {}",
-                    self.rng.gen::<u16>()
+                    self.rng.random::<u16>()
                 )),
             ),
             _ => (
                 TransactionChannel::Wire,
-                CounterpartyRef::person(&format!("Contact {}", self.rng.gen::<u16>())),
+                CounterpartyRef::person(&format!("Contact {}", self.rng.random::<u16>())),
             ),
         }
     }
@@ -245,7 +245,7 @@ impl MuleInjector {
             CashoutMethod::WireTransfer => (
                 TransactionChannel::Wire,
                 TransactionCategory::TransferOut,
-                CounterpartyRef::person(&format!("Recipient {}", self.rng.gen::<u16>())),
+                CounterpartyRef::person(&format!("Recipient {}", self.rng.random::<u16>())),
                 "Wire transfer".to_string(),
             ),
             CashoutMethod::InternationalWire => (
@@ -253,7 +253,7 @@ impl MuleInjector {
                 TransactionCategory::InternationalTransfer,
                 CounterpartyRef::international(&format!(
                     "Overseas Account {}",
-                    self.rng.gen::<u16>()
+                    self.rng.random::<u16>()
                 )),
                 "International wire".to_string(),
             ),
@@ -280,9 +280,9 @@ impl MuleInjector {
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(7..21);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(7..21);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

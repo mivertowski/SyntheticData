@@ -69,7 +69,7 @@ impl CashPoolGenerator {
         let pool_type = self.parse_pool_type();
         let sweep_time = self.parse_sweep_time();
         let interest_benefit = dec!(0.0025)
-            + Decimal::try_from(self.rng.gen_range(0.0f64..0.003)).unwrap_or(Decimal::ZERO);
+            + Decimal::try_from(self.rng.random_range(0.0f64..0.003)).unwrap_or(Decimal::ZERO);
 
         let mut pool = CashPool::new(
             format!("POOL-{:06}", self.pool_counter),

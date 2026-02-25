@@ -112,7 +112,7 @@ impl ExpenseReportGenerator {
 
             for employee_id in employee_ids {
                 // Only submission_rate fraction of employees submit per month
-                if self.rng.gen_bool(config.submission_rate.min(1.0)) {
+                if self.rng.random_bool(config.submission_rate.min(1.0)) {
                     let report = self.generate_report(
                         employee_id,
                         current_month_start,
@@ -143,7 +143,7 @@ impl ExpenseReportGenerator {
         let report_id = self.uuid_factory.next().to_string();
 
         // 1-5 line items per report
-        let item_count = self.rng.gen_range(1..=5);
+        let item_count = self.rng.random_range(1..=5);
         let mut line_items = Vec::with_capacity(item_count);
         let mut total_amount = Decimal::ZERO;
 
@@ -159,7 +159,7 @@ impl ExpenseReportGenerator {
             .map(|li| li.date)
             .max()
             .unwrap_or(period_end);
-        let submission_lag = self.rng.gen_range(0..=5);
+        let submission_lag = self.rng.random_range(0..=5);
         let submission_date = max_expense_date + chrono::Duration::days(submission_lag);
 
         // Trip/purpose descriptions
@@ -173,10 +173,10 @@ impl ExpenseReportGenerator {
             "Sales meeting",
             "Project kickoff",
         ];
-        let description = descriptions[self.rng.gen_range(0..descriptions.len())].to_string();
+        let description = descriptions[self.rng.random_range(0..descriptions.len())].to_string();
 
         // Status distribution: 70% Approved, 10% Paid, 10% Submitted, 5% Rejected, 5% Draft
-        let status_roll: f64 = self.rng.gen();
+        let status_roll: f64 = self.rng.random();
         let status = if status_roll < 0.70 {
             ExpenseStatus::Approved
         } else if status_roll < 0.80 {
@@ -191,41 +191,41 @@ impl ExpenseReportGenerator {
 
         let approved_by = if matches!(status, ExpenseStatus::Approved | ExpenseStatus::Paid) {
             if !self.employee_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                let idx = self.rng.random_range(0..self.employee_ids_pool.len());
                 Some(self.employee_ids_pool[idx].clone())
             } else {
-                Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+                Some(format!("MGR-{:04}", self.rng.random_range(1..=100)))
             }
         } else {
             None
         };
 
         let approved_date = if matches!(status, ExpenseStatus::Approved | ExpenseStatus::Paid) {
-            let approval_lag = self.rng.gen_range(1..=7);
+            let approval_lag = self.rng.random_range(1..=7);
             Some(submission_date + chrono::Duration::days(approval_lag))
         } else {
             None
         };
 
         let paid_date = if status == ExpenseStatus::Paid {
-            approved_date.map(|ad| ad + chrono::Duration::days(self.rng.gen_range(3..=14)))
+            approved_date.map(|ad| ad + chrono::Duration::days(self.rng.random_range(3..=14)))
         } else {
             None
         };
 
         // Cost center and department
-        let cost_center = if self.rng.gen_bool(0.70) {
+        let cost_center = if self.rng.random_bool(0.70) {
             if !self.cost_center_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.cost_center_ids_pool.len());
+                let idx = self.rng.random_range(0..self.cost_center_ids_pool.len());
                 Some(self.cost_center_ids_pool[idx].clone())
             } else {
-                Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+                Some(format!("CC-{:03}", self.rng.random_range(100..=500)))
             }
         } else {
             None
         };
 
-        let department = if self.rng.gen_bool(0.80) {
+        let department = if self.rng.random_bool(0.80) {
             let departments = [
                 "Engineering",
                 "Sales",
@@ -237,7 +237,7 @@ impl ExpenseReportGenerator {
                 "IT",
                 "Executive",
             ];
-            Some(departments[self.rng.gen_range(0..departments.len())].to_string())
+            Some(departments[self.rng.random_range(0..departments.len())].to_string())
         } else {
             None
         };
@@ -246,7 +246,7 @@ impl ExpenseReportGenerator {
         let policy_violation_rate = config.policy_violation_rate;
         let mut policy_violations = Vec::new();
         for item in &line_items {
-            if self.rng.gen_bool(policy_violation_rate.min(1.0)) {
+            if self.rng.random_bool(policy_violation_rate.min(1.0)) {
                 let violation = self.pick_violation(item);
                 policy_violations.push(violation);
             }
@@ -291,11 +291,11 @@ impl ExpenseReportGenerator {
 
         // Date within the period
         let days_in_period = (period_end - period_start).num_days().max(1);
-        let offset = self.rng.gen_range(0..=days_in_period);
+        let offset = self.rng.random_range(0..=days_in_period);
         let date = period_start + chrono::Duration::days(offset);
 
         // Receipt attached: 85% of the time
-        let receipt_attached = self.rng.gen_bool(0.85);
+        let receipt_attached = self.rng.random_bool(0.85);
 
         ExpenseLineItem {
             item_id,
@@ -311,7 +311,7 @@ impl ExpenseReportGenerator {
 
     /// Pick an expense category with corresponding amount range, description, and merchant.
     fn pick_category(&mut self) -> (ExpenseCategory, f64, f64, String, Option<String>) {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         if roll < 0.20 {
             let merchants = [
@@ -320,7 +320,7 @@ impl ExpenseReportGenerator {
                 "American Airlines",
                 "Southwest",
             ];
-            let merchant = merchants[self.rng.gen_range(0..merchants.len())].to_string();
+            let merchant = merchants[self.rng.random_range(0..merchants.len())].to_string();
             (
                 ExpenseCategory::Travel,
                 200.0,
@@ -336,7 +336,7 @@ impl ExpenseReportGenerator {
                 "Steakhouse Prime",
                 "Sushi Palace",
             ];
-            let merchant = merchants[self.rng.gen_range(0..merchants.len())].to_string();
+            let merchant = merchants[self.rng.random_range(0..merchants.len())].to_string();
             (
                 ExpenseCategory::Meals,
                 20.0,
@@ -346,7 +346,7 @@ impl ExpenseReportGenerator {
             )
         } else if roll < 0.55 {
             let merchants = ["Marriott", "Hilton", "Hyatt", "Holiday Inn", "Best Western"];
-            let merchant = merchants[self.rng.gen_range(0..merchants.len())].to_string();
+            let merchant = merchants[self.rng.random_range(0..merchants.len())].to_string();
             (
                 ExpenseCategory::Lodging,
                 100.0,
@@ -356,7 +356,7 @@ impl ExpenseReportGenerator {
             )
         } else if roll < 0.70 {
             let merchants = ["Uber", "Lyft", "Hertz", "Enterprise", "Airport Parking"];
-            let merchant = merchants[self.rng.gen_range(0..merchants.len())].to_string();
+            let merchant = merchants[self.rng.random_range(0..merchants.len())].to_string();
             (
                 ExpenseCategory::Transportation,
                 10.0,
@@ -424,7 +424,7 @@ impl ExpenseReportGenerator {
             ],
         };
 
-        violations[self.rng.gen_range(0..violations.len())].to_string()
+        violations[self.rng.random_range(0..violations.len())].to_string()
     }
 
     /// Get the last day of the month for a given date.

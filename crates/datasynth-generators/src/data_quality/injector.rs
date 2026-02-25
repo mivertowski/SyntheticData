@@ -333,14 +333,14 @@ impl DataQualityInjector {
 
         // Apply encoding issues
         if self.config.enable_encoding_issues
-            && self.rng.gen::<f64>() < self.config.encoding_issue_rate
+            && self.rng.random::<f64>() < self.config.encoding_issue_rate
         {
             let issues = [
                 EncodingIssue::Mojibake,
                 EncodingIssue::MissingChars,
                 EncodingIssue::HTMLEntities,
             ];
-            let issue = issues[self.rng.gen_range(0..issues.len())];
+            let issue = issues[self.rng.random_range(0..issues.len())];
             let with_encoding = introduce_encoding_issue(&result, issue, &mut self.rng);
 
             if with_encoding != result {

@@ -233,7 +233,7 @@ impl O2CGenerator {
                 _ => return default.to_string(),
             };
             if !descriptions.is_empty() {
-                let idx = self.rng.gen_range(0..descriptions.len());
+                let idx = self.rng.random_range(0..descriptions.len());
                 return descriptions[idx].clone();
             }
         }
@@ -329,7 +329,7 @@ impl O2CGenerator {
         };
 
         // Determine if customer pays
-        let will_pay = self.rng.gen::<f64>() >= self.config.bad_debt_rate;
+        let will_pay = self.rng.random::<f64>() >= self.config.bad_debt_rate;
 
         // Calculate payment date and determine payment type
         let mut payment_events = Vec::new();
@@ -384,7 +384,7 @@ impl O2CGenerator {
                     PaymentType::OnAccount => {
                         // On-account payment - not tied to this specific invoice
                         let amount = invoice.total_gross_amount
-                            * Decimal::from_f64_retain(0.8 + self.rng.gen::<f64>() * 0.4)
+                            * Decimal::from_f64_retain(0.8 + self.rng.random::<f64>() * 0.4)
                                 .unwrap_or(Decimal::ONE);
                         let (payment, on_account) = self.generate_on_account_payment(
                             company_code,
@@ -412,11 +412,11 @@ impl O2CGenerator {
                         );
 
                         // Check if this payment will have a correction
-                        if self.rng.gen::<f64>()
+                        if self.rng.random::<f64>()
                             < self.config.payment_behavior.payment_correction_rate
                         {
                             let correction_date = payment_date
-                                + chrono::Duration::days(self.rng.gen_range(3..14) as i64);
+                                + chrono::Duration::days(self.rng.random_range(3..14) as i64);
 
                             let correction = self.generate_payment_correction(
                                 &payment,
@@ -491,7 +491,7 @@ impl O2CGenerator {
 
         // Add line items
         for (idx, material) in materials.iter().enumerate() {
-            let quantity = Decimal::from(self.rng.gen_range(1..50));
+            let quantity = Decimal::from(self.rng.random_range(1..50));
             let unit_price = material.list_price;
 
             let description = self.pick_line_description("sales_order", &material.description);
@@ -522,11 +522,11 @@ impl O2CGenerator {
         let mut deliveries = Vec::new();
 
         // Determine if partial shipment
-        let is_partial = self.rng.gen::<f64>() < self.config.partial_shipment_rate;
+        let is_partial = self.rng.random::<f64>() < self.config.partial_shipment_rate;
 
         if is_partial {
             // First shipment (60-80%)
-            let first_pct = 0.6 + self.rng.gen::<f64>() * 0.2;
+            let first_pct = 0.6 + self.rng.random::<f64>() * 0.2;
             let dlv1 = self.create_delivery(
                 so,
                 company_code,
@@ -541,7 +541,7 @@ impl O2CGenerator {
 
             // Second shipment
             let second_date =
-                delivery_date + chrono::Duration::days(self.rng.gen_range(3..7) as i64);
+                delivery_date + chrono::Duration::days(self.rng.random_range(3..7) as i64);
             let second_period = self.get_fiscal_period(second_date);
             let dlv2 = self.create_delivery(
                 so,
@@ -608,7 +608,7 @@ impl O2CGenerator {
 
             if ship_qty > Decimal::ZERO {
                 // Calculate COGS (assume 60-70% of sales price)
-                let cogs_pct = 0.60 + self.rng.gen::<f64>() * 0.10;
+                let cogs_pct = 0.60 + self.rng.random::<f64>() * 0.10;
                 let cogs = (so_item.base.unit_price
                     * ship_qty
                     * Decimal::from_f64_retain(cogs_pct)
@@ -641,7 +641,7 @@ impl O2CGenerator {
         // Process delivery workflow
         delivery.release_for_picking(created_by);
         delivery.confirm_pick();
-        delivery.confirm_pack(self.rng.gen_range(1..10));
+        delivery.confirm_pack(self.rng.random_range(1..10));
         delivery.post_goods_issue(created_by, delivery_date);
 
         delivery
@@ -765,7 +765,8 @@ impl O2CGenerator {
 
         // Determine if cash discount taken
         let take_discount = invoice.discount_date_1.is_some_and(|disc_date| {
-            payment_date <= disc_date && self.rng.gen::<f64>() < self.config.cash_discount_take_rate
+            payment_date <= disc_date
+                && self.rng.random::<f64>() < self.config.cash_discount_take_rate
         });
 
         let discount_amount = if take_discount {
@@ -833,11 +834,11 @@ impl O2CGenerator {
 
         for _ in 0..count {
             // Select random customer
-            let customer_idx = self.rng.gen_range(0..customers.customers.len());
+            let customer_idx = self.rng.random_range(0..customers.customers.len());
             let customer = &customers.customers[customer_idx];
 
             // Select random materials (1-5 items per SO)
-            let num_items = self.rng.gen_range(1..=5).min(materials.materials.len());
+            let num_items = self.rng.random_range(1..=5).min(materials.materials.len());
             let selected_materials: Vec<&Material> = materials
                 .materials
                 .iter()
@@ -847,7 +848,7 @@ impl O2CGenerator {
 
             // Select random SO date
             let so_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let fiscal_period = self.get_fiscal_period(so_date);
 
             let chain = self.generate_chain(
@@ -874,7 +875,7 @@ impl O2CGenerator {
         }
 
         // Additional random failure based on config
-        let fail_roll = self.rng.gen::<f64>();
+        let fail_roll = self.rng.random::<f64>();
         if fail_roll < self.config.credit_check_failure_rate {
             return false;
         }
@@ -886,18 +887,18 @@ impl O2CGenerator {
             _ => 0.0,
         };
 
-        self.rng.gen::<f64>() >= additional_fail_rate
+        self.rng.random::<f64>() >= additional_fail_rate
     }
 
     /// Calculate delivery date from SO date.
     fn calculate_delivery_date(&mut self, so_date: NaiveDate) -> NaiveDate {
-        let variance = self.rng.gen_range(0..3) as i64;
+        let variance = self.rng.random_range(0..3) as i64;
         so_date + chrono::Duration::days(self.config.avg_days_so_to_delivery as i64 + variance)
     }
 
     /// Calculate invoice date from delivery date.
     fn calculate_invoice_date(&mut self, delivery_date: NaiveDate) -> NaiveDate {
-        let variance = self.rng.gen_range(0..2) as i64;
+        let variance = self.rng.random_range(0..2) as i64;
         delivery_date
             + chrono::Duration::days(self.config.avg_days_delivery_to_invoice as i64 + variance)
     }
@@ -915,29 +916,29 @@ impl O2CGenerator {
         let behavior_adjustment = match customer.payment_behavior {
             datasynth_core::models::CustomerPaymentBehavior::Excellent
             | datasynth_core::models::CustomerPaymentBehavior::EarlyPayer => {
-                -self.rng.gen_range(5..15) as i64
+                -self.rng.random_range(5..15) as i64
             }
             datasynth_core::models::CustomerPaymentBehavior::Good
             | datasynth_core::models::CustomerPaymentBehavior::OnTime => {
-                self.rng.gen_range(-2..3) as i64
+                self.rng.random_range(-2..3) as i64
             }
             datasynth_core::models::CustomerPaymentBehavior::Fair
             | datasynth_core::models::CustomerPaymentBehavior::SlightlyLate => {
-                self.rng.gen_range(5..15) as i64
+                self.rng.random_range(5..15) as i64
             }
             datasynth_core::models::CustomerPaymentBehavior::Poor
             | datasynth_core::models::CustomerPaymentBehavior::OftenLate => {
-                self.rng.gen_range(15..45) as i64
+                self.rng.random_range(15..45) as i64
             }
             datasynth_core::models::CustomerPaymentBehavior::VeryPoor
             | datasynth_core::models::CustomerPaymentBehavior::HighRisk => {
-                self.rng.gen_range(30..90) as i64
+                self.rng.random_range(30..90) as i64
             }
         };
 
         // Additional random late payment
-        let late_adjustment = if self.rng.gen::<f64>() < self.config.late_payment_rate {
-            self.rng.gen_range(10..30) as i64
+        let late_adjustment = if self.rng.random::<f64>() < self.config.late_payment_rate {
+            self.rng.random_range(10..30) as i64
         } else {
             0
         };
@@ -956,7 +957,7 @@ impl O2CGenerator {
 
     /// Select payment method based on distribution.
     fn select_payment_method(&mut self) -> PaymentMethod {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (method, prob) in &self.config.payment_method_distribution {
@@ -1049,7 +1050,7 @@ impl O2CGenerator {
                 + chrono::Duration::days(
                     self.config.payment_behavior.avg_days_until_remainder as i64,
                 )
-                + chrono::Duration::days(self.rng.gen_range(-7..7) as i64),
+                + chrono::Duration::days(self.rng.random_range(-7..7) as i64),
         );
 
         (receipt, remaining_amount, expected_remainder_date)
@@ -1076,7 +1077,8 @@ impl O2CGenerator {
         let full_amount = invoice.amount_open;
 
         // Calculate short amount (1-10% of invoice)
-        let short_percent = self.rng.gen::<f64>() * self.config.payment_behavior.max_short_percent;
+        let short_percent =
+            self.rng.random::<f64>() * self.config.payment_behavior.max_short_percent;
         let short_amount = (full_amount
             * Decimal::from_f64_retain(short_percent).unwrap_or(Decimal::ZERO))
         .round_dp(2)
@@ -1199,7 +1201,7 @@ impl O2CGenerator {
 
         let correction_id = format!("CORR-{}-{:06}", company_code, self.correction_counter);
 
-        let correction_type = if self.rng.gen::<f64>() < 0.6 {
+        let correction_type = if self.rng.random::<f64>() < 0.6 {
             PaymentCorrectionType::NSF
         } else {
             PaymentCorrectionType::Chargeback
@@ -1220,13 +1222,13 @@ impl O2CGenerator {
         // Set appropriate details based on type
         match correction_type {
             PaymentCorrectionType::NSF => {
-                correction.bank_reference = Some(format!("NSF-{}", self.rng.gen::<u32>()));
+                correction.bank_reference = Some(format!("NSF-{}", self.rng.random::<u32>()));
                 correction.fee_amount = Decimal::from(35); // Standard NSF fee
                 correction.reason = Some("Payment returned - Insufficient funds".to_string());
             }
             PaymentCorrectionType::Chargeback => {
                 correction.chargeback_code =
-                    Some(format!("CB{:04}", self.rng.gen_range(1000..9999)));
+                    Some(format!("CB{:04}", self.rng.random_range(1000..9999)));
                 correction.reason = Some("Credit card chargeback".to_string());
             }
             _ => {}
@@ -1242,7 +1244,7 @@ impl O2CGenerator {
 
     /// Select a random short payment reason code.
     fn select_short_payment_reason(&mut self) -> ShortPaymentReasonCode {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.30 {
             ShortPaymentReasonCode::PricingDispute
         } else if roll < 0.50 {
@@ -1258,7 +1260,7 @@ impl O2CGenerator {
 
     /// Select a random on-account reason.
     fn select_on_account_reason(&mut self) -> OnAccountReason {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.40 {
             OnAccountReason::NoInvoiceReference
         } else if roll < 0.60 {
@@ -1274,7 +1276,7 @@ impl O2CGenerator {
 
     /// Determine the payment type based on configuration.
     fn determine_payment_type(&mut self) -> PaymentType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let pb = &self.config.payment_behavior;
 
         let mut cumulative = 0.0;
@@ -1299,7 +1301,7 @@ impl O2CGenerator {
 
     /// Determine partial payment percentage.
     fn determine_partial_payment_percent(&mut self) -> f64 {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.15 {
             0.25
         } else if roll < 0.65 {
@@ -1308,7 +1310,7 @@ impl O2CGenerator {
             0.75
         } else {
             // Random between 30-80%
-            0.30 + self.rng.gen::<f64>() * 0.50
+            0.30 + self.rng.random::<f64>() * 0.50
         }
     }
 }

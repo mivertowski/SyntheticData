@@ -258,15 +258,15 @@ impl RevenueRecognitionGenerator {
         framework: AccountingFramework,
     ) -> CustomerContract {
         // Pick a random customer
-        let customer_idx = self.rng.gen_range(0..customer_ids.len());
+        let customer_idx = self.rng.random_range(0..customer_ids.len());
         let customer_id = &customer_ids[customer_idx];
 
         // Pick a random customer name from the pool
-        let name_idx = self.rng.gen_range(0..CUSTOMER_NAMES.len());
+        let name_idx = self.rng.random_range(0..CUSTOMER_NAMES.len());
         let customer_name = CUSTOMER_NAMES[name_idx];
 
         // Random inception date within the period
-        let offset_days = self.rng.gen_range(0..period_days);
+        let offset_days = self.rng.random_range(0..period_days);
         let inception_date = period_start + chrono::Duration::days(offset_days);
 
         // Transaction price: log-normal in $5K-$5M range
@@ -308,7 +308,7 @@ impl RevenueRecognitionGenerator {
         // Optionally add variable consideration
         if self
             .rng
-            .gen_bool(config.variable_consideration_rate.clamp(0.0, 1.0))
+            .random_bool(config.variable_consideration_rate.clamp(0.0, 1.0))
         {
             let vc = self.generate_variable_consideration(contract.contract_id, transaction_price);
             contract.add_variable_consideration(vc);
@@ -320,7 +320,7 @@ impl RevenueRecognitionGenerator {
         // Set end date for completed/terminated contracts
         match contract.status {
             ContractStatus::Complete | ContractStatus::Terminated => {
-                let days_after = self.rng.gen_range(30..365);
+                let days_after = self.rng.random_range(30..365);
                 contract.end_date = Some(inception_date + chrono::Duration::days(days_after));
             }
             _ => {}
@@ -350,7 +350,7 @@ impl RevenueRecognitionGenerator {
     fn sample_obligation_count(&mut self, avg: f64) -> u32 {
         // Simple approach: generate from a shifted geometric-like distribution
         // by using the average as a bias factor.
-        let base: f64 = self.rng.gen();
+        let base: f64 = self.rng.random();
         let count = if base < 0.3 {
             1
         } else if base < 0.3 + 0.4 * (avg / 2.0).min(1.0) {
@@ -381,7 +381,7 @@ impl RevenueRecognitionGenerator {
 
         for seq in 0..count {
             let ob_type = self.pick_obligation_type();
-            let satisfaction = if self.rng.gen_bool(over_time_rate.clamp(0.0, 1.0)) {
+            let satisfaction = if self.rng.random_bool(over_time_rate.clamp(0.0, 1.0)) {
                 SatisfactionPattern::OverTime
             } else {
                 SatisfactionPattern::PointInTime
@@ -402,7 +402,7 @@ impl RevenueRecognitionGenerator {
             obligation.obligation_id = ob_id;
 
             // Set expected satisfaction date
-            let days_to_satisfy = self.rng.gen_range(30..365);
+            let days_to_satisfy = self.rng.random_range(30..365);
             let expected_date = inception_date + chrono::Duration::days(days_to_satisfy);
             obligation.expected_satisfaction_date =
                 Some(expected_date.min(period_end + chrono::Duration::days(365)));
@@ -424,7 +424,7 @@ impl RevenueRecognitionGenerator {
 
         // Generate random weights and normalize
         let mut weights: Vec<f64> = (0..count)
-            .map(|_| self.rng.gen_range(0.2_f64..1.0))
+            .map(|_| self.rng.random_range(0.2_f64..1.0))
             .collect();
         let weight_sum: f64 = weights.iter().sum();
 
@@ -437,7 +437,7 @@ impl RevenueRecognitionGenerator {
         let mut prices: Vec<Decimal> = weights
             .iter()
             .map(|w| {
-                let markup = 1.0 + self.rng.gen_range(0.05..0.25);
+                let markup = 1.0 + self.rng.random_range(0.05..0.25);
                 let ssp_f64 = w * total_price.to_f64().unwrap_or(50_000.0) * markup;
                 Decimal::from_f64_retain(ssp_f64)
                     .unwrap_or(Decimal::ONE)
@@ -511,7 +511,7 @@ impl RevenueRecognitionGenerator {
                     let elapsed = (period_end - inception_date).num_days().max(0) as f64;
                     let base_progress = (elapsed / total_days) * 100.0;
                     // Add noise: +/- 15%
-                    let noise = self.rng.gen_range(-15.0_f64..15.0);
+                    let noise = self.rng.random_range(-15.0_f64..15.0);
                     let progress = (base_progress + noise).clamp(5.0, 95.0);
                     let progress_dec =
                         Decimal::from_f64_retain(progress).unwrap_or(Decimal::from(50));
@@ -519,10 +519,10 @@ impl RevenueRecognitionGenerator {
                 }
                 SatisfactionPattern::PointInTime => {
                     // 70% chance the obligation is already satisfied
-                    if self.rng.gen_bool(0.70) {
+                    if self.rng.random_bool(0.70) {
                         // Satisfaction date is some time between inception and period end
                         let max_offset = (period_end - inception_date).num_days().max(1);
-                        let sat_offset = self.rng.gen_range(0..max_offset);
+                        let sat_offset = self.rng.random_range(0..max_offset);
                         let sat_date = inception_date + chrono::Duration::days(sat_offset);
                         po.update_progress(Decimal::from(100), sat_date);
                     }
@@ -538,11 +538,11 @@ impl RevenueRecognitionGenerator {
         contract_id: uuid::Uuid,
         transaction_price: Decimal,
     ) -> VariableConsideration {
-        let idx = self.rng.gen_range(0..VC_DESCRIPTIONS.len());
+        let idx = self.rng.random_range(0..VC_DESCRIPTIONS.len());
         let (description, vc_type) = VC_DESCRIPTIONS[idx];
 
         // Estimated amount is 5-20% of the transaction price
-        let pct = self.rng.gen_range(0.05..0.20);
+        let pct = self.rng.random_range(0.05..0.20);
         let estimated_f64 = transaction_price.to_f64().unwrap_or(50_000.0) * pct;
         let estimated_amount = Decimal::from_f64_retain(estimated_f64)
             .unwrap_or(Decimal::from(5_000))
@@ -552,7 +552,7 @@ impl RevenueRecognitionGenerator {
             VariableConsideration::new(contract_id, vc_type, estimated_amount, description);
 
         // Apply constraint (80-95% of estimated amount is "highly probable")
-        let constraint_pct = self.rng.gen_range(0.80..0.95);
+        let constraint_pct = self.rng.random_range(0.80..0.95);
         let constraint_dec = Decimal::from_f64_retain(constraint_pct)
             .unwrap_or(Decimal::from_str("0.85").unwrap_or(Decimal::ONE));
         vc.apply_constraint(constraint_dec);
@@ -563,7 +563,7 @@ impl RevenueRecognitionGenerator {
     /// Pick a random contract status with the specified distribution:
     /// 60% Active, 15% Complete, 10% Pending, 10% Modified, 5% Terminated.
     fn pick_contract_status(&mut self) -> ContractStatus {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.60 {
             ContractStatus::Active
         } else if roll < 0.75 {
@@ -579,7 +579,7 @@ impl RevenueRecognitionGenerator {
 
     /// Pick a random obligation type with realistic weighting.
     fn pick_obligation_type(&mut self) -> ObligationType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.25 {
             ObligationType::Good
         } else if roll < 0.50 {
@@ -605,7 +605,7 @@ impl RevenueRecognitionGenerator {
             ObligationType::ServiceTypeWarranty => WARRANTY_DESCRIPTIONS,
             ObligationType::MaterialRight => MATERIAL_RIGHT_DESCRIPTIONS,
         };
-        let idx = self.rng.gen_range(0..pool.len());
+        let idx = self.rng.random_range(0..pool.len());
         pool[idx]
     }
 }

@@ -189,9 +189,9 @@ impl DisclosureGenerator {
 
                 let (metric_value, metric_unit) = self.metric_for_topic(dt.topic);
 
-                let assurance_level = if self.rng.gen::<f64>() < 0.30 {
+                let assurance_level = if self.rng.random::<f64>() < 0.30 {
                     AssuranceLevel::Reasonable
-                } else if self.rng.gen::<f64>() < 0.60 {
+                } else if self.rng.random::<f64>() < 0.60 {
                     AssuranceLevel::Limited
                 } else {
                     AssuranceLevel::None
@@ -315,58 +315,58 @@ impl DisclosureGenerator {
     }
 
     fn random_score(&mut self) -> Decimal {
-        let v: f64 = self.rng.gen_range(0.2..0.95);
+        let v: f64 = self.rng.random_range(0.2..0.95);
         Decimal::from_f64_retain(v).unwrap_or(dec!(0.5)).round_dp(2)
     }
 
     fn random_impact(&mut self, min: f64, max: f64) -> Decimal {
-        let v: f64 = self.rng.gen_range(min..max);
+        let v: f64 = self.rng.random_range(min..max);
         Decimal::from_f64_retain(v).unwrap_or(dec!(0.3)).round_dp(4)
     }
 
     fn metric_for_topic(&mut self, topic: &str) -> (String, String) {
         match topic {
             "GHG Emissions - Scope 1" | "GHG Emissions - Scope 2" | "GHG Emissions - Scope 3" => {
-                let val: f64 = self.rng.gen_range(100.0..50000.0);
+                let val: f64 = self.rng.random_range(100.0..50000.0);
                 (format!("{:.1}", val), "tonnes CO2e".to_string())
             }
             "Energy Consumption" => {
-                let val: f64 = self.rng.gen_range(1_000_000.0..50_000_000.0);
+                let val: f64 = self.rng.random_range(1_000_000.0..50_000_000.0);
                 (format!("{:.0}", val), "kWh".to_string())
             }
             "Water Withdrawal" => {
-                let val: f64 = self.rng.gen_range(10_000.0..500_000.0);
+                let val: f64 = self.rng.random_range(10_000.0..500_000.0);
                 (format!("{:.0}", val), "m3".to_string())
             }
             "Waste Generation" => {
-                let val: f64 = self.rng.gen_range(100.0..10_000.0);
+                let val: f64 = self.rng.random_range(100.0..10_000.0);
                 (format!("{:.1}", val), "tonnes".to_string())
             }
             "Workforce Diversity" => {
-                let val: f64 = self.rng.gen_range(30.0..55.0);
+                let val: f64 = self.rng.random_range(30.0..55.0);
                 (format!("{:.1}%", val), "percent female".to_string())
             }
             "Pay Equity" => {
-                let val: f64 = self.rng.gen_range(0.85..1.05);
+                let val: f64 = self.rng.random_range(0.85..1.05);
                 (format!("{:.3}", val), "ratio".to_string())
             }
             "Occupational Safety" => {
-                let val: f64 = self.rng.gen_range(0.5..5.0);
+                let val: f64 = self.rng.random_range(0.5..5.0);
                 (format!("{:.2}", val), "TRIR".to_string())
             }
             "Board Composition" => {
-                let val: f64 = self.rng.gen_range(0.50..0.80);
+                let val: f64 = self.rng.random_range(0.50..0.80);
                 (
                     format!("{:.1}%", val * 100.0),
                     "percent independent".to_string(),
                 )
             }
             "Anti-Corruption" => {
-                let val: u32 = self.rng.gen_range(0..3);
+                let val: u32 = self.rng.random_range(0..3);
                 (val.to_string(), "violations".to_string())
             }
             "Supply Chain Assessment" => {
-                let val: f64 = self.rng.gen_range(60.0..95.0);
+                let val: f64 = self.rng.random_range(60.0..95.0);
                 (format!("{:.1}%", val), "percent assessed".to_string())
             }
             _ => ("N/A".to_string(), "N/A".to_string()),

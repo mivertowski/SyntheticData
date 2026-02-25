@@ -130,7 +130,7 @@ impl InjectionStrategy for AmountModificationStrategy {
             return InjectionResult::failure("No lines to modify");
         }
 
-        let line_idx = rng.gen_range(0..entry.lines.len());
+        let line_idx = rng.random_range(0..entry.lines.len());
         let is_debit = entry.lines[line_idx].debit_amount > Decimal::ZERO;
         let original_amount = if is_debit {
             entry.lines[line_idx].debit_amount
@@ -138,7 +138,7 @@ impl InjectionStrategy for AmountModificationStrategy {
             entry.lines[line_idx].credit_amount
         };
 
-        let multiplier = rng.gen_range(self.min_multiplier..self.max_multiplier);
+        let multiplier = rng.random_range(self.min_multiplier..self.max_multiplier);
         let mut new_amount =
             original_amount * Decimal::from_f64_retain(multiplier).unwrap_or(Decimal::ONE);
 
@@ -262,21 +262,21 @@ impl InjectionStrategy for DateModificationStrategy {
 
         let (days_offset, description) = match anomaly_type {
             AnomalyType::Error(ErrorType::BackdatedEntry) => {
-                let days = rng.gen_range(1..=self.max_backdate_days);
+                let days = rng.random_range(1..=self.max_backdate_days);
                 (-days, format!("Backdated by {} days", days))
             }
             AnomalyType::Error(ErrorType::FutureDatedEntry) => {
-                let days = rng.gen_range(1..=self.max_future_days);
+                let days = rng.random_range(1..=self.max_future_days);
                 (days, format!("Future-dated by {} days", days))
             }
             AnomalyType::Error(ErrorType::WrongPeriod) => {
                 // Move to previous or next month
-                let direction: i64 = if rng.gen_bool(0.5) { -1 } else { 1 };
+                let direction: i64 = if rng.random_bool(0.5) { -1 } else { 1 };
                 let days = direction * 32; // Ensure crossing month boundary
                 (days, "Posted to wrong period".to_string())
             }
             AnomalyType::ProcessIssue(ProcessIssueType::LatePosting) => {
-                let days = rng.gen_range(5..=15);
+                let days = rng.random_range(5..=15);
                 entry.header.document_date = entry.header.posting_date; // Document date stays same
                 entry.header.posting_date = original_date + chrono::Duration::days(days);
                 return InjectionResult::success(&format!(
@@ -339,7 +339,7 @@ impl DuplicationStrategy {
 
         if self.vary_amounts {
             for line in &mut duplicate.lines {
-                let variance = 1.0 + rng.gen_range(-self.amount_variance..self.amount_variance);
+                let variance = 1.0 + rng.random_range(-self.amount_variance..self.amount_variance);
                 let variance_dec = Decimal::from_f64_retain(variance).unwrap_or(Decimal::ONE);
 
                 if line.debit_amount > Decimal::ZERO {
@@ -392,7 +392,7 @@ impl InjectionStrategy for ApprovalAnomalyStrategy {
                 // Set total to just below threshold
                 let target = self.approval_threshold
                     - self.threshold_buffer
-                    - Decimal::new(rng.gen_range(1..50), 0);
+                    - Decimal::new(rng.random_range(1..50), 0);
 
                 let current_total = entry.total_debit();
                 if current_total == Decimal::ZERO {
@@ -482,7 +482,7 @@ impl InjectionStrategy for DescriptionAnomalyStrategy {
         rng: &mut R,
     ) -> InjectionResult {
         let original = entry.description().unwrap_or("").to_string();
-        let vague = &self.vague_descriptions[rng.gen_range(0..self.vague_descriptions.len())];
+        let vague = &self.vague_descriptions[rng.random_range(0..self.vague_descriptions.len())];
         entry.set_description(vague.clone());
 
         InjectionResult::success(&format!(
@@ -529,7 +529,7 @@ impl InjectionStrategy for BenfordViolationStrategy {
             return InjectionResult::failure("No lines to modify");
         }
 
-        let line_idx = rng.gen_range(0..entry.lines.len());
+        let line_idx = rng.random_range(0..entry.lines.len());
         let is_debit = entry.lines[line_idx].debit_amount > Decimal::ZERO;
         let original_amount = if is_debit {
             entry.lines[line_idx].debit_amount
@@ -538,7 +538,7 @@ impl InjectionStrategy for BenfordViolationStrategy {
         };
 
         // Get target first digit
-        let target_digit = self.target_digits[rng.gen_range(0..self.target_digits.len())];
+        let target_digit = self.target_digits[rng.random_range(0..self.target_digits.len())];
 
         // Calculate new amount with target first digit
         let original_str = original_amount.to_string();
@@ -548,7 +548,7 @@ impl InjectionStrategy for BenfordViolationStrategy {
 
         let base = Decimal::new(10_i64.pow(safe_magnitude), 0);
         let new_amount = base * Decimal::new(target_digit as i64, 0)
-            + Decimal::new(rng.gen_range(0..10_i64.pow(safe_magnitude)), 0);
+            + Decimal::new(rng.random_range(0..10_i64.pow(safe_magnitude)), 0);
 
         let impact = new_amount - original_amount;
 
@@ -642,9 +642,10 @@ impl InjectionStrategy for SplitTransactionStrategy {
             return InjectionResult::failure("Amount below split threshold");
         }
 
-        let num_splits = rng.gen_range(self.min_splits..=self.max_splits);
-        let target_per_split =
-            self.split_threshold - self.threshold_buffer - Decimal::new(rng.gen_range(1..100), 0);
+        let num_splits = rng.random_range(self.min_splits..=self.max_splits);
+        let target_per_split = self.split_threshold
+            - self.threshold_buffer
+            - Decimal::new(rng.random_range(1..100), 0);
 
         // Scale down all lines to fit first split
         let scale = target_per_split / total;
@@ -753,7 +754,7 @@ impl InjectionStrategy for WeekendPostingStrategy {
         };
 
         // Move to Saturday or Sunday
-        let weekend_day = if rng.gen_bool(0.6) {
+        let weekend_day = if rng.random_bool(0.6) {
             days_to_weekend
         } else {
             days_to_weekend + 1
@@ -803,7 +804,7 @@ impl InjectionStrategy for ReversedAmountStrategy {
         }
 
         // Pick a random line and swap its debit/credit
-        let line_idx = rng.gen_range(0..entry.lines.len());
+        let line_idx = rng.random_range(0..entry.lines.len());
         let line = &mut entry.lines[line_idx];
 
         let original_debit = line.debit_amount;
@@ -879,7 +880,7 @@ impl InjectionStrategy for TransposedDigitsStrategy {
             return InjectionResult::failure("No lines with transposable amounts");
         }
 
-        let line_idx = valid_lines[rng.gen_range(0..valid_lines.len())];
+        let line_idx = valid_lines[rng.random_range(0..valid_lines.len())];
         let line = &mut entry.lines[line_idx];
 
         let is_debit = line.debit_amount > Decimal::ZERO;
@@ -898,7 +899,7 @@ impl InjectionStrategy for TransposedDigitsStrategy {
         }
 
         // Pick a position to transpose (not the decimal point)
-        let pos = rng.gen_range(0..chars.len() - 1);
+        let pos = rng.random_range(0..chars.len() - 1);
         let mut new_chars = chars.clone();
         new_chars.swap(pos, pos + 1);
 
@@ -966,11 +967,12 @@ impl InjectionStrategy for DormantAccountStrategy {
             return InjectionResult::failure("No lines or dormant accounts");
         }
 
-        let line_idx = rng.gen_range(0..entry.lines.len());
+        let line_idx = rng.random_range(0..entry.lines.len());
         let line = &mut entry.lines[line_idx];
 
         let original_account = line.gl_account.clone();
-        let dormant_account = &self.dormant_accounts[rng.gen_range(0..self.dormant_accounts.len())];
+        let dormant_account =
+            &self.dormant_accounts[rng.random_range(0..self.dormant_accounts.len())];
 
         line.gl_account = dormant_account.clone();
         line.account_code = dormant_account.clone();

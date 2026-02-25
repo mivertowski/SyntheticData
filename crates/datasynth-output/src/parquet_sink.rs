@@ -151,7 +151,7 @@ impl ParquetSink {
             .set_compression(Compression::ZSTD(ZstdLevel::try_new(3).map_err(|e| {
                 SynthError::generation(format!("Failed to create Zstd compression level: {}", e))
             })?))
-            .set_max_row_group_size(batch_size)
+            .set_max_row_group_row_count(Some(batch_size))
             .build();
 
         let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props)).map_err(|e| {

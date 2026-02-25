@@ -197,7 +197,7 @@ impl LineItemSampler {
 
     /// Sample a line item count.
     pub fn sample_count(&mut self) -> usize {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
 
         // Find the bin using cumulative distribution
         if p < self.cumulative[0] {
@@ -218,19 +218,19 @@ impl LineItemSampler {
             9
         } else if p < self.cumulative[8] {
             // 10-99 range - use uniform distribution within range
-            self.rng.gen_range(10..100)
+            self.rng.random_range(10..100)
         } else if p < self.cumulative[9] {
             // 100-999 range
-            self.rng.gen_range(100..1000)
+            self.rng.random_range(100..1000)
         } else {
             // 1000+ range (cap at 10000 for practicality)
-            self.rng.gen_range(1000..10000)
+            self.rng.random_range(1000..10000)
         }
     }
 
     /// Sample whether the count should be even.
     pub fn sample_even(&mut self) -> bool {
-        self.rng.gen::<f64>() < self.even_odd_config.even
+        self.rng.random::<f64>() < self.even_odd_config.even
     }
 
     /// Sample a line item count with even/odd constraint.
@@ -248,7 +248,7 @@ impl LineItemSampler {
             if base_count <= 2 {
                 // Can only increment for small counts
                 base_count + 1
-            } else if self.rng.gen::<bool>() {
+            } else if self.rng.random::<bool>() {
                 // Randomly choose to increment
                 base_count + 1
             } else {
@@ -262,7 +262,7 @@ impl LineItemSampler {
 
     /// Sample the debit/credit split type.
     pub fn sample_debit_credit_type(&mut self) -> DebitCreditSplit {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
 
         if p < self.debit_credit_config.equal {
             DebitCreditSplit::Equal

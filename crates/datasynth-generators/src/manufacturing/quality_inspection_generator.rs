@@ -93,16 +93,16 @@ impl QualityInspectionGenerator {
         let inspection_type = self.pick_inspection_type();
 
         // Lot size based on typical production order quantity
-        let lot_size_f64: f64 = self.rng.gen_range(50.0..=1000.0);
+        let lot_size_f64: f64 = self.rng.random_range(50.0..=1000.0);
         let lot_size = Decimal::from_f64_retain(lot_size_f64.round()).unwrap_or(Decimal::from(100));
 
         // Sample size: 10-30% of lot
-        let sample_pct: f64 = self.rng.gen_range(0.10..=0.30);
+        let sample_pct: f64 = self.rng.random_range(0.10..=0.30);
         let sample_size_f64 = (lot_size_f64 * sample_pct).round().max(1.0);
         let sample_size = Decimal::from_f64_retain(sample_size_f64).unwrap_or(Decimal::from(10));
 
         // Generate 2-5 inspection characteristics
-        let num_characteristics: usize = self.rng.gen_range(2..=5);
+        let num_characteristics: usize = self.rng.random_range(2..=5);
         let characteristics = self.generate_characteristics(num_characteristics);
 
         // Count defects (failed characteristics)
@@ -117,7 +117,7 @@ impl QualityInspectionGenerator {
         let result = self.pick_result();
 
         // Inspector
-        let inspector_id = Some(format!("QC-{:02}", self.rng.gen_range(1..=20)));
+        let inspector_id = Some(format!("QC-{:02}", self.rng.random_range(1..=20)));
 
         // Disposition based on result
         let disposition = match result {
@@ -169,7 +169,7 @@ impl QualityInspectionGenerator {
 
     /// Pick an inspection type based on distribution.
     fn pick_inspection_type(&mut self) -> InspectionType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.40 {
             InspectionType::Final
         } else if roll < 0.65 {
@@ -185,7 +185,7 @@ impl QualityInspectionGenerator {
 
     /// Pick an inspection result based on distribution.
     fn pick_result(&mut self) -> InspectionResult {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.80 {
             InspectionResult::Accepted
         } else if roll < 0.90 {
@@ -210,15 +210,15 @@ impl QualityInspectionGenerator {
                 let name = CHARACTERISTIC_NAMES[idx].to_string();
 
                 // Target value: random 10.0 - 100.0
-                let target_value: f64 = self.rng.gen_range(10.0..=100.0);
+                let target_value: f64 = self.rng.random_range(10.0..=100.0);
 
                 // Limits: ± 5-15% of target
-                let tolerance_pct: f64 = self.rng.gen_range(0.05..=0.15);
+                let tolerance_pct: f64 = self.rng.random_range(0.05..=0.15);
                 let lower_limit = target_value * (1.0 - tolerance_pct);
                 let upper_limit = target_value * (1.0 + tolerance_pct);
 
                 // Actual value: target * random(0.95 - 1.05)
-                let actual_factor: f64 = self.rng.gen_range(0.95..=1.05);
+                let actual_factor: f64 = self.rng.random_range(0.95..=1.05);
                 let actual_value = target_value * actual_factor;
 
                 let passed = actual_value >= lower_limit && actual_value <= upper_limit;

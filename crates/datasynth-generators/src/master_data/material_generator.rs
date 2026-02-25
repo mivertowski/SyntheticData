@@ -277,7 +277,7 @@ impl MaterialGenerator {
             let component =
                 self.generate_material_of_type(component_type, company_code, effective_date);
 
-            let quantity = Decimal::from(self.rng.gen_range(1..10));
+            let quantity = Decimal::from(self.rng.random_range(1..10));
             components.push(BomComponent {
                 component_material_id: component.material_id.clone(),
                 quantity,
@@ -352,16 +352,16 @@ impl MaterialGenerator {
         // Generate finished goods, some with BOM
         let finished_count = count - raw_count - semi_count;
         for _ in 0..finished_count {
-            let material = if self.rng.gen::<f64>() < bom_rate && !self.created_materials.is_empty()
-            {
-                self.generate_material_with_bom_from_existing(company_code, effective_date)
-            } else {
-                self.generate_material_of_type(
-                    MaterialType::FinishedGood,
-                    company_code,
-                    effective_date,
-                )
-            };
+            let material =
+                if self.rng.random::<f64>() < bom_rate && !self.created_materials.is_empty() {
+                    self.generate_material_with_bom_from_existing(company_code, effective_date)
+                } else {
+                    self.generate_material_of_type(
+                        MaterialType::FinishedGood,
+                        company_code,
+                        effective_date,
+                    )
+                };
             pool.add_material(material);
         }
 
@@ -381,14 +381,17 @@ impl MaterialGenerator {
         );
 
         // Select some existing materials as components
-        let component_count = self.rng.gen_range(2..=5).min(self.created_materials.len());
+        let component_count = self
+            .rng
+            .random_range(2..=5)
+            .min(self.created_materials.len());
         let mut components = Vec::new();
 
         for i in 0..component_count {
             if let Some(component_material_id) = self.created_materials.get(i) {
                 components.push(BomComponent {
                     component_material_id: component_material_id.clone(),
-                    quantity: Decimal::from(self.rng.gen_range(1..5)),
+                    quantity: Decimal::from(self.rng.random_range(1..5)),
                     uom: "EA".to_string(),
                     position: (i + 1) as u16 * 10,
                     scrap_percentage: Decimal::ZERO,
@@ -406,7 +409,7 @@ impl MaterialGenerator {
 
     /// Select material type based on distribution.
     fn select_material_type(&mut self) -> MaterialType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (mat_type, prob) in &self.config.material_type_distribution {
@@ -421,7 +424,7 @@ impl MaterialGenerator {
 
     /// Select valuation method based on distribution.
     fn select_valuation_method(&mut self) -> ValuationMethod {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (method, prob) in &self.config.valuation_method_distribution {
@@ -438,7 +441,7 @@ impl MaterialGenerator {
     fn select_description(&mut self, material_type: &MaterialType) -> &'static str {
         for (mat_type, descriptions) in MATERIAL_DESCRIPTIONS {
             if mat_type == material_type {
-                let idx = self.rng.gen_range(0..descriptions.len());
+                let idx = self.rng.random_range(0..descriptions.len());
                 return descriptions[idx];
             }
         }
@@ -454,7 +457,7 @@ impl MaterialGenerator {
                     MaterialGroup::Mechanical,
                     MaterialGroup::FinishedGoods,
                 ];
-                options[self.rng.gen_range(0..options.len())]
+                options[self.rng.random_range(0..options.len())]
             }
             MaterialType::RawMaterial => {
                 let options = [
@@ -462,11 +465,11 @@ impl MaterialGenerator {
                     MaterialGroup::Chemical,
                     MaterialGroup::Mechanical,
                 ];
-                options[self.rng.gen_range(0..options.len())]
+                options[self.rng.random_range(0..options.len())]
             }
             MaterialType::SemiFinished => {
                 let options = [MaterialGroup::Electronics, MaterialGroup::Mechanical];
-                options[self.rng.gen_range(0..options.len())]
+                options[self.rng.random_range(0..options.len())]
             }
             MaterialType::TradingGood => MaterialGroup::FinishedGoods,
             MaterialType::OperatingSupplies => MaterialGroup::Services,
@@ -481,21 +484,21 @@ impl MaterialGenerator {
         let max = self.config.standard_cost_range.1;
         let range = (max - min).to_string().parse::<f64>().unwrap_or(0.0);
         let offset =
-            Decimal::from_f64_retain(self.rng.gen::<f64>() * range).unwrap_or(Decimal::ZERO);
+            Decimal::from_f64_retain(self.rng.random::<f64>() * range).unwrap_or(Decimal::ZERO);
         (min + offset).round_dp(2)
     }
 
     /// Generate list price from standard cost.
     fn generate_list_price(&mut self, standard_cost: Decimal) -> Decimal {
         let (min_margin, max_margin) = self.config.gross_margin_range;
-        let margin = min_margin + self.rng.gen::<f64>() * (max_margin - min_margin);
+        let margin = min_margin + self.rng.random::<f64>() * (max_margin - min_margin);
         let markup = Decimal::from_f64_retain(1.0 / (1.0 - margin)).unwrap_or(Decimal::from(2));
         (standard_cost * markup).round_dp(2)
     }
 
     /// Generate safety stock.
     fn generate_safety_stock(&mut self) -> Decimal {
-        Decimal::from(self.rng.gen_range(10..500))
+        Decimal::from(self.rng.random_range(10..500))
     }
 
     /// Generate account determination.

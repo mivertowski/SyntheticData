@@ -131,7 +131,7 @@ impl ImpairmentGenerator {
             self.add_indicators(&mut test, asset_type);
 
             // --- Discount rate (8-15%) ---
-            let discount_rate_f64 = self.rng.gen_range(0.08..=0.15);
+            let discount_rate_f64 = self.rng.random_range(0.08..=0.15);
             test.discount_rate =
                 Decimal::from_f64_retain(discount_rate_f64).unwrap_or(Decimal::ONE);
 
@@ -143,7 +143,7 @@ impl ImpairmentGenerator {
             }
 
             // --- Fair value less costs to sell ---
-            let fv_factor = self.rng.gen_range(0.5..=1.1);
+            let fv_factor = self.rng.random_range(0.5..=1.1);
             let fv_decimal = Decimal::from_f64_retain(fv_factor).unwrap_or(Decimal::ONE);
             test.fair_value_less_costs = *carrying_amount * fv_decimal;
 
@@ -190,7 +190,7 @@ impl ImpairmentGenerator {
             test.add_indicator(ImpairmentIndicator::AnnualTest);
         }
 
-        let extra_count = self.rng.gen_range(1..=3_usize);
+        let extra_count = self.rng.random_range(1..=3_usize);
         let count_needed = if requires_annual {
             // Already added AnnualTest; add 0-2 more for up to 3 total.
             extra_count.saturating_sub(1)
@@ -199,7 +199,7 @@ impl ImpairmentGenerator {
         };
 
         for _ in 0..count_needed {
-            let idx = self.rng.gen_range(0..GENERAL_INDICATORS.len());
+            let idx = self.rng.random_range(0..GENERAL_INDICATORS.len());
             let indicator = GENERAL_INDICATORS[idx];
             // Avoid duplicates.
             if !test.impairment_indicators.contains(&indicator) {
@@ -217,14 +217,14 @@ impl ImpairmentGenerator {
         let mut projections = Vec::with_capacity(PROJECTION_YEARS as usize);
 
         // Base revenue: carrying_amount * random(0.3 .. 0.6)
-        let base_factor = self.rng.gen_range(0.3..=0.6);
+        let base_factor = self.rng.random_range(0.3..=0.6);
         let base_revenue_f64 = carrying_amount.to_f64().unwrap_or(100_000.0) * base_factor;
 
         // Operating expense ratio: 60-80% of revenue.
-        let opex_ratio = self.rng.gen_range(0.60..=0.80);
+        let opex_ratio = self.rng.random_range(0.60..=0.80);
 
         // Annual growth rate: -5% to +5%.
-        let growth_rate_f64 = self.rng.gen_range(-0.05..=0.05);
+        let growth_rate_f64 = self.rng.random_range(-0.05..=0.05);
         let growth_decimal = Decimal::from_f64_retain(growth_rate_f64).unwrap_or(Decimal::ZERO);
 
         let mut current_revenue_f64 = base_revenue_f64;
@@ -238,7 +238,7 @@ impl ImpairmentGenerator {
             proj.growth_rate = growth_decimal;
 
             // Capital expenditures: 5-15% of revenue.
-            let capex_ratio = self.rng.gen_range(0.05..=0.15);
+            let capex_ratio = self.rng.random_range(0.05..=0.15);
             proj.capital_expenditures = Decimal::from_f64_retain(current_revenue_f64 * capex_ratio)
                 .unwrap_or(Decimal::ZERO);
 
@@ -249,7 +249,7 @@ impl ImpairmentGenerator {
                 // but since we already add it to the projection stream we simply
                 // boost revenue by a terminal multiplier (3-5x) to approximate
                 // a perpetuity.
-                let terminal_multiplier = self.rng.gen_range(3.0..=5.0);
+                let terminal_multiplier = self.rng.random_range(3.0..=5.0);
                 let terminal_revenue =
                     Decimal::from_f64_retain(current_revenue_f64 * terminal_multiplier)
                         .unwrap_or(Decimal::ZERO);
@@ -308,7 +308,7 @@ impl ImpairmentGenerator {
                 }
                 if test.test_result == ImpairmentTestResult::NotImpaired {
                     // Set fair value well below carrying amount.
-                    let reduction_factor = self.rng.gen_range(0.3..=0.6);
+                    let reduction_factor = self.rng.random_range(0.3..=0.6);
                     let factor_dec =
                         Decimal::from_f64_retain(reduction_factor).unwrap_or(Decimal::ONE);
                     test.fair_value_less_costs = test.carrying_amount * factor_dec;
@@ -321,13 +321,13 @@ impl ImpairmentGenerator {
                             | AccountingFramework::FrenchGaap
                     ) {
                         test.value_in_use = test.fair_value_less_costs
-                            - Decimal::from_f64_retain(self.rng.gen_range(1000.0..=10000.0))
+                            - Decimal::from_f64_retain(self.rng.random_range(1000.0..=10000.0))
                                 .unwrap_or(Decimal::ZERO);
                     }
 
                     // For US GAAP, ensure undiscounted CFs fail Step 1.
                     if matches!(framework, AccountingFramework::UsGaap) {
-                        let low_factor = self.rng.gen_range(0.5..=0.8);
+                        let low_factor = self.rng.random_range(0.5..=0.8);
                         test.undiscounted_cash_flows = Some(
                             test.carrying_amount
                                 * Decimal::from_f64_retain(low_factor).unwrap_or(Decimal::ONE),
@@ -348,7 +348,7 @@ impl ImpairmentGenerator {
                 }
                 if test.test_result == ImpairmentTestResult::Impaired {
                     // Set fair value above carrying amount.
-                    let boost_factor = self.rng.gen_range(1.05..=1.30);
+                    let boost_factor = self.rng.random_range(1.05..=1.30);
                     let factor_dec = Decimal::from_f64_retain(boost_factor).unwrap_or(Decimal::ONE);
                     test.fair_value_less_costs = test.carrying_amount * factor_dec;
                     test.value_in_use = test.fair_value_less_costs;

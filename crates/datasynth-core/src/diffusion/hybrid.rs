@@ -146,7 +146,7 @@ impl HybridGenerator {
         seed: u64,
     ) -> Vec<Vec<f64>> {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
-        let uniform = Uniform::new(0.0_f64, 1.0);
+        let uniform = Uniform::new(0.0_f64, 1.0).expect("valid uniform params");
 
         (0..n_rows)
             .map(|i| {

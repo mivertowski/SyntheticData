@@ -95,7 +95,7 @@ impl RevenueGenerator {
                 let period_revenue = (cumulative_revenue - prev_cumulative_revenue).max(dec!(0));
 
                 // Billing lags behind recognition by a random factor
-                let billing_pct: f64 = self.rng.gen_range(0.70..0.95);
+                let billing_pct: f64 = self.rng.random_range(0.70..0.95);
                 let target_billed = cumulative_revenue
                     * Decimal::from_f64_retain(billing_pct).unwrap_or(dec!(0.85));
                 if target_billed > billed_to_date {

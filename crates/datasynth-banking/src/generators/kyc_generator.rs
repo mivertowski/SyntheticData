@@ -106,7 +106,7 @@ impl KycGenerator {
         }];
 
         // Random completeness
-        profile.completeness_score = self.rng.gen_range(0.90..1.0);
+        profile.completeness_score = self.rng.random_range(0.90..1.0);
 
         profile
     }
@@ -133,7 +133,7 @@ impl KycGenerator {
             .with_cash_intensity(cash_intensity);
 
         // Business-specific settings
-        profile.beneficial_owner_complexity = self.rng.gen_range(1..5);
+        profile.beneficial_owner_complexity = self.rng.random_range(1..5);
 
         if matches!(persona, BusinessPersona::ImportExport) {
             profile.international_rate = 0.4;
@@ -160,7 +160,7 @@ impl KycGenerator {
         _persona: datasynth_core::models::banking::TrustPersona,
     ) -> KycProfile {
         let mut profile = KycProfile::high_net_worth();
-        profile.beneficial_owner_complexity = self.rng.gen_range(3..8);
+        profile.beneficial_owner_complexity = self.rng.random_range(3..8);
         profile.source_of_wealth = Some(SourceOfWealth::Inheritance);
         profile
     }

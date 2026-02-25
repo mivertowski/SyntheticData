@@ -60,7 +60,7 @@ impl QualificationGenerator {
             let mut all_mandatory_passed = true;
 
             for (name, weight, min_score) in &criteria {
-                let score = self.rng.gen_range(40.0..=100.0);
+                let score = self.rng.random_range(40.0..=100.0);
                 let passed = score >= *min_score;
                 if !passed {
                     all_mandatory_passed = false;
@@ -130,11 +130,11 @@ impl QualificationGenerator {
             ("ISO 27001", "BSI Group"),
         ];
 
-        let count = self.rng.gen_range(0..=3);
+        let count = self.rng.random_range(0..=3);
         let mut certs = Vec::new();
 
         for &(cert_type, issuer) in cert_types.iter().take(count) {
-            let issue_date = base_date - chrono::Duration::days(self.rng.gen_range(30..=730));
+            let issue_date = base_date - chrono::Duration::days(self.rng.random_range(30..=730));
             let expiry_date = issue_date + chrono::Duration::days(365 * 3);
 
             certs.push(SupplierCertification {

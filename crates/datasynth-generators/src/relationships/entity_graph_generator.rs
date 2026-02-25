@@ -330,7 +330,7 @@ impl EntityGraphGenerator {
 
         // Link GRs to Deliveries via shared material
         for gr in goods_receipts {
-            if self.rng.gen::<f64>() > self.config.cross_process.inventory_link_rate {
+            if self.rng.random::<f64>() > self.config.cross_process.inventory_link_rate {
                 continue;
             }
 
@@ -345,7 +345,8 @@ impl EntityGraphGenerator {
                     .collect();
 
                 if !valid_deliveries.is_empty() {
-                    let delivery = valid_deliveries[self.rng.gen_range(0..valid_deliveries.len())];
+                    let delivery =
+                        valid_deliveries[self.rng.random_range(0..valid_deliveries.len())];
 
                     // Calculate linked quantity (minimum of available)
                     let linked_qty = gr.quantity.min(delivery.quantity);

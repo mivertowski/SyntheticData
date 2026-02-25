@@ -44,15 +44,15 @@ impl StructuringInjector {
 
         // Structuring: multiple deposits just below $10,000 threshold
         let threshold = 10_000.0;
-        let total_amount: f64 = self.rng.gen_range(30_000.0..100_000.0);
+        let total_amount: f64 = self.rng.random_range(30_000.0..100_000.0);
 
         // Number of deposits based on sophistication
         let num_deposits = match sophistication {
-            Sophistication::Basic => self.rng.gen_range(3..6),
-            Sophistication::Standard => self.rng.gen_range(5..10),
-            Sophistication::Professional => self.rng.gen_range(8..15),
-            Sophistication::Advanced => self.rng.gen_range(12..25),
-            Sophistication::StateLevel => self.rng.gen_range(20..40),
+            Sophistication::Basic => self.rng.random_range(3..6),
+            Sophistication::Standard => self.rng.random_range(5..10),
+            Sophistication::Professional => self.rng.random_range(8..15),
+            Sophistication::Advanced => self.rng.random_range(12..25),
+            Sophistication::StateLevel => self.rng.random_range(20..40),
         };
 
         // Time spread based on sophistication
@@ -68,7 +68,7 @@ impl StructuringInjector {
         let actual_spread = days_spread.min(available_days);
 
         let mut remaining = total_amount;
-        let scenario_id = format!("STR-{:06}", self.rng.gen::<u32>());
+        let scenario_id = format!("STR-{:06}", self.rng.random::<u32>());
 
         for i in 0..num_deposits {
             if remaining <= 0.0 {
@@ -79,7 +79,7 @@ impl StructuringInjector {
             let max_deposit = threshold * 0.99;
             let min_deposit = threshold * 0.80;
             let deposit_amount = if remaining > max_deposit {
-                self.rng.gen_range(min_deposit..max_deposit)
+                self.rng.random_range(min_deposit..max_deposit)
             } else {
                 remaining.min(max_deposit)
             };
@@ -88,7 +88,7 @@ impl StructuringInjector {
 
             // Time distribution
             let day_offset = if actual_spread > 0 {
-                self.rng.gen_range(0..actual_spread) as i64
+                self.rng.random_range(0..actual_spread) as i64
             } else {
                 0
             };
@@ -130,9 +130,9 @@ impl StructuringInjector {
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(9..17); // Business hours
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(9..17); // Business hours
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

@@ -59,7 +59,7 @@ impl StructuralCausalModel {
                 let value = match var.var_type {
                     CausalVarType::Binary => {
                         let prob = (noise + parent_contribution).clamp(0.0, 1.0);
-                        if rng.gen::<f64>() < prob {
+                        if rng.random::<f64>() < prob {
                             1.0
                         } else {
                             0.0
@@ -107,7 +107,7 @@ impl StructuralCausalModel {
             "uniform" => {
                 let low = var.params.get("low").copied().unwrap_or(0.0);
                 let high = var.params.get("high").copied().unwrap_or(1.0);
-                rng.gen::<f64>() * (high - low) + low
+                rng.random::<f64>() * (high - low) + low
             }
             _ => {
                 // Default to normal distribution
@@ -196,7 +196,7 @@ impl<'a> IntervenedScm<'a> {
                 let value = match var.var_type {
                     CausalVarType::Binary => {
                         let prob = (noise + parent_contribution).clamp(0.0, 1.0);
-                        if rng.gen::<f64>() < prob {
+                        if rng.random::<f64>() < prob {
                             1.0
                         } else {
                             0.0

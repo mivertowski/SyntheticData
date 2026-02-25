@@ -566,7 +566,7 @@ mod tests {
     fn test_uniform_distribution() {
         // Generate uniform data and test against uniform expectation
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let uniform = Uniform::new(0.0, 100.0);
+        let uniform = Uniform::new(0.0, 100.0).unwrap();
         let values: Vec<f64> = (0..1000).map(|_| uniform.sample(&mut rng)).collect();
 
         let analyzer = ChiSquaredAnalyzer::new()
@@ -629,7 +629,7 @@ mod tests {
     #[test]
     fn test_binning_strategies() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let uniform = Uniform::new(0.0, 100.0);
+        let uniform = Uniform::new(0.0, 100.0).unwrap();
         let values: Vec<f64> = (0..500).map(|_| uniform.sample(&mut rng)).collect();
 
         // Test equal-width

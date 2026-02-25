@@ -119,7 +119,7 @@ impl TemporalAttributeGenerator {
         let (valid_from, valid_to) = self.generate_valid_time();
         let transaction_time = self.generate_transaction_time(valid_from);
 
-        let recorded_by = format!("system_{}", self.rng.gen_range(1..=100));
+        let recorded_by = format!("system_{}", self.rng.random_range(1..=100));
         let mut temporal = BiTemporal::new(entity)
             .with_valid_time(valid_from, valid_to)
             .with_recorded_at(transaction_time)
@@ -127,7 +127,7 @@ impl TemporalAttributeGenerator {
             .with_change_type(TemporalChangeType::Original);
 
         // Optionally add a change reason
-        if self.rng.gen_bool(0.2) {
+        if self.rng.random_bool(0.2) {
             temporal = temporal.with_change_reason("Initial creation");
         }
 
@@ -150,7 +150,7 @@ impl TemporalAttributeGenerator {
             let l = (-lambda).exp();
             loop {
                 count += 1;
-                p *= self.rng.gen::<f64>();
+                p *= self.rng.random::<f64>();
                 if p <= l {
                     break;
                 }
@@ -168,9 +168,9 @@ impl TemporalAttributeGenerator {
         let current_entity = entity;
         for i in 1..num_versions {
             // Each version is a correction or adjustment
-            let change_type = if i == num_versions - 1 && self.rng.gen_bool(0.1) {
+            let change_type = if i == num_versions - 1 && self.rng.random_bool(0.1) {
                 TemporalChangeType::Reversal
-            } else if self.rng.gen_bool(0.3) {
+            } else if self.rng.random_bool(0.3) {
                 TemporalChangeType::Correction
             } else {
                 TemporalChangeType::Adjustment
@@ -199,7 +199,7 @@ impl TemporalAttributeGenerator {
             _ => None,
         };
 
-        let recorded_by = format!("user_{}", self.rng.gen_range(1..=50));
+        let recorded_by = format!("user_{}", self.rng.random_range(1..=50));
         let mut temporal = BiTemporal::new(entity)
             .with_valid_time(valid_from, valid_to)
             .with_recorded_at(transaction_time)
@@ -216,24 +216,28 @@ impl TemporalAttributeGenerator {
     /// Generates valid time (business time) attributes.
     pub fn generate_valid_time(&mut self) -> (NaiveDateTime, Option<NaiveDateTime>) {
         // Generate valid_from within a reasonable range from base_date
-        let days_offset = self.rng.gen_range(-365..=365);
+        let days_offset = self.rng.random_range(-365..=365);
         let valid_from_date = self.base_date + Duration::days(days_offset as i64);
         let valid_from = valid_from_date
             .and_hms_opt(
-                self.rng.gen_range(0..24),
-                self.rng.gen_range(0..60),
-                self.rng.gen_range(0..60),
+                self.rng.random_range(0..24),
+                self.rng.random_range(0..60),
+                self.rng.random_range(0..60),
             )
             .expect("valid h/m/s ranges");
 
         // Determine if validity is closed
-        let valid_to = if self.rng.gen_bool(self.config.valid_time.closed_probability) {
+        let valid_to = if self
+            .rng
+            .random_bool(self.config.valid_time.closed_probability)
+        {
             // Generate validity duration
             let avg_days = self.config.valid_time.avg_validity_days as f64;
             let stddev_days = self.config.valid_time.validity_stddev_days as f64;
 
             // Normal distribution for duration
-            let duration_days = (avg_days + self.rng.gen::<f64>() * stddev_days * 2.0 - stddev_days)
+            let duration_days = (avg_days + self.rng.random::<f64>() * stddev_days * 2.0
+                - stddev_days)
                 .max(1.0) as i64;
 
             Some(valid_from + Duration::days(duration_days))
@@ -252,7 +256,7 @@ impl TemporalAttributeGenerator {
         let delay_secs = if self.config.transaction_time.avg_recording_delay_seconds > 0 {
             let avg = self.config.transaction_time.avg_recording_delay_seconds as f64;
             // Exponential distribution for delay
-            let delay = -avg * self.rng.gen::<f64>().ln();
+            let delay = -avg * self.rng.random::<f64>().ln();
             delay as i64
         } else {
             0
@@ -264,11 +268,11 @@ impl TemporalAttributeGenerator {
         if self.config.transaction_time.allow_backdating
             && self
                 .rng
-                .gen_bool(self.config.transaction_time.backdating_probability)
+                .random_bool(self.config.transaction_time.backdating_probability)
         {
             let backdate_days = self
                 .rng
-                .gen_range(1..=self.config.transaction_time.max_backdate_days)
+                .random_range(1..=self.config.transaction_time.max_backdate_days)
                 as i64;
             recorded_at - Duration::days(backdate_days)
         } else {

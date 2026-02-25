@@ -501,7 +501,7 @@ impl EntityAwareInjector {
     ) -> bool {
         let multiplier = self.get_rate_multiplier(vendor_ctx, employee_ctx, account_ctx);
         let adjusted_rate = (base_rate * multiplier).min(1.0);
-        rng.gen::<f64>() < adjusted_rate
+        rng.random::<f64>() < adjusted_rate
     }
 
     /// Builds a vendor context from entity data.

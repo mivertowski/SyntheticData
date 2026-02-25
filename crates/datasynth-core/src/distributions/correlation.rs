@@ -297,8 +297,8 @@ impl CorrelationEngine {
 
     /// Sample from standard normal using Box-Muller.
     fn sample_standard_normal(&mut self) -> f64 {
-        let u1: f64 = self.rng.gen();
-        let u2: f64 = self.rng.gen();
+        let u1: f64 = self.rng.random();
+        let u2: f64 = self.rng.random();
         (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
     }
 

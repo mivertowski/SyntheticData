@@ -100,7 +100,7 @@ impl EarnedValueGenerator {
 
                 // Earned Value: actual cost adjusted by efficiency factor
                 // Creates realistic SPI/CPI variations
-                let efficiency: f64 = self.rng.gen_range(0.75..1.25);
+                let efficiency: f64 = self.rng.random_range(0.75..1.25);
                 let ev = (ac * Decimal::from_f64_retain(efficiency).unwrap_or(dec!(1)))
                     .min(bac)
                     .round_dp(2);

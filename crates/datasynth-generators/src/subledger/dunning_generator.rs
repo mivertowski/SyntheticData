@@ -160,7 +160,7 @@ impl DunningGenerator {
             }
 
             // Check if blocked from dunning
-            if self.rng.gen::<f64>() < self.config.dunning_block_rate {
+            if self.rng.random::<f64>() < self.config.dunning_block_rate {
                 // Skip this customer - dunning blocked
                 continue;
             }
@@ -278,7 +278,7 @@ impl DunningGenerator {
 
     /// Simulates a payment response based on dunning level and configuration.
     fn simulate_payment_response(&mut self, dunning_level: u8) -> DunningResponseType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         // Calculate cumulative probabilities
         let p1 = self.config.payment_rate_after_level_1;
@@ -344,13 +344,13 @@ impl DunningGenerator {
     ) -> Option<NaiveDate> {
         match response {
             DunningResponseType::Paid => {
-                Some(dunning_date + chrono::Duration::days(self.rng.gen_range(1..14) as i64))
+                Some(dunning_date + chrono::Duration::days(self.rng.random_range(1..14) as i64))
             }
             DunningResponseType::PaymentPromise => {
-                Some(dunning_date + chrono::Duration::days(self.rng.gen_range(7..21) as i64))
+                Some(dunning_date + chrono::Duration::days(self.rng.random_range(7..21) as i64))
             }
             DunningResponseType::PaymentPlan => {
-                Some(dunning_date + chrono::Duration::days(self.rng.gen_range(30..90) as i64))
+                Some(dunning_date + chrono::Duration::days(self.rng.random_range(30..90) as i64))
             }
             _ => None,
         }

@@ -4,7 +4,7 @@
 //! for populating header_text and line_text fields.
 
 use crate::models::BusinessProcess;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -761,14 +761,17 @@ impl DescriptionGenerator {
         } else {
             result = result.replace(
                 "{InvoiceNumber}",
-                &format!("INV-{:06}", rng.gen_range(1..999999)),
+                &format!("INV-{:06}", rng.random_range(1..999999)),
             );
         }
 
         if let Some(ref val) = context.po_number {
             result = result.replace("{PONumber}", val);
         } else {
-            result = result.replace("{PONumber}", &format!("PO-{:06}", rng.gen_range(1..999999)));
+            result = result.replace(
+                "{PONumber}",
+                &format!("PO-{:06}", rng.random_range(1..999999)),
+            );
         }
 
         if let Some(ref val) = context.month_name {

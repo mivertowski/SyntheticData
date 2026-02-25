@@ -159,7 +159,7 @@ impl ICGenerator {
         let rel = relationships.choose(&mut self.rng)?;
 
         // Randomly decide direction (parent sells to sub, or sub sells to parent)
-        if self.rng.gen_bool(0.5) {
+        if self.rng.random_bool(0.5) {
             Some((rel.parent_company.clone(), rel.subsidiary_company.clone()))
         } else {
             Some((rel.subsidiary_company.clone(), rel.parent_company.clone()))
@@ -181,7 +181,7 @@ impl ICGenerator {
         };
 
         let range = max - min;
-        let random_factor = Decimal::from_f64_retain(self.rng.gen::<f64>()).unwrap_or(dec!(0.5));
+        let random_factor = Decimal::from_f64_retain(self.rng.random::<f64>()).unwrap_or(dec!(0.5));
         (min + range * random_factor).round_dp(2)
     }
 
@@ -202,7 +202,7 @@ impl ICGenerator {
         _fiscal_period: &str,
     ) -> Option<ICMatchedPair> {
         // Check if we should generate an IC transaction
-        if !self.rng.gen_bool(self.config.ic_transaction_rate) {
+        if !self.rng.random_bool(self.config.ic_transaction_rate) {
             return None;
         }
 
@@ -438,12 +438,12 @@ impl ICGenerator {
     ) -> ICLoan {
         let (min_amount, max_amount) = self.config.loan_amount_range;
         let range = max_amount - min_amount;
-        let random_factor = Decimal::from_f64_retain(self.rng.gen::<f64>()).unwrap_or(dec!(0.5));
+        let random_factor = Decimal::from_f64_retain(self.rng.random::<f64>()).unwrap_or(dec!(0.5));
         let principal = (min_amount + range * random_factor).round_dp(0);
 
         let (min_rate, max_rate) = self.config.loan_interest_rate_range;
         let rate_range = max_rate - min_rate;
-        let rate_factor = Decimal::from_f64_retain(self.rng.gen::<f64>()).unwrap_or(dec!(0.5));
+        let rate_factor = Decimal::from_f64_retain(self.rng.random::<f64>()).unwrap_or(dec!(0.5));
         let interest_rate = (min_rate + rate_range * rate_factor).round_dp(2);
 
         let maturity_date = start_date

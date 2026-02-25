@@ -511,10 +511,10 @@ impl FormatVariationInjector {
     pub fn vary_date<R: Rng>(&mut self, date: NaiveDate, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
-        if rng.gen::<f64>() < self.config.date_variation_rate {
+        if rng.random::<f64>() < self.config.date_variation_rate {
             self.stats.date_variations += 1;
             let format = &self.config.allowed_date_formats
-                [rng.gen_range(0..self.config.allowed_date_formats.len())];
+                [rng.random_range(0..self.config.allowed_date_formats.len())];
             format.format(date)
         } else {
             self.baseline_date_format().format(date)
@@ -529,10 +529,10 @@ impl FormatVariationInjector {
     pub fn vary_amount<R: Rng>(&mut self, amount: Decimal, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
-        if rng.gen::<f64>() < self.config.amount_variation_rate {
+        if rng.random::<f64>() < self.config.amount_variation_rate {
             self.stats.amount_variations += 1;
             let format = &self.config.allowed_amount_formats
-                [rng.gen_range(0..self.config.allowed_amount_formats.len())];
+                [rng.random_range(0..self.config.allowed_amount_formats.len())];
             format.format(amount)
         } else {
             self.baseline_amount_format().format(amount)
@@ -543,7 +543,7 @@ impl FormatVariationInjector {
     pub fn vary_identifier<R: Rng>(&mut self, id: &str, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
-        if rng.gen::<f64>() < self.config.identifier_variation_rate {
+        if rng.random::<f64>() < self.config.identifier_variation_rate {
             self.stats.identifier_variations += 1;
 
             let variations = [
@@ -554,7 +554,7 @@ impl FormatVariationInjector {
                 IdentifierFormat::WithSuffix(" ".to_string()),
             ];
 
-            let format = &variations[rng.gen_range(0..variations.len())];
+            let format = &variations[rng.random_range(0..variations.len())];
             format.format(id)
         } else {
             id.to_string()
@@ -565,7 +565,7 @@ impl FormatVariationInjector {
     pub fn vary_text<R: Rng>(&mut self, text: &str, rng: &mut R) -> String {
         self.stats.total_processed += 1;
 
-        if rng.gen::<f64>() < self.config.text_variation_rate {
+        if rng.random::<f64>() < self.config.text_variation_rate {
             self.stats.text_variations += 1;
 
             let variations = [
@@ -577,7 +577,7 @@ impl FormatVariationInjector {
                 TextFormat::ExtraSpaces,
             ];
 
-            let format = &variations[rng.gen_range(0..variations.len())];
+            let format = &variations[rng.random_range(0..variations.len())];
             format.format(text)
         } else {
             text.to_string()

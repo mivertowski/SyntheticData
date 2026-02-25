@@ -59,29 +59,29 @@ impl FraudInjector {
             Sophistication::StateLevel => (5..10, 250_000.0, 8..48),
         };
 
-        let extractions = self.rng.gen_range(num_extractions);
-        let scenario_id = format!("ATO-{:06}", self.rng.gen::<u32>());
+        let extractions = self.rng.random_range(num_extractions);
+        let scenario_id = format!("ATO-{:06}", self.rng.random::<u32>());
 
         // Account takeover typically happens in a short window
         let takeover_date = start_date;
-        let mut current_hour = self.rng.gen_range(0..12);
+        let mut current_hour = self.rng.random_range(0..12);
 
         for i in 0..extractions {
             // Time progresses within the window
-            let hour_offset = self.rng.gen_range(time_window_hours.clone());
+            let hour_offset = self.rng.random_range(time_window_hours.clone());
             current_hour = (current_hour + hour_offset) % 24;
 
             let timestamp = takeover_date
                 .and_hms_opt(
                     current_hour as u32,
-                    self.rng.gen_range(0..60),
-                    self.rng.gen_range(0..60),
+                    self.rng.random_range(0..60),
+                    self.rng.random_range(0..60),
                 )
                 .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
                 .unwrap_or_else(Utc::now);
 
             // Each extraction varies in amount
-            let amount = self.rng.gen_range(500.0..max_amount);
+            let amount = self.rng.random_range(500.0..max_amount);
 
             // Varying channels for extraction
             let (channel, category, counterparty, reference) = self.random_ato_extraction(i);
@@ -112,14 +112,18 @@ impl FraudInjector {
         ) {
             // Small test transactions before main extraction
             let test_timestamp = takeover_date
-                .and_hms_opt(self.rng.gen_range(6..12), self.rng.gen_range(0..60), 0)
+                .and_hms_opt(
+                    self.rng.random_range(6..12),
+                    self.rng.random_range(0..60),
+                    0,
+                )
                 .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
                 .unwrap_or_else(Utc::now);
 
             let test_txn = BankTransaction::new(
                 self.uuid_factory.next(),
                 account.account_id,
-                Decimal::from_f64_retain(self.rng.gen_range(1.0..10.0)).unwrap_or(Decimal::ONE),
+                Decimal::from_f64_retain(self.rng.random_range(1.0..10.0)).unwrap_or(Decimal::ONE),
                 &account.currency,
                 Direction::Outbound,
                 TransactionChannel::CardNotPresent,
@@ -160,8 +164,8 @@ impl FraudInjector {
             Sophistication::StateLevel => (8..20, 50_000.0..500_000.0, 45..90),
         };
 
-        let payments = self.rng.gen_range(num_payments);
-        let scenario_id = format!("FKV-{:06}", self.rng.gen::<u32>());
+        let payments = self.rng.random_range(num_payments);
+        let scenario_id = format!("FKV-{:06}", self.rng.random::<u32>());
 
         // Create the fake vendor
         let fake_vendor = self.random_fake_vendor();
@@ -170,13 +174,13 @@ impl FraudInjector {
 
         for i in 0..payments {
             let timestamp = self.random_timestamp(current_date);
-            let amount = self.rng.gen_range(payment_range.clone());
+            let amount = self.rng.random_range(payment_range.clone());
 
             // Create invoice-like reference
             let invoice_ref = format!(
                 "INV-{:04}-{:06}",
                 current_date.year() % 100,
-                self.rng.gen::<u32>() % 1_000_000
+                self.rng.random::<u32>() % 1_000_000
             );
 
             let txn = BankTransaction::new(
@@ -198,7 +202,7 @@ impl FraudInjector {
             transactions.push(txn);
 
             // Move to next payment date
-            let interval = self.rng.gen_range(interval_days.clone()) as i64;
+            let interval = self.rng.random_range(interval_days.clone()) as i64;
             current_date += chrono::Duration::days(interval);
 
             if current_date > end_date || (current_date - start_date).num_days() > available_days {
@@ -242,15 +246,15 @@ impl FraudInjector {
             Sophistication::StateLevel => (2..4, 500_000.0..5_000_000.0),
         };
 
-        let payments = self.rng.gen_range(num_payments);
-        let scenario_id = format!("BEC-{:06}", self.rng.gen::<u32>());
+        let payments = self.rng.random_range(num_payments);
+        let scenario_id = format!("BEC-{:06}", self.rng.random::<u32>());
 
         // BEC typically happens quickly after the initial compromise
         let mut current_date = start_date;
 
         for i in 0..payments {
             let timestamp = self.random_timestamp(current_date);
-            let amount = self.rng.gen_range(amount_range.clone());
+            let amount = self.rng.random_range(amount_range.clone());
 
             let (recipient, reference) = self.random_bec_recipient();
 
@@ -273,7 +277,7 @@ impl FraudInjector {
             transactions.push(txn);
 
             // Short interval between BEC payments
-            current_date += chrono::Duration::days(self.rng.gen_range(1..3));
+            current_date += chrono::Duration::days(self.rng.random_range(1..3));
         }
 
         transactions
@@ -301,8 +305,8 @@ impl FraudInjector {
             Sophistication::StateLevel => (5..10, 25_000.0..250_000.0, 0.4),
         };
 
-        let payments = self.rng.gen_range(num_payments);
-        let scenario_id = format!("APP-{:06}", self.rng.gen::<u32>());
+        let payments = self.rng.random_range(num_payments);
+        let scenario_id = format!("APP-{:06}", self.rng.random::<u32>());
 
         let scam_type = self.random_app_scam_type();
         let available_days = (end_date - start_date).num_days().max(1);
@@ -310,7 +314,7 @@ impl FraudInjector {
 
         for i in 0..payments {
             let timestamp = self.random_timestamp(current_date);
-            let amount = self.rng.gen_range(amount_range.clone());
+            let amount = self.rng.random_range(amount_range.clone());
 
             let txn = BankTransaction::new(
                 self.uuid_factory.next(),
@@ -331,7 +335,7 @@ impl FraudInjector {
             transactions.push(txn);
 
             // Interval between payments (urgency = shorter intervals)
-            let base_interval = self.rng.gen_range(1..7) as f64;
+            let base_interval = self.rng.random_range(1..7) as f64;
             let interval = (base_interval * urgency_factor).max(1.0) as i64;
             current_date += chrono::Duration::days(interval);
 
@@ -386,7 +390,7 @@ impl FraudInjector {
             ),
         ];
 
-        let idx = (index + self.rng.gen_range(0..extractions.len())) % extractions.len();
+        let idx = (index + self.rng.random_range(0..extractions.len())) % extractions.len();
         extractions[idx].clone()
     }
 
@@ -405,7 +409,7 @@ impl FraudInjector {
             ("Operational Excellence LLC", "Operations consulting"),
         ];
 
-        let idx = self.rng.gen_range(0..vendors.len());
+        let idx = self.rng.random_range(0..vendors.len());
         (vendors[idx].0.to_string(), vendors[idx].1.to_string())
     }
 
@@ -434,7 +438,7 @@ impl FraudInjector {
             ),
         ];
 
-        let idx = self.rng.gen_range(0..recipients.len());
+        let idx = self.rng.random_range(0..recipients.len());
         (recipients[idx].0.to_string(), recipients[idx].1.to_string())
     }
 
@@ -451,15 +455,15 @@ impl FraudInjector {
             ("Crypto Investment", "Cryptocurrency investment"),
         ];
 
-        let idx = self.rng.gen_range(0..scam_types.len());
+        let idx = self.rng.random_range(0..scam_types.len());
         (scam_types[idx].0.to_string(), scam_types[idx].1.to_string())
     }
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(6..23);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(6..23);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

@@ -315,7 +315,7 @@ impl EmissionGenerator {
 
     /// Small random variance ±5% for measurement uncertainty.
     fn random_variance(&mut self) -> Decimal {
-        let v: f64 = self.rng.gen_range(-0.05..0.05);
+        let v: f64 = self.rng.random_range(-0.05..0.05);
         Decimal::from_f64_retain(v).unwrap_or(Decimal::ZERO)
     }
 }

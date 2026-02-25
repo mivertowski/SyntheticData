@@ -57,12 +57,12 @@ impl FunnelInjector {
             Sophistication::StateLevel => (30..60, 500_000.0..5_000_000.0, 7..30),
         };
 
-        let num_inbound = self.rng.gen_range(num_sources);
-        let total: f64 = self.rng.gen_range(total_amount);
-        let hold_period = self.rng.gen_range(holding_days) as i64;
+        let num_inbound = self.rng.random_range(num_sources);
+        let total: f64 = self.rng.random_range(total_amount);
+        let hold_period = self.rng.random_range(holding_days) as i64;
 
         let available_days = (end_date - start_date).num_days().max(1) as u32;
-        let scenario_id = format!("FUN-{:06}", self.rng.gen::<u32>());
+        let scenario_id = format!("FUN-{:06}", self.rng.random::<u32>());
 
         // Phase 1: Inbound transfers from multiple sources
         let mut accumulated = 0.0;
@@ -74,11 +74,11 @@ impl FunnelInjector {
             } else {
                 let min_portion = total / (num_inbound as f64 * 2.0);
                 let max_portion = total / (num_inbound as f64) * 1.5;
-                self.rng.gen_range(min_portion..max_portion)
+                self.rng.random_range(min_portion..max_portion)
             };
             accumulated += portion;
 
-            let day_offset = self.rng.gen_range(0..inbound_window);
+            let day_offset = self.rng.random_range(0..inbound_window);
             let date = start_date + chrono::Duration::days(day_offset);
             let timestamp = self.random_timestamp(date);
 
@@ -114,7 +114,7 @@ impl FunnelInjector {
             Sophistication::StateLevel => 4..8,
         };
 
-        let num_out = self.rng.gen_range(num_outbound);
+        let num_out = self.rng.random_range(num_outbound);
         let mut remaining = total * 0.97; // Account for fees
 
         for i in 0..num_out {
@@ -124,11 +124,11 @@ impl FunnelInjector {
                 let portion = remaining / ((num_out - i) as f64);
                 let variance = portion * 0.3;
                 self.rng
-                    .gen_range((portion - variance)..(portion + variance))
+                    .random_range((portion - variance)..(portion + variance))
             };
             remaining -= amount;
 
-            let day_offset = self.rng.gen_range(0..3) as i64;
+            let day_offset = self.rng.random_range(0..3) as i64;
             let date = outflow_start + chrono::Duration::days(day_offset);
             let timestamp = self.random_timestamp(date);
 
@@ -172,30 +172,30 @@ impl FunnelInjector {
         &mut self,
         _index: usize,
     ) -> (TransactionChannel, TransactionCategory, CounterpartyRef) {
-        let source_type = self.rng.gen_range(0..4);
+        let source_type = self.rng.random_range(0..4);
         match source_type {
             0 => (
                 TransactionChannel::Ach,
                 TransactionCategory::TransferIn,
-                CounterpartyRef::person(&format!("Individual {}", self.rng.gen::<u16>())),
+                CounterpartyRef::person(&format!("Individual {}", self.rng.random::<u16>())),
             ),
             1 => (
                 TransactionChannel::Wire,
                 TransactionCategory::TransferIn,
-                CounterpartyRef::business(&format!("Company {}", self.rng.gen::<u16>())),
+                CounterpartyRef::business(&format!("Company {}", self.rng.random::<u16>())),
             ),
             2 => (
                 TransactionChannel::Swift,
                 TransactionCategory::InternationalTransfer,
                 CounterpartyRef::international(&format!(
                     "Foreign Entity {}",
-                    self.rng.gen::<u16>()
+                    self.rng.random::<u16>()
                 )),
             ),
             _ => (
                 TransactionChannel::Ach,
                 TransactionCategory::TransferIn,
-                CounterpartyRef::person(&format!("Sender {}", self.rng.gen::<u16>())),
+                CounterpartyRef::person(&format!("Sender {}", self.rng.random::<u16>())),
             ),
         }
     }
@@ -205,20 +205,20 @@ impl FunnelInjector {
         &mut self,
         _index: usize,
     ) -> (TransactionChannel, TransactionCategory, CounterpartyRef) {
-        let dest_type = self.rng.gen_range(0..3);
+        let dest_type = self.rng.random_range(0..3);
         match dest_type {
             0 => (
                 TransactionChannel::Swift,
                 TransactionCategory::InternationalTransfer,
                 CounterpartyRef::international(&format!(
                     "Offshore Account {}",
-                    self.rng.gen::<u16>()
+                    self.rng.random::<u16>()
                 )),
             ),
             1 => (
                 TransactionChannel::Wire,
                 TransactionCategory::TransferOut,
-                CounterpartyRef::business(&format!("Shell Corp {}", self.rng.gen::<u16>())),
+                CounterpartyRef::business(&format!("Shell Corp {}", self.rng.random::<u16>())),
             ),
             _ => (
                 TransactionChannel::Atm,
@@ -230,9 +230,9 @@ impl FunnelInjector {
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(8..20);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(8..20);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

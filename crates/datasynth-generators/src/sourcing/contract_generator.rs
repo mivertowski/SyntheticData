@@ -49,27 +49,27 @@ impl ContractGenerator {
     ) -> ProcurementContract {
         let duration_months = self
             .rng
-            .gen_range(self.config.min_duration_months..=self.config.max_duration_months);
+            .random_range(self.config.min_duration_months..=self.config.max_duration_months);
         let end_date = start_date + chrono::Duration::days((duration_months * 30) as i64);
 
         let contract_type = self.select_contract_type();
 
-        let auto_renewal = self.rng.gen_bool(self.config.auto_renewal_rate);
+        let auto_renewal = self.rng.random_bool(self.config.auto_renewal_rate);
 
         let terms = ContractTerms {
             payment_terms: winning_bid.payment_terms.clone(),
             delivery_terms: winning_bid.delivery_terms.clone(),
-            warranty_months: if self.rng.gen_bool(0.5) {
-                Some(self.rng.gen_range(6..=24))
+            warranty_months: if self.rng.random_bool(0.5) {
+                Some(self.rng.random_range(6..=24))
             } else {
                 None
             },
-            early_termination_penalty_pct: Some(self.rng.gen_range(0.02..=0.10)),
+            early_termination_penalty_pct: Some(self.rng.random_range(0.02..=0.10)),
             auto_renewal,
-            termination_notice_days: self.rng.gen_range(30..=120),
-            price_adjustment_clause: self.rng.gen_bool(0.3),
-            max_annual_price_increase_pct: if self.rng.gen_bool(0.4) {
-                Some(self.rng.gen_range(0.02..=0.05))
+            termination_notice_days: self.rng.random_range(30..=120),
+            price_adjustment_clause: self.rng.random_bool(0.3),
+            max_annual_price_increase_pct: if self.rng.random_bool(0.4) {
+                Some(self.rng.random_range(0.02..=0.05))
             } else {
                 None
             },
@@ -138,8 +138,8 @@ impl ContractGenerator {
             line_items,
             category_id: category_id.to_string(),
             owner_id: owner_id.to_string(),
-            amendment_count: if self.rng.gen_bool(self.config.amendment_rate) {
-                self.rng.gen_range(1..=3)
+            amendment_count: if self.rng.random_bool(self.config.amendment_rate) {
+                self.rng.random_range(1..=3)
             } else {
                 0
             },
@@ -149,7 +149,7 @@ impl ContractGenerator {
 
     fn select_contract_type(&mut self) -> ContractType {
         let dist = &self.config.type_distribution;
-        let r: f64 = self.rng.gen();
+        let r: f64 = self.rng.random();
         if r < dist.fixed_price {
             ContractType::FixedPrice
         } else if r < dist.fixed_price + dist.blanket {

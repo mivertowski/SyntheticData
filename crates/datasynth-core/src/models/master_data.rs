@@ -4,7 +4,7 @@
 //! attribution and header/line text generation. Includes payment terms,
 //! behavioral patterns, and intercompany support for enterprise simulation.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -513,7 +513,8 @@ impl Vendor {
     pub fn generate_amount(&self, rng: &mut impl Rng) -> Decimal {
         let (min, max) = self.typical_amount_range;
         let range = max - min;
-        let random_fraction = Decimal::from_f64_retain(rng.gen::<f64>()).unwrap_or(Decimal::ZERO);
+        let random_fraction =
+            Decimal::from_f64_retain(rng.random::<f64>()).unwrap_or(Decimal::ZERO);
         min + range * random_fraction
     }
 
@@ -784,7 +785,8 @@ impl Customer {
     pub fn generate_order_amount(&self, rng: &mut impl Rng) -> Decimal {
         let (min, max) = self.typical_order_range;
         let range = max - min;
-        let random_fraction = Decimal::from_f64_retain(rng.gen::<f64>()).unwrap_or(Decimal::ZERO);
+        let random_fraction =
+            Decimal::from_f64_retain(rng.random::<f64>()).unwrap_or(Decimal::ZERO);
         min + range * random_fraction
     }
 
@@ -801,7 +803,7 @@ impl Customer {
     ) -> chrono::NaiveDate {
         let days_offset = self.payment_behavior.average_days_past_due();
         // Add some random variation
-        let variation: i16 = rng.gen_range(-5..=10);
+        let variation: i16 = rng.random_range(-5..=10);
         let total_offset = days_offset + variation;
         due_date + chrono::Duration::days(total_offset as i64)
     }

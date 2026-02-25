@@ -46,36 +46,36 @@ impl ChangeOrderGenerator {
             }
 
             // Check if this project gets change orders
-            if self.rng.gen::<f64>() >= self.config.probability {
+            if self.rng.random::<f64>() >= self.config.probability {
                 continue;
             }
 
-            let co_count = self.rng.gen_range(1..=self.config.max_per_project);
+            let co_count = self.rng.random_range(1..=self.config.max_per_project);
 
             for number in 1..=co_count {
                 self.counter += 1;
 
                 // Submit at a random point during the project
-                let day_offset = self.rng.gen_range(1..period_days);
+                let day_offset = self.rng.random_range(1..period_days);
                 let submitted_date = start_date + chrono::Duration::days(day_offset);
 
                 let reason = self.pick_reason();
                 let description = self.description_for(reason);
 
                 // Cost impact: 2-15% of project budget
-                let impact_pct: f64 = self.rng.gen_range(0.02..0.15);
+                let impact_pct: f64 = self.rng.random_range(0.02..0.15);
                 let cost_impact = (project.budget
                     * Decimal::from_f64_retain(impact_pct).unwrap_or(dec!(0.05)))
                 .round_dp(2);
 
                 // Estimated cost impact is usually close to contract impact
-                let est_factor: f64 = self.rng.gen_range(0.80..1.20);
+                let est_factor: f64 = self.rng.random_range(0.80..1.20);
                 let estimated_cost_impact = (cost_impact
                     * Decimal::from_f64_retain(est_factor).unwrap_or(dec!(1)))
                 .round_dp(2);
 
                 // Schedule impact: 0-60 days
-                let schedule_days = self.rng.gen_range(0..60i32);
+                let schedule_days = self.rng.random_range(0..60i32);
 
                 let mut co = ChangeOrder::new(
                     format!("CO-{:06}", self.counter),
@@ -89,13 +89,13 @@ impl ChangeOrderGenerator {
                 .with_schedule_impact(schedule_days);
 
                 // Approve based on config rate
-                if self.rng.gen::<f64>() < self.config.approval_rate {
-                    let approval_delay = self.rng.gen_range(3..30);
+                if self.rng.random::<f64>() < self.config.approval_rate {
+                    let approval_delay = self.rng.random_range(3..30);
                     let approved_date = submitted_date + chrono::Duration::days(approval_delay);
                     if approved_date <= end_date {
                         co = co.approve(approved_date);
                     }
-                } else if self.rng.gen::<f64>() < 0.7 {
+                } else if self.rng.random::<f64>() < 0.7 {
                     co.status = ChangeOrderStatus::Rejected;
                 } else {
                     co.status = ChangeOrderStatus::UnderReview;
@@ -109,7 +109,7 @@ impl ChangeOrderGenerator {
     }
 
     fn pick_reason(&mut self) -> ChangeReason {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.30 {
             ChangeReason::ScopeChange
         } else if roll < 0.50 {
@@ -217,7 +217,7 @@ impl MilestoneGenerator {
                 }
 
                 // Payment milestone?
-                if self.rng.gen::<f64>() < self.config.payment_milestone_rate {
+                if self.rng.random::<f64>() < self.config.payment_milestone_rate {
                     let payment_share = dec!(1) / Decimal::from(ms_count.max(1));
                     let payment = (project.budget * payment_share).round_dp(2);
                     ms = ms.with_payment(payment);
@@ -229,10 +229,10 @@ impl MilestoneGenerator {
 
                 // Determine status based on reference date
                 if planned_date <= reference_date {
-                    if self.rng.gen::<f64>() < 0.85 {
+                    if self.rng.random::<f64>() < 0.85 {
                         // Completed (possibly late)
                         ms.status = MilestoneStatus::Completed;
-                        let variance_days: i64 = self.rng.gen_range(-5..15);
+                        let variance_days: i64 = self.rng.random_range(-5..15);
                         ms.actual_date = Some(planned_date + chrono::Duration::days(variance_days));
                     } else {
                         ms.status = MilestoneStatus::Overdue;

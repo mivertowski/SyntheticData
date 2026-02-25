@@ -56,12 +56,12 @@ impl CorrelatedAnomaly {
         if self.lag_days_min == self.lag_days_max {
             return self.lag_days_min;
         }
-        rng.gen_range(self.lag_days_min..=self.lag_days_max)
+        rng.random_range(self.lag_days_min..=self.lag_days_max)
     }
 
     /// Returns whether this anomaly should be triggered.
     pub fn should_trigger<R: Rng>(&self, rng: &mut R) -> bool {
-        rng.gen::<f64>() < self.probability
+        rng.random::<f64>() < self.probability
     }
 }
 

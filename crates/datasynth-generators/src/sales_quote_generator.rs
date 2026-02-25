@@ -153,7 +153,7 @@ impl SalesQuoteGenerator {
 
         // Random customer — prefer pool when available
         let (customer_id, customer_name) = if !self.customer_ids_pool.is_empty() {
-            let pool_idx = self.rng.gen_range(0..self.customer_ids_pool.len());
+            let pool_idx = self.rng.random_range(0..self.customer_ids_pool.len());
             let pool_id = &self.customer_ids_pool[pool_idx];
             // Try to find matching name from customer_ids tuples
             customer_ids
@@ -162,14 +162,14 @@ impl SalesQuoteGenerator {
                 .map(|(id, name)| (id.clone(), name.clone()))
                 .unwrap_or_else(|| (pool_id.clone(), pool_id.clone()))
         } else {
-            let customer_idx = self.rng.gen_range(0..customer_ids.len());
+            let customer_idx = self.rng.random_range(0..customer_ids.len());
             let (id, name) = &customer_ids[customer_idx];
             (id.clone(), name.clone())
         };
 
         // Random quote date within the month
         let last_day = last_day_of_month(year, month);
-        let day = self.rng.gen_range(1..=last_day);
+        let day = self.rng.random_range(1..=last_day);
         let quote_date = NaiveDate::from_ymd_opt(year, month, day).unwrap_or_else(|| {
             NaiveDate::from_ymd_opt(year, month, 1)
                 .unwrap_or(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap_or_default())
@@ -177,12 +177,12 @@ impl SalesQuoteGenerator {
         let valid_until = quote_date + chrono::Duration::days(config.validity_days as i64);
 
         // Generate 1-5 line items
-        let item_count = self.rng.gen_range(1..=5usize);
+        let item_count = self.rng.random_range(1..=5usize);
         let mut line_items = Vec::with_capacity(item_count);
         let mut total_amount = Decimal::ZERO;
 
         for item_num in 1..=item_count {
-            let mat_idx = self.rng.gen_range(0..material_ids.len());
+            let mat_idx = self.rng.random_range(0..material_ids.len());
             let (material_id, description) = &material_ids[mat_idx];
 
             let unit_price =
@@ -204,8 +204,8 @@ impl SalesQuoteGenerator {
         }
 
         // Discount: 20% of quotes get 5-20% discount
-        let (discount_percent, discount_amount) = if self.rng.gen::<f64>() < 0.20 {
-            let pct = self.rng.gen_range(0.05..0.20);
+        let (discount_percent, discount_amount) = if self.rng.random::<f64>() < 0.20 {
+            let pct = self.rng.random_range(0.05..0.20);
             let disc_amount =
                 (Decimal::from_f64_retain(pct).unwrap_or(Decimal::ZERO) * total_amount).round_dp(2);
             (pct, disc_amount)
@@ -215,7 +215,7 @@ impl SalesQuoteGenerator {
 
         // Status distribution:
         // win_rate fraction Won, 25% Lost, 15% Expired, 10% Sent, 5% Draft, rest Negotiating
-        let status_roll: f64 = self.rng.gen();
+        let status_roll: f64 = self.rng.random();
         let won_threshold = config.win_rate;
         let lost_threshold = won_threshold + 0.25;
         let expired_threshold = lost_threshold + 0.15;
@@ -238,7 +238,7 @@ impl SalesQuoteGenerator {
 
         // Won quotes get a linked sales order ID
         let sales_order_id = if status == QuoteStatus::Won {
-            let so_num = self.rng.gen_range(1..=999999u32);
+            let so_num = self.rng.random_range(1..=999999u32);
             Some(format!("SO-{:06}", so_num))
         } else {
             None
@@ -253,7 +253,7 @@ impl SalesQuoteGenerator {
             "Timing not right",
         ];
         let lost_reason = if status == QuoteStatus::Lost {
-            let idx = self.rng.gen_range(0..lost_reasons.len());
+            let idx = self.rng.random_range(0..lost_reasons.len());
             Some(lost_reasons[idx].to_string())
         } else {
             None
@@ -261,10 +261,10 @@ impl SalesQuoteGenerator {
 
         // Sales rep — prefer employee pool when available
         let sales_rep_id = if !self.employee_ids_pool.is_empty() {
-            let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+            let idx = self.rng.random_range(0..self.employee_ids_pool.len());
             Some(self.employee_ids_pool[idx].clone())
         } else {
-            let rep_num = self.rng.gen_range(1..=20u32);
+            let rep_num = self.rng.random_range(1..=20u32);
             Some(format!("SR-{:02}", rep_num))
         };
 

@@ -236,7 +236,7 @@ impl P2PGenerator {
                 _ => return default.to_string(),
             };
             if !descriptions.is_empty() {
-                let idx = self.rng.gen_range(0..descriptions.len());
+                let idx = self.rng.random_range(0..descriptions.len());
                 return descriptions[idx].clone();
             }
         }
@@ -285,7 +285,7 @@ impl P2PGenerator {
 
         // Determine if we should introduce variances based on configuration
         // This simulates real-world scenarios where not all invoices match perfectly
-        let should_have_variance = self.rng.gen::<f64>() >= self.config.three_way_match_rate;
+        let should_have_variance = self.rng.random::<f64>() >= self.config.three_way_match_rate;
 
         // Generate invoice (may introduce variances based on config)
         let vendor_invoice = self.generate_vendor_invoice(
@@ -394,7 +394,7 @@ impl P2PGenerator {
 
         // Add line items
         for (idx, material) in materials.iter().enumerate() {
-            let quantity = Decimal::from(self.rng.gen_range(1..100));
+            let quantity = Decimal::from(self.rng.random_range(1..100));
             let unit_price = material.standard_cost;
 
             let description = self.pick_line_description("purchase_order", &material.description);
@@ -424,11 +424,11 @@ impl P2PGenerator {
         let mut receipts = Vec::new();
 
         // Determine if partial delivery
-        let is_partial = self.rng.gen::<f64>() < self.config.partial_delivery_rate;
+        let is_partial = self.rng.random::<f64>() < self.config.partial_delivery_rate;
 
         if is_partial {
             // First partial delivery (60-80% of quantity)
-            let first_pct = 0.6 + self.rng.gen::<f64>() * 0.2;
+            let first_pct = 0.6 + self.rng.random::<f64>() * 0.2;
             let gr1 = self.create_goods_receipt(
                 po,
                 company_code,
@@ -441,7 +441,7 @@ impl P2PGenerator {
             receipts.push(gr1);
 
             // Second delivery (remaining quantity)
-            let second_date = gr_date + chrono::Duration::days(self.rng.gen_range(3..10) as i64);
+            let second_date = gr_date + chrono::Duration::days(self.rng.random_range(3..10) as i64);
             let second_period = self.get_fiscal_period(second_date);
             let gr2 = self.create_goods_receipt(
                 po,
@@ -455,8 +455,8 @@ impl P2PGenerator {
             receipts.push(gr2);
         } else {
             // Full delivery
-            let delivery_pct = if self.rng.gen::<f64>() < self.config.over_delivery_rate {
-                1.0 + self.rng.gen::<f64>() * 0.1 // Up to 10% over
+            let delivery_pct = if self.rng.random::<f64>() < self.config.over_delivery_rate {
+                1.0 + self.rng.random::<f64>() * 0.1 // Up to 10% over
             } else {
                 1.0
             };
@@ -553,7 +553,7 @@ impl P2PGenerator {
         self.vi_counter += 1;
 
         let invoice_id = self.make_doc_id("VI", "vendor_invoice", company_code, self.vi_counter);
-        let vendor_invoice_number = format!("INV-{:08}", self.rng.gen_range(10000000..99999999));
+        let vendor_invoice_number = format!("INV-{:08}", self.rng.random_range(10000000..99999999));
 
         // Calculate due date based on payment terms
         let _due_date = self.calculate_due_date(invoice_date, &vendor.payment_terms);
@@ -597,10 +597,10 @@ impl P2PGenerator {
             if let Some(&qty) = received_quantities.get(&po_item.base.line_number) {
                 // Apply price variance if configured
                 let unit_price = if !three_way_match_passed
-                    && self.rng.gen::<f64>() < self.config.price_variance_rate
+                    && self.rng.random::<f64>() < self.config.price_variance_rate
                 {
                     let variance = Decimal::from_f64_retain(
-                        1.0 + (self.rng.gen::<f64>() - 0.5)
+                        1.0 + (self.rng.random::<f64>() - 0.5)
                             * 2.0
                             * self.config.max_price_variance_percent,
                     )
@@ -682,7 +682,7 @@ impl P2PGenerator {
         // Determine if early payment discount applies
         let take_discount = invoice.discount_due_date.is_some_and(|disc_date| {
             payment_date <= disc_date
-                && self.rng.gen::<f64>() < self.config.early_payment_discount_rate
+                && self.rng.random::<f64>() < self.config.early_payment_discount_rate
         });
 
         let discount_amount = if take_discount {
@@ -754,11 +754,11 @@ impl P2PGenerator {
 
         for _ in 0..count {
             // Select random vendor
-            let vendor_idx = self.rng.gen_range(0..vendors.vendors.len());
+            let vendor_idx = self.rng.random_range(0..vendors.vendors.len());
             let vendor = &vendors.vendors[vendor_idx];
 
             // Select random materials (1-5 items per PO)
-            let num_items = self.rng.gen_range(1..=5).min(materials.materials.len());
+            let num_items = self.rng.random_range(1..=5).min(materials.materials.len());
             let selected_materials: Vec<&Material> = materials
                 .materials
                 .iter()
@@ -768,7 +768,7 @@ impl P2PGenerator {
 
             // Select random PO date
             let po_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let fiscal_period = self.get_fiscal_period(po_date);
 
             let chain = self.generate_chain(
@@ -789,13 +789,13 @@ impl P2PGenerator {
 
     /// Calculate GR date based on PO date.
     fn calculate_gr_date(&mut self, po_date: NaiveDate) -> NaiveDate {
-        let variance = self.rng.gen_range(0..5) as i64;
+        let variance = self.rng.random_range(0..5) as i64;
         po_date + chrono::Duration::days(self.config.avg_days_po_to_gr as i64 + variance)
     }
 
     /// Calculate invoice date based on GR date.
     fn calculate_invoice_date(&mut self, gr_date: NaiveDate) -> NaiveDate {
-        let variance = self.rng.gen_range(0..3) as i64;
+        let variance = self.rng.random_range(0..3) as i64;
         gr_date + chrono::Duration::days(self.config.avg_days_gr_to_invoice as i64 + variance)
     }
 
@@ -809,46 +809,46 @@ impl P2PGenerator {
         let due_date = invoice_date + chrono::Duration::days(due_days);
 
         // Determine if this is a late payment
-        if self.rng.gen::<f64>() < self.config.payment_behavior.late_payment_rate {
+        if self.rng.random::<f64>() < self.config.payment_behavior.late_payment_rate {
             // Calculate late days based on distribution
             let late_days = self.calculate_late_days();
             due_date + chrono::Duration::days(late_days as i64)
         } else {
             // On-time or slightly early payment (-5 to +5 days variance)
-            let variance = self.rng.gen_range(-5..=5) as i64;
+            let variance = self.rng.random_range(-5..=5) as i64;
             due_date + chrono::Duration::days(variance)
         }
     }
 
     /// Calculate late payment days based on the distribution.
     fn calculate_late_days(&mut self) -> u32 {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let dist = &self.config.payment_behavior.late_payment_distribution;
 
         let mut cumulative = 0.0;
 
         cumulative += dist.slightly_late_1_to_7;
         if roll < cumulative {
-            return self.rng.gen_range(1..=7);
+            return self.rng.random_range(1..=7);
         }
 
         cumulative += dist.late_8_to_14;
         if roll < cumulative {
-            return self.rng.gen_range(8..=14);
+            return self.rng.random_range(8..=14);
         }
 
         cumulative += dist.very_late_15_to_30;
         if roll < cumulative {
-            return self.rng.gen_range(15..=30);
+            return self.rng.random_range(15..=30);
         }
 
         cumulative += dist.severely_late_31_to_60;
         if roll < cumulative {
-            return self.rng.gen_range(31..=60);
+            return self.rng.random_range(31..=60);
         }
 
         // Extremely late: 61-120 days
-        self.rng.gen_range(61..=120)
+        self.rng.random_range(61..=120)
     }
 
     /// Calculate due date based on payment terms.
@@ -862,7 +862,7 @@ impl P2PGenerator {
 
     /// Select payment method based on distribution.
     fn select_payment_method(&mut self) -> PaymentMethod {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (method, prob) in &self.config.payment_method_distribution {

@@ -102,7 +102,7 @@ impl EsgAnomalyInjector {
         let mut labels = Vec::new();
 
         for record in emissions.iter_mut() {
-            if self.rng.gen::<f64>() >= self.anomaly_rate {
+            if self.rng.random::<f64>() >= self.anomaly_rate {
                 continue;
             }
 
@@ -110,7 +110,7 @@ impl EsgAnomalyInjector {
             let original = record.co2e_tonnes;
 
             // Reduce reported emissions by 30-60%
-            let reduction: f64 = self.rng.gen_range(0.30..0.60);
+            let reduction: f64 = self.rng.random_range(0.30..0.60);
             let reduction_dec = Decimal::from_f64_retain(reduction).unwrap_or(dec!(0.40));
             record.co2e_tonnes = (original * (dec!(1) - reduction_dec)).round_dp(4);
 
@@ -144,7 +144,7 @@ impl EsgAnomalyInjector {
         let mut labels = Vec::new();
 
         for metric in metrics.iter_mut() {
-            if self.rng.gen::<f64>() >= self.anomaly_rate {
+            if self.rng.random::<f64>() >= self.anomaly_rate {
                 continue;
             }
 
@@ -179,7 +179,7 @@ impl EsgAnomalyInjector {
         let mut labels = Vec::new();
 
         for assessment in assessments.iter_mut() {
-            if self.rng.gen::<f64>() >= self.anomaly_rate {
+            if self.rng.random::<f64>() >= self.anomaly_rate {
                 continue;
             }
 
@@ -187,7 +187,7 @@ impl EsgAnomalyInjector {
             let original_overall = assessment.overall_score;
 
             // Inflate scores by 20-40 points
-            let inflation: f64 = self.rng.gen_range(20.0..40.0);
+            let inflation: f64 = self.rng.random_range(20.0..40.0);
             let bump = Decimal::from_f64_retain(inflation).unwrap_or(dec!(30));
             assessment.environmental_score = (assessment.environmental_score + bump).min(dec!(100));
             assessment.social_score = (assessment.social_score + bump).min(dec!(100));
@@ -228,7 +228,7 @@ impl EsgAnomalyInjector {
         let mut labels = Vec::new();
 
         for metric in safety_metrics.iter_mut() {
-            if self.rng.gen::<f64>() >= self.anomaly_rate {
+            if self.rng.random::<f64>() >= self.anomaly_rate {
                 continue;
             }
 
@@ -266,7 +266,7 @@ impl EsgAnomalyInjector {
         let mut labels = Vec::new();
 
         for assessment in materiality.iter_mut() {
-            if !assessment.is_material || self.rng.gen::<f64>() >= self.anomaly_rate {
+            if !assessment.is_material || self.rng.random::<f64>() >= self.anomaly_rate {
                 continue;
             }
 

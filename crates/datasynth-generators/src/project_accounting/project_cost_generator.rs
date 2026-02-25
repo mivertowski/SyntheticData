@@ -60,7 +60,7 @@ impl ProjectCostGenerator {
 
         for doc in documents {
             let rate = self.rate_for(doc.source_type);
-            if self.rng.gen::<f64>() >= rate {
+            if self.rng.random::<f64>() >= rate {
                 continue;
             }
 
@@ -75,7 +75,7 @@ impl ProjectCostGenerator {
             if active_wbs.is_empty() {
                 continue;
             }
-            let wbs = active_wbs[self.rng.gen_range(0..active_wbs.len())];
+            let wbs = active_wbs[self.rng.random_range(0..active_wbs.len())];
 
             self.counter += 1;
             let cost_line_id = format!("PCL-{:06}", self.counter);

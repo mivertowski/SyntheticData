@@ -228,7 +228,7 @@ impl MissingValueInjector {
             self.stats.total_fields += 1;
         }
 
-        let is_missing = rng.gen::<f64>() < probability;
+        let is_missing = rng.random::<f64>() < probability;
 
         if is_missing && self.config.track_statistics {
             self.stats.total_missing += 1;
@@ -409,7 +409,7 @@ impl MissingValue {
 /// Selects a random missing value representation.
 pub fn random_missing_representation<R: Rng>(rng: &mut R) -> MissingValue {
     let representations = MissingValue::common_representations();
-    representations[rng.gen_range(0..representations.len())].clone()
+    representations[rng.random_range(0..representations.len())].clone()
 }
 
 #[cfg(test)]

@@ -247,8 +247,8 @@ impl BivariateCopulaSampler {
         let theta = self.config.theta;
 
         // Use conditional method
-        let u: f64 = self.rng.gen();
-        let t: f64 = self.rng.gen();
+        let u: f64 = self.rng.random();
+        let t: f64 = self.rng.random();
 
         // v = ((u^(-theta) - 1) * t^(-theta/(theta+1)) + 1)^(-1/theta)
         let v = (u.powf(-theta) * (t.powf(-theta / (theta + 1.0)) - 1.0) + 1.0).powf(-1.0 / theta);
@@ -263,8 +263,8 @@ impl BivariateCopulaSampler {
         // Use Marshall-Olkin method with stable distribution
         // Simplified implementation using conditional method
 
-        let u: f64 = self.rng.gen();
-        let t: f64 = self.rng.gen();
+        let u: f64 = self.rng.random();
+        let t: f64 = self.rng.random();
 
         // Approximate using Gumbel stable variate
         let s = sample_positive_stable(&mut self.rng, 1.0 / theta);
@@ -288,8 +288,8 @@ impl BivariateCopulaSampler {
     fn sample_frank(&mut self) -> (f64, f64) {
         let theta = self.config.theta;
 
-        let u: f64 = self.rng.gen();
-        let t: f64 = self.rng.gen();
+        let u: f64 = self.rng.random();
+        let t: f64 = self.rng.random();
 
         // Conditional distribution inversion
         let v = -((1.0 - t)
@@ -322,8 +322,8 @@ impl BivariateCopulaSampler {
 
     /// Sample from standard normal using Box-Muller.
     fn sample_standard_normal(&mut self) -> f64 {
-        let u1: f64 = self.rng.gen();
-        let u2: f64 = self.rng.gen();
+        let u1: f64 = self.rng.random();
+        let u2: f64 = self.rng.random();
         (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
     }
 
@@ -531,7 +531,7 @@ fn debye_1(x: f64) -> f64 {
 
 /// Sample from exponential distribution.
 fn sample_exponential(rng: &mut ChaCha8Rng, lambda: f64) -> f64 {
-    let u: f64 = rng.gen();
+    let u: f64 = rng.random();
     -u.ln() / lambda
 }
 
@@ -540,8 +540,8 @@ fn sample_chi_squared(rng: &mut ChaCha8Rng, df: f64) -> f64 {
     let n = df.floor() as usize;
     let mut sum = 0.0;
     for _ in 0..n {
-        let u1: f64 = rng.gen();
-        let u2: f64 = rng.gen();
+        let u1: f64 = rng.random();
+        let u2: f64 = rng.random();
         let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
         sum += z * z;
     }
@@ -554,7 +554,7 @@ fn sample_positive_stable(rng: &mut ChaCha8Rng, alpha: f64) -> f64 {
         return 1.0;
     }
 
-    let u: f64 = rng.gen::<f64>() * std::f64::consts::PI - std::f64::consts::PI / 2.0;
+    let u: f64 = rng.random::<f64>() * std::f64::consts::PI - std::f64::consts::PI / 2.0;
     let e = sample_exponential(rng, 1.0);
 
     let b = (std::f64::consts::PI * alpha / 2.0).tan();

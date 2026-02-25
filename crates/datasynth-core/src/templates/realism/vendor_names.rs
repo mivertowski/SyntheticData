@@ -3,7 +3,7 @@
 //! Generates realistic vendor names based on spend categories with
 //! appropriate naming patterns and industry-specific terminology.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -160,7 +160,7 @@ impl VendorNameGenerator {
     /// Generate a vendor name for the specified category.
     pub fn generate(&self, category: SpendCategory, rng: &mut impl Rng) -> String {
         // 20% chance to use a well-known brand if available
-        if rng.gen_bool(0.20) {
+        if rng.random_bool(0.20) {
             if let Some(brand) = self.get_brand(category, rng) {
                 return brand.to_string();
             }
@@ -173,7 +173,7 @@ impl VendorNameGenerator {
     /// Generate a vendor profile with full details.
     pub fn generate_profile(&self, category: SpendCategory, rng: &mut impl Rng) -> VendorProfile {
         // 20% chance to use a well-known brand if available
-        if rng.gen_bool(0.20) {
+        if rng.random_bool(0.20) {
             if let Some(brand) = self.get_brand(category, rng) {
                 return VendorProfile {
                     name: brand.to_string(),
@@ -203,7 +203,7 @@ impl VendorNameGenerator {
     }
 
     fn generate_base_name(&self, template: &CategoryTemplate, rng: &mut impl Rng) -> String {
-        let style: u8 = rng.gen_range(0..4);
+        let style: u8 = rng.random_range(0..4);
         match style {
             0 => {
                 // Prefix + Descriptor
@@ -274,7 +274,7 @@ impl VendorNameGenerator {
     }
 
     fn select_legal_suffix(&self, rng: &mut impl Rng) -> LegalSuffix {
-        let roll: f64 = rng.gen();
+        let roll: f64 = rng.random();
         if roll < 0.35 {
             LegalSuffix::Inc
         } else if roll < 0.55 {

@@ -74,9 +74,9 @@ impl EvidenceGenerator {
         team_members: &[String],
         base_date: NaiveDate,
     ) -> Vec<AuditEvidence> {
-        let count = self
-            .rng
-            .gen_range(self.config.evidence_per_workpaper.0..=self.config.evidence_per_workpaper.1);
+        let count = self.rng.random_range(
+            self.config.evidence_per_workpaper.0..=self.config.evidence_per_workpaper.1,
+        );
 
         (0..count)
             .map(|i| {
@@ -121,9 +121,9 @@ impl EvidenceGenerator {
         // Set file info
         let file_size = self
             .rng
-            .gen_range(self.config.file_size_range.0..=self.config.file_size_range.1);
+            .random_range(self.config.file_size_range.0..=self.config.file_size_range.1);
         let file_path = self.generate_file_path(evidence_type, self.evidence_counter);
-        let file_hash = format!("sha256:{:064x}", self.rng.gen::<u128>());
+        let file_hash = format!("sha256:{:064x}", self.rng.random::<u128>());
         evidence = evidence.with_file_info(&file_path, &file_hash, file_size);
 
         // Set reliability assessment
@@ -143,9 +143,9 @@ impl EvidenceGenerator {
         }
 
         // Maybe add AI extraction
-        if self.rng.gen::<f64>() < self.config.ai_extraction_probability {
+        if self.rng.random::<f64>() < self.config.ai_extraction_probability {
             let terms = self.generate_ai_terms(evidence_type);
-            let confidence = self.rng.gen_range(0.75..0.98);
+            let confidence = self.rng.random_range(0.75..0.98);
             let summary = self.generate_ai_summary(evidence_type);
             evidence = evidence.with_ai_extraction(terms, confidence, &summary);
         }
@@ -172,7 +172,7 @@ impl EvidenceGenerator {
         }
 
         // Add some standalone evidence not linked to specific workpapers
-        let standalone_count = self.rng.gen_range(5..15);
+        let standalone_count = self.rng.random_range(5..15);
         for i in 0..standalone_count {
             let date = engagement.fieldwork_start + Duration::days(i as i64 * 3);
             let evidence =
@@ -185,7 +185,7 @@ impl EvidenceGenerator {
 
     /// Select evidence type and source.
     fn select_evidence_type_and_source(&mut self) -> (EvidenceType, EvidenceSource) {
-        let is_external = self.rng.gen::<f64>() < self.config.external_third_party_probability;
+        let is_external = self.rng.random::<f64>() < self.config.external_third_party_probability;
 
         if is_external {
             let external_types = [
@@ -206,7 +206,7 @@ impl EvidenceGenerator {
                     EvidenceSource::ExternalClientProvided,
                 ),
             ];
-            let idx = self.rng.gen_range(0..external_types.len());
+            let idx = self.rng.random_range(0..external_types.len());
             external_types[idx]
         } else {
             let internal_types = [
@@ -230,7 +230,7 @@ impl EvidenceGenerator {
                 ),
                 (EvidenceType::Email, EvidenceSource::InternalClientPrepared),
             ];
-            let idx = self.rng.gen_range(0..internal_types.len());
+            let idx = self.rng.random_range(0..internal_types.len());
             internal_types[idx]
         }
     }
@@ -316,7 +316,7 @@ impl EvidenceGenerator {
             ],
         };
 
-        let idx = self.rng.gen_range(0..titles.len());
+        let idx = self.rng.random_range(0..titles.len());
         titles[idx].to_string()
     }
 
@@ -352,12 +352,12 @@ impl EvidenceGenerator {
         let base_reliability = source.inherent_reliability();
 
         let independence = base_reliability;
-        let controls = if self.rng.gen::<f64>() < self.config.high_reliability_probability {
+        let controls = if self.rng.random::<f64>() < self.config.high_reliability_probability {
             ReliabilityLevel::High
         } else {
             ReliabilityLevel::Medium
         };
-        let qualifications = if self.rng.gen::<f64>() < 0.7 {
+        let qualifications = if self.rng.random::<f64>() < 0.7 {
             ReliabilityLevel::High
         } else {
             ReliabilityLevel::Medium
@@ -367,7 +367,7 @@ impl EvidenceGenerator {
                 ReliabilityLevel::High
             }
             _ => {
-                if self.rng.gen::<f64>() < 0.5 {
+                if self.rng.random::<f64>() < 0.5 {
                     ReliabilityLevel::Medium
                 } else {
                     ReliabilityLevel::Low
@@ -394,7 +394,7 @@ impl EvidenceGenerator {
             EvidenceType::MeetingMinutes | EvidenceType::ManagementRepresentation => "pdf",
             EvidenceType::Email => "msg",
             _ => {
-                if self.rng.gen::<f64>() < 0.6 {
+                if self.rng.random::<f64>() < 0.6 {
                     "pdf"
                 } else {
                     "xlsx"
@@ -408,9 +408,9 @@ impl EvidenceGenerator {
     /// Select a random team member.
     fn select_team_member(&mut self, team_members: &[String]) -> String {
         if team_members.is_empty() {
-            format!("STAFF{:03}", self.rng.gen_range(1..100))
+            format!("STAFF{:03}", self.rng.random_range(1..100))
         } else {
-            let idx = self.rng.gen_range(0..team_members.len());
+            let idx = self.rng.random_range(0..team_members.len());
             team_members[idx].clone()
         }
     }
@@ -428,7 +428,7 @@ impl EvidenceGenerator {
             Assertion::ValuationAndAllocation,
             Assertion::PresentationAndDisclosure,
         ];
-        let idx = self.rng.gen_range(0..assertions.len());
+        let idx = self.rng.random_range(0..assertions.len());
         assertions[idx]
     }
 
@@ -443,26 +443,29 @@ impl EvidenceGenerator {
             EvidenceType::Invoice => {
                 terms.insert(
                     "invoice_number".into(),
-                    format!("INV-{:06}", self.rng.gen_range(100000..999999)),
+                    format!("INV-{:06}", self.rng.random_range(100000..999999)),
                 );
                 terms.insert(
                     "amount".into(),
-                    format!("{:.2}", self.rng.gen_range(1000.0..100000.0)),
+                    format!("{:.2}", self.rng.random_range(1000.0..100000.0)),
                 );
                 terms.insert("vendor".into(), "Extracted Vendor Name".into());
             }
             EvidenceType::Contract => {
                 terms.insert("effective_date".into(), "2025-01-01".into());
-                terms.insert("term_years".into(), format!("{}", self.rng.gen_range(1..5)));
+                terms.insert(
+                    "term_years".into(),
+                    format!("{}", self.rng.random_range(1..5)),
+                );
                 terms.insert(
                     "total_value".into(),
-                    format!("{:.2}", self.rng.gen_range(50000.0..500000.0)),
+                    format!("{:.2}", self.rng.random_range(50000.0..500000.0)),
                 );
             }
             EvidenceType::BankStatement => {
                 terms.insert(
                     "ending_balance".into(),
-                    format!("{:.2}", self.rng.gen_range(100000.0..10000000.0)),
+                    format!("{:.2}", self.rng.random_range(100000.0..10000000.0)),
                 );
                 terms.insert("statement_date".into(), "2025-12-31".into());
             }
@@ -470,7 +473,7 @@ impl EvidenceGenerator {
                 terms.insert("document_date".into(), "2025-12-31".into());
                 terms.insert(
                     "reference".into(),
-                    format!("REF-{:06}", self.rng.gen_range(100000..999999)),
+                    format!("REF-{:06}", self.rng.random_range(100000..999999)),
                 );
             }
         }

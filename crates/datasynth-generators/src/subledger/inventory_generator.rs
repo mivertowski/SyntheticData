@@ -129,7 +129,7 @@ impl InventoryGenerator {
     ) -> (InventoryMovement, JournalEntry) {
         self.movement_counter += 1;
         let document_number = format!("INVMV{:08}", self.movement_counter);
-        let batch_number = format!("BATCH{:06}", self.rng.gen::<u32>() % 1000000);
+        let batch_number = format!("BATCH{:06}", self.rng.random::<u32>() % 1000000);
 
         let mut movement = InventoryMovement::new(
             document_number,
@@ -315,7 +315,7 @@ impl InventoryGenerator {
     fn generate_unit_cost(&mut self) -> Decimal {
         let base = self.config.avg_unit_cost;
         let variation = base * self.config.cost_variation;
-        let random: f64 = self.rng.gen_range(-1.0..1.0);
+        let random: f64 = self.rng.random_range(-1.0..1.0);
         (base + variation * Decimal::try_from(random).unwrap_or_default())
             .max(dec!(1))
             .round_dp(2)

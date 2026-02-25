@@ -272,7 +272,7 @@ impl EmployeeGenerator {
 
         // Assign system roles
         if !department.system_roles.is_empty() {
-            let role_idx = self.rng.gen_range(0..department.system_roles.len());
+            let role_idx = self.rng.random_range(0..department.system_roles.len());
             employee
                 .system_roles
                 .push(department.system_roles[role_idx].clone());
@@ -291,7 +291,7 @@ impl EmployeeGenerator {
         employee.status = self.select_status();
         if employee.status == EmployeeStatus::Terminated {
             employee.termination_date =
-                Some(hire_date + chrono::Duration::days(self.rng.gen_range(365..1825) as i64));
+                Some(hire_date + chrono::Duration::days(self.rng.random_range(365..1825) as i64));
         }
 
         employee
@@ -346,7 +346,7 @@ impl EmployeeGenerator {
             JobLevel::Manager
         };
         let hire_date =
-            start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range / 2) as i64);
+            start_date + chrono::Duration::days(self.rng.random_range(0..=days_range / 2) as i64);
         let dept_head =
             self.generate_employee_with_level(company_code, department, head_level, hire_date);
         let dept_head_id = dept_head.employee_id.clone();
@@ -355,7 +355,7 @@ impl EmployeeGenerator {
         // Generate remaining employees
         for _ in 1..department.headcount {
             let hire_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let mut employee = self.generate_employee(company_code, department, hire_date);
 
             // Assign manager (department head)
@@ -505,7 +505,7 @@ impl EmployeeGenerator {
 
     /// Select job level based on distribution.
     fn select_job_level(&mut self) -> JobLevel {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (level, prob) in &self.config.job_level_distribution {
@@ -530,7 +530,7 @@ impl EmployeeGenerator {
 
     /// Select employee status.
     fn select_status(&mut self) -> EmployeeStatus {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         if roll < self.config.termination_rate {
             EmployeeStatus::Terminated

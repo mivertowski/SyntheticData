@@ -226,7 +226,7 @@ impl FxRateService {
         let mu = base_log + self.config.long_term_mean;
 
         // Check for fat-tail event
-        let volatility = if self.rng.gen::<f64>() < self.config.fat_tail_probability {
+        let volatility = if self.rng.random::<f64>() < self.config.fat_tail_probability {
             self.config.daily_volatility * self.config.fat_tail_multiplier
         } else {
             self.config.daily_volatility

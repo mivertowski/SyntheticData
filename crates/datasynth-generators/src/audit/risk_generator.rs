@@ -76,7 +76,7 @@ impl RiskAssessmentGenerator {
     ) -> Vec<RiskAssessment> {
         let count = self
             .rng
-            .gen_range(self.config.risks_per_engagement.0..=self.config.risks_per_engagement.1);
+            .random_range(self.config.risks_per_engagement.0..=self.config.risks_per_engagement.1);
 
         let mut risks = Vec::with_capacity(count as usize);
 
@@ -127,7 +127,7 @@ impl RiskAssessmentGenerator {
         risk = risk.with_risk_levels(inherent_risk, control_risk);
 
         // Maybe mark as significant
-        if self.rng.gen::<f64>() < self.config.significant_risk_probability
+        if self.rng.random::<f64>() < self.config.significant_risk_probability
             || matches!(
                 risk.risk_of_material_misstatement,
                 RiskLevel::High | RiskLevel::Significant
@@ -138,7 +138,7 @@ impl RiskAssessmentGenerator {
         }
 
         // Add fraud risk factors if applicable
-        if self.rng.gen::<f64>() < self.config.fraud_factor_probability {
+        if self.rng.random::<f64>() < self.config.fraud_factor_probability {
             let factors = self.generate_fraud_factors();
             for factor in factors {
                 risk.add_fraud_factor(factor);
@@ -153,7 +153,7 @@ impl RiskAssessmentGenerator {
         // Add planned responses
         let response_count = self
             .rng
-            .gen_range(self.config.responses_per_risk.0..=self.config.responses_per_risk.1);
+            .random_range(self.config.responses_per_risk.0..=self.config.responses_per_risk.1);
         for _ in 0..response_count {
             let response = self.generate_planned_response(&risk, team_members, engagement);
             risk.add_response(response);
@@ -164,7 +164,7 @@ impl RiskAssessmentGenerator {
         risk = risk.with_assessed_by(&assessor, engagement.planning_start + Duration::days(7));
 
         // Maybe add review
-        if self.rng.gen::<f64>() < 0.8 {
+        if self.rng.random::<f64>() < 0.8 {
             risk.review_status = RiskReviewStatus::Approved;
             risk.reviewer_id = Some(self.select_team_member(team_members, "manager"));
             risk.review_date = Some(engagement.planning_start + Duration::days(14));
@@ -339,7 +339,7 @@ impl RiskAssessmentGenerator {
 
         // Shuffle and return
         for i in (1..areas.len()).rev() {
-            let j = self.rng.gen_range(0..=i);
+            let j = self.rng.random_range(0..=i);
             areas.swap(i, j);
         }
         areas
@@ -357,7 +357,7 @@ impl RiskAssessmentGenerator {
             (RiskCategory::RegulatoryCompliance, 0.05),
         ];
 
-        let r: f64 = self.rng.gen();
+        let r: f64 = self.rng.random();
         let mut cumulative = 0.0;
         for (category, probability) in categories {
             cumulative += probability;
@@ -387,7 +387,7 @@ impl RiskAssessmentGenerator {
             ),
         ];
 
-        let idx = self.rng.gen_range(0..assertions.len());
+        let idx = self.rng.random_range(0..assertions.len());
         let (assertion, assertion_name) = assertions[idx];
 
         let description = match category {
@@ -445,9 +445,9 @@ impl RiskAssessmentGenerator {
 
     /// Generate inherent risk level.
     fn generate_inherent_risk(&mut self) -> RiskLevel {
-        if self.rng.gen::<f64>() < self.config.high_inherent_risk_probability {
+        if self.rng.random::<f64>() < self.config.high_inherent_risk_probability {
             RiskLevel::High
-        } else if self.rng.gen::<f64>() < 0.5 {
+        } else if self.rng.random::<f64>() < 0.5 {
             RiskLevel::Medium
         } else {
             RiskLevel::Low
@@ -459,23 +459,23 @@ impl RiskAssessmentGenerator {
         // Control risk tends to be correlated with inherent risk
         match inherent_risk {
             RiskLevel::High | RiskLevel::Significant => {
-                if self.rng.gen::<f64>() < 0.6 {
+                if self.rng.random::<f64>() < 0.6 {
                     RiskLevel::High
                 } else {
                     RiskLevel::Medium
                 }
             }
             RiskLevel::Medium => {
-                if self.rng.gen::<f64>() < 0.4 {
+                if self.rng.random::<f64>() < 0.4 {
                     RiskLevel::Medium
-                } else if self.rng.gen::<f64>() < 0.7 {
+                } else if self.rng.random::<f64>() < 0.7 {
                     RiskLevel::Low
                 } else {
                     RiskLevel::High
                 }
             }
             RiskLevel::Low => {
-                if self.rng.gen::<f64>() < 0.7 {
+                if self.rng.random::<f64>() < 0.7 {
                     RiskLevel::Low
                 } else {
                     RiskLevel::Medium
@@ -508,7 +508,7 @@ impl RiskAssessmentGenerator {
                     "History of misstatements in this area",
                     "New accounting standard implementation",
                 ];
-                let idx = self.rng.gen_range(0..rationales.len());
+                let idx = self.rng.random_range(0..rationales.len());
                 rationales[idx].into()
             }
         }
@@ -517,7 +517,7 @@ impl RiskAssessmentGenerator {
     /// Generate fraud risk factors.
     fn generate_fraud_factors(&mut self) -> Vec<FraudRiskFactor> {
         let mut factors = Vec::new();
-        let count = self.rng.gen_range(1..=3);
+        let count = self.rng.random_range(1..=3);
 
         let pressure_indicators = [
             "Financial pressure from debt covenants",
@@ -541,37 +541,37 @@ impl RiskAssessmentGenerator {
         ];
 
         for _ in 0..count {
-            let element = match self.rng.gen_range(0..3) {
+            let element = match self.rng.random_range(0..3) {
                 0 => {
-                    let idx = self.rng.gen_range(0..pressure_indicators.len());
+                    let idx = self.rng.random_range(0..pressure_indicators.len());
                     FraudRiskFactor::new(
                         FraudTriangleElement::Pressure,
                         pressure_indicators[idx],
-                        self.rng.gen_range(40..90),
+                        self.rng.random_range(40..90),
                         "Risk assessment procedures",
                     )
                 }
                 1 => {
-                    let idx = self.rng.gen_range(0..opportunity_indicators.len());
+                    let idx = self.rng.random_range(0..opportunity_indicators.len());
                     FraudRiskFactor::new(
                         FraudTriangleElement::Opportunity,
                         opportunity_indicators[idx],
-                        self.rng.gen_range(40..90),
+                        self.rng.random_range(40..90),
                         "Control environment assessment",
                     )
                 }
                 _ => {
-                    let idx = self.rng.gen_range(0..rationalization_indicators.len());
+                    let idx = self.rng.random_range(0..rationalization_indicators.len());
                     FraudRiskFactor::new(
                         FraudTriangleElement::Rationalization,
                         rationalization_indicators[idx],
-                        self.rng.gen_range(30..70),
+                        self.rng.random_range(30..70),
                         "Management inquiries",
                     )
                 }
             };
 
-            let trend = match self.rng.gen_range(0..3) {
+            let trend = match self.rng.random_range(0..3) {
                 0 => Trend::Increasing,
                 1 => Trend::Stable,
                 _ => Trend::Decreasing,
@@ -588,14 +588,14 @@ impl RiskAssessmentGenerator {
         match risk.risk_of_material_misstatement {
             RiskLevel::High | RiskLevel::Significant => ResponseNature::SubstantiveOnly,
             RiskLevel::Medium => {
-                if self.rng.gen::<f64>() < 0.6 {
+                if self.rng.random::<f64>() < 0.6 {
                     ResponseNature::Combined
                 } else {
                     ResponseNature::SubstantiveOnly
                 }
             }
             RiskLevel::Low => {
-                if self.rng.gen::<f64>() < 0.4 {
+                if self.rng.random::<f64>() < 0.4 {
                     ResponseNature::ControlsReliance
                 } else {
                     ResponseNature::Combined
@@ -608,7 +608,7 @@ impl RiskAssessmentGenerator {
     fn select_response_timing(&mut self, engagement: &AuditEngagement) -> ResponseTiming {
         match engagement.current_phase {
             EngagementPhase::Planning | EngagementPhase::RiskAssessment => {
-                if self.rng.gen::<f64>() < 0.3 {
+                if self.rng.random::<f64>() < 0.3 {
                     ResponseTiming::Interim
                 } else {
                     ResponseTiming::YearEnd
@@ -645,7 +645,7 @@ impl RiskAssessmentGenerator {
         let procedure =
             self.generate_procedure_description(procedure_type, &risk.account_or_process);
 
-        let days_offset = self.rng.gen_range(7..45);
+        let days_offset = self.rng.random_range(7..45);
         let target_date = engagement.fieldwork_start + Duration::days(days_offset);
 
         let mut response = PlannedResponse::new(
@@ -657,7 +657,7 @@ impl RiskAssessmentGenerator {
         );
 
         // Maybe mark as in progress or complete
-        if self.rng.gen::<f64>() < 0.2 {
+        if self.rng.random::<f64>() < 0.2 {
             response.status = ResponseStatus::InProgress;
         }
 
@@ -668,7 +668,7 @@ impl RiskAssessmentGenerator {
     fn select_procedure_type(&mut self, nature: &ResponseNature) -> ResponseProcedureType {
         match nature {
             ResponseNature::ControlsReliance => {
-                if self.rng.gen::<f64>() < 0.7 {
+                if self.rng.random::<f64>() < 0.7 {
                     ResponseProcedureType::TestOfControls
                 } else {
                     ResponseProcedureType::Inquiry
@@ -681,7 +681,7 @@ impl RiskAssessmentGenerator {
                     ResponseProcedureType::Confirmation,
                     ResponseProcedureType::PhysicalInspection,
                 ];
-                let idx = self.rng.gen_range(0..types.len());
+                let idx = self.rng.random_range(0..types.len());
                 types[idx]
             }
             ResponseNature::Combined => {
@@ -690,7 +690,7 @@ impl RiskAssessmentGenerator {
                     ResponseProcedureType::TestOfDetails,
                     ResponseProcedureType::AnalyticalProcedure,
                 ];
-                let idx = self.rng.gen_range(0..types.len());
+                let idx = self.rng.random_range(0..types.len());
                 types[idx]
             }
         }
@@ -740,7 +740,7 @@ impl RiskAssessmentGenerator {
         if let Some(&member) = matching.first() {
             member.clone()
         } else if !team_members.is_empty() {
-            let idx = self.rng.gen_range(0..team_members.len());
+            let idx = self.rng.random_range(0..team_members.len());
             team_members[idx].clone()
         } else {
             format!("{}001", role_hint.to_uppercase())
@@ -757,7 +757,7 @@ impl RiskAssessmentGenerator {
             Assertion::Existence,
             Assertion::ValuationAndAllocation,
         ];
-        let idx = self.rng.gen_range(0..assertions.len());
+        let idx = self.rng.random_range(0..assertions.len());
         assertions[idx]
     }
 }

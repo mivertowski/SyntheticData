@@ -4,7 +4,7 @@
 //! more realistic by applying abbreviations, case variations, and
 //! occasional typos.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -124,7 +124,7 @@ impl TypoGenerator {
             return text.to_string();
         }
 
-        let typo_type = rng.gen_range(0..5);
+        let typo_type = rng.random_range(0..5);
         match typo_type {
             0 => self.keyboard_typo(text, rng),
             1 => self.transposition_typo(text, rng),
@@ -246,7 +246,7 @@ impl TypoGenerator {
 
         // Try transposition first
         for (correct, typo) in &self.common_transpositions {
-            if text_lower.contains(*correct) && rng.gen_bool(0.5) {
+            if text_lower.contains(*correct) && rng.random_bool(0.5) {
                 return text.replacen(correct, typo, 1);
             }
         }
@@ -373,17 +373,17 @@ impl DescriptionVariator {
         let mut result = description.to_string();
 
         // Apply abbreviations
-        if rng.gen_bool(self.config.abbreviation_rate) {
+        if rng.random_bool(self.config.abbreviation_rate) {
             result = self.apply_abbreviations(&result, rng);
         }
 
         // Apply case variations
-        if rng.gen_bool(self.config.case_variation_rate) {
+        if rng.random_bool(self.config.case_variation_rate) {
             result = self.apply_case_variation(&result, rng);
         }
 
         // Apply typos (rare)
-        if rng.gen_bool(self.config.typo_rate) {
+        if rng.random_bool(self.config.typo_rate) {
             result = self.typo_gen.introduce_typo(&result, rng);
         }
 
@@ -399,7 +399,7 @@ impl DescriptionVariator {
         let mut result = text.to_string();
 
         // Find and replace one or two terms
-        let max_replacements = rng.gen_range(1..=2);
+        let max_replacements = rng.random_range(1..=2);
         let mut replacements = 0;
 
         for (full, abbrevs) in &self.abbreviations {
@@ -415,7 +415,7 @@ impl DescriptionVariator {
     }
 
     fn apply_case_variation(&self, text: &str, rng: &mut impl Rng) -> String {
-        let variation = rng.gen_range(0..3);
+        let variation = rng.random_range(0..3);
         match variation {
             0 => text.to_uppercase(),
             1 => text.to_lowercase(),

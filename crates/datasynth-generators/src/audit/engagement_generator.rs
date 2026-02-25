@@ -99,17 +99,17 @@ impl AuditEngagementGenerator {
         let eng_type = engagement_type.unwrap_or(self.config.default_engagement_type);
 
         // Calculate materiality
-        let materiality_pct = self.rng.gen_range(
+        let materiality_pct = self.rng.random_range(
             self.config.materiality_percentage_range.0..=self.config.materiality_percentage_range.1,
         );
         let materiality = total_revenue * Decimal::try_from(materiality_pct).unwrap_or_default();
 
-        let perf_mat_factor = self.rng.gen_range(
+        let perf_mat_factor = self.rng.random_range(
             self.config.performance_materiality_factor_range.0
                 ..=self.config.performance_materiality_factor_range.1,
         );
 
-        let trivial_factor = self.rng.gen_range(
+        let trivial_factor = self.rng.random_range(
             self.config.clearly_trivial_factor_range.0..=self.config.clearly_trivial_factor_range.1,
         );
 
@@ -172,13 +172,13 @@ impl AuditEngagementGenerator {
     /// Generate an engagement timeline based on period end date.
     fn generate_timeline(&mut self, period_end_date: NaiveDate) -> EngagementTimeline {
         // Planning typically starts 3-4 months before year end
-        let planning_duration = self.rng.gen_range(
+        let planning_duration = self.rng.random_range(
             self.config.planning_duration_range.0..=self.config.planning_duration_range.1,
         );
-        let fieldwork_duration = self.rng.gen_range(
+        let fieldwork_duration = self.rng.random_range(
             self.config.fieldwork_duration_range.0..=self.config.fieldwork_duration_range.1,
         );
-        let completion_duration = self.rng.gen_range(
+        let completion_duration = self.rng.random_range(
             self.config.completion_duration_range.0..=self.config.completion_duration_range.1,
         );
 
@@ -208,23 +208,23 @@ impl AuditEngagementGenerator {
     fn generate_team(&mut self) -> (String, String, String, String, Vec<String>) {
         let team_size = self
             .rng
-            .gen_range(self.config.team_size_range.0..=self.config.team_size_range.1)
+            .random_range(self.config.team_size_range.0..=self.config.team_size_range.1)
             as usize;
 
         // Partner
-        let partner_num = self.rng.gen_range(1..=20);
+        let partner_num = self.rng.random_range(1..=20);
         let partner_id = format!("PARTNER{:03}", partner_num);
         let partner_name = self.generate_auditor_name(partner_num);
 
         // Manager
-        let manager_num = self.rng.gen_range(1..=50);
+        let manager_num = self.rng.random_range(1..=50);
         let manager_id = format!("MANAGER{:03}", manager_num);
         let manager_name = self.generate_auditor_name(manager_num + 100);
 
         // Team members (seniors and staff)
         let mut team_members = Vec::with_capacity(team_size);
         for i in 0..team_size {
-            let member_num = self.rng.gen_range(1..=200);
+            let member_num = self.rng.random_range(1..=200);
             if i < team_size / 2 {
                 team_members.push(format!("SENIOR{:03}", member_num));
             } else {
@@ -275,21 +275,21 @@ impl AuditEngagementGenerator {
     /// Generate risk profile for the engagement.
     fn generate_risk_profile(&mut self) -> (RiskLevel, RiskLevel, u32) {
         // Determine fraud risk
-        let fraud_risk = if self.rng.gen::<f64>() < self.config.high_fraud_risk_probability {
+        let fraud_risk = if self.rng.random::<f64>() < self.config.high_fraud_risk_probability {
             RiskLevel::High
-        } else if self.rng.gen::<f64>() < 0.40 {
+        } else if self.rng.random::<f64>() < 0.40 {
             RiskLevel::Medium
         } else {
             RiskLevel::Low
         };
 
         // Determine significant risk count (typically 2-8)
-        let significant_count = if self.rng.gen::<f64>() < self.config.significant_risk_probability
-        {
-            self.rng.gen_range(2..=8)
-        } else {
-            self.rng.gen_range(0..=2)
-        };
+        let significant_count =
+            if self.rng.random::<f64>() < self.config.significant_risk_probability {
+                self.rng.random_range(2..=8)
+            } else {
+                self.rng.random_range(0..=2)
+            };
 
         // Overall risk is influenced by both
         let overall_risk = if fraud_risk == RiskLevel::High || significant_count > 5 {

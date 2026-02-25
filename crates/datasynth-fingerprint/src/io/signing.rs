@@ -38,7 +38,7 @@ impl SigningKey {
     /// Generate a random signing key.
     pub fn generate(key_id: impl Into<String>) -> Self {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut secret = vec![0u8; 32];
         rng.fill(&mut secret[..]);
 

@@ -94,7 +94,7 @@ impl BudgetGenerator {
         let total_variance = total_actual - total_budget;
 
         // Status: 60% Approved, 20% Closed, 15% Revised, 5% Submitted
-        let status_roll: f64 = self.rng.gen();
+        let status_roll: f64 = self.rng.random();
         let status = if status_roll < 0.60 {
             BudgetStatus::Approved
         } else if status_roll < 0.80 {
@@ -108,7 +108,7 @@ impl BudgetGenerator {
         // Approved/Closed budgets get an approver
         let (approved_by, approved_date) =
             if matches!(status, BudgetStatus::Approved | BudgetStatus::Closed) {
-                let approver = if self.rng.gen_bool(0.5) {
+                let approver = if self.rng.random_bool(0.5) {
                     "CFO-001".to_string()
                 } else {
                     "VP-FIN-001".to_string()
@@ -153,7 +153,7 @@ impl BudgetGenerator {
         let line_id = self.line_uuid_factory.next().to_string();
 
         // Budget amount: random 10000 - 500000, applying revenue growth rate
-        let base_amount: f64 = self.rng.gen_range(10_000.0..500_000.0);
+        let base_amount: f64 = self.rng.random_range(10_000.0..500_000.0);
         let growth_adjusted = base_amount * (1.0 + config.revenue_growth_rate);
         let budget_amount = Decimal::from_f64_retain(growth_adjusted)
             .unwrap_or(Decimal::ZERO)
@@ -162,7 +162,7 @@ impl BudgetGenerator {
         // Actual amount: budget * (1 + random(-variance_noise, +variance_noise))
         let variance_factor: f64 = self
             .rng
-            .gen_range(-config.variance_noise..config.variance_noise);
+            .random_range(-config.variance_noise..config.variance_noise);
         let actual_raw = growth_adjusted * (1.0 + variance_factor);
         let actual_amount = Decimal::from_f64_retain(actual_raw)
             .unwrap_or(Decimal::ZERO)

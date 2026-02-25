@@ -260,7 +260,7 @@ impl OcpmEventGenerator {
 
     /// Select a process variant type based on configuration.
     pub fn select_variant_type(&mut self) -> VariantType {
-        let r: f64 = self.rng.gen();
+        let r: f64 = self.rng.random();
         if r < self.config.happy_path_rate {
             VariantType::HappyPath
         } else if r < self.config.happy_path_rate + self.config.exception_path_rate {
@@ -281,7 +281,7 @@ impl OcpmEventGenerator {
 
             if self.config.add_duration_variability {
                 // Add some variability using normal-like distribution
-                let variability: f64 = self.rng.gen_range(-2.0..2.0) * std_dev;
+                let variability: f64 = self.rng.random_range(-2.0..2.0) * std_dev;
                 let actual_minutes = (typical_minutes + variability).max(1.0);
                 base_time + Duration::minutes(actual_minutes as i64)
             } else {
@@ -407,9 +407,9 @@ impl OcpmEventGenerator {
         if activity.is_automated {
             "SYSTEM".into()
         } else if available_users.is_empty() {
-            format!("USER{:04}", self.rng.gen_range(1..100))
+            format!("USER{:04}", self.rng.random_range(1..100))
         } else {
-            let idx = self.rng.gen_range(0..available_users.len());
+            let idx = self.rng.random_range(0..available_users.len());
             available_users[idx].clone()
         }
     }
@@ -465,18 +465,18 @@ impl OcpmEventGenerator {
         min_minutes: i64,
         max_minutes: i64,
     ) -> Duration {
-        let minutes = self.rng.gen_range(min_minutes..=max_minutes);
+        let minutes = self.rng.random_range(min_minutes..=max_minutes);
         Duration::minutes(minutes)
     }
 
     /// Check if an activity should be skipped (for exception paths).
     pub fn should_skip_activity(&mut self, skip_probability: f64) -> bool {
-        self.rng.gen::<f64>() < skip_probability
+        self.rng.random::<f64>() < skip_probability
     }
 
     /// Generate a random boolean with given probability.
     pub fn random_bool(&mut self, probability: f64) -> bool {
-        self.rng.gen::<f64>() < probability
+        self.rng.random::<f64>() < probability
     }
 }
 

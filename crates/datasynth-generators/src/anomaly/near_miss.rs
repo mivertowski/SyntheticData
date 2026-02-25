@@ -125,7 +125,7 @@ impl NearMissGenerator {
         thresholds: &[Decimal],
     ) -> Option<NearMissLabel> {
         // Check proportion
-        if self.rng.gen::<f64>() >= self.config.proportion {
+        if self.rng.random::<f64>() >= self.config.proportion {
             return None;
         }
 
@@ -140,7 +140,7 @@ impl NearMissGenerator {
         }
 
         // Select random pattern
-        let idx = self.rng.gen_range(0..patterns.len());
+        let idx = self.rng.random_range(0..patterns.len());
         let (pattern, trigger, explanation) =
             patterns.into_iter().nth(idx).expect("idx < patterns.len()");
 
@@ -284,7 +284,7 @@ impl NearMissGenerator {
         _account: &str,
     ) -> Option<(LegitimatePatternType, String)> {
         // Year-end bonuses (December, large amounts)
-        if date.month() == 12 && amount >= dec!(10000) && self.rng.gen::<f64>() < 0.3 {
+        if date.month() == 12 && amount >= dec!(10000) && self.rng.random::<f64>() < 0.3 {
             return Some((
                 LegitimatePatternType::YearEndBonus,
                 "Year-end bonus payment per compensation plan".to_string(),
@@ -292,7 +292,7 @@ impl NearMissGenerator {
         }
 
         // Contract prepayments (Q1, moderate amounts)
-        if date.month() <= 3 && amount >= dec!(5000) && self.rng.gen::<f64>() < 0.2 {
+        if date.month() <= 3 && amount >= dec!(5000) && self.rng.random::<f64>() < 0.2 {
             return Some((
                 LegitimatePatternType::ContractPrepayment,
                 "Annual contract prepayment per terms".to_string(),
@@ -300,7 +300,7 @@ impl NearMissGenerator {
         }
 
         // Promotional spending (Q4)
-        if date.month() >= 10 && amount >= dec!(25000) && self.rng.gen::<f64>() < 0.2 {
+        if date.month() >= 10 && amount >= dec!(25000) && self.rng.random::<f64>() < 0.2 {
             return Some((
                 LegitimatePatternType::PromotionalSpending,
                 "Holiday promotional campaign spending".to_string(),
@@ -311,7 +311,7 @@ impl NearMissGenerator {
         if date.month() >= 8
             && date.month() <= 11
             && amount >= dec!(50000)
-            && self.rng.gen::<f64>() < 0.15
+            && self.rng.random::<f64>() < 0.15
         {
             return Some((
                 LegitimatePatternType::SeasonalInventory,
@@ -320,7 +320,7 @@ impl NearMissGenerator {
         }
 
         // One-time payments (any time, large amounts)
-        if amount >= dec!(100000) && self.rng.gen::<f64>() < 0.1 {
+        if amount >= dec!(100000) && self.rng.random::<f64>() < 0.1 {
             return Some((
                 LegitimatePatternType::OneTimePayment,
                 "One-time strategic vendor payment".to_string(),

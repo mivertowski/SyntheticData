@@ -3,7 +3,7 @@
 //! Provides project master data for capital projects, internal projects,
 //! and associated WBS elements for cost tracking.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};

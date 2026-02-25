@@ -92,9 +92,9 @@ impl WorkpaperGenerator {
             EngagementPhase::Reporting => WorkpaperSection::Reporting,
         };
 
-        let count = self
-            .rng
-            .gen_range(self.config.workpapers_per_section.0..=self.config.workpapers_per_section.1);
+        let count = self.rng.random_range(
+            self.config.workpapers_per_section.0..=self.config.workpapers_per_section.1,
+        );
 
         (0..count)
             .map(|_| self.generate_workpaper(engagement, section, phase_date, team_members))
@@ -142,7 +142,7 @@ impl WorkpaperGenerator {
         wp = wp.with_preparer(&preparer, &preparer_name, base_date);
 
         // Add first review
-        let first_review_delay = self.rng.gen_range(
+        let first_review_delay = self.rng.random_range(
             self.config.first_review_delay_range.0..=self.config.first_review_delay_range.1,
         );
         let first_review_date = base_date + Duration::days(first_review_delay as i64);
@@ -151,8 +151,8 @@ impl WorkpaperGenerator {
         wp.add_first_review(&reviewer, &reviewer_name, first_review_date);
 
         // Maybe add second review
-        if self.rng.gen::<f64>() < 0.7 {
-            let second_review_delay = self.rng.gen_range(
+        if self.rng.random::<f64>() < 0.7 {
+            let second_review_delay = self.rng.random_range(
                 self.config.second_review_delay_range.0..=self.config.second_review_delay_range.1,
             );
             let second_review_date = first_review_date + Duration::days(second_review_delay as i64);
@@ -164,7 +164,7 @@ impl WorkpaperGenerator {
         }
 
         // Maybe add review notes
-        if self.rng.gen::<f64>() < 0.30 {
+        if self.rng.random::<f64>() < 0.30 {
             let note = self.generate_review_note();
             wp.add_review_note(&reviewer, &note);
         }
@@ -241,7 +241,7 @@ impl WorkpaperGenerator {
             ],
         };
 
-        let idx = self.rng.gen_range(0..titles.len());
+        let idx = self.rng.random_range(0..titles.len());
         titles[idx].to_string()
     }
 
@@ -260,7 +260,7 @@ impl WorkpaperGenerator {
                 Assertion::transaction_assertions(),
             ),
             WorkpaperSection::SubstantiveTesting => {
-                let assertions = if self.rng.gen::<f64>() < 0.5 {
+                let assertions = if self.rng.random::<f64>() < 0.5 {
                     Assertion::transaction_assertions()
                 } else {
                     Assertion::balance_assertions()
@@ -314,7 +314,7 @@ impl WorkpaperGenerator {
                         ProcedureType::Reperformance,
                     ),
                 ];
-                let idx = self.rng.gen_range(0..procedures.len());
+                let idx = self.rng.random_range(0..procedures.len());
                 (procedures[idx].0.into(), procedures[idx].1)
             }
             WorkpaperSection::SubstantiveTesting => {
@@ -340,7 +340,7 @@ impl WorkpaperGenerator {
                         ProcedureType::Inspection,
                     ),
                 ];
-                let idx = self.rng.gen_range(0..procedures.len());
+                let idx = self.rng.random_range(0..procedures.len());
                 (procedures[idx].0.into(), procedures[idx].1)
             }
             WorkpaperSection::Completion | WorkpaperSection::Reporting => (
@@ -360,7 +360,7 @@ impl WorkpaperGenerator {
         section: WorkpaperSection,
     ) -> (WorkpaperScope, u64, u32, SamplingMethod) {
         let scope = WorkpaperScope {
-            coverage_percentage: self.rng.gen_range(70.0..100.0),
+            coverage_percentage: self.rng.random_range(70.0..100.0),
             period_start: None,
             period_end: None,
             limitations: Vec::new(),
@@ -368,17 +368,17 @@ impl WorkpaperGenerator {
 
         match section {
             WorkpaperSection::ControlTesting | WorkpaperSection::SubstantiveTesting => {
-                let population = self.rng.gen_range(
+                let population = self.rng.random_range(
                     self.config.population_size_range.0..=self.config.population_size_range.1,
                 );
-                let sample_pct = self.rng.gen_range(
+                let sample_pct = self.rng.random_range(
                     self.config.sample_percentage_range.0..=self.config.sample_percentage_range.1,
                 );
                 let sample = ((population as f64 * sample_pct).max(25.0) as u32).min(200);
 
-                let method = if self.rng.gen::<f64>() < 0.4 {
+                let method = if self.rng.random::<f64>() < 0.4 {
                     SamplingMethod::StatisticalRandom
-                } else if self.rng.gen::<f64>() < 0.3 {
+                } else if self.rng.random::<f64>() < 0.3 {
                     SamplingMethod::MonetaryUnit
                 } else {
                     SamplingMethod::Judgmental
@@ -411,16 +411,16 @@ impl WorkpaperGenerator {
             RiskLevel::High | RiskLevel::Significant => 0.40,
         };
 
-        let has_exceptions = self.rng.gen::<f64>() < exception_probability;
+        let has_exceptions = self.rng.random::<f64>() < exception_probability;
 
         let (exceptions, conclusion) = if has_exceptions {
-            let exception_rate = self
-                .rng
-                .gen_range(self.config.exception_rate_range.0..=self.config.exception_rate_range.1);
+            let exception_rate = self.rng.random_range(
+                self.config.exception_rate_range.0..=self.config.exception_rate_range.1,
+            );
             let exceptions =
                 ((sample_size as f64 * exception_rate).max(1.0) as u32).min(sample_size);
 
-            let conclusion = if self.rng.gen::<f64>() < self.config.unsatisfactory_probability {
+            let conclusion = if self.rng.random::<f64>() < self.config.unsatisfactory_probability {
                 WorkpaperConclusion::Unsatisfactory
             } else {
                 WorkpaperConclusion::SatisfactoryWithExceptions
@@ -463,7 +463,7 @@ impl WorkpaperGenerator {
         if let Some(&member) = matching.first() {
             member.clone()
         } else if !team_members.is_empty() {
-            let idx = self.rng.gen_range(0..team_members.len());
+            let idx = self.rng.random_range(0..team_members.len());
             team_members[idx].clone()
         } else {
             format!("{}001", role_hint.to_uppercase())
@@ -477,8 +477,8 @@ impl WorkpaperGenerator {
         ];
         let last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Davis"];
 
-        let first_idx = self.rng.gen_range(0..first_names.len());
-        let last_idx = self.rng.gen_range(0..last_names.len());
+        let first_idx = self.rng.random_range(0..first_names.len());
+        let last_idx = self.rng.random_range(0..last_names.len());
 
         format!("{} {}", first_names[first_idx], last_names[last_idx])
     }
@@ -496,7 +496,7 @@ impl WorkpaperGenerator {
             "Add evidence reference for supporting documentation",
         ];
 
-        let idx = self.rng.gen_range(0..notes.len());
+        let idx = self.rng.random_range(0..notes.len());
         notes[idx].to_string()
     }
 

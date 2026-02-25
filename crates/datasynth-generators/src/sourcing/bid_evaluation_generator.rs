@@ -62,7 +62,7 @@ impl BidEvaluationGenerator {
                         (score, true)
                     } else {
                         // Other criteria: random score
-                        (self.rng.gen_range(50.0..=100.0), false)
+                        (self.rng.random_range(50.0..=100.0), false)
                     };
 
                     let weighted = raw_score * criterion.weight;

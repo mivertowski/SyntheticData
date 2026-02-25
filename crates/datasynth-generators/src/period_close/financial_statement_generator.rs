@@ -477,17 +477,17 @@ impl FinancialStatementGenerator {
         preparer_id: &str,
     ) -> FinancialStatement {
         // Indirect method: start with net income, adjust for non-cash items
-        let depreciation = Decimal::from(self.rng.gen_range(5000..=50000));
-        let ar_change = Decimal::from(self.rng.gen_range(-20000i64..=20000));
-        let ap_change = Decimal::from(self.rng.gen_range(-15000i64..=15000));
-        let inventory_change = Decimal::from(self.rng.gen_range(-10000i64..=10000));
+        let depreciation = Decimal::from(self.rng.random_range(5000..=50000));
+        let ar_change = Decimal::from(self.rng.random_range(-20000i64..=20000));
+        let ap_change = Decimal::from(self.rng.random_range(-15000i64..=15000));
+        let inventory_change = Decimal::from(self.rng.random_range(-10000i64..=10000));
 
         let operating_cf = net_income + depreciation - ar_change + ap_change - inventory_change;
 
-        let capex = Decimal::from(self.rng.gen_range(-100000i64..=-5000));
+        let capex = Decimal::from(self.rng.random_range(-100000i64..=-5000));
         let investing_cf = capex;
 
-        let debt_change = Decimal::from(self.rng.gen_range(-50000i64..=50000));
+        let debt_change = Decimal::from(self.rng.random_range(-50000i64..=50000));
         let financing_cf = debt_change;
 
         let net_change = operating_cf + investing_cf + financing_cf;

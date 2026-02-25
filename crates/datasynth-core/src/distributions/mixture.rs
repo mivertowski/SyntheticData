@@ -314,7 +314,7 @@ impl GaussianMixtureSampler {
 
     /// Select a component using binary search on cumulative weights.
     fn select_component(&mut self) -> usize {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         match self
             .cumulative_weights
             .binary_search_by(|w| w.partial_cmp(&p).unwrap_or(std::cmp::Ordering::Equal))
@@ -430,7 +430,7 @@ impl LogNormalMixtureSampler {
 
     /// Select a component using binary search on cumulative weights.
     fn select_component(&mut self) -> usize {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         match self
             .cumulative_weights
             .binary_search_by(|w| w.partial_cmp(&p).unwrap_or(std::cmp::Ordering::Equal))

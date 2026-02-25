@@ -361,11 +361,11 @@ impl TypoGenerator {
     fn process_word<R: Rng>(&mut self, word: &str, rng: &mut R) -> String {
         // Check for homophone substitution first
         if let Some(homophones) = self.homophones.get_homophones(word) {
-            if rng.gen::<f64>() < self.config.char_error_rate * 10.0 {
+            if rng.random::<f64>() < self.config.char_error_rate * 10.0 {
                 // Higher probability for whole-word substitution
                 self.stats.total_typos += 1;
                 *self.stats.by_type.entry(TypoType::Homophone).or_insert(0) += 1;
-                return homophones[rng.gen_range(0..homophones.len())].clone();
+                return homophones[rng.random_range(0..homophones.len())].clone();
             }
         }
 
@@ -380,7 +380,7 @@ impl TypoGenerator {
 
             self.stats.total_characters += 1;
 
-            if rng.gen::<f64>() < self.config.char_error_rate {
+            if rng.random::<f64>() < self.config.char_error_rate {
                 let typo_type = self.select_typo_type(rng);
                 let c = result[i];
 
@@ -388,7 +388,7 @@ impl TypoGenerator {
                     TypoType::Substitution => {
                         let nearby = self.keyboard.get_nearby(c);
                         if !nearby.is_empty() {
-                            result[i] = nearby[rng.gen_range(0..nearby.len())];
+                            result[i] = nearby[rng.random_range(0..nearby.len())];
                         }
                     }
                     TypoType::Transposition => {
@@ -410,7 +410,7 @@ impl TypoGenerator {
                     TypoType::Insertion => {
                         let nearby = self.keyboard.get_nearby(c);
                         if !nearby.is_empty() {
-                            result.insert(i, nearby[rng.gen_range(0..nearby.len())]);
+                            result.insert(i, nearby[rng.random_range(0..nearby.len())]);
                             // Skip the inserted character
                             i += 1;
                         }
@@ -430,7 +430,7 @@ impl TypoGenerator {
                     TypoType::OCRError => {
                         let confusions = self.ocr.get_confusions(c);
                         if !confusions.is_empty() {
-                            result[i] = confusions[rng.gen_range(0..confusions.len())];
+                            result[i] = confusions[rng.random_range(0..confusions.len())];
                         }
                     }
                     TypoType::Homophone => {
@@ -455,14 +455,14 @@ impl TypoGenerator {
         for c in text.chars() {
             self.stats.total_characters += 1;
 
-            if c.is_alphanumeric() && rng.gen::<f64>() < self.config.char_error_rate {
+            if c.is_alphanumeric() && rng.random::<f64>() < self.config.char_error_rate {
                 let typo_type = self.select_typo_type(rng);
 
                 match typo_type {
                     TypoType::Substitution => {
                         let nearby = self.keyboard.get_nearby(c);
                         if !nearby.is_empty() {
-                            result.push(nearby[rng.gen_range(0..nearby.len())]);
+                            result.push(nearby[rng.random_range(0..nearby.len())]);
                         } else {
                             result.push(c);
                         }
@@ -474,7 +474,7 @@ impl TypoGenerator {
                         result.push(c);
                         let nearby = self.keyboard.get_nearby(c);
                         if !nearby.is_empty() {
-                            result.push(nearby[rng.gen_range(0..nearby.len())]);
+                            result.push(nearby[rng.random_range(0..nearby.len())]);
                         }
                     }
                     TypoType::DoubleChar => {
@@ -565,7 +565,7 @@ pub fn introduce_encoding_issue<R: Rng>(text: &str, issue: EncodingIssue, rng: &
         EncodingIssue::MissingChars => text
             .chars()
             .map(|c| {
-                if !c.is_ascii() && rng.gen::<f64>() < 0.5 {
+                if !c.is_ascii() && rng.random::<f64>() < 0.5 {
                     '?'
                 } else {
                     c
@@ -579,7 +579,7 @@ pub fn introduce_encoding_issue<R: Rng>(text: &str, issue: EncodingIssue, rng: &
             let mut result = String::new();
             for c in text.chars() {
                 result.push(c);
-                if rng.gen::<f64>() < 0.01 {
+                if rng.random::<f64>() < 0.01 {
                     // Insert random control character
                     result.push('\u{0000}');
                 }

@@ -332,7 +332,7 @@ impl TaxLineGenerator {
         let line_id = format!("TXLN-{:06}", self.counter);
 
         // Use rng to slightly vary line_number for realism in future extensions
-        let _noise: f64 = self.rng.gen();
+        let _noise: f64 = self.rng.random();
 
         TaxLine::new(
             line_id,

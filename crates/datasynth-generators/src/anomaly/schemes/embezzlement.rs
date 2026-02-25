@@ -204,14 +204,14 @@ impl GradualEmbezzlementScheme {
         rng: &mut R,
     ) -> Option<String> {
         // Prefer established accounts
-        if !self.preferred_accounts.is_empty() && rng.gen::<f64>() < 0.8 {
-            let idx = rng.gen_range(0..self.preferred_accounts.len());
+        if !self.preferred_accounts.is_empty() && rng.random::<f64>() < 0.8 {
+            let idx = rng.random_range(0..self.preferred_accounts.len());
             return Some(self.preferred_accounts[idx].clone());
         }
 
         // Fall back to available accounts
         if !context.available_accounts.is_empty() {
-            let idx = rng.gen_range(0..context.available_accounts.len());
+            let idx = rng.random_range(0..context.available_accounts.len());
             return Some(context.available_accounts[idx].clone());
         }
 
@@ -267,7 +267,7 @@ impl FraudScheme for GradualEmbezzlementScheme {
         }
 
         // Check if detected
-        if rng.gen::<f64>() < self.detection_probability * context.detection_activity {
+        if rng.random::<f64>() < self.detection_probability * context.detection_activity {
             self.detection_status = SchemeDetectionStatus::PartiallyDetected;
             self.status = SchemeStatus::Detected;
             return actions;
@@ -279,7 +279,7 @@ impl FraudScheme for GradualEmbezzlementScheme {
         }
 
         // Pause if audit in progress
-        if context.audit_in_progress && rng.gen::<f64>() < 0.8 {
+        if context.audit_in_progress && rng.random::<f64>() < 0.8 {
             self.status = SchemeStatus::Paused;
             return actions;
         }
@@ -291,7 +291,7 @@ impl FraudScheme for GradualEmbezzlementScheme {
         let target_count = stage.random_transaction_count(rng);
         let should_transact = self.stage_transaction_count < target_count
             && self.days_since_last_transaction >= 3 // At least 3 days between transactions
-            && rng.gen::<f64>() < 0.3; // Random chance
+            && rng.random::<f64>() < 0.3; // Random chance
 
         if should_transact {
             let amount = stage.random_amount(rng);

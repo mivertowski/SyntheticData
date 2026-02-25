@@ -456,7 +456,7 @@ impl EntityRegistryManager {
         if vendors.is_empty() {
             None
         } else {
-            use rand::seq::SliceRandom;
+            use rand::seq::IndexedRandom;
             vendors.choose(rng).map(|rec| rec.entity_id.id.clone())
         }
     }
@@ -479,7 +479,7 @@ impl EntityRegistryManager {
         if customers.is_empty() {
             None
         } else {
-            use rand::seq::SliceRandom;
+            use rand::seq::IndexedRandom;
             customers.choose(rng).map(|rec| rec.entity_id.id.clone())
         }
     }

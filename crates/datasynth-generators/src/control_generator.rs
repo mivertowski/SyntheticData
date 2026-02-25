@@ -164,7 +164,7 @@ impl ControlGenerator {
         }
 
         // Roll for exception based on exception rate
-        if self.rng.gen::<f64>() < self.config.exception_rate {
+        if self.rng.random::<f64>() < self.config.exception_rate {
             ControlStatus::Exception
         } else {
             ControlStatus::Effective
@@ -212,7 +212,7 @@ impl SodChecker {
     /// Returns a tuple of (has_violation, conflict_type).
     pub fn check_entry(&mut self, entry: &JournalEntry) -> (bool, Option<SodConflictType>) {
         // Roll for violation based on violation rate
-        if self.rng.gen::<f64>() >= self.violation_rate {
+        if self.rng.random::<f64>() >= self.violation_rate {
             return (false, None);
         }
 

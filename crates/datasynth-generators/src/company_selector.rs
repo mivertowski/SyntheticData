@@ -88,7 +88,7 @@ impl WeightedCompanySelector {
 
     /// Select a company code using the weighted distribution.
     pub fn select(&self, rng: &mut ChaCha8Rng) -> &str {
-        let p: f64 = rng.gen();
+        let p: f64 = rng.random();
 
         for (i, &cum_weight) in self.cumulative_weights.iter().enumerate() {
             if p < cum_weight {

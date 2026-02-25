@@ -53,7 +53,8 @@ impl ProjectGenerator {
             project.end_date = Some(end_date.to_string());
             project.status = self.pick_status();
             project.description = self.project_description(project_type);
-            project.responsible_cost_center = format!("{:04}", self.rng.gen_range(1000..9999u32));
+            project.responsible_cost_center =
+                format!("{:04}", self.rng.random_range(1000..9999u32));
 
             // Generate WBS hierarchy
             let wbs_elements = self.generate_wbs(&project_id, budget, &self.config.wbs.clone());
@@ -77,7 +78,7 @@ impl ProjectGenerator {
             + dist.maintenance
             + dist.technology;
 
-        let roll: f64 = self.rng.gen::<f64>() * total;
+        let roll: f64 = self.rng.random::<f64>() * total;
         let mut cumulative = 0.0;
 
         let types = [
@@ -101,7 +102,7 @@ impl ProjectGenerator {
 
     /// Pick a project status (most should be Active).
     fn pick_status(&mut self) -> ProjectStatus {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.05 {
             ProjectStatus::Planned
         } else if roll < 0.80 {
@@ -127,7 +128,7 @@ impl ProjectGenerator {
             ProjectType::Maintenance => (25_000.0, 300_000.0),
             ProjectType::Technology => (100_000.0, 2_000_000.0),
         };
-        let amount = self.rng.gen_range(lo..hi);
+        let amount = self.rng.random_range(lo..hi);
         Decimal::from_f64_retain(amount)
             .unwrap_or(Decimal::from(500_000))
             .round_dp(2)
@@ -143,7 +144,7 @@ impl ProjectGenerator {
         let mut elements = Vec::new();
         let top_count = self
             .rng
-            .gen_range(wbs_config.min_elements_per_level..=wbs_config.max_elements_per_level);
+            .random_range(wbs_config.min_elements_per_level..=wbs_config.max_elements_per_level);
 
         let mut remaining_budget = total_budget;
 
@@ -165,7 +166,7 @@ impl ProjectGenerator {
 
             // Generate sub-levels if depth > 1
             if wbs_config.max_depth > 1 {
-                let sub_count = self.rng.gen_range(
+                let sub_count = self.rng.random_range(
                     wbs_config.min_elements_per_level.min(3)
                         ..=wbs_config.max_elements_per_level.min(4),
                 );

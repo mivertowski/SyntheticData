@@ -569,7 +569,7 @@ impl CollusionRing {
         }
 
         // Check for detection
-        if rng.gen::<f64>() < self.detection_risk * 0.1 {
+        if rng.random::<f64>() < self.detection_risk * 0.1 {
             self.status = RingStatus::Detected;
             return;
         }
@@ -581,7 +581,7 @@ impl CollusionRing {
             }
             RingStatus::Active if self.active_months >= 6 && self.detection_risk < 0.3 => {
                 // Consider escalation if successful
-                if rng.gen::<f64>() < 0.3 {
+                if rng.random::<f64>() < 0.3 {
                     self.status = RingStatus::Escalating;
                     self.behavior.avg_transaction_amount = self
                         .behavior
@@ -591,7 +591,7 @@ impl CollusionRing {
             }
             RingStatus::Dormant if self.active_months.is_multiple_of(3) => {
                 // Chance to reactivate
-                if rng.gen::<f64>() < 0.4 && self.detection_risk < 0.4 {
+                if rng.random::<f64>() < 0.4 && self.detection_risk < 0.4 {
                     self.status = RingStatus::Active;
                     self.detection_risk *= 0.8; // Risk reduced during dormancy
                 }
@@ -606,10 +606,10 @@ impl CollusionRing {
             let defection_prob = member.defection_probability(
                 self.detection_risk,
                 self.active_months,
-                rng.gen::<f64>() * 0.3, // Random external pressure
+                rng.random::<f64>() * 0.3, // Random external pressure
             );
 
-            if rng.gen::<f64>() < defection_prob {
+            if rng.random::<f64>() < defection_prob {
                 return true;
             }
         }

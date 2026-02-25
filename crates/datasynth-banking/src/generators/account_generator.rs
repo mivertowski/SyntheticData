@@ -100,7 +100,7 @@ impl AccountGenerator {
         };
 
         let target = base_count * multiplier;
-        let variation: f64 = self.rng.gen_range(-0.5..0.5);
+        let variation: f64 = self.rng.random_range(-0.5..0.5);
         ((target + variation).round() as u32).max(1)
     }
 
@@ -224,10 +224,10 @@ impl AccountGenerator {
         };
 
         // Adjust based on config
-        if self.rng.gen::<f64>() > self.config.products.debit_card_rate {
+        if self.rng.random::<f64>() > self.config.products.debit_card_rate {
             features.debit_card = false;
         }
-        if self.rng.gen::<f64>() > self.config.products.international_rate {
+        if self.rng.random::<f64>() > self.config.products.international_rate {
             features.international_transfers = false;
             features.wire_transfers = false;
         }
@@ -247,26 +247,26 @@ impl AccountGenerator {
             Some(PersonaVariant::Retail(p)) => {
                 use datasynth_core::models::banking::RetailPersona;
                 match p {
-                    RetailPersona::Student => self.rng.gen_range(100.0..2_000.0),
-                    RetailPersona::EarlyCareer => self.rng.gen_range(500.0..10_000.0),
-                    RetailPersona::MidCareer => self.rng.gen_range(2_000.0..50_000.0),
-                    RetailPersona::Retiree => self.rng.gen_range(5_000.0..100_000.0),
-                    RetailPersona::HighNetWorth => self.rng.gen_range(50_000.0..1_000_000.0),
-                    RetailPersona::GigWorker => self.rng.gen_range(200.0..5_000.0),
-                    _ => self.rng.gen_range(500.0..5_000.0),
+                    RetailPersona::Student => self.rng.random_range(100.0..2_000.0),
+                    RetailPersona::EarlyCareer => self.rng.random_range(500.0..10_000.0),
+                    RetailPersona::MidCareer => self.rng.random_range(2_000.0..50_000.0),
+                    RetailPersona::Retiree => self.rng.random_range(5_000.0..100_000.0),
+                    RetailPersona::HighNetWorth => self.rng.random_range(50_000.0..1_000_000.0),
+                    RetailPersona::GigWorker => self.rng.random_range(200.0..5_000.0),
+                    _ => self.rng.random_range(500.0..5_000.0),
                 }
             }
             Some(PersonaVariant::Business(p)) => {
                 use datasynth_core::models::banking::BusinessPersona;
                 match p {
-                    BusinessPersona::SmallBusiness => self.rng.gen_range(5_000.0..100_000.0),
-                    BusinessPersona::MidMarket => self.rng.gen_range(50_000.0..1_000_000.0),
-                    BusinessPersona::Enterprise => self.rng.gen_range(500_000.0..10_000_000.0),
-                    BusinessPersona::CashIntensive => self.rng.gen_range(10_000.0..200_000.0),
-                    _ => self.rng.gen_range(10_000.0..200_000.0),
+                    BusinessPersona::SmallBusiness => self.rng.random_range(5_000.0..100_000.0),
+                    BusinessPersona::MidMarket => self.rng.random_range(50_000.0..1_000_000.0),
+                    BusinessPersona::Enterprise => self.rng.random_range(500_000.0..10_000_000.0),
+                    BusinessPersona::CashIntensive => self.rng.random_range(10_000.0..200_000.0),
+                    _ => self.rng.random_range(10_000.0..200_000.0),
                 }
             }
-            _ => self.rng.gen_range(1_000.0..10_000.0),
+            _ => self.rng.random_range(1_000.0..10_000.0),
         };
 
         Decimal::from_f64_retain(base_balance).unwrap_or(Decimal::ZERO)
@@ -286,7 +286,7 @@ impl AccountGenerator {
         let prefix = routing_prefixes
             .choose(&mut self.rng)
             .expect("non-empty array");
-        format!("{}{:06}", prefix, self.rng.gen_range(0..1_000_000))
+        format!("{}{:06}", prefix, self.rng.random_range(0..1_000_000))
     }
 
     /// Get customer's currency.
@@ -307,14 +307,14 @@ impl AccountGenerator {
 
     /// Generate random opening date after onboarding.
     fn random_opening_date(&mut self, onboarding: NaiveDate) -> NaiveDate {
-        let days_after: i64 = self.rng.gen_range(30..365);
+        let days_after: i64 = self.rng.random_range(30..365);
         onboarding + chrono::Duration::days(days_after)
     }
 
     /// Weighted random selection.
     fn weighted_select<T: Copy>(&mut self, options: &[(T, f64)]) -> T {
         let total: f64 = options.iter().map(|(_, w)| w).sum();
-        let roll: f64 = self.rng.gen::<f64>() * total;
+        let roll: f64 = self.rng.random::<f64>() * total;
         let mut cumulative = 0.0;
 
         for (item, weight) in options {

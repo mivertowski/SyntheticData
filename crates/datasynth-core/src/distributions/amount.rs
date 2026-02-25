@@ -182,7 +182,7 @@ impl AmountSampler {
         self.benford_enabled = enabled;
         if enabled && self.benford_sampler.is_none() {
             // Initialize Benford sampler if not already present
-            let seed = self.rng.gen();
+            let seed = self.rng.random();
             self.benford_sampler = Some(BenfordSampler::new(seed, self.config.clone()));
         }
     }
@@ -216,7 +216,7 @@ impl AmountSampler {
         amount = amount.clamp(self.config.min_amount, self.config.max_amount);
 
         // Apply round number bias
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         if p < self.config.round_number_probability {
             // Round to nearest whole number ending in 00
             amount = (amount / 100.0).round() * 100.0;
@@ -265,7 +265,7 @@ impl AmountSampler {
 
         // Generate random weights ensuring minimum weight
         let mut weights: Vec<f64> = (0..count)
-            .map(|_| self.rng.gen::<f64>().max(0.01))
+            .map(|_| self.rng.random::<f64>().max(0.01))
             .collect();
         let sum: f64 = weights.iter().sum();
         weights.iter_mut().for_each(|w| *w /= sum);
@@ -325,7 +325,7 @@ impl AmountSampler {
         let max_f64 = max.to_string().parse::<f64>().unwrap_or(1000000.0);
 
         let range = max_f64 - min_f64;
-        let amount = min_f64 + self.rng.gen::<f64>() * range;
+        let amount = min_f64 + self.rng.random::<f64>() * range;
 
         let rounded = (amount * self.decimal_multiplier).round() / self.decimal_multiplier;
         Decimal::from_f64_retain(rounded).unwrap_or(min)
@@ -377,7 +377,7 @@ impl ExchangeRateSampler {
         let base_rate = to_usd / from_usd;
 
         // Add some random variation
-        let variation = 1.0 + (self.rng.gen::<f64>() - 0.5) * 2.0 * self.volatility;
+        let variation = 1.0 + (self.rng.random::<f64>() - 0.5) * 2.0 * self.volatility;
         let rate = base_rate * variation;
 
         // Round to 6 decimal places

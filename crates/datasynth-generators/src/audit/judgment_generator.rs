@@ -75,7 +75,7 @@ impl JudgmentGenerator {
     ) -> Vec<ProfessionalJudgment> {
         self.fiscal_year = engagement.fiscal_year;
 
-        let count = self.rng.gen_range(
+        let count = self.rng.random_range(
             self.config.judgments_per_engagement.0..=self.config.judgments_per_engagement.1,
         );
 
@@ -114,7 +114,7 @@ impl JudgmentGenerator {
         judgment = judgment.with_issue(&issue);
 
         // Add information items
-        let info_count = self.rng.gen_range(
+        let info_count = self.rng.random_range(
             self.config.information_items_range.0..=self.config.information_items_range.1,
         );
         for _ in 0..info_count {
@@ -125,7 +125,7 @@ impl JudgmentGenerator {
         // Add alternative evaluations
         let alt_count = self
             .rng
-            .gen_range(self.config.alternatives_range.0..=self.config.alternatives_range.1);
+            .random_range(self.config.alternatives_range.0..=self.config.alternatives_range.1);
         let alternatives = self.generate_alternatives(judgment_type, alt_count);
         for alt in alternatives {
             judgment.add_alternative(alt);
@@ -142,27 +142,28 @@ impl JudgmentGenerator {
         // Set preparer
         let preparer = self.select_team_member(team_members, "manager");
         let preparer_name = self.generate_name();
-        let preparer_date = engagement.planning_start + Duration::days(self.rng.gen_range(5..20));
+        let preparer_date =
+            engagement.planning_start + Duration::days(self.rng.random_range(5..20));
         judgment = judgment.with_preparer(&preparer, &preparer_name, preparer_date);
 
         // Add reviewer
-        if self.rng.gen::<f64>() < 0.9 {
+        if self.rng.random::<f64>() < 0.9 {
             let reviewer = self.select_team_member(team_members, "senior");
             let reviewer_name = self.generate_name();
-            let review_date = preparer_date + Duration::days(self.rng.gen_range(3..10));
+            let review_date = preparer_date + Duration::days(self.rng.random_range(3..10));
             judgment.add_review(&reviewer, &reviewer_name, review_date);
         }
 
         // Maybe add partner concurrence
-        if judgment.partner_concurrence_required && self.rng.gen::<f64>() < 0.8 {
+        if judgment.partner_concurrence_required && self.rng.random::<f64>() < 0.8 {
             let partner = engagement.engagement_partner_id.clone();
-            let partner_date = preparer_date + Duration::days(self.rng.gen_range(7..14));
+            let partner_date = preparer_date + Duration::days(self.rng.random_range(7..14));
             judgment.add_partner_concurrence(&partner, partner_date);
         }
 
         // Maybe add consultation
         if judgment.consultation_required
-            || self.rng.gen::<f64>() < self.config.consultation_probability
+            || self.rng.random::<f64>() < self.config.consultation_probability
         {
             let consultation = self.generate_consultation(judgment_type, preparer_date);
             judgment.add_consultation(consultation);
@@ -353,7 +354,7 @@ impl JudgmentGenerator {
             (JudgmentType::SubsequentEvents, 0.05),
         ];
 
-        let r: f64 = self.rng.gen();
+        let r: f64 = self.rng.random();
         let mut cumulative = 0.0;
         for (jtype, probability) in types {
             cumulative += probability;
@@ -376,7 +377,7 @@ impl JudgmentGenerator {
                     "Fixed Assets",
                     "Payables",
                 ];
-                let idx = self.rng.gen_range(0..areas.len());
+                let idx = self.rng.random_range(0..areas.len());
                 format!("{} Risk Assessment", areas[idx])
             }
             JudgmentType::ControlEvaluation => {
@@ -386,7 +387,7 @@ impl JudgmentGenerator {
                     "Payroll",
                     "IT General",
                 ];
-                let idx = self.rng.gen_range(0..controls.len());
+                let idx = self.rng.random_range(0..controls.len());
                 format!("{} Controls Evaluation", controls[idx])
             }
             JudgmentType::EstimateEvaluation => {
@@ -396,14 +397,14 @@ impl JudgmentGenerator {
                     "Warranty Liability",
                     "Goodwill Impairment",
                 ];
-                let idx = self.rng.gen_range(0..estimates.len());
+                let idx = self.rng.random_range(0..estimates.len());
                 format!("{} Estimate", estimates[idx])
             }
             JudgmentType::GoingConcern => "Going Concern Assessment".into(),
             JudgmentType::MisstatementEvaluation => "Evaluation of Identified Misstatements".into(),
             JudgmentType::SamplingDesign => {
                 let areas = ["Revenue Cutoff", "Expense Testing", "AP Completeness"];
-                let idx = self.rng.gen_range(0..areas.len());
+                let idx = self.rng.random_range(0..areas.len());
                 format!("{} Sample Design", areas[idx])
             }
             JudgmentType::FraudRiskAssessment => "Fraud Risk Assessment".into(),
@@ -553,12 +554,12 @@ impl JudgmentGenerator {
             ],
         };
 
-        let idx = self.rng.gen_range(0..items.len());
+        let idx = self.rng.random_range(0..items.len());
         let (desc, source, reliability) = items[idx];
 
         let weight = match reliability {
             InformationReliability::High => {
-                if self.rng.gen::<f64>() < 0.7 {
+                if self.rng.random::<f64>() < 0.7 {
                     InformationWeight::High
                 } else {
                     InformationWeight::Moderate
@@ -651,7 +652,7 @@ impl JudgmentGenerator {
             ],
         };
 
-        let selected_idx = self.rng.gen_range(0..count.min(options.len() as u32)) as usize;
+        let selected_idx = self.rng.random_range(0..count.min(options.len() as u32)) as usize;
 
         for (i, (desc, pros, cons)) in options.into_iter().take(count as usize).enumerate() {
             let mut alt = AlternativeEvaluation::new(desc, pros, cons);
@@ -778,7 +779,7 @@ impl JudgmentGenerator {
         judgment_type: JudgmentType,
         base_date: NaiveDate,
     ) -> ConsultationRecord {
-        let (consultant, role, is_external) = if self.rng.gen::<f64>() < 0.3 {
+        let (consultant, role, is_external) = if self.rng.random::<f64>() < 0.3 {
             ("External Technical Partner", "Industry Specialist", true)
         } else {
             let roles = [
@@ -786,7 +787,7 @@ impl JudgmentGenerator {
                 ("Quality Review Partner", "Quality Control", false),
                 ("Industry Specialist", "Sector Expert", false),
             ];
-            let idx = self.rng.gen_range(0..roles.len());
+            let idx = self.rng.random_range(0..roles.len());
             (roles[idx].0, roles[idx].1, roles[idx].2)
         };
 
@@ -807,7 +808,7 @@ impl JudgmentGenerator {
             consultant,
             role,
             is_external,
-            base_date + Duration::days(self.rng.gen_range(1..7)),
+            base_date + Duration::days(self.rng.random_range(1..7)),
         )
         .with_content(
             issue,
@@ -827,7 +828,7 @@ impl JudgmentGenerator {
         if let Some(&member) = matching.first() {
             member.clone()
         } else if !team_members.is_empty() {
-            let idx = self.rng.gen_range(0..team_members.len());
+            let idx = self.rng.random_range(0..team_members.len());
             team_members[idx].clone()
         } else {
             format!("{}001", role_hint.to_uppercase())
@@ -839,8 +840,8 @@ impl JudgmentGenerator {
         let first_names = ["Michael", "Sarah", "David", "Jennifer", "Robert", "Emily"];
         let last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Davis"];
 
-        let first_idx = self.rng.gen_range(0..first_names.len());
-        let last_idx = self.rng.gen_range(0..last_names.len());
+        let first_idx = self.rng.random_range(0..first_names.len());
+        let last_idx = self.rng.random_range(0..last_names.len());
 
         format!("{} {}", first_names[first_idx], last_names[last_idx])
     }

@@ -201,7 +201,7 @@ impl DebtGenerator {
         let threshold = Decimal::try_from(def.threshold).unwrap_or(dec!(3.0));
 
         // Generate actual value: usually compliant (90%), occasionally breached (10%)
-        let actual = if self.rng.gen_bool(0.90) {
+        let actual = if self.rng.random_bool(0.90) {
             self.generate_compliant_value(covenant_type, threshold)
         } else {
             self.generate_breached_value(covenant_type, threshold)
@@ -226,12 +226,12 @@ impl DebtGenerator {
         match covenant_type {
             // Maximum covenants: actual < threshold
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
-                let factor = self.rng.gen_range(0.50f64..0.90f64);
+                let factor = self.rng.random_range(0.50f64..0.90f64);
                 (threshold * Decimal::try_from(factor).unwrap_or(dec!(0.70))).round_dp(2)
             }
             // Minimum covenants: actual > threshold
             _ => {
-                let factor = self.rng.gen_range(1.10f64..2.00f64);
+                let factor = self.rng.random_range(1.10f64..2.00f64);
                 (threshold * Decimal::try_from(factor).unwrap_or(dec!(1.50))).round_dp(2)
             }
         }
@@ -245,18 +245,18 @@ impl DebtGenerator {
     ) -> Decimal {
         match covenant_type {
             CovenantType::DebtToEquity | CovenantType::DebtToEbitda => {
-                let factor = self.rng.gen_range(1.05f64..1.30f64);
+                let factor = self.rng.random_range(1.05f64..1.30f64);
                 (threshold * Decimal::try_from(factor).unwrap_or(dec!(1.10))).round_dp(2)
             }
             _ => {
-                let factor = self.rng.gen_range(0.70f64..0.95f64);
+                let factor = self.rng.random_range(0.70f64..0.95f64);
                 (threshold * Decimal::try_from(factor).unwrap_or(dec!(0.85))).round_dp(2)
             }
         }
     }
 
     fn random_lender(&mut self) -> &'static str {
-        let idx = self.rng.gen_range(0..LENDERS.len());
+        let idx = self.rng.random_range(0..LENDERS.len());
         LENDERS[idx]
     }
 

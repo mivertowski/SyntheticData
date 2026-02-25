@@ -53,7 +53,7 @@ impl SupplierEsgGenerator {
         let assessed_indices: Vec<usize> = vendors
             .iter()
             .enumerate()
-            .filter(|_| self.rng.gen::<f64>() < self.config.assessment_coverage)
+            .filter(|_| self.rng.random::<f64>() < self.config.assessment_coverage)
             .map(|(i, _)| i)
             .collect();
 
@@ -87,9 +87,9 @@ impl SupplierEsgGenerator {
 
             let risk_flag = self.determine_risk(overall, is_high_risk_country);
             let corrective_actions = match risk_flag {
-                EsgRiskFlag::Critical => self.rng.gen_range(3..8u32),
-                EsgRiskFlag::High => self.rng.gen_range(1..5u32),
-                EsgRiskFlag::Medium => self.rng.gen_range(0..3u32),
+                EsgRiskFlag::Critical => self.rng.random_range(3..8u32),
+                EsgRiskFlag::High => self.rng.random_range(1..5u32),
+                EsgRiskFlag::Medium => self.rng.random_range(0..3u32),
                 EsgRiskFlag::Low => 0,
             };
 
@@ -121,17 +121,17 @@ impl SupplierEsgGenerator {
         industry: &str,
         _dimension: &str,
     ) -> f64 {
-        let mut score = base_quality + self.rng.gen_range(-15.0..15.0);
+        let mut score = base_quality + self.rng.random_range(-15.0..15.0);
 
         // Country risk adjustment
         if self.config.high_risk_countries.iter().any(|c| c == country) {
-            score -= self.rng.gen_range(5.0..20.0);
+            score -= self.rng.random_range(5.0..20.0);
         }
 
         // Industry adjustment: manufacturing and mining tend lower on environmental
         match industry {
-            "manufacturing" | "mining" | "chemicals" => score -= self.rng.gen_range(0.0..10.0),
-            "technology" | "professional_services" => score += self.rng.gen_range(0.0..5.0),
+            "manufacturing" | "mining" | "chemicals" => score -= self.rng.random_range(0.0..10.0),
+            "technology" | "professional_services" => score += self.rng.random_range(0.0..5.0),
             _ => {}
         }
 
@@ -151,7 +151,7 @@ impl SupplierEsgGenerator {
     }
 
     fn pick_method(&mut self) -> AssessmentMethod {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.40 {
             AssessmentMethod::SelfAssessment
         } else if roll < 0.65 {

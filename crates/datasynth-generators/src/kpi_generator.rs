@@ -173,13 +173,13 @@ impl KpiGenerator {
         let kpi_id = self.uuid_factory.next().to_string();
 
         // Generate a target value within the defined range
-        let target_raw: f64 = self.rng.gen_range(def.target_min..=def.target_max);
+        let target_raw: f64 = self.rng.random_range(def.target_min..=def.target_max);
         let target = Decimal::from_f64_retain(target_raw)
             .unwrap_or(Decimal::ZERO)
             .round_dp(2);
 
         // Actual value = target * random(0.8 - 1.2) with noise
-        let multiplier: f64 = self.rng.gen_range(0.8..1.2);
+        let multiplier: f64 = self.rng.random_range(0.8..1.2);
         let value_raw = target_raw * multiplier;
         let value = Decimal::from_f64_retain(value_raw)
             .unwrap_or(Decimal::ZERO)
@@ -200,11 +200,11 @@ impl KpiGenerator {
         };
 
         // Year-over-year change: random -10% to +15%
-        let yoy_raw: f64 = self.rng.gen_range(-0.10..0.15);
+        let yoy_raw: f64 = self.rng.random_range(-0.10..0.15);
         let year_over_year_change = Some((yoy_raw * 10000.0).round() / 10000.0);
 
         // Prior period value: value * (1 - small random change)
-        let prior_change: f64 = self.rng.gen_range(-0.08..0.08);
+        let prior_change: f64 = self.rng.random_range(-0.08..0.08);
         let prior_raw = value_raw * (1.0 - prior_change);
         let prior_period_value = Some(
             Decimal::from_f64_retain(prior_raw)

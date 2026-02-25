@@ -85,7 +85,7 @@ impl FindingGenerator {
     ) -> Vec<AuditFinding> {
         self.fiscal_year = engagement.fiscal_year;
 
-        let count = self.rng.gen_range(
+        let count = self.rng.random_range(
             self.config.findings_per_engagement.0..=self.config.findings_per_engagement.1,
         );
 
@@ -143,9 +143,9 @@ impl FindingGenerator {
 
         // Link to workpapers
         if !workpapers.is_empty() {
-            let wp_count = self.rng.gen_range(1..=3.min(workpapers.len()));
+            let wp_count = self.rng.random_range(1..=3.min(workpapers.len()));
             for _ in 0..wp_count {
-                let idx = self.rng.gen_range(0..workpapers.len());
+                let idx = self.rng.random_range(0..workpapers.len());
                 finding.workpaper_refs.push(workpapers[idx].workpaper_id);
             }
         }
@@ -154,13 +154,13 @@ impl FindingGenerator {
         let identifier = self.select_team_member(team_members, "senior");
         finding.identified_by = identifier;
         finding.identified_date =
-            engagement.fieldwork_start + Duration::days(self.rng.gen_range(7..30));
+            engagement.fieldwork_start + Duration::days(self.rng.random_range(7..30));
 
         // Maybe add review
-        if self.rng.gen::<f64>() < 0.8 {
+        if self.rng.random::<f64>() < 0.8 {
             finding.reviewed_by = Some(self.select_team_member(team_members, "manager"));
             finding.review_date =
-                Some(finding.identified_date + Duration::days(self.rng.gen_range(3..10)));
+                Some(finding.identified_date + Duration::days(self.rng.random_range(3..10)));
             finding.status = FindingStatus::PendingReview;
         }
 
@@ -171,14 +171,15 @@ impl FindingGenerator {
         );
 
         // Maybe add management response
-        if self.rng.gen::<f64>() < 0.7 {
-            let response_date = finding.identified_date + Duration::days(self.rng.gen_range(7..21));
-            let agrees = self.rng.gen::<f64>() < self.config.management_agrees_probability;
+        if self.rng.random::<f64>() < 0.7 {
+            let response_date =
+                finding.identified_date + Duration::days(self.rng.random_range(7..21));
+            let agrees = self.rng.random::<f64>() < self.config.management_agrees_probability;
             let response = self.generate_management_response(finding_type, agrees);
             finding.add_management_response(&response, agrees, response_date);
 
             // Maybe add remediation plan
-            if agrees && self.rng.gen::<f64>() < self.config.remediation_plan_probability {
+            if agrees && self.rng.random::<f64>() < self.config.remediation_plan_probability {
                 let plan = self.generate_remediation_plan(&finding, &account);
                 finding.with_remediation_plan(plan);
             }
@@ -189,7 +190,7 @@ impl FindingGenerator {
 
     /// Select finding type based on probabilities.
     fn select_finding_type(&mut self) -> FindingType {
-        let r: f64 = self.rng.gen();
+        let r: f64 = self.rng.random();
 
         if r < self.config.material_weakness_probability {
             FindingType::MaterialWeakness
@@ -201,7 +202,7 @@ impl FindingGenerator {
             + self.config.significant_deficiency_probability
             + self.config.misstatement_probability
         {
-            if self.rng.gen::<f64>() < 0.3 {
+            if self.rng.random::<f64>() < 0.3 {
                 FindingType::MaterialMisstatement
             } else {
                 FindingType::ImmaterialMisstatement
@@ -214,7 +215,7 @@ impl FindingGenerator {
                 FindingType::ItDeficiency,
                 FindingType::ProcessImprovement,
             ];
-            let idx = self.rng.gen_range(0..other_types.len());
+            let idx = self.rng.random_range(0..other_types.len());
             other_types[idx]
         }
     }
@@ -241,7 +242,7 @@ impl FindingGenerator {
                         "Financial Close",
                     ),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::SignificantDeficiency => {
@@ -260,7 +261,7 @@ impl FindingGenerator {
                         "General Ledger",
                     ),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::ControlDeficiency => {
@@ -273,7 +274,7 @@ impl FindingGenerator {
                     ("Delayed bank reconciliation preparation", "Cash"),
                     ("Inconsistent inventory count procedures", "Inventory"),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::MaterialMisstatement | FindingType::ImmaterialMisstatement => {
@@ -287,7 +288,7 @@ impl FindingGenerator {
                     ("Accrued liabilities understatement", "Accrued Liabilities"),
                     ("Fixed asset depreciation calculation error", "Fixed Assets"),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::ComplianceException => {
@@ -296,7 +297,7 @@ impl FindingGenerator {
                     ("Incomplete Form 1099 reporting", "Tax"),
                     ("Non-compliance with debt covenant reporting", "Debt"),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::ItDeficiency => {
@@ -306,7 +307,7 @@ impl FindingGenerator {
                     ("Missing change management documentation", "IT Controls"),
                     ("Incomplete disaster recovery testing", "IT Controls"),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
             FindingType::OtherMatter | FindingType::ProcessImprovement => {
@@ -324,7 +325,7 @@ impl FindingGenerator {
                         "General Ledger",
                     ),
                 ];
-                let idx = self.rng.gen_range(0..titles.len());
+                let idx = self.rng.random_range(0..titles.len());
                 (titles[idx].0.into(), titles[idx].1.into())
             }
         }
@@ -344,8 +345,8 @@ impl FindingGenerator {
                     "During our testing of {} controls, we noted that the control was not operating effectively. \
                     Specifically, {} of {} items tested did not have evidence of the required control activity.",
                     account,
-                    self.rng.gen_range(2..8),
-                    self.rng.gen_range(20..40)
+                    self.rng.random_range(2..8),
+                    self.rng.random_range(20..40)
                 );
                 let criteria = format!(
                     "Company policy and SOX requirements mandate that all {} transactions receive appropriate \
@@ -361,9 +362,9 @@ impl FindingGenerator {
                 (condition, criteria, cause, effect)
             }
             FindingType::MaterialMisstatement | FindingType::ImmaterialMisstatement => {
-                let amount = self
-                    .rng
-                    .gen_range(self.config.misstatement_range.0..self.config.misstatement_range.1);
+                let amount = self.rng.random_range(
+                    self.config.misstatement_range.0..self.config.misstatement_range.1,
+                );
                 let condition = format!(
                     "Our testing identified a misstatement in {} of approximately ${}. \
                     The error resulted from incorrect application of accounting standards.",
@@ -375,7 +376,7 @@ impl FindingGenerator {
                 let effect = format!(
                     "The {} balance was {} by ${}, which {}.",
                     account,
-                    if self.rng.gen::<bool>() {
+                    if self.rng.random::<bool>() {
                         "overstated"
                     } else {
                         "understated"
@@ -469,18 +470,18 @@ impl FindingGenerator {
         let base_severity = finding_type.default_severity();
 
         // Maybe adjust severity
-        if self.rng.gen::<f64>() < 0.2 {
+        if self.rng.random::<f64>() < 0.2 {
             match base_severity {
                 FindingSeverity::Critical => FindingSeverity::High,
                 FindingSeverity::High => {
-                    if self.rng.gen::<bool>() {
+                    if self.rng.random::<bool>() {
                         FindingSeverity::Critical
                     } else {
                         FindingSeverity::Medium
                     }
                 }
                 FindingSeverity::Medium => {
-                    if self.rng.gen::<bool>() {
+                    if self.rng.random::<bool>() {
                         FindingSeverity::High
                     } else {
                         FindingSeverity::Low
@@ -508,22 +509,24 @@ impl FindingGenerator {
     ) -> (Option<Decimal>, Option<Decimal>, Option<Decimal>) {
         let factual = Decimal::new(
             self.rng
-                .gen_range(self.config.misstatement_range.0..self.config.misstatement_range.1),
+                .random_range(self.config.misstatement_range.0..self.config.misstatement_range.1),
             0,
         );
 
-        let projected = if self.rng.gen::<f64>() < 0.5 {
+        let projected = if self.rng.random::<f64>() < 0.5 {
             Some(Decimal::new(
-                self.rng.gen_range(0..self.config.misstatement_range.1 / 2),
+                self.rng
+                    .random_range(0..self.config.misstatement_range.1 / 2),
                 0,
             ))
         } else {
             None
         };
 
-        let judgmental = if self.rng.gen::<f64>() < 0.3 {
+        let judgmental = if self.rng.random::<f64>() < 0.3 {
             Some(Decimal::new(
-                self.rng.gen_range(0..self.config.misstatement_range.1 / 4),
+                self.rng
+                    .random_range(0..self.config.misstatement_range.1 / 4),
                 0,
             ))
         } else {
@@ -540,7 +543,7 @@ impl FindingGenerator {
         match finding_type {
             FindingType::MaterialMisstatement | FindingType::ImmaterialMisstatement => {
                 assertions.push(Assertion::Accuracy);
-                if self.rng.gen::<bool>() {
+                if self.rng.random::<bool>() {
                     assertions.push(Assertion::ValuationAndAllocation);
                 }
             }
@@ -553,9 +556,9 @@ impl FindingGenerator {
                     Assertion::Accuracy,
                     Assertion::Classification,
                 ];
-                let count = self.rng.gen_range(1..=3);
+                let count = self.rng.random_range(1..=3);
                 for _ in 0..count {
-                    let idx = self.rng.gen_range(0..possible.len());
+                    let idx = self.rng.random_range(0..possible.len());
                     if !assertions.contains(&possible[idx]) {
                         assertions.push(possible[idx]);
                     }
@@ -626,7 +629,7 @@ impl FindingGenerator {
         finding: &AuditFinding,
         account: &str,
     ) -> RemediationPlan {
-        let target_date = finding.identified_date + Duration::days(self.rng.gen_range(60..180));
+        let target_date = finding.identified_date + Duration::days(self.rng.random_range(60..180));
 
         let description = format!(
             "Implement enhanced controls and monitoring procedures for {} to address \
@@ -676,7 +679,7 @@ impl FindingGenerator {
         }
 
         // Maybe mark some progress
-        if self.rng.gen::<f64>() < 0.3 {
+        if self.rng.random::<f64>() < 0.3 {
             plan.status = RemediationStatus::InProgress;
             if !plan.milestones.is_empty() {
                 plan.milestones[0].status = MilestoneStatus::Complete;
@@ -697,7 +700,7 @@ impl FindingGenerator {
         if let Some(&member) = matching.first() {
             member.clone()
         } else if !team_members.is_empty() {
-            let idx = self.rng.gen_range(0..team_members.len());
+            let idx = self.rng.random_range(0..team_members.len());
             team_members[idx].clone()
         } else {
             format!("{}001", role_hint.to_uppercase())

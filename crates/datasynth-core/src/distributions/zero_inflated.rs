@@ -305,7 +305,7 @@ impl ZeroInflatedSampler {
     /// Sample a value from the distribution.
     pub fn sample(&mut self) -> f64 {
         // First, determine if this is a structural zero
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         if p < self.config.zero_probability {
             return 0.0;
         }
@@ -335,7 +335,7 @@ impl ZeroInflatedSampler {
 
     /// Sample with information about whether it's a structural zero.
     pub fn sample_with_info(&mut self) -> ZeroInflatedSample {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         if p < self.config.zero_probability {
             return ZeroInflatedSample {
                 value: 0.0,

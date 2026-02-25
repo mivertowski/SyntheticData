@@ -40,7 +40,7 @@ impl BidGenerator {
                     // Vendor offers price within ±30% of target
                     let target = rfx_item.target_price.unwrap_or(Decimal::from(100));
                     let target_f64: f64 = target.to_string().parse().unwrap_or(100.0);
-                    let price_factor = self.rng.gen_range(0.70..=1.30);
+                    let price_factor = self.rng.random_range(0.70..=1.30);
                     let unit_price =
                         Decimal::from_f64_retain(target_f64 * price_factor).unwrap_or(target);
                     let quantity = rfx_item.quantity;
@@ -51,7 +51,7 @@ impl BidGenerator {
                         unit_price,
                         quantity,
                         total_amount: total,
-                        lead_time_days: self.rng.gen_range(5..=60),
+                        lead_time_days: self.rng.random_range(5..=60),
                         notes: None,
                     }
                 })
@@ -59,8 +59,8 @@ impl BidGenerator {
 
             let total_amount: Decimal = line_items.iter().map(|i| i.total_amount).sum();
 
-            let is_on_time = self.rng.gen_bool(0.92);
-            let is_compliant = self.rng.gen_bool(0.88);
+            let is_on_time = self.rng.random_bool(0.92);
+            let is_compliant = self.rng.random_bool(0.88);
 
             bids.push(SupplierBid {
                 bid_id: self.uuid_factory.next().to_string(),
@@ -71,9 +71,10 @@ impl BidGenerator {
                 submission_date,
                 line_items,
                 total_amount,
-                validity_days: self.rng.gen_range(30..=90),
-                payment_terms: ["NET30", "NET45", "NET60", "2/10 NET30"][self.rng.gen_range(0..4)]
-                    .to_string(),
+                validity_days: self.rng.random_range(30..=90),
+                payment_terms: ["NET30", "NET45", "NET60", "2/10 NET30"]
+                    [self.rng.random_range(0..4)]
+                .to_string(),
                 delivery_terms: Some("FCA".to_string()),
                 technical_summary: None,
                 is_on_time,

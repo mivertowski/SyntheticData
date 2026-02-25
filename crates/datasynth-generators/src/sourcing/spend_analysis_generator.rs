@@ -50,7 +50,7 @@ impl SpendAnalysisGenerator {
 
         for (cat_id, cat_name) in categories {
             // Assign random vendors to this category
-            let vendor_count = self.rng.gen_range(3..=vendor_ids.len().min(15));
+            let vendor_count = self.rng.random_range(3..=vendor_ids.len().min(15));
             let mut cat_vendors: Vec<&String> = vendor_ids
                 .choose_multiple(&mut self.rng, vendor_count)
                 .collect();
@@ -65,14 +65,14 @@ impl SpendAnalysisGenerator {
                 *s /= total;
             }
 
-            let total_spend = Decimal::from(self.rng.gen_range(100_000i64..=5_000_000));
-            let transaction_count = self.rng.gen_range(50..=2000);
+            let total_spend = Decimal::from(self.rng.random_range(100_000i64..=5_000_000));
+            let transaction_count = self.rng.random_range(50..=2000);
 
             // Calculate HHI
             let hhi: f64 = raw_shares.iter().map(|s| (s * 100.0).powi(2)).sum();
 
-            let contract_coverage = self.rng.gen_range(0.3..=0.95);
-            let preferred_coverage = contract_coverage * self.rng.gen_range(0.7..=1.0);
+            let contract_coverage = self.rng.random_range(0.3..=0.95);
+            let preferred_coverage = contract_coverage * self.rng.random_range(0.7..=1.0);
 
             let vendor_shares: Vec<VendorSpendShare> = cat_vendors
                 .iter()
@@ -85,7 +85,7 @@ impl SpendAnalysisGenerator {
                     )
                     .unwrap_or(Decimal::ZERO),
                     share: *share,
-                    is_preferred: *share > 0.15 && self.rng.gen_bool(preferred_coverage),
+                    is_preferred: *share > 0.15 && self.rng.random_bool(preferred_coverage),
                 })
                 .collect();
 
@@ -100,7 +100,7 @@ impl SpendAnalysisGenerator {
                 vendor_shares,
                 contract_coverage,
                 preferred_vendor_coverage: preferred_coverage,
-                price_trend_pct: self.rng.gen_range(-0.05..=0.10),
+                price_trend_pct: self.rng.random_range(-0.05..=0.10),
                 fiscal_year,
             });
         }

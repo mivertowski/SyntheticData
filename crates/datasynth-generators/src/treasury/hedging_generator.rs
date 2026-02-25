@@ -156,7 +156,7 @@ impl HedgingGenerator {
     ) -> HedgingInstrument {
         let counterparty = self.random_counterparty();
         let fixed_rate = dec!(0.03)
-            + Decimal::try_from(self.rng.gen_range(0.0f64..0.025)).unwrap_or(Decimal::ZERO);
+            + Decimal::try_from(self.rng.random_range(0.0f64..0.025)).unwrap_or(Decimal::ZERO);
 
         self.instrument_counter += 1;
         HedgingInstrument::new(
@@ -174,35 +174,35 @@ impl HedgingGenerator {
     }
 
     fn random_counterparty(&mut self) -> &'static str {
-        let idx = self.rng.gen_range(0..COUNTERPARTIES.len());
+        let idx = self.rng.random_range(0..COUNTERPARTIES.len());
         COUNTERPARTIES[idx]
     }
 
     fn generate_forward_rate(&mut self) -> Decimal {
         // Typical FX forward rate around 1.0-1.5 range
-        let rate = self.rng.gen_range(0.85f64..1.50f64);
+        let rate = self.rng.random_range(0.85f64..1.50f64);
         Decimal::try_from(rate).unwrap_or(dec!(1.10)).round_dp(4)
     }
 
     fn generate_fair_value(&mut self, notional: Decimal) -> Decimal {
         // Fair value is typically a small fraction of notional (±2%)
-        let pct = self.rng.gen_range(-0.02f64..0.02f64);
+        let pct = self.rng.random_range(-0.02f64..0.02f64);
         (notional * Decimal::try_from(pct).unwrap_or(Decimal::ZERO)).round_dp(2)
     }
 
     fn generate_effectiveness_ratio(&mut self) -> Decimal {
         // Most hedges are effective (0.85-1.15), with occasional failures
-        if self.rng.gen_bool(0.90) {
+        if self.rng.random_bool(0.90) {
             // Effective: within 80-125% corridor
-            let ratio = self.rng.gen_range(0.85f64..1.15f64);
+            let ratio = self.rng.random_range(0.85f64..1.15f64);
             Decimal::try_from(ratio).unwrap_or(dec!(1.00)).round_dp(4)
         } else {
             // Ineffective: outside corridor
-            if self.rng.gen_bool(0.5) {
-                let ratio = self.rng.gen_range(0.60f64..0.79f64);
+            if self.rng.random_bool(0.5) {
+                let ratio = self.rng.random_range(0.60f64..0.79f64);
                 Decimal::try_from(ratio).unwrap_or(dec!(0.75)).round_dp(4)
             } else {
-                let ratio = self.rng.gen_range(1.26f64..1.50f64);
+                let ratio = self.rng.random_range(1.26f64..1.50f64);
                 Decimal::try_from(ratio).unwrap_or(dec!(1.30)).round_dp(4)
             }
         }
