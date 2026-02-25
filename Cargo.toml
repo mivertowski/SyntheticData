@@ -162,7 +162,7 @@ jsonwebtoken = "9"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 
 # TLS
-axum-server = { version = "0.7", features = ["tls-rustls"] }
+axum-server = { version = "0.8", features = ["tls-rustls"] }
 
 # Testing
 proptest = "1.5"
