@@ -1,6 +1,8 @@
 //! CSV streaming sink for real-time data output.
 //!
 //! Writes streaming data to CSV files with optional disk space monitoring.
+//! Optimized to reuse a single serialization buffer across all items instead
+//! of allocating a new csv::Writer per item (Phase 3 I/O optimization).
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -15,7 +17,8 @@ use datasynth_core::traits::{StreamEvent, StreamingSink};
 /// CSV streaming sink that writes serializable items to a CSV file.
 ///
 /// This sink writes each data item as a CSV row, handling headers
-/// automatically on the first write.
+/// automatically on the first write. Uses a reusable internal buffer
+/// to avoid per-item allocations.
 ///
 /// # Type Parameters
 ///
@@ -37,6 +40,8 @@ pub struct CsvStreamingSink<T> {
     bytes_written: u64,
     header_written: bool,
     path: PathBuf,
+    /// Reusable serialization buffer to avoid per-item allocation.
+    serialize_buf: Vec<u8>,
     _phantom: PhantomData<T>,
 }
 
@@ -58,6 +63,7 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
             bytes_written: 0,
             header_written: false,
             path,
+            serialize_buf: Vec::with_capacity(4096),
             _phantom: PhantomData,
         })
     }
@@ -81,6 +87,7 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
             bytes_written,
             header_written: true,
             path,
+            serialize_buf: Vec::with_capacity(4096),
             _phantom: PhantomData,
         })
     }
@@ -95,23 +102,28 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
         self.bytes_written
     }
 
-    /// Writes a single item to CSV.
+    /// Writes a single item to CSV, reusing the internal buffer.
     fn write_item(&mut self, item: &T) -> SynthResult<()> {
-        // Use serde to serialize the item
-        let mut wtr = csv::WriterBuilder::new()
-            .has_headers(!self.header_written)
-            .from_writer(Vec::new());
+        // Clear and reuse the buffer — no new allocation after the first item
+        self.serialize_buf.clear();
 
-        wtr.serialize(item).map_err(|e| {
-            SynthError::generation(format!("Failed to serialize item to CSV: {}", e))
-        })?;
+        {
+            let mut wtr = csv::WriterBuilder::new()
+                .has_headers(!self.header_written)
+                .from_writer(&mut self.serialize_buf);
 
-        let data = wtr
-            .into_inner()
-            .map_err(|e| SynthError::generation(format!("Failed to flush CSV writer: {}", e)))?;
+            wtr.serialize(item).map_err(|e| {
+                SynthError::generation(format!("Failed to serialize item to CSV: {}", e))
+            })?;
 
-        self.writer.write_all(&data)?;
-        self.bytes_written += data.len() as u64;
+            // Flush the csv writer into our buffer (not into the file)
+            wtr.flush().map_err(|e| {
+                SynthError::generation(format!("Failed to flush CSV writer: {}", e))
+            })?;
+        }
+
+        self.writer.write_all(&self.serialize_buf)?;
+        self.bytes_written += self.serialize_buf.len() as u64;
         self.header_written = true;
         self.items_written += 1;
 

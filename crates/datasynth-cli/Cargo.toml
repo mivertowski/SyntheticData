@@ -35,6 +35,8 @@ tracing-subscriber = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
 serde_json = { workspace = true }
+itoa = { workspace = true }
+ryu = { workspace = true }
 rayon = { workspace = true }
 num_cpus = { workspace = true }
 reqwest = { workspace = true, optional = true }

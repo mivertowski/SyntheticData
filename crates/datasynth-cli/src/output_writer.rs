@@ -11,6 +11,9 @@ use datasynth_runtime::enhanced_orchestrator::EnhancedGenerationResult;
 use tracing::{info, warn};
 
 /// Write a JSON file for any serializable slice. Skips empty slices.
+///
+/// Streams JSON directly to a buffered file writer instead of allocating
+/// the entire JSON string in memory (Phase 3 I/O optimization).
 fn write_json<T: serde::Serialize>(
     data: &[T],
     path: &Path,
@@ -19,8 +22,9 @@ fn write_json<T: serde::Serialize>(
     if data.is_empty() {
         return Ok(());
     }
-    let json = serde_json::to_string_pretty(data)?;
-    std::fs::write(path, json)?;
+    let file = std::fs::File::create(path)?;
+    let writer = std::io::BufWriter::with_capacity(256 * 1024, file);
+    serde_json::to_writer_pretty(writer, data)?;
     info!(
         "  {} written: {} records -> {}",
         label,
