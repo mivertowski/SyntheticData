@@ -290,16 +290,16 @@ impl FraudScheme for VendorKickbackScheme {
         }
 
         // Check detection
-        if rng.gen::<f64>() < self.detection_probability * context.detection_activity {
+        if rng.random::<f64>() < self.detection_probability * context.detection_activity {
             self.detection_status = SchemeDetectionStatus::UnderInvestigation;
-            if rng.gen::<f64>() < 0.3 {
+            if rng.random::<f64>() < 0.3 {
                 self.status = SchemeStatus::Detected;
                 return actions;
             }
         }
 
         // Pause during audit
-        if context.audit_in_progress && rng.gen::<f64>() < 0.6 {
+        if context.audit_in_progress && rng.random::<f64>() < 0.6 {
             self.status = SchemeStatus::Paused;
             return actions;
         }
@@ -316,7 +316,7 @@ impl FraudScheme for VendorKickbackScheme {
         match self.current_stage_index {
             0 => {
                 // Setup stage - create fictitious vendor if needed
-                if rng.gen::<f64>() < 0.1 {
+                if rng.random::<f64>() < 0.1 {
                     let action = SchemeAction::new(
                         self.scheme_id,
                         stage.stage_number,
@@ -333,7 +333,7 @@ impl FraudScheme for VendorKickbackScheme {
             }
             1 => {
                 // Price inflation stage
-                if rng.gen::<f64>() < 0.2 {
+                if rng.random::<f64>() < 0.2 {
                     let base_amount = stage.random_amount(rng);
                     let inflation = self.calculate_inflation(base_amount);
                     let total_amount = base_amount + inflation;
@@ -363,7 +363,7 @@ impl FraudScheme for VendorKickbackScheme {
             }
             2 => {
                 // Kickback payment stage
-                if self.total_impact > Decimal::ZERO && rng.gen::<f64>() < 0.15 {
+                if self.total_impact > Decimal::ZERO && rng.random::<f64>() < 0.15 {
                     // Calculate kickback based on accumulated inflation
                     let kickback_amount = if self.total_kickbacks < self.total_impact * dec!(0.5) {
                         let max_kickback = self.total_impact
@@ -403,7 +403,7 @@ impl FraudScheme for VendorKickbackScheme {
             }
             3 => {
                 // Concealment stage
-                if rng.gen::<f64>() < 0.05 {
+                if rng.random::<f64>() < 0.05 {
                     let action = SchemeAction::new(
                         self.scheme_id,
                         stage.stage_number,

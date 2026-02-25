@@ -155,7 +155,7 @@ impl BankReconciliationGenerator {
         let mut reconciling_items: Vec<ReconcilingItem> = Vec::new();
 
         for payment in payments {
-            let roll: f64 = self.rng.gen();
+            let roll: f64 = self.rng.random();
             let auto_threshold = self.config.auto_match_rate;
             let manual_threshold = auto_threshold + self.config.manual_match_rate;
 
@@ -183,7 +183,7 @@ impl BankReconciliationGenerator {
                 } else {
                     ReconcilingItemType::DepositInTransit
                 };
-                let clearing_days = self.rng.gen_range(1..=10);
+                let clearing_days = self.rng.random_range(1..=10);
                 reconciling_items.push(ReconcilingItem {
                     item_id: self.recon_item_uuid_factory.next().to_string(),
                     item_type,
@@ -278,7 +278,7 @@ impl BankReconciliationGenerator {
 
         let status = if has_unmatched {
             ReconciliationStatus::CompletedWithExceptions
-        } else if self.rng.gen_bool(self.config.completion_rate) {
+        } else if self.rng.random_bool(self.config.completion_rate) {
             ReconciliationStatus::Completed
         } else {
             ReconciliationStatus::InProgress
@@ -289,16 +289,16 @@ impl BankReconciliationGenerator {
 
         // Preparer / reviewer – use real employee IDs when available
         let preparer_id = if self.employee_ids_pool.is_empty() {
-            format!("USR-{:04}", self.rng.gen_range(1..=200))
+            format!("USR-{:04}", self.rng.random_range(1..=200))
         } else {
             self.employee_ids_pool
                 .choose(&mut self.rng)
                 .cloned()
-                .unwrap_or_else(|| format!("USR-{:04}", self.rng.gen_range(1..=200)))
+                .unwrap_or_else(|| format!("USR-{:04}", self.rng.random_range(1..=200)))
         };
         let reviewer_id = if status == ReconciliationStatus::Completed {
             if self.employee_ids_pool.is_empty() {
-                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+                Some(format!("USR-{:04}", self.rng.random_range(201..=400)))
             } else {
                 self.employee_ids_pool.choose(&mut self.rng).cloned()
             }
@@ -353,13 +353,13 @@ impl BankReconciliationGenerator {
         };
 
         // Value date may lag statement date by 0-2 business days.
-        let lag_days = self.rng.gen_range(0..=2);
+        let lag_days = self.rng.random_range(0..=2);
         let value_date = payment.date + chrono::Duration::days(lag_days);
 
         let bank_ref = format!(
             "BNK-{}-{:06}",
             payment.date.format("%Y%m%d"),
-            self.rng.gen_range(1..=999_999)
+            self.rng.random_range(1..=999_999)
         );
 
         BankStatementLine {
@@ -390,11 +390,11 @@ impl BankReconciliationGenerator {
         currency: &str,
     ) -> (BankStatementLine, Option<ReconcilingItem>) {
         let days_in_period = (period_end - period_start).num_days().max(1);
-        let offset = self.rng.gen_range(0..=days_in_period);
+        let offset = self.rng.random_range(0..=days_in_period);
         let statement_date = period_start + chrono::Duration::days(offset);
 
         // Pick a bank-only category.
-        let category_roll: f64 = self.rng.gen();
+        let category_roll: f64 = self.rng.random();
         let (match_status, direction, amount_range, desc, recon_type) = if category_roll < 0.40 {
             // Bank service charge
             (
@@ -424,7 +424,7 @@ impl BankReconciliationGenerator {
             )
         } else {
             // Miscellaneous unmatched debit/credit
-            let is_debit = self.rng.gen_bool(0.5);
+            let is_debit = self.rng.random_bool(0.5);
             if is_debit {
                 (
                     MatchStatus::Unmatched,
@@ -454,7 +454,7 @@ impl BankReconciliationGenerator {
         let bank_ref = format!(
             "BNK-{}-{:06}",
             statement_date.format("%Y%m%d"),
-            self.rng.gen_range(1..=999_999)
+            self.rng.random_range(1..=999_999)
         );
 
         let line = BankStatementLine {
@@ -479,7 +479,7 @@ impl BankReconciliationGenerator {
             date: statement_date,
             description: format!("{} ({})", desc, currency),
             expected_clearing_date: if rt == ReconcilingItemType::ReturnedCheck {
-                Some(period_end + chrono::Duration::days(self.rng.gen_range(3..=14) as i64))
+                Some(period_end + chrono::Duration::days(self.rng.random_range(3..=14) as i64))
             } else {
                 // Charges/interest settle immediately on the bank side.
                 None

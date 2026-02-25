@@ -105,8 +105,8 @@ impl TimeEntryGenerator {
         let entry_id = self.uuid_factory.next().to_string();
 
         // Determine entry type: PTO, sick, or regular working day
-        let pto_roll: f64 = self.rng.gen();
-        let sick_roll: f64 = self.rng.gen();
+        let pto_roll: f64 = self.rng.random();
+        let sick_roll: f64 = self.rng.random();
 
         let (hours_regular, hours_overtime, hours_pto, hours_sick) = if pto_roll < DEFAULT_PTO_RATE
         {
@@ -118,8 +118,8 @@ impl TimeEntryGenerator {
         } else {
             // Regular working day
             let regular = 8.0;
-            let overtime = if self.rng.gen_bool(overtime_rate) {
-                self.rng.gen_range(1.0..=4.0)
+            let overtime = if self.rng.random_bool(overtime_rate) {
+                self.rng.random_range(1.0..=4.0)
             } else {
                 0.0
             };
@@ -127,19 +127,19 @@ impl TimeEntryGenerator {
         };
 
         // Project assignment: ~60% of entries have a project
-        let project_id = if self.rng.gen_bool(0.60) {
-            Some(format!("PROJ-{:04}", self.rng.gen_range(1..=50)))
+        let project_id = if self.rng.random_bool(0.60) {
+            Some(format!("PROJ-{:04}", self.rng.random_range(1..=50)))
         } else {
             None
         };
 
         // Cost center: ~70% of entries have a cost center
-        let cost_center = if self.rng.gen_bool(0.70) {
+        let cost_center = if self.rng.random_bool(0.70) {
             if !self.cost_center_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.cost_center_ids_pool.len());
+                let idx = self.rng.random_range(0..self.cost_center_ids_pool.len());
                 Some(self.cost_center_ids_pool[idx].clone())
             } else {
-                Some(format!("CC-{:03}", self.rng.gen_range(100..=500)))
+                Some(format!("CC-{:03}", self.rng.random_range(100..=500)))
             }
         } else {
             None
@@ -157,7 +157,7 @@ impl TimeEntryGenerator {
         };
 
         // Approval status: 90% approved, 5% pending, 5% rejected
-        let status_roll: f64 = self.rng.gen();
+        let status_roll: f64 = self.rng.random();
         let approval_status = if status_roll < 0.90 {
             TimeApprovalStatus::Approved
         } else if status_roll < 0.95 {
@@ -168,19 +168,19 @@ impl TimeEntryGenerator {
 
         let approved_by = if approval_status == TimeApprovalStatus::Approved {
             if !self.employee_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                let idx = self.rng.random_range(0..self.employee_ids_pool.len());
                 Some(self.employee_ids_pool[idx].clone())
             } else {
-                Some(format!("MGR-{:04}", self.rng.gen_range(1..=100)))
+                Some(format!("MGR-{:04}", self.rng.random_range(1..=100)))
             }
         } else {
             None
         };
 
         let submitted_at =
-            if approval_status != TimeApprovalStatus::Pending || self.rng.gen_bool(0.5) {
+            if approval_status != TimeApprovalStatus::Pending || self.rng.random_bool(0.5) {
                 // Most entries are submitted on the day or the next day
-                let lag = self.rng.gen_range(0..=2);
+                let lag = self.rng.random_range(0..=2);
                 Some(date + chrono::Duration::days(lag))
             } else {
                 None

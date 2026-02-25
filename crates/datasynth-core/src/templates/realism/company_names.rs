@@ -3,7 +3,7 @@
 //! Generates realistic company names based on industry sector with appropriate
 //! naming patterns and legal suffixes.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -691,7 +691,7 @@ impl CompanyNameGenerator {
             }
             CompanyNameStyle::Acronym => {
                 let letters: String = (0..3)
-                    .map(|_| (b'A' + rng.gen_range(0..26)) as char)
+                    .map(|_| (b'A' + rng.random_range(0..26)) as char)
                     .collect();
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
                 format!("{} {}", letters, descriptor)
@@ -725,7 +725,7 @@ impl CompanyNameGenerator {
     }
 
     fn select_style(&self, rng: &mut impl Rng) -> CompanyNameStyle {
-        let roll: f64 = rng.gen();
+        let roll: f64 = rng.random();
         if roll < 0.35 {
             CompanyNameStyle::FounderBased
         } else if roll < 0.55 {
@@ -773,7 +773,7 @@ impl CompanyNameGenerator {
         let suffixes = LegalSuffix::us_suffixes();
         let weights = [30, 20, 10, 25, 5, 5, 5]; // Inc, Corp, Corporation, LLC, Co, Company, Group
         let total: i32 = weights.iter().sum();
-        let roll = rng.gen_range(0..total);
+        let roll = rng.random_range(0..total);
 
         let mut cumulative = 0;
         for (i, &weight) in weights.iter().enumerate() {

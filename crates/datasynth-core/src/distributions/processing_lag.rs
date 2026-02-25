@@ -138,20 +138,20 @@ impl LagDistribution {
             LagDistributionType::Fixed { hours } => *hours,
             LagDistributionType::Normal { mu, sigma } => {
                 // Box-Muller transform for normal distribution
-                let u1: f64 = rng.gen();
-                let u2: f64 = rng.gen();
+                let u1: f64 = rng.random();
+                let u2: f64 = rng.random();
                 let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
                 mu + sigma * z
             }
             LagDistributionType::LogNormal { mu, sigma } => {
                 // Sample from log-normal
-                let u1: f64 = rng.gen();
-                let u2: f64 = rng.gen();
+                let u1: f64 = rng.random();
+                let u2: f64 = rng.random();
                 let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos();
                 (mu + sigma * z).exp()
             }
             LagDistributionType::Exponential { lambda } => {
-                let u: f64 = rng.gen();
+                let u: f64 = rng.random();
                 -u.ln() / lambda
             }
         };
@@ -378,7 +378,7 @@ impl ProcessingLagCalculator {
             // Move to next business day morning
             let next_day = event_datetime.date() + Duration::days(1);
             let morning_hour = self.config.cross_day.work_start_hour as u32;
-            let morning_minute: u32 = self.rng.gen_range(0..60);
+            let morning_minute: u32 = self.rng.random_range(0..60);
             posting_time = NaiveDateTime::new(
                 next_day,
                 NaiveTime::from_hms_opt(morning_hour, morning_minute, 0)
@@ -397,7 +397,7 @@ impl ProcessingLagCalculator {
     /// Determine if an event should be posted the next day based on its hour.
     pub fn should_post_next_day(&mut self, hour: u8) -> bool {
         let prob = self.config.cross_day.next_day_probability(hour);
-        self.rng.gen::<f64>() < prob
+        self.rng.random::<f64>() < prob
     }
 
     /// Calculate posting date (ignoring time).

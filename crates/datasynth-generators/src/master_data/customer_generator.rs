@@ -493,7 +493,7 @@ impl CustomerGenerator {
         customer.payment_terms = self.select_payment_terms();
 
         // Check if intercompany
-        if self.rng.gen::<f64>() < self.config.intercompany_rate {
+        if self.rng.random::<f64>() < self.config.intercompany_rate {
             customer.is_intercompany = true;
             customer.intercompany_code = Some(format!("IC-{}", company_code));
         }
@@ -535,7 +535,7 @@ impl CustomerGenerator {
         // Adjust payment behavior based on credit rating
         customer.payment_behavior = match credit_rating {
             CreditRating::AAA | CreditRating::AA => {
-                if self.rng.gen::<f64>() < 0.7 {
+                if self.rng.random::<f64>() < 0.7 {
                     CustomerPaymentBehavior::EarlyPayer
                 } else {
                     CustomerPaymentBehavior::OnTime
@@ -640,15 +640,15 @@ impl CustomerGenerator {
 
     /// Select a customer name from templates.
     fn select_customer_name(&mut self) -> (&'static str, &'static str) {
-        let industry_idx = self.rng.gen_range(0..CUSTOMER_NAME_TEMPLATES.len());
+        let industry_idx = self.rng.random_range(0..CUSTOMER_NAME_TEMPLATES.len());
         let (industry, names) = CUSTOMER_NAME_TEMPLATES[industry_idx];
-        let name_idx = self.rng.gen_range(0..names.len());
+        let name_idx = self.rng.random_range(0..names.len());
         (industry, names[name_idx])
     }
 
     /// Select credit rating based on distribution.
     fn select_credit_rating(&mut self) -> CreditRating {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (rating, prob) in &self.config.credit_rating_distribution {
@@ -666,7 +666,7 @@ impl CustomerGenerator {
         for (r, min, max) in &self.config.credit_limits {
             if r == rating {
                 let range = (*max - *min).to_string().parse::<f64>().unwrap_or(0.0);
-                let offset = Decimal::from_f64_retain(self.rng.gen::<f64>() * range)
+                let offset = Decimal::from_f64_retain(self.rng.random::<f64>() * range)
                     .unwrap_or(Decimal::ZERO);
                 return *min + offset;
             }
@@ -677,7 +677,7 @@ impl CustomerGenerator {
 
     /// Select payment behavior based on distribution.
     fn select_payment_behavior(&mut self) -> CustomerPaymentBehavior {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (behavior, prob) in &self.config.payment_behavior_distribution {
@@ -692,7 +692,7 @@ impl CustomerGenerator {
 
     /// Select payment terms based on distribution.
     fn select_payment_terms(&mut self) -> PaymentTerms {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (terms, prob) in &self.config.payment_terms_distribution {
@@ -825,16 +825,16 @@ impl CustomerGenerator {
     /// Generate lifecycle stage based on distribution.
     fn generate_lifecycle_stage(&mut self, effective_date: NaiveDate) -> CustomerLifecycleStage {
         let dist = &self.segmentation_config.lifecycle_distribution;
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         cumulative += dist.prospect;
         if roll < cumulative {
             return CustomerLifecycleStage::Prospect {
-                conversion_probability: self.rng.gen_range(0.1..0.4),
+                conversion_probability: self.rng.random_range(0.1..0.4),
                 source: Some("Marketing".to_string()),
                 first_contact_date: effective_date
-                    - chrono::Duration::days(self.rng.gen_range(1..90)),
+                    - chrono::Duration::days(self.rng.random_range(1..90)),
             };
         }
 
@@ -842,16 +842,16 @@ impl CustomerGenerator {
         if roll < cumulative {
             return CustomerLifecycleStage::New {
                 first_order_date: effective_date
-                    - chrono::Duration::days(self.rng.gen_range(1..90)),
-                onboarding_complete: self.rng.gen::<f64>() > 0.3,
+                    - chrono::Duration::days(self.rng.random_range(1..90)),
+                onboarding_complete: self.rng.random::<f64>() > 0.3,
             };
         }
 
         cumulative += dist.growth;
         if roll < cumulative {
             return CustomerLifecycleStage::Growth {
-                since: effective_date - chrono::Duration::days(self.rng.gen_range(90..365)),
-                growth_rate: self.rng.gen_range(0.10..0.50),
+                since: effective_date - chrono::Duration::days(self.rng.random_range(90..365)),
+                growth_rate: self.rng.random_range(0.10..0.50),
             };
         }
 
@@ -859,8 +859,8 @@ impl CustomerGenerator {
         if roll < cumulative {
             return CustomerLifecycleStage::Mature {
                 stable_since: effective_date
-                    - chrono::Duration::days(self.rng.gen_range(365..1825)),
-                avg_annual_spend: Decimal::from(self.rng.gen_range(10000..500000)),
+                    - chrono::Duration::days(self.rng.random_range(365..1825)),
+                avg_annual_spend: Decimal::from(self.rng.random_range(10000..500000)),
             };
         }
 
@@ -869,15 +869,15 @@ impl CustomerGenerator {
             let triggers = self.generate_risk_triggers();
             return CustomerLifecycleStage::AtRisk {
                 triggers,
-                flagged_date: effective_date - chrono::Duration::days(self.rng.gen_range(7..60)),
-                churn_probability: self.rng.gen_range(0.3..0.8),
+                flagged_date: effective_date - chrono::Duration::days(self.rng.random_range(7..60)),
+                churn_probability: self.rng.random_range(0.3..0.8),
             };
         }
 
         // Churned
         CustomerLifecycleStage::Churned {
-            last_activity: effective_date - chrono::Duration::days(self.rng.gen_range(90..365)),
-            win_back_probability: self.rng.gen_range(0.05..0.25),
+            last_activity: effective_date - chrono::Duration::days(self.rng.random_range(90..365)),
+            win_back_probability: self.rng.random_range(0.05..0.25),
             reason: Some(self.generate_churn_reason()),
         }
     }
@@ -893,11 +893,11 @@ impl CustomerGenerator {
             RiskTrigger::ContractExpiring,
         ];
 
-        let count = self.rng.gen_range(1..=3);
+        let count = self.rng.random_range(1..=3);
         let mut triggers = Vec::new();
 
         for _ in 0..count {
-            let idx = self.rng.gen_range(0..all_triggers.len());
+            let idx = self.rng.random_range(0..all_triggers.len());
             triggers.push(all_triggers[idx].clone());
         }
 
@@ -906,7 +906,7 @@ impl CustomerGenerator {
 
     /// Generate churn reason.
     fn generate_churn_reason(&mut self) -> ChurnReason {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.30 {
             ChurnReason::Competitor
         } else if roll < 0.50 {
@@ -926,7 +926,7 @@ impl CustomerGenerator {
 
     /// Select an industry based on distribution.
     fn select_industry(&mut self) -> String {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (industry, prob) in &self.segmentation_config.industry_distribution {
@@ -961,7 +961,7 @@ impl CustomerGenerator {
         };
 
         // Add variance (±50%)
-        let variance = self.rng.gen_range(0.5..1.5);
+        let variance = self.rng.random_range(0.5..1.5);
         avg_acv * Decimal::from_f64_retain(variance).unwrap_or(Decimal::ONE)
     }
 
@@ -989,7 +989,7 @@ impl CustomerGenerator {
             .collect();
 
         for i in 0..pool.customers.len() {
-            if self.rng.gen::<f64>() < referral_rate {
+            if self.rng.random::<f64>() < referral_rate {
                 // This customer was referred - find a referrer
                 let potential_referrers: Vec<usize> = customer_ids
                     .iter()
@@ -1002,7 +1002,7 @@ impl CustomerGenerator {
 
                 if !potential_referrers.is_empty() {
                     let referrer_idx =
-                        potential_referrers[self.rng.gen_range(0..potential_referrers.len())];
+                        potential_referrers[self.rng.random_range(0..potential_referrers.len())];
                     let referrer_id = customer_ids[referrer_idx].clone();
                     let customer_id = pool.customers[i].customer_id.clone();
 
@@ -1051,16 +1051,16 @@ impl CustomerGenerator {
                 continue;
             }
 
-            if self.rng.gen::<f64>() < hierarchy_rate && !parent_candidates.is_empty() {
+            if self.rng.random::<f64>() < hierarchy_rate && !parent_candidates.is_empty() {
                 // Assign a parent
-                let parent_idx = self.rng.gen_range(0..parent_candidates.len());
+                let parent_idx = self.rng.random_range(0..parent_candidates.len());
                 let parent_id = parent_candidates[parent_idx].clone();
                 let customer_id = pool.customers[i].customer_id.clone();
 
                 // Update the child
                 pool.customers[i].network_position.parent_customer = Some(parent_id.clone());
                 pool.customers[i].network_position.billing_consolidation =
-                    self.rng.gen::<f64>() < billing_consolidation_rate;
+                    self.rng.random::<f64>() < billing_consolidation_rate;
 
                 // Update the parent's child list
                 if let Some(&parent_idx) = id_to_idx.get(&parent_id) {
@@ -1085,29 +1085,29 @@ impl CustomerGenerator {
                 CustomerLifecycleStage::Mature {
                     avg_annual_spend, ..
                 } => {
-                    let orders = self.rng.gen_range(12..48);
+                    let orders = self.rng.random_range(12..48);
                     (orders, avg_annual_spend)
                 }
                 CustomerLifecycleStage::Growth { growth_rate, .. } => {
-                    let orders = self.rng.gen_range(6..24);
-                    let rev = Decimal::from(orders * self.rng.gen_range(5000..20000));
+                    let orders = self.rng.random_range(6..24);
+                    let rev = Decimal::from(orders * self.rng.random_range(5000..20000));
                     (
                         orders,
                         rev * Decimal::from_f64_retain(1.0 + growth_rate).unwrap_or(Decimal::ONE),
                     )
                 }
                 CustomerLifecycleStage::New { .. } => {
-                    let orders = self.rng.gen_range(1..6);
+                    let orders = self.rng.random_range(1..6);
                     (
                         orders,
-                        Decimal::from(orders * self.rng.gen_range(2000..10000)),
+                        Decimal::from(orders * self.rng.random_range(2000..10000)),
                     )
                 }
                 CustomerLifecycleStage::AtRisk { .. } => {
-                    let orders = self.rng.gen_range(2..12);
+                    let orders = self.rng.random_range(2..12);
                     (
                         orders,
-                        Decimal::from(orders * self.rng.gen_range(3000..15000)),
+                        Decimal::from(orders * self.rng.random_range(3000..15000)),
                     )
                 }
                 CustomerLifecycleStage::Churned { .. } => (0, Decimal::ZERO),
@@ -1129,18 +1129,18 @@ impl CustomerGenerator {
                     CustomerLifecycleStage::Churned { last_activity, .. } => {
                         (effective_date - *last_activity).num_days().max(0) as u32
                     }
-                    CustomerLifecycleStage::AtRisk { .. } => self.rng.gen_range(30..120),
-                    _ => self.rng.gen_range(1..30),
+                    CustomerLifecycleStage::AtRisk { .. } => self.rng.random_range(30..120),
+                    _ => self.rng.random_range(1..30),
                 },
                 last_order_date: Some(
-                    effective_date - chrono::Duration::days(self.rng.gen_range(1..90)),
+                    effective_date - chrono::Duration::days(self.rng.random_range(1..90)),
                 ),
                 first_order_date: Some(
-                    effective_date - chrono::Duration::days(self.rng.gen_range(180..1825)),
+                    effective_date - chrono::Duration::days(self.rng.random_range(180..1825)),
                 ),
-                products_purchased: base_orders as u32 * self.rng.gen_range(1..5),
-                support_tickets: self.rng.gen_range(0..10),
-                nps_score: Some(self.rng.gen_range(-20..80) as i8),
+                products_purchased: base_orders as u32 * self.rng.random_range(1..5),
+                support_tickets: self.rng.random_range(0..10),
+                nps_score: Some(self.rng.random_range(-20..80) as i8),
             };
 
             // Calculate churn risk
@@ -1148,10 +1148,10 @@ impl CustomerGenerator {
 
             // Calculate upsell potential based on segment and engagement
             customer.upsell_potential = match customer.segment {
-                CustomerValueSegment::Enterprise => 0.3 + self.rng.gen_range(0.0..0.2),
-                CustomerValueSegment::MidMarket => 0.4 + self.rng.gen_range(0.0..0.3),
-                CustomerValueSegment::Smb => 0.5 + self.rng.gen_range(0.0..0.3),
-                CustomerValueSegment::Consumer => 0.2 + self.rng.gen_range(0.0..0.3),
+                CustomerValueSegment::Enterprise => 0.3 + self.rng.random_range(0.0..0.2),
+                CustomerValueSegment::MidMarket => 0.4 + self.rng.random_range(0.0..0.3),
+                CustomerValueSegment::Smb => 0.5 + self.rng.random_range(0.0..0.3),
+                CustomerValueSegment::Consumer => 0.2 + self.rng.random_range(0.0..0.3),
             };
         }
     }

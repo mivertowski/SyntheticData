@@ -230,10 +230,10 @@ impl ARGenerator {
                     continue;
                 }
 
-                let customer_idx = self.rng.gen_range(0..customers.len());
+                let customer_idx = self.rng.random_range(0..customers.len());
                 let (customer_id, customer_name) = &customers[customer_idx];
 
-                let line_count = self.rng.gen_range(1..=5);
+                let line_count = self.rng.random_range(1..=5);
                 let (invoice, je) = self.generate_invoice(
                     company_code,
                     customer_id,
@@ -255,7 +255,7 @@ impl ARGenerator {
             end_date - chrono::Duration::days(self.config.avg_days_to_payment as i64);
         for invoice in &invoices {
             if invoice.invoice_date <= payment_cutoff {
-                let should_pay: f64 = self.rng.gen();
+                let should_pay: f64 = self.rng.random();
                 if should_pay
                     < self
                         .config
@@ -264,7 +264,7 @@ impl ARGenerator {
                         .parse()
                         .unwrap_or(0.75)
                 {
-                    let days_to_pay = self.rng.gen_range(
+                    let days_to_pay = self.rng.random_range(
                         (self.config.avg_days_to_payment / 2)
                             ..(self.config.avg_days_to_payment * 2),
                     );
@@ -282,7 +282,7 @@ impl ARGenerator {
 
         // Generate some credit memos
         for invoice in &invoices {
-            let should_credit: f64 = self.rng.gen();
+            let should_credit: f64 = self.rng.random();
             if should_credit
                 < self
                     .config
@@ -291,12 +291,12 @@ impl ARGenerator {
                     .parse()
                     .unwrap_or(0.05)
             {
-                let days_after = self.rng.gen_range(5..30);
+                let days_after = self.rng.random_range(5..30);
                 let memo_date = invoice.invoice_date + chrono::Duration::days(days_after);
 
                 if memo_date <= end_date {
                     let reason = self.random_credit_reason();
-                    let percent = Decimal::from(self.rng.gen_range(10..50)) / dec!(100);
+                    let percent = Decimal::from(self.rng.random_range(10..50)) / dec!(100);
                     let (memo, je) = self.generate_credit_memo(invoice, memo_date, reason, percent);
                     journal_entries.push(je);
                     credit_memos.push(memo);
@@ -316,7 +316,7 @@ impl ARGenerator {
     fn generate_line_amount(&mut self) -> Decimal {
         let base = self.config.avg_invoice_amount;
         let variation = base * self.config.amount_variation;
-        let random: f64 = self.rng.gen_range(-1.0..1.0);
+        let random: f64 = self.rng.random_range(-1.0..1.0);
         let amount = base + variation * Decimal::try_from(random).unwrap_or_default();
         amount.max(dec!(100)).round_dp(2)
     }
@@ -452,7 +452,7 @@ impl ARGenerator {
 
     /// Generates a random payment method.
     fn random_payment_method(&mut self) -> PaymentMethod {
-        match self.rng.gen_range(0..4) {
+        match self.rng.random_range(0..4) {
             0 => PaymentMethod::WireTransfer,
             1 => PaymentMethod::Check,
             2 => PaymentMethod::ACH,
@@ -462,7 +462,7 @@ impl ARGenerator {
 
     /// Generates a random credit memo reason.
     fn random_credit_reason(&mut self) -> CreditMemoReason {
-        match self.rng.gen_range(0..5) {
+        match self.rng.random_range(0..5) {
             0 => CreditMemoReason::Return,
             1 => CreditMemoReason::PriceError,
             2 => CreditMemoReason::QualityIssue,

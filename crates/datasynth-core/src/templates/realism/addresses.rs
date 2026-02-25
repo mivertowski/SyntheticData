@@ -3,7 +3,7 @@
 //! Generates realistic addresses for multiple regions with appropriate
 //! formatting and regional conventions.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -177,7 +177,7 @@ impl AddressGenerator {
         let street_number = self.generate_street_number(rng);
         let street_name = self.data.street_names.choose(rng).unwrap_or(&"Main");
         let street_type = self.select_street_type(rng);
-        let unit = if rng.gen_bool(self.data.unit_probability) {
+        let unit = if rng.random_bool(self.data.unit_probability) {
             Some(self.generate_unit(rng))
         } else {
             None
@@ -206,24 +206,24 @@ impl AddressGenerator {
     pub fn generate_commercial(&self, rng: &mut impl Rng) -> Address {
         let mut addr = self.generate(rng);
         // Commercial addresses more likely to have suite numbers
-        if rng.gen_bool(0.7) && addr.unit.is_none() {
+        if rng.random_bool(0.7) && addr.unit.is_none() {
             addr.unit = Some(self.generate_commercial_unit(rng));
         }
         // Use lower street numbers for commercial areas
-        addr.street_number = format!("{}", rng.gen_range(1..500));
+        addr.street_number = format!("{}", rng.random_range(1..500));
         addr
     }
 
     fn generate_street_number(&self, rng: &mut impl Rng) -> String {
         // Log-normal-ish distribution for street numbers
-        let base = rng.gen_range(1..100);
-        let multiplier = if rng.gen_bool(0.7) { 1 } else { 10 };
+        let base = rng.random_range(1..100);
+        let multiplier = if rng.random_bool(0.7) { 1 } else { 10 };
         format!("{}", base * multiplier)
     }
 
     fn select_street_type(&self, rng: &mut impl Rng) -> &'static str {
         let total_weight: f64 = self.data.street_types.iter().map(|(_, w)| w).sum();
-        let mut roll = rng.gen::<f64>() * total_weight;
+        let mut roll = rng.random::<f64>() * total_weight;
 
         for (street_type, weight) in &self.data.street_types {
             roll -= weight;
@@ -236,23 +236,23 @@ impl AddressGenerator {
     }
 
     fn generate_unit(&self, rng: &mut impl Rng) -> String {
-        let style = rng.gen_range(0..5);
+        let style = rng.random_range(0..5);
         match style {
-            0 => format!("Apt {}", rng.gen_range(1..500)),
-            1 => format!("Suite {}", rng.gen_range(100..999)),
-            2 => format!("Unit {}", rng.gen_range(1..200)),
-            3 => format!("#{}", rng.gen_range(1..300)),
-            _ => format!("Floor {}", rng.gen_range(1..30)),
+            0 => format!("Apt {}", rng.random_range(1..500)),
+            1 => format!("Suite {}", rng.random_range(100..999)),
+            2 => format!("Unit {}", rng.random_range(1..200)),
+            3 => format!("#{}", rng.random_range(1..300)),
+            _ => format!("Floor {}", rng.random_range(1..30)),
         }
     }
 
     fn generate_commercial_unit(&self, rng: &mut impl Rng) -> String {
-        let style = rng.gen_range(0..4);
+        let style = rng.random_range(0..4);
         match style {
-            0 => format!("Suite {}", rng.gen_range(100..999)),
-            1 => format!("Floor {}", rng.gen_range(1..50)),
-            2 => format!("Ste. {}", rng.gen_range(100..999)),
-            _ => format!("Unit {}", (b'A' + rng.gen_range(0..26)) as char),
+            0 => format!("Suite {}", rng.random_range(100..999)),
+            1 => format!("Floor {}", rng.random_range(1..50)),
+            2 => format!("Ste. {}", rng.random_range(100..999)),
+            _ => format!("Unit {}", (b'A' + rng.random_range(0..26)) as char),
         }
     }
 
@@ -262,29 +262,29 @@ impl AddressGenerator {
                 // US ZIP code or Canadian postal code
                 if state.len() == 2 && state.chars().all(|c| c.is_ascii_uppercase()) {
                     // US state - ZIP code
-                    format!("{:05}", rng.gen_range(10000..99999))
+                    format!("{:05}", rng.random_range(10000..99999))
                 } else {
                     // Canadian postal code
-                    let letter1 = (b'A' + rng.gen_range(0..26)) as char;
-                    let num1 = rng.gen_range(1..9);
-                    let letter2 = (b'A' + rng.gen_range(0..26)) as char;
-                    let num2 = rng.gen_range(1..9);
-                    let letter3 = (b'A' + rng.gen_range(0..26)) as char;
-                    let num3 = rng.gen_range(1..9);
+                    let letter1 = (b'A' + rng.random_range(0..26)) as char;
+                    let num1 = rng.random_range(1..9);
+                    let letter2 = (b'A' + rng.random_range(0..26)) as char;
+                    let num2 = rng.random_range(1..9);
+                    let letter3 = (b'A' + rng.random_range(0..26)) as char;
+                    let num3 = rng.random_range(1..9);
                     format!("{}{}{} {}{}{}", letter1, num1, letter2, num2, letter3, num3)
                 }
             }
             AddressRegion::Europe => {
                 // Various European formats
-                format!("{:05}", rng.gen_range(10000..99999))
+                format!("{:05}", rng.random_range(10000..99999))
             }
             AddressRegion::AsiaPacific => {
                 // Various APAC formats
-                format!("{:06}", rng.gen_range(100000..999999))
+                format!("{:06}", rng.random_range(100000..999999))
             }
             AddressRegion::LatinAmerica => {
                 // Latin American formats
-                format!("{:05}", rng.gen_range(10000..99999))
+                format!("{:05}", rng.random_range(10000..99999))
             }
         }
     }

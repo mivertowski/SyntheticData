@@ -788,7 +788,7 @@ impl TaxCodeGenerator {
 
         // Suppress unused-variable warning for the RNG (deterministic but unused
         // in this path; kept for future jitter / randomised selection).
-        let _ = self.rng.gen::<u32>();
+        let _ = self.rng.random::<u32>();
 
         (jurisdictions, codes)
     }

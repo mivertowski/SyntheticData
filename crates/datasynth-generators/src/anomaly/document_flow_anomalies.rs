@@ -193,7 +193,7 @@ impl DocumentFlowAnomalyInjector {
         gr: &mut GoodsReceipt,
         po: &PurchaseOrder,
     ) -> bool {
-        if self.rng.gen::<f64>() >= self.config.quantity_mismatch_rate {
+        if self.rng.random::<f64>() >= self.config.quantity_mismatch_rate {
             return false;
         }
 
@@ -202,16 +202,16 @@ impl DocumentFlowAnomalyInjector {
             let original_qty = gr_item.base.quantity;
 
             // Generate variance (either over or under)
-            let variance = if self.rng.gen::<bool>() {
+            let variance = if self.rng.random::<bool>() {
                 // Over-receipt (more common in fraud)
                 Decimal::from_f64_retain(
-                    1.0 + self.rng.gen::<f64>() * self.config.max_quantity_variance,
+                    1.0 + self.rng.random::<f64>() * self.config.max_quantity_variance,
                 )
                 .unwrap_or(Decimal::ONE)
             } else {
                 // Under-receipt
                 Decimal::from_f64_retain(
-                    1.0 - self.rng.gen::<f64>() * self.config.max_quantity_variance,
+                    1.0 - self.rng.random::<f64>() * self.config.max_quantity_variance,
                 )
                 .unwrap_or(Decimal::ONE)
             };
@@ -250,7 +250,7 @@ impl DocumentFlowAnomalyInjector {
         invoice: &mut VendorInvoice,
         po: &PurchaseOrder,
     ) -> bool {
-        if self.rng.gen::<f64>() >= self.config.price_mismatch_rate {
+        if self.rng.random::<f64>() >= self.config.price_mismatch_rate {
             return false;
         }
 
@@ -259,16 +259,16 @@ impl DocumentFlowAnomalyInjector {
             let original_price = inv_item.base.unit_price;
 
             // Usually invoices are higher than PO (vendor overcharging)
-            let variance = if self.rng.gen::<f64>() < 0.8 {
+            let variance = if self.rng.random::<f64>() < 0.8 {
                 // 80% chance of overcharge
                 Decimal::from_f64_retain(
-                    1.0 + self.rng.gen::<f64>() * self.config.max_price_variance,
+                    1.0 + self.rng.random::<f64>() * self.config.max_price_variance,
                 )
                 .unwrap_or(Decimal::ONE)
             } else {
                 // 20% chance of undercharge (rare, could be error)
                 Decimal::from_f64_retain(
-                    1.0 - self.rng.gen::<f64>() * self.config.max_price_variance * 0.5,
+                    1.0 - self.rng.random::<f64>() * self.config.max_price_variance * 0.5,
                 )
                 .unwrap_or(Decimal::ONE)
             };
@@ -306,7 +306,7 @@ impl DocumentFlowAnomalyInjector {
     ///
     /// Removes the PO reference from an invoice to simulate maverick buying.
     pub fn inject_maverick_buying(&mut self, invoice: &mut VendorInvoice) -> bool {
-        if self.rng.gen::<f64>() >= self.config.maverick_buying_rate {
+        if self.rng.random::<f64>() >= self.config.maverick_buying_rate {
             return false;
         }
 
@@ -338,7 +338,7 @@ impl DocumentFlowAnomalyInjector {
         invoice: &VendorInvoice,
         gr: &GoodsReceipt,
     ) -> Option<DocumentFlowAnomalyResult> {
-        if self.rng.gen::<f64>() >= self.config.early_invoice_rate {
+        if self.rng.random::<f64>() >= self.config.early_invoice_rate {
             return None;
         }
 
@@ -376,7 +376,7 @@ impl DocumentFlowAnomalyInjector {
             return None;
         }
 
-        if self.rng.gen::<f64>() >= self.config.unauthorized_payment_rate {
+        if self.rng.random::<f64>() >= self.config.unauthorized_payment_rate {
             return None;
         }
 

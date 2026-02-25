@@ -248,7 +248,7 @@ impl FraudScheme for RevenueManipulationScheme {
         }
 
         // Check detection
-        if rng.gen::<f64>() < self.detection_probability * context.detection_activity {
+        if rng.random::<f64>() < self.detection_probability * context.detection_activity {
             self.detection_status = SchemeDetectionStatus::UnderInvestigation;
             // Don't fully terminate - management fraud often continues
             if context.detection_activity > 0.7 {
@@ -271,7 +271,7 @@ impl FraudScheme for RevenueManipulationScheme {
         // Generate actions based on stage
         // Revenue manipulation typically happens at quarter/year end
         let is_period_end = context.current_date.day() >= 25;
-        let should_act = is_period_end && rng.gen::<f64>() < 0.4;
+        let should_act = is_period_end && rng.random::<f64>() < 0.4;
 
         if should_act {
             let amount = stage.random_amount(rng);

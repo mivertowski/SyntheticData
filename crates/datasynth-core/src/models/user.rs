@@ -298,7 +298,7 @@ impl UserPool {
 
     /// Get a random user of a specific persona.
     pub fn get_random_user(&self, persona: UserPersona, rng: &mut impl rand::Rng) -> Option<&User> {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
         self.get_users_by_persona(persona).choose(rng).copied()
     }
 
@@ -969,7 +969,7 @@ impl EmployeePool {
 
     /// Get a random employee with approval authority.
     pub fn get_random_approver(&self, rng: &mut impl rand::Rng) -> Option<&Employee> {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
 
         let approvers: Vec<_> = self
             .employees
@@ -986,7 +986,7 @@ impl EmployeePool {
         amount: Decimal,
         rng: &mut impl rand::Rng,
     ) -> Option<&Employee> {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
 
         let approvers: Vec<_> = self
             .employees

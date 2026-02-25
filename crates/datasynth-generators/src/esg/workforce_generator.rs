@@ -114,7 +114,7 @@ impl WorkforceGenerator {
 
     /// Generate random shares that sum to 1.0.
     fn random_shares(&mut self, count: usize) -> Vec<f64> {
-        let mut raw: Vec<f64> = (0..count).map(|_| self.rng.gen::<f64>()).collect();
+        let mut raw: Vec<f64> = (0..count).map(|_| self.rng.random::<f64>()).collect();
         let total: f64 = raw.iter().sum();
         if total > 0.0 {
             for v in &mut raw {
@@ -147,9 +147,9 @@ impl WorkforceGenerator {
             .iter()
             .map(|(dim, ref_group, cmp_group)| {
                 self.counter += 1;
-                let ref_salary: f64 = self.rng.gen_range(70_000.0..120_000.0);
+                let ref_salary: f64 = self.rng.random_range(70_000.0..120_000.0);
                 // Pay gap: comparison group earns 85-105% of reference
-                let gap_factor: f64 = self.rng.gen_range(0.85..1.05);
+                let gap_factor: f64 = self.rng.random_range(0.85..1.05);
                 let cmp_salary = ref_salary * gap_factor;
 
                 let ref_dec = Decimal::from_f64_retain(ref_salary)
@@ -174,7 +174,7 @@ impl WorkforceGenerator {
                     reference_median_salary: ref_dec,
                     comparison_median_salary: cmp_dec,
                     pay_gap_ratio: ratio,
-                    sample_size: self.rng.gen_range(50..500),
+                    sample_size: self.rng.random_range(50..500),
                 }
             })
             .collect()
@@ -200,16 +200,16 @@ impl WorkforceGenerator {
         (0..total_incidents)
             .map(|_| {
                 self.counter += 1;
-                let day_offset = self.rng.gen_range(0..period_days);
+                let day_offset = self.rng.random_range(0..period_days);
                 let date = start_date + chrono::Duration::days(day_offset);
-                let fac = self.rng.gen_range(1..=facility_count.max(1));
+                let fac = self.rng.random_range(1..=facility_count.max(1));
 
                 let incident_type = self.pick_incident_type();
                 let days_away = match incident_type {
                     IncidentType::Fatality => 0,
                     IncidentType::NearMiss | IncidentType::PropertyDamage => 0,
-                    IncidentType::Injury => self.rng.gen_range(0..30u32),
-                    IncidentType::Illness => self.rng.gen_range(1..15u32),
+                    IncidentType::Injury => self.rng.random_range(0..30u32),
+                    IncidentType::Illness => self.rng.random_range(1..15u32),
                 };
                 let is_recordable = !matches!(incident_type, IncidentType::NearMiss);
 
@@ -236,7 +236,7 @@ impl WorkforceGenerator {
     }
 
     fn pick_incident_type(&mut self) -> IncidentType {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.35 {
             IncidentType::NearMiss
         } else if roll < 0.65 {
@@ -332,14 +332,14 @@ impl GovernanceGenerator {
         self.counter += 1;
 
         // Independent directors: aim near target with some noise
-        let ind_frac: f64 = self.rng.gen_range(
+        let ind_frac: f64 = self.rng.random_range(
             (self.independence_target - 0.10).max(0.0)..(self.independence_target + 0.10).min(1.0),
         );
         let independent = (self.board_size as f64 * ind_frac).round() as u32;
         let independent = independent.min(self.board_size);
 
         // Female directors: 20-40% range
-        let fem_frac: f64 = self.rng.gen_range(0.20..0.40);
+        let fem_frac: f64 = self.rng.random_range(0.20..0.40);
         let female = (self.board_size as f64 * fem_frac).round() as u32;
         let female = female.min(self.board_size);
 
@@ -354,9 +354,13 @@ impl GovernanceGenerator {
             Decimal::ZERO
         };
 
-        let ethics_pct: f64 = self.rng.gen_range(0.85..0.99);
-        let whistleblower: u32 = self.rng.gen_range(0..5);
-        let anti_corruption: u32 = if self.rng.gen::<f64>() < 0.10 { 1 } else { 0 };
+        let ethics_pct: f64 = self.rng.random_range(0.85..0.99);
+        let whistleblower: u32 = self.rng.random_range(0..5);
+        let anti_corruption: u32 = if self.rng.random::<f64>() < 0.10 {
+            1
+        } else {
+            0
+        };
 
         GovernanceMetric {
             id: format!("GV-{:06}", self.counter),

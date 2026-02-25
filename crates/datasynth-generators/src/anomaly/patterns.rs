@@ -353,7 +353,7 @@ impl ClusterManager {
         // Get time window for this category
         let time_window = if self.config.use_fraud_specific_windows {
             let (min, max) = category.time_window_days();
-            rng.gen_range(min..=max)
+            rng.random_range(min..=max)
         } else {
             self.config.cluster_time_window_days
         };
@@ -365,7 +365,7 @@ impl ClusterManager {
             // Check if within time window and not at max size
             if days_elapsed <= active.time_window_days
                 && active.size < self.config.max_cluster_size
-                && rng.gen::<f64>() < self.config.cluster_continuation_probability
+                && rng.random::<f64>() < self.config.cluster_continuation_probability
             {
                 // If preserving relationships, prefer matching accounts/entities
                 let relationship_match = if self.config.preserve_account_relationships {
@@ -425,7 +425,7 @@ impl ClusterManager {
         }
 
         // Decide whether to start a new cluster
-        if rng.gen::<f64>() < self.config.cluster_start_probability {
+        if rng.random::<f64>() < self.config.cluster_start_probability {
             let cluster_id = format!("CLU{:06}", self.next_cluster_id);
             self.next_cluster_id += 1;
 
@@ -572,12 +572,12 @@ impl EntityTargetingManager {
 
         let selected = match &self.pattern {
             EntityTargetingPattern::Random => {
-                candidates[rng.gen_range(0..candidates.len())].clone()
+                candidates[rng.random_range(0..candidates.len())].clone()
             }
             EntityTargetingPattern::VolumeWeighted => {
                 // In practice, would weight by actual volume
                 // For now, use random
-                candidates[rng.gen_range(0..candidates.len())].clone()
+                candidates[rng.random_range(0..candidates.len())].clone()
             }
             EntityTargetingPattern::TypeFocused { type_weights } => {
                 // Filter by type weights
@@ -587,18 +587,18 @@ impl EntityTargetingManager {
                     .collect();
 
                 if weighted.is_empty() {
-                    candidates[rng.gen_range(0..candidates.len())].clone()
+                    candidates[rng.random_range(0..candidates.len())].clone()
                 } else {
                     weighted_select(rng, &weighted).clone()
                 }
             }
             EntityTargetingPattern::RepeatOffender { repeat_probability } => {
                 // Check if we should repeat a recent target
-                if !self.recent_targets.is_empty() && rng.gen::<f64>() < *repeat_probability {
-                    let idx = rng.gen_range(0..self.recent_targets.len());
+                if !self.recent_targets.is_empty() && rng.random::<f64>() < *repeat_probability {
+                    let idx = rng.random_range(0..self.recent_targets.len());
                     self.recent_targets[idx].clone()
                 } else {
-                    candidates[rng.gen_range(0..candidates.len())].clone()
+                    candidates[rng.random_range(0..candidates.len())].clone()
                 }
             }
         };
@@ -656,7 +656,7 @@ pub fn should_inject_anomaly<R: Rng>(
 ) -> bool {
     let multiplier = pattern.probability_multiplier(date);
     let adjusted_rate = (base_rate * multiplier).min(1.0);
-    rng.gen::<f64>() < adjusted_rate
+    rng.random::<f64>() < adjusted_rate
 }
 
 // ============================================================================
@@ -863,7 +863,7 @@ impl FraudActor {
         if self.preferred_accounts.is_empty() {
             None
         } else {
-            Some(&self.preferred_accounts[rng.gen_range(0..self.preferred_accounts.len())])
+            Some(&self.preferred_accounts[rng.random_range(0..self.preferred_accounts.len())])
         }
     }
 
@@ -872,7 +872,7 @@ impl FraudActor {
         if self.preferred_vendors.is_empty() {
             None
         } else {
-            Some(&self.preferred_vendors[rng.gen_range(0..self.preferred_vendors.len())])
+            Some(&self.preferred_vendors[rng.random_range(0..self.preferred_vendors.len())])
         }
     }
 }
@@ -926,16 +926,16 @@ impl FraudActorManager {
             .map(|(i, _)| i)
             .collect();
 
-        if !active_actors.is_empty() && rng.gen::<f64>() < self.repeat_actor_probability {
+        if !active_actors.is_empty() && rng.random::<f64>() < self.repeat_actor_probability {
             // Use existing actor
-            let idx = active_actors[rng.gen_range(0..active_actors.len())];
+            let idx = active_actors[rng.random_range(0..active_actors.len())];
             return Some(&mut self.actors[idx]);
         }
 
         // Create new actor if under max
         if self.actors.len() < self.max_active_actors {
             // Pick a random user
-            let user_id = &available_users[rng.gen_range(0..available_users.len())];
+            let user_id = &available_users[rng.random_range(0..available_users.len())];
 
             // Check if user already has an actor
             if let Some(&idx) = self.user_index.get(user_id) {
@@ -943,7 +943,7 @@ impl FraudActorManager {
             }
 
             // Create new actor with random escalation pattern
-            let pattern = match rng.gen_range(0..5) {
+            let pattern = match rng.random_range(0..5) {
                 0 => EscalationPattern::Stable,
                 1 => EscalationPattern::Gradual,
                 2 => EscalationPattern::Aggressive,
@@ -960,7 +960,7 @@ impl FraudActorManager {
 
         // Use random existing actor
         if !self.actors.is_empty() {
-            let idx = rng.gen_range(0..self.actors.len());
+            let idx = rng.random_range(0..self.actors.len());
             return Some(&mut self.actors[idx]);
         }
 
@@ -984,7 +984,7 @@ impl FraudActorManager {
     /// Deactivate actors who have high detection risk.
     pub fn apply_detection<R: Rng>(&mut self, rng: &mut R) {
         for actor in &mut self.actors {
-            if actor.is_active && rng.gen::<f64>() < actor.detection_risk {
+            if actor.is_active && rng.random::<f64>() < actor.detection_risk {
                 actor.is_active = false;
             }
         }

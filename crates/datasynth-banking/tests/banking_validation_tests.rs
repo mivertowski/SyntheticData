@@ -438,6 +438,11 @@ fn test_spoofing_labels() {
     let mut config = BankingConfig::small();
     config.spoofing.enabled = true;
     config.spoofing.intensity = 0.5;
+    // Bias toward Professional/Advanced so spoofing is reliably triggered
+    config.typologies.sophistication.basic = 0.1;
+    config.typologies.sophistication.standard = 0.1;
+    config.typologies.sophistication.professional = 0.4;
+    config.typologies.sophistication.advanced = 0.4;
 
     let orchestrator = BankingOrchestrator::new(config, 10101);
     let data = orchestrator.generate();

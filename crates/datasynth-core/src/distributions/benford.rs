@@ -155,7 +155,7 @@ impl BenfordSampler {
 
     /// Sample a first digit according to Benford's Law.
     fn sample_benford_first_digit(&mut self) -> u8 {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         for (i, &cumulative) in BENFORD_CDF.iter().enumerate() {
             if p < cumulative {
                 return (i + 1) as u8;
@@ -166,7 +166,7 @@ impl BenfordSampler {
 
     /// Sample a first digit from the anti-Benford distribution.
     fn sample_anti_benford_first_digit(&mut self) -> u8 {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         let mut cumulative = 0.0;
         for (i, &prob) in ANTI_BENFORD_PROBABILITIES.iter().enumerate() {
             cumulative += prob;
@@ -192,11 +192,11 @@ impl BenfordSampler {
         let max_magnitude = self.config.max_amount.log10().floor() as i32;
 
         // Sample a magnitude within the valid range
-        let magnitude = self.rng.gen_range(min_magnitude..=max_magnitude);
+        let magnitude = self.rng.random_range(min_magnitude..=max_magnitude);
         let base = 10_f64.powi(magnitude);
 
         // Generate the remaining digits (0.0 to 0.999...)
-        let remaining: f64 = self.rng.gen();
+        let remaining: f64 = self.rng.random();
 
         // Construct: first_digit.remaining * 10^magnitude
         let mantissa = first_digit as f64 + remaining;
@@ -206,7 +206,7 @@ impl BenfordSampler {
         amount = amount.clamp(self.config.min_amount, self.config.max_amount);
 
         // Apply round number bias (25% chance)
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         if p < self.config.round_number_probability {
             // Round to nearest whole number ending in 00
             amount = (amount / 100.0).round() * 100.0;
@@ -272,32 +272,32 @@ impl FraudAmountGenerator {
 
     /// Generate an obvious round number amount (suspicious pattern).
     fn sample_obvious_round(&mut self) -> Decimal {
-        let pattern_choice = self.rng.gen_range(0..5);
+        let pattern_choice = self.rng.random_range(0..5);
 
         let amount = match pattern_choice {
             // Even thousands ($1,000, $5,000, $10,000, etc.)
             0 => {
-                let multiplier = self.rng.gen_range(1..100);
+                let multiplier = self.rng.random_range(1..100);
                 multiplier as f64 * 1000.0
             }
             // $X9,999.99 pattern (just under round number)
             1 => {
-                let base = self.rng.gen_range(1..10) as f64 * 10000.0;
+                let base = self.rng.random_range(1..10) as f64 * 10000.0;
                 base - 0.01
             }
             // Exact $X0,000.00 pattern
             2 => {
-                let multiplier = self.rng.gen_range(1..20);
+                let multiplier = self.rng.random_range(1..20);
                 multiplier as f64 * 10000.0
             }
             // Five-thousands ($5,000, $15,000, $25,000)
             3 => {
-                let multiplier = self.rng.gen_range(1..40);
+                let multiplier = self.rng.random_range(1..40);
                 multiplier as f64 * 5000.0
             }
             // $X,999.99 pattern
             _ => {
-                let base = self.rng.gen_range(1..100) as f64 * 1000.0;
+                let base = self.rng.random_range(1..100) as f64 * 1000.0;
                 base - 0.01
             }
         };
@@ -323,11 +323,11 @@ impl FraudAmountGenerator {
         // Calculate amount as percentage below threshold
         let pct_below = self
             .rng
-            .gen_range(self.threshold_config.min_below_pct..self.threshold_config.max_below_pct);
+            .random_range(self.threshold_config.min_below_pct..self.threshold_config.max_below_pct);
         let base_amount = threshold * (1.0 - pct_below);
 
         // Add small noise to avoid exact patterns
-        let noise_factor = 1.0 + self.rng.gen_range(-0.005..0.005);
+        let noise_factor = 1.0 + self.rng.random_range(-0.005..0.005);
         let amount = base_amount * noise_factor;
 
         // Round to 2 decimal places
@@ -420,7 +420,7 @@ impl EnhancedBenfordSampler {
 
     /// Sample first two digits according to Benford's Law.
     fn sample_first_two_digits(&mut self) -> (u8, u8) {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         for (i, &cdf) in self.first_two_cdf.iter().enumerate() {
             if p < cdf {
                 let d1 = (i / 10 + 1) as u8;
@@ -433,7 +433,7 @@ impl EnhancedBenfordSampler {
 
     /// Sample a second digit according to Benford's Law.
     fn sample_second_digit(&mut self) -> u8 {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         for (i, &cdf) in BENFORD_SECOND_DIGIT_CDF.iter().enumerate() {
             if p < cdf {
                 return i as u8;
@@ -444,7 +444,7 @@ impl EnhancedBenfordSampler {
 
     /// Sample a first digit according to Benford's Law.
     fn sample_first_digit(&mut self) -> u8 {
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         for (i, &cdf) in BENFORD_CDF.iter().enumerate() {
             if p < cdf {
                 return (i + 1) as u8;
@@ -460,7 +460,10 @@ impl EnhancedBenfordSampler {
         } else if self.config.second_digit_compliance {
             (self.sample_first_digit(), self.sample_second_digit())
         } else {
-            (self.sample_first_digit(), self.rng.gen_range(0..10) as u8)
+            (
+                self.sample_first_digit(),
+                self.rng.random_range(0..10) as u8,
+            )
         };
 
         self.sample_with_digits(first_digit, second_digit)
@@ -476,11 +479,11 @@ impl EnhancedBenfordSampler {
         let max_magnitude = self.config.amount_config.max_amount.log10().floor() as i32;
 
         // Sample a magnitude within the valid range
-        let magnitude = self.rng.gen_range(min_magnitude..=max_magnitude);
+        let magnitude = self.rng.random_range(min_magnitude..=max_magnitude);
         let base = 10_f64.powi(magnitude - 1); // -1 because first two digits span 10-99
 
         // Generate the remaining digits (0.0 to 0.99...)
-        let remaining: f64 = self.rng.gen();
+        let remaining: f64 = self.rng.random();
 
         // Construct the amount: (first_digit * 10 + second_digit + remaining) * base
         let mantissa = (first_digit as f64) * 10.0 + (second_digit as f64) + remaining;
@@ -578,7 +581,7 @@ impl BenfordDeviationSampler {
     /// Sample an amount with the configured deviation pattern.
     pub fn sample(&mut self) -> Decimal {
         // With probability (1 - intensity), sample from normal Benford
-        let p: f64 = self.rng.gen();
+        let p: f64 = self.rng.random();
         if p > self.config.intensity {
             return self.benford_sampler.sample();
         }
@@ -596,25 +599,25 @@ impl BenfordDeviationSampler {
     /// Sample with round number bias.
     fn sample_round_bias(&mut self) -> Decimal {
         // Bias towards first digits 1 and 5
-        let first_digit = if self.rng.gen_bool(0.6) {
-            if self.rng.gen_bool(0.7) {
+        let first_digit = if self.rng.random_bool(0.6) {
+            if self.rng.random_bool(0.7) {
                 1
             } else {
                 5
             }
         } else {
-            self.rng.gen_range(1..=9)
+            self.rng.random_range(1..=9)
         };
 
         // Bias towards second digits 0 and 5
-        let _second_digit = if self.rng.gen_bool(0.5) {
-            if self.rng.gen_bool(0.6) {
+        let _second_digit = if self.rng.random_bool(0.5) {
+            if self.rng.random_bool(0.6) {
                 0
             } else {
                 5
             }
         } else {
-            self.rng.gen_range(0..=9)
+            self.rng.random_range(0..=9)
         };
 
         self.benford_sampler.sample_with_first_digit(first_digit)
@@ -630,11 +633,11 @@ impl BenfordDeviationSampler {
             .unwrap_or(10000.0);
 
         // Generate amount 1-15% below threshold
-        let pct_below = self.rng.gen_range(0.01..0.15);
+        let pct_below = self.rng.random_range(0.01..0.15);
         let amount = threshold * (1.0 - pct_below);
 
         // Add small noise
-        let noise = 1.0 + self.rng.gen_range(-0.005..0.005);
+        let noise = 1.0 + self.rng.random_range(-0.005..0.005);
         let final_amount = (amount * noise * 100.0).round() / 100.0;
 
         Decimal::from_f64_retain(final_amount.clamp(
@@ -646,7 +649,7 @@ impl BenfordDeviationSampler {
 
     /// Sample with uniform first digit distribution.
     fn sample_uniform_first_digit(&mut self) -> Decimal {
-        let first_digit = self.rng.gen_range(1..=9);
+        let first_digit = self.rng.random_range(1..=9);
         self.benford_sampler.sample_with_first_digit(first_digit)
     }
 
@@ -654,10 +657,10 @@ impl BenfordDeviationSampler {
     fn sample_digit_bias(&mut self, target_digit: u8) -> Decimal {
         let digit = target_digit.clamp(1, 9);
         // 70% chance of using the biased digit
-        let first_digit = if self.rng.gen_bool(0.7) {
+        let first_digit = if self.rng.random_bool(0.7) {
             digit
         } else {
-            self.rng.gen_range(1..=9)
+            self.rng.random_range(1..=9)
         };
         self.benford_sampler.sample_with_first_digit(first_digit)
     }

@@ -176,7 +176,7 @@ impl CashPositionGenerator {
         if closing_balance <= Decimal::ZERO {
             return Decimal::ZERO;
         }
-        let pct = self.rng.gen_range(0.0f64..0.02);
+        let pct = self.rng.random_range(0.0f64..0.02);
         let hold = closing_balance * Decimal::try_from(pct).unwrap_or(Decimal::ZERO);
         hold.round_dp(2)
     }

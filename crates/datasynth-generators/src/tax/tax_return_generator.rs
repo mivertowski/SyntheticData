@@ -119,20 +119,20 @@ impl TaxReturnGenerator {
             );
 
             // ~95% of returns are filed, ~5% remain as Draft
-            let filed_roll: f64 = self.rng.gen();
+            let filed_roll: f64 = self.rng.random();
             if filed_roll < 0.95 {
                 // Determine actual filing date
-                let late_roll: f64 = self.rng.gen();
+                let late_roll: f64 = self.rng.random();
                 let is_late = late_roll < 0.02;
 
                 let filing_date = if is_late {
                     // Late: 1-30 days after deadline
-                    let late_days: i64 = self.rng.gen_range(1..=30);
+                    let late_days: i64 = self.rng.random_range(1..=30);
                     filing_deadline + chrono::Duration::days(late_days)
                 } else {
                     // On time: between period_end and deadline
                     let days_available = (filing_deadline - period_end).num_days().max(1);
-                    let days_before: i64 = self.rng.gen_range(1..=days_available);
+                    let days_before: i64 = self.rng.random_range(1..=days_available);
                     period_end + chrono::Duration::days(days_before)
                 };
 

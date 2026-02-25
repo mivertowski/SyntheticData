@@ -49,10 +49,10 @@ impl ScorecardGenerator {
         let mut scorecards = Vec::new();
 
         for (vendor_id, contracts) in vendor_contracts {
-            let otd_rate = self.rng.gen_range(0.75..=0.99);
-            let quality_rate = self.rng.gen_range(0.85..=0.99);
-            let price_score = self.rng.gen_range(60.0..=100.0);
-            let responsiveness = self.rng.gen_range(50.0..=100.0);
+            let otd_rate = self.rng.random_range(0.75..=0.99);
+            let quality_rate = self.rng.random_range(0.85..=0.99);
+            let price_score = self.rng.random_range(60.0..=100.0);
+            let responsiveness = self.rng.random_range(50.0..=100.0);
 
             let overall = otd_rate * 100.0 * self.config.on_time_delivery_weight
                 + quality_rate * 100.0 * self.config.quality_weight
@@ -69,9 +69,9 @@ impl ScorecardGenerator {
                 "D"
             };
 
-            let trend = if self.rng.gen_bool(0.5) {
+            let trend = if self.rng.random_bool(0.5) {
                 ScoreboardTrend::Stable
-            } else if self.rng.gen_bool(0.6) {
+            } else if self.rng.random_bool(0.6) {
                 ScoreboardTrend::Improving
             } else {
                 ScoreboardTrend::Declining
@@ -98,8 +98,8 @@ impl ScorecardGenerator {
                     ContractComplianceMetrics {
                         contract_id: c.contract_id.clone(),
                         utilization_pct: utilization,
-                        sla_breach_count: self.rng.gen_range(0..=3),
-                        price_compliance_pct: self.rng.gen_range(0.85..=1.0),
+                        sla_breach_count: self.rng.random_range(0..=3),
+                        price_compliance_pct: self.rng.random_range(0.85..=1.0),
                         amendment_count: c.amendment_count,
                     }
                 })

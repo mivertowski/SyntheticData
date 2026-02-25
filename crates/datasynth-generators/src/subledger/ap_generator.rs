@@ -110,7 +110,7 @@ impl APGenerator {
 
         if let Some(po) = po_number {
             invoice.reference_po = Some(po.to_string());
-            invoice.match_status = if self.rng.gen::<f64>() < 0.95 {
+            invoice.match_status = if self.rng.random::<f64>() < 0.95 {
                 MatchStatus::Matched
             } else {
                 MatchStatus::MatchedWithVariance {
@@ -232,19 +232,19 @@ impl APGenerator {
     fn generate_line_amount(&mut self) -> Decimal {
         let base = self.config.avg_invoice_amount;
         let variation = base * self.config.amount_variation;
-        let random: f64 = self.rng.gen_range(-1.0..1.0);
+        let random: f64 = self.rng.random_range(-1.0..1.0);
         (base + variation * Decimal::try_from(random).unwrap_or_default())
             .max(dec!(100))
             .round_dp(2)
     }
 
     fn generate_variance(&mut self) -> Decimal {
-        let random: f64 = self.rng.gen_range(-100.0..100.0);
+        let random: f64 = self.rng.random_range(-100.0..100.0);
         Decimal::try_from(random).unwrap_or_default().round_dp(2)
     }
 
     fn random_payment_method(&mut self) -> APPaymentMethod {
-        match self.rng.gen_range(0..4) {
+        match self.rng.random_range(0..4) {
             0 => APPaymentMethod::WireTransfer,
             1 => APPaymentMethod::Check,
             2 => APPaymentMethod::ACH,

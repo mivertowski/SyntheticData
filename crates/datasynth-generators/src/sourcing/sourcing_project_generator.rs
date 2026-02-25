@@ -71,25 +71,25 @@ impl SourcingProjectGenerator {
             }
 
             let (cat_id, cat_name, annual_spend) =
-                &categories[self.rng.gen_range(0..categories.len())];
-            let owner_id = &owner_ids[self.rng.gen_range(0..owner_ids.len())];
+                &categories[self.rng.random_range(0..categories.len())];
+            let owner_id = &owner_ids[self.rng.random_range(0..owner_ids.len())];
 
-            let project_type = if self.rng.gen_bool(0.4) {
+            let project_type = if self.rng.random_bool(0.4) {
                 SourcingProjectType::Renewal
-            } else if self.rng.gen_bool(0.15) {
+            } else if self.rng.random_bool(0.15) {
                 SourcingProjectType::Consolidation
             } else {
                 SourcingProjectType::NewSourcing
             };
 
-            let days_offset = self.rng.gen_range(0..period_months * 30);
+            let days_offset = self.rng.random_range(0..period_months * 30);
             let start_date = period_start + chrono::Duration::days(days_offset as i64);
             let duration_months = self.config.project_duration_months;
             let target_end_date =
                 start_date + chrono::Duration::days((duration_months * 30) as i64);
 
             let project_id = self.uuid_factory.next().to_string();
-            let target_savings = self.rng.gen_range(0.03..=0.15);
+            let target_savings = self.rng.random_range(0.03..=0.15);
 
             projects.push(SourcingProject {
                 project_id,
@@ -104,12 +104,13 @@ impl SourcingProjectGenerator {
                 start_date,
                 target_end_date,
                 actual_end_date: Some(
-                    target_end_date + chrono::Duration::days(self.rng.gen_range(-10..=20) as i64),
+                    target_end_date
+                        + chrono::Duration::days(self.rng.random_range(-10..=20) as i64),
                 ),
                 spend_analysis_id: None,
                 rfx_ids: Vec::new(),
                 contract_id: None,
-                actual_savings_pct: Some(target_savings * self.rng.gen_range(0.6..=1.2)),
+                actual_savings_pct: Some(target_savings * self.rng.random_range(0.6..=1.2)),
             });
         }
 

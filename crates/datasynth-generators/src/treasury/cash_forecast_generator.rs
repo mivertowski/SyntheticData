@@ -173,7 +173,7 @@ impl CashForecastGenerator {
         };
         // Add small random jitter (±5%)
         let jitter =
-            Decimal::try_from(self.rng.gen_range(-0.05f64..0.05f64)).unwrap_or(Decimal::ZERO);
+            Decimal::try_from(self.rng.random_range(-0.05f64..0.05f64)).unwrap_or(Decimal::ZERO);
         (base + jitter).max(dec!(0.05)).min(dec!(1.00)).round_dp(2)
     }
 }

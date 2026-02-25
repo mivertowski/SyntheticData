@@ -5,7 +5,7 @@ use rand::Rng;
 /// Select from weighted options. Weights don't need to sum to 1.0.
 pub fn weighted_select<'a, T, R: Rng>(rng: &mut R, options: &'a [(T, f64)]) -> &'a T {
     let total: f64 = options.iter().map(|(_, w)| w).sum();
-    let mut roll = rng.gen::<f64>() * total;
+    let mut roll = rng.random::<f64>() * total;
     for (item, weight) in options {
         roll -= weight;
         if roll <= 0.0 {
@@ -27,7 +27,7 @@ pub fn sample_decimal_range<R: Rng>(
     use rust_decimal::prelude::ToPrimitive;
     let min_f = min.to_f64().unwrap_or(0.0);
     let max_f = max.to_f64().unwrap_or(min_f + 1.0);
-    let val = rng.gen_range(min_f..=max_f);
+    let val = rng.random_range(min_f..=max_f);
     rust_decimal::Decimal::from_f64_retain(val).unwrap_or(min)
 }
 
@@ -92,8 +92,8 @@ mod tests {
     fn test_seeded_rng_different_discriminators() {
         let mut rng1 = seeded_rng(42, 0);
         let mut rng2 = seeded_rng(42, 1);
-        let val1: f64 = rng1.gen();
-        let val2: f64 = rng2.gen();
+        let val1: f64 = rng1.random();
+        let val2: f64 = rng2.random();
         assert_ne!(
             val1, val2,
             "Different discriminators should produce different values"

@@ -41,22 +41,22 @@ impl SpoofingEngine {
         let intensity = txn.spoofing_intensity.unwrap_or(0.0);
 
         // Adjust timing to look more natural
-        if self.config.spoof_timing && self.rng.gen::<f64>() < intensity {
+        if self.config.spoof_timing && self.rng.random::<f64>() < intensity {
             self.spoof_timing(txn, customer);
         }
 
         // Adjust amounts to fit customer profile
-        if self.config.spoof_amounts && self.rng.gen::<f64>() < intensity {
+        if self.config.spoof_amounts && self.rng.random::<f64>() < intensity {
             self.spoof_amount(txn, customer);
         }
 
         // Use persona-appropriate merchant categories
-        if self.config.spoof_merchants && self.rng.gen::<f64>() < intensity {
+        if self.config.spoof_merchants && self.rng.random::<f64>() < intensity {
             self.spoof_merchant(txn, customer);
         }
 
         // Add delays to reduce velocity signatures
-        if self.config.add_delays && self.rng.gen::<f64>() < intensity {
+        if self.config.add_delays && self.rng.random::<f64>() < intensity {
             self.add_timing_jitter(txn);
         }
     }
@@ -68,9 +68,9 @@ impl SpoofingEngine {
 
         // Move suspicious late-night/early-morning transactions to business hours
         if !(7..=22).contains(&current_hour) {
-            let new_hour = self.rng.gen_range(9..18);
-            let new_minute = self.rng.gen_range(0..60);
-            let new_second = self.rng.gen_range(0..60);
+            let new_hour = self.rng.random_range(9..18);
+            let new_minute = self.rng.random_range(0..60);
+            let new_second = self.rng.random_range(0..60);
 
             if let Some(new_time) = txn
                 .timestamp_initiated
@@ -93,7 +93,7 @@ impl SpoofingEngine {
         let amount_f64: f64 = txn.amount.try_into().unwrap_or(0.0);
 
         // Add small random cents
-        let cents = self.rng.gen_range(1..99) as f64 / 100.0;
+        let cents = self.rng.random_range(1..99) as f64 / 100.0;
         let new_amount = amount_f64 + cents;
 
         // Avoid threshold-adjacent amounts (like $9,999)
@@ -112,10 +112,10 @@ impl SpoofingEngine {
 
             if amount > lower_bound && amount < upper_bound {
                 // Move amount away from threshold
-                if self.rng.gen::<bool>() {
-                    return threshold * 0.85 + self.rng.gen_range(0.0..100.0);
+                if self.rng.random::<bool>() {
+                    return threshold * 0.85 + self.rng.random_range(0.0..100.0);
                 } else {
-                    return threshold * 1.15 + self.rng.gen_range(0.0..100.0);
+                    return threshold * 1.15 + self.rng.random_range(0.0..100.0);
                 }
             }
         }
@@ -129,7 +129,7 @@ impl SpoofingEngine {
         let persona_categories = self.get_persona_categories(customer);
 
         if !persona_categories.is_empty() {
-            let idx = self.rng.gen_range(0..persona_categories.len());
+            let idx = self.rng.random_range(0..persona_categories.len());
             txn.category = persona_categories[idx];
         }
     }
@@ -196,7 +196,7 @@ impl SpoofingEngine {
     /// Add timing jitter to reduce velocity detection.
     fn add_timing_jitter(&mut self, txn: &mut BankTransaction) {
         // Add random minutes to the timestamp
-        let jitter_minutes = self.rng.gen_range(-30..30);
+        let jitter_minutes = self.rng.random_range(-30..30);
         txn.timestamp_initiated += chrono::Duration::minutes(jitter_minutes as i64);
     }
 

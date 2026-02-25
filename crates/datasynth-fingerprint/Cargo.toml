@@ -23,7 +23,7 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 
 # Archive format
-zip = "2.2"
+zip = "8.1"
 
 # Date/Time
 chrono = { workspace = true }

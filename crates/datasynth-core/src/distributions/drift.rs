@@ -441,7 +441,7 @@ impl DriftController {
     fn precompute_sudden_drifts(&mut self) {
         for period in 0..self.total_periods {
             if period >= self.config.drift_start_period
-                && self.rng.gen::<f64>() < self.config.sudden_drift_probability
+                && self.rng.random::<f64>() < self.config.sudden_drift_probability
             {
                 self.sudden_drift_periods.push(period);
             }

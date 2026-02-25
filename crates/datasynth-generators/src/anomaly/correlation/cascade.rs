@@ -328,7 +328,7 @@ impl CascadeGenerator {
         // Generate steps from template
         let mut step_num = 0u32;
         for step_template in &template.steps {
-            if rng.gen::<f64>() < step_template.probability {
+            if rng.random::<f64>() < step_template.probability {
                 step_num += 1;
 
                 if step_num > self.config.max_depth {
@@ -338,7 +338,7 @@ impl CascadeGenerator {
                 let lag = if step_template.lag_min == step_template.lag_max {
                     step_template.lag_min
                 } else {
-                    rng.gen_range(step_template.lag_min..=step_template.lag_max)
+                    rng.random_range(step_template.lag_min..=step_template.lag_max)
                 };
 
                 let step = CascadeStep::new(step_num, step_template.anomaly_type.clone(), lag)

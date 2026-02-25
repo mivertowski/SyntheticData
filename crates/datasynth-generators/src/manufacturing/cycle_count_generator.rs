@@ -100,18 +100,18 @@ impl CycleCountGenerator {
 
         // Counter and supervisor – use real employee IDs when available
         let counter_id = if self.employee_ids_pool.is_empty() {
-            Some(format!("WH-{:02}", self.rng.gen_range(1..=10)))
+            Some(format!("WH-{:02}", self.rng.random_range(1..=10)))
         } else {
             self.employee_ids_pool.choose(&mut self.rng).cloned()
         };
         let supervisor_id = if self.employee_ids_pool.is_empty() {
-            Some(format!("SUP-{:02}", self.rng.gen_range(1..=5)))
+            Some(format!("SUP-{:02}", self.rng.random_range(1..=5)))
         } else {
             self.employee_ids_pool.choose(&mut self.rng).cloned()
         };
 
         // Warehouse ID
-        let warehouse_id = format!("WH-{:03}", self.rng.gen_range(1..=10));
+        let warehouse_id = format!("WH-{:03}", self.rng.random_range(1..=10));
 
         CycleCount {
             count_id,
@@ -131,41 +131,41 @@ impl CycleCountGenerator {
     /// Generate a single cycle count item with realistic variance patterns.
     fn generate_item(&mut self, material_id: &str, storage_location: &str) -> CycleCountItem {
         // Book quantity: random 100 - 10,000
-        let book_qty_f64: f64 = self.rng.gen_range(100.0..=10_000.0);
+        let book_qty_f64: f64 = self.rng.random_range(100.0..=10_000.0);
         let book_quantity =
             Decimal::from_f64_retain(book_qty_f64.round()).unwrap_or(Decimal::from(100));
 
         // Unit cost: random 5.0 - 500.0
-        let unit_cost_f64: f64 = self.rng.gen_range(5.0..=500.0);
+        let unit_cost_f64: f64 = self.rng.random_range(5.0..=500.0);
         let unit_cost = Decimal::from_f64_retain(unit_cost_f64)
             .unwrap_or(Decimal::from(10))
             .round_dp(2);
 
         // Determine variance type and counted quantity
         // 85% match, 10% minor (±1-3%), 4% major (±5-15%), 1% critical (±20-50%)
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let (variance_type, counted_quantity) = if roll < 0.85 {
             // Exact match
             (CountVarianceType::None, book_quantity)
         } else if roll < 0.95 {
             // Minor variance: ±1-3%
-            let pct: f64 = self.rng.gen_range(0.01..=0.03);
-            let sign = if self.rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+            let pct: f64 = self.rng.random_range(0.01..=0.03);
+            let sign = if self.rng.random_bool(0.5) { 1.0 } else { -1.0 };
             let counted_f64 = book_qty_f64 * (1.0 + sign * pct);
             let counted = Decimal::from_f64_retain(counted_f64.round()).unwrap_or(book_quantity);
             (CountVarianceType::Minor, counted)
         } else if roll < 0.99 {
             // Major variance: ±5-15%
-            let pct: f64 = self.rng.gen_range(0.05..=0.15);
-            let sign = if self.rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+            let pct: f64 = self.rng.random_range(0.05..=0.15);
+            let sign = if self.rng.random_bool(0.5) { 1.0 } else { -1.0 };
             let counted_f64 = book_qty_f64 * (1.0 + sign * pct);
             let counted =
                 Decimal::from_f64_retain(counted_f64.round().max(0.0)).unwrap_or(book_quantity);
             (CountVarianceType::Major, counted)
         } else {
             // Critical variance: ±20-50%
-            let pct: f64 = self.rng.gen_range(0.20..=0.50);
-            let sign = if self.rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+            let pct: f64 = self.rng.random_range(0.20..=0.50);
+            let sign = if self.rng.random_bool(0.5) { 1.0 } else { -1.0 };
             let counted_f64 = book_qty_f64 * (1.0 + sign * pct);
             let counted =
                 Decimal::from_f64_retain(counted_f64.round().max(0.0)).unwrap_or(book_quantity);
@@ -177,7 +177,7 @@ impl CycleCountGenerator {
 
         // Adjusted: 80% of items with variance get adjusted
         let has_variance = !matches!(variance_type, CountVarianceType::None);
-        let adjusted = has_variance && self.rng.gen_bool(0.80);
+        let adjusted = has_variance && self.rng.random_bool(0.80);
 
         let adjustment_reason = if adjusted {
             ADJUSTMENT_REASONS
@@ -203,7 +203,7 @@ impl CycleCountGenerator {
 
     /// Pick a cycle count status based on distribution.
     fn pick_status(&mut self) -> CycleCountStatus {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.40 {
             CycleCountStatus::Reconciled
         } else if roll < 0.70 {

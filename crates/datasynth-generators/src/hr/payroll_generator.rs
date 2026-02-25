@@ -457,8 +457,8 @@ impl PayrollGenerator {
             let monthly_base = (*base_salary / Decimal::from(12)).round_dp(2);
 
             // Overtime: 10% chance, 1-20 hours at 1.5x hourly rate
-            let (overtime_pay, overtime_hours) = if self.rng.gen_bool(0.10) {
-                let ot_hours = self.rng.gen_range(1.0..=20.0);
+            let (overtime_pay, overtime_hours) = if self.rng.random_bool(0.10) {
+                let ot_hours = self.rng.random_range(1.0..=20.0);
                 // Hourly rate = annual salary / (52 weeks * 40 hours)
                 let hourly_rate = *base_salary / Decimal::from(2080);
                 let ot_rate = hourly_rate * Decimal::from_f64_retain(1.5).unwrap_or(Decimal::ONE);
@@ -471,8 +471,8 @@ impl PayrollGenerator {
             };
 
             // Bonus: 5% chance for a monthly bonus (1-10% of monthly base)
-            let bonus = if self.rng.gen_bool(0.05) {
-                let pct = self.rng.gen_range(0.01..=0.10);
+            let bonus = if self.rng.random_bool(0.05) {
+                let pct = self.rng.random_range(0.01..=0.10);
                 (monthly_base * Decimal::from_f64_retain(pct).unwrap_or(Decimal::ZERO)).round_dp(2)
             } else {
                 Decimal::ZERO
@@ -484,20 +484,20 @@ impl PayrollGenerator {
             let tax_withholding = (gross_pay * rates.income_tax_rate).round_dp(2);
             let social_security = (gross_pay * rates.fica_rate).round_dp(2);
 
-            let health_insurance = if self.rng.gen_bool(benefits_enrolled) {
+            let health_insurance = if self.rng.random_bool(benefits_enrolled) {
                 (gross_pay * rates.health_rate).round_dp(2)
             } else {
                 Decimal::ZERO
             };
 
-            let retirement_contribution = if self.rng.gen_bool(retirement_participating) {
+            let retirement_contribution = if self.rng.random_bool(retirement_participating) {
                 (gross_pay * rates.retirement_rate).round_dp(2)
             } else {
                 Decimal::ZERO
             };
 
             // Small random other deductions (garnishments, etc.): ~3% chance
-            let other_deductions = if self.rng.gen_bool(0.03) {
+            let other_deductions = if self.rng.random_bool(0.03) {
                 sample_decimal_range(&mut self.rng, Decimal::from(50), Decimal::from(500))
                     .round_dp(2)
             } else {
@@ -551,7 +551,7 @@ impl PayrollGenerator {
         }
 
         // Determine status
-        let status_roll: f64 = self.rng.gen();
+        let status_roll: f64 = self.rng.random();
         let status = if status_roll < 0.60 {
             PayrollRunStatus::Posted
         } else if status_roll < 0.85 {
@@ -567,10 +567,10 @@ impl PayrollGenerator {
             PayrollRunStatus::Approved | PayrollRunStatus::Posted
         ) {
             if !self.employee_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                let idx = self.rng.random_range(0..self.employee_ids_pool.len());
                 Some(self.employee_ids_pool[idx].clone())
             } else {
-                Some(format!("USR-{:04}", self.rng.gen_range(201..=400)))
+                Some(format!("USR-{:04}", self.rng.random_range(201..=400)))
             }
         } else {
             None
@@ -578,10 +578,10 @@ impl PayrollGenerator {
 
         let posted_by = if status == PayrollRunStatus::Posted {
             if !self.employee_ids_pool.is_empty() {
-                let idx = self.rng.gen_range(0..self.employee_ids_pool.len());
+                let idx = self.rng.random_range(0..self.employee_ids_pool.len());
                 Some(self.employee_ids_pool[idx].clone())
             } else {
-                Some(format!("USR-{:04}", self.rng.gen_range(401..=500)))
+                Some(format!("USR-{:04}", self.rng.random_range(401..=500)))
             }
         } else {
             None

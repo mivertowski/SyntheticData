@@ -49,8 +49,8 @@ impl MockLlmProvider {
             "Partners",
             "Supply",
         ];
-        let prefix = PREFIXES[rng.gen_range(0..PREFIXES.len())];
-        let suffix = TYPES[rng.gen_range(0..TYPES.len())];
+        let prefix = PREFIXES[rng.random_range(0..PREFIXES.len())];
+        let suffix = TYPES[rng.random_range(0..TYPES.len())];
         format!("{} {}", prefix, suffix)
     }
 
@@ -67,7 +67,7 @@ impl MockLlmProvider {
             "Warehouse logistics and distribution services",
             "Annual software license renewal and support",
         ];
-        DESCRIPTIONS[rng.gen_range(0..DESCRIPTIONS.len())].to_string()
+        DESCRIPTIONS[rng.random_range(0..DESCRIPTIONS.len())].to_string()
     }
 
     fn generate_memo(rng: &mut ChaCha8Rng) -> String {
@@ -81,7 +81,7 @@ impl MockLlmProvider {
             "Intercompany settlement",
             "Variance analysis completed",
         ];
-        MEMOS[rng.gen_range(0..MEMOS.len())].to_string()
+        MEMOS[rng.random_range(0..MEMOS.len())].to_string()
     }
 }
 

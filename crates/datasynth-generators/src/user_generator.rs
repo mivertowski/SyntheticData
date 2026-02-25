@@ -151,7 +151,7 @@ impl UserGenerator {
 
     /// Select a working hours pattern based on random distribution.
     fn select_working_hours_pattern(&mut self) -> WorkingHoursPattern {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.5 {
             WorkingHoursPattern::us_standard()
         } else if roll < 0.75 {

@@ -3,7 +3,7 @@
 //! Provides name pools for various cultures to generate realistic
 //! user names, IDs, and email addresses.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -1011,7 +1011,7 @@ impl NamePool {
 
     /// Generate a random name from this pool.
     pub fn generate_name(&self, rng: &mut impl Rng) -> PersonName {
-        let is_male = rng.gen_bool(0.5);
+        let is_male = rng.random_bool(0.5);
 
         let first_name = if is_male {
             self.first_names_male
@@ -1110,7 +1110,7 @@ impl MultiCultureNameGenerator {
 
     /// Select a culture based on the distribution.
     fn select_culture(&self, rng: &mut impl Rng) -> NameCulture {
-        let roll: f64 = rng.gen();
+        let roll: f64 = rng.random();
         let mut cumulative = 0.0;
 
         for (culture, weight) in &self.distribution {

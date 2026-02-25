@@ -137,17 +137,17 @@ impl EnhancedReferenceGenerator {
 
     fn generate_alphanumeric(&self, rng: &mut impl Rng) -> String {
         let letters: String = (0..3)
-            .map(|_| (b'A' + rng.gen_range(0..26)) as char)
+            .map(|_| (b'A' + rng.random_range(0..26)) as char)
             .collect();
-        let numbers = rng.gen_range(100000..999999);
-        let check = (b'A' + rng.gen_range(0..26)) as char;
+        let numbers = rng.random_range(100000..999999);
+        let check = (b'A' + rng.random_range(0..26)) as char;
         format!("{}{:06}{}", letters, numbers, check)
     }
 
     fn generate_short_uuid(&self, rng: &mut impl Rng) -> String {
         let chars: String = (0..8)
             .map(|_| {
-                let idx = rng.gen_range(0..36);
+                let idx = rng.random_range(0..36);
                 if idx < 10 {
                     (b'0' + idx) as char
                 } else {
@@ -159,67 +159,67 @@ impl EnhancedReferenceGenerator {
     }
 
     fn generate_date_based(&self, year: i32, rng: &mut impl Rng) -> String {
-        let month = rng.gen_range(1..=12);
-        let day = rng.gen_range(1..=28);
-        let seq = rng.gen_range(1..=9999);
+        let month = rng.random_range(1..=12);
+        let day = rng.random_range(1..=28);
+        let seq = rng.random_range(1..=9999);
         format!("{}{:02}{:02}-{:04}", year, month, day, seq)
     }
 
     fn generate_vendor_invoice(&self, rng: &mut impl Rng) -> String {
-        let style = rng.gen_range(0..8);
+        let style = rng.random_range(0..8);
         match style {
             0 => {
                 // INV-NNNNNNNN
-                format!("INV-{:08}", rng.gen_range(10000000..99999999))
+                format!("INV-{:08}", rng.random_range(10000000..99999999))
             }
             1 => {
                 // Pure numbers
-                format!("{:010}", rng.gen_range(1000000000u64..9999999999))
+                format!("{:010}", rng.random_range(1000000000u64..9999999999))
             }
             2 => {
                 // V-NNN-NNNNNN
                 format!(
                     "V{:03}-{:06}",
-                    rng.gen_range(100..999),
-                    rng.gen_range(100000..999999)
+                    rng.random_range(100..999),
+                    rng.random_range(100000..999999)
                 )
             }
             3 => {
                 // Letter + numbers
-                let letter = (b'A' + rng.gen_range(0..26)) as char;
-                format!("{}{:07}", letter, rng.gen_range(1000000..9999999))
+                let letter = (b'A' + rng.random_range(0..26)) as char;
+                format!("{}{:07}", letter, rng.random_range(1000000..9999999))
             }
             4 => {
                 // YYYY-NNNNNN
-                let year = rng.gen_range(2020..=2025);
-                format!("{}-{:06}", year, rng.gen_range(1..999999))
+                let year = rng.random_range(2020..=2025);
+                format!("{}-{:06}", year, rng.random_range(1..999999))
             }
             5 => {
                 // PO-based
-                format!("PO{:08}", rng.gen_range(10000000..99999999))
+                format!("PO{:08}", rng.random_range(10000000..99999999))
             }
             6 => {
                 // Short alphanumeric
                 let alpha: String = (0..2)
-                    .map(|_| (b'A' + rng.gen_range(0..26)) as char)
+                    .map(|_| (b'A' + rng.random_range(0..26)) as char)
                     .collect();
-                format!("{}{:06}", alpha, rng.gen_range(100000..999999))
+                format!("{}{:06}", alpha, rng.random_range(100000..999999))
             }
             _ => {
                 // UUID-like
                 format!(
                     "{:04X}-{:04X}",
-                    rng.gen_range(0..0xFFFF),
-                    rng.gen_range(0..0xFFFF)
+                    rng.random_range(0..0xFFFF),
+                    rng.random_range(0..0xFFFF)
                 )
             }
         }
     }
 
     fn generate_bank_reference(&self, year: i32, rng: &mut impl Rng) -> String {
-        let month = rng.gen_range(1..=12);
-        let day = rng.gen_range(1..=28);
-        let seq = rng.gen_range(1..=999999);
+        let month = rng.random_range(1..=12);
+        let day = rng.random_range(1..=28);
+        let seq = rng.random_range(1..=999999);
         format!("BNK{}{:02}{:02}{:06}", year, month, day, seq)
     }
 

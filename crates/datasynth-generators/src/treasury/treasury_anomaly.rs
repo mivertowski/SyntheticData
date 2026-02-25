@@ -110,7 +110,7 @@ impl TreasuryAnomalyInjector {
                 continue;
             }
 
-            let roll: f64 = self.rng.gen();
+            let roll: f64 = self.rng.random();
             if roll < 0.50 {
                 labels.push(self.inject_unusual_cash_movement(pos));
             } else {
@@ -169,7 +169,7 @@ impl TreasuryAnomalyInjector {
         let original_outflows = pos.outflows;
         // Inject a large unexpected outflow (50-200% of current closing balance)
         let spike_pct =
-            Decimal::try_from(self.rng.gen_range(0.50f64..2.00f64)).unwrap_or(dec!(1.0));
+            Decimal::try_from(self.rng.random_range(0.50f64..2.00f64)).unwrap_or(dec!(1.0));
         let spike = (pos.closing_balance.abs() * spike_pct).round_dp(2);
         pos.outflows += spike;
         let new_closing = (pos.opening_balance + pos.inflows - pos.outflows).round_dp(2);
@@ -201,7 +201,7 @@ impl TreasuryAnomalyInjector {
         let original_available = pos.available_balance;
         // Drop available balance below the minimum policy
         let target_pct =
-            Decimal::try_from(self.rng.gen_range(0.10f64..0.80f64)).unwrap_or(dec!(0.50));
+            Decimal::try_from(self.rng.random_range(0.10f64..0.80f64)).unwrap_or(dec!(0.50));
         pos.available_balance = (minimum_balance * target_pct).round_dp(2);
 
         self.counter += 1;
@@ -230,12 +230,12 @@ impl TreasuryAnomalyInjector {
     ) -> TreasuryAnomalyLabel {
         let original_ratio = rel.effectiveness_ratio;
         // Push ratio outside the 80-125% corridor
-        let new_ratio = if self.rng.gen_bool(0.5) {
+        let new_ratio = if self.rng.random_bool(0.5) {
             // Below 80%
-            Decimal::try_from(self.rng.gen_range(0.50f64..0.79f64)).unwrap_or(dec!(0.65))
+            Decimal::try_from(self.rng.random_range(0.50f64..0.79f64)).unwrap_or(dec!(0.65))
         } else {
             // Above 125%
-            Decimal::try_from(self.rng.gen_range(1.26f64..1.60f64)).unwrap_or(dec!(1.40))
+            Decimal::try_from(self.rng.random_range(1.26f64..1.60f64)).unwrap_or(dec!(1.40))
         };
         rel.effectiveness_ratio = new_ratio.round_dp(4);
         rel.update_effectiveness();
@@ -260,7 +260,7 @@ impl TreasuryAnomalyInjector {
         let original_value = cov.actual_value;
         // Push actual value past the threshold
         let breach_factor =
-            Decimal::try_from(self.rng.gen_range(1.05f64..1.25f64)).unwrap_or(dec!(1.10));
+            Decimal::try_from(self.rng.random_range(1.05f64..1.25f64)).unwrap_or(dec!(1.10));
         cov.actual_value = (cov.threshold * breach_factor).round_dp(2);
         cov.update_compliance();
 
@@ -285,7 +285,7 @@ impl TreasuryAnomalyInjector {
     }
 
     fn should_inject(&mut self) -> bool {
-        self.rng.gen_bool(self.anomaly_rate)
+        self.rng.random_bool(self.anomaly_rate)
     }
 }
 

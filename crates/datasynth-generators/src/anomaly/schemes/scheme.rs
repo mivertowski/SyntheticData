@@ -78,7 +78,7 @@ impl SchemeStage {
         }
         let min_f64: f64 = self.amount_min.try_into().unwrap_or(0.0);
         let max_f64: f64 = self.amount_max.try_into().unwrap_or(min_f64 + 1000.0);
-        let value = rng.gen_range(min_f64..=max_f64);
+        let value = rng.random_range(min_f64..=max_f64);
         Decimal::from_f64_retain(value).unwrap_or(self.amount_min)
     }
 
@@ -87,7 +87,7 @@ impl SchemeStage {
         if self.transaction_count_min == self.transaction_count_max {
             return self.transaction_count_min;
         }
-        rng.gen_range(self.transaction_count_min..=self.transaction_count_max)
+        rng.random_range(self.transaction_count_min..=self.transaction_count_max)
     }
 }
 

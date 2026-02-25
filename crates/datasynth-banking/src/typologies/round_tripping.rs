@@ -59,9 +59,9 @@ impl RoundTrippingInjector {
             Sophistication::StateLevel => (6..12, 750_000.0..5_000_000.0, 30..60),
         };
 
-        let trips = self.rng.gen_range(num_trips);
-        let base_amount: f64 = self.rng.gen_range(total_amount);
-        let scenario_id = format!("RND-{:06}", self.rng.gen::<u32>());
+        let trips = self.rng.random_range(num_trips);
+        let base_amount: f64 = self.rng.random_range(total_amount);
+        let scenario_id = format!("RND-{:06}", self.rng.random::<u32>());
 
         let _available_days = (end_date - start_date).num_days().max(1);
         let mut current_date = start_date;
@@ -73,7 +73,7 @@ impl RoundTrippingInjector {
             let outbound_timestamp = self.random_timestamp(outbound_date);
 
             // Amount varies slightly each trip (with "fees")
-            let trip_amount = base_amount * (0.95 + self.rng.gen::<f64>() * 0.1);
+            let trip_amount = base_amount * (0.95 + self.rng.random::<f64>() * 0.1);
             let offshore_entity = self.random_offshore_entity(trip);
 
             let outbound_txn = BankTransaction::new(
@@ -96,7 +96,7 @@ impl RoundTrippingInjector {
             seq += 1;
 
             // Delay before return
-            let delay = self.rng.gen_range(trip_delay_days.clone()) as i64;
+            let delay = self.rng.random_range(trip_delay_days.clone()) as i64;
             current_date = outbound_date + chrono::Duration::days(delay);
 
             if current_date > end_date {
@@ -115,7 +115,7 @@ impl RoundTrippingInjector {
                 Sophistication::Advanced => 0.85..1.30,
                 Sophistication::StateLevel => 0.80..1.50,
             };
-            let return_amount = trip_amount * self.rng.gen_range(return_multiplier);
+            let return_amount = trip_amount * self.rng.random_range(return_multiplier);
 
             let return_entity = self.random_return_entity(trip);
             let return_reference = self.random_return_reference();
@@ -158,7 +158,7 @@ impl RoundTrippingInjector {
             }
 
             // Move to next trip
-            let gap = self.rng.gen_range(3..10) as i64;
+            let gap = self.rng.random_range(3..10) as i64;
             current_date += chrono::Duration::days(gap);
 
             if current_date > end_date - chrono::Duration::days(trip_delay_days.start as i64) {
@@ -192,22 +192,22 @@ impl RoundTrippingInjector {
         sophistication: Sophistication,
     ) {
         let num_intermediate = match sophistication {
-            Sophistication::Professional => self.rng.gen_range(1..3),
-            Sophistication::Advanced => self.rng.gen_range(2..5),
-            Sophistication::StateLevel => self.rng.gen_range(3..8),
+            Sophistication::Professional => self.rng.random_range(1..3),
+            Sophistication::Advanced => self.rng.random_range(2..5),
+            Sophistication::StateLevel => self.rng.random_range(3..8),
             _ => 0,
         };
 
         let available_days = (end_date - start_date).num_days().max(1);
 
         for i in 0..num_intermediate {
-            let day_offset = self.rng.gen_range(1..available_days);
+            let day_offset = self.rng.random_range(1..available_days);
             let txn_date = start_date + chrono::Duration::days(day_offset);
             let timestamp = self.random_timestamp(txn_date);
 
             // Small intermediate transfers to add complexity
-            let amount = self.rng.gen_range(1_000.0..25_000.0);
-            let direction = if self.rng.gen::<bool>() {
+            let amount = self.rng.random_range(1_000.0..25_000.0);
+            let direction = if self.rng.random::<bool>() {
                 Direction::Outbound
             } else {
                 Direction::Inbound
@@ -252,7 +252,7 @@ impl RoundTrippingInjector {
             ("Delaware Holdings LLC", "Delaware"),
         ];
 
-        let idx = (index + self.rng.gen_range(0..entities.len())) % entities.len();
+        let idx = (index + self.rng.random_range(0..entities.len())) % entities.len();
         (entities[idx].0.to_string(), entities[idx].1.to_string())
     }
 
@@ -271,7 +271,7 @@ impl RoundTrippingInjector {
             "Swiss Financial Services AG",
         ];
 
-        entities[self.rng.gen_range(0..entities.len())].to_string()
+        entities[self.rng.random_range(0..entities.len())].to_string()
     }
 
     /// Generate random return reference.
@@ -289,14 +289,14 @@ impl RoundTrippingInjector {
             "Commission payment",
         ];
 
-        references[self.rng.gen_range(0..references.len())].to_string()
+        references[self.rng.random_range(0..references.len())].to_string()
     }
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(8..18);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(8..18);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

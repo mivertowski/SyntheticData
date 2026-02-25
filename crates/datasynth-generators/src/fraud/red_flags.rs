@@ -219,7 +219,7 @@ impl RedFlagGenerator {
             } else {
                 pattern.inject_without_fraud
             };
-            if rng.gen::<f64>() < prob {
+            if rng.random::<f64>() < prob {
                 flags.push(self.create_flag(document_id, pattern, is_fraud));
             }
         }
@@ -231,7 +231,7 @@ impl RedFlagGenerator {
             } else {
                 pattern.inject_without_fraud
             };
-            if rng.gen::<f64>() < prob {
+            if rng.random::<f64>() < prob {
                 flags.push(self.create_flag(document_id, pattern, is_fraud));
             }
         }
@@ -243,7 +243,7 @@ impl RedFlagGenerator {
             } else {
                 pattern.inject_without_fraud
             };
-            if rng.gen::<f64>() < prob {
+            if rng.random::<f64>() < prob {
                 flags.push(self.create_flag(document_id, pattern, is_fraud));
             }
         }

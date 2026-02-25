@@ -57,9 +57,9 @@ impl LayeringInjector {
             Sophistication::StateLevel => (8..15, 500_000.0..3_000_000.0, 10..45),
         };
 
-        let layers = self.rng.gen_range(num_layers);
-        let total: f64 = self.rng.gen_range(total_amount);
-        let scenario_id = format!("LAY-{:06}", self.rng.gen::<u32>());
+        let layers = self.rng.random_range(num_layers);
+        let total: f64 = self.rng.random_range(total_amount);
+        let scenario_id = format!("LAY-{:06}", self.rng.random::<u32>());
 
         let available_days = (end_date - start_date).num_days().max(1);
 
@@ -92,7 +92,7 @@ impl LayeringInjector {
 
         for layer in 0..layers {
             // Time jitter between layers
-            let jitter = self.rng.gen_range(jitter_range.clone()) as i64;
+            let jitter = self.rng.random_range(jitter_range.clone()) as i64;
             current_date += chrono::Duration::days(jitter);
 
             if current_date > end_date {
@@ -106,7 +106,7 @@ impl LayeringInjector {
                     | Sophistication::Advanced
                     | Sophistication::StateLevel
             ) {
-                self.rng.gen_range(2..4)
+                self.rng.random_range(2..4)
             } else {
                 1
             };
@@ -120,7 +120,7 @@ impl LayeringInjector {
                     let portion = remaining / ((num_slices - slice) as f64);
                     let variance = portion * 0.2;
                     self.rng
-                        .gen_range((portion - variance)..(portion + variance))
+                        .random_range((portion - variance)..(portion + variance))
                 };
                 remaining -= slice_amount;
 
@@ -148,8 +148,8 @@ impl LayeringInjector {
                 seq += 1;
 
                 // Corresponding inbound (simulating round-trip or return)
-                if layer < layers - 1 && self.rng.gen::<f64>() < 0.6 {
-                    let return_jitter = self.rng.gen_range(1..3) as i64;
+                if layer < layers - 1 && self.rng.random::<f64>() < 0.6 {
+                    let return_jitter = self.rng.random_range(1..3) as i64;
                     let return_date = current_date + chrono::Duration::days(return_jitter);
                     let return_timestamp = self.random_timestamp(return_date);
 
@@ -190,14 +190,14 @@ impl LayeringInjector {
                 _ => 1..2,
             };
 
-            for _ in 0..self.rng.gen_range(cover_count) {
-                let cover_day = self.rng.gen_range(0..available_days);
+            for _ in 0..self.rng.random_range(cover_count) {
+                let cover_day = self.rng.random_range(0..available_days);
                 let cover_date = start_date + chrono::Duration::days(cover_day);
                 let cover_timestamp = self.random_timestamp(cover_date);
 
                 // Cover traffic - legitimate-looking transactions
-                let cover_amount = self.rng.gen_range(100.0..5000.0);
-                let direction = if self.rng.gen::<bool>() {
+                let cover_amount = self.rng.random_range(100.0..5000.0);
+                let direction = if self.rng.random::<bool>() {
                     Direction::Inbound
                 } else {
                     Direction::Outbound
@@ -259,15 +259,15 @@ impl LayeringInjector {
             ),
         ];
 
-        let idx = self.rng.gen_range(0..destinations.len());
+        let idx = self.rng.random_range(0..destinations.len());
         destinations[idx].clone()
     }
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(6..22);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(6..22);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

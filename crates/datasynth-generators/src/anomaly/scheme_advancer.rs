@@ -149,7 +149,7 @@ impl SchemeAdvancer {
         }
 
         // Determine which scheme type to start (if any)
-        let r = self.rng.gen::<f64>();
+        let r = self.rng.random::<f64>();
         let total_prob = self.config.embezzlement_probability
             + self.config.revenue_manipulation_probability
             + self.config.kickback_probability;
@@ -163,7 +163,7 @@ impl SchemeAdvancer {
         let revenue_threshold =
             embezzlement_threshold + self.config.revenue_manipulation_probability / total_prob;
 
-        let user_idx = self.rng.gen_range(0..available_users.len());
+        let user_idx = self.rng.random_range(0..available_users.len());
         let perpetrator = available_users[user_idx].clone();
 
         let scheme: Box<dyn FraudScheme> = if normalized_r < embezzlement_threshold {
@@ -192,10 +192,10 @@ impl SchemeAdvancer {
                 return None;
             }
 
-            let vendor_idx = self.rng.gen_range(0..available_vendors.len());
+            let vendor_idx = self.rng.random_range(0..available_vendors.len());
             let vendor = available_vendors[vendor_idx].clone();
 
-            let inflation = 0.10 + self.rng.gen::<f64>() * 0.15; // 10-25%
+            let inflation = 0.10 + self.rng.random::<f64>() * 0.15; // 10-25%
             let scheme =
                 VendorKickbackScheme::new(&perpetrator, &vendor).with_inflation_percent(inflation);
 

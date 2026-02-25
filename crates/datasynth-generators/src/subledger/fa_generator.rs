@@ -117,7 +117,7 @@ impl FAGenerator {
         );
 
         // Add serial number and inventory number
-        asset.serial_number = Some(format!("SN-{:010}", self.rng.gen::<u32>()));
+        asset.serial_number = Some(format!("SN-{:010}", self.rng.random::<u32>()));
         asset.inventory_number = Some(format!("INV-{:08}", self.asset_counter));
         asset.cost_center = cost_center.map(|s| s.to_string());
 
@@ -231,14 +231,14 @@ impl FAGenerator {
     fn generate_acquisition_cost(&mut self) -> Decimal {
         let base = self.config.avg_acquisition_cost;
         let variation = base * self.config.cost_variation;
-        let random: f64 = self.rng.gen_range(-1.0..1.0);
+        let random: f64 = self.rng.random_range(-1.0..1.0);
         (base + variation * Decimal::try_from(random).unwrap_or_default())
             .max(dec!(1000))
             .round_dp(2)
     }
 
     fn random_disposal_reason(&mut self) -> DisposalReason {
-        match self.rng.gen_range(0..5) {
+        match self.rng.random_range(0..5) {
             0 => DisposalReason::Sale,
             1 => DisposalReason::EndOfLife,
             2 => DisposalReason::Obsolescence,

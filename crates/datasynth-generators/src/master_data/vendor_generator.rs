@@ -130,7 +130,7 @@ impl TierCountConfig {
 
     /// Sample a count from the range.
     pub fn sample(&self, rng: &mut impl Rng) -> usize {
-        rng.gen_range(self.min..=self.max)
+        rng.random_range(self.min..=self.max)
     }
 }
 
@@ -338,7 +338,7 @@ impl VendorGenerator {
         vendor.behavior = self.select_vendor_behavior();
 
         // Check if intercompany
-        if self.rng.gen::<f64>() < self.config.intercompany_rate {
+        if self.rng.random::<f64>() < self.config.intercompany_rate {
             vendor.is_intercompany = true;
             vendor.intercompany_code = Some(format!("IC-{}", company_code));
         }
@@ -348,7 +348,7 @@ impl VendorGenerator {
             let bank_account = self.generate_bank_account(&vendor.vendor_id);
             vendor.bank_accounts.push(bank_account);
 
-            if self.rng.gen::<f64>() < self.config.multiple_bank_account_rate {
+            if self.rng.random::<f64>() < self.config.multiple_bank_account_rate {
                 let bank_account2 = self.generate_bank_account(&vendor.vendor_id);
                 vendor.bank_accounts.push(bank_account2);
             }
@@ -418,7 +418,7 @@ impl VendorGenerator {
 
     /// Select a spend category based on distribution.
     fn select_spend_category(&mut self) -> SpendCategory {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (category, prob) in &self.config.spend_category_distribution {
@@ -448,7 +448,7 @@ impl VendorGenerator {
 
     /// Select payment terms based on distribution.
     fn select_payment_terms(&mut self) -> PaymentTerms {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (terms, prob) in &self.config.payment_terms_distribution {
@@ -463,7 +463,7 @@ impl VendorGenerator {
 
     /// Select vendor behavior based on distribution.
     fn select_vendor_behavior(&mut self) -> VendorBehavior {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (behavior, prob) in &self.config.behavior_distribution {
@@ -480,18 +480,18 @@ impl VendorGenerator {
     fn generate_tax_id(&mut self) -> String {
         format!(
             "{:02}-{:07}",
-            self.rng.gen_range(10..99),
-            self.rng.gen_range(1000000..9999999)
+            self.rng.random_range(10..99),
+            self.rng.random_range(1000000..9999999)
         )
     }
 
     /// Generate a bank account.
     fn generate_bank_account(&mut self, vendor_id: &str) -> BankAccount {
-        let bank_idx = self.rng.gen_range(0..BANK_NAMES.len());
+        let bank_idx = self.rng.random_range(0..BANK_NAMES.len());
         let bank_name = BANK_NAMES[bank_idx];
 
-        let routing = format!("{:09}", self.rng.gen_range(100000000u64..999999999));
-        let account = format!("{:010}", self.rng.gen_range(1000000000u64..9999999999));
+        let routing = format!("{:09}", self.rng.random_range(100000000u64..999999999));
+        let account = format!("{:010}", self.rng.random_range(1000000000u64..9999999999));
 
         BankAccount {
             bank_name: bank_name.to_string(),
@@ -647,7 +647,7 @@ impl VendorGenerator {
 
     /// Select a relationship type.
     fn select_relationship_type(&mut self) -> VendorRelationshipType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.40 {
             VendorRelationshipType::DirectSupplier
         } else if roll < 0.55 {
@@ -667,13 +667,13 @@ impl VendorGenerator {
 
     /// Select a cluster based on distribution.
     fn select_cluster(&mut self) -> VendorCluster {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         self.network_config.cluster_distribution.select(roll)
     }
 
     /// Select a strategic level based on distribution.
     fn select_strategic_level(&mut self) -> StrategicLevel {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (level, prob) in &self.network_config.strategic_distribution {
@@ -688,7 +688,7 @@ impl VendorGenerator {
 
     /// Select a spend tier.
     fn select_spend_tier(&mut self) -> SpendTier {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.05 {
             SpendTier::Platinum
         } else if roll < 0.20 {
@@ -702,36 +702,36 @@ impl VendorGenerator {
 
     /// Generate a relationship start date (before effective date).
     fn generate_relationship_start_date(&mut self, effective_date: NaiveDate) -> NaiveDate {
-        let days_back: i64 = self.rng.gen_range(90..3650); // 3 months to 10 years
+        let days_back: i64 = self.rng.random_range(90..3650); // 3 months to 10 years
         effective_date - chrono::Duration::days(days_back)
     }
 
     /// Generate lifecycle stage based on probabilities.
     fn generate_lifecycle_stage(&mut self, effective_date: NaiveDate) -> VendorLifecycleStage {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.05 {
             VendorLifecycleStage::Onboarding {
-                started: effective_date - chrono::Duration::days(self.rng.gen_range(1..60)),
+                started: effective_date - chrono::Duration::days(self.rng.random_range(1..60)),
                 expected_completion: effective_date
-                    + chrono::Duration::days(self.rng.gen_range(30..90)),
+                    + chrono::Duration::days(self.rng.random_range(30..90)),
             }
         } else if roll < 0.12 {
             VendorLifecycleStage::RampUp {
-                started: effective_date - chrono::Duration::days(self.rng.gen_range(60..180)),
-                target_volume_percent: self.rng.gen_range(50..80) as u8,
+                started: effective_date - chrono::Duration::days(self.rng.random_range(60..180)),
+                target_volume_percent: self.rng.random_range(50..80) as u8,
             }
         } else if roll < 0.85 {
             VendorLifecycleStage::SteadyState {
-                since: effective_date - chrono::Duration::days(self.rng.gen_range(180..1825)),
+                since: effective_date - chrono::Duration::days(self.rng.random_range(180..1825)),
             }
         } else if roll < 0.95 {
             VendorLifecycleStage::Decline {
-                started: effective_date - chrono::Duration::days(self.rng.gen_range(30..180)),
+                started: effective_date - chrono::Duration::days(self.rng.random_range(30..180)),
                 reason: DeclineReason::QualityIssues,
             }
         } else {
             VendorLifecycleStage::SteadyState {
-                since: effective_date - chrono::Duration::days(self.rng.gen_range(365..1825)),
+                since: effective_date - chrono::Duration::days(self.rng.random_range(365..1825)),
             }
         }
     }
@@ -746,10 +746,10 @@ impl VendorGenerator {
         };
 
         // Add some variance
-        let delivery_variance: f64 = self.rng.gen_range(-0.05..0.05);
-        let quality_variance: f64 = self.rng.gen_range(-0.05..0.05);
-        let invoice_variance: f64 = self.rng.gen_range(-0.05..0.05);
-        let response_variance: f64 = self.rng.gen_range(-0.05..0.05);
+        let delivery_variance: f64 = self.rng.random_range(-0.05..0.05);
+        let quality_variance: f64 = self.rng.random_range(-0.05..0.05);
+        let invoice_variance: f64 = self.rng.random_range(-0.05..0.05);
+        let response_variance: f64 = self.rng.random_range(-0.05..0.05);
 
         VendorQualityScore {
             delivery_score: (base_delivery + delivery_variance).clamp(0.0_f64, 1.0_f64),
@@ -757,16 +757,16 @@ impl VendorGenerator {
             invoice_accuracy_score: (base_invoice + invoice_variance).clamp(0.0_f64, 1.0_f64),
             responsiveness_score: (base_response + response_variance).clamp(0.0_f64, 1.0_f64),
             last_evaluation: NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"),
-            evaluation_count: self.rng.gen_range(1..20),
+            evaluation_count: self.rng.random_range(1..20),
         }
     }
 
     /// Generate payment history based on cluster.
     fn generate_payment_history(&mut self, cluster: &VendorCluster) -> PaymentHistory {
-        let total = self.rng.gen_range(10..200) as u32;
+        let total = self.rng.random_range(10..200) as u32;
         let on_time_rate = cluster.invoice_accuracy_probability();
         let on_time = (total as f64 * on_time_rate) as u32;
-        let early = (total as f64 * self.rng.gen_range(0.05..0.20)) as u32;
+        let early = (total as f64 * self.rng.random_range(0.05..0.20)) as u32;
         let late = total.saturating_sub(on_time).saturating_sub(early);
 
         PaymentHistory {
@@ -774,19 +774,19 @@ impl VendorGenerator {
             on_time_payments: on_time,
             early_payments: early,
             late_payments: late,
-            total_amount: Decimal::from(total) * Decimal::from(self.rng.gen_range(1000..50000)),
-            average_days_to_pay: self.rng.gen_range(20.0..45.0),
+            total_amount: Decimal::from(total) * Decimal::from(self.rng.random_range(1000..50000)),
+            average_days_to_pay: self.rng.random_range(20.0..45.0),
             last_payment_date: None,
-            total_discounts: Decimal::from(early) * Decimal::from(self.rng.gen_range(50..500)),
+            total_discounts: Decimal::from(early) * Decimal::from(self.rng.random_range(50..500)),
         }
     }
 
     /// Generate vendor dependency analysis.
     fn generate_dependency(&mut self, vendor_id: &str, vendor_name: &str) -> VendorDependency {
-        let is_single_source = self.rng.gen::<f64>() < self.network_config.single_source_percent;
+        let is_single_source = self.rng.random::<f64>() < self.network_config.single_source_percent;
 
         let substitutability = {
-            let roll: f64 = self.rng.gen();
+            let roll: f64 = self.rng.random();
             if roll < 0.60 {
                 Substitutability::Easy
             } else if roll < 0.90 {
@@ -799,11 +799,11 @@ impl VendorGenerator {
         let mut dep = VendorDependency::new(vendor_id, self.infer_spend_category(vendor_name));
         dep.is_single_source = is_single_source;
         dep.substitutability = substitutability;
-        dep.concentration_percent = self.rng.gen_range(0.01..0.20);
+        dep.concentration_percent = self.rng.random_range(0.01..0.20);
 
         // Generate alternative vendors if not single source
         if !is_single_source {
-            let alt_count = self.rng.gen_range(1..4);
+            let alt_count = self.rng.random_range(1..4);
             for i in 0..alt_count {
                 dep.alternatives.push(format!("ALT-{}-{:03}", vendor_id, i));
             }
@@ -828,7 +828,7 @@ impl VendorGenerator {
         let mut weights: Vec<f64> = (0..tier1_count)
             .map(|_| {
                 // Pareto distribution with alpha = 1.5
-                let u: f64 = self.rng.gen_range(0.01..1.0);
+                let u: f64 = self.rng.random_range(0.01..1.0);
                 u.powf(-1.0 / 1.5)
             })
             .collect();
@@ -861,7 +861,7 @@ impl VendorGenerator {
         for vendor_id in &network.tier2_vendors.clone() {
             if let Some(rel) = network.get_relationship_mut(vendor_id) {
                 rel.annual_spend = tier2_avg_spend
-                    * Decimal::from_f64_retain(self.rng.gen_range(0.5..1.5))
+                    * Decimal::from_f64_retain(self.rng.random_range(0.5..1.5))
                         .unwrap_or(Decimal::ONE);
             }
         }
@@ -871,7 +871,7 @@ impl VendorGenerator {
         for vendor_id in &network.tier3_vendors.clone() {
             if let Some(rel) = network.get_relationship_mut(vendor_id) {
                 rel.annual_spend = tier3_avg_spend
-                    * Decimal::from_f64_retain(self.rng.gen_range(0.5..1.5))
+                    * Decimal::from_f64_retain(self.rng.random_range(0.5..1.5))
                         .unwrap_or(Decimal::ONE);
             }
         }

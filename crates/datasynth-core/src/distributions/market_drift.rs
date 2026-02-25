@@ -469,7 +469,7 @@ impl CommodityConfig {
     /// Calculate price factor at a period.
     pub fn price_factor_at(&self, period: u32, rng: &mut ChaCha8Rng) -> f64 {
         // Mean-reverting random walk
-        let random: f64 = rng.gen();
+        let random: f64 = rng.random();
         let z_score = (random - 0.5) * 2.0; // Approximate normal
         let price_change = z_score * self.volatility;
 

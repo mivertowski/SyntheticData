@@ -545,7 +545,7 @@ mod tests {
     #[test]
     fn test_uniform_sample() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
-        let uniform = Uniform::new(0.0, 10.0);
+        let uniform = Uniform::new(0.0, 10.0).unwrap();
         let values: Vec<f64> = (0..500).map(|_| uniform.sample(&mut rng)).collect();
 
         let analyzer = AndersonDarlingAnalyzer::new()

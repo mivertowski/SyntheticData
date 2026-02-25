@@ -3,7 +3,7 @@
 //! Generates user IDs in various corporate patterns including standard
 //! employee IDs, system accounts, and service accounts.
 
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -134,7 +134,7 @@ impl UserIdGenerator {
     }
 
     fn select_pattern(&self, rng: &mut impl Rng) -> UserIdPattern {
-        let roll: f64 = rng.gen();
+        let roll: f64 = rng.random();
         if roll < 0.40 {
             UserIdPattern::InitialLastName
         } else if roll < 0.65 {

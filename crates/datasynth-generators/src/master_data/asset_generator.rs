@@ -230,12 +230,12 @@ impl AssetGenerator {
         }
 
         // Handle fully depreciated or disposed assets
-        if self.rng.gen::<f64>() < self.config.disposed_rate {
+        if self.rng.random::<f64>() < self.config.disposed_rate {
             let disposal_date =
-                acquisition_date + chrono::Duration::days(self.rng.gen_range(365..1825) as i64);
+                acquisition_date + chrono::Duration::days(self.rng.random_range(365..1825) as i64);
             let (proceeds, _gain_loss) = self.generate_disposal_values(&asset);
             asset.dispose(disposal_date, proceeds);
-        } else if self.rng.gen::<f64>() < self.config.fully_depreciated_rate {
+        } else if self.rng.random::<f64>() < self.config.fully_depreciated_rate {
             asset.accumulated_depreciation = asset.acquisition_cost - asset.salvage_value;
             asset.net_book_value = asset.salvage_value;
         }
@@ -326,7 +326,7 @@ impl AssetGenerator {
 
         for _ in 0..count {
             let acquisition_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let asset = self.generate_asset(company_code, acquisition_date);
             pool.add_asset(asset);
         }
@@ -349,7 +349,7 @@ impl AssetGenerator {
 
         for _ in 0..count {
             let acquisition_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let asset = self.generate_aged_asset(company_code, acquisition_date, as_of_date);
             pool.add_asset(asset);
         }
@@ -385,8 +385,8 @@ impl AssetGenerator {
 
         for (class, class_count) in class_counts {
             for _ in 0..class_count {
-                let acquisition_date =
-                    start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                let acquisition_date = start_date
+                    + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
                 let asset = self.generate_asset_of_class(class, company_code, acquisition_date);
                 pool.add_asset(asset);
             }
@@ -395,7 +395,7 @@ impl AssetGenerator {
         // Fill remaining slots
         while pool.assets.len() < count {
             let acquisition_date =
-                start_date + chrono::Duration::days(self.rng.gen_range(0..=days_range) as i64);
+                start_date + chrono::Duration::days(self.rng.random_range(0..=days_range) as i64);
             let asset = self.generate_asset(company_code, acquisition_date);
             pool.add_asset(asset);
         }
@@ -405,7 +405,7 @@ impl AssetGenerator {
 
     /// Select asset class based on distribution.
     fn select_asset_class(&mut self) -> AssetClass {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (class, prob) in &self.config.asset_class_distribution {
@@ -428,7 +428,7 @@ impl AssetGenerator {
             return DepreciationMethod::StraightLine; // Won't be used but needs a value
         }
 
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (method, prob) in &self.config.depreciation_method_distribution {
@@ -455,7 +455,7 @@ impl AssetGenerator {
     fn select_description(&mut self, asset_class: &AssetClass) -> &'static str {
         for (class, descriptions) in ASSET_DESCRIPTIONS {
             if class == asset_class {
-                let idx = self.rng.gen_range(0..descriptions.len());
+                let idx = self.rng.random_range(0..descriptions.len());
                 return descriptions[idx];
             }
         }
@@ -468,7 +468,7 @@ impl AssetGenerator {
         let max = self.config.acquisition_cost_range.1;
         let range = (max - min).to_string().parse::<f64>().unwrap_or(0.0);
         let offset =
-            Decimal::from_f64_retain(self.rng.gen::<f64>() * range).unwrap_or(Decimal::ZERO);
+            Decimal::from_f64_retain(self.rng.random::<f64>() * range).unwrap_or(Decimal::ZERO);
         (min + offset).round_dp(2)
     }
 
@@ -500,7 +500,7 @@ impl AssetGenerator {
 
         let range = (max - min).to_string().parse::<f64>().unwrap_or(0.0);
         let offset =
-            Decimal::from_f64_retain(self.rng.gen::<f64>() * range).unwrap_or(Decimal::ZERO);
+            Decimal::from_f64_retain(self.rng.random::<f64>() * range).unwrap_or(Decimal::ZERO);
         (min + offset).round_dp(2)
     }
 
@@ -508,15 +508,15 @@ impl AssetGenerator {
     fn generate_serial_number(&mut self) -> String {
         format!(
             "SN-{:04}-{:08}",
-            self.rng.gen_range(1000..9999),
-            self.rng.gen_range(10000000..99999999)
+            self.rng.random_range(1000..9999),
+            self.rng.random_range(10000000..99999999)
         )
     }
 
     /// Generate disposal values.
     fn generate_disposal_values(&mut self, asset: &FixedAsset) -> (Decimal, Decimal) {
         // Disposal proceeds typically 0-50% of acquisition cost
-        let proceeds_rate = self.rng.gen::<f64>() * 0.5;
+        let proceeds_rate = self.rng.random::<f64>() * 0.5;
         let proceeds = (asset.acquisition_cost
             * Decimal::from_f64_retain(proceeds_rate).unwrap_or(Decimal::ZERO))
         .round_dp(2);

@@ -105,7 +105,7 @@ impl CustomerGenerator {
         customer.kyc_profile = self.generate_retail_kyc_profile(persona);
 
         // Possibly mark as PEP
-        if self.rng.gen::<f64>() < self.config.compliance.pep_rate {
+        if self.rng.random::<f64>() < self.config.compliance.pep_rate {
             customer.is_pep = true;
             customer.pep_category = Some(self.select_pep_category());
             customer.risk_tier = RiskTier::High;
@@ -138,7 +138,7 @@ impl CustomerGenerator {
         } else {
             self.generate_national_id(&country)
         });
-        if self.rng.gen::<f64>() < 0.4 {
+        if self.rng.random::<f64>() < 0.4 {
             customer.passport_number = Some(self.generate_passport_number(&country));
         }
 
@@ -188,7 +188,7 @@ impl CustomerGenerator {
         customer.postal_code = Some(postal);
 
         // Generate beneficial owners (business entities must have UBOs)
-        let ubo_count = self.rng.gen_range(1..=3);
+        let ubo_count = self.rng.random_range(1..=3);
         let mut remaining_pct = 100.0_f64;
         for i in 0..ubo_count {
             let (first, last) = self.generate_person_name();
@@ -197,7 +197,7 @@ impl CustomerGenerator {
             } else {
                 let share = self
                     .rng
-                    .gen_range(15.0..=50.0_f64)
+                    .random_range(15.0..=50.0_f64)
                     .min(remaining_pct - 10.0);
                 remaining_pct -= share;
                 share
@@ -248,14 +248,17 @@ impl CustomerGenerator {
         customer.postal_code = Some(postal);
 
         // Generate beneficial owners (trusts always have UBOs)
-        let ubo_count = self.rng.gen_range(1..=4);
+        let ubo_count = self.rng.random_range(1..=4);
         let mut remaining_pct = 100.0_f64;
         for i in 0..ubo_count {
             let (first, last) = self.generate_person_name();
             let pct = if i == ubo_count - 1 {
                 remaining_pct
             } else {
-                let share = self.rng.gen_range(10.0..=40.0_f64).min(remaining_pct - 5.0);
+                let share = self
+                    .rng
+                    .random_range(10.0..=40.0_f64)
+                    .min(remaining_pct - 5.0);
                 remaining_pct -= share;
                 share
             };
@@ -266,7 +269,7 @@ impl CustomerGenerator {
                 Decimal::from_f64_retain(pct).unwrap_or(Decimal::from(25)),
             );
             ubo.control_type = ControlType::TrustArrangement;
-            ubo.verification_status = if self.rng.gen::<f64>() < 0.7 {
+            ubo.verification_status = if self.rng.random::<f64>() < 0.7 {
                 VerificationStatus::Verified
             } else {
                 VerificationStatus::PartiallyVerified
@@ -280,7 +283,7 @@ impl CustomerGenerator {
     /// Select a retail persona based on configured weights.
     fn select_retail_persona(&mut self) -> RetailPersona {
         let weights = &self.config.population.retail_persona_weights;
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (name, weight) in weights {
@@ -305,7 +308,7 @@ impl CustomerGenerator {
     /// Select a business persona based on configured weights.
     fn select_business_persona(&mut self) -> BusinessPersona {
         let weights = &self.config.population.business_persona_weights;
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
         for (name, weight) in weights {
@@ -449,7 +452,7 @@ impl CustomerGenerator {
 
     /// Select a country (weighted towards US).
     fn select_country(&mut self) -> String {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.8 {
             "US".to_string()
         } else if roll < 0.85 {
@@ -472,15 +475,15 @@ impl CustomerGenerator {
     /// Generate a random onboarding date within the simulation period.
     fn random_onboarding_date(&mut self) -> NaiveDate {
         // 70% onboarded before simulation, 30% during
-        if self.rng.gen::<f64>() < 0.7 {
+        if self.rng.random::<f64>() < 0.7 {
             // Onboarded 1-5 years before simulation start
-            let years_before: i64 = self.rng.gen_range(1..=5);
-            let days_offset: i64 = self.rng.gen_range(0..365);
+            let years_before: i64 = self.rng.random_range(1..=5);
+            let days_offset: i64 = self.rng.random_range(0..365);
             self.start_date - chrono::Duration::days(years_before * 365 + days_offset)
         } else {
             // Onboarded during simulation
             let sim_days = (self.end_date - self.start_date).num_days();
-            let offset = self.rng.gen_range(0..sim_days);
+            let offset = self.rng.random_range(0..sim_days);
             self.start_date + chrono::Duration::days(offset)
         }
     }
@@ -499,7 +502,7 @@ impl CustomerGenerator {
         score *= self.config.compliance.risk_appetite.high_risk_multiplier();
 
         // Random variation
-        score += self.rng.gen_range(-10.0..10.0);
+        score += self.rng.random_range(-10.0..10.0);
 
         RiskTier::from_score(score.clamp(0.0, 100.0) as u8)
     }
@@ -527,7 +530,7 @@ impl CustomerGenerator {
         score *= self.config.compliance.risk_appetite.high_risk_multiplier();
 
         // Random variation
-        score += self.rng.gen_range(-10.0..10.0);
+        score += self.rng.random_range(-10.0..10.0);
 
         RiskTier::from_score(score.clamp(0.0, 100.0) as u8)
     }
@@ -641,7 +644,7 @@ impl CustomerGenerator {
             "icloud.com",
         ];
         let domain = domains.choose(&mut self.rng).expect("non-empty array");
-        let num: u32 = self.rng.gen_range(1..999);
+        let num: u32 = self.rng.random_range(1..999);
         format!(
             "{}.{}{}@{}",
             first.to_lowercase(),
@@ -686,9 +689,9 @@ impl CustomerGenerator {
             RetailPersona::LowActivity => (20, 70),
         };
 
-        let age: i32 = self.rng.gen_range(age_range.0..=age_range.1);
-        let month: u32 = self.rng.gen_range(1..=12);
-        let day: u32 = self.rng.gen_range(1..=28);
+        let age: i32 = self.rng.random_range(age_range.0..=age_range.1);
+        let month: u32 = self.rng.random_range(1..=12);
+        let day: u32 = self.rng.random_range(1..=28);
 
         NaiveDate::from_ymd_opt(base_year - age, month, day).unwrap_or_else(|| {
             NaiveDate::from_ymd_opt(base_year - age, 1, 1).expect("valid fallback date")
@@ -712,7 +715,7 @@ impl CustomerGenerator {
 
     /// Generate a realistic address.
     fn generate_address(&mut self, country: &str) -> (String, String, String, String) {
-        let number: u32 = self.rng.gen_range(1..=9999);
+        let number: u32 = self.rng.random_range(1..=9999);
         let streets = [
             "Main St",
             "Oak Ave",
@@ -743,7 +746,7 @@ impl CustomerGenerator {
                     ("Austin", "TX"),
                 ];
                 let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
-                let zip: u32 = self.rng.gen_range(10001..=99999);
+                let zip: u32 = self.rng.random_range(10001..=99999);
                 (c.to_string(), s.to_string(), format!("{:05}", zip))
             }
             "GB" => {
@@ -754,12 +757,12 @@ impl CustomerGenerator {
                     ("Edinburgh", "Scotland"),
                 ];
                 let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
-                let area: char = (b'A' + self.rng.gen_range(0..26)) as char;
-                let num: u8 = self.rng.gen_range(1..=9);
+                let area: char = (b'A' + self.rng.random_range(0..26)) as char;
+                let num: u8 = self.rng.random_range(1..=9);
                 (
                     c.to_string(),
                     s.to_string(),
-                    format!("{}{}  {}AA", area, num, self.rng.gen_range(1..=9)),
+                    format!("{}{}  {}AA", area, num, self.rng.random_range(1..=9)),
                 )
             }
             "CA" => {
@@ -770,9 +773,9 @@ impl CustomerGenerator {
                     ("Calgary", "AB"),
                 ];
                 let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
-                let l1: char = (b'A' + self.rng.gen_range(0..26)) as char;
-                let d1: u8 = self.rng.gen_range(1..=9);
-                let l2: char = (b'A' + self.rng.gen_range(0..26)) as char;
+                let l1: char = (b'A' + self.rng.random_range(0..26)) as char;
+                let d1: u8 = self.rng.random_range(1..=9);
+                let l2: char = (b'A' + self.rng.random_range(0..26)) as char;
                 (
                     c.to_string(),
                     s.to_string(),
@@ -780,7 +783,7 @@ impl CustomerGenerator {
                 )
             }
             _ => {
-                let zip: u32 = self.rng.gen_range(10000..=99999);
+                let zip: u32 = self.rng.random_range(10000..=99999);
                 ("City".to_string(), "State".to_string(), format!("{}", zip))
             }
         };
@@ -792,12 +795,15 @@ impl CustomerGenerator {
         match country {
             "US" => format!(
                 "{:03}-{:02}-{:04}",
-                self.rng.gen_range(100..=999),
-                self.rng.gen_range(10..=99),
-                self.rng.gen_range(1000..=9999)
+                self.rng.random_range(100..=999),
+                self.rng.random_range(10..=99),
+                self.rng.random_range(1000..=9999)
             ),
-            "GB" => format!("AB{:06}C", self.rng.gen_range(100000..=999999)),
-            _ => format!("ID-{:010}", self.rng.gen_range(1000000000_u64..=9999999999)),
+            "GB" => format!("AB{:06}C", self.rng.random_range(100000..=999999)),
+            _ => format!(
+                "ID-{:010}",
+                self.rng.random_range(1000000000_u64..=9999999999)
+            ),
         }
     }
 
@@ -828,7 +834,7 @@ impl CustomerGenerator {
         }
 
         // Pick a random format template.
-        let mut thread_rng = rand::thread_rng();
+        let mut thread_rng = rand::rng();
         let template = *formats.choose(&mut thread_rng).expect("non-empty vec");
 
         // Replace every `{x…}` placeholder with random digits.
@@ -883,7 +889,7 @@ impl CustomerGenerator {
         }
 
         // --- Street address ---
-        let number: u32 = self.rng.gen_range(1..=9999);
+        let number: u32 = self.rng.random_range(1..=9999);
         let street_names = &pack.address.components.street_names;
         let street = if street_names.is_empty() {
             let default_streets = [
@@ -936,7 +942,7 @@ impl CustomerGenerator {
 
         // --- Postal code ---
         let postal = if postal_format.is_empty() {
-            let zip: u32 = self.rng.gen_range(10000..=99999);
+            let zip: u32 = self.rng.random_range(10000..=99999);
             format!("{}", zip)
         } else {
             self.expand_postal_format(postal_format)
@@ -976,11 +982,11 @@ impl CustomerGenerator {
         for ch in format.chars() {
             match ch {
                 'X' => {
-                    let d: u8 = self.rng.gen_range(0..10);
+                    let d: u8 = self.rng.random_range(0..10);
                     result.push((b'0' + d) as char);
                 }
                 'A' => {
-                    let l: u8 = self.rng.gen_range(0..26);
+                    let l: u8 = self.rng.random_range(0..26);
                     result.push((b'A' + l) as char);
                 }
                 other => result.push(other),
@@ -999,10 +1005,10 @@ impl CustomerGenerator {
         let mut result = String::with_capacity(format.len());
         for ch in format.chars() {
             if ch == 'x' {
-                let d: u8 = self.rng.gen_range(0..10);
+                let d: u8 = self.rng.random_range(0..10);
                 result.push((b'0' + d) as char);
             } else if ch.is_ascii_uppercase() {
-                let l: u8 = self.rng.gen_range(0..26);
+                let l: u8 = self.rng.random_range(0..26);
                 result.push((b'A' + l) as char);
             } else {
                 result.push(ch);
@@ -1014,9 +1020,9 @@ impl CustomerGenerator {
     /// Generate a passport number.
     fn generate_passport_number(&mut self, country: &str) -> String {
         match country {
-            "US" => format!("{:09}", self.rng.gen_range(100000000_u64..=999999999)),
-            "GB" => format!("{:09}", self.rng.gen_range(100000000_u64..=999999999)),
-            _ => format!("P{:08}", self.rng.gen_range(10000000_u64..=99999999)),
+            "US" => format!("{:09}", self.rng.random_range(100000000_u64..=999999999)),
+            "GB" => format!("{:09}", self.rng.random_range(100000000_u64..=999999999)),
+            _ => format!("P{:08}", self.rng.random_range(10000000_u64..=99999999)),
         }
     }
 
@@ -1036,7 +1042,7 @@ impl CustomerGenerator {
 
         for _ in 0..household_count {
             let household_id = Uuid::new_v4();
-            let size = self.rng.gen_range(2..=4).min(retail_indices.len());
+            let size = self.rng.random_range(2..=4).min(retail_indices.len());
 
             // Select random customers for household
             let selected: Vec<usize> = retail_indices

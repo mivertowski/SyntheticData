@@ -218,7 +218,7 @@ impl AnomalyInjector {
                 embezzlement_probability: config.enhanced.scheme_probability,
                 revenue_manipulation_probability: config.enhanced.scheme_probability * 0.5,
                 kickback_probability: config.enhanced.scheme_probability * 0.5,
-                seed: rng.gen(),
+                seed: rng.random(),
                 ..Default::default()
             };
             Some(SchemeAdvancer::new(scheme_config))
@@ -229,7 +229,7 @@ impl AnomalyInjector {
         let near_miss_generator = if config.enhanced.near_miss_enabled {
             let near_miss_config = NearMissConfig {
                 proportion: config.enhanced.near_miss_proportion,
-                seed: rng.gen(),
+                seed: rng.random(),
                 ..Default::default()
             };
             Some(NearMissGenerator::new(near_miss_config))
@@ -492,7 +492,7 @@ impl AnomalyInjector {
 
     /// Selects an anomaly category based on configured rates.
     fn select_anomaly_category(&mut self) -> AnomalyType {
-        let r = self.rng.gen::<f64>();
+        let r = self.rng.random::<f64>();
         let rates = &self.config.rates;
 
         let mut cumulative = 0.0;

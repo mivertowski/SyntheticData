@@ -132,7 +132,7 @@ impl TypologyInjector {
             return AmlTypology::Structuring;
         }
 
-        let roll: f64 = self.rng.gen::<f64>() * total;
+        let roll: f64 = self.rng.random::<f64>() * total;
         let mut cumulative = 0.0;
 
         for (typology, rate) in rates {
@@ -149,7 +149,7 @@ impl TypologyInjector {
     fn select_sophistication(&mut self) -> Sophistication {
         let dist = &self.config.typologies.sophistication;
         let total = dist.basic + dist.standard + dist.professional + dist.advanced;
-        let roll: f64 = self.rng.gen::<f64>() * total;
+        let roll: f64 = self.rng.random::<f64>() * total;
 
         let mut cumulative = 0.0;
         cumulative += dist.basic;
@@ -423,7 +423,7 @@ impl TypologyInjector {
         let scenario_id = self.next_scenario_id();
 
         for txn in transactions.iter_mut() {
-            if txn.account_id == account_id && self.rng.gen::<f64>() < 0.1 {
+            if txn.account_id == account_id && self.rng.random::<f64>() < 0.1 {
                 txn.is_suspicious = true;
                 txn.suspicion_reason = Some(typology);
                 txn.case_id = Some(scenario_id.clone());

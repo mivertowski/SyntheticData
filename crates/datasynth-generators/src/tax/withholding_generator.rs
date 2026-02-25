@@ -131,7 +131,7 @@ impl WithholdingGenerator {
             let record_id = format!("WHT-{:06}", self.counter);
 
             // Generate a certificate number with some randomness
-            let cert_suffix: u32 = self.rng.gen_range(100_000..999_999);
+            let cert_suffix: u32 = self.rng.random_range(100_000..999_999);
             let cert_number = format!("CERT-{}-{cert_suffix}", &record_id);
 
             let mut record = WithholdingTaxRecord::new(

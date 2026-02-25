@@ -124,7 +124,7 @@ impl TaxAnomalyInjector {
                 continue;
             }
 
-            let roll: f64 = self.rng.gen();
+            let roll: f64 = self.rng.random();
             if roll < 0.40 {
                 // IncorrectTaxCode
                 labels.push(self.inject_incorrect_tax_code(line));
@@ -190,7 +190,7 @@ impl TaxAnomalyInjector {
 
     /// Returns `true` with probability `anomaly_rate`.
     fn should_inject(&mut self) -> bool {
-        self.rng.gen::<f64>() < self.anomaly_rate
+        self.rng.random::<f64>() < self.anomaly_rate
     }
 
     /// Returns the next sequential anomaly label ID.
@@ -231,7 +231,7 @@ impl TaxAnomalyInjector {
             dec!(0.25),
         ];
 
-        let idx = self.rng.gen_range(0..wrong_rates.len());
+        let idx = self.rng.random_range(0..wrong_rates.len());
         let mut wrong_rate = wrong_rates[idx];
         // If we accidentally picked the same rate, shift by one index.
         if wrong_rate == original_rate.round_dp(2) {
@@ -284,13 +284,14 @@ impl TaxAnomalyInjector {
     fn inject_rate_arbitrage(&mut self, line: &mut TaxLine) -> TaxAnomalyLabel {
         let original_jurisdiction = line.jurisdiction_id.clone();
 
-        let idx = self.rng.gen_range(0..LOW_TAX_JURISDICTIONS.len());
+        let idx = self.rng.random_range(0..LOW_TAX_JURISDICTIONS.len());
         let new_jurisdiction = LOW_TAX_JURISDICTIONS[idx].to_string();
 
         line.jurisdiction_id = new_jurisdiction.clone();
 
         // Also reduce the tax amount to reflect the low-tax jurisdiction
-        let reduction_factor = dec!(0.25) + dec!(0.25) * Decimal::from(self.rng.gen_range(0u32..4));
+        let reduction_factor =
+            dec!(0.25) + dec!(0.25) * Decimal::from(self.rng.random_range(0u32..4));
         let original_amount = line.tax_amount;
         line.tax_amount = (line.tax_amount * reduction_factor).round_dp(2);
 
@@ -320,7 +321,7 @@ impl TaxAnomalyInjector {
         let original_amount = line.tax_amount;
 
         // Reduce the tax amount by 30-70%
-        let reduction: f64 = 0.30 + self.rng.gen::<f64>() * 0.40;
+        let reduction: f64 = 0.30 + self.rng.random::<f64>() * 0.40;
         let reduction_dec = Decimal::from_f64_retain(reduction).unwrap_or(dec!(0.50));
         let new_amount = (line.tax_amount * (Decimal::ONE - reduction_dec)).round_dp(2);
         line.tax_amount = new_amount;
@@ -354,7 +355,7 @@ impl TaxAnomalyInjector {
         let deadline = ret.filing_deadline;
 
         // Decide how late: -2 days to +30 days from deadline
-        let days_offset: i64 = self.rng.gen_range(-2..=30);
+        let days_offset: i64 = self.rng.random_range(-2..=30);
         let filing_date = deadline + Duration::days(days_offset);
 
         ret.actual_filing_date = Some(filing_date);
@@ -403,7 +404,7 @@ impl TaxAnomalyInjector {
         let statutory = record.statutory_rate;
 
         // Set applied_rate to 30-70% of statutory rate, without a treaty justification
-        let fraction: f64 = 0.30 + self.rng.gen::<f64>() * 0.40;
+        let fraction: f64 = 0.30 + self.rng.random::<f64>() * 0.40;
         let fraction_dec = Decimal::from_f64_retain(fraction).unwrap_or(dec!(0.50));
         let new_rate = (statutory * fraction_dec).round_dp(4);
 

@@ -82,7 +82,7 @@ impl<T: ToParquetBatch + Send> ParquetStreamingSink<T> {
 
         let props = WriterProperties::builder()
             .set_compression(Compression::SNAPPY)
-            .set_max_row_group_size(self.row_group_size)
+            .set_max_row_group_row_count(Some(self.row_group_size))
             .build();
 
         let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props)).map_err(|e| {

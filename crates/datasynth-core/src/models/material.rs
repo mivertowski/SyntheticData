@@ -493,7 +493,7 @@ impl MaterialPool {
 
     /// Get a random material.
     pub fn random_material(&self, rng: &mut impl rand::Rng) -> Option<&Material> {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
         self.materials.choose(rng)
     }
 
@@ -503,7 +503,7 @@ impl MaterialPool {
         material_type: MaterialType,
         rng: &mut impl rand::Rng,
     ) -> Option<&Material> {
-        use rand::seq::SliceRandom;
+        use rand::seq::IndexedRandom;
         self.type_index
             .get(&material_type)
             .and_then(|indices| indices.choose(rng))

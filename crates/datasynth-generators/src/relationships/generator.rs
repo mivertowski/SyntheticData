@@ -163,7 +163,7 @@ impl RelationshipGenerator {
         available_targets: &HashMap<String, Vec<NodeRef>>,
     ) -> Vec<GeneratedRelationship> {
         // Check for orphan generation
-        if self.config.allow_orphans && self.rng.gen_bool(self.config.orphan_probability) {
+        if self.config.allow_orphans && self.rng.random_bool(self.config.orphan_probability) {
             return Vec::new();
         }
 
@@ -343,7 +343,7 @@ impl RelationshipGenerator {
         let count = if min == max {
             min as usize
         } else {
-            self.rng.gen_range(min..=max) as usize
+            self.rng.random_range(min..=max) as usize
         };
 
         // Filter available targets
@@ -455,13 +455,13 @@ impl RelationshipGenerator {
                 if choices.is_empty() {
                     Value::Null
                 } else {
-                    let idx = self.rng.gen_range(0..choices.len());
+                    let idx = self.rng.random_range(0..choices.len());
                     choices[idx].clone()
                 }
             }
 
             PropertyGenerator::Range { min, max } => {
-                let value = self.rng.gen_range(*min..=*max);
+                let value = self.rng.random_range(*min..=*max);
                 match value_type {
                     PropertyValueType::Integer => {
                         Value::Number(serde_json::Number::from(value as i64))

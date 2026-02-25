@@ -64,7 +64,7 @@ impl EnergyGenerator {
 
                     // Seasonal variation: higher in winter/summer (HVAC)
                     let seasonal = self.seasonal_factor(month);
-                    let variance: f64 = self.rng.gen_range(0.85..1.15);
+                    let variance: f64 = self.rng.random_range(0.85..1.15);
                     let consumption_kwh = (*base_kwh
                         * Decimal::from_f64_retain(seasonal).unwrap_or(dec!(1))
                         * Decimal::from_f64_retain(variance).unwrap_or(dec!(1)))
@@ -100,15 +100,15 @@ impl EnergyGenerator {
         let mut sources = Vec::new();
 
         // Electricity is always present (base: 50k–200k kWh/month)
-        let elec_base: f64 = self.rng.gen_range(50_000.0..200_000.0);
+        let elec_base: f64 = self.rng.random_range(50_000.0..200_000.0);
         sources.push((
             EnergySourceType::Electricity,
             Decimal::from_f64_retain(elec_base).unwrap_or(dec!(100000)),
         ));
 
         // Natural gas (80% of facilities)
-        if self.rng.gen::<f64>() < 0.80 {
-            let gas_base: f64 = self.rng.gen_range(20_000.0..100_000.0);
+        if self.rng.random::<f64>() < 0.80 {
+            let gas_base: f64 = self.rng.random_range(20_000.0..100_000.0);
             sources.push((
                 EnergySourceType::NaturalGas,
                 Decimal::from_f64_retain(gas_base).unwrap_or(dec!(50000)),
@@ -116,13 +116,13 @@ impl EnergyGenerator {
         }
 
         // Renewable based on target
-        if self.rng.gen::<f64>() < self.config.renewable_target {
-            let renewable_type = if self.rng.gen::<f64>() < 0.6 {
+        if self.rng.random::<f64>() < self.config.renewable_target {
+            let renewable_type = if self.rng.random::<f64>() < 0.6 {
                 EnergySourceType::SolarPv
             } else {
                 EnergySourceType::WindOnshore
             };
-            let renewable_base: f64 = self.rng.gen_range(10_000.0..80_000.0);
+            let renewable_base: f64 = self.rng.random_range(10_000.0..80_000.0);
             sources.push((
                 renewable_type,
                 Decimal::from_f64_retain(renewable_base).unwrap_or(dec!(30000)),
@@ -130,8 +130,8 @@ impl EnergyGenerator {
         }
 
         // Diesel (20% of facilities — backup generators, fleet)
-        if self.rng.gen::<f64>() < 0.20 {
-            let diesel_base: f64 = self.rng.gen_range(5_000.0..30_000.0);
+        if self.rng.random::<f64>() < 0.20 {
+            let diesel_base: f64 = self.rng.random_range(5_000.0..30_000.0);
             sources.push((
                 EnergySourceType::Diesel,
                 Decimal::from_f64_retain(diesel_base).unwrap_or(dec!(10000)),
@@ -194,15 +194,15 @@ impl WaterGenerator {
 
         for fac in 1..=self.facility_count {
             let facility_id = format!("FAC-{:03}", fac);
-            let is_stressed = self.rng.gen::<f64>() < 0.15; // 15% in water-stressed areas
+            let is_stressed = self.rng.random::<f64>() < 0.15; // 15% in water-stressed areas
             let mut month = start_date;
 
             while month <= end_date {
                 self.counter += 1;
 
                 let source = self.pick_water_source();
-                let withdrawal: f64 = self.rng.gen_range(500.0..5000.0);
-                let discharge_pct: f64 = self.rng.gen_range(0.50..0.85);
+                let withdrawal: f64 = self.rng.random_range(500.0..5000.0);
+                let discharge_pct: f64 = self.rng.random_range(0.50..0.85);
                 let withdrawal_m3 = Decimal::from_f64_retain(withdrawal).unwrap_or(dec!(2000));
                 let discharge_m3 = (withdrawal_m3
                     * Decimal::from_f64_retain(discharge_pct).unwrap_or(dec!(0.7)))
@@ -229,7 +229,7 @@ impl WaterGenerator {
     }
 
     fn pick_water_source(&mut self) -> WaterSource {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.50 {
             WaterSource::Municipal
         } else if roll < 0.70 {
@@ -278,12 +278,12 @@ impl WasteGenerator {
 
             while month <= end_date {
                 // Each facility generates 2-4 waste streams
-                let stream_count = self.rng.gen_range(2u32..=4);
+                let stream_count = self.rng.random_range(2u32..=4);
                 for _ in 0..stream_count {
                     self.counter += 1;
                     let waste_type = self.pick_waste_type();
                     let disposal = self.pick_disposal();
-                    let quantity: f64 = self.rng.gen_range(5.0..200.0);
+                    let quantity: f64 = self.rng.random_range(5.0..200.0);
 
                     records.push(WasteRecord {
                         id: format!("WS-{:06}", self.counter),
@@ -310,7 +310,7 @@ impl WasteGenerator {
     }
 
     fn pick_waste_type(&mut self) -> WasteType {
-        let roll: f64 = self.rng.gen::<f64>();
+        let roll: f64 = self.rng.random::<f64>();
         if roll < 0.45 {
             WasteType::General
         } else if roll < 0.60 {
@@ -326,8 +326,8 @@ impl WasteGenerator {
 
     fn pick_disposal(&mut self) -> DisposalMethod {
         // Bias toward diversion target
-        if self.rng.gen::<f64>() < self.diversion_target {
-            let roll: f64 = self.rng.gen::<f64>();
+        if self.rng.random::<f64>() < self.diversion_target {
+            let roll: f64 = self.rng.random::<f64>();
             if roll < 0.50 {
                 DisposalMethod::Recycled
             } else if roll < 0.80 {
@@ -335,7 +335,7 @@ impl WasteGenerator {
             } else {
                 DisposalMethod::Reused
             }
-        } else if self.rng.gen::<f64>() < 0.70 {
+        } else if self.rng.random::<f64>() < 0.70 {
             DisposalMethod::Landfill
         } else {
             DisposalMethod::Incinerated

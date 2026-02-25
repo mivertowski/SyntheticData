@@ -604,7 +604,7 @@ impl JournalEntryGenerator {
         }
 
         // Roll for fraud based on fraud rate
-        if self.rng.gen::<f64>() >= self.fraud_config.fraud_rate {
+        if self.rng.random::<f64>() >= self.fraud_config.fraud_rate {
             return None;
         }
 
@@ -615,7 +615,7 @@ impl JournalEntryGenerator {
     /// Select a fraud type based on the configured distribution.
     fn select_fraud_type(&mut self) -> FraudType {
         let dist = &self.fraud_config.fraud_type_distribution;
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         let mut cumulative = 0.0;
 
@@ -998,7 +998,7 @@ impl JournalEntryGenerator {
         }
 
         // 15% chance to start a batch (most work is not batched)
-        if self.rng.gen::<f64>() > 0.15 {
+        if self.rng.random::<f64>() > 0.15 {
             return;
         }
 
@@ -1016,7 +1016,7 @@ impl JournalEntryGenerator {
             base_amount,
             base_business_process: entry.header.business_process,
             base_posting_date: entry.header.posting_date,
-            remaining: self.rng.gen_range(2..7), // 2-6 more similar entries
+            remaining: self.rng.random_range(2..7), // 2-6 more similar entries
         });
     }
 
@@ -1080,7 +1080,7 @@ impl JournalEntryGenerator {
         header.business_process = Some(business_process);
 
         // Generate similar amount (within ±15% of base)
-        let variation = self.rng.gen_range(-0.15..0.15);
+        let variation = self.rng.random_range(-0.15..0.15);
         let varied_amount =
             batch.base_amount * (Decimal::ONE + Decimal::try_from(variation).unwrap_or_default());
         let total_amount = varied_amount.round_dp(2).max(Decimal::from(1));
@@ -1141,7 +1141,7 @@ impl JournalEntryGenerator {
         let adjusted_rate = self.apply_stress_factors(base_error_rate, entry.header.posting_date);
 
         // Check if error should occur based on adjusted rate
-        if self.rng.gen::<f64>() >= adjusted_rate {
+        if self.rng.random::<f64>() >= adjusted_rate {
             return; // No error this time
         }
 
@@ -1216,17 +1216,17 @@ impl JournalEntryGenerator {
         }
 
         // 70% chance of human variation being applied
-        if self.rng.gen::<f64>() > 0.70 {
+        if self.rng.random::<f64>() > 0.70 {
             return amount;
         }
 
         // Decide which type of human variation to apply
-        let variation_type: u8 = self.rng.gen_range(0..4);
+        let variation_type: u8 = self.rng.random_range(0..4);
 
         match variation_type {
             0 => {
                 // ±2% variation (common for estimated amounts)
-                let variation_pct = self.rng.gen_range(-0.02..0.02);
+                let variation_pct = self.rng.random_range(-0.02..0.02);
                 let variation = amount * Decimal::try_from(variation_pct).unwrap_or_default();
                 (amount + variation).round_dp(2)
             }
@@ -1246,7 +1246,7 @@ impl JournalEntryGenerator {
             }
             3 => {
                 // Slight under/over payment (±$0.01 to ±$1.00)
-                let cents = Decimal::new(self.rng.gen_range(-100..100), 2);
+                let cents = Decimal::new(self.rng.random_range(-100..100), 2);
                 (amount + cents).max(Decimal::ZERO).round_dp(2)
             }
             _ => amount,
@@ -1288,15 +1288,15 @@ impl JournalEntryGenerator {
         let error_type: u8 = match persona {
             UserPersona::JuniorAccountant => {
                 // Junior accountants make more varied errors
-                self.rng.gen_range(0..5)
+                self.rng.random_range(0..5)
             }
             UserPersona::SeniorAccountant => {
                 // Senior accountants mainly make transposition errors
-                self.rng.gen_range(0..3)
+                self.rng.random_range(0..3)
             }
             UserPersona::Controller | UserPersona::Manager => {
                 // Controllers/managers mainly make rounding or cutoff errors
-                self.rng.gen_range(3..5)
+                self.rng.random_range(3..5)
             }
             _ => return,
         };
@@ -1316,7 +1316,7 @@ impl JournalEntryGenerator {
                     let s = original_amount.to_string();
                     if s.len() >= 2 {
                         let chars: Vec<char> = s.chars().collect();
-                        let pos = self.rng.gen_range(0..chars.len().saturating_sub(1));
+                        let pos = self.rng.random_range(0..chars.len().saturating_sub(1));
                         if chars[pos].is_ascii_digit()
                             && chars.get(pos + 1).is_some_and(|c| c.is_ascii_digit())
                         {
@@ -1380,7 +1380,7 @@ impl JournalEntryGenerator {
                 if let Some(ref mut text) = entry.header.header_text {
                     let typos = ["teh", "adn", "wiht", "taht", "recieve"];
                     let correct = ["the", "and", "with", "that", "receive"];
-                    let idx = self.rng.gen_range(0..typos.len());
+                    let idx = self.rng.random_range(0..typos.len());
                     if text.to_lowercase().contains(correct[idx]) {
                         *text = text.replace(correct[idx], typos[idx]);
                         *text = format!("{} [HUMAN_ERROR:TYPO]", text);
@@ -1421,7 +1421,7 @@ impl JournalEntryGenerator {
                 // Late posting marker (document date much earlier than posting date)
                 // This doesn't create an imbalance
                 if entry.header.document_date == entry.header.posting_date {
-                    let days_late = self.rng.gen_range(5..15);
+                    let days_late = self.rng.random_range(5..15);
                     entry.header.document_date =
                         entry.header.posting_date - chrono::Duration::days(days_late);
                     entry.header.header_text = Some(
@@ -1499,7 +1499,7 @@ impl JournalEntryGenerator {
         let mut current_time = submit_time;
         for level in 1..=required_levels {
             // Add delay for approval (1-3 business hours per level)
-            let delay_hours = self.rng.gen_range(1..4);
+            let delay_hours = self.rng.random_range(1..4);
             current_time += chrono::Duration::hours(delay_hours);
 
             // Skip weekends
@@ -1549,10 +1549,10 @@ impl JournalEntryGenerator {
 
         // Fallback to generated approver
         let approver_id = match persona {
-            UserPersona::Manager => format!("MGR{:04}", self.rng.gen_range(1..100)),
-            UserPersona::Controller => format!("CTRL{:04}", self.rng.gen_range(1..20)),
-            UserPersona::Executive => format!("EXEC{:04}", self.rng.gen_range(1..10)),
-            _ => format!("USR{:04}", self.rng.gen_range(1..1000)),
+            UserPersona::Manager => format!("MGR{:04}", self.rng.random_range(1..100)),
+            UserPersona::Controller => format!("CTRL{:04}", self.rng.random_range(1..20)),
+            UserPersona::Executive => format!("EXEC{:04}", self.rng.random_range(1..10)),
+            _ => format!("USR{:04}", self.rng.random_range(1..1000)),
         };
 
         (approver_id, persona)
@@ -1642,7 +1642,7 @@ impl JournalEntryGenerator {
                 UserPersona::AutomatedSystem
             } else {
                 // Random distribution among human personas
-                let roll: f64 = self.rng.gen();
+                let roll: f64 = self.rng.random();
                 if roll < 0.4 {
                     UserPersona::JuniorAccountant
                 } else if roll < 0.7 {
@@ -1665,12 +1665,12 @@ impl JournalEntryGenerator {
         // Fallback to generic format
         if is_automated {
             (
-                format!("BATCH{:04}", self.rng.gen_range(1..=20)),
+                format!("BATCH{:04}", self.rng.random_range(1..=20)),
                 "automated_system".to_string(),
             )
         } else {
             (
-                format!("USER{:04}", self.rng.gen_range(1..=40)),
+                format!("USER{:04}", self.rng.random_range(1..=40)),
                 "senior_accountant".to_string(),
             )
         }
@@ -1678,7 +1678,7 @@ impl JournalEntryGenerator {
 
     /// Select transaction source based on configuration weights.
     fn select_source(&mut self) -> TransactionSource {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         let dist = &self.config.source_distribution;
 
         if roll < dist.manual {
@@ -1694,7 +1694,7 @@ impl JournalEntryGenerator {
 
     /// Select a business process based on configuration weights.
     fn select_business_process(&mut self) -> BusinessProcess {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         // Default weights: O2C=35%, P2P=30%, R2R=20%, H2R=10%, A2R=5%
         if roll < 0.35 {
@@ -1715,7 +1715,7 @@ impl JournalEntryGenerator {
         let expense_accounts = self.coa.get_accounts_by_type(AccountType::Expense);
 
         // 60% asset, 40% expense for debits
-        let all: Vec<_> = if self.rng.gen::<f64>() < 0.6 {
+        let all: Vec<_> = if self.rng.random::<f64>() < 0.6 {
             accounts
         } else {
             expense_accounts
@@ -1731,7 +1731,7 @@ impl JournalEntryGenerator {
         let revenue_accounts = self.coa.get_accounts_by_type(AccountType::Revenue);
 
         // 60% liability, 40% revenue for credits
-        let all: Vec<_> = if self.rng.gen::<f64>() < 0.6 {
+        let all: Vec<_> = if self.rng.random::<f64>() < 0.6 {
             liability_accounts
         } else {
             revenue_accounts

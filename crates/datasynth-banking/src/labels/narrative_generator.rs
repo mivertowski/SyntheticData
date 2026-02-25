@@ -144,7 +144,7 @@ impl NarrativeGenerator {
         // Add typology-specific evidence
         match scenario.typology {
             AmlTypology::Structuring | AmlTypology::Smurfing => {
-                let deposit_count = self.rng.gen_range(5..20);
+                let deposit_count = self.rng.random_range(5..20);
                 let threshold = 10_000;
                 points.push(format!(
                     "{} cash deposits below ${} reporting threshold within {} days",
@@ -156,7 +156,7 @@ impl NarrativeGenerator {
                 points.push("Immediate consolidation transfer following deposits".to_string());
             }
             AmlTypology::FunnelAccount => {
-                let source_count = self.rng.gen_range(8..25);
+                let source_count = self.rng.random_range(8..25);
                 points.push(format!(
                     "{} unrelated inbound transfers from different sources",
                     source_count
@@ -165,7 +165,7 @@ impl NarrativeGenerator {
                 points.push("No business relationship with senders documented".to_string());
             }
             AmlTypology::Layering => {
-                let hop_count = self.rng.gen_range(3..8);
+                let hop_count = self.rng.random_range(3..8);
                 points.push(format!(
                     "Funds traced through {} intermediary accounts",
                     hop_count
@@ -214,8 +214,8 @@ impl NarrativeGenerator {
         let mut violations = Vec::new();
 
         // Transaction frequency violation
-        let expected_freq = self.rng.gen_range(5..15);
-        let actual_freq = self.rng.gen_range(25..100);
+        let expected_freq = self.rng.random_range(5..15);
+        let actual_freq = self.rng.random_range(25..100);
         violations.push(ViolatedExpectation::new(
             "Monthly transaction count",
             &format!("{}", expected_freq),
@@ -228,8 +228,8 @@ impl NarrativeGenerator {
             scenario.typology,
             AmlTypology::Structuring | AmlTypology::Smurfing | AmlTypology::MoneyMule
         ) {
-            let expected_cash = self.rng.gen_range(5..15);
-            let actual_cash = self.rng.gen_range(40..80);
+            let expected_cash = self.rng.random_range(5..15);
+            let actual_cash = self.rng.random_range(40..80);
             violations.push(ViolatedExpectation::new(
                 "Cash activity percentage",
                 &format!("{}%", expected_cash),
@@ -239,8 +239,8 @@ impl NarrativeGenerator {
         }
 
         // Volume violation
-        let expected_vol = self.rng.gen_range(5000..15000);
-        let actual_vol = self.rng.gen_range(50000..250000);
+        let expected_vol = self.rng.random_range(5000..15000);
+        let actual_vol = self.rng.random_range(50000..250000);
         violations.push(ViolatedExpectation::new(
             "Monthly transaction volume",
             &format!("${}", expected_vol),

@@ -165,7 +165,7 @@ impl TransactionGenerator {
             _ => 1.0,
         };
 
-        let expected = avg_daily * multiplier + self.rng.gen_range(-1.0..1.0);
+        let expected = avg_daily * multiplier + self.rng.random_range(-1.0..1.0);
         expected.max(0.0) as u32
     }
 
@@ -176,14 +176,14 @@ impl TransactionGenerator {
                 use datasynth_core::models::banking::RetailPersona;
                 match p {
                     RetailPersona::Retiree => date.day() == 1 || date.day() == 15, // Pension
-                    RetailPersona::GigWorker => self.rng.gen::<f64>() < 0.15, // Variable income
+                    RetailPersona::GigWorker => self.rng.random::<f64>() < 0.15, // Variable income
                     _ => {
                         (date.day() == 1 || date.day() == 15)
                             && date.weekday().num_days_from_monday() < 5
                     }
                 }
             }
-            Some(PersonaVariant::Business(_)) => self.rng.gen::<f64>() < 0.3, // Business income
+            Some(PersonaVariant::Business(_)) => self.rng.random::<f64>() < 0.3, // Business income
             _ => date.day() == 1,
         }
     }
@@ -205,8 +205,9 @@ impl TransactionGenerator {
         let (amount, category, counterparty) = match &customer.persona {
             Some(PersonaVariant::Retail(p)) => {
                 let (min, max) = p.income_range();
-                let amount = Decimal::from_f64_retain(self.rng.gen_range(min as f64..max as f64))
-                    .unwrap_or(Decimal::ZERO);
+                let amount =
+                    Decimal::from_f64_retain(self.rng.random_range(min as f64..max as f64))
+                        .unwrap_or(Decimal::ZERO);
 
                 let category = match p {
                     datasynth_core::models::banking::RetailPersona::Retiree => {
@@ -267,9 +268,9 @@ impl TransactionGenerator {
         ];
 
         for (category, min, max, probability) in recurring_types {
-            if self.rng.gen::<f64>() < probability {
-                let amount =
-                    Decimal::from_f64_retain(self.rng.gen_range(min..max)).unwrap_or(Decimal::ZERO);
+            if self.rng.random::<f64>() < probability {
+                let amount = Decimal::from_f64_retain(self.rng.random_range(min..max))
+                    .unwrap_or(Decimal::ZERO);
 
                 // Skip if insufficient balance
                 if *balance < amount {
@@ -322,7 +323,7 @@ impl TransactionGenerator {
         let amount = self.generate_transaction_amount(category);
 
         // Determine direction (mostly outbound for discretionary)
-        let direction = if self.rng.gen::<f64>() < 0.1 {
+        let direction = if self.rng.random::<f64>() < 0.1 {
             Direction::Inbound
         } else {
             Direction::Outbound
@@ -371,7 +372,7 @@ impl TransactionGenerator {
     /// Select transaction channel.
     fn select_channel(&mut self) -> TransactionChannel {
         let card_ratio = self.config.products.card_vs_transfer;
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
 
         if roll < card_ratio * 0.6 {
             TransactionChannel::CardPresent
@@ -437,7 +438,7 @@ impl TransactionGenerator {
             };
 
         let total: f64 = categories.iter().map(|(_, _, w)| w).sum();
-        let roll: f64 = self.rng.gen::<f64>() * total;
+        let roll: f64 = self.rng.random::<f64>() * total;
         let mut cumulative = 0.0;
 
         for (cat, mcc, weight) in categories {
@@ -464,7 +465,7 @@ impl TransactionGenerator {
             _ => (10.0, 200.0),
         };
 
-        Decimal::from_f64_retain(self.rng.gen_range(min..max)).unwrap_or(Decimal::ZERO)
+        Decimal::from_f64_retain(self.rng.random_range(min..max)).unwrap_or(Decimal::ZERO)
     }
 
     /// Select counterparty.
@@ -499,9 +500,9 @@ impl TransactionGenerator {
 
     /// Generate random timestamp for a date.
     fn random_timestamp(&mut self, date: NaiveDate) -> DateTime<Utc> {
-        let hour: u32 = self.rng.gen_range(8..22);
-        let minute: u32 = self.rng.gen_range(0..60);
-        let second: u32 = self.rng.gen_range(0..60);
+        let hour: u32 = self.rng.random_range(8..22);
+        let minute: u32 = self.rng.random_range(0..60);
+        let second: u32 = self.rng.random_range(0..60);
 
         date.and_hms_opt(hour, minute, second)
             .map(|dt| DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))

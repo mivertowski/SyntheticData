@@ -3,7 +3,7 @@
 //! This module defines the `TemplateProvider` trait for accessing template data,
 //! along with implementations that combine embedded and file-based templates.
 
-use rand::prelude::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::RngCore;
 use std::sync::Arc;
 

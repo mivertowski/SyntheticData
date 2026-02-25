@@ -39,7 +39,7 @@ impl CatalogGenerator {
 
         for contract in contracts {
             for line in &contract.line_items {
-                let is_preferred = self.rng.gen_bool(self.config.preferred_vendor_flag_rate);
+                let is_preferred = self.rng.random_bool(self.config.preferred_vendor_flag_rate);
 
                 items.push(CatalogItem {
                     catalog_item_id: self.uuid_factory.next().to_string(),
@@ -53,12 +53,12 @@ impl CatalogGenerator {
                     is_preferred,
                     category: contract.category_id.clone(),
                     min_order_quantity: line.min_quantity,
-                    lead_time_days: Some(self.rng.gen_range(3..=30)),
+                    lead_time_days: Some(self.rng.random_range(3..=30)),
                     is_active: true,
                 });
 
                 // Possibly add alternative source
-                if self.rng.gen_bool(self.config.multi_source_rate) {
+                if self.rng.random_bool(self.config.multi_source_rate) {
                     items.push(CatalogItem {
                         catalog_item_id: self.uuid_factory.next().to_string(),
                         contract_id: contract.contract_id.clone(),
@@ -68,14 +68,14 @@ impl CatalogGenerator {
                         description: format!("{} (alternate)", line.description),
                         catalog_price: line.unit_price
                             * rust_decimal::Decimal::from_f64_retain(
-                                self.rng.gen_range(0.95..=1.10),
+                                self.rng.random_range(0.95..=1.10),
                             )
                             .unwrap_or(rust_decimal::Decimal::ONE),
                         uom: line.uom.clone(),
                         is_preferred: false,
                         category: contract.category_id.clone(),
                         min_order_quantity: line.min_quantity,
-                        lead_time_days: Some(self.rng.gen_range(5..=45)),
+                        lead_time_days: Some(self.rng.random_range(5..=45)),
                         is_active: true,
                     });
                 }

@@ -128,13 +128,13 @@ impl ProductionOrderGenerator {
         let status = self.pick_status();
 
         // Batch size: avg * random factor (0.5 - 1.5)
-        let batch_factor: f64 = self.rng.gen_range(0.5..=1.5);
+        let batch_factor: f64 = self.rng.random_range(0.5..=1.5);
         let planned_qty_f64 = config.avg_batch_size as f64 * batch_factor;
         let planned_quantity = Decimal::from_f64_retain(planned_qty_f64.round())
             .unwrap_or(Decimal::from(config.avg_batch_size));
 
         // Yield: actual = planned * yield_rate * random(0.95 - 1.05)
-        let yield_factor: f64 = self.rng.gen_range(0.95..=1.05);
+        let yield_factor: f64 = self.rng.random_range(0.95..=1.05);
         let effective_yield = config.yield_rate * yield_factor;
         let actual_qty_f64 = planned_qty_f64 * effective_yield;
         let actual_quantity =
@@ -143,9 +143,9 @@ impl ProductionOrderGenerator {
 
         // Dates
         let days_in_month = (month_end - month_start).num_days().max(1);
-        let start_offset = self.rng.gen_range(0..days_in_month);
+        let start_offset = self.rng.random_range(0..days_in_month);
         let planned_start = month_start + chrono::Duration::days(start_offset);
-        let production_days = self.rng.gen_range(3..=14);
+        let production_days = self.rng.random_range(3..=14);
         let planned_end = planned_start + chrono::Duration::days(production_days);
 
         // Actual dates depend on status
@@ -153,12 +153,12 @@ impl ProductionOrderGenerator {
             ProductionOrderStatus::Planned => (None, None),
             ProductionOrderStatus::Released => (None, None),
             ProductionOrderStatus::InProcess => {
-                let offset = self.rng.gen_range(0..=2);
+                let offset = self.rng.random_range(0..=2);
                 (Some(planned_start + chrono::Duration::days(offset)), None)
             }
             ProductionOrderStatus::Completed | ProductionOrderStatus::Closed => {
-                let start_offset = self.rng.gen_range(0..=2);
-                let end_offset = self.rng.gen_range(-1..=3);
+                let start_offset = self.rng.random_range(0..=2);
+                let end_offset = self.rng.random_range(-1..=3);
                 (
                     Some(planned_start + chrono::Duration::days(start_offset)),
                     Some(planned_end + chrono::Duration::days(end_offset)),
@@ -174,7 +174,7 @@ impl ProductionOrderGenerator {
             .to_string();
 
         // Routing operations
-        let variation: i32 = self.rng.gen_range(-1..=1);
+        let variation: i32 = self.rng.random_range(-1..=1);
         let num_operations = (routing.avg_operations as i32 + variation).max(1) as u32;
         let operations = self.generate_operations(
             num_operations,
@@ -193,7 +193,7 @@ impl ProductionOrderGenerator {
             .sum();
         let labor_variation: f64 = self
             .rng
-            .gen_range(-routing.run_time_variation..=routing.run_time_variation);
+            .random_range(-routing.run_time_variation..=routing.run_time_variation);
         let labor_hours = raw_labor_hours * (1.0 + labor_variation);
 
         // Machine hours: 70% of labor hours
@@ -202,14 +202,14 @@ impl ProductionOrderGenerator {
         // Costing
         let labor_cost = labor_hours * costing.labor_rate_per_hour;
         let overhead_cost = labor_cost * costing.overhead_rate;
-        let material_cost = planned_qty_f64 * self.rng.gen_range(5.0..50.0);
+        let material_cost = planned_qty_f64 * self.rng.random_range(5.0..50.0);
         let planned_cost_f64 = labor_cost + overhead_cost + material_cost;
         let planned_cost = Decimal::from_f64_retain(planned_cost_f64)
             .unwrap_or(Decimal::ZERO)
             .round_dp(2);
 
         // Actual cost: planned * random(0.9 - 1.15)
-        let cost_factor: f64 = self.rng.gen_range(0.9..=1.15);
+        let cost_factor: f64 = self.rng.random_range(0.9..=1.15);
         let actual_cost = Decimal::from_f64_retain(planned_cost_f64 * cost_factor)
             .unwrap_or(planned_cost)
             .round_dp(2);
@@ -218,7 +218,7 @@ impl ProductionOrderGenerator {
         let batch_number = Some(format!(
             "BATCH-{}-{:04}",
             planned_start.format("%Y%m%d"),
-            self.rng.gen_range(1..=9999)
+            self.rng.random_range(1..=9999)
         ));
 
         ProductionOrder {
@@ -249,12 +249,12 @@ impl ProductionOrderGenerator {
 
     /// Pick a production order type based on configured rates.
     fn pick_order_type(&mut self, config: &ProductionOrderConfig) -> ProductionOrderType {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < config.make_to_order_rate {
             ProductionOrderType::MakeToOrder
         } else if roll < config.make_to_order_rate + config.rework_rate {
             ProductionOrderType::Rework
-        } else if self.rng.gen_bool(0.5) {
+        } else if self.rng.random_bool(0.5) {
             ProductionOrderType::Standard
         } else {
             ProductionOrderType::MakeToStock
@@ -263,7 +263,7 @@ impl ProductionOrderGenerator {
 
     /// Pick a production order status with realistic distribution.
     fn pick_status(&mut self) -> ProductionOrderStatus {
-        let roll: f64 = self.rng.gen();
+        let roll: f64 = self.rng.random();
         if roll < 0.50 {
             ProductionOrderStatus::Completed
         } else if roll < 0.70 {
@@ -303,14 +303,14 @@ impl ProductionOrderGenerator {
                     .to_string();
 
                 // Setup time with variation
-                let setup_variation: f64 = self.rng.gen_range(0.8..=1.2);
+                let setup_variation: f64 = self.rng.random_range(0.8..=1.2);
                 let setup_time_hours = routing.setup_time_hours * setup_variation;
 
                 // Run time based on quantity and variation
                 let base_run_hours: f64 = planned_quantity.to_f64().unwrap_or(100.0) * 0.05; // 0.05 hours per unit base
-                let run_variation: f64 = self
-                    .rng
-                    .gen_range(1.0 - routing.run_time_variation..=1.0 + routing.run_time_variation);
+                let run_variation: f64 = self.rng.random_range(
+                    1.0 - routing.run_time_variation..=1.0 + routing.run_time_variation,
+                );
                 let run_time_hours = base_run_hours * run_variation;
 
                 // Operation status depends on order status and sequence position
