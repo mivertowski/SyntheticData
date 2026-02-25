@@ -255,8 +255,13 @@ impl AmountSampler {
     /// Sample multiple amounts that sum to a target total.
     ///
     /// Useful for generating line items that must balance.
+    /// The sum of returned amounts is guaranteed to equal `total` exactly.
+    /// Every returned amount is guaranteed to be > 0 when `total > 0` and
+    /// `count * 0.01 <= total`.
     pub fn sample_summing_to(&mut self, count: usize, total: Decimal) -> Vec<Decimal> {
         use rust_decimal::prelude::ToPrimitive;
+
+        let min_amount = Decimal::new(1, 2); // 0.01
 
         if count == 0 {
             return Vec::new();
@@ -307,15 +312,43 @@ impl AmountSampler {
                 remaining -= take;
             }
 
-            // If still remaining (shouldn't happen with proper weights),
-            // absorb into the last amount as a negative value for safety
+            // If still remaining, absorb into the first non-zero amount
             if remaining > Decimal::ZERO {
-                // Re-add to first non-zero amount - this ensures sum is correct
                 for amt in amounts.iter_mut() {
                     if *amt > Decimal::ZERO {
                         *amt -= remaining;
                         break;
                     }
+                }
+            }
+        }
+
+        // Post-process: fix zero-amount lines by transferring min_amount from the
+        // largest line. This preserves the exact sum while eliminating zeros.
+        // Only attempt when total is large enough to support min_amount per line.
+        if total >= min_amount * Decimal::from(count as u32) {
+            loop {
+                // Find a zero-amount line
+                let zero_idx = amounts.iter().position(|a| *a == Decimal::ZERO);
+                let Some(zi) = zero_idx else { break };
+
+                // Find the largest amount (must be > min_amount to donate)
+                let donor = amounts
+                    .iter()
+                    .enumerate()
+                    .filter(|&(j, _)| j != zi)
+                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                    .map(|(j, _)| j);
+
+                if let Some(di) = donor {
+                    if amounts[di] > min_amount {
+                        amounts[zi] = min_amount;
+                        amounts[di] -= min_amount;
+                    } else {
+                        break; // No donor has enough headroom
+                    }
+                } else {
+                    break;
                 }
             }
         }
