@@ -99,13 +99,9 @@ fn skr04_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType
             } else if (1200..1300).contains(&number) {
                 (Asset, AccountsReceivable)
             } else if (1300..1600).contains(&number) {
-                (Asset, OtherReceivables)
-            } else if (1570..1600).contains(&number) {
-                (Asset, OtherReceivables) // VAT receivable
-            } else if (1600..1700).contains(&number) {
-                (Asset, Cash) // Kasse
-            } else if (1800..1900).contains(&number) {
-                (Asset, Cash) // Bank
+                (Asset, OtherReceivables) // includes VAT receivable (1570-1599)
+            } else if (1600..1700).contains(&number) || (1800..1900).contains(&number) {
+                (Asset, Cash) // Kasse (16xx) / Bank (18xx)
             } else if (1900..2000).contains(&number) {
                 (Asset, PrepaidExpenses)
             } else {
@@ -120,8 +116,6 @@ fn skr04_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType
                 (Equity, RetainedEarnings) // Reserves
             } else if (2900..3000).contains(&number) {
                 (Equity, OtherComprehensiveIncome) // CTA, results
-            } else if (2950..2980).contains(&number) {
-                (Equity, RetainedEarnings)
             } else {
                 (Equity, RetainedEarnings)
             }
@@ -146,10 +140,8 @@ fn skr04_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType
                 (Liability, AccruedLiabilities) // Personnel payables
             } else if (3800..3900).contains(&number) {
                 (Liability, TaxLiabilities) // VAT
-            } else if (3900..4000).contains(&number) {
-                (Liability, OtherLiabilities) // Passive accruals
             } else {
-                (Liability, OtherLiabilities)
+                (Liability, OtherLiabilities) // Passive accruals (39xx) and others
             }
         }
         4 => {
@@ -162,10 +154,8 @@ fn skr04_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType
                 (Revenue, OtherIncome) // IC revenue
             } else if (4700..4800).contains(&number) {
                 (Revenue, ProductRevenue) // Sales deductions
-            } else if (4900..5000).contains(&number) {
-                (Revenue, OtherIncome) // Other operating income
             } else {
-                (Revenue, OtherIncome)
+                (Revenue, OtherIncome) // Other operating income (49xx) and others
             }
         }
         5 => {
@@ -178,10 +168,8 @@ fn skr04_to_account_type(class: u8, number: u32) -> (AccountType, AccountSubType
                 (Expense, OperatingExpenses) // Personnel
             } else if (6200..6300).contains(&number) {
                 (Expense, DepreciationExpense) // Depreciation
-            } else if (6300..6500).contains(&number) {
-                (Expense, OperatingExpenses) // Premises, bad debt, insurance
-            } else if (6500..6600).contains(&number) {
-                (Expense, OperatingExpenses) // Vehicle costs
+            } else if (6300..6600).contains(&number) {
+                (Expense, OperatingExpenses) // Premises, insurance, vehicles (63xx-65xx)
             } else if (6600..6700).contains(&number) {
                 (Expense, SellingExpenses) // Advertising, travel
             } else if (6700..6800).contains(&number) {
