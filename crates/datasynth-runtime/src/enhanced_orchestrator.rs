@@ -5036,10 +5036,12 @@ impl EnhancedOrchestrator {
             .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
         // Generate P2P chains
+        // Cap at ~2 POs per vendor per month to keep spend concentration realistic
+        let months = (self.config.global.period_months as usize).max(1);
         let p2p_count = self
             .phase_config
             .p2p_chains
-            .min(self.master_data.vendors.len() * 2);
+            .min(self.master_data.vendors.len() * 2 * months);
         let pb = self.create_progress_bar(p2p_count as u64, "Generating P2P Document Flows");
 
         // Convert P2P config from schema to generator config
@@ -5103,10 +5105,11 @@ impl EnhancedOrchestrator {
         }
 
         // Generate O2C chains
+        // Cap at ~2 SOs per customer per month to keep order volume realistic
         let o2c_count = self
             .phase_config
             .o2c_chains
-            .min(self.master_data.customers.len() * 2);
+            .min(self.master_data.customers.len() * 2 * months);
         let pb = self.create_progress_bar(o2c_count as u64, "Generating O2C Document Flows");
 
         // Convert O2C config from schema to generator config
