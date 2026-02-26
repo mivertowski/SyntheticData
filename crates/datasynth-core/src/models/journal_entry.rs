@@ -495,6 +495,26 @@ pub struct JournalEntryLine {
     /// Project code
     #[serde(default)]
     pub project_code: Option<String>,
+
+    /// Auxiliary account number (FEC column 7: Numéro de compte auxiliaire)
+    /// Populated for AP/AR lines under French GAAP with the business partner ID.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auxiliary_account_number: Option<String>,
+
+    /// Auxiliary account label (FEC column 8: Libellé de compte auxiliaire)
+    /// Populated for AP/AR lines under French GAAP with the business partner name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auxiliary_account_label: Option<String>,
+
+    /// Lettrage code (FEC column 14: Lettrage)
+    /// Links offset postings in a completed document chain (e.g. invoice ↔ payment).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lettrage: Option<String>,
+
+    /// Lettrage date (FEC column 15: Date de lettrage)
+    /// Date when the matching was performed (typically the payment posting date).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lettrage_date: Option<NaiveDate>,
 }
 
 impl JournalEntryLine {
@@ -529,6 +549,10 @@ impl JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 
@@ -568,6 +592,10 @@ impl JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 
@@ -634,6 +662,10 @@ impl Default for JournalEntryLine {
             unit_of_measure: None,
             unit: None,
             project_code: None,
+            auxiliary_account_number: None,
+            auxiliary_account_label: None,
+            lettrage: None,
+            lettrage_date: None,
         }
     }
 }

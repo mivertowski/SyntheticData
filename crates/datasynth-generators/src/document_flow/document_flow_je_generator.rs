@@ -13,6 +13,7 @@
 //! - CustomerInvoice → DR AR, CR Revenue
 //! - CustomerReceipt → DR Cash, CR AR
 
+use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
 use datasynth_core::accounts::{
@@ -43,6 +44,9 @@ pub struct DocumentFlowJeConfig {
     pub revenue_account: String,
     /// COGS account (default: 5000 from expense_accounts::COGS)
     pub cogs_account: String,
+    /// Whether to populate FEC auxiliary and lettrage fields on AP/AR lines.
+    /// Only relevant for French GAAP / FEC export.
+    pub populate_fec_fields: bool,
 }
 
 impl Default for DocumentFlowJeConfig {
@@ -55,6 +59,24 @@ impl Default for DocumentFlowJeConfig {
             ar_account: control_accounts::AR_CONTROL.to_string(),
             revenue_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
             cogs_account: expense_accounts::COGS.to_string(),
+            populate_fec_fields: false,
+        }
+    }
+}
+
+impl DocumentFlowJeConfig {
+    /// Create a config for French GAAP (PCG) with FEC field population enabled.
+    pub fn french_gaap() -> Self {
+        use datasynth_core::pcg;
+        Self {
+            inventory_account: pcg::control_accounts::INVENTORY.to_string(),
+            gr_ir_clearing_account: pcg::control_accounts::GR_IR_CLEARING.to_string(),
+            ap_account: pcg::control_accounts::AP_CONTROL.to_string(),
+            cash_account: pcg::cash_accounts::BANK_ACCOUNT.to_string(),
+            ar_account: pcg::control_accounts::AR_CONTROL.to_string(),
+            revenue_account: pcg::revenue_accounts::PRODUCT_REVENUE.to_string(),
+            cogs_account: pcg::expense_accounts::COGS.to_string(),
+            populate_fec_fields: true,
         }
     }
 }
@@ -76,6 +98,52 @@ impl DocumentFlowJeGenerator {
         Self {
             config,
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::DocumentFlow),
+        }
+    }
+
+    /// Set auxiliary account fields on AP/AR lines when FEC population is enabled.
+    ///
+    /// Only sets the fields if `populate_fec_fields` is true and the line's
+    /// GL account matches the configured AP or AR control account.
+    fn set_auxiliary_fields(
+        &self,
+        line: &mut JournalEntryLine,
+        partner_id: &str,
+        partner_label: &str,
+    ) {
+        if !self.config.populate_fec_fields {
+            return;
+        }
+        if line.gl_account == self.config.ap_account || line.gl_account == self.config.ar_account {
+            line.auxiliary_account_number = Some(partner_id.to_string());
+            line.auxiliary_account_label = Some(partner_label.to_string());
+        }
+    }
+
+    /// Apply lettrage (matching) codes to all AP/AR lines in a set of entries.
+    ///
+    /// Only sets lettrage if `populate_fec_fields` is true. The lettrage code
+    /// is derived from the chain ID (e.g. PO or SO document ID) and the date
+    /// is typically the final payment's posting date.
+    fn apply_lettrage(
+        &self,
+        entries: &mut [JournalEntry],
+        chain_id: &str,
+        lettrage_date: NaiveDate,
+    ) {
+        if !self.config.populate_fec_fields {
+            return;
+        }
+        let code = format!("LTR-{}", &chain_id[..chain_id.len().min(8)]);
+        for entry in entries.iter_mut() {
+            for line in entry.lines.iter_mut() {
+                if line.gl_account == self.config.ap_account
+                    || line.gl_account == self.config.ar_account
+                {
+                    line.lettrage = Some(code.clone());
+                    line.lettrage_date = Some(lettrage_date);
+                }
+            }
         }
     }
 
@@ -104,6 +172,21 @@ impl DocumentFlowJeGenerator {
             }
         }
 
+        // Apply lettrage on complete P2P chains (invoice + payment both present)
+        if self.config.populate_fec_fields && chain.is_complete {
+            if let Some(ref payment) = chain.payment {
+                let posting_date = payment
+                    .header
+                    .posting_date
+                    .unwrap_or(payment.header.document_date);
+                self.apply_lettrage(
+                    &mut entries,
+                    &chain.purchase_order.header.document_id,
+                    posting_date,
+                );
+            }
+        }
+
         entries
     }
 
@@ -129,6 +212,21 @@ impl DocumentFlowJeGenerator {
         if let Some(ref receipt) = chain.customer_receipt {
             if let Some(je) = self.generate_from_ar_receipt(receipt) {
                 entries.push(je);
+            }
+        }
+
+        // Apply lettrage on complete O2C chains (invoice + receipt both present)
+        if self.config.populate_fec_fields && chain.customer_receipt.is_some() {
+            if let Some(ref receipt) = chain.customer_receipt {
+                let posting_date = receipt
+                    .header
+                    .posting_date
+                    .unwrap_or(receipt.header.document_date);
+                self.apply_lettrage(
+                    &mut entries,
+                    &chain.sales_order.header.document_id,
+                    posting_date,
+                );
             }
         }
 
@@ -241,12 +339,13 @@ impl DocumentFlowJeGenerator {
         entry.add_line(debit_line);
 
         // CR Accounts Payable
-        let credit_line = JournalEntryLine::credit(
+        let mut credit_line = JournalEntryLine::credit(
             entry.header.document_id,
             2,
             self.config.ap_account.clone(),
             invoice.payable_amount,
         );
+        self.set_auxiliary_fields(&mut credit_line, &invoice.vendor_id, &invoice.vendor_id);
         entry.add_line(credit_line);
 
         Some(entry)
@@ -283,11 +382,16 @@ impl DocumentFlowJeGenerator {
         let mut entry = JournalEntry::new(header);
 
         // DR Accounts Payable
-        let debit_line = JournalEntryLine::debit(
+        let mut debit_line = JournalEntryLine::debit(
             entry.header.document_id,
             1,
             self.config.ap_account.clone(),
             payment.amount,
+        );
+        self.set_auxiliary_fields(
+            &mut debit_line,
+            &payment.business_partner_id,
+            &payment.business_partner_id,
         );
         entry.add_line(debit_line);
 
@@ -399,12 +503,13 @@ impl DocumentFlowJeGenerator {
         let mut entry = JournalEntry::new(header);
 
         // DR Accounts Receivable
-        let debit_line = JournalEntryLine::debit(
+        let mut debit_line = JournalEntryLine::debit(
             entry.header.document_id,
             1,
             self.config.ar_account.clone(),
             invoice.total_gross_amount,
         );
+        self.set_auxiliary_fields(&mut debit_line, &invoice.customer_id, &invoice.customer_id);
         entry.add_line(debit_line);
 
         // CR Revenue
@@ -459,11 +564,16 @@ impl DocumentFlowJeGenerator {
         entry.add_line(debit_line);
 
         // CR Accounts Receivable
-        let credit_line = JournalEntryLine::credit(
+        let mut credit_line = JournalEntryLine::credit(
             entry.header.document_id,
             2,
             self.config.ar_account.clone(),
             payment.amount,
+        );
+        self.set_auxiliary_fields(
+            &mut credit_line,
+            &payment.business_partner_id,
+            &payment.business_partner_id,
         );
         entry.add_line(credit_line);
 
@@ -637,6 +747,160 @@ mod tests {
                 "Entry {} is not balanced",
                 entry.header.document_id
             );
+        }
+    }
+
+    // ====================================================================
+    // FEC compliance tests
+    // ====================================================================
+
+    #[test]
+    fn test_french_gaap_auxiliary_on_ap_ar_lines_only() {
+        // French GAAP config sets auxiliary fields on AP/AR lines only
+        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
+            DocumentFlowJeConfig::french_gaap(),
+            42,
+        );
+
+        // Vendor invoice: AP line should have auxiliary, GR/IR line should not
+        let invoice = create_test_vendor_invoice();
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // Line 1 = DR GR/IR Clearing → no auxiliary
+        assert!(
+            je.lines[0].auxiliary_account_number.is_none(),
+            "GR/IR clearing line should not have auxiliary"
+        );
+
+        // Line 2 = CR AP → has auxiliary
+        assert_eq!(
+            je.lines[1].auxiliary_account_number.as_deref(),
+            Some("V-001"),
+            "AP line should have vendor ID as auxiliary"
+        );
+        assert_eq!(
+            je.lines[1].auxiliary_account_label.as_deref(),
+            Some("V-001"),
+        );
+    }
+
+    #[test]
+    fn test_french_gaap_lettrage_on_complete_p2p_chain() {
+        use datasynth_core::models::documents::PurchaseOrder;
+
+        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
+            DocumentFlowJeConfig::french_gaap(),
+            42,
+        );
+
+        let po = PurchaseOrder::new(
+            "PO-001",
+            "1000",
+            "V-001",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 10).unwrap(),
+            "JSMITH",
+        );
+
+        let chain = P2PDocumentChain {
+            purchase_order: po,
+            goods_receipts: vec![create_test_gr()],
+            vendor_invoice: Some(create_test_vendor_invoice()),
+            payment: Some(create_test_payment()),
+            is_complete: true,
+            three_way_match_passed: true,
+            payment_timing: None,
+        };
+
+        let entries = generator.generate_from_p2p_chain(&chain);
+        assert!(!entries.is_empty());
+
+        // All AP lines should share the same lettrage code
+        let ap_account = &generator.config.ap_account;
+        let mut lettrage_codes: Vec<&str> = Vec::new();
+        for entry in &entries {
+            for line in &entry.lines {
+                if &line.gl_account == ap_account {
+                    assert!(
+                        line.lettrage.is_some(),
+                        "AP line should have lettrage on complete chain"
+                    );
+                    assert!(line.lettrage_date.is_some());
+                    lettrage_codes.push(line.lettrage.as_deref().unwrap());
+                } else {
+                    assert!(
+                        line.lettrage.is_none(),
+                        "Non-AP line should not have lettrage"
+                    );
+                }
+            }
+        }
+
+        // All AP lettrage codes should be the same
+        assert!(!lettrage_codes.is_empty());
+        assert!(
+            lettrage_codes.iter().all(|c| *c == lettrage_codes[0]),
+            "All AP lines should share the same lettrage code"
+        );
+        assert!(lettrage_codes[0].starts_with("LTR-"));
+    }
+
+    #[test]
+    fn test_incomplete_chain_has_no_lettrage() {
+        use datasynth_core::models::documents::PurchaseOrder;
+
+        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
+            DocumentFlowJeConfig::french_gaap(),
+            42,
+        );
+
+        let po = PurchaseOrder::new(
+            "PO-002",
+            "1000",
+            "V-001",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 10).unwrap(),
+            "JSMITH",
+        );
+
+        // Incomplete chain: no payment
+        let chain = P2PDocumentChain {
+            purchase_order: po,
+            goods_receipts: vec![create_test_gr()],
+            vendor_invoice: Some(create_test_vendor_invoice()),
+            payment: None,
+            is_complete: false,
+            three_way_match_passed: false,
+            payment_timing: None,
+        };
+
+        let entries = generator.generate_from_p2p_chain(&chain);
+
+        for entry in &entries {
+            for line in &entry.lines {
+                assert!(
+                    line.lettrage.is_none(),
+                    "Incomplete chain should have no lettrage"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_default_config_no_fec_fields() {
+        // Default config (non-French) should leave all FEC fields as None
+        let mut generator = DocumentFlowJeGenerator::new();
+
+        let invoice = create_test_vendor_invoice();
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        for line in &je.lines {
+            assert!(line.auxiliary_account_number.is_none());
+            assert!(line.auxiliary_account_label.is_none());
+            assert!(line.lettrage.is_none());
+            assert!(line.lettrage_date.is_none());
         }
     }
 }

@@ -5291,10 +5291,20 @@ impl EnhancedOrchestrator {
         let total_chains = flows.p2p_chains.len() + flows.o2c_chains.len();
         let pb = self.create_progress_bar(total_chains as u64, "Generating Document Flow JEs");
 
-        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
-            DocumentFlowJeConfig::default(),
-            self.seed,
-        );
+        let use_french_pcg = self.config.accounting_standards.enabled
+            && matches!(
+                self.config.accounting_standards.framework,
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
+            );
+
+        let je_config = if use_french_pcg {
+            DocumentFlowJeConfig::french_gaap()
+        } else {
+            DocumentFlowJeConfig::default()
+        };
+
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(je_config, self.seed);
         let mut entries = Vec::new();
 
         // Generate JEs from P2P chains

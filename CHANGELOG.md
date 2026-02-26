@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-02-26
+
+### Fixed
+
+- FEC export now populates columns 7-8 (auxiliary account number/label) and 14-15 (lettrage/lettrage date) on AP/AR lines for French GAAP (`datasynth-output`, `datasynth-core`)
+- Document flow JE generator populates FEC auxiliary fields with business partner ID on AP/AR lines and applies lettrage codes on completed P2P/O2C chains (`datasynth-generators`)
+- Orchestrator auto-detects French GAAP framework and uses PCG account mapping with FEC field population (`datasynth-runtime`)
+- PCG constant `FIXED_ASSETS` corrected from 215000 (installations techniques, a specific sub-class) to 210000 (immobilisations corporelles, generic class 2) (`datasynth-core`)
+- Journal entries CSV export now includes auxiliary_account_number, auxiliary_account_label, lettrage, lettrage_date columns (`datasynth-cli`)
+
 ## [0.9.0] - 2026-02-25
 
 ### Added

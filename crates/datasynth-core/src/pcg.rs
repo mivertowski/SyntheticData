@@ -32,8 +32,8 @@ pub mod control_accounts {
     /// Inventories – Class 3
     pub const INVENTORY: &str = "310000";
 
-    /// Immobilisations (Fixed assets) – Class 2
-    pub const FIXED_ASSETS: &str = "215000";
+    /// Immobilisations corporelles (Fixed assets) – Class 2
+    pub const FIXED_ASSETS: &str = "210000";
 
     /// Amortissements (Accumulated depreciation) – Class 2
     pub const ACCUMULATED_DEPRECIATION: &str = "281000";
