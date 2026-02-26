@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -21,6 +21,10 @@
 SyntheticData is a configurable synthetic data generator that produces realistic, interconnected enterprise financial data. It generates General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, audit workpapers, and ML-ready graph exports at scale.
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
+
+**v0.9.0:** ~2x performance improvement — cached temporal CDF, fast Decimal, SmallVec line items, parallel generation with deterministic seed splitting, itoa/ryu formatting, fast_csv module, and zstd CompressedWriter. Major dependency upgrades: rand 0.9, arrow/parquet 58, zip 8.
+
+**v0.8.x:** French GAAP (PCG) accounting framework with Plan Comptable Général 2024, FEC export (Article A47 A-1), and pluggable country pack architecture with runtime-loaded JSON packs (US, DE, GB built-in).
 
 **New in v0.7.0:** Four new enterprise domains — Tax Accounting (ASC 740/IAS 12 provisions, VAT/GST, withholding), Treasury & Cash Management (cash positioning, hedging with ASC 815/IFRS 9, debt covenants), Project Accounting (WBS, earned value management, PoC revenue), and ESG/Sustainability (GHG Scope 1/2/3, diversity metrics, GRI/SASB/TCFD disclosures). OCPM expanded to 12 process families with 101+ activities and 65+ object types.
 
@@ -122,7 +126,7 @@ The generator produces statistically accurate data based on empirical research f
 
 | Metric | Performance |
 |--------|-------------|
-| Single-threaded throughput | ~100,000+ entries/second |
+| Single-threaded throughput | ~200,000+ entries/second |
 | Parallel scaling | Linear with available cores |
 | Memory efficiency | Streaming generation for large volumes |
 

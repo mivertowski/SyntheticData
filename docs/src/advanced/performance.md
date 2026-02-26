@@ -6,9 +6,32 @@ Optimize SyntheticData for your hardware and requirements.
 
 | Metric | Typical Performance |
 |--------|---------------------|
-| Single-threaded | ~100,000 entries/second |
-| Parallel (8 cores) | ~600,000 entries/second |
+| Single-threaded | ~200,000 entries/second |
+| Parallel (8 cores) | ~1,200,000 entries/second |
 | Memory per 1M entries | ~500 MB |
+
+## What's New in 0.9.0
+
+Version 0.9.0 delivers ~2x single-threaded throughput through three optimization phases:
+
+**Phase 1 — Hot Path Optimization:**
+- Cached temporal CDF lookup (eliminates per-entry recomputation)
+- Fast `Decimal` construction bypassing string parsing
+- `SmallVec` for journal entry line items (avoids heap allocation for ≤4 lines)
+- Binary search company selector replacing linear scan
+- `#[inline]` annotations on hot paths
+- 256KB `BufWriter` buffers (up from 8KB default) across 86+ output sinks
+
+**Phase 2 — Parallel Generation:**
+- `ParallelGenerator` trait with deterministic seed splitting
+- Multi-core master data and journal entry generation
+- Per-partition UUID factories for collision-free parallel output
+
+**Phase 3 — I/O Optimization:**
+- `itoa`/`ryu` formatting for integer and float fields
+- `fast_csv` module for zero-allocation CSV row writing
+- zstd `CompressedWriter` for streaming compressed output
+- Optimized `CsvSink` and `JsonLinesSink` write paths
 
 ## Configuration Tuning
 

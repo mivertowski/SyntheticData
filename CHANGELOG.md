@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-25
+
+### Added
+
+- Performance Phase 1: cached temporal CDF, fast Decimal, SmallVec line items, binary search company selector, `#[inline]` hot paths, 256KB BufWriter buffers (~2x throughput)
+- Performance Phase 2: `ParallelGenerator` trait, deterministic seed splitting, multi-core master data + JE generation, per-partition UUID factories
+- Performance Phase 3: itoa/ryu formatting, `fast_csv` module, zstd `CompressedWriter`, `CsvSink`/`JsonLinesSink` write optimization
+- 14 parallel coherence verification tests
+- Performance analysis documentation (`docs/performance-improvements.md`)
+
+### Changed
+
+- BufWriter default 8KB to 256KB across 86+ output sinks
+- Single-threaded throughput ~100K to ~200K entries/sec
+
+### Fixed
+
+- Banking spoofing test resilience to RNG sequence changes
+- Zero-amount line in `sample_summing_to` with sum-preserving transfer
+
+### Dependencies
+
+- arrow/parquet 54 to 58, zip 2 to 8
+- rand 0.8 to 0.9, rand_chacha 0.3 to 0.9, rand_distr 0.4 to 0.5
+- jsonwebtoken 9 to 10, redis 0.27 to 1.0, axum-server 0.7 to 0.8, indicatif 0.17 to 0.18
+
 ## [0.8.1] - 2026-02-20
 
 ### Added

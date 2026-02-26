@@ -756,7 +756,7 @@ output/
 
 | Metric | Performance |
 |--------|-------------|
-| Single-threaded throughput | ~100,000+ entries/second |
+| Single-threaded throughput | ~200,000+ entries/second |
 | Parallel scaling | Linear with available cores |
 | Memory efficiency | Streaming generation for large volumes |
 

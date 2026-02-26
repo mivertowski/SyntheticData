@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datasynth-py"
-version = "1.3.0"
+version = "1.5.0"
 description = "Python wrapper for DataSynth synthetic data generation"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -10,6 +10,7 @@
 - [Installation](getting-started/installation.md)
 - [Quick Start](getting-started/quick-start.md)
 - [Demo Mode](getting-started/demo-mode.md)
+- [Changelog](changelog.md)
 
 ---
 

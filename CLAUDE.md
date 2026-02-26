@@ -481,7 +481,7 @@ cross_process_links:
 
 ## Performance
 
-~100K+ entries/second single-threaded, scales with cores, memory-efficient streaming
+~200K+ entries/second single-threaded, scales with cores, memory-efficient streaming
 
 ## Python Wrapper
 

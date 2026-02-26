@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 (2026-02-25)
+
+### Changed
+
+- Bumped version to 1.5.0 to match Rust v0.9.0 (performance optimizations + dependency upgrades)
+- Rust engine now ~2x faster single-threaded throughput with parallel generation support
+- Updated dependencies: rand 0.9, arrow/parquet 58, zip 8
+
 ## 1.4.0 (2026-02-18)
 
 ### Added
