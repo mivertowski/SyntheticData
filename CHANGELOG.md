@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Orchestrator auto-detects French GAAP framework and uses PCG account mapping with FEC field population (`datasynth-runtime`)
 - PCG constant `FIXED_ASSETS` corrected from 215000 (installations techniques, a specific sub-class) to 210000 (immobilisations corporelles, generic class 2) (`datasynth-core`)
 - Journal entries CSV export now includes auxiliary_account_number, auxiliary_account_label, lettrage, lettrage_date columns (`datasynth-cli`)
+- P2P/O2C document flow chain caps now scale with `period_months` — previously capped at `partners × 2` regardless of period length, now `partners × 2 × period_months` (`datasynth-runtime`)
 
 ## [0.9.0] - 2026-02-25
 
