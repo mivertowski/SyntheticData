@@ -384,6 +384,11 @@ pub struct Vendor {
     /// Reconciliation account in GL
     pub reconciliation_account: Option<String>,
 
+    /// Auxiliary GL sub-account for French PCG / German SKR04 frameworks.
+    /// French: 401XXXX, German: AP_CONTROL + counter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auxiliary_gl_account: Option<String>,
+
     /// Withholding tax applicable
     pub withholding_tax_applicable: bool,
 
@@ -417,6 +422,7 @@ impl Vendor {
             behavior: VendorBehavior::default(),
             currency: "USD".to_string(),
             reconciliation_account: None,
+            auxiliary_gl_account: None,
             withholding_tax_applicable: false,
             withholding_tax_rate: None,
             is_one_time: false,
@@ -601,6 +607,11 @@ pub struct Customer {
     /// Reconciliation account in GL
     pub reconciliation_account: Option<String>,
 
+    /// Auxiliary GL sub-account for French PCG / German SKR04 frameworks.
+    /// French: 411XXXX, German: AR_CONTROL + counter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auxiliary_gl_account: Option<String>,
+
     /// Sales organization
     pub sales_org: Option<String>,
 
@@ -647,6 +658,7 @@ impl Customer {
             intercompany_code: None,
             currency: "USD".to_string(),
             reconciliation_account: None,
+            auxiliary_gl_account: None,
             sales_org: None,
             distribution_channel: None,
             tax_id: None,

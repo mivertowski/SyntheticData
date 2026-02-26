@@ -49,6 +49,17 @@ pub enum AccountingFramework {
     /// - Impairment reversal permitted under French rules
     /// - Principles-based lease classification (convergent with IFRS 16 for many entities)
     FrenchGaap,
+
+    /// German GAAP (Handelsgesetzbuch – HGB, §238-263).
+    ///
+    /// German statutory accounting framework:
+    /// - SKR04 chart of accounts (classes 0–9, Abschlussgliederungsprinzip)
+    /// - LIFO prohibited since BilMoG 2009
+    /// - Mandatory impairment reversal (§253(5) HGB)
+    /// - Operating leases remain off-balance (BMF-Leasingerlasse)
+    /// - Pending loss provisions mandatory (§249(1) HGB)
+    /// - Low-value assets (GWG) immediate expensing ≤800 EUR
+    GermanGaap,
 }
 
 impl AccountingFramework {
@@ -59,6 +70,7 @@ impl AccountingFramework {
             Self::Ifrs => "IFRS 15",
             Self::DualReporting => "ASC 606 / IFRS 15",
             Self::FrenchGaap => "PCG / ANC (IFRS 15 aligned)",
+            Self::GermanGaap => "HGB §277 / BilRUG",
         }
     }
 
@@ -69,6 +81,7 @@ impl AccountingFramework {
             Self::Ifrs => "IFRS 16",
             Self::DualReporting => "ASC 842 / IFRS 16",
             Self::FrenchGaap => "PCG / ANC (IFRS 16 aligned)",
+            Self::GermanGaap => "HGB / BMF-Leasingerlasse",
         }
     }
 
@@ -79,6 +92,7 @@ impl AccountingFramework {
             Self::Ifrs => "IFRS 13",
             Self::DualReporting => "ASC 820 / IFRS 13",
             Self::FrenchGaap => "PCG / ANC (IFRS 13 aligned)",
+            Self::GermanGaap => "HGB §253 / IDW RS HFA 10",
         }
     }
 
@@ -89,6 +103,7 @@ impl AccountingFramework {
             Self::Ifrs => "IAS 36",
             Self::DualReporting => "ASC 360 / IAS 36",
             Self::FrenchGaap => "PCG / ANC (IAS 36 aligned)",
+            Self::GermanGaap => "HGB §253(3)-(5)",
         }
     }
 
@@ -100,21 +115,51 @@ impl AccountingFramework {
     /// Returns whether development cost capitalization is required.
     pub fn requires_development_capitalization(&self) -> bool {
         matches!(self, Self::Ifrs | Self::DualReporting | Self::FrenchGaap)
+        // GermanGaap: §248(2) optional, not required
     }
 
     /// Returns whether PPE revaluation above cost is permitted.
     pub fn allows_ppe_revaluation(&self) -> bool {
         matches!(self, Self::Ifrs | Self::DualReporting)
+        // GermanGaap: not permitted (strict Anschaffungskostenprinzip)
     }
 
     /// Returns whether impairment loss reversal is permitted.
     pub fn allows_impairment_reversal(&self) -> bool {
-        matches!(self, Self::Ifrs | Self::DualReporting | Self::FrenchGaap)
+        matches!(
+            self,
+            Self::Ifrs | Self::DualReporting | Self::FrenchGaap | Self::GermanGaap
+        )
+        // GermanGaap: mandatory reversal per §253(5) HGB
     }
 
     /// Returns whether this framework uses bright-line lease tests.
     pub fn uses_brightline_lease_tests(&self) -> bool {
         matches!(self, Self::UsGaap)
+    }
+
+    /// Returns whether pending loss provisions are mandatory.
+    ///
+    /// Under HGB §249(1), provisions for pending losses (drohende Verluste
+    /// aus schwebenden Geschäften) are mandatory.
+    pub fn requires_pending_loss_provisions(&self) -> bool {
+        matches!(self, Self::GermanGaap)
+    }
+
+    /// Returns whether low-value assets can be immediately expensed.
+    ///
+    /// Under HGB / EStG §6(2), assets with acquisition cost ≤ 800 EUR
+    /// (GWG — geringwertige Wirtschaftsgüter) can be fully expensed.
+    pub fn allows_low_value_asset_expensing(&self) -> bool {
+        matches!(self, Self::GermanGaap)
+    }
+
+    /// Returns whether operating leases remain off-balance sheet.
+    ///
+    /// Under HGB with BMF-Leasingerlasse, the economic owner (usually lessor)
+    /// keeps the asset on their balance sheet for operating leases.
+    pub fn operating_leases_off_balance(&self) -> bool {
+        matches!(self, Self::GermanGaap)
     }
 }
 
@@ -125,6 +170,7 @@ impl std::fmt::Display for AccountingFramework {
             Self::Ifrs => write!(f, "IFRS"),
             Self::DualReporting => write!(f, "Dual Reporting (US GAAP & IFRS)"),
             Self::FrenchGaap => write!(f, "French GAAP (PCG)"),
+            Self::GermanGaap => write!(f, "German GAAP (HGB)"),
         }
     }
 }
@@ -273,13 +319,27 @@ impl FrameworkSettings {
         }
     }
 
+    /// Create settings for German GAAP (Handelsgesetzbuch — HGB).
+    pub fn german_gaap() -> Self {
+        Self {
+            framework: AccountingFramework::GermanGaap,
+            use_lifo_inventory: false, // LIFO prohibited since BilMoG 2009
+            capitalize_development_costs: false, // §248(2) optional, most companies expense
+            use_ppe_revaluation: false, // Strict Anschaffungskostenprinzip
+            allow_impairment_reversal: true, // Mandatory per §253(5) HGB
+            ..Default::default()
+        }
+    }
+
     /// Validate settings are consistent with the selected framework.
     pub fn validate(&self) -> Result<(), FrameworkValidationError> {
-        // LIFO is only permitted under US GAAP (prohibited under IFRS and French GAAP)
+        // LIFO is only permitted under US GAAP (prohibited under IFRS, French GAAP, and German GAAP)
         if self.use_lifo_inventory
             && matches!(
                 self.framework,
-                AccountingFramework::Ifrs | AccountingFramework::FrenchGaap
+                AccountingFramework::Ifrs
+                    | AccountingFramework::FrenchGaap
+                    | AccountingFramework::GermanGaap
             )
         {
             return Err(FrameworkValidationError::LifoNotPermittedUnderIfrs);
@@ -447,6 +507,64 @@ mod tests {
         let settings = FrameworkSettings::french_gaap();
         assert!(settings.validate().is_ok());
         assert_eq!(settings.framework, AccountingFramework::FrenchGaap);
+    }
+
+    #[test]
+    fn test_german_gaap_standards() {
+        let fw = AccountingFramework::GermanGaap;
+        assert_eq!(fw.revenue_standard(), "HGB §277 / BilRUG");
+        assert_eq!(fw.lease_standard(), "HGB / BMF-Leasingerlasse");
+        assert_eq!(fw.fair_value_standard(), "HGB §253 / IDW RS HFA 10");
+        assert_eq!(fw.impairment_standard(), "HGB §253(3)-(5)");
+    }
+
+    #[test]
+    fn test_german_gaap_features() {
+        let fw = AccountingFramework::GermanGaap;
+        assert!(!fw.allows_lifo(), "LIFO prohibited under HGB since BilMoG");
+        assert!(
+            !fw.allows_ppe_revaluation(),
+            "Strict Anschaffungskostenprinzip"
+        );
+        assert!(fw.allows_impairment_reversal(), "Mandatory per §253(5)");
+        assert!(!fw.uses_brightline_lease_tests(), "BMF uses 40-90% test");
+        assert!(fw.requires_pending_loss_provisions(), "§249(1) HGB");
+        assert!(fw.allows_low_value_asset_expensing(), "GWG ≤ 800 EUR");
+        assert!(fw.operating_leases_off_balance(), "BMF-Leasingerlasse");
+        assert!(
+            !fw.requires_development_capitalization(),
+            "§248(2) optional"
+        );
+    }
+
+    #[test]
+    fn test_german_gaap_settings() {
+        let settings = FrameworkSettings::german_gaap();
+        assert!(settings.validate().is_ok());
+        assert_eq!(settings.framework, AccountingFramework::GermanGaap);
+        assert!(!settings.use_lifo_inventory);
+        assert!(!settings.capitalize_development_costs);
+        assert!(!settings.use_ppe_revaluation);
+        assert!(settings.allow_impairment_reversal);
+    }
+
+    #[test]
+    fn test_german_gaap_lifo_validation_fails() {
+        let mut settings = FrameworkSettings::german_gaap();
+        settings.use_lifo_inventory = true;
+        assert!(matches!(
+            settings.validate(),
+            Err(FrameworkValidationError::LifoNotPermittedUnderIfrs)
+        ));
+    }
+
+    #[test]
+    fn test_german_gaap_serde_roundtrip() {
+        let framework = AccountingFramework::GermanGaap;
+        let json = serde_json::to_string(&framework).unwrap();
+        assert_eq!(json, "\"german_gaap\"");
+        let deserialized: AccountingFramework = serde_json::from_str(&json).unwrap();
+        assert_eq!(framework, deserialized);
     }
 
     #[test]

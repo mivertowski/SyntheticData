@@ -129,7 +129,10 @@ impl ImpairmentTest {
             AccountingFramework::UsGaap => self.perform_us_gaap_test(),
             AccountingFramework::Ifrs
             | AccountingFramework::DualReporting
-            | AccountingFramework::FrenchGaap => self.perform_ifrs_test(),
+            | AccountingFramework::FrenchGaap
+            | AccountingFramework::GermanGaap => self.perform_ifrs_test(),
+            // GermanGaap: mandatory reversal per §253(5) — uses IFRS-style test
+            // with mandatory reversal (handled downstream by allows_impairment_reversal)
         }
     }
 
@@ -510,6 +513,55 @@ mod tests {
         assert_eq!(test.recoverable_amount, dec!(380000));
         assert_eq!(test.impairment_loss, dec!(120000)); // 500000 - 380000
         assert_eq!(test.test_result, ImpairmentTestResult::Impaired);
+    }
+
+    #[test]
+    fn test_german_gaap_impairment() {
+        // GermanGaap uses IFRS-style one-step test (IAS 36 aligned)
+        // with mandatory impairment reversal per §253(5)
+        let mut test = ImpairmentTest::new(
+            "DE01",
+            "FA001",
+            "Industriemaschine",
+            ImpairmentAssetType::PropertyPlantEquipment,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            dec!(500000),
+            AccountingFramework::GermanGaap,
+        );
+
+        test.fair_value_less_costs = dec!(300000);
+        test.value_in_use = dec!(350000);
+        test.perform_test();
+
+        // One-step: recoverable = max(300000, 350000) = 350000
+        assert_eq!(test.recoverable_amount, dec!(350000));
+        assert_eq!(test.impairment_loss, dec!(150000));
+        assert_eq!(test.test_result, ImpairmentTestResult::Impaired);
+
+        // Framework allows impairment reversal (mandatory per §253(5))
+        assert!(AccountingFramework::GermanGaap.allows_impairment_reversal());
+    }
+
+    #[test]
+    fn test_german_gaap_goodwill_impairment() {
+        // Under HGB, goodwill is amortized (unlike IFRS where it's tested annually)
+        // but impairment testing still applies
+        let mut test = ImpairmentTest::new(
+            "DE01",
+            "GW001",
+            "Geschäftswert",
+            ImpairmentAssetType::Goodwill,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            dec!(200000),
+            AccountingFramework::GermanGaap,
+        );
+
+        test.fair_value_less_costs = dec!(150000);
+        test.value_in_use = dec!(160000);
+        test.perform_test();
+
+        assert_eq!(test.recoverable_amount, dec!(160000));
+        assert_eq!(test.impairment_loss, dec!(40000));
     }
 
     #[test]

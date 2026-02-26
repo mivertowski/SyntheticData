@@ -232,6 +232,7 @@ impl Lease {
                 self.classify_us_gaap();
             }
             AccountingFramework::FrenchGaap => self.classify_french_gaap(),
+            AccountingFramework::GermanGaap => self.classify_german_gaap(),
         }
     }
 
@@ -244,6 +245,37 @@ impl Lease {
     /// returning `false` for `uses_brightline_lease_tests()`.
     fn classify_french_gaap(&mut self) {
         self.classify_ifrs();
+    }
+
+    /// German GAAP lease classification (BMF-Leasingerlasse).
+    ///
+    /// Under HGB, operating leases remain off-balance sheet.
+    /// The 40%-90% economic life test from the BMF circulars determines
+    /// classification. Most leases are classified as operating under HGB.
+    fn classify_german_gaap(&mut self) {
+        // HGB uses a simpler test based on BMF-Leasingerlasse:
+        // Finance lease only if lease term covers 40%-90% of economic life
+        // AND lessee bears substantially all risks.
+        // Default: classify as operating (off-balance) unless clearly finance.
+        let term_ratio = if self.economic_life_months > 0 {
+            self.lease_term_months as f64 / self.economic_life_months as f64
+        } else {
+            0.0
+        };
+
+        if term_ratio >= 0.90 || term_ratio <= 0.40 {
+            // Outside 40-90% range: classified based on economic ownership
+            // ≥90%: essentially purchased → finance lease
+            // ≤40%: short-term, usually operating but check other criteria
+            if term_ratio >= 0.90 {
+                self.classification = LeaseClassification::Finance;
+            } else {
+                self.classification = LeaseClassification::Operating;
+            }
+        } else {
+            // Within 40-90%: additional criteria needed, default operating
+            self.classification = LeaseClassification::Operating;
+        }
     }
 
     /// US GAAP classification using bright-line tests (ASC 842).
@@ -1017,6 +1049,75 @@ mod tests {
             Decimal::ZERO,
             "ROU asset should not go below zero when incentives exceed other components"
         );
+    }
+
+    #[test]
+    fn test_german_gaap_lease_classification_operating() {
+        // Under HGB/BMF: 24/120 = 20%, within 40-90% rule → additional criteria, default operating
+        let lease = Lease::new(
+            "DE01",
+            "Siemens Leasing",
+            "Büroausstattung",
+            LeaseAssetClass::Equipment,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            60,        // 5 years
+            dec!(800), // monthly payment
+            PaymentFrequency::Monthly,
+            dec!(0.04),
+            dec!(200000), // fair value
+            120,          // 10 year economic life
+            AccountingFramework::GermanGaap,
+        );
+
+        // 60/120 = 50%, within 40-90% → operating by default
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+    }
+
+    #[test]
+    fn test_german_gaap_lease_classification_finance() {
+        // Under HGB/BMF: 108/120 = 90% → finance lease (essentially purchased)
+        let lease = Lease::new(
+            "DE01",
+            "Deutsche Leasing",
+            "Produktionsanlage",
+            LeaseAssetClass::Equipment,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            108,        // 9 years
+            dec!(2000), // monthly payment
+            PaymentFrequency::Monthly,
+            dec!(0.04),
+            dec!(300000), // fair value
+            120,          // 10 year economic life
+            AccountingFramework::GermanGaap,
+        );
+
+        // 108/120 = 90% → ≥ 90% → finance lease
+        assert_eq!(lease.classification, LeaseClassification::Finance);
+    }
+
+    #[test]
+    fn test_german_gaap_short_term_operating() {
+        // Under HGB/BMF: 36/120 = 30% → ≤ 40% → operating
+        let lease = Lease::new(
+            "DE01",
+            "Leasing GmbH",
+            "Firmenwagen",
+            LeaseAssetClass::Vehicles,
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            36,        // 3 years
+            dec!(500), // monthly payment
+            PaymentFrequency::Monthly,
+            dec!(0.04),
+            dec!(50000), // fair value
+            120,         // 10 year economic life
+            AccountingFramework::GermanGaap,
+        );
+
+        // 36/120 = 30% → ≤ 40% → operating
+        assert_eq!(lease.classification, LeaseClassification::Operating);
+
+        // Verify HGB operating leases are off-balance
+        assert!(AccountingFramework::GermanGaap.operating_leases_off_balance());
     }
 
     #[test]

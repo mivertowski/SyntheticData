@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.8.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.9.1}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -401,6 +401,15 @@ Accounting (US GAAP) &
 Accounting (IFRS) &
   IFRS 15 (Revenue), IFRS 16 (Leases --- enhanced ROU measurement),
   IFRS 13 (Fair Value), IAS 36 (Impairment) \\
+Accounting (French GAAP) &
+  Plan Comptable G\'{e}n\'{e}ral 2024 (PCG) chart of accounts,
+  FEC export (Article A47 A-1, 18 columns),
+  auxiliary GL sub-accounts (401/411 series) \\
+Accounting (German GAAP) &
+  HGB \S\S{}238--263, SKR04 chart of accounts (classes 0--9),
+  GoBD audit export (13-column journal + XML index),
+  Degressiv depreciation (EStG \S{}7(2)),
+  GWG low-value asset expensing (\S{}6(2), $\leq$800\,EUR) \\
 Audit Standards &
   34 ISA standards (ISA 200--720), 19+ PCAOB standards with ISA mapping \\
 Regulatory &
@@ -413,7 +422,9 @@ Regulatory &
 \vspace{0.3em}
 \noindent
 Supports dual reporting mode (US GAAP + IFRS) with automatic framework
-difference reconciliation.
+difference reconciliation. A generalized \texttt{FrameworkAccounts} struct maps
+${\sim}45$ semantic account purposes to framework-specific GL codes, enabling
+consistent multi-GAAP data generation with a single code path per framework.
 
 \subsection{Process Mining (OCEL 2.0 \& XES 2.0)}
 
@@ -1194,7 +1205,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.8.0 \textbullet{}
+  DataSynth v0.9.1 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]

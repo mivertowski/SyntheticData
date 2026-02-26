@@ -717,7 +717,7 @@ class AccountingStandardsConfig:
     """
 
     enabled: bool = False
-    framework: Optional[str] = None  # us_gaap, ifrs, dual_reporting, french_gaap; None = country pack default
+    framework: Optional[str] = None  # us_gaap, ifrs, dual_reporting, french_gaap, german_gaap; None = country pack default
     revenue_recognition: Optional[RevenueRecognitionConfig] = None
     leases: Optional[LeaseAccountingConfig] = None
     fair_value: Optional[FairValueConfig] = None

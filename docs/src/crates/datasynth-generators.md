@@ -24,7 +24,7 @@ Data generators for journal entries, master data, document flows, and anomalies.
 | Generator | Description |
 |-----------|-------------|
 | `je_generator` | Journal entry generation with statistical distributions |
-| `coa_generator` | Chart of accounts with industry-specific structures |
+| `coa_generator` | Chart of accounts with industry-specific structures; `CoAFramework` enum dispatches US GAAP / French PCG / German SKR04 |
 | `company_selector` | Weighted company selection for transactions |
 | `user_generator` | User/persona generation with roles |
 | `control_generator` | Internal controls and SoD rules |
@@ -36,7 +36,7 @@ Data generators for journal entries, master data, document flows, and anomalies.
 | `vendor_generator` | Vendors with payment terms, bank accounts, behaviors |
 | `customer_generator` | Customers with credit ratings, payment patterns |
 | `material_generator` | Materials/products with BOM, valuations |
-| `asset_generator` | Fixed assets with depreciation schedules |
+| `asset_generator` | Fixed assets with depreciation schedules; German GWG expensing, Degressiv method, AfA-Tabellen useful lives |
 | `employee_generator` | Employees with manager hierarchy |
 | `entity_registry_manager` | Central entity registry with temporal validity |
 
@@ -47,7 +47,7 @@ Data generators for journal entries, master data, document flows, and anomalies.
 | `p2p_generator` | PO → GR → Invoice → Payment flow |
 | `o2c_generator` | SO → Delivery → Invoice → Receipt flow |
 | `document_chain_manager` | Reference chain management |
-| `document_flow_je_generator` | Generate JEs from document flows |
+| `document_flow_je_generator` | Generate JEs from document flows; framework-aware auxiliary GL account lookup for FEC/GoBD |
 | `three_way_match` | PO/GR/Invoice matching validation |
 
 ### Intercompany (`intercompany/`)

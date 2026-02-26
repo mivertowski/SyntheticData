@@ -11,6 +11,8 @@ use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use tracing::debug;
 
+use crate::coa_generator::CoAFramework;
+
 /// Configuration for asset generation.
 #[derive(Debug, Clone)]
 pub struct AssetGeneratorConfig {
@@ -167,6 +169,7 @@ pub struct AssetGenerator {
     seed: u64,
     config: AssetGeneratorConfig,
     asset_counter: usize,
+    coa_framework: CoAFramework,
 }
 
 impl AssetGenerator {
@@ -182,7 +185,13 @@ impl AssetGenerator {
             seed,
             config,
             asset_counter: 0,
+            coa_framework: CoAFramework::UsGaap,
         }
+    }
+
+    /// Set the accounting framework for framework-aware asset generation.
+    pub fn set_coa_framework(&mut self, framework: CoAFramework) {
+        self.coa_framework = framework;
     }
 
     /// Generate a single fixed asset.
@@ -206,13 +215,25 @@ impl AssetGenerator {
             self.generate_acquisition_cost(),
         );
 
-        // Set depreciation parameters
-        asset.depreciation_method = self.select_depreciation_method(&asset_class);
-        asset.useful_life_months = self.get_useful_life(&asset_class);
-        asset.salvage_value = (asset.acquisition_cost
-            * Decimal::from_f64_retain(self.config.salvage_value_percent)
-                .unwrap_or(Decimal::from_f64_retain(0.05).expect("valid decimal literal")))
-        .round_dp(2);
+        // GWG check: German GAAP immediate expensing for assets ≤ 800 EUR
+        let is_gwg = self.coa_framework == CoAFramework::GermanSkr04
+            && asset.acquisition_cost <= Decimal::from(800)
+            && asset_class.is_depreciable();
+
+        if is_gwg {
+            asset.is_gwg = Some(true);
+            asset.depreciation_method = DepreciationMethod::ImmediateExpense;
+            asset.useful_life_months = 1;
+            asset.salvage_value = Decimal::ZERO;
+        } else {
+            // Set depreciation parameters
+            asset.depreciation_method = self.select_depreciation_method(&asset_class);
+            asset.useful_life_months = self.get_useful_life(&asset_class);
+            asset.salvage_value = (asset.acquisition_cost
+                * Decimal::from_f64_retain(self.config.salvage_value_percent)
+                    .unwrap_or(Decimal::from_f64_retain(0.05).expect("valid decimal literal")))
+            .round_dp(2);
+        }
 
         // Set account determination
         asset.account_determination = self.generate_account_determination(&asset_class);
@@ -428,6 +449,16 @@ impl AssetGenerator {
             return DepreciationMethod::StraightLine; // Won't be used but needs a value
         }
 
+        // German GAAP: use Degressiv instead of DDB/MACRS, with higher SL proportion
+        if self.coa_framework == CoAFramework::GermanSkr04 {
+            let roll: f64 = self.rng.random();
+            return if roll < 0.75 {
+                DepreciationMethod::StraightLine
+            } else {
+                DepreciationMethod::Degressiv
+            };
+        }
+
         let roll: f64 = self.rng.random();
         let mut cumulative = 0.0;
 
@@ -443,6 +474,11 @@ impl AssetGenerator {
 
     /// Get useful life for asset class.
     fn get_useful_life(&self, asset_class: &AssetClass) -> u32 {
+        // German GAAP: use AfA-Tabellen defaults
+        if self.coa_framework == CoAFramework::GermanSkr04 {
+            return self.get_useful_life_german(asset_class);
+        }
+
         for (class, months) in &self.config.useful_life_by_class {
             if class == asset_class {
                 return *months;
@@ -464,6 +500,14 @@ impl AssetGenerator {
 
     /// Generate acquisition cost.
     fn generate_acquisition_cost(&mut self) -> Decimal {
+        // German GAAP: ~15% of assets are GWG-eligible (≤ 800 EUR)
+        if self.coa_framework == CoAFramework::GermanSkr04 && self.rng.random::<f64>() < 0.15 {
+            let gwg_cost = Decimal::from(100)
+                + Decimal::from_f64_retain(self.rng.random::<f64>() * 700.0)
+                    .unwrap_or(Decimal::ZERO);
+            return gwg_cost.round_dp(2);
+        }
+
         let min = self.config.acquisition_cost_range.0;
         let max = self.config.acquisition_cost_range.1;
         let range = (max - min).to_string().parse::<f64>().unwrap_or(0.0);
@@ -629,6 +673,21 @@ impl AssetGenerator {
         }
     }
 
+    /// Generate German useful life based on AfA-Tabellen defaults.
+    fn get_useful_life_german(&self, asset_class: &AssetClass) -> u32 {
+        match asset_class {
+            AssetClass::Buildings | AssetClass::BuildingImprovements => 396, // 33 years (AfA §7(4))
+            AssetClass::Machinery | AssetClass::MachineryEquipment => 120,   // 10 years
+            AssetClass::Vehicles => 72,                                      // 6 years
+            AssetClass::Furniture | AssetClass::FurnitureFixtures => 156,    // 13 years
+            AssetClass::ItEquipment | AssetClass::ComputerHardware => 36,    // 3 years (digital)
+            AssetClass::Software | AssetClass::Intangibles => 36,            // 3 years (digital)
+            AssetClass::LeaseholdImprovements => 120,                        // 10 years
+            AssetClass::Land | AssetClass::ConstructionInProgress => 0,
+            AssetClass::LowValueAssets => 12,
+        }
+    }
+
     /// Reset the generator.
     pub fn reset(&mut self) {
         self.rng = seeded_rng(self.seed, 0);
@@ -748,6 +807,78 @@ mod tests {
 
         assert!(asset.accumulated_depreciation > Decimal::ZERO);
         assert!(asset.net_book_value < initial_nbv);
+    }
+
+    #[test]
+    fn test_german_gwg_assets() {
+        let mut gen = AssetGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::GermanSkr04);
+
+        let mut gwg_count = 0;
+        for _ in 0..200 {
+            let asset = gen.generate_asset("DE01", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            if asset.is_gwg == Some(true) {
+                gwg_count += 1;
+                assert!(asset.acquisition_cost <= Decimal::from(800));
+                assert_eq!(
+                    asset.depreciation_method,
+                    DepreciationMethod::ImmediateExpense
+                );
+                assert_eq!(asset.useful_life_months, 1);
+                assert_eq!(asset.salvage_value, Decimal::ZERO);
+            }
+        }
+        // Should have some GWG assets (~15% of the ~15% that get low cost)
+        assert!(gwg_count > 0, "Expected at least one GWG asset");
+    }
+
+    #[test]
+    fn test_german_depreciation_methods() {
+        let mut gen = AssetGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::GermanSkr04);
+
+        let mut sl_count = 0;
+        let mut degressiv_count = 0;
+        let mut immediate_count = 0;
+        for _ in 0..200 {
+            let asset = gen.generate_asset("DE01", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            match asset.depreciation_method {
+                DepreciationMethod::StraightLine => sl_count += 1,
+                DepreciationMethod::Degressiv => degressiv_count += 1,
+                DepreciationMethod::ImmediateExpense => immediate_count += 1,
+                other => panic!("Unexpected German depreciation method: {:?}", other),
+            }
+        }
+        // Should have a mix: mostly SL, some Degressiv, some ImmediateExpense (GWG)
+        assert!(sl_count > 0, "Expected some straight-line assets");
+        assert!(degressiv_count > 0, "Expected some Degressiv assets");
+        assert!(
+            immediate_count > 0,
+            "Expected some GWG immediate expense assets"
+        );
+        // No MACRS or DDB under German GAAP
+    }
+
+    #[test]
+    fn test_german_useful_life_afa() {
+        let mut gen = AssetGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::GermanSkr04);
+
+        let vehicle = gen.generate_asset_of_class(
+            AssetClass::Vehicles,
+            "DE01",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+        );
+        // German AfA: vehicles = 72 months (6 years)
+        assert_eq!(vehicle.useful_life_months, 72);
+
+        let building = gen.generate_asset_of_class(
+            AssetClass::Buildings,
+            "DE01",
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+        );
+        // German AfA: buildings = 396 months (33 years)
+        assert_eq!(building.useful_life_months, 396);
     }
 
     #[test]

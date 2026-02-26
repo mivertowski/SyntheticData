@@ -13,6 +13,8 @@
 //! - CustomerInvoice → DR AR, CR Revenue
 //! - CustomerReceipt → DR Cash, CR AR
 
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
@@ -81,10 +83,30 @@ impl DocumentFlowJeConfig {
     }
 }
 
+impl From<&datasynth_core::FrameworkAccounts> for DocumentFlowJeConfig {
+    fn from(fa: &datasynth_core::FrameworkAccounts) -> Self {
+        Self {
+            inventory_account: fa.inventory.clone(),
+            gr_ir_clearing_account: fa.gr_ir_clearing.clone(),
+            ap_account: fa.ap_control.clone(),
+            cash_account: fa.bank_account.clone(),
+            ar_account: fa.ar_control.clone(),
+            revenue_account: fa.product_revenue.clone(),
+            cogs_account: fa.cogs.clone(),
+            populate_fec_fields: fa.audit_export.fec_enabled,
+        }
+    }
+}
+
 /// Generator for creating JEs from document flows.
 pub struct DocumentFlowJeGenerator {
     config: DocumentFlowJeConfig,
     uuid_factory: DeterministicUuidFactory,
+    /// Lookup map: partner_id → auxiliary GL account number.
+    /// When populated (from vendor/customer master data), `set_auxiliary_fields`
+    /// uses the framework-specific auxiliary account (e.g., PCG "4010001", SKR04 "33000001")
+    /// instead of the raw partner ID.
+    auxiliary_account_lookup: HashMap<String, String>,
 }
 
 impl DocumentFlowJeGenerator {
@@ -98,13 +120,27 @@ impl DocumentFlowJeGenerator {
         Self {
             config,
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::DocumentFlow),
+            auxiliary_account_lookup: HashMap::new(),
         }
+    }
+
+    /// Set the auxiliary account lookup map (partner_id → auxiliary GL account).
+    ///
+    /// When populated, FEC `auxiliary_account_number` fields will use the
+    /// framework-specific auxiliary GL account (e.g., PCG "4010001") instead
+    /// of the raw partner ID.
+    pub fn set_auxiliary_account_lookup(&mut self, lookup: HashMap<String, String>) {
+        self.auxiliary_account_lookup = lookup;
     }
 
     /// Set auxiliary account fields on AP/AR lines when FEC population is enabled.
     ///
     /// Only sets the fields if `populate_fec_fields` is true and the line's
     /// GL account matches the configured AP or AR control account.
+    ///
+    /// When an auxiliary account lookup is available, uses the framework-specific
+    /// auxiliary GL account (e.g., PCG "4010001", SKR04 "33000001") instead of
+    /// the raw partner ID.
     fn set_auxiliary_fields(
         &self,
         line: &mut JournalEntryLine,
@@ -115,7 +151,14 @@ impl DocumentFlowJeGenerator {
             return;
         }
         if line.gl_account == self.config.ap_account || line.gl_account == self.config.ar_account {
-            line.auxiliary_account_number = Some(partner_id.to_string());
+            // Prefer the framework-specific auxiliary GL account from the lookup map;
+            // fall back to the raw partner ID if not found.
+            let aux_account = self
+                .auxiliary_account_lookup
+                .get(partner_id)
+                .cloned()
+                .unwrap_or_else(|| partner_id.to_string());
+            line.auxiliary_account_number = Some(aux_account);
             line.auxiliary_account_label = Some(partner_label.to_string());
         }
     }
@@ -757,10 +800,8 @@ mod tests {
     #[test]
     fn test_french_gaap_auxiliary_on_ap_ar_lines_only() {
         // French GAAP config sets auxiliary fields on AP/AR lines only
-        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
-            DocumentFlowJeConfig::french_gaap(),
-            42,
-        );
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
 
         // Vendor invoice: AP line should have auxiliary, GR/IR line should not
         let invoice = create_test_vendor_invoice();
@@ -788,10 +829,8 @@ mod tests {
     fn test_french_gaap_lettrage_on_complete_p2p_chain() {
         use datasynth_core::models::documents::PurchaseOrder;
 
-        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
-            DocumentFlowJeConfig::french_gaap(),
-            42,
-        );
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
 
         let po = PurchaseOrder::new(
             "PO-001",
@@ -850,10 +889,8 @@ mod tests {
     fn test_incomplete_chain_has_no_lettrage() {
         use datasynth_core::models::documents::PurchaseOrder;
 
-        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(
-            DocumentFlowJeConfig::french_gaap(),
-            42,
-        );
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
 
         let po = PurchaseOrder::new(
             "PO-002",
@@ -902,5 +939,87 @@ mod tests {
             assert!(line.lettrage.is_none());
             assert!(line.lettrage_date.is_none());
         }
+    }
+
+    #[test]
+    fn test_auxiliary_lookup_uses_gl_account_instead_of_partner_id() {
+        // When auxiliary lookup is populated, FEC auxiliary_account_number should
+        // use the framework-specific GL account instead of the raw partner ID.
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
+
+        let mut lookup = HashMap::new();
+        lookup.insert("V-001".to_string(), "4010001".to_string());
+        generator.set_auxiliary_account_lookup(lookup);
+
+        let invoice = create_test_vendor_invoice();
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // AP line should use the auxiliary GL account from lookup, not "V-001"
+        assert_eq!(
+            je.lines[1].auxiliary_account_number.as_deref(),
+            Some("4010001"),
+            "AP line should use auxiliary GL account from lookup"
+        );
+        // Label should still be the partner ID (human-readable)
+        assert_eq!(
+            je.lines[1].auxiliary_account_label.as_deref(),
+            Some("V-001"),
+        );
+    }
+
+    #[test]
+    fn test_auxiliary_lookup_fallback_to_partner_id() {
+        // When the auxiliary lookup exists but doesn't contain the partner,
+        // should fall back to raw partner ID.
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
+
+        // Lookup has a different vendor, not V-001
+        let mut lookup = HashMap::new();
+        lookup.insert("V-999".to_string(), "4019999".to_string());
+        generator.set_auxiliary_account_lookup(lookup);
+
+        let invoice = create_test_vendor_invoice();
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // V-001 not in lookup, so should fall back to raw partner ID
+        assert_eq!(
+            je.lines[1].auxiliary_account_number.as_deref(),
+            Some("V-001"),
+            "Should fall back to partner ID when not in lookup"
+        );
+    }
+
+    #[test]
+    fn test_auxiliary_lookup_works_for_customer_receipt() {
+        // Verify the lookup also works for O2C AR receipt lines.
+        let mut generator =
+            DocumentFlowJeGenerator::with_config_and_seed(DocumentFlowJeConfig::french_gaap(), 42);
+
+        let mut lookup = HashMap::new();
+        lookup.insert("C-001".to_string(), "4110001".to_string());
+        generator.set_auxiliary_account_lookup(lookup);
+
+        let mut receipt = Payment::new_ar_receipt(
+            "RCP-001".to_string(),
+            "1000",
+            "C-001",
+            Decimal::from(3000),
+            2024,
+            3,
+            NaiveDate::from_ymd_opt(2024, 3, 15).unwrap(),
+            "JSMITH",
+        );
+        receipt.post("JSMITH", NaiveDate::from_ymd_opt(2024, 3, 15).unwrap());
+
+        let je = generator.generate_from_ar_receipt(&receipt).unwrap();
+
+        // AR line (line 2 = CR AR) should use the auxiliary GL account from lookup
+        assert_eq!(
+            je.lines[1].auxiliary_account_number.as_deref(),
+            Some("4110001"),
+            "AR line should use auxiliary GL account from lookup"
+        );
     }
 }

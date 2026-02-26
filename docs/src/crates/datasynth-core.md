@@ -57,12 +57,22 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 
 Built-in packs: `_default.json`, `US.json`, `DE.json`, `GB.json`. External packs loaded from `country_packs.external_dir`.
 
+### Accounting Framework Support
+
+| Module | Description |
+|--------|-------------|
+| `framework_accounts.rs` | `FrameworkAccounts` — maps ~45 semantic account purposes to framework-specific GL codes with `for_framework()` constructor; `AuditExportConfig` for FEC/GoBD flags |
+| `accounts.rs` | US GAAP GL control account constants (AR_CONTROL, AP_CONTROL, etc.) |
+| `pcg.rs` | French PCG (Plan Comptable Général) constants — control, cash, revenue, expense, tax, fixed asset, suspense, equity accounts |
+| `pcg_loader.rs` | Loads embedded `pcg_2024.json` into `ChartOfAccounts` with complexity filtering |
+| `skr.rs` | German SKR04 (Standardkontenrahmen 04) constants — classes 0-9 covering all HGB account categories |
+| `skr_loader.rs` | Loads embedded `skr04_2024.json` (~400 accounts) into `ChartOfAccounts` with complexity and industry mapping |
+
 ### Infrastructure
 
 | Component | Description |
 |-----------|-------------|
 | `uuid_factory.rs` | Deterministic FNV-1a hash-based UUID generation |
-| `accounts.rs` | Centralized GL control account numbers |
 | `templates/` | YAML/JSON template loading and merging |
 
 ### Resource Guards

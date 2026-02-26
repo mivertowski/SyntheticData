@@ -15,7 +15,7 @@ datasynth-generators   → Data generators (JE, Document Flows, Subledgers, Anom
 datasynth-banking      → KYC/AML banking transaction generator with fraud typologies
 datasynth-ocpm         → Object-Centric Process Mining (OCEL 2.0 event logs)
 datasynth-fingerprint  → Privacy-preserving fingerprint extraction and synthesis
-datasynth-standards    → Accounting/audit standards (US GAAP, IFRS, ISA, SOX)
+datasynth-standards    → Accounting/audit standards (US GAAP, IFRS, French GAAP, German GAAP, ISA, SOX)
     ↓
 datasynth-graph        → Graph/network export (PyTorch Geometric, Neo4j, DGL)
 datasynth-eval         → Evaluation framework with auto-tuning and recommendations
@@ -54,7 +54,7 @@ datasynth-test-utils   → Testing utilities and fixtures
 | [datasynth-banking](datasynth-banking.md) | KYC/AML banking transactions with fraud typologies |
 | [datasynth-ocpm](datasynth-ocpm.md) | Object-Centric Process Mining (OCEL 2.0) |
 | [datasynth-fingerprint](datasynth-fingerprint.md) | Privacy-preserving fingerprint extraction and synthesis |
-| [datasynth-standards](datasynth-standards.md) | Accounting/audit standards (US GAAP, IFRS, ISA, SOX, PCAOB) |
+| [datasynth-standards](datasynth-standards.md) | Accounting/audit standards (US GAAP, IFRS, French GAAP, German GAAP, ISA, SOX, PCAOB) |
 
 ### Foundation
 

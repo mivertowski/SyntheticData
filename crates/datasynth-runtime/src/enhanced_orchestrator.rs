@@ -129,6 +129,7 @@ use datasynth_core::llm::MockLlmProvider;
 use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
+use datasynth_generators::coa_generator::CoAFramework;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 use rayon::prelude::*;
 
@@ -1060,6 +1061,28 @@ impl EnhancedOrchestrator {
     /// Resolve the country pack for the primary (first) company.
     fn primary_pack(&self) -> &datasynth_core::CountryPack {
         self.country_pack_for(self.primary_country_code())
+    }
+
+    /// Resolve the CoA framework from config/country-pack.
+    fn resolve_coa_framework(&self) -> CoAFramework {
+        if self.config.accounting_standards.enabled {
+            match self.config.accounting_standards.framework {
+                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap) => {
+                    return CoAFramework::FrenchPcg;
+                }
+                Some(datasynth_config::schema::AccountingFrameworkConfig::GermanGaap) => {
+                    return CoAFramework::GermanSkr04;
+                }
+                _ => {}
+            }
+        }
+        // Fallback: derive from country pack
+        let pack = self.primary_pack();
+        match pack.accounting.framework.as_str() {
+            "french_gaap" => CoAFramework::FrenchPcg,
+            "german_gaap" | "hgb" => CoAFramework::GermanSkr04,
+            _ => CoAFramework::UsGaap,
+        }
     }
 
     /// Check if copula generators are available.
@@ -3665,6 +3688,9 @@ impl EnhancedOrchestrator {
             Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap) => {
                 datasynth_standards::framework::AccountingFramework::FrenchGaap
             }
+            Some(datasynth_config::schema::AccountingFrameworkConfig::GermanGaap) => {
+                datasynth_standards::framework::AccountingFramework::GermanGaap
+            }
             None => {
                 // Derive framework from the primary company's country pack
                 let pack = self.primary_pack();
@@ -3676,6 +3702,9 @@ impl EnhancedOrchestrator {
                     }
                     "french_gaap" => {
                         datasynth_standards::framework::AccountingFramework::FrenchGaap
+                    }
+                    "german_gaap" | "hgb" => {
+                        datasynth_standards::framework::AccountingFramework::GermanGaap
                     }
                     // "us_gaap" or any other/unrecognised value falls back to US GAAP
                     _ => datasynth_standards::framework::AccountingFramework::UsGaap,
@@ -4912,18 +4941,14 @@ impl EnhancedOrchestrator {
     fn generate_coa(&mut self) -> SynthResult<Arc<ChartOfAccounts>> {
         let pb = self.create_progress_bar(1, "Generating Chart of Accounts");
 
-        let use_french_pcg = self.config.accounting_standards.enabled
-            && matches!(
-                self.config.accounting_standards.framework,
-                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
-            );
+        let coa_framework = self.resolve_coa_framework();
 
         let mut gen = ChartOfAccountsGenerator::new(
             self.config.chart_of_accounts.complexity,
             self.config.global.industry,
             self.seed,
         )
-        .with_french_pcg(use_french_pcg);
+        .with_coa_framework(coa_framework);
 
         let coa = Arc::new(gen.generate());
         self.coa = Some(Arc::clone(&coa));
@@ -4952,6 +4977,7 @@ impl EnhancedOrchestrator {
         let customers_per_company = self.phase_config.customers_per_company;
         let materials_per_company = self.phase_config.materials_per_company;
         let assets_per_company = self.phase_config.assets_per_company;
+        let coa_framework = self.resolve_coa_framework();
 
         // Generate all master data in parallel across companies.
         // Each company's data is independent, making this embarrassingly parallel.
@@ -4967,12 +4993,14 @@ impl EnhancedOrchestrator {
                 // Generate vendors
                 let mut vendor_gen = VendorGenerator::new(company_seed);
                 vendor_gen.set_country_pack(pack.clone());
+                vendor_gen.set_coa_framework(coa_framework);
                 let vendor_pool =
                     vendor_gen.generate_vendor_pool(vendors_per_company, &company.code, start_date);
 
                 // Generate customers
                 let mut customer_gen = CustomerGenerator::new(company_seed + 100);
                 customer_gen.set_country_pack(pack.clone());
+                customer_gen.set_coa_framework(coa_framework);
                 let customer_pool = customer_gen.generate_customer_pool(
                     customers_per_company,
                     &company.code,
@@ -5294,20 +5322,38 @@ impl EnhancedOrchestrator {
         let total_chains = flows.p2p_chains.len() + flows.o2c_chains.len();
         let pb = self.create_progress_bar(total_chains as u64, "Generating Document Flow JEs");
 
-        let use_french_pcg = self.config.accounting_standards.enabled
-            && matches!(
-                self.config.accounting_standards.framework,
-                Some(datasynth_config::schema::AccountingFrameworkConfig::FrenchGaap)
-            );
-
-        let je_config = if use_french_pcg {
-            DocumentFlowJeConfig::french_gaap()
-        } else {
-            DocumentFlowJeConfig::default()
+        let je_config = match self.resolve_coa_framework() {
+            CoAFramework::FrenchPcg => DocumentFlowJeConfig::french_gaap(),
+            CoAFramework::GermanSkr04 => {
+                let fa = datasynth_core::FrameworkAccounts::german_gaap();
+                DocumentFlowJeConfig::from(&fa)
+            }
+            CoAFramework::UsGaap => DocumentFlowJeConfig::default(),
         };
 
-        let mut generator =
-            DocumentFlowJeGenerator::with_config_and_seed(je_config, self.seed);
+        let populate_fec = je_config.populate_fec_fields;
+        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(je_config, self.seed);
+
+        // Build auxiliary account lookup from vendor/customer master data so that
+        // FEC auxiliary_account_number uses framework-specific GL accounts (e.g.,
+        // PCG "4010001") instead of raw partner IDs.
+        if populate_fec {
+            let mut aux_lookup = std::collections::HashMap::new();
+            for vendor in &self.master_data.vendors {
+                if let Some(ref aux) = vendor.auxiliary_gl_account {
+                    aux_lookup.insert(vendor.vendor_id.clone(), aux.clone());
+                }
+            }
+            for customer in &self.master_data.customers {
+                if let Some(ref aux) = customer.auxiliary_gl_account {
+                    aux_lookup.insert(customer.customer_id.clone(), aux.clone());
+                }
+            }
+            if !aux_lookup.is_empty() {
+                generator.set_auxiliary_account_lookup(aux_lookup);
+            }
+        }
+
         let mut entries = Vec::new();
 
         // Generate JEs from P2P chains

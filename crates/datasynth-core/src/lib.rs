@@ -24,6 +24,7 @@ pub mod diffusion;
 pub mod disk_guard;
 pub mod distributions;
 pub mod error;
+pub mod framework_accounts;
 pub mod llm;
 pub mod memory_guard;
 pub mod models;
@@ -32,6 +33,8 @@ pub mod pcg_loader;
 pub mod plugins;
 pub mod rate_limit;
 pub mod resource_guard;
+pub mod skr;
+pub mod skr_loader;
 pub mod streaming;
 pub mod templates;
 pub mod traits;
@@ -54,6 +57,8 @@ pub use disk_guard::{
 };
 
 pub use error::{SynthError, SynthResult};
+
+pub use framework_accounts::{AuditExportConfig, FrameworkAccounts};
 
 pub use memory_guard::{
     check_sufficient_memory, estimate_memory_mb, get_memory_usage_mb, MemoryGuard,

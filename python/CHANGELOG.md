@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1 (2026-02-26)
+
+### Added
+
+- `german_gaap` option for `framework` field in accounting standards configuration
+- Matches Rust v0.9.1 generalized multi-GAAP framework with German HGB/SKR04 support
+
 ## 1.5.0 (2026-02-25)
 
 ### Changed

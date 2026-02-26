@@ -22,6 +22,7 @@
     { value: 'ifrs', label: 'IFRS', description: 'International Financial Reporting Standards' },
     { value: 'dual_reporting', label: 'Dual Reporting', description: 'Generate data compliant with both US GAAP and IFRS' },
     { value: 'french_gaap', label: 'PCG (French GAAP)', description: 'Plan Comptable Général – French statutory reporting' },
+    { value: 'german_gaap', label: 'HGB (German GAAP)', description: 'Handelsgesetzbuch – German statutory reporting (SKR04)' },
   ];
 
   const testFrequencies = [
@@ -42,7 +43,7 @@
             <Toggle
               bind:checked={$config.accounting_standards.enabled}
               label="Enable Accounting Standards"
-              description="Generate data that conforms to accounting framework requirements (ASC / IFRS / PCG)"
+              description="Generate data that conforms to accounting framework requirements (ASC / IFRS / PCG / HGB)"
             />
 
             {#if $config.accounting_standards.enabled}

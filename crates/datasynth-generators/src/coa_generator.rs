@@ -8,9 +8,22 @@ use datasynth_core::accounts::{
 };
 use datasynth_core::models::*;
 use datasynth_core::pcg_loader;
+use datasynth_core::skr_loader;
 use datasynth_core::traits::Generator;
 use datasynth_core::utils::seeded_rng;
 use rand_chacha::ChaCha8Rng;
+
+/// Accounting framework for CoA generation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CoAFramework {
+    /// US GAAP (4-digit accounts)
+    #[default]
+    UsGaap,
+    /// French GAAP / Plan Comptable Général (6-digit accounts)
+    FrenchPcg,
+    /// German GAAP / SKR04 (4-digit accounts)
+    GermanSkr04,
+}
 
 /// Generator for Chart of Accounts.
 pub struct ChartOfAccountsGenerator {
@@ -19,8 +32,8 @@ pub struct ChartOfAccountsGenerator {
     complexity: CoAComplexity,
     industry: IndustrySector,
     count: u64,
-    /// When true, generate Plan Comptable Général (French GAAP) structure.
-    use_french_pcg: bool,
+    /// Accounting framework for CoA generation.
+    coa_framework: CoAFramework,
 }
 
 impl ChartOfAccountsGenerator {
@@ -32,13 +45,23 @@ impl ChartOfAccountsGenerator {
             complexity,
             industry,
             count: 0,
-            use_french_pcg: false,
+            coa_framework: CoAFramework::UsGaap,
         }
     }
 
     /// Use French GAAP (Plan Comptable Général) account structure.
+    ///
+    /// Deprecated: use `with_coa_framework(CoAFramework::FrenchPcg)` instead.
     pub fn with_french_pcg(mut self, use_pcg: bool) -> Self {
-        self.use_french_pcg = use_pcg;
+        if use_pcg {
+            self.coa_framework = CoAFramework::FrenchPcg;
+        }
+        self
+    }
+
+    /// Set the accounting framework for CoA generation.
+    pub fn with_coa_framework(mut self, framework: CoAFramework) -> Self {
+        self.coa_framework = framework;
         self
     }
 
@@ -48,14 +71,15 @@ impl ChartOfAccountsGenerator {
             complexity = ?self.complexity,
             industry = ?self.industry,
             seed = self.seed,
+            framework = ?self.coa_framework,
             "Generating chart of accounts"
         );
 
         self.count += 1;
-        if self.use_french_pcg {
-            self.generate_pcg()
-        } else {
-            self.generate_default()
+        match self.coa_framework {
+            CoAFramework::UsGaap => self.generate_default(),
+            CoAFramework::FrenchPcg => self.generate_pcg(),
+            CoAFramework::GermanSkr04 => self.generate_skr(),
         }
     }
 
@@ -90,6 +114,152 @@ impl ChartOfAccountsGenerator {
             Ok(coa) => coa,
             Err(_) => self.generate_pcg_fallback(),
         }
+    }
+
+    /// Generate SKR04 (German GAAP) chart of accounts.
+    /// Uses the embedded SKR04 2024 structure when available.
+    fn generate_skr(&mut self) -> ChartOfAccounts {
+        match skr_loader::build_chart_of_accounts_from_skr04(self.complexity, self.industry) {
+            Ok(coa) => coa,
+            Err(_) => self.generate_skr_fallback(),
+        }
+    }
+
+    /// Fallback simplified SKR04 when the embedded 2024 JSON cannot be loaded.
+    fn generate_skr_fallback(&mut self) -> ChartOfAccounts {
+        use datasynth_core::skr;
+        let target_count = self.complexity.target_count();
+        let mut coa = ChartOfAccounts::new(
+            format!("COA_SKR04_{:?}_{}", self.industry, target_count),
+            format!("Standardkontenrahmen 04 – {:?}", self.industry),
+            "DE".to_string(),
+            self.industry,
+            self.complexity,
+        );
+        coa.account_format = "####".to_string();
+
+        // Seed key SKR04 accounts
+        let key_accounts = [
+            (
+                skr::control_accounts::AR_CONTROL,
+                "Forderungen aus L+L",
+                AccountType::Asset,
+                AccountSubType::AccountsReceivable,
+            ),
+            (
+                skr::control_accounts::AP_CONTROL,
+                "Verbindlichkeiten aus L+L",
+                AccountType::Liability,
+                AccountSubType::AccountsPayable,
+            ),
+            (
+                skr::control_accounts::INVENTORY,
+                "Vorräte",
+                AccountType::Asset,
+                AccountSubType::Inventory,
+            ),
+            (
+                skr::control_accounts::FIXED_ASSETS,
+                "Sachanlagen",
+                AccountType::Asset,
+                AccountSubType::FixedAssets,
+            ),
+            (
+                skr::cash_accounts::OPERATING_CASH,
+                "Bank",
+                AccountType::Asset,
+                AccountSubType::Cash,
+            ),
+            (
+                skr::cash_accounts::PETTY_CASH,
+                "Kasse",
+                AccountType::Asset,
+                AccountSubType::Cash,
+            ),
+            (
+                skr::equity_accounts::COMMON_STOCK,
+                "Gezeichnetes Kapital",
+                AccountType::Equity,
+                AccountSubType::CommonStock,
+            ),
+            (
+                skr::equity_accounts::RETAINED_EARNINGS,
+                "Gewinnvortrag",
+                AccountType::Equity,
+                AccountSubType::RetainedEarnings,
+            ),
+            (
+                skr::revenue_accounts::PRODUCT_REVENUE,
+                "Umsatzerlöse",
+                AccountType::Revenue,
+                AccountSubType::ProductRevenue,
+            ),
+            (
+                skr::revenue_accounts::SERVICE_REVENUE,
+                "Erlöse Leistungen",
+                AccountType::Revenue,
+                AccountSubType::ServiceRevenue,
+            ),
+            (
+                skr::expense_accounts::COGS,
+                "Materialaufwand",
+                AccountType::Expense,
+                AccountSubType::CostOfGoodsSold,
+            ),
+            (
+                skr::expense_accounts::SALARIES_WAGES,
+                "Löhne und Gehälter",
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            ),
+            (
+                skr::expense_accounts::DEPRECIATION,
+                "Abschreibungen",
+                AccountType::Expense,
+                AccountSubType::DepreciationExpense,
+            ),
+            (
+                skr::expense_accounts::RENT,
+                "Miete",
+                AccountType::Expense,
+                AccountSubType::OperatingExpenses,
+            ),
+        ];
+
+        for (code, name, acc_type, sub_type) in key_accounts {
+            let mut account =
+                GLAccount::new(code.to_string(), name.to_string(), acc_type, sub_type);
+            account.requires_cost_center = acc_type == AccountType::Expense;
+            coa.add_account(account);
+        }
+
+        // Add additional accounts to reach target count
+        let mut num = 4100u32;
+        while coa.account_count() < target_count && num < 9900 {
+            let code = format!("{:04}", num);
+            if coa.get_account(&code).is_none() {
+                let class = (num / 1000) as u8;
+                let (acc_type, sub_type) = match class {
+                    0..=1 => (AccountType::Asset, AccountSubType::OtherAssets),
+                    2 => (AccountType::Equity, AccountSubType::RetainedEarnings),
+                    3 => (AccountType::Liability, AccountSubType::OtherLiabilities),
+                    4 => (AccountType::Revenue, AccountSubType::OtherIncome),
+                    5 => (AccountType::Expense, AccountSubType::CostOfGoodsSold),
+                    6 => (AccountType::Expense, AccountSubType::OperatingExpenses),
+                    7 => (AccountType::Expense, AccountSubType::InterestExpense),
+                    _ => (AccountType::Asset, AccountSubType::SuspenseClearing),
+                };
+                coa.add_account(GLAccount::new(
+                    code,
+                    format!("Konto {}", num),
+                    acc_type,
+                    sub_type,
+                ));
+            }
+            num += 10;
+        }
+
+        coa
     }
 
     /// Fallback simplified PCG when the embedded 2024 JSON cannot be loaded.
@@ -965,6 +1135,7 @@ impl Generator for ChartOfAccountsGenerator {
     fn reset(&mut self) {
         self.rng = seeded_rng(self.seed, 0);
         self.count = 0;
+        self.coa_framework = CoAFramework::UsGaap;
     }
 
     fn count(&self) -> u64 {

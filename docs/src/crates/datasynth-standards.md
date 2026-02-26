@@ -1,6 +1,6 @@
 # datasynth-standards
 
-The `datasynth-standards` crate provides comprehensive support for major accounting and auditing standards frameworks including IFRS, US GAAP, ISA, SOX, and PCAOB.
+The `datasynth-standards` crate provides comprehensive support for major accounting and auditing standards frameworks including IFRS, US GAAP, French GAAP (PCG), German GAAP (HGB), ISA, SOX, and PCAOB.
 
 ## Overview
 
@@ -23,6 +23,13 @@ use datasynth_standards::framework::{AccountingFramework, FrameworkSettings};
 let framework = AccountingFramework::UsGaap;
 assert!(framework.allows_lifo());
 assert!(!framework.allows_impairment_reversal());
+
+// German GAAP specifics
+let hgb = AccountingFramework::GermanGaap;
+assert!(!hgb.allows_lifo());
+assert!(hgb.allows_impairment_reversal());       // Mandatory under §253(5)
+assert!(hgb.requires_pending_loss_provisions());  // HGB-specific
+assert!(hgb.allows_low_value_asset_expensing());  // GWG ≤ 800 EUR
 
 // Framework-specific settings
 let settings = FrameworkSettings::us_gaap();
@@ -177,6 +184,11 @@ assert!(settings.validate().is_err());
 // PPE revaluation is not permitted under US GAAP
 let mut settings = FrameworkSettings::us_gaap();
 settings.use_ppe_revaluation = true;
+assert!(settings.validate().is_err());
+
+// German GAAP: LIFO also prohibited
+let mut settings = FrameworkSettings::german_gaap();
+settings.use_lifo_inventory = true;
 assert!(settings.validate().is_err());
 ```
 

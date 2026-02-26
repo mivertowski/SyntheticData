@@ -47,6 +47,21 @@ impl Default for YearEndCloseConfig {
     }
 }
 
+impl From<&datasynth_core::FrameworkAccounts> for YearEndCloseConfig {
+    fn from(fa: &datasynth_core::FrameworkAccounts) -> Self {
+        Self {
+            income_summary_account: fa.income_summary.clone(),
+            retained_earnings_account: fa.retained_earnings.clone(),
+            dividend_account: fa.dividends_paid.clone(),
+            current_tax_payable_account: fa.sales_tax_payable.clone(),
+            deferred_tax_liability_account: fa.deferred_tax_liability.clone(),
+            deferred_tax_asset_account: fa.deferred_tax_asset.clone(),
+            tax_expense_account: fa.tax_expense.clone(),
+            ..Default::default()
+        }
+    }
+}
+
 /// Generator for year-end closing entries.
 pub struct YearEndCloseGenerator {
     config: YearEndCloseConfig,

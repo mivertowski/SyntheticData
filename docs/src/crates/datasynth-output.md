@@ -30,6 +30,13 @@ Output sinks for CSV, JSON, and streaming formats.
 | Oracle EBS | `OracleExporter` | GL_JE_HEADERS, GL_JE_LINES, GL_JE_BATCHES |
 | NetSuite | `NetSuiteExporter` | Journal entries with subsidiary/multi-book support |
 
+### Audit Export Formats
+
+| Format | Standard | Description |
+|--------|----------|-------------|
+| FEC | French Art. A47 A-1 | 18-column semicolon-separated CSV for French fiscal audit |
+| GoBD | German GoBD | 13-column journal CSV + account CSV + XML index for German fiscal audit |
+
 ### Streaming Sinks
 
 | Sink | Description |

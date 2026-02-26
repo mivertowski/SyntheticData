@@ -45,7 +45,7 @@ datasynth-generators   → Data generators (JE, Document Flows, Subledgers, Anom
 datasynth-banking      → KYC/AML banking with fraud typologies
 datasynth-ocpm         → OCEL 2.0 process mining
 datasynth-fingerprint  → Privacy-preserving fingerprint extraction/synthesis
-datasynth-standards    → Accounting/audit standards (IFRS, US GAAP, French GAAP, ISA, SOX, PCAOB)
+datasynth-standards    → Accounting/audit standards (IFRS, US GAAP, French GAAP, German GAAP, ISA, SOX, PCAOB)
 datasynth-graph        → Graph export (PyTorch Geometric, Neo4j, DGL)
 datasynth-eval         → Evaluation framework with auto-tuning
 datasynth-config       → Configuration schema, validation, presets
@@ -181,7 +181,7 @@ Key types:
 ```yaml
 accounting_standards:
   enabled: true
-  framework: us_gaap  # us_gaap, ifrs, french_gaap, dual_reporting
+  framework: us_gaap  # us_gaap, ifrs, french_gaap, german_gaap, dual_reporting
   revenue_recognition:
     enabled: true
     generate_contracts: true

@@ -6,6 +6,8 @@
 //! - Referral networks and corporate hierarchies
 //! - Engagement metrics and churn analysis
 
+use std::collections::HashSet;
+
 use chrono::NaiveDate;
 use datasynth_core::models::{
     ChurnReason, CreditRating, Customer, CustomerEngagement, CustomerLifecycleStage,
@@ -17,6 +19,8 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use tracing::debug;
+
+use crate::coa_generator::CoAFramework;
 
 /// Configuration for customer generation.
 #[derive(Debug, Clone)]
@@ -415,6 +419,10 @@ pub struct CustomerGenerator {
     segmentation_config: CustomerSegmentationConfig,
     /// Optional country pack for locale-aware generation
     country_pack: Option<datasynth_core::CountryPack>,
+    /// Accounting framework for auxiliary GL account generation
+    coa_framework: CoAFramework,
+    /// Tracks used customer names for deduplication
+    used_names: HashSet<String>,
 }
 
 impl CustomerGenerator {
@@ -432,6 +440,8 @@ impl CustomerGenerator {
             customer_counter: 0,
             segmentation_config: CustomerSegmentationConfig::default(),
             country_pack: None,
+            coa_framework: CoAFramework::UsGaap,
+            used_names: HashSet::new(),
         }
     }
 
@@ -448,7 +458,14 @@ impl CustomerGenerator {
             customer_counter: 0,
             segmentation_config,
             country_pack: None,
+            coa_framework: CoAFramework::UsGaap,
+            used_names: HashSet::new(),
         }
+    }
+
+    /// Set the accounting framework for auxiliary GL account generation.
+    pub fn set_coa_framework(&mut self, framework: CoAFramework) {
+        self.coa_framework = framework;
     }
 
     /// Set segmentation configuration.
@@ -470,11 +487,11 @@ impl CustomerGenerator {
         self.customer_counter += 1;
 
         let customer_id = format!("C-{:06}", self.customer_counter);
-        let (_industry, name) = self.select_customer_name();
+        let (_industry, name) = self.select_customer_name_unique();
 
         let mut customer = Customer::new(
             &customer_id,
-            name,
+            &name,
             datasynth_core::models::CustomerType::Corporate,
         );
 
@@ -491,6 +508,9 @@ impl CustomerGenerator {
 
         // Set payment terms
         customer.payment_terms = self.select_payment_terms();
+
+        // Set auxiliary GL account based on accounting framework
+        customer.auxiliary_gl_account = self.generate_auxiliary_gl_account();
 
         // Check if intercompany
         if self.rng.random::<f64>() < self.config.intercompany_rate {
@@ -646,6 +666,57 @@ impl CustomerGenerator {
         (industry, names[name_idx])
     }
 
+    /// Select a unique customer name, appending a suffix if collision detected.
+    fn select_customer_name_unique(&mut self) -> (&'static str, String) {
+        let (industry, name) = self.select_customer_name();
+        let mut name = name.to_string();
+
+        if self.used_names.contains(&name) {
+            let suffixes = [
+                " II",
+                " III",
+                " & Partners",
+                " Group",
+                " Holdings",
+                " International",
+            ];
+            let mut found_unique = false;
+            for suffix in &suffixes {
+                let candidate = format!("{}{}", name, suffix);
+                if !self.used_names.contains(&candidate) {
+                    name = candidate;
+                    found_unique = true;
+                    break;
+                }
+            }
+            if !found_unique {
+                name = format!("{} #{}", name, self.customer_counter);
+            }
+        }
+
+        self.used_names.insert(name.clone());
+        (industry, name)
+    }
+
+    /// Generate auxiliary GL account based on accounting framework.
+    fn generate_auxiliary_gl_account(&self) -> Option<String> {
+        match self.coa_framework {
+            CoAFramework::FrenchPcg => {
+                // French PCG: 411XXXX sub-accounts under clients
+                Some(format!("411{:04}", self.customer_counter))
+            }
+            CoAFramework::GermanSkr04 => {
+                // German SKR04: AR control (1200) + sequential number
+                Some(format!(
+                    "{}{:04}",
+                    datasynth_core::skr::control_accounts::AR_CONTROL,
+                    self.customer_counter
+                ))
+            }
+            CoAFramework::UsGaap => None,
+        }
+    }
+
     /// Select credit rating based on distribution.
     fn select_credit_rating(&mut self) -> CreditRating {
         let roll: f64 = self.rng.random();
@@ -709,6 +780,7 @@ impl CustomerGenerator {
     pub fn reset(&mut self) {
         self.rng = seeded_rng(self.seed, 0);
         self.customer_counter = 0;
+        self.used_names.clear();
     }
 
     // ===== Customer Segmentation Generation =====
@@ -1556,5 +1628,58 @@ mod tests {
 
         // Should return empty pool when disabled
         assert!(pool.customers.is_empty());
+    }
+
+    #[test]
+    fn test_customer_auxiliary_gl_account_french() {
+        let mut gen = CustomerGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::FrenchPcg);
+        let customer = gen.generate_customer("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        assert!(customer.auxiliary_gl_account.is_some());
+        let aux = customer.auxiliary_gl_account.unwrap();
+        assert!(
+            aux.starts_with("411"),
+            "French PCG customer auxiliary should start with 411, got {}",
+            aux
+        );
+    }
+
+    #[test]
+    fn test_customer_auxiliary_gl_account_german() {
+        let mut gen = CustomerGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::GermanSkr04);
+        let customer = gen.generate_customer("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        assert!(customer.auxiliary_gl_account.is_some());
+        let aux = customer.auxiliary_gl_account.unwrap();
+        assert!(
+            aux.starts_with("1200"),
+            "German SKR04 customer auxiliary should start with 1200, got {}",
+            aux
+        );
+    }
+
+    #[test]
+    fn test_customer_auxiliary_gl_account_us_gaap() {
+        let mut gen = CustomerGenerator::new(42);
+        let customer = gen.generate_customer("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        assert!(customer.auxiliary_gl_account.is_none());
+    }
+
+    #[test]
+    fn test_customer_name_dedup() {
+        let mut gen = CustomerGenerator::new(42);
+        let mut names = HashSet::new();
+
+        for _ in 0..200 {
+            let customer =
+                gen.generate_customer("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            assert!(
+                names.insert(customer.name.clone()),
+                "Duplicate customer name found: {}",
+                customer.name
+            );
+        }
     }
 }

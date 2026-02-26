@@ -143,6 +143,10 @@ pub enum DepreciationMethod {
     Macrs,
     /// Immediate expense (low-value assets)
     ImmediateExpense,
+    /// German declining balance (Degressiv): min(3× straight-line rate, 30%) on NBV,
+    /// with automatic switch to straight-line when SL exceeds Degressiv.
+    /// Per EStG §7(2) / Wachstumschancengesetz (Jul 2025 – Dec 2027).
+    Degressiv,
     /// No depreciation (land, CIP)
     None,
 }
@@ -241,6 +245,34 @@ impl DepreciationMethod {
                 } else {
                     Decimal::ZERO
                 }
+            }
+
+            Self::Degressiv => {
+                // German declining balance: min(3 × SL rate, 30%) on NBV,
+                // with automatic switch to straight-line when SL > Degressiv.
+                let useful_life_years = useful_life_months / 12;
+                if useful_life_years == 0 {
+                    return Decimal::ZERO;
+                }
+
+                let sl_annual_rate = Decimal::ONE / Decimal::from(useful_life_years);
+                // Degressiv rate: 3× straight-line, capped at 30%
+                let degressiv_rate = (sl_annual_rate * Decimal::from(3)).min(dec!(0.30));
+                let degressiv_monthly = net_book_value * degressiv_rate / dec!(12);
+
+                // Straight-line on remaining: depreciable base spread over remaining months
+                let remaining_months = useful_life_months.saturating_sub(months_elapsed);
+                let sl_monthly = if remaining_months > 0 {
+                    (net_book_value - salvage_value) / Decimal::from(remaining_months)
+                } else {
+                    Decimal::ZERO
+                };
+
+                // Switch to SL when it exceeds Degressiv
+                let monthly_amount = degressiv_monthly.max(sl_monthly);
+                monthly_amount
+                    .min(net_book_value - salvage_value)
+                    .max(Decimal::ZERO)
             }
 
             Self::None => Decimal::ZERO,
@@ -405,6 +437,12 @@ pub struct FixedAsset {
 
     /// Invoice reference
     pub invoice_reference: Option<String>,
+
+    /// Whether this asset is a GWG (geringwertiges Wirtschaftsgut) under German tax law.
+    /// Assets with acquisition cost ≤ 800 EUR are eligible for immediate full expensing
+    /// per EStG §6(2).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_gwg: Option<bool>,
 }
 
 impl FixedAsset {
@@ -449,6 +487,7 @@ impl FixedAsset {
             purchase_order: None,
             vendor_id: None,
             invoice_reference: None,
+            is_gwg: None,
         }
     }
 
@@ -1067,5 +1106,116 @@ mod tests {
         // DDB would compute 210 * (1/18) = 11.666..., but cap at NBV - salvage = 10
         let monthly = asset.ddb_depreciation();
         assert_eq!(monthly, Decimal::from(10));
+    }
+
+    // ---- Degressiv (German declining balance) tests ----
+
+    #[test]
+    fn test_degressiv_depreciation_initial() {
+        // 10-year asset, 120000 EUR, no salvage
+        // SL rate = 1/10 = 10%; Degressiv = min(3 * 10%, 30%) = 30%
+        // Monthly: 120000 * 0.30 / 12 = 3000
+        let asset = FixedAsset::new(
+            "FA-DEG",
+            "Maschine",
+            AssetClass::MachineryEquipment,
+            "DE01",
+            test_date(2024, 1, 1),
+            Decimal::from(120000),
+        )
+        .with_useful_life_months(120)
+        .with_depreciation_method(DepreciationMethod::Degressiv);
+
+        let monthly = asset.calculate_monthly_depreciation(test_date(2024, 2, 1));
+        assert_eq!(monthly, Decimal::from(3000));
+    }
+
+    #[test]
+    fn test_degressiv_rate_capped_at_30_percent() {
+        // 5-year asset: SL rate = 1/5 = 20%; 3x = 60%. Capped at 30%.
+        // Degressiv monthly: 6000 * 0.30 / 12 = 150
+        // SL monthly on remaining: 6000 / 59 ≈ 101.69 (< 150)
+        // → Degressiv wins at start
+        let asset = FixedAsset::new(
+            "FA-DEG2",
+            "Fahrzeug",
+            AssetClass::Vehicles,
+            "DE01",
+            test_date(2024, 1, 1),
+            Decimal::from(6000),
+        )
+        .with_useful_life_months(60)
+        .with_depreciation_method(DepreciationMethod::Degressiv);
+
+        let monthly = asset.calculate_monthly_depreciation(test_date(2024, 2, 1));
+        assert_eq!(monthly, Decimal::from(150));
+
+        // For a 3-year asset, SL rate (33.3%) > Degressiv cap (30%),
+        // so the switch to SL happens immediately.
+        let short_asset = FixedAsset::new(
+            "FA-DEG2S",
+            "Server",
+            AssetClass::ComputerHardware,
+            "DE01",
+            test_date(2024, 1, 1),
+            Decimal::from(3600),
+        )
+        .with_useful_life_months(36)
+        .with_depreciation_method(DepreciationMethod::Degressiv);
+
+        // months_elapsed=1, remaining=35, SL = 3600/35 ≈ 102.86 > Degressiv 90
+        let monthly_short = short_asset.calculate_monthly_depreciation(test_date(2024, 2, 1));
+        assert!(
+            monthly_short > Decimal::from(100),
+            "SL should win for 3-year asset"
+        );
+    }
+
+    #[test]
+    fn test_degressiv_switches_to_straight_line() {
+        // Degressiv should switch to SL when SL produces higher depreciation.
+        // 10-year, 10000 EUR asset.
+        // Degressiv rate = 30%, monthly = NBV * 0.30 / 12
+        // SL on remaining = (NBV - salvage) / remaining_months
+        let mut asset = FixedAsset::new(
+            "FA-DEG3",
+            "Fahrzeug",
+            AssetClass::Vehicles,
+            "DE01",
+            test_date(2024, 1, 1),
+            Decimal::from(10000),
+        )
+        .with_useful_life_months(120)
+        .with_depreciation_method(DepreciationMethod::Degressiv);
+
+        // Simulate significant depreciation: NBV = 1000, 24 months remaining
+        asset.apply_depreciation(Decimal::from(9000));
+        // NBV = 1000
+        // Degressiv: 1000 * 0.30 / 12 = 25
+        // SL on remaining: 1000 / 24 ≈ 41.67
+        // Should use SL (41.67) since it's higher
+        let dep = asset.calculate_monthly_depreciation(test_date(2032, 1, 1));
+        // months_elapsed = 96, remaining = 120 - 96 = 24
+        // SL = 1000/24 = 41.666...
+        // Degressiv = 1000 * 0.30 / 12 = 25
+        // max(25, 41.666) = 41.666...
+        assert!(
+            dep > Decimal::from(25),
+            "Should switch to SL when it exceeds Degressiv"
+        );
+        assert!(dep < Decimal::from(42), "SL should be ~41.67");
+    }
+
+    #[test]
+    fn test_gwg_field_default() {
+        let asset = FixedAsset::new(
+            "FA-GWG",
+            "Keyboard",
+            AssetClass::ComputerHardware,
+            "DE01",
+            test_date(2024, 1, 1),
+            Decimal::from(200),
+        );
+        assert_eq!(asset.is_gwg, None, "is_gwg should default to None");
     }
 }

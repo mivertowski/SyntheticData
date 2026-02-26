@@ -81,10 +81,7 @@ pub fn write_fec_csv(
             };
 
             // Column 7: Numéro de compte auxiliaire
-            let aux_num = line
-                .auxiliary_account_number
-                .as_deref()
-                .unwrap_or("");
+            let aux_num = line.auxiliary_account_number.as_deref().unwrap_or("");
             // Column 8: Libellé de compte auxiliaire
             let aux_label = line
                 .auxiliary_account_label

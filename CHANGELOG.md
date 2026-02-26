@@ -7,8 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.1] - 2026-02-26
 
+### Added
+
+- **German GAAP (HGB) Accounting Framework** (`datasynth-standards`, `datasynth-core`, `datasynth-generators`)
+  - `AccountingFramework::GermanGaap` variant with HGB §238-263 rules: mandatory impairment reversal (§253(5)), no bright-line lease tests (BMF-Leasingerlasse 40-90%), no PPE revaluation, optional development capitalization (§248(2)), LIFO prohibited, pending loss provisions required
+  - `FrameworkSettings::german_gaap()` constructor with validation
+  - HGB-specific query methods: `requires_pending_loss_provisions()`, `allows_low_value_asset_expensing()`, `operating_leases_off_balance()`
+
+- **Generalized Multi-GAAP Framework** (`datasynth-core`)
+  - `FrameworkAccounts` struct mapping ~45 semantic account purposes to framework-specific GL codes with `for_framework(AccountingFramework)` constructor
+  - `AuditExportConfig` controlling FEC (French) and GoBD (German) audit export flags
+  - Framework-aware `classify(account) -> AccountCategory` via pluggable classifiers for US GAAP (1-9 digit), PCG (1-7 digit), and SKR04 (0-9 digit) account numbering
+  - `From<&FrameworkAccounts>` impls for `DocumentFlowJeConfig`, `DepreciationRunConfig`, `YearEndCloseConfig`
+
+- **SKR04 Chart of Accounts** (`datasynth-core`)
+  - `skr` module with German Standardkontenrahmen 04 constants: control, cash, revenue, expense, equity, tax, personnel, and provision accounts
+  - `skr_loader` module loading embedded `skr04_2024.json` (~400 accounts across classes 0-9) with complexity filtering and industry mapping
+  - `CoAFramework::GermanSkr04` variant in `coa_generator` with `generate_skr()` dispatch
+
+- **GoBD Audit Export** (`datasynth-output`)
+  - `gobd::write_gobd_journal_csv()` — semicolon-separated, UTF-8, 13-column GoBD journal export (Belegdatum, Buchungsdatum, Belegnummer, Buchungstext, Kontonummer, Gegenkontonummer, Sollbetrag, Habenbetrag, Steuerschlüssel, Steuerbetrag, Währung, Kostenstelle, Belegnummernkreis)
+  - `gobd::write_gobd_accounts_csv()` — account master data export
+  - `gobd::write_gobd_index_xml()` — GoBD-compliant XML index with table schema descriptions
+
+- **German Depreciation Methods** (`datasynth-core`, `datasynth-generators`)
+  - `DepreciationMethod::Degressiv` — declining balance: min(3x straight-line rate, 30%) on NBV with automatic switch to straight-line (per EStG §7(2) / Wachstumschancengesetz Jul 2025-Dec 2027)
+  - GWG (geringwertige Wirtschaftsgüter) support: assets ≤ 800 EUR → immediate full expense (EStG §6(2)), `is_gwg: Option<bool>` field on `FixedAsset`
+  - AfA-Tabellen default useful lives for German GAAP (buildings 33yr, vehicles 6yr, IT equipment 3yr, etc.)
+
+- **Auxiliary GL Accounts on Master Data** (`datasynth-core`, `datasynth-generators`)
+  - `auxiliary_gl_account: Option<String>` field on `Vendor` and `Customer` models
+  - French PCG format: `401XXXX` (vendors), `411XXXX` (customers)
+  - German SKR04 format: `3300XXXX` (vendors), `1200XXXX` (customers)
+  - Vendor/customer name deduplication via `HashSet` tracking with suffix fallback
+
+- **Expanded PCG Accounts** (`datasynth-core`)
+  - New modules: `fixed_asset_accounts`, `tax_accounts`, `suspense_accounts`, `additional_revenue`, `additional_expense`, `liability_accounts`, `equity_accounts`
+
+- **DE.json Country Pack**: Updated framework to `german_gaap`, added `GoBD` to local regulations (`datasynth-core`)
+- **UI**: German GAAP (HGB) framework option in accounting standards selector (`datasynth-ui`)
+- **Python**: `german_gaap` added to framework enum options comment (`datasynth-py`)
+
 ### Fixed
 
+- FEC auxiliary account fields now use framework-specific GL accounts (e.g., PCG `4010001`) instead of raw partner IDs — lookup map built from vendor/customer `auxiliary_gl_account` master data (`datasynth-generators`, `datasynth-runtime`)
 - FEC export now populates columns 7-8 (auxiliary account number/label) and 14-15 (lettrage/lettrage date) on AP/AR lines for French GAAP (`datasynth-output`, `datasynth-core`)
 - Document flow JE generator populates FEC auxiliary fields with business partner ID on AP/AR lines and applies lettrage codes on completed P2P/O2C chains (`datasynth-generators`)
 - Orchestrator auto-detects French GAAP framework and uses PCG account mapping with FEC field population (`datasynth-runtime`)

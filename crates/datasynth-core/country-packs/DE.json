@@ -320,8 +320,8 @@
   },
 
   "accounting": {
-    "framework": "ifrs",
-    "secondary_framework": "local_gaap",
+    "framework": "german_gaap",
+    "secondary_framework": "ifrs",
     "local_gaap_name": "HGB",
     "chart_of_accounts": {
       "standard": "SKR04",
@@ -337,7 +337,7 @@
     "audit_framework": "isa",
     "regulatory": {
       "sox_applicable": false,
-      "local_regulations": ["BilMoG", "HGB"],
+      "local_regulations": ["BilMoG", "HGB", "GoBD"],
       "filing_requirements": [
         { "name": "Jahresabschluss", "name_en": "Annual Financial Statements", "deadline_months_after_ye": 12 },
         { "name": "Konzernabschluss", "name_en": "Consolidated Statements", "deadline_months_after_ye": 4 }

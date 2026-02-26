@@ -612,6 +612,70 @@ fn main() -> Result<()> {
                 }
             }
 
+            // Write GoBD (Grundsätze zur ordnungsmäßigen Führung) when German GAAP
+            if matches!(
+                config_for_manifest.accounting_standards.framework,
+                Some(AccountingFrameworkConfig::GermanGaap)
+            ) && !result.journal_entries.is_empty()
+            {
+                let gobd_dir = output.join("gobd_export");
+                if let Err(e) = std::fs::create_dir_all(&gobd_dir) {
+                    tracing::warn!("Could not create gobd_export directory: {}", e);
+                } else {
+                    // Journal CSV
+                    match datasynth_output::write_gobd_journal_csv(
+                        &gobd_dir.join("gobd_journal.csv"),
+                        &result.journal_entries,
+                        &result.chart_of_accounts,
+                    ) {
+                        Ok(()) => tracing::info!(
+                            "GoBD journal (13 columns) written: {} entries",
+                            result.journal_entries.len()
+                        ),
+                        Err(e) => tracing::warn!("Could not write GoBD journal: {}", e),
+                    }
+
+                    // Accounts CSV
+                    match datasynth_output::write_gobd_accounts_csv(
+                        &gobd_dir.join("gobd_accounts.csv"),
+                        &result.chart_of_accounts,
+                    ) {
+                        Ok(()) => tracing::info!(
+                            "GoBD accounts written: {} accounts",
+                            result.chart_of_accounts.accounts.len()
+                        ),
+                        Err(e) => tracing::warn!("Could not write GoBD accounts: {}", e),
+                    }
+
+                    // Index XML
+                    let company_code = config_for_manifest
+                        .companies
+                        .first()
+                        .map(|c| c.code.as_str())
+                        .unwrap_or("UNKNOWN");
+                    let fiscal_year: i32 = config_for_manifest
+                        .global
+                        .start_date
+                        .split('-')
+                        .next()
+                        .and_then(|y| y.parse().ok())
+                        .unwrap_or(2024);
+                    let tables = vec![
+                        ("gobd_journal.csv", "Buchungsjournal"),
+                        ("gobd_accounts.csv", "Kontenplan"),
+                    ];
+                    match datasynth_output::write_gobd_index_xml(
+                        &gobd_dir.join("index.xml"),
+                        company_code,
+                        fiscal_year,
+                        &tables,
+                    ) {
+                        Ok(()) => tracing::info!("GoBD index.xml written"),
+                        Err(e) => tracing::warn!("Could not write GoBD index.xml: {}", e),
+                    }
+                }
+            }
+
             // ========================================
             // WRITE ANOMALY LABELS (Phase 1.1)
             // ========================================

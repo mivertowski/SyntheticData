@@ -9,6 +9,8 @@
 //! - Strategic importance and spend tier classification
 //! - Concentration analysis and dependency tracking
 
+use std::collections::HashSet;
+
 use chrono::NaiveDate;
 use datasynth_core::models::{
     BankAccount, DeclineReason, PaymentHistory, PaymentTerms, SpendTier, StrategicLevel,
@@ -24,6 +26,8 @@ use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use tracing::debug;
+
+use crate::coa_generator::CoAFramework;
 
 /// Configuration for vendor generation.
 #[derive(Debug, Clone)]
@@ -262,6 +266,10 @@ pub struct VendorGenerator {
     network_config: VendorNetworkConfig,
     /// Optional country pack for locale-aware generation
     country_pack: Option<datasynth_core::CountryPack>,
+    /// Accounting framework for auxiliary GL account generation
+    coa_framework: CoAFramework,
+    /// Tracks used vendor names for deduplication
+    used_names: HashSet<String>,
 }
 
 impl VendorGenerator {
@@ -281,6 +289,8 @@ impl VendorGenerator {
             vendor_counter: 0,
             network_config: VendorNetworkConfig::default(),
             country_pack: None,
+            coa_framework: CoAFramework::UsGaap,
+            used_names: HashSet::new(),
         }
     }
 
@@ -299,7 +309,14 @@ impl VendorGenerator {
             vendor_counter: 0,
             network_config,
             country_pack: None,
+            coa_framework: CoAFramework::UsGaap,
+            used_names: HashSet::new(),
         }
+    }
+
+    /// Set the accounting framework for auxiliary GL account generation.
+    pub fn set_coa_framework(&mut self, framework: CoAFramework) {
+        self.coa_framework = framework;
     }
 
     /// Set network configuration.
@@ -317,7 +334,7 @@ impl VendorGenerator {
         self.vendor_counter += 1;
 
         let vendor_id = format!("V-{:06}", self.vendor_counter);
-        let (_category, name) = self.select_vendor_name();
+        let (_category, name) = self.select_vendor_name_unique();
         let tax_id = self.generate_tax_id();
         let _address = self.address_gen.generate_commercial(&mut self.rng);
 
@@ -336,6 +353,9 @@ impl VendorGenerator {
 
         // Set behavior
         vendor.behavior = self.select_vendor_behavior();
+
+        // Set auxiliary GL account based on accounting framework
+        vendor.auxiliary_gl_account = self.generate_auxiliary_gl_account();
 
         // Check if intercompany
         if self.rng.random::<f64>() < self.config.intercompany_rate {
@@ -446,6 +466,58 @@ impl VendorGenerator {
         }
     }
 
+    /// Select a unique vendor name, appending a suffix if collision detected.
+    fn select_vendor_name_unique(&mut self) -> (SpendCategory, String) {
+        let (category, mut name) = self.select_vendor_name();
+
+        // Dedup: if the name was already used, append a disambiguator
+        if self.used_names.contains(&name) {
+            let suffixes = [
+                " II",
+                " III",
+                " & Co.",
+                " Group",
+                " Holdings",
+                " International",
+            ];
+            let mut found_unique = false;
+            for suffix in &suffixes {
+                let candidate = format!("{}{}", name, suffix);
+                if !self.used_names.contains(&candidate) {
+                    name = candidate;
+                    found_unique = true;
+                    break;
+                }
+            }
+            if !found_unique {
+                // Last resort: append counter
+                name = format!("{} #{}", name, self.vendor_counter);
+            }
+        }
+
+        self.used_names.insert(name.clone());
+        (category, name)
+    }
+
+    /// Generate auxiliary GL account based on accounting framework.
+    fn generate_auxiliary_gl_account(&self) -> Option<String> {
+        match self.coa_framework {
+            CoAFramework::FrenchPcg => {
+                // French PCG: 401XXXX sub-accounts under fournisseurs
+                Some(format!("401{:04}", self.vendor_counter))
+            }
+            CoAFramework::GermanSkr04 => {
+                // German SKR04: AP control (3300) + sequential number
+                Some(format!(
+                    "{}{:04}",
+                    datasynth_core::skr::control_accounts::AP_CONTROL,
+                    self.vendor_counter
+                ))
+            }
+            CoAFramework::UsGaap => None,
+        }
+    }
+
     /// Select payment terms based on distribution.
     fn select_payment_terms(&mut self) -> PaymentTerms {
         let roll: f64 = self.rng.random();
@@ -509,6 +581,7 @@ impl VendorGenerator {
         self.vendor_counter = 0;
         self.vendor_name_gen = VendorNameGenerator::new();
         self.address_gen = AddressGenerator::for_region(self.config.primary_region);
+        self.used_names.clear();
     }
 
     // ===== Vendor Network Generation =====
@@ -1154,5 +1227,58 @@ mod tests {
 
         assert!(network.tier1_vendors.is_empty());
         assert!(network.relationships.is_empty());
+    }
+
+    #[test]
+    fn test_vendor_auxiliary_gl_account_french() {
+        let mut gen = VendorGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::FrenchPcg);
+        let vendor = gen.generate_vendor("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        assert!(vendor.auxiliary_gl_account.is_some());
+        let aux = vendor.auxiliary_gl_account.unwrap();
+        assert!(
+            aux.starts_with("401"),
+            "French PCG vendor auxiliary should start with 401, got {}",
+            aux
+        );
+    }
+
+    #[test]
+    fn test_vendor_auxiliary_gl_account_german() {
+        let mut gen = VendorGenerator::new(42);
+        gen.set_coa_framework(CoAFramework::GermanSkr04);
+        let vendor = gen.generate_vendor("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        assert!(vendor.auxiliary_gl_account.is_some());
+        let aux = vendor.auxiliary_gl_account.unwrap();
+        assert!(
+            aux.starts_with("3300"),
+            "German SKR04 vendor auxiliary should start with 3300, got {}",
+            aux
+        );
+    }
+
+    #[test]
+    fn test_vendor_auxiliary_gl_account_us_gaap() {
+        let mut gen = VendorGenerator::new(42);
+        // US GAAP is default, should have no auxiliary GL account
+        let vendor = gen.generate_vendor("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        assert!(vendor.auxiliary_gl_account.is_none());
+    }
+
+    #[test]
+    fn test_vendor_name_dedup() {
+        let mut gen = VendorGenerator::new(42);
+        let mut names = HashSet::new();
+
+        for _ in 0..200 {
+            let vendor = gen.generate_vendor("1000", NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+            assert!(
+                names.insert(vendor.name.clone()),
+                "Duplicate vendor name found: {}",
+                vendor.name
+            );
+        }
     }
 }

@@ -1,0 +1,518 @@
+[
+    {
+        "number": 0,
+        "label": "Anlagevermögen",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 0,
+                "label": "Immaterielle Vermögensgegenstände",
+                "system": "base",
+                "accounts": [
+                    {"number": 10, "label": "Aufwendungen für die Ingangsetzung und Erweiterung des Geschäftsbetriebs", "system": "developed", "accounts": []},
+                    {"number": 20, "label": "Konzessionen, gewerbliche Schutzrechte", "system": "developed", "accounts": []},
+                    {"number": 27, "label": "EDV-Software", "system": "developed", "accounts": []},
+                    {"number": 30, "label": "Lizenzen", "system": "developed", "accounts": []},
+                    {"number": 35, "label": "Firmenwert (Geschäfts- oder Firmenwert)", "system": "developed", "accounts": []},
+                    {"number": 50, "label": "Geleistete Anzahlungen imm. Vermögensgegenstände", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 0,
+                "label": "Sachanlagen",
+                "system": "base",
+                "accounts": [
+                    {"number": 60, "label": "Grundstücke, grundstücksgleiche Rechte", "system": "base", "accounts": []},
+                    {"number": 90, "label": "Geschäfts-, Fabrik- und andere Bauten", "system": "base", "accounts": []},
+                    {"number": 100, "label": "Grundstückseinrichtungen", "system": "developed", "accounts": []},
+                    {"number": 200, "label": "Technische Anlagen und Maschinen", "system": "base", "accounts": []},
+                    {"number": 210, "label": "Maschinen", "system": "developed", "accounts": []},
+                    {"number": 220, "label": "Maschinengebundene Werkzeuge", "system": "developed", "accounts": []},
+                    {"number": 240, "label": "Transportanlagen und Fördermittel", "system": "developed", "accounts": []},
+                    {"number": 320, "label": "PKW", "system": "base", "accounts": []},
+                    {"number": 330, "label": "LKW", "system": "base", "accounts": []},
+                    {"number": 350, "label": "Sonstige Transportmittel", "system": "developed", "accounts": []},
+                    {"number": 400, "label": "Betriebs- und Geschäftsausstattung", "system": "base", "accounts": []},
+                    {"number": 410, "label": "Geschäftsausstattung", "system": "developed", "accounts": []},
+                    {"number": 420, "label": "Büroeinrichtung", "system": "developed", "accounts": []},
+                    {"number": 430, "label": "Ladeneinrichtung", "system": "developed", "accounts": []},
+                    {"number": 440, "label": "Einbauten in fremde Grundstücke", "system": "developed", "accounts": []},
+                    {"number": 480, "label": "Geringwertige Wirtschaftsgüter (GWG)", "system": "base", "accounts": []},
+                    {"number": 485, "label": "Sammelposten Wirtschaftsgüter 250-1000 EUR", "system": "developed", "accounts": []},
+                    {"number": 490, "label": "Sonstige Betriebs- und Geschäftsausstattung", "system": "developed", "accounts": []},
+                    {"number": 500, "label": "Geleistete Anzahlungen und Anlagen im Bau", "system": "base", "accounts": []}
+                ]
+            },
+            {
+                "number": 0,
+                "label": "Finanzanlagen",
+                "system": "base",
+                "accounts": [
+                    {"number": 550, "label": "Anteile an verbundenen Unternehmen", "system": "base", "accounts": []},
+                    {"number": 560, "label": "Ausleihungen an verbundene Unternehmen", "system": "developed", "accounts": []},
+                    {"number": 580, "label": "Beteiligungen", "system": "base", "accounts": []},
+                    {"number": 590, "label": "Ausleihungen an Unternehmen mit Beteiligungsverhältnis", "system": "developed", "accounts": []},
+                    {"number": 600, "label": "Wertpapiere des Anlagevermögens", "system": "base", "accounts": []},
+                    {"number": 620, "label": "Sonstige Ausleihungen", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 0,
+                "label": "Kumulierte Abschreibungen",
+                "system": "base",
+                "accounts": [
+                    {"number": 700, "label": "Kumulierte Abschreibungen imm. Vermögensgegenstände", "system": "base", "accounts": []},
+                    {"number": 720, "label": "Kumulierte Abschreibungen auf Gebäude", "system": "developed", "accounts": []},
+                    {"number": 740, "label": "Kumulierte Abschreibungen auf techn. Anlagen", "system": "developed", "accounts": []},
+                    {"number": 750, "label": "Kumulierte Abschreibungen auf Fahrzeuge", "system": "developed", "accounts": []},
+                    {"number": 770, "label": "Kumulierte Abschreibungen auf BGA", "system": "developed", "accounts": []},
+                    {"number": 780, "label": "Kumulierte Abschreibungen auf GWG", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 1,
+        "label": "Umlaufvermögen",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 1,
+                "label": "Vorräte",
+                "system": "base",
+                "accounts": [
+                    {"number": 1000, "label": "Roh-, Hilfs- und Betriebsstoffe (Bestand)", "system": "base", "accounts": []},
+                    {"number": 1050, "label": "Unfertige Erzeugnisse (Bestand)", "system": "developed", "accounts": []},
+                    {"number": 1080, "label": "Fertige Erzeugnisse (Bestand)", "system": "developed", "accounts": []},
+                    {"number": 1100, "label": "Roh-, Hilfs- und Betriebsstoffe", "system": "base", "accounts": []},
+                    {"number": 1140, "label": "Unfertige Erzeugnisse, unfertige Leistungen", "system": "developed", "accounts": []},
+                    {"number": 1150, "label": "Fertige Erzeugnisse und Waren", "system": "base", "accounts": []}
+                ]
+            },
+            {
+                "number": 1,
+                "label": "Forderungen und sonstige Vermögensgegenstände",
+                "system": "base",
+                "accounts": [
+                    {"number": 1200, "label": "Forderungen aus Lieferungen und Leistungen", "system": "base", "accounts": []},
+                    {"number": 1210, "label": "Forderungen aus L+L ohne Kontokorrent", "system": "developed", "accounts": []},
+                    {"number": 1220, "label": "Forderungen nach Restlaufzeiten", "system": "developed", "accounts": []},
+                    {"number": 1250, "label": "Wertberichtigungen zu Forderungen", "system": "developed", "accounts": []},
+                    {"number": 1300, "label": "Sonstige Vermögensgegenstände", "system": "base", "accounts": []},
+                    {"number": 1310, "label": "Forderungen gegen Personal", "system": "developed", "accounts": []},
+                    {"number": 1350, "label": "Kaufpreisforderungen aus Anlageverkäufen", "system": "developed", "accounts": []},
+                    {"number": 1400, "label": "Forderungen gegen verbundene Unternehmen", "system": "base", "accounts": []},
+                    {"number": 1410, "label": "Forderungen gg. Unternehmen mit Beteiligungsverhältnis", "system": "developed", "accounts": []},
+                    {"number": 1450, "label": "Körperschaftsteuer-Vorauszahlungen", "system": "developed", "accounts": []},
+                    {"number": 1500, "label": "Sonstige Vermögensgegenstände, restl. Laufzeit bis 1 Jahr", "system": "developed", "accounts": []},
+                    {"number": 1520, "label": "Sonstige Vermögensgegenstände, restl. Laufzeit größer 1 Jahr", "system": "developed", "accounts": []},
+                    {"number": 1540, "label": "Steuererstattungsansprüche gg. andere EG-Länder", "system": "developed", "accounts": []},
+                    {"number": 1545, "label": "Anrechenbare Vorsteuer", "system": "developed", "accounts": []},
+                    {"number": 1548, "label": "Vorsteuer in Folgeperiode abziehbar", "system": "developed", "accounts": []},
+                    {"number": 1550, "label": "Steuererstattungsansprüche gegenüber Finanzamt", "system": "base", "accounts": []},
+                    {"number": 1570, "label": "Abziehbare Vorsteuer 19%", "system": "base", "accounts": []},
+                    {"number": 1571, "label": "Abziehbare Vorsteuer 7%", "system": "developed", "accounts": []},
+                    {"number": 1576, "label": "Abziehbare Vorsteuer aus innergemeinschaftlichem Erwerb 19%", "system": "developed", "accounts": []},
+                    {"number": 1580, "label": "Vorsteuer nach § 13b UStG 19%", "system": "developed", "accounts": []},
+                    {"number": 1590, "label": "Durchlaufende Posten", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 1,
+                "label": "Wertpapiere und Bankguthaben",
+                "system": "base",
+                "accounts": [
+                    {"number": 1600, "label": "Kasse", "system": "base", "accounts": []},
+                    {"number": 1620, "label": "Nebenkassen", "system": "developed", "accounts": []},
+                    {"number": 1700, "label": "Schecks", "system": "developed", "accounts": []},
+                    {"number": 1710, "label": "Wertpapiere des Umlaufvermögens", "system": "developed", "accounts": []},
+                    {"number": 1800, "label": "Bank", "system": "base", "accounts": []},
+                    {"number": 1810, "label": "Bankkonten", "system": "developed", "accounts": []},
+                    {"number": 1820, "label": "Festgeldkonto", "system": "developed", "accounts": []},
+                    {"number": 1840, "label": "Bundesbankguthaben", "system": "developed", "accounts": []},
+                    {"number": 1890, "label": "Wechsel", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 1,
+                "label": "Aktive Rechnungsabgrenzungsposten",
+                "system": "base",
+                "accounts": [
+                    {"number": 1900, "label": "Aktive Rechnungsabgrenzung", "system": "base", "accounts": []},
+                    {"number": 1940, "label": "Nicht durch Eigenkapital gedeckter Fehlbetrag", "system": "developed", "accounts": []},
+                    {"number": 1960, "label": "Aktive latente Steuern", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 2,
+        "label": "Eigenkapital",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 2,
+                "label": "Gezeichnetes Kapital / Rücklagen",
+                "system": "base",
+                "accounts": [
+                    {"number": 2000, "label": "Gezeichnetes Kapital", "system": "base", "accounts": []},
+                    {"number": 2010, "label": "Ausstehende Einlagen auf das gezeichnete Kapital", "system": "developed", "accounts": []},
+                    {"number": 2050, "label": "Kapitalrücklage", "system": "base", "accounts": []},
+                    {"number": 2100, "label": "Gesetzliche Rücklage", "system": "developed", "accounts": []},
+                    {"number": 2150, "label": "Rücklage für Anteile an einem herrschenden oder mehrheitlich beteiligten Unternehmen", "system": "developed", "accounts": []},
+                    {"number": 2200, "label": "Satzungsmäßige Rücklagen", "system": "developed", "accounts": []},
+                    {"number": 2300, "label": "Andere Gewinnrücklagen", "system": "base", "accounts": []},
+                    {"number": 2350, "label": "Andere Gewinnrücklagen aus Zuführung Jahresüberschuss", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 2,
+                "label": "Ergebnisvortrag und Jahresergebnis",
+                "system": "base",
+                "accounts": [
+                    {"number": 2860, "label": "Genussscheine", "system": "developed", "accounts": []},
+                    {"number": 2900, "label": "Eigenkapitalkorrekturen (CTA)", "system": "developed", "accounts": []},
+                    {"number": 2909, "label": "Währungsumrechnungsdifferenzen", "system": "developed", "accounts": []},
+                    {"number": 2950, "label": "Ergebnisvortrag (Gewinnvortrag)", "system": "base", "accounts": []},
+                    {"number": 2960, "label": "Jahresüberschuss / Jahresfehlbetrag", "system": "base", "accounts": []},
+                    {"number": 2970, "label": "Gewinnvortrag vor Verwendung", "system": "base", "accounts": []},
+                    {"number": 2978, "label": "Verlustvortrag vor Verwendung", "system": "developed", "accounts": []},
+                    {"number": 2980, "label": "Gewinnverwendung (Ausschüttungen)", "system": "base", "accounts": []},
+                    {"number": 2990, "label": "Schlussbilanzkonto", "system": "base", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 3,
+        "label": "Fremdkapital",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 3,
+                "label": "Rückstellungen",
+                "system": "base",
+                "accounts": [
+                    {"number": 3000, "label": "Rückstellungen für Pensionen und ähnliche Verpflichtungen", "system": "base", "accounts": []},
+                    {"number": 3020, "label": "Steuerrückstellungen", "system": "base", "accounts": []},
+                    {"number": 3030, "label": "Rückstellungen für Körperschaftsteuer", "system": "developed", "accounts": []},
+                    {"number": 3040, "label": "Rückstellungen für Gewerbesteuer", "system": "developed", "accounts": []},
+                    {"number": 3050, "label": "Rückstellungen für Umsatzsteuer", "system": "developed", "accounts": []},
+                    {"number": 3060, "label": "Rückstellungen für latente Steuern", "system": "developed", "accounts": []},
+                    {"number": 3070, "label": "Sonstige Rückstellungen", "system": "base", "accounts": []},
+                    {"number": 3075, "label": "Rückstellungen für Gewährleistungen", "system": "developed", "accounts": []},
+                    {"number": 3080, "label": "Rückstellungen für Abschluss und Prüfung", "system": "developed", "accounts": []},
+                    {"number": 3090, "label": "Rückstellungen für Aufbewahrung von Geschäftsunterlagen", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 3,
+                "label": "Verbindlichkeiten gegenüber Kreditinstituten",
+                "system": "base",
+                "accounts": [
+                    {"number": 3100, "label": "Verbindlichkeiten gg. Kreditinstituten, Restlaufzeit bis 1 Jahr", "system": "base", "accounts": []},
+                    {"number": 3150, "label": "Verbindlichkeiten gg. Kreditinstituten, Restlaufzeit größer 1 Jahr", "system": "base", "accounts": []},
+                    {"number": 3160, "label": "Verbindlichkeiten gg. Kreditinstituten, Restlaufzeit größer 5 Jahre", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 3,
+                "label": "Erhaltene Anzahlungen und Lieferantenverbindlichkeiten",
+                "system": "base",
+                "accounts": [
+                    {"number": 3250, "label": "Erhaltene Anzahlungen auf Bestellungen", "system": "base", "accounts": []},
+                    {"number": 3260, "label": "Erhaltene Anzahlungen – Restlaufzeit größer 1 Jahr", "system": "developed", "accounts": []},
+                    {"number": 3300, "label": "Verbindlichkeiten aus Lieferungen und Leistungen", "system": "base", "accounts": []},
+                    {"number": 3310, "label": "Verbindlichkeiten aus L+L ohne Kontokorrent", "system": "developed", "accounts": []},
+                    {"number": 3350, "label": "Wareneingang / Rechnungseingang Verrechnungskonto", "system": "base", "accounts": []},
+                    {"number": 3400, "label": "Verbindlichkeiten aus L+L Restlaufzeit 1 bis 5 Jahre", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 3,
+                "label": "Verbindlichkeiten gegenüber verbundenen Unternehmen",
+                "system": "base",
+                "accounts": [
+                    {"number": 3500, "label": "Verbindlichkeiten gg. verbundenen Unternehmen", "system": "base", "accounts": []},
+                    {"number": 3510, "label": "Verbindlichkeiten gg. verb. Unternehmen aus L+L", "system": "developed", "accounts": []},
+                    {"number": 3520, "label": "Verbindlichkeiten gg. Unternehmen mit Beteiligungsverhältnis", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 3,
+                "label": "Sonstige Verbindlichkeiten",
+                "system": "base",
+                "accounts": [
+                    {"number": 3700, "label": "Sonstige Verbindlichkeiten", "system": "base", "accounts": []},
+                    {"number": 3710, "label": "Verbindlichkeiten aus Lohn- und Kirchensteuer", "system": "developed", "accounts": []},
+                    {"number": 3720, "label": "Verbindlichkeiten aus Lohn und Gehalt", "system": "base", "accounts": []},
+                    {"number": 3730, "label": "Verbindlichkeiten im Rahmen der sozialen Sicherheit", "system": "developed", "accounts": []},
+                    {"number": 3740, "label": "Verbindlichkeiten aus Vermögensbildung", "system": "developed", "accounts": []},
+                    {"number": 3780, "label": "Verrechnungskonto erhaltene Anzahlungen bei Ist-Versteuerung", "system": "developed", "accounts": []},
+                    {"number": 3800, "label": "Umsatzsteuer 19%", "system": "base", "accounts": []},
+                    {"number": 3801, "label": "Umsatzsteuer 7%", "system": "developed", "accounts": []},
+                    {"number": 3810, "label": "Umsatzsteuer aus innergemeinschaftlichem Erwerb 19%", "system": "developed", "accounts": []},
+                    {"number": 3820, "label": "Umsatzsteuer nach § 13b UStG 19%", "system": "developed", "accounts": []},
+                    {"number": 3830, "label": "Umsatzsteuer-Vorauszahlung", "system": "developed", "accounts": []},
+                    {"number": 3840, "label": "Umsatzsteuer-Vorauszahlung 1/11", "system": "developed", "accounts": []},
+                    {"number": 3850, "label": "Umsatzsteuer laufendes Jahr", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 3,
+                "label": "Passive Rechnungsabgrenzung",
+                "system": "base",
+                "accounts": [
+                    {"number": 3900, "label": "Passive Rechnungsabgrenzung", "system": "base", "accounts": []},
+                    {"number": 3950, "label": "Passive latente Steuern", "system": "developed", "accounts": []},
+                    {"number": 3980, "label": "Sonstige passive Rechnungsabgrenzung", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 4,
+        "label": "Betriebliche Erträge",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 4,
+                "label": "Umsatzerlöse",
+                "system": "base",
+                "accounts": [
+                    {"number": 4000, "label": "Umsatzerlöse", "system": "base", "accounts": []},
+                    {"number": 4100, "label": "Steuerfreie Umsätze § 4 Nr. 1a UStG (Ausfuhrlieferungen)", "system": "developed", "accounts": []},
+                    {"number": 4110, "label": "Steuerfreie innergemeinschaftliche Lieferungen § 4 Nr. 1b UStG", "system": "developed", "accounts": []},
+                    {"number": 4120, "label": "Steuerfreie Umsätze § 4 Nr. 2-7 UStG", "system": "developed", "accounts": []},
+                    {"number": 4200, "label": "Erlöse Leistungen", "system": "base", "accounts": []},
+                    {"number": 4300, "label": "Erlöse 19% USt", "system": "developed", "accounts": []},
+                    {"number": 4310, "label": "Erlöse 7% USt", "system": "developed", "accounts": []},
+                    {"number": 4400, "label": "Erlöse aus Leistungen", "system": "base", "accounts": []},
+                    {"number": 4500, "label": "Erlöse aus Lieferungen an verbundene Unternehmen", "system": "base", "accounts": []}
+                ]
+            },
+            {
+                "number": 4,
+                "label": "Erlösschmälerungen und sonstige Erträge",
+                "system": "base",
+                "accounts": [
+                    {"number": 4700, "label": "Erlösschmälerungen", "system": "base", "accounts": []},
+                    {"number": 4710, "label": "Retouren", "system": "developed", "accounts": []},
+                    {"number": 4720, "label": "Gewährte Skonti", "system": "base", "accounts": []},
+                    {"number": 4730, "label": "Gewährte Boni und Rabatte", "system": "developed", "accounts": []},
+                    {"number": 4800, "label": "Bestandsveränderungen fertige und unfertige Erzeugnisse", "system": "developed", "accounts": []},
+                    {"number": 4830, "label": "Andere aktivierte Eigenleistungen", "system": "developed", "accounts": []},
+                    {"number": 4900, "label": "Sonstige betriebliche Erträge", "system": "base", "accounts": []},
+                    {"number": 4910, "label": "Erträge aus dem Abgang von Gegenständen des Anlagevermögens", "system": "developed", "accounts": []},
+                    {"number": 4920, "label": "Erträge aus der Auflösung von Rückstellungen", "system": "developed", "accounts": []},
+                    {"number": 4930, "label": "Erträge aus der Herabsetzung von Wertberichtigungen", "system": "developed", "accounts": []},
+                    {"number": 4940, "label": "Versicherungsentschädigungen", "system": "developed", "accounts": []},
+                    {"number": 4945, "label": "Erträge aus Währungsumrechnung", "system": "developed", "accounts": []},
+                    {"number": 4950, "label": "Periodenfremde Erträge", "system": "developed", "accounts": []},
+                    {"number": 4970, "label": "Verrechnete sonstige Sachbezüge", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 5,
+        "label": "Materialaufwand / Wareneinsatz",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 5,
+                "label": "Materialaufwand und bezogene Leistungen",
+                "system": "base",
+                "accounts": [
+                    {"number": 5000, "label": "Aufwendungen für Roh-, Hilfs- und Betriebsstoffe", "system": "base", "accounts": []},
+                    {"number": 5100, "label": "Einkauf Roh-, Hilfs- und Betriebsstoffe 19% Vorsteuer", "system": "base", "accounts": []},
+                    {"number": 5110, "label": "Einkauf Roh-, Hilfs- und Betriebsstoffe 7% Vorsteuer", "system": "developed", "accounts": []},
+                    {"number": 5200, "label": "Aufwendungen für bezogene Leistungen", "system": "base", "accounts": []},
+                    {"number": 5300, "label": "Wareneingang 19% Vorsteuer", "system": "base", "accounts": []},
+                    {"number": 5310, "label": "Wareneingang 7% Vorsteuer", "system": "developed", "accounts": []},
+                    {"number": 5400, "label": "Wareneingang ohne Vorsteuer", "system": "developed", "accounts": []},
+                    {"number": 5500, "label": "Nicht abziehbare Vorsteuer", "system": "developed", "accounts": []},
+                    {"number": 5600, "label": "Fremdleistungen", "system": "developed", "accounts": []},
+                    {"number": 5700, "label": "Nachlässe", "system": "base", "accounts": []},
+                    {"number": 5720, "label": "Erhaltene Skonti", "system": "base", "accounts": []},
+                    {"number": 5730, "label": "Erhaltene Boni und Rabatte", "system": "developed", "accounts": []},
+                    {"number": 5800, "label": "Bestandsveränderungen Roh-, Hilfs- und Betriebsstoffe", "system": "developed", "accounts": []},
+                    {"number": 5900, "label": "Aufwendungen für Energieversorgung", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 6,
+        "label": "Personalaufwand / sonstige betriebliche Aufwendungen",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 6,
+                "label": "Personalaufwand",
+                "system": "base",
+                "accounts": [
+                    {"number": 6000, "label": "Löhne", "system": "base", "accounts": []},
+                    {"number": 6010, "label": "Löhne (steuerfrei)", "system": "developed", "accounts": []},
+                    {"number": 6020, "label": "Gehälter", "system": "base", "accounts": []},
+                    {"number": 6030, "label": "Geschäftsführergehälter der GmbH", "system": "developed", "accounts": []},
+                    {"number": 6040, "label": "Aushilfslöhne", "system": "developed", "accounts": []},
+                    {"number": 6050, "label": "Gratifikationen / Tantiemen", "system": "developed", "accounts": []},
+                    {"number": 6060, "label": "Vermögenswirksame Leistungen", "system": "developed", "accounts": []},
+                    {"number": 6070, "label": "Urlaubsgeld", "system": "developed", "accounts": []},
+                    {"number": 6080, "label": "Weihnachtsgeld", "system": "developed", "accounts": []},
+                    {"number": 6100, "label": "Soziale Abgaben und Aufwendungen für Altersversorgung", "system": "base", "accounts": []},
+                    {"number": 6110, "label": "Gesetzliche Sozialaufwendungen", "system": "developed", "accounts": []},
+                    {"number": 6120, "label": "Beiträge zur Berufsgenossenschaft", "system": "developed", "accounts": []},
+                    {"number": 6130, "label": "Freiwillige Sozialaufwendungen", "system": "developed", "accounts": []},
+                    {"number": 6140, "label": "Aufwendungen für Altersversorgung", "system": "developed", "accounts": []},
+                    {"number": 6160, "label": "Aufwendungen für Unterstützung", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 6,
+                "label": "Abschreibungen und sonstige betriebliche Aufwendungen",
+                "system": "base",
+                "accounts": [
+                    {"number": 6200, "label": "Abschreibungen auf immaterielle Vermögensgegenstände", "system": "developed", "accounts": []},
+                    {"number": 6210, "label": "Abschreibungen auf Sachanlagen (ohne AfA auf Kfz und GWG)", "system": "developed", "accounts": []},
+                    {"number": 6220, "label": "Abschreibungen auf Sachanlagen", "system": "base", "accounts": []},
+                    {"number": 6230, "label": "Abschreibungen auf GWG", "system": "developed", "accounts": []},
+                    {"number": 6240, "label": "Abschreibungen auf Kfz", "system": "developed", "accounts": []},
+                    {"number": 6250, "label": "Abschreibungen auf Finanzanlagen", "system": "developed", "accounts": []},
+                    {"number": 6260, "label": "Abschreibungen auf Umlaufvermögen (soweit nicht üblich)", "system": "developed", "accounts": []},
+                    {"number": 6280, "label": "Außerplanmäßige Abschreibungen", "system": "developed", "accounts": []},
+                    {"number": 6300, "label": "Sonstige betriebliche Aufwendungen", "system": "base", "accounts": []},
+                    {"number": 6305, "label": "Grundsteuer", "system": "developed", "accounts": []},
+                    {"number": 6310, "label": "Miete und Nebenkosten (Immobilien)", "system": "base", "accounts": []},
+                    {"number": 6315, "label": "Leasing", "system": "developed", "accounts": []},
+                    {"number": 6320, "label": "Heizung, Gas, Strom, Wasser", "system": "developed", "accounts": []},
+                    {"number": 6325, "label": "Reinigung", "system": "developed", "accounts": []},
+                    {"number": 6330, "label": "Instandhaltung betrieblicher Räume", "system": "developed", "accounts": []},
+                    {"number": 6340, "label": "Abschreibungen auf Forderungen (Forderungsausfälle)", "system": "base", "accounts": []},
+                    {"number": 6350, "label": "Einstellung in Einzelwertberichtigungen zu Forderungen", "system": "developed", "accounts": []},
+                    {"number": 6370, "label": "Verluste aus dem Abgang von Gegenständen des AV", "system": "developed", "accounts": []},
+                    {"number": 6400, "label": "Versicherungen", "system": "base", "accounts": []},
+                    {"number": 6410, "label": "Beiträge", "system": "developed", "accounts": []},
+                    {"number": 6420, "label": "Bürobedarf", "system": "developed", "accounts": []},
+                    {"number": 6430, "label": "Porto", "system": "developed", "accounts": []},
+                    {"number": 6440, "label": "Telefon", "system": "developed", "accounts": []},
+                    {"number": 6450, "label": "Internet", "system": "developed", "accounts": []},
+                    {"number": 6460, "label": "EDV-Kosten", "system": "developed", "accounts": []},
+                    {"number": 6470, "label": "Rechts- und Beratungskosten", "system": "base", "accounts": []},
+                    {"number": 6480, "label": "Buchführungskosten", "system": "developed", "accounts": []},
+                    {"number": 6490, "label": "Abschluss- und Prüfungskosten", "system": "developed", "accounts": []},
+                    {"number": 6500, "label": "Fahrzeugkosten", "system": "base", "accounts": []},
+                    {"number": 6520, "label": "Laufende Kfz-Betriebskosten", "system": "developed", "accounts": []},
+                    {"number": 6540, "label": "Kfz-Versicherungen", "system": "developed", "accounts": []},
+                    {"number": 6560, "label": "Kfz-Reparaturen", "system": "developed", "accounts": []},
+                    {"number": 6600, "label": "Werbekosten", "system": "base", "accounts": []},
+                    {"number": 6610, "label": "Repräsentationskosten", "system": "developed", "accounts": []},
+                    {"number": 6640, "label": "Bewirtungskosten", "system": "developed", "accounts": []},
+                    {"number": 6650, "label": "Reisekosten Unternehmer", "system": "developed", "accounts": []},
+                    {"number": 6660, "label": "Reisekosten Arbeitnehmer", "system": "base", "accounts": []},
+                    {"number": 6670, "label": "Reisekosten Arbeitnehmer (Fahrkosten)", "system": "developed", "accounts": []},
+                    {"number": 6680, "label": "Reisekosten Arbeitnehmer (Verpflegung)", "system": "developed", "accounts": []},
+                    {"number": 6700, "label": "Kosten der Warenabgabe (Transport)", "system": "base", "accounts": []},
+                    {"number": 6750, "label": "Aufwendungen für ein häusliches Arbeitszimmer", "system": "developed", "accounts": []},
+                    {"number": 6780, "label": "Fremdarbeiten / Fremdleistungen", "system": "developed", "accounts": []},
+                    {"number": 6800, "label": "Aufwendungen aus Währungsumrechnung", "system": "base", "accounts": []},
+                    {"number": 6815, "label": "Sonstige Aufwendungen unregelmäßig", "system": "developed", "accounts": []},
+                    {"number": 6820, "label": "Sonstige Aufwendungen betriebsfremd", "system": "developed", "accounts": []},
+                    {"number": 6830, "label": "Periodenfremde Aufwendungen", "system": "developed", "accounts": []},
+                    {"number": 6850, "label": "Spenden und Zuwendungen", "system": "developed", "accounts": []},
+                    {"number": 6880, "label": "Aufwendungen aus der Zuführung zu Rückstellungen", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 7,
+        "label": "Finanzerträge und -aufwendungen",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 7,
+                "label": "Finanzerträge",
+                "system": "base",
+                "accounts": [
+                    {"number": 7000, "label": "Erträge aus Beteiligungen", "system": "base", "accounts": []},
+                    {"number": 7020, "label": "Erträge aus Beteiligungen an verbundenen Unternehmen", "system": "developed", "accounts": []},
+                    {"number": 7050, "label": "Erträge aus anderen Wertpapieren und Ausleihungen des Finanzanlagevermögens", "system": "base", "accounts": []},
+                    {"number": 7100, "label": "Sonstige Zinsen und ähnliche Erträge", "system": "base", "accounts": []},
+                    {"number": 7110, "label": "Zinserträge aus verbundenen Unternehmen", "system": "developed", "accounts": []},
+                    {"number": 7150, "label": "Erträge aus Gewinngemeinschaften", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 7,
+                "label": "Finanzaufwendungen",
+                "system": "base",
+                "accounts": [
+                    {"number": 7200, "label": "Abschreibungen auf Finanzanlagen und Wertpapiere des UV", "system": "developed", "accounts": []},
+                    {"number": 7300, "label": "Zinsen und ähnliche Aufwendungen", "system": "base", "accounts": []},
+                    {"number": 7310, "label": "Zinsen an verbundene Unternehmen", "system": "developed", "accounts": []},
+                    {"number": 7320, "label": "Zinsen für Kontokorrent", "system": "developed", "accounts": []},
+                    {"number": 7330, "label": "Zinsen für langfristige Verbindlichkeiten", "system": "developed", "accounts": []},
+                    {"number": 7340, "label": "Diskontaufwendungen", "system": "developed", "accounts": []},
+                    {"number": 7350, "label": "Zinsanteil der Zuführung zu Pensionsrückstellungen", "system": "developed", "accounts": []},
+                    {"number": 7400, "label": "Aufwendungen aus Verlustübernahme", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 8,
+        "label": "Steuern / außerordentliches Ergebnis",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 8,
+                "label": "Steuern vom Einkommen und Ertrag",
+                "system": "base",
+                "accounts": [
+                    {"number": 7600, "label": "Körperschaftsteuer", "system": "base", "accounts": []},
+                    {"number": 7610, "label": "Körperschaftsteuer für Vorjahre", "system": "developed", "accounts": []},
+                    {"number": 7620, "label": "Gewerbesteuer", "system": "base", "accounts": []},
+                    {"number": 7630, "label": "Gewerbesteuer für Vorjahre", "system": "developed", "accounts": []},
+                    {"number": 7640, "label": "Solidaritätszuschlag", "system": "developed", "accounts": []},
+                    {"number": 7650, "label": "Latente Steuern (Aufwand)", "system": "developed", "accounts": []},
+                    {"number": 7660, "label": "Latente Steuern (Ertrag)", "system": "developed", "accounts": []}
+                ]
+            },
+            {
+                "number": 8,
+                "label": "Sonstige Steuern",
+                "system": "base",
+                "accounts": [
+                    {"number": 7680, "label": "Sonstige Steuern", "system": "base", "accounts": []},
+                    {"number": 7685, "label": "Grundsteuer", "system": "developed", "accounts": []},
+                    {"number": 7690, "label": "Kfz-Steuer", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    },
+    {
+        "number": 9,
+        "label": "Statistische Konten / Vorträge",
+        "system": "condensed",
+        "accounts": [
+            {
+                "number": 9,
+                "label": "Eröffnungs- und Saldenvortragskonten",
+                "system": "base",
+                "accounts": [
+                    {"number": 9000, "label": "Saldenvorträge Sachkonten", "system": "base", "accounts": []},
+                    {"number": 9008, "label": "Saldenvorträge Debitoren", "system": "developed", "accounts": []},
+                    {"number": 9009, "label": "Saldenvorträge Kreditoren", "system": "developed", "accounts": []},
+                    {"number": 9010, "label": "Eröffnungsbilanzkonto", "system": "base", "accounts": []},
+                    {"number": 9100, "label": "Verrechnungskonto innerbetrieblich", "system": "developed", "accounts": []},
+                    {"number": 9200, "label": "Bankabstimmungskonto", "system": "developed", "accounts": []},
+                    {"number": 9800, "label": "Einzelkosten der Fertigung (Statistisch)", "system": "developed", "accounts": []},
+                    {"number": 9850, "label": "Gemeinkosten der Fertigung (Statistisch)", "system": "developed", "accounts": []},
+                    {"number": 9900, "label": "Kosten-Leistungs-Rechnung Verrechnungskonten", "system": "developed", "accounts": []}
+                ]
+            }
+        ]
+    }
+]

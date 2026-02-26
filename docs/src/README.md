@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -21,6 +21,8 @@
 SyntheticData is a configurable synthetic data generator that produces realistic, interconnected enterprise financial data. It generates General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, audit workpapers, and ML-ready graph exports at scale.
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
+
+**v0.9.1:** Generalized multi-GAAP framework — German GAAP (HGB) with SKR04 chart of accounts, Degressiv depreciation, GWG low-value asset expensing, GoBD audit export; `FrameworkAccounts` maps ~45 semantic accounts per framework; auxiliary GL sub-accounts on vendor/customer master data; expanded French PCG accounts.
 
 **v0.9.0:** ~2x performance improvement — cached temporal CDF, fast Decimal, SmallVec line items, parallel generation with deterministic seed splitting, itoa/ryu formatting, fast_csv module, and zstd CompressedWriter. Major dependency upgrades: rand 0.9, arrow/parquet 58, zip 8.
 
@@ -255,7 +257,7 @@ datasynth-generators   Data generators (JE, documents, subledgers, anomalies, au
 datasynth-banking      KYC/AML banking transaction generator
 datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0)
 datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
-datasynth-standards    Accounting/audit standards (US GAAP, IFRS, ISA, SOX)
+datasynth-standards    Accounting/audit standards (US GAAP, IFRS, French GAAP, German GAAP, ISA, SOX)
     │
 datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL)
 datasynth-eval         Evaluation framework with auto-tuning

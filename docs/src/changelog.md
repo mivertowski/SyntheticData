@@ -4,6 +4,17 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [0.9.1] - 2026-02-26
+
+**Generalized Multi-GAAP Framework + German GAAP (HGB)**
+
+- German GAAP (HGB) framework: SKR04 chart of accounts, Degressiv depreciation, GWG low-value asset expensing, BMF lease classification, mandatory impairment reversal
+- Generalized `FrameworkAccounts` mapping ~45 semantic accounts per framework (US GAAP, French PCG, German SKR04)
+- GoBD audit export (13-column journal CSV + account CSV + XML index)
+- Auxiliary GL sub-accounts on vendor/customer master data (PCG `401XXXX`/`411XXXX`, SKR04 `3300XXXX`/`1200XXXX`)
+- FEC auxiliary fields now use framework-specific GL accounts instead of raw partner IDs
+- Expanded French PCG account modules (fixed assets, tax, suspense, equity, liabilities)
+
 ### [0.9.0] - 2026-02-25
 
 **Performance & Dependencies**

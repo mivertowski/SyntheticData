@@ -4688,6 +4688,8 @@ pub enum AccountingFrameworkConfig {
     DualReporting,
     /// French GAAP (Plan Comptable Général – PCG)
     FrenchGaap,
+    /// German GAAP (Handelsgesetzbuch – HGB, §238-263)
+    GermanGaap,
 }
 
 /// Revenue recognition configuration (ASC 606/IFRS 15).
@@ -12722,6 +12724,7 @@ mod tests {
             AccountingFrameworkConfig::Ifrs,
             AccountingFrameworkConfig::DualReporting,
             AccountingFrameworkConfig::FrenchGaap,
+            AccountingFrameworkConfig::GermanGaap,
         ];
 
         for framework in frameworks {

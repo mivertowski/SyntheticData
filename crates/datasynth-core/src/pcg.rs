@@ -86,6 +86,96 @@ pub mod personnel_accounts {
     pub const WAGES_PAYABLE: &str = "421000";
 }
 
+/// Fixed asset sub-accounts – Class 2.
+pub mod fixed_asset_accounts {
+    /// Terrains (Land)
+    pub const TERRAINS: &str = "211000";
+    /// Constructions (Buildings)
+    pub const CONSTRUCTIONS: &str = "213000";
+    /// Installations techniques, matériel et outillage industriels
+    pub const INDUSTRIAL: &str = "215000";
+    /// Matériel de transport (Vehicles)
+    pub const TRANSPORT: &str = "218200";
+    /// Matériel de bureau (Office Equipment)
+    pub const OFFICE_EQUIPMENT: &str = "218300";
+    /// Matériel informatique (IT Equipment)
+    pub const IT_EQUIPMENT: &str = "218400";
+}
+
+/// Tax accounts – Classes 4 & 6.
+pub mod tax_accounts {
+    /// TVA déductible sur biens et services (Input VAT)
+    pub const INPUT_VAT: &str = "445660";
+    /// TVA collectée (Output VAT)
+    pub const OUTPUT_VAT: &str = "445710";
+    /// Retenue à la source (Withholding Tax Payable)
+    pub const WHT_PAYABLE: &str = "442100";
+    /// Crédit d'impôt (Tax Receivable)
+    pub const TAX_RECEIVABLE: &str = "443000";
+    /// Impôt sur les bénéfices (Tax Expense)
+    pub const TAX_EXPENSE: &str = "695000";
+    /// Provisions pour impôts différés passifs (Deferred Tax Liability)
+    pub const DEFERRED_TAX_LIABILITY: &str = "155000";
+    /// Charges à répartir / actif impôt différé (Deferred Tax Asset)
+    pub const DEFERRED_TAX_ASSET: &str = "481000";
+}
+
+/// Suspense and clearing accounts.
+pub mod suspense_accounts {
+    /// Personnel – Rémunérations dues (Payroll Clearing)
+    pub const PAYROLL_CLEARING: &str = "421000";
+    /// Comptes d'attente (General Suspense)
+    pub const GENERAL_SUSPENSE: &str = "471000";
+}
+
+/// Additional revenue accounts – Class 7.
+pub mod additional_revenue {
+    /// Produits intercompany (IC Revenue)
+    pub const IC_REVENUE: &str = "757000";
+    /// Escomptes obtenus / rabais sur achats (Purchase Discount Income)
+    pub const PURCHASE_DISCOUNT_INCOME: &str = "765000";
+    /// Rabais, remises et ristournes accordés (Sales Returns)
+    pub const SALES_RETURNS: &str = "709100";
+}
+
+/// Additional expense accounts – Class 6.
+pub mod additional_expense {
+    /// Achats de matières premières (Raw Materials)
+    pub const RAW_MATERIALS: &str = "601000";
+    /// Rabais, remises sur achats (Purchase Discounts)
+    pub const PURCHASE_DISCOUNTS: &str = "609000";
+    /// Pertes de change (FX Gain/Loss)
+    pub const FX_GAIN_LOSS: &str = "666000";
+    /// Pertes sur créances irrécouvrables (Bad Debt)
+    pub const BAD_DEBT: &str = "654000";
+}
+
+/// Liability accounts – Class 4.
+pub mod liability_accounts {
+    /// Charges à payer (Accrued Expenses)
+    pub const ACCRUED_EXPENSES: &str = "428000";
+    /// Charges de personnel à payer (Accrued Salaries)
+    pub const ACCRUED_SALARIES: &str = "428400";
+    /// Produits constatés d'avance (Unearned Revenue)
+    pub const UNEARNED_REVENUE: &str = "487000";
+    /// Comptes courants des associés / IC Payable (Group Companies)
+    pub const IC_PAYABLE: &str = "451000";
+}
+
+/// Additional equity accounts – Class 1.
+pub mod equity_accounts {
+    /// Prime d'émission (Additional Paid-In Capital)
+    pub const APIC: &str = "104000";
+    /// Résultat de l'exercice (Current Year Earnings)
+    pub const CURRENT_YEAR_EARNINGS: &str = "120000";
+    /// Écart de conversion (Currency Translation Adjustment)
+    pub const CTA: &str = "107000";
+    /// Solde intermédiaire de gestion (Income Summary)
+    pub const INCOME_SUMMARY: &str = "129900";
+    /// Associés – dividendes à payer (Dividends Paid)
+    pub const DIVIDENDS_PAID: &str = "457000";
+}
+
 /// Return the PCG class (1–9) from a 6-digit account number.
 #[inline]
 pub fn pcg_class(account: &str) -> Option<u8> {

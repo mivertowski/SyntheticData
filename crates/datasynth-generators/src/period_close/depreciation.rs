@@ -35,6 +35,16 @@ impl Default for DepreciationRunConfig {
     }
 }
 
+impl From<&datasynth_core::FrameworkAccounts> for DepreciationRunConfig {
+    fn from(fa: &datasynth_core::FrameworkAccounts) -> Self {
+        Self {
+            default_expense_account: fa.depreciation_expense.clone(),
+            default_accum_depr_account: fa.accumulated_depreciation.clone(),
+            ..Default::default()
+        }
+    }
+}
+
 /// Generator for depreciation runs.
 pub struct DepreciationRunGenerator {
     config: DepreciationRunConfig,
