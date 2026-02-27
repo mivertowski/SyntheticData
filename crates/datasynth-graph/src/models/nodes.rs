@@ -262,9 +262,18 @@ impl AccountNode {
             0.0
         });
 
-        // Account code as numeric (first digits)
-        if let Ok(code_num) = self.account_code[..1.min(self.account_code.len())].parse::<f64>() {
-            self.node.features.push(code_num);
+        // Account code as normalized numeric feature [0, 1]
+        // Parse up to 4 leading digits and divide by 10000.
+        let code_prefix: String = self
+            .account_code
+            .chars()
+            .take(4)
+            .take_while(|c| c.is_ascii_digit())
+            .collect();
+        if let Ok(code_num) = code_prefix.parse::<f64>() {
+            self.node.features.push(code_num / 10000.0);
+        } else {
+            self.node.features.push(0.0);
         }
 
         // Add categorical features

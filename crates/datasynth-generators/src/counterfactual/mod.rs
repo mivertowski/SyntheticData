@@ -20,7 +20,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 
 use datasynth_core::models::{
     AnomalyCausalReason, AnomalyType, ErrorType, FraudType, InjectionStrategy, JournalEntry,
-    LabeledAnomaly, RelationalAnomalyType, StatisticalAnomalyType,
+    JournalEntryLine, LabeledAnomaly, RelationalAnomalyType, StatisticalAnomalyType,
 };
 
 /// A counterfactual pair containing both the original and modified versions.
@@ -463,6 +463,53 @@ impl CounterfactualGenerator {
             CounterfactualSpec::CreateRoundTrip { intermediaries } => {
                 InjectionStrategy::CircularFlow {
                     entity_chain: intermediaries.clone(),
+                }
+            }
+            CounterfactualSpec::AddLineItem {
+                account,
+                amount,
+                is_debit,
+            } => {
+                let next_line_number =
+                    entry.lines.iter().map(|l| l.line_number).max().unwrap_or(0) + 1;
+                let new_line = if *is_debit {
+                    JournalEntryLine::debit(
+                        entry.header.document_id,
+                        next_line_number,
+                        account.clone(),
+                        *amount,
+                    )
+                } else {
+                    JournalEntryLine::credit(
+                        entry.header.document_id,
+                        next_line_number,
+                        account.clone(),
+                        *amount,
+                    )
+                };
+                entry.lines.push(new_line);
+                InjectionStrategy::Custom {
+                    name: "AddLineItem".to_string(),
+                    parameters: HashMap::from([
+                        ("account".to_string(), account.clone()),
+                        ("amount".to_string(), amount.to_string()),
+                        ("is_debit".to_string(), is_debit.to_string()),
+                    ]),
+                }
+            }
+            CounterfactualSpec::RemoveLineItem { line_index } => {
+                let removed_account = if *line_index < entry.lines.len() {
+                    let removed = entry.lines.remove(*line_index);
+                    removed.gl_account
+                } else {
+                    String::from("(index out of bounds)")
+                };
+                InjectionStrategy::Custom {
+                    name: "RemoveLineItem".to_string(),
+                    parameters: HashMap::from([
+                        ("line_index".to_string(), line_index.to_string()),
+                        ("removed_account".to_string(), removed_account),
+                    ]),
                 }
             }
             _ => InjectionStrategy::Custom {

@@ -18,6 +18,7 @@ use datasynth_core::models::balance::{
     ComparativeTrialBalance, TrialBalance, TrialBalanceLine, TrialBalanceStatus, TrialBalanceType,
 };
 use datasynth_core::models::ChartOfAccounts;
+use datasynth_core::FrameworkAccounts;
 
 use super::RunningBalanceTracker;
 
@@ -55,19 +56,27 @@ pub struct TrialBalanceGenerator {
     category_mappings: HashMap<String, AccountCategory>,
     /// Account descriptions.
     account_descriptions: HashMap<String, String>,
+    /// Framework-aware account classification.
+    framework_accounts: FrameworkAccounts,
 }
 
 impl TrialBalanceGenerator {
-    /// Creates a new trial balance generator.
-    pub fn new(config: TrialBalanceConfig) -> Self {
+    /// Creates a new trial balance generator for a specific accounting framework.
+    pub fn new_with_framework(config: TrialBalanceConfig, framework: &str) -> Self {
         Self {
             config,
             category_mappings: HashMap::new(),
             account_descriptions: HashMap::new(),
+            framework_accounts: FrameworkAccounts::for_framework(framework),
         }
     }
 
-    /// Creates a generator with default configuration.
+    /// Creates a new trial balance generator (defaults to US GAAP).
+    pub fn new(config: TrialBalanceConfig) -> Self {
+        Self::new_with_framework(config, "us_gaap")
+    }
+
+    /// Creates a generator with default configuration (US GAAP).
     pub fn with_defaults() -> Self {
         Self::new(TrialBalanceConfig::default())
     }
@@ -455,33 +464,18 @@ impl TrialBalanceGenerator {
     }
 
     /// Determines account category from code prefix.
+    ///
+    /// Checks explicitly registered mappings first, then falls back to the
+    /// framework-aware classifier from [`FrameworkAccounts`].
     fn determine_category(&self, account_code: &str) -> AccountCategory {
         // Check registered mappings first
         if let Some(category) = self.category_mappings.get(account_code) {
             return *category;
         }
 
-        // Default logic based on account code ranges
-        let prefix: u32 = account_code
-            .chars()
-            .take(2)
-            .collect::<String>()
-            .parse()
-            .unwrap_or(0);
-
-        match prefix {
-            10..=14 => AccountCategory::CurrentAssets,
-            15..=19 => AccountCategory::NonCurrentAssets,
-            20..=24 => AccountCategory::CurrentLiabilities,
-            25..=29 => AccountCategory::NonCurrentLiabilities,
-            30..=39 => AccountCategory::Equity,
-            40..=44 => AccountCategory::Revenue,
-            50..=54 => AccountCategory::CostOfGoodsSold,
-            55..=69 => AccountCategory::OperatingExpenses,
-            70..=74 => AccountCategory::OtherIncome,
-            75..=99 => AccountCategory::OtherExpenses,
-            _ => AccountCategory::OtherExpenses,
-        }
+        // Use framework-aware classification
+        self.framework_accounts
+            .classify_trial_balance_category(account_code)
     }
 
     /// Calculates category summaries from lines.

@@ -174,8 +174,12 @@ impl AmlDetectabilityAnalyzer {
                     !case_ids.is_empty() && txns.len() > case_ids.len()
                 }
                 _ => {
-                    // Generic: at least some transactions present
-                    !txns.is_empty()
+                    // Generic: require a meaningful flag rate indicating
+                    // the typology produces detectable suspicious patterns.
+                    // A flag rate of 0 means no suspicious indicators at all.
+                    let suspicious_count = txns.iter().filter(|t| t.is_flagged).count();
+                    let suspicious_ratio = suspicious_count as f64 / txns.len().max(1) as f64;
+                    !txns.is_empty() && suspicious_ratio > 0.0
                 }
             };
 

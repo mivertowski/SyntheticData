@@ -8,6 +8,8 @@
 use std::sync::Arc;
 
 use crate::accounts::AccountCategory;
+use crate::models::balance::AccountCategory as TrialBalanceCategory;
+use crate::models::balance::AccountType;
 
 /// Audit export configuration flags.
 #[derive(Debug, Clone, Default)]
@@ -116,6 +118,23 @@ impl FrameworkAccounts {
         (self.classifier)(account)
     }
 
+    /// Classify an account code into an [`AccountType`] using this framework's rules.
+    ///
+    /// Maps the framework-specific [`AccountCategory`] to the balance-sheet
+    /// oriented [`AccountType`] (Asset, Liability, Equity, Revenue, Expense).
+    pub fn classify_account_type(&self, account_code: &str) -> AccountType {
+        account_type_from_category(self.classify(account_code))
+    }
+
+    /// Classify an account code into a [`TrialBalanceCategory`] using this
+    /// framework's rules.
+    ///
+    /// Provides the finer-grained trial-balance grouping (CurrentAssets,
+    /// NonCurrentAssets, etc.) derived from the framework classifier.
+    pub fn classify_trial_balance_category(&self, account_code: &str) -> TrialBalanceCategory {
+        trial_balance_category_from_category(self.classify(account_code))
+    }
+
     /// US GAAP (default) — 4-digit accounts from `crate::accounts`.
     pub fn us_gaap() -> Self {
         use crate::accounts::*;
@@ -182,6 +201,11 @@ impl FrameworkAccounts {
             audit_export: AuditExportConfig::default(),
             classifier: Arc::new(us_gaap_classify),
         }
+    }
+
+    /// IFRS — uses the same numbering conventions as US GAAP.
+    pub fn ifrs() -> Self {
+        Self::us_gaap()
     }
 
     /// French GAAP (PCG) — 6-digit accounts from `crate::pcg`.
@@ -332,10 +356,51 @@ impl FrameworkAccounts {
     /// framework detection logic.
     pub fn for_framework(framework: &str) -> Self {
         match framework {
+            "us_gaap" | "UsGaap" => Self::us_gaap(),
+            "ifrs" | "Ifrs" => Self::ifrs(),
+            "dual_reporting" | "DualReporting" => Self::us_gaap(),
             "french_gaap" | "FrenchGaap" => Self::french_gaap(),
             "german_gaap" | "GermanGaap" | "hgb" => Self::german_gaap(),
-            _ => Self::us_gaap(),
+            other => {
+                eprintln!(
+                    "FrameworkAccounts::for_framework: unknown framework {:?}, defaulting to US GAAP",
+                    other
+                );
+                Self::us_gaap()
+            }
         }
+    }
+}
+
+// ── Conversion helpers ──────────────────────────────────────────────────
+
+/// Convert a framework [`AccountCategory`] to an [`AccountType`].
+fn account_type_from_category(cat: AccountCategory) -> AccountType {
+    match cat {
+        AccountCategory::Asset => AccountType::Asset,
+        AccountCategory::Liability => AccountType::Liability,
+        AccountCategory::Equity => AccountType::Equity,
+        AccountCategory::Revenue => AccountType::Revenue,
+        AccountCategory::Cogs
+        | AccountCategory::OperatingExpense
+        | AccountCategory::OtherIncomeExpense
+        | AccountCategory::Tax => AccountType::Expense,
+        AccountCategory::Suspense | AccountCategory::Unknown => AccountType::Asset,
+    }
+}
+
+/// Convert a framework [`AccountCategory`] to a [`TrialBalanceCategory`].
+fn trial_balance_category_from_category(cat: AccountCategory) -> TrialBalanceCategory {
+    match cat {
+        AccountCategory::Asset => TrialBalanceCategory::CurrentAssets,
+        AccountCategory::Liability => TrialBalanceCategory::CurrentLiabilities,
+        AccountCategory::Equity => TrialBalanceCategory::Equity,
+        AccountCategory::Revenue => TrialBalanceCategory::Revenue,
+        AccountCategory::Cogs => TrialBalanceCategory::CostOfGoodsSold,
+        AccountCategory::OperatingExpense => TrialBalanceCategory::OperatingExpenses,
+        AccountCategory::OtherIncomeExpense => TrialBalanceCategory::OtherExpenses,
+        AccountCategory::Tax => TrialBalanceCategory::OtherExpenses,
+        AccountCategory::Suspense | AccountCategory::Unknown => TrialBalanceCategory::OtherExpenses,
     }
 }
 
@@ -503,5 +568,110 @@ mod tests {
 
         let hgb = FrameworkAccounts::for_framework("hgb");
         assert_eq!(hgb.ar_control, "1200");
+
+        // IFRS and dual_reporting dispatch
+        let ifrs = FrameworkAccounts::for_framework("ifrs");
+        assert_eq!(ifrs.ar_control, "1100");
+
+        let dual = FrameworkAccounts::for_framework("dual_reporting");
+        assert_eq!(dual.ar_control, "1100");
+
+        // Unknown framework falls back to US GAAP (with eprintln warning)
+        let unknown = FrameworkAccounts::for_framework("martian_gaap");
+        assert_eq!(unknown.ar_control, "1100");
+    }
+
+    #[test]
+    fn test_ifrs_constructor() {
+        let ifrs = FrameworkAccounts::ifrs();
+        let us = FrameworkAccounts::us_gaap();
+        assert_eq!(ifrs.ar_control, us.ar_control);
+        assert_eq!(ifrs.ap_control, us.ap_control);
+        assert_eq!(ifrs.cogs, us.cogs);
+        assert_eq!(ifrs.product_revenue, us.product_revenue);
+        assert_eq!(ifrs.classify("1100"), us.classify("1100"));
+        assert_eq!(ifrs.classify("4000"), us.classify("4000"));
+    }
+
+    #[test]
+    fn test_classify_account_type_us_gaap() {
+        let fa = FrameworkAccounts::us_gaap();
+        assert_eq!(fa.classify_account_type("1100"), AccountType::Asset);
+        assert_eq!(fa.classify_account_type("2000"), AccountType::Liability);
+        assert_eq!(fa.classify_account_type("3200"), AccountType::Equity);
+        assert_eq!(fa.classify_account_type("4000"), AccountType::Revenue);
+        assert_eq!(fa.classify_account_type("5000"), AccountType::Expense);
+        assert_eq!(fa.classify_account_type("6100"), AccountType::Expense);
+    }
+
+    #[test]
+    fn test_classify_account_type_french_gaap() {
+        let fa = FrameworkAccounts::french_gaap();
+        assert_eq!(fa.classify_account_type("101000"), AccountType::Equity);
+        assert_eq!(fa.classify_account_type("210000"), AccountType::Asset);
+        assert_eq!(fa.classify_account_type("401000"), AccountType::Liability);
+        assert_eq!(fa.classify_account_type("603000"), AccountType::Expense);
+        assert_eq!(fa.classify_account_type("701000"), AccountType::Revenue);
+    }
+
+    #[test]
+    fn test_classify_account_type_german_gaap() {
+        let fa = FrameworkAccounts::german_gaap();
+        assert_eq!(fa.classify_account_type("0200"), AccountType::Asset);
+        assert_eq!(fa.classify_account_type("2000"), AccountType::Equity);
+        assert_eq!(fa.classify_account_type("3300"), AccountType::Liability);
+        assert_eq!(fa.classify_account_type("4000"), AccountType::Revenue);
+        assert_eq!(fa.classify_account_type("5000"), AccountType::Expense);
+        assert_eq!(fa.classify_account_type("6000"), AccountType::Expense);
+    }
+
+    #[test]
+    fn test_classify_trial_balance_category_us_gaap() {
+        let fa = FrameworkAccounts::us_gaap();
+        assert_eq!(
+            fa.classify_trial_balance_category("1100"),
+            TrialBalanceCategory::CurrentAssets
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("2000"),
+            TrialBalanceCategory::CurrentLiabilities
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("3200"),
+            TrialBalanceCategory::Equity
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("4000"),
+            TrialBalanceCategory::Revenue
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("5000"),
+            TrialBalanceCategory::CostOfGoodsSold
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("6100"),
+            TrialBalanceCategory::OperatingExpenses
+        );
+    }
+
+    #[test]
+    fn test_classify_trial_balance_category_french_gaap() {
+        let fa = FrameworkAccounts::french_gaap();
+        assert_eq!(
+            fa.classify_trial_balance_category("101000"),
+            TrialBalanceCategory::Equity
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("210000"),
+            TrialBalanceCategory::CurrentAssets
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("603000"),
+            TrialBalanceCategory::OperatingExpenses
+        );
+        assert_eq!(
+            fa.classify_trial_balance_category("701000"),
+            TrialBalanceCategory::Revenue
+        );
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use rand_distr::{Distribution, LogNormal, Normal};
+use rand_distr::{Beta, Distribution, LogNormal, Normal};
 
 use super::graph::{CausalGraph, CausalVarType, CausalVariable};
 
@@ -92,16 +92,18 @@ impl StructuralCausalModel {
                 }
             }
             "beta" => {
-                // Simple beta approximation using normal
                 let alpha = var.params.get("alpha").copied().unwrap_or(2.0);
                 let beta_param = var.params.get("beta_param").copied().unwrap_or(2.0);
-                let mean = alpha / (alpha + beta_param);
-                let var_val = (alpha * beta_param)
-                    / ((alpha + beta_param).powi(2) * (alpha + beta_param + 1.0));
-                if let Ok(d) = Normal::new(mean, var_val.sqrt()) {
-                    d.sample(rng).clamp(0.0, 1.0) // Clamp for beta-like behavior
+                if let Ok(d) = Beta::new(alpha, beta_param) {
+                    d.sample(rng)
                 } else {
-                    mean
+                    // Fallback to mean if parameters are invalid
+                    let sum = alpha + beta_param;
+                    if sum > 0.0 {
+                        alpha / sum
+                    } else {
+                        0.5
+                    }
                 }
             }
             "uniform" => {

@@ -6,7 +6,6 @@
 //! - Employee behavioral drift (approval patterns, error patterns)
 //! - Collective behavioral drift (year-end intensity, automation adoption)
 
-use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 /// Context for behavioral drift calculations.
@@ -73,15 +72,6 @@ impl MarketSentiment {
             Self::VeryOptimistic => 1.4,
         }
     }
-}
-
-/// Trait for behavioral drift modeling.
-pub trait BehavioralDrift {
-    /// Get the behavioral state at a given date.
-    fn behavioral_state_at(&self, date: NaiveDate, context: &DriftContext) -> BehavioralState;
-
-    /// Evolve the behavior to the current date.
-    fn evolve(&mut self, current_date: NaiveDate, context: &DriftContext);
 }
 
 /// Behavioral state snapshot.

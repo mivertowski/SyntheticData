@@ -414,11 +414,23 @@ impl AndersonDarlingAnalyzer {
                 }
             }
             _ => {
-                // Generic approximation
-                if a2 < 2.0 {
-                    (-a2 + 0.5).exp().clamp(0.0, 1.0)
+                // Conservative approximation using normal critical value thresholds.
+                // Returns the highest significance level whose critical value the
+                // statistic does not exceed, providing conservative p-value bounds.
+                let cv = CriticalValues::normal();
+                if a2 <= cv.cv_15 {
+                    0.25 // clearly passes, p > 0.15
+                } else if a2 <= cv.cv_10 {
+                    0.15
+                } else if a2 <= cv.cv_05 {
+                    0.10
+                } else if a2 <= cv.cv_025 {
+                    0.05
+                } else if a2 <= cv.cv_01 {
+                    0.025
                 } else {
-                    0.0
+                    // Beyond the 1% critical value
+                    (1.2937 - 5.709 * a2 + 0.0186 * a2.powi(2)).exp().max(0.0)
                 }
             }
         }

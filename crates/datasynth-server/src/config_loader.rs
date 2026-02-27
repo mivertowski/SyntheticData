@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 /// Source for loading configuration.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -37,8 +37,10 @@ pub async fn load_config(source: &ConfigSource) -> Result<GeneratorConfig, Confi
             Ok(config)
         }
         ConfigSource::Url { url } => {
-            // URL loading uses a simple blocking HTTP client to avoid adding reqwest dependency
-            info!("Loading config from URL: {}", url);
+            warn!(
+                "URL config loading not yet supported (requires reqwest dependency). URL: {}",
+                url
+            );
             Err(ConfigLoadError::Io(format!(
                 "URL config loading not yet supported. Use file or inline config instead. URL: {}",
                 url

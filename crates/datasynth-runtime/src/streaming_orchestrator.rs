@@ -8,7 +8,7 @@ use std::thread;
 use std::time::Instant;
 
 use chrono::NaiveDate;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::SynthResult;
@@ -277,8 +277,7 @@ impl StreamingOrchestrator {
                     items_generated += result;
                 }
                 GenerationPhase::OcpmEvents => {
-                    // OCPM event generation is optional and requires document flows
-                    debug!("OCPM events phase - skipping (documents should be generated via P2P/O2C generators)");
+                    warn!("OCPM event generation is not yet supported in streaming mode; skipping");
                 }
                 GenerationPhase::JournalEntries => {
                     let result = Self::generate_journal_entries_phase(
@@ -291,15 +290,13 @@ impl StreamingOrchestrator {
                     items_generated += result;
                 }
                 GenerationPhase::AnomalyInjection | GenerationPhase::DataQuality => {
-                    // These phases modify existing data; not directly generating new items
-                    debug!(
-                        "Phase {:?} operates on existing data (not streaming new items)",
+                    warn!(
+                        "Phase {:?} requires post-processing of existing data and is skipped in streaming mode",
                         phase
                     );
                 }
                 GenerationPhase::BalanceValidation | GenerationPhase::Complete => {
-                    // Validation and completion phases don't generate items
-                    debug!("Phase {:?} is a validation/completion phase", phase);
+                    info!("Phase {:?} is not applicable in streaming mode", phase);
                 }
             }
 
@@ -432,14 +429,29 @@ impl StreamingOrchestrator {
 
         info!("Generating employees");
         let mut employee_gen = EmployeeGenerator::new(seed + 4);
-        // Use first department from config
-        let dept = datasynth_generators::DepartmentDefinition {
-            code: "1000".to_string(),
-            name: "General".to_string(),
-            cost_center: "CC1000".to_string(),
-            headcount: 10,
-            system_roles: vec![],
-            transaction_codes: vec![],
+        // Use first department from config, falling back to a default
+        let dept = if let Some(first_custom) = config.departments.custom_departments.first() {
+            datasynth_generators::DepartmentDefinition {
+                code: first_custom.code.clone(),
+                name: first_custom.name.clone(),
+                cost_center: first_custom
+                    .cost_center
+                    .clone()
+                    .unwrap_or_else(|| format!("CC{}", first_custom.code)),
+                headcount: 10,
+                system_roles: vec![],
+                transaction_codes: vec![],
+            }
+        } else {
+            warn!("No departments configured, using default 'General' department");
+            datasynth_generators::DepartmentDefinition {
+                code: "1000".to_string(),
+                name: "General".to_string(),
+                cost_center: "CC1000".to_string(),
+                headcount: 10,
+                system_roles: vec![],
+                transaction_codes: vec![],
+            }
         };
         for _ in 0..md_config.employees.count {
             if control.is_cancelled() {
@@ -495,8 +507,9 @@ impl StreamingOrchestrator {
         // Parse start date
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
             .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
-        let end_date =
-            start_date + chrono::Duration::days((config.global.period_months as i64) * 30);
+        let end_date = start_date
+            .checked_add_months(chrono::Months::new(config.global.period_months))
+            .unwrap_or(start_date + chrono::Duration::days(365));
 
         // Create JE generator from config
         let mut je_gen = JournalEntryGenerator::from_generator_config(
@@ -560,6 +573,10 @@ impl StreamingOrchestrator {
         // Parse dates
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
             .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
+        let end_date = start_date
+            .checked_add_months(chrono::Months::new(config.global.period_months))
+            .unwrap_or(start_date + chrono::Duration::days(365));
+        let total_period_days = (end_date - start_date).num_days().max(1);
 
         let company_code = config
             .companies
@@ -619,7 +636,7 @@ impl StreamingOrchestrator {
                     vec![&materials[i % materials.len()]];
 
                 // Calculate posting date within the period
-                let days_offset = (i as i64 % (config.global.period_months as i64 * 30)).max(0);
+                let days_offset = (i as i64 % total_period_days).max(0);
                 let po_date = start_date + chrono::Duration::days(days_offset);
                 let fiscal_year = po_date.year() as u16;
                 let fiscal_period = po_date.month() as u8;
@@ -687,7 +704,7 @@ impl StreamingOrchestrator {
                 let material_refs: Vec<&datasynth_core::models::Material> =
                     vec![&materials[i % materials.len()]];
 
-                let days_offset = (i as i64 % (config.global.period_months as i64 * 30)).max(0);
+                let days_offset = (i as i64 % total_period_days).max(0);
                 let so_date = start_date + chrono::Duration::days(days_offset);
                 let fiscal_year = so_date.year() as u16;
                 let fiscal_period = so_date.month() as u8;

@@ -2,11 +2,6 @@
 //!
 //! Takes project cost lines and project contract values to compute revenue
 //! recognition using the cost-to-cost PoC method (ASC 606 input method).
-// allow(dead_code): RevenueGenerator is pub-exported and tested but not yet
-// wired into the runtime orchestrator; will be integrated alongside project
-// revenue recognition support.
-#![allow(dead_code)]
-
 use chrono::{Datelike, NaiveDate};
 use datasynth_config::schema::ProjectRevenueRecognitionConfig;
 use datasynth_core::models::{
@@ -20,6 +15,10 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 /// Generates [`ProjectRevenue`] records using Percentage of Completion.
+///
+/// Not yet wired into the runtime orchestrator; will be integrated alongside
+/// project revenue recognition support.
+#[allow(dead_code)]
 pub struct RevenueGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
@@ -140,6 +139,7 @@ impl RevenueGenerator {
 }
 
 /// Get the last day of a month.
+#[allow(dead_code)]
 fn end_of_month(date: NaiveDate) -> NaiveDate {
     let (year, month) = if date.month() == 12 {
         (date.year() + 1, 1)
@@ -153,6 +153,7 @@ fn end_of_month(date: NaiveDate) -> NaiveDate {
 }
 
 /// Get the first day of the next month.
+#[allow(dead_code)]
 fn next_month_start(date: NaiveDate) -> NaiveDate {
     let (year, month) = if date.month() == 12 {
         (date.year() + 1, 1)

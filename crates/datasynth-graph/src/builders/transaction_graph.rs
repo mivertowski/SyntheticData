@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 use rust_decimal::Decimal;
 
+use datasynth_core::accounts::AccountCategory;
+use datasynth_core::framework_accounts::FrameworkAccounts;
 use datasynth_core::models::JournalEntry;
 
 use crate::models::{
@@ -30,6 +32,9 @@ pub struct TransactionGraphConfig {
     pub min_edge_weight: f64,
     /// Whether to aggregate parallel edges.
     pub aggregate_parallel_edges: bool,
+    /// Accounting framework for account classification (e.g. `"us_gaap"`,
+    /// `"french_gaap"`, `"german_gaap"`, `"ifrs"`). Defaults to `"us_gaap"`.
+    pub framework: Option<String>,
 }
 
 impl Default for TransactionGraphConfig {
@@ -41,6 +46,7 @@ impl Default for TransactionGraphConfig {
             include_document_nodes: false,
             min_edge_weight: 0.0,
             aggregate_parallel_edges: false,
+            framework: None,
         }
     }
 }
@@ -49,6 +55,8 @@ impl Default for TransactionGraphConfig {
 pub struct TransactionGraphBuilder {
     config: TransactionGraphConfig,
     graph: Graph,
+    /// Framework-aware account classification.
+    framework_accounts: FrameworkAccounts,
     /// Map from account code to node ID.
     account_nodes: HashMap<String, NodeId>,
     /// Map from document number to node ID (if document nodes enabled).
@@ -60,9 +68,12 @@ pub struct TransactionGraphBuilder {
 impl TransactionGraphBuilder {
     /// Creates a new transaction graph builder.
     pub fn new(config: TransactionGraphConfig) -> Self {
+        let framework_accounts =
+            FrameworkAccounts::for_framework(config.framework.as_deref().unwrap_or("us_gaap"));
         Self {
             config,
             graph: Graph::new("transaction_network", GraphType::Transaction),
+            framework_accounts,
             account_nodes: HashMap::new(),
             document_nodes: HashMap::new(),
             edge_aggregation: HashMap::new(),
@@ -220,15 +231,20 @@ impl TransactionGraphBuilder {
             return id;
         }
 
+        let category = self.framework_accounts.classify(account_code);
         let mut account = AccountNode::new(
             0,
             account_code.to_string(),
             account_name.to_string(),
-            Self::infer_account_type(account_code),
+            Self::account_type_label(category),
             company_code.to_string(),
         );
-        account.is_balance_sheet = Self::is_balance_sheet_account(account_code);
-        account.normal_balance = Self::infer_normal_balance(account_code);
+        account.is_balance_sheet = category.is_balance_sheet();
+        account.normal_balance = if category.is_debit_normal() {
+            "Debit".to_string()
+        } else {
+            "Credit".to_string()
+        };
         account.compute_features();
 
         let id = self.graph.add_node(account.node);
@@ -284,55 +300,18 @@ impl TransactionGraphBuilder {
         }
     }
 
-    /// Infers account type from account code.
-    fn infer_account_type(account_code: &str) -> String {
-        if account_code.is_empty() {
-            return "Unknown".to_string();
-        }
-
-        match account_code
-            .chars()
-            .next()
-            .expect("non-empty checked above")
-        {
-            '1' => "Asset".to_string(),
-            '2' => "Liability".to_string(),
-            '3' => "Equity".to_string(),
-            '4' => "Revenue".to_string(),
-            '5' | '6' | '7' => "Expense".to_string(),
-            _ => "Unknown".to_string(),
-        }
-    }
-
-    /// Checks if account is balance sheet.
-    fn is_balance_sheet_account(account_code: &str) -> bool {
-        if account_code.is_empty() {
-            return false;
-        }
-
-        matches!(
-            account_code
-                .chars()
-                .next()
-                .expect("non-empty checked above"),
-            '1' | '2' | '3'
-        )
-    }
-
-    /// Infers normal balance from account code.
-    fn infer_normal_balance(account_code: &str) -> String {
-        if account_code.is_empty() {
-            return "Debit".to_string();
-        }
-
-        match account_code
-            .chars()
-            .next()
-            .expect("non-empty checked above")
-        {
-            '1' | '5' | '6' | '7' => "Debit".to_string(),
-            '2' | '3' | '4' => "Credit".to_string(),
-            _ => "Debit".to_string(),
+    /// Returns a human-readable account type label from an [`AccountCategory`].
+    fn account_type_label(category: AccountCategory) -> String {
+        match category {
+            AccountCategory::Asset => "Asset".to_string(),
+            AccountCategory::Liability => "Liability".to_string(),
+            AccountCategory::Equity => "Equity".to_string(),
+            AccountCategory::Revenue => "Revenue".to_string(),
+            AccountCategory::Cogs
+            | AccountCategory::OperatingExpense
+            | AccountCategory::OtherIncomeExpense
+            | AccountCategory::Tax => "Expense".to_string(),
+            AccountCategory::Suspense | AccountCategory::Unknown => "Unknown".to_string(),
         }
     }
 

@@ -355,7 +355,13 @@ impl TemplateProvider for DefaultTemplateProvider {
         let embedded = match category {
             "manufacturing" => Self::embedded_vendor_names_manufacturing(),
             "services" => Self::embedded_vendor_names_services(),
-            _ => Self::embedded_vendor_names_manufacturing(),
+            _ => {
+                tracing::debug!(
+                    "Unknown vendor name category '{}', falling back to manufacturing",
+                    category
+                );
+                Self::embedded_vendor_names_manufacturing()
+            }
         };
 
         embedded
@@ -380,7 +386,13 @@ impl TemplateProvider for DefaultTemplateProvider {
         let embedded = match industry {
             "automotive" => Self::embedded_customer_names_automotive(),
             "retail" => Self::embedded_customer_names_retail(),
-            _ => Self::embedded_customer_names_retail(),
+            _ => {
+                tracing::debug!(
+                    "Unknown customer name industry '{}', falling back to retail",
+                    industry
+                );
+                Self::embedded_customer_names_retail()
+            }
         };
 
         embedded

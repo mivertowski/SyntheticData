@@ -5,8 +5,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use arrow::array::{ArrayRef, RecordBatch, StringArray};
-use arrow::datatypes::{DataType, Field, Schema};
+use arrow::array::RecordBatch;
+use arrow::datatypes::Schema;
 use parquet::arrow::ArrowWriter;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
@@ -190,9 +190,9 @@ pub trait ToParquetBatch {
 /// A generic string-based Parquet record for simple use cases.
 ///
 /// This type stores all fields as strings and can be used when schema
-/// is determined at runtime.
+/// is determined at runtime. Currently used only in tests.
+#[cfg(test)]
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct GenericParquetRecord {
     /// Field names
     pub field_names: Vec<String>,
@@ -200,9 +200,9 @@ pub struct GenericParquetRecord {
     pub values: Vec<String>,
 }
 
+#[cfg(test)]
 impl GenericParquetRecord {
     /// Creates a new generic record.
-    #[allow(dead_code)]
     pub fn new(field_names: Vec<String>, values: Vec<String>) -> Self {
         Self {
             field_names,
@@ -211,8 +211,10 @@ impl GenericParquetRecord {
     }
 }
 
+#[cfg(test)]
 impl ToParquetBatch for GenericParquetRecord {
     fn schema() -> Schema {
+        use arrow::datatypes::{DataType, Field};
         // Default schema with common fields
         Schema::new(vec![
             Field::new("id", DataType::Utf8, false),
@@ -222,6 +224,9 @@ impl ToParquetBatch for GenericParquetRecord {
     }
 
     fn to_batch(items: &[Self], schema: Arc<Schema>) -> SynthResult<RecordBatch> {
+        use arrow::array::{ArrayRef, StringArray};
+        use arrow::datatypes::{DataType, Field};
+
         if items.is_empty() {
             return RecordBatch::try_new_with_options(
                 schema,

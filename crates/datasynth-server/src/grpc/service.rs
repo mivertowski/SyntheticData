@@ -27,6 +27,8 @@ use super::synth::*;
 pub struct ServerState {
     /// Current configuration
     pub config: RwLock<GeneratorConfig>,
+    /// Configuration source for reloading
+    pub config_source: RwLock<crate::config_loader::ConfigSource>,
     /// Server start time
     start_time: Instant,
     /// Total entries generated
@@ -41,6 +43,12 @@ pub struct ServerState {
     pub stream_paused: AtomicBool,
     /// Stream stop flag
     pub stream_stopped: AtomicBool,
+    /// Stream events per second (0 = unlimited)
+    pub stream_events_per_second: AtomicU64,
+    /// Stream maximum events (0 = unlimited)
+    pub stream_max_events: AtomicU64,
+    /// Stream anomaly injection flag
+    pub stream_inject_anomalies: AtomicBool,
     /// Triggered pattern name (if any) - will be applied to next generated entries
     pub triggered_pattern: RwLock<Option<String>>,
     /// Resource guard for memory and disk monitoring
@@ -68,6 +76,7 @@ impl ServerState {
 
         Self {
             config: RwLock::new(config),
+            config_source: RwLock::new(crate::config_loader::ConfigSource::Default),
             start_time: Instant::now(),
             total_entries: AtomicU64::new(0),
             total_anomalies: AtomicU64::new(0),
@@ -75,6 +84,9 @@ impl ServerState {
             total_stream_events: AtomicU64::new(0),
             stream_paused: AtomicBool::new(false),
             stream_stopped: AtomicBool::new(false),
+            stream_events_per_second: AtomicU64::new(0),
+            stream_max_events: AtomicU64::new(0),
+            stream_inject_anomalies: AtomicBool::new(false),
             triggered_pattern: RwLock::new(None),
             resource_guard: Arc::new(resource_guard),
             max_concurrent_generations: AtomicU64::new(4),
@@ -90,6 +102,7 @@ impl ServerState {
 
         Self {
             config: RwLock::new(config),
+            config_source: RwLock::new(crate::config_loader::ConfigSource::Default),
             start_time: Instant::now(),
             total_entries: AtomicU64::new(0),
             total_anomalies: AtomicU64::new(0),
@@ -97,6 +110,9 @@ impl ServerState {
             total_stream_events: AtomicU64::new(0),
             stream_paused: AtomicBool::new(false),
             stream_stopped: AtomicBool::new(false),
+            stream_events_per_second: AtomicU64::new(0),
+            stream_max_events: AtomicU64::new(0),
+            stream_inject_anomalies: AtomicBool::new(false),
             triggered_pattern: RwLock::new(None),
             resource_guard: Arc::new(resource_guard),
             max_concurrent_generations: AtomicU64::new(4),
@@ -193,14 +209,26 @@ impl SynthService {
                     "financial_services" | "financial" => IndustrySector::FinancialServices,
                     "healthcare" => IndustrySector::Healthcare,
                     "technology" => IndustrySector::Technology,
-                    _ => IndustrySector::Manufacturing,
+                    "" => IndustrySector::Manufacturing, // empty defaults to manufacturing
+                    other => {
+                        return Err(Status::invalid_argument(format!(
+                            "Unknown industry '{}'. Valid values: manufacturing, retail, financial_services, healthcare, technology",
+                            other
+                        )));
+                    }
                 };
 
                 let complexity = match p.coa_complexity.to_lowercase().as_str() {
                     "small" => CoAComplexity::Small,
                     "medium" => CoAComplexity::Medium,
                     "large" => CoAComplexity::Large,
-                    _ => CoAComplexity::Small,
+                    "" => CoAComplexity::Small, // empty defaults to small
+                    other => {
+                        return Err(Status::invalid_argument(format!(
+                            "Unknown coa_complexity '{}'. Valid values: small, medium, large",
+                            other
+                        )));
+                    }
                 };
 
                 let companies: Vec<CompanyConfig> = if p.companies.is_empty() {
@@ -305,10 +333,12 @@ impl SynthService {
                         is_debit: line.is_debit(),
                         cost_center: line.cost_center.clone(),
                         profit_center: line.profit_center.clone(),
-                        vendor_id: None,
+                        // vendor_id/customer_id/material_id are not on JournalEntryLine;
+                        // populate from auxiliary_account_number when available (French GAAP)
+                        vendor_id: line.auxiliary_account_number.clone(),
                         customer_id: None,
                         material_id: None,
-                        text: None,
+                        text: line.line_text.clone().or_else(|| line.text.clone()),
                     }
                 })
                 .collect(),
@@ -339,8 +369,11 @@ impl SynthService {
                 .collect(),
             fraud_enabled: config.fraud.enabled,
             fraud_rate: config.fraud.fraud_rate as f32,
-            generate_master_data: true,
-            generate_document_flows: true,
+            generate_master_data: config.master_data.vendors.count > 0
+                || config.master_data.customers.count > 0
+                || config.master_data.materials.count > 0,
+            generate_document_flows: config.document_flows.p2p.enabled
+                || config.document_flows.o2c.enabled,
         }
     }
 }
@@ -556,6 +589,16 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
                 Duration::from_millis(1)
             };
 
+            // Create orchestrator once outside the loop to avoid per-iteration overhead
+            let mut orchestrator =
+                match EnhancedOrchestrator::new(config.clone(), phase_config.clone()) {
+                    Ok(o) => o,
+                    Err(e) => {
+                        error!("Failed to create orchestrator: {}", e);
+                        return;
+                    }
+                };
+
             loop {
                 // Check stop flag
                 if state.stream_stopped.load(Ordering::Relaxed) {
@@ -578,15 +621,6 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
                 }
 
                 // Generate a batch
-                let mut orchestrator =
-                    match EnhancedOrchestrator::new(config.clone(), phase_config.clone()) {
-                        Ok(o) => o,
-                        Err(e) => {
-                            error!("Failed to create orchestrator: {}", e);
-                            break;
-                        }
-                    };
-
                 let result = match orchestrator.generate() {
                     Ok(r) => r,
                     Err(e) => {

@@ -13,7 +13,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::timeout::TimeoutLayer;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::grpc::service::{ServerState, SynthService};
 use crate::jobs::{JobQueue, JobRequest};
@@ -817,8 +817,31 @@ async fn bulk_generate(
 /// Start streaming.
 async fn start_stream(
     State(state): State<AppState>,
-    Json(_req): Json<StreamRequest>,
+    Json(req): Json<StreamRequest>,
 ) -> Json<StreamResponse> {
+    // Apply stream request parameters to server state
+    if let Some(eps) = req.events_per_second {
+        info!("Stream configured: events_per_second={}", eps);
+        state
+            .server_state
+            .stream_events_per_second
+            .store(eps as u64, std::sync::atomic::Ordering::Relaxed);
+    }
+    if let Some(max) = req.max_events {
+        info!("Stream configured: max_events={}", max);
+        state
+            .server_state
+            .stream_max_events
+            .store(max, std::sync::atomic::Ordering::Relaxed);
+    }
+    if let Some(inject) = req.inject_anomalies {
+        info!("Stream configured: inject_anomalies={}", inject);
+        state
+            .server_state
+            .stream_inject_anomalies
+            .store(inject, std::sync::atomic::Ordering::Relaxed);
+    }
+
     state
         .server_state
         .stream_stopped
@@ -1052,16 +1075,28 @@ async fn cancel_job(
 async fn reload_config(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    // Reload from default config source
-    let new_config = crate::grpc::service::default_generator_config();
-    let mut config = state.server_state.config.write().await;
-    *config = new_config;
-    info!("Configuration reloaded via REST API");
-
-    Ok(Json(serde_json::json!({
-        "success": true,
-        "message": "Configuration reloaded"
-    })))
+    let source = state.server_state.config_source.read().await.clone();
+    match crate::config_loader::load_config(&source).await {
+        Ok(new_config) => {
+            let mut config = state.server_state.config.write().await;
+            *config = new_config;
+            info!("Configuration reloaded via REST API from {:?}", source);
+            Ok(Json(serde_json::json!({
+                "success": true,
+                "message": "Configuration reloaded"
+            })))
+        }
+        Err(e) => {
+            error!("Failed to reload configuration: {}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "success": false,
+                    "message": format!("Failed to reload configuration: {}", e)
+                })),
+            ))
+        }
+    }
 }
 
 #[cfg(test)]

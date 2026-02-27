@@ -211,7 +211,10 @@ pub enum AccountType {
 }
 
 impl AccountType {
-    /// Determine account type from account code (simplified).
+    /// Determine account type from account code (simplified, US GAAP heuristic).
+    ///
+    /// For framework-aware classification, use
+    /// [`from_account_code_with_framework`](Self::from_account_code_with_framework).
     pub fn from_account_code(code: &str) -> Self {
         let first_char = code.chars().next().unwrap_or('0');
         match first_char {
@@ -222,6 +225,15 @@ impl AccountType {
             '5' | '6' | '7' | '8' => Self::Expense,
             _ => Self::Asset,
         }
+    }
+
+    /// Determine account type using framework-aware classification.
+    ///
+    /// `framework` is the framework string (e.g. `"us_gaap"`, `"french_gaap"`,
+    /// `"german_gaap"`, `"ifrs"`). Uses [`FrameworkAccounts`] internally.
+    pub fn from_account_code_with_framework(code: &str, framework: &str) -> Self {
+        crate::framework_accounts::FrameworkAccounts::for_framework(framework)
+            .classify_account_type(code)
     }
 
     /// Check if contra account based on code pattern.
@@ -776,6 +788,56 @@ mod tests {
         assert_eq!(AccountType::from_account_code("3100"), AccountType::Equity);
         assert_eq!(AccountType::from_account_code("4100"), AccountType::Revenue);
         assert_eq!(AccountType::from_account_code("5100"), AccountType::Expense);
+    }
+
+    #[test]
+    fn test_account_type_from_code_with_framework_us_gaap() {
+        assert_eq!(
+            AccountType::from_account_code_with_framework("1100", "us_gaap"),
+            AccountType::Asset
+        );
+        assert_eq!(
+            AccountType::from_account_code_with_framework("4000", "us_gaap"),
+            AccountType::Revenue
+        );
+    }
+
+    #[test]
+    fn test_account_type_from_code_with_framework_french_gaap() {
+        // PCG class 1 (10x) = Equity, not Asset
+        assert_eq!(
+            AccountType::from_account_code_with_framework("101000", "french_gaap"),
+            AccountType::Equity
+        );
+        // PCG class 2 = Fixed Assets
+        assert_eq!(
+            AccountType::from_account_code_with_framework("210000", "french_gaap"),
+            AccountType::Asset
+        );
+        // PCG class 7 = Revenue
+        assert_eq!(
+            AccountType::from_account_code_with_framework("701000", "french_gaap"),
+            AccountType::Revenue
+        );
+    }
+
+    #[test]
+    fn test_account_type_from_code_with_framework_german_gaap() {
+        // SKR04 class 0 = Fixed Assets
+        assert_eq!(
+            AccountType::from_account_code_with_framework("0200", "german_gaap"),
+            AccountType::Asset
+        );
+        // SKR04 class 2 = Equity (not Liability as US GAAP would say)
+        assert_eq!(
+            AccountType::from_account_code_with_framework("2000", "german_gaap"),
+            AccountType::Equity
+        );
+        // SKR04 class 4 = Revenue
+        assert_eq!(
+            AccountType::from_account_code_with_framework("4000", "german_gaap"),
+            AccountType::Revenue
+        );
     }
 
     #[test]

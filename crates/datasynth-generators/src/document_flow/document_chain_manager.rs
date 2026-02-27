@@ -222,12 +222,20 @@ impl DocumentChainManager {
         let mut results = Vec::new();
 
         for company_code in company_codes {
-            let vendors = vendors_by_company
-                .get(company_code)
-                .expect("Vendor pool not found for company");
-            let customers = customers_by_company
-                .get(company_code)
-                .expect("Customer pool not found for company");
+            let Some(vendors) = vendors_by_company.get(company_code) else {
+                tracing::warn!(
+                    "Vendor pool not found for company '{}'; skipping",
+                    company_code
+                );
+                continue;
+            };
+            let Some(customers) = customers_by_company.get(company_code) else {
+                tracing::warn!(
+                    "Customer pool not found for company '{}'; skipping",
+                    company_code
+                );
+                continue;
+            };
 
             let flows = self.generate_flows(
                 company_code,

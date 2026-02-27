@@ -227,7 +227,13 @@ impl RunManifest {
 
     /// Computes SHA-256 hash of the configuration.
     fn hash_config(config: &GeneratorConfig) -> String {
-        let json = serde_json::to_string(config).unwrap_or_default();
+        let json = match serde_json::to_string(config) {
+            Ok(j) => j,
+            Err(e) => {
+                tracing::warn!("Failed to serialize config for hashing: {}", e);
+                String::new()
+            }
+        };
         let mut hasher = Sha256::new();
         hasher.update(json.as_bytes());
         let result = hasher.finalize();
@@ -236,12 +242,9 @@ impl RunManifest {
 
     /// Marks the run as complete.
     pub fn complete(&mut self, statistics: EnhancedGenerationStatistics) {
-        self.completed_at = Some(Utc::now());
-        self.duration_seconds = Some(
-            (self.completed_at.expect("completed_at just set above") - self.started_at)
-                .num_milliseconds() as f64
-                / 1000.0,
-        );
+        let now = Utc::now();
+        self.completed_at = Some(now);
+        self.duration_seconds = Some((now - self.started_at).num_milliseconds() as f64 / 1000.0);
         self.statistics = Some(statistics);
     }
 

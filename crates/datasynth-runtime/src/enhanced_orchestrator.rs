@@ -139,12 +139,16 @@ use rayon::prelude::*;
 
 /// Convert P2P flow config from schema to generator config.
 fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
+    tracing::debug!(
+        "P2P config: using hardcoded defaults for over_delivery_rate=0.02, early_payment_discount_rate=0.30"
+    );
     let payment_behavior = &schema_config.payment_behavior;
     let late_dist = &payment_behavior.late_payment_days_distribution;
 
     P2PGeneratorConfig {
         three_way_match_rate: schema_config.three_way_match_rate,
         partial_delivery_rate: schema_config.partial_delivery_rate,
+        // TODO: expose over_delivery_rate in P2PFlowConfig schema
         over_delivery_rate: 0.02, // Not in schema, use default
         price_variance_rate: schema_config.price_variance_rate,
         max_price_variance_percent: schema_config.max_price_variance_percent,
@@ -157,6 +161,7 @@ fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
             (PaymentMethod::Wire, 0.10),
             (PaymentMethod::CreditCard, 0.05),
         ],
+        // TODO: expose early_payment_discount_rate in P2PFlowConfig schema
         early_payment_discount_rate: 0.30, // Not in schema, use default
         payment_behavior: P2PPaymentBehavior {
             late_payment_rate: payment_behavior.late_payment_rate,
@@ -175,6 +180,7 @@ fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
 
 /// Convert O2C flow config from schema to generator config.
 fn convert_o2c_config(schema_config: &O2CFlowConfig) -> O2CGeneratorConfig {
+    tracing::debug!("O2C config: using hardcoded default for late_payment_rate=0.15");
     let payment_behavior = &schema_config.payment_behavior;
 
     O2CGeneratorConfig {
@@ -183,6 +189,7 @@ fn convert_o2c_config(schema_config: &O2CFlowConfig) -> O2CGeneratorConfig {
         avg_days_so_to_delivery: schema_config.average_so_to_delivery_days,
         avg_days_delivery_to_invoice: schema_config.average_delivery_to_invoice_days,
         avg_days_invoice_to_payment: schema_config.average_invoice_to_receipt_days,
+        // TODO: expose late_payment_rate in O2CFlowConfig schema (currently managed through dunning)
         late_payment_rate: 0.15, // Managed through dunning now
         bad_debt_rate: schema_config.bad_debt_rate,
         returns_rate: schema_config.return_rate,
@@ -6580,6 +6587,7 @@ impl EnhancedOrchestrator {
                 include_document_nodes: graph_type.include_document_nodes,
                 min_edge_weight: graph_type.min_edge_weight,
                 aggregate_parallel_edges: graph_type.aggregate_edges,
+                framework: None,
             };
 
             let mut builder = TransactionGraphBuilder::new(graph_config);
@@ -6641,12 +6649,75 @@ impl EnhancedOrchestrator {
                         }
                     }
                     datasynth_config::schema::GraphExportFormat::Neo4j => {
-                        // Neo4j export will be added in a future update
-                        warn!("Neo4j graph export is not yet implemented; skipping. Use 'pytorch_geometric' or 'rust_graph' format instead.");
+                        use datasynth_graph::{Neo4jExportConfig, Neo4jExporter};
+
+                        let neo4j_config = Neo4jExportConfig {
+                            export_node_properties: true,
+                            export_edge_properties: true,
+                            export_features: true,
+                            generate_cypher: true,
+                            generate_admin_import: true,
+                            database_name: "synth".to_string(),
+                            cypher_batch_size: 1000,
+                        };
+
+                        let exporter = Neo4jExporter::new(neo4j_config);
+                        match exporter.export(&graph, &format_dir) {
+                            Ok(metadata) => {
+                                snapshot.exports.insert(
+                                    format!("{}_{}", graph_type.name, "neo4j"),
+                                    GraphExportInfo {
+                                        name: graph_type.name.clone(),
+                                        format: "neo4j".to_string(),
+                                        output_path: format_dir.clone(),
+                                        node_count: metadata.num_nodes,
+                                        edge_count: metadata.num_edges,
+                                    },
+                                );
+                                snapshot.graph_count += 1;
+                            }
+                            Err(e) => {
+                                warn!("Failed to export Neo4j graph: {}", e);
+                            }
+                        }
                     }
                     datasynth_config::schema::GraphExportFormat::Dgl => {
-                        // DGL export will be added in a future update
-                        warn!("DGL graph export is not yet implemented; skipping. Use 'pytorch_geometric' or 'rust_graph' format instead.");
+                        use datasynth_graph::{DGLExportConfig, DGLExporter};
+
+                        let dgl_config = DGLExportConfig {
+                            common: datasynth_graph::CommonExportConfig {
+                                export_node_features: true,
+                                export_edge_features: true,
+                                export_node_labels: true,
+                                export_edge_labels: true,
+                                export_masks: true,
+                                train_ratio: self.config.graph_export.train_ratio,
+                                val_ratio: self.config.graph_export.validation_ratio,
+                                seed: self.config.graph_export.split_seed.unwrap_or(self.seed),
+                            },
+                            heterogeneous: false,
+                            include_pickle_script: true, // DGL ecosystem standard helper
+                        };
+
+                        let exporter = DGLExporter::new(dgl_config);
+                        match exporter.export(&graph, &format_dir) {
+                            Ok(metadata) => {
+                                snapshot.exports.insert(
+                                    format!("{}_{}", graph_type.name, "dgl"),
+                                    GraphExportInfo {
+                                        name: graph_type.name.clone(),
+                                        format: "dgl".to_string(),
+                                        output_path: format_dir.clone(),
+                                        node_count: metadata.common.num_nodes,
+                                        edge_count: metadata.common.num_edges,
+                                    },
+                                );
+                                snapshot.graph_count += 1;
+                            }
+                            Err(e) => {
+                                warn!("Failed to export DGL graph: {}", e);
+                            }
+                        }
                     }
                     datasynth_config::schema::GraphExportFormat::RustGraph => {
                         use datasynth_graph::{

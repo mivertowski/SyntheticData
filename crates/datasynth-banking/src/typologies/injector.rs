@@ -1,6 +1,5 @@
 //! Main AML typology injector.
 
-use chrono::NaiveDate;
 use datasynth_core::models::banking::{AmlTypology, LaunderingStage, Sophistication};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -186,11 +185,7 @@ impl TypologyInjector {
 
         if let Some(account) = account {
             let scenario_id = self.next_scenario_id();
-            let start_date =
-                NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| {
-                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
-                    });
+            let start_date = crate::parse_start_date(&self.config.population.start_date);
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =
@@ -249,11 +244,7 @@ impl TypologyInjector {
         let account_id = customer.account_ids[0];
         if let Some(account) = accounts.iter_mut().find(|a| a.account_id == account_id) {
             let scenario_id = self.next_scenario_id();
-            let start_date =
-                NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| {
-                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
-                    });
+            let start_date = crate::parse_start_date(&self.config.population.start_date);
             let end_date = start_date + chrono::Months::new(2);
 
             let mut scenario = AmlScenario::new(
@@ -310,11 +301,7 @@ impl TypologyInjector {
         let account_id = customer.account_ids[0];
         if let Some(account) = accounts.iter_mut().find(|a| a.account_id == account_id) {
             let scenario_id = self.next_scenario_id();
-            let start_date =
-                NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| {
-                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
-                    });
+            let start_date = crate::parse_start_date(&self.config.population.start_date);
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =
@@ -365,11 +352,7 @@ impl TypologyInjector {
         let account_id = customer.account_ids[0];
         if let Some(account) = accounts.iter_mut().find(|a| a.account_id == account_id) {
             let scenario_id = self.next_scenario_id();
-            let start_date =
-                NaiveDate::parse_from_str(&self.config.population.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| {
-                        NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
-                    });
+            let start_date = crate::parse_start_date(&self.config.population.start_date);
             let end_date = start_date + chrono::Months::new(1);
 
             let mut scenario =

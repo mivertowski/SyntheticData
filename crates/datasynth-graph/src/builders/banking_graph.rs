@@ -10,7 +10,9 @@ use std::collections::HashMap;
 use chrono::{Datelike, Timelike};
 
 use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer, CounterpartyPool};
-use datasynth_core::models::banking::{AmlTypology, Direction, RiskTier};
+use datasynth_core::models::banking::{
+    AmlTypology, CashIntensity, Direction, RiskTier, TransactionChannel, TurnoverBand,
+};
 
 use crate::models::{EdgeType, Graph, GraphEdge, GraphNode, GraphType, NodeId, NodeType};
 
@@ -139,24 +141,23 @@ impl BankingGraphBuilder {
             let kyc = &customer.kyc_profile;
 
             // Expected monthly turnover encoding
-            let turnover_band = match format!("{:?}", kyc.expected_monthly_turnover).as_str() {
-                "VeryLow" => 1.0,
-                "Low" => 2.0,
-                "Medium" => 3.0,
-                "High" => 4.0,
-                "VeryHigh" => 5.0,
-                _ => 3.0,
+            let turnover_band = match kyc.expected_monthly_turnover {
+                TurnoverBand::VeryLow => 1.0,
+                TurnoverBand::Low => 2.0,
+                TurnoverBand::Medium => 3.0,
+                TurnoverBand::High => 4.0,
+                TurnoverBand::VeryHigh => 5.0,
+                TurnoverBand::UltraHigh => 6.0,
             };
             node.features.push(turnover_band);
 
             // Cash intensity
-            let cash_intensity: f64 = match format!("{:?}", kyc.cash_intensity).as_str() {
-                "VeryLow" => 0.0,
-                "Low" => 0.25,
-                "Moderate" => 0.5,
-                "High" => 0.75,
-                "VeryHigh" => 1.0,
-                _ => 0.5,
+            let cash_intensity: f64 = match kyc.cash_intensity {
+                CashIntensity::VeryLow => 0.0,
+                CashIntensity::Low => 0.25,
+                CashIntensity::Moderate => 0.5,
+                CashIntensity::High => 0.75,
+                CashIntensity::VeryHigh => 1.0,
             };
             node.features.push(cash_intensity);
         }
@@ -406,20 +407,23 @@ impl BankingGraphBuilder {
         });
 
         // Channel encoding
-        let channel_code = match format!("{:?}", txn.channel).as_str() {
-            "CardPresent" => 0.0,
-            "CardNotPresent" => 1.0,
-            "Ach" => 2.0,
-            "Wire" => 3.0,
-            "Cash" => 4.0,
-            "Atm" => 5.0,
-            "Branch" => 6.0,
-            "Mobile" => 7.0,
-            "Online" => 8.0,
-            "Swift" => 9.0,
-            _ => 10.0,
+        let channel_code = match txn.channel {
+            TransactionChannel::CardPresent => 0.0,
+            TransactionChannel::CardNotPresent => 1.0,
+            TransactionChannel::Ach => 2.0,
+            TransactionChannel::Wire => 3.0,
+            TransactionChannel::Cash => 4.0,
+            TransactionChannel::Atm => 5.0,
+            TransactionChannel::Branch => 6.0,
+            TransactionChannel::Mobile => 7.0,
+            TransactionChannel::Online => 8.0,
+            TransactionChannel::Swift => 9.0,
+            TransactionChannel::InternalTransfer => 10.0,
+            TransactionChannel::Check => 11.0,
+            TransactionChannel::RealTimePayment => 12.0,
+            TransactionChannel::PeerToPeer => 13.0,
         };
-        edge.features.push(channel_code / 10.0); // Normalized
+        edge.features.push(channel_code / 13.0); // Normalized
 
         // Temporal features
         if self.config.include_temporal_features {

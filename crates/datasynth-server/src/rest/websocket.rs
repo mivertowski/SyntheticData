@@ -129,6 +129,19 @@ pub async fn handle_events_socket(socket: WebSocket, state: AppState) {
     let mut sequence = 0u64;
     let delay = Duration::from_millis(100); // 10 events per second
 
+    // Create orchestrator once outside the loop to avoid per-iteration overhead
+    let mut orchestrator = match EnhancedOrchestrator::new(config.clone(), phase_config.clone()) {
+        Ok(o) => o,
+        Err(e) => {
+            error!("Failed to create orchestrator: {}", e);
+            state
+                .server_state
+                .active_streams
+                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+            return;
+        }
+    };
+
     loop {
         // Check if we should stop
         if state
@@ -177,15 +190,6 @@ pub async fn handle_events_socket(socket: WebSocket, state: AppState) {
                 }
             }
             _ = tokio::time::sleep(delay) => {
-                // Generate and send an event
-                let mut orchestrator = match EnhancedOrchestrator::new(config.clone(), phase_config.clone()) {
-                    Ok(o) => o,
-                    Err(e) => {
-                        error!("Failed to create orchestrator: {}", e);
-                        break;
-                    }
-                };
-
                 let result = match orchestrator.generate() {
                     Ok(r) => r,
                     Err(e) => {
@@ -194,8 +198,8 @@ pub async fn handle_events_socket(socket: WebSocket, state: AppState) {
                     }
                 };
 
-                // Send each entry
-                for entry in result.journal_entries.iter().take(1) {
+                // Stream all journal entries, not just the first one
+                for entry in result.journal_entries.iter() {
                     sequence += 1;
                     state.server_state.total_stream_events.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     state.server_state.total_entries.fetch_add(1, std::sync::atomic::Ordering::Relaxed);

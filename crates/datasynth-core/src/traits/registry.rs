@@ -123,8 +123,8 @@ impl PluginRegistry {
                 if let Ok(sink) = sink_lock.read() {
                     plugins.push(PluginInfo {
                         name: sink.name().to_string(),
-                        version: String::new(),
-                        description: String::new(),
+                        version: sink.version().to_string(),
+                        description: sink.description().to_string(),
                         plugin_type: PluginType::Sink,
                     });
                 }
@@ -135,8 +135,8 @@ impl PluginRegistry {
             for t in transforms.values() {
                 plugins.push(PluginInfo {
                     name: t.name().to_string(),
-                    version: String::new(),
-                    description: String::new(),
+                    version: t.version().to_string(),
+                    description: t.description().to_string(),
                     plugin_type: PluginType::Transform,
                 });
             }

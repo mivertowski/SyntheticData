@@ -193,6 +193,14 @@ pub trait GeneratorPlugin: Send + Sync {
 pub trait SinkPlugin: Send + Sync {
     /// Unique name identifying this sink.
     fn name(&self) -> &str;
+    /// Semantic version of this plugin. Defaults to "0.1.0".
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
+    /// Human-readable description. Defaults to empty string.
+    fn description(&self) -> &str {
+        ""
+    }
     /// Initialize the sink with configuration.
     fn initialize(&mut self, config: &serde_json::Value) -> Result<(), SynthError>;
     /// Write a batch of records. Returns number of records written.
@@ -207,6 +215,14 @@ pub trait SinkPlugin: Send + Sync {
 pub trait TransformPlugin: Send + Sync {
     /// Unique name identifying this transform.
     fn name(&self) -> &str;
+    /// Semantic version of this plugin. Defaults to "0.1.0".
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
+    /// Human-readable description. Defaults to empty string.
+    fn description(&self) -> &str {
+        ""
+    }
     /// Transform a batch of records.
     fn transform(&self, records: Vec<GeneratedRecord>) -> Result<Vec<GeneratedRecord>, SynthError>;
 }

@@ -24,6 +24,7 @@ rand_distr = { workspace = true }
 smallvec = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
+tracing = { workspace = true }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

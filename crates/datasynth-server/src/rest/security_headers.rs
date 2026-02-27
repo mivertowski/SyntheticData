@@ -4,7 +4,7 @@
 
 use axum::{
     body::Body,
-    http::{Request, Response},
+    http::{header::HeaderValue, Request, Response},
     middleware::Next,
 };
 
@@ -21,20 +21,21 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     let mut response = next.run(request).await;
     let headers = response.headers_mut();
 
-    headers.insert("x-content-type-options", "nosniff".parse().unwrap());
-    headers.insert("x-frame-options", "DENY".parse().unwrap());
-    headers.insert("x-xss-protection", "0".parse().unwrap());
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert("x-frame-options", HeaderValue::from_static("DENY"));
+    headers.insert("x-xss-protection", HeaderValue::from_static("0"));
     headers.insert(
         "referrer-policy",
-        "strict-origin-when-cross-origin".parse().unwrap(),
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
     );
     headers.insert(
         "content-security-policy",
-        "default-src 'none'; frame-ancestors 'none'"
-            .parse()
-            .unwrap(),
+        HeaderValue::from_static("default-src 'none'; frame-ancestors 'none'"),
     );
-    headers.insert("cache-control", "no-store".parse().unwrap());
+    headers.insert("cache-control", HeaderValue::from_static("no-store"));
 
     response
 }

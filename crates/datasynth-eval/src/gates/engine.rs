@@ -370,7 +370,9 @@ impl GateEngine {
                 (rate, "document chain evaluation not available".to_string())
             }
             QualityMetric::CorrelationPreservation => {
-                // Not directly available in ComprehensiveEvaluation - return None
+                // Correlation preservation is not yet computed in ComprehensiveEvaluation.
+                // This gate will always be skipped until the metric is wired in.
+                tracing::warn!("CorrelationPreservation metric always returns None — not yet wired into evaluation pipeline");
                 (
                     None,
                     "correlation preservation metric not available".to_string(),
@@ -538,13 +540,16 @@ impl GateEngine {
                     .map(|d| d.domain_gap_score);
                 (score, "domain gap evaluation not available".to_string())
             }
-            QualityMetric::Custom(name) => (
-                None,
-                format!(
-                    "custom metric '{}' not available in standard evaluation",
-                    name
-                ),
-            ),
+            QualityMetric::Custom(name) => {
+                tracing::warn!("Custom metric '{}' always returns None — custom metric evaluation not implemented", name);
+                (
+                    None,
+                    format!(
+                        "custom metric '{}' not available in standard evaluation",
+                        name
+                    ),
+                )
+            }
         }
     }
 }

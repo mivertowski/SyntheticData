@@ -108,6 +108,10 @@ pub trait IndustryAnomaly: std::fmt::Debug + Send + Sync {
 }
 
 /// Trait for industry-specific transaction generators.
+///
+/// This is the intended future API for pluggable industry modules.
+/// Concrete implementations will be added as each industry vertical is built out.
+#[allow(unused)]
 pub trait IndustryTransactionGenerator: Send + Sync {
     /// The transaction type produced by this generator.
     type Transaction: IndustryTransaction;

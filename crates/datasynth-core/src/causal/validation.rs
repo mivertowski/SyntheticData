@@ -83,7 +83,7 @@ impl CausalValidator {
         graph: &CausalGraph,
     ) -> CausalCheck {
         let mut total_edges = 0;
-        let mut _correct_signs = 0u32;
+        let mut correct_signs = 0u32;
         let mut mismatches = Vec::new();
 
         for edge in &graph.edges {
@@ -109,7 +109,7 @@ impl CausalValidator {
             let corr = pearson_correlation(&parent_vals, &child_vals);
 
             if (expected_sign > 0 && corr > -0.05) || (expected_sign < 0 && corr < 0.05) {
-                _correct_signs += 1;
+                correct_signs += 1;
             } else {
                 mismatches.push(format!(
                     "{} -> {}: expected sign {}, got correlation {:.4}",
@@ -120,7 +120,10 @@ impl CausalValidator {
 
         let passed = mismatches.is_empty();
         let details = if passed {
-            format!("All {} edges have correct correlation signs", total_edges)
+            format!(
+                "All {}/{} edges have correct correlation signs",
+                correct_signs, total_edges
+            )
         } else {
             format!(
                 "{}/{} edges have incorrect signs: {}",
@@ -389,7 +392,7 @@ mod tests {
     fn test_causal_validation_detects_shuffled_columns() {
         let graph = CausalGraph::fraud_detection_template();
         let scm = StructuralCausalModel::new(graph.clone()).unwrap();
-        let mut samples = scm.generate(500, 42).unwrap();
+        let mut samples = scm.generate(2000, 42).unwrap();
 
         // Shuffle the fraud_probability column by rotating values.
         // This breaks the causal relationship between parents and fraud_probability.

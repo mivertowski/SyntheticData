@@ -1036,10 +1036,15 @@ impl JournalEntryGenerator {
             state.remaining = state.remaining.saturating_sub(1);
         }
 
-        let batch = self
-            .batch_state
-            .clone()
-            .expect("batch_state set before calling generate_batched_entry");
+        let Some(batch) = self.batch_state.clone() else {
+            // This is a programming error - batch_state should be set before calling this method.
+            // Clear state and fall back to generating a standard entry instead of panicking.
+            tracing::warn!(
+                "generate_batched_entry called without batch_state; generating standard entry"
+            );
+            self.batch_state = None;
+            return self.generate();
+        };
 
         // Use the batch's posting date (work done on same day)
         let posting_date = batch.base_posting_date;

@@ -166,7 +166,12 @@ impl NlConfigGenerator {
                         industry
                     ));
                 }
-                _ => {} // Unknown features are silently ignored
+                other => {
+                    tracing::warn!(
+                        "Unknown NL config feature '{}' ignored. Valid features: fraud, audit, banking, controls, process_mining, intercompany, distributions",
+                        other
+                    );
+                }
             }
         }
 

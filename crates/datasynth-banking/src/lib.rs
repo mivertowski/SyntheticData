@@ -60,6 +60,19 @@ pub mod typologies;
 mod config;
 mod orchestrator;
 
+/// Parse a start date string in YYYY-MM-DD format, logging a warning and
+/// falling back to 2024-01-01 when the string is malformed.
+pub(crate) fn parse_start_date(date_str: &str) -> chrono::NaiveDate {
+    chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d").unwrap_or_else(|e| {
+        tracing::warn!(
+            "Failed to parse start_date '{}': {}. Defaulting to 2024-01-01",
+            date_str,
+            e
+        );
+        chrono::NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date")
+    })
+}
+
 pub use config::*;
 pub use orchestrator::*;
 

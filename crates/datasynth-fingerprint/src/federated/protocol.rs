@@ -35,6 +35,9 @@
 //!     1000,
 //!     vec![100.0, 5.0],
 //!     vec![20.0, 2.0],
+//!     vec![10.0, 1.0],   // mins
+//!     vec![200.0, 10.0], // maxs
+//!     vec![],             // correlations
 //!     1.0,
 //! );
 //!
@@ -44,6 +47,9 @@
 //!     3000,
 //!     vec![120.0, 7.0],
 //!     vec![25.0, 3.0],
+//!     vec![5.0, 0.5],    // mins
+//!     vec![250.0, 15.0], // maxs
+//!     vec![],             // correlations
 //!     1.0,
 //! );
 //!
@@ -155,13 +161,19 @@ impl FederatedFingerprintProtocol {
     /// Create a partial fingerprint from locally computed statistics.
     ///
     /// The caller is responsible for computing the per-column statistics
-    /// and selecting an appropriate local epsilon.
+    /// and selecting an appropriate local epsilon. Optional `mins`, `maxs`,
+    /// and `correlations` can be provided for richer fingerprints; pass
+    /// empty vectors to omit them.
+    #[allow(clippy::too_many_arguments)]
     pub fn create_partial(
         source_id: &str,
         columns: Vec<String>,
         record_count: u64,
         means: Vec<f64>,
         stds: Vec<f64>,
+        mins: Vec<f64>,
+        maxs: Vec<f64>,
+        correlations: Vec<f64>,
         epsilon: f64,
     ) -> PartialFingerprint {
         PartialFingerprint {
@@ -171,9 +183,9 @@ impl FederatedFingerprintProtocol {
             column_names: columns,
             means,
             stds,
-            mins: Vec::new(),
-            maxs: Vec::new(),
-            correlations: Vec::new(),
+            mins,
+            maxs,
+            correlations,
         }
     }
 
@@ -480,6 +492,9 @@ mod tests {
             record_count,
             means,
             stds,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
             epsilon,
         )
     }

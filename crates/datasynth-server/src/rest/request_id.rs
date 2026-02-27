@@ -2,7 +2,12 @@
 //!
 //! Generates or preserves a unique request ID for each request.
 
-use axum::{body::Body, http::Request, middleware::Next, response::Response};
+use axum::{
+    body::Body,
+    http::{header::HeaderValue, Request},
+    middleware::Next,
+    response::Response,
+};
 use uuid::Uuid;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
@@ -26,9 +31,9 @@ pub async fn request_id_middleware(mut request: Request<Body>, next: Next) -> Re
         .insert(RequestId(request_id.clone()));
 
     let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(REQUEST_ID_HEADER, request_id.parse().unwrap());
+    if let Ok(header_val) = HeaderValue::try_from(&request_id) {
+        response.headers_mut().insert(REQUEST_ID_HEADER, header_val);
+    }
 
     response
 }

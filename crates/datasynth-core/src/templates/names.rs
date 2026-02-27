@@ -1009,21 +1009,49 @@ impl NamePool {
         }
     }
 
+    /// Validate that the name pool has at least one entry in each list.
+    ///
+    /// Returns `Err` if any name list is empty, preventing panics during generation.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.first_names_male.is_empty() {
+            return Err(format!(
+                "NamePool for {:?} has empty male first names list",
+                self.culture
+            ));
+        }
+        if self.first_names_female.is_empty() {
+            return Err(format!(
+                "NamePool for {:?} has empty female first names list",
+                self.culture
+            ));
+        }
+        if self.last_names.is_empty() {
+            return Err(format!(
+                "NamePool for {:?} has empty last names list",
+                self.culture
+            ));
+        }
+        Ok(())
+    }
+
     /// Generate a random name from this pool.
     pub fn generate_name(&self, rng: &mut impl Rng) -> PersonName {
         let is_male = rng.random_bool(0.5);
 
         let first_name = if is_male {
-            self.first_names_male
-                .choose(rng)
-                .expect("non-empty name list")
+            self.first_names_male.choose(rng).expect(
+                "NamePool male first names must not be empty; call validate() at construction",
+            )
         } else {
-            self.first_names_female
-                .choose(rng)
-                .expect("non-empty name list")
+            self.first_names_female.choose(rng).expect(
+                "NamePool female first names must not be empty; call validate() at construction",
+            )
         };
 
-        let last_name = self.last_names.choose(rng).expect("non-empty name list");
+        let last_name = self
+            .last_names
+            .choose(rng)
+            .expect("NamePool last names must not be empty; call validate() at construction");
 
         PersonName {
             first_name: first_name.clone(),

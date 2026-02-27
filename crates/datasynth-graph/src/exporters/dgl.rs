@@ -23,12 +23,13 @@
 
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
 use crate::exporters::common::{CommonExportConfig, CommonGraphMetadata};
+use crate::exporters::npy_writer;
 use crate::models::Graph;
 
 /// Configuration for DGL export.
@@ -213,7 +214,7 @@ impl DGLExporter {
 
         // Write as NPY format [num_edges, 2]
         let path = output_dir.join("edge_index.npy");
-        self.write_npy_2d_i64(&path, &coo_data)?;
+        npy_writer::write_npy_2d_i64(&path, &coo_data)?;
 
         Ok(())
     }
@@ -224,7 +225,7 @@ impl DGLExporter {
         let dim = features.first().map(|f| f.len()).unwrap_or(0);
 
         let path = output_dir.join("node_features.npy");
-        self.write_npy_2d_f64(&path, &features)?;
+        npy_writer::write_npy_2d_f64(&path, &features)?;
 
         Ok(dim)
     }
@@ -235,7 +236,7 @@ impl DGLExporter {
         let dim = features.first().map(|f| f.len()).unwrap_or(0);
 
         let path = output_dir.join("edge_features.npy");
-        self.write_npy_2d_f64(&path, &features)?;
+        npy_writer::write_npy_2d_f64(&path, &features)?;
 
         Ok(dim)
     }
@@ -249,7 +250,7 @@ impl DGLExporter {
             .collect();
 
         let path = output_dir.join("node_labels.npy");
-        self.write_npy_1d_i64(&path, &labels)?;
+        npy_writer::write_npy_1d_i64(&path, &labels)?;
 
         Ok(())
     }
@@ -263,47 +264,20 @@ impl DGLExporter {
             .collect();
 
         let path = output_dir.join("edge_labels.npy");
-        self.write_npy_1d_i64(&path, &labels)?;
+        npy_writer::write_npy_1d_i64(&path, &labels)?;
 
         Ok(())
     }
 
     /// Exports train/val/test masks.
     fn export_masks(&self, graph: &Graph, output_dir: &Path) -> std::io::Result<()> {
-        let n = graph.node_count();
-        let mut rng = SimpleRng::new(self.config.common.seed);
-
-        let train_size = (n as f64 * self.config.common.train_ratio) as usize;
-        let val_size = (n as f64 * self.config.common.val_ratio) as usize;
-
-        // Create shuffled indices
-        let mut indices: Vec<usize> = (0..n).collect();
-        for i in (1..n).rev() {
-            let j = (rng.next() % (i as u64 + 1)) as usize;
-            indices.swap(i, j);
-        }
-
-        // Create masks
-        let mut train_mask = vec![false; n];
-        let mut val_mask = vec![false; n];
-        let mut test_mask = vec![false; n];
-
-        for (i, &idx) in indices.iter().enumerate() {
-            if i < train_size {
-                train_mask[idx] = true;
-            } else if i < train_size + val_size {
-                val_mask[idx] = true;
-            } else {
-                test_mask[idx] = true;
-            }
-        }
-
-        // Write masks
-        self.write_npy_1d_bool(&output_dir.join("train_mask.npy"), &train_mask)?;
-        self.write_npy_1d_bool(&output_dir.join("val_mask.npy"), &val_mask)?;
-        self.write_npy_1d_bool(&output_dir.join("test_mask.npy"), &test_mask)?;
-
-        Ok(())
+        npy_writer::export_masks(
+            output_dir,
+            graph.node_count(),
+            self.config.common.seed,
+            self.config.common.train_ratio,
+            self.config.common.val_ratio,
+        )
     }
 
     /// Exports node type indices for heterogeneous graphs.
@@ -330,7 +304,7 @@ impl DGLExporter {
             .collect();
 
         let path = output_dir.join("node_type_indices.npy");
-        self.write_npy_1d_i64(&path, &type_indices)?;
+        npy_writer::write_npy_1d_i64(&path, &type_indices)?;
 
         Ok(())
     }
@@ -359,127 +333,7 @@ impl DGLExporter {
             .collect();
 
         let path = output_dir.join("edge_type_indices.npy");
-        self.write_npy_1d_i64(&path, &type_indices)?;
-
-        Ok(())
-    }
-
-    /// Writes a 1D array of i64 in NPY format.
-    fn write_npy_1d_i64(&self, path: &Path, data: &[i64]) -> std::io::Result<()> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::with_capacity(256 * 1024, file);
-
-        // NPY header
-        let shape = format!("({},)", data.len());
-        self.write_npy_header(&mut writer, "<i8", &shape)?;
-
-        // Data
-        for &val in data {
-            writer.write_all(&val.to_le_bytes())?;
-        }
-
-        Ok(())
-    }
-
-    /// Writes a 1D array of bool in NPY format.
-    fn write_npy_1d_bool(&self, path: &Path, data: &[bool]) -> std::io::Result<()> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::with_capacity(256 * 1024, file);
-
-        // NPY header
-        let shape = format!("({},)", data.len());
-        self.write_npy_header(&mut writer, "|b1", &shape)?;
-
-        // Data
-        for &val in data {
-            writer.write_all(&[if val { 1u8 } else { 0u8 }])?;
-        }
-
-        Ok(())
-    }
-
-    /// Writes a 2D array of i64 in NPY format.
-    fn write_npy_2d_i64(&self, path: &Path, data: &[Vec<i64>]) -> std::io::Result<()> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::with_capacity(256 * 1024, file);
-
-        let rows = data.len();
-        let cols = data.first().map(|r| r.len()).unwrap_or(0);
-
-        // NPY header
-        let shape = format!("({}, {})", rows, cols);
-        self.write_npy_header(&mut writer, "<i8", &shape)?;
-
-        // Data (row-major)
-        for row in data {
-            for &val in row {
-                writer.write_all(&val.to_le_bytes())?;
-            }
-            // Pad short rows if needed
-            for _ in row.len()..cols {
-                writer.write_all(&0_i64.to_le_bytes())?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Writes a 2D array of f64 in NPY format.
-    fn write_npy_2d_f64(&self, path: &Path, data: &[Vec<f64>]) -> std::io::Result<()> {
-        let file = File::create(path)?;
-        let mut writer = BufWriter::with_capacity(256 * 1024, file);
-
-        let rows = data.len();
-        let cols = data.first().map(|r| r.len()).unwrap_or(0);
-
-        // NPY header
-        let shape = format!("({}, {})", rows, cols);
-        self.write_npy_header(&mut writer, "<f8", &shape)?;
-
-        // Data (row-major)
-        for row in data {
-            for &val in row {
-                writer.write_all(&val.to_le_bytes())?;
-            }
-            // Pad short rows with zeros
-            for _ in row.len()..cols {
-                writer.write_all(&0.0_f64.to_le_bytes())?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Writes NPY header.
-    fn write_npy_header<W: Write>(
-        &self,
-        writer: &mut W,
-        dtype: &str,
-        shape: &str,
-    ) -> std::io::Result<()> {
-        // Magic number and version
-        writer.write_all(&[0x93])?; // \x93
-        writer.write_all(b"NUMPY")?;
-        writer.write_all(&[0x01, 0x00])?; // Version 1.0
-
-        // Header dict
-        let header = format!(
-            "{{'descr': '{}', 'fortran_order': False, 'shape': {} }}",
-            dtype, shape
-        );
-
-        // Pad header to multiple of 64 bytes (including magic, version, header_len)
-        let header_len = header.len();
-        let total_len = 10 + header_len + 1; // magic(6) + version(2) + header_len(2) + header + newline
-        let padding = (64 - (total_len % 64)) % 64;
-        let padded_len = header_len + 1 + padding;
-
-        writer.write_all(&(padded_len as u16).to_le_bytes())?;
-        writer.write_all(header.as_bytes())?;
-        for _ in 0..padding {
-            writer.write_all(b" ")?;
-        }
-        writer.write_all(b"\n")?;
+        npy_writer::write_npy_1d_i64(&path, &type_indices)?;
 
         Ok(())
     }
@@ -854,28 +708,6 @@ if __name__ == "__main__":
         file.write_all(script.as_bytes())?;
 
         Ok(())
-    }
-}
-
-/// Simple random number generator (xorshift64).
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> Self {
-        Self {
-            state: if seed == 0 { 1 } else { seed },
-        }
-    }
-
-    fn next(&mut self) -> u64 {
-        let mut x = self.state;
-        x ^= x << 13;
-        x ^= x >> 7;
-        x ^= x << 17;
-        self.state = x;
-        x
     }
 }
 

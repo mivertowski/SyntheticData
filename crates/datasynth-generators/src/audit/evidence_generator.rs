@@ -3,7 +3,7 @@
 //! Generates audit evidence with appropriate reliability assessments,
 //! source classifications, and cross-references per ISA 500.
 
-use chrono::{Duration, NaiveDate};
+use chrono::{Datelike, Duration, NaiveDate};
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
@@ -27,6 +27,9 @@ pub struct EvidenceGeneratorConfig {
     pub ai_extraction_probability: f64,
     /// File size range in bytes (min, max)
     pub file_size_range: (u64, u64),
+    /// Period end date used for evidence document dates (e.g., statement_date, document_date).
+    /// Defaults to 2025-12-31 if not set.
+    pub period_end_date: Option<NaiveDate>,
 }
 
 impl Default for EvidenceGeneratorConfig {
@@ -37,6 +40,7 @@ impl Default for EvidenceGeneratorConfig {
             high_reliability_probability: 0.40,
             ai_extraction_probability: 0.15,
             file_size_range: (10_000, 5_000_000),
+            period_end_date: None,
         }
     }
 }
@@ -439,6 +443,15 @@ impl EvidenceGenerator {
     ) -> std::collections::HashMap<String, String> {
         let mut terms = std::collections::HashMap::new();
 
+        let default_end = NaiveDate::from_ymd_opt(2025, 12, 31).expect("valid date");
+        let period_end = self.config.period_end_date.unwrap_or(default_end);
+        let period_end_str = period_end.format("%Y-%m-%d").to_string();
+        // Derive a period-start from period_end (beginning of that year)
+        let period_start_str = NaiveDate::from_ymd_opt(period_end.year(), 1, 1)
+            .expect("valid date")
+            .format("%Y-%m-%d")
+            .to_string();
+
         match evidence_type {
             EvidenceType::Invoice => {
                 terms.insert(
@@ -452,7 +465,7 @@ impl EvidenceGenerator {
                 terms.insert("vendor".into(), "Extracted Vendor Name".into());
             }
             EvidenceType::Contract => {
-                terms.insert("effective_date".into(), "2025-01-01".into());
+                terms.insert("effective_date".into(), period_start_str);
                 terms.insert(
                     "term_years".into(),
                     format!("{}", self.rng.random_range(1..5)),
@@ -467,10 +480,10 @@ impl EvidenceGenerator {
                     "ending_balance".into(),
                     format!("{:.2}", self.rng.random_range(100000.0..10000000.0)),
                 );
-                terms.insert("statement_date".into(), "2025-12-31".into());
+                terms.insert("statement_date".into(), period_end_str);
             }
             _ => {
-                terms.insert("document_date".into(), "2025-12-31".into());
+                terms.insert("document_date".into(), period_end_str);
                 terms.insert(
                     "reference".into(),
                     format!("REF-{:06}", self.rng.random_range(100000..999999)),

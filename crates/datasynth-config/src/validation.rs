@@ -67,6 +67,13 @@ fn validate_global_settings(config: &GeneratorConfig) -> SynthResult<()> {
             MAX_PERIOD_MONTHS, config.global.period_months
         )));
     }
+    // Validate start_date format (YYYY-MM-DD)
+    if chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d").is_err() {
+        return Err(SynthError::validation(format!(
+            "start_date '{}' is not a valid date in YYYY-MM-DD format",
+            config.global.start_date
+        )));
+    }
     Ok(())
 }
 
@@ -81,6 +88,18 @@ fn validate_companies(config: &GeneratorConfig) -> SynthResult<()> {
     for company in &config.companies {
         if company.code.is_empty() {
             return Err(SynthError::validation("Company code cannot be empty"));
+        }
+        if company.name.trim().is_empty() {
+            return Err(SynthError::validation(format!(
+                "Company name cannot be empty for company '{}'",
+                company.code
+            )));
+        }
+        if company.country.len() != 2 || !company.country.chars().all(|c| c.is_ascii_uppercase()) {
+            return Err(SynthError::validation(format!(
+                "Invalid country code '{}' for company '{}': expected 2-letter ISO 3166-1 alpha-2 code (e.g., 'US', 'DE')",
+                company.country, company.code
+            )));
         }
         if company.currency.len() != 3 {
             return Err(SynthError::validation(format!(

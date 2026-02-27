@@ -12,6 +12,7 @@ pub mod common;
 mod dgl;
 pub mod hypergraph;
 mod neo4j;
+pub mod npy_writer;
 mod pytorch_geometric;
 mod rustgraph;
 pub mod unified;

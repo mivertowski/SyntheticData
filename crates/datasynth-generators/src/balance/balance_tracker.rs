@@ -13,6 +13,7 @@ use datasynth_core::models::balance::{
     AccountBalance, AccountPeriodActivity, AccountType, BalanceSnapshot,
 };
 use datasynth_core::models::JournalEntry;
+use datasynth_core::FrameworkAccounts;
 
 /// Configuration for the balance tracker.
 #[derive(Debug, Clone)]
@@ -45,6 +46,8 @@ pub struct RunningBalanceTracker {
     balances: HashMap<String, HashMap<String, AccountBalance>>,
     /// Account type registry for determining debit/credit behavior.
     account_types: HashMap<String, AccountType>,
+    /// Framework-aware account classification.
+    framework_accounts: FrameworkAccounts,
     /// Balance history by company code.
     history: HashMap<String, Vec<BalanceHistoryEntry>>,
     /// Validation errors encountered.
@@ -105,12 +108,17 @@ pub struct TrackerStatistics {
 }
 
 impl RunningBalanceTracker {
-    /// Creates a new balance tracker with the specified currency.
-    pub fn new_with_currency(config: BalanceTrackerConfig, currency: String) -> Self {
+    /// Creates a new balance tracker with the specified currency and accounting framework.
+    pub fn new_with_currency_and_framework(
+        config: BalanceTrackerConfig,
+        currency: String,
+        framework: &str,
+    ) -> Self {
         Self {
             config,
             balances: HashMap::new(),
             account_types: HashMap::new(),
+            framework_accounts: FrameworkAccounts::for_framework(framework),
             history: HashMap::new(),
             validation_errors: Vec::new(),
             stats: TrackerStatistics::default(),
@@ -118,12 +126,22 @@ impl RunningBalanceTracker {
         }
     }
 
-    /// Creates a new balance tracker (defaults to USD).
+    /// Creates a new balance tracker with the specified currency (defaults to US GAAP).
+    pub fn new_with_currency(config: BalanceTrackerConfig, currency: String) -> Self {
+        Self::new_with_currency_and_framework(config, currency, "us_gaap")
+    }
+
+    /// Creates a new balance tracker (defaults to USD and US GAAP).
     pub fn new(config: BalanceTrackerConfig) -> Self {
         Self::new_with_currency(config, "USD".to_string())
     }
 
-    /// Creates a tracker with default configuration.
+    /// Creates a new balance tracker for a specific accounting framework (defaults to USD).
+    pub fn new_with_framework(config: BalanceTrackerConfig, framework: &str) -> Self {
+        Self::new_with_currency_and_framework(config, "USD".to_string(), framework)
+    }
+
+    /// Creates a tracker with default configuration (US GAAP).
     pub fn with_defaults() -> Self {
         Self::new(BalanceTrackerConfig::default())
     }
@@ -303,6 +321,9 @@ impl RunningBalanceTracker {
     }
 
     /// Determines account type from code prefix.
+    ///
+    /// Checks explicitly registered types first, then falls back to the
+    /// framework-aware classifier from [`FrameworkAccounts`].
     fn determine_account_type(&self, account_code: &str) -> AccountType {
         // Check registered types first (exact match or prefix)
         for (registered_code, account_type) in &self.account_types {
@@ -311,15 +332,8 @@ impl RunningBalanceTracker {
             }
         }
 
-        // Default logic based on first digit
-        match account_code.chars().next() {
-            Some('1') => AccountType::Asset,
-            Some('2') => AccountType::Liability,
-            Some('3') => AccountType::Equity,
-            Some('4') => AccountType::Revenue,
-            Some('5') | Some('6') | Some('7') | Some('8') => AccountType::Expense,
-            _ => AccountType::Asset, // Default fallback
-        }
+        // Use framework-aware classification
+        self.framework_accounts.classify_account_type(account_code)
     }
 
     /// Validates the balance sheet equation for a company.
@@ -637,6 +651,59 @@ mod tests {
         );
         assert_eq!(tracker.determine_account_type("3000"), AccountType::Equity);
         assert_eq!(tracker.determine_account_type("4000"), AccountType::Revenue);
+        assert_eq!(tracker.determine_account_type("5000"), AccountType::Expense);
+    }
+
+    #[test]
+    fn test_determine_account_type_french_gaap() {
+        let tracker = RunningBalanceTracker::new_with_framework(
+            BalanceTrackerConfig::default(),
+            "french_gaap",
+        );
+
+        // PCG class 2 = Fixed Assets (Asset)
+        assert_eq!(tracker.determine_account_type("210000"), AccountType::Asset);
+        // PCG class 1 subclass 0-4 = Equity
+        assert_eq!(
+            tracker.determine_account_type("101000"),
+            AccountType::Equity
+        );
+        // PCG class 4 subclass 0 = Suppliers (Liability)
+        assert_eq!(
+            tracker.determine_account_type("401000"),
+            AccountType::Liability
+        );
+        // PCG class 6 = Expenses
+        assert_eq!(
+            tracker.determine_account_type("603000"),
+            AccountType::Expense
+        );
+        // PCG class 7 = Revenue
+        assert_eq!(
+            tracker.determine_account_type("701000"),
+            AccountType::Revenue
+        );
+    }
+
+    #[test]
+    fn test_determine_account_type_german_gaap() {
+        let tracker = RunningBalanceTracker::new_with_framework(
+            BalanceTrackerConfig::default(),
+            "german_gaap",
+        );
+
+        // SKR04 class 0 = Fixed Assets (Asset)
+        assert_eq!(tracker.determine_account_type("0200"), AccountType::Asset);
+        // SKR04 class 2 = Equity
+        assert_eq!(tracker.determine_account_type("2000"), AccountType::Equity);
+        // SKR04 class 3 = Liabilities
+        assert_eq!(
+            tracker.determine_account_type("3300"),
+            AccountType::Liability
+        );
+        // SKR04 class 4 = Revenue
+        assert_eq!(tracker.determine_account_type("4000"), AccountType::Revenue);
+        // SKR04 class 5 = COGS (Expense)
         assert_eq!(tracker.determine_account_type("5000"), AccountType::Expense);
     }
 }

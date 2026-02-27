@@ -193,7 +193,20 @@ impl SubledgerEvaluator {
                 }
                 (is_reconciled, gl, sub, diff)
             }
-            _ => (true, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO),
+            (Some(gl), None) => {
+                // GL balance exists but subledger is missing — unreconciled
+                *total_count += 1;
+                (false, gl, Decimal::ZERO, gl)
+            }
+            (None, Some(sub)) => {
+                // Subledger balance exists but GL is missing — unreconciled
+                *total_count += 1;
+                (false, Decimal::ZERO, sub, Decimal::ZERO - sub)
+            }
+            (None, None) => {
+                // Neither side has data — nothing to reconcile
+                (true, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO)
+            }
         }
     }
 }

@@ -418,8 +418,11 @@ fn main() -> Result<()> {
             let generator_config = match &config_or_orchestrator {
                 ConfigOrOrchestrator::Config(cfg) => cfg.clone(),
                 ConfigOrOrchestrator::Orchestrator(_) => {
-                    // Placeholder for logging - fingerprint orchestrator has its own config
-                    // Use demo preset as a stand-in for manifest generation
+                    // Fingerprint orchestrator has its own config; use demo preset as
+                    // a stand-in for manifest generation metadata.
+                    tracing::warn!(
+                        "Fingerprint-based generation: manifest uses approximate config metadata"
+                    );
                     create_safe_demo_preset()
                 }
             };
@@ -1219,9 +1222,9 @@ fn main() -> Result<()> {
             // ========================================
             if quality_gate != "none" {
                 if let Some(profile) = datasynth_eval::gates::get_profile(&quality_gate) {
-                    // Build a ComprehensiveEvaluation for the gate engine.
-                    // Currently we use an empty evaluation since full evaluation
-                    // integration is not yet wired into the generation pipeline.
+                    tracing::warn!(
+                        "Quality gate evaluation uses placeholder data — full integration pending"
+                    );
                     let evaluation = datasynth_eval::ComprehensiveEvaluation::new();
                     let gate_result =
                         datasynth_eval::gates::GateEngine::evaluate(&evaluation, &profile);
@@ -1276,20 +1279,34 @@ fn main() -> Result<()> {
             industry,
             complexity,
         } => {
-            let industry_sector = match industry.to_lowercase().as_str() {
+            let industry_lower = industry.to_lowercase();
+            let industry_sector = match industry_lower.as_str() {
                 "manufacturing" => IndustrySector::Manufacturing,
                 "retail" => IndustrySector::Retail,
                 "financial" | "financial_services" => IndustrySector::FinancialServices,
                 "healthcare" => IndustrySector::Healthcare,
                 "technology" | "tech" => IndustrySector::Technology,
-                _ => IndustrySector::Manufacturing,
+                _ => {
+                    eprintln!(
+                        "Warning: unrecognized industry '{}'. Valid values: manufacturing, retail, financial_services, healthcare, technology. Defaulting to manufacturing.",
+                        industry
+                    );
+                    IndustrySector::Manufacturing
+                }
             };
 
-            let coa_complexity = match complexity.to_lowercase().as_str() {
+            let complexity_lower = complexity.to_lowercase();
+            let coa_complexity = match complexity_lower.as_str() {
                 "small" => CoAComplexity::Small,
                 "medium" => CoAComplexity::Medium,
                 "large" => CoAComplexity::Large,
-                _ => CoAComplexity::Medium,
+                _ => {
+                    eprintln!(
+                        "Warning: unrecognized complexity '{}'. Valid values: small, medium, large. Defaulting to medium.",
+                        complexity
+                    );
+                    CoAComplexity::Medium
+                }
             };
 
             let config = presets::create_preset(
@@ -1537,7 +1554,9 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
             // Write fingerprint
             let writer = FingerprintWriter::new();
             if sign {
-                tracing::info!("Signing is not yet implemented, writing unsigned fingerprint");
+                tracing::warn!(
+                    "Fingerprint signing is not yet implemented; writing unsigned fingerprint"
+                );
             }
             writer.write_to_file(&fingerprint, &output)?;
 
@@ -2014,14 +2033,26 @@ fn create_safe_demo_preset() -> GeneratorConfig {
 /// Apply safety limits to a loaded configuration.
 fn apply_safety_limits(config: &mut GeneratorConfig) {
     // Limit period to 12 months max
-    config.global.period_months = config.global.period_months.min(12);
+    if config.global.period_months > 12 {
+        tracing::warn!(
+            "Safety limit: period_months truncated from {} to 12",
+            config.global.period_months
+        );
+        config.global.period_months = 12;
+    }
 
     // Limit transaction volume
     for company in &mut config.companies {
+        let original = company.annual_transaction_volume;
         company.annual_transaction_volume = match company.annual_transaction_volume {
             datasynth_config::TransactionVolume::OneM
             | datasynth_config::TransactionVolume::TenM
             | datasynth_config::TransactionVolume::HundredM => {
+                tracing::warn!(
+                    "Safety limit: transaction volume for company '{}' capped from {:?} to HundredK",
+                    company.code,
+                    original
+                );
                 datasynth_config::TransactionVolume::HundredK
             }
             other => other,
@@ -2030,11 +2061,23 @@ fn apply_safety_limits(config: &mut GeneratorConfig) {
 
     // Limit banking population
     if config.banking.enabled {
-        config.banking.population.retail_customers =
-            config.banking.population.retail_customers.min(500);
-        config.banking.population.business_customers =
-            config.banking.population.business_customers.min(100);
-        config.banking.population.trusts = config.banking.population.trusts.min(20);
+        let orig_retail = config.banking.population.retail_customers;
+        let orig_business = config.banking.population.business_customers;
+        let orig_trusts = config.banking.population.trusts;
+        config.banking.population.retail_customers = orig_retail.min(500);
+        config.banking.population.business_customers = orig_business.min(100);
+        config.banking.population.trusts = orig_trusts.min(20);
+        if orig_retail > 500 || orig_business > 100 || orig_trusts > 20 {
+            tracing::warn!(
+                "Safety limit: banking population capped (retail: {} -> {}, business: {} -> {}, trusts: {} -> {})",
+                orig_retail,
+                config.banking.population.retail_customers,
+                orig_business,
+                config.banking.population.business_customers,
+                orig_trusts,
+                config.banking.population.trusts,
+            );
+        }
     }
 
     // Force conservative settings

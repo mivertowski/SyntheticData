@@ -7,11 +7,14 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::warn;
 
+use datasynth_core::accounts::AccountCategory;
 use datasynth_core::models::balance::TrialBalance;
 use datasynth_core::models::{
     FxRateTable, RateType, TranslatedAmount, TranslationAccountType, TranslationMethod,
 };
+use datasynth_core::FrameworkAccounts;
 
 /// Configuration for currency translation.
 #[derive(Debug, Clone)]
@@ -59,35 +62,68 @@ impl Default for CurrencyTranslatorConfig {
     }
 }
 
-/// Classifies whether an account is monetary based on its account code prefix.
+/// Classifies whether an account is monetary using framework-aware classification.
 ///
 /// Monetary items include cash, receivables, payables, and other items that
 /// are settled in fixed currency amounts. Non-monetary items include inventory,
 /// PP&E, intangibles, equity, and other items whose value fluctuates.
 ///
-/// Classification by 2-digit prefix ranges:
-/// - 10xx (Cash & Cash Equivalents): Monetary
-/// - 11xx (Accounts Receivable): Monetary
-/// - 12xx (Short-term Investments): Monetary
-/// - 13xx (Notes Receivable): Monetary
-/// - 14xx (Prepaid Expenses): Non-monetary (future economic benefit)
-/// - 15xx (Inventory): Non-monetary
-/// - 16xx (Property, Plant & Equipment): Non-monetary
-/// - 17xx (Intangible Assets): Non-monetary
-/// - 18xx (Long-term Investments): Non-monetary
-/// - 19xx (Other Non-current Assets): Non-monetary
-/// - 20xx-29xx (Liabilities): Monetary (obligations settled in cash)
-/// - 30xx-39xx (Equity): Non-monetary
-/// - 40xx-49xx (Revenue): Treated as monetary for temporal method
-/// - 50xx-69xx (Expenses): Treated as monetary for temporal method
-pub fn is_monetary(account_code: &str) -> bool {
+/// The classification uses the framework's account classifier to determine the
+/// broad account category, then applies monetary/non-monetary rules:
+/// - **Liability**: always monetary (obligations settled in cash)
+/// - **Equity**: always non-monetary
+/// - **Revenue/Expense**: treated as monetary (use average rate in temporal method)
+/// - **Asset**: sub-classified using US GAAP 2-digit prefix for US GAAP/IFRS,
+///   or framework-specific rules for other frameworks
+/// - **Suspense/Unknown**: defaults to monetary with a warning
+///
+/// For US GAAP assets specifically:
+/// - 10xx-13xx (Cash, AR, Investments, Notes): Monetary
+/// - 14xx-19xx (Prepaid, Inventory, PP&E, Intangibles): Non-monetary
+pub fn is_monetary(account_code: &str, framework_accounts: &FrameworkAccounts) -> bool {
+    let category = framework_accounts.classify(account_code);
+
+    match category {
+        // Liabilities are always monetary (obligations to pay cash)
+        AccountCategory::Liability => true,
+        // Equity is always non-monetary
+        AccountCategory::Equity => false,
+        // Income statement items use average rate (treated as monetary for temporal method)
+        AccountCategory::Revenue
+        | AccountCategory::Cogs
+        | AccountCategory::OperatingExpense
+        | AccountCategory::OtherIncomeExpense
+        | AccountCategory::Tax => true,
+        // Assets require sub-classification (monetary vs non-monetary)
+        AccountCategory::Asset => is_monetary_asset(account_code),
+        // Suspense/Unknown: default to monetary with warning
+        AccountCategory::Suspense | AccountCategory::Unknown => {
+            warn!(
+                account_code,
+                ?category,
+                "is_monetary: unrecognized account category, defaulting to monetary"
+            );
+            true
+        }
+    }
+}
+
+/// Sub-classifies whether an asset account is monetary based on its 2-digit prefix.
+///
+/// This is a US GAAP-oriented classification that works for IFRS and US GAAP
+/// account numbering. For other frameworks (PCG, SKR04), the broad category
+/// classification from the framework classifier already provides the right
+/// answer in most cases (cash class = asset+monetary, inventory class = asset+non-monetary).
+///
+/// - 10xx-13xx: Monetary (cash, AR, investments, notes)
+/// - 14xx-19xx: Non-monetary (prepaid, inventory, PP&E, intangibles)
+/// - Other prefixes: default to monetary (conservative)
+fn is_monetary_asset(account_code: &str) -> bool {
     if account_code.len() < 2 {
-        // Default to monetary for very short codes
         return true;
     }
 
     let prefix2 = &account_code[..2];
-
     match prefix2 {
         // Cash and cash equivalents - monetary
         "10" => true,
@@ -109,16 +145,7 @@ pub fn is_monetary(account_code: &str) -> bool {
         "18" => false,
         // Other non-current assets - non-monetary
         "19" => false,
-        // All liabilities (20xx-29xx) - monetary (obligations to pay cash)
-        "20" | "21" | "22" | "23" | "24" | "25" | "26" | "27" | "28" | "29" => true,
-        // All equity accounts (30xx-39xx) - non-monetary
-        "30" | "31" | "32" | "33" | "34" | "35" | "36" | "37" | "38" | "39" => false,
-        // Revenue (40xx-49xx) - income statement items use average rate
-        "40" | "41" | "42" | "43" | "44" | "45" | "46" | "47" | "48" | "49" => true,
-        // Expenses (50xx-69xx) - income statement items use average rate
-        "50" | "51" | "52" | "53" | "54" | "55" | "56" | "57" | "58" | "59" => true,
-        "60" | "61" | "62" | "63" | "64" | "65" | "66" | "67" | "68" | "69" => true,
-        // Default: treat as monetary (conservative approach)
+        // For other prefixes (e.g., PCG/SKR04 asset classes), default to monetary
         _ => true,
     }
 }
@@ -128,15 +155,23 @@ pub struct CurrencyTranslator {
     config: CurrencyTranslatorConfig,
     /// Historical equity rates keyed by account code.
     historical_equity_rates: HashMap<String, Decimal>,
+    /// Framework-aware account classification.
+    framework_accounts: FrameworkAccounts,
 }
 
 impl CurrencyTranslator {
-    /// Creates a new currency translator.
-    pub fn new(config: CurrencyTranslatorConfig) -> Self {
+    /// Creates a new currency translator for a specific accounting framework.
+    pub fn new_with_framework(config: CurrencyTranslatorConfig, framework: &str) -> Self {
         Self {
             config,
             historical_equity_rates: HashMap::new(),
+            framework_accounts: FrameworkAccounts::for_framework(framework),
         }
+    }
+
+    /// Creates a new currency translator (defaults to US GAAP).
+    pub fn new(config: CurrencyTranslatorConfig) -> Self {
+        Self::new_with_framework(config, "us_gaap")
     }
 
     /// Sets historical equity rates for specific accounts.
@@ -289,7 +324,7 @@ impl CurrencyTranslator {
                     (hist_rate, RateType::Historical)
                 }
                 TranslationAccountType::Asset | TranslationAccountType::Liability => {
-                    if is_monetary(account_code) {
+                    if is_monetary(account_code, &self.framework_accounts) {
                         (closing_rate, RateType::Closing)
                     } else {
                         let hist_rate = self
@@ -314,7 +349,7 @@ impl CurrencyTranslator {
                     (hist_rate, RateType::Historical)
                 }
                 _ => {
-                    if is_monetary(account_code) {
+                    if is_monetary(account_code, &self.framework_accounts) {
                         (closing_rate, RateType::Closing)
                     } else {
                         let hist_rate = self
@@ -442,7 +477,7 @@ impl CurrencyTranslator {
                     }
                     TranslationAccountType::Asset | TranslationAccountType::Liability => {
                         // Distinguish monetary vs non-monetary for balance sheet items
-                        if is_monetary(account_code) {
+                        if is_monetary(account_code, &self.framework_accounts) {
                             closing_rate
                         } else {
                             // Non-monetary items use historical rate if available,
@@ -475,7 +510,7 @@ impl CurrencyTranslator {
                     ),
                     _ => {
                         // For all other accounts, classify based on monetary nature
-                        if is_monetary(account_code) {
+                        if is_monetary(account_code, &self.framework_accounts) {
                             closing_rate
                         } else {
                             // Non-monetary items use historical rate if available
@@ -743,66 +778,96 @@ mod tests {
     }
 
     #[test]
-    fn test_is_monetary() {
+    fn test_is_monetary_us_gaap() {
+        let fa = FrameworkAccounts::us_gaap();
+
         // Cash and cash equivalents - monetary
-        assert!(is_monetary("1000"));
-        assert!(is_monetary("1001"));
-        assert!(is_monetary("1099"));
+        assert!(is_monetary("1000", &fa));
+        assert!(is_monetary("1001", &fa));
+        assert!(is_monetary("1099", &fa));
 
         // Accounts receivable - monetary
-        assert!(is_monetary("1100"));
-        assert!(is_monetary("1150"));
+        assert!(is_monetary("1100", &fa));
+        assert!(is_monetary("1150", &fa));
 
         // Short-term investments - monetary
-        assert!(is_monetary("1200"));
+        assert!(is_monetary("1200", &fa));
 
         // Notes receivable - monetary
-        assert!(is_monetary("1300"));
+        assert!(is_monetary("1300", &fa));
 
         // Prepaid expenses - non-monetary
-        assert!(!is_monetary("1400"));
-        assert!(!is_monetary("1450"));
+        assert!(!is_monetary("1400", &fa));
+        assert!(!is_monetary("1450", &fa));
 
         // Inventory - non-monetary
-        assert!(!is_monetary("1500"));
-        assert!(!is_monetary("1550"));
+        assert!(!is_monetary("1500", &fa));
+        assert!(!is_monetary("1550", &fa));
 
         // PP&E - non-monetary
-        assert!(!is_monetary("1600"));
-        assert!(!is_monetary("1650"));
+        assert!(!is_monetary("1600", &fa));
+        assert!(!is_monetary("1650", &fa));
 
         // Intangible assets - non-monetary
-        assert!(!is_monetary("1700"));
+        assert!(!is_monetary("1700", &fa));
 
         // Long-term investments - non-monetary
-        assert!(!is_monetary("1800"));
+        assert!(!is_monetary("1800", &fa));
 
         // Other non-current assets - non-monetary
-        assert!(!is_monetary("1900"));
+        assert!(!is_monetary("1900", &fa));
 
         // Liabilities - all monetary
-        assert!(is_monetary("2000"));
-        assert!(is_monetary("2100"));
-        assert!(is_monetary("2500"));
-        assert!(is_monetary("2900"));
+        assert!(is_monetary("2000", &fa));
+        assert!(is_monetary("2100", &fa));
+        assert!(is_monetary("2500", &fa));
+        assert!(is_monetary("2900", &fa));
 
         // Equity - non-monetary
-        assert!(!is_monetary("3000"));
-        assert!(!is_monetary("3100"));
-        assert!(!is_monetary("3200"));
-        assert!(!is_monetary("3900"));
+        assert!(!is_monetary("3000", &fa));
+        assert!(!is_monetary("3100", &fa));
+        assert!(!is_monetary("3200", &fa));
+        assert!(!is_monetary("3900", &fa));
 
         // Revenue - treated as monetary (average rate in temporal)
-        assert!(is_monetary("4000"));
-        assert!(is_monetary("4500"));
+        assert!(is_monetary("4000", &fa));
+        assert!(is_monetary("4500", &fa));
 
         // Expenses - treated as monetary (average rate in temporal)
-        assert!(is_monetary("5000"));
-        assert!(is_monetary("6000"));
+        assert!(is_monetary("5000", &fa));
+        assert!(is_monetary("6000", &fa));
 
-        // Short codes default to monetary
-        assert!(is_monetary("1"));
-        assert!(is_monetary(""));
+        // Short codes: "1" classifies as Asset (first digit), then
+        // is_monetary_asset sees len < 2, defaults to monetary
+        assert!(is_monetary("1", &fa));
+    }
+
+    #[test]
+    fn test_is_monetary_french_gaap() {
+        let fa = FrameworkAccounts::french_gaap();
+
+        // PCG class 5 (Cash) = Asset -> monetary
+        assert!(is_monetary("512000", &fa));
+
+        // PCG class 4 subclass 1 (Customers/AR) = Asset -> monetary
+        // prefix "41" is not in is_monetary_asset's 10-19 range, defaults to monetary
+        assert!(is_monetary("411000", &fa));
+
+        // PCG class 2 (Fixed assets) = Asset -> is_monetary_asset("21") defaults to monetary
+        // (non-US GAAP asset prefix, conservative default)
+        assert!(is_monetary("210000", &fa));
+
+        // PCG class 4 subclass 0 (Suppliers) = Liability -> always monetary
+        assert!(is_monetary("401000", &fa));
+
+        // PCG class 1 subclass 0-4 (Equity) = Equity -> non-monetary
+        assert!(!is_monetary("101000", &fa));
+
+        // PCG class 7 (Revenue) = Revenue -> monetary
+        assert!(is_monetary("701000", &fa));
+
+        // PCG class 6 (Expenses) = OperatingExpense -> monetary
+        assert!(is_monetary("603000", &fa));
     }
 
     #[test]

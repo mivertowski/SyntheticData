@@ -61,13 +61,29 @@ pub fn write_gobd_journal_csv(
         let waehrung = escape_gobd_field(&je.header.currency);
         let beleg_kreis = escape_gobd_field(je.header.document_type.as_str());
 
-        // Determine contra account: if 2 lines, use the other line's account
+        // Determine contra account: for 2-line entries use the other line's account;
+        // for multi-line entries, find the first line on the opposite debit/credit side.
         let contra_for = |idx: usize| -> String {
             if je.lines.len() == 2 {
                 let other = if idx == 0 { 1 } else { 0 };
                 je.lines[other].gl_account.clone()
             } else {
-                String::new()
+                let current = &je.lines[idx];
+                let is_debit = current.debit_amount > rust_decimal::Decimal::ZERO;
+                // Find first line on the opposite side
+                je.lines
+                    .iter()
+                    .enumerate()
+                    .find(|(i, l)| {
+                        *i != idx
+                            && if is_debit {
+                                l.credit_amount > rust_decimal::Decimal::ZERO
+                            } else {
+                                l.debit_amount > rust_decimal::Decimal::ZERO
+                            }
+                    })
+                    .map(|(_, l)| l.gl_account.clone())
+                    .unwrap_or_default()
             }
         };
 
@@ -77,7 +93,11 @@ pub fn write_gobd_journal_csv(
             let soll = format_decimal(line.debit_amount);
             let haben = format_decimal(line.credit_amount);
             let steuer_schluessel = line.tax_code.as_deref().unwrap_or("");
-            let steuer_betrag = "0.00"; // Tax amount not tracked separately in JE lines
+            // Use the line's tax_amount when available, otherwise default to 0.00
+            let steuer_betrag = line
+                .tax_amount
+                .map(format_decimal)
+                .unwrap_or_else(|| "0.00".to_string());
             let kostenstelle = line.cost_center.as_deref().unwrap_or("");
 
             writeln!(

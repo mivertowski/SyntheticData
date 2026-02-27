@@ -30,8 +30,7 @@ pub struct CustomerGenerator {
 impl CustomerGenerator {
     /// Create a new customer generator.
     pub fn new(config: BankingConfig, seed: u64) -> Self {
-        let start_date = NaiveDate::parse_from_str(&config.population.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
+        let start_date = crate::parse_start_date(&config.population.start_date);
         let end_date = start_date + chrono::Months::new(config.population.period_months);
 
         Self {

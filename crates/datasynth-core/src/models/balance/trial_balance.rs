@@ -383,7 +383,10 @@ impl AccountCategory {
         }
     }
 
-    /// Determine category from account code.
+    /// Determine category from account code (US GAAP heuristic).
+    ///
+    /// For framework-aware classification, use
+    /// [`from_account_code_with_framework`](Self::from_account_code_with_framework).
     pub fn from_account_code(code: &str) -> Self {
         let prefix = code.chars().take(2).collect::<String>();
         match prefix.as_str() {
@@ -403,6 +406,15 @@ impl AccountCategory {
             }
             _ => Self::OperatingExpenses,
         }
+    }
+
+    /// Determine category using framework-aware classification.
+    ///
+    /// `framework` is the framework string (e.g. `"us_gaap"`, `"french_gaap"`,
+    /// `"german_gaap"`, `"ifrs"`). Uses [`FrameworkAccounts`] internally.
+    pub fn from_account_code_with_framework(code: &str, framework: &str) -> Self {
+        crate::framework_accounts::FrameworkAccounts::for_framework(framework)
+            .classify_trial_balance_category(code)
     }
 
     /// Get display name.
@@ -707,6 +719,71 @@ mod tests {
         assert_eq!(
             AccountCategory::from_account_code("6100"),
             AccountCategory::OperatingExpenses
+        );
+    }
+
+    #[test]
+    fn test_account_category_from_code_with_framework_us_gaap() {
+        // Should produce results consistent with the original from_account_code
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("1100", "us_gaap"),
+            AccountCategory::CurrentAssets
+        );
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("4000", "us_gaap"),
+            AccountCategory::Revenue
+        );
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("5000", "us_gaap"),
+            AccountCategory::CostOfGoodsSold
+        );
+    }
+
+    #[test]
+    fn test_account_category_from_code_with_framework_french_gaap() {
+        // PCG: class 1 = Equity (not CurrentAssets)
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("101000", "french_gaap"),
+            AccountCategory::Equity
+        );
+        // PCG: class 2 = Asset
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("210000", "french_gaap"),
+            AccountCategory::CurrentAssets
+        );
+        // PCG: class 6 = OperatingExpenses
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("603000", "french_gaap"),
+            AccountCategory::OperatingExpenses
+        );
+        // PCG: class 7 = Revenue
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("701000", "french_gaap"),
+            AccountCategory::Revenue
+        );
+    }
+
+    #[test]
+    fn test_account_category_from_code_with_framework_german_gaap() {
+        // SKR04: class 0 = Asset
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("0200", "german_gaap"),
+            AccountCategory::CurrentAssets
+        );
+        // SKR04: class 2 = Equity
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("2000", "german_gaap"),
+            AccountCategory::Equity
+        );
+        // SKR04: class 3 = Liability
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("3300", "german_gaap"),
+            AccountCategory::CurrentLiabilities
+        );
+        // SKR04: class 5 = COGS
+        assert_eq!(
+            AccountCategory::from_account_code_with_framework("5000", "german_gaap"),
+            AccountCategory::CostOfGoodsSold
         );
     }
 

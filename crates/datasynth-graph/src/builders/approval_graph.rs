@@ -63,8 +63,11 @@ impl ApprovalGraphBuilder {
             self.get_or_create_user_node(user);
         }
 
-        // Note: hierarchy edges require manager_id which is not in the User model
-        // To enable hierarchy, extend the User model with manager_id field
+        if self.config.include_hierarchy {
+            tracing::warn!(
+                "include_hierarchy requires manager_id field on User model — not yet supported"
+            );
+        }
     }
 
     /// Adds an approval record to the graph.

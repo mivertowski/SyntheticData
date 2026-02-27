@@ -5,6 +5,7 @@
 
 use chrono::{Datelike, NaiveDate};
 use datasynth_core::utils::{seeded_rng, weighted_select};
+use datasynth_core::FrameworkAccounts;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
@@ -90,14 +91,17 @@ pub struct ICGenerator {
     ic_counter: u64,
     /// Document counter.
     doc_counter: u64,
+    /// Framework-aware account mappings.
+    framework_accounts: FrameworkAccounts,
 }
 
 impl ICGenerator {
-    /// Create a new IC generator.
-    pub fn new(
+    /// Create a new IC generator for a specific accounting framework.
+    pub fn new_with_framework(
         config: ICGeneratorConfig,
         ownership_structure: OwnershipStructure,
         seed: u64,
+        framework: &str,
     ) -> Self {
         Self {
             config,
@@ -108,7 +112,17 @@ impl ICGenerator {
             matched_pairs: Vec::new(),
             ic_counter: 0,
             doc_counter: 0,
+            framework_accounts: FrameworkAccounts::for_framework(framework),
         }
+    }
+
+    /// Create a new IC generator (defaults to US GAAP).
+    pub fn new(
+        config: ICGeneratorConfig,
+        ownership_structure: OwnershipStructure,
+        seed: u64,
+    ) -> Self {
+        Self::new_with_framework(config, ownership_structure, seed, "us_gaap")
     }
 
     /// Add a transfer pricing policy.
@@ -328,7 +342,7 @@ impl ICGenerator {
         if let Some(wht) = pair.withholding_tax {
             je.add_line(JournalEntryLine {
                 line_number: 3,
-                gl_account: "2180".to_string(), // WHT payable
+                gl_account: self.framework_accounts.sales_tax_payable.clone(), // WHT payable
                 credit_amount: wht,
                 text: Some("Withholding tax on IC transaction".to_string()),
                 assignment: Some(pair.ic_reference.clone()),
@@ -391,41 +405,55 @@ impl ICGenerator {
     }
 
     /// Get IC receivable account for seller.
+    ///
+    /// Uses the framework's IC AR clearing account as a base, appending the
+    /// first two characters of the buyer company code as a sub-account suffix.
     fn get_seller_receivable_account(&self, buyer_company: &str) -> String {
         let suffix: String = buyer_company.chars().take(2).collect();
-        format!("1310{}", suffix)
+        format!("{}{}", self.framework_accounts.ic_ar_clearing, suffix)
     }
 
     /// Get IC revenue account for seller.
+    ///
+    /// Maps the IC transaction type to the appropriate framework-specific
+    /// revenue account code.
     fn get_seller_revenue_account(&self, tx_type: ICTransactionType) -> String {
+        let fa = &self.framework_accounts;
         match tx_type {
-            ICTransactionType::GoodsSale => "4100".to_string(),
-            ICTransactionType::ServiceProvided => "4200".to_string(),
-            ICTransactionType::ManagementFee => "4300".to_string(),
-            ICTransactionType::Royalty => "4400".to_string(),
-            ICTransactionType::LoanInterest => "4500".to_string(),
-            ICTransactionType::Dividend => "4600".to_string(),
-            _ => "4900".to_string(),
+            ICTransactionType::GoodsSale => fa.product_revenue.clone(),
+            ICTransactionType::ServiceProvided => fa.service_revenue.clone(),
+            ICTransactionType::ManagementFee => fa.ic_revenue.clone(),
+            ICTransactionType::Royalty => fa.other_revenue.clone(),
+            ICTransactionType::LoanInterest => fa.other_revenue.clone(),
+            ICTransactionType::Dividend => fa.other_revenue.clone(),
+            _ => fa.ic_revenue.clone(),
         }
     }
 
     /// Get IC expense account for buyer.
+    ///
+    /// Maps the IC transaction type to the appropriate framework-specific
+    /// expense (or equity) account code.
     fn get_buyer_expense_account(&self, tx_type: ICTransactionType) -> String {
+        let fa = &self.framework_accounts;
         match tx_type {
-            ICTransactionType::GoodsSale => "5100".to_string(),
-            ICTransactionType::ServiceProvided => "5200".to_string(),
-            ICTransactionType::ManagementFee => "5300".to_string(),
-            ICTransactionType::Royalty => "5400".to_string(),
-            ICTransactionType::LoanInterest => "5500".to_string(),
-            ICTransactionType::Dividend => "3100".to_string(), // Retained earnings
-            _ => "5900".to_string(),
+            ICTransactionType::GoodsSale => fa.cogs.clone(),
+            ICTransactionType::ServiceProvided => fa.rent.clone(), // general operating expense
+            ICTransactionType::ManagementFee => fa.rent.clone(),   // general operating expense
+            ICTransactionType::Royalty => fa.rent.clone(),         // general operating expense
+            ICTransactionType::LoanInterest => fa.interest_expense.clone(),
+            ICTransactionType::Dividend => fa.retained_earnings.clone(),
+            _ => fa.cogs.clone(),
         }
     }
 
     /// Get IC payable account for buyer.
+    ///
+    /// Uses the framework's IC AP clearing account as a base, appending the
+    /// first two characters of the seller company code as a sub-account suffix.
     fn get_buyer_payable_account(&self, seller_company: &str) -> String {
         let suffix: String = seller_company.chars().take(2).collect();
-        format!("2110{}", suffix)
+        format!("{}{}", self.framework_accounts.ic_ap_clearing, suffix)
     }
 
     /// Generate an IC loan.
