@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-02-27
+
+### Added
+
+- **Framework-aware account classification** (`datasynth-core`, `datasynth-generators`, `datasynth-graph`)
+  - `FrameworkAccounts::classify_account_type()` and `classify_trial_balance_category()` methods for centralized, framework-aware account type inference
+  - `ifrs()` constructor on `FrameworkAccounts` with explicit dispatch for all framework string variants
+  - `AccountBalanceType::from_account_code_with_framework()` and `TrialBalanceCategory::from_account_code_with_framework()` for framework-aware balance classification
+  - `balance_tracker`, `trial_balance_generator`, `currency_translator`, and `ic_generator` now accept framework parameter and use centralized classification instead of first-digit heuristics
+  - `TransactionGraphBuilder` uses `FrameworkAccounts` classifier; account code ML feature normalized to [0,1] range using up to 4 digits
+
+- **Shared NPY writer module** (`datasynth-graph`)
+  - Extracted duplicated `write_npy_header`, `write_npy_1d_f32`, `write_npy_1d_i64`, `write_npy_2d_i64`, `write_npy_1d_bool`, `export_masks` from PyTorch Geometric and DGL exporters into `npy_writer.rs`
+
+- **Plugin trait defaults** (`datasynth-core`)
+  - `SinkPlugin` and `TransformPlugin` now have default `version()` ("0.1.0") and `description()` methods
+
+- **Config validation** (`datasynth-config`)
+  - `start_date` format validation (YYYY-MM-DD) in `validate_global_settings`
+  - Company `name` non-empty and `country` 2-letter ISO code validation
+
+### Changed
+
+- **IC generator** uses `FrameworkAccounts` fields for revenue, expense, receivable, and payable account codes instead of hardcoded US GAAP accounts (`datasynth-generators`)
+- **Currency translator** `is_monetary()` now framework-aware — classifies by `AccountCategory` before sub-classifying assets, with warning on unknown categories (`datasynth-generators`)
+- **Streaming orchestrator** uses `chrono::Months` for proper end-date calculation instead of 30-day month approximation; reads departments from config with fallback warning (`datasynth-runtime`)
+- **Server stubs wired** (`datasynth-server`):
+  - `start_stream` reads `StreamRequest` fields (events_per_second, batch_size, patterns)
+  - `reload_config` uses `config_loader` with proper error handling
+  - Proto field mappings populated from domain models (vendor_id, customer_id, material_id, text, generate_master_data, generate_document_flows)
+  - `ConfigSource::Url` implemented with `reqwest`
+- **Streaming orchestrator phases** now log explicit `warn!` for skipped phases (AnomalyInjection, DataQuality, OCPM) instead of silent no-ops (`datasynth-runtime`)
+- **CLI warnings**: unrecognized industry/complexity in `init` command, safety limit capping in demo mode now log `eprintln!` warnings (`datasynth-cli`)
+- **Anderson-Darling p-value** uses conservative step-wise thresholds for unknown distributions instead of generic 0.05 (`datasynth-eval`)
+- **AML detectability** for unknown typologies uses suspicious transaction ratio instead of trivially returning true (`datasynth-eval`)
+- **Subledger reconciliation** returns unreconciled with warning for unknown account types instead of silently marking as reconciled (`datasynth-eval`)
+- **Quality gate evaluation** logs clear warning that integration is pending (`datasynth-cli`)
+- **Fingerprint `--sign`** logs `warn!` instead of silent `info!` (`datasynth-cli`)
+
+### Fixed
+
+- **Employee generator `last_mut()` ordering bug** (`datasynth-generators`): CFO/COO manager_id was being set on the wrong employee because `add_employee()` was called after `last_mut()` — now called before
+- **Banking RNG determinism** (`datasynth-banking`): `generate_phone_from_pack` replaced `rand::rng()` / `rand::random()` with `self.rng` for deterministic output
+- **Timing attack on gRPC auth** (`datasynth-server`): Token validation now uses `subtle::ConstantTimeEq` instead of `==`
+- **CLI verify count mismatch** (`datasynth-cli`): Count mismatches were incrementing `passed` instead of `failed` and not setting `all_pass = false`
+- **DGL heterogeneous graph node types** (`datasynth-graph`): Hardcoded `node_type_names[0]` replaced with per-node type lookup via `np.bincount(node_types).argmax()`
+- **GoBD tax amount** (`datasynth-output`): `Steuerbetrag` now computed from line `tax_amount` field when `tax_code` is present; `Gegenkontonummer` finds correct contra account for multi-line entries
+- **Banking silent date fallbacks** (`datasynth-banking`): 6 occurrences of `unwrap_or(2024-01-01)` replaced with shared `parse_start_date()` helper that logs warnings
+- **Evidence generator hardcoded date** (`datasynth-generators`): Uses config period end date instead of hardcoded `2025-12-31`
+- **gRPC unknown enum handling** (`datasynth-server`): Returns `Status::invalid_argument` instead of silently defaulting
+- **Neo4j and DGL graph exports** (`datasynth-runtime`): Wired in orchestrator — previously logged warning and skipped
+- **Production unwrap/expect calls** (`datasynth-core`, `datasynth-generators`, `datasynth-runtime`, `datasynth-fingerprint`): Replaced bare `.unwrap()` / `.expect()` with descriptive messages, `unwrap_or_else` with warnings, or `let Some(x) = ... else { warn; continue }` patterns across name pools, streaming channels, document chain manager, JE generator, run manifest, and certificates
+- **Debug-format enum matching** (`datasynth-graph`): `banking_graph.rs` now matches on proper enum variants (`TurnoverBand::Low`, `CashIntensity::High`, etc.) instead of `format!("{:?}", ...)` string comparison
+- **Header value unwraps** (`datasynth-server`): `security_headers.rs` uses `HeaderValue::from_static()`; `request_id.rs` and `rate_limit.rs` use `HeaderValue::try_from()` with error handling
+- **Dead `BehavioralDrift` trait** removed (`datasynth-core`); dead `GenericParquetRecord` struct removed (`datasynth-output`); stale comment cleaned from `standards/mod.rs`
+- **Causal validation `_correct_signs`** now used in success message reporting (`datasynth-core`)
+- **Beta distribution** in causal SCM uses proper `rand_distr::Beta` instead of uniform fallback (`datasynth-core`)
+- **Counterfactual `AddLineItem` and `RemoveLineItem`** implemented (`datasynth-generators`)
+- **Approval graph `include_hierarchy`** logs warning when enabled (`datasynth-graph`)
+- **Orchestrator hardcoded rates** annotated with `// TODO: wire to config schema` and `tracing::debug!` (`datasynth-runtime`)
+- **NL config unknown features** now log `warn!` instead of silently ignoring (`datasynth-core`)
+- **Template provider unknown industry** now logs `debug!` instead of silently falling back (`datasynth-core`)
+- **WebSocket streaming** sends all entries per generation cycle instead of `take(1)` (`datasynth-server`)
+- **gRPC streaming** creates orchestrator once outside loop instead of per iteration (`datasynth-server`)
+
 ## [0.9.1] - 2026-02-26
 
 ### Added

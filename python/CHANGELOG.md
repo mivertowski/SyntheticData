@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.2 (2026-02-27)
+
+### Changed
+
+- Matches Rust v0.9.2 comprehensive codebase quality fixes (Tiers 1-6)
+- Framework-aware account classification, constant-time auth, deterministic banking RNG
+- Graph export wiring, server stub implementations, production unwrap elimination
+
 ## 1.5.1 (2026-02-26)
 
 ### Added

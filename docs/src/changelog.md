@@ -4,6 +4,20 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [0.9.2] - 2026-02-27
+
+**Comprehensive Codebase Quality Fixes (Tiers 1-6)**
+
+- Framework-aware account classification in all generators (balance tracker, trial balance, currency translator, IC generator, graph builder)
+- Constant-time gRPC auth token comparison (`subtle::ConstantTimeEq`)
+- Fixed employee generator `last_mut()` ordering, banking RNG determinism, CLI verify count mismatch, DGL node types
+- Neo4j/DGL graph exports wired in orchestrator; server stream/reload/proto stubs implemented
+- GoBD tax amount and contra account improvements for multi-line entries
+- Config validation: start_date format, company name/country, safety limit warnings
+- Production unwrap/expect calls replaced with descriptive errors across 6 crates
+- Shared NPY writer extraction; proper Beta distribution; improved A-D p-value and AML detectability
+- 59 files changed, 3,376 tests pass, 0 clippy warnings
+
 ### [0.9.1] - 2026-02-26
 
 **Generalized Multi-GAAP Framework + German GAAP (HGB)**
