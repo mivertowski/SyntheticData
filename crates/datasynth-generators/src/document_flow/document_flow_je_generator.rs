@@ -1193,12 +1193,14 @@ mod tests {
         assert_eq!(invoice.total_tax_amount, Decimal::from(100));
         assert_eq!(invoice.total_gross_amount, Decimal::from(1100));
 
-        let je = generator
-            .generate_from_customer_invoice(&invoice)
-            .unwrap();
+        let je = generator.generate_from_customer_invoice(&invoice).unwrap();
 
         // Should have 3 lines: DR AR, CR Revenue, CR VAT
-        assert_eq!(je.line_count(), 3, "Expected 3 JE lines for invoice with tax");
+        assert_eq!(
+            je.line_count(),
+            3,
+            "Expected 3 JE lines for invoice with tax"
+        );
         assert!(je.is_balanced(), "Entry must be balanced");
 
         // Line 1: DR AR = gross (1100)
@@ -1226,9 +1228,7 @@ mod tests {
         assert_eq!(invoice.total_net_amount, Decimal::from(1000));
         assert_eq!(invoice.total_gross_amount, Decimal::from(1000));
 
-        let je = generator
-            .generate_from_customer_invoice(&invoice)
-            .unwrap();
+        let je = generator.generate_from_customer_invoice(&invoice).unwrap();
 
         // Should have 2 lines (no VAT line)
         assert_eq!(
@@ -1321,9 +1321,7 @@ mod tests {
 
         // Customer invoice with tax
         let ci = create_test_customer_invoice_with_tax();
-        let je = generator
-            .generate_from_customer_invoice(&ci)
-            .unwrap();
+        let je = generator.generate_from_customer_invoice(&ci).unwrap();
         assert_eq!(
             je.lines[2].gl_account, "2999",
             "VAT output account should be configurable"
@@ -1395,9 +1393,7 @@ mod tests {
         assert_eq!(invoice.total_gross_amount, Decimal::from(880));
 
         let mut generator = DocumentFlowJeGenerator::new();
-        let je = generator
-            .generate_from_customer_invoice(&invoice)
-            .unwrap();
+        let je = generator.generate_from_customer_invoice(&invoice).unwrap();
 
         assert_eq!(je.line_count(), 3);
         assert!(je.is_balanced());

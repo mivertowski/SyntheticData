@@ -519,7 +519,9 @@ mod tests {
 
         stats.row_count = 42;
         stats.numeric = Some(NumericStats::new(42, 10.0, 5000.0, 1234.5, 800.0));
-        stats.benford_first_digit = Some([0.301, 0.176, 0.125, 0.097, 0.079, 0.067, 0.058, 0.051, 0.046]);
+        stats.benford_first_digit = Some([
+            0.301, 0.176, 0.125, 0.097, 0.079, 0.067, 0.058, 0.051, 0.046,
+        ]);
 
         fp.add_account_class_stats(stats);
         assert_eq!(fp.account_class_stats.len(), 1);
@@ -558,7 +560,10 @@ mod tests {
 
         // Now add one entry and confirm it appears
         let mut fp2 = StatisticsFingerprint::new();
-        fp2.add_account_class_stats(AccountClassStats::new("5XXX".to_string(), "Expenses".to_string()));
+        fp2.add_account_class_stats(AccountClassStats::new(
+            "5XXX".to_string(),
+            "Expenses".to_string(),
+        ));
         let json2 = serde_json::to_string(&fp2).expect("serialize");
         assert!(
             json2.contains("account_class_stats"),
@@ -569,8 +574,14 @@ mod tests {
     #[test]
     fn test_statistics_fingerprint_json_roundtrip_with_account_class_stats() {
         let mut fp = StatisticsFingerprint::new();
-        fp.add_account_class_stats(AccountClassStats::new("1XXX".to_string(), "Assets".to_string()));
-        fp.add_account_class_stats(AccountClassStats::new("4XXX".to_string(), "Revenue".to_string()));
+        fp.add_account_class_stats(AccountClassStats::new(
+            "1XXX".to_string(),
+            "Assets".to_string(),
+        ));
+        fp.add_account_class_stats(AccountClassStats::new(
+            "4XXX".to_string(),
+            "Revenue".to_string(),
+        ));
 
         let json = serde_json::to_string(&fp).expect("serialize");
         let deserialized: StatisticsFingerprint = serde_json::from_str(&json).expect("deserialize");

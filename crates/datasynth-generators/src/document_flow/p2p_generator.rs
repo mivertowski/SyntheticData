@@ -322,8 +322,8 @@ impl P2PGenerator {
         let due_date = self.calculate_due_date(invoice_date, &vendor.payment_terms);
 
         // Determine if this is a partial payment
-        let is_partial_payment = self.rng.random::<f64>()
-            < self.config.payment_behavior.partial_payment_rate;
+        let is_partial_payment =
+            self.rng.random::<f64>() < self.config.payment_behavior.partial_payment_rate;
 
         // Generate payment (possibly partial)
         let (payment, remainder_payments) = if let Some(ref invoice) = vendor_invoice {
@@ -1377,10 +1377,7 @@ mod tests {
             "JSMITH",
         );
 
-        assert!(
-            chain.payment.is_some(),
-            "Chain should have a full payment"
-        );
+        assert!(chain.payment.is_some(), "Chain should have a full payment");
         assert!(
             chain.remainder_payments.is_empty(),
             "Chain should have no remainder payments when partial_payment_rate is 0"

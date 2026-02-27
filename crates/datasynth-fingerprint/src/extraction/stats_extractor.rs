@@ -666,11 +666,7 @@ mod tests {
 
     #[test]
     fn test_detect_account_column_none() {
-        let headers = vec![
-            "id".to_string(),
-            "name".to_string(),
-            "value".to_string(),
-        ];
+        let headers = vec!["id".to_string(), "name".to_string(), "value".to_string()];
         assert_eq!(detect_account_column(&headers), None);
     }
 
@@ -682,10 +678,7 @@ mod tests {
 
     #[test]
     fn test_detect_account_column_prefers_first_match() {
-        let headers = vec![
-            "gl_account".to_string(),
-            "account_number".to_string(),
-        ];
+        let headers = vec!["gl_account".to_string(), "account_number".to_string()];
         // Should return the first match
         assert_eq!(detect_account_column(&headers), Some(0));
     }
@@ -895,7 +888,10 @@ mod tests {
             .collect();
 
         assert!(patterns.contains(&"1XXX"), "Should contain Assets (1XXX)");
-        assert!(patterns.contains(&"2XXX"), "Should contain Liabilities (2XXX)");
+        assert!(
+            patterns.contains(&"2XXX"),
+            "Should contain Liabilities (2XXX)"
+        );
         assert!(patterns.contains(&"4XXX"), "Should contain Revenue (4XXX)");
         assert!(patterns.contains(&"5XXX"), "Should contain COGS (5XXX)");
 
@@ -931,15 +927,15 @@ mod tests {
         use crate::models::PrivacyLevel;
         use crate::privacy::{PrivacyConfig, PrivacyEngine};
 
-        let headers = vec![
-            "id".to_string(),
-            "name".to_string(),
-            "value".to_string(),
-        ];
+        let headers = vec!["id".to_string(), "name".to_string(), "value".to_string()];
 
         let columns = vec![
             vec!["1".to_string(), "2".to_string(), "3".to_string()],
-            vec!["Alice".to_string(), "Bob".to_string(), "Charlie".to_string()],
+            vec![
+                "Alice".to_string(),
+                "Bob".to_string(),
+                "Charlie".to_string(),
+            ],
             vec!["100".to_string(), "200".to_string(), "300".to_string()],
         ];
 

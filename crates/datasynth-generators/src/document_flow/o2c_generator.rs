@@ -388,9 +388,8 @@ impl O2CGenerator {
                                 created_by,
                                 remaining,
                             );
-                            payment_events.push(PaymentEvent::RemainderPayment(
-                                remainder_payment.clone(),
-                            ));
+                            payment_events
+                                .push(PaymentEvent::RemainderPayment(remainder_payment.clone()));
                             remainder_receipts.push(remainder_payment);
                         }
                     }
@@ -480,9 +479,8 @@ impl O2CGenerator {
             .iter()
             .any(|e| matches!(e, PaymentEvent::PaymentCorrection { .. }));
 
-        let is_complete = customer_receipt.is_some()
-            && !has_correction
-            && (!has_partial || has_remainder);
+        let is_complete =
+            customer_receipt.is_some() && !has_correction && (!has_partial || has_remainder);
 
         O2CDocumentChain {
             sales_order: so,
@@ -1639,7 +1637,7 @@ mod tests {
         let config = O2CGeneratorConfig {
             bad_debt_rate: 0.0, // Ensure payment happens
             payment_behavior: O2CPaymentBehavior {
-                partial_payment_rate: 1.0,  // Force partial payment
+                partial_payment_rate: 1.0, // Force partial payment
                 short_payment_rate: 0.0,
                 on_account_rate: 0.0,
                 payment_correction_rate: 0.0,
@@ -1664,12 +1662,14 @@ mod tests {
         );
 
         // Should have both PartialPayment and RemainderPayment events
-        let has_partial = chain.payment_events.iter().any(|e| {
-            matches!(e, PaymentEvent::PartialPayment { .. })
-        });
-        let has_remainder = chain.payment_events.iter().any(|e| {
-            matches!(e, PaymentEvent::RemainderPayment(_))
-        });
+        let has_partial = chain
+            .payment_events
+            .iter()
+            .any(|e| matches!(e, PaymentEvent::PartialPayment { .. }));
+        let has_remainder = chain
+            .payment_events
+            .iter()
+            .any(|e| matches!(e, PaymentEvent::RemainderPayment(_)));
 
         assert!(has_partial, "Should have a PartialPayment event");
         assert!(has_remainder, "Should have a RemainderPayment event");
@@ -1708,31 +1708,41 @@ mod tests {
             "JSMITH",
         );
 
-        let invoice = chain.customer_invoice.as_ref().expect("Should have an invoice");
+        let invoice = chain
+            .customer_invoice
+            .as_ref()
+            .expect("Should have an invoice");
 
         // Extract partial payment amount
-        let partial_amount = chain.payment_events.iter().find_map(|e| {
-            if let PaymentEvent::PartialPayment { payment, .. } = e {
-                Some(payment.amount)
-            } else {
-                None
-            }
-        }).expect("Should have a partial payment");
+        let partial_amount = chain
+            .payment_events
+            .iter()
+            .find_map(|e| {
+                if let PaymentEvent::PartialPayment { payment, .. } = e {
+                    Some(payment.amount)
+                } else {
+                    None
+                }
+            })
+            .expect("Should have a partial payment");
 
         // Extract remainder payment amount
-        let remainder_amount = chain.payment_events.iter().find_map(|e| {
-            if let PaymentEvent::RemainderPayment(payment) = e {
-                Some(payment.amount)
-            } else {
-                None
-            }
-        }).expect("Should have a remainder payment");
+        let remainder_amount = chain
+            .payment_events
+            .iter()
+            .find_map(|e| {
+                if let PaymentEvent::RemainderPayment(payment) = e {
+                    Some(payment.amount)
+                } else {
+                    None
+                }
+            })
+            .expect("Should have a remainder payment");
 
         // partial + remainder should equal invoice total
         let total_paid = partial_amount + remainder_amount;
         assert_eq!(
-            total_paid,
-            invoice.total_gross_amount,
+            total_paid, invoice.total_gross_amount,
             "Partial ({}) + remainder ({}) = {} should equal invoice total ({})",
             partial_amount, remainder_amount, total_paid, invoice.total_gross_amount
         );
@@ -1809,27 +1819,36 @@ mod tests {
         );
 
         // Get partial payment date (use value_date which is always set)
-        let partial_date = chain.payment_events.iter().find_map(|e| {
-            if let PaymentEvent::PartialPayment { payment, .. } = e {
-                Some(payment.value_date)
-            } else {
-                None
-            }
-        }).expect("Should have a partial payment");
+        let partial_date = chain
+            .payment_events
+            .iter()
+            .find_map(|e| {
+                if let PaymentEvent::PartialPayment { payment, .. } = e {
+                    Some(payment.value_date)
+                } else {
+                    None
+                }
+            })
+            .expect("Should have a partial payment");
 
         // Get remainder payment date
-        let remainder_date = chain.payment_events.iter().find_map(|e| {
-            if let PaymentEvent::RemainderPayment(payment) = e {
-                Some(payment.value_date)
-            } else {
-                None
-            }
-        }).expect("Should have a remainder payment");
+        let remainder_date = chain
+            .payment_events
+            .iter()
+            .find_map(|e| {
+                if let PaymentEvent::RemainderPayment(payment) = e {
+                    Some(payment.value_date)
+                } else {
+                    None
+                }
+            })
+            .expect("Should have a remainder payment");
 
         assert!(
             remainder_date > partial_date,
             "Remainder date ({}) should be after partial payment date ({})",
-            remainder_date, partial_date
+            remainder_date,
+            partial_date
         );
     }
 
@@ -1874,7 +1893,7 @@ mod tests {
         let config = O2CGeneratorConfig {
             bad_debt_rate: 0.0,
             payment_behavior: O2CPaymentBehavior {
-                partial_payment_rate: 0.0,  // No partial payments
+                partial_payment_rate: 0.0, // No partial payments
                 short_payment_rate: 0.0,
                 on_account_rate: 0.0,
                 payment_correction_rate: 0.0,
