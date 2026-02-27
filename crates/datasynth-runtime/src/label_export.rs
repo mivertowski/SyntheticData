@@ -61,6 +61,13 @@ pub struct FlatAnomalyLabel {
     pub metadata_json: String,
 }
 
+fn serialize_or_warn<T: serde::Serialize>(value: &T, field_name: &str) -> String {
+    serde_json::to_string(value).unwrap_or_else(|e| {
+        tracing::warn!("Failed to serialize {} for label export: {}", field_name, e);
+        String::new()
+    })
+}
+
 impl From<&LabeledAnomaly> for FlatAnomalyLabel {
     fn from(label: &LabeledAnomaly) -> Self {
         Self {
@@ -77,7 +84,7 @@ impl From<&LabeledAnomaly> for FlatAnomalyLabel {
             description: label.description.clone(),
             is_injected: label.is_injected,
             monetary_impact: label.monetary_impact.map(|d| d.to_string()),
-            related_entities: serde_json::to_string(&label.related_entities).unwrap_or_default(),
+            related_entities: serialize_or_warn(&label.related_entities, "related_entities"),
             cluster_id: label.cluster_id.clone(),
 
             // Provenance fields
@@ -90,7 +97,7 @@ impl From<&LabeledAnomaly> for FlatAnomalyLabel {
             structured_strategy_json: label
                 .structured_strategy
                 .as_ref()
-                .map(|s| serde_json::to_string(s).unwrap_or_default()),
+                .map(|s| serialize_or_warn(s, "structured_strategy")),
             causal_reason_type: label.causal_reason.as_ref().map(|r| match r {
                 datasynth_core::models::AnomalyCausalReason::RandomRate { .. } => {
                     "RandomRate".to_string()
@@ -117,14 +124,14 @@ impl From<&LabeledAnomaly> for FlatAnomalyLabel {
             causal_reason_json: label
                 .causal_reason
                 .as_ref()
-                .map(|r| serde_json::to_string(r).unwrap_or_default()),
+                .map(|r| serialize_or_warn(r, "causal_reason")),
             parent_anomaly_id: label.parent_anomaly_id.clone(),
-            child_anomaly_ids: serde_json::to_string(&label.child_anomaly_ids).unwrap_or_default(),
+            child_anomaly_ids: serialize_or_warn(&label.child_anomaly_ids, "child_anomaly_ids"),
             scenario_id: label.scenario_id.clone(),
             run_id: label.run_id.clone(),
             generation_seed: label.generation_seed,
 
-            metadata_json: serde_json::to_string(&label.metadata).unwrap_or_default(),
+            metadata_json: serialize_or_warn(&label.metadata, "metadata"),
         }
     }
 }

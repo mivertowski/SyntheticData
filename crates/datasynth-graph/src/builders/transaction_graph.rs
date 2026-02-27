@@ -282,8 +282,6 @@ impl TransactionGraphBuilder {
     ) {
         let key = (source, target);
         let agg = self.edge_aggregation.entry(key).or_insert(AggregatedEdge {
-            source,
-            target,
             total_weight: 0.0,
             count: 0,
             first_date: entry.posting_date(),
@@ -347,11 +345,8 @@ impl TransactionGraphBuilder {
     }
 }
 
-/// Aggregated edge data.
-#[allow(dead_code)]
+/// Aggregated edge data for combining multiple transactions between the same accounts.
 struct AggregatedEdge {
-    source: NodeId,
-    target: NodeId,
     total_weight: f64,
     count: usize,
     first_date: chrono::NaiveDate,

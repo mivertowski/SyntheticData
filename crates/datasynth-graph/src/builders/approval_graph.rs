@@ -166,8 +166,6 @@ impl ApprovalGraphBuilder {
             .approval_aggregation
             .entry(key)
             .or_insert(ApprovalAggregation {
-                approver,
-                requester,
                 total_amount: 0.0,
                 count: 0,
                 approve_count: 0,
@@ -223,11 +221,8 @@ impl ApprovalGraphBuilder {
     }
 }
 
-/// Aggregated approval data.
-#[allow(dead_code)]
+/// Aggregated approval data for combining multiple approvals between the same participants.
 struct ApprovalAggregation {
-    approver: NodeId,
-    requester: NodeId,
     total_amount: f64,
     count: usize,
     approve_count: usize,

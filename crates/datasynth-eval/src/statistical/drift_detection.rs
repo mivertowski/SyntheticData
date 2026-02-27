@@ -399,6 +399,14 @@ impl DriftDetectionAnalyzer {
     // Helper methods
 
     fn calculate_rolling_means(&self, values: &[f64]) -> Vec<f64> {
+        if values.len() < self.window_size {
+            tracing::debug!(
+                "Drift detection: not enough values ({}) for window size ({}), returning empty",
+                values.len(),
+                self.window_size
+            );
+            return Vec::new();
+        }
         let mut means = Vec::with_capacity(values.len() - self.window_size + 1);
         for i in 0..=(values.len() - self.window_size) {
             let window = &values[i..i + self.window_size];
@@ -409,6 +417,14 @@ impl DriftDetectionAnalyzer {
     }
 
     fn calculate_rolling_stds(&self, values: &[f64]) -> Vec<f64> {
+        if values.len() < self.window_size {
+            tracing::debug!(
+                "Drift detection: not enough values ({}) for window size ({}), returning empty",
+                values.len(),
+                self.window_size
+            );
+            return Vec::new();
+        }
         let mut stds = Vec::with_capacity(values.len() - self.window_size + 1);
         for i in 0..=(values.len() - self.window_size) {
             let window = &values[i..i + self.window_size];

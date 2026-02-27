@@ -139,17 +139,13 @@ use rayon::prelude::*;
 
 /// Convert P2P flow config from schema to generator config.
 fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
-    tracing::debug!(
-        "P2P config: using hardcoded defaults for over_delivery_rate=0.02, early_payment_discount_rate=0.30"
-    );
     let payment_behavior = &schema_config.payment_behavior;
     let late_dist = &payment_behavior.late_payment_days_distribution;
 
     P2PGeneratorConfig {
         three_way_match_rate: schema_config.three_way_match_rate,
         partial_delivery_rate: schema_config.partial_delivery_rate,
-        // TODO: expose over_delivery_rate in P2PFlowConfig schema
-        over_delivery_rate: 0.02, // Not in schema, use default
+        over_delivery_rate: schema_config.over_delivery_rate.unwrap_or(0.02),
         price_variance_rate: schema_config.price_variance_rate,
         max_price_variance_percent: schema_config.max_price_variance_percent,
         avg_days_po_to_gr: schema_config.average_po_to_gr_days,
@@ -161,8 +157,7 @@ fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
             (PaymentMethod::Wire, 0.10),
             (PaymentMethod::CreditCard, 0.05),
         ],
-        // TODO: expose early_payment_discount_rate in P2PFlowConfig schema
-        early_payment_discount_rate: 0.30, // Not in schema, use default
+        early_payment_discount_rate: schema_config.early_payment_discount_rate.unwrap_or(0.30),
         payment_behavior: P2PPaymentBehavior {
             late_payment_rate: payment_behavior.late_payment_rate,
             late_payment_distribution: LatePaymentDistribution {
@@ -180,7 +175,6 @@ fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
 
 /// Convert O2C flow config from schema to generator config.
 fn convert_o2c_config(schema_config: &O2CFlowConfig) -> O2CGeneratorConfig {
-    tracing::debug!("O2C config: using hardcoded default for late_payment_rate=0.15");
     let payment_behavior = &schema_config.payment_behavior;
 
     O2CGeneratorConfig {
@@ -189,8 +183,7 @@ fn convert_o2c_config(schema_config: &O2CFlowConfig) -> O2CGeneratorConfig {
         avg_days_so_to_delivery: schema_config.average_so_to_delivery_days,
         avg_days_delivery_to_invoice: schema_config.average_delivery_to_invoice_days,
         avg_days_invoice_to_payment: schema_config.average_invoice_to_receipt_days,
-        // TODO: expose late_payment_rate in O2CFlowConfig schema (currently managed through dunning)
-        late_payment_rate: 0.15, // Managed through dunning now
+        late_payment_rate: schema_config.late_payment_rate.unwrap_or(0.15),
         bad_debt_rate: schema_config.bad_debt_rate,
         returns_rate: schema_config.return_rate,
         cash_discount_take_rate: schema_config.cash_discount.taken_rate,

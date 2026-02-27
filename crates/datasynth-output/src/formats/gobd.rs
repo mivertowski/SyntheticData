@@ -51,7 +51,8 @@ pub fn write_gobd_journal_csv(
     for je in entries {
         let beleg_datum = je.header.document_date.format("%Y%m%d").to_string();
         let buchungs_datum = je.header.posting_date.format("%Y%m%d").to_string();
-        let beleg_nummer = escape_gobd_field(&je.header.document_id.to_string()[..8]);
+        let doc_id_str = je.header.document_id.to_string();
+        let beleg_nummer = escape_gobd_field(&doc_id_str[..doc_id_str.len().min(8)]);
         let buchungstext = escape_gobd_field(
             je.header
                 .header_text

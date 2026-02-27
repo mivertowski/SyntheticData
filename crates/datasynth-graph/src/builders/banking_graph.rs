@@ -499,8 +499,6 @@ impl BankingGraphBuilder {
             .edge_aggregation
             .entry(key)
             .or_insert(AggregatedBankingEdge {
-                source,
-                target,
                 total_amount: 0.0,
                 count: 0,
                 suspicious_count: 0,
@@ -570,11 +568,8 @@ impl BankingGraphBuilder {
     }
 }
 
-/// Aggregated banking edge data (for future edge aggregation support).
-#[allow(dead_code)]
+/// Aggregated banking edge data for combining multiple transactions between the same accounts.
 struct AggregatedBankingEdge {
-    source: NodeId,
-    target: NodeId,
     total_amount: f64,
     count: usize,
     suspicious_count: usize,

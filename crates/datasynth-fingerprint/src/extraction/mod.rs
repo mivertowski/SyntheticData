@@ -664,7 +664,10 @@ impl FingerprintExtractor {
             match extractor.extract(source, &self.config, &mut privacy) {
                 Ok(ExtractedComponent::Correlations(c)) => Some(c),
                 Ok(_) => None,
-                Err(_) => None, // Optional, ignore errors
+                Err(e) => {
+                    tracing::warn!("Optional correlations extraction failed: {}", e);
+                    None
+                }
             }
         } else {
             None
@@ -675,7 +678,10 @@ impl FingerprintExtractor {
             match extractor.extract(source, &self.config, &mut privacy) {
                 Ok(ExtractedComponent::Integrity(i)) => Some(i),
                 Ok(_) => None,
-                Err(_) => None,
+                Err(e) => {
+                    tracing::warn!("Optional integrity extraction failed: {}", e);
+                    None
+                }
             }
         } else {
             None
@@ -686,7 +692,10 @@ impl FingerprintExtractor {
             match extractor.extract(source, &self.config, &mut privacy) {
                 Ok(ExtractedComponent::Rules(r)) => Some(r),
                 Ok(_) => None,
-                Err(_) => None,
+                Err(e) => {
+                    tracing::warn!("Optional rules extraction failed: {}", e);
+                    None
+                }
             }
         } else {
             None
@@ -697,7 +706,10 @@ impl FingerprintExtractor {
             match extractor.extract(source, &self.config, &mut privacy) {
                 Ok(ExtractedComponent::Anomalies(a)) => Some(a),
                 Ok(_) => None,
-                Err(_) => None,
+                Err(e) => {
+                    tracing::warn!("Optional anomalies extraction failed: {}", e);
+                    None
+                }
             }
         } else {
             None

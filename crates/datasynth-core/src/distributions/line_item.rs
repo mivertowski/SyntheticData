@@ -151,9 +151,6 @@ impl Default for DebitCreditDistributionConfig {
 pub struct LineItemSampler {
     /// RNG for sampling
     rng: ChaCha8Rng,
-    /// Line item distribution config
-    #[allow(dead_code)]
-    line_config: LineItemDistributionConfig,
     /// Even/odd distribution config
     even_odd_config: EvenOddDistributionConfig,
     /// Debit/credit distribution config
@@ -170,7 +167,6 @@ impl LineItemSampler {
 
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            line_config,
             even_odd_config: EvenOddDistributionConfig::default(),
             debit_credit_config: DebitCreditDistributionConfig::default(),
             cumulative,
@@ -188,7 +184,6 @@ impl LineItemSampler {
 
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
-            line_config,
             even_odd_config,
             debit_credit_config,
             cumulative,

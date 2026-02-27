@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-02-27
+
+### Added
+
+- **Config-driven P2P/O2C rates** (`datasynth-config`, `datasynth-runtime`)
+  - `over_delivery_rate` and `early_payment_discount_rate` on `P2PFlowConfig`
+  - `late_payment_rate` on `O2CFlowConfig`
+  - Orchestrator reads from config with backward-compatible defaults (0.02, 0.30, 0.15)
+
+- **DEFAULT_SEED constant** (`datasynth-runtime`): Extracted repeated `.unwrap_or(42)` into named constant
+
+### Fixed
+
+- **K-anonymity division by zero** (`datasynth-fingerprint`): `filter_frequencies()` now returns empty on `total=0` instead of producing NaN
+- **Federated aggregation division by zero** (`datasynth-fingerprint`): `aggregate_weighted()` returns error on `total_record_count=0` instead of Infinity/NaN
+- **Graph ghost edges** (`datasynth-graph`): PyTorch Geometric and DGL exporters now skip edges with missing node IDs instead of silently remapping to node 0 via `.unwrap_or(&0)`
+- **GoBD document ID panic** (`datasynth-output`): Safe truncation `[..len.min(8)]` instead of `[..8]` substring that panics on short IDs
+- **Prometheus metrics crash** (`datasynth-server`): Encoder and UTF-8 conversion now return error strings instead of panicking via `.unwrap()`
+- **Rate limit header unwraps** (`datasynth-server`): Replaced `.parse().unwrap()` with infallible `HeaderValue::from()`
+- **Non-deterministic household UUIDs** (`datasynth-banking`): Replaced `Uuid::new_v4()` with deterministic RNG-seeded UUID for reproducibility
+- **Streaming orchestrator silent date fallbacks** (`datasynth-runtime`): 3 instances now log `tracing::warn!` before defaulting to 2024-01-01
+- **Streaming orchestrator company fallback** (`datasynth-runtime`): 2 instances now log warning before defaulting to "1000"
+- **Gate engine stub metrics** (`datasynth-eval`): CorrelationPreservation and Custom metrics now log `error!` level instead of `warn!` to surface unimplemented gates
+- **Fingerprint extraction error drops** (`datasynth-fingerprint`): Optional component extraction failures now log warnings instead of silently returning None
+- **Anomaly rounding magnitude** (`datasynth-generators`): Fixed string-length-based calculation that broke for negatives and small decimals; now uses proper digit counting on absolute value
+- **Drift detection underflow** (`datasynth-eval`): Added guard for `values.len() < window_size` preventing subtraction overflow panic
+- **Rayon thread pool error silenced** (`datasynth-cli`): Replaced `.ok()` with `eprintln!` warning on initialization failure
+- **Label export serialization** (`datasynth-runtime`): 5 instances of `.unwrap_or_default()` replaced with `serialize_or_warn()` helper that logs failures
+- **Distribution fitter NaN** (`datasynth-fingerprint`): Added `mean > 0.0` guard before calling `.ln()` in log-normal fitting
+- **PCAOB series parse** (`datasynth-standards`): `parse().unwrap_or(0)` now logs warning on failure
+- **JE generator COA fallback** (`datasynth-generators`): Added warning before falling back to first account
+- **Mixture sampler NaN** (`datasynth-core`): Binary search uses `Ordering::Less` for NaN instead of `Ordering::Equal`
+- **LLM config parse fallback** (`datasynth-core`): Now logs warning before falling back to keyword parsing
+- **Test utility RwLock** (`datasynth-test-utils`): Replaced bare `.unwrap()` with descriptive `.expect()` messages
+
+### Removed
+
+- Dead `AggregatedEdge`, `ApprovalAggregation`, `AggregatedBankingEdge` structs (`datasynth-graph`)
+- Dead `account_groups` field from `BalanceCoherenceValidator` (`datasynth-core`)
+- Dead `line_config` field from `LineItemSampler` (`datasynth-core`)
+- Unused `_credit_amount` variable in AR generator (`datasynth-generators`)
+
 ## [0.9.2] - 2026-02-27
 
 ### Added

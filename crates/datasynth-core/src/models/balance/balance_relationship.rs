@@ -300,18 +300,12 @@ impl ValidationResult {
 pub struct BalanceCoherenceValidator {
     /// Rules to validate.
     rules: Vec<BalanceRelationshipRule>,
-    /// Account groupings for calculations.
-    #[allow(dead_code)]
-    account_groups: AccountGroups,
 }
 
 impl BalanceCoherenceValidator {
     /// Create a new validator with default rules.
     pub fn new() -> Self {
-        Self {
-            rules: Vec::new(),
-            account_groups: AccountGroups::default(),
-        }
+        Self { rules: Vec::new() }
     }
 
     /// Add a rule to the validator.

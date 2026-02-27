@@ -315,10 +315,12 @@ impl GaussianMixtureSampler {
     /// Select a component using binary search on cumulative weights.
     fn select_component(&mut self) -> usize {
         let p: f64 = self.rng.random();
-        match self
-            .cumulative_weights
-            .binary_search_by(|w| w.partial_cmp(&p).unwrap_or(std::cmp::Ordering::Equal))
-        {
+        match self.cumulative_weights.binary_search_by(|w| {
+            w.partial_cmp(&p).unwrap_or_else(|| {
+                tracing::debug!("NaN detected in mixture weight comparison");
+                std::cmp::Ordering::Less
+            })
+        }) {
             Ok(i) => i,
             Err(i) => i.min(self.distributions.len() - 1),
         }
@@ -431,10 +433,12 @@ impl LogNormalMixtureSampler {
     /// Select a component using binary search on cumulative weights.
     fn select_component(&mut self) -> usize {
         let p: f64 = self.rng.random();
-        match self
-            .cumulative_weights
-            .binary_search_by(|w| w.partial_cmp(&p).unwrap_or(std::cmp::Ordering::Equal))
-        {
+        match self.cumulative_weights.binary_search_by(|w| {
+            w.partial_cmp(&p).unwrap_or_else(|| {
+                tracing::debug!("NaN detected in mixture weight comparison");
+                std::cmp::Ordering::Less
+            })
+        }) {
             Ok(i) => i,
             Err(i) => i.min(self.distributions.len() - 1),
         }

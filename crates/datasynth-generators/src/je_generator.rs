@@ -1731,9 +1731,12 @@ impl JournalEntryGenerator {
             expense_accounts
         };
 
-        all.choose(&mut self.rng)
-            .copied()
-            .unwrap_or_else(|| &self.coa.accounts[0])
+        all.choose(&mut self.rng).copied().unwrap_or_else(|| {
+            tracing::warn!(
+                "Account selection returned empty list, falling back to first COA account"
+            );
+            &self.coa.accounts[0]
+        })
     }
 
     #[inline]
@@ -1748,9 +1751,12 @@ impl JournalEntryGenerator {
             revenue_accounts
         };
 
-        all.choose(&mut self.rng)
-            .copied()
-            .unwrap_or_else(|| &self.coa.accounts[0])
+        all.choose(&mut self.rng).copied().unwrap_or_else(|| {
+            tracing::warn!(
+                "Account selection returned empty list, falling back to first COA account"
+            );
+            &self.coa.accounts[0]
+        })
     }
 }
 

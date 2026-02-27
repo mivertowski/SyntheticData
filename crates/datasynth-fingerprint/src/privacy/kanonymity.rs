@@ -22,6 +22,10 @@ impl KAnonymity {
         frequencies: Vec<(String, u64)>,
         total: u64,
     ) -> (Vec<(String, f64)>, usize) {
+        if total == 0 {
+            tracing::warn!("K-anonymity filter called with total=0, returning empty frequencies");
+            return (Vec::new(), frequencies.len());
+        }
         let threshold = self.k.max(self.min_occurrence) as u64;
 
         let mut kept = Vec::new();

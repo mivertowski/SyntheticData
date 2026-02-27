@@ -2659,6 +2659,12 @@ pub struct P2PFlowConfig {
     /// Payment behavior configuration
     #[serde(default)]
     pub payment_behavior: P2PPaymentBehaviorConfig,
+    /// Rate of over-deliveries (quantity received exceeds PO quantity)
+    #[serde(default)]
+    pub over_delivery_rate: Option<f64>,
+    /// Rate of early payment discounts being taken
+    #[serde(default)]
+    pub early_payment_discount_rate: Option<f64>,
 }
 
 fn default_three_way_match_rate() -> f64 {
@@ -2707,6 +2713,8 @@ impl Default for P2PFlowConfig {
             average_invoice_to_payment_days: default_invoice_to_payment_days(),
             line_count_distribution: DocumentLineCountDistribution::default(),
             payment_behavior: P2PPaymentBehaviorConfig::default(),
+            over_delivery_rate: None,
+            early_payment_discount_rate: None,
         }
     }
 }
@@ -2843,6 +2851,9 @@ pub struct O2CFlowConfig {
     /// Payment behavior configuration
     #[serde(default)]
     pub payment_behavior: O2CPaymentBehaviorConfig,
+    /// Rate of late payments
+    #[serde(default)]
+    pub late_payment_rate: Option<f64>,
 }
 
 fn default_credit_check_failure_rate() -> f64 {
@@ -2887,6 +2898,7 @@ impl Default for O2CFlowConfig {
             line_count_distribution: DocumentLineCountDistribution::default(),
             cash_discount: CashDiscountConfig::default(),
             payment_behavior: O2CPaymentBehaviorConfig::default(),
+            late_payment_rate: None,
         }
     }
 }

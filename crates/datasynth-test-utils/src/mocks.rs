@@ -22,7 +22,7 @@ impl MockBalanceTracker {
     pub fn get_balance(&self, account: &str) -> Decimal {
         self.balances
             .read()
-            .unwrap()
+            .expect("MockBalanceTracker RwLock read poisoned")
             .get(account)
             .copied()
             .unwrap_or(Decimal::ZERO)
@@ -30,7 +30,10 @@ impl MockBalanceTracker {
 
     /// Update balance for an account.
     pub fn update_balance(&self, account: &str, amount: Decimal) {
-        let mut balances = self.balances.write().unwrap();
+        let mut balances = self
+            .balances
+            .write()
+            .expect("MockBalanceTracker RwLock write poisoned");
         *balances.entry(account.to_string()).or_insert(Decimal::ZERO) += amount;
     }
 
@@ -46,7 +49,7 @@ impl MockBalanceTracker {
     pub fn total_debits(&self) -> Decimal {
         self.balances
             .read()
-            .unwrap()
+            .expect("MockBalanceTracker RwLock read poisoned")
             .values()
             .filter(|v| **v > Decimal::ZERO)
             .copied()
@@ -57,7 +60,7 @@ impl MockBalanceTracker {
     pub fn total_credits(&self) -> Decimal {
         self.balances
             .read()
-            .unwrap()
+            .expect("MockBalanceTracker RwLock read poisoned")
             .values()
             .filter(|v| **v < Decimal::ZERO)
             .map(|v| v.abs())
@@ -66,7 +69,10 @@ impl MockBalanceTracker {
 
     /// Clear all balances.
     pub fn clear(&self) {
-        self.balances.write().unwrap().clear();
+        self.balances
+            .write()
+            .expect("MockBalanceTracker RwLock write poisoned")
+            .clear();
     }
 }
 

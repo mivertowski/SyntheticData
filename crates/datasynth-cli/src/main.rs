@@ -278,10 +278,15 @@ fn main() -> Result<()> {
             });
 
             // Configure rayon thread pool with limited threads
-            rayon::ThreadPoolBuilder::new()
+            if let Err(e) = rayon::ThreadPoolBuilder::new()
                 .num_threads(effective_threads)
                 .build_global()
-                .ok(); // Ignore error if already initialized
+            {
+                eprintln!(
+                    "Warning: failed to configure thread pool with {} threads: {}",
+                    effective_threads, e
+                );
+            }
 
             tracing::info!(
                 "CPU safeguard: using {} threads (of {} available)",
@@ -396,6 +401,7 @@ fn main() -> Result<()> {
                         cfg.graph_export.hypergraph.stream_batch_size = stream_batch_size;
                         if let Some(ref key) = stream_api_key {
                             std::env::set_var("RUSTGRAPH_API_KEY", key);
+                            tracing::debug!("API key set from CLI argument");
                         }
                         tracing::info!("Streaming unified hypergraph to: {}", target);
                     }

@@ -67,7 +67,13 @@ impl NlConfigGenerator {
         // Merge: prefer LLM results where available, fall back to keywords
         match llm_intent {
             Ok(llm) => Ok(Self::merge_intents(llm, keyword_intent)),
-            Err(_) => Ok(keyword_intent),
+            Err(e) => {
+                tracing::warn!(
+                    "LLM-based config parsing failed, falling back to keyword parsing: {}",
+                    e
+                );
+                Ok(keyword_intent)
+            }
         }
     }
 

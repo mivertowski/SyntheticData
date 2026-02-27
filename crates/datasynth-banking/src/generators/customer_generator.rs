@@ -1027,8 +1027,6 @@ impl CustomerGenerator {
 
     /// Form households from retail customers.
     fn form_households(&mut self, customers: &mut [BankingCustomer]) {
-        use uuid::Uuid;
-
         let retail_indices: Vec<usize> = customers
             .iter()
             .enumerate()
@@ -1040,7 +1038,7 @@ impl CustomerGenerator {
             / self.config.population.avg_household_size) as usize;
 
         for _ in 0..household_count {
-            let household_id = Uuid::new_v4();
+            let household_id = self.uuid_factory.next();
             let size = self.rng.random_range(2..=4).min(retail_indices.len());
 
             // Select random customers for household

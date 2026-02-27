@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-0.9.2-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
+[![Version](https://img.shields.io/badge/version-0.9.3-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
@@ -21,6 +21,8 @@
 SyntheticData is a configurable synthetic data generator that produces realistic, interconnected enterprise financial data. It generates General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, audit workpapers, and ML-ready graph exports at scale.
 
 The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
+
+**v0.9.3:** Edge-case hardening — division-by-zero guards in fingerprint k-anonymity/federation, graph ghost edge elimination, GoBD safe truncation, Prometheus/rate-limit unwrap removal, deterministic household UUIDs, config-driven P2P/O2C rates, dead code removal, NaN guards in distributions, improved error logging across all crates.
 
 **v0.9.2:** Comprehensive codebase quality fixes across 6 tiers — constant-time auth token comparison, deterministic RNG in banking, framework-aware account classification in all generators, Neo4j/DGL graph export wiring, GoBD tax/contra improvements, server stub implementations, production unwrap elimination, shared NPY writer extraction.
 

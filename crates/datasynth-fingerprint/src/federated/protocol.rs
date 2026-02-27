@@ -275,6 +275,9 @@ impl FederatedFingerprintProtocol {
         total_record_count: u64,
         total_epsilon: f64,
     ) -> Result<AggregatedFingerprint, String> {
+        if total_record_count == 0 {
+            return Err("Cannot aggregate fingerprints: total record count is zero".to_string());
+        }
         let total_f = total_record_count as f64;
         let mut agg_means = vec![0.0_f64; n_cols];
         let mut agg_stds = vec![0.0_f64; n_cols];

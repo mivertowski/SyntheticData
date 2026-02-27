@@ -182,7 +182,6 @@ impl ARGenerator {
 
         // Add credit memo lines proportional to original invoice
         for (idx, inv_line) in invoice.lines.iter().enumerate() {
-            let _credit_amount = (inv_line.net_amount * percent_of_invoice).round_dp(2);
             let line = ARCreditMemoLine::new(
                 (idx + 1) as u32,
                 inv_line.description.clone(),

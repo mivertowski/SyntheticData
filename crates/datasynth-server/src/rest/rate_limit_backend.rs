@@ -6,7 +6,7 @@
 
 use axum::{
     body::Body,
-    http::{Request, StatusCode},
+    http::{header::HeaderValue, Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
@@ -171,14 +171,8 @@ pub async fn backend_rate_limit_middleware(
 
         // Add rate limit headers
         let headers = response.headers_mut();
-        headers.insert(
-            "X-RateLimit-Limit",
-            max_requests.to_string().parse().unwrap(),
-        );
-        headers.insert(
-            "X-RateLimit-Remaining",
-            remaining.to_string().parse().unwrap(),
-        );
+        headers.insert("X-RateLimit-Limit", HeaderValue::from(max_requests));
+        headers.insert("X-RateLimit-Remaining", HeaderValue::from(remaining));
 
         response
     } else {

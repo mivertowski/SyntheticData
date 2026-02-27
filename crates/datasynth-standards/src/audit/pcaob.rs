@@ -250,7 +250,14 @@ impl PcaobStandard {
 
     /// Get the series this standard belongs to.
     pub fn series(&self) -> PcaobSeries {
-        let num: u32 = self.number().parse().unwrap_or(0);
+        let num: u32 = self.number().parse().unwrap_or_else(|e| {
+            tracing::warn!(
+                "Failed to parse PCAOB standard number '{}': {}. Defaulting to 0",
+                self.number(),
+                e
+            );
+            0
+        });
         match num / 100 {
             10..=11 => PcaobSeries::GeneralStandards,
             12..=13 => PcaobSeries::GeneralActivities,

@@ -161,15 +161,28 @@ impl PyGExporter {
             .map(|(i, &id)| (id, i))
             .collect();
 
-        // Remap edge indices
-        let sources_remapped: Vec<i64> = sources
-            .iter()
-            .map(|id| *id_to_idx.get(id).unwrap_or(&0) as i64)
-            .collect();
-        let targets_remapped: Vec<i64> = targets
-            .iter()
-            .map(|id| *id_to_idx.get(id).unwrap_or(&0) as i64)
-            .collect();
+        // Remap edge indices, skipping edges with missing node IDs
+        let mut sources_remapped: Vec<i64> = Vec::with_capacity(sources.len());
+        let mut targets_remapped: Vec<i64> = Vec::with_capacity(targets.len());
+        let mut skipped_edges = 0usize;
+
+        for (src, dst) in sources.iter().zip(targets.iter()) {
+            match (id_to_idx.get(src), id_to_idx.get(dst)) {
+                (Some(&s), Some(&d)) => {
+                    sources_remapped.push(s as i64);
+                    targets_remapped.push(d as i64);
+                }
+                _ => {
+                    skipped_edges += 1;
+                }
+            }
+        }
+        if skipped_edges > 0 {
+            tracing::warn!(
+                "PyTorch Geometric export: skipped {} edges with missing node IDs",
+                skipped_edges
+            );
+        }
 
         // Write as NPY format
         let path = output_dir.join("edge_index.npy");

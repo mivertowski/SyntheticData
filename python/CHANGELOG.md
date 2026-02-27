@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.3 (2026-02-27)
+
+### Changed
+
+- Matches Rust v0.9.3 edge-case hardening and defensive programming fixes
+- Division-by-zero guards, ghost edge elimination, NaN guards, dead code removal
+
 ## 1.5.2 (2026-02-27)
 
 ### Changed

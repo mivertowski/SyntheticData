@@ -144,8 +144,19 @@ impl InjectionStrategy for AmountModificationStrategy {
 
         // Round to nice number if preferred
         if self.prefer_round_numbers {
-            let magnitude = new_amount.to_string().len() as i32 - 2;
-            let round_factor = Decimal::new(10_i64.pow(magnitude.max(0) as u32), 0);
+            let abs_amount = new_amount.abs();
+            let magnitude = if abs_amount >= Decimal::ONE {
+                let digits = abs_amount
+                    .to_string()
+                    .split('.')
+                    .next()
+                    .map(|s| s.trim_start_matches('-').len())
+                    .unwrap_or(1);
+                (digits as i32 - 1).max(0)
+            } else {
+                0
+            };
+            let round_factor = Decimal::new(10_i64.pow(magnitude as u32), 0);
             new_amount = (new_amount / round_factor).round() * round_factor;
         }
 

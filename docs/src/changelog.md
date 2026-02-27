@@ -4,6 +4,18 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [0.9.3] - 2026-02-27
+
+**Edge-Case Hardening & Defensive Programming**
+
+- Division-by-zero guards in fingerprint k-anonymity and federated aggregation
+- Graph ghost edge elimination (skip missing nodes instead of remapping to node 0)
+- GoBD safe document ID truncation, Prometheus/rate-limit unwrap removal
+- Deterministic household UUIDs, config-driven P2P/O2C rates
+- NaN guards in distribution fitter and mixture samplers
+- Dead code removal (3 structs, 2 fields, 1 variable)
+- Improved error logging across 12 crates (serialization, parsing, configuration)
+
 ### [0.9.2] - 2026-02-27
 
 **Comprehensive Codebase Quality Fixes (Tiers 1-6)**

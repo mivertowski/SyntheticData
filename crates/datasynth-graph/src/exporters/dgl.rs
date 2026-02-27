@@ -204,13 +204,25 @@ impl DGLExporter {
 
         // Create COO format: [num_edges, 2] where each row is (src, dst)
         let num_edges = sources.len();
-        let coo_data: Vec<Vec<i64>> = (0..num_edges)
-            .map(|i| {
-                let src = *id_to_idx.get(&sources[i]).unwrap_or(&0) as i64;
-                let dst = *id_to_idx.get(&targets[i]).unwrap_or(&0) as i64;
-                vec![src, dst]
-            })
-            .collect();
+        let mut coo_data: Vec<Vec<i64>> = Vec::with_capacity(num_edges);
+        let mut skipped_edges = 0usize;
+
+        for i in 0..num_edges {
+            match (id_to_idx.get(&sources[i]), id_to_idx.get(&targets[i])) {
+                (Some(&s), Some(&d)) => {
+                    coo_data.push(vec![s as i64, d as i64]);
+                }
+                _ => {
+                    skipped_edges += 1;
+                }
+            }
+        }
+        if skipped_edges > 0 {
+            tracing::warn!(
+                "DGL export: skipped {} edges with missing node IDs",
+                skipped_edges
+            );
+        }
 
         // Write as NPY format [num_edges, 2]
         let path = output_dir.join("edge_index.npy");
@@ -299,7 +311,13 @@ impl DGLExporter {
             .iter()
             .map(|id| {
                 let node = graph.nodes.get(id).expect("node ID from keys()");
-                *type_to_idx.get(&node.node_type).unwrap_or(&0)
+                *type_to_idx.get(&node.node_type).unwrap_or_else(|| {
+                    tracing::warn!(
+                        "Unknown node type '{:?}', defaulting to index 0",
+                        node.node_type
+                    );
+                    &0
+                })
             })
             .collect();
 
@@ -328,7 +346,13 @@ impl DGLExporter {
             .iter()
             .map(|id| {
                 let edge = graph.edges.get(id).expect("edge ID from keys()");
-                *type_to_idx.get(&edge.edge_type).unwrap_or(&0)
+                *type_to_idx.get(&edge.edge_type).unwrap_or_else(|| {
+                    tracing::warn!(
+                        "Unknown edge type '{:?}', defaulting to index 0",
+                        edge.edge_type
+                    );
+                    &0
+                })
             })
             .collect();
 

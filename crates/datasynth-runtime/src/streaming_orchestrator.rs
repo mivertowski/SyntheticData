@@ -11,6 +11,9 @@ use chrono::NaiveDate;
 use tracing::{info, warn};
 
 use datasynth_config::schema::GeneratorConfig;
+
+/// Default RNG seed when not specified in config.
+const DEFAULT_SEED: u64 = 42;
 use datasynth_core::error::SynthResult;
 use datasynth_core::models::{
     documents::{
@@ -351,7 +354,7 @@ impl StreamingOrchestrator {
         }
 
         info!("Generating Chart of Accounts");
-        let seed = config.global.seed.unwrap_or(42);
+        let seed = config.global.seed.unwrap_or(DEFAULT_SEED);
         let complexity = config.chart_of_accounts.complexity;
         let industry = config.global.industry;
         let coa_framework = resolve_coa_framework_from_config(config);
@@ -377,16 +380,26 @@ impl StreamingOrchestrator {
         use datasynth_generators::{CustomerGenerator, EmployeeGenerator, VendorGenerator};
 
         let mut count: u64 = 0;
-        let seed = config.global.seed.unwrap_or(42);
+        let seed = config.global.seed.unwrap_or(DEFAULT_SEED);
         let md_config = &config.master_data;
         let effective_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
+            .unwrap_or_else(|e| {
+                tracing::warn!(
+                    "Failed to parse start_date '{}': {}. Defaulting to 2024-01-01",
+                    config.global.start_date,
+                    e
+                );
+                NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+            });
 
         let company_code = config
             .companies
             .first()
             .map(|c| c.code.as_str())
-            .unwrap_or("1000");
+            .unwrap_or_else(|| {
+                tracing::warn!("No companies configured, defaulting to company code '1000'");
+                "1000"
+            });
 
         // Generate vendors
         if control.is_cancelled() {
@@ -482,7 +495,7 @@ impl StreamingOrchestrator {
         use std::sync::Arc;
 
         let mut count: u64 = 0;
-        let seed = config.global.seed.unwrap_or(42);
+        let seed = config.global.seed.unwrap_or(DEFAULT_SEED);
 
         // Calculate total entries to generate based on volume weights
         let default_monthly = 500;
@@ -506,7 +519,14 @@ impl StreamingOrchestrator {
 
         // Parse start date
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
+            .unwrap_or_else(|e| {
+                tracing::warn!(
+                    "Failed to parse start_date '{}': {}. Defaulting to 2024-01-01",
+                    config.global.start_date,
+                    e
+                );
+                NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+            });
         let end_date = start_date
             .checked_add_months(chrono::Months::new(config.global.period_months))
             .unwrap_or(start_date + chrono::Duration::days(365));
@@ -566,13 +586,20 @@ impl StreamingOrchestrator {
         };
 
         let mut count: u64 = 0;
-        let seed = config.global.seed.unwrap_or(42);
+        let seed = config.global.seed.unwrap_or(DEFAULT_SEED);
         let df_config = &config.document_flows;
         let md_config = &config.master_data;
 
         // Parse dates
         let start_date = NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date"));
+            .unwrap_or_else(|e| {
+                tracing::warn!(
+                    "Failed to parse start_date '{}': {}. Defaulting to 2024-01-01",
+                    config.global.start_date,
+                    e
+                );
+                NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid default date")
+            });
         let end_date = start_date
             .checked_add_months(chrono::Months::new(config.global.period_months))
             .unwrap_or(start_date + chrono::Duration::days(365));
@@ -582,7 +609,10 @@ impl StreamingOrchestrator {
             .companies
             .first()
             .map(|c| c.code.as_str())
-            .unwrap_or("1000");
+            .unwrap_or_else(|| {
+                tracing::warn!("No companies configured, defaulting to company code '1000'");
+                "1000"
+            });
 
         // Use master data config counts for generating reference data
         let vendor_count = md_config.vendors.count.min(100);

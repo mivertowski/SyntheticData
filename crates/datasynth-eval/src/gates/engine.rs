@@ -256,7 +256,7 @@ impl GateEngine {
         let mut all_passed = true;
 
         for gate in &profile.gates {
-            let (actual_value, message) = Self::extract_metric(evaluation, &gate.metric);
+            let (actual_value, message) = Self::extract_metric(evaluation, gate);
 
             let check_result = match actual_value {
                 Some(value) => {
@@ -343,9 +343,9 @@ impl GateEngine {
     /// Extract a metric value from a comprehensive evaluation.
     fn extract_metric(
         evaluation: &ComprehensiveEvaluation,
-        metric: &QualityMetric,
+        gate: &QualityGate,
     ) -> (Option<f64>, String) {
-        match metric {
+        match &gate.metric {
             QualityMetric::BenfordMad => {
                 let mad = evaluation.statistical.benford.as_ref().map(|b| b.mad);
                 (mad, "benford analysis not available".to_string())
@@ -372,10 +372,14 @@ impl GateEngine {
             QualityMetric::CorrelationPreservation => {
                 // Correlation preservation is not yet computed in ComprehensiveEvaluation.
                 // This gate will always be skipped until the metric is wired in.
-                tracing::warn!("CorrelationPreservation metric always returns None — not yet wired into evaluation pipeline");
+                tracing::error!(
+                    "CorrelationPreservation gate '{}' cannot be evaluated — metric not implemented",
+                    gate.name
+                );
                 (
                     None,
-                    "correlation preservation metric not available".to_string(),
+                    "correlation preservation metric not implemented — gate cannot be evaluated"
+                        .to_string(),
                 )
             }
             QualityMetric::TemporalConsistency => {
@@ -541,11 +545,14 @@ impl GateEngine {
                 (score, "domain gap evaluation not available".to_string())
             }
             QualityMetric::Custom(name) => {
-                tracing::warn!("Custom metric '{}' always returns None — custom metric evaluation not implemented", name);
+                tracing::error!(
+                    "Custom metric '{}' gate '{}' cannot be evaluated — custom metrics not implemented",
+                    name, gate.name
+                );
                 (
                     None,
                     format!(
-                        "custom metric '{}' not available in standard evaluation",
+                        "custom metric '{}' not implemented — gate cannot be evaluated",
                         name
                     ),
                 )

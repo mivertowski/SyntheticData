@@ -36,7 +36,7 @@ pub fn fit_to_stats(stats: &NumericStats) -> (DistributionType, DistributionPara
     }
 
     // For positive data, prefer log-normal
-    if min > 0.0 {
+    if min > 0.0 && mean > 0.0 {
         let log_values_mean = mean.ln();
         let cv = std_dev / mean; // Coefficient of variation
         let sigma = (1.0 + cv.powi(2)).ln().sqrt();

@@ -67,8 +67,14 @@ pub fn render_prometheus_metrics() -> String {
     let encoder = prometheus::TextEncoder::new();
     let metric_families = prometheus::default_registry().gather();
     let mut buf = Vec::new();
-    encoder.encode(&metric_families, &mut buf).unwrap();
-    String::from_utf8(buf).unwrap()
+    if let Err(e) = encoder.encode(&metric_families, &mut buf) {
+        tracing::error!("Failed to encode Prometheus metrics: {}", e);
+        return String::from("# Error encoding metrics\n");
+    }
+    String::from_utf8(buf).unwrap_or_else(|e| {
+        tracing::error!("Prometheus metrics buffer is not valid UTF-8: {}", e);
+        String::from("# Error: invalid UTF-8 in metrics\n")
+    })
 }
 
 /// Shutdown OpenTelemetry providers gracefully.
