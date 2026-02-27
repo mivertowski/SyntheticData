@@ -120,6 +120,8 @@ pub struct O2CDocumentChain {
     pub is_return: bool,
     /// Payment events (partial, short, corrections, etc.)
     pub payment_events: Vec<PaymentEvent>,
+    /// Remainder payment receipts (follow-up to partial payments)
+    pub remainder_receipts: Vec<Payment>,
 }
 
 /// Payment event in an O2C chain.
@@ -284,6 +286,7 @@ impl O2CGenerator {
                 credit_check_passed: false,
                 is_return: false,
                 payment_events: Vec::new(),
+                remainder_receipts: Vec::new(),
             };
         }
 
@@ -334,6 +337,7 @@ impl O2CGenerator {
         // Calculate payment date and determine payment type
         let mut payment_events = Vec::new();
         let mut customer_receipt = None;
+        let mut remainder_receipts = Vec::new();
 
         if will_pay {
             if let Some(ref invoice) = customer_invoice {
@@ -363,6 +367,32 @@ impl O2CGenerator {
                             expected_remainder_date: expected_date,
                         });
                         customer_receipt = Some(payment);
+
+                        // Generate remainder payment
+                        if remaining > Decimal::ZERO {
+                            let remainder_date = expected_date.unwrap_or(
+                                payment_date
+                                    + chrono::Duration::days(
+                                        self.config.payment_behavior.avg_days_until_remainder
+                                            as i64,
+                                    ),
+                            );
+                            let remainder_period = self.get_fiscal_period(remainder_date);
+                            let remainder_payment = self.generate_remainder_payment(
+                                invoice,
+                                company_code,
+                                customer,
+                                remainder_date,
+                                fiscal_year,
+                                remainder_period,
+                                created_by,
+                                remaining,
+                            );
+                            payment_events.push(PaymentEvent::RemainderPayment(
+                                remainder_payment.clone(),
+                            ));
+                            remainder_receipts.push(remainder_payment);
+                        }
                     }
                     PaymentType::Short => {
                         let (payment, short) = self.generate_short_payment(
@@ -440,13 +470,19 @@ impl O2CGenerator {
             }
         }
 
+        let has_partial = payment_events
+            .iter()
+            .any(|e| matches!(e, PaymentEvent::PartialPayment { .. }));
+        let has_remainder = payment_events
+            .iter()
+            .any(|e| matches!(e, PaymentEvent::RemainderPayment(_)));
+        let has_correction = payment_events
+            .iter()
+            .any(|e| matches!(e, PaymentEvent::PaymentCorrection { .. }));
+
         let is_complete = customer_receipt.is_some()
-            && payment_events.iter().all(|e| {
-                !matches!(
-                    e,
-                    PaymentEvent::PartialPayment { .. } | PaymentEvent::PaymentCorrection { .. }
-                )
-            });
+            && !has_correction
+            && (!has_partial || has_remainder);
 
         O2CDocumentChain {
             sales_order: so,
@@ -457,6 +493,7 @@ impl O2CGenerator {
             credit_check_passed: true,
             is_return: false,
             payment_events,
+            remainder_receipts,
         }
     }
 
@@ -1056,6 +1093,61 @@ impl O2CGenerator {
         (receipt, remaining_amount, expected_remainder_date)
     }
 
+    /// Generate a remainder payment for a partial payment.
+    pub fn generate_remainder_payment(
+        &mut self,
+        invoice: &CustomerInvoice,
+        company_code: &str,
+        customer: &Customer,
+        payment_date: NaiveDate,
+        fiscal_year: u16,
+        fiscal_period: u8,
+        created_by: &str,
+        amount: Decimal,
+    ) -> Payment {
+        self.rec_counter += 1;
+
+        let receipt_id =
+            self.make_doc_id("REC", "customer_receipt", company_code, self.rec_counter);
+
+        let mut receipt = Payment::new_ar_receipt(
+            receipt_id,
+            company_code,
+            &customer.customer_id,
+            amount,
+            fiscal_year,
+            fiscal_period,
+            payment_date,
+            created_by,
+        )
+        .with_payment_method(self.select_payment_method())
+        .with_value_date(payment_date);
+
+        // Allocate remainder amount to invoice
+        receipt.allocate_to_invoice(
+            &invoice.header.document_id,
+            DocumentType::CustomerInvoice,
+            amount,
+            Decimal::ZERO, // No discount on remainder payments
+        );
+
+        // Add document reference linking receipt to invoice
+        receipt.header.add_reference(DocumentReference::new(
+            DocumentType::CustomerReceipt,
+            &receipt.header.document_id,
+            DocumentType::CustomerInvoice,
+            &invoice.header.document_id,
+            ReferenceType::Payment,
+            &receipt.header.company_code,
+            payment_date,
+        ));
+
+        // Post the receipt
+        receipt.post(created_by, payment_date);
+
+        receipt
+    }
+
     /// Generate a short payment for an invoice.
     pub fn generate_short_payment(
         &mut self,
@@ -1540,5 +1632,275 @@ mod tests {
             let margin = invoice.gross_margin();
             assert!(margin > Decimal::ZERO, "Gross margin should be positive");
         }
+    }
+
+    #[test]
+    fn test_partial_payment_generates_remainder() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0, // Ensure payment happens
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 1.0,  // Force partial payment
+                short_payment_rate: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        // Should have both PartialPayment and RemainderPayment events
+        let has_partial = chain.payment_events.iter().any(|e| {
+            matches!(e, PaymentEvent::PartialPayment { .. })
+        });
+        let has_remainder = chain.payment_events.iter().any(|e| {
+            matches!(e, PaymentEvent::RemainderPayment(_))
+        });
+
+        assert!(has_partial, "Should have a PartialPayment event");
+        assert!(has_remainder, "Should have a RemainderPayment event");
+        assert!(
+            chain.payment_events.len() >= 2,
+            "Should have at least 2 payment events (partial + remainder)"
+        );
+    }
+
+    #[test]
+    fn test_partial_plus_remainder_equals_invoice_total() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0,
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 1.0,
+                short_payment_rate: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        let invoice = chain.customer_invoice.as_ref().expect("Should have an invoice");
+
+        // Extract partial payment amount
+        let partial_amount = chain.payment_events.iter().find_map(|e| {
+            if let PaymentEvent::PartialPayment { payment, .. } = e {
+                Some(payment.amount)
+            } else {
+                None
+            }
+        }).expect("Should have a partial payment");
+
+        // Extract remainder payment amount
+        let remainder_amount = chain.payment_events.iter().find_map(|e| {
+            if let PaymentEvent::RemainderPayment(payment) = e {
+                Some(payment.amount)
+            } else {
+                None
+            }
+        }).expect("Should have a remainder payment");
+
+        // partial + remainder should equal invoice total
+        let total_paid = partial_amount + remainder_amount;
+        assert_eq!(
+            total_paid,
+            invoice.total_gross_amount,
+            "Partial ({}) + remainder ({}) = {} should equal invoice total ({})",
+            partial_amount, remainder_amount, total_paid, invoice.total_gross_amount
+        );
+    }
+
+    #[test]
+    fn test_remainder_receipts_vec_populated() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0,
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 1.0,
+                short_payment_rate: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        assert!(
+            !chain.remainder_receipts.is_empty(),
+            "remainder_receipts should be populated for partial payment chains"
+        );
+        assert_eq!(
+            chain.remainder_receipts.len(),
+            1,
+            "Should have exactly one remainder receipt"
+        );
+    }
+
+    #[test]
+    fn test_remainder_date_after_partial_date() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0,
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 1.0,
+                short_payment_rate: 0.0,
+                max_short_percent: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                avg_days_until_remainder: 30,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        // Get partial payment date (use value_date which is always set)
+        let partial_date = chain.payment_events.iter().find_map(|e| {
+            if let PaymentEvent::PartialPayment { payment, .. } = e {
+                Some(payment.value_date)
+            } else {
+                None
+            }
+        }).expect("Should have a partial payment");
+
+        // Get remainder payment date
+        let remainder_date = chain.payment_events.iter().find_map(|e| {
+            if let PaymentEvent::RemainderPayment(payment) = e {
+                Some(payment.value_date)
+            } else {
+                None
+            }
+        }).expect("Should have a remainder payment");
+
+        assert!(
+            remainder_date > partial_date,
+            "Remainder date ({}) should be after partial payment date ({})",
+            remainder_date, partial_date
+        );
+    }
+
+    #[test]
+    fn test_partial_payment_chain_is_complete() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0,
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 1.0,
+                short_payment_rate: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        // With both partial and remainder, chain should be complete
+        assert!(
+            chain.is_complete,
+            "Chain with partial + remainder payment should be marked complete"
+        );
+    }
+
+    #[test]
+    fn test_non_partial_chain_has_empty_remainder_receipts() {
+        let config = O2CGeneratorConfig {
+            bad_debt_rate: 0.0,
+            payment_behavior: O2CPaymentBehavior {
+                partial_payment_rate: 0.0,  // No partial payments
+                short_payment_rate: 0.0,
+                on_account_rate: 0.0,
+                payment_correction_rate: 0.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        assert!(
+            chain.remainder_receipts.is_empty(),
+            "Non-partial payment chains should have empty remainder_receipts"
+        );
     }
 }

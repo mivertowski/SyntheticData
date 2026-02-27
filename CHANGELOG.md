@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **VAT line splitting in document flow journal entries** ([#64](https://github.com/DataSynth/SyntheticData/issues/64)) (`datasynth-generators`)
+  - Customer Invoice JE now posts: DR AR (gross), CR Revenue (net), CR VAT Payable (tax) when tax > 0
+  - Vendor Invoice JE now posts: DR GR/IR Clearing (net), DR Input VAT (tax), CR AP (payable) when tax > 0
+  - New `vat_output_account` and `vat_input_account` fields on `DocumentFlowJeConfig`
+  - Framework-aware VAT accounts for French PCG, German SKR04, and default chart
+
+- **Multipayment behavior with remainder payments** ([#65](https://github.com/DataSynth/SyntheticData/issues/65)) (`datasynth-generators`, `datasynth-runtime`)
+  - O2C chains: partial payments now generate `RemainderPayment` events with follow-up `Payment` documents
+  - P2P chains: new `remainder_payments` field with partial payment logic (50-75% initial, remainder after configurable days)
+  - `avg_days_until_remainder` config field for both O2C and P2P payment behaviors
+  - Orchestrator extracts all remainder receipts/payments into payments output and cash flows
+  - JE generator produces proper GL entries for remainder payments (DR Cash/CR AR for O2C, DR AP/CR Cash for P2P)
+  - Document chain manager tracks remainder references and statistics
+
+- **Account-class-based fingerprinting** ([#66](https://github.com/DataSynth/SyntheticData/issues/66)) (`datasynth-fingerprint`)
+  - New `AccountClassStats` model with per-class numeric statistics, row counts, and Benford analysis
+  - Semantic column detection: heuristic GL account column recognition (supports `gl_account`, `konto`, `compte`, etc.)
+  - Automatic debit/credit amount column detection
+  - Account classification by first digit (0XXX-9XXX) with human-readable labels
+  - Per-class `NumericStats` extraction reusing existing DP-protected computation
+  - `fit_account_class_distributions()` for per-class distribution parameter fitting in synthesis
+
 - **Config-driven P2P/O2C rates** (`datasynth-config`, `datasynth-runtime`)
   - `over_delivery_rate` and `early_payment_discount_rate` on `P2PFlowConfig`
   - `late_payment_rate` on `O2CFlowConfig`

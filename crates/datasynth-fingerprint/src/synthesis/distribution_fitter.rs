@@ -1,6 +1,9 @@
 //! Distribution fitting utilities.
 
-use crate::models::{DistributionParams, DistributionType, NumericStats};
+use std::collections::HashMap;
+
+use crate::error::FingerprintResult;
+use crate::models::{AccountClassStats, DistributionParams, DistributionType, NumericStats};
 
 /// Fit a distribution to observed statistics.
 pub fn fit_to_stats(stats: &NumericStats) -> (DistributionType, DistributionParams) {
@@ -80,6 +83,68 @@ pub fn estimate_normal_params(values: &[f64]) -> (f64, f64) {
     let variance: f64 = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n;
 
     (mean, variance.sqrt())
+}
+
+/// Fitted distribution parameters for an account class.
+///
+/// Contains the distribution type, parameters, and summary statistics
+/// derived from an [`AccountClassStats`] entry.
+#[derive(Debug, Clone)]
+pub struct FittedDistribution {
+    /// The fitted distribution type (e.g., LogNormal, Normal).
+    pub distribution_type: DistributionType,
+    /// Distribution-specific parameters.
+    pub params: DistributionParams,
+    /// Mean of the observed data.
+    pub mean: f64,
+    /// Standard deviation of the observed data.
+    pub std_dev: f64,
+    /// Minimum observed value.
+    pub min: f64,
+    /// Maximum observed value.
+    pub max: f64,
+}
+
+/// Fit distribution parameters for each account class.
+///
+/// Takes a slice of [`AccountClassStats`] and produces a mapping from
+/// `class_pattern` (e.g., `"1XXX"`) to a [`FittedDistribution`] that
+/// captures the distribution type, parameters, and summary statistics.
+///
+/// Account classes that lack numeric statistics are silently skipped.
+///
+/// # Examples
+///
+/// ```ignore
+/// use datasynth_fingerprint::synthesis::fit_account_class_distributions;
+/// use datasynth_fingerprint::models::statistics::AccountClassStats;
+///
+/// let stats = vec![/* ... */];
+/// let fitted = fit_account_class_distributions(&stats).unwrap();
+/// for (pattern, dist) in &fitted {
+///     println!("{}: {:?} (mean={:.2})", pattern, dist.distribution_type, dist.mean);
+/// }
+/// ```
+pub fn fit_account_class_distributions(
+    class_stats: &[AccountClassStats],
+) -> FingerprintResult<HashMap<String, FittedDistribution>> {
+    let mut result = HashMap::new();
+
+    for class in class_stats {
+        if let Some(ref numeric) = class.numeric {
+            let fitted = FittedDistribution {
+                distribution_type: numeric.distribution,
+                params: numeric.distribution_params.clone(),
+                mean: numeric.mean,
+                std_dev: numeric.std_dev,
+                min: numeric.min,
+                max: numeric.max,
+            };
+            result.insert(class.class_pattern.clone(), fitted);
+        }
+    }
+
+    Ok(result)
 }
 
 /// Goodness of fit test (simplified KS-like).
@@ -895,5 +960,130 @@ mod tests {
             );
             prev = p;
         }
+    }
+
+    // --- fit_account_class_distributions tests ---
+
+    /// Helper to build an AccountClassStats with numeric data.
+    fn make_class_stats(
+        pattern: &str,
+        label: &str,
+        numeric: Option<NumericStats>,
+        row_count: u64,
+    ) -> AccountClassStats {
+        let mut s = AccountClassStats::new(pattern.to_string(), label.to_string());
+        s.numeric = numeric;
+        s.row_count = row_count;
+        s
+    }
+
+    #[test]
+    fn test_fit_account_class_distributions_empty_input() {
+        let result = fit_account_class_distributions(&[]).unwrap();
+        assert!(
+            result.is_empty(),
+            "Empty input should produce empty map, got {} entries",
+            result.len()
+        );
+    }
+
+    #[test]
+    fn test_fit_account_class_distributions_correct_count() {
+        let classes = vec![
+            make_class_stats(
+                "1XXX",
+                "Assets",
+                Some(NumericStats::new(50, 100.0, 50000.0, 5000.0, 3000.0)),
+                50,
+            ),
+            make_class_stats(
+                "4XXX",
+                "Revenue",
+                Some(NumericStats::new(200, 500.0, 99000.0, 12000.0, 8000.0)),
+                200,
+            ),
+            make_class_stats(
+                "5XXX",
+                "Expenses",
+                Some(NumericStats::new(150, 10.0, 30000.0, 4000.0, 2500.0)),
+                150,
+            ),
+        ];
+
+        let result = fit_account_class_distributions(&classes).unwrap();
+        assert_eq!(
+            result.len(),
+            3,
+            "Should have 3 fitted distributions, got {}",
+            result.len()
+        );
+        assert!(result.contains_key("1XXX"));
+        assert!(result.contains_key("4XXX"));
+        assert!(result.contains_key("5XXX"));
+    }
+
+    #[test]
+    fn test_fit_account_class_distributions_skips_no_numeric() {
+        let classes = vec![
+            make_class_stats(
+                "1XXX",
+                "Assets",
+                Some(NumericStats::new(50, 100.0, 50000.0, 5000.0, 3000.0)),
+                50,
+            ),
+            // No numeric stats for this class
+            make_class_stats("2XXX", "Liabilities", None, 0),
+            make_class_stats(
+                "4XXX",
+                "Revenue",
+                Some(NumericStats::new(200, 500.0, 99000.0, 12000.0, 8000.0)),
+                200,
+            ),
+        ];
+
+        let result = fit_account_class_distributions(&classes).unwrap();
+        assert_eq!(
+            result.len(),
+            2,
+            "Should have 2 entries (skipping class without numeric), got {}",
+            result.len()
+        );
+        assert!(result.contains_key("1XXX"));
+        assert!(!result.contains_key("2XXX"), "2XXX should be skipped");
+        assert!(result.contains_key("4XXX"));
+    }
+
+    #[test]
+    fn test_fit_account_class_distributions_propagates_params() {
+        let mut numeric = NumericStats::new(100, 500.0, 99000.0, 12345.67, 5000.0);
+        numeric.distribution = DistributionType::LogNormal;
+        numeric.distribution_params = DistributionParams::log_normal(8.5, 1.2);
+
+        let classes = vec![make_class_stats("4XXX", "Revenue", Some(numeric), 100)];
+
+        let result = fit_account_class_distributions(&classes).unwrap();
+        let fitted = result.get("4XXX").expect("4XXX should be present");
+
+        assert_eq!(fitted.distribution_type, DistributionType::LogNormal);
+        assert_eq!(fitted.params.param1, Some(8.5));
+        assert_eq!(fitted.params.param2, Some(1.2));
+        assert!((fitted.mean - 12345.67).abs() < 1e-10);
+        assert!((fitted.std_dev - 5000.0).abs() < 1e-10);
+        assert!((fitted.min - 500.0).abs() < 1e-10);
+        assert!((fitted.max - 99000.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_fit_account_class_distributions_all_without_numeric() {
+        let classes = vec![
+            make_class_stats("1XXX", "Assets", None, 0),
+            make_class_stats("2XXX", "Liabilities", None, 0),
+        ];
+
+        let result = fit_account_class_distributions(&classes).unwrap();
+        assert!(
+            result.is_empty(),
+            "All classes without numeric should produce empty map"
+        );
     }
 }

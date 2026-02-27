@@ -5,12 +5,12 @@
 //!
 //! # P2P Flow JE Mappings
 //! - GoodsReceipt → DR Inventory, CR GR/IR Clearing
-//! - VendorInvoice → DR GR/IR Clearing, CR AP
+//! - VendorInvoice → DR GR/IR Clearing (net), DR Input VAT (tax), CR AP (gross)
 //! - Payment → DR AP, CR Cash
 //!
 //! # O2C Flow JE Mappings
 //! - Delivery → DR COGS, CR Inventory
-//! - CustomerInvoice → DR AR, CR Revenue
+//! - CustomerInvoice → DR AR (gross), CR Revenue (net), CR VAT Payable (tax)
 //! - CustomerReceipt → DR Cash, CR AR
 
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
 use datasynth_core::accounts::{
-    cash_accounts, control_accounts, expense_accounts, revenue_accounts,
+    cash_accounts, control_accounts, expense_accounts, revenue_accounts, tax_accounts,
 };
 use datasynth_core::models::{
     documents::{CustomerInvoice, Delivery, GoodsReceipt, Payment, VendorInvoice},
@@ -46,6 +46,10 @@ pub struct DocumentFlowJeConfig {
     pub revenue_account: String,
     /// COGS account (default: 5000 from expense_accounts::COGS)
     pub cogs_account: String,
+    /// VAT output (payable) account for O2C (default: 2110 from tax_accounts::VAT_PAYABLE)
+    pub vat_output_account: String,
+    /// VAT input (receivable) account for P2P (default: 1160 from tax_accounts::INPUT_VAT)
+    pub vat_input_account: String,
     /// Whether to populate FEC auxiliary and lettrage fields on AP/AR lines.
     /// Only relevant for French GAAP / FEC export.
     pub populate_fec_fields: bool,
@@ -61,6 +65,8 @@ impl Default for DocumentFlowJeConfig {
             ar_account: control_accounts::AR_CONTROL.to_string(),
             revenue_account: revenue_accounts::PRODUCT_REVENUE.to_string(),
             cogs_account: expense_accounts::COGS.to_string(),
+            vat_output_account: tax_accounts::VAT_PAYABLE.to_string(),
+            vat_input_account: tax_accounts::INPUT_VAT.to_string(),
             populate_fec_fields: false,
         }
     }
@@ -78,6 +84,8 @@ impl DocumentFlowJeConfig {
             ar_account: pcg::control_accounts::AR_CONTROL.to_string(),
             revenue_account: pcg::revenue_accounts::PRODUCT_REVENUE.to_string(),
             cogs_account: pcg::expense_accounts::COGS.to_string(),
+            vat_output_account: pcg::tax_accounts::OUTPUT_VAT.to_string(),
+            vat_input_account: pcg::tax_accounts::INPUT_VAT.to_string(),
             populate_fec_fields: true,
         }
     }
@@ -93,6 +101,8 @@ impl From<&datasynth_core::FrameworkAccounts> for DocumentFlowJeConfig {
             ar_account: fa.ar_control.clone(),
             revenue_account: fa.product_revenue.clone(),
             cogs_account: fa.cogs.clone(),
+            vat_output_account: fa.vat_payable.clone(),
+            vat_input_account: fa.input_vat.clone(),
             populate_fec_fields: fa.audit_export.fec_enabled,
         }
     }
@@ -215,6 +225,13 @@ impl DocumentFlowJeGenerator {
             }
         }
 
+        // Generate JEs for remainder payments
+        for payment in &chain.remainder_payments {
+            if let Some(je) = self.generate_from_ap_payment(payment) {
+                entries.push(je);
+            }
+        }
+
         // Apply lettrage on complete P2P chains (invoice + payment both present)
         if self.config.populate_fec_fields && chain.is_complete {
             if let Some(ref payment) = chain.payment {
@@ -253,6 +270,13 @@ impl DocumentFlowJeGenerator {
 
         // Generate JE for customer receipt
         if let Some(ref receipt) = chain.customer_receipt {
+            if let Some(je) = self.generate_from_ar_receipt(receipt) {
+                entries.push(je);
+            }
+        }
+
+        // Generate JEs for remainder receipts (follow-up to partial payments)
+        for receipt in &chain.remainder_receipts {
             if let Some(je) = self.generate_from_ar_receipt(receipt) {
                 entries.push(je);
             }
@@ -340,7 +364,15 @@ impl DocumentFlowJeGenerator {
     }
 
     /// Generate JE from Vendor Invoice.
-    /// DR GR/IR Clearing, CR AP
+    ///
+    /// When the invoice carries tax (`tax_amount > 0`), the entry is split:
+    /// - DR GR/IR Clearing = net amount
+    /// - DR Input VAT      = tax amount
+    /// - CR AP              = gross (payable) amount
+    ///
+    /// When there is no tax, the original two-line entry is produced:
+    /// - DR GR/IR Clearing = payable amount
+    /// - CR AP              = payable amount
     pub fn generate_from_vendor_invoice(
         &mut self,
         invoice: &VendorInvoice,
@@ -372,19 +404,37 @@ impl DocumentFlowJeGenerator {
 
         let mut entry = JournalEntry::new(header);
 
-        // DR GR/IR Clearing (or expense if no PO)
+        let has_vat = invoice.tax_amount > Decimal::ZERO;
+        let clearing_amount = if has_vat {
+            invoice.net_amount
+        } else {
+            invoice.payable_amount
+        };
+
+        // DR GR/IR Clearing (net amount when VAT present, else payable)
         let debit_line = JournalEntryLine::debit(
             entry.header.document_id,
             1,
             self.config.gr_ir_clearing_account.clone(),
-            invoice.payable_amount,
+            clearing_amount,
         );
         entry.add_line(debit_line);
 
-        // CR Accounts Payable
+        // DR Input VAT (only when tax is non-zero)
+        if has_vat {
+            let vat_line = JournalEntryLine::debit(
+                entry.header.document_id,
+                2,
+                self.config.vat_input_account.clone(),
+                invoice.tax_amount,
+            );
+            entry.add_line(vat_line);
+        }
+
+        // CR Accounts Payable (gross / payable amount)
         let mut credit_line = JournalEntryLine::credit(
             entry.header.document_id,
-            2,
+            if has_vat { 3 } else { 2 },
             self.config.ap_account.clone(),
             invoice.payable_amount,
         );
@@ -513,7 +563,15 @@ impl DocumentFlowJeGenerator {
     }
 
     /// Generate JE from Customer Invoice.
-    /// DR AR, CR Revenue
+    ///
+    /// When the invoice carries tax (`total_tax_amount > 0`), the entry is split:
+    /// - DR AR          = gross amount
+    /// - CR Revenue     = net amount
+    /// - CR VAT Payable = tax amount
+    ///
+    /// When there is no tax, the original two-line entry is produced:
+    /// - DR AR      = gross amount
+    /// - CR Revenue = gross amount
     pub fn generate_from_customer_invoice(
         &mut self,
         invoice: &CustomerInvoice,
@@ -545,7 +603,7 @@ impl DocumentFlowJeGenerator {
 
         let mut entry = JournalEntry::new(header);
 
-        // DR Accounts Receivable
+        // DR Accounts Receivable (gross amount)
         let mut debit_line = JournalEntryLine::debit(
             entry.header.document_id,
             1,
@@ -555,14 +613,30 @@ impl DocumentFlowJeGenerator {
         self.set_auxiliary_fields(&mut debit_line, &invoice.customer_id, &invoice.customer_id);
         entry.add_line(debit_line);
 
-        // CR Revenue
+        // CR Revenue (net amount when VAT present, else gross)
+        let revenue_amount = if invoice.total_tax_amount > Decimal::ZERO {
+            invoice.total_net_amount
+        } else {
+            invoice.total_gross_amount
+        };
         let credit_line = JournalEntryLine::credit(
             entry.header.document_id,
             2,
             self.config.revenue_account.clone(),
-            invoice.total_gross_amount,
+            revenue_amount,
         );
         entry.add_line(credit_line);
+
+        // CR VAT Payable (only when tax is non-zero)
+        if invoice.total_tax_amount > Decimal::ZERO {
+            let vat_line = JournalEntryLine::credit(
+                entry.header.document_id,
+                3,
+                self.config.vat_output_account.clone(),
+                invoice.total_tax_amount,
+            );
+            entry.add_line(vat_line);
+        }
 
         Some(entry)
     }
@@ -847,6 +921,7 @@ mod tests {
             goods_receipts: vec![create_test_gr()],
             vendor_invoice: Some(create_test_vendor_invoice()),
             payment: Some(create_test_payment()),
+            remainder_payments: Vec::new(),
             is_complete: true,
             three_way_match_passed: true,
             payment_timing: None,
@@ -908,6 +983,7 @@ mod tests {
             goods_receipts: vec![create_test_gr()],
             vendor_invoice: Some(create_test_vendor_invoice()),
             payment: None,
+            remainder_payments: Vec::new(),
             is_complete: false,
             three_way_match_passed: false,
             payment_timing: None,
@@ -1021,5 +1097,311 @@ mod tests {
             Some("4110001"),
             "AR line should use auxiliary GL account from lookup"
         );
+    }
+
+    // ====================================================================
+    // VAT / tax splitting tests
+    // ====================================================================
+
+    /// Helper: create a customer invoice with tax on its line items.
+    fn create_test_customer_invoice_with_tax() -> CustomerInvoice {
+        use datasynth_core::models::documents::CustomerInvoiceItem;
+
+        let mut invoice = CustomerInvoice::new(
+            "CI-001",
+            "1000",
+            "C-001",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 2, 14).unwrap(),
+            "JSMITH",
+        );
+
+        // 10 units * 100 = 1000 net, 100 tax => 1100 gross
+        let mut item =
+            CustomerInvoiceItem::new(1, "Product A", Decimal::from(10), Decimal::from(100));
+        item.base.tax_amount = Decimal::from(100);
+        invoice.add_item(item);
+        invoice.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
+
+        invoice
+    }
+
+    /// Helper: create a customer invoice without any tax.
+    fn create_test_customer_invoice_no_tax() -> CustomerInvoice {
+        use datasynth_core::models::documents::CustomerInvoiceItem;
+
+        let mut invoice = CustomerInvoice::new(
+            "CI-002",
+            "1000",
+            "C-002",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 2, 14).unwrap(),
+            "JSMITH",
+        );
+
+        let item = CustomerInvoiceItem::new(1, "Product B", Decimal::from(10), Decimal::from(100));
+        invoice.add_item(item);
+        invoice.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
+
+        invoice
+    }
+
+    /// Helper: create a vendor invoice with tax on its line items.
+    fn create_test_vendor_invoice_with_tax() -> VendorInvoice {
+        use datasynth_core::models::documents::VendorInvoiceItem;
+
+        let mut invoice = VendorInvoice::new(
+            "VI-002".to_string(),
+            "1000",
+            "V-001",
+            "INV-TAX-001".to_string(),
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 20).unwrap(),
+            "JSMITH",
+        );
+
+        // 100 qty * 50 price = 5000 net, 500 tax => 5500 gross = payable
+        let item = VendorInvoiceItem::from_po_gr(
+            10,
+            "Test Material",
+            Decimal::from(100),
+            Decimal::from(50),
+            "PO-001",
+            10,
+            Some("GR-001".to_string()),
+            Some(10),
+        )
+        .with_tax("VAT10", Decimal::from(500));
+
+        invoice.add_item(item);
+        invoice.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 20).unwrap());
+
+        invoice
+    }
+
+    #[test]
+    fn test_customer_invoice_with_tax_produces_three_lines() {
+        let mut generator = DocumentFlowJeGenerator::new();
+        let invoice = create_test_customer_invoice_with_tax();
+
+        assert_eq!(invoice.total_net_amount, Decimal::from(1000));
+        assert_eq!(invoice.total_tax_amount, Decimal::from(100));
+        assert_eq!(invoice.total_gross_amount, Decimal::from(1100));
+
+        let je = generator
+            .generate_from_customer_invoice(&invoice)
+            .unwrap();
+
+        // Should have 3 lines: DR AR, CR Revenue, CR VAT
+        assert_eq!(je.line_count(), 3, "Expected 3 JE lines for invoice with tax");
+        assert!(je.is_balanced(), "Entry must be balanced");
+
+        // Line 1: DR AR = gross (1100)
+        assert_eq!(je.lines[0].gl_account, control_accounts::AR_CONTROL);
+        assert_eq!(je.lines[0].debit_amount, Decimal::from(1100));
+        assert_eq!(je.lines[0].credit_amount, Decimal::ZERO);
+
+        // Line 2: CR Revenue = net (1000)
+        assert_eq!(je.lines[1].gl_account, revenue_accounts::PRODUCT_REVENUE);
+        assert_eq!(je.lines[1].credit_amount, Decimal::from(1000));
+        assert_eq!(je.lines[1].debit_amount, Decimal::ZERO);
+
+        // Line 3: CR VAT Payable = tax (100)
+        assert_eq!(je.lines[2].gl_account, tax_accounts::VAT_PAYABLE);
+        assert_eq!(je.lines[2].credit_amount, Decimal::from(100));
+        assert_eq!(je.lines[2].debit_amount, Decimal::ZERO);
+    }
+
+    #[test]
+    fn test_customer_invoice_no_tax_produces_two_lines() {
+        let mut generator = DocumentFlowJeGenerator::new();
+        let invoice = create_test_customer_invoice_no_tax();
+
+        assert_eq!(invoice.total_tax_amount, Decimal::ZERO);
+        assert_eq!(invoice.total_net_amount, Decimal::from(1000));
+        assert_eq!(invoice.total_gross_amount, Decimal::from(1000));
+
+        let je = generator
+            .generate_from_customer_invoice(&invoice)
+            .unwrap();
+
+        // Should have 2 lines (no VAT line)
+        assert_eq!(
+            je.line_count(),
+            2,
+            "Expected 2 JE lines for invoice without tax"
+        );
+        assert!(je.is_balanced(), "Entry must be balanced");
+
+        // Line 1: DR AR = gross (1000)
+        assert_eq!(je.lines[0].gl_account, control_accounts::AR_CONTROL);
+        assert_eq!(je.lines[0].debit_amount, Decimal::from(1000));
+
+        // Line 2: CR Revenue = gross (1000)  — same as gross when no tax
+        assert_eq!(je.lines[1].gl_account, revenue_accounts::PRODUCT_REVENUE);
+        assert_eq!(je.lines[1].credit_amount, Decimal::from(1000));
+    }
+
+    #[test]
+    fn test_vendor_invoice_with_tax_produces_three_lines() {
+        let mut generator = DocumentFlowJeGenerator::new();
+        let invoice = create_test_vendor_invoice_with_tax();
+
+        assert_eq!(invoice.net_amount, Decimal::from(5000));
+        assert_eq!(invoice.tax_amount, Decimal::from(500));
+        assert_eq!(invoice.gross_amount, Decimal::from(5500));
+        assert_eq!(invoice.payable_amount, Decimal::from(5500));
+
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // Should have 3 lines: DR GR/IR, DR Input VAT, CR AP
+        assert_eq!(
+            je.line_count(),
+            3,
+            "Expected 3 JE lines for vendor invoice with tax"
+        );
+        assert!(je.is_balanced(), "Entry must be balanced");
+
+        // Line 1: DR GR/IR Clearing = net (5000)
+        assert_eq!(je.lines[0].gl_account, control_accounts::GR_IR_CLEARING);
+        assert_eq!(je.lines[0].debit_amount, Decimal::from(5000));
+        assert_eq!(je.lines[0].credit_amount, Decimal::ZERO);
+
+        // Line 2: DR Input VAT = tax (500)
+        assert_eq!(je.lines[1].gl_account, tax_accounts::INPUT_VAT);
+        assert_eq!(je.lines[1].debit_amount, Decimal::from(500));
+        assert_eq!(je.lines[1].credit_amount, Decimal::ZERO);
+
+        // Line 3: CR AP = gross (5500)
+        assert_eq!(je.lines[2].gl_account, control_accounts::AP_CONTROL);
+        assert_eq!(je.lines[2].credit_amount, Decimal::from(5500));
+        assert_eq!(je.lines[2].debit_amount, Decimal::ZERO);
+    }
+
+    #[test]
+    fn test_vendor_invoice_no_tax_produces_two_lines() {
+        // The existing create_test_vendor_invoice() has no tax
+        let mut generator = DocumentFlowJeGenerator::new();
+        let invoice = create_test_vendor_invoice();
+
+        assert_eq!(invoice.tax_amount, Decimal::ZERO);
+
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // Should have 2 lines (unchanged behavior)
+        assert_eq!(
+            je.line_count(),
+            2,
+            "Expected 2 JE lines for vendor invoice without tax"
+        );
+        assert!(je.is_balanced(), "Entry must be balanced");
+
+        // Line 1: DR GR/IR Clearing = payable
+        assert_eq!(je.lines[0].gl_account, control_accounts::GR_IR_CLEARING);
+        assert_eq!(je.lines[0].debit_amount, invoice.payable_amount);
+
+        // Line 2: CR AP = payable
+        assert_eq!(je.lines[1].gl_account, control_accounts::AP_CONTROL);
+        assert_eq!(je.lines[1].credit_amount, invoice.payable_amount);
+    }
+
+    #[test]
+    fn test_vat_accounts_configurable() {
+        // Verify that VAT accounts can be customized via config
+        let mut config = DocumentFlowJeConfig::default();
+        config.vat_output_account = "2999".to_string();
+        config.vat_input_account = "1999".to_string();
+
+        let mut generator = DocumentFlowJeGenerator::with_config_and_seed(config, 42);
+
+        // Customer invoice with tax
+        let ci = create_test_customer_invoice_with_tax();
+        let je = generator
+            .generate_from_customer_invoice(&ci)
+            .unwrap();
+        assert_eq!(
+            je.lines[2].gl_account, "2999",
+            "VAT output account should be configurable"
+        );
+
+        // Vendor invoice with tax
+        let vi = create_test_vendor_invoice_with_tax();
+        let je = generator.generate_from_vendor_invoice(&vi).unwrap();
+        assert_eq!(
+            je.lines[1].gl_account, "1999",
+            "VAT input account should be configurable"
+        );
+    }
+
+    #[test]
+    fn test_vat_entries_from_framework_accounts() {
+        // FrameworkAccounts should propagate VAT accounts into DocumentFlowJeConfig
+        let fa = datasynth_core::FrameworkAccounts::us_gaap();
+        let config = DocumentFlowJeConfig::from(&fa);
+
+        assert_eq!(config.vat_output_account, tax_accounts::VAT_PAYABLE);
+        assert_eq!(config.vat_input_account, tax_accounts::INPUT_VAT);
+
+        let fa_fr = datasynth_core::FrameworkAccounts::french_gaap();
+        let config_fr = DocumentFlowJeConfig::from(&fa_fr);
+
+        assert_eq!(config_fr.vat_output_account, "445710");
+        assert_eq!(config_fr.vat_input_account, "445660");
+    }
+
+    #[test]
+    fn test_french_gaap_vat_accounts() {
+        let config = DocumentFlowJeConfig::french_gaap();
+        assert_eq!(config.vat_output_account, "445710"); // PCG OUTPUT_VAT
+        assert_eq!(config.vat_input_account, "445660"); // PCG INPUT_VAT
+    }
+
+    #[test]
+    fn test_vat_balanced_with_multiple_items() {
+        // Multiple line items with different tax amounts must still balance
+        use datasynth_core::models::documents::CustomerInvoiceItem;
+
+        let mut invoice = CustomerInvoice::new(
+            "CI-003",
+            "1000",
+            "C-003",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 2, 14).unwrap(),
+            "JSMITH",
+        );
+
+        // Item 1: 500 net, 50 tax
+        let mut item1 = CustomerInvoiceItem::new(1, "A", Decimal::from(5), Decimal::from(100));
+        item1.base.tax_amount = Decimal::from(50);
+        invoice.add_item(item1);
+
+        // Item 2: 300 net, 30 tax
+        let mut item2 = CustomerInvoiceItem::new(2, "B", Decimal::from(3), Decimal::from(100));
+        item2.base.tax_amount = Decimal::from(30);
+        invoice.add_item(item2);
+
+        invoice.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
+
+        // net=800, tax=80, gross=880
+        assert_eq!(invoice.total_net_amount, Decimal::from(800));
+        assert_eq!(invoice.total_tax_amount, Decimal::from(80));
+        assert_eq!(invoice.total_gross_amount, Decimal::from(880));
+
+        let mut generator = DocumentFlowJeGenerator::new();
+        let je = generator
+            .generate_from_customer_invoice(&invoice)
+            .unwrap();
+
+        assert_eq!(je.line_count(), 3);
+        assert!(je.is_balanced());
+        assert_eq!(je.total_debit(), Decimal::from(880));
+        assert_eq!(je.total_credit(), Decimal::from(880));
     }
 }

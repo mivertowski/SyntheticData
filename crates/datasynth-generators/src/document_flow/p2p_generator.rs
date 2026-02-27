@@ -59,6 +59,8 @@ pub struct P2PPaymentBehavior {
     pub partial_payment_rate: f64,
     /// Rate of payment corrections
     pub payment_correction_rate: f64,
+    /// Average days until partial payment remainder is paid
+    pub avg_days_until_remainder: u32,
 }
 
 impl Default for P2PPaymentBehavior {
@@ -68,6 +70,7 @@ impl Default for P2PPaymentBehavior {
             late_payment_distribution: LatePaymentDistribution::default(),
             partial_payment_rate: 0.05,
             payment_correction_rate: 0.02,
+            avg_days_until_remainder: 30,
         }
     }
 }
@@ -133,6 +136,8 @@ pub struct P2PDocumentChain {
     pub vendor_invoice: Option<VendorInvoice>,
     /// Payment
     pub payment: Option<Payment>,
+    /// Remainder payments (follow-up to partial payments)
+    pub remainder_payments: Vec<Payment>,
     /// Chain completion status
     pub is_complete: bool,
     /// Three-way match status
@@ -316,18 +321,69 @@ impl P2PGenerator {
         // Calculate due date for timing info
         let due_date = self.calculate_due_date(invoice_date, &vendor.payment_terms);
 
-        // Generate payment
-        let payment = vendor_invoice.as_ref().map(|invoice| {
-            self.generate_payment(
-                invoice,
-                company_code,
-                vendor,
-                payment_date,
-                fiscal_year,
-                payment_fiscal_period,
-                created_by,
-            )
-        });
+        // Determine if this is a partial payment
+        let is_partial_payment = self.rng.random::<f64>()
+            < self.config.payment_behavior.partial_payment_rate;
+
+        // Generate payment (possibly partial)
+        let (payment, remainder_payments) = if let Some(ref invoice) = vendor_invoice {
+            if is_partial_payment {
+                // Partial payment: 50-75% of invoice amount
+                let partial_pct = 0.50 + self.rng.random::<f64>() * 0.25;
+                let partial_amount = (invoice.payable_amount
+                    * Decimal::from_f64_retain(partial_pct).unwrap_or(Decimal::ONE))
+                .round_dp(2);
+
+                let initial_payment = self.generate_payment_for_amount(
+                    invoice,
+                    company_code,
+                    vendor,
+                    payment_date,
+                    fiscal_year,
+                    payment_fiscal_period,
+                    created_by,
+                    partial_amount,
+                );
+
+                // Generate remainder payment
+                let remainder_amount = invoice.payable_amount - partial_amount;
+                let remainder_days_variance = self.rng.random_range(0..10) as i64;
+                let remainder_date = payment_date
+                    + chrono::Duration::days(
+                        self.config.payment_behavior.avg_days_until_remainder as i64
+                            + remainder_days_variance,
+                    );
+                let remainder_fiscal_period = self.get_fiscal_period(remainder_date);
+
+                let remainder_payment = self.generate_remainder_payment(
+                    invoice,
+                    company_code,
+                    vendor,
+                    remainder_date,
+                    fiscal_year,
+                    remainder_fiscal_period,
+                    created_by,
+                    remainder_amount,
+                    &initial_payment,
+                );
+
+                (Some(initial_payment), vec![remainder_payment])
+            } else {
+                // Full payment
+                let full_payment = self.generate_payment(
+                    invoice,
+                    company_code,
+                    vendor,
+                    payment_date,
+                    fiscal_year,
+                    payment_fiscal_period,
+                    created_by,
+                );
+                (Some(full_payment), Vec::new())
+            }
+        } else {
+            (None, Vec::new())
+        };
 
         let is_complete = payment.is_some();
 
@@ -360,6 +416,7 @@ impl P2PGenerator {
             goods_receipts,
             vendor_invoice,
             payment,
+            remainder_payments,
             is_complete,
             three_way_match_passed,
             payment_timing,
@@ -735,6 +792,134 @@ impl P2PGenerator {
         payment
     }
 
+    /// Generate a payment for a specific amount (used for partial payments).
+    fn generate_payment_for_amount(
+        &mut self,
+        invoice: &VendorInvoice,
+        company_code: &str,
+        vendor: &Vendor,
+        payment_date: NaiveDate,
+        fiscal_year: u16,
+        fiscal_period: u8,
+        created_by: &str,
+        amount: Decimal,
+    ) -> Payment {
+        self.pay_counter += 1;
+
+        let payment_id = self.make_doc_id("PAY", "payment", company_code, self.pay_counter);
+
+        let mut payment = Payment::new_ap_payment(
+            payment_id,
+            company_code,
+            &vendor.vendor_id,
+            amount,
+            fiscal_year,
+            fiscal_period,
+            payment_date,
+            created_by,
+        )
+        .with_payment_method(self.select_payment_method())
+        .with_value_date(payment_date + chrono::Duration::days(1));
+
+        // Allocate to invoice (partial amount, no discount on partial)
+        payment.allocate_to_invoice(
+            &invoice.header.document_id,
+            DocumentType::VendorInvoice,
+            amount,
+            Decimal::ZERO,
+        );
+
+        // Add document reference linking payment to invoice
+        payment.header.add_reference(DocumentReference::new(
+            DocumentType::ApPayment,
+            &payment.header.document_id,
+            DocumentType::VendorInvoice,
+            &invoice.header.document_id,
+            ReferenceType::Payment,
+            &payment.header.company_code,
+            payment_date,
+        ));
+
+        // Approve and send to bank
+        payment.approve(created_by);
+        payment.send_to_bank(created_by);
+
+        // Post the payment
+        payment.post(created_by, payment_date);
+
+        payment
+    }
+
+    /// Generate a remainder payment for the balance after a partial payment.
+    fn generate_remainder_payment(
+        &mut self,
+        invoice: &VendorInvoice,
+        company_code: &str,
+        vendor: &Vendor,
+        payment_date: NaiveDate,
+        fiscal_year: u16,
+        fiscal_period: u8,
+        created_by: &str,
+        amount: Decimal,
+        initial_payment: &Payment,
+    ) -> Payment {
+        self.pay_counter += 1;
+
+        let payment_id = self.make_doc_id("PAY", "payment", company_code, self.pay_counter);
+
+        let mut payment = Payment::new_ap_payment(
+            payment_id,
+            company_code,
+            &vendor.vendor_id,
+            amount,
+            fiscal_year,
+            fiscal_period,
+            payment_date,
+            created_by,
+        )
+        .with_payment_method(self.select_payment_method())
+        .with_value_date(payment_date + chrono::Duration::days(1));
+
+        // Allocate remainder to the same invoice
+        payment.allocate_to_invoice(
+            &invoice.header.document_id,
+            DocumentType::VendorInvoice,
+            amount,
+            Decimal::ZERO,
+        );
+
+        // Add document reference linking remainder payment to invoice
+        payment.header.add_reference(DocumentReference::new(
+            DocumentType::ApPayment,
+            &payment.header.document_id,
+            DocumentType::VendorInvoice,
+            &invoice.header.document_id,
+            ReferenceType::Payment,
+            &payment.header.company_code,
+            payment_date,
+        ));
+
+        // Add document reference linking remainder payment to initial payment
+        payment.header.add_reference(DocumentReference::new(
+            DocumentType::ApPayment,
+            &payment.header.document_id,
+            DocumentType::ApPayment,
+            &initial_payment.header.document_id,
+            ReferenceType::FollowOn,
+            &payment.header.company_code,
+            payment_date,
+        ));
+
+        // Approve and send to bank
+        payment.approve(created_by);
+        payment.send_to_bank(created_by);
+
+        // Post the payment
+        payment.post(created_by, payment_date);
+
+        payment
+    }
+
     /// Generate multiple P2P chains.
     pub fn generate_chains(
         &mut self,
@@ -1050,5 +1235,200 @@ mod tests {
 
         // Should have multiple goods receipts due to partial delivery
         assert!(chain.goods_receipts.len() >= 2);
+    }
+
+    #[test]
+    fn test_partial_payment_produces_remainder() {
+        let config = P2PGeneratorConfig {
+            payment_behavior: P2PPaymentBehavior {
+                partial_payment_rate: 1.0, // Force partial payment
+                avg_days_until_remainder: 30,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = P2PGenerator::with_config(42, config);
+        let vendor = create_test_vendor();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &vendor,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        // With 100% partial_payment_rate, chain must have both payment and remainder
+        assert!(
+            chain.payment.is_some(),
+            "Chain should have an initial payment"
+        );
+        assert_eq!(
+            chain.remainder_payments.len(),
+            1,
+            "Chain should have exactly one remainder payment"
+        );
+    }
+
+    #[test]
+    fn test_partial_payment_amounts_sum_to_invoice() {
+        let config = P2PGeneratorConfig {
+            payment_behavior: P2PPaymentBehavior {
+                partial_payment_rate: 1.0, // Force partial payment
+                avg_days_until_remainder: 30,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = P2PGenerator::with_config(42, config);
+        let vendor = create_test_vendor();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &vendor,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        let invoice = chain.vendor_invoice.as_ref().unwrap();
+        let initial_payment = chain.payment.as_ref().unwrap();
+        let remainder = &chain.remainder_payments[0];
+
+        // payment amount + remainder amount = invoice payable_amount
+        let total_paid = initial_payment.amount + remainder.amount;
+        assert_eq!(
+            total_paid, invoice.payable_amount,
+            "Initial payment ({}) + remainder ({}) = {} but invoice payable is {}",
+            initial_payment.amount, remainder.amount, total_paid, invoice.payable_amount
+        );
+    }
+
+    #[test]
+    fn test_remainder_payment_date_after_initial() {
+        let config = P2PGeneratorConfig {
+            payment_behavior: P2PPaymentBehavior {
+                partial_payment_rate: 1.0, // Force partial payment
+                avg_days_until_remainder: 30,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = P2PGenerator::with_config(42, config);
+        let vendor = create_test_vendor();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &vendor,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        let initial_payment = chain.payment.as_ref().unwrap();
+        let remainder = &chain.remainder_payments[0];
+
+        // Remainder date should be after initial payment date
+        assert!(
+            remainder.header.document_date > initial_payment.header.document_date,
+            "Remainder date ({}) should be after initial payment date ({})",
+            remainder.header.document_date,
+            initial_payment.header.document_date
+        );
+    }
+
+    #[test]
+    fn test_no_partial_payment_means_no_remainder() {
+        let config = P2PGeneratorConfig {
+            payment_behavior: P2PPaymentBehavior {
+                partial_payment_rate: 0.0, // Never partial payment
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = P2PGenerator::with_config(42, config);
+        let vendor = create_test_vendor();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &vendor,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        assert!(
+            chain.payment.is_some(),
+            "Chain should have a full payment"
+        );
+        assert!(
+            chain.remainder_payments.is_empty(),
+            "Chain should have no remainder payments when partial_payment_rate is 0"
+        );
+    }
+
+    #[test]
+    fn test_partial_payment_amount_in_expected_range() {
+        let config = P2PGeneratorConfig {
+            payment_behavior: P2PPaymentBehavior {
+                partial_payment_rate: 1.0, // Force partial payment
+                avg_days_until_remainder: 30,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = P2PGenerator::with_config(42, config);
+        let vendor = create_test_vendor();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &vendor,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        let invoice = chain.vendor_invoice.as_ref().unwrap();
+        let initial_payment = chain.payment.as_ref().unwrap();
+
+        // Partial payment should be 50-75% of invoice amount
+        let min_pct = Decimal::from_f64_retain(0.50).unwrap();
+        let max_pct = Decimal::from_f64_retain(0.75).unwrap();
+        let min_amount = (invoice.payable_amount * min_pct).round_dp(2);
+        let max_amount = (invoice.payable_amount * max_pct).round_dp(2);
+
+        assert!(
+            initial_payment.amount >= min_amount && initial_payment.amount <= max_amount,
+            "Partial payment {} should be between {} and {} (50-75% of {})",
+            initial_payment.amount,
+            min_amount,
+            max_amount,
+            invoice.payable_amount
+        );
     }
 }

@@ -6,8 +6,11 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ### [0.9.3] - 2026-02-27
 
-**Edge-Case Hardening & Defensive Programming**
+**Community Features & Edge-Case Hardening**
 
+- **VAT line splitting in O2C/P2P journal entries** ([#64](https://github.com/DataSynth/SyntheticData/issues/64)): Customer Invoice JE now correctly posts DR AR (gross), CR Revenue (net), CR VAT Payable (tax); Vendor Invoice JE posts DR GR/IR (net), DR Input VAT (tax), CR AP (payable)
+- **Multipayment behavior** ([#65](https://github.com/DataSynth/SyntheticData/issues/65)): O2C/P2P partial payments now generate remainder payments with configurable timing, full JE generation, and cash flow integration
+- **Account-class fingerprinting** ([#66](https://github.com/DataSynth/SyntheticData/issues/66)): Per-account-class statistics extraction with semantic column detection, per-class Benford analysis, and distribution fitting for synthesis
 - Division-by-zero guards in fingerprint k-anonymity and federated aggregation
 - Graph ghost edge elimination (skip missing nodes instead of remapping to node 0)
 - GoBD safe document ID truncation, Prometheus/rate-limit unwrap removal

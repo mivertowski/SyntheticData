@@ -19,6 +19,10 @@ pub struct StatisticsFingerprint {
     /// Global Benford's Law analysis for amount fields.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub benford_analysis: Option<BenfordStats>,
+
+    /// Per-account-class amount statistics.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub account_class_stats: Vec<AccountClassStats>,
 }
 
 impl StatisticsFingerprint {
@@ -29,6 +33,7 @@ impl StatisticsFingerprint {
             categorical_columns: HashMap::new(),
             temporal_columns: HashMap::new(),
             benford_analysis: None,
+            account_class_stats: Vec::new(),
         }
     }
 
@@ -48,6 +53,11 @@ impl StatisticsFingerprint {
     pub fn add_temporal(&mut self, table: &str, column: &str, stats: TemporalStats) {
         let key = format!("{}.{}", table, column);
         self.temporal_columns.insert(key, stats);
+    }
+
+    /// Add account class statistics.
+    pub fn add_account_class_stats(&mut self, stats: AccountClassStats) {
+        self.account_class_stats.push(stats);
     }
 }
 
@@ -444,6 +454,40 @@ pub struct BenfordStats {
     pub conforms: bool,
 }
 
+/// Per-account-class statistics for amount fingerprinting.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountClassStats {
+    /// Account class pattern (e.g., "1XXX" for assets, "4XXX" for revenue).
+    pub class_pattern: String,
+
+    /// Human-readable label (e.g., "Assets", "Revenue").
+    pub class_label: String,
+
+    /// Numeric statistics for amounts in this account class.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub numeric: Option<NumericStats>,
+
+    /// Row count for this account class.
+    pub row_count: u64,
+
+    /// Benford's law analysis for this class.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub benford_first_digit: Option<[f64; 9]>,
+}
+
+impl AccountClassStats {
+    /// Create new empty account class stats.
+    pub fn new(class_pattern: String, class_label: String) -> Self {
+        Self {
+            class_pattern,
+            class_label,
+            numeric: None,
+            row_count: 0,
+            benford_first_digit: None,
+        }
+    }
+}
+
 /// Round number bias statistics.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoundNumberStats {
@@ -455,4 +499,97 @@ pub struct RoundNumberStats {
     pub round_five_rate: f64,
     /// Proportion with exactly zero decimal places.
     pub whole_number_rate: f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_account_class_stats_creation_and_add() {
+        let mut fp = StatisticsFingerprint::new();
+        assert!(fp.account_class_stats.is_empty());
+
+        let mut stats = AccountClassStats::new("1XXX".to_string(), "Assets".to_string());
+        assert_eq!(stats.class_pattern, "1XXX");
+        assert_eq!(stats.class_label, "Assets");
+        assert!(stats.numeric.is_none());
+        assert_eq!(stats.row_count, 0);
+        assert!(stats.benford_first_digit.is_none());
+
+        stats.row_count = 42;
+        stats.numeric = Some(NumericStats::new(42, 10.0, 5000.0, 1234.5, 800.0));
+        stats.benford_first_digit = Some([0.301, 0.176, 0.125, 0.097, 0.079, 0.067, 0.058, 0.051, 0.046]);
+
+        fp.add_account_class_stats(stats);
+        assert_eq!(fp.account_class_stats.len(), 1);
+        assert_eq!(fp.account_class_stats[0].class_pattern, "1XXX");
+        assert_eq!(fp.account_class_stats[0].row_count, 42);
+        assert!(fp.account_class_stats[0].numeric.is_some());
+        assert!(fp.account_class_stats[0].benford_first_digit.is_some());
+    }
+
+    #[test]
+    fn test_account_class_stats_json_roundtrip() {
+        let mut stats = AccountClassStats::new("4XXX".to_string(), "Revenue".to_string());
+        stats.row_count = 100;
+        stats.numeric = Some(NumericStats::new(100, 500.0, 99000.0, 12345.67, 5000.0));
+
+        let json = serde_json::to_string(&stats).expect("serialize");
+        let deserialized: AccountClassStats = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(deserialized.class_pattern, "4XXX");
+        assert_eq!(deserialized.class_label, "Revenue");
+        assert_eq!(deserialized.row_count, 100);
+        assert!(deserialized.numeric.is_some());
+        assert!(deserialized.benford_first_digit.is_none());
+    }
+
+    #[test]
+    fn test_account_class_stats_skip_serializing_when_empty() {
+        let fp = StatisticsFingerprint::new();
+        let json = serde_json::to_string(&fp).expect("serialize");
+
+        // account_class_stats should NOT appear in JSON when the Vec is empty
+        assert!(
+            !json.contains("account_class_stats"),
+            "empty account_class_stats should be skipped in serialization"
+        );
+
+        // Now add one entry and confirm it appears
+        let mut fp2 = StatisticsFingerprint::new();
+        fp2.add_account_class_stats(AccountClassStats::new("5XXX".to_string(), "Expenses".to_string()));
+        let json2 = serde_json::to_string(&fp2).expect("serialize");
+        assert!(
+            json2.contains("account_class_stats"),
+            "non-empty account_class_stats should appear in serialization"
+        );
+    }
+
+    #[test]
+    fn test_statistics_fingerprint_json_roundtrip_with_account_class_stats() {
+        let mut fp = StatisticsFingerprint::new();
+        fp.add_account_class_stats(AccountClassStats::new("1XXX".to_string(), "Assets".to_string()));
+        fp.add_account_class_stats(AccountClassStats::new("4XXX".to_string(), "Revenue".to_string()));
+
+        let json = serde_json::to_string(&fp).expect("serialize");
+        let deserialized: StatisticsFingerprint = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(deserialized.account_class_stats.len(), 2);
+        assert_eq!(deserialized.account_class_stats[0].class_pattern, "1XXX");
+        assert_eq!(deserialized.account_class_stats[1].class_label, "Revenue");
+    }
+
+    #[test]
+    fn test_deserialize_without_account_class_stats_field() {
+        // Simulate JSON from an older version that lacks the field entirely.
+        // The #[serde(default)] on the field should populate an empty Vec.
+        let json = r#"{
+            "numeric_columns": {},
+            "categorical_columns": {},
+            "temporal_columns": {}
+        }"#;
+        let fp: StatisticsFingerprint = serde_json::from_str(json).expect("deserialize");
+        assert!(fp.account_class_stats.is_empty());
+    }
 }

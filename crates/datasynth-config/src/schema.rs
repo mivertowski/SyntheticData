@@ -2738,6 +2738,9 @@ pub struct P2PPaymentBehaviorConfig {
     /// Rate of payment corrections (NSF, chargebacks, reversals)
     #[serde(default = "default_p2p_payment_correction_rate")]
     pub payment_correction_rate: f64,
+    /// Average days until partial payment remainder is paid
+    #[serde(default = "default_p2p_avg_days_until_remainder")]
+    pub avg_days_until_remainder: u32,
 }
 
 fn default_p2p_late_payment_rate() -> f64 {
@@ -2752,6 +2755,10 @@ fn default_p2p_payment_correction_rate() -> f64 {
     0.02
 }
 
+fn default_p2p_avg_days_until_remainder() -> u32 {
+    30
+}
+
 impl Default for P2PPaymentBehaviorConfig {
     fn default() -> Self {
         Self {
@@ -2759,6 +2766,7 @@ impl Default for P2PPaymentBehaviorConfig {
             late_payment_days_distribution: LatePaymentDaysDistribution::default(),
             partial_payment_rate: default_p2p_partial_payment_rate(),
             payment_correction_rate: default_p2p_payment_correction_rate(),
+            avg_days_until_remainder: default_p2p_avg_days_until_remainder(),
         }
     }
 }

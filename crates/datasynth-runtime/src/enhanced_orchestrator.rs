@@ -169,6 +169,7 @@ fn convert_p2p_config(schema_config: &P2PFlowConfig) -> P2PGeneratorConfig {
             },
             partial_payment_rate: payment_behavior.partial_payment_rate,
             payment_correction_rate: payment_behavior.payment_correction_rate,
+            avg_days_until_remainder: payment_behavior.avg_days_until_remainder,
         },
     }
 }
@@ -4577,6 +4578,15 @@ impl EnhancedOrchestrator {
                         direction: datasynth_generators::treasury::CashFlowDirection::Inflow,
                     });
                 }
+                // Remainder receipts (follow-up to partial payments)
+                for receipt in &chain.remainder_receipts {
+                    cash_flows.push(datasynth_generators::treasury::CashFlow {
+                        date: receipt.header.document_date,
+                        account_id: format!("{}-MAIN", entity_id),
+                        amount: receipt.amount,
+                        direction: datasynth_generators::treasury::CashFlowDirection::Inflow,
+                    });
+                }
             }
 
             if !cash_flows.is_empty() {
@@ -5121,6 +5131,9 @@ impl EnhancedOrchestrator {
             if let Some(payment) = &chain.payment {
                 flows.payments.push(payment.clone());
             }
+            for remainder in &chain.remainder_payments {
+                flows.payments.push(remainder.clone());
+            }
             flows.p2p_chains.push(chain);
 
             if let Some(pb) = &pb {
@@ -5187,6 +5200,10 @@ impl EnhancedOrchestrator {
                 flows.customer_invoices.push(ci.clone());
             }
             if let Some(receipt) = &chain.customer_receipt {
+                flows.payments.push(receipt.clone());
+            }
+            // Extract remainder receipts (follow-up to partial payments)
+            for receipt in &chain.remainder_receipts {
                 flows.payments.push(receipt.clone());
             }
             flows.o2c_chains.push(chain);

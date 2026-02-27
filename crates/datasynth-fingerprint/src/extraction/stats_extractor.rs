@@ -4,8 +4,8 @@ use std::collections::HashMap;
 
 use crate::error::FingerprintResult;
 use crate::models::{
-    CategoricalStats, CategoryFrequency, DistributionParams, DistributionType, NumericStats,
-    Percentiles, StatisticsFingerprint,
+    AccountClassStats, CategoricalStats, CategoryFrequency, DistributionParams, DistributionType,
+    NumericStats, Percentiles, StatisticsFingerprint,
 };
 use crate::privacy::PrivacyEngine;
 
@@ -250,6 +250,62 @@ fn extract_column_stats(
         // For now, placeholder
     }
 
+    // Per-account-class extraction
+    if let Some(acct_idx) = detect_account_column(headers) {
+        let (debit_idx, credit_idx) = detect_amount_columns(headers);
+
+        // Group rows by account class
+        let mut class_amounts: HashMap<(String, String), Vec<f64>> = HashMap::new();
+        let mut class_row_counts: HashMap<(String, String), u64> = HashMap::new();
+        let acct_values = &columns[acct_idx];
+        let row_count = acct_values.len();
+
+        for row in 0..row_count {
+            let acct = &acct_values[row];
+            if let Some((pattern, label)) = account_class(acct) {
+                let key = (pattern, label.to_string());
+                *class_row_counts.entry(key.clone()).or_insert(0) += 1;
+                let entry = class_amounts.entry(key).or_default();
+
+                // Collect non-zero amounts from debit/credit columns
+                if let Some(di) = debit_idx {
+                    if di < columns.len() {
+                        if let Ok(v) = columns[di][row].parse::<f64>() {
+                            if v != 0.0 {
+                                entry.push(v);
+                            }
+                        }
+                    }
+                }
+                if let Some(ci) = credit_idx {
+                    if ci < columns.len() {
+                        if let Ok(v) = columns[ci][row].parse::<f64>() {
+                            if v != 0.0 {
+                                entry.push(v);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Compute stats per class
+        for ((pattern, label), amounts) in &class_amounts {
+            let mut class_stats = AccountClassStats::new(pattern.clone(), label.clone());
+            let key = (pattern.clone(), label.clone());
+            class_stats.row_count = *class_row_counts.get(&key).unwrap_or(&0);
+
+            if !amounts.is_empty() {
+                let target = format!("account_class.{}", pattern);
+                if let Ok(numeric) = compute_numeric_stats(amounts, &target, privacy) {
+                    class_stats.numeric = Some(numeric);
+                }
+            }
+
+            stats.add_account_class_stats(class_stats);
+        }
+    }
+
     Ok(stats)
 }
 
@@ -489,6 +545,66 @@ fn compute_entropy(frequencies: &[CategoryFrequency]) -> f64 {
     entropy
 }
 
+/// Heuristic: detect which column contains GL account numbers.
+fn detect_account_column(headers: &[String]) -> Option<usize> {
+    let account_patterns = [
+        "gl_account",
+        "account_number",
+        "account",
+        "konto",
+        "compte",
+        "kontonummer",
+    ];
+    for (i, header) in headers.iter().enumerate() {
+        let lower = header.to_lowercase();
+        for pattern in &account_patterns {
+            if lower.contains(pattern) {
+                return Some(i);
+            }
+        }
+    }
+    None
+}
+
+/// Detect which columns contain debit and credit amounts.
+fn detect_amount_columns(headers: &[String]) -> (Option<usize>, Option<usize>) {
+    let mut debit_col = None;
+    let mut credit_col = None;
+    for (i, header) in headers.iter().enumerate() {
+        let lower = header.to_lowercase();
+        if lower.contains("debit") {
+            debit_col = Some(i);
+        } else if lower.contains("credit") {
+            credit_col = Some(i);
+        }
+    }
+    (debit_col, credit_col)
+}
+
+/// Classify an account number into its class (first digit + "XXX").
+fn account_class(account: &str) -> Option<(String, &'static str)> {
+    let first_char = account.trim().chars().next()?;
+    if !first_char.is_ascii_digit() {
+        return None;
+    }
+    let digit = first_char.to_digit(10)?;
+    let pattern = format!("{}XXX", digit);
+    let label = match digit {
+        0 => "Fixed Assets",
+        1 => "Assets",
+        2 => "Liabilities",
+        3 => "Equity",
+        4 => "Revenue",
+        5 => "COGS",
+        6 => "Operating Expenses",
+        7 => "Other Income/Expense",
+        8 => "Tax",
+        9 => "Statistical",
+        _ => "Unknown",
+    };
+    Some((pattern, label))
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -503,5 +619,340 @@ mod tests {
         assert!(benford[0] > 0.0); // digit 1
         assert!(benford[1] > 0.0); // digit 2
         assert!(benford[2] > 0.0); // digit 3
+    }
+
+    // ---- detect_account_column tests ----
+
+    #[test]
+    fn test_detect_account_column_gl_account() {
+        let headers = vec![
+            "posting_date".to_string(),
+            "gl_account".to_string(),
+            "amount".to_string(),
+        ];
+        assert_eq!(detect_account_column(&headers), Some(1));
+    }
+
+    #[test]
+    fn test_detect_account_column_account_number() {
+        let headers = vec![
+            "id".to_string(),
+            "description".to_string(),
+            "Account_Number".to_string(),
+            "debit".to_string(),
+        ];
+        assert_eq!(detect_account_column(&headers), Some(2));
+    }
+
+    #[test]
+    fn test_detect_account_column_german_konto() {
+        let headers = vec![
+            "datum".to_string(),
+            "kontonummer".to_string(),
+            "betrag".to_string(),
+        ];
+        assert_eq!(detect_account_column(&headers), Some(1));
+    }
+
+    #[test]
+    fn test_detect_account_column_french_compte() {
+        let headers = vec![
+            "date".to_string(),
+            "compte".to_string(),
+            "montant".to_string(),
+        ];
+        assert_eq!(detect_account_column(&headers), Some(1));
+    }
+
+    #[test]
+    fn test_detect_account_column_none() {
+        let headers = vec![
+            "id".to_string(),
+            "name".to_string(),
+            "value".to_string(),
+        ];
+        assert_eq!(detect_account_column(&headers), None);
+    }
+
+    #[test]
+    fn test_detect_account_column_empty() {
+        let headers: Vec<String> = vec![];
+        assert_eq!(detect_account_column(&headers), None);
+    }
+
+    #[test]
+    fn test_detect_account_column_prefers_first_match() {
+        let headers = vec![
+            "gl_account".to_string(),
+            "account_number".to_string(),
+        ];
+        // Should return the first match
+        assert_eq!(detect_account_column(&headers), Some(0));
+    }
+
+    // ---- detect_amount_columns tests ----
+
+    #[test]
+    fn test_detect_amount_columns_both() {
+        let headers = vec![
+            "account".to_string(),
+            "debit_amount".to_string(),
+            "credit_amount".to_string(),
+        ];
+        assert_eq!(detect_amount_columns(&headers), (Some(1), Some(2)));
+    }
+
+    #[test]
+    fn test_detect_amount_columns_debit_only() {
+        let headers = vec![
+            "account".to_string(),
+            "debit".to_string(),
+            "description".to_string(),
+        ];
+        assert_eq!(detect_amount_columns(&headers), (Some(1), None));
+    }
+
+    #[test]
+    fn test_detect_amount_columns_credit_only() {
+        let headers = vec![
+            "account".to_string(),
+            "description".to_string(),
+            "credit".to_string(),
+        ];
+        assert_eq!(detect_amount_columns(&headers), (None, Some(2)));
+    }
+
+    #[test]
+    fn test_detect_amount_columns_none() {
+        let headers = vec![
+            "account".to_string(),
+            "amount".to_string(),
+            "description".to_string(),
+        ];
+        assert_eq!(detect_amount_columns(&headers), (None, None));
+    }
+
+    #[test]
+    fn test_detect_amount_columns_case_insensitive() {
+        let headers = vec![
+            "GL_Account".to_string(),
+            "DEBIT".to_string(),
+            "Credit_Amount".to_string(),
+        ];
+        assert_eq!(detect_amount_columns(&headers), (Some(1), Some(2)));
+    }
+
+    // ---- account_class tests ----
+
+    #[test]
+    fn test_account_class_assets() {
+        let result = account_class("1100");
+        assert_eq!(result, Some(("1XXX".to_string(), "Assets")));
+    }
+
+    #[test]
+    fn test_account_class_liabilities() {
+        let result = account_class("2000");
+        assert_eq!(result, Some(("2XXX".to_string(), "Liabilities")));
+    }
+
+    #[test]
+    fn test_account_class_revenue() {
+        let result = account_class("4000");
+        assert_eq!(result, Some(("4XXX".to_string(), "Revenue")));
+    }
+
+    #[test]
+    fn test_account_class_fixed_assets() {
+        let result = account_class("0100");
+        assert_eq!(result, Some(("0XXX".to_string(), "Fixed Assets")));
+    }
+
+    #[test]
+    fn test_account_class_all_digits() {
+        let expected = [
+            ("0100", "0XXX", "Fixed Assets"),
+            ("1100", "1XXX", "Assets"),
+            ("2000", "2XXX", "Liabilities"),
+            ("3000", "3XXX", "Equity"),
+            ("4000", "4XXX", "Revenue"),
+            ("5000", "5XXX", "COGS"),
+            ("6000", "6XXX", "Operating Expenses"),
+            ("7000", "7XXX", "Other Income/Expense"),
+            ("8000", "8XXX", "Tax"),
+            ("9000", "9XXX", "Statistical"),
+        ];
+        for (acct, pattern, label) in expected {
+            let result = account_class(acct);
+            assert_eq!(
+                result,
+                Some((pattern.to_string(), label)),
+                "Failed for account {}",
+                acct
+            );
+        }
+    }
+
+    #[test]
+    fn test_account_class_with_leading_whitespace() {
+        let result = account_class("  1100");
+        assert_eq!(result, Some(("1XXX".to_string(), "Assets")));
+    }
+
+    #[test]
+    fn test_account_class_non_digit() {
+        assert_eq!(account_class("ABC"), None);
+    }
+
+    #[test]
+    fn test_account_class_empty() {
+        assert_eq!(account_class(""), None);
+    }
+
+    #[test]
+    fn test_account_class_whitespace_only() {
+        assert_eq!(account_class("   "), None);
+    }
+
+    // ---- Integration test: extract_column_stats with account classes ----
+
+    #[test]
+    fn test_extract_column_stats_with_account_classes() {
+        use crate::models::PrivacyLevel;
+        use crate::privacy::{PrivacyConfig, PrivacyEngine};
+
+        let headers = vec![
+            "gl_account".to_string(),
+            "description".to_string(),
+            "debit".to_string(),
+            "credit".to_string(),
+        ];
+
+        let columns = vec![
+            // gl_account column
+            vec![
+                "1100".to_string(),
+                "1100".to_string(),
+                "2000".to_string(),
+                "4000".to_string(),
+                "4000".to_string(),
+                "4000".to_string(),
+                "5000".to_string(),
+                "5000".to_string(),
+            ],
+            // description column
+            vec![
+                "Cash receipt".to_string(),
+                "Cash receipt".to_string(),
+                "AP payment".to_string(),
+                "Sales revenue".to_string(),
+                "Sales revenue".to_string(),
+                "Sales revenue".to_string(),
+                "COGS".to_string(),
+                "COGS".to_string(),
+            ],
+            // debit column
+            vec![
+                "1000.00".to_string(),
+                "2000.00".to_string(),
+                "0".to_string(),
+                "0".to_string(),
+                "0".to_string(),
+                "0".to_string(),
+                "500.00".to_string(),
+                "800.00".to_string(),
+            ],
+            // credit column
+            vec![
+                "0".to_string(),
+                "0".to_string(),
+                "3000.00".to_string(),
+                "1500.00".to_string(),
+                "2500.00".to_string(),
+                "4000.00".to_string(),
+                "0".to_string(),
+                "0".to_string(),
+            ],
+        ];
+
+        let config = ExtractionConfig::default();
+        let mut privacy = PrivacyEngine::new(PrivacyConfig::from_level(PrivacyLevel::Minimal));
+
+        let stats = extract_column_stats(&headers, &columns, "test", &config, &mut privacy)
+            .expect("extraction should succeed");
+
+        // Should have account class stats
+        assert!(
+            !stats.account_class_stats.is_empty(),
+            "account_class_stats should not be empty"
+        );
+
+        // Collect class patterns for verification
+        let patterns: Vec<&str> = stats
+            .account_class_stats
+            .iter()
+            .map(|s| s.class_pattern.as_str())
+            .collect();
+
+        assert!(patterns.contains(&"1XXX"), "Should contain Assets (1XXX)");
+        assert!(patterns.contains(&"2XXX"), "Should contain Liabilities (2XXX)");
+        assert!(patterns.contains(&"4XXX"), "Should contain Revenue (4XXX)");
+        assert!(patterns.contains(&"5XXX"), "Should contain COGS (5XXX)");
+
+        // Verify row counts
+        for class in &stats.account_class_stats {
+            match class.class_pattern.as_str() {
+                "1XXX" => {
+                    assert_eq!(class.row_count, 2, "Assets should have 2 rows");
+                    assert_eq!(class.class_label, "Assets");
+                    assert!(class.numeric.is_some(), "Assets should have numeric stats");
+                }
+                "2XXX" => {
+                    assert_eq!(class.row_count, 1, "Liabilities should have 1 row");
+                    assert_eq!(class.class_label, "Liabilities");
+                }
+                "4XXX" => {
+                    assert_eq!(class.row_count, 3, "Revenue should have 3 rows");
+                    assert_eq!(class.class_label, "Revenue");
+                    assert!(class.numeric.is_some(), "Revenue should have numeric stats");
+                }
+                "5XXX" => {
+                    assert_eq!(class.row_count, 2, "COGS should have 2 rows");
+                    assert_eq!(class.class_label, "COGS");
+                    assert!(class.numeric.is_some(), "COGS should have numeric stats");
+                }
+                _ => panic!("Unexpected class pattern: {}", class.class_pattern),
+            }
+        }
+    }
+
+    #[test]
+    fn test_extract_column_stats_without_account_column() {
+        use crate::models::PrivacyLevel;
+        use crate::privacy::{PrivacyConfig, PrivacyEngine};
+
+        let headers = vec![
+            "id".to_string(),
+            "name".to_string(),
+            "value".to_string(),
+        ];
+
+        let columns = vec![
+            vec!["1".to_string(), "2".to_string(), "3".to_string()],
+            vec!["Alice".to_string(), "Bob".to_string(), "Charlie".to_string()],
+            vec!["100".to_string(), "200".to_string(), "300".to_string()],
+        ];
+
+        let config = ExtractionConfig::default();
+        let mut privacy = PrivacyEngine::new(PrivacyConfig::from_level(PrivacyLevel::Minimal));
+
+        let stats = extract_column_stats(&headers, &columns, "test", &config, &mut privacy)
+            .expect("extraction should succeed");
+
+        // No account column detected, so no account class stats
+        assert!(
+            stats.account_class_stats.is_empty(),
+            "account_class_stats should be empty when no account column is detected"
+        );
     }
 }

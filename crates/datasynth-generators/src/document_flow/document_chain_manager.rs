@@ -289,6 +289,13 @@ impl DocumentChainManager {
                     references.push(ref_doc.clone());
                 }
             }
+
+            // Remainder payment references
+            for payment in &chain.remainder_payments {
+                for ref_doc in &payment.header.document_references {
+                    references.push(ref_doc.clone());
+                }
+            }
         }
 
         // Collect O2C references
@@ -314,6 +321,13 @@ impl DocumentChainManager {
 
             // Receipt references
             if let Some(receipt) = &chain.customer_receipt {
+                for ref_doc in &receipt.header.document_references {
+                    references.push(ref_doc.clone());
+                }
+            }
+
+            // Remainder receipt references
+            for receipt in &chain.remainder_receipts {
                 for ref_doc in &receipt.header.document_references {
                     references.push(ref_doc.clone());
                 }
@@ -351,6 +365,8 @@ impl DocumentChainManager {
                 stats.ap_payments += 1;
             }
 
+            stats.ap_payments += chain.remainder_payments.len();
+
             if chain.is_complete {
                 stats.p2p_completed += 1;
             }
@@ -373,6 +389,8 @@ impl DocumentChainManager {
             if chain.customer_receipt.is_some() {
                 stats.ar_receipts += 1;
             }
+
+            stats.ar_receipts += chain.remainder_receipts.len();
 
             if chain.is_complete {
                 stats.o2c_completed += 1;
@@ -419,6 +437,11 @@ pub fn extract_je_sources(flows: &GeneratedDocumentFlows) -> JournalEntrySources
         if let Some(payment) = &chain.payment {
             sources.ap_payments.push(payment.clone());
         }
+
+        // Remainder payments also create JEs: DR AP, CR Bank
+        for payment in &chain.remainder_payments {
+            sources.ap_payments.push(payment.clone());
+        }
     }
 
     for chain in &flows.o2c_chains {
@@ -434,6 +457,11 @@ pub fn extract_je_sources(flows: &GeneratedDocumentFlows) -> JournalEntrySources
 
         // Receipt creates JE: DR Bank, CR AR
         if let Some(receipt) = &chain.customer_receipt {
+            sources.ar_receipts.push(receipt.clone());
+        }
+
+        // Remainder receipts also create JEs: DR Bank, CR AR
+        for receipt in &chain.remainder_receipts {
             sources.ar_receipts.push(receipt.clone());
         }
     }
