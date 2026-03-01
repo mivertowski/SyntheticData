@@ -43,6 +43,9 @@ pub mod esg;
 pub mod hr;
 pub mod kpi_generator;
 pub mod manufacturing;
+pub mod drift_event_generator;
+pub mod organizational_event_generator;
+pub mod process_evolution_generator;
 pub mod project_accounting;
 pub mod sales_quote_generator;
 pub mod sourcing;
@@ -112,7 +115,10 @@ pub use standards::*;
 
 // Enterprise process chain generators
 pub use budget_generator::*;
+pub use drift_event_generator::*;
 pub use kpi_generator::*;
+pub use organizational_event_generator::*;
+pub use process_evolution_generator::*;
 pub use sales_quote_generator::*;
 pub use tax::*;
 
