@@ -49,7 +49,7 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `BenfordSampler` | First-digit distribution following P(d) = log10(1 + 1/d) |
 | `FraudAmountGenerator` | Suspicious amount patterns |
 | `IndustrySeasonality` | Industry-specific volume patterns |
-| `HolidayCalendar` | Regional holidays for US, DE, GB, CN, JP, IN; `from_country_pack()` resolves 5 holiday types from JSON packs |
+| `HolidayCalendar` | Regional holidays for US, DE, GB, FR, IT, ES, CA, CN, JP, IN; `from_country_pack()` resolves 5 holiday types from JSON packs |
 
 ### Country Pack System (`country/`)
 
@@ -62,7 +62,7 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `lunar.rs` | Lunar calendar algorithms (Chinese New Year, Diwali, Eid al-Fitr, Chuseok, etc.) |
 | `error.rs` | `CountryPackError` — invalid codes, parse errors, schema version mismatches |
 
-Built-in packs: `_default.json`, `US.json`, `DE.json`, `GB.json`. External packs loaded from `country_packs.external_dir`.
+Built-in packs: `_default.json`, `US.json`, `DE.json`, `GB.json`, `FR.json`, `JP.json`, `CN.json`, `IN.json`, `IT.json`, `ES.json`, `CA.json` (10 countries). External packs loaded from `country_packs.external_dir`.
 
 ### Accounting Framework Support
 

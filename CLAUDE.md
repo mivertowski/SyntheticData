@@ -240,7 +240,7 @@ audit_standards:
 | period_end.rs | PeriodEndDynamics (decay curves: exponential, extended_crunch) |
 | processing_lag.rs | ProcessingLagCalculator (event-to-posting lag modeling) |
 | timezone.rs | TimezoneHandler (multi-region timezone handling) |
-| holidays.rs | HolidayCalendar (11 regions: US, DE, GB, CN, JP, IN, BR, MX, AU, SG, KR) |
+| holidays.rs | HolidayCalendar (15 regions: US, DE, GB, FR, IT, ES, CA, CN, JP, IN, BR, MX, AU, SG, KR) |
 | fraud.rs | FraudAmountGenerator |
 
 ### Distributions Configuration

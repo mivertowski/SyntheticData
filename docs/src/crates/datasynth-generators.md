@@ -170,6 +170,15 @@ Accounting and audit standards generators.
 |-----------|-------------|
 | `revenue_recognition_generator` | ASC 606/IFRS 15 customer contracts with performance obligations |
 | `impairment_generator` | Asset impairment tests with recoverable amount calculations |
+| `confirmation_generator` | ISA 505 external confirmations (AR/AP/Bank/Legal) with response modeling (v0.9.5) |
+
+### Organizational & Process Generators -- v0.9.5
+
+| Generator | Description |
+|-----------|-------------|
+| `organizational_event_generator` | Acquisition, Divestiture, Reorganization, LeadershipChange, WorkforceReduction, Merger events with multi-phase integration |
+| `process_evolution_generator` | S-curve automation rollout, workflow type transitions, policy/control changes |
+| `drift_event_generator` | Meta-generator producing ML ground-truth drift labels from organizational and process events |
 
 ### Period Close Additions -- v0.6.0
 

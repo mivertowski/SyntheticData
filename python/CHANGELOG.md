@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.5.5 (2026-03-01)
+
+### Added
+
+- Matches Rust v0.9.5 codebase quality audit release
+- 7 new country packs: FR, JP, CN, IN, IT, ES, CA (10 total built-in packs)
+- 4 new holiday calendars for FR, IT, ES, CA regions
+- Progressive tax bracket computation using country pack data
+- Credit memo (ARCreditMemo) generation in O2C document flow via `returns_rate`
+- 4 new generators: OrganizationalEvent, ProcessEvolution, DriftEvent, ISA 505 Confirmation
+- 39 new integration tests across eval, output, config, and banking crates
+
+### Changed
+
+- Mutex poisoning recovery in streaming channel (graceful recovery after thread panics)
+- NetSuite CSV export: eliminated heap allocations in hot path
+- Orchestrator: eliminated expensive clones via Arc wrapping and ownership transfer
+
 ## 1.5.4 (2026-03-01)
 
 ### Added

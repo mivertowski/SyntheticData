@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-03-01
+
+### Fixed
+
+- **Mutex poisoning recovery in streaming channel** (`datasynth-core`)
+  - All 11 `.expect()` calls on `Mutex::lock()` and `Condvar` waits replaced with `.unwrap_or_else(|p| p.into_inner())` for graceful recovery after thread panics
+
+### Added
+
+- **7 new country packs** (`datasynth-core`)
+  - France (FR): EUR, PCG accounting, SIREN/SIRET, 11 national holidays + Easter-relative
+  - Japan (JP): JPY (0 decimals), April–March fiscal year, KK/GK legal forms, bonus months
+  - China (CN): CNY, CNAPS banking, WFOE/JV legal forms, 5-fund social insurance
+  - India (IN): INR with [3,2] number grouping, April–March fiscal, IFSC/UPI banking, GST/TDS
+  - Italy (IT): EUR, IRES 24% + IRAP 3.9%, IVA 22%, 13th+14th month payroll, FatturaPA
+  - Spain (ES): EUR, IS 25%, IVA 21%, 14 payments, SII reporting
+  - Canada (CA): CAD, federal + provincial tax, GST/HST, CPP/EI, bilingual EN/FR
+
+- **4 new holiday calendars with Region enum extension** (`datasynth-core`)
+  - `FR`, `IT`, `ES`, `CA` variants added to `Region` enum
+  - France: 11 national holidays + Easter Monday + Whit Monday
+  - Italy: 12 holidays including Ferragosto, St. Stephen's Day
+  - Spain: 10 national holidays including Epiphany, Hispanic Day
+  - Canada: 10 holidays including Victoria Day, Canada Day, Thanksgiving (2nd Mon Oct)
+
+- **Progressive tax bracket computation** (`datasynth-generators`)
+  - `compute_progressive_tax()` helper iterates brackets in ascending order
+  - Country pack income tax brackets wired into payroll generation
+  - High/low earners pay different effective rates per country tax tables
+
+- **Credit memo wiring in O2C flow** (`datasynth-generators`)
+  - `returns_rate` config now generates `ARCreditMemo` documents in O2C chains
+  - Credit memos reference parent invoice with random reason (Return, Damaged, QualityIssue, PriceError)
+  - Credit amount bounded to 10–100% of invoice amount
+
+- **4 new generators** (`datasynth-generators`)
+  - `OrganizationalEventGenerator`: Acquisition, Divestiture, Reorganization, LeadershipChange, WorkforceReduction, Merger events with multi-phase integration
+  - `ProcessEvolutionGenerator`: S-curve automation rollout, workflow type transitions, policy/control changes
+  - `DriftEventGenerator`: Meta-generator producing ML ground-truth drift labels from organizational and process events (Statistical, Temporal, Behavioral, Market drift types)
+  - `ConfirmationGenerator`: ISA 505 external confirmations (AR 40%, AP 30%, Bank 20%, Legal 10%) with positive/negative response modeling and reconciliation
+
+- **39 new integration tests** (`datasynth-eval`, `datasynth-output`, `datasynth-config`, `datasynth-banking`)
+  - `datasynth-eval`: 17 tests for Benford analysis, balance sheet coherence, and comprehensive evaluation
+  - `datasynth-output`: 8 tests for CSV/JSON write-readback, Unicode, decimal precision
+  - `datasynth-config`: 7 tests for preset loading, validation, and config inheritance
+  - `datasynth-banking`: 7 tests for KYC/AML fraud typology behavior (structuring, layering, funnel, round-tripping)
+
+### Changed
+
+- **NetSuite CSV export heap allocation elimination** (`datasynth-output`)
+  - `Option<String>` patterns replaced with `.as_deref().unwrap_or("")` to avoid temporary `String` allocations
+  - `HashMap::get()` patterns replaced with `.map(|s| s.as_str()).unwrap_or("")`
+
+- **Hot path clone elimination in orchestrator** (`datasynth-runtime`)
+  - `journal.entries.clone()` replaced with `std::mem::take()` ownership transfer
+  - Large struct clones replaced with `Arc` wrapping for shared ownership
+
 ## [0.9.4] - 2026-03-01
 
 ### Added
