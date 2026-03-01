@@ -92,7 +92,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // Check if buffer is full
         if buffer.len() >= self.capacity {
@@ -106,7 +106,7 @@ impl<T> BoundedChannel<T> {
                         .wait_while(buffer, |b| {
                             b.len() >= self.capacity && !self.inner.closed.load(Ordering::SeqCst)
                         })
-                        .expect("BoundedChannel condvar wait: mutex was poisoned");
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
 
                     if self.inner.closed.load(Ordering::SeqCst) {
                         return Err(SynthError::ChannelClosed);
@@ -133,7 +133,7 @@ impl<T> BoundedChannel<T> {
                                 b.len() >= self.capacity + max_overflow
                                     && !self.inner.closed.load(Ordering::SeqCst)
                             })
-                            .expect("BoundedChannel condvar wait: mutex was poisoned");
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
                         if self.inner.closed.load(Ordering::SeqCst) {
                             return Err(SynthError::ChannelClosed);
@@ -178,7 +178,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // Check if buffer is full
         while buffer.len() >= self.capacity {
@@ -209,7 +209,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_full
                 .wait_timeout(buffer, remaining)
-                .expect("BoundedChannel condvar wait: mutex was poisoned");
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
             buffer = new_buffer;
 
             if wait_result.timed_out() && buffer.len() >= self.capacity {
@@ -246,7 +246,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         while buffer.is_empty() {
             if self.inner.closed.load(Ordering::SeqCst) {
@@ -257,7 +257,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_empty
                 .wait(buffer)
-                .expect("BoundedChannel condvar wait: mutex was poisoned");
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
         }
 
         let item = buffer.pop_front();
@@ -277,7 +277,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         while buffer.is_empty() {
             if self.inner.closed.load(Ordering::SeqCst) {
@@ -293,7 +293,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_empty
                 .wait_timeout(buffer, remaining)
-                .expect("BoundedChannel condvar wait: mutex was poisoned");
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
             buffer = new_buffer;
 
             if wait_result.timed_out() && buffer.is_empty() {
@@ -317,7 +317,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let item = buffer.pop_front();
         if item.is_some() {
             self.inner.items_received.fetch_add(1, Ordering::Relaxed);
@@ -344,7 +344,7 @@ impl<T> BoundedChannel<T> {
         self.inner
             .buffer
             .lock()
-            .expect("BoundedChannel mutex poisoned: a thread panicked while holding the lock")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .len()
     }
 
@@ -578,5 +578,34 @@ mod tests {
         assert_eq!(stats.items_sent, 2);
         assert_eq!(stats.items_received, 1);
         assert_eq!(stats.buffer_size, 1);
+    }
+
+    #[test]
+    fn test_channel_recovers_from_poisoned_mutex() {
+        let channel: BoundedChannel<i32> = BoundedChannel::new(10, BackpressureStrategy::Block);
+        let poisoner = channel.clone();
+
+        // Spawn a thread that acquires the lock and then panics, poisoning the mutex
+        let handle = thread::spawn(move || {
+            let _guard = poisoner
+                .inner
+                .buffer
+                .lock()
+                .unwrap_or_else(|p| p.into_inner());
+            panic!("intentional panic to poison mutex");
+        });
+
+        // Wait for the panicking thread to finish
+        let _ = handle.join();
+
+        // The mutex is now poisoned — verify that send/recv still work
+        assert!(channel.send(42).is_ok());
+        assert_eq!(channel.recv(), Some(42));
+
+        // Also verify try_recv and stats work
+        assert_eq!(channel.try_recv(), None);
+        let stats = channel.stats();
+        assert_eq!(stats.items_sent, 1);
+        assert_eq!(stats.items_received, 1);
     }
 }
