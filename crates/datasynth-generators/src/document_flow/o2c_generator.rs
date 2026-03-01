@@ -10,8 +10,8 @@ use datasynth_core::models::{
         DocumentType, Payment, PaymentMethod, ReferenceType, SalesOrder, SalesOrderItem,
     },
     subledger::ar::{
-        OnAccountPayment, OnAccountReason, PaymentCorrection, PaymentCorrectionType, ShortPayment,
-        ShortPaymentReasonCode,
+        ARCreditMemo, ARCreditMemoLine, CreditMemoReason, OnAccountPayment, OnAccountReason,
+        PaymentCorrection, PaymentCorrectionType, ShortPayment, ShortPaymentReasonCode,
     },
     CreditRating, Customer, CustomerPool, Material, MaterialPool, PaymentTerms,
 };
@@ -112,6 +112,8 @@ pub struct O2CDocumentChain {
     pub customer_invoice: Option<CustomerInvoice>,
     /// Customer Receipt (Payment)
     pub customer_receipt: Option<Payment>,
+    /// Credit memo (if return or adjustment)
+    pub credit_memo: Option<ARCreditMemo>,
     /// Chain completion status
     pub is_complete: bool,
     /// Credit check passed
@@ -160,6 +162,7 @@ pub struct O2CGenerator {
     dlv_counter: usize,
     ci_counter: usize,
     rec_counter: usize,
+    credit_memo_counter: usize,
     short_payment_counter: usize,
     on_account_counter: usize,
     correction_counter: usize,
@@ -182,6 +185,7 @@ impl O2CGenerator {
             dlv_counter: 0,
             ci_counter: 0,
             rec_counter: 0,
+            credit_memo_counter: 0,
             short_payment_counter: 0,
             on_account_counter: 0,
             correction_counter: 0,
@@ -282,6 +286,7 @@ impl O2CGenerator {
                 deliveries: Vec::new(),
                 customer_invoice: None,
                 customer_receipt: None,
+                credit_memo: None,
                 is_complete: false,
                 credit_check_passed: false,
                 is_return: false,
@@ -482,17 +487,110 @@ impl O2CGenerator {
         let is_complete =
             customer_receipt.is_some() && !has_correction && (!has_partial || has_remainder);
 
+        // Generate credit memo for returns based on returns_rate
+        let credit_memo = if let Some(ref invoice) = customer_invoice {
+            if self.rng.random_bool(self.config.returns_rate) {
+                let return_days = self.rng.random_range(5u32..=30);
+                let return_date =
+                    invoice.header.document_date + chrono::Duration::days(return_days as i64);
+                Some(self.generate_return_credit_memo(
+                    invoice,
+                    customer,
+                    company_code,
+                    return_date,
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        let is_return = credit_memo.is_some();
+
         O2CDocumentChain {
             sales_order: so,
             deliveries,
             customer_invoice,
             customer_receipt,
+            credit_memo,
             is_complete,
             credit_check_passed: true,
-            is_return: false,
+            is_return,
             payment_events,
             remainder_receipts,
         }
+    }
+
+    /// Generate an AR credit memo for a return against a customer invoice.
+    fn generate_return_credit_memo(
+        &mut self,
+        invoice: &CustomerInvoice,
+        customer: &Customer,
+        company_code: &str,
+        return_date: NaiveDate,
+    ) -> ARCreditMemo {
+        self.credit_memo_counter += 1;
+        let cm_number = format!("CM-{}-{:010}", company_code, self.credit_memo_counter);
+
+        let reason = match self.rng.random_range(0u8..=3) {
+            0 => CreditMemoReason::Return,
+            1 => CreditMemoReason::Damaged,
+            2 => CreditMemoReason::QualityIssue,
+            _ => CreditMemoReason::PriceError,
+        };
+
+        let reason_desc = match reason {
+            CreditMemoReason::Return => "Goods returned by customer",
+            CreditMemoReason::Damaged => "Goods damaged in transit",
+            CreditMemoReason::QualityIssue => "Quality issue reported",
+            CreditMemoReason::PriceError => "Invoice price correction",
+            _ => "Credit adjustment",
+        };
+
+        let currency = invoice.header.currency.clone();
+        let mut memo = ARCreditMemo::for_invoice(
+            cm_number,
+            company_code.to_string(),
+            customer.customer_id.clone(),
+            customer.name.clone(),
+            return_date,
+            invoice.header.document_id.clone(),
+            reason,
+            reason_desc.to_string(),
+            currency.clone(),
+        );
+
+        // Credit 10-100% of invoice amount
+        let credit_pct = self.rng.random_range(0.10f64..=1.0);
+        let credit_amount = (invoice.total_gross_amount
+            * Decimal::from_f64_retain(credit_pct).unwrap_or(Decimal::ONE))
+        .round_dp(2);
+
+        memo.add_line(ARCreditMemoLine {
+            line_number: 1,
+            material_id: None,
+            description: format!("{:?} - {}", reason, reason_desc),
+            quantity: Decimal::ONE,
+            unit: "EA".to_string(),
+            unit_price: credit_amount,
+            net_amount: credit_amount,
+            tax_code: None,
+            tax_rate: Decimal::ZERO,
+            tax_amount: Decimal::ZERO,
+            gross_amount: credit_amount,
+            revenue_account: "4000".to_string(),
+            reference_invoice_line: Some(1),
+            cost_center: None,
+            profit_center: None,
+        });
+
+        // Auto-approve if under threshold (e.g., 10,000)
+        let threshold = Decimal::from(10_000);
+        if !memo.requires_approval(threshold) {
+            memo.approve("SYSTEM".to_string(), return_date);
+        }
+
+        memo
     }
 
     /// Generate a sales order.
@@ -1927,5 +2025,117 @@ mod tests {
             chain.remainder_receipts.is_empty(),
             "Non-partial payment chains should have empty remainder_receipts"
         );
+    }
+
+    #[test]
+    fn test_o2c_returns_rate_generates_credit_memos() {
+        let mut config = O2CGeneratorConfig::default();
+        config.returns_rate = 1.0; // Force all chains to have returns
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        assert!(chain.credit_check_passed);
+        assert!(chain.is_return);
+        assert!(chain.credit_memo.is_some());
+    }
+
+    #[test]
+    fn test_credit_memo_references_invoice() {
+        let mut config = O2CGeneratorConfig::default();
+        config.returns_rate = 1.0;
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        let chain = gen.generate_chain(
+            "1000",
+            &customer,
+            &material_refs,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            2024,
+            1,
+            "JSMITH",
+        );
+
+        let memo = chain.credit_memo.as_ref().unwrap();
+        let invoice = chain.customer_invoice.as_ref().unwrap();
+        assert_eq!(
+            memo.reference_invoice.as_deref(),
+            Some(invoice.header.document_id.as_str())
+        );
+    }
+
+    #[test]
+    fn test_credit_memo_amount_bounded() {
+        let mut config = O2CGeneratorConfig::default();
+        config.returns_rate = 1.0;
+        let mut gen = O2CGenerator::with_config(42, config);
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        for seed in 0..10 {
+            let mut gen = O2CGenerator::with_config(seed, {
+                let mut c = O2CGeneratorConfig::default();
+                c.returns_rate = 1.0;
+                c
+            });
+            let chain = gen.generate_chain(
+                "1000",
+                &customer,
+                &material_refs,
+                NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+                2024,
+                1,
+                "JSMITH",
+            );
+            if let (Some(memo), Some(invoice)) = (&chain.credit_memo, &chain.customer_invoice) {
+                assert!(
+                    memo.gross_amount.document_amount <= invoice.total_gross_amount,
+                    "Credit memo gross {:?} exceeds invoice gross {}",
+                    memo.gross_amount.document_amount,
+                    invoice.total_gross_amount
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_zero_returns_rate() {
+        let customer = create_test_customer();
+        let materials = create_test_materials();
+        let material_refs: Vec<&Material> = materials.iter().collect();
+
+        for seed in 0..20 {
+            let mut gen = O2CGenerator::with_config(seed, {
+                let mut c = O2CGeneratorConfig::default();
+                c.returns_rate = 0.0;
+                c
+            });
+            let chain = gen.generate_chain(
+                "1000",
+                &customer,
+                &material_refs,
+                NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+                2024,
+                1,
+                "JSMITH",
+            );
+            assert!(chain.credit_memo.is_none(), "No credit memos with returns_rate=0");
+            assert!(!chain.is_return);
+        }
     }
 }
