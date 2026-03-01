@@ -1,0 +1,447 @@
+{
+  "schema_version": "1.0",
+  "country_code": "ES",
+  "country_name": "Spain",
+  "region": "EMEA",
+
+  "locale": {
+    "language_code": "es",
+    "language_name": "Spanish",
+    "default_currency": "EUR",
+    "currency_symbol": "€",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "DD/MM/YYYY",
+      "long": "D de MMMM de YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Europe/Madrid",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "spanish",
+        "weight": 0.85,
+        "male_first_names": [
+          "Antonio", "Manuel", "José", "Francisco", "David", "Juan", "Carlos",
+          "Jesús", "Javier", "Daniel", "Miguel", "Rafael", "Pedro", "Ángel",
+          "Alejandro", "Fernando", "Luis", "Pablo", "Sergio", "Jorge", "Alberto",
+          "Andrés", "Ramón", "Enrique", "Vicente", "Diego", "Adrián", "Álvaro",
+          "Raúl", "Rubén", "Iván", "Óscar", "Marcos", "Guillermo", "Salvador",
+          "Eduardo", "Roberto", "Víctor", "Emilio", "Joaquín", "Ricardo", "Tomás",
+          "Gonzalo", "Hugo", "Mario", "Ignacio", "Jaime", "Héctor", "Santiago",
+          "Rodrigo"
+        ],
+        "female_first_names": [
+          "María", "Carmen", "Ana", "Isabel", "Laura", "Cristina", "Marta",
+          "Lucía", "Elena", "Pilar", "Rosa", "Sara", "Paula", "Raquel",
+          "Teresa", "Beatriz", "Silvia", "Patricia", "Nuria", "Sonia",
+          "Andrea", "Irene", "Alba", "Eva", "Inés", "Sofía", "Clara",
+          "Natalia", "Marina", "Alicia", "Rocío", "Claudia", "Julia",
+          "Verónica", "Susana", "Lorena", "Montserrat", "Dolores", "Amparo",
+          "Consuelo", "Mercedes", "Francisca", "Inmaculada", "Concepción",
+          "Victoria", "Josefa", "Mónica", "Sandra", "Esther", "Noelia"
+        ],
+        "last_names": [
+          "García", "Rodríguez", "Martínez", "López", "González", "Hernández",
+          "Pérez", "Sánchez", "Ramírez", "Torres", "Flores", "Rivera", "Gómez",
+          "Díaz", "Reyes", "Moreno", "Muñoz", "Álvarez", "Romero", "Ruiz",
+          "Jiménez", "Navarro", "Domínguez", "Vázquez", "Ramos", "Gil", "Serrano",
+          "Blanco", "Molina", "Morales", "Suárez", "Ortega", "Delgado", "Castro",
+          "Ortiz", "Rubio", "Marín", "Sanz", "Iglesias", "Nuñez", "Medina",
+          "Garrido", "Cortés", "Castillo", "Santos", "Lozano", "Guerrero",
+          "Cano", "Prieto", "Méndez"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Sr.", "D."], "female": ["Sra.", "Dña."] },
+        "academic_titles": ["Dr.", "Prof.", "Ing.", "Ldo."]
+      },
+      {
+        "culture_id": "latin_american_spanish",
+        "weight": 0.15,
+        "male_first_names": [
+          "Carlos", "Jorge", "Luis", "Andrés", "Diego", "Miguel",
+          "Alejandro", "Ricardo", "Fernando", "Eduardo"
+        ],
+        "female_first_names": [
+          "Valentina", "Camila", "Daniela", "Paola", "Gabriela",
+          "Mariana", "Alejandra", "Catalina", "Fernanda", "Natalia"
+        ],
+        "last_names": [
+          "Morales", "Vargas", "Castillo", "Rojas", "Herrera",
+          "Mendoza", "Aguilar", "Silva", "Ríos", "Peña"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Sr."], "female": ["Sra."] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.es", "empresa.es", "sociedad.es", "ejemplo.es"],
+    "username_patterns": ["{first_name}.{last_name}", "{first_initial}{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "Año Nuevo", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Epifanía del Señor", "name_en": "Epiphany", "month": 1, "day": 6, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Fiesta del Trabajo", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Asunción de la Virgen", "name_en": "Assumption of Mary", "month": 8, "day": 15, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Fiesta Nacional de España", "name_en": "National Day of Spain", "month": 10, "day": 12, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Todos los Santos", "name_en": "All Saints' Day", "month": 11, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Día de la Constitución", "name_en": "Constitution Day", "month": 12, "day": 6, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Inmaculada Concepción", "name_en": "Immaculate Conception", "month": 12, "day": 8, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Navidad", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [
+      { "name": "Viernes Santo", "name_en": "Good Friday", "offset_days": -2, "activity_multiplier": 0.02 }
+    ],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Navidades",
+        "name_en": "Christmas Season",
+        "start": { "month": 12, "day": 24 },
+        "end": { "month": 12, "day": 26 },
+        "activity_multiplier": 0.02,
+        "description": "Extended Christmas holiday period"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.25,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.25,
+      "small_business_threshold": 1000000
+    },
+    "vat": {
+      "standard_rate": 0.21,
+      "reduced_rates": [
+        { "rate": 0.10, "label": "reduced", "applies_to": ["food", "transport", "hotels", "renovation"] },
+        { "rate": 0.04, "label": "super_reduced", "applies_to": ["bread", "milk", "medicines", "books"] }
+      ],
+      "zero_rated": ["exports", "intra_eu_supplies"],
+      "exempt": ["financial_services", "insurance", "healthcare", "education"],
+      "registration_threshold": null,
+      "filing_frequency": "quarterly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.19,
+      "dividends_foreign_default": 0.19,
+      "interest": 0.19,
+      "royalties": 0.24,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 12450, "rate": 0.19 },
+        { "up_to": 20200, "rate": 0.24 },
+        { "up_to": 35200, "rate": 0.30 },
+        { "up_to": 60000, "rate": 0.37 },
+        { "up_to": 300000, "rate": 0.45 },
+        { "above": 300000, "rate": 0.47 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.047, "employer_rate": 0.236, "ceiling_annual": 56844 },
+        "health": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null },
+        "unemployment": { "employee_rate": 0.0155, "employer_rate": 0.055, "ceiling_annual": 56844 },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": [
+      { "code": "CAT", "name": "Cataluña", "rate": 0.0, "tax_type": "regional_supplement" },
+      { "code": "MAD", "name": "Madrid", "rate": 0.0, "tax_type": "regional_supplement" },
+      { "code": "AND", "name": "Andalucía", "rate": 0.0, "tax_type": "regional_supplement" },
+      { "code": "PVA", "name": "País Vasco", "rate": 0.0, "tax_type": "foral_regime" }
+    ]
+  },
+
+  "address": {
+    "format_template": "{street}, {building_number}\n{postal_code} {city} ({state})",
+    "components": {
+      "street_names": [
+        "Calle Mayor", "Gran Vía", "Paseo de la Castellana", "Avenida de la Constitución",
+        "Calle de Alcalá", "Rambla de Catalunya", "Calle de Serrano", "Paseo de Gracia",
+        "Avenida de Andalucía", "Calle del Príncipe"
+      ],
+      "city_names": [
+        "Madrid", "Barcelona", "Valencia", "Sevilla", "Bilbao", "Málaga",
+        "Zaragoza", "Murcia", "Palma de Mallorca", "Las Palmas"
+      ],
+      "state_names": [
+        "Madrid", "Cataluña", "Valencia", "Andalucía", "País Vasco",
+        "Galicia", "Aragón", "Castilla y León"
+      ],
+      "state_codes": ["MAD", "CAT", "VAL", "AND", "PVA", "GAL", "ARA", "CYL"]
+    },
+    "postal_code": {
+      "format": "NNNNN",
+      "regex": "^[0-9]{5}$",
+      "ranges": [{ "from": "01000", "to": "52999" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 300]
+    },
+    "country_calling_code": "+34"
+  },
+
+  "phone": {
+    "country_calling_code": "+34",
+    "formats": {
+      "landline": "+34-9{n2}-{n3}-{n3}",
+      "mobile": "+34-6{n2}-{n3}-{n3}",
+      "freephone": "+34-900-{n3}-{n3}"
+    },
+    "area_codes": ["91", "93", "96", "95", "94", "98", "976", "968", "971", "928"],
+    "subscriber_length": { "min": 9, "max": 9 },
+    "display_format": "{n3} {n3} {n3}"
+  },
+
+  "banking": {
+    "account_format": "IBAN",
+    "iban": {
+      "country_prefix": "ES",
+      "length": 24,
+      "bban_structure": "{entity_code:4}{office_code:4}{check_digits:2}{account_number:10}",
+      "check_digit_algorithm": "mod97"
+    },
+    "domestic_format": {
+      "name": "CCC",
+      "format": "{entity:4} {office:4} {dc:2} {account:10}"
+    },
+    "bank_names": [
+      "Banco Santander", "BBVA", "CaixaBank",
+      "Banco Sabadell", "Bankinter", "Unicaja Banco"
+    ],
+    "swift_prefix": "ES",
+    "payment_systems": ["SEPA", "TARGET2"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "14:00",
+      "direct_debit_lead_days": 5
+    },
+    "kyc_requirements": {
+      "id_document_types": ["DNI", "Pasaporte", "NIE"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "FA-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["nif", "cif", "serie", "numero_factura"],
+      "retention_years": 6,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "Facturae"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [30, 60, 90],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.08, "base_rate_reference": "ECB" }
+    },
+    "approval_thresholds": {
+      "currency": "EUR",
+      "levels": [
+        { "up_to": 5000, "approver": "jefe_equipo" },
+        { "up_to": 25000, "approver": "director_departamento" },
+        { "up_to": 100000, "approver": "director_general" },
+        { "above": 100000, "approver": "consejo_administracion" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "GDPR",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 5,
+        "financial_records_years": 6,
+        "tax_records_years": 4
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "SL", "name": "Sociedad Limitada", "name_en": "Limited Company", "weight": 0.45 },
+      { "code": "SA", "name": "Sociedad Anónima", "name_en": "Public Limited Company", "weight": 0.20 },
+      { "code": "SLU", "name": "Sociedad Limitada Unipersonal", "name_en": "Single-Member LLC", "weight": 0.15 },
+      { "code": "SC", "name": "Sociedad Colectiva", "name_en": "General Partnership", "weight": 0.05 },
+      { "code": "SAU", "name": "Sociedad Anónima Unipersonal", "name_en": "Single-Member PLC", "weight": 0.05 },
+      { "code": "Autónomo", "name": "Trabajador Autónomo", "name_en": "Self-Employed", "weight": 0.10 }
+    ],
+    "tax_id_format": {
+      "name": "NIF/CIF",
+      "format": "A NNNNNNNN C",
+      "regex": "^[A-Z][0-9]{7}[0-9A-Z]$"
+    },
+    "vat_id_format": {
+      "name": "NIF-IVA",
+      "prefix": "ES",
+      "format": "ES ANNNNNNNA",
+      "regex": "^ES[A-Z0-9][0-9]{7}[A-Z0-9]$"
+    },
+    "registration_authority": "Registro Mercantil",
+    "registration_format": "RM {province} T{NNNNN} F{NNN} S{N} H{NNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "PGC",
+    "chart_of_accounts": {
+      "standard": "PGC",
+      "numbering_length": 5,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "5" },
+        "liabilities": { "from": "1", "to": "1" },
+        "revenue": { "from": "7", "to": "7" },
+        "expenses": { "from": "6", "to": "6" },
+        "closing": { "from": "8", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Código de Comercio", "PGC", "Ley de Sociedades de Capital"],
+      "filing_requirements": [
+        { "name": "Cuentas Anuales", "name_en": "Annual Accounts", "deadline_months_after_ye": 7 },
+        { "name": "Impuesto de Sociedades", "name_en": "Corporate Tax Return", "deadline_months_after_ye": 7 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "EUR",
+    "statutory_deductions": [
+      { "code": "IRPF", "name": "Impuesto sobre la Renta", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "SS_CC", "name": "Contingencias Comunes", "name_en": "Common Contingencies", "type": "percentage", "rate": 0.047 },
+      { "code": "SS_DESEMP", "name": "Desempleo", "name_en": "Unemployment", "type": "percentage", "rate": 0.0155 },
+      { "code": "SS_FP", "name": "Formación Profesional", "name_en": "Training", "type": "percentage", "rate": 0.001 }
+    ],
+    "employer_contributions": [
+      { "code": "SS_CC_E", "name": "Contingencias Comunes (Empresa)", "name_en": "Common Contingencies (Employer)", "type": "percentage", "rate": 0.236 },
+      { "code": "SS_DESEMP_E", "name": "Desempleo (Empresa)", "name_en": "Unemployment (Employer)", "type": "percentage", "rate": 0.055 },
+      { "code": "SS_AT", "name": "Accidentes de Trabajo", "name_en": "Work Accidents", "type": "percentage", "rate": 0.015 },
+      { "code": "SS_FP_E", "name": "Formación Profesional (Empresa)", "name_en": "Training (Employer)", "type": "percentage", "rate": 0.006 },
+      { "code": "SS_FOGASA", "name": "FOGASA", "name_en": "Wage Guarantee Fund", "type": "percentage", "rate": 0.002 }
+    ],
+    "minimum_wage": { "hourly": 0, "currency": "EUR", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 9.0,
+      "statutory_annual_leave_days": 22,
+      "common_annual_leave_days": 22
+    },
+    "thirteenth_month": true,
+    "severance": {
+      "statutory": true,
+      "formula": "20_days_salary * years_of_service (max 12 months)"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} y {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Industrias", "Mecánica", "Herramientas", "Precisión", "Metalurgia"],
+      "services": ["Consultoría", "Servicios", "Logística"],
+      "technology": ["Sistemas", "Tecnologías", "Informática", "Soluciones"],
+      "supplies": ["Suministros", "Materiales", "Comercial"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Comercio", "Distribución", "Tiendas", "Venta"],
+      "enterprise": ["Grupo", "Holding", "Empresas"],
+      "public_sector": ["Ayuntamiento", "Diputación", "Organismo"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Chapa de acero", "Perfiles de aluminio", "Granulado plástico", "Hilo de cobre"],
+      "components": ["Caja de cambios", "Cilindro hidráulico", "Módulo de control", "Sensor"],
+      "finished_goods": ["Máquina herramienta", "Transportador", "Banco de pruebas"],
+      "consumables": ["Lubricante", "Abrasivo", "Juntas", "Tornillería"],
+      "office_supplies": ["Papel de impresora", "Tóner", "Mobiliario de oficina"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Unidad",
+      "kg": "Kilogramo",
+      "liter": "Litro",
+      "meter": "Metro",
+      "box": "Caja"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Pedido de Compra n.º {po_number} — {vendor_name}",
+        "Pedido marco según contrato {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Suministro {material} según especificación",
+        "Servicio de mantenimiento para {asset}",
+        "Consultoría {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Factura n.º {invoice_number}",
+        "Nota de crédito n.º {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "Asiento {doc_type} {doc_number}",
+        "Periodificación {period}",
+        "Cierre de período {period}"
+      ]
+    }
+  }
+}

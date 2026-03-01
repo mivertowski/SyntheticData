@@ -1,0 +1,454 @@
+{
+  "schema_version": "1.0",
+  "country_code": "IT",
+  "country_name": "Italy",
+  "region": "EMEA",
+
+  "locale": {
+    "language_code": "it",
+    "language_name": "Italian",
+    "default_currency": "EUR",
+    "currency_symbol": "€",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ",",
+      "thousands_separator": ".",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "DD/MM/YYYY",
+      "long": "D MMMM YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Europe/Rome",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "italian",
+        "weight": 0.90,
+        "male_first_names": [
+          "Marco", "Giuseppe", "Giovanni", "Antonio", "Francesco", "Alessandro",
+          "Andrea", "Luca", "Matteo", "Roberto", "Stefano", "Paolo", "Massimo",
+          "Davide", "Fabio", "Simone", "Claudio", "Sergio", "Riccardo", "Daniele",
+          "Lorenzo", "Leonardo", "Tommaso", "Gabriele", "Federico", "Vincenzo",
+          "Salvatore", "Angelo", "Enrico", "Gianluca", "Nicola", "Emanuele",
+          "Filippo", "Alberto", "Pietro", "Giorgio", "Luigi", "Carlo", "Bruno",
+          "Maurizio", "Enzo", "Gianfranco", "Mario", "Raffaele", "Dario",
+          "Giacomo", "Michele", "Edoardo", "Cristiano", "Valentino"
+        ],
+        "female_first_names": [
+          "Maria", "Anna", "Giulia", "Francesca", "Sara", "Laura", "Valentina",
+          "Chiara", "Alessandra", "Roberta", "Paola", "Silvia", "Elisa",
+          "Federica", "Monica", "Claudia", "Giorgia", "Martina", "Elena",
+          "Cristina", "Angela", "Rosa", "Teresa", "Simona", "Barbara",
+          "Daniela", "Ilaria", "Michela", "Serena", "Patrizia", "Luisa",
+          "Carla", "Giovanna", "Rita", "Antonella", "Isabella", "Veronica",
+          "Alice", "Sofia", "Aurora", "Beatrice", "Emma", "Giada", "Arianna",
+          "Marta", "Camilla", "Irene", "Caterina", "Margherita", "Lucia"
+        ],
+        "last_names": [
+          "Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo",
+          "Ricci", "Marino", "Greco", "Bruno", "Gallo", "Conti", "De Luca",
+          "Mancini", "Costa", "Giordano", "Rizzo", "Lombardi", "Moretti",
+          "Barbieri", "Fontana", "Santoro", "Mariani", "Rinaldi", "Caruso",
+          "Ferrara", "Galli", "Martini", "Leone", "Longo", "Gentile", "Martinelli",
+          "Vitale", "Lombardo", "Serra", "Coppola", "De Santis", "D'Angelo",
+          "Marchetti", "Parisi", "Villa", "Conte", "Ferraro", "Ferri", "Fabbri",
+          "Bianco", "Marini", "Grasso", "Valentini"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Sig."], "female": ["Sig.ra"] },
+        "academic_titles": ["Dott.", "Prof.", "Ing.", "Avv.", "Rag."]
+      },
+      {
+        "culture_id": "italian_immigrant",
+        "weight": 0.10,
+        "male_first_names": [
+          "Mohamed", "Alexandru", "Andrei", "Ion", "Vasile", "Abdul",
+          "Chen", "Wei", "Radu", "Gheorghe"
+        ],
+        "female_first_names": [
+          "Maria", "Ana", "Elena", "Fatima", "Amina", "Ioana",
+          "Cristina", "Daniela", "Lin", "Mei"
+        ],
+        "last_names": [
+          "Popa", "Ionescu", "Ahmed", "Hassan", "Chen", "Wang",
+          "Singh", "Ali", "Popescu", "Radu"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Sig."], "female": ["Sig.ra"] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.it", "azienda.it", "impresa.it", "esempio.it"],
+    "username_patterns": ["{first_name}.{last_name}", "{first_initial}{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "Capodanno", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Epifania", "name_en": "Epiphany", "month": 1, "day": 6, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Festa della Liberazione", "name_en": "Liberation Day", "month": 4, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Festa dei Lavoratori", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Festa della Repubblica", "name_en": "Republic Day", "month": 6, "day": 2, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Ferragosto", "name_en": "Assumption of Mary", "month": 8, "day": 15, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Tutti i Santi", "name_en": "All Saints' Day", "month": 11, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Immacolata Concezione", "name_en": "Immaculate Conception", "month": 12, "day": 8, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Natale", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Santo Stefano", "name_en": "St. Stephen's Day", "month": 12, "day": 26, "activity_multiplier": 0.02, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [
+      { "name": "Lunedì dell'Angelo", "name_en": "Easter Monday", "offset_days": 1, "activity_multiplier": 0.02 }
+    ],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Ferragosto",
+        "name_en": "August Holidays",
+        "start": { "month": 8, "day": 10 },
+        "end": { "month": 8, "day": 20 },
+        "activity_multiplier": 0.05,
+        "description": "Many businesses close for summer vacation"
+      },
+      {
+        "name": "Natale",
+        "name_en": "Christmas Season",
+        "start": { "month": 12, "day": 24 },
+        "end": { "month": 12, "day": 26 },
+        "activity_multiplier": 0.02,
+        "description": "Extended Christmas holiday period"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.24,
+      "trade_tax_rate": 0.039,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.279,
+      "small_business_threshold": null
+    },
+    "vat": {
+      "standard_rate": 0.22,
+      "reduced_rates": [
+        { "rate": 0.10, "label": "reduced", "applies_to": ["restaurants", "hotels", "renovation", "transport"] },
+        { "rate": 0.05, "label": "super_reduced", "applies_to": ["medical_devices", "social_housing"] },
+        { "rate": 0.04, "label": "minimum", "applies_to": ["food_staples", "books", "newspapers"] }
+      ],
+      "zero_rated": ["exports", "intra_eu_supplies"],
+      "exempt": ["financial_services", "insurance", "healthcare", "education"],
+      "registration_threshold": null,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.26,
+      "dividends_foreign_default": 0.26,
+      "interest": 0.26,
+      "royalties": 0.30,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 15000, "rate": 0.23 },
+        { "up_to": 28000, "rate": 0.25 },
+        { "up_to": 50000, "rate": 0.35 },
+        { "above": 50000, "rate": 0.43 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.0919, "employer_rate": 0.2381, "ceiling_annual": 113520 },
+        "health": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null },
+        "unemployment": { "employee_rate": 0.0, "employer_rate": 0.0161, "ceiling_annual": null },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": [
+      { "code": "LOM", "name": "Lombardia", "rate": 0.039, "tax_type": "irap" },
+      { "code": "LAZ", "name": "Lazio", "rate": 0.039, "tax_type": "irap" },
+      { "code": "CAM", "name": "Campania", "rate": 0.039, "tax_type": "irap" },
+      { "code": "VEN", "name": "Veneto", "rate": 0.039, "tax_type": "irap" }
+    ]
+  },
+
+  "address": {
+    "format_template": "{street}, {building_number}\n{postal_code} {city} ({state_code})",
+    "components": {
+      "street_names": [
+        "Via Roma", "Corso Italia", "Via Garibaldi", "Via Nazionale", "Via Manzoni",
+        "Viale Europa", "Via Dante", "Piazza della Repubblica", "Via Vittorio Emanuele",
+        "Via dei Mille"
+      ],
+      "city_names": [
+        "Milano", "Roma", "Torino", "Napoli", "Bologna", "Firenze",
+        "Genova", "Venezia", "Palermo", "Verona"
+      ],
+      "state_names": [
+        "Lombardia", "Lazio", "Piemonte", "Campania", "Emilia-Romagna",
+        "Toscana", "Liguria", "Veneto"
+      ],
+      "state_codes": ["MI", "RM", "TO", "NA", "BO", "FI", "GE", "VE"]
+    },
+    "postal_code": {
+      "format": "NNNNN",
+      "regex": "^[0-9]{5}$",
+      "ranges": [{ "from": "00010", "to": "98168" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 300]
+    },
+    "country_calling_code": "+39"
+  },
+
+  "phone": {
+    "country_calling_code": "+39",
+    "formats": {
+      "landline": "+39-0{area_code}-{n7}",
+      "mobile": "+39-3{n2}-{n7}",
+      "freephone": "+39-800-{n6}"
+    },
+    "area_codes": ["2", "6", "11", "81", "51", "55", "10", "41", "91", "45"],
+    "subscriber_length": { "min": 6, "max": 8 },
+    "display_format": "0{area_code} {subscriber}"
+  },
+
+  "banking": {
+    "account_format": "IBAN",
+    "iban": {
+      "country_prefix": "IT",
+      "length": 27,
+      "bban_structure": "{cin:1}{abi:5}{cab:5}{account_number:12}",
+      "check_digit_algorithm": "mod97"
+    },
+    "domestic_format": {
+      "name": "ABI/CAB",
+      "format": "{abi:5} {cab:5} {account:12}"
+    },
+    "bank_names": [
+      "Intesa Sanpaolo", "UniCredit", "Banco BPM",
+      "Monte dei Paschi di Siena", "BPER Banca", "Mediobanca"
+    ],
+    "swift_prefix": "IT",
+    "payment_systems": ["SEPA", "TARGET2"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "14:00",
+      "direct_debit_lead_days": 5
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Carta d'identità", "Passaporto", "Patente di guida"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "FT-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["codice_fiscale", "partita_iva", "codice_destinatario", "pec"],
+      "retention_years": 10,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "FatturaPA"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [30, 60, 90, 120],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.0825, "base_rate_reference": "ECB" }
+    },
+    "approval_thresholds": {
+      "currency": "EUR",
+      "levels": [
+        { "up_to": 5000, "approver": "responsabile" },
+        { "up_to": 25000, "approver": "direttore" },
+        { "up_to": 100000, "approver": "amministratore_delegato" },
+        { "above": 100000, "approver": "consiglio_amministrazione" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "GDPR",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 5,
+        "financial_records_years": 10,
+        "tax_records_years": 5
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "SRL", "name": "Società a Responsabilità Limitata", "name_en": "Limited Liability Company", "weight": 0.40 },
+      { "code": "SPA", "name": "Società per Azioni", "name_en": "Joint-Stock Company", "weight": 0.20 },
+      { "code": "SAS", "name": "Società in Accomandita Semplice", "name_en": "Limited Partnership", "weight": 0.10 },
+      { "code": "SNC", "name": "Società in Nome Collettivo", "name_en": "General Partnership", "weight": 0.10 },
+      { "code": "SRLS", "name": "Società a Responsabilità Limitata Semplificata", "name_en": "Simplified LLC", "weight": 0.15 },
+      { "code": "DI", "name": "Ditta Individuale", "name_en": "Sole Proprietorship", "weight": 0.05 }
+    ],
+    "tax_id_format": {
+      "name": "Codice Fiscale",
+      "format": "AAAAAA NN A NN A NNNC",
+      "regex": "^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$"
+    },
+    "vat_id_format": {
+      "name": "Partita IVA",
+      "prefix": "IT",
+      "format": "IT NNNNNNNNNNN",
+      "regex": "^IT[0-9]{11}$"
+    },
+    "registration_authority": "Camera di Commercio",
+    "registration_format": "REA {province} {NNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "OIC",
+    "chart_of_accounts": {
+      "standard": "Piano_dei_Conti",
+      "numbering_length": 6,
+      "account_ranges": {
+        "assets": { "from": "0", "to": "2" },
+        "liabilities": { "from": "3", "to": "4" },
+        "revenue": { "from": "7", "to": "8" },
+        "expenses": { "from": "5", "to": "6" },
+        "closing": { "from": "9", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Codice Civile", "OIC", "TUIR"],
+      "filing_requirements": [
+        { "name": "Bilancio d'esercizio", "name_en": "Annual Financial Statements", "deadline_months_after_ye": 4 },
+        { "name": "Dichiarazione dei redditi", "name_en": "Income Tax Return", "deadline_months_after_ye": 11 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "EUR",
+    "statutory_deductions": [
+      { "code": "IRPEF", "name": "Imposta sul Reddito delle Persone Fisiche", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "INPS", "name": "Contributi INPS", "name_en": "Social Security", "type": "percentage", "rate": 0.0919 },
+      { "code": "ADDIZ_REG", "name": "Addizionale Regionale", "name_en": "Regional Surtax", "type": "percentage", "rate": 0.0173 },
+      { "code": "ADDIZ_COM", "name": "Addizionale Comunale", "name_en": "Municipal Surtax", "type": "percentage", "rate": 0.008 }
+    ],
+    "employer_contributions": [
+      { "code": "INPS_E", "name": "INPS (Datore di lavoro)", "name_en": "Social Security (Employer)", "type": "percentage", "rate": 0.2381 },
+      { "code": "INAIL", "name": "INAIL", "name_en": "Work Accident Insurance", "type": "percentage", "rate": 0.01 },
+      { "code": "TFR", "name": "Trattamento di Fine Rapporto", "name_en": "Severance Fund", "type": "percentage", "rate": 0.0691 },
+      { "code": "NASPI", "name": "NASpI", "name_en": "Unemployment (Employer)", "type": "percentage", "rate": 0.0161 }
+    ],
+    "minimum_wage": { "hourly": 0, "currency": "EUR", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 8.0,
+      "statutory_annual_leave_days": 20,
+      "common_annual_leave_days": 26
+    },
+    "thirteenth_month": true,
+    "severance": {
+      "statutory": true,
+      "formula": "annual_salary / 13.5 per year of service"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} & {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Meccanica", "Industrie", "Utensili", "Precisione", "Metallurgia"],
+      "services": ["Consulenza", "Servizi", "Logistica"],
+      "technology": ["Sistemi", "Tecnologie", "Informatica", "Soluzioni Digitali"],
+      "supplies": ["Forniture", "Materiali", "Commercio"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Commercio", "Distribuzione", "Negozi", "Vendita"],
+      "enterprise": ["Gruppo", "Holding", "Imprese"],
+      "public_sector": ["Comune", "Provincia", "Ente"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Lamiera d'acciaio", "Profili di alluminio", "Granulato plastico", "Filo di rame"],
+      "components": ["Cambio", "Cilindro idraulico", "Modulo di controllo", "Sensore"],
+      "finished_goods": ["Macchina utensile", "Nastro trasportatore", "Banco di prova"],
+      "consumables": ["Lubrificante", "Abrasivo", "Guarnizioni", "Bulloneria"],
+      "office_supplies": ["Carta per stampante", "Toner", "Mobili per ufficio"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Pezzo",
+      "kg": "Chilogrammo",
+      "liter": "Litro",
+      "meter": "Metro",
+      "box": "Scatola"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Ordine di Acquisto n. {po_number} — {vendor_name}",
+        "Ordine quadro ai sensi del contratto {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Fornitura {material} secondo specifica",
+        "Servizio di manutenzione per {asset}",
+        "Consulenza {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Fattura n. {invoice_number}",
+        "Nota di credito n. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "Registrazione {doc_type} {doc_number}",
+        "Rateo {period}",
+        "Chiusura periodo {period}"
+      ]
+    }
+  }
+}

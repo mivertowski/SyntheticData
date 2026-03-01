@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.0",
+  "country_code": "FR",
+  "country_name": "France",
+  "region": "EMEA",
+
+  "locale": {
+    "language_code": "fr",
+    "language_name": "French",
+    "default_currency": "EUR",
+    "currency_symbol": "€",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ",",
+      "thousands_separator": " ",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "DD/MM/YYYY",
+      "long": "D MMMM YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Europe/Paris",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "french",
+        "weight": 0.80,
+        "male_first_names": [
+          "Jean", "Pierre", "Michel", "Philippe", "Alain", "Patrick", "Jacques",
+          "Bernard", "François", "André", "Laurent", "Thierry", "Nicolas", "Christophe",
+          "Frédéric", "Stéphane", "Olivier", "Didier", "Éric", "Pascal", "Gérard",
+          "Daniel", "Julien", "Sébastien", "Antoine", "Maxime", "Alexandre", "Thomas",
+          "Louis", "Hugo", "Léo", "Gabriel", "Raphaël", "Arthur", "Mathis", "Lucas",
+          "Nathan", "Étienne", "Vincent", "Yves", "Paul", "Luc", "Marc", "Rémi",
+          "Damien", "Cédric", "Fabien", "Guillaume", "Benoît", "Arnaud"
+        ],
+        "female_first_names": [
+          "Marie", "Jeanne", "Françoise", "Monique", "Catherine", "Nathalie", "Isabelle",
+          "Sylvie", "Anne", "Martine", "Christine", "Valérie", "Véronique", "Sandrine",
+          "Sophie", "Céline", "Virginie", "Julie", "Émilie", "Marine", "Aurélie",
+          "Camille", "Léa", "Manon", "Chloé", "Emma", "Inès", "Louise", "Alice",
+          "Charlotte", "Clara", "Sarah", "Laure", "Margaux", "Pauline", "Élise",
+          "Mathilde", "Juliette", "Brigitte", "Corinne", "Patricia", "Laurence",
+          "Hélène", "Dominique", "Stéphanie", "Delphine", "Claire", "Mélanie",
+          "Caroline", "Agathe"
+        ],
+        "last_names": [
+          "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit",
+          "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel",
+          "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier", "Morel",
+          "Girard", "André", "Lefèvre", "Mercier", "Dupont", "Lambert", "Bonnet",
+          "François", "Martinez", "Legrand", "Garnier", "Faure", "Rousseau", "Blanc",
+          "Guérin", "Muller", "Henry", "Roussel", "Nicolas", "Perrin", "Morin",
+          "Mathieu", "Clément", "Gauthier", "Dumont", "Lopez", "Fontaine", "Chevalier",
+          "Robin"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["M."], "female": ["Mme"] },
+        "academic_titles": ["Dr", "Pr", "Me", "Ing."]
+      },
+      {
+        "culture_id": "maghrebi_french",
+        "weight": 0.20,
+        "male_first_names": [
+          "Mohamed", "Ahmed", "Karim", "Youssef", "Omar", "Rachid", "Samir",
+          "Mehdi", "Nassim", "Sofiane"
+        ],
+        "female_first_names": [
+          "Fatima", "Amina", "Leila", "Nadia", "Samira", "Yasmine", "Khadija",
+          "Aicha", "Djamila", "Soraya"
+        ],
+        "last_names": [
+          "Benali", "Bouzid", "Khelifi", "Hamidi", "Cherif", "Bensaid", "Amrani",
+          "Belkacem", "Djebbar", "Messaoudi"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["M."], "female": ["Mme"] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.fr", "entreprise.fr", "societe.fr", "exemple.fr"],
+    "username_patterns": ["{first_initial}{last_name}", "{first_name}.{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "Jour de l'an", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Fête du Travail", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Victoire 1945", "name_en": "Victory in Europe Day", "month": 5, "day": 8, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Fête nationale", "name_en": "Bastille Day", "month": 7, "day": 14, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Assomption", "name_en": "Assumption of Mary", "month": 8, "day": 15, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Toussaint", "name_en": "All Saints' Day", "month": 11, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Armistice", "name_en": "Armistice Day", "month": 11, "day": 11, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Noël", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [
+      { "name": "Lundi de Pâques", "name_en": "Easter Monday", "offset_days": 1, "activity_multiplier": 0.02 },
+      { "name": "Ascension", "name_en": "Ascension Day", "offset_days": 39, "activity_multiplier": 0.02 },
+      { "name": "Lundi de Pentecôte", "name_en": "Whit Monday", "offset_days": 50, "activity_multiplier": 0.05 }
+    ],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Vacances de Noël",
+        "name_en": "Christmas Holidays",
+        "start": { "month": 12, "day": 24 },
+        "end": { "month": 12, "day": 26 },
+        "activity_multiplier": 0.05,
+        "description": "Extended holiday period with minimal business activity"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.25,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.25,
+      "small_business_threshold": 42500
+    },
+    "vat": {
+      "standard_rate": 0.20,
+      "reduced_rates": [
+        { "rate": 0.10, "label": "intermediate", "applies_to": ["restaurants", "transport", "renovation"] },
+        { "rate": 0.055, "label": "reduced", "applies_to": ["food", "books", "energy"] },
+        { "rate": 0.021, "label": "super_reduced", "applies_to": ["press", "medicines"] }
+      ],
+      "zero_rated": ["exports", "intra_eu_supplies"],
+      "exempt": ["financial_services", "insurance", "healthcare", "education"],
+      "registration_threshold": 85800,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.128,
+      "dividends_foreign_default": 0.25,
+      "interest": 0.0,
+      "royalties": 0.25,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 11294, "rate": 0.0 },
+        { "up_to": 28797, "rate": 0.11 },
+        { "up_to": 82341, "rate": 0.30 },
+        { "up_to": 177106, "rate": 0.41 },
+        { "above": 177106, "rate": 0.45 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.069, "employer_rate": 0.086, "ceiling_annual": 46368 },
+        "health": { "employee_rate": 0.0, "employer_rate": 0.13, "ceiling_annual": null },
+        "unemployment": { "employee_rate": 0.0, "employer_rate": 0.0405, "ceiling_annual": 46368 },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": []
+  },
+
+  "address": {
+    "format_template": "{building_number} {street}\n{postal_code} {city}",
+    "components": {
+      "street_names": [
+        "Rue de la Paix", "Avenue des Champs-Élysées", "Boulevard Haussmann",
+        "Rue du Faubourg Saint-Honoré", "Avenue de la République", "Rue de Rivoli",
+        "Boulevard Saint-Germain", "Rue Nationale", "Avenue Victor Hugo",
+        "Rue du Commerce"
+      ],
+      "city_names": [
+        "Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg",
+        "Bordeaux", "Lille", "Montpellier"
+      ],
+      "state_names": [
+        "Île-de-France", "Auvergne-Rhône-Alpes", "Provence-Alpes-Côte d'Azur",
+        "Occitanie", "Nouvelle-Aquitaine", "Hauts-de-France", "Grand Est",
+        "Pays de la Loire"
+      ],
+      "state_codes": ["IDF", "ARA", "PAC", "OCC", "NAQ", "HDF", "GES", "PDL"]
+    },
+    "postal_code": {
+      "format": "NNNNN",
+      "regex": "^[0-9]{5}$",
+      "ranges": [{ "from": "01000", "to": "98999" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 300]
+    },
+    "country_calling_code": "+33"
+  },
+
+  "phone": {
+    "country_calling_code": "+33",
+    "formats": {
+      "landline": "+33-{n1}-{n2}-{n2}-{n2}-{n2}",
+      "mobile": "+33-6{n1}-{n2}-{n2}-{n2}",
+      "freephone": "+33-800-{n2}-{n2}-{n2}"
+    },
+    "area_codes": ["1", "2", "3", "4", "5"],
+    "subscriber_length": { "min": 8, "max": 8 },
+    "display_format": "0{n1} {n2} {n2} {n2} {n2}"
+  },
+
+  "banking": {
+    "account_format": "IBAN",
+    "iban": {
+      "country_prefix": "FR",
+      "length": 27,
+      "bban_structure": "{bank_code:5}{branch_code:5}{account_number:11}{check_digits:2}",
+      "check_digit_algorithm": "mod97"
+    },
+    "domestic_format": {
+      "name": "RIB",
+      "format": "{bank_code:5} {branch_code:5} {account:11} {key:2}"
+    },
+    "bank_names": [
+      "BNP Paribas", "Crédit Agricole", "Société Générale",
+      "Banque Populaire", "Caisse d'Épargne", "Crédit Mutuel"
+    ],
+    "swift_prefix": "FR",
+    "payment_systems": ["SEPA", "TARGET2"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "14:00",
+      "direct_debit_lead_days": 5
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Carte nationale d'identité", "Passeport", "Titre de séjour"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "FA-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["siren", "vat_number", "sequential_number", "issue_date"],
+      "retention_years": 10,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "Factur-X"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [30, 45, 60],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.0462, "base_rate_reference": "ECB" }
+    },
+    "approval_thresholds": {
+      "currency": "EUR",
+      "levels": [
+        { "up_to": 5000, "approver": "chef_equipe" },
+        { "up_to": 25000, "approver": "directeur_departement" },
+        { "up_to": 100000, "approver": "directeur_general" },
+        { "above": 100000, "approver": "conseil_administration" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "GDPR",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 5,
+        "financial_records_years": 10,
+        "tax_records_years": 6
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "SA", "name": "Société Anonyme", "name_en": "Public Limited Company", "weight": 0.15 },
+      { "code": "SAS", "name": "Société par Actions Simplifiée", "name_en": "Simplified Joint-Stock Company", "weight": 0.35 },
+      { "code": "SARL", "name": "Société à Responsabilité Limitée", "name_en": "Limited Liability Company", "weight": 0.30 },
+      { "code": "EURL", "name": "Entreprise Unipersonnelle à Responsabilité Limitée", "name_en": "Single-Member LLC", "weight": 0.10 },
+      { "code": "SNC", "name": "Société en Nom Collectif", "name_en": "General Partnership", "weight": 0.05 },
+      { "code": "SCA", "name": "Société en Commandite par Actions", "name_en": "Partnership Limited by Shares", "weight": 0.05 }
+    ],
+    "tax_id_format": {
+      "name": "SIREN",
+      "format": "NNN NNN NNN",
+      "regex": "^[0-9]{9}$"
+    },
+    "vat_id_format": {
+      "name": "Numéro de TVA intracommunautaire",
+      "prefix": "FR",
+      "format": "FR NN NNNNNNNNN",
+      "regex": "^FR[0-9A-Z]{2}[0-9]{9}$"
+    },
+    "registration_authority": "Registre du Commerce et des Sociétés",
+    "registration_format": "RCS {city} {letter} {NNN NNN NNN}"
+  },
+
+  "accounting": {
+    "framework": "french_gaap",
+    "secondary_framework": "ifrs",
+    "local_gaap_name": "PCG",
+    "chart_of_accounts": {
+      "standard": "PCG",
+      "numbering_length": 6,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "5" },
+        "liabilities": { "from": "1", "to": "1" },
+        "revenue": { "from": "7", "to": "7" },
+        "expenses": { "from": "6", "to": "6" },
+        "closing": { "from": "8", "to": "8" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Code de Commerce", "PCG", "FEC"],
+      "filing_requirements": [
+        { "name": "Comptes annuels", "name_en": "Annual Financial Statements", "deadline_months_after_ye": 6 },
+        { "name": "Liasse fiscale", "name_en": "Tax Return Package", "deadline_months_after_ye": 4 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "EUR",
+    "statutory_deductions": [
+      { "code": "IR", "name": "Impôt sur le revenu", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "CSG", "name": "Contribution sociale généralisée", "name_en": "General Social Contribution", "type": "percentage", "rate": 0.098 },
+      { "code": "CRDS", "name": "Contribution au remboursement de la dette sociale", "name_en": "Social Debt Repayment", "type": "percentage", "rate": 0.005 },
+      { "code": "RET", "name": "Retraite de base", "name_en": "Basic Pension", "type": "percentage", "rate": 0.069 },
+      { "code": "RETC", "name": "Retraite complémentaire", "name_en": "Supplementary Pension", "type": "percentage", "rate": 0.031 },
+      { "code": "CHO", "name": "Assurance chômage", "name_en": "Unemployment Insurance", "type": "percentage", "rate": 0.0 }
+    ],
+    "employer_contributions": [
+      { "code": "PAT_SS", "name": "Charges patronales sécurité sociale", "name_en": "Employer Social Security", "type": "percentage", "rate": 0.13 },
+      { "code": "PAT_RET", "name": "Retraite (patronale)", "name_en": "Pension (Employer)", "type": "percentage", "rate": 0.086 },
+      { "code": "PAT_CHO", "name": "Assurance chômage (patronale)", "name_en": "Unemployment (Employer)", "type": "percentage", "rate": 0.0405 },
+      { "code": "PAT_AT", "name": "Accident du travail", "name_en": "Work Accident Insurance", "type": "percentage", "rate": 0.02 },
+      { "code": "PAT_FORM", "name": "Taxe formation", "name_en": "Training Tax", "type": "percentage", "rate": 0.0155 }
+    ],
+    "minimum_wage": { "hourly": 11.65, "currency": "EUR", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 35.0,
+      "max_daily": 10.0,
+      "statutory_annual_leave_days": 25,
+      "common_annual_leave_days": 25
+    },
+    "thirteenth_month": false,
+    "severance": {
+      "statutory": true,
+      "formula": "0.25 * monthly_salary * years_of_service"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} & {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Industries", "Mécanique", "Outillage", "Précision", "Métallurgie"],
+      "services": ["Conseil", "Services", "Logistique", "Consulting"],
+      "technology": ["Systèmes", "Solutions Numériques", "Informatique", "Technologies"],
+      "supplies": ["Fournitures", "Matériel", "Équipements"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Commerce", "Distribution", "Magasins", "Négoce"],
+      "enterprise": ["Groupe", "Holding", "Entreprises"],
+      "public_sector": ["Mairie", "Préfecture", "Collectivité"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Tôle d'acier", "Profilés aluminium", "Granulés plastique", "Fil de cuivre"],
+      "components": ["Boîte de vitesses", "Vérin hydraulique", "Module de commande", "Capteur"],
+      "finished_goods": ["Machine-outil", "Convoyeur", "Banc d'essai"],
+      "consumables": ["Lubrifiant", "Abrasif", "Joints", "Boulonnerie"],
+      "office_supplies": ["Papier imprimante", "Toner", "Mobilier de bureau"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Pièce",
+      "kg": "Kilogramme",
+      "liter": "Litre",
+      "meter": "Mètre",
+      "box": "Carton"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Bon de commande n° {po_number} — {vendor_name}",
+        "Commande cadre selon contrat {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Livraison {material} selon spécification",
+        "Service de maintenance pour {asset}",
+        "Prestation de conseil {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Facture n° {invoice_number}",
+        "Avoir n° {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "Écriture {doc_type} {doc_number}",
+        "Régularisation {period}",
+        "Clôture période {period}"
+      ]
+    }
+  }
+}

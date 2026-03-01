@@ -1,0 +1,417 @@
+{
+  "schema_version": "1.0",
+  "country_code": "CN",
+  "country_name": "China",
+  "region": "APAC",
+
+  "locale": {
+    "language_code": "zh",
+    "language_name": "Chinese",
+    "default_currency": "CNY",
+    "currency_symbol": "¥",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "YYYY-MM-DD",
+      "long": "YYYY年MM月DD日",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Asia/Shanghai",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "chinese",
+        "weight": 1.0,
+        "male_first_names": [
+          "Wei", "Jian", "Ming", "Qiang", "Lei", "Jun", "Yong", "Jie",
+          "Chao", "Peng", "Hao", "Bo", "Yang", "Long", "Tao", "Fei",
+          "Xiang", "Gang", "Hua", "Dong", "Kai", "Bin", "Feng", "Lin",
+          "Zhi", "Guang", "Hai", "Xin", "Yi", "Chen", "Da", "Sheng",
+          "Liang", "Ping", "Wen", "Rui", "Zhen", "Zhong", "De", "Guo",
+          "Hong", "Cheng", "Xiao", "Nan", "Jia", "Shuai", "Jing", "Yu",
+          "Shan", "Kun"
+        ],
+        "female_first_names": [
+          "Fang", "Xiu", "Li", "Na", "Juan", "Ying", "Mei", "Yan",
+          "Hong", "Yu", "Hua", "Ping", "Jing", "Xia", "Lan", "Yun",
+          "Min", "Qin", "Wen", "Ling", "Dan", "Hui", "Xin", "Rong",
+          "Yue", "Ting", "Jie", "Lu", "Jia", "Qi", "Meng", "Xue",
+          "Zhi", "Shan", "Wei", "Qing", "Shu", "Yi", "Ning", "Chen",
+          "Lin", "Yao", "Han", "Si", "Rui", "Ke", "Man", "Zi",
+          "Xuan", "Tong"
+        ],
+        "last_names": [
+          "Wang", "Li", "Zhang", "Liu", "Chen", "Yang", "Zhao", "Huang",
+          "Zhou", "Wu", "Xu", "Sun", "Hu", "Zhu", "Gao", "Lin",
+          "He", "Guo", "Ma", "Luo", "Liang", "Song", "Zheng", "Xie",
+          "Han", "Tang", "Feng", "Yu", "Dong", "Xiao", "Cheng", "Cao",
+          "Yuan", "Deng", "Xu", "Fu", "Shen", "Zeng", "Peng", "Lu",
+          "Su", "Jiang", "Cai", "Jia", "Wei", "Xue", "Ye", "Yan",
+          "Pan", "Du"
+        ],
+        "name_order": "eastern",
+        "titles": { "male": ["先生"], "female": ["女士"] },
+        "academic_titles": ["博士", "教授", "工程师"]
+      }
+    ],
+    "email_domains": ["example.cn", "company.cn", "corp.com.cn", "sample.cn"],
+    "username_patterns": ["{last_name}{first_name}", "{first_name}.{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "元旦", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "劳动节", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "国庆节", "name_en": "National Day", "month": 10, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "国庆节假期", "name_en": "National Day Holiday", "month": 10, "day": 2, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "国庆节假期", "name_en": "National Day Holiday", "month": 10, "day": 3, "activity_multiplier": 0.02, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [
+      { "name": "春节", "name_en": "Chinese New Year", "algorithm": "chinese_new_year", "duration_days": 3, "activity_multiplier": 0.02 },
+      { "name": "清明节", "name_en": "Qingming Festival", "algorithm": "qingming", "duration_days": 1, "activity_multiplier": 0.05 },
+      { "name": "端午节", "name_en": "Dragon Boat Festival", "algorithm": "dragon_boat", "duration_days": 1, "activity_multiplier": 0.05 },
+      { "name": "中秋节", "name_en": "Mid-Autumn Festival", "algorithm": "mid_autumn", "duration_days": 1, "activity_multiplier": 0.05 }
+    ],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "春节假期",
+        "name_en": "Spring Festival",
+        "start": { "month": 1, "day": 21 },
+        "end": { "month": 2, "day": 20 },
+        "activity_multiplier": 0.05,
+        "description": "7-day holiday around Chinese New Year, dates vary"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.25,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.25,
+      "small_business_threshold": 3000000
+    },
+    "vat": {
+      "standard_rate": 0.13,
+      "reduced_rates": [
+        { "rate": 0.09, "label": "reduced", "applies_to": ["transport", "agriculture", "utilities", "real_estate"] },
+        { "rate": 0.06, "label": "low", "applies_to": ["financial_services", "modern_services", "telecom"] }
+      ],
+      "zero_rated": ["exports"],
+      "exempt": ["education", "healthcare", "agriculture_self_produced"],
+      "registration_threshold": null,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": false
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.10,
+      "dividends_foreign_default": 0.10,
+      "interest": 0.10,
+      "royalties": 0.10,
+      "services": 0.10
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 36000, "rate": 0.03 },
+        { "up_to": 144000, "rate": 0.10 },
+        { "up_to": 300000, "rate": 0.20 },
+        { "up_to": 420000, "rate": 0.25 },
+        { "up_to": 660000, "rate": 0.30 },
+        { "up_to": 960000, "rate": 0.35 },
+        { "above": 960000, "rate": 0.45 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.08, "employer_rate": 0.16, "ceiling_annual": 375000 },
+        "health": { "employee_rate": 0.02, "employer_rate": 0.10, "ceiling_annual": 375000 },
+        "unemployment": { "employee_rate": 0.005, "employer_rate": 0.005, "ceiling_annual": 375000 },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": []
+  },
+
+  "address": {
+    "format_template": "{state}{city}{street}{building_number}",
+    "components": {
+      "street_names": [
+        "朝阳区建国路", "海淀区中关村大街", "浦东新区陆家嘴环路",
+        "天河区天河路", "福田区深南大道", "江干区钱江路",
+        "武昌区中南路", "锦江区红星路", "雨花台区软件大道",
+        "高新区科技路"
+      ],
+      "city_names": [
+        "北京市", "上海市", "深圳市", "广州市", "杭州市",
+        "成都市", "武汉市", "南京市", "重庆市", "苏州市"
+      ],
+      "state_names": [
+        "北京市", "上海市", "广东省", "浙江省", "江苏省",
+        "四川省", "湖北省", "山东省"
+      ],
+      "state_codes": ["BJ", "SH", "GD", "ZJ", "JS", "SC", "HB", "SD"]
+    },
+    "postal_code": {
+      "format": "NNNNNN",
+      "regex": "^[0-9]{6}$",
+      "ranges": [{ "from": "100000", "to": "999999" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 500]
+    },
+    "country_calling_code": "+86"
+  },
+
+  "phone": {
+    "country_calling_code": "+86",
+    "formats": {
+      "landline": "+86-{area_code}-{n8}",
+      "mobile": "+86-1{n2}-{n4}-{n4}",
+      "freephone": "+86-400-{n3}-{n4}"
+    },
+    "area_codes": ["10", "21", "755", "20", "571", "28", "27", "25", "23", "512"],
+    "subscriber_length": { "min": 7, "max": 8 },
+    "display_format": "{area_code}-{subscriber}"
+  },
+
+  "banking": {
+    "account_format": "domestic",
+    "iban": {},
+    "domestic_format": {
+      "name": "CNAPS",
+      "format": "{bank_code:3}{city_code:4}{branch_code:4}{account_number:8}"
+    },
+    "bank_names": [
+      "中国工商银行", "中国建设银行", "中国农业银行",
+      "中国银行", "交通银行", "招商银行"
+    ],
+    "swift_prefix": "CN",
+    "payment_systems": ["CNAPS", "CIPS"],
+    "settlement_rules": {
+      "domestic_transfer_days": 0,
+      "international_transfer_days": 3,
+      "wire_cutoff_time": "16:00",
+      "direct_debit_lead_days": 3
+    },
+    "kyc_requirements": {
+      "id_document_types": ["身份证", "护照", "港澳通行证"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "FP-{YYYY}{MM}-{SEQ:8}",
+      "mandatory_fields": ["tax_id", "unified_social_credit_code", "vat_amount", "tax_rate"],
+      "retention_years": 10,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "Golden_Tax"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [30, 60, 90, 180],
+      "early_payment_discount": { "common_rate": 0.0, "common_days": 0 },
+      "late_payment_interest": { "statutory_rate": 0.0365, "base_rate_reference": "PBOC_LPR" }
+    },
+    "approval_thresholds": {
+      "currency": "CNY",
+      "levels": [
+        { "up_to": 50000, "approver": "department_manager" },
+        { "up_to": 500000, "approver": "division_head" },
+        { "up_to": 5000000, "approver": "cfo" },
+        { "above": 5000000, "approver": "board" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "PIPL",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 3,
+        "financial_records_years": 10,
+        "tax_records_years": 10
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "LLC", "name": "有限责任公司", "name_en": "Limited Liability Company", "weight": 0.45 },
+      { "code": "JSC", "name": "股份有限公司", "name_en": "Joint Stock Company", "weight": 0.20 },
+      { "code": "WFOE", "name": "外商独资企业", "name_en": "Wholly Foreign-Owned Enterprise", "weight": 0.15 },
+      { "code": "JV", "name": "中外合资企业", "name_en": "Sino-Foreign Joint Venture", "weight": 0.10 },
+      { "code": "SOE", "name": "国有企业", "name_en": "State-Owned Enterprise", "weight": 0.10 }
+    ],
+    "tax_id_format": {
+      "name": "统一社会信用代码",
+      "format": "ANNNNNNNNNNNNNNNNC",
+      "regex": "^[0-9A-Z]{18}$"
+    },
+    "vat_id_format": {
+      "name": "纳税人识别号",
+      "prefix": "",
+      "format": "NNNNNNNNNNNNNNNN",
+      "regex": "^[0-9A-Z]{15,20}$"
+    },
+    "registration_authority": "市场监督管理局",
+    "registration_format": "{NNNNNNNNNNNNNNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "CAS",
+    "chart_of_accounts": {
+      "standard": "CAS",
+      "numbering_length": 4,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "1" },
+        "liabilities": { "from": "2", "to": "2" },
+        "revenue": { "from": "6", "to": "6" },
+        "expenses": { "from": "5", "to": "5" },
+        "closing": { "from": "3", "to": "3" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Accounting Law", "CAS", "Enterprise Income Tax Law"],
+      "filing_requirements": [
+        { "name": "年度审计报告", "name_en": "Annual Audit Report", "deadline_months_after_ye": 4 },
+        { "name": "企业所得税年度纳税申报", "name_en": "Annual CIT Return", "deadline_months_after_ye": 5 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "CNY",
+    "statutory_deductions": [
+      { "code": "IIT", "name": "个人所得税", "name_en": "Individual Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "PENSION", "name": "养老保险", "name_en": "Pension Insurance", "type": "percentage", "rate": 0.08 },
+      { "code": "MEDICAL", "name": "医疗保险", "name_en": "Medical Insurance", "type": "percentage", "rate": 0.02 },
+      { "code": "UNEMP", "name": "失业保险", "name_en": "Unemployment Insurance", "type": "percentage", "rate": 0.005 },
+      { "code": "HPF", "name": "住房公积金", "name_en": "Housing Provident Fund", "type": "percentage", "rate": 0.12 }
+    ],
+    "employer_contributions": [
+      { "code": "PENSION_E", "name": "养老保险 (单位)", "name_en": "Pension (Employer)", "type": "percentage", "rate": 0.16 },
+      { "code": "MEDICAL_E", "name": "医疗保险 (单位)", "name_en": "Medical (Employer)", "type": "percentage", "rate": 0.10 },
+      { "code": "UNEMP_E", "name": "失业保险 (单位)", "name_en": "Unemployment (Employer)", "type": "percentage", "rate": 0.005 },
+      { "code": "INJURY", "name": "工伤保险", "name_en": "Work Injury Insurance", "type": "percentage", "rate": 0.005 },
+      { "code": "MATERNITY", "name": "生育保险", "name_en": "Maternity Insurance", "type": "percentage", "rate": 0.008 },
+      { "code": "HPF_E", "name": "住房公积金 (单位)", "name_en": "Housing Fund (Employer)", "type": "percentage", "rate": 0.12 }
+    ],
+    "minimum_wage": { "hourly": 0, "currency": "CNY", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 8.0,
+      "statutory_annual_leave_days": 5,
+      "common_annual_leave_days": 10
+    },
+    "thirteenth_month": true,
+    "severance": {
+      "statutory": true,
+      "formula": "monthly_salary * years_of_service"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{city}{industry_word}{entity_suffix}",
+      "{last_name}{industry_word}{entity_suffix}",
+      "{industry_word}{entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["制造", "机械", "精密", "金属", "科技"],
+      "services": ["服务", "咨询", "物流", "贸易"],
+      "technology": ["科技", "信息", "电子", "软件"],
+      "supplies": ["商贸", "物资", "供应"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word}{entity_suffix}",
+      "{city}{industry_word}",
+      "{last_name}{industry_word}"
+    ],
+    "industry_words": {
+      "retail": ["商贸", "零售", "百货", "连锁"],
+      "enterprise": ["集团", "控股", "实业"],
+      "public_sector": ["政府", "事业单位", "国有"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["钢板", "铝型材", "塑料颗粒", "铜线"],
+      "components": ["变速箱", "液压缸", "控制模块", "传感器"],
+      "finished_goods": ["机床", "输送机", "检测设备"],
+      "consumables": ["切削液", "磨料", "密封件", "螺栓"],
+      "office_supplies": ["打印纸", "墨盒", "办公家具"]
+    },
+    "unit_of_measure_labels": {
+      "each": "个",
+      "kg": "千克",
+      "liter": "升",
+      "meter": "米",
+      "box": "箱"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "采购订单 {po_number} — {vendor_name}",
+        "框架合同 {contract_ref} 采购单"
+      ],
+      "line_descriptions": [
+        "按规格交付 {material}",
+        "{asset} 维护服务",
+        "咨询服务 {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "发票号 {invoice_number}",
+        "红字发票 {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "记账凭证 {doc_type} {doc_number}",
+        "计提 {period}",
+        "期末结转 {period}"
+      ]
+    }
+  }
+}

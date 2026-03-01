@@ -1,0 +1,449 @@
+{
+  "schema_version": "1.0",
+  "country_code": "IN",
+  "country_name": "India",
+  "region": "APAC",
+
+  "locale": {
+    "language_code": "en",
+    "language_name": "English",
+    "default_currency": "INR",
+    "currency_symbol": "₹",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3, 2]
+    },
+    "date_format": {
+      "short": "DD/MM/YYYY",
+      "long": "D MMMM YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Asia/Kolkata",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 4,
+      "start_day": 1,
+      "variant": "custom"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "north_indian",
+        "weight": 0.50,
+        "male_first_names": [
+          "Rajesh", "Amit", "Suresh", "Rahul", "Vikram", "Anil", "Sanjay", "Manoj",
+          "Deepak", "Ashok", "Vivek", "Ravi", "Rohit", "Nikhil", "Arun", "Vijay",
+          "Ajay", "Prashant", "Sandeep", "Alok", "Gaurav", "Ankit", "Harsh",
+          "Kunal", "Varun"
+        ],
+        "female_first_names": [
+          "Priya", "Sunita", "Anjali", "Neha", "Pooja", "Kavita", "Meena", "Swati",
+          "Nisha", "Shilpa", "Aarti", "Ritu", "Seema", "Rekha", "Divya", "Manisha",
+          "Rashmi", "Shalini", "Deepika", "Pallavi", "Shruti", "Ananya", "Ishita",
+          "Kriti", "Sakshi"
+        ],
+        "last_names": [
+          "Sharma", "Verma", "Gupta", "Singh", "Kumar", "Agarwal", "Jain", "Mishra",
+          "Pandey", "Tiwari", "Chauhan", "Yadav", "Saxena", "Rastogi", "Srivastava",
+          "Bhatia", "Kapoor", "Malhotra", "Mehta", "Khanna", "Chopra", "Arora",
+          "Goel", "Bansal", "Mittal"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr.", "Shri"], "female": ["Ms.", "Smt."] },
+        "academic_titles": ["Dr.", "Prof.", "CA", "CS"]
+      },
+      {
+        "culture_id": "south_indian",
+        "weight": 0.30,
+        "male_first_names": [
+          "Ramesh", "Suresh", "Venkatesh", "Karthik", "Ganesh", "Aravind", "Prasad",
+          "Krishna", "Srinivas", "Balaji"
+        ],
+        "female_first_names": [
+          "Lakshmi", "Padma", "Revathi", "Saroja", "Janaki", "Bhavani", "Meenakshi",
+          "Vidya", "Durga", "Geetha"
+        ],
+        "last_names": [
+          "Iyer", "Iyengar", "Nair", "Menon", "Pillai", "Reddy", "Rao", "Naidu",
+          "Murthy", "Krishnamurthy"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr.", "Shri"], "female": ["Ms.", "Smt."] },
+        "academic_titles": []
+      },
+      {
+        "culture_id": "western_indian",
+        "weight": 0.20,
+        "male_first_names": [
+          "Nilesh", "Hitesh", "Jitesh", "Paresh", "Mahesh", "Tushar", "Chintan",
+          "Darshan", "Jayesh", "Bhavesh"
+        ],
+        "female_first_names": [
+          "Hetal", "Komal", "Jyoti", "Kalpana", "Minal", "Vaishali", "Sneha",
+          "Asha", "Bhakti", "Disha"
+        ],
+        "last_names": [
+          "Patel", "Shah", "Desai", "Modi", "Parikh", "Trivedi", "Joshi", "Dave",
+          "Thakkar", "Bhatt"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr.", "Shri"], "female": ["Ms.", "Smt."] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.in", "company.co.in", "enterprise.in", "sample.in"],
+    "username_patterns": ["{first_name}.{last_name}", "{first_initial}{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "Republic Day", "name_en": "Republic Day", "month": 1, "day": 26, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Independence Day", "name_en": "Independence Day", "month": 8, "day": 15, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Gandhi Jayanti", "name_en": "Gandhi's Birthday", "month": 10, "day": 2, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "Christmas", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.05, "observe_weekend_rule": false },
+      { "name": "New Year's Day", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.1, "observe_weekend_rule": false },
+      { "name": "May Day", "name_en": "Labour Day", "month": 5, "day": 1, "activity_multiplier": 0.1, "observe_weekend_rule": false }
+    ],
+    "easter_relative": [
+      { "name": "Good Friday", "name_en": "Good Friday", "offset_days": -2, "activity_multiplier": 0.05 }
+    ],
+    "nth_weekday": [],
+    "last_weekday": [],
+    "lunar": [
+      { "name": "Diwali", "name_en": "Festival of Lights", "algorithm": "diwali", "duration_days": 2, "activity_multiplier": 0.02 },
+      { "name": "Holi", "name_en": "Festival of Colors", "algorithm": "holi", "duration_days": 1, "activity_multiplier": 0.05 },
+      { "name": "Dussehra", "name_en": "Dussehra", "algorithm": "dussehra", "duration_days": 1, "activity_multiplier": 0.05 },
+      { "name": "Eid ul-Fitr", "name_en": "Eid ul-Fitr", "algorithm": "eid_ul_fitr", "duration_days": 1, "activity_multiplier": 0.05 }
+    ],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Diwali Season",
+        "name_en": "Diwali Season",
+        "start": { "month": 10, "day": 15 },
+        "end": { "month": 11, "day": 15 },
+        "activity_multiplier": 0.3,
+        "description": "Major festive season, dates vary"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.2517,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.04,
+      "effective_combined_rate": 0.2517,
+      "small_business_threshold": 4000000
+    },
+    "vat": {
+      "standard_rate": 0.18,
+      "reduced_rates": [
+        { "rate": 0.12, "label": "standard_goods", "applies_to": ["processed_food", "computers", "telecom"] },
+        { "rate": 0.05, "label": "essential", "applies_to": ["transport", "basic_food", "healthcare"] },
+        { "rate": 0.0, "label": "nil", "applies_to": ["fresh_food", "books", "education"] }
+      ],
+      "zero_rated": ["exports", "sez_supplies"],
+      "exempt": ["healthcare_services", "education_services", "agriculture"],
+      "registration_threshold": 4000000,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.10,
+      "dividends_foreign_default": 0.20,
+      "interest": 0.10,
+      "royalties": 0.10,
+      "services": 0.10
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 300000, "rate": 0.0 },
+        { "up_to": 700000, "rate": 0.05 },
+        { "up_to": 1000000, "rate": 0.10 },
+        { "up_to": 1200000, "rate": 0.15 },
+        { "up_to": 1500000, "rate": 0.20 },
+        { "above": 1500000, "rate": 0.30 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.12, "employer_rate": 0.12, "ceiling_annual": 180000 },
+        "health": { "employee_rate": 0.0075, "employer_rate": 0.0325, "ceiling_annual": 252000 },
+        "unemployment": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM", "Other"],
+      "safe_harbor_rules": true
+    },
+    "subnational": [
+      { "code": "MH", "name": "Maharashtra", "rate": 0.025, "tax_type": "professional_tax" },
+      { "code": "KA", "name": "Karnataka", "rate": 0.025, "tax_type": "professional_tax" },
+      { "code": "TN", "name": "Tamil Nadu", "rate": 0.0, "tax_type": "professional_tax" },
+      { "code": "DL", "name": "Delhi", "rate": 0.0, "tax_type": "professional_tax" }
+    ]
+  },
+
+  "address": {
+    "format_template": "{building_number}, {street}\n{city}, {state} {postal_code}",
+    "components": {
+      "street_names": [
+        "MG Road", "Station Road", "Gandhi Nagar", "Nehru Place", "Industrial Area",
+        "IT Park Road", "Ring Road", "Main Street", "Sector 5", "Rajaji Nagar"
+      ],
+      "city_names": [
+        "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata",
+        "Pune", "Ahmedabad", "Jaipur", "Lucknow"
+      ],
+      "state_names": [
+        "Maharashtra", "Delhi", "Karnataka", "Telangana", "Tamil Nadu",
+        "West Bengal", "Gujarat", "Rajasthan"
+      ],
+      "state_codes": ["MH", "DL", "KA", "TS", "TN", "WB", "GJ", "RJ"]
+    },
+    "postal_code": {
+      "format": "NNNNNN",
+      "regex": "^[1-9][0-9]{5}$",
+      "ranges": [{ "from": "110001", "to": "855117" }]
+    },
+    "building_number": {
+      "format": "alphanumeric",
+      "range": [1, 500]
+    },
+    "country_calling_code": "+91"
+  },
+
+  "phone": {
+    "country_calling_code": "+91",
+    "formats": {
+      "landline": "+91-{area_code}-{n7}",
+      "mobile": "+91-{n5}-{n5}",
+      "freephone": "+91-1800-{n3}-{n4}"
+    },
+    "area_codes": ["11", "22", "80", "40", "44", "33", "20", "79", "141", "522"],
+    "subscriber_length": { "min": 7, "max": 8 },
+    "display_format": "+91 {n5} {n5}"
+  },
+
+  "banking": {
+    "account_format": "domestic",
+    "iban": {},
+    "domestic_format": {
+      "name": "IFSC",
+      "format": "{ifsc_code:11} {account_number:9-18}"
+    },
+    "bank_names": [
+      "State Bank of India", "HDFC Bank", "ICICI Bank",
+      "Kotak Mahindra Bank", "Axis Bank", "Punjab National Bank"
+    ],
+    "swift_prefix": "IN",
+    "payment_systems": ["NEFT", "RTGS", "IMPS", "UPI"],
+    "settlement_rules": {
+      "domestic_transfer_days": 0,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "16:00",
+      "direct_debit_lead_days": 3
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Aadhaar Card", "PAN Card", "Passport", "Voter ID"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.10,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure", "high_value"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "INV/{FY}-{SEQ:6}",
+      "mandatory_fields": ["gstin", "hsn_code", "place_of_supply", "tax_breakup"],
+      "retention_years": 8,
+      "electronic_invoice_mandatory": true,
+      "e_invoice_format": "GST_E_Invoice"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [15, 30, 45, 60, 90],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.18, "base_rate_reference": "RBI" }
+    },
+    "approval_thresholds": {
+      "currency": "INR",
+      "levels": [
+        { "up_to": 100000, "approver": "team_lead" },
+        { "up_to": 1000000, "approver": "department_head" },
+        { "up_to": 10000000, "approver": "director" },
+        { "above": 10000000, "approver": "board" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "DPDP",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 3,
+        "financial_records_years": 8,
+        "tax_records_years": 8
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "PvtLtd", "name": "Private Limited Company", "name_en": "Private Limited Company", "weight": 0.45 },
+      { "code": "Ltd", "name": "Public Limited Company", "name_en": "Public Limited Company", "weight": 0.15 },
+      { "code": "LLP", "name": "Limited Liability Partnership", "name_en": "Limited Liability Partnership", "weight": 0.20 },
+      { "code": "OPC", "name": "One Person Company", "name_en": "One Person Company", "weight": 0.10 },
+      { "code": "Proprietorship", "name": "Sole Proprietorship", "name_en": "Sole Proprietorship", "weight": 0.10 }
+    ],
+    "tax_id_format": {
+      "name": "PAN",
+      "format": "AAAAA NNNN A",
+      "regex": "^[A-Z]{5}[0-9]{4}[A-Z]$"
+    },
+    "vat_id_format": {
+      "name": "GSTIN",
+      "prefix": "",
+      "format": "NN AAAAA NNNN A NZN",
+      "regex": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$"
+    },
+    "registration_authority": "Ministry of Corporate Affairs",
+    "registration_format": "CIN: {A}{NNNNN}{AA}{YYYY}{AAA}{NNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "Ind AS",
+    "chart_of_accounts": {
+      "standard": "Ind_AS",
+      "numbering_length": 4,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "1" },
+        "liabilities": { "from": "2", "to": "2" },
+        "revenue": { "from": "4", "to": "4" },
+        "expenses": { "from": "5", "to": "7" },
+        "closing": { "from": "9", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["Companies Act 2013", "Ind AS", "GST Act", "Income Tax Act"],
+      "filing_requirements": [
+        { "name": "Annual Return", "name_en": "Annual Return (MGT-7)", "deadline_months_after_ye": 2 },
+        { "name": "Financial Statements", "name_en": "Financial Statements (AOC-4)", "deadline_months_after_ye": 6 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "INR",
+    "statutory_deductions": [
+      { "code": "IT", "name": "Income Tax", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "PF", "name": "Provident Fund", "name_en": "Employee Provident Fund", "type": "percentage", "rate": 0.12 },
+      { "code": "ESI", "name": "Employee State Insurance", "name_en": "Employee State Insurance", "type": "percentage", "rate": 0.0075 },
+      { "code": "PT", "name": "Professional Tax", "name_en": "Professional Tax", "type": "fixed", "rate": 200 }
+    ],
+    "employer_contributions": [
+      { "code": "PF_E", "name": "Provident Fund (Employer)", "name_en": "EPF (Employer)", "type": "percentage", "rate": 0.12 },
+      { "code": "ESI_E", "name": "ESI (Employer)", "name_en": "ESI (Employer)", "type": "percentage", "rate": 0.0325 },
+      { "code": "EDLI", "name": "EDLI", "name_en": "Employee Deposit Linked Insurance", "type": "percentage", "rate": 0.005 },
+      { "code": "GRATUITY", "name": "Gratuity Provision", "name_en": "Gratuity", "type": "percentage", "rate": 0.0481 }
+    ],
+    "minimum_wage": { "hourly": 0, "currency": "INR", "effective_date": "2024-01-01" },
+    "working_hours": {
+      "standard_weekly": 48.0,
+      "max_daily": 9.0,
+      "statutory_annual_leave_days": 15,
+      "common_annual_leave_days": 24
+    },
+    "thirteenth_month": false,
+    "severance": {
+      "statutory": true,
+      "formula": "15_days_salary * years_of_service / 26"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{last_name} {industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{industry_word} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Industries", "Engineering", "Manufacturing", "Enterprises", "Works"],
+      "services": ["Services", "Solutions", "Consulting", "Logistics"],
+      "technology": ["Technologies", "Infosys", "Tech", "Systems", "IT Solutions"],
+      "supplies": ["Traders", "Suppliers", "Enterprises"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{last_name} {industry_word}",
+      "{city} {industry_word}"
+    ],
+    "industry_words": {
+      "retail": ["Retail", "Stores", "Mart", "Bazaar"],
+      "enterprise": ["Group", "Holdings", "Corporation"],
+      "public_sector": ["Corporation", "Authority", "Board"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Steel Sheet", "Aluminium Profiles", "Plastic Granules", "Copper Wire"],
+      "components": ["Gearbox", "Hydraulic Cylinder", "Control Module", "Sensor Unit"],
+      "finished_goods": ["Machine Tool", "Conveyor", "Test Bench"],
+      "consumables": ["Cutting Oil", "Abrasives", "Gaskets", "Fasteners"],
+      "office_supplies": ["Printer Paper", "Toner", "Office Furniture"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Nos",
+      "kg": "Kg",
+      "liter": "Ltr",
+      "meter": "Mtr",
+      "box": "Box"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Purchase Order No. {po_number} — {vendor_name}",
+        "Blanket Order as per Agreement {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Supply of {material} as per specification",
+        "AMC for {asset}",
+        "Consulting services {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Tax Invoice No. {invoice_number}",
+        "Credit Note No. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "JV {doc_type} {doc_number}",
+        "Provision for {period}",
+        "Period closing {period}"
+      ]
+    }
+  }
+}

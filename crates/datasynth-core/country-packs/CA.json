@@ -1,0 +1,462 @@
+{
+  "schema_version": "1.0",
+  "country_code": "CA",
+  "country_name": "Canada",
+  "region": "AMER",
+
+  "locale": {
+    "language_code": "en",
+    "language_name": "English",
+    "default_currency": "CAD",
+    "currency_symbol": "$",
+    "currency_decimal_places": 2,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "YYYY-MM-DD",
+      "long": "MMMM D, YYYY",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "America/Toronto",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 1,
+      "start_day": 1,
+      "variant": "calendar"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "english_canadian",
+        "weight": 0.55,
+        "male_first_names": [
+          "James", "Robert", "John", "Michael", "David", "William", "Richard",
+          "Thomas", "Mark", "Steven", "Kevin", "Brian", "Daniel", "Andrew",
+          "Matthew", "Ryan", "Jason", "Tyler", "Connor", "Liam", "Noah",
+          "Ethan", "Benjamin", "Alexander", "Nathan", "Jacob", "Owen", "Logan",
+          "Dylan", "Aiden", "Jack", "Samuel", "Henry", "Oliver", "Carter",
+          "Evan", "Lucas", "Mason", "Gavin", "Cole", "Ian", "Cameron",
+          "Hunter", "Kyle", "Sean", "Patrick", "Travis", "Derek", "Brandon",
+          "Scott"
+        ],
+        "female_first_names": [
+          "Jennifer", "Sarah", "Jessica", "Ashley", "Emily", "Megan", "Amanda",
+          "Stephanie", "Nicole", "Michelle", "Laura", "Rachel", "Heather",
+          "Shannon", "Kaitlyn", "Olivia", "Emma", "Sophia", "Ava", "Isabella",
+          "Charlotte", "Amelia", "Ella", "Abigail", "Chloe", "Harper",
+          "Grace", "Lily", "Hannah", "Nora", "Natalie", "Victoria", "Claire",
+          "Samantha", "Allison", "Haley", "Paige", "Brooke", "Taylor",
+          "Morgan", "Mackenzie", "Kayla", "Madison", "Brianna", "Chelsea",
+          "Lindsay", "Courtney", "Andrea", "Christina", "Vanessa"
+        ],
+        "last_names": [
+          "Smith", "Brown", "Wilson", "Thomson", "Campbell", "Anderson", "MacDonald",
+          "Taylor", "Stewart", "Clark", "Ross", "Young", "Mitchell", "Walker",
+          "Morrison", "Johnston", "Hamilton", "Graham", "Martin", "White",
+          "Robertson", "Murray", "Reid", "Fraser", "Scott", "Kennedy", "Murphy",
+          "Bell", "Kelly", "Moore", "Duncan", "Cameron", "Henderson", "Hunter",
+          "Robertson", "Black", "Watson", "Wood", "Gordon", "Marshall", "King",
+          "Douglas", "Ferguson", "Allan", "Davidson", "Sinclair", "MacLeod",
+          "MacDougall", "Robertson", "Phillips"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr."], "female": ["Ms.", "Mrs."] },
+        "academic_titles": ["Dr.", "Prof.", "CPA", "P.Eng."]
+      },
+      {
+        "culture_id": "french_canadian",
+        "weight": 0.25,
+        "male_first_names": [
+          "Jean", "Pierre", "Michel", "Jacques", "André", "François", "Louis",
+          "Marc", "Luc", "Guy", "Claude", "Yves", "Benoît", "Mathieu",
+          "Alexandre", "Sébastien", "Étienne", "Maxime", "Gabriel", "Olivier"
+        ],
+        "female_first_names": [
+          "Marie", "Françoise", "Monique", "Sylvie", "Nathalie", "Isabelle",
+          "Julie", "Véronique", "Geneviève", "Sophie", "Catherine", "Anne",
+          "Chantal", "Diane", "Louise", "Brigitte", "Hélène", "Céline",
+          "Valérie", "Mélanie"
+        ],
+        "last_names": [
+          "Tremblay", "Gagnon", "Roy", "Côté", "Bouchard", "Gauthier",
+          "Morin", "Lavoie", "Fortin", "Gagné", "Ouellet", "Pelletier",
+          "Bélanger", "Lévesque", "Bergeron", "Leblanc", "Paquette",
+          "Girard", "Simard", "Boucher"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["M."], "female": ["Mme"] },
+        "academic_titles": ["Dr", "Pr", "CPA"]
+      },
+      {
+        "culture_id": "multicultural_canadian",
+        "weight": 0.20,
+        "male_first_names": [
+          "Raj", "Wei", "Harpreet", "Ming", "Arjun", "Ahmed", "Ali",
+          "Chen", "Patel", "Singh"
+        ],
+        "female_first_names": [
+          "Priya", "Mei", "Fatima", "Ling", "Anita", "Noor", "Sunita",
+          "Yan", "Deepa", "Amara"
+        ],
+        "last_names": [
+          "Singh", "Li", "Wang", "Patel", "Chen", "Kim", "Nguyen",
+          "Ahmed", "Khan", "Lee"
+        ],
+        "name_order": "western",
+        "titles": { "male": ["Mr."], "female": ["Ms."] },
+        "academic_titles": []
+      }
+    ],
+    "email_domains": ["example.ca", "company.ca", "enterprise.ca", "sample.ca"],
+    "username_patterns": ["{first_name}.{last_name}", "{first_initial}{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "New Year's Day", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Canada Day", "name_en": "Canada Day", "month": 7, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "National Day for Truth and Reconciliation", "name_en": "Truth and Reconciliation Day", "month": 9, "day": 30, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Remembrance Day", "name_en": "Remembrance Day", "month": 11, "day": 11, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Christmas Day", "name_en": "Christmas Day", "month": 12, "day": 25, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "Boxing Day", "name_en": "Boxing Day", "month": 12, "day": 26, "activity_multiplier": 0.02, "observe_weekend_rule": true }
+    ],
+    "easter_relative": [
+      { "name": "Good Friday", "name_en": "Good Friday", "offset_days": -2, "activity_multiplier": 0.02 }
+    ],
+    "nth_weekday": [
+      { "name": "Victoria Day", "name_en": "Victoria Day", "month": 5, "weekday": "monday", "occurrence": 4, "offset_days": -7, "activity_multiplier": 0.02 },
+      { "name": "Labour Day", "name_en": "Labour Day", "month": 9, "weekday": "monday", "occurrence": 1, "offset_days": 0, "activity_multiplier": 0.02 },
+      { "name": "Thanksgiving", "name_en": "Thanksgiving", "month": 10, "weekday": "monday", "occurrence": 2, "offset_days": 0, "activity_multiplier": 0.02 }
+    ],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "Christmas Holiday",
+        "name_en": "Christmas to New Year",
+        "start": { "month": 12, "day": 24 },
+        "end": { "month": 12, "day": 27 },
+        "activity_multiplier": 0.02,
+        "description": "Extended Christmas holiday period"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.15,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.265,
+      "small_business_threshold": 500000
+    },
+    "vat": {
+      "standard_rate": 0.05,
+      "reduced_rates": [
+        { "rate": 0.13, "label": "hst_ontario", "applies_to": ["goods_and_services_ontario"] },
+        { "rate": 0.15, "label": "hst_atlantic", "applies_to": ["goods_and_services_atlantic"] }
+      ],
+      "zero_rated": ["exports", "basic_groceries", "prescription_drugs"],
+      "exempt": ["financial_services", "healthcare", "education", "residential_rent"],
+      "registration_threshold": 30000,
+      "filing_frequency": "quarterly",
+      "reverse_charge_applicable": false
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.0,
+      "dividends_foreign_default": 0.25,
+      "interest": 0.25,
+      "royalties": 0.25,
+      "services": 0.0
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 55867, "rate": 0.15 },
+        { "up_to": 111733, "rate": 0.205 },
+        { "up_to": 154906, "rate": 0.26 },
+        { "up_to": 220000, "rate": 0.29 },
+        { "above": 220000, "rate": 0.33 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.0595, "employer_rate": 0.0595, "ceiling_annual": 68500 },
+        "health": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null },
+        "unemployment": { "employee_rate": 0.0166, "employer_rate": 0.02324, "ceiling_annual": 63200 },
+        "long_term_care": { "employee_rate": 0.0, "employer_rate": 0.0, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM"],
+      "safe_harbor_rules": false
+    },
+    "subnational": [
+      { "code": "ON", "name": "Ontario", "rate": 0.115, "tax_type": "provincial_corporate" },
+      { "code": "QC", "name": "Quebec", "rate": 0.115, "tax_type": "provincial_corporate" },
+      { "code": "BC", "name": "British Columbia", "rate": 0.12, "tax_type": "provincial_corporate" },
+      { "code": "AB", "name": "Alberta", "rate": 0.08, "tax_type": "provincial_corporate" }
+    ]
+  },
+
+  "address": {
+    "format_template": "{building_number} {street}\n{city}, {state_code} {postal_code}",
+    "components": {
+      "street_names": [
+        "King Street", "Queen Street", "Main Street", "Bay Street", "Yonge Street",
+        "Rue Sainte-Catherine", "Boulevard Saint-Laurent", "Maple Avenue",
+        "Oak Drive", "Cedar Boulevard"
+      ],
+      "city_names": [
+        "Toronto", "Montreal", "Vancouver", "Calgary", "Edmonton", "Ottawa",
+        "Winnipeg", "Quebec City", "Hamilton", "Halifax"
+      ],
+      "state_names": [
+        "Ontario", "Quebec", "British Columbia", "Alberta",
+        "Manitoba", "Saskatchewan", "Nova Scotia", "New Brunswick"
+      ],
+      "state_codes": ["ON", "QC", "BC", "AB", "MB", "SK", "NS", "NB"]
+    },
+    "postal_code": {
+      "format": "ANA NAN",
+      "regex": "^[A-Z][0-9][A-Z] [0-9][A-Z][0-9]$",
+      "ranges": [{ "from": "A0A 0A0", "to": "Y9Z 9Z9" }]
+    },
+    "building_number": {
+      "format": "numeric",
+      "range": [1, 9999]
+    },
+    "country_calling_code": "+1"
+  },
+
+  "phone": {
+    "country_calling_code": "+1",
+    "formats": {
+      "landline": "+1-{area_code}-{n3}-{n4}",
+      "mobile": "+1-{area_code}-{n3}-{n4}",
+      "freephone": "+1-800-{n3}-{n4}"
+    },
+    "area_codes": ["416", "647", "514", "604", "403", "613", "204", "418", "905", "902"],
+    "subscriber_length": { "min": 7, "max": 7 },
+    "display_format": "({area_code}) {n3}-{n4}"
+  },
+
+  "banking": {
+    "account_format": "domestic",
+    "iban": {},
+    "domestic_format": {
+      "name": "Canadian_Transit",
+      "format": "{transit_number:5}-{institution_number:3}-{account_number:7-12}"
+    },
+    "bank_names": [
+      "Royal Bank of Canada", "Toronto-Dominion Bank", "Bank of Nova Scotia",
+      "Bank of Montreal", "Canadian Imperial Bank of Commerce", "National Bank of Canada"
+    ],
+    "swift_prefix": "CA",
+    "payment_systems": ["Interac", "ACSS", "LVTS"],
+    "settlement_rules": {
+      "domestic_transfer_days": 1,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "15:00",
+      "direct_debit_lead_days": 3
+    },
+    "kyc_requirements": {
+      "id_document_types": ["Passport", "Driver's Licence", "Provincial ID Card"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "INV-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["business_number", "gst_hst_number", "date", "amount"],
+      "retention_years": 6,
+      "electronic_invoice_mandatory": false,
+      "e_invoice_format": "PEPPOL"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [15, 30, 45, 60, 90],
+      "early_payment_discount": { "common_rate": 0.02, "common_days": 10 },
+      "late_payment_interest": { "statutory_rate": 0.05, "base_rate_reference": "BOC" }
+    },
+    "approval_thresholds": {
+      "currency": "CAD",
+      "levels": [
+        { "up_to": 5000, "approver": "team_lead" },
+        { "up_to": 25000, "approver": "department_head" },
+        { "up_to": 100000, "approver": "director" },
+        { "above": 100000, "approver": "board" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "PIPEDA",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 3,
+        "financial_records_years": 6,
+        "tax_records_years": 6
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "Corp", "name": "Corporation", "name_en": "Corporation", "weight": 0.40 },
+      { "code": "Inc", "name": "Incorporated", "name_en": "Incorporated", "weight": 0.25 },
+      { "code": "Ltd", "name": "Limited", "name_en": "Limited", "weight": 0.15 },
+      { "code": "LP", "name": "Limited Partnership", "name_en": "Limited Partnership", "weight": 0.10 },
+      { "code": "SP", "name": "Sole Proprietorship", "name_en": "Sole Proprietorship", "weight": 0.10 }
+    ],
+    "tax_id_format": {
+      "name": "Business Number",
+      "format": "NNN NNN NNN RC NNNN",
+      "regex": "^[0-9]{9}RC[0-9]{4}$"
+    },
+    "vat_id_format": {
+      "name": "GST/HST Registration Number",
+      "prefix": "",
+      "format": "NNN NNN NNN RT NNNN",
+      "regex": "^[0-9]{9}RT[0-9]{4}$"
+    },
+    "registration_authority": "Corporations Canada",
+    "registration_format": "{NNNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "ASPE",
+    "chart_of_accounts": {
+      "standard": "IFRS_CA",
+      "numbering_length": 4,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "1" },
+        "liabilities": { "from": "2", "to": "2" },
+        "revenue": { "from": "4", "to": "4" },
+        "expenses": { "from": "5", "to": "7" },
+        "closing": { "from": "9", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": false,
+      "local_regulations": ["CBCA", "IFRS", "ASPE", "Income Tax Act"],
+      "filing_requirements": [
+        { "name": "Annual Return", "name_en": "Annual Return", "deadline_months_after_ye": 6 },
+        { "name": "T2 Corporate Tax Return", "name_en": "Corporate Tax Return", "deadline_months_after_ye": 6 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "biweekly",
+    "currency": "CAD",
+    "statutory_deductions": [
+      { "code": "FIT", "name": "Federal Income Tax", "name_en": "Federal Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "CPP", "name": "Canada Pension Plan", "name_en": "Canada Pension Plan", "type": "percentage", "rate": 0.0595 },
+      { "code": "EI", "name": "Employment Insurance", "name_en": "Employment Insurance", "type": "percentage", "rate": 0.0166 }
+    ],
+    "employer_contributions": [
+      { "code": "CPP_E", "name": "CPP (Employer)", "name_en": "Canada Pension Plan (Employer)", "type": "percentage", "rate": 0.0595 },
+      { "code": "EI_E", "name": "EI (Employer)", "name_en": "Employment Insurance (Employer)", "type": "percentage", "rate": 0.02324 },
+      { "code": "WSIB", "name": "Workers' Compensation", "name_en": "Workers' Safety and Insurance", "type": "percentage", "rate": 0.013 }
+    ],
+    "minimum_wage": { "hourly": 16.55, "currency": "CAD", "effective_date": "2024-10-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 8.0,
+      "statutory_annual_leave_days": 10,
+      "common_annual_leave_days": 15
+    },
+    "thirteenth_month": false,
+    "severance": {
+      "statutory": true,
+      "formula": "1_week_per_year_of_service"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word} {entity_suffix}",
+      "{last_name} & {last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["Manufacturing", "Industries", "Precision", "Metalworks", "Engineering"],
+      "services": ["Consulting", "Services", "Logistics", "Solutions"],
+      "technology": ["Technologies", "Systems", "Digital", "Software"],
+      "supplies": ["Supply", "Distributors", "Materials"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word} {entity_suffix}",
+      "{city} {industry_word}",
+      "{last_name} {entity_suffix}"
+    ],
+    "industry_words": {
+      "retail": ["Retail", "Stores", "Market", "Trading"],
+      "enterprise": ["Group", "Holdings", "Corporation"],
+      "public_sector": ["Municipality", "Authority", "Board"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["Steel Sheet", "Aluminium Profiles", "Plastic Granules", "Copper Wire"],
+      "components": ["Gearbox", "Hydraulic Cylinder", "Control Module", "Sensor Unit"],
+      "finished_goods": ["Machine Tool", "Conveyor", "Test Bench"],
+      "consumables": ["Cutting Fluid", "Abrasives", "Gaskets", "Fasteners"],
+      "office_supplies": ["Printer Paper", "Toner", "Office Furniture"]
+    },
+    "unit_of_measure_labels": {
+      "each": "Each",
+      "kg": "Kilogram",
+      "liter": "Litre",
+      "meter": "Metre",
+      "box": "Box"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "Purchase Order No. {po_number} — {vendor_name}",
+        "Blanket Order per Agreement {contract_ref}"
+      ],
+      "line_descriptions": [
+        "Supply of {material} per specification",
+        "Maintenance service for {asset}",
+        "Consulting services {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "Invoice No. {invoice_number}",
+        "Credit Note No. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "JE {doc_type} {doc_number}",
+        "Accrual {period}",
+        "Period close {period}"
+      ]
+    }
+  }
+}

@@ -1,0 +1,430 @@
+{
+  "schema_version": "1.0",
+  "country_code": "JP",
+  "country_name": "Japan",
+  "region": "APAC",
+
+  "locale": {
+    "language_code": "ja",
+    "language_name": "Japanese",
+    "default_currency": "JPY",
+    "currency_symbol": "¥",
+    "currency_decimal_places": 0,
+    "number_format": {
+      "decimal_separator": ".",
+      "thousands_separator": ",",
+      "grouping": [3]
+    },
+    "date_format": {
+      "short": "YYYY/MM/DD",
+      "long": "YYYY年MM月DD日",
+      "iso": "YYYY-MM-DD"
+    },
+    "default_timezone": "Asia/Tokyo",
+    "weekend_days": ["Saturday", "Sunday"],
+    "fiscal_year": {
+      "start_month": 4,
+      "start_day": 1,
+      "variant": "custom"
+    }
+  },
+
+  "names": {
+    "cultures": [
+      {
+        "culture_id": "japanese",
+        "weight": 1.0,
+        "male_first_names": [
+          "Hiroshi", "Takeshi", "Kenji", "Masashi", "Yoshio", "Akira", "Taro",
+          "Kazuo", "Junichi", "Shigeru", "Yuki", "Ryo", "Daiki", "Sota", "Haruto",
+          "Yuto", "Ren", "Minato", "Kaito", "Sora", "Hayato", "Kota", "Shota",
+          "Takumi", "Naoki", "Daisuke", "Satoshi", "Makoto", "Kenichi", "Shinji",
+          "Tetsuya", "Hideki", "Nori", "Koichi", "Masato", "Ryota", "Shun",
+          "Tomoya", "Yusuke", "Atsushi", "Hajime", "Mitsuru", "Tsuyoshi", "Osamu",
+          "Shuichi", "Ichiro", "Noboru", "Tadashi", "Masaki", "Yuichi"
+        ],
+        "female_first_names": [
+          "Yoko", "Keiko", "Sachiko", "Yoshiko", "Tomoko", "Hiroko", "Akiko",
+          "Mariko", "Yuki", "Miki", "Emi", "Ayumi", "Yui", "Hana", "Sakura",
+          "Aoi", "Mei", "Rin", "Mio", "Saki", "Haruka", "Misaki", "Nanami",
+          "Natsuki", "Asuka", "Kaori", "Megumi", "Kumiko", "Noriko", "Reiko",
+          "Satoko", "Junko", "Chie", "Aya", "Mai", "Shiori", "Kanako",
+          "Miho", "Rika", "Naomi", "Yukiko", "Takako", "Midori", "Mayumi",
+          "Chieko", "Fumiko", "Kyoko", "Sayuri", "Momoko", "Nozomi"
+        ],
+        "last_names": [
+          "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamoto",
+          "Nakamura", "Kobayashi", "Kato", "Yoshida", "Yamada", "Sasaki", "Yamaguchi",
+          "Matsumoto", "Inoue", "Kimura", "Hayashi", "Shimizu", "Yamazaki",
+          "Mori", "Abe", "Ikeda", "Hashimoto", "Yamashita", "Ishikawa", "Nakajima",
+          "Maeda", "Fujita", "Ogawa", "Goto", "Okada", "Hasegawa", "Murakami",
+          "Kondo", "Ishii", "Saito", "Sakamoto", "Endo", "Aoki", "Fujii",
+          "Nishimura", "Fukuda", "Ota", "Miura", "Fujiwara", "Okamoto", "Matsuda",
+          "Nakagawa", "Nakano"
+        ],
+        "name_order": "eastern",
+        "titles": { "male": ["氏"], "female": ["氏"] },
+        "academic_titles": ["博士", "教授"]
+      }
+    ],
+    "email_domains": ["example.co.jp", "kaisha.co.jp", "jigyou.co.jp", "sample.jp"],
+    "username_patterns": ["{last_name}.{first_name}", "{first_initial}{last_name}", "{last_name}{employee_number}"]
+  },
+
+  "holidays": {
+    "calendar_type": "gregorian",
+    "fixed": [
+      { "name": "元日", "name_en": "New Year's Day", "month": 1, "day": 1, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "建国記念の日", "name_en": "National Foundation Day", "month": 2, "day": 11, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "天皇誕生日", "name_en": "Emperor's Birthday", "month": 2, "day": 23, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "昭和の日", "name_en": "Showa Day", "month": 4, "day": 29, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "憲法記念日", "name_en": "Constitution Memorial Day", "month": 5, "day": 3, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "みどりの日", "name_en": "Greenery Day", "month": 5, "day": 4, "activity_multiplier": 0.02, "observe_weekend_rule": false },
+      { "name": "こどもの日", "name_en": "Children's Day", "month": 5, "day": 5, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "山の日", "name_en": "Mountain Day", "month": 8, "day": 11, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "文化の日", "name_en": "Culture Day", "month": 11, "day": 3, "activity_multiplier": 0.02, "observe_weekend_rule": true },
+      { "name": "勤労感謝の日", "name_en": "Labour Thanksgiving Day", "month": 11, "day": 23, "activity_multiplier": 0.02, "observe_weekend_rule": true }
+    ],
+    "easter_relative": [],
+    "nth_weekday": [
+      { "name": "成人の日", "name_en": "Coming of Age Day", "month": 1, "weekday": "monday", "occurrence": 2, "offset_days": 0, "activity_multiplier": 0.02 },
+      { "name": "海の日", "name_en": "Marine Day", "month": 7, "weekday": "monday", "occurrence": 3, "offset_days": 0, "activity_multiplier": 0.02 },
+      { "name": "スポーツの日", "name_en": "Sports Day", "month": 10, "weekday": "monday", "occurrence": 2, "offset_days": 0, "activity_multiplier": 0.02 }
+    ],
+    "last_weekday": [],
+    "lunar": [],
+    "regional_holidays": { "enabled": false, "regions": {} },
+    "holiday_seasons": [
+      {
+        "name": "年末年始",
+        "name_en": "New Year Holiday",
+        "start": { "month": 12, "day": 29 },
+        "end": { "month": 1, "day": 3 },
+        "activity_multiplier": 0.02,
+        "description": "Extended new year holiday period"
+      },
+      {
+        "name": "お盆",
+        "name_en": "Obon",
+        "start": { "month": 8, "day": 13 },
+        "end": { "month": 8, "day": 16 },
+        "activity_multiplier": 0.1,
+        "description": "Buddhist festival, many businesses close"
+      }
+    ]
+  },
+
+  "tax": {
+    "corporate_income_tax": {
+      "standard_rate": 0.2320,
+      "trade_tax_rate": 0.0,
+      "solidarity_surcharge": 0.0,
+      "effective_combined_rate": 0.3062,
+      "small_business_threshold": null
+    },
+    "vat": {
+      "standard_rate": 0.10,
+      "reduced_rates": [
+        { "rate": 0.08, "label": "reduced", "applies_to": ["food", "newspapers"] }
+      ],
+      "zero_rated": ["exports"],
+      "exempt": ["financial_services", "insurance", "healthcare", "education"],
+      "registration_threshold": 10000000,
+      "filing_frequency": "monthly",
+      "reverse_charge_applicable": true
+    },
+    "withholding_tax": {
+      "dividends_domestic": 0.2042,
+      "dividends_foreign_default": 0.2042,
+      "interest": 0.1521,
+      "royalties": 0.2042,
+      "services": 0.2042
+    },
+    "payroll_tax": {
+      "income_tax_brackets": [
+        { "up_to": 1950000, "rate": 0.05 },
+        { "up_to": 3300000, "rate": 0.10 },
+        { "up_to": 6950000, "rate": 0.20 },
+        { "up_to": 9000000, "rate": 0.23 },
+        { "up_to": 18000000, "rate": 0.33 },
+        { "up_to": 40000000, "rate": 0.40 },
+        { "above": 40000000, "rate": 0.45 }
+      ],
+      "social_security": {
+        "pension": { "employee_rate": 0.0915, "employer_rate": 0.0915, "ceiling_annual": 7800000 },
+        "health": { "employee_rate": 0.05, "employer_rate": 0.05, "ceiling_annual": null },
+        "unemployment": { "employee_rate": 0.003, "employer_rate": 0.006, "ceiling_annual": null },
+        "long_term_care": { "employee_rate": 0.009, "employer_rate": 0.009, "ceiling_annual": null }
+      },
+      "church_tax_rate": 0.0
+    },
+    "transfer_pricing": {
+      "documentation_required": true,
+      "methods": ["CUP", "RPM", "CPLM", "TNMM", "PSM", "Berry_Ratio"],
+      "safe_harbor_rules": false
+    },
+    "subnational": [
+      { "code": "TK", "name": "Tokyo", "rate": 0.0714, "tax_type": "corporate_inhabitant" },
+      { "code": "OS", "name": "Osaka", "rate": 0.0714, "tax_type": "corporate_inhabitant" }
+    ]
+  },
+
+  "address": {
+    "format_template": "〒{postal_code}\n{state}{city}{street}{building_number}",
+    "components": {
+      "street_names": [
+        "千代田区丸の内", "中央区日本橋", "港区六本木", "新宿区西新宿",
+        "渋谷区渋谷", "品川区東品川", "大田区蒲田", "世田谷区三軒茶屋",
+        "豊島区池袋", "文京区本郷"
+      ],
+      "city_names": [
+        "東京都", "大阪市", "名古屋市", "横浜市", "福岡市", "札幌市",
+        "神戸市", "京都市", "仙台市", "広島市"
+      ],
+      "state_names": [
+        "東京都", "大阪府", "愛知県", "神奈川県", "福岡県",
+        "北海道", "兵庫県", "京都府"
+      ],
+      "state_codes": ["13", "27", "23", "14", "40", "01", "28", "26"]
+    },
+    "postal_code": {
+      "format": "NNN-NNNN",
+      "regex": "^[0-9]{3}-[0-9]{4}$",
+      "ranges": [{ "from": "100-0000", "to": "999-9999" }]
+    },
+    "building_number": {
+      "format": "japanese_address",
+      "range": [1, 30]
+    },
+    "country_calling_code": "+81"
+  },
+
+  "phone": {
+    "country_calling_code": "+81",
+    "formats": {
+      "landline": "+81-{area_code}-{n4}-{n4}",
+      "mobile": "+81-90-{n4}-{n4}",
+      "freephone": "+81-120-{n3}-{n3}"
+    },
+    "area_codes": ["3", "6", "52", "45", "92", "11", "78", "75", "22", "82"],
+    "subscriber_length": { "min": 7, "max": 8 },
+    "display_format": "0{area_code}-{n4}-{n4}"
+  },
+
+  "banking": {
+    "account_format": "domestic",
+    "iban": {},
+    "domestic_format": {
+      "name": "Zengin",
+      "format": "{bank_code:4}-{branch_code:3}-{account_type:1}-{account_number:7}"
+    },
+    "bank_names": [
+      "三菱UFJ銀行", "三井住友銀行", "みずほ銀行",
+      "りそな銀行", "三井住友信託銀行", "横浜銀行"
+    ],
+    "swift_prefix": "JP",
+    "payment_systems": ["Zengin", "BOJ-NET"],
+    "settlement_rules": {
+      "domestic_transfer_days": 0,
+      "international_transfer_days": 2,
+      "wire_cutoff_time": "15:00",
+      "direct_debit_lead_days": 3
+    },
+    "kyc_requirements": {
+      "id_document_types": ["運転免許証", "マイナンバーカード", "パスポート"],
+      "pep_screening_required": true,
+      "beneficial_ownership_threshold": 0.25,
+      "enhanced_due_diligence_triggers": ["high_risk_country", "pep", "complex_structure"]
+    }
+  },
+
+  "business_rules": {
+    "invoice": {
+      "numbering_format": "INV-{YYYY}-{SEQ:6}",
+      "mandatory_fields": ["registration_number", "qualified_invoice_number", "tax_rate_breakdown"],
+      "retention_years": 7,
+      "electronic_invoice_mandatory": false,
+      "e_invoice_format": "Peppol"
+    },
+    "payment_terms": {
+      "default_days": 30,
+      "common_terms": [30, 60, 90, 120],
+      "early_payment_discount": { "common_rate": 0.0, "common_days": 0 },
+      "late_payment_interest": { "statutory_rate": 0.03, "base_rate_reference": "BOJ" }
+    },
+    "approval_thresholds": {
+      "currency": "JPY",
+      "levels": [
+        { "up_to": 500000, "approver": "kacho" },
+        { "up_to": 5000000, "approver": "bucho" },
+        { "up_to": 50000000, "approver": "torishimariyaku" },
+        { "above": 50000000, "approver": "torishimariyakukai" }
+      ]
+    },
+    "data_privacy": {
+      "regulation": "APPI",
+      "pseudonymization_required": true,
+      "retention_limits": {
+        "employee_data_years": 3,
+        "financial_records_years": 7,
+        "tax_records_years": 7
+      }
+    }
+  },
+
+  "legal_entities": {
+    "entity_types": [
+      { "code": "KK", "name": "株式会社", "name_en": "Kabushiki Kaisha (Corporation)", "weight": 0.60 },
+      { "code": "GK", "name": "合同会社", "name_en": "Godo Kaisha (LLC)", "weight": 0.25 },
+      { "code": "YK", "name": "有限会社", "name_en": "Yugen Kaisha (Ltd)", "weight": 0.10 },
+      { "code": "NK", "name": "合名会社", "name_en": "Gomei Kaisha (Partnership)", "weight": 0.05 }
+    ],
+    "tax_id_format": {
+      "name": "法人番号",
+      "format": "NNNNNNNNNNNNN",
+      "regex": "^[0-9]{13}$"
+    },
+    "vat_id_format": {
+      "name": "適格請求書発行事業者登録番号",
+      "prefix": "T",
+      "format": "T NNNNNNNNNNNNN",
+      "regex": "^T[0-9]{13}$"
+    },
+    "registration_authority": "法務局",
+    "registration_format": "{NNNN}-{NN}-{NNNNNN}"
+  },
+
+  "accounting": {
+    "framework": "ifrs",
+    "secondary_framework": null,
+    "local_gaap_name": "J-GAAP",
+    "chart_of_accounts": {
+      "standard": "J-GAAP",
+      "numbering_length": 4,
+      "account_ranges": {
+        "assets": { "from": "1", "to": "1" },
+        "liabilities": { "from": "2", "to": "2" },
+        "revenue": { "from": "4", "to": "4" },
+        "expenses": { "from": "5", "to": "8" },
+        "closing": { "from": "9", "to": "9" }
+      }
+    },
+    "audit_framework": "isa",
+    "regulatory": {
+      "sox_applicable": true,
+      "local_regulations": ["Companies Act", "Financial Instruments and Exchange Act", "J-SOX"],
+      "filing_requirements": [
+        { "name": "有価証券報告書", "name_en": "Annual Securities Report", "deadline_months_after_ye": 3 },
+        { "name": "決算短信", "name_en": "Earnings Summary", "deadline_months_after_ye": 1 }
+      ]
+    }
+  },
+
+  "payroll": {
+    "pay_frequency": "monthly",
+    "currency": "JPY",
+    "statutory_deductions": [
+      { "code": "SHOTOKU", "name": "所得税", "name_en": "Income Tax", "type": "progressive", "rate": 0.0 },
+      { "code": "JUMIN", "name": "住民税", "name_en": "Resident Tax", "type": "percentage", "rate": 0.10 },
+      { "code": "KOSEI", "name": "厚生年金", "name_en": "Employee Pension", "type": "percentage", "rate": 0.0915 },
+      { "code": "KENKO", "name": "健康保険", "name_en": "Health Insurance", "type": "percentage", "rate": 0.05 },
+      { "code": "KOYO", "name": "雇用保険", "name_en": "Employment Insurance", "type": "percentage", "rate": 0.003 },
+      { "code": "KAIGO", "name": "介護保険", "name_en": "Nursing Care Insurance", "type": "percentage", "rate": 0.009 }
+    ],
+    "employer_contributions": [
+      { "code": "KOSEI_E", "name": "厚生年金 (事業主)", "name_en": "Employee Pension (Employer)", "type": "percentage", "rate": 0.0915 },
+      { "code": "KENKO_E", "name": "健康保険 (事業主)", "name_en": "Health Insurance (Employer)", "type": "percentage", "rate": 0.05 },
+      { "code": "KOYO_E", "name": "雇用保険 (事業主)", "name_en": "Employment Insurance (Employer)", "type": "percentage", "rate": 0.006 },
+      { "code": "ROSAI", "name": "労災保険", "name_en": "Workers' Compensation", "type": "percentage", "rate": 0.003 },
+      { "code": "KODOMO", "name": "子ども子育て拠出金", "name_en": "Child Care Contribution", "type": "percentage", "rate": 0.0036 }
+    ],
+    "minimum_wage": { "hourly": 1004, "currency": "JPY", "effective_date": "2024-10-01" },
+    "working_hours": {
+      "standard_weekly": 40.0,
+      "max_daily": 8.0,
+      "statutory_annual_leave_days": 10,
+      "common_annual_leave_days": 20
+    },
+    "thirteenth_month": true,
+    "severance": {
+      "statutory": false,
+      "formula": "company_specific"
+    }
+  },
+
+  "vendor_templates": {
+    "name_patterns": [
+      "{last_name}{industry_word}{entity_suffix}",
+      "{city}{industry_word}{entity_suffix}",
+      "{industry_word}{entity_suffix}"
+    ],
+    "industry_words": {
+      "manufacturing": ["製作所", "工業", "精密", "金属", "機械"],
+      "services": ["サービス", "コンサルティング", "物流", "ソリューション"],
+      "technology": ["テクノロジー", "システム", "電子", "情報"],
+      "supplies": ["商事", "物産", "資材"]
+    }
+  },
+
+  "customer_templates": {
+    "name_patterns": [
+      "{industry_word}{entity_suffix}",
+      "{last_name}{industry_word}",
+      "{city}{industry_word}"
+    ],
+    "industry_words": {
+      "retail": ["百貨店", "ストア", "マート", "販売"],
+      "enterprise": ["ホールディングス", "グループ", "産業"],
+      "public_sector": ["市役所", "県庁", "法人"]
+    }
+  },
+
+  "material_templates": {
+    "categories": {
+      "raw_materials": ["鋼板", "アルミプロファイル", "樹脂ペレット", "銅線"],
+      "components": ["ギアボックス", "油圧シリンダー", "制御モジュール", "センサー"],
+      "finished_goods": ["工作機械", "コンベア", "検査装置"],
+      "consumables": ["切削油", "研磨材", "パッキン", "ボルト"],
+      "office_supplies": ["コピー用紙", "トナー", "オフィス家具"]
+    },
+    "unit_of_measure_labels": {
+      "each": "個",
+      "kg": "キログラム",
+      "liter": "リットル",
+      "meter": "メートル",
+      "box": "箱"
+    }
+  },
+
+  "document_texts": {
+    "purchase_order": {
+      "header_templates": [
+        "注文書 No. {po_number} — {vendor_name}",
+        "基本契約 {contract_ref} に基づく発注"
+      ],
+      "line_descriptions": [
+        "{material} 仕様書に基づく納品",
+        "{asset} メンテナンスサービス",
+        "コンサルティング業務 {service_description}"
+      ],
+      "posting_texts": []
+    },
+    "invoice": {
+      "header_templates": [
+        "請求書 No. {invoice_number}",
+        "クレジットノート No. {credit_note_number}"
+      ],
+      "line_descriptions": [],
+      "posting_texts": []
+    },
+    "journal_entry": {
+      "header_templates": [],
+      "line_descriptions": [],
+      "posting_texts": [
+        "仕訳 {doc_type} {doc_number}",
+        "見越計上 {period}",
+        "期末締切 {period}"
+      ]
+    }
+  }
+}

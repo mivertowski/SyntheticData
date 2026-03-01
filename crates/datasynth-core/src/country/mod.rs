@@ -28,6 +28,13 @@ const DEFAULT_PACK_JSON: &str = include_str!("../../country-packs/_default.json"
 const US_PACK_JSON: &str = include_str!("../../country-packs/US.json");
 const DE_PACK_JSON: &str = include_str!("../../country-packs/DE.json");
 const GB_PACK_JSON: &str = include_str!("../../country-packs/GB.json");
+const FR_PACK_JSON: &str = include_str!("../../country-packs/FR.json");
+const JP_PACK_JSON: &str = include_str!("../../country-packs/JP.json");
+const CN_PACK_JSON: &str = include_str!("../../country-packs/CN.json");
+const IN_PACK_JSON: &str = include_str!("../../country-packs/IN.json");
+const IT_PACK_JSON: &str = include_str!("../../country-packs/IT.json");
+const ES_PACK_JSON: &str = include_str!("../../country-packs/ES.json");
+const CA_PACK_JSON: &str = include_str!("../../country-packs/CA.json");
 
 // ---------------------------------------------------------------------------
 // CountryCode
@@ -116,6 +123,13 @@ impl CountryPackRegistry {
             (US_PACK_JSON, "US.json"),
             (DE_PACK_JSON, "DE.json"),
             (GB_PACK_JSON, "GB.json"),
+            (FR_PACK_JSON, "FR.json"),
+            (JP_PACK_JSON, "JP.json"),
+            (CN_PACK_JSON, "CN.json"),
+            (IN_PACK_JSON, "IN.json"),
+            (IT_PACK_JSON, "IT.json"),
+            (ES_PACK_JSON, "ES.json"),
+            (CA_PACK_JSON, "CA.json"),
         ] {
             let pack = Self::parse_and_merge(&default_pack, json, label)?;
             let code = CountryCode::new(&pack.country_code)?;
@@ -258,6 +272,85 @@ mod tests {
 
         let gb = reg.get_by_str("GB");
         assert_eq!(gb.country_code, "GB");
+    }
+
+    #[test]
+    fn test_all_ten_packs_load() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        assert_eq!(reg.available_countries().len(), 10);
+
+        for code in ["US", "DE", "GB", "FR", "JP", "CN", "IN", "IT", "ES", "CA"] {
+            let pack = reg.get_by_str(code);
+            assert_eq!(pack.country_code, code, "country_code mismatch for {code}");
+            assert!(!pack.holidays.fixed.is_empty(), "{code} has no fixed holidays");
+            assert!(!pack.names.cultures.is_empty(), "{code} has no name cultures");
+        }
+    }
+
+    #[test]
+    fn test_fr_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let fr = reg.get_by_str("FR");
+        assert_eq!(fr.country_code, "FR");
+        assert_eq!(fr.locale.default_currency, "EUR");
+        assert_eq!(fr.locale.default_timezone, "Europe/Paris");
+        assert!(fr.tax.vat.standard_rate > 0.19);
+    }
+
+    #[test]
+    fn test_jp_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let jp = reg.get_by_str("JP");
+        assert_eq!(jp.country_code, "JP");
+        assert_eq!(jp.locale.default_currency, "JPY");
+        assert_eq!(jp.locale.currency_decimal_places, 0);
+        assert_eq!(jp.locale.fiscal_year.start_month, 4);
+    }
+
+    #[test]
+    fn test_cn_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let cn = reg.get_by_str("CN");
+        assert_eq!(cn.country_code, "CN");
+        assert_eq!(cn.locale.default_currency, "CNY");
+        assert_eq!(cn.locale.default_timezone, "Asia/Shanghai");
+    }
+
+    #[test]
+    fn test_in_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let india = reg.get_by_str("IN");
+        assert_eq!(india.country_code, "IN");
+        assert_eq!(india.locale.default_currency, "INR");
+        assert_eq!(india.locale.number_format.grouping, vec![3, 2]);
+        assert_eq!(india.locale.fiscal_year.start_month, 4);
+    }
+
+    #[test]
+    fn test_it_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let it = reg.get_by_str("IT");
+        assert_eq!(it.country_code, "IT");
+        assert_eq!(it.locale.default_currency, "EUR");
+        assert!(it.payroll.thirteenth_month);
+    }
+
+    #[test]
+    fn test_es_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let es = reg.get_by_str("ES");
+        assert_eq!(es.country_code, "ES");
+        assert_eq!(es.locale.default_currency, "EUR");
+        assert_eq!(es.locale.default_timezone, "Europe/Madrid");
+    }
+
+    #[test]
+    fn test_ca_pack_loads() {
+        let reg = CountryPackRegistry::builtin_only().expect("should load");
+        let ca = reg.get_by_str("CA");
+        assert_eq!(ca.country_code, "CA");
+        assert_eq!(ca.locale.default_currency, "CAD");
+        assert!(!ca.tax.payroll_tax.income_tax_brackets.is_empty());
     }
 
     #[test]
