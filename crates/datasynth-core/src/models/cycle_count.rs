@@ -6,6 +6,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of a cycle count through the counting lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -64,6 +67,58 @@ pub struct CycleCount {
     pub total_variances: u32,
     /// Overall variance rate (total_variances / total_items_counted)
     pub variance_rate: f64,
+}
+
+impl ToNodeProperties for CycleCount {
+    fn node_type_name(&self) -> &'static str {
+        "cycle_count"
+    }
+    fn node_type_code(&self) -> u16 {
+        342
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "countId".into(),
+            GraphPropertyValue::String(self.count_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "warehouseId".into(),
+            GraphPropertyValue::String(self.warehouse_id.clone()),
+        );
+        p.insert(
+            "countDate".into(),
+            GraphPropertyValue::Date(self.count_date),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "totalItemsCounted".into(),
+            GraphPropertyValue::Int(self.total_items_counted as i64),
+        );
+        p.insert(
+            "totalVariances".into(),
+            GraphPropertyValue::Int(self.total_variances as i64),
+        );
+        p.insert(
+            "varianceRate".into(),
+            GraphPropertyValue::Float(self.variance_rate),
+        );
+        p.insert(
+            "isReconciled".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                CycleCountStatus::Reconciled | CycleCountStatus::Closed
+            )),
+        );
+        p
+    }
 }
 
 /// A single item within a cycle count.

@@ -285,6 +285,12 @@ impl MaterialGenerator {
                 position: (i + 1) as u16 * 10,
                 scrap_percentage: Decimal::ZERO,
                 is_optional: false,
+                id: None,
+                entity_code: None,
+                parent_material: None,
+                component_description: None,
+                level: None,
+                is_phantom: false,
             });
         }
 
@@ -396,6 +402,12 @@ impl MaterialGenerator {
                     position: (i + 1) as u16 * 10,
                     scrap_percentage: Decimal::ZERO,
                     is_optional: false,
+                    id: None,
+                    entity_code: None,
+                    parent_material: None,
+                    component_description: None,
+                    level: None,
+                    is_phantom: false,
                 });
             }
         }

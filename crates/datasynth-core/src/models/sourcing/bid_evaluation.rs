@@ -2,6 +2,9 @@
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// An individual criterion score entry for a bid.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,4 +76,61 @@ pub struct BidEvaluation {
     pub notes: Option<String>,
     /// Is the evaluation finalized
     pub is_finalized: bool,
+}
+
+impl ToNodeProperties for BidEvaluation {
+    fn node_type_name(&self) -> &'static str {
+        "bid_evaluation"
+    }
+    fn node_type_code(&self) -> u16 {
+        323
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "evaluationId".into(),
+            GraphPropertyValue::String(self.evaluation_id.clone()),
+        );
+        p.insert(
+            "rfxId".into(),
+            GraphPropertyValue::String(self.rfx_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "evaluatorId".into(),
+            GraphPropertyValue::String(self.evaluator_id.clone()),
+        );
+        p.insert(
+            "recommendation".into(),
+            GraphPropertyValue::String(format!("{:?}", self.recommendation)),
+        );
+        p.insert(
+            "bidCount".into(),
+            GraphPropertyValue::Int(self.ranked_bids.len() as i64),
+        );
+        if let Some(top) = self.ranked_bids.first() {
+            p.insert(
+                "topBidScore".into(),
+                GraphPropertyValue::Float(top.total_score),
+            );
+            p.insert(
+                "topBidAmount".into(),
+                GraphPropertyValue::Decimal(top.total_amount),
+            );
+        }
+        if let Some(ref vendor_id) = self.recommended_vendor_id {
+            p.insert(
+                "recommendedVendorId".into(),
+                GraphPropertyValue::String(vendor_id.clone()),
+            );
+        }
+        p.insert(
+            "isFinalized".into(),
+            GraphPropertyValue::Bool(self.is_finalized),
+        );
+        p
+    }
 }

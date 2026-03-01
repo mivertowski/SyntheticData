@@ -6,6 +6,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of a production order through the manufacturing lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -122,6 +125,86 @@ pub struct RoutingOperation {
     pub started_at: Option<NaiveDate>,
     /// Date the operation completed
     pub completed_at: Option<NaiveDate>,
+}
+
+impl ToNodeProperties for ProductionOrder {
+    fn node_type_name(&self) -> &'static str {
+        "production_order"
+    }
+    fn node_type_code(&self) -> u16 {
+        340
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "orderNumber".into(),
+            GraphPropertyValue::String(self.order_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "materialId".into(),
+            GraphPropertyValue::String(self.material_id.clone()),
+        );
+        p.insert(
+            "materialDescription".into(),
+            GraphPropertyValue::String(self.material_description.clone()),
+        );
+        p.insert(
+            "orderType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.order_type)),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "plannedQuantity".into(),
+            GraphPropertyValue::Decimal(self.planned_quantity),
+        );
+        p.insert(
+            "actualQuantity".into(),
+            GraphPropertyValue::Decimal(self.actual_quantity),
+        );
+        p.insert(
+            "scrapQuantity".into(),
+            GraphPropertyValue::Decimal(self.scrap_quantity),
+        );
+        p.insert(
+            "plannedStart".into(),
+            GraphPropertyValue::Date(self.planned_start),
+        );
+        p.insert(
+            "plannedEnd".into(),
+            GraphPropertyValue::Date(self.planned_end),
+        );
+        p.insert(
+            "plannedCost".into(),
+            GraphPropertyValue::Decimal(self.planned_cost),
+        );
+        p.insert(
+            "actualCost".into(),
+            GraphPropertyValue::Decimal(self.actual_cost),
+        );
+        p.insert(
+            "yieldRate".into(),
+            GraphPropertyValue::Float(self.yield_rate),
+        );
+        p.insert(
+            "operationCount".into(),
+            GraphPropertyValue::Int(self.operations.len() as i64),
+        );
+        p.insert(
+            "isComplete".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                ProductionOrderStatus::Completed | ProductionOrderStatus::Closed
+            )),
+        );
+        p
+    }
 }
 
 /// Status of a routing operation.

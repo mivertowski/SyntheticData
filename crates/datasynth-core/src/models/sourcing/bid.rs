@@ -3,6 +3,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of a supplier bid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -74,4 +77,57 @@ pub struct SupplierBid {
     pub is_on_time: bool,
     /// Whether the bid is technically compliant
     pub is_compliant: bool,
+}
+
+impl ToNodeProperties for SupplierBid {
+    fn node_type_name(&self) -> &'static str {
+        "supplier_bid"
+    }
+    fn node_type_code(&self) -> u16 {
+        322
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "bidId".into(),
+            GraphPropertyValue::String(self.bid_id.clone()),
+        );
+        p.insert(
+            "rfxId".into(),
+            GraphPropertyValue::String(self.rfx_id.clone()),
+        );
+        p.insert(
+            "vendorId".into(),
+            GraphPropertyValue::String(self.vendor_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "submissionDate".into(),
+            GraphPropertyValue::Date(self.submission_date),
+        );
+        p.insert(
+            "bidAmount".into(),
+            GraphPropertyValue::Decimal(self.total_amount),
+        );
+        p.insert(
+            "validityDays".into(),
+            GraphPropertyValue::Int(self.validity_days as i64),
+        );
+        p.insert(
+            "isOnTime".into(),
+            GraphPropertyValue::Bool(self.is_on_time),
+        );
+        p.insert(
+            "isCompliant".into(),
+            GraphPropertyValue::Bool(self.is_compliant),
+        );
+        p
+    }
 }

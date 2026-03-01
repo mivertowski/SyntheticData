@@ -4,8 +4,10 @@
 //! and SOX 404 compliance markers in synthetic accounting data.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use super::coso::{ControlScope, CosoComponent, CosoMaturityLevel, CosoPrinciple};
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 use super::user::UserPersona;
 
 /// Control type based on SOX 404 framework.
@@ -100,6 +102,24 @@ pub enum SoxAssertion {
     RightsAndObligations,
     /// Components are properly classified and disclosed
     PresentationAndDisclosure,
+}
+
+impl ToNodeProperties for SoxAssertion {
+    fn node_type_name(&self) -> &'static str {
+        "sox_assertion"
+    }
+    fn node_type_code(&self) -> u16 {
+        502
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
+        p.insert(
+            "code".into(),
+            GraphPropertyValue::String(format!("{:?}", self)),
+        );
+        p
+    }
 }
 
 impl std::fmt::Display for SoxAssertion {

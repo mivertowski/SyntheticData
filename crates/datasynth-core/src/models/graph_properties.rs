@@ -115,13 +115,17 @@ mod tests {
             GraphPropertyValue::String("hello".into()).to_string_value(),
             "hello"
         );
-        assert_eq!(GraphPropertyValue::Float(3.14).to_string_value(), "3.140000");
+        assert_eq!(
+            GraphPropertyValue::Float(3.14).to_string_value(),
+            "3.140000"
+        );
         assert_eq!(
             GraphPropertyValue::Decimal(Decimal::new(1234, 2)).to_string_value(),
             "12.34"
         );
         assert_eq!(
-            GraphPropertyValue::Date(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()).to_string_value(),
+            GraphPropertyValue::Date(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap())
+                .to_string_value(),
             "2024-01-15"
         );
         assert_eq!(

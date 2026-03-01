@@ -5,8 +5,10 @@
 
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 use super::engagement::RiskLevel;
 
 /// Professional judgment documentation.
@@ -196,6 +198,63 @@ impl ProfessionalJudgment {
             !self.partner_concurrence_required || self.partner_concurrence_id.is_some();
         let consultation_ok = !self.consultation_required || self.consultation.is_some();
         reviewer_ok && partner_ok && consultation_ok
+    }
+}
+
+impl ToNodeProperties for ProfessionalJudgment {
+    fn node_type_name(&self) -> &'static str {
+        "professional_judgment"
+    }
+    fn node_type_code(&self) -> u16 {
+        365
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "judgmentId".into(),
+            GraphPropertyValue::String(self.judgment_id.to_string()),
+        );
+        p.insert(
+            "judgmentRef".into(),
+            GraphPropertyValue::String(self.judgment_ref.clone()),
+        );
+        p.insert(
+            "engagementId".into(),
+            GraphPropertyValue::String(self.engagement_id.to_string()),
+        );
+        p.insert(
+            "judgmentType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.judgment_type)),
+        );
+        p.insert(
+            "topic".into(),
+            GraphPropertyValue::String(self.subject.clone()),
+        );
+        p.insert(
+            "conclusion".into(),
+            GraphPropertyValue::String(self.conclusion.clone()),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "alternativesCount".into(),
+            GraphPropertyValue::Int(self.alternatives_evaluated.len() as i64),
+        );
+        p.insert(
+            "consultationRequired".into(),
+            GraphPropertyValue::Bool(self.consultation_required),
+        );
+        p.insert(
+            "partnerConcurrenceRequired".into(),
+            GraphPropertyValue::Bool(self.partner_concurrence_required),
+        );
+        p.insert(
+            "isApproved".into(),
+            GraphPropertyValue::Bool(self.is_approved()),
+        );
+        p
     }
 }
 

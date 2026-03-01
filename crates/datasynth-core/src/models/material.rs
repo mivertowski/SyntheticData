@@ -5,6 +5,9 @@
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Type of material in the system.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -184,6 +187,26 @@ pub struct BomComponent {
     pub is_optional: bool,
     /// Position/sequence in BOM
     pub position: u16,
+
+    // -- Graph export fields (DS-008) --
+    /// Unique BOM line identifier
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// Company / entity code
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_code: Option<String>,
+    /// Parent (finished/semi-finished) material ID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_material: Option<String>,
+    /// Component description
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub component_description: Option<String>,
+    /// BOM level (1 = direct component, 2+ = sub-assembly)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<u32>,
+    /// Whether this is a phantom assembly (exploded during MRP)
+    #[serde(default)]
+    pub is_phantom: bool,
 }
 
 impl BomComponent {
@@ -200,6 +223,12 @@ impl BomComponent {
             scrap_percentage: Decimal::ZERO,
             is_optional: false,
             position: 0,
+            id: None,
+            entity_code: None,
+            parent_material: None,
+            component_description: None,
+            level: None,
+            is_phantom: false,
         }
     }
 
@@ -212,6 +241,54 @@ impl BomComponent {
     /// Calculate effective quantity including scrap.
     pub fn effective_quantity(&self) -> Decimal {
         self.quantity * (Decimal::ONE + self.scrap_percentage / Decimal::from(100))
+    }
+}
+
+impl ToNodeProperties for BomComponent {
+    fn node_type_name(&self) -> &'static str {
+        "bom_component"
+    }
+    fn node_type_code(&self) -> u16 {
+        343
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        if let Some(ref ec) = self.entity_code {
+            p.insert("entityCode".into(), GraphPropertyValue::String(ec.clone()));
+        }
+        if let Some(ref pm) = self.parent_material {
+            p.insert(
+                "parentMaterial".into(),
+                GraphPropertyValue::String(pm.clone()),
+            );
+        }
+        p.insert(
+            "componentMaterial".into(),
+            GraphPropertyValue::String(self.component_material_id.clone()),
+        );
+        if let Some(ref desc) = self.component_description {
+            p.insert(
+                "componentDescription".into(),
+                GraphPropertyValue::String(desc.clone()),
+            );
+        }
+        if let Some(lvl) = self.level {
+            p.insert("level".into(), GraphPropertyValue::Int(lvl as i64));
+        }
+        p.insert(
+            "quantityPer".into(),
+            GraphPropertyValue::Decimal(self.quantity),
+        );
+        p.insert("unit".into(), GraphPropertyValue::String(self.uom.clone()));
+        p.insert(
+            "scrapRate".into(),
+            GraphPropertyValue::Decimal(self.scrap_percentage),
+        );
+        p.insert(
+            "isPhantom".into(),
+            GraphPropertyValue::Bool(self.is_phantom),
+        );
+        p
     }
 }
 

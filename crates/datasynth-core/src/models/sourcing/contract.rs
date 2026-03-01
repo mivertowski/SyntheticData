@@ -3,6 +3,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Type of procurement contract.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -162,4 +165,66 @@ pub struct ProcurementContract {
     pub amendment_count: u32,
     /// Previous contract ID (if renewal)
     pub previous_contract_id: Option<String>,
+}
+
+impl ToNodeProperties for ProcurementContract {
+    fn node_type_name(&self) -> &'static str {
+        "procurement_contract"
+    }
+    fn node_type_code(&self) -> u16 {
+        324
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "contractId".into(),
+            GraphPropertyValue::String(self.contract_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "contractType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.contract_type)),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "vendorId".into(),
+            GraphPropertyValue::String(self.vendor_id.clone()),
+        );
+        p.insert(
+            "title".into(),
+            GraphPropertyValue::String(self.title.clone()),
+        );
+        p.insert(
+            "startDate".into(),
+            GraphPropertyValue::Date(self.start_date),
+        );
+        p.insert("endDate".into(), GraphPropertyValue::Date(self.end_date));
+        p.insert(
+            "totalValue".into(),
+            GraphPropertyValue::Decimal(self.total_value),
+        );
+        p.insert(
+            "consumedValue".into(),
+            GraphPropertyValue::Decimal(self.consumed_value),
+        );
+        p.insert(
+            "lineItemCount".into(),
+            GraphPropertyValue::Int(self.line_items.len() as i64),
+        );
+        p.insert(
+            "amendmentCount".into(),
+            GraphPropertyValue::Int(self.amendment_count as i64),
+        );
+        p.insert(
+            "isActive".into(),
+            GraphPropertyValue::Bool(matches!(self.status, ContractStatus::Active)),
+        );
+        p
+    }
 }

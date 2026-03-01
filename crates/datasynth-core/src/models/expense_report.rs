@@ -6,6 +6,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of an expense report through the approval and payment lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -78,6 +81,69 @@ pub struct ExpenseReport {
     pub department: Option<String>,
     /// List of policy violations flagged on this report
     pub policy_violations: Vec<String>,
+    /// Employee display name (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employee_name: Option<String>,
+}
+
+impl ToNodeProperties for ExpenseReport {
+    fn node_type_name(&self) -> &'static str {
+        "expense_report"
+    }
+    fn node_type_code(&self) -> u16 {
+        332
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "reportId".into(),
+            GraphPropertyValue::String(self.report_id.clone()),
+        );
+        p.insert(
+            "employeeId".into(),
+            GraphPropertyValue::String(self.employee_id.clone()),
+        );
+        if let Some(ref name) = self.employee_name {
+            p.insert(
+                "employeeName".into(),
+                GraphPropertyValue::String(name.clone()),
+            );
+        }
+        p.insert(
+            "submissionDate".into(),
+            GraphPropertyValue::Date(self.submission_date),
+        );
+        p.insert(
+            "totalAmount".into(),
+            GraphPropertyValue::Decimal(self.total_amount),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "lineCount".into(),
+            GraphPropertyValue::Int(self.line_items.len() as i64),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "isApproved".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                ExpenseStatus::Approved | ExpenseStatus::Paid
+            )),
+        );
+        if let Some(ref dept) = self.department {
+            p.insert(
+                "department".into(),
+                GraphPropertyValue::String(dept.clone()),
+            );
+        }
+        p
+    }
 }
 
 /// An individual line item within an expense report.

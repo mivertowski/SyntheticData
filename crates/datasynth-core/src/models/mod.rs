@@ -16,7 +16,6 @@ mod acdoca;
 mod anomaly;
 
 // Graph property mapping trait (DS-001)
-pub mod graph_properties;
 mod approval;
 mod chart_of_accounts;
 mod company;
@@ -27,6 +26,7 @@ mod department;
 mod entity_registry;
 mod fixed_asset;
 mod fx;
+pub mod graph_properties;
 mod internal_control;
 mod journal_entry;
 mod master_data;
@@ -61,6 +61,7 @@ mod time_entry;
 
 // Manufacturing models
 mod cycle_count;
+mod manufacturing_models;
 mod production_order;
 mod quality_inspection;
 
@@ -95,7 +96,6 @@ pub mod audit;
 pub mod banking;
 
 pub use acdoca::*;
-pub use graph_properties::*;
 pub use anomaly::*;
 pub use approval::*;
 pub use chart_of_accounts::*;
@@ -107,6 +107,7 @@ pub use department::*;
 pub use entity_registry::*;
 pub use fixed_asset::*;
 pub use fx::*;
+pub use graph_properties::*;
 pub use internal_control::*;
 pub use journal_entry::*;
 pub use master_data::*;
@@ -141,6 +142,7 @@ pub use time_entry::*;
 
 // Manufacturing exports
 pub use cycle_count::*;
+pub use manufacturing_models::*;
 pub use production_order::*;
 pub use quality_inspection::*;
 

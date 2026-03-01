@@ -4,10 +4,14 @@
 //! workforce diversity, pay equity, safety, governance metrics, supply chain ESG
 //! assessments, and disclosure/assurance records.
 
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 // ===========================================================================
 // Environmental — Emissions
@@ -589,6 +593,595 @@ pub struct ClimateScenario {
     pub physical_risk_impact: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
     pub financial_impact: Decimal,
+}
+
+// ===========================================================================
+// ToNodeProperties implementations
+// ===========================================================================
+
+impl ToNodeProperties for EmissionRecord {
+    fn node_type_name(&self) -> &'static str {
+        "emission_record"
+    }
+    fn node_type_code(&self) -> u16 {
+        430
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "scope".into(),
+            GraphPropertyValue::String(format!("{:?}", self.scope)),
+        );
+        if let Some(ref cat) = self.scope3_category {
+            p.insert(
+                "scope3Category".into(),
+                GraphPropertyValue::String(format!("{:?}", cat)),
+            );
+        }
+        if let Some(ref fid) = self.facility_id {
+            p.insert("facilityId".into(), GraphPropertyValue::String(fid.clone()));
+        }
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        if let Some(ref ad) = self.activity_data {
+            p.insert(
+                "activityData".into(),
+                GraphPropertyValue::String(ad.clone()),
+            );
+        }
+        if let Some(ref au) = self.activity_unit {
+            p.insert(
+                "activityUnit".into(),
+                GraphPropertyValue::String(au.clone()),
+            );
+        }
+        if let Some(ef) = self.emission_factor {
+            p.insert("emissionFactor".into(), GraphPropertyValue::Decimal(ef));
+        }
+        p.insert(
+            "amount".into(),
+            GraphPropertyValue::Decimal(self.co2e_tonnes),
+        );
+        p.insert(
+            "dataQuality".into(),
+            GraphPropertyValue::String(format!("{:?}", self.estimation_method)),
+        );
+        if let Some(ref src) = self.source {
+            p.insert("source".into(), GraphPropertyValue::String(src.clone()));
+        }
+        p
+    }
+}
+
+impl ToNodeProperties for EnergyConsumption {
+    fn node_type_name(&self) -> &'static str {
+        "energy_consumption"
+    }
+    fn node_type_code(&self) -> u16 {
+        431
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "facilityId".into(),
+            GraphPropertyValue::String(self.facility_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "energySource".into(),
+            GraphPropertyValue::String(format!("{:?}", self.energy_source)),
+        );
+        p.insert(
+            "consumptionKwh".into(),
+            GraphPropertyValue::Decimal(self.consumption_kwh),
+        );
+        p.insert("cost".into(), GraphPropertyValue::Decimal(self.cost));
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "isRenewable".into(),
+            GraphPropertyValue::Bool(self.is_renewable),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for WaterUsage {
+    fn node_type_name(&self) -> &'static str {
+        "water_usage"
+    }
+    fn node_type_code(&self) -> u16 {
+        432
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "facilityId".into(),
+            GraphPropertyValue::String(self.facility_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "source".into(),
+            GraphPropertyValue::String(format!("{:?}", self.source)),
+        );
+        p.insert(
+            "withdrawalM3".into(),
+            GraphPropertyValue::Decimal(self.withdrawal_m3),
+        );
+        p.insert(
+            "dischargeM3".into(),
+            GraphPropertyValue::Decimal(self.discharge_m3),
+        );
+        p.insert(
+            "consumptionM3".into(),
+            GraphPropertyValue::Decimal(self.consumption_m3),
+        );
+        p.insert(
+            "isWaterStressed".into(),
+            GraphPropertyValue::Bool(self.is_water_stressed_area),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for WasteRecord {
+    fn node_type_name(&self) -> &'static str {
+        "waste_record"
+    }
+    fn node_type_code(&self) -> u16 {
+        433
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "facilityId".into(),
+            GraphPropertyValue::String(self.facility_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "wasteType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.waste_type)),
+        );
+        p.insert(
+            "disposalMethod".into(),
+            GraphPropertyValue::String(format!("{:?}", self.disposal_method)),
+        );
+        p.insert(
+            "quantityTonnes".into(),
+            GraphPropertyValue::Decimal(self.quantity_tonnes),
+        );
+        p.insert(
+            "isDivertedFromLandfill".into(),
+            GraphPropertyValue::Bool(self.is_diverted_from_landfill),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for WorkforceDiversityMetric {
+    fn node_type_name(&self) -> &'static str {
+        "workforce_diversity_metric"
+    }
+    fn node_type_code(&self) -> u16 {
+        434
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "dimension".into(),
+            GraphPropertyValue::String(format!("{:?}", self.dimension)),
+        );
+        p.insert(
+            "level".into(),
+            GraphPropertyValue::String(format!("{:?}", self.level)),
+        );
+        p.insert(
+            "category".into(),
+            GraphPropertyValue::String(self.category.clone()),
+        );
+        p.insert(
+            "headcount".into(),
+            GraphPropertyValue::Int(self.headcount as i64),
+        );
+        p.insert(
+            "totalHeadcount".into(),
+            GraphPropertyValue::Int(self.total_headcount as i64),
+        );
+        p.insert(
+            "percentage".into(),
+            GraphPropertyValue::Decimal(self.percentage),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for PayEquityMetric {
+    fn node_type_name(&self) -> &'static str {
+        "pay_equity_metric"
+    }
+    fn node_type_code(&self) -> u16 {
+        435
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "dimension".into(),
+            GraphPropertyValue::String(format!("{:?}", self.dimension)),
+        );
+        p.insert(
+            "referenceGroup".into(),
+            GraphPropertyValue::String(self.reference_group.clone()),
+        );
+        p.insert(
+            "comparisonGroup".into(),
+            GraphPropertyValue::String(self.comparison_group.clone()),
+        );
+        p.insert(
+            "referenceSalary".into(),
+            GraphPropertyValue::Decimal(self.reference_median_salary),
+        );
+        p.insert(
+            "comparisonSalary".into(),
+            GraphPropertyValue::Decimal(self.comparison_median_salary),
+        );
+        p.insert(
+            "payGapRatio".into(),
+            GraphPropertyValue::Decimal(self.pay_gap_ratio),
+        );
+        p.insert(
+            "sampleSize".into(),
+            GraphPropertyValue::Int(self.sample_size as i64),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for SafetyIncident {
+    fn node_type_name(&self) -> &'static str {
+        "safety_incident"
+    }
+    fn node_type_code(&self) -> u16 {
+        436
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "facilityId".into(),
+            GraphPropertyValue::String(self.facility_id.clone()),
+        );
+        p.insert("date".into(), GraphPropertyValue::Date(self.date));
+        p.insert(
+            "incidentType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.incident_type)),
+        );
+        p.insert(
+            "daysAway".into(),
+            GraphPropertyValue::Int(self.days_away as i64),
+        );
+        p.insert(
+            "isRecordable".into(),
+            GraphPropertyValue::Bool(self.is_recordable),
+        );
+        p.insert(
+            "description".into(),
+            GraphPropertyValue::String(self.description.clone()),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for SafetyMetric {
+    fn node_type_name(&self) -> &'static str {
+        "safety_metric"
+    }
+    fn node_type_code(&self) -> u16 {
+        437
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "totalHoursWorked".into(),
+            GraphPropertyValue::Int(self.total_hours_worked as i64),
+        );
+        p.insert(
+            "recordableIncidents".into(),
+            GraphPropertyValue::Int(self.recordable_incidents as i64),
+        );
+        p.insert(
+            "lostTimeIncidents".into(),
+            GraphPropertyValue::Int(self.lost_time_incidents as i64),
+        );
+        p.insert(
+            "daysAway".into(),
+            GraphPropertyValue::Int(self.days_away as i64),
+        );
+        p.insert(
+            "nearMisses".into(),
+            GraphPropertyValue::Int(self.near_misses as i64),
+        );
+        p.insert(
+            "fatalities".into(),
+            GraphPropertyValue::Int(self.fatalities as i64),
+        );
+        p.insert("trir".into(), GraphPropertyValue::Decimal(self.trir));
+        p.insert("ltir".into(), GraphPropertyValue::Decimal(self.ltir));
+        p.insert(
+            "dartRate".into(),
+            GraphPropertyValue::Decimal(self.dart_rate),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for GovernanceMetric {
+    fn node_type_name(&self) -> &'static str {
+        "governance_metric"
+    }
+    fn node_type_code(&self) -> u16 {
+        438
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "boardSize".into(),
+            GraphPropertyValue::Int(self.board_size as i64),
+        );
+        p.insert(
+            "independentDirectors".into(),
+            GraphPropertyValue::Int(self.independent_directors as i64),
+        );
+        p.insert(
+            "femaleDirectors".into(),
+            GraphPropertyValue::Int(self.female_directors as i64),
+        );
+        p.insert(
+            "independenceRatio".into(),
+            GraphPropertyValue::Decimal(self.board_independence_ratio),
+        );
+        p.insert(
+            "genderDiversityRatio".into(),
+            GraphPropertyValue::Decimal(self.board_gender_diversity_ratio),
+        );
+        p.insert(
+            "ethicsTrainingPct".into(),
+            GraphPropertyValue::Float(self.ethics_training_completion_pct),
+        );
+        p.insert(
+            "whistleblowerReports".into(),
+            GraphPropertyValue::Int(self.whistleblower_reports as i64),
+        );
+        p.insert(
+            "antiCorruptionViolations".into(),
+            GraphPropertyValue::Int(self.anti_corruption_violations as i64),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for SupplierEsgAssessment {
+    fn node_type_name(&self) -> &'static str {
+        "supplier_esg_assessment"
+    }
+    fn node_type_code(&self) -> u16 {
+        439
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "vendorId".into(),
+            GraphPropertyValue::String(self.vendor_id.clone()),
+        );
+        p.insert(
+            "assessmentDate".into(),
+            GraphPropertyValue::Date(self.assessment_date),
+        );
+        p.insert(
+            "method".into(),
+            GraphPropertyValue::String(format!("{:?}", self.method)),
+        );
+        p.insert(
+            "environmentalScore".into(),
+            GraphPropertyValue::Decimal(self.environmental_score),
+        );
+        p.insert(
+            "socialScore".into(),
+            GraphPropertyValue::Decimal(self.social_score),
+        );
+        p.insert(
+            "governanceScore".into(),
+            GraphPropertyValue::Decimal(self.governance_score),
+        );
+        p.insert(
+            "overallScore".into(),
+            GraphPropertyValue::Decimal(self.overall_score),
+        );
+        p.insert(
+            "riskTier".into(),
+            GraphPropertyValue::String(format!("{:?}", self.risk_flag)),
+        );
+        p.insert(
+            "hasCorrectiveAction".into(),
+            GraphPropertyValue::Bool(self.corrective_actions_required > 0),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for MaterialityAssessment {
+    fn node_type_name(&self) -> &'static str {
+        "materiality_assessment"
+    }
+    fn node_type_code(&self) -> u16 {
+        440
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "topic".into(),
+            GraphPropertyValue::String(self.topic.clone()),
+        );
+        p.insert(
+            "impactScore".into(),
+            GraphPropertyValue::Decimal(self.impact_score),
+        );
+        p.insert(
+            "financialScore".into(),
+            GraphPropertyValue::Decimal(self.financial_score),
+        );
+        p.insert(
+            "combinedScore".into(),
+            GraphPropertyValue::Decimal(self.combined_score),
+        );
+        p.insert(
+            "isMaterial".into(),
+            GraphPropertyValue::Bool(self.is_material),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for EsgDisclosure {
+    fn node_type_name(&self) -> &'static str {
+        "esg_disclosure"
+    }
+    fn node_type_code(&self) -> u16 {
+        441
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "framework".into(),
+            GraphPropertyValue::String(format!("{:?}", self.framework)),
+        );
+        p.insert(
+            "topic".into(),
+            GraphPropertyValue::String(self.disclosure_topic.clone()),
+        );
+        p.insert(
+            "periodStart".into(),
+            GraphPropertyValue::Date(self.reporting_period_start),
+        );
+        p.insert(
+            "periodEnd".into(),
+            GraphPropertyValue::Date(self.reporting_period_end),
+        );
+        p.insert(
+            "assuranceLevel".into(),
+            GraphPropertyValue::String(format!("{:?}", self.assurance_level)),
+        );
+        p.insert(
+            "metricValue".into(),
+            GraphPropertyValue::String(self.metric_value.clone()),
+        );
+        p.insert(
+            "metricUnit".into(),
+            GraphPropertyValue::String(self.metric_unit.clone()),
+        );
+        p.insert(
+            "isAssured".into(),
+            GraphPropertyValue::Bool(self.is_assured),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for ClimateScenario {
+    fn node_type_name(&self) -> &'static str {
+        "climate_scenario"
+    }
+    fn node_type_code(&self) -> u16 {
+        442
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "scenario".into(),
+            GraphPropertyValue::String(format!("{:?}", self.scenario_type)),
+        );
+        p.insert(
+            "timeHorizon".into(),
+            GraphPropertyValue::String(format!("{:?}", self.time_horizon)),
+        );
+        p.insert(
+            "description".into(),
+            GraphPropertyValue::String(self.description.clone()),
+        );
+        p.insert(
+            "warmingPathway".into(),
+            GraphPropertyValue::Decimal(self.temperature_rise_c),
+        );
+        p.insert(
+            "transitionRisk".into(),
+            GraphPropertyValue::Decimal(self.transition_risk_impact),
+        );
+        p.insert(
+            "physicalRisk".into(),
+            GraphPropertyValue::Decimal(self.physical_risk_impact),
+        );
+        p.insert(
+            "financialImpact".into(),
+            GraphPropertyValue::Decimal(self.financial_impact),
+        );
+        p
+    }
 }
 
 // ===========================================================================

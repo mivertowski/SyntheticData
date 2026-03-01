@@ -2,6 +2,9 @@
 
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of supplier qualification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -96,4 +99,56 @@ pub struct SupplierQualification {
     pub certifications: Vec<String>,
     /// Conditions or restrictions (if conditionally qualified)
     pub conditions: Option<String>,
+}
+
+impl ToNodeProperties for SupplierQualification {
+    fn node_type_name(&self) -> &'static str {
+        "supplier_qualification"
+    }
+    fn node_type_code(&self) -> u16 {
+        325
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "qualificationId".into(),
+            GraphPropertyValue::String(self.qualification_id.clone()),
+        );
+        p.insert(
+            "vendorId".into(),
+            GraphPropertyValue::String(self.vendor_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "startDate".into(),
+            GraphPropertyValue::Date(self.start_date),
+        );
+        p.insert(
+            "overallScore".into(),
+            GraphPropertyValue::Float(self.overall_score),
+        );
+        p.insert(
+            "criterionCount".into(),
+            GraphPropertyValue::Int(self.scores.len() as i64),
+        );
+        p.insert(
+            "certificationCount".into(),
+            GraphPropertyValue::Int(self.certifications.len() as i64),
+        );
+        p.insert(
+            "isQualified".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                QualificationStatus::Qualified | QualificationStatus::ConditionallyQualified
+            )),
+        );
+        p
+    }
 }

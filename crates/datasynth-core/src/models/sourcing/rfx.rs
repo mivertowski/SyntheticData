@@ -3,6 +3,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Type of RFx event.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -116,4 +119,61 @@ pub struct RfxEvent {
     pub awarded_vendor_id: Option<String>,
     /// Awarded bid ID
     pub awarded_bid_id: Option<String>,
+}
+
+impl ToNodeProperties for RfxEvent {
+    fn node_type_name(&self) -> &'static str {
+        "rfx_event"
+    }
+    fn node_type_code(&self) -> u16 {
+        321
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "rfxId".into(),
+            GraphPropertyValue::String(self.rfx_id.clone()),
+        );
+        p.insert(
+            "rfxType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.rfx_type)),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "title".into(),
+            GraphPropertyValue::String(self.title.clone()),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "scoringMethod".into(),
+            GraphPropertyValue::String(format!("{:?}", self.scoring_method)),
+        );
+        p.insert(
+            "publishDate".into(),
+            GraphPropertyValue::Date(self.publish_date),
+        );
+        p.insert(
+            "responseDeadline".into(),
+            GraphPropertyValue::Date(self.response_deadline),
+        );
+        p.insert(
+            "bidCount".into(),
+            GraphPropertyValue::Int(self.bid_count as i64),
+        );
+        p.insert(
+            "invitedVendorCount".into(),
+            GraphPropertyValue::Int(self.invited_vendors.len() as i64),
+        );
+        p.insert(
+            "isAwarded".into(),
+            GraphPropertyValue::Bool(matches!(self.status, RfxStatus::Awarded)),
+        );
+        p
+    }
 }

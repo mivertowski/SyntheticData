@@ -10,9 +10,14 @@
 //! - Bank guarantees and letters of credit
 //! - Intercompany netting runs with multilateral settlement
 
+use std::collections::HashMap;
+
 use chrono::{NaiveDate, NaiveTime};
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -726,6 +731,26 @@ pub struct DebtCovenant {
     pub headroom: Decimal,
     /// Whether a waiver was obtained for a breach
     pub waiver_obtained: bool,
+
+    // -- Standalone fields for graph export (DS-003) --
+    /// Back-reference to the parent debt instrument ID
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facility_id: Option<String>,
+    /// Entity / company code
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_code: Option<String>,
+    /// Debt facility name
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facility_name: Option<String>,
+    /// Outstanding principal at measurement date
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outstanding_principal: Option<Decimal>,
+    /// Currency of the facility
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    /// Fiscal period (e.g. "2024-06")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<String>,
 }
 
 impl DebtCovenant {
@@ -751,12 +776,37 @@ impl DebtCovenant {
             is_compliant,
             headroom,
             waiver_obtained: false,
+            facility_id: None,
+            entity_code: None,
+            facility_name: None,
+            outstanding_principal: None,
+            currency: None,
+            period: None,
         }
     }
 
     /// Sets the waiver flag.
     pub fn with_waiver(mut self, waiver: bool) -> Self {
         self.waiver_obtained = waiver;
+        self
+    }
+
+    /// Set the parent debt facility details for standalone graph export.
+    pub fn with_facility(
+        mut self,
+        facility_id: impl Into<String>,
+        entity_code: impl Into<String>,
+        facility_name: impl Into<String>,
+        outstanding_principal: Decimal,
+        currency: impl Into<String>,
+        period: impl Into<String>,
+    ) -> Self {
+        self.facility_id = Some(facility_id.into());
+        self.entity_code = Some(entity_code.into());
+        self.facility_name = Some(facility_name.into());
+        self.outstanding_principal = Some(outstanding_principal);
+        self.currency = Some(currency.into());
+        self.period = Some(period.into());
         self
     }
 
@@ -1112,6 +1162,389 @@ impl NettingRun {
             return Decimal::ZERO;
         }
         (self.savings() / gross_max * Decimal::ONE_HUNDRED).round_dp(2)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ToNodeProperties implementations
+// ---------------------------------------------------------------------------
+
+impl ToNodeProperties for CashPosition {
+    fn node_type_name(&self) -> &'static str {
+        "cash_position"
+    }
+    fn node_type_code(&self) -> u16 {
+        420
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "bankId".into(),
+            GraphPropertyValue::String(self.bank_account_id.clone()),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert("asOfDate".into(), GraphPropertyValue::Date(self.date));
+        p.insert(
+            "openingBalance".into(),
+            GraphPropertyValue::Decimal(self.opening_balance),
+        );
+        p.insert("inflows".into(), GraphPropertyValue::Decimal(self.inflows));
+        p.insert(
+            "outflows".into(),
+            GraphPropertyValue::Decimal(self.outflows),
+        );
+        p.insert(
+            "balance".into(),
+            GraphPropertyValue::Decimal(self.closing_balance),
+        );
+        p.insert(
+            "availableBalance".into(),
+            GraphPropertyValue::Decimal(self.available_balance),
+        );
+        p.insert(
+            "valueDateBalance".into(),
+            GraphPropertyValue::Decimal(self.value_date_balance),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for CashForecast {
+    fn node_type_name(&self) -> &'static str {
+        "cash_forecast"
+    }
+    fn node_type_code(&self) -> u16 {
+        421
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "forecastDate".into(),
+            GraphPropertyValue::Date(self.forecast_date),
+        );
+        p.insert(
+            "horizonDays".into(),
+            GraphPropertyValue::Int(self.horizon_days as i64),
+        );
+        p.insert(
+            "itemCount".into(),
+            GraphPropertyValue::Int(self.items.len() as i64),
+        );
+        p.insert(
+            "netPosition".into(),
+            GraphPropertyValue::Decimal(self.net_position),
+        );
+        p.insert(
+            "certaintyLevel".into(),
+            GraphPropertyValue::Float(self.confidence_level.to_f64().unwrap_or(0.0)),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for CashPool {
+    fn node_type_name(&self) -> &'static str {
+        "cash_pool"
+    }
+    fn node_type_code(&self) -> u16 {
+        422
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("name".into(), GraphPropertyValue::String(self.name.clone()));
+        p.insert(
+            "poolType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.pool_type)),
+        );
+        p.insert(
+            "headerAccount".into(),
+            GraphPropertyValue::String(self.header_account_id.clone()),
+        );
+        p.insert(
+            "participantCount".into(),
+            GraphPropertyValue::Int(self.participant_accounts.len() as i64),
+        );
+        p.insert(
+            "interestBenefit".into(),
+            GraphPropertyValue::Decimal(self.interest_rate_benefit),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for CashPoolSweep {
+    fn node_type_name(&self) -> &'static str {
+        "cash_pool_sweep"
+    }
+    fn node_type_code(&self) -> u16 {
+        423
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "poolId".into(),
+            GraphPropertyValue::String(self.pool_id.clone()),
+        );
+        p.insert("date".into(), GraphPropertyValue::Date(self.date));
+        p.insert(
+            "fromAccount".into(),
+            GraphPropertyValue::String(self.from_account_id.clone()),
+        );
+        p.insert(
+            "toAccount".into(),
+            GraphPropertyValue::String(self.to_account_id.clone()),
+        );
+        p.insert("amount".into(), GraphPropertyValue::Decimal(self.amount));
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for HedgingInstrument {
+    fn node_type_name(&self) -> &'static str {
+        "hedging_instrument"
+    }
+    fn node_type_code(&self) -> u16 {
+        424
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "hedgeType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.instrument_type)),
+        );
+        p.insert(
+            "notionalAmount".into(),
+            GraphPropertyValue::Decimal(self.notional_amount),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        if let Some(ref cp) = self.currency_pair {
+            p.insert(
+                "currencyPair".into(),
+                GraphPropertyValue::String(cp.clone()),
+            );
+        }
+        p.insert(
+            "tradeDate".into(),
+            GraphPropertyValue::Date(self.trade_date),
+        );
+        p.insert(
+            "maturityDate".into(),
+            GraphPropertyValue::Date(self.maturity_date),
+        );
+        p.insert(
+            "counterparty".into(),
+            GraphPropertyValue::String(self.counterparty.clone()),
+        );
+        p.insert(
+            "fairValue".into(),
+            GraphPropertyValue::Decimal(self.fair_value),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for HedgeRelationship {
+    fn node_type_name(&self) -> &'static str {
+        "hedge_relationship"
+    }
+    fn node_type_code(&self) -> u16 {
+        425
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "hedgedItemType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.hedged_item_type)),
+        );
+        p.insert(
+            "hedgedItemDescription".into(),
+            GraphPropertyValue::String(self.hedged_item_description.clone()),
+        );
+        p.insert(
+            "instrumentId".into(),
+            GraphPropertyValue::String(self.hedging_instrument_id.clone()),
+        );
+        p.insert(
+            "hedgeType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.hedge_type)),
+        );
+        p.insert(
+            "designationDate".into(),
+            GraphPropertyValue::Date(self.designation_date),
+        );
+        p.insert(
+            "effectivenessMethod".into(),
+            GraphPropertyValue::String(format!("{:?}", self.effectiveness_test_method)),
+        );
+        p.insert(
+            "effectivenessRatio".into(),
+            GraphPropertyValue::Float(self.effectiveness_ratio.to_f64().unwrap_or(0.0)),
+        );
+        p.insert(
+            "isEffective".into(),
+            GraphPropertyValue::Bool(self.is_effective),
+        );
+        p.insert(
+            "ineffectivenessAmount".into(),
+            GraphPropertyValue::Decimal(self.ineffectiveness_amount),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for DebtInstrument {
+    fn node_type_name(&self) -> &'static str {
+        "debt_instrument"
+    }
+    fn node_type_code(&self) -> u16 {
+        426
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "instrumentType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.instrument_type)),
+        );
+        p.insert(
+            "lender".into(),
+            GraphPropertyValue::String(self.lender.clone()),
+        );
+        p.insert(
+            "principal".into(),
+            GraphPropertyValue::Decimal(self.principal),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "interestRate".into(),
+            GraphPropertyValue::Decimal(self.interest_rate),
+        );
+        p.insert(
+            "rateType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.rate_type)),
+        );
+        p.insert(
+            "originationDate".into(),
+            GraphPropertyValue::Date(self.origination_date),
+        );
+        p.insert(
+            "maturityDate".into(),
+            GraphPropertyValue::Date(self.maturity_date),
+        );
+        p.insert(
+            "drawnAmount".into(),
+            GraphPropertyValue::Decimal(self.drawn_amount),
+        );
+        p.insert(
+            "facilityLimit".into(),
+            GraphPropertyValue::Decimal(self.facility_limit),
+        );
+        p.insert(
+            "covenantCount".into(),
+            GraphPropertyValue::Int(self.covenants.len() as i64),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for DebtCovenant {
+    fn node_type_name(&self) -> &'static str {
+        "debt_covenant"
+    }
+    fn node_type_code(&self) -> u16 {
+        427
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "covenantType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.covenant_type)),
+        );
+        p.insert(
+            "threshold".into(),
+            GraphPropertyValue::Decimal(self.threshold),
+        );
+        p.insert(
+            "frequency".into(),
+            GraphPropertyValue::String(format!("{:?}", self.measurement_frequency)),
+        );
+        p.insert(
+            "actualValue".into(),
+            GraphPropertyValue::Decimal(self.actual_value),
+        );
+        p.insert(
+            "testDate".into(),
+            GraphPropertyValue::Date(self.measurement_date),
+        );
+        p.insert(
+            "complianceStatus".into(),
+            GraphPropertyValue::Bool(self.is_compliant),
+        );
+        p.insert(
+            "headroom".into(),
+            GraphPropertyValue::Decimal(self.headroom),
+        );
+        p.insert(
+            "waiverObtained".into(),
+            GraphPropertyValue::Bool(self.waiver_obtained),
+        );
+        if let Some(ref fid) = self.facility_id {
+            p.insert("facilityId".into(), GraphPropertyValue::String(fid.clone()));
+        }
+        if let Some(ref ec) = self.entity_code {
+            p.insert("entityCode".into(), GraphPropertyValue::String(ec.clone()));
+        }
+        if let Some(ref fn_) = self.facility_name {
+            p.insert(
+                "facilityName".into(),
+                GraphPropertyValue::String(fn_.clone()),
+            );
+        }
+        if let Some(op) = self.outstanding_principal {
+            p.insert(
+                "outstandingPrincipal".into(),
+                GraphPropertyValue::Decimal(op),
+            );
+        }
+        if let Some(ref cur) = self.currency {
+            p.insert("currency".into(), GraphPropertyValue::String(cur.clone()));
+        }
+        if let Some(ref per) = self.period {
+            p.insert("period".into(), GraphPropertyValue::String(per.clone()));
+        }
+        p
     }
 }
 

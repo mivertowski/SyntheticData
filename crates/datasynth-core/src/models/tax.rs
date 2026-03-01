@@ -9,9 +9,13 @@
 //! - Uncertain tax positions under FIN 48 / IFRIC 23
 //! - Withholding tax records with treaty benefit tracking
 
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -689,6 +693,289 @@ impl WithholdingTaxRecord {
     /// `(statutory_rate - applied_rate) * base_amount`, rounded to 2 dp.
     pub fn treaty_savings(&self) -> Decimal {
         ((self.statutory_rate - self.applied_rate) * self.base_amount).round_dp(2)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ToNodeProperties implementations
+// ---------------------------------------------------------------------------
+
+impl ToNodeProperties for TaxJurisdiction {
+    fn node_type_name(&self) -> &'static str {
+        "tax_jurisdiction"
+    }
+    fn node_type_code(&self) -> u16 {
+        410
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("code".into(), GraphPropertyValue::String(self.id.clone()));
+        p.insert("name".into(), GraphPropertyValue::String(self.name.clone()));
+        p.insert(
+            "country".into(),
+            GraphPropertyValue::String(self.country_code.clone()),
+        );
+        if let Some(ref rc) = self.region_code {
+            p.insert("region".into(), GraphPropertyValue::String(rc.clone()));
+        }
+        p.insert(
+            "jurisdictionType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.jurisdiction_type)),
+        );
+        p.insert(
+            "isActive".into(),
+            GraphPropertyValue::Bool(self.vat_registered),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for TaxCode {
+    fn node_type_name(&self) -> &'static str {
+        "tax_code"
+    }
+    fn node_type_code(&self) -> u16 {
+        411
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("code".into(), GraphPropertyValue::String(self.code.clone()));
+        p.insert(
+            "description".into(),
+            GraphPropertyValue::String(self.description.clone()),
+        );
+        p.insert("rate".into(), GraphPropertyValue::Decimal(self.rate));
+        p.insert(
+            "taxType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.tax_type)),
+        );
+        p.insert(
+            "jurisdiction".into(),
+            GraphPropertyValue::String(self.jurisdiction_id.clone()),
+        );
+        p.insert("isActive".into(), GraphPropertyValue::Bool(!self.is_exempt));
+        p.insert(
+            "isReverseCharge".into(),
+            GraphPropertyValue::Bool(self.is_reverse_charge),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for TaxLine {
+    fn node_type_name(&self) -> &'static str {
+        "tax_line"
+    }
+    fn node_type_code(&self) -> u16 {
+        412
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "returnId".into(),
+            GraphPropertyValue::String(self.document_id.clone()),
+        );
+        p.insert(
+            "lineNumber".into(),
+            GraphPropertyValue::Int(self.line_number as i64),
+        );
+        p.insert(
+            "description".into(),
+            GraphPropertyValue::String(format!("{:?}", self.document_type)),
+        );
+        p.insert(
+            "amount".into(),
+            GraphPropertyValue::Decimal(self.tax_amount),
+        );
+        p.insert(
+            "taxableAmount".into(),
+            GraphPropertyValue::Decimal(self.taxable_amount),
+        );
+        p.insert(
+            "taxCode".into(),
+            GraphPropertyValue::String(self.tax_code_id.clone()),
+        );
+        p.insert(
+            "jurisdiction".into(),
+            GraphPropertyValue::String(self.jurisdiction_id.clone()),
+        );
+        p.insert(
+            "isDeductible".into(),
+            GraphPropertyValue::Bool(self.is_deductible),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for TaxReturn {
+    fn node_type_name(&self) -> &'static str {
+        "tax_return"
+    }
+    fn node_type_code(&self) -> u16 {
+        413
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "period".into(),
+            GraphPropertyValue::String(format!("{}..{}", self.period_start, self.period_end)),
+        );
+        p.insert(
+            "jurisdiction".into(),
+            GraphPropertyValue::String(self.jurisdiction_id.clone()),
+        );
+        p.insert(
+            "filingType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.return_type)),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "totalTax".into(),
+            GraphPropertyValue::Decimal(self.total_output_tax),
+        );
+        p.insert(
+            "taxPaid".into(),
+            GraphPropertyValue::Decimal(self.total_input_tax),
+        );
+        p.insert(
+            "balanceDue".into(),
+            GraphPropertyValue::Decimal(self.net_payable),
+        );
+        p.insert(
+            "dueDate".into(),
+            GraphPropertyValue::Date(self.filing_deadline),
+        );
+        p.insert("isLate".into(), GraphPropertyValue::Bool(self.is_late));
+        p
+    }
+}
+
+impl ToNodeProperties for TaxProvision {
+    fn node_type_name(&self) -> &'static str {
+        "tax_provision"
+    }
+    fn node_type_code(&self) -> u16 {
+        414
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert("period".into(), GraphPropertyValue::Date(self.period));
+        p.insert(
+            "totalProvision".into(),
+            GraphPropertyValue::Decimal(self.current_tax_expense),
+        );
+        p.insert(
+            "deferredAsset".into(),
+            GraphPropertyValue::Decimal(self.deferred_tax_asset),
+        );
+        p.insert(
+            "deferredLiability".into(),
+            GraphPropertyValue::Decimal(self.deferred_tax_liability),
+        );
+        p.insert(
+            "statutoryRate".into(),
+            GraphPropertyValue::Decimal(self.statutory_rate),
+        );
+        p.insert(
+            "effectiveRate".into(),
+            GraphPropertyValue::Decimal(self.effective_rate),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for WithholdingTaxRecord {
+    fn node_type_name(&self) -> &'static str {
+        "withholding_tax_record"
+    }
+    fn node_type_code(&self) -> u16 {
+        415
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "paymentId".into(),
+            GraphPropertyValue::String(self.payment_id.clone()),
+        );
+        p.insert(
+            "vendorId".into(),
+            GraphPropertyValue::String(self.vendor_id.clone()),
+        );
+        p.insert(
+            "taxCode".into(),
+            GraphPropertyValue::String(format!("{:?}", self.withholding_type)),
+        );
+        p.insert(
+            "grossAmount".into(),
+            GraphPropertyValue::Decimal(self.base_amount),
+        );
+        p.insert(
+            "withholdingRate".into(),
+            GraphPropertyValue::Decimal(self.applied_rate),
+        );
+        p.insert(
+            "withholdingAmount".into(),
+            GraphPropertyValue::Decimal(self.withheld_amount),
+        );
+        p.insert(
+            "treatyApplied".into(),
+            GraphPropertyValue::Bool(self.treaty_rate.is_some()),
+        );
+        if let Some(ref cn) = self.certificate_number {
+            p.insert(
+                "certificateNumber".into(),
+                GraphPropertyValue::String(cn.clone()),
+            );
+        }
+        p
+    }
+}
+
+impl ToNodeProperties for UncertainTaxPosition {
+    fn node_type_name(&self) -> &'static str {
+        "uncertain_tax_position"
+    }
+    fn node_type_code(&self) -> u16 {
+        416
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "description".into(),
+            GraphPropertyValue::String(self.description.clone()),
+        );
+        p.insert(
+            "amount".into(),
+            GraphPropertyValue::Decimal(self.tax_benefit),
+        );
+        p.insert(
+            "probability".into(),
+            GraphPropertyValue::Decimal(self.recognition_threshold),
+        );
+        p.insert(
+            "reserveAmount".into(),
+            GraphPropertyValue::Decimal(self.recognized_amount),
+        );
+        p.insert(
+            "measurementMethod".into(),
+            GraphPropertyValue::String(format!("{:?}", self.measurement_method)),
+        );
+        p
     }
 }
 

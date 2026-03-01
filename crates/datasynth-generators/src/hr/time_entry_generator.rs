@@ -200,6 +200,8 @@ impl TimeEntryGenerator {
             approval_status,
             approved_by,
             submitted_at,
+            employee_name: None,
+            billable: false,
         }
     }
 }

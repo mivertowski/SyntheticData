@@ -6,6 +6,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Status of a payroll run through the processing lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -130,4 +133,226 @@ pub struct PayrollLineItem {
     /// Localized label(s) for employer contributions (semicolon-separated).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub employer_contribution_label: Option<String>,
+}
+
+impl ToNodeProperties for PayrollRun {
+    fn node_type_name(&self) -> &'static str {
+        "payroll_run"
+    }
+    fn node_type_code(&self) -> u16 {
+        330
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "payrollId".into(),
+            GraphPropertyValue::String(self.payroll_id.clone()),
+        );
+        p.insert(
+            "periodStart".into(),
+            GraphPropertyValue::Date(self.pay_period_start),
+        );
+        p.insert(
+            "periodEnd".into(),
+            GraphPropertyValue::Date(self.pay_period_end),
+        );
+        p.insert("runDate".into(), GraphPropertyValue::Date(self.run_date));
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "employeeCount".into(),
+            GraphPropertyValue::Int(self.employee_count as i64),
+        );
+        p.insert(
+            "grossPay".into(),
+            GraphPropertyValue::Decimal(self.total_gross),
+        );
+        p.insert("netPay".into(), GraphPropertyValue::Decimal(self.total_net));
+        p.insert(
+            "taxWithheld".into(),
+            GraphPropertyValue::Decimal(self.total_deductions),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "isApproved".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                PayrollRunStatus::Approved | PayrollRunStatus::Posted
+            )),
+        );
+        p
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Benefit enrollment models
+// ---------------------------------------------------------------------------
+
+/// Type of benefit plan.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum BenefitPlanType {
+    #[default]
+    Health,
+    Dental,
+    Vision,
+    Retirement401k,
+    StockPurchase,
+    LifeInsurance,
+    Disability,
+}
+
+/// Status of a benefit enrollment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum BenefitStatus {
+    #[default]
+    Active,
+    Pending,
+    Terminated,
+    OnLeave,
+}
+
+/// An employee's enrollment in a benefit plan.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BenefitEnrollment {
+    /// Unique enrollment identifier
+    pub id: String,
+    /// Company / entity code
+    pub entity_code: String,
+    /// Employee ID
+    pub employee_id: String,
+    /// Employee display name (denormalized)
+    pub employee_name: String,
+    /// Benefit plan type
+    pub plan_type: BenefitPlanType,
+    /// Plan name (e.g. "Blue Cross PPO")
+    pub plan_name: String,
+    /// Date enrollment was submitted
+    pub enrollment_date: NaiveDate,
+    /// Coverage effective date
+    pub effective_date: NaiveDate,
+    /// Fiscal period (e.g. "2024-06")
+    pub period: String,
+    /// Employee contribution amount per period
+    #[serde(with = "rust_decimal::serde::str")]
+    pub employee_contribution: Decimal,
+    /// Employer contribution amount per period
+    #[serde(with = "rust_decimal::serde::str")]
+    pub employer_contribution: Decimal,
+    /// Currency code
+    pub currency: String,
+    /// Current enrollment status
+    pub status: BenefitStatus,
+    /// Whether enrollment is currently active
+    pub is_active: bool,
+}
+
+impl BenefitEnrollment {
+    /// Create a new benefit enrollment.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: impl Into<String>,
+        entity_code: impl Into<String>,
+        employee_id: impl Into<String>,
+        employee_name: impl Into<String>,
+        plan_type: BenefitPlanType,
+        plan_name: impl Into<String>,
+        enrollment_date: NaiveDate,
+        effective_date: NaiveDate,
+        period: impl Into<String>,
+        employee_contribution: Decimal,
+        employer_contribution: Decimal,
+        currency: impl Into<String>,
+        status: BenefitStatus,
+        is_active: bool,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            entity_code: entity_code.into(),
+            employee_id: employee_id.into(),
+            employee_name: employee_name.into(),
+            plan_type,
+            plan_name: plan_name.into(),
+            enrollment_date,
+            effective_date,
+            period: period.into(),
+            employee_contribution,
+            employer_contribution,
+            currency: currency.into(),
+            status,
+            is_active,
+        }
+    }
+}
+
+impl ToNodeProperties for BenefitEnrollment {
+    fn node_type_name(&self) -> &'static str {
+        "benefit_enrollment"
+    }
+    fn node_type_code(&self) -> u16 {
+        333
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_code.clone()),
+        );
+        p.insert(
+            "employeeId".into(),
+            GraphPropertyValue::String(self.employee_id.clone()),
+        );
+        p.insert(
+            "employeeName".into(),
+            GraphPropertyValue::String(self.employee_name.clone()),
+        );
+        p.insert(
+            "planType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.plan_type)),
+        );
+        p.insert(
+            "planName".into(),
+            GraphPropertyValue::String(self.plan_name.clone()),
+        );
+        p.insert(
+            "enrollmentDate".into(),
+            GraphPropertyValue::Date(self.enrollment_date),
+        );
+        p.insert(
+            "effectiveDate".into(),
+            GraphPropertyValue::Date(self.effective_date),
+        );
+        p.insert(
+            "period".into(),
+            GraphPropertyValue::String(self.period.clone()),
+        );
+        p.insert(
+            "employeeContribution".into(),
+            GraphPropertyValue::Decimal(self.employee_contribution),
+        );
+        p.insert(
+            "employerContribution".into(),
+            GraphPropertyValue::Decimal(self.employer_contribution),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert("isActive".into(), GraphPropertyValue::Bool(self.is_active));
+        p
+    }
 }

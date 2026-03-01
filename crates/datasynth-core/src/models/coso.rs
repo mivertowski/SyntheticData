@@ -4,6 +4,9 @@
 //! and 17 principles, along with control scope and maturity levels.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// COSO 2013 Framework - 5 Components of Internal Control.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -196,6 +199,66 @@ impl std::fmt::Display for CosoPrinciple {
             Self::OngoingMonitoring => write!(f, "Ongoing Monitoring"),
             Self::DeficiencyEvaluation => write!(f, "Deficiency Evaluation"),
         }
+    }
+}
+
+impl ToNodeProperties for CosoComponent {
+    fn node_type_name(&self) -> &'static str {
+        "coso_component"
+    }
+    fn node_type_code(&self) -> u16 {
+        500
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
+        p.insert(
+            "code".into(),
+            GraphPropertyValue::String(format!("{:?}", self)),
+        );
+        // Number of principles in this component
+        let principle_count = match self {
+            CosoComponent::ControlEnvironment => 5,
+            CosoComponent::RiskAssessment => 4,
+            CosoComponent::ControlActivities => 3,
+            CosoComponent::InformationCommunication => 3,
+            CosoComponent::MonitoringActivities => 2,
+        };
+        p.insert(
+            "principleCount".into(),
+            GraphPropertyValue::Int(principle_count),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for CosoPrinciple {
+    fn node_type_name(&self) -> &'static str {
+        "coso_principle"
+    }
+    fn node_type_code(&self) -> u16 {
+        501
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
+        p.insert(
+            "code".into(),
+            GraphPropertyValue::String(format!("{:?}", self)),
+        );
+        p.insert(
+            "number".into(),
+            GraphPropertyValue::Int(self.principle_number() as i64),
+        );
+        p.insert(
+            "componentId".into(),
+            GraphPropertyValue::String(format!("{:?}", self.component())),
+        );
+        p.insert(
+            "componentName".into(),
+            GraphPropertyValue::String(self.component().to_string()),
+        );
+        p
     }
 }
 

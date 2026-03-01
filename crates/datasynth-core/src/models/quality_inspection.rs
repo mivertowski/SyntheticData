@@ -6,6 +6,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Result of a quality inspection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -78,6 +81,78 @@ pub struct QualityInspection {
     pub disposition: Option<String>,
     /// Additional notes or observations
     pub notes: Option<String>,
+}
+
+impl ToNodeProperties for QualityInspection {
+    fn node_type_name(&self) -> &'static str {
+        "quality_inspection"
+    }
+    fn node_type_code(&self) -> u16 {
+        341
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "inspectionId".into(),
+            GraphPropertyValue::String(self.inspection_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "referenceType".into(),
+            GraphPropertyValue::String(self.reference_type.clone()),
+        );
+        p.insert(
+            "referenceId".into(),
+            GraphPropertyValue::String(self.reference_id.clone()),
+        );
+        p.insert(
+            "materialId".into(),
+            GraphPropertyValue::String(self.material_id.clone()),
+        );
+        p.insert(
+            "materialDescription".into(),
+            GraphPropertyValue::String(self.material_description.clone()),
+        );
+        p.insert(
+            "inspectionType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.inspection_type)),
+        );
+        p.insert(
+            "inspectionDate".into(),
+            GraphPropertyValue::Date(self.inspection_date),
+        );
+        p.insert(
+            "lotSize".into(),
+            GraphPropertyValue::Decimal(self.lot_size),
+        );
+        p.insert(
+            "inspectedQuantity".into(),
+            GraphPropertyValue::Decimal(self.sample_size),
+        );
+        p.insert(
+            "defectQuantity".into(),
+            GraphPropertyValue::Int(self.defect_count as i64),
+        );
+        p.insert(
+            "defectRate".into(),
+            GraphPropertyValue::Float(self.defect_rate),
+        );
+        p.insert(
+            "result".into(),
+            GraphPropertyValue::String(format!("{:?}", self.result)),
+        );
+        p.insert(
+            "isPassed".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.result,
+                InspectionResult::Accepted | InspectionResult::Conditionally
+            )),
+        );
+        p
+    }
 }
 
 /// A single measured characteristic within a quality inspection.

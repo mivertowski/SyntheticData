@@ -267,6 +267,7 @@ impl ExpenseReportGenerator {
             cost_center,
             department,
             policy_violations,
+            employee_name: None,
         }
     }
 

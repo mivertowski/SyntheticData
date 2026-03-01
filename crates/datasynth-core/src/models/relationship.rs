@@ -432,12 +432,18 @@ impl GraphEntityType {
 
     /// Lookup entity type by numeric code.
     pub fn from_numeric_code(code: u16) -> Option<Self> {
-        Self::all_types().iter().find(|t| t.numeric_code() == code).copied()
+        Self::all_types()
+            .iter()
+            .find(|t| t.numeric_code() == code)
+            .copied()
     }
 
     /// Lookup entity type by snake_case name.
     pub fn from_node_type_name(name: &str) -> Option<Self> {
-        Self::all_types().iter().find(|t| t.node_type_name() == name).copied()
+        Self::all_types()
+            .iter()
+            .find(|t| t.node_type_name() == name)
+            .copied()
     }
 
     /// All registered entity types.
@@ -1050,7 +1056,9 @@ impl RelationshipType {
             Self::WithheldFrom => Some(c(E::WithholdingTaxRecord, E::Vendor, ManyToOne)),
             // Treasury
             Self::SweepsTo => Some(c(E::CashPoolSweep, E::CashPool, ManyToOne)),
-            Self::HedgesInstrument => Some(c(E::HedgeRelationship, E::HedgingInstrument, ManyToOne)),
+            Self::HedgesInstrument => {
+                Some(c(E::HedgeRelationship, E::HedgingInstrument, ManyToOne))
+            }
             Self::GovernsInstrument => Some(c(E::DebtCovenant, E::DebtInstrument, ManyToOne)),
             // ESG
             Self::EmissionReportedBy => Some(c(E::EmissionRecord, E::Company, ManyToOne)),
@@ -2087,7 +2095,11 @@ mod tests {
     #[test]
     fn test_edge_constraint_validity() {
         let constraints = RelationshipType::all_constraints();
-        assert_eq!(constraints.len(), 29, "Expected 29 domain-specific edge constraints");
+        assert_eq!(
+            constraints.len(),
+            29,
+            "Expected 29 domain-specific edge constraints"
+        );
         for constraint in &constraints {
             // Source and target types should have valid numeric codes
             assert!(constraint.source_type.numeric_code() > 0);
@@ -2099,23 +2111,45 @@ mod tests {
     fn test_all_process_families_have_edges() {
         let constraints = RelationshipType::all_constraints();
         // P2P
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PlacedWith));
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PaysInvoice));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::PlacedWith));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::PaysInvoice));
         // O2C
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PlacedBy));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::PlacedBy));
         // Tax
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::TaxLineBelongsTo));
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::WithheldFrom));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::TaxLineBelongsTo));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::WithheldFrom));
         // Treasury
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::SweepsTo));
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::GovernsInstrument));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::SweepsTo));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::GovernsInstrument));
         // ESG
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::EmissionReportedBy));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::EmissionReportedBy));
         // Project
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::CostChargedTo));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::CostChargedTo));
         // GOV
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PrincipleUnder));
-        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::JudgmentWithin));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::PrincipleUnder));
+        assert!(constraints
+            .iter()
+            .any(|c| c.relationship_type == RelationshipType::JudgmentWithin));
     }
 
     #[test]
@@ -2126,7 +2160,10 @@ mod tests {
         assert_eq!(placed_with.cardinality, Cardinality::ManyToOne);
 
         let awarded_from = RelationshipType::AwardedFrom.constraint().unwrap();
-        assert_eq!(awarded_from.source_type, GraphEntityType::ProcurementContract);
+        assert_eq!(
+            awarded_from.source_type,
+            GraphEntityType::ProcurementContract
+        );
         assert_eq!(awarded_from.target_type, GraphEntityType::BidEvaluation);
         assert_eq!(awarded_from.cardinality, Cardinality::OneToOne);
 

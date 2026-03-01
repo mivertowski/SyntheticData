@@ -6,7 +6,10 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Audit engagement representing an audit project.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,6 +209,79 @@ impl AuditEngagement {
     /// Calculate days until report date.
     pub fn days_until_report(&self, as_of: NaiveDate) -> i64 {
         (self.report_date - as_of).num_days()
+    }
+}
+
+impl ToNodeProperties for AuditEngagement {
+    fn node_type_name(&self) -> &'static str {
+        "audit_engagement"
+    }
+    fn node_type_code(&self) -> u16 {
+        360
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "engagementId".into(),
+            GraphPropertyValue::String(self.engagement_id.to_string()),
+        );
+        p.insert(
+            "engagementRef".into(),
+            GraphPropertyValue::String(self.engagement_ref.clone()),
+        );
+        p.insert(
+            "clientName".into(),
+            GraphPropertyValue::String(self.client_name.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.client_entity_id.clone()),
+        );
+        p.insert(
+            "engagementType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.engagement_type)),
+        );
+        p.insert(
+            "fiscalYear".into(),
+            GraphPropertyValue::Int(self.fiscal_year as i64),
+        );
+        p.insert(
+            "periodEndDate".into(),
+            GraphPropertyValue::Date(self.period_end_date),
+        );
+        p.insert(
+            "materiality".into(),
+            GraphPropertyValue::Decimal(self.materiality),
+        );
+        p.insert(
+            "performanceMateriality".into(),
+            GraphPropertyValue::Decimal(self.performance_materiality),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "currentPhase".into(),
+            GraphPropertyValue::String(self.current_phase.display_name().into()),
+        );
+        p.insert(
+            "overallAuditRisk".into(),
+            GraphPropertyValue::String(format!("{:?}", self.overall_audit_risk)),
+        );
+        p.insert(
+            "significantRiskCount".into(),
+            GraphPropertyValue::Int(self.significant_risk_count as i64),
+        );
+        p.insert(
+            "teamSize".into(),
+            GraphPropertyValue::Int(self.team_member_ids.len() as i64),
+        );
+        p.insert(
+            "isComplete".into(),
+            GraphPropertyValue::Bool(self.is_complete()),
+        );
+        p
     }
 }
 

@@ -3,6 +3,9 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use super::super::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Type of sourcing project.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -82,4 +85,68 @@ pub struct SourcingProject {
     pub contract_id: Option<String>,
     /// Actual savings achieved
     pub actual_savings_pct: Option<f64>,
+}
+
+impl ToNodeProperties for SourcingProject {
+    fn node_type_name(&self) -> &'static str {
+        "sourcing_project"
+    }
+    fn node_type_code(&self) -> u16 {
+        320
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        p.insert(
+            "projectName".into(),
+            GraphPropertyValue::String(self.project_name.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "projectType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.project_type)),
+        );
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "estimatedValue".into(),
+            GraphPropertyValue::Decimal(self.estimated_annual_spend),
+        );
+        p.insert(
+            "targetSavingsPct".into(),
+            GraphPropertyValue::Float(self.target_savings_pct),
+        );
+        p.insert(
+            "owner".into(),
+            GraphPropertyValue::String(self.owner_id.clone()),
+        );
+        p.insert(
+            "startDate".into(),
+            GraphPropertyValue::Date(self.start_date),
+        );
+        p.insert(
+            "targetEndDate".into(),
+            GraphPropertyValue::Date(self.target_end_date),
+        );
+        p.insert(
+            "bidCount".into(),
+            GraphPropertyValue::Int(self.rfx_ids.len() as i64),
+        );
+        p.insert(
+            "isComplete".into(),
+            GraphPropertyValue::Bool(matches!(
+                self.status,
+                SourcingProjectStatus::Completed | SourcingProjectStatus::Awarded
+            )),
+        );
+        p
+    }
 }
