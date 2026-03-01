@@ -352,7 +352,11 @@ fn test_full_diff_all_formats() {
 
     // Request all three diff formats
     let config = DiffConfig {
-        formats: vec![DiffFormat::Summary, DiffFormat::RecordLevel, DiffFormat::Aggregate],
+        formats: vec![
+            DiffFormat::Summary,
+            DiffFormat::RecordLevel,
+            DiffFormat::Aggregate,
+        ],
         scope: vec![],
         max_sample_changes: 100,
     };

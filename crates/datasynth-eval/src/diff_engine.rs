@@ -323,12 +323,7 @@ impl DiffEngine {
         let mut sample_changes = Vec::new();
 
         // Get header for field names
-        let header: Vec<&str> = b_content
-            .lines()
-            .next()
-            .unwrap_or("")
-            .split(',')
-            .collect();
+        let header: Vec<&str> = b_content.lines().next().unwrap_or("").split(',').collect();
 
         for id in &common {
             let b_line = b_records[id];
@@ -344,10 +339,7 @@ impl DiffEngine {
                     for (i, (bf, cf)) in b_fields.iter().zip(c_fields.iter()).enumerate() {
                         if bf != cf {
                             field_changes.push(FieldChange {
-                                field_name: header
-                                    .get(i)
-                                    .unwrap_or(&"unknown")
-                                    .to_string(),
+                                field_name: header.get(i).unwrap_or(&"unknown").to_string(),
                                 baseline_value: bf.to_string(),
                                 counterfactual_value: cf.to_string(),
                             });
@@ -463,11 +455,7 @@ mod tests {
         let counter = TempDir::new().unwrap();
 
         write_csv(baseline.path(), "data.csv", "id,amount\n1,100.0\n");
-        write_csv(
-            counter.path(),
-            "data.csv",
-            "id,amount\n1,100.0\n2,200.0\n",
-        );
+        write_csv(counter.path(), "data.csv", "id,amount\n1,100.0\n2,200.0\n");
 
         let config = DiffConfig {
             formats: vec![DiffFormat::RecordLevel],
@@ -485,16 +473,8 @@ mod tests {
         let baseline = TempDir::new().unwrap();
         let counter = TempDir::new().unwrap();
 
-        write_csv(
-            baseline.path(),
-            "data.csv",
-            "id,amount\n1,100.0\n2,200.0\n",
-        );
-        write_csv(
-            counter.path(),
-            "data.csv",
-            "id,amount\n1,150.0\n2,200.0\n",
-        );
+        write_csv(baseline.path(), "data.csv", "id,amount\n1,100.0\n2,200.0\n");
+        write_csv(counter.path(), "data.csv", "id,amount\n1,150.0\n2,200.0\n");
 
         let config = DiffConfig {
             formats: vec![DiffFormat::RecordLevel],
@@ -553,11 +533,7 @@ mod tests {
         let counter = TempDir::new().unwrap();
 
         write_csv(baseline.path(), "data.csv", "id,val\n1,10\n2,20\n");
-        write_csv(
-            counter.path(),
-            "data.csv",
-            "id,val\n1,10\n2,20\n3,30\n",
-        );
+        write_csv(counter.path(), "data.csv", "id,val\n1,10\n2,20\n3,30\n");
 
         let config = DiffConfig {
             formats: vec![DiffFormat::Aggregate],

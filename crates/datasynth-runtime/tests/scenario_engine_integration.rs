@@ -116,10 +116,7 @@ fn test_full_scenario_pipeline() {
         serde_yaml::from_str(&manifest_content).expect("manifest should be valid YAML");
 
     // Verify key fields in the manifest.
-    assert_eq!(
-        manifest["scenario_name"].as_str().unwrap(),
-        "recession"
-    );
+    assert_eq!(manifest["scenario_name"].as_str().unwrap(), "recession");
     assert!(manifest["interventions_count"].as_u64().unwrap() >= 1);
 
     // Baseline directory must also have been created.
@@ -197,10 +194,7 @@ fn test_config_mutator_dot_path_roundtrip() {
         json["distributions"]["amounts"]["components"][0]["label"],
         "routine"
     );
-    assert_eq!(
-        json["distributions"]["amounts"]["components"][1]["mu"],
-        8.5
-    );
+    assert_eq!(json["distributions"]["amounts"]["components"][1]["mu"], 8.5);
     assert_eq!(
         json["distributions"]["amounts"]["components"][1]["label"],
         "significant"
@@ -292,7 +286,10 @@ fn test_intervention_conflict_same_priority() {
     };
 
     let result = InterventionManager::validate(&[intervention_a, intervention_b], &config);
-    assert!(result.is_err(), "should detect conflict on same path + priority");
+    assert!(
+        result.is_err(),
+        "should detect conflict on same path + priority"
+    );
 
     match result.unwrap_err() {
         InterventionError::ConflictDetected(priority, path) => {

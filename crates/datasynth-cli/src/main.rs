@@ -2251,7 +2251,11 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
                 if r.valid {
                     println!("  [PASS] {}", r.name);
                 } else {
-                    println!("  [FAIL] {}: {}", r.name, r.error.as_deref().unwrap_or("unknown"));
+                    println!(
+                        "  [FAIL] {}: {}",
+                        r.name,
+                        r.error.as_deref().unwrap_or("unknown")
+                    );
                     all_valid = false;
                 }
             }
@@ -2281,8 +2285,10 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
 
             println!("Generated {} scenario(s):", results.len());
             for r in &results {
-                println!("  {} — {} interventions, {} months affected",
-                    r.scenario_name, r.interventions_applied, r.months_affected);
+                println!(
+                    "  {} — {} interventions, {} months affected",
+                    r.scenario_name, r.interventions_applied, r.months_affected
+                );
                 println!("    Baseline: {}", r.baseline_path.display());
                 println!("    Counterfactual: {}", r.counterfactual_path.display());
             }
@@ -2300,8 +2306,15 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
                 "summary" => vec![DiffFormat::Summary],
                 "record_level" => vec![DiffFormat::RecordLevel],
                 "aggregate" => vec![DiffFormat::Aggregate],
-                "all" => vec![DiffFormat::Summary, DiffFormat::RecordLevel, DiffFormat::Aggregate],
-                other => anyhow::bail!("Unknown diff format: '{}'. Use: summary, record_level, aggregate, all", other),
+                "all" => vec![
+                    DiffFormat::Summary,
+                    DiffFormat::RecordLevel,
+                    DiffFormat::Aggregate,
+                ],
+                other => anyhow::bail!(
+                    "Unknown diff format: '{}'. Use: summary, record_level, aggregate, all",
+                    other
+                ),
             };
 
             let diff_config = DiffConfig {
