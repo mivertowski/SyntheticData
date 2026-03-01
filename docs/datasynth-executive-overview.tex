@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.9.3}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.9.5}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -105,14 +105,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.3 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.5 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.8.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.9.5}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -122,7 +122,7 @@
 \vfill
 \begin{flushleft}
   \textcolor{midgray}{\small
-    Built with Rust \& Python \textbullet{} 15 modular crates \textbullet{} 100\,K+ entries/sec\\[4pt]
+    Built with Rust \& Python \textbullet{} 15 modular crates \textbullet{} 200\,K+ entries/sec\\[4pt]
     Open-source (Apache-2.0) \textbullet{} Commercial license available\\[4pt]
     \textbf{Contact:} \href{mailto:michael.ivertowski@ch.ey.com}{michael.ivertowski@ch.ey.com}
   }
@@ -170,7 +170,7 @@ real-world enterprise resource planning (ERP) systems.
 % Row 1
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{100\,K+}}\\[3pt]
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{200\,K+}}\\[3pt]
   {\small entries/sec (single thread)}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
@@ -226,7 +226,8 @@ Master Data &
 Document Flows &
   Full Procure-to-Pay (PO\,$\to$\,GR\,$\to$\,Invoice\,$\to$\,Payment) and
   Order-to-Cash (SO\,$\to$\,Delivery\,$\to$\,Invoice\,$\to$\,Receipt) with
-  three-way match validation and contract price enforcement. \\
+  three-way match validation, contract price enforcement, and credit memo
+  generation (configurable \texttt{returns\_rate} with ARCreditMemo). \\
 Intercompany &
   Matched IC journal entry pairs, transfer pricing (Cost-Plus, Resale-Minus,
   CUP), and consolidation elimination entries. \\
@@ -265,9 +266,9 @@ Source-to-Pay &
   scorecards --- with contract-governed PO generation and maverick spend
   detection. \\
 Hire-to-Retire &
-  Payroll runs with tax/deduction calculations, time entries with overtime
-  modeling, expense reports with policy violation detection, and payroll
-  journal entry generation. \\
+  Payroll runs with progressive tax bracket computation (country-pack-aware),
+  time entries with overtime modeling, expense reports with policy violation
+  detection, and payroll journal entry generation. \\
 Manufacturing &
   Production orders with BOM explosion, routing operations, component
   issues, finished goods receipts, WIP costing (material/labor/overhead),
@@ -321,19 +322,21 @@ on existing structs use \texttt{Option<>} for backward compatibility.
 
 \subsection{Country Pack Architecture}
 
-\textit{New in v0.8.0} --- pluggable JSON-based country configuration replacing
+\textit{New in v0.8.0, expanded in v0.9.5} --- pluggable JSON-based country configuration replacing
 $\sim$7\,500 lines of hardcoded country-specific data:
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
-  \item \textbf{Built-in packs}: US, DE, GB with 16-section JSON schema covering
-        locale, names, holidays, tax rates, addresses, phone formats, banking,
-        payroll rules, legal entity formats, and document texts.
+  \item \textbf{10 built-in packs}: US, DE, GB, FR, JP, CN, IN, IT, ES, CA with
+        16-section JSON schema covering locale, names, holidays, tax rates,
+        addresses, phone formats, banking, payroll rules, legal entity formats,
+        and document texts.
   \item \textbf{Layered merge}: \texttt{\_default.json} $\to$ country pack $\to$
         user overrides --- objects merge recursively, arrays/scalars replace,
         enabling surgical per-country customization.
-  \item \textbf{5 holiday types}: Fixed dates, Easter-relative, nth-weekday
-        (with offset), last-weekday, and lunar calendar algorithms
-        (Chinese New Year, Diwali, Eid al-Fitr, Chuseok).
+  \item \textbf{5 holiday types, 15 regions}: Fixed dates, Easter-relative,
+        nth-weekday (with offset), last-weekday, and lunar calendar algorithms
+        (Chinese New Year, Diwali, Eid al-Fitr, Chuseok). Holiday calendars
+        for US, DE, GB, FR, IT, ES, CA, CN, JP, IN, BR, MX, AU, SG, KR.
   \item \textbf{Generator integration}: \texttt{HolidayCalendar},
         \texttt{MultiCultureNameGenerator}, tax code, payroll, emission, and
         customer generators all consume country pack data --- wired through
@@ -368,6 +371,10 @@ Generates ISA-compliant audit artifacts:
   \item Workpapers per ISA 230, evidence per ISA 500.
   \item Risk assessments (ISA 315/330), findings (ISA 265), and
         professional judgment documentation (ISA 200).
+  \item \textit{New in v0.9.5}: External confirmations per ISA 505 --- AR (40\%),
+        AP (30\%), Bank (20\%), Legal (10\%) with positive/negative response
+        modeling, reconciliation for disagreements, and alternative procedures
+        for non-responses.
 \end{itemize}
 
 \subsection{COSO 2013 Internal Control Framework}
@@ -560,21 +567,22 @@ Realistic enterprise network modeling with configurable relationships:
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
   \item \textbf{Multi-Tier Vendor Networks}: 3-tier supply chain (Tier1/Tier2/Tier3), vendor clusters (ReliableStrategic 20\%, StandardOperational 50\%, Transactional 25\%, Problematic 5\%), lifecycle stages, quality scores, dependency analysis.
   \item \textbf{Customer Value Segmentation}: Enterprise (40\% revenue/5\% customers), MidMarket (35\%/20\%), SMB (20\%/50\%), Consumer (5\%/25\%), lifecycle stages, referral networks, corporate hierarchies.
-  \item \textbf{Entity Relationship Graph}: 16 entity types, 26 relationship types, composite strength calculation from volume, count, duration, recency, and mutual connections.
+  \item \textbf{Entity Relationship Graph}: 51+ entity types across 10 process families, 28+ relationship types with typed edge constraints, composite strength calculation from volume, count, duration, recency, and mutual connections.
   \item \textbf{Cross-Process Links}: P2P$\leftrightarrow$O2C linkage via inventory (GoodsReceipt$\to$Delivery), intercompany bilateral links.
 \end{itemize}
 
 \subsection{Pattern \& Process Drift}
 
-Comprehensive drift modeling for realistic temporal evolution:
+\textit{Expanded in v0.9.5} --- comprehensive drift modeling with dedicated generators
+for realistic temporal evolution:
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
-  \item \textbf{Organizational Events}: Acquisition (1.35x volume, 5\% integration errors), divestiture, reorganization, leadership change, workforce reduction, merger.
-  \item \textbf{Process Evolution}: Approval workflow changes, S-curve automation rollout, policy changes, control enhancements.
+  \item \textbf{Organizational Events}: \texttt{OrganizationalEventGenerator} produces Acquisition (1.35x volume, 5\% integration errors), Divestiture, Reorganization, LeadershipChange, WorkforceReduction, and Merger events with multi-phase integration timelines and volume/error-rate multipliers.
+  \item \textbf{Process Evolution}: \texttt{ProcessEvolutionGenerator} with S-curve automation rollout, approval workflow transitions between \texttt{WorkflowType} variants, policy changes, and control enhancements.
+  \item \textbf{Drift Event Meta-Generator}: \texttt{DriftEventGenerator} observes organizational and process events to produce ML ground-truth \texttt{LabeledDriftEvent} records with drift type (Statistical, Temporal, Behavioral, Market, Organizational, Process), magnitude, affected fields, and detection difficulty.
   \item \textbf{Technology Transitions}: ERP migration phases with error rate and processing time multipliers, duplicate/missing/format issues.
   \item \textbf{Behavioral Drift}: Vendor payment term extensions, customer delays during downturns, employee learning curves, year-end intensity.
   \item \textbf{Market Drift}: Economic cycles (sinusoidal, asymmetric, mean-reverting), industry-specific cycles, commodity drift, price shocks.
-  \item \textbf{Ground Truth}: \texttt{LabeledDriftEvent} with event type, magnitude, and detection difficulty (Easy/Medium/Hard) for drift detection ML.
 \end{itemize}
 
 \subsection{Graph \& Network Export}
@@ -838,7 +846,7 @@ Data Lineage &
   config$\to$generator$\to$output relationships, W3C PROV-JSON export,
   CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} 1.3 with blueprints (sourcing, HR, manufacturing,
+  \texttt{datasynth-py} 1.5 with blueprints (sourcing, HR, manufacturing,
   financial reporting, tax, treasury, project accounting, ESG),
   pandas/polars integration, async client, and WebSocket streaming support. \\
 \bottomrule
@@ -1205,7 +1213,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.9.3 \textbullet{}
+  DataSynth v0.9.5 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
