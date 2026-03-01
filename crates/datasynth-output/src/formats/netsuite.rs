@@ -398,7 +398,7 @@ impl NetSuiteExporter {
                 header.subsidiary,
                 header.currency,
                 header.exchange_rate,
-                escape_csv_field(&header.memo.unwrap_or_default()),
+                escape_csv_field(header.memo.as_deref().unwrap_or("")),
                 if header.approved { "T" } else { "F" },
                 header.total_debit,
                 header.total_credit,
@@ -411,11 +411,11 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(fraud_field)
-                            .unwrap_or(&String::new()),
+                            .map(|s| s.as_str()).unwrap_or(""),
                         header
                             .custom_fields
                             .get(&format!("{}_type", fraud_field))
-                            .unwrap_or(&String::new()),
+                            .map(|s| s.as_str()).unwrap_or(""),
                     ));
                 }
                 if let Some(ref process_field) = self.config.process_custom_field {
@@ -424,7 +424,7 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(process_field)
-                            .unwrap_or(&String::new()),
+                            .map(|s| s.as_str()).unwrap_or(""),
                     ));
                 }
             }
@@ -437,10 +437,10 @@ impl NetSuiteExporter {
                     header.internal_id,
                     line.line,
                     line.account,
-                    escape_csv_field(&line.account_name.unwrap_or_default()),
+                    escape_csv_field(line.account_name.as_deref().unwrap_or("")),
                     line.debit.map(|d| d.to_string()).unwrap_or_default(),
                     line.credit.map(|d| d.to_string()).unwrap_or_default(),
-                    escape_csv_field(&line.memo.unwrap_or_default()),
+                    escape_csv_field(line.memo.as_deref().unwrap_or("")),
                     line.department.map(|d| d.to_string()).unwrap_or_default(),
                     line.class.map(|d| d.to_string()).unwrap_or_default(),
                     line.location.map(|d| d.to_string()).unwrap_or_default(),
@@ -454,10 +454,10 @@ impl NetSuiteExporter {
                         ",{},{}",
                         line.custom_fields
                             .get("custcol_cost_center")
-                            .unwrap_or(&String::new()),
+                            .map(|s| s.as_str()).unwrap_or(""),
                         line.custom_fields
                             .get("custcol_profit_center")
-                            .unwrap_or(&String::new()),
+                            .map(|s| s.as_str()).unwrap_or(""),
                     ));
                 }
                 writeln!(lines_writer, "{}", line_row)?;
