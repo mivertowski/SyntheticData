@@ -188,8 +188,7 @@ mod tests {
         assert!(matches!(onset, OnsetType::Oscillating));
 
         // Custom with easing
-        let onset: OnsetType =
-            serde_json::from_str(r#"{"custom":{"easing":"ease_in"}}"#).unwrap();
+        let onset: OnsetType = serde_json::from_str(r#"{"custom":{"easing":"ease_in"}}"#).unwrap();
         assert!(matches!(onset, OnsetType::Custom { .. }));
     }
 

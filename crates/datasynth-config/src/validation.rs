@@ -2196,9 +2196,7 @@ fn validate_scenarios(config: &GeneratorConfig) -> SynthResult<()> {
 
     for scenario in &scenarios.scenarios {
         if scenario.name.is_empty() {
-            return Err(SynthError::validation(
-                "scenario name must not be empty",
-            ));
+            return Err(SynthError::validation("scenario name must not be empty"));
         }
 
         if !names.insert(&scenario.name) {

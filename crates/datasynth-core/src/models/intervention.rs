@@ -81,7 +81,9 @@ pub enum InterpolationType {
     #[default]
     Linear,
     Exponential,
-    Logistic { steepness: f64 },
+    Logistic {
+        steepness: f64,
+    },
     Step,
 }
 

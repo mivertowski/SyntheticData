@@ -215,8 +215,11 @@ impl<'a> CausalPropagationEngine<'a> {
                             );
                         }
                         if let Some(node) = self.dag.find_node("unemployment_rate") {
-                            let shock =
-                                ms.overrides.get("unemployment_rate").copied().unwrap_or(0.03);
+                            let shock = ms
+                                .overrides
+                                .get("unemployment_rate")
+                                .copied()
+                                .unwrap_or(0.03);
                             effects.insert(
                                 "unemployment_rate".to_string(),
                                 node.baseline_value + shock * severity,
@@ -225,8 +228,7 @@ impl<'a> CausalPropagationEngine<'a> {
                     }
                     MacroShockType::InflationSpike => {
                         if let Some(node) = self.dag.find_node("inflation_rate") {
-                            let shock =
-                                ms.overrides.get("inflation_rate").copied().unwrap_or(0.05);
+                            let shock = ms.overrides.get("inflation_rate").copied().unwrap_or(0.05);
                             effects.insert(
                                 "inflation_rate".to_string(),
                                 node.baseline_value + shock * severity,
@@ -235,8 +237,7 @@ impl<'a> CausalPropagationEngine<'a> {
                     }
                     MacroShockType::InterestRateShock => {
                         if let Some(node) = self.dag.find_node("interest_rate") {
-                            let shock =
-                                ms.overrides.get("interest_rate").copied().unwrap_or(0.03);
+                            let shock = ms.overrides.get("interest_rate").copied().unwrap_or(0.03);
                             effects.insert(
                                 "interest_rate".to_string(),
                                 node.baseline_value + shock * severity,
@@ -554,13 +555,11 @@ mod tests {
 
         let engine = CausalPropagationEngine::new(&dag);
 
-        let intervention_type = InterventionType::Custom(
-            datasynth_core::CustomIntervention {
-                name: "test".to_string(),
-                config_overrides: HashMap::new(),
-                downstream_triggers: vec![],
-            },
-        );
+        let intervention_type = InterventionType::Custom(datasynth_core::CustomIntervention {
+            name: "test".to_string(),
+            config_overrides: HashMap::new(),
+            downstream_triggers: vec![],
+        });
 
         // Directly set node "a" via effects
         let intervention = Intervention {

@@ -96,9 +96,9 @@ pub mod audit;
 pub mod banking;
 
 // Counterfactual simulation models
+pub mod causal_dag;
 mod intervention;
 mod scenario;
-pub mod causal_dag;
 
 pub use acdoca::*;
 pub use anomaly::*;

@@ -13,12 +13,15 @@
 //! - `label_export`: Anomaly label export to CSV/JSON formats
 
 pub mod causal_engine;
+pub mod config_mutator;
 pub mod enhanced_orchestrator;
+pub mod intervention_manager;
 pub mod label_export;
 pub mod lineage;
 pub mod orchestrator;
 pub mod prov;
 pub mod run_manifest;
+pub mod scenario_engine;
 #[cfg(feature = "streaming")]
 pub mod stream_client;
 pub mod streaming_orchestrator;

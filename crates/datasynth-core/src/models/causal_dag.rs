@@ -242,10 +242,7 @@ impl CausalDAG {
 
         for edge in &self.edges {
             *in_degree.entry(&edge.to).or_insert(0) += 1;
-            adjacency
-                .entry(&edge.from)
-                .or_default()
-                .push(&edge.to);
+            adjacency.entry(&edge.from).or_default().push(&edge.to);
         }
 
         let mut queue: VecDeque<&str> = VecDeque::new();
@@ -305,10 +302,7 @@ impl CausalDAG {
         // Build edge lookup: to_node -> list of (from_node, edge)
         let mut incoming: HashMap<&str, Vec<&CausalEdge>> = HashMap::new();
         for edge in &self.edges {
-            incoming
-                .entry(&edge.to)
-                .or_default()
-                .push(edge);
+            incoming.entry(&edge.to).or_default().push(edge);
         }
 
         // Propagate in topological order
@@ -447,7 +441,7 @@ mod tests {
             saturation: f64::INFINITY,
         };
         assert!((tf.compute(1.0) - 0.0).abs() < f64::EPSILON); // below threshold
-        // Above threshold: 10.0 * (3.0 - 2.0) / 2.0 = 5.0
+                                                               // Above threshold: 10.0 * (3.0 - 2.0) / 2.0 = 5.0
         assert!((tf.compute(3.0) - 5.0).abs() < 0.001);
     }
 
@@ -481,10 +475,28 @@ mod tests {
     #[test]
     fn test_dag_validate_acyclic() {
         let mut dag = CausalDAG {
-            nodes: vec![make_node("a", 1.0), make_node("b", 2.0), make_node("c", 3.0)],
+            nodes: vec![
+                make_node("a", 1.0),
+                make_node("b", 2.0),
+                make_node("c", 3.0),
+            ],
             edges: vec![
-                make_edge("a", "b", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
-                make_edge("b", "c", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
+                make_edge(
+                    "a",
+                    "b",
+                    TransferFunction::Linear {
+                        coefficient: 1.0,
+                        intercept: 0.0,
+                    },
+                ),
+                make_edge(
+                    "b",
+                    "c",
+                    TransferFunction::Linear {
+                        coefficient: 1.0,
+                        intercept: 0.0,
+                    },
+                ),
             ],
             topological_order: vec![],
         };
@@ -497,8 +509,22 @@ mod tests {
         let mut dag = CausalDAG {
             nodes: vec![make_node("a", 1.0), make_node("b", 2.0)],
             edges: vec![
-                make_edge("a", "b", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
-                make_edge("b", "a", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
+                make_edge(
+                    "a",
+                    "b",
+                    TransferFunction::Linear {
+                        coefficient: 1.0,
+                        intercept: 0.0,
+                    },
+                ),
+                make_edge(
+                    "b",
+                    "a",
+                    TransferFunction::Linear {
+                        coefficient: 1.0,
+                        intercept: 0.0,
+                    },
+                ),
             ],
             topological_order: vec![],
         };
@@ -509,12 +535,20 @@ mod tests {
     fn test_dag_validate_unknown_node() {
         let mut dag = CausalDAG {
             nodes: vec![make_node("a", 1.0)],
-            edges: vec![
-                make_edge("a", "nonexistent", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
-            ],
+            edges: vec![make_edge(
+                "a",
+                "nonexistent",
+                TransferFunction::Linear {
+                    coefficient: 1.0,
+                    intercept: 0.0,
+                },
+            )],
             topological_order: vec![],
         };
-        assert!(matches!(dag.validate(), Err(CausalDAGError::UnknownNode(_))));
+        assert!(matches!(
+            dag.validate(),
+            Err(CausalDAGError::UnknownNode(_))
+        ));
     }
 
     #[test]
@@ -524,7 +558,10 @@ mod tests {
             edges: vec![],
             topological_order: vec![],
         };
-        assert!(matches!(dag.validate(), Err(CausalDAGError::DuplicateNode(_))));
+        assert!(matches!(
+            dag.validate(),
+            Err(CausalDAGError::DuplicateNode(_))
+        ));
     }
 
     #[test]
@@ -536,8 +573,22 @@ mod tests {
                 make_node("c", 0.0),
             ],
             edges: vec![
-                make_edge("a", "b", TransferFunction::Linear { coefficient: 0.5, intercept: 0.0 }),
-                make_edge("b", "c", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
+                make_edge(
+                    "a",
+                    "b",
+                    TransferFunction::Linear {
+                        coefficient: 0.5,
+                        intercept: 0.0,
+                    },
+                ),
+                make_edge(
+                    "b",
+                    "c",
+                    TransferFunction::Linear {
+                        coefficient: 1.0,
+                        intercept: 0.0,
+                    },
+                ),
             ],
             topological_order: vec![],
         };
@@ -563,7 +614,10 @@ mod tests {
             edges: vec![CausalEdge {
                 from: "a".to_string(),
                 to: "b".to_string(),
-                transfer: TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 },
+                transfer: TransferFunction::Linear {
+                    coefficient: 1.0,
+                    intercept: 0.0,
+                },
                 lag_months: 2,
                 strength: 1.0,
                 mechanism: None,
@@ -588,17 +642,19 @@ mod tests {
     #[test]
     fn test_dag_propagate_node_bounds_clamped() {
         let mut dag = CausalDAG {
-            nodes: vec![
-                make_node("a", 10.0),
-                {
-                    let mut n = make_node("b", 5.0);
-                    n.bounds = Some((0.0, 8.0));
-                    n
+            nodes: vec![make_node("a", 10.0), {
+                let mut n = make_node("b", 5.0);
+                n.bounds = Some((0.0, 8.0));
+                n
+            }],
+            edges: vec![make_edge(
+                "a",
+                "b",
+                TransferFunction::Linear {
+                    coefficient: 1.0,
+                    intercept: 0.0,
                 },
-            ],
-            edges: vec![
-                make_edge("a", "b", TransferFunction::Linear { coefficient: 1.0, intercept: 0.0 }),
-            ],
+            )],
             topological_order: vec![],
         };
         dag.validate().unwrap();
@@ -613,7 +669,10 @@ mod tests {
 
     #[test]
     fn test_transfer_function_serde() {
-        let tf = TransferFunction::Linear { coefficient: 0.5, intercept: 1.0 };
+        let tf = TransferFunction::Linear {
+            coefficient: 0.5,
+            intercept: 1.0,
+        };
         let json = serde_json::to_string(&tf).unwrap();
         let deserialized: TransferFunction = serde_json::from_str(&json).unwrap();
         assert!((deserialized.compute(2.0) - 2.0).abs() < f64::EPSILON);
