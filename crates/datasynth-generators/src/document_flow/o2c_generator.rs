@@ -2082,7 +2082,7 @@ mod tests {
     fn test_credit_memo_amount_bounded() {
         let mut config = O2CGeneratorConfig::default();
         config.returns_rate = 1.0;
-        let mut gen = O2CGenerator::with_config(42, config);
+        let _ = O2CGenerator::with_config(42, config);
         let customer = create_test_customer();
         let materials = create_test_materials();
         let material_refs: Vec<&Material> = materials.iter().collect();
