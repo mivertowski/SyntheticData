@@ -63,8 +63,8 @@ datasynth-test-utils   → Test utilities
 | Document Flow | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment, SalesOrder, Delivery, CustomerInvoice, CustomerReceipt, DocumentReference |
 | Sourcing (S2C) | SourcingProject, SupplierQualification, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis |
 | Financial Reporting | FinancialStatement, FinancialStatementLineItem, CashFlowItem, ManagementKpi, Budget, BudgetLineItem |
-| HR/Payroll | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem |
-| Manufacturing | ProductionOrder, RoutingOperation, QualityInspection, InspectionCharacteristic, CycleCount, CycleCountItem |
+| HR/Payroll | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem, BenefitEnrollment |
+| Manufacturing | ProductionOrder, RoutingOperation, QualityInspection, InspectionCharacteristic, CycleCount, CycleCountItem, BomComponent, InventoryMovement |
 | Sales | SalesQuote, QuoteLineItem |
 | Bank Reconciliation | BankReconciliation, BankStatementLine, ReconcilingItem |
 | Intercompany | IntercompanyRelationship, ICTransactionType, ICMatchedPair, TransferPricingMethod |
@@ -75,7 +75,12 @@ datasynth-test-utils   → Test utilities
 | COSO Framework | CosoComponent, CosoPrinciple, ControlScope, CosoMaturityLevel |
 | Vendor Network | VendorNetwork, VendorRelationship, VendorCluster, VendorLifecycleStage, VendorQualityScore, VendorDependency, SupplyChainTier |
 | Customer Segment | SegmentedCustomer, CustomerValueSegment, CustomerLifecycleStage, CustomerNetworkPosition, CustomerEngagement, SegmentedCustomerPool |
+| Tax | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition |
+| Treasury | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
+| ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
+| Project Accounting | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
 | Relationships | EntityGraph, GraphEntityType, GraphEntityId, RelationshipEdge, RelationshipType, RelationshipStrengthCalculator, CrossProcessLink |
+| Graph Properties | ToNodeProperties, GraphPropertyValue, EdgeConstraint, Cardinality |
 
 ### Core Infrastructure (datasynth-core/src/)
 
@@ -86,6 +91,7 @@ datasynth-test-utils   → Test utilities
 - **resource_guard.rs**: Unified resource orchestration
 - **degradation.rs**: Graceful degradation (Normal→Reduced→Minimal→Emergency)
 - **accounts.rs**: GL account constants (AR_CONTROL="1100", AP_CONTROL="2000")
+- **graph_properties.rs**: ToNodeProperties trait, GraphPropertyValue enum for typed model→graph property mapping
 - **templates/**: YAML/JSON template loading with merge strategies
 
 ### Generator Modules (datasynth-generators/src/)
@@ -96,8 +102,8 @@ datasynth-test-utils   → Test utilities
 | master_data/ | vendor, customer, material, asset, employee generators |
 | document_flow/ | p2p_generator, o2c_generator, three_way_match, document_chain_manager |
 | sourcing/ | spend_analysis, sourcing_project, qualification, rfx, bid, bid_evaluation, contract, catalog, scorecard generators |
-| hr/ | payroll_generator, time_entry_generator, expense_report_generator |
-| manufacturing/ | production_order_generator, quality_inspection_generator, cycle_count_generator |
+| hr/ | payroll_generator, time_entry_generator, expense_report_generator, benefit_enrollment_generator |
+| manufacturing/ | production_order_generator, quality_inspection_generator, cycle_count_generator, bom_generator, inventory_movement_generator |
 | standards/ | revenue_recognition_generator, impairment_generator |
 | intercompany/ | ic_generator, matching_engine, elimination_generator |
 | balance/ | opening_balance, balance_tracker, trial_balance generators |

@@ -425,24 +425,108 @@ for epoch in range(100):
     optimizer.step()
 ```
 
-## Multi-Layer Hypergraph (v0.6.2)
+## Graph Property Mapping (v0.9.4)
 
-The RustGraph Hypergraph exporter now supports all 8 enterprise process families with 24 entity type codes:
+The `ToNodeProperties` trait provides a standardized way to convert typed Rust model structs into graph node property maps with camelCase keys, suitable for Neo4j, AssureTwin, and other graph consumers.
+
+### ToNodeProperties Trait
+
+```rust
+pub trait ToNodeProperties {
+    fn node_type_name(&self) -> &'static str;  // e.g. "uncertain_tax_position"
+    fn node_type_code(&self) -> u16;           // e.g. 416
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue>;
+}
+```
+
+### GraphPropertyValue Enum
+
+```rust
+pub enum GraphPropertyValue {
+    String(String),
+    Int(i64),
+    Float(f64),
+    Decimal(Decimal),
+    Bool(bool),
+    Date(NaiveDate),
+    StringList(Vec<String>),
+}
+```
+
+### GraphNode::from_entity()
+
+Bridge method for converting any `ToNodeProperties` implementor into a graph node:
+
+```rust
+let node = GraphNode::from_entity(node_id, &tax_return);
+// node.properties contains all camelCase property keys
+```
+
+### Implemented Entity Types (51 types across 10 process families)
+
+All model structs implement `ToNodeProperties`, mapping their fields to camelCase property keys. Boolean flags (`isApproved`, `isPassed`, `isActive`, `treatyApplied`, `billable`, etc.) are derived from status fields or probability-based generation for graph query convenience.
+
+## Multi-Layer Hypergraph (v0.6.2+)
+
+The RustGraph Hypergraph exporter supports all enterprise process families with 51 entity type codes:
 
 ### Entity Type Codes
 
 | Range | Family | Types |
 |-------|--------|-------|
-| 100 | Accounting | GL Accounts |
+| 100-106 | Core | Company, Vendor, Material, Customer, Employee, GlAccount |
 | 300-303 | P2P | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment |
 | 310-312 | O2C | SalesOrder, Delivery, CustomerInvoice |
 | 320-325 | S2C | SourcingProject, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, SupplierQualification |
-| 330-333 | H2R | PayrollRun, TimeEntry, ExpenseReport, PayrollLineItem |
-| 340-343 | MFG | ProductionOrder, RoutingOperation, QualityInspection, CycleCount |
+| 330-333 | H2R | PayrollRun, TimeEntry, ExpenseReport, BenefitEnrollment |
+| 340-345 | MFG | ProductionOrder, RoutingOperation, QualityInspection, CycleCount, BomComponent, InventoryMovement |
 | 350-352 | BANK | BankingCustomer, BankAccount, BankTransaction |
 | 360-365 | AUDIT | AuditEngagement, Workpaper, AuditFinding, AuditEvidence, RiskAssessment, ProfessionalJudgment |
 | 370-372 | Bank Recon | BankReconciliation, BankStatementLine, ReconcilingItem |
 | 400 | OCPM | OcpmEvent (events as hyperedges) |
+| 410-416 | TAX | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition |
+| 420-427 | Treasury | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
+| 430-442 | ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
+| 450-455 | Project | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
+| 500-504 | GOV | CosoComponent, CosoPrinciple, SoxAssertion, AuditEngagement, ProfessionalJudgment |
+
+### Edge Type Registry (v0.9.4)
+
+28 typed relationship variants with source→target entity constraints:
+
+| Family | Edge Type | Source → Target |
+|--------|-----------|-----------------|
+| P2P | PlacedWith | PurchaseOrder → Vendor |
+| P2P | MatchesOrder | VendorInvoice → PurchaseOrder |
+| P2P | PaysInvoice | Payment → VendorInvoice |
+| O2C | PlacedBy | SalesOrder → Customer |
+| O2C | BillsOrder | CustomerInvoice → SalesOrder |
+| S2C | RfxBelongsToProject | RfxEvent → SourcingProject |
+| S2C | RespondsTo | SupplierBid → RfxEvent |
+| S2C | AwardedFrom | ProcurementContract → BidEvaluation |
+| H2R | RecordedBy | TimeEntry → Employee |
+| H2R | PayrollIncludes | PayrollRun → Employee |
+| H2R | SubmittedBy | ExpenseReport → Employee |
+| H2R | EnrolledBy | BenefitEnrollment → Employee |
+| MFG | Produces | ProductionOrder → Material |
+| MFG | Inspects | QualityInspection → ProductionOrder |
+| MFG | PartOf | BomComponent → Material |
+| TAX | TaxLineBelongsTo | TaxLine → TaxReturn |
+| TAX | ProvisionAppliesTo | TaxProvision → TaxJurisdiction |
+| TAX | WithheldFrom | WithholdingTaxRecord → Vendor |
+| Treasury | SweepsTo | CashPoolSweep → CashPool |
+| Treasury | HedgesInstrument | HedgeRelationship → HedgingInstrument |
+| Treasury | GovernsInstrument | DebtCovenant → DebtInstrument |
+| ESG | EmissionReportedBy | EmissionRecord → Company |
+| ESG | AssessesSupplier | SupplierEsgAssessment → Vendor |
+| Project | CostChargedTo | ProjectCostLine → Project |
+| Project | MilestoneOf | ProjectMilestone → Project |
+| Project | ModifiesProject | ChangeOrder → Project |
+| GOV | PrincipleUnder | CosoPrinciple → CosoComponent |
+| GOV | AssertionCovers | SoxAssertion → GlAccount |
+| GOV | JudgmentWithin | ProfessionalJudgment → AuditEngagement |
+
+Each edge has a typed `EdgeConstraint` with `Cardinality` (OneToOne, OneToMany, ManyToMany) and optional edge properties.
 
 ### OCPM Events as Hyperedges
 

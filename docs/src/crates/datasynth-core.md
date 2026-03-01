@@ -31,6 +31,13 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 | `expense_report.rs` | ExpenseReport, ExpenseLineItem with category and approval workflow |
 | `financial_statements.rs` | FinancialStatement, FinancialStatementLineItem, CashFlowItem, StatementType |
 | `bank_reconciliation.rs` | BankReconciliation, BankStatementLine, ReconcilingItem with auto-matching |
+| `graph_properties.rs` | `ToNodeProperties` trait, `GraphPropertyValue` enum for typed model→graph property mapping |
+| `manufacturing.rs` | BomComponent (multi-level BOM), InventoryMovement (goods movement tracking) |
+| `tax.rs` | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition |
+| `treasury.rs` | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
+| `esg.rs` | 13 ESG models: EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, diversity/safety/governance metrics, SupplierEsgAssessment, EsgDisclosure, ClimateScenario |
+| `project_accounting.rs` | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
+| `relationship.rs` | GraphEntityType (51 types), RelationshipType (28+ edge types), EdgeConstraint, Cardinality |
 
 ### Statistical Distributions (`distributions/`)
 
@@ -104,6 +111,28 @@ Built-in packs: `_default.json`, `US.json`, `DE.json`, `GB.json`. External packs
 | `causal/intervention.rs` | `InterventionEngine` with do-calculus and effect estimation |
 | `causal/counterfactual.rs` | `CounterfactualGenerator` with abduction-action-prediction |
 | `causal/validation.rs` | `CausalValidator` for causal structure validation |
+
+## Graph Property Mapping (v0.9.4)
+
+The `graph_properties` module provides the `ToNodeProperties` trait for converting typed model structs to graph node property maps:
+
+```rust
+use synth_core::models::{ToNodeProperties, GraphPropertyValue};
+
+// Any model struct implementing ToNodeProperties
+let tax_return = TaxReturn { /* ... */ };
+assert_eq!(tax_return.node_type_name(), "tax_return");
+assert_eq!(tax_return.node_type_code(), 413);
+
+let props = tax_return.to_node_properties();
+// props["entityCode"] = GraphPropertyValue::String("C001".into())
+// props["totalTax"] = GraphPropertyValue::Decimal(dec!(50000))
+// props["status"] = GraphPropertyValue::String("Filed".into())
+```
+
+51 entity types across 10 process families (Tax, Treasury, ESG, Project, S2C, H2R, MFG, GOV, P2P, O2C) implement this trait. The `GraphEntityType` enum provides `numeric_code()`, `node_type_name()`, `from_numeric_code()`, and category helpers (`is_tax()`, `is_treasury()`, etc.).
+
+The `RelationshipType` enum includes 28+ typed edge variants with `EdgeConstraint` validation (source/target entity types and cardinality). Use `RelationshipType::all_constraints()` to retrieve the full edge registry.
 
 ## Key Types
 

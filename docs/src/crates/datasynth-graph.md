@@ -7,7 +7,8 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 `datasynth-graph` provides graph construction and export capabilities:
 
 - **Graph Builders**: Transaction, approval, entity relationship, and multi-layer hypergraph builders
-- **Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 8 process families with 24 entity type codes and OCPM event hyperedges
+- **Graph Property Mapping**: `ToNodeProperties` trait bridge via `GraphNode::from_entity()` for typed model→graph node conversion with 51 entity types
+- **Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 10 process families with 51 entity type codes and OCPM event hyperedges
 - **ML Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats
 - **Feature Engineering**: Temporal, amount, structural, and categorical features
 - **Data Splits**: Train/validation/test split generation
@@ -268,17 +269,34 @@ graph_export:
     categorical: true
 ```
 
-## Multi-Layer Hypergraph (v0.6.2)
+## Graph Property Mapping (v0.9.4)
 
-The hypergraph builder supports all 8 enterprise process families:
+The `GraphNode::from_entity()` bridge converts any `ToNodeProperties` implementor into a graph node:
+
+```rust
+use synth_graph::models::GraphNode;
+use synth_core::models::ToNodeProperties;
+
+// Convert any model struct to a graph node
+let node = GraphNode::from_entity(node_id, &tax_return);
+// node.properties contains all camelCase property keys from the model
+```
+
+`From<GraphPropertyValue> for NodeProperty` handles automatic type conversion between the core property enum and the graph module's property types.
+
+**51 entity types** across 10 process families and **28 typed edge variants** with `EdgeConstraint` validation are available. See [Graph Export](../advanced/graph-export.md) for the full entity type code table and edge registry.
+
+## Multi-Layer Hypergraph (v0.6.2+)
+
+The hypergraph builder supports all enterprise process families:
 
 | Method | Family | Node Types |
 |--------|--------|-----------|
 | `add_p2p_documents()` | P2P | PurchaseOrder, GoodsReceipt, VendorInvoice, Payment |
 | `add_o2c_documents()` | O2C | SalesOrder, Delivery, CustomerInvoice |
 | `add_s2c_documents()` | S2C | SourcingProject, RfxEvent, SupplierBid, ProcurementContract |
-| `add_h2r_documents()` | H2R | PayrollRun, TimeEntry, ExpenseReport |
-| `add_mfg_documents()` | MFG | ProductionOrder, QualityInspection, CycleCount |
+| `add_h2r_documents()` | H2R | PayrollRun, TimeEntry, ExpenseReport, BenefitEnrollment |
+| `add_mfg_documents()` | MFG | ProductionOrder, QualityInspection, CycleCount, BomComponent, InventoryMovement |
 | `add_bank_documents()` | BANK | BankingCustomer, BankAccount, BankTransaction |
 | `add_audit_documents()` | AUDIT | AuditEngagement, Workpaper, AuditFinding, AuditEvidence |
 | `add_bank_recon_documents()` | Bank Recon | BankReconciliation, BankStatementLine, ReconcilingItem |

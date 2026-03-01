@@ -12,10 +12,15 @@ Core data structures representing enterprise financial concepts.
 | [Financial](#financial) | TrialBalance, FxRate, AccountBalance |
 | [Financial Reporting](#financial-reporting) | FinancialStatement, CashFlowItem, BankReconciliation, BankStatementLine |
 | [Sourcing (S2C)](#sourcing-s2c) | SourcingProject, SupplierQualification, RfxEvent, Bid, BidEvaluation, ProcurementContract, CatalogItem, SupplierScorecard, SpendAnalysis |
-| [HR / Payroll](#hr--payroll) | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem |
-| [Manufacturing](#manufacturing) | ProductionOrder, QualityInspection, CycleCount |
+| [HR / Payroll](#hr--payroll) | PayrollRun, PayrollLineItem, TimeEntry, ExpenseReport, ExpenseLineItem, BenefitEnrollment |
+| [Manufacturing](#manufacturing) | ProductionOrder, QualityInspection, CycleCount, BomComponent, InventoryMovement |
 | [Sales Quotes](#sales-quotes) | SalesQuote, QuoteLineItem |
+| [Tax](#tax) | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition |
+| [Treasury](#treasury) | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
+| [ESG](#esg) | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
+| [Project Accounting](#project-accounting) | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
 | [Compliance](#compliance) | InternalControl, SoDRule, LabeledAnomaly |
+| [Graph Properties](#graph-properties) | ToNodeProperties, GraphPropertyValue, GraphEntityType (51 types), RelationshipType (28 edge types), EdgeConstraint |
 
 ---
 
@@ -606,6 +611,28 @@ pub enum ExpenseCategory {
 }
 ```
 
+### BenefitEnrollment
+
+Employee benefit plan enrollment record.
+
+```rust
+pub struct BenefitEnrollment {
+    pub id: String,
+    pub entity_code: String,
+    pub employee_id: String,
+    pub employee_name: String,
+    pub plan_type: BenefitPlanType,       // Health, Dental, Vision, Retirement401k, StockPurchase, LifeInsurance, Disability
+    pub plan_name: String,
+    pub enrollment_date: NaiveDate,
+    pub effective_date: NaiveDate,
+    pub employee_contribution: Decimal,
+    pub employer_contribution: Decimal,
+    pub currency: String,
+    pub status: BenefitStatus,            // Active, Pending, Terminated, OnLeave
+    pub is_active: bool,
+}
+```
+
 ---
 
 ## Manufacturing
@@ -658,6 +685,114 @@ pub struct CycleCount {
 }
 ```
 
+### BomComponent
+
+Bill-of-materials component linking parent materials to child components.
+
+```rust
+pub struct BomComponent {
+    pub id: String,
+    pub entity_code: String,
+    pub parent_material: String,
+    pub component_material: String,
+    pub component_description: String,
+    pub level: u32,
+    pub quantity_per: Decimal,
+    pub unit: String,
+    pub scrap_rate: Decimal,
+    pub is_phantom: bool,
+}
+```
+
+### InventoryMovement
+
+Goods movement record for receipts, issues, transfers, returns, scrap, and adjustments.
+
+```rust
+pub struct InventoryMovement {
+    pub id: String,
+    pub entity_code: String,
+    pub material_code: String,
+    pub movement_date: NaiveDate,
+    pub movement_type: MovementType,  // GoodsReceipt, GoodsIssue, Transfer, Return, Scrap, Adjustment
+    pub quantity: Decimal,
+    pub value: Decimal,
+    pub currency: String,
+    pub storage_location: String,
+    pub reference_doc: String,
+}
+```
+
+---
+
+## Tax
+
+Tax accounting models (ASC 740/IAS 12). See [Tax Accounting](../advanced/tax-accounting.md) for full details.
+
+### Key Models
+
+- **TaxJurisdiction**: Tax authority with country/region codes, VAT registration status
+- **TaxCode**: Tax rate definitions with type classification and exemption flags
+- **TaxLine**: Individual line items on tax returns with amounts by jurisdiction
+- **TaxReturn**: Filing records with total tax, amount paid, balance due, and filing status
+- **TaxProvision**: Current/deferred tax provisions with effective rates by jurisdiction
+- **WithholdingTaxRecord**: Withholding tax with base amounts, applied rates, and treaty applicability
+- **UncertainTaxPosition**: UTP records with recognition thresholds and measurement methods
+
+---
+
+## Treasury
+
+Treasury and cash management models. See [Treasury](../advanced/treasury.md) for full details.
+
+### Key Models
+
+- **CashPosition**: Daily bank account balances with closing, available, and value-date balances
+- **CashForecast**: Forward-looking cash flow projections with confidence levels
+- **CashPool**: Notional or physical cash pooling with header accounts and participant aggregation
+- **CashPoolSweep**: Automated sweep transactions between pool participants and header
+- **HedgingInstrument**: FX forwards, interest rate swaps, options with notional amounts
+- **HedgeRelationship**: Hedge accounting designations with effectiveness testing (ASC 815/IFRS 9)
+- **DebtInstrument**: Loan facilities with outstanding principal, rates, and maturity dates
+- **DebtCovenant**: Financial covenant thresholds with actual values, headroom, and compliance status
+
+---
+
+## ESG
+
+Environmental, Social, and Governance models. See [ESG/Sustainability](../advanced/esg-sustainability.md) for full details.
+
+### Key Models
+
+- **EmissionRecord**: GHG Scope 1/2/3 emissions with CO2e tonnes and emission factors
+- **EnergyConsumption**: Energy usage by source (renewable/non-renewable) with MWh tracking
+- **WaterUsage**: Water withdrawal, consumption, and discharge by source
+- **WasteRecord**: Waste generation by type (hazardous/non-hazardous) with disposal methods
+- **WorkforceDiversityMetric**: Demographic representation by category and level
+- **PayEquityMetric**: Compensation equity ratios by demographic group
+- **SafetyIncident**: Workplace incidents with severity and root cause classification
+- **SafetyMetric**: Aggregate safety rates (TRIR, DART, lost time)
+- **GovernanceMetric**: Board composition, independence, and oversight metrics
+- **SupplierEsgAssessment**: Vendor ESG scores with environmental/social/governance breakdown
+- **MaterialityAssessment**: Double materiality assessments by ESG topic
+- **EsgDisclosure**: Framework-specific disclosures (GRI, SASB, TCFD) with completion tracking
+- **ClimateScenario**: TCFD climate scenarios with warming pathways and financial impact
+
+---
+
+## Project Accounting
+
+Project accounting models with WBS, earned value, and cost tracking. See [Project Accounting](../advanced/project-accounting.md) for full details.
+
+### Key Models
+
+- **Project**: Project master with WBS structure, status, and budget
+- **ProjectCostLine**: Cost postings to WBS elements with budget/actual/variance
+- **ProjectRevenue**: Revenue recognition records (PoC or milestone-based)
+- **EarnedValueMetric**: EVM metrics (BCWS, BCWP, ACWP, CPI, SPI) per period
+- **ChangeOrder**: Project scope/budget change requests with approval workflow
+- **ProjectMilestone**: Deliverable milestones with payment amounts and completion status
+
 ---
 
 ## Sales Quotes
@@ -679,6 +814,43 @@ pub struct SalesQuote {
     pub converted_order_id: Option<String>,
 }
 ```
+
+---
+
+## Graph Properties
+
+### ToNodeProperties Trait
+
+All 51 entity types implement `ToNodeProperties` for graph property mapping:
+
+```rust
+pub trait ToNodeProperties {
+    fn node_type_name(&self) -> &'static str;  // e.g. "uncertain_tax_position"
+    fn node_type_code(&self) -> u16;           // e.g. 416
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue>;
+}
+```
+
+Property maps use camelCase keys (e.g. `entityCode`, `totalAmount`, `isApproved`) for downstream graph consumers.
+
+### GraphPropertyValue
+
+```rust
+pub enum GraphPropertyValue {
+    String(String), Int(i64), Float(f64), Decimal(Decimal),
+    Bool(bool), Date(NaiveDate), StringList(Vec<String>),
+}
+```
+
+### GraphEntityType
+
+Registry of 51 entity types with numeric codes (100-504), 2-letter codes, snake_case names, and category helpers (`is_tax()`, `is_treasury()`, `is_esg()`, `is_project()`, `is_h2r()`, `is_mfg()`, `is_governance()`).
+
+### RelationshipType
+
+Registry of 28+ typed edge variants with `EdgeConstraint` validation (source/target entity types, `Cardinality`).
+
+See [Graph Export](../advanced/graph-export.md) for the full entity type code table and edge registry.
 
 ---
 
