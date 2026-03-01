@@ -9,6 +9,7 @@ use datasynth_config::schema::PayrollConfig;
 use datasynth_core::models::{PayrollLineItem, PayrollRun, PayrollRunStatus};
 use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use datasynth_core::country::schema::TaxBracket;
 use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -20,6 +21,8 @@ use tracing::debug;
 struct PayrollRates {
     /// Combined income tax rate (federal + state, or equivalent).
     income_tax_rate: Decimal,
+    /// Progressive income tax brackets from country pack (if available).
+    income_tax_brackets: Vec<TaxBracket>,
     /// Social security / FICA rate.
     fica_rate: Decimal,
     /// Employee health insurance rate.
@@ -216,11 +219,50 @@ impl PayrollGenerator {
 
         PayrollRates {
             income_tax_rate: federal_rate + state_rate,
+            income_tax_brackets: Vec::new(),
             fica_rate,
             health_rate: Decimal::from_f64_retain(0.03).unwrap_or(Decimal::ZERO),
             retirement_rate: Decimal::from_f64_retain(0.05).unwrap_or(Decimal::ZERO),
             employer_fica_rate: fica_rate,
         }
+    }
+
+    /// Compute progressive tax using marginal brackets.
+    ///
+    /// Iterates brackets in ascending order. Each bracket taxes only the
+    /// portion of income within that bracket at the bracket's rate. The
+    /// terminal bracket (no `up_to`) taxes all remaining income.
+    fn compute_progressive_tax(annual_income: Decimal, brackets: &[TaxBracket]) -> Decimal {
+        let mut total_tax = Decimal::ZERO;
+        let mut taxed_up_to = Decimal::ZERO;
+
+        for bracket in brackets {
+            let bracket_floor = bracket
+                .above
+                .and_then(Decimal::from_f64_retain)
+                .unwrap_or(taxed_up_to);
+            let bracket_rate = Decimal::from_f64_retain(bracket.rate).unwrap_or(Decimal::ZERO);
+
+            if annual_income <= bracket_floor {
+                break;
+            }
+
+            let taxable_in_bracket = if let Some(ceiling) = bracket.up_to {
+                let ceiling = Decimal::from_f64_retain(ceiling).unwrap_or(Decimal::ZERO);
+                (annual_income.min(ceiling) - bracket_floor).max(Decimal::ZERO)
+            } else {
+                // Terminal bracket — tax all remaining income
+                (annual_income - bracket_floor).max(Decimal::ZERO)
+            };
+
+            total_tax += (taxable_in_bracket * bracket_rate).round_dp(2);
+            taxed_up_to = bracket
+                .up_to
+                .and_then(Decimal::from_f64_retain)
+                .unwrap_or(annual_income);
+        }
+
+        total_tax.round_dp(2)
     }
 
     /// Build [`PayrollRates`] from a [`CountryPack`], falling back to config
@@ -248,12 +290,19 @@ impl PayrollGenerator {
             let name_en_lower = ded.name_en.to_lowercase();
             let rate = Decimal::from_f64_retain(ded.rate).unwrap_or(Decimal::ZERO);
 
-            // Skip progressive (bracket-based) income taxes that have rate 0.0
-            // in the pack — these are placeholders indicating bracket lookup is
-            // needed. We will fall back to the config's effective rate instead.
+            // Progressive (bracket-based) income taxes have rate 0.0 as a
+            // placeholder. Mark the category as found so the config fallback
+            // is skipped — the actual tax will be computed per-employee from
+            // the bracket table in generate_with_rates_and_labels().
             if (ded.deduction_type == "progressive" || ded.type_field == "progressive")
                 && ded.rate == 0.0
             {
+                if code_upper == "FIT"
+                    || code_upper == "LOHNST"
+                    || (name_en_lower.contains("income tax") && !name_en_lower.contains("state"))
+                {
+                    found_federal = true;
+                }
                 continue;
             }
 
@@ -304,6 +353,7 @@ impl PayrollGenerator {
             } else {
                 fallback.income_tax_rate
             },
+            income_tax_brackets: pack.tax.payroll_tax.income_tax_brackets.clone(),
             fica_rate: if found_fica { fica } else { fallback.fica_rate },
             health_rate: if found_health {
                 health
@@ -480,8 +530,13 @@ impl PayrollGenerator {
 
             let gross_pay = monthly_base + overtime_pay + bonus;
 
-            // Deductions
-            let tax_withholding = (gross_pay * rates.income_tax_rate).round_dp(2);
+            // Deductions — use progressive brackets when available
+            let tax_withholding = if !rates.income_tax_brackets.is_empty() {
+                let annual = gross_pay * Decimal::from(12);
+                Self::compute_progressive_tax(annual, &rates.income_tax_brackets) / Decimal::from(12)
+            } else {
+                (gross_pay * rates.income_tax_rate).round_dp(2)
+            };
             let social_security = (gross_pay * rates.fica_rate).round_dp(2);
 
             let health_insurance = if self.rng.random_bool(benefits_enrolled) {
@@ -1012,6 +1067,190 @@ mod tests {
         assert!(item.health_insurance_label.is_some());
         assert!(item.retirement_contribution_label.is_some());
         assert!(item.employer_contribution_label.is_some());
+    }
+
+    #[test]
+    fn test_compute_progressive_tax_us_brackets() {
+        // Simplified US-style brackets for testing
+        let brackets = vec![
+            TaxBracket {
+                above: Some(0.0),
+                up_to: Some(11_000.0),
+                rate: 0.10,
+            },
+            TaxBracket {
+                above: Some(11_000.0),
+                up_to: Some(44_725.0),
+                rate: 0.12,
+            },
+            TaxBracket {
+                above: Some(44_725.0),
+                up_to: Some(95_375.0),
+                rate: 0.22,
+            },
+            TaxBracket {
+                above: Some(95_375.0),
+                up_to: None,
+                rate: 0.24,
+            },
+        ];
+
+        // $60,000 income
+        let tax = PayrollGenerator::compute_progressive_tax(Decimal::from(60_000), &brackets);
+        // 11,000 * 0.10 = 1,100
+        // (44,725 - 11,000) * 0.12 = 4,047
+        // (60,000 - 44,725) * 0.22 = 3,360.50
+        // Total = 8,507.50
+        assert_eq!(tax, Decimal::from_f64_retain(8507.50).unwrap());
+
+        // $11,000 income — only first bracket
+        let tax = PayrollGenerator::compute_progressive_tax(Decimal::from(11_000), &brackets);
+        assert_eq!(tax, Decimal::from_f64_retain(1100.0).unwrap());
+    }
+
+    #[test]
+    fn test_progressive_tax_zero_income() {
+        let brackets = vec![TaxBracket {
+            above: Some(0.0),
+            up_to: Some(10_000.0),
+            rate: 0.10,
+        }];
+        let tax = PayrollGenerator::compute_progressive_tax(Decimal::ZERO, &brackets);
+        assert_eq!(tax, Decimal::ZERO);
+    }
+
+    #[test]
+    fn test_us_pack_employees_have_varying_rates() {
+        use datasynth_core::country::schema::{
+            CountryTaxConfig, PayrollCountryConfig, PayrollDeduction, PayrollTaxBracketsConfig,
+        };
+
+        let brackets = vec![
+            TaxBracket {
+                above: Some(0.0),
+                up_to: Some(11_000.0),
+                rate: 0.10,
+            },
+            TaxBracket {
+                above: Some(11_000.0),
+                up_to: Some(44_725.0),
+                rate: 0.12,
+            },
+            TaxBracket {
+                above: Some(44_725.0),
+                up_to: None,
+                rate: 0.22,
+            },
+        ];
+        let pack = CountryPack {
+            country_code: "US".to_string(),
+            payroll: PayrollCountryConfig {
+                statutory_deductions: vec![
+                    PayrollDeduction {
+                        code: "FIT".to_string(),
+                        name_en: "Federal Income Tax".to_string(),
+                        deduction_type: "progressive".to_string(),
+                        rate: 0.0,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "FICA".to_string(),
+                        name_en: "Social Security".to_string(),
+                        deduction_type: "percentage".to_string(),
+                        rate: 0.0765,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            tax: CountryTaxConfig {
+                payroll_tax: PayrollTaxBracketsConfig {
+                    income_tax_brackets: brackets,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let mut gen = PayrollGenerator::new(42);
+        gen.set_country_pack(pack);
+
+        // Low earner vs high earner
+        let low_earner = vec![(
+            "LOW".to_string(),
+            Decimal::from(30_000),
+            None,
+            None,
+        )];
+        let high_earner = vec![(
+            "HIGH".to_string(),
+            Decimal::from(200_000),
+            None,
+            None,
+        )];
+
+        let start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();
+
+        let (_, low_items) = gen.generate("C001", &low_earner, start, end, "USD");
+        let mut gen2 = PayrollGenerator::new(42);
+        gen2.set_country_pack(CountryPack {
+            country_code: "US".to_string(),
+            payroll: PayrollCountryConfig {
+                statutory_deductions: vec![
+                    PayrollDeduction {
+                        code: "FIT".to_string(),
+                        name_en: "Federal Income Tax".to_string(),
+                        deduction_type: "progressive".to_string(),
+                        rate: 0.0,
+                        ..Default::default()
+                    },
+                    PayrollDeduction {
+                        code: "FICA".to_string(),
+                        name_en: "Social Security".to_string(),
+                        deduction_type: "percentage".to_string(),
+                        rate: 0.0765,
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            tax: CountryTaxConfig {
+                payroll_tax: PayrollTaxBracketsConfig {
+                    income_tax_brackets: vec![
+                        TaxBracket {
+                            above: Some(0.0),
+                            up_to: Some(11_000.0),
+                            rate: 0.10,
+                        },
+                        TaxBracket {
+                            above: Some(11_000.0),
+                            up_to: Some(44_725.0),
+                            rate: 0.12,
+                        },
+                        TaxBracket {
+                            above: Some(44_725.0),
+                            up_to: None,
+                            rate: 0.22,
+                        },
+                    ],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        let (_, high_items) = gen2.generate("C001", &high_earner, start, end, "USD");
+
+        let low_eff = low_items[0].tax_withholding / low_items[0].gross_pay;
+        let high_eff = high_items[0].tax_withholding / high_items[0].gross_pay;
+
+        // High earner should have a higher effective tax rate
+        assert!(
+            high_eff > low_eff,
+            "High earner effective rate ({high_eff}) should exceed low earner ({low_eff})"
+        );
     }
 
     #[test]
