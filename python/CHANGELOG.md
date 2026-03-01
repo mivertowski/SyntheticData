@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.5.4 (2026-03-01)
+
+### Added
+
+- Matches Rust v0.9.4 RustGraph Round 2 feature set (DS-001 through DS-012)
+- Graph property mapping: `ToNodeProperties` trait, `GraphPropertyValue` enum, entity type registry (50+ types)
+- Edge type registry with 28 new relationship variants and typed constraints
+- New model structs: BomComponent, InventoryMovement, BenefitEnrollment
+- Denormalized name fields on transaction models (vendor_name, customer_name, employee_name)
+- Boolean flags for graph queries (treatyApplied, isApproved, isPassed, isPhantom, isActive, billable)
+- New generators: BOM, inventory movement, benefit enrollment
+
 ## 1.5.3 (2026-02-27)
 
 ### Changed

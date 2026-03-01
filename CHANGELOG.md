@@ -5,6 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-03-01
+
+### Added
+
+- **Graph property mapping trait and value enum** (DS-001) (`datasynth-core`)
+  - `ToNodeProperties` trait for converting typed model structs to `HashMap<String, GraphPropertyValue>` with camelCase keys
+  - `GraphPropertyValue` enum supporting String, Int, Float, Decimal, Bool, Date, and StringList variants
+  - `node_type_name()` and `node_type_code()` methods for canonical entity identification
+
+- **Extended entity type registry with 50+ variants** (DS-001 through DS-009) (`datasynth-core`)
+  - `GraphEntityType` expanded with Tax (7), Treasury (8), ESG (13), Project (5), S2C (4), H2R (4), MFG (4), GOV (5) entity types
+  - `numeric_code()`, `node_type_name()`, `from_numeric_code()`, `from_node_type_name()` methods
+  - Category helpers: `is_tax()`, `is_treasury()`, `is_esg()`, `is_project()`, `is_h2r()`, `is_mfg()`, `is_governance()`
+  - `all_types()` iterator for exhaustive enumeration
+
+- **Edge type registry with 28 new relationship variants** (DS-010) (`datasynth-core`)
+  - `RelationshipType` expanded with P2P, O2C, S2C, H2R, MFG, TAX, Treasury, ESG, Project, and GOV edge types
+  - `EdgeConstraint` struct with source/target entity types and `Cardinality` enum
+  - `constraint()` and `all_constraints()` methods for typed edge validation
+
+- **New model structs** (DS-007, DS-008) (`datasynth-core`)
+  - `BomComponent`: multi-level bill-of-materials with phantom assembly support
+  - `InventoryMovement`: goods receipt/issue/transfer/return/scrap/adjustment tracking
+  - `BenefitEnrollment`: employee benefit plan enrollment with contribution tracking
+
+- **ToNodeProperties implementations for all 10 process families** (DS-001 through DS-009) (`datasynth-core`)
+  - Tax domain (7 types): TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition
+  - Treasury domain (8 types): CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant
+  - ESG domain (13 types): EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario
+  - Project domain (6 types): Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone
+  - S2C domain (6 types): SourcingProject, RfxEvent, SupplierBid, BidEvaluation, ProcurementContract, SupplierQualification
+  - H2R domain (4 types): PayrollRun, TimeEntry, ExpenseReport, BenefitEnrollment
+  - MFG domain (6 types): ProductionOrder, QualityInspection, CycleCount, BomComponent, InventoryMovement, Material
+  - GOV domain (5 types): CosoComponent, CosoPrinciple, SoxAssertion, AuditEngagement, ProfessionalJudgment
+
+- **Denormalized name fields on transaction models** (DS-011) (`datasynth-core`)
+  - `vendor_name: Option<String>` on PurchaseOrder and VendorInvoice
+  - `customer_name: Option<String>` on SalesOrder and CustomerInvoice
+  - `employee_name: Option<String>` on TimeEntry and ExpenseReport
+  - `material_description: Option<String>` on CycleCountItem
+  - Builder methods (`with_vendor_name()`, `with_customer_name()`, etc.) for ergonomic construction
+
+- **Boolean flags for graph queries** (DS-012) (`datasynth-core`)
+  - `treatyApplied` on WithholdingTaxRecord (derived from `treaty_rate.is_some()`)
+  - `isApproved` on PayrollRun (derived from status)
+  - `isPassed` on QualityInspection (derived from result)
+  - `isPhantom` on BomComponent
+  - `isActive` on BenefitEnrollment, Material, TaxCode
+  - `billable` on TimeEntry (70% probability in generator)
+
+- **New generators** (DS-007, DS-008) (`datasynth-generators`)
+  - `BomGenerator`: multi-level BOM component generation with phantom assembly support
+  - `InventoryMovementGenerator`: goods movement generation tied to production orders and materials
+  - `BenefitEnrollmentGenerator`: employee benefit enrollment with plan type distribution
+
+- **Generator denormalization support** (DS-011) (`datasynth-generators`)
+  - P2P generator populates `vendor_name` on PurchaseOrder and VendorInvoice
+  - O2C generator populates `customer_name` on SalesOrder and CustomerInvoice
+  - HR generators support `with_employee_names()` for name pool injection
+  - Cycle count generator supports `with_material_descriptions()` for description pool injection
+
+- **Graph export bridge** (DS-001) (`datasynth-graph`)
+  - `From<GraphPropertyValue> for NodeProperty` conversion
+  - `GraphNode::from_entity()` for creating graph nodes from any `ToNodeProperties` implementor
+
+- **Comprehensive test suite** (`datasynth-core`, `datasynth-graph`)
+  - Entity registry uniqueness tests (numeric codes, node type names)
+  - Edge constraint validation tests (source/target validity, per-family coverage)
+  - Category helper exhaustive tests
+  - GraphPropertyValue round-trip tests
+  - Graph export bridge integration tests
+
 ## [0.9.3] - 2026-02-27
 
 ### Added

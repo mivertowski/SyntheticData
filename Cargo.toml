@@ -22,7 +22,7 @@ exclude = ["fuzz"]
 # Root package for workspace-level benchmarks
 [package]
 name = "datasynth-workspace"
-version = "0.9.3"
+version = "0.9.4"
 edition = "2021"
 publish = false
 
@@ -42,7 +42,7 @@ tempfile = { workspace = true }
 serde_json = { workspace = true }
 
 [workspace.package]
-version = "0.9.3"
+version = "0.9.4"
 edition = "2021"
 license = "Apache-2.0"
 rust-version = "1.88"
@@ -56,19 +56,19 @@ categories = ["simulation", "finance", "data-structures"]
 
 [workspace.dependencies]
 # Internal crates - version required for crates.io publishing
-datasynth-core = { version = "0.9.3", path = "crates/datasynth-core" }
-datasynth-config = { version = "0.9.3", path = "crates/datasynth-config" }
-datasynth-generators = { version = "0.9.3", path = "crates/datasynth-generators" }
-datasynth-output = { version = "0.9.3", path = "crates/datasynth-output" }
-datasynth-runtime = { version = "0.9.3", path = "crates/datasynth-runtime" }
-datasynth-graph = { version = "0.9.3", path = "crates/datasynth-graph" }
-datasynth-server = { version = "0.9.3", path = "crates/datasynth-server" }
-datasynth-test-utils = { version = "0.9.3", path = "crates/datasynth-test-utils" }
-datasynth-eval = { version = "0.9.3", path = "crates/datasynth-eval" }
-datasynth-ocpm = { version = "0.9.3", path = "crates/datasynth-ocpm" }
-datasynth-banking = { version = "0.9.3", path = "crates/datasynth-banking" }
-datasynth-fingerprint = { version = "0.9.3", path = "crates/datasynth-fingerprint" }
-datasynth-standards = { version = "0.9.3", path = "crates/datasynth-standards" }
+datasynth-core = { version = "0.9.4", path = "crates/datasynth-core" }
+datasynth-config = { version = "0.9.4", path = "crates/datasynth-config" }
+datasynth-generators = { version = "0.9.4", path = "crates/datasynth-generators" }
+datasynth-output = { version = "0.9.4", path = "crates/datasynth-output" }
+datasynth-runtime = { version = "0.9.4", path = "crates/datasynth-runtime" }
+datasynth-graph = { version = "0.9.4", path = "crates/datasynth-graph" }
+datasynth-server = { version = "0.9.4", path = "crates/datasynth-server" }
+datasynth-test-utils = { version = "0.9.4", path = "crates/datasynth-test-utils" }
+datasynth-eval = { version = "0.9.4", path = "crates/datasynth-eval" }
+datasynth-ocpm = { version = "0.9.4", path = "crates/datasynth-ocpm" }
+datasynth-banking = { version = "0.9.4", path = "crates/datasynth-banking" }
+datasynth-fingerprint = { version = "0.9.4", path = "crates/datasynth-fingerprint" }
+datasynth-standards = { version = "0.9.4", path = "crates/datasynth-standards" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
