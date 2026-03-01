@@ -95,6 +95,11 @@ pub mod audit;
 // Banking models (KYC/AML transaction generation)
 pub mod banking;
 
+// Counterfactual simulation models
+mod intervention;
+mod scenario;
+pub mod causal_dag;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -157,3 +162,8 @@ pub use organizational_event::*;
 pub use process_evolution::*;
 pub use regulatory_events::*;
 pub use technology_transition::*;
+
+// Counterfactual simulation exports
+pub use causal_dag::*;
+pub use intervention::*;
+pub use scenario::*;
