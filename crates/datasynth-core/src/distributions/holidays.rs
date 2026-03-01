@@ -32,6 +32,14 @@ pub enum Region {
     SG,
     /// South Korea
     KR,
+    /// France
+    FR,
+    /// Italy
+    IT,
+    /// Spain
+    ES,
+    /// Canada
+    CA,
 }
 
 impl std::fmt::Display for Region {
@@ -48,6 +56,10 @@ impl std::fmt::Display for Region {
             Region::AU => write!(f, "Australia"),
             Region::SG => write!(f, "Singapore"),
             Region::KR => write!(f, "South Korea"),
+            Region::FR => write!(f, "France"),
+            Region::IT => write!(f, "Italy"),
+            Region::ES => write!(f, "Spain"),
+            Region::CA => write!(f, "Canada"),
         }
     }
 }
@@ -118,6 +130,10 @@ impl HolidayCalendar {
             Region::AU => Self::au_holidays(year),
             Region::SG => Self::sg_holidays(year),
             Region::KR => Self::kr_holidays(year),
+            Region::FR => Self::fr_holidays(year),
+            Region::IT => Self::it_holidays(year),
+            Region::ES => Self::es_holidays(year),
+            Region::CA => Self::ca_holidays(year),
         }
     }
 
@@ -170,6 +186,10 @@ impl HolidayCalendar {
             "AU" => Region::AU,
             "SG" => Region::SG,
             "KR" => Region::KR,
+            "FR" => Region::FR,
+            "IT" => Region::IT,
+            "ES" => Region::ES,
+            "CA" => Region::CA,
             _ => Region::US,
         };
 
@@ -1111,6 +1131,336 @@ impl HolidayCalendar {
         cal
     }
 
+    /// French national holidays.
+    fn fr_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::FR, year);
+
+        // Jour de l'an - January 1
+        cal.add_holiday(Holiday::new(
+            "Jour de l'an",
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        let easter = Self::easter_date(year);
+
+        // Lundi de Pâques - Easter Monday
+        cal.add_holiday(Holiday::new(
+            "Lundi de Pâques",
+            easter + Duration::days(1),
+            0.02,
+        ));
+
+        // Fête du Travail - May 1
+        cal.add_holiday(Holiday::new(
+            "Fête du Travail",
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Victoire 1945 - May 8
+        cal.add_holiday(Holiday::new(
+            "Victoire 1945",
+            NaiveDate::from_ymd_opt(year, 5, 8).expect("valid date components"),
+            0.02,
+        ));
+
+        // Ascension - Easter + 39 days
+        cal.add_holiday(Holiday::new(
+            "Ascension",
+            easter + Duration::days(39),
+            0.02,
+        ));
+
+        // Lundi de Pentecôte - Whit Monday (Easter + 50 days)
+        cal.add_holiday(Holiday::new(
+            "Lundi de Pentecôte",
+            easter + Duration::days(50),
+            0.05,
+        ));
+
+        // Fête nationale - July 14
+        cal.add_holiday(Holiday::new(
+            "Fête nationale",
+            NaiveDate::from_ymd_opt(year, 7, 14).expect("valid date components"),
+            0.02,
+        ));
+
+        // Assomption - August 15
+        cal.add_holiday(Holiday::new(
+            "Assomption",
+            NaiveDate::from_ymd_opt(year, 8, 15).expect("valid date components"),
+            0.02,
+        ));
+
+        // Toussaint - November 1
+        cal.add_holiday(Holiday::new(
+            "Toussaint",
+            NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Armistice - November 11
+        cal.add_holiday(Holiday::new(
+            "Armistice",
+            NaiveDate::from_ymd_opt(year, 11, 11).expect("valid date components"),
+            0.02,
+        ));
+
+        // Noël - December 25
+        cal.add_holiday(Holiday::new(
+            "Noël",
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Italian national holidays.
+    fn it_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::IT, year);
+
+        // Capodanno - January 1
+        cal.add_holiday(Holiday::new(
+            "Capodanno",
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Epifania - January 6
+        cal.add_holiday(Holiday::new(
+            "Epifania",
+            NaiveDate::from_ymd_opt(year, 1, 6).expect("valid date components"),
+            0.02,
+        ));
+
+        let easter = Self::easter_date(year);
+
+        // Lunedì dell'Angelo - Easter Monday
+        cal.add_holiday(Holiday::new(
+            "Lunedì dell'Angelo",
+            easter + Duration::days(1),
+            0.02,
+        ));
+
+        // Festa della Liberazione - April 25
+        cal.add_holiday(Holiday::new(
+            "Festa della Liberazione",
+            NaiveDate::from_ymd_opt(year, 4, 25).expect("valid date components"),
+            0.02,
+        ));
+
+        // Festa dei Lavoratori - May 1
+        cal.add_holiday(Holiday::new(
+            "Festa dei Lavoratori",
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Festa della Repubblica - June 2
+        cal.add_holiday(Holiday::new(
+            "Festa della Repubblica",
+            NaiveDate::from_ymd_opt(year, 6, 2).expect("valid date components"),
+            0.02,
+        ));
+
+        // Ferragosto - August 15
+        cal.add_holiday(Holiday::new(
+            "Ferragosto",
+            NaiveDate::from_ymd_opt(year, 8, 15).expect("valid date components"),
+            0.02,
+        ));
+
+        // Tutti i Santi - November 1
+        cal.add_holiday(Holiday::new(
+            "Tutti i Santi",
+            NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Immacolata Concezione - December 8
+        cal.add_holiday(Holiday::new(
+            "Immacolata Concezione",
+            NaiveDate::from_ymd_opt(year, 12, 8).expect("valid date components"),
+            0.02,
+        ));
+
+        // Natale - December 25
+        cal.add_holiday(Holiday::new(
+            "Natale",
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
+            0.02,
+        ));
+
+        // Santo Stefano - December 26
+        cal.add_holiday(Holiday::new(
+            "Santo Stefano",
+            NaiveDate::from_ymd_opt(year, 12, 26).expect("valid date components"),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Spanish national holidays.
+    fn es_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::ES, year);
+
+        // Año Nuevo - January 1
+        cal.add_holiday(Holiday::new(
+            "Año Nuevo",
+            NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Epifanía del Señor - January 6
+        cal.add_holiday(Holiday::new(
+            "Epifanía del Señor",
+            NaiveDate::from_ymd_opt(year, 1, 6).expect("valid date components"),
+            0.02,
+        ));
+
+        let easter = Self::easter_date(year);
+
+        // Viernes Santo - Good Friday
+        cal.add_holiday(Holiday::new(
+            "Viernes Santo",
+            easter - Duration::days(2),
+            0.02,
+        ));
+
+        // Fiesta del Trabajo - May 1
+        cal.add_holiday(Holiday::new(
+            "Fiesta del Trabajo",
+            NaiveDate::from_ymd_opt(year, 5, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Asunción de la Virgen - August 15
+        cal.add_holiday(Holiday::new(
+            "Asunción de la Virgen",
+            NaiveDate::from_ymd_opt(year, 8, 15).expect("valid date components"),
+            0.02,
+        ));
+
+        // Fiesta Nacional de España - October 12
+        cal.add_holiday(Holiday::new(
+            "Fiesta Nacional de España",
+            NaiveDate::from_ymd_opt(year, 10, 12).expect("valid date components"),
+            0.02,
+        ));
+
+        // Todos los Santos - November 1
+        cal.add_holiday(Holiday::new(
+            "Todos los Santos",
+            NaiveDate::from_ymd_opt(year, 11, 1).expect("valid date components"),
+            0.02,
+        ));
+
+        // Día de la Constitución - December 6
+        cal.add_holiday(Holiday::new(
+            "Día de la Constitución",
+            NaiveDate::from_ymd_opt(year, 12, 6).expect("valid date components"),
+            0.02,
+        ));
+
+        // Inmaculada Concepción - December 8
+        cal.add_holiday(Holiday::new(
+            "Inmaculada Concepción",
+            NaiveDate::from_ymd_opt(year, 12, 8).expect("valid date components"),
+            0.02,
+        ));
+
+        // Navidad - December 25
+        cal.add_holiday(Holiday::new(
+            "Navidad",
+            NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components"),
+            0.02,
+        ));
+
+        cal
+    }
+
+    /// Canadian national holidays.
+    fn ca_holidays(year: i32) -> Self {
+        let mut cal = Self::new(Region::CA, year);
+
+        // New Year's Day - January 1 (observed)
+        let new_years = NaiveDate::from_ymd_opt(year, 1, 1).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "New Year's Day",
+            Self::observe_weekend(new_years),
+            0.02,
+        ));
+
+        let easter = Self::easter_date(year);
+
+        // Good Friday
+        cal.add_holiday(Holiday::new("Good Friday", easter - Duration::days(2), 0.02));
+
+        // Victoria Day - last Monday before May 25
+        let may24 = NaiveDate::from_ymd_opt(year, 5, 24).expect("valid date components");
+        let victoria_day = {
+            let wd = may24.weekday();
+            let days_back = (wd.num_days_from_monday() as i64 + 7) % 7;
+            may24 - Duration::days(days_back)
+        };
+        cal.add_holiday(Holiday::new("Victoria Day", victoria_day, 0.02));
+
+        // Canada Day - July 1 (observed)
+        let canada_day = NaiveDate::from_ymd_opt(year, 7, 1).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "Canada Day",
+            Self::observe_weekend(canada_day),
+            0.02,
+        ));
+
+        // Labour Day - 1st Monday of September
+        let labour_day = Self::nth_weekday_of_month(year, 9, Weekday::Mon, 1);
+        cal.add_holiday(Holiday::new("Labour Day", labour_day, 0.02));
+
+        // National Day for Truth and Reconciliation - September 30 (observed)
+        let truth_recon =
+            NaiveDate::from_ymd_opt(year, 9, 30).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "National Day for Truth and Reconciliation",
+            Self::observe_weekend(truth_recon),
+            0.02,
+        ));
+
+        // Thanksgiving - 2nd Monday of October
+        let thanksgiving = Self::nth_weekday_of_month(year, 10, Weekday::Mon, 2);
+        cal.add_holiday(Holiday::new("Thanksgiving", thanksgiving, 0.02));
+
+        // Remembrance Day - November 11 (observed)
+        let remembrance =
+            NaiveDate::from_ymd_opt(year, 11, 11).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "Remembrance Day",
+            Self::observe_weekend(remembrance),
+            0.02,
+        ));
+
+        // Christmas Day - December 25 (observed)
+        let christmas = NaiveDate::from_ymd_opt(year, 12, 25).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "Christmas Day",
+            Self::observe_weekend(christmas),
+            0.02,
+        ));
+
+        // Boxing Day - December 26 (observed)
+        let boxing = NaiveDate::from_ymd_opt(year, 12, 26).expect("valid date components");
+        cal.add_holiday(Holiday::new(
+            "Boxing Day",
+            Self::observe_weekend(boxing),
+            0.02,
+        ));
+
+        cal
+    }
+
     /// Calculate Easter date using the anonymous Gregorian algorithm.
     fn easter_date(year: i32) -> NaiveDate {
         let a = year % 19;
@@ -1458,6 +1808,10 @@ mod tests {
             Region::AU,
             Region::SG,
             Region::KR,
+            Region::FR,
+            Region::IT,
+            Region::ES,
+            Region::CA,
         ];
 
         for region in regions {
@@ -1543,6 +1897,124 @@ mod tests {
         // Check Golden Week holidays
         let kodomo = NaiveDate::from_ymd_opt(2024, 5, 5).unwrap();
         assert!(cal.is_holiday(kodomo));
+    }
+
+    #[test]
+    fn test_french_holidays() {
+        let cal = HolidayCalendar::for_region(Region::FR, 2024);
+
+        // Fête nationale - July 14
+        let bastille = NaiveDate::from_ymd_opt(2024, 7, 14).unwrap();
+        assert!(cal.is_holiday(bastille));
+
+        // Noël - December 25
+        let noel = NaiveDate::from_ymd_opt(2024, 12, 25).unwrap();
+        assert!(cal.is_holiday(noel));
+
+        // Fête du Travail - May 1
+        let travail = NaiveDate::from_ymd_opt(2024, 5, 1).unwrap();
+        assert!(cal.is_holiday(travail));
+
+        // Easter Monday 2024: April 1 (Easter is March 31, 2024)
+        let easter_monday = NaiveDate::from_ymd_opt(2024, 4, 1).unwrap();
+        assert!(cal.is_holiday(easter_monday));
+
+        // 11 holidays total
+        assert_eq!(cal.holidays.len(), 11);
+    }
+
+    #[test]
+    fn test_french_holidays_2025() {
+        let cal = HolidayCalendar::for_region(Region::FR, 2025);
+
+        // Easter Monday 2025: April 21 (Easter is April 20, 2025)
+        let easter_monday = NaiveDate::from_ymd_opt(2025, 4, 21).unwrap();
+        assert!(cal.is_holiday(easter_monday));
+
+        // Ascension 2025: May 29 (Easter + 39)
+        let ascension = NaiveDate::from_ymd_opt(2025, 5, 29).unwrap();
+        assert!(cal.is_holiday(ascension));
+    }
+
+    #[test]
+    fn test_italian_holidays() {
+        let cal = HolidayCalendar::for_region(Region::IT, 2024);
+
+        // Ferragosto - August 15
+        let ferragosto = NaiveDate::from_ymd_opt(2024, 8, 15).unwrap();
+        assert!(cal.is_holiday(ferragosto));
+
+        // Festa della Repubblica - June 2
+        let repubblica = NaiveDate::from_ymd_opt(2024, 6, 2).unwrap();
+        assert!(cal.is_holiday(repubblica));
+
+        // Santo Stefano - December 26
+        let stefano = NaiveDate::from_ymd_opt(2024, 12, 26).unwrap();
+        assert!(cal.is_holiday(stefano));
+
+        // Epifania - January 6
+        let epifania = NaiveDate::from_ymd_opt(2024, 1, 6).unwrap();
+        assert!(cal.is_holiday(epifania));
+
+        // 11 holidays total (including Easter Monday)
+        assert_eq!(cal.holidays.len(), 11);
+    }
+
+    #[test]
+    fn test_spanish_holidays() {
+        let cal = HolidayCalendar::for_region(Region::ES, 2024);
+
+        // Fiesta Nacional - October 12
+        let national = NaiveDate::from_ymd_opt(2024, 10, 12).unwrap();
+        assert!(cal.is_holiday(national));
+
+        // Día de la Constitución - December 6
+        let constitution = NaiveDate::from_ymd_opt(2024, 12, 6).unwrap();
+        assert!(cal.is_holiday(constitution));
+
+        // Viernes Santo 2024: March 29 (Easter March 31 - 2)
+        let good_friday = NaiveDate::from_ymd_opt(2024, 3, 29).unwrap();
+        assert!(cal.is_holiday(good_friday));
+
+        // 10 holidays total
+        assert_eq!(cal.holidays.len(), 10);
+    }
+
+    #[test]
+    fn test_canadian_holidays() {
+        let cal = HolidayCalendar::for_region(Region::CA, 2024);
+
+        // Canada Day - July 1
+        let canada_day = NaiveDate::from_ymd_opt(2024, 7, 1).unwrap();
+        assert!(cal.is_holiday(canada_day));
+
+        // Thanksgiving - 2nd Monday of October 2024 = October 14
+        let thanksgiving = NaiveDate::from_ymd_opt(2024, 10, 14).unwrap();
+        assert!(cal.is_holiday(thanksgiving));
+
+        // Victoria Day 2024 - Monday before May 25 = May 20
+        let victoria = NaiveDate::from_ymd_opt(2024, 5, 20).unwrap();
+        assert!(cal.is_holiday(victoria));
+
+        // Labour Day 2024 - 1st Monday of September = September 2
+        let labour = NaiveDate::from_ymd_opt(2024, 9, 2).unwrap();
+        assert!(cal.is_holiday(labour));
+
+        // 10 holidays total
+        assert_eq!(cal.holidays.len(), 10);
+    }
+
+    #[test]
+    fn test_canadian_holidays_2025() {
+        let cal = HolidayCalendar::for_region(Region::CA, 2025);
+
+        // Victoria Day 2025 - Monday before May 25 = May 19
+        let victoria = NaiveDate::from_ymd_opt(2025, 5, 19).unwrap();
+        assert!(cal.is_holiday(victoria));
+
+        // Thanksgiving 2025 - 2nd Monday of October = October 13
+        let thanksgiving = NaiveDate::from_ymd_opt(2025, 10, 13).unwrap();
+        assert!(cal.is_holiday(thanksgiving));
     }
 
     // -----------------------------------------------------------------

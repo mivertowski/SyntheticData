@@ -502,6 +502,10 @@ impl JournalEntryGenerator {
             "AU" => Region::AU,
             "SG" => Region::SG,
             "KR" => Region::KR,
+            "FR" => Region::FR,
+            "IT" => Region::IT,
+            "ES" => Region::ES,
+            "CA" => Region::CA,
             _ => Region::US,
         }
     }
