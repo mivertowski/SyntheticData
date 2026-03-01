@@ -6,10 +6,10 @@
 
 use chrono::NaiveDate;
 use datasynth_config::schema::PayrollConfig;
+use datasynth_core::country::schema::TaxBracket;
 use datasynth_core::models::{PayrollLineItem, PayrollRun, PayrollRunStatus};
 use datasynth_core::utils::{sample_decimal_range, seeded_rng};
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
-use datasynth_core::country::schema::TaxBracket;
 use datasynth_core::CountryPack;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -533,7 +533,8 @@ impl PayrollGenerator {
             // Deductions — use progressive brackets when available
             let tax_withholding = if !rates.income_tax_brackets.is_empty() {
                 let annual = gross_pay * Decimal::from(12);
-                Self::compute_progressive_tax(annual, &rates.income_tax_brackets) / Decimal::from(12)
+                Self::compute_progressive_tax(annual, &rates.income_tax_brackets)
+                    / Decimal::from(12)
             } else {
                 (gross_pay * rates.income_tax_rate).round_dp(2)
             };
@@ -1177,18 +1178,8 @@ mod tests {
         gen.set_country_pack(pack);
 
         // Low earner vs high earner
-        let low_earner = vec![(
-            "LOW".to_string(),
-            Decimal::from(30_000),
-            None,
-            None,
-        )];
-        let high_earner = vec![(
-            "HIGH".to_string(),
-            Decimal::from(200_000),
-            None,
-            None,
-        )];
+        let low_earner = vec![("LOW".to_string(), Decimal::from(30_000), None, None)];
+        let high_earner = vec![("HIGH".to_string(), Decimal::from(200_000), None, None)];
 
         let start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();

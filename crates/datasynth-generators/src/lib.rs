@@ -39,11 +39,11 @@ pub mod user_generator;
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
 pub mod budget_generator;
+pub mod drift_event_generator;
 pub mod esg;
 pub mod hr;
 pub mod kpi_generator;
 pub mod manufacturing;
-pub mod drift_event_generator;
 pub mod organizational_event_generator;
 pub mod process_evolution_generator;
 pub mod project_accounting;

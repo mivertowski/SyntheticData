@@ -12,9 +12,9 @@ use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 use datasynth_core::models::organizational_event::{
-    AcquisitionConfig, DateRange, DivestitureConfig, IntegrationPhaseConfig, LeadershipChangeConfig,
-    MergerConfig, OrganizationalEvent, OrganizationalEventType, PolicyArea, PolicyChangeDetail,
-    ReorganizationConfig, ReportingChange, WorkforceReductionConfig,
+    AcquisitionConfig, DateRange, DivestitureConfig, IntegrationPhaseConfig,
+    LeadershipChangeConfig, MergerConfig, OrganizationalEvent, OrganizationalEventType, PolicyArea,
+    PolicyChangeDetail, ReorganizationConfig, ReportingChange, WorkforceReductionConfig,
 };
 
 /// Probability distribution across event types.

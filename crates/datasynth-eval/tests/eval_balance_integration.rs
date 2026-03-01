@@ -103,11 +103,7 @@ fn test_multiple_periods() {
     assert_eq!(result.companies_evaluated, 1);
 
     for (i, period) in result.period_results.iter().enumerate() {
-        assert!(
-            period.is_balanced,
-            "Period {} should be balanced",
-            i + 1
-        );
+        assert!(period.is_balanced, "Period {} should be balanced", i + 1);
     }
 }
 

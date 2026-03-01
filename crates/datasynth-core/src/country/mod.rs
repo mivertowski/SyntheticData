@@ -282,8 +282,14 @@ mod tests {
         for code in ["US", "DE", "GB", "FR", "JP", "CN", "IN", "IT", "ES", "CA"] {
             let pack = reg.get_by_str(code);
             assert_eq!(pack.country_code, code, "country_code mismatch for {code}");
-            assert!(!pack.holidays.fixed.is_empty(), "{code} has no fixed holidays");
-            assert!(!pack.names.cultures.is_empty(), "{code} has no name cultures");
+            assert!(
+                !pack.holidays.fixed.is_empty(),
+                "{code} has no fixed holidays"
+            );
+            assert!(
+                !pack.names.cultures.is_empty(),
+                "{code} has no name cultures"
+            );
         }
     }
 

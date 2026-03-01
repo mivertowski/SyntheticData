@@ -146,7 +146,10 @@ fn test_csv_empty_file() {
     sink.close().unwrap();
 
     // File should exist (created by File::create)
-    assert!(csv_path.exists(), "CSV file should exist even without writes");
+    assert!(
+        csv_path.exists(),
+        "CSV file should exist even without writes"
+    );
 
     let content = std::fs::read_to_string(&csv_path).unwrap();
     // No header should be written if no items were written

@@ -1166,11 +1166,7 @@ impl HolidayCalendar {
         ));
 
         // Ascension - Easter + 39 days
-        cal.add_holiday(Holiday::new(
-            "Ascension",
-            easter + Duration::days(39),
-            0.02,
-        ));
+        cal.add_holiday(Holiday::new("Ascension", easter + Duration::days(39), 0.02));
 
         // Lundi de Pentecôte - Whit Monday (Easter + 50 days)
         cal.add_holiday(Holiday::new(
@@ -1397,7 +1393,11 @@ impl HolidayCalendar {
         let easter = Self::easter_date(year);
 
         // Good Friday
-        cal.add_holiday(Holiday::new("Good Friday", easter - Duration::days(2), 0.02));
+        cal.add_holiday(Holiday::new(
+            "Good Friday",
+            easter - Duration::days(2),
+            0.02,
+        ));
 
         // Victoria Day - last Monday before May 25
         let may24 = NaiveDate::from_ymd_opt(year, 5, 24).expect("valid date components");
@@ -1421,8 +1421,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Labour Day", labour_day, 0.02));
 
         // National Day for Truth and Reconciliation - September 30 (observed)
-        let truth_recon =
-            NaiveDate::from_ymd_opt(year, 9, 30).expect("valid date components");
+        let truth_recon = NaiveDate::from_ymd_opt(year, 9, 30).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "National Day for Truth and Reconciliation",
             Self::observe_weekend(truth_recon),
@@ -1434,8 +1433,7 @@ impl HolidayCalendar {
         cal.add_holiday(Holiday::new("Thanksgiving", thanksgiving, 0.02));
 
         // Remembrance Day - November 11 (observed)
-        let remembrance =
-            NaiveDate::from_ymd_opt(year, 11, 11).expect("valid date components");
+        let remembrance = NaiveDate::from_ymd_opt(year, 11, 11).expect("valid date components");
         cal.add_holiday(Holiday::new(
             "Remembrance Day",
             Self::observe_weekend(remembrance),

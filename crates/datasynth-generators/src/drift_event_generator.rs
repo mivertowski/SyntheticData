@@ -14,9 +14,9 @@ use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 use datasynth_core::models::drift_events::{
-    BehavioralDriftEvent, DetectionDifficulty, DriftEventType, LabeledDriftEvent,
-    MarketDriftEvent, MarketEventType, OrganizationalDriftEvent, ProcessDriftEvent,
-    StatisticalDriftEvent, StatisticalShiftType, TemporalDriftEvent, TemporalShiftType,
+    BehavioralDriftEvent, DetectionDifficulty, DriftEventType, LabeledDriftEvent, MarketDriftEvent,
+    MarketEventType, OrganizationalDriftEvent, ProcessDriftEvent, StatisticalDriftEvent,
+    StatisticalShiftType, TemporalDriftEvent, TemporalShiftType,
 };
 use datasynth_core::models::organizational_event::{OrganizationalEvent, OrganizationalEventType};
 use datasynth_core::models::process_evolution::{ProcessEvolutionEvent, ProcessEvolutionType};
@@ -285,13 +285,8 @@ impl DriftEventGenerator {
             let start_period = 0_u32;
             let end_period = (duration_days / 30) as u32;
 
-            let mut labeled = LabeledDriftEvent::new(
-                event_id,
-                drift_type,
-                drift_start,
-                start_period,
-                magnitude,
-            );
+            let mut labeled =
+                LabeledDriftEvent::new(event_id, drift_type, drift_start, start_period, magnitude);
             labeled.end_date = Some(drift_end);
             labeled.end_period = Some(end_period);
             labeled.detection_difficulty = detection_difficulty;
@@ -319,7 +314,12 @@ impl DriftEventGenerator {
         let idx = self.rng.random_range(0..shift_types.len());
         let shift_type = shift_types[idx];
 
-        let fields = ["amount", "line_count", "processing_time", "approval_duration"];
+        let fields = [
+            "amount",
+            "line_count",
+            "processing_time",
+            "approval_duration",
+        ];
         let field_idx = self.rng.random_range(0..fields.len());
         let affected_field = fields[field_idx].to_string();
 
@@ -604,7 +604,10 @@ mod tests {
 
         // With default 6 drifts/year and ~1 year range, we expect ~6 drifts
         assert!(!drifts.is_empty(), "should produce standalone drifts");
-        assert!(drifts.len() >= 4, "should produce at least 4 standalone drifts");
+        assert!(
+            drifts.len() >= 4,
+            "should produce at least 4 standalone drifts"
+        );
     }
 
     #[test]

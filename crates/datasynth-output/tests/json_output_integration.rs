@@ -45,7 +45,12 @@ fn test_json_write_and_readback() {
     let content = std::fs::read_to_string(&json_path).unwrap();
     let lines: Vec<&str> = content.lines().collect();
 
-    assert_eq!(lines.len(), 1, "Expected exactly 1 JSON line, got {}", lines.len());
+    assert_eq!(
+        lines.len(),
+        1,
+        "Expected exactly 1 JSON line, got {}",
+        lines.len()
+    );
 
     // Parse as valid JSON
     let parsed: serde_json::Value = serde_json::from_str(lines[0]).unwrap();

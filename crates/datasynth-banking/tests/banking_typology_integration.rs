@@ -10,11 +10,11 @@
 #![allow(clippy::unwrap_used)]
 
 use chrono::NaiveDate;
+use datasynth_banking::models::{BankAccount, BankingCustomer};
 use datasynth_banking::typologies::{
     FunnelInjector, LayeringInjector, RoundTrippingInjector, StructuringInjector,
 };
 use datasynth_banking::{BankingConfig, BankingOrchestrator, Direction, Sophistication};
-use datasynth_banking::models::{BankAccount, BankingCustomer};
 use datasynth_core::models::banking::BankAccountType;
 use uuid::Uuid;
 
@@ -93,8 +93,7 @@ fn test_layering_generates_multi_hop() {
     // Use a wider window so layering hops have room
     let end = NaiveDate::from_ymd_opt(2024, 3, 31).unwrap();
 
-    let transactions =
-        injector.generate(&customer, &account, start, end, Sophistication::Standard);
+    let transactions = injector.generate(&customer, &account, start, end, Sophistication::Standard);
 
     assert!(
         !transactions.is_empty(),
@@ -121,8 +120,7 @@ fn test_funnel_generates_many_inbound() {
     let (start, _) = test_date_range();
     let end = NaiveDate::from_ymd_opt(2024, 3, 31).unwrap();
 
-    let transactions =
-        injector.generate(&customer, &account, start, end, Sophistication::Standard);
+    let transactions = injector.generate(&customer, &account, start, end, Sophistication::Standard);
 
     assert!(
         !transactions.is_empty(),
@@ -160,8 +158,7 @@ fn test_round_tripping_generates_circular() {
     let start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
     let end = NaiveDate::from_ymd_opt(2024, 6, 30).unwrap();
 
-    let transactions =
-        injector.generate(&customer, &account, start, end, Sophistication::Standard);
+    let transactions = injector.generate(&customer, &account, start, end, Sophistication::Standard);
 
     assert!(
         transactions.len() >= 2,
@@ -266,8 +263,7 @@ fn test_generation_deterministic() {
         "Determinism: transaction count should match across runs"
     );
     assert_eq!(
-        data1.stats.suspicious_count,
-        data2.stats.suspicious_count,
+        data1.stats.suspicious_count, data2.stats.suspicious_count,
         "Determinism: suspicious count should match across runs"
     );
 }

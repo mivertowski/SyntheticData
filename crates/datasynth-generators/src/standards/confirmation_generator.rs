@@ -14,9 +14,9 @@ use uuid::Uuid;
 
 use datasynth_standards::audit::confirmation::{
     AlternativeProcedureConclusion, AlternativeProcedureReason, AlternativeProcedures,
-    ConfirmationConclusion, ConfirmationForm, ConfirmationReconciliation,
-    ConfirmationResponse, ConfirmationResponseStatus, ConfirmationType,
-    ExternalConfirmation, ReconcilingItem, ReconcilingItemType, ResponseReliability,
+    ConfirmationConclusion, ConfirmationForm, ConfirmationReconciliation, ConfirmationResponse,
+    ConfirmationResponseStatus, ConfirmationType, ExternalConfirmation, ReconcilingItem,
+    ReconcilingItemType, ResponseReliability,
 };
 
 /// Configuration for the confirmation generator.
@@ -139,12 +139,8 @@ impl ConfirmationGenerator {
             ConfirmationType::AccountsReceivable | ConfirmationType::AccountsPayable => {
                 Decimal::from(self.rng.random_range(1000..500_000_i64))
             }
-            ConfirmationType::Bank => {
-                Decimal::from(self.rng.random_range(50_000..5_000_000_i64))
-            }
-            ConfirmationType::Legal => {
-                Decimal::from(self.rng.random_range(500..100_000_i64))
-            }
+            ConfirmationType::Bank => Decimal::from(self.rng.random_range(50_000..5_000_000_i64)),
+            ConfirmationType::Legal => Decimal::from(self.rng.random_range(500..100_000_i64)),
             _ => Decimal::from(self.rng.random_range(1000..500_000_i64)),
         }
     }
@@ -265,8 +261,7 @@ impl ConfirmationGenerator {
         confirmation.response = Some(response);
 
         // Create reconciliation
-        let mut reconciliation =
-            ConfirmationReconciliation::new(client_amount, confirmed_amount);
+        let mut reconciliation = ConfirmationReconciliation::new(client_amount, confirmed_amount);
 
         // Add a reconciling item
         let item_type = if self.rng.random_bool(0.5) {
@@ -299,16 +294,11 @@ impl ConfirmationGenerator {
     }
 
     /// Apply NoResponse status with alternative procedures.
-    fn apply_no_response(
-        &mut self,
-        confirmation: &mut ExternalConfirmation,
-        date_sent: NaiveDate,
-    ) {
+    fn apply_no_response(&mut self, confirmation: &mut ExternalConfirmation, date_sent: NaiveDate) {
         confirmation.response_status = ConfirmationResponseStatus::NoResponse;
         confirmation.follow_up_date = Some(date_sent + chrono::Duration::days(14));
 
-        let mut alt_procedures =
-            AlternativeProcedures::new(AlternativeProcedureReason::NoResponse);
+        let mut alt_procedures = AlternativeProcedures::new(AlternativeProcedureReason::NoResponse);
         alt_procedures
             .evidence_obtained
             .push("Reviewed subsequent transactions".to_string());
@@ -517,10 +507,7 @@ mod tests {
             .filter(|c| c.response_status == ConfirmationResponseStatus::ReceivedDisagrees)
             .collect();
 
-        assert!(
-            !disagrees.is_empty(),
-            "Should have some disagreements"
-        );
+        assert!(!disagrees.is_empty(), "Should have some disagreements");
 
         for c in &disagrees {
             assert!(

@@ -124,10 +124,9 @@ impl ProcessEvolutionGenerator {
         };
 
         let description = match &event_type {
-            ProcessEvolutionType::ApprovalWorkflowChange(c) => Some(format!(
-                "Workflow change from {:?} to {:?}",
-                c.from, c.to
-            )),
+            ProcessEvolutionType::ApprovalWorkflowChange(c) => {
+                Some(format!("Workflow change from {:?} to {:?}", c.from, c.to))
+            }
             ProcessEvolutionType::ProcessAutomation(c) => {
                 Some(format!("Automation of {} process", c.process_name))
             }
@@ -296,8 +295,7 @@ impl ProcessEvolutionGenerator {
             Some(datasynth_core::models::process_evolution::ToleranceChange {
                 old_tolerance: old_tol,
                 new_tolerance: new_tol,
-                tolerance_type:
-                    datasynth_core::models::process_evolution::ToleranceType::Absolute,
+                tolerance_type: datasynth_core::models::process_evolution::ToleranceType::Absolute,
             })
         } else {
             None
@@ -433,7 +431,10 @@ mod tests {
         let events = gen.generate_events(start, end);
         for e in &events {
             if let ProcessEvolutionType::ProcessAutomation(ref c) = e.event_type {
-                assert!(!c.process_name.is_empty(), "process_name should not be empty");
+                assert!(
+                    !c.process_name.is_empty(),
+                    "process_name should not be empty"
+                );
                 assert!(
                     c.manual_rate_before >= 0.60 && c.manual_rate_before <= 0.90,
                     "manual_rate_before out of range: {}",

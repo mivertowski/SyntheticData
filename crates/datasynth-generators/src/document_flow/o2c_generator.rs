@@ -493,12 +493,7 @@ impl O2CGenerator {
                 let return_days = self.rng.random_range(5u32..=30);
                 let return_date =
                     invoice.header.document_date + chrono::Duration::days(return_days as i64);
-                Some(self.generate_return_credit_memo(
-                    invoice,
-                    customer,
-                    company_code,
-                    return_date,
-                ))
+                Some(self.generate_return_credit_memo(invoice, customer, company_code, return_date))
             } else {
                 None
             }
@@ -2134,7 +2129,10 @@ mod tests {
                 1,
                 "JSMITH",
             );
-            assert!(chain.credit_memo.is_none(), "No credit memos with returns_rate=0");
+            assert!(
+                chain.credit_memo.is_none(),
+                "No credit memos with returns_rate=0"
+            );
             assert!(!chain.is_return);
         }
     }

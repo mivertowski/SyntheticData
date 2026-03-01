@@ -72,8 +72,7 @@ fn test_empty_companies_fails() {
 
     let err_msg = format!("{}", result.unwrap_err());
     assert!(
-        err_msg.to_lowercase().contains("company")
-            || err_msg.to_lowercase().contains("companies"),
+        err_msg.to_lowercase().contains("company") || err_msg.to_lowercase().contains("companies"),
         "Error message should mention companies: {}",
         err_msg
     );
@@ -116,23 +115,14 @@ fn test_config_roundtrip_yaml() {
         deserialized.global.period_months,
         original.global.period_months
     );
-    assert_eq!(
-        deserialized.global.start_date,
-        original.global.start_date
-    );
+    assert_eq!(deserialized.global.start_date, original.global.start_date);
     assert_eq!(
         deserialized.global.group_currency,
         original.global.group_currency
     );
     assert_eq!(deserialized.companies.len(), original.companies.len());
-    assert_eq!(
-        deserialized.companies[0].code,
-        original.companies[0].code
-    );
-    assert_eq!(
-        deserialized.companies[0].name,
-        original.companies[0].name
-    );
+    assert_eq!(deserialized.companies[0].code, original.companies[0].code);
+    assert_eq!(deserialized.companies[0].name, original.companies[0].name);
     assert_eq!(
         deserialized.companies[0].currency,
         original.companies[0].currency

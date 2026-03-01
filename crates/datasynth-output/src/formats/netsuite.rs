@@ -411,11 +411,13 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(fraud_field)
-                            .map(|s| s.as_str()).unwrap_or(""),
+                            .map(|s| s.as_str())
+                            .unwrap_or(""),
                         header
                             .custom_fields
                             .get(&format!("{}_type", fraud_field))
-                            .map(|s| s.as_str()).unwrap_or(""),
+                            .map(|s| s.as_str())
+                            .unwrap_or(""),
                     ));
                 }
                 if let Some(ref process_field) = self.config.process_custom_field {
@@ -424,7 +426,8 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(process_field)
-                            .map(|s| s.as_str()).unwrap_or(""),
+                            .map(|s| s.as_str())
+                            .unwrap_or(""),
                     ));
                 }
             }
@@ -454,10 +457,12 @@ impl NetSuiteExporter {
                         ",{},{}",
                         line.custom_fields
                             .get("custcol_cost_center")
-                            .map(|s| s.as_str()).unwrap_or(""),
+                            .map(|s| s.as_str())
+                            .unwrap_or(""),
                         line.custom_fields
                             .get("custcol_profit_center")
-                            .map(|s| s.as_str()).unwrap_or(""),
+                            .map(|s| s.as_str())
+                            .unwrap_or(""),
                     ));
                 }
                 writeln!(lines_writer, "{}", line_row)?;

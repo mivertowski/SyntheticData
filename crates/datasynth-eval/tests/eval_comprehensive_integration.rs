@@ -96,10 +96,7 @@ fn test_evaluation_thresholds_with_benford_failure() {
     );
 
     // Verify at least one failure message mentions Benford
-    let has_benford_failure = eval
-        .failures
-        .iter()
-        .any(|f| f.contains("Benford"));
+    let has_benford_failure = eval.failures.iter().any(|f| f.contains("Benford"));
     assert!(
         has_benford_failure,
         "Should have a Benford-related failure message, got: {:?}",
@@ -136,10 +133,7 @@ fn test_evaluation_thresholds_with_balance_failure() {
         !eval.passes,
         "Evaluation should fail with imbalanced balance sheet"
     );
-    let has_balance_failure = eval
-        .failures
-        .iter()
-        .any(|f| f.contains("Balance sheet"));
+    let has_balance_failure = eval.failures.iter().any(|f| f.contains("Balance sheet"));
     assert!(
         has_balance_failure,
         "Should have a balance-related failure message, got: {:?}",

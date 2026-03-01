@@ -106,19 +106,14 @@ fn test_benford_empty_data() {
             assert_eq!(required, 10);
             assert_eq!(actual, 0);
         }
-        other => panic!(
-            "Expected InsufficientData error, got {:?}",
-            other.err()
-        ),
+        other => panic!("Expected InsufficientData error, got {:?}", other.err()),
     }
 }
 
 #[test]
 fn test_benford_small_sample() {
     // 10 amounts -- exactly at the minimum threshold
-    let amounts: Vec<Decimal> = (1..=10)
-        .map(|i| Decimal::new(i * 100 + 50, 2))
-        .collect();
+    let amounts: Vec<Decimal> = (1..=10).map(|i| Decimal::new(i * 100 + 50, 2)).collect();
     let analyzer = BenfordAnalyzer::new(0.05);
     // With exactly 10 samples the analyzer requires >= 10 valid first digits.
     // All values 1.50 through 10.50 have first digits 1..9 plus one starting with 1 (10.50).
