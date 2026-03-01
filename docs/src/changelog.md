@@ -4,6 +4,21 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [0.9.4] - 2026-03-01
+
+**RustGraph Round 2 — Graph Property Mapping & Entity/Edge Registry (DS-001 through DS-012)**
+
+- `ToNodeProperties` trait and `GraphPropertyValue` enum for converting typed model structs to graph property maps with camelCase keys
+- `GraphEntityType` expanded with 35+ new entity variants across Tax (7), Treasury (8), ESG (13), Project (5), S2C (4), H2R (4), MFG (4), GOV (5) domains
+- Edge type registry: 28 new `RelationshipType` variants with `EdgeConstraint` struct (source/target entity types, cardinality)
+- New model structs: `BomComponent` (multi-level BOM), `InventoryMovement` (goods movement tracking), `BenefitEnrollment` (employee benefit plans)
+- `ToNodeProperties` implemented for all 51 entity types across 10 process families
+- Denormalized name fields (`vendor_name`, `customer_name`, `employee_name`, `material_description`) on transaction models with generator population
+- Boolean query flags: `treatyApplied`, `isApproved`, `isPassed`, `isPhantom`, `isActive`, `billable`
+- New generators: BOM component, inventory movement, benefit enrollment
+- `GraphNode::from_entity()` bridge wiring `ToNodeProperties` into the graph export pipeline
+- Comprehensive test suite: entity registry uniqueness, edge constraint validation, category helpers, property round-trips
+
 ### [0.9.3] - 2026-02-27
 
 **Community Features & Edge-Case Hardening**
