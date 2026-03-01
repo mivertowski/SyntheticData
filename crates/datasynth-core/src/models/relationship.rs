@@ -58,6 +58,122 @@ pub enum GraphEntityType {
     ProductionOrder,
     /// Bank reconciliation
     BankReconciliation,
+
+    // ===== Tax entities (DS-001, DS-002) =====
+    /// Tax jurisdiction
+    TaxJurisdiction,
+    /// Tax code
+    TaxCode,
+    /// Tax line item
+    TaxLine,
+    /// Tax return
+    TaxReturn,
+    /// Tax provision
+    TaxProvision,
+    /// Withholding tax record
+    WithholdingTaxRecord,
+    /// Uncertain tax position
+    UncertainTaxPosition,
+
+    // ===== Treasury entities (DS-003) =====
+    /// Cash position
+    CashPosition,
+    /// Cash forecast
+    CashForecast,
+    /// Cash pool
+    CashPool,
+    /// Cash pool sweep
+    CashPoolSweep,
+    /// Hedging instrument
+    HedgingInstrument,
+    /// Hedge relationship
+    HedgeRelationship,
+    /// Debt instrument
+    DebtInstrument,
+    /// Debt covenant
+    DebtCovenant,
+
+    // ===== ESG entities (DS-004) =====
+    /// Emission record
+    EmissionRecord,
+    /// Energy consumption
+    EnergyConsumption,
+    /// Water usage
+    WaterUsage,
+    /// Waste record
+    WasteRecord,
+    /// Workforce diversity metric
+    WorkforceDiversityMetric,
+    /// Pay equity metric
+    PayEquityMetric,
+    /// Safety incident
+    SafetyIncident,
+    /// Safety metric
+    SafetyMetric,
+    /// Governance metric
+    GovernanceMetric,
+    /// Supplier ESG assessment
+    SupplierEsgAssessment,
+    /// Materiality assessment
+    MaterialityAssessment,
+    /// ESG disclosure
+    EsgDisclosure,
+    /// Climate scenario
+    ClimateScenario,
+
+    // ===== Project entities (DS-005) =====
+    /// Project cost line
+    ProjectCostLine,
+    /// Project revenue
+    ProjectRevenue,
+    /// Earned value metric
+    EarnedValueMetric,
+    /// Change order
+    ChangeOrder,
+    /// Project milestone
+    ProjectMilestone,
+
+    // ===== S2C entities (DS-006) =====
+    /// Supplier bid
+    SupplierBid,
+    /// Bid evaluation
+    BidEvaluation,
+    /// Procurement contract
+    ProcurementContract,
+    /// Supplier qualification
+    SupplierQualification,
+
+    // ===== H2R entities (DS-007) =====
+    /// Payroll run
+    PayrollRun,
+    /// Time entry
+    TimeEntry,
+    /// Expense report
+    ExpenseReport,
+    /// Benefit enrollment
+    BenefitEnrollment,
+
+    // ===== MFG entities (DS-008) =====
+    /// Quality inspection
+    QualityInspection,
+    /// Cycle count
+    CycleCount,
+    /// BOM component
+    BomComponent,
+    /// Inventory movement
+    InventoryMovement,
+
+    // ===== GOV entities (DS-009) =====
+    /// COSO component
+    CosoComponent,
+    /// COSO principle
+    CosoPrinciple,
+    /// SOX assertion
+    SoxAssertion,
+    /// Audit engagement
+    AuditEngagement,
+    /// Professional judgment
+    ProfessionalJudgment,
 }
 
 impl GraphEntityType {
@@ -84,7 +200,424 @@ impl GraphEntityType {
             Self::RfxEvent => "RX",
             Self::ProductionOrder => "PR",
             Self::BankReconciliation => "BR",
+            // Tax
+            Self::TaxJurisdiction => "TJ",
+            Self::TaxCode => "TC",
+            Self::TaxLine => "TL",
+            Self::TaxReturn => "TR",
+            Self::TaxProvision => "TP",
+            Self::WithholdingTaxRecord => "WH",
+            Self::UncertainTaxPosition => "UT",
+            // Treasury
+            Self::CashPosition => "CP",
+            Self::CashForecast => "CF",
+            Self::CashPool => "CL",
+            Self::CashPoolSweep => "CS",
+            Self::HedgingInstrument => "HI",
+            Self::HedgeRelationship => "HR",
+            Self::DebtInstrument => "DI",
+            Self::DebtCovenant => "DC",
+            // ESG
+            Self::EmissionRecord => "ER",
+            Self::EnergyConsumption => "EC",
+            Self::WaterUsage => "WU",
+            Self::WasteRecord => "WR",
+            Self::WorkforceDiversityMetric => "WD",
+            Self::PayEquityMetric => "PE",
+            Self::SafetyIncident => "SI",
+            Self::SafetyMetric => "SM",
+            Self::GovernanceMetric => "GM",
+            Self::SupplierEsgAssessment => "SE",
+            Self::MaterialityAssessment => "MA",
+            Self::EsgDisclosure => "ED",
+            Self::ClimateScenario => "CZ",
+            // Project
+            Self::ProjectCostLine => "PL",
+            Self::ProjectRevenue => "PV",
+            Self::EarnedValueMetric => "EV",
+            Self::ChangeOrder => "CR",
+            Self::ProjectMilestone => "MS",
+            // S2C
+            Self::SupplierBid => "BD",
+            Self::BidEvaluation => "BE",
+            Self::ProcurementContract => "PC",
+            Self::SupplierQualification => "SQ",
+            // H2R
+            Self::PayrollRun => "PY",
+            Self::TimeEntry => "TE",
+            Self::ExpenseReport => "EX",
+            Self::BenefitEnrollment => "BN",
+            // MFG
+            Self::QualityInspection => "QI",
+            Self::CycleCount => "CY",
+            Self::BomComponent => "BC",
+            Self::InventoryMovement => "IM",
+            // GOV
+            Self::CosoComponent => "GC",
+            Self::CosoPrinciple => "GP",
+            Self::SoxAssertion => "SA",
+            Self::AuditEngagement => "AE",
+            Self::ProfessionalJudgment => "JD",
         }
+    }
+
+    /// Numeric entity type code for registry.
+    pub fn numeric_code(&self) -> u16 {
+        match self {
+            // Existing types (100-series)
+            Self::Company => 100,
+            Self::Vendor => 101,
+            Self::Material => 102,
+            Self::Customer => 103,
+            Self::Employee => 104,
+            Self::InventoryMovement => 105,
+            Self::GlAccount => 106,
+            Self::Department => 107,
+            Self::CostCenter => 108,
+            Self::Project => 109,
+            Self::Contract => 110,
+            Self::Asset => 111,
+            Self::BankAccount => 112,
+            Self::PurchaseOrder => 200,
+            Self::SalesOrder => 201,
+            Self::Invoice => 202,
+            Self::Payment => 203,
+            Self::BankReconciliation => 210,
+            // S2C
+            Self::SourcingProject => 320,
+            Self::RfxEvent => 321,
+            Self::SupplierBid => 322,
+            Self::BidEvaluation => 323,
+            Self::ProcurementContract => 324,
+            Self::SupplierQualification => 325,
+            // H2R
+            Self::PayrollRun => 330,
+            Self::TimeEntry => 331,
+            Self::ExpenseReport => 332,
+            Self::BenefitEnrollment => 333,
+            // MFG
+            Self::ProductionOrder => 340,
+            Self::QualityInspection => 341,
+            Self::CycleCount => 342,
+            Self::BomComponent => 343,
+            // Tax
+            Self::TaxJurisdiction => 410,
+            Self::TaxCode => 411,
+            Self::TaxLine => 412,
+            Self::TaxReturn => 413,
+            Self::TaxProvision => 414,
+            Self::WithholdingTaxRecord => 415,
+            Self::UncertainTaxPosition => 416,
+            // Treasury
+            Self::CashPosition => 420,
+            Self::CashForecast => 421,
+            Self::CashPool => 422,
+            Self::CashPoolSweep => 423,
+            Self::HedgingInstrument => 424,
+            Self::HedgeRelationship => 425,
+            Self::DebtInstrument => 426,
+            Self::DebtCovenant => 427,
+            // ESG
+            Self::EmissionRecord => 430,
+            Self::EnergyConsumption => 431,
+            Self::WaterUsage => 432,
+            Self::WasteRecord => 433,
+            Self::WorkforceDiversityMetric => 434,
+            Self::PayEquityMetric => 435,
+            Self::SafetyIncident => 436,
+            Self::SafetyMetric => 437,
+            Self::GovernanceMetric => 438,
+            Self::SupplierEsgAssessment => 439,
+            Self::MaterialityAssessment => 440,
+            Self::EsgDisclosure => 441,
+            Self::ClimateScenario => 442,
+            // Project
+            Self::ProjectCostLine => 451,
+            Self::ProjectRevenue => 452,
+            Self::EarnedValueMetric => 453,
+            Self::ChangeOrder => 454,
+            Self::ProjectMilestone => 455,
+            // GOV
+            Self::CosoComponent => 500,
+            Self::CosoPrinciple => 501,
+            Self::SoxAssertion => 502,
+            Self::AuditEngagement => 360,
+            Self::ProfessionalJudgment => 365,
+        }
+    }
+
+    /// Entity type name (snake_case) for graph export.
+    pub fn node_type_name(&self) -> &'static str {
+        match self {
+            Self::Company => "company",
+            Self::Vendor => "vendor",
+            Self::Customer => "customer",
+            Self::Employee => "employee",
+            Self::Department => "department",
+            Self::CostCenter => "cost_center",
+            Self::Project => "project",
+            Self::Contract => "contract",
+            Self::Asset => "asset",
+            Self::BankAccount => "bank_account",
+            Self::Material => "material",
+            Self::GlAccount => "gl_account",
+            Self::PurchaseOrder => "purchase_order",
+            Self::SalesOrder => "sales_order",
+            Self::Invoice => "invoice",
+            Self::Payment => "payment",
+            Self::SourcingProject => "sourcing_project",
+            Self::RfxEvent => "rfx_event",
+            Self::ProductionOrder => "production_order",
+            Self::BankReconciliation => "bank_reconciliation",
+            // Tax
+            Self::TaxJurisdiction => "tax_jurisdiction",
+            Self::TaxCode => "tax_code",
+            Self::TaxLine => "tax_line",
+            Self::TaxReturn => "tax_return",
+            Self::TaxProvision => "tax_provision",
+            Self::WithholdingTaxRecord => "withholding_tax_record",
+            Self::UncertainTaxPosition => "uncertain_tax_position",
+            // Treasury
+            Self::CashPosition => "cash_position",
+            Self::CashForecast => "cash_forecast",
+            Self::CashPool => "cash_pool",
+            Self::CashPoolSweep => "cash_pool_sweep",
+            Self::HedgingInstrument => "hedging_instrument",
+            Self::HedgeRelationship => "hedge_relationship",
+            Self::DebtInstrument => "debt_instrument",
+            Self::DebtCovenant => "debt_covenant",
+            // ESG
+            Self::EmissionRecord => "emission_record",
+            Self::EnergyConsumption => "energy_consumption",
+            Self::WaterUsage => "water_usage",
+            Self::WasteRecord => "waste_record",
+            Self::WorkforceDiversityMetric => "workforce_diversity_metric",
+            Self::PayEquityMetric => "pay_equity_metric",
+            Self::SafetyIncident => "safety_incident",
+            Self::SafetyMetric => "safety_metric",
+            Self::GovernanceMetric => "governance_metric",
+            Self::SupplierEsgAssessment => "supplier_esg_assessment",
+            Self::MaterialityAssessment => "materiality_assessment",
+            Self::EsgDisclosure => "esg_disclosure",
+            Self::ClimateScenario => "climate_scenario",
+            // Project
+            Self::ProjectCostLine => "project_cost_line",
+            Self::ProjectRevenue => "project_revenue",
+            Self::EarnedValueMetric => "earned_value_metric",
+            Self::ChangeOrder => "change_order",
+            Self::ProjectMilestone => "project_milestone",
+            // S2C
+            Self::SupplierBid => "supplier_bid",
+            Self::BidEvaluation => "bid_evaluation",
+            Self::ProcurementContract => "procurement_contract",
+            Self::SupplierQualification => "supplier_qualification",
+            // H2R
+            Self::PayrollRun => "payroll_run",
+            Self::TimeEntry => "time_entry",
+            Self::ExpenseReport => "expense_report",
+            Self::BenefitEnrollment => "benefit_enrollment",
+            // MFG
+            Self::QualityInspection => "quality_inspection",
+            Self::CycleCount => "cycle_count",
+            Self::BomComponent => "bom_component",
+            Self::InventoryMovement => "inventory_movement",
+            // GOV
+            Self::CosoComponent => "coso_component",
+            Self::CosoPrinciple => "coso_principle",
+            Self::SoxAssertion => "sox_assertion",
+            Self::AuditEngagement => "audit_engagement",
+            Self::ProfessionalJudgment => "professional_judgment",
+        }
+    }
+
+    /// Lookup entity type by numeric code.
+    pub fn from_numeric_code(code: u16) -> Option<Self> {
+        Self::all_types().iter().find(|t| t.numeric_code() == code).copied()
+    }
+
+    /// Lookup entity type by snake_case name.
+    pub fn from_node_type_name(name: &str) -> Option<Self> {
+        Self::all_types().iter().find(|t| t.node_type_name() == name).copied()
+    }
+
+    /// All registered entity types.
+    pub fn all_types() -> &'static [GraphEntityType] {
+        &[
+            // Original
+            Self::Company,
+            Self::Vendor,
+            Self::Customer,
+            Self::Employee,
+            Self::Department,
+            Self::CostCenter,
+            Self::Project,
+            Self::Contract,
+            Self::Asset,
+            Self::BankAccount,
+            Self::Material,
+            Self::GlAccount,
+            Self::PurchaseOrder,
+            Self::SalesOrder,
+            Self::Invoice,
+            Self::Payment,
+            Self::SourcingProject,
+            Self::RfxEvent,
+            Self::ProductionOrder,
+            Self::BankReconciliation,
+            // Tax
+            Self::TaxJurisdiction,
+            Self::TaxCode,
+            Self::TaxLine,
+            Self::TaxReturn,
+            Self::TaxProvision,
+            Self::WithholdingTaxRecord,
+            Self::UncertainTaxPosition,
+            // Treasury
+            Self::CashPosition,
+            Self::CashForecast,
+            Self::CashPool,
+            Self::CashPoolSweep,
+            Self::HedgingInstrument,
+            Self::HedgeRelationship,
+            Self::DebtInstrument,
+            Self::DebtCovenant,
+            // ESG
+            Self::EmissionRecord,
+            Self::EnergyConsumption,
+            Self::WaterUsage,
+            Self::WasteRecord,
+            Self::WorkforceDiversityMetric,
+            Self::PayEquityMetric,
+            Self::SafetyIncident,
+            Self::SafetyMetric,
+            Self::GovernanceMetric,
+            Self::SupplierEsgAssessment,
+            Self::MaterialityAssessment,
+            Self::EsgDisclosure,
+            Self::ClimateScenario,
+            // Project
+            Self::ProjectCostLine,
+            Self::ProjectRevenue,
+            Self::EarnedValueMetric,
+            Self::ChangeOrder,
+            Self::ProjectMilestone,
+            // S2C
+            Self::SupplierBid,
+            Self::BidEvaluation,
+            Self::ProcurementContract,
+            Self::SupplierQualification,
+            // H2R
+            Self::PayrollRun,
+            Self::TimeEntry,
+            Self::ExpenseReport,
+            Self::BenefitEnrollment,
+            // MFG
+            Self::QualityInspection,
+            Self::CycleCount,
+            Self::BomComponent,
+            Self::InventoryMovement,
+            // GOV
+            Self::CosoComponent,
+            Self::CosoPrinciple,
+            Self::SoxAssertion,
+            Self::AuditEngagement,
+            Self::ProfessionalJudgment,
+        ]
+    }
+
+    /// Check if this is a tax entity.
+    pub fn is_tax(&self) -> bool {
+        matches!(
+            self,
+            Self::TaxJurisdiction
+                | Self::TaxCode
+                | Self::TaxLine
+                | Self::TaxReturn
+                | Self::TaxProvision
+                | Self::WithholdingTaxRecord
+                | Self::UncertainTaxPosition
+        )
+    }
+
+    /// Check if this is a treasury entity.
+    pub fn is_treasury(&self) -> bool {
+        matches!(
+            self,
+            Self::CashPosition
+                | Self::CashForecast
+                | Self::CashPool
+                | Self::CashPoolSweep
+                | Self::HedgingInstrument
+                | Self::HedgeRelationship
+                | Self::DebtInstrument
+                | Self::DebtCovenant
+        )
+    }
+
+    /// Check if this is an ESG entity.
+    pub fn is_esg(&self) -> bool {
+        matches!(
+            self,
+            Self::EmissionRecord
+                | Self::EnergyConsumption
+                | Self::WaterUsage
+                | Self::WasteRecord
+                | Self::WorkforceDiversityMetric
+                | Self::PayEquityMetric
+                | Self::SafetyIncident
+                | Self::SafetyMetric
+                | Self::GovernanceMetric
+                | Self::SupplierEsgAssessment
+                | Self::MaterialityAssessment
+                | Self::EsgDisclosure
+                | Self::ClimateScenario
+        )
+    }
+
+    /// Check if this is a project entity.
+    pub fn is_project(&self) -> bool {
+        matches!(
+            self,
+            Self::Project
+                | Self::ProjectCostLine
+                | Self::ProjectRevenue
+                | Self::EarnedValueMetric
+                | Self::ChangeOrder
+                | Self::ProjectMilestone
+        )
+    }
+
+    /// Check if this is an H2R (hire-to-retire) entity.
+    pub fn is_h2r(&self) -> bool {
+        matches!(
+            self,
+            Self::PayrollRun | Self::TimeEntry | Self::ExpenseReport | Self::BenefitEnrollment
+        )
+    }
+
+    /// Check if this is a manufacturing entity.
+    pub fn is_mfg(&self) -> bool {
+        matches!(
+            self,
+            Self::ProductionOrder
+                | Self::QualityInspection
+                | Self::CycleCount
+                | Self::BomComponent
+                | Self::Material
+                | Self::InventoryMovement
+        )
+    }
+
+    /// Check if this is a governance entity.
+    pub fn is_governance(&self) -> bool {
+        matches!(
+            self,
+            Self::CosoComponent
+                | Self::CosoPrinciple
+                | Self::SoxAssertion
+                | Self::AuditEngagement
+                | Self::ProfessionalJudgment
+        )
     }
 
     /// Check if this is a master data entity.
@@ -99,6 +632,9 @@ impl GraphEntityType {
                 | Self::CostCenter
                 | Self::Material
                 | Self::GlAccount
+                | Self::TaxJurisdiction
+                | Self::TaxCode
+                | Self::BankAccount
         )
     }
 
@@ -106,7 +642,14 @@ impl GraphEntityType {
     pub fn is_transactional(&self) -> bool {
         matches!(
             self,
-            Self::PurchaseOrder | Self::SalesOrder | Self::Invoice | Self::Payment
+            Self::PurchaseOrder
+                | Self::SalesOrder
+                | Self::Invoice
+                | Self::Payment
+                | Self::TaxLine
+                | Self::TaxReturn
+                | Self::CashPoolSweep
+                | Self::InventoryMovement
         )
     }
 }
@@ -198,6 +741,84 @@ pub enum RelationshipType {
     // ===== Banking relationships =====
     /// Payment reconciled with bank statement line
     ReconciledWith,
+
+    // ===== P2P domain edges (DS-010) =====
+    /// PurchaseOrder → Vendor
+    PlacedWith,
+    /// VendorInvoice → PurchaseOrder
+    MatchesOrder,
+    /// Payment → VendorInvoice
+    PaysInvoice,
+
+    // ===== O2C domain edges =====
+    /// SalesOrder → Customer
+    PlacedBy,
+    /// CustomerInvoice → SalesOrder
+    BillsOrder,
+
+    // ===== S2C domain edges =====
+    /// RfxEvent → SourcingProject
+    RfxBelongsToProject,
+    /// SupplierBid → RfxEvent
+    RespondsTo,
+    /// ProcurementContract → BidEvaluation
+    AwardedFrom,
+
+    // ===== H2R domain edges =====
+    /// TimeEntry → Employee
+    RecordedBy,
+    /// PayrollRun → Employee
+    PayrollIncludes,
+    /// ExpenseReport → Employee
+    SubmittedBy,
+    /// BenefitEnrollment → Employee
+    EnrolledBy,
+
+    // ===== MFG domain edges =====
+    /// ProductionOrder → Material
+    Produces,
+    /// QualityInspection → ProductionOrder
+    Inspects,
+    /// BomComponent → Material
+    PartOf,
+
+    // ===== Tax domain edges =====
+    /// TaxLine → TaxReturn
+    TaxLineBelongsTo,
+    /// TaxProvision → TaxJurisdiction
+    ProvisionAppliesTo,
+    /// WithholdingTaxRecord → Vendor
+    WithheldFrom,
+
+    // ===== Treasury domain edges =====
+    /// CashPoolSweep → CashPool
+    SweepsTo,
+    /// HedgeRelationship → HedgingInstrument
+    HedgesInstrument,
+    /// DebtCovenant → DebtInstrument
+    GovernsInstrument,
+
+    // ===== ESG domain edges =====
+    /// EmissionRecord → Company
+    EmissionReportedBy,
+    /// SupplierEsgAssessment → Vendor
+    AssessesSupplier,
+
+    // ===== Project domain edges =====
+    /// ProjectCostLine → Project
+    CostChargedTo,
+    /// ProjectMilestone → Project
+    MilestoneOf,
+    /// ChangeOrder → Project
+    ModifiesProject,
+
+    // ===== GOV domain edges =====
+    /// CosoPrinciple → CosoComponent
+    PrincipleUnder,
+    /// SoxAssertion → GlAccount
+    AssertionCovers,
+    /// ProfessionalJudgment → AuditEngagement
+    JudgmentWithin,
 }
 
 impl RelationshipType {
@@ -238,6 +859,45 @@ impl RelationshipType {
             Self::CatalogItemOf => "CIO",
             Self::ProducedBy => "PB",
             Self::ReconciledWith => "RW",
+            // P2P
+            Self::PlacedWith => "PWI",
+            Self::MatchesOrder => "MO",
+            Self::PaysInvoice => "PI",
+            // O2C
+            Self::PlacedBy => "PLB",
+            Self::BillsOrder => "BO",
+            // S2C
+            Self::RfxBelongsToProject => "RBP",
+            Self::RespondsTo => "RTO",
+            Self::AwardedFrom => "AFR",
+            // H2R
+            Self::RecordedBy => "RCB",
+            Self::PayrollIncludes => "PYI",
+            Self::SubmittedBy => "SUB",
+            Self::EnrolledBy => "ENB",
+            // MFG
+            Self::Produces => "PRD",
+            Self::Inspects => "INS",
+            Self::PartOf => "POF",
+            // Tax
+            Self::TaxLineBelongsTo => "TLB",
+            Self::ProvisionAppliesTo => "PAT",
+            Self::WithheldFrom => "WHF",
+            // Treasury
+            Self::SweepsTo => "SWT",
+            Self::HedgesInstrument => "HDG",
+            Self::GovernsInstrument => "GVI",
+            // ESG
+            Self::EmissionReportedBy => "ERB",
+            Self::AssessesSupplier => "ASS",
+            // Project
+            Self::CostChargedTo => "CCT",
+            Self::MilestoneOf => "MLO",
+            Self::ModifiesProject => "MPJ",
+            // GOV
+            Self::PrincipleUnder => "PUN",
+            Self::AssertionCovers => "ACO",
+            Self::JudgmentWithin => "JWI",
         }
     }
 
@@ -280,6 +940,36 @@ impl RelationshipType {
             Self::CatalogItemOf => Self::CatalogItemOf,
             Self::ProducedBy => Self::ProducedBy,
             Self::ReconciledWith => Self::ReconciledWith,
+            // New domain edges (self-inverse, as they are directed)
+            Self::PlacedWith => Self::PlacedWith,
+            Self::MatchesOrder => Self::MatchesOrder,
+            Self::PaysInvoice => Self::PaysInvoice,
+            Self::PlacedBy => Self::PlacedBy,
+            Self::BillsOrder => Self::BillsOrder,
+            Self::RfxBelongsToProject => Self::RfxBelongsToProject,
+            Self::RespondsTo => Self::RespondsTo,
+            Self::AwardedFrom => Self::AwardedFrom,
+            Self::RecordedBy => Self::RecordedBy,
+            Self::PayrollIncludes => Self::PayrollIncludes,
+            Self::SubmittedBy => Self::SubmittedBy,
+            Self::EnrolledBy => Self::EnrolledBy,
+            Self::Produces => Self::Produces,
+            Self::Inspects => Self::Inspects,
+            Self::PartOf => Self::PartOf,
+            Self::TaxLineBelongsTo => Self::TaxLineBelongsTo,
+            Self::ProvisionAppliesTo => Self::ProvisionAppliesTo,
+            Self::WithheldFrom => Self::WithheldFrom,
+            Self::SweepsTo => Self::SweepsTo,
+            Self::HedgesInstrument => Self::HedgesInstrument,
+            Self::GovernsInstrument => Self::GovernsInstrument,
+            Self::EmissionReportedBy => Self::EmissionReportedBy,
+            Self::AssessesSupplier => Self::AssessesSupplier,
+            Self::CostChargedTo => Self::CostChargedTo,
+            Self::MilestoneOf => Self::MilestoneOf,
+            Self::ModifiesProject => Self::ModifiesProject,
+            Self::PrincipleUnder => Self::PrincipleUnder,
+            Self::AssertionCovers => Self::AssertionCovers,
+            Self::JudgmentWithin => Self::JudgmentWithin,
         }
     }
 
@@ -321,6 +1011,116 @@ impl RelationshipType {
                 | Self::AppliedBy
         )
     }
+
+    /// Get the edge constraint for this domain-specific relationship type.
+    pub fn constraint(&self) -> Option<EdgeConstraint> {
+        let c = |src: GraphEntityType, tgt: GraphEntityType, card: Cardinality| EdgeConstraint {
+            relationship_type: *self,
+            source_type: src,
+            target_type: tgt,
+            cardinality: card,
+            edge_properties: &[],
+        };
+        use Cardinality::*;
+        use GraphEntityType as E;
+        match self {
+            // P2P
+            Self::PlacedWith => Some(c(E::PurchaseOrder, E::Vendor, ManyToOne)),
+            Self::MatchesOrder => Some(c(E::Invoice, E::PurchaseOrder, ManyToOne)),
+            Self::PaysInvoice => Some(c(E::Payment, E::Invoice, ManyToMany)),
+            // O2C
+            Self::PlacedBy => Some(c(E::SalesOrder, E::Customer, ManyToOne)),
+            Self::BillsOrder => Some(c(E::Invoice, E::SalesOrder, ManyToOne)),
+            // S2C
+            Self::RfxBelongsToProject => Some(c(E::RfxEvent, E::SourcingProject, ManyToOne)),
+            Self::RespondsTo => Some(c(E::SupplierBid, E::RfxEvent, ManyToOne)),
+            Self::AwardedFrom => Some(c(E::ProcurementContract, E::BidEvaluation, OneToOne)),
+            // H2R
+            Self::RecordedBy => Some(c(E::TimeEntry, E::Employee, ManyToOne)),
+            Self::PayrollIncludes => Some(c(E::PayrollRun, E::Employee, ManyToMany)),
+            Self::SubmittedBy => Some(c(E::ExpenseReport, E::Employee, ManyToOne)),
+            Self::EnrolledBy => Some(c(E::BenefitEnrollment, E::Employee, ManyToOne)),
+            // MFG
+            Self::Produces => Some(c(E::ProductionOrder, E::Material, ManyToOne)),
+            Self::Inspects => Some(c(E::QualityInspection, E::ProductionOrder, ManyToOne)),
+            Self::PartOf => Some(c(E::BomComponent, E::Material, ManyToOne)),
+            // Tax
+            Self::TaxLineBelongsTo => Some(c(E::TaxLine, E::TaxReturn, ManyToOne)),
+            Self::ProvisionAppliesTo => Some(c(E::TaxProvision, E::TaxJurisdiction, ManyToOne)),
+            Self::WithheldFrom => Some(c(E::WithholdingTaxRecord, E::Vendor, ManyToOne)),
+            // Treasury
+            Self::SweepsTo => Some(c(E::CashPoolSweep, E::CashPool, ManyToOne)),
+            Self::HedgesInstrument => Some(c(E::HedgeRelationship, E::HedgingInstrument, ManyToOne)),
+            Self::GovernsInstrument => Some(c(E::DebtCovenant, E::DebtInstrument, ManyToOne)),
+            // ESG
+            Self::EmissionReportedBy => Some(c(E::EmissionRecord, E::Company, ManyToOne)),
+            Self::AssessesSupplier => Some(c(E::SupplierEsgAssessment, E::Vendor, ManyToOne)),
+            // Project
+            Self::CostChargedTo => Some(c(E::ProjectCostLine, E::Project, ManyToOne)),
+            Self::MilestoneOf => Some(c(E::ProjectMilestone, E::Project, ManyToOne)),
+            Self::ModifiesProject => Some(c(E::ChangeOrder, E::Project, ManyToOne)),
+            // GOV
+            Self::PrincipleUnder => Some(c(E::CosoPrinciple, E::CosoComponent, ManyToOne)),
+            Self::AssertionCovers => Some(c(E::SoxAssertion, E::GlAccount, ManyToMany)),
+            Self::JudgmentWithin => Some(c(E::ProfessionalJudgment, E::AuditEngagement, ManyToOne)),
+            // Existing relationship types don't have formal constraints
+            _ => None,
+        }
+    }
+
+    /// All domain-specific edge constraints.
+    pub fn all_constraints() -> Vec<EdgeConstraint> {
+        let all_types = [
+            Self::PlacedWith,
+            Self::MatchesOrder,
+            Self::PaysInvoice,
+            Self::PlacedBy,
+            Self::BillsOrder,
+            Self::RfxBelongsToProject,
+            Self::RespondsTo,
+            Self::AwardedFrom,
+            Self::RecordedBy,
+            Self::PayrollIncludes,
+            Self::SubmittedBy,
+            Self::EnrolledBy,
+            Self::Produces,
+            Self::Inspects,
+            Self::PartOf,
+            Self::TaxLineBelongsTo,
+            Self::ProvisionAppliesTo,
+            Self::WithheldFrom,
+            Self::SweepsTo,
+            Self::HedgesInstrument,
+            Self::GovernsInstrument,
+            Self::EmissionReportedBy,
+            Self::AssessesSupplier,
+            Self::CostChargedTo,
+            Self::MilestoneOf,
+            Self::ModifiesProject,
+            Self::PrincipleUnder,
+            Self::AssertionCovers,
+            Self::JudgmentWithin,
+        ];
+        all_types.iter().filter_map(|t| t.constraint()).collect()
+    }
+}
+
+/// Edge cardinality constraint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Cardinality {
+    OneToOne,
+    ManyToOne,
+    ManyToMany,
+}
+
+/// Constraint on an edge type: valid source/target entity types and cardinality.
+#[derive(Debug, Clone)]
+pub struct EdgeConstraint {
+    pub relationship_type: RelationshipType,
+    pub source_type: GraphEntityType,
+    pub target_type: GraphEntityType,
+    pub cardinality: Cardinality,
+    pub edge_properties: &'static [&'static str],
 }
 
 /// Unique identifier for an entity in the relationship graph.
@@ -1186,6 +1986,179 @@ mod tests {
         assert_eq!(stats.edge_count, 5);
         assert!((stats.avg_degree - 1.0).abs() < 0.01);
         assert!((stats.avg_strength - 0.6).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_numeric_code_roundtrip() {
+        for &entity_type in GraphEntityType::all_types() {
+            let code = entity_type.numeric_code();
+            let recovered = GraphEntityType::from_numeric_code(code);
+            assert_eq!(
+                recovered,
+                Some(entity_type),
+                "Failed roundtrip for {:?} with code {}",
+                entity_type,
+                code
+            );
+        }
+    }
+
+    #[test]
+    fn test_node_type_name_roundtrip() {
+        for &entity_type in GraphEntityType::all_types() {
+            let name = entity_type.node_type_name();
+            let recovered = GraphEntityType::from_node_type_name(name);
+            assert_eq!(
+                recovered,
+                Some(entity_type),
+                "Failed roundtrip for {:?} with name {}",
+                entity_type,
+                name
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_types_unique_codes() {
+        let mut codes = std::collections::HashSet::new();
+        for &entity_type in GraphEntityType::all_types() {
+            assert!(
+                codes.insert(entity_type.numeric_code()),
+                "Duplicate numeric code {} for {:?}",
+                entity_type.numeric_code(),
+                entity_type
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_types_unique_names() {
+        let mut names = std::collections::HashSet::new();
+        for &entity_type in GraphEntityType::all_types() {
+            assert!(
+                names.insert(entity_type.node_type_name()),
+                "Duplicate name {} for {:?}",
+                entity_type.node_type_name(),
+                entity_type
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_types_unique_letter_codes() {
+        let mut codes = std::collections::HashSet::new();
+        for &entity_type in GraphEntityType::all_types() {
+            assert!(
+                codes.insert(entity_type.code()),
+                "Duplicate letter code {} for {:?}",
+                entity_type.code(),
+                entity_type
+            );
+        }
+    }
+
+    #[test]
+    fn test_category_helpers() {
+        assert!(GraphEntityType::TaxJurisdiction.is_tax());
+        assert!(GraphEntityType::UncertainTaxPosition.is_tax());
+        assert!(!GraphEntityType::CashPosition.is_tax());
+
+        assert!(GraphEntityType::CashPosition.is_treasury());
+        assert!(GraphEntityType::DebtCovenant.is_treasury());
+        assert!(!GraphEntityType::EmissionRecord.is_treasury());
+
+        assert!(GraphEntityType::EmissionRecord.is_esg());
+        assert!(GraphEntityType::ClimateScenario.is_esg());
+        assert!(!GraphEntityType::TaxCode.is_esg());
+
+        assert!(GraphEntityType::Project.is_project());
+        assert!(GraphEntityType::ProjectMilestone.is_project());
+
+        assert!(GraphEntityType::PayrollRun.is_h2r());
+        assert!(GraphEntityType::BenefitEnrollment.is_h2r());
+
+        assert!(GraphEntityType::ProductionOrder.is_mfg());
+        assert!(GraphEntityType::BomComponent.is_mfg());
+
+        assert!(GraphEntityType::CosoComponent.is_governance());
+        assert!(GraphEntityType::ProfessionalJudgment.is_governance());
+    }
+
+    #[test]
+    fn test_edge_constraint_validity() {
+        let constraints = RelationshipType::all_constraints();
+        assert_eq!(constraints.len(), 29, "Expected 29 domain-specific edge constraints");
+        for constraint in &constraints {
+            // Source and target types should have valid numeric codes
+            assert!(constraint.source_type.numeric_code() > 0);
+            assert!(constraint.target_type.numeric_code() > 0);
+        }
+    }
+
+    #[test]
+    fn test_all_process_families_have_edges() {
+        let constraints = RelationshipType::all_constraints();
+        // P2P
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PlacedWith));
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PaysInvoice));
+        // O2C
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PlacedBy));
+        // Tax
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::TaxLineBelongsTo));
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::WithheldFrom));
+        // Treasury
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::SweepsTo));
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::GovernsInstrument));
+        // ESG
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::EmissionReportedBy));
+        // Project
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::CostChargedTo));
+        // GOV
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::PrincipleUnder));
+        assert!(constraints.iter().any(|c| c.relationship_type == RelationshipType::JudgmentWithin));
+    }
+
+    #[test]
+    fn test_edge_source_target_types() {
+        let placed_with = RelationshipType::PlacedWith.constraint().unwrap();
+        assert_eq!(placed_with.source_type, GraphEntityType::PurchaseOrder);
+        assert_eq!(placed_with.target_type, GraphEntityType::Vendor);
+        assert_eq!(placed_with.cardinality, Cardinality::ManyToOne);
+
+        let awarded_from = RelationshipType::AwardedFrom.constraint().unwrap();
+        assert_eq!(awarded_from.source_type, GraphEntityType::ProcurementContract);
+        assert_eq!(awarded_from.target_type, GraphEntityType::BidEvaluation);
+        assert_eq!(awarded_from.cardinality, Cardinality::OneToOne);
+
+        let pays_invoice = RelationshipType::PaysInvoice.constraint().unwrap();
+        assert_eq!(pays_invoice.cardinality, Cardinality::ManyToMany);
+    }
+
+    #[test]
+    fn test_existing_types_no_constraint() {
+        // Pre-existing relationship types should return None for constraint
+        assert!(RelationshipType::BuysFrom.constraint().is_none());
+        assert!(RelationshipType::SellsTo.constraint().is_none());
+        assert!(RelationshipType::ReportsTo.constraint().is_none());
+    }
+
+    #[test]
+    fn test_specific_entity_codes() {
+        assert_eq!(GraphEntityType::UncertainTaxPosition.numeric_code(), 416);
+        assert_eq!(
+            GraphEntityType::UncertainTaxPosition.node_type_name(),
+            "uncertain_tax_position"
+        );
+        assert_eq!(GraphEntityType::DebtCovenant.numeric_code(), 427);
+        assert_eq!(GraphEntityType::BenefitEnrollment.numeric_code(), 333);
+        assert_eq!(GraphEntityType::BomComponent.numeric_code(), 343);
+    }
+
+    #[test]
+    fn test_all_types_count() {
+        // 20 original + 7 tax + 8 treasury + 13 ESG + 5 project
+        // + 4 S2C + 4 H2R + 4 MFG + 5 GOV = 70
+        assert_eq!(GraphEntityType::all_types().len(), 70);
     }
 
     #[test]

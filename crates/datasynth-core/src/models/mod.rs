@@ -14,6 +14,9 @@
 
 mod acdoca;
 mod anomaly;
+
+// Graph property mapping trait (DS-001)
+pub mod graph_properties;
 mod approval;
 mod chart_of_accounts;
 mod company;
@@ -92,6 +95,7 @@ pub mod audit;
 pub mod banking;
 
 pub use acdoca::*;
+pub use graph_properties::*;
 pub use anomaly::*;
 pub use approval::*;
 pub use chart_of_accounts::*;
