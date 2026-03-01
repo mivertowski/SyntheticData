@@ -116,6 +116,12 @@ pub enum GeneratorType {
     SupplierQualification = 0x3D,
     /// Supplier scorecard generator
     SupplierScorecard = 0x3E,
+    /// BOM component generator
+    BomComponent = 0x3F,
+    /// Inventory movement generator
+    InventoryMovement = 0x40,
+    /// Benefit enrollment generator
+    BenefitEnrollment = 0x41,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

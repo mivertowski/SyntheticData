@@ -12,6 +12,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use std::collections::HashMap;
 use tracing::debug;
 
 /// Generates [`ExpenseReport`] records for employees over a period.
@@ -26,6 +27,8 @@ pub struct ExpenseReportGenerator {
     employee_ids_pool: Vec<String>,
     /// Pool of real cost center IDs.
     cost_center_ids_pool: Vec<String>,
+    /// Mapping of employee_id → employee_name for denormalization (DS-011).
+    employee_names: HashMap<String, String>,
 }
 
 impl ExpenseReportGenerator {
@@ -42,6 +45,7 @@ impl ExpenseReportGenerator {
             config: ExpenseConfig::default(),
             employee_ids_pool: Vec::new(),
             cost_center_ids_pool: Vec::new(),
+            employee_names: HashMap::new(),
         }
     }
 
@@ -58,6 +62,7 @@ impl ExpenseReportGenerator {
             config,
             employee_ids_pool: Vec::new(),
             cost_center_ids_pool: Vec::new(),
+            employee_names: HashMap::new(),
         }
     }
 
@@ -69,6 +74,15 @@ impl ExpenseReportGenerator {
     pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
         self.employee_ids_pool = employee_ids;
         self.cost_center_ids_pool = cost_center_ids;
+        self
+    }
+
+    /// Set the employee name mapping for denormalization (DS-011).
+    ///
+    /// Maps employee IDs to their display names so that generated expense
+    /// reports include the employee name for graph export convenience.
+    pub fn with_employee_names(mut self, names: HashMap<String, String>) -> Self {
+        self.employee_names = names;
         self
     }
 
@@ -267,7 +281,7 @@ impl ExpenseReportGenerator {
             cost_center,
             department,
             policy_violations,
-            employee_name: None,
+            employee_name: self.employee_names.get(employee_id).cloned(),
         }
     }
 

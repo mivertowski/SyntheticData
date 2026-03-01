@@ -449,6 +449,9 @@ impl P2PGenerator {
         )
         .with_payment_terms(vendor.payment_terms.code());
 
+        // Denormalize vendor name (DS-011)
+        po.vendor_name = Some(vendor.name.clone());
+
         // Add line items
         for (idx, material) in materials.iter().enumerate() {
             let quantity = Decimal::from(self.rng.random_range(1..100));
@@ -628,6 +631,9 @@ impl P2PGenerator {
             created_by,
         )
         .with_payment_terms(vendor.payment_terms.code(), net_days);
+
+        // Denormalize vendor name (DS-011)
+        invoice.vendor_name = Some(vendor.name.clone());
 
         // Apply cash discount if payment terms have one
         if let (Some(discount_days), Some(discount_percent)) = (

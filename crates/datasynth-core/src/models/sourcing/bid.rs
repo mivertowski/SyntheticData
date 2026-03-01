@@ -120,10 +120,7 @@ impl ToNodeProperties for SupplierBid {
             "validityDays".into(),
             GraphPropertyValue::Int(self.validity_days as i64),
         );
-        p.insert(
-            "isOnTime".into(),
-            GraphPropertyValue::Bool(self.is_on_time),
-        );
+        p.insert("isOnTime".into(), GraphPropertyValue::Bool(self.is_on_time));
         p.insert(
             "isCompliant".into(),
             GraphPropertyValue::Bool(self.is_compliant),

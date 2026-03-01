@@ -287,6 +287,10 @@ pub struct SalesOrder {
 
     /// Contract reference
     pub contract_id: Option<String>,
+
+    /// Customer display name (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customer_name: Option<String>,
 }
 
 /// Credit check status.
@@ -354,6 +358,7 @@ impl SalesOrder {
             is_billing_released: false,
             quote_id: None,
             contract_id: None,
+            customer_name: None,
         }
     }
 

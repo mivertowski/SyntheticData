@@ -524,6 +524,9 @@ impl O2CGenerator {
         )
         .with_requested_delivery_date(requested_delivery);
 
+        // Denormalize customer name (DS-011)
+        so.customer_name = Some(customer.name.clone());
+
         // Add line items
         for (idx, material) in materials.iter().enumerate() {
             let quantity = Decimal::from(self.rng.random_range(1..50));
@@ -717,6 +720,9 @@ impl O2CGenerator {
             customer.payment_terms.discount_days(),
             customer.payment_terms.discount_percent(),
         );
+
+        // Denormalize customer name (DS-011)
+        invoice.customer_name = Some(customer.name.clone());
 
         // Calculate total delivered quantity per item
         let mut delivered_quantities: std::collections::HashMap<u16, (Decimal, Decimal)> =

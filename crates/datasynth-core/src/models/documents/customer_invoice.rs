@@ -322,6 +322,10 @@ pub struct CustomerInvoice {
 
     /// Cancellation invoice reference
     pub cancellation_invoice: Option<String>,
+
+    /// Customer display name (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customer_name: Option<String>,
 }
 
 impl CustomerInvoice {
@@ -387,6 +391,7 @@ impl CustomerInvoice {
             last_dunning_date: None,
             is_cancelled: false,
             cancellation_invoice: None,
+            customer_name: None,
         }
     }
 

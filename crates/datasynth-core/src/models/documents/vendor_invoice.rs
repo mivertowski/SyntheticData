@@ -277,6 +277,10 @@ pub struct VendorInvoice {
 
     /// Baseline date for payment
     pub baseline_date: NaiveDate,
+
+    /// Vendor display name (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vendor_name: Option<String>,
 }
 
 impl VendorInvoice {
@@ -331,6 +335,7 @@ impl VendorInvoice {
             balance: Decimal::ZERO,
             payment_references: Vec::new(),
             baseline_date: invoice_date,
+            vendor_name: None,
         }
     }
 

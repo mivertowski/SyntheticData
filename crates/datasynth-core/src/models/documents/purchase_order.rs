@@ -255,6 +255,10 @@ pub struct PurchaseOrder {
 
     /// Output control - PO printed/sent
     pub output_complete: bool,
+
+    /// Vendor display name (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vendor_name: Option<String>,
 }
 
 impl PurchaseOrder {
@@ -297,6 +301,7 @@ impl PurchaseOrder {
             contract_id: None,
             release_status: None,
             output_complete: false,
+            vendor_name: None,
         }
     }
 

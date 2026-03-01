@@ -126,6 +126,9 @@ impl ToNodeProperties for CycleCount {
 pub struct CycleCountItem {
     /// Material being counted
     pub material_id: String,
+    /// Material description (denormalized, DS-011)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub material_description: Option<String>,
     /// Storage location within the warehouse
     pub storage_location: String,
     /// Quantity recorded in the system

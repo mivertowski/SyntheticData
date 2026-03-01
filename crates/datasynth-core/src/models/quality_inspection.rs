@@ -124,10 +124,7 @@ impl ToNodeProperties for QualityInspection {
             "inspectionDate".into(),
             GraphPropertyValue::Date(self.inspection_date),
         );
-        p.insert(
-            "lotSize".into(),
-            GraphPropertyValue::Decimal(self.lot_size),
-        );
+        p.insert("lotSize".into(), GraphPropertyValue::Decimal(self.lot_size));
         p.insert(
             "inspectedQuantity".into(),
             GraphPropertyValue::Decimal(self.sample_size),

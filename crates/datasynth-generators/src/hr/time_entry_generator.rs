@@ -10,6 +10,7 @@ use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
+use std::collections::HashMap;
 use tracing::debug;
 
 /// Default PTO rate (probability that an employee takes PTO on a given business day).
@@ -26,6 +27,8 @@ pub struct TimeEntryGenerator {
     employee_ids_pool: Vec<String>,
     /// Pool of real cost center IDs.
     cost_center_ids_pool: Vec<String>,
+    /// Mapping of employee_id → employee_name for denormalization (DS-011).
+    employee_names: HashMap<String, String>,
 }
 
 impl TimeEntryGenerator {
@@ -36,6 +39,7 @@ impl TimeEntryGenerator {
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::TimeEntry),
             employee_ids_pool: Vec::new(),
             cost_center_ids_pool: Vec::new(),
+            employee_names: HashMap::new(),
         }
     }
 
@@ -47,6 +51,15 @@ impl TimeEntryGenerator {
     pub fn with_pools(mut self, employee_ids: Vec<String>, cost_center_ids: Vec<String>) -> Self {
         self.employee_ids_pool = employee_ids;
         self.cost_center_ids_pool = cost_center_ids;
+        self
+    }
+
+    /// Set the employee name mapping for denormalization (DS-011).
+    ///
+    /// Maps employee IDs to their display names so that generated time entries
+    /// include the employee name for graph export convenience.
+    pub fn with_employee_names(mut self, names: HashMap<String, String>) -> Self {
+        self.employee_names = names;
         self
     }
 
@@ -200,8 +213,8 @@ impl TimeEntryGenerator {
             approval_status,
             approved_by,
             submitted_at,
-            employee_name: None,
-            billable: false,
+            employee_name: self.employee_names.get(employee_id).cloned(),
+            billable: self.rng.random_bool(0.70),
         }
     }
 }

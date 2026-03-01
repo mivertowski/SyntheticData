@@ -138,6 +138,24 @@ impl GraphNode {
     pub fn feature_dim(&self) -> usize {
         self.features.len()
     }
+
+    /// Create a graph node from any type implementing `ToNodeProperties`.
+    ///
+    /// This bridges the domain model structs (with `ToNodeProperties`) to the
+    /// graph export pipeline by converting all typed properties into `NodeProperty` values.
+    pub fn from_entity(id: NodeId, entity: &dyn datasynth_core::models::ToNodeProperties) -> Self {
+        let type_name = entity.node_type_name();
+        let mut node = GraphNode::new(
+            id,
+            NodeType::Custom(type_name.to_string()),
+            type_name.to_string(),
+            type_name.to_string(),
+        );
+        for (key, value) in entity.to_node_properties() {
+            node.properties.insert(key, NodeProperty::from(value));
+        }
+        node
+    }
 }
 
 /// Property value for a node.
@@ -181,6 +199,21 @@ impl NodeProperty {
             NodeProperty::Decimal(d) => (*d).try_into().ok(),
             NodeProperty::Bool(b) => Some(if *b { 1.0 } else { 0.0 }),
             _ => None,
+        }
+    }
+}
+
+impl From<datasynth_core::models::GraphPropertyValue> for NodeProperty {
+    fn from(v: datasynth_core::models::GraphPropertyValue) -> Self {
+        use datasynth_core::models::GraphPropertyValue;
+        match v {
+            GraphPropertyValue::String(s) => NodeProperty::String(s),
+            GraphPropertyValue::Int(i) => NodeProperty::Int(i),
+            GraphPropertyValue::Float(f) => NodeProperty::Float(f),
+            GraphPropertyValue::Decimal(d) => NodeProperty::Decimal(d),
+            GraphPropertyValue::Bool(b) => NodeProperty::Bool(b),
+            GraphPropertyValue::Date(d) => NodeProperty::Date(d),
+            GraphPropertyValue::StringList(v) => NodeProperty::StringList(v),
         }
     }
 }
@@ -455,5 +488,47 @@ mod tests {
         account.compute_features();
 
         assert!(!account.node.features.is_empty());
+    }
+
+    #[test]
+    fn test_from_graph_property_value() {
+        use datasynth_core::models::GraphPropertyValue;
+
+        let prop: NodeProperty = GraphPropertyValue::Bool(true).into();
+        assert!(matches!(prop, NodeProperty::Bool(true)));
+
+        let prop: NodeProperty = GraphPropertyValue::Int(42).into();
+        assert!(matches!(prop, NodeProperty::Int(42)));
+
+        let prop: NodeProperty = GraphPropertyValue::String("hello".into()).into();
+        assert!(matches!(prop, NodeProperty::String(ref s) if s == "hello"));
+    }
+
+    #[test]
+    fn test_from_entity() {
+        use datasynth_core::models::{GraphPropertyValue, ToNodeProperties};
+        use std::collections::HashMap;
+
+        struct TestEntity;
+        impl ToNodeProperties for TestEntity {
+            fn node_type_name(&self) -> &'static str {
+                "test_entity"
+            }
+            fn node_type_code(&self) -> u16 {
+                999
+            }
+            fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+                let mut p = HashMap::new();
+                p.insert("name".into(), GraphPropertyValue::String("Test".into()));
+                p.insert("active".into(), GraphPropertyValue::Bool(true));
+                p
+            }
+        }
+
+        let node = GraphNode::from_entity(42, &TestEntity);
+        assert_eq!(node.id, 42);
+        assert_eq!(node.node_type, NodeType::Custom("test_entity".into()));
+        assert!(node.properties.contains_key("name"));
+        assert!(node.properties.contains_key("active"));
     }
 }

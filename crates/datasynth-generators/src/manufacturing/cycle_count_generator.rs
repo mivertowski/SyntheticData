@@ -11,6 +11,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use std::collections::HashMap;
 
 /// Adjustment reason strings for items that are adjusted.
 const ADJUSTMENT_REASONS: &[&str] = &[
@@ -30,6 +31,8 @@ pub struct CycleCountGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     employee_ids_pool: Vec<String>,
+    /// Mapping of material_id → description for denormalization (DS-011).
+    material_descriptions: HashMap<String, String>,
 }
 
 impl CycleCountGenerator {
@@ -39,6 +42,7 @@ impl CycleCountGenerator {
             rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::CycleCount),
             employee_ids_pool: Vec::new(),
+            material_descriptions: HashMap::new(),
         }
     }
 
@@ -48,6 +52,15 @@ impl CycleCountGenerator {
     /// pool instead of fabricated `WH-{:02}` / `SUP-{:02}` strings.
     pub fn with_employee_pool(mut self, employee_ids: Vec<String>) -> Self {
         self.employee_ids_pool = employee_ids;
+        self
+    }
+
+    /// Set the material description mapping for denormalization (DS-011).
+    ///
+    /// Maps material IDs to their descriptions so that generated cycle count
+    /// items include the material description for graph export convenience.
+    pub fn with_material_descriptions(mut self, descriptions: HashMap<String, String>) -> Self {
+        self.material_descriptions = descriptions;
         self
     }
 
@@ -189,6 +202,7 @@ impl CycleCountGenerator {
 
         CycleCountItem {
             material_id: material_id.to_string(),
+            material_description: self.material_descriptions.get(material_id).cloned(),
             storage_location: storage_location.to_string(),
             book_quantity,
             counted_quantity,
