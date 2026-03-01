@@ -106,6 +106,7 @@ pub fn create_preset(
         // a dedicated pack (e.g. CN, FR, CH, IE, JP) gracefully fall back to
         // the _default pack which provides sensible baseline data.
         country_packs: None,
+        scenarios: ScenariosConfig::default(),
     }
 }
 

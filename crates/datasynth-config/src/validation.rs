@@ -51,6 +51,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_quality_gates(config)?;
     validate_compliance(config)?;
     validate_country_packs(config)?;
+    validate_scenarios(config)?;
     Ok(())
 }
 
@@ -2176,6 +2177,81 @@ fn validate_country_packs(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate scenario configuration.
+fn validate_scenarios(config: &GeneratorConfig) -> SynthResult<()> {
+    let scenarios = &config.scenarios;
+    if !scenarios.enabled {
+        return Ok(());
+    }
+
+    if scenarios.scenarios.is_empty() {
+        return Err(SynthError::validation(
+            "scenarios.enabled is true but no scenarios are defined",
+        ));
+    }
+
+    let valid_onsets = ["sudden", "gradual", "oscillating", "custom"];
+    let mut names = std::collections::HashSet::new();
+    let mut total_weight = 0.0f64;
+
+    for scenario in &scenarios.scenarios {
+        if scenario.name.is_empty() {
+            return Err(SynthError::validation(
+                "scenario name must not be empty",
+            ));
+        }
+
+        if !names.insert(&scenario.name) {
+            return Err(SynthError::validation(format!(
+                "duplicate scenario name: '{}'",
+                scenario.name
+            )));
+        }
+
+        if let Some(weight) = scenario.probability_weight {
+            if !(0.0..=1.0).contains(&weight) {
+                return Err(SynthError::validation(format!(
+                    "scenario '{}' probability_weight must be between 0.0 and 1.0, got {}",
+                    scenario.name, weight
+                )));
+            }
+            total_weight += weight;
+        }
+
+        for (i, intervention) in scenario.interventions.iter().enumerate() {
+            if intervention.timing.start_month < 1 {
+                return Err(SynthError::validation(format!(
+                    "scenario '{}' intervention {} start_month must be >= 1",
+                    scenario.name, i
+                )));
+            }
+            if intervention.timing.start_month > config.global.period_months {
+                return Err(SynthError::validation(format!(
+                    "scenario '{}' intervention {} start_month ({}) exceeds period_months ({})",
+                    scenario.name, i, intervention.timing.start_month, config.global.period_months
+                )));
+            }
+
+            let onset = intervention.timing.onset.to_lowercase();
+            if !valid_onsets.contains(&onset.as_str()) {
+                return Err(SynthError::validation(format!(
+                    "scenario '{}' intervention {} has invalid onset type '{}' (valid: {:?})",
+                    scenario.name, i, onset, valid_onsets
+                )));
+            }
+        }
+    }
+
+    if total_weight > 1.01 {
+        return Err(SynthError::validation(format!(
+            "scenario probability_weights sum to {} (must be <= 1.0)",
+            total_weight
+        )));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -2268,6 +2344,7 @@ mod tests {
             project_accounting: ProjectAccountingConfig::default(),
             esg: EsgConfig::default(),
             country_packs: None,
+            scenarios: ScenariosConfig::default(),
         }
     }
 

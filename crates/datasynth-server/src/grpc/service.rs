@@ -911,6 +911,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         project_accounting: Default::default(),
         esg: Default::default(),
         country_packs: None,
+        scenarios: Default::default(),
     }
 }
 

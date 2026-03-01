@@ -183,6 +183,9 @@ pub struct GeneratorConfig {
     /// Country pack configuration (external packs directory, per-country overrides)
     #[serde(default)]
     pub country_packs: Option<CountryPacksSchemaConfig>,
+    /// Counterfactual simulation scenario configuration
+    #[serde(default)]
+    pub scenarios: ScenariosConfig,
 }
 
 /// LLM enrichment configuration.
@@ -12270,6 +12273,203 @@ impl Default for ClimateScenarioConfig {
             time_horizons: default_time_horizons(),
         }
     }
+}
+
+// ===== Counterfactual Simulation Scenarios =====
+
+/// Configuration for counterfactual simulation scenarios.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ScenariosConfig {
+    /// Whether scenario generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// List of scenario definitions.
+    #[serde(default)]
+    pub scenarios: Vec<ScenarioSchemaConfig>,
+    /// Causal model configuration.
+    #[serde(default)]
+    pub causal_model: CausalModelSchemaConfig,
+    /// Default settings applied to all scenarios.
+    #[serde(default)]
+    pub defaults: ScenarioDefaultsConfig,
+}
+
+/// A single scenario definition in the config.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScenarioSchemaConfig {
+    /// Scenario name (must be unique).
+    pub name: String,
+    /// Human-readable description.
+    #[serde(default)]
+    pub description: String,
+    /// Tags for categorization.
+    #[serde(default)]
+    pub tags: Vec<String>,
+    /// Base scenario name (None = default config).
+    pub base: Option<String>,
+    /// IFRS 9-style probability weight.
+    pub probability_weight: Option<f64>,
+    /// List of interventions to apply.
+    #[serde(default)]
+    pub interventions: Vec<InterventionSchemaConfig>,
+    /// Constraint overrides for this scenario.
+    #[serde(default)]
+    pub constraints: ScenarioConstraintsSchemaConfig,
+    /// Output configuration for this scenario.
+    #[serde(default)]
+    pub output: ScenarioOutputSchemaConfig,
+    /// Arbitrary metadata.
+    #[serde(default)]
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+/// An intervention definition in the config.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InterventionSchemaConfig {
+    /// Intervention type and parameters (flattened tagged enum).
+    #[serde(flatten)]
+    pub intervention_type: serde_json::Value,
+    /// Timing configuration.
+    #[serde(default)]
+    pub timing: InterventionTimingSchemaConfig,
+    /// Human-readable label.
+    pub label: Option<String>,
+    /// Priority for conflict resolution (higher wins).
+    #[serde(default)]
+    pub priority: u32,
+}
+
+/// Timing configuration for an intervention.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InterventionTimingSchemaConfig {
+    /// Month offset from start (1-indexed).
+    #[serde(default = "default_start_month")]
+    pub start_month: u32,
+    /// Duration in months.
+    pub duration_months: Option<u32>,
+    /// Onset type: "sudden", "gradual", "oscillating", "custom".
+    #[serde(default = "default_onset")]
+    pub onset: String,
+    /// Ramp period in months.
+    pub ramp_months: Option<u32>,
+}
+
+fn default_start_month() -> u32 {
+    1
+}
+
+fn default_onset() -> String {
+    "sudden".to_string()
+}
+
+impl Default for InterventionTimingSchemaConfig {
+    fn default() -> Self {
+        Self {
+            start_month: 1,
+            duration_months: None,
+            onset: "sudden".to_string(),
+            ramp_months: None,
+        }
+    }
+}
+
+/// Scenario constraint overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScenarioConstraintsSchemaConfig {
+    #[serde(default = "default_true")]
+    pub preserve_accounting_identity: bool,
+    #[serde(default = "default_true")]
+    pub preserve_document_chains: bool,
+    #[serde(default = "default_true")]
+    pub preserve_period_close: bool,
+    #[serde(default = "default_true")]
+    pub preserve_balance_coherence: bool,
+    #[serde(default)]
+    pub custom: Vec<CustomConstraintSchemaConfig>,
+}
+
+impl Default for ScenarioConstraintsSchemaConfig {
+    fn default() -> Self {
+        Self {
+            preserve_accounting_identity: true,
+            preserve_document_chains: true,
+            preserve_period_close: true,
+            preserve_balance_coherence: true,
+            custom: Vec::new(),
+        }
+    }
+}
+
+/// Custom constraint in config.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomConstraintSchemaConfig {
+    pub config_path: String,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    #[serde(default)]
+    pub description: String,
+}
+
+/// Output configuration for a scenario.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScenarioOutputSchemaConfig {
+    #[serde(default = "default_true")]
+    pub paired: bool,
+    #[serde(default = "default_diff_formats_schema")]
+    pub diff_formats: Vec<String>,
+    #[serde(default)]
+    pub diff_scope: Vec<String>,
+}
+
+fn default_diff_formats_schema() -> Vec<String> {
+    vec!["summary".to_string(), "aggregate".to_string()]
+}
+
+impl Default for ScenarioOutputSchemaConfig {
+    fn default() -> Self {
+        Self {
+            paired: true,
+            diff_formats: default_diff_formats_schema(),
+            diff_scope: Vec::new(),
+        }
+    }
+}
+
+/// Causal model configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CausalModelSchemaConfig {
+    /// Preset name: "default", "minimal", or "custom".
+    #[serde(default = "default_causal_preset")]
+    pub preset: String,
+    /// Custom nodes (merged with preset).
+    #[serde(default)]
+    pub nodes: Vec<serde_json::Value>,
+    /// Custom edges (merged with preset).
+    #[serde(default)]
+    pub edges: Vec<serde_json::Value>,
+}
+
+fn default_causal_preset() -> String {
+    "default".to_string()
+}
+
+impl Default for CausalModelSchemaConfig {
+    fn default() -> Self {
+        Self {
+            preset: "default".to_string(),
+            nodes: Vec::new(),
+            edges: Vec::new(),
+        }
+    }
+}
+
+/// Default settings applied to all scenarios.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ScenarioDefaultsConfig {
+    #[serde(default)]
+    pub constraints: ScenarioConstraintsSchemaConfig,
+    #[serde(default)]
+    pub output: ScenarioOutputSchemaConfig,
 }
 
 #[cfg(test)]

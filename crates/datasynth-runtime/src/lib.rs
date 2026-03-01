@@ -12,6 +12,7 @@
 //! - `run_manifest`: Run metadata and reproducibility tracking
 //! - `label_export`: Anomaly label export to CSV/JSON formats
 
+pub mod causal_engine;
 pub mod enhanced_orchestrator;
 pub mod label_export;
 pub mod lineage;

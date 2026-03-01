@@ -2033,6 +2033,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         project_accounting: Default::default(),
         esg: Default::default(),
         country_packs: None,
+        scenarios: Default::default(),
     }
 }
 

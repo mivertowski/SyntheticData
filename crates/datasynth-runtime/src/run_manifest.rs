@@ -453,6 +453,7 @@ mod tests {
             project_accounting: Default::default(),
             esg: Default::default(),
             country_packs: None,
+            scenarios: Default::default(),
         }
     }
 
