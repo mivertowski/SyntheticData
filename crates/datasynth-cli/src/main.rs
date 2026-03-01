@@ -157,6 +157,67 @@ enum Commands {
         #[command(subcommand)]
         command: FingerprintCommands,
     },
+
+    /// Counterfactual scenario management
+    Scenario {
+        #[command(subcommand)]
+        command: ScenarioCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum ScenarioCommands {
+    /// List all scenarios in a config
+    List {
+        /// Path to configuration file
+        #[arg(short, long)]
+        config: PathBuf,
+    },
+
+    /// Validate scenarios without generating data
+    Validate {
+        /// Path to configuration file
+        #[arg(short, long)]
+        config: PathBuf,
+
+        /// Validate a specific scenario by name
+        #[arg(short, long)]
+        scenario: Option<String>,
+    },
+
+    /// Generate paired baseline/counterfactual datasets
+    Generate {
+        /// Path to configuration file
+        #[arg(short, long)]
+        config: PathBuf,
+
+        /// Output directory
+        #[arg(short, long, default_value = "./output")]
+        output: PathBuf,
+
+        /// Generate only a specific scenario by name
+        #[arg(short, long)]
+        scenario: Option<String>,
+    },
+
+    /// Diff baseline vs counterfactual outputs
+    Diff {
+        /// Baseline output directory
+        #[arg(short, long)]
+        baseline: PathBuf,
+
+        /// Counterfactual output directory
+        #[arg(long)]
+        counterfactual: PathBuf,
+
+        /// Diff format (summary, record_level, aggregate, all)
+        #[arg(short, long, default_value = "summary")]
+        format: String,
+
+        /// Output file for diff results (default: stdout)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -1491,6 +1552,7 @@ fn main() -> Result<()> {
         }
 
         Commands::Fingerprint { command } => handle_fingerprint_command(command),
+        Commands::Scenario { command } => handle_scenario_command(command),
     }
 }
 
@@ -2116,4 +2178,148 @@ fn get_safe_memory_limit() -> usize {
 
     // Default to 1GB if detection fails
     1024
+}
+
+/// Handle scenario subcommands.
+fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
+    use datasynth_eval::diff_engine::{DiffConfig, DiffEngine, DiffFormat};
+    use datasynth_runtime::scenario_engine::ScenarioEngine;
+
+    match command {
+        ScenarioCommands::List { config } => {
+            let config_str = std::fs::read_to_string(&config)?;
+            let gen_config: GeneratorConfig = serde_yaml::from_str(&config_str)?;
+
+            if !gen_config.scenarios.enabled {
+                println!("Scenarios are disabled in this config.");
+                return Ok(());
+            }
+
+            let engine = ScenarioEngine::new(gen_config)?;
+            let scenarios = engine.list_scenarios();
+
+            if scenarios.is_empty() {
+                println!("No scenarios defined.");
+                return Ok(());
+            }
+
+            println!("Scenarios ({}):", scenarios.len());
+            println!("{:-<60}", "");
+            for s in &scenarios {
+                println!("  Name: {}", s.name);
+                println!("  Description: {}", s.description);
+                if !s.tags.is_empty() {
+                    println!("  Tags: {}", s.tags.join(", "));
+                }
+                println!("  Interventions: {}", s.intervention_count);
+                if let Some(w) = s.probability_weight {
+                    println!("  Probability Weight: {:.2}", w);
+                }
+                println!("{:-<60}", "");
+            }
+
+            Ok(())
+        }
+
+        ScenarioCommands::Validate { config, scenario } => {
+            let config_str = std::fs::read_to_string(&config)?;
+            let gen_config: GeneratorConfig = serde_yaml::from_str(&config_str)?;
+
+            if !gen_config.scenarios.enabled {
+                anyhow::bail!("Scenarios are disabled in this config.");
+            }
+
+            let engine = ScenarioEngine::new(gen_config)?;
+            let results = engine.validate_all();
+
+            let filtered: Vec<_> = if let Some(ref name) = scenario {
+                results.into_iter().filter(|r| r.name == *name).collect()
+            } else {
+                results
+            };
+
+            if filtered.is_empty() {
+                if let Some(name) = scenario {
+                    anyhow::bail!("Scenario '{}' not found.", name);
+                }
+                println!("No scenarios to validate.");
+                return Ok(());
+            }
+
+            let mut all_valid = true;
+            for r in &filtered {
+                if r.valid {
+                    println!("  [PASS] {}", r.name);
+                } else {
+                    println!("  [FAIL] {}: {}", r.name, r.error.as_deref().unwrap_or("unknown"));
+                    all_valid = false;
+                }
+            }
+
+            if all_valid {
+                println!("\nAll {} scenario(s) valid.", filtered.len());
+                Ok(())
+            } else {
+                anyhow::bail!("Some scenarios failed validation.")
+            }
+        }
+
+        ScenarioCommands::Generate {
+            config,
+            output,
+            scenario: _scenario_filter,
+        } => {
+            let config_str = std::fs::read_to_string(&config)?;
+            let gen_config: GeneratorConfig = serde_yaml::from_str(&config_str)?;
+
+            if !gen_config.scenarios.enabled {
+                anyhow::bail!("Scenarios are disabled in this config.");
+            }
+
+            let engine = ScenarioEngine::new(gen_config)?;
+            let results = engine.generate_all(&output)?;
+
+            println!("Generated {} scenario(s):", results.len());
+            for r in &results {
+                println!("  {} — {} interventions, {} months affected",
+                    r.scenario_name, r.interventions_applied, r.months_affected);
+                println!("    Baseline: {}", r.baseline_path.display());
+                println!("    Counterfactual: {}", r.counterfactual_path.display());
+            }
+
+            Ok(())
+        }
+
+        ScenarioCommands::Diff {
+            baseline,
+            counterfactual,
+            format,
+            output,
+        } => {
+            let formats = match format.as_str() {
+                "summary" => vec![DiffFormat::Summary],
+                "record_level" => vec![DiffFormat::RecordLevel],
+                "aggregate" => vec![DiffFormat::Aggregate],
+                "all" => vec![DiffFormat::Summary, DiffFormat::RecordLevel, DiffFormat::Aggregate],
+                other => anyhow::bail!("Unknown diff format: '{}'. Use: summary, record_level, aggregate, all", other),
+            };
+
+            let diff_config = DiffConfig {
+                formats,
+                ..Default::default()
+            };
+
+            let diff = DiffEngine::compute(&baseline, &counterfactual, &diff_config)?;
+            let json = serde_json::to_string_pretty(&diff)?;
+
+            if let Some(out_path) = output {
+                std::fs::write(&out_path, &json)?;
+                println!("Diff written to {}", out_path.display());
+            } else {
+                println!("{}", json);
+            }
+
+            Ok(())
+        }
+    }
 }
