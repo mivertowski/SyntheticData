@@ -48,8 +48,10 @@ pub mod tuning;
 
 pub mod banking;
 pub mod causal;
+pub mod diff_engine;
 pub mod enrichment;
 pub mod process_mining;
+pub mod scenario_diff;
 
 // Re-exports
 pub use config::{EvaluationConfig, EvaluationThresholds, PrivacyEvaluationConfig};
