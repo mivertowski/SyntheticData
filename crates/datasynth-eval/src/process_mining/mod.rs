@@ -3,9 +3,11 @@
 //! Validates event sequence validity, object lifecycle completeness,
 //! and process variant distribution.
 
+pub mod enrichment_quality;
 pub mod event_sequence;
 pub mod variant_analysis;
 
+pub use enrichment_quality::*;
 pub use event_sequence::{EventSequenceAnalysis, EventSequenceAnalyzer, ProcessEventData};
 pub use variant_analysis::{VariantAnalysis, VariantAnalyzer, VariantData};
 

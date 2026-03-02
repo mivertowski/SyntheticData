@@ -11,9 +11,11 @@ mod cross_process;
 mod document_chain;
 mod esg;
 mod financial_reporting;
+mod fraud_packs;
 mod hr_payroll;
 mod intercompany;
 mod manufacturing;
+mod multi_period;
 mod multi_table;
 mod network;
 mod project_accounting;
@@ -53,6 +55,7 @@ pub use financial_reporting::{
     BudgetVarianceData, FinancialReportingEvaluation, FinancialReportingEvaluator,
     FinancialReportingThresholds, FinancialStatementData, KpiData,
 };
+pub use fraud_packs::{FraudPackAnalysis, FraudPackAnalyzer, FraudPackData, FraudPackThresholds};
 pub use hr_payroll::{
     ExpenseReportData, HrPayrollEvaluation, HrPayrollEvaluator, HrPayrollThresholds,
     PayrollHoursData, PayrollLineItemData, PayrollRunData, TimeEntryData,
@@ -62,6 +65,7 @@ pub use manufacturing::{
     CycleCountData, ManufacturingEvaluation, ManufacturingEvaluator, ManufacturingThresholds,
     ProductionOrderData, QualityInspectionData, RoutingOperationData,
 };
+pub use multi_period::{MultiPeriodAnalysis, MultiPeriodAnalyzer, MultiPeriodThresholds, PeriodData};
 pub use multi_table::{
     get_o2c_flow_relationships, get_p2p_flow_relationships, AnomalyRecord, CascadeAnomalyAnalysis,
     CascadePath, ConsistencyViolation, MultiTableConsistencyEvaluator, MultiTableData,
@@ -164,6 +168,9 @@ pub struct CoherenceEvaluation {
     /// Country pack evaluation results.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country_packs: Option<CountryPackEvaluation>,
+    /// Multi-period coherence evaluation results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multi_period: Option<MultiPeriodAnalysis>,
     /// Overall pass/fail status.
     pub passes: bool,
     /// Summary of failed checks.
@@ -195,6 +202,7 @@ impl CoherenceEvaluation {
             esg: None,
             sales_quotes: None,
             country_packs: None,
+            multi_period: None,
             passes: true,
             failures: Vec::new(),
         }
@@ -340,6 +348,11 @@ impl CoherenceEvaluation {
             }
         }
         if let Some(ref eval) = self.country_packs {
+            if !eval.passes {
+                self.failures.extend(eval.issues.clone());
+            }
+        }
+        if let Some(ref eval) = self.multi_period {
             if !eval.passes {
                 self.failures.extend(eval.issues.clone());
             }
