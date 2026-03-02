@@ -703,21 +703,20 @@ impl TemporalSampler {
     #[inline]
     pub fn sample_time(&mut self, is_human: bool) -> NaiveTime {
         if !is_human {
-            // Automated systems can post any time, but prefer off-hours
+            // Automated systems can post any time, but prefer batch windows
             let hour = if self.rng.random::<f64>() < 0.7 {
-                // 70% off-peak hours (night batch processing)
-                self.rng.random_range(22..=23).clamp(0, 23)
-                    + if self.rng.random_bool(0.5) {
-                        0
-                    } else {
-                        self.rng.random_range(0..=5)
-                    }
+                // 70% during typical batch windows: overnight (0-6) and evening (20-23)
+                if self.rng.random_bool(0.6) {
+                    self.rng.random_range(0..=6) // overnight batch
+                } else {
+                    self.rng.random_range(20..=23) // evening batch
+                }
             } else {
-                self.rng.random_range(0..24)
+                self.rng.random_range(0..24) // 30% any time
             };
             let minute = self.rng.random_range(0..60);
             let second = self.rng.random_range(0..60);
-            return NaiveTime::from_hms_opt(hour.clamp(0, 23) as u32, minute, second)
+            return NaiveTime::from_hms_opt(hour as u32, minute, second)
                 .expect("valid date/time components");
         }
 
@@ -916,5 +915,51 @@ mod tests {
         let partial = TimePeriod::months(2024, 1, 6);
         assert!(partial.total_days() > 180);
         assert!(partial.total_days() < 185);
+    }
+
+    #[test]
+    fn test_automated_posting_time_distribution() {
+        let mut sampler = TemporalSampler::new(42);
+        let n = 10_000;
+        let mut hour_counts = [0u32; 24];
+
+        for _ in 0..n {
+            let time = sampler.sample_time(false); // automated (non-human)
+            let hour = time.hour() as usize;
+            hour_counts[hour] += 1;
+        }
+
+        // No single hour should exceed 25% of all samples
+        let max_allowed = (n as f64 * 0.25) as u32;
+        for (hour, &count) in hour_counts.iter().enumerate() {
+            assert!(
+                count <= max_allowed,
+                "Hour {} has {} samples ({:.1}%), exceeding 25% threshold of {}",
+                hour,
+                count,
+                (count as f64 / n as f64) * 100.0,
+                max_allowed,
+            );
+        }
+
+        // Batch window hours (0-6, 20-23) should collectively have the majority
+        let batch_window: u32 = hour_counts[0..=6].iter().sum::<u32>()
+            + hour_counts[20..=23].iter().sum::<u32>();
+        let batch_pct = batch_window as f64 / n as f64;
+        assert!(
+            batch_pct > 0.40,
+            "Batch window hours (0-6, 20-23) should have >40% of samples, got {:.1}%",
+            batch_pct * 100.0,
+        );
+
+        // Verify at least some spread: overnight (0-6) and evening (20-23) both populated
+        let overnight: u32 = hour_counts[0..=6].iter().sum();
+        let evening: u32 = hour_counts[20..=23].iter().sum();
+        assert!(
+            overnight > 0 && evening > 0,
+            "Both overnight ({}) and evening ({}) windows should have samples",
+            overnight,
+            evening,
+        );
     }
 }
