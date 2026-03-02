@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-03-02
+
+### Added
+
+- **GenerationSession**: Stateful multi-period generation with `.dss` checkpoint files (`datasynth-runtime`, `datasynth-core`)
+  - `GenerationPeriod` splits total time span into fiscal-year-aligned periods
+  - `SessionState` tracks RNG seeds, balance state, document IDs, entity counts across periods
+  - Deterministic seed advancement via `advance_seed()` ensures reproducibility
+- **Incremental generation**: `--append --months N` adds more periods to an existing session (`datasynth-cli`)
+- **Fraud scenario packs**: 5 built-in YAML packs (`--fraud-scenario revenue_fraud|payroll_ghost|vendor_kickback|management_override|comprehensive`) (`datasynth-config`)
+  - Deep-merge into config with `apply_fraud_packs()`, compatible with `--fraud-rate` override
+- **StreamPipeline**: Phase-aware streaming via `PhaseSink` trait (`datasynth-runtime`)
+  - File target (JSONL), HTTP target, and no-op sink
+  - Tracks items emitted, bytes sent, phases completed
+- **OCEL 2.0 enrichment** (`datasynth-ocpm`)
+  - Lifecycle state machines for PurchaseOrder, SalesOrder, VendorInvoice with probabilistic transitions
+  - Multi-object correlation events: ThreeWayMatch, PaymentAllocation, BankReconciliation
+  - Resource pool workload modeling with RoundRobin, LeastBusy, SkillBased assignment
+  - Enriched OcpmEvent: `from_state`, `to_state`, `resource_workload`, `correlation_id` fields
+- **CLI flags**: `--fiscal-year-months`, `--append`, `--months`, `--fraud-scenario`, `--fraud-rate`, `--stream-file` (`datasynth-cli`)
+- **SessionSchemaConfig**: Config schema for session behavior (checkpointing, per-period output) (`datasynth-config`)
+- 13 integration tests across session, OCEL, and fraud pack modules
+
 ## [0.10.0] - 2026-03-02
 
 ### Added

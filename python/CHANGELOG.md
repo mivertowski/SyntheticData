@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.7.0 (2026-03-02)
+
+### Added
+
+- Matches Rust v0.11.0 unified generation pipeline release
+- GenerationSession: stateful multi-period generation with `.dss` checkpoint files
+- Incremental generation: `--append --months N` for extending existing sessions
+- 5 built-in fraud scenario packs with deep-merge config application
+- StreamPipeline: phase-aware streaming with file, HTTP, and no-op sinks
+- OCEL 2.0 enrichment: lifecycle state machines, correlation events, resource pool workload modeling
+- New CLI flags: `--fiscal-year-months`, `--append`, `--months`, `--fraud-scenario`, `--fraud-rate`, `--stream-file`
+- 13 new integration tests for session, OCEL enrichment, and fraud packs
+
 ## 1.6.0 (2026-03-02)
 
 ### Added
