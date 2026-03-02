@@ -224,7 +224,11 @@ impl JournalEntryGenerator {
             approval_threshold: rust_decimal::Decimal::new(10000, 0), // $10,000 default threshold
             batch_state: None,
             drift_controller: None,
-            business_day_calculator: None,
+            // Always provide a basic BusinessDayCalculator so that weekend/holiday
+            // filtering is active even when temporal_patterns is not explicitly enabled.
+            business_day_calculator: Some(BusinessDayCalculator::new(
+                HolidayCalendar::new(Region::US, start_date.year()),
+            )),
             processing_lag_calculator: None,
             temporal_patterns_config: None,
         }
@@ -1668,7 +1672,7 @@ impl JournalEntryGenerator {
             if let Some(user) = pool.get_random_user(persona, &mut self.rng) {
                 return (
                     user.user_id.clone(),
-                    format!("{:?}", user.persona).to_lowercase(),
+                    user.persona.to_string(),
                 );
             }
         }
@@ -2309,5 +2313,46 @@ mod tests {
                 entry.header.posting_date
             );
         }
+    }
+
+    #[test]
+    fn test_default_generation_filters_weekends() {
+        // Verify that weekend entries are <5% even when temporal_patterns is NOT enabled.
+        // This tests the fix where new_with_full_config always creates a default
+        // BusinessDayCalculator with US holidays as a fallback.
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        let total = 500;
+        let entries: Vec<JournalEntry> = (0..total).map(|_| je_gen.generate()).collect();
+
+        let weekend_count = entries
+            .iter()
+            .filter(|e| {
+                let wd = e.header.posting_date.weekday();
+                wd == chrono::Weekday::Sat || wd == chrono::Weekday::Sun
+            })
+            .count();
+
+        let weekend_pct = weekend_count as f64 / total as f64;
+        assert!(
+            weekend_pct < 0.05,
+            "Expected weekend entries <5% of total without temporal_patterns enabled, \
+             but got {:.1}% ({}/{})",
+            weekend_pct * 100.0,
+            weekend_count,
+            total
+        );
     }
 }
