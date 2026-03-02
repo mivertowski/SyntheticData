@@ -133,6 +133,36 @@ assessing whether the generated patterns have sufficient salience for ML
 models while remaining realistic.
 
 % ─────────────────────────────────────────────────────────────────────
+\subsection{Extended Evaluators}
+\label{sec:eval_extended}
+
+Four additional evaluators were introduced in v0.11.0:
+
+\paragraph{Multi-Period Coherence.}
+Validates that opening balances equal prior closing balances, that document
+IDs are sequential across periods, and that entity references remain
+consistent throughout the generation horizon.
+
+\paragraph{Fraud Pack Effectiveness.}
+Measures detection rate at configurable thresholds, performs false positive
+analysis, and computes coverage metrics per fraud scenario pack
+(\Cref{sec:anom_fraud_packs}).
+
+\paragraph{OCEL Enrichment Quality.}
+Assesses state transition coverage, correlation event linking accuracy, and
+resource utilization distribution across workload pools in OCEL~2.0 event
+logs.
+
+\paragraph{Causal Intervention Magnitude.}
+Compares KPI deltas against expected magnitudes from the causal DAG, verifies
+propagation paths, and validates that preservation constraints are maintained
+under intervention.
+
+Additionally, counterfactual evaluation is supported via the
+\texttt{DiffEngine}, which computes record-level diffs between baseline and
+counterfactual outputs (see Section~\ref{sec:counterfactual}).
+
+% ─────────────────────────────────────────────────────────────────────
 \subsection{AutoTuner}
 \label{sec:eval_autotuner}
 

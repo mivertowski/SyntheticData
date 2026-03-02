@@ -10,7 +10,11 @@ copula-based dependency modeling, relational completeness through multi-process
 document-flow generation with three-way matching, anomaly realism through
 multi-stage fraud schemes with difficulty and severity scoring, and formal
 privacy guarantees through differential-privacy--protected fingerprint
-extraction.
+extraction.  Beyond these core capabilities, \system{} provides a
+counterfactual simulation engine built on causal DAGs for what-if analysis
+of financial process dependencies, and supports five accounting frameworks
+(US~GAAP, IFRS, French~GAAP, German~GAAP, and dual-reporting) with
+jurisdiction-specific country packs.
 
 Our experimental evaluation demonstrates that \system{} produces data that
 (i)~satisfies all hard accounting invariants (balanced entries, accounting
@@ -18,7 +22,7 @@ equation, subledger reconciliation) at 100\% compliance,
 (ii)~achieves Benford first-digit MAD scores below 0.006 (close conformity),
 (iii)~preserves configured correlation structures within $< 1\%$ deviation,
 and (iv)~supports downstream fraud detection models achieving F1 scores of
-0.84 with graph neural networks.  The system generates over $10^5$ journal
+0.84 with graph neural networks.  The system generates over $2 \times 10^5$ journal
 entries per second on a single core, scaling near-linearly to 16 cores.
 
 % ─────────────────────────────────────────────────────────────────────
@@ -40,9 +44,12 @@ Several limitations warrant acknowledgment:
     structures, though at the cost of reproducibility and interpretability.
 
   \item \textbf{Temporal realism.}  While \system{} models business-day
-    calendars, period-end dynamics, and economic cycles, it does not capture
-    event-driven disruptions (e.g., supply-chain shocks, regulatory changes)
-    that produce non-stationary patterns in real data.
+    calendars, period-end dynamics, and economic cycles, it does not fully
+    capture event-driven disruptions that produce non-stationary patterns
+    in real data.  This limitation is now partially addressed by the
+    counterfactual simulation engine, which supports MacroShock,
+    ProcessChange, and EntityEvent interventions, but the space of possible
+    disruptions remains large.
 
   \item \textbf{Cross-enterprise patterns.}  The fingerprint module extracts
     and synthesizes data for a single enterprise.  Cross-organization
@@ -72,19 +79,16 @@ We identify several directions for future research:
     to tune anomaly injection parameters such that downstream detector
     performance matches a target difficulty curve.
 
-  \item \textbf{Real-time streaming generation.}  Extending the server
-    module to produce continuous streaming data for testing real-time
-    fraud detection and continuous auditing systems.
-
   \item \textbf{Regulatory sandbox integration.}  Packaging \system{} as a
     compliance-testing tool for regulatory sandboxes (e.g., FinTech
     regulatory environments), where synthetic data can substitute for
     production data in certification workflows.
 
-  \item \textbf{Expanded graph analytics.}  Incorporating temporal graph
-    networks (TGN) and dynamic graph export to support research on
-    time-evolving fraud patterns.  The temporal accounting network
-    formalism of~\citet{ivertowski2024temporal}, where
+  \item \textbf{Temporal graph analytics.}  While \system{} now exports
+    graphs covering 50+ entity types and 28 edge types, incorporating
+    temporal graph networks (TGN) and dynamic graph export would further
+    support research on time-evolving fraud patterns.  The temporal
+    accounting network formalism of~\citet{ivertowski2024temporal}, where
     $G(t_0,t_1) = A(t_0,t_1) \times E(t_0,t_1)$ defines the graph as a
     function of time, could be integrated to enable cross-correlation and
     auto-correlation analysis on synthesized accounting networks.
@@ -95,6 +99,16 @@ We identify several directions for future research:
     construction of transaction graphs from synthesized journal entries,
     supporting interactive audit analytics and streaming fraud detection
     scenarios.
+
+  \item \textbf{Learned transfer functions.}  Replacing the parametric
+    causal DAG transfer functions in the counterfactual engine with neural
+    network-based learned functions fitted from real-world data, enabling
+    more faithful propagation of intervention effects.
+
+  \item \textbf{Cross-enterprise federation.}  Extending the
+    counterfactual framework to model cascading effects across supply chain
+    partners, enabling simulation of multi-organization scenarios such as
+    supplier disruptions and industry-wide regulatory changes.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────

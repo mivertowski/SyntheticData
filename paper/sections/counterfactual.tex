@@ -1,0 +1,366 @@
+% sections/counterfactual.tex — Counterfactual Simulation Engine
+\section{Counterfactual Simulation}
+\label{sec:counterfactual}
+
+A growing need in audit analytics and financial risk management is the
+ability to answer ``what if'' questions: \emph{What would financial
+statements look like under a recession? How would a control failure
+propagate through the enterprise?}  Traditional synthetic data generators
+produce a single dataset from fixed parameters.  \system{} extends this
+with a \emph{counterfactual simulation engine} that models causal
+dependencies between financial processes, applies structured interventions,
+and generates paired baseline/counterfactual datasets suitable for causal
+inference research, stress testing, and audit planning.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Causal DAG Model}
+\label{sec:cf_dag}
+
+\system{} models the interdependencies among financial processes as a
+directed acyclic graph (DAG).  Each node represents an observable or
+latent parameter of the generation model, and each edge encodes the
+mechanism by which a change in one parameter propagates to another.
+
+\begin{definition}[Financial Causal DAG]
+\label{def:causal_dag}
+A \emph{financial causal DAG} is a tuple $G = (V, E, \tau, w)$ where:
+\begin{itemize}
+  \item $V = \{v_1, \ldots, v_n\}$ is a set of \emph{process nodes},
+    each with a baseline value $b_i \in \R$, an optional bound interval
+    $[\ell_i, u_i]$, and a category
+    $c_i \in \{\text{Macro}, \text{Operational}, \text{Control},
+    \text{Financial}, \text{Behavioral}, \text{Regulatory},
+    \text{Outcome}\}$.
+  \item $E \subseteq V \times V$ is a set of directed edges such that
+    $(V, E)$ is acyclic.
+  \item $\tau : E \to \mathcal{T}$ assigns a \emph{transfer function}
+    to each edge, drawn from a family $\mathcal{T}$ of eight function
+    types (\Cref{tab:transfer_functions}).
+  \item $w : E \to [0,1]$ assigns a \emph{strength} weight to each
+    edge, modulating the magnitude of the transferred effect.
+\end{itemize}
+Additionally, each edge carries a \emph{lag} $\lambda_e \in \N_0$
+(in months), encoding the temporal delay before an upstream change
+manifests downstream.
+\end{definition}
+
+The default DAG shipped with \system{} contains 17 nodes spanning
+macroeconomic drivers, operational parameters, control variables, and
+financial outcome metrics (\Cref{tab:dag_nodes}).
+
+\begin{table}[t]
+\centering
+\caption{Causal DAG nodes with default bound intervals.  Nodes are
+  organized by category; unbounded quantities use the effective range
+  of the generation model.}
+\label{tab:dag_nodes}
+\small
+\begin{tabular}{clccc}
+\toprule
+\textbf{ID} & \textbf{Node} & \textbf{Category}
+  & \textbf{Lower} & \textbf{Upper} \\
+\midrule
+$v_1$    & GDP growth              & Macro       & $-0.10$ & $0.15$ \\
+$v_2$    & Interest rates          & Macro       & $0.00$  & $0.20$ \\
+$v_3$    & Transaction volume      & Operational & $0$     & $\infty$ \\
+$v_4$    & Avg.\ transaction amount & Operational & $0$    & $\infty$ \\
+$v_5$    & Control effectiveness   & Control     & $0.0$   & $1.0$ \\
+$v_6$    & Fraud detection rate    & Outcome     & $0.0$   & $1.0$ \\
+$v_7$    & Misstatement risk       & Outcome     & $0.0$   & $1.0$ \\
+$v_8$    & Staffing level          & Operational & $0.0$   & $\infty$ \\
+$v_9$    & Automation rate         & Operational & $0.0$   & $1.0$ \\
+$v_{10}$ & Material cost           & Financial   & $0$     & $\infty$ \\
+$v_{11}$ & Working capital         & Financial   & $-\infty$ & $\infty$ \\
+$v_{12}$ & Revenue growth          & Financial   & $-1.0$  & $\infty$ \\
+$v_{13}$ & Operating margin        & Financial   & $-1.0$  & $1.0$ \\
+$v_{14}$ & Audit scope             & Regulatory  & $0.0$   & $1.0$ \\
+$v_{15}$ & Regulatory burden       & Regulatory  & $0.0$   & $1.0$ \\
+$v_{16}$ & IT investment           & Operational & $0$     & $\infty$ \\
+$v_{17}$ & Process complexity      & Behavioral  & $0.0$   & $1.0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Transfer function types and their mathematical forms.
+  In each case, $x$ denotes the input delta from the upstream node's
+  baseline.}
+\label{tab:transfer_functions}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Type} & \textbf{Formula} & \textbf{Use Case} \\
+\midrule
+Linear & $ax + b$ & Proportional effects \\
+Exponential & $b(1+r)^{x}$ & Compounding growth/decay \\
+Logistic & $\frac{K}{1 + e^{-s(x - m)}}$
+  & Saturating positive effects \\
+Inverse Logistic & $\frac{K}{1 + e^{s(x - m)}}$
+  & Diminishing effectiveness \\
+Step & $\begin{cases} M & x > \theta \\ 0 & \text{otherwise} \end{cases}$
+  & Regime switches \\
+Threshold & $\min\!\big(M\frac{x-\theta}{\theta},\, S\big)$
+  & Gradual activation with cap \\
+Decay & $a \, e^{-rx}$ & Exponential decay \\
+Piecewise & linear interpolation on $\{(x_k, y_k)\}$
+  & Arbitrary empirical shapes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Causal propagation.}
+Given a set of interventions $\mathcal{I} = \{(v_j, \hat{x}_j)\}$ that
+override specific node values, the engine computes the equilibrium state
+of all nodes via forward propagation in topological order.
+\Cref{alg:propagation} formalizes this procedure.
+
+\begin{algorithm}[t]
+\caption{Causal forward propagation with lag awareness.}
+\label{alg:propagation}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\Input{Causal DAG $G = (V, E, \tau, w)$; interventions
+  $\mathcal{I} = \{(v_j, \hat{x}_j)\}$; current month $t$}
+\Output{Node values $\{x_i\}_{i=1}^{|V|}$}
+\BlankLine
+Compute topological order $\sigma = (\sigma_1, \ldots, \sigma_{|V|})$
+  via Kahn's algorithm\;
+\ForEach{$v_i \in V$}{
+  $x_i \leftarrow b_i$ \tcp*{initialize to baseline}
+}
+\ForEach{$(v_j, \hat{x}_j) \in \mathcal{I}$}{
+  $x_j \leftarrow \hat{x}_j$ \tcp*{apply direct interventions}
+}
+\For{$k = 1$ \KwTo $|V|$}{
+  $v_i \leftarrow \sigma_k$\;
+  \If{$(v_i, \cdot) \in \mathcal{I}$}{\textbf{continue}\;}
+  $\Delta_i \leftarrow 0$\;
+  \ForEach{edge $e = (v_p, v_i) \in E$}{
+    \If{$t \geq \lambda_e$}{
+      $\delta_p \leftarrow x_p - b_p$\;
+      $\Delta_i \leftarrow \Delta_i + \tau_e(\delta_p) \cdot w_e$\;
+    }
+  }
+  $x_i \leftarrow \text{clamp}\big(b_i + \Delta_i,\; \ell_i,\; u_i\big)$\;
+}
+\Return $\{x_i\}_{i=1}^{|V|}$\;
+\end{algorithm}
+
+The topological ordering is computed once at DAG validation time using
+Kahn's algorithm~\citep{kahn1962topological} and cached.  Validation also
+checks for duplicate node identifiers and dangling edge references,
+returning a descriptive error if the graph is cyclic or malformed.  Node
+bounds clamping (line~13 of \Cref{alg:propagation}) ensures that
+propagated values remain physically plausible---for example, a fraud
+detection rate cannot exceed 1.0 or drop below 0.0 regardless of
+intervention severity.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Intervention Framework}
+\label{sec:cf_interventions}
+
+An \emph{intervention} is a structured perturbation applied to the
+generation process.  \system{} defines eight intervention types,
+organized by the aspect of the enterprise they target:
+
+\begin{enumerate}
+  \item \textbf{ParameterShift.} A direct change to a configuration
+    value, specified via a dot-path into the YAML schema
+    (e.g., \texttt{distributions.amounts.components[0].mu}).
+    Supports four interpolation modes during gradual onset: linear,
+    exponential, logistic, and step.
+
+  \item \textbf{ControlFailure.} Reduces or eliminates the effectiveness
+    of internal controls.  Four subtypes are modeled:
+    effectiveness reduction, complete bypass, intermittent failure
+    (with configurable failure probability), and delayed detection
+    (with a detection lag in months).
+
+  \item \textbf{MacroShock.} Simulates macroeconomic events such as
+    recession, inflation spike, currency crisis, interest rate shock,
+    commodity shock, pandemic disruption, supply chain crisis, or credit
+    crunch.  Each shock type maps to pre-configured causal DAG
+    node overrides; a severity multiplier scales the effect.
+
+  \item \textbf{EntityEvent.} Targets specific entities: vendor default,
+    customer churn, employee departure, new vendor onboarding,
+    merger/acquisition, vendor collusion, customer consolidation, or key
+    person risk.  Entity selection supports filtering by cluster,
+    attribute, or explicit ID list.
+
+  \item \textbf{ProcessChange.} Modifies business processes: approval
+    threshold changes, new approval levels, system migrations, process
+    automation, outsourcing transitions, policy changes, or
+    reorganizations.
+
+  \item \textbf{RegulatoryChange.} Models regulatory shifts: new standard
+    adoption, materiality threshold changes, reporting requirement changes,
+    or tax rate changes.
+
+  \item \textbf{Composite.} Bundles multiple interventions into a named
+    package with conflict resolution semantics (first-wins, last-wins,
+    average, or error on conflict).
+
+  \item \textbf{Custom.} Provides arbitrary config path overrides and
+    downstream causal triggers for user-defined scenarios.
+\end{enumerate}
+
+\paragraph{Intervention timing.}
+Each intervention specifies a timing profile consisting of a start month,
+optional duration, and an \emph{onset type} that controls how the
+intervention ramps in:
+
+\begin{itemize}
+  \item \textbf{Sudden:} Full effect at the start month.
+  \item \textbf{Gradual:} Linear ramp from zero to full effect over a
+    configurable ramp period of $r$ months.  At month $t$ within the ramp
+    window:
+    \begin{equation}
+    \alpha(t) = \min\!\left(\frac{t - t_{\text{start}}}{r},\; 1\right)
+    \label{eq:gradual_onset}
+    \end{equation}
+  \item \textbf{Oscillating:} Sinusoidal modulation
+    $\alpha(t) = \tfrac{1}{2}(1 - \cos(\pi (t - t_{\text{start}}) / r))$,
+    enabling cyclic stress patterns.
+\end{itemize}
+
+\noindent The \texttt{InterventionManager} validates timing (start month
+within generation window, non-negative duration), checks intervention
+bounds against node constraints, resolves config paths, and applies
+priority-based conflict resolution when multiple interventions target
+the same parameter.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Paired Generation and Diff Analysis}
+\label{sec:cf_paired}
+
+The central output of counterfactual simulation is a \emph{paired
+dataset}: a baseline generated from the original configuration and a
+counterfactual generated from a mutated configuration, both sharing the
+same deterministic seed (\Cref{sec:arch_determinism}).  This ensures
+that differences between the two datasets are attributable solely to the
+intervention, not to random variation.
+
+\paragraph{Config mutation.}
+The \texttt{ConfigMutator} translates propagated causal effects into
+concrete configuration changes.  It serializes the base
+\texttt{GeneratorConfig} to a JSON value tree, navigates dot-paths
+(including array indexing, e.g., \texttt{components[0].mu}), and
+applies the new values.  After mutation, the modified configuration is
+deserialized back and validated against scenario constraints.
+
+\paragraph{Scenario engine workflow.}
+The \texttt{ScenarioEngine} orchestrates the end-to-end process:
+\begin{enumerate}
+  \item \textbf{Load and validate} the scenario definition (interventions,
+    timing, constraints).
+  \item \textbf{Propagate} interventions through the causal DAG per month
+    via \Cref{alg:propagation}.
+  \item \textbf{Mutate} the base config using propagated node values.
+  \item \textbf{Generate} baseline and counterfactual datasets from the
+    original and mutated configs, respectively.
+  \item \textbf{Diff} the two datasets using the \texttt{DiffEngine}.
+\end{enumerate}
+
+\paragraph{Diff analysis.}
+The \texttt{DiffEngine} produces a \texttt{ScenarioDiff} comprising four
+complementary views:
+
+\begin{itemize}
+  \item \textbf{ImpactSummary:} KPI-level deltas (absolute change,
+    percentage change, direction) for key financial metrics, plus
+    financial statement impacts (revenue, COGS, margin, net income,
+    total assets, liabilities, cash flow).
+  \item \textbf{RecordLevelDiff:} Per-file comparison of added, removed,
+    modified, and unchanged records, with sample field-level changes.
+  \item \textbf{AggregateComparison:} Statistical comparison of
+    distributions, counts, and ratios across the two datasets.
+  \item \textbf{InterventionTrace:} Causal attribution linking each
+    observed change back to the intervention(s) that caused it, including
+    the propagation path through the DAG.
+\end{itemize}
+
+Additionally, \texttt{AnomalyImpact} and \texttt{ControlImpact}
+structures capture how the intervention affected anomaly injection rates
+and internal control effectiveness, including whether the counterfactual
+introduced new material weaknesses (per SOX~404
+classification~\citep{sox2002}).
+
+\paragraph{CLI interface.}
+The scenario subsystem is exposed via four CLI subcommands:
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Command} & \textbf{Description} \\
+\midrule
+\texttt{datasynth-data scenario list} & List built-in and user scenarios \\
+\texttt{datasynth-data scenario validate} & Validate scenario YAML \\
+\texttt{datasynth-data scenario generate} & Run paired generation \\
+\texttt{datasynth-data scenario diff} & Compute diff on existing outputs \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Scenario Constraints}
+\label{sec:cf_constraints}
+
+Interventions perturb generation parameters, but certain accounting
+invariants must hold unconditionally---even under extreme counterfactual
+scenarios.  Without enforcement, a macro shock that halves transaction
+volume could inadvertently produce unbalanced journal entries or orphaned
+document references, yielding a dataset that is structurally invalid
+rather than merely counterfactual.
+
+\begin{definition}[Scenario Constraint Set]
+\label{def:constraints}
+A \emph{scenario constraint set} $\mathcal{C}$ is a collection of
+Boolean predicates over the mutated configuration $\hat{\theta}$ and
+the generated dataset $\hat{D}$:
+\[
+\mathcal{C} = \{c_k : (\hat{\theta}, \hat{D}) \to \{\text{\textsc{true}},
+  \text{\textsc{false}}\}\}_{k=1}^{|\mathcal{C}|}
+\]
+A counterfactual generation is \emph{valid} iff $\forall\, c_k \in
+\mathcal{C}: c_k(\hat{\theta}, \hat{D}) = \text{\textsc{true}}$.
+\end{definition}
+
+\system{} enforces four built-in constraints, each enabled by default:
+
+\begin{enumerate}
+  \item \textbf{Accounting identity} (\texttt{preserve\_accounting\_identity}).
+    For every journal entry $j$ in the counterfactual dataset,
+    $\sum_{l \in j} l.\text{debit} = \sum_{l \in j} l.\text{credit}$
+    (\Cref{eq:balanced}).
+
+  \item \textbf{Document chain integrity}
+    (\texttt{preserve\_document\_chains}).
+    Every document reference (PO$\to$GR$\to$Invoice$\to$Payment) resolves
+    to a valid target record, and timestamps respect causal ordering.
+
+  \item \textbf{Period close execution}
+    (\texttt{preserve\_period\_close}).
+    The period-close engine (accruals, depreciation, FX translation,
+    eliminations) runs to completion in every fiscal period, even if
+    reduced transaction volume would otherwise leave certain accounts
+    empty.
+
+  \item \textbf{Balance coherence}
+    (\texttt{preserve\_balance\_coherence}).
+    The accounting equation $A = L + E$ holds at each period-end
+    balance sheet.
+\end{enumerate}
+
+The \texttt{ConfigMutator} validates these constraints \emph{after}
+applying mutations, rejecting any configuration that would violate them.
+Users may additionally define custom constraints as range bounds on
+arbitrary config paths (e.g., requiring that the anomaly injection rate
+never exceeds 15\% even under stress).
+
+This constraint mechanism ensures that counterfactual datasets remain
+usable for downstream tasks---an auditor training a misstatement
+detection model on the counterfactual output can trust that structural
+integrity holds, and that observed differences reflect the intended
+intervention rather than generation artifacts.

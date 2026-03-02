@@ -211,3 +211,28 @@ Each typology generates persona-based transaction patterns with risk-tier
 profiles (Low, Medium, High, Very High) and sophistication levels (Basic,
 Intermediate, Advanced).  Ground-truth AML labels are exported alongside
 transaction data.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Fraud Scenario Packs}
+\label{sec:anom_fraud_packs}
+
+\system{} provides five pre-built fraud scenario packs as YAML configurations
+that can be deep-merged into any generation config:
+
+\begin{itemize}
+  \item \texttt{revenue\_fraud}: Revenue manipulation patterns including
+    channel stuffing, bill-and-hold, and premature recognition.
+  \item \texttt{payroll\_ghost}: Ghost employee schemes with fictitious
+    payroll entries.
+  \item \texttt{vendor\_kickback}: Vendor collusion with inflated invoices
+    and split payments.
+  \item \texttt{management\_override}: Override of internal controls by
+    senior personnel.
+  \item \texttt{comprehensive}: Combined pack with elements from all four
+    categories.
+\end{itemize}
+
+These packs configure anomaly rates, affected account ranges, temporal
+distribution, and multi-stage progression.  They are applied via
+\texttt{apply\_fraud\_packs()} which performs a deep-merge, and can be
+overridden with \texttt{-{}-fraud-rate} for rate adjustment.

@@ -331,14 +331,19 @@ that the difficulty scoring produces a meaningful proxy for detectability.
 \toprule
 \textbf{Record Type} & \textbf{Throughput (records/sec)} \\
 \midrule
-Journal entries           & 112{,}000 \\
-Journal line items        & 340{,}000 \\
+Journal entries           & 200{,}000+ \\
+Journal line items        & 680{,}000+ \\
 Master data (combined)    & 58{,}000 \\
 Document-flow records     & 85{,}000 \\
 Subledger records         & 95{,}000 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\noindent
+The journal entry and line item throughput improvements stem from cached
+temporal CDFs, \texttt{SmallVec} line items, parallel generation with
+deterministic seed splitting, and \texttt{itoa}/\texttt{ryu} fast formatting.
 
 \paragraph{Distribution Sampling.}
 Micro-benchmarks for individual samplers:

@@ -63,8 +63,9 @@ by business process: P2P document flows, O2C chains, S2C sourcing,
 HR/payroll, manufacturing, period-close, intercompany, and anomaly injection.
 \texttt{datasynth-banking} adds KYC/AML-specific generation with five money
 laundering typologies.  \texttt{datasynth-ocpm} produces OCEL~2.0 compliant
-event logs.  \texttt{datasynth-standards} implements IFRS, US~GAAP, ISA, SOX,
-and PCAOB accounting and audit standard models.
+event logs.  \texttt{datasynth-standards} implements five accounting frameworks
+(US~GAAP, IFRS, French GAAP/PCG, German GAAP/HGB, and dual-reporting)
+together with ISA, SOX, and PCAOB audit standard models.
 
 \paragraph{Layer 4: Analytics.}
 \texttt{datasynth-eval} provides the evaluation framework (15 coherence
@@ -168,3 +169,69 @@ granularity and transaction volume.
 Configuration validation enforces invariants such as ascending approval
 thresholds, distribution weights summing to 1.0 ($\pm 0.01$),
 period lengths in $[1, 120]$ months, and rates in $[0, 1]$.
+
+\paragraph{Multi-GAAP Framework.}
+\system{} supports framework-aware generation across five accounting
+standards: US~GAAP, IFRS, French GAAP (Plan Comptable G\'{e}n\'{e}ral),
+German GAAP (HGB), and dual-reporting mode.  Each framework determines GL
+account numbering conventions (e.g., SKR04 for German, PCG classes for
+French), account classification rules, and depreciation methods.  Seven
+country packs (FR, JP, CN, IN, IT, ES, CA) bundle currency, tax regime,
+fiscal-year convention, and banking configurations into reusable presets.
+German jurisdictions additionally support GoBD-compliant audit export,
+and French jurisdictions produce FEC (\emph{Fichier des \'{E}critures
+Comptables}) extracts, satisfying the structured data access requirements
+of their respective tax authorities.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Streaming Pipeline}
+\label{sec:arch_streaming}
+
+\system{} supports phase-aware streaming output via the
+\texttt{PhaseSink} trait, which defines a uniform interface for emitting
+generated records as they are produced rather than buffering entire
+datasets in memory.  Three sink implementations are provided: a file sink
+that writes JSONL (newline-delimited JSON), an HTTP sink that pushes
+records to a configurable endpoint, and a no-op sink for benchmarking.
+Each sink tracks items emitted, bytes sent, and generation phases
+completed, enabling real-time consumption of synthetic data by downstream
+systems and progress monitoring by the orchestrator.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Multi-Period Session Management}
+\label{sec:arch_sessions}
+
+Enterprise datasets often span multiple fiscal years, with each period
+building on the prior period's closing balances and entity state.
+\system{} addresses this with \texttt{GenerationSession}, a stateful
+session manager that persists its state to \texttt{.dss} checkpoint files
+between runs.  A \texttt{GenerationPeriod} splitter divides the configured
+total timespan into fiscal-year-aligned periods.
+\texttt{SessionState} tracks RNG seeds, account balance snapshots,
+document-ID counters, and entity counts across periods, enabling
+incremental generation via \texttt{-{}-append -{}-months~N}.
+Deterministic seed advancement ($s_{t+1} = f(s_t, t)$) ensures that
+multi-period runs produce bitwise-identical output regardless of whether
+they execute in a single invocation or across multiple incremental
+sessions.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Performance}
+\label{sec:arch_performance}
+
+Versions 0.9--0.11 introduced several throughput optimizations.
+Line-item collections use \texttt{SmallVec<[T; 4]>} to avoid heap
+allocation for typical entry sizes.  Temporal CDF tables are precomputed
+and cached, and company selection uses binary search over cumulative
+weights.  Integer and floating-point formatting use the \texttt{itoa} and
+\texttt{ryu} crates, respectively, bypassing \texttt{std::fmt}.
+Output compression uses \texttt{zstd} at configurable levels (1--9).
+
+For multi-core generation, the \texttt{ParallelGenerator} trait splits the
+seed space deterministically across threads, so that the union of
+per-thread outputs is identical to a single-threaded run with the same
+seed.  Master data and journal-entry generation are fully parallelized
+under this scheme, achieving near-linear scaling up to 8~cores.
+Collectively these changes yield approximately $2\times$
+single-threaded throughput, exceeding $2 \times 10^5$ journal entries
+per second on a modern x86-64 core.

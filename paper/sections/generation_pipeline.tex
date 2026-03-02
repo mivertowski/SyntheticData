@@ -137,10 +137,17 @@ catalog items, and supplier scorecards.
 \paragraph{HR/Payroll.}
 Payroll runs with line items (base pay, overtime, deductions, taxes),
 time entries, and expense reports with configurable approval workflows.
+A benefit enrollment generator tracks employee plan selections
+(health, dental, vision, retirement) with employer and employee
+contribution amounts, enrollment windows, and coverage periods.
 
 \paragraph{Manufacturing.}
 Production orders, routing operations, quality inspections with
-characteristics, and cycle counts.
+characteristics, and cycle counts.  A bill-of-materials (BOM) component
+generator produces multi-level product structures with phantom assembly
+support and quantity-per calculations.  Inventory movement tracking
+covers receipt, issue, transfer, return, scrap, and adjustment movement
+types, each posting corresponding material-ledger journal entries.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Subledger and Period-Close Processing}
@@ -219,6 +226,19 @@ exports them in formats suitable for graph neural network (GNN) research:
 Export formats: PyTorch Geometric (\texttt{.pt} tensors), Neo4j (CSV +
 Cypher scripts), and DGL (heterograph with typed nodes/edges).
 
+As of v0.10, the graph module covers over 50 entity types across ten
+process families (Tax, Treasury, ESG, Project Accounting, Source-to-Contract,
+Hire-to-Retire, Manufacturing, Governance, and core P2P/O2C), connected by
+28~relationship edge types with explicit cardinality constraints (e.g.,
+one-to-many for invoice-to-line-item, many-to-many for vendor-to-material).
+A typed \texttt{ToNodeProperties} trait maps domain models to seven
+property-value types (\texttt{String}, \texttt{Decimal}, \texttt{Integer},
+\texttt{Boolean}, \texttt{Date}, \texttt{DateTime}, \texttt{List}),
+ensuring lossless round-tripping through graph serialization.  A
+hypergraph builder extends the model to multi-entity relationships---for
+example, a three-way match hyperedge linking a purchase order, goods
+receipt, and vendor invoice simultaneously.
+
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Process Mining (OCEL 2.0)}
 \label{sec:gen_ocel}
@@ -230,3 +250,18 @@ relationships.  Process variants (standard P2P, P2P with three-way match
 variance, full O2C, O2C with returns) are generated with empirically
 calibrated frequency distributions.  The resulting logs are directly
 importable into process mining tools such as PM4Py and Celonis.
+
+Version 0.11 enriches the OCEL module with lifecycle state machines for
+\texttt{PurchaseOrder}, \texttt{SalesOrder}, and \texttt{VendorInvoice}
+objects.  Each state machine defines probabilistic transitions (e.g.,
+\emph{Created} $\to$ \emph{Approved} with $p=0.92$, \emph{Created} $\to$
+\emph{Rejected} with $p=0.08$), producing realistic variant distributions
+without manual scripting.  Multi-object correlation events---three-way
+match, payment allocation, and bank reconciliation---link objects across
+process boundaries in a single event, reflecting the cross-functional
+nature of enterprise operations.  Resource pool workload modeling assigns
+events to users via configurable strategies (round-robin, least-busy,
+skill-based), and enriched events carry \texttt{from\_state},
+\texttt{to\_state}, \texttt{resource\_workload}, and
+\texttt{correlation\_id} attributes for downstream conformance checking
+and resource-perspective analysis.

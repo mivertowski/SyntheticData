@@ -227,3 +227,70 @@ Long-horizon datasets incorporate regime changes via:
 where $P$ is the cycle period (default 48~months), $A$ is the amplitude
 (0.15), and $d_r$ is the recession depth (0.25).  Regime switches are
 modeled as Markov transitions with configurable probabilities.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Causal Transfer Functions}
+\label{sec:stat_transfer_functions}
+
+The counterfactual simulation engine (\Cref{sec:counterfactual}) models
+inter-process dependencies via a causal DAG whose edges carry typed
+transfer functions.  This subsection catalogs the eight function types
+in the family $\mathcal{T}$, together with their mathematical forms and
+the financial modeling contexts in which each is most appropriate.
+
+\begin{enumerate}
+  \item \textbf{Linear} ($f(x) = \alpha x + \beta$).  Models
+    proportional relationships where the effect scales linearly with the
+    cause---for example, a percentage change in transaction volume
+    producing a proportional change in staffing requirements.
+
+  \item \textbf{Exponential} ($f(x) = \alpha \exp(\beta x)$).
+    Captures compounding or accelerating effects, such as the
+    exponential growth of fraud losses when control effectiveness
+    degrades.
+
+  \item \textbf{Logistic}
+    ($f(x) = L / (1 + \exp(-k(x - x_0)))$).  Encodes
+    saturating positive effects with a carrying capacity $L$.  Used
+    where an upstream improvement yields diminishing returns beyond a
+    threshold---e.g., increasing IT investment eventually saturates
+    automation rate.
+
+  \item \textbf{Inverse Logistic}
+    ($f(x) = L \cdot (1 - 1/(1 + \exp(-k(x - x_0))))$).  The
+    complement of the logistic, modeling diminishing effectiveness as a
+    variable increases.  Appropriate for the relationship between
+    regulatory burden and operating margin, where additional compliance
+    costs exhibit decreasing marginal impact.
+
+  \item \textbf{Step} ($f(x) = \alpha \cdot \mathbf{1}[x > t]$).
+    A discontinuous regime switch that activates at threshold $t$.
+    Models abrupt transitions such as a control bypass triggered when
+    staffing drops below a critical level.
+
+  \item \textbf{Threshold}
+    ($f(x) = \alpha \cdot \max(0, x - t)$).  A soft-activation
+    function that remains zero below threshold $t$ and grows linearly
+    above it.  Suitable for modeling effects that emerge only after a
+    minimum trigger level, such as audit scope expansion once
+    misstatement risk exceeds a materiality threshold.
+
+  \item \textbf{Decay} ($f(x; t) = \alpha \exp(-\lambda t)$).
+    Exponential decay over time, independent of the input magnitude.
+    Used to model transient shocks that dissipate---e.g., a one-time
+    macroeconomic event whose effect on transaction volume fades over
+    subsequent periods.
+
+  \item \textbf{Piecewise} ($f(x) = f_i(x)$ for $x \in [b_{i-1}, b_i)$).
+    A partition of the input domain into segments, each with its own
+    linear interpolant.  Provides maximum flexibility for encoding
+    empirically observed, non-parametric relationships---for instance,
+    mapping GDP growth to revenue growth using historical data points
+    without assuming a functional form.
+\end{enumerate}
+
+\noindent All transfer functions are composed with an edge weight
+$w_e \in [0,1]$ that scales the output, and the propagated result is
+clamped to the target node's domain bounds to ensure physical
+plausibility.  The full causal propagation algorithm and the DAG
+structure are detailed in \Cref{sec:counterfactual}.
