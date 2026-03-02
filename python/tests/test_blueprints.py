@@ -19,6 +19,7 @@ _COMPOSABLE_BLUEPRINTS = {
     "with_financial_reporting", "with_hr", "with_manufacturing",
     "with_sales_quotes", "with_process_mining",
     "with_llm_enrichment", "with_diffusion", "with_causal",
+    "with_fraud_packs", "with_scenarios", "with_streaming",
 }
 
 
@@ -376,6 +377,153 @@ class TestVolumeMapping(unittest.TestCase):
             blueprints.retail_small(transactions=50000000).to_dict()
             ["companies"][0]["annual_transaction_volume"], "hundred_m",
         )
+
+
+class TestFraudPacksBlueprint(unittest.TestCase):
+    """Test with_fraud_packs composable blueprint."""
+
+    def _base(self):
+        return blueprints.retail_small(companies=1)
+
+    def test_with_fraud_packs_default(self):
+        config = blueprints.with_fraud_packs(self._base())
+        payload = config.to_dict()
+        self.assertTrue(payload["fraud"]["enabled"])
+        self.assertEqual(payload["fraud"]["fraud_packs"], ["comprehensive"])
+
+    def test_with_fraud_packs_specific(self):
+        config = blueprints.with_fraud_packs(
+            self._base(), packs=["revenue_fraud", "payroll_ghost"],
+        )
+        payload = config.to_dict()
+        self.assertTrue(payload["fraud"]["enabled"])
+        self.assertEqual(
+            payload["fraud"]["fraud_packs"],
+            ["revenue_fraud", "payroll_ghost"],
+        )
+
+    def test_with_fraud_packs_unknown_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            blueprints.with_fraud_packs(self._base(), packs=["nonexistent_pack"])
+        self.assertIn("nonexistent_pack", str(ctx.exception))
+        self.assertIn("Valid packs", str(ctx.exception))
+
+    def test_with_fraud_packs_with_rate(self):
+        config = blueprints.with_fraud_packs(self._base(), fraud_rate=0.15)
+        payload = config.to_dict()
+        self.assertTrue(payload["fraud"]["enabled"])
+        self.assertAlmostEqual(payload["fraud"]["rate"], 0.15)
+        self.assertEqual(payload["fraud"]["fraud_packs"], ["comprehensive"])
+
+    def test_fraud_packs_constant(self):
+        self.assertEqual(len(blueprints.FRAUD_PACKS), 5)
+        self.assertIn("revenue_fraud", blueprints.FRAUD_PACKS)
+        self.assertIn("payroll_ghost", blueprints.FRAUD_PACKS)
+        self.assertIn("vendor_kickback", blueprints.FRAUD_PACKS)
+        self.assertIn("management_override", blueprints.FRAUD_PACKS)
+        self.assertIn("comprehensive", blueprints.FRAUD_PACKS)
+
+
+class TestScenariosBlueprint(unittest.TestCase):
+    """Test with_scenarios composable blueprint."""
+
+    def _base(self):
+        return blueprints.retail_small(companies=1)
+
+    def test_with_scenarios_default(self):
+        config = blueprints.with_scenarios(self._base())
+        payload = config.to_dict()
+        self.assertTrue(payload["causal"]["enabled"])
+        self.assertEqual(payload["causal"]["template"], "fraud_detection")
+        self.assertTrue(payload["causal"]["interventions"]["enabled"])
+        self.assertTrue(payload["causal"]["counterfactuals"]["enabled"])
+        self.assertEqual(payload["causal"]["counterfactuals"]["samples_per_record"], 5)
+
+    def test_with_scenarios_custom(self):
+        config = blueprints.with_scenarios(
+            self._base(), template="supply_chain", with_interventions=False,
+        )
+        payload = config.to_dict()
+        self.assertTrue(payload["causal"]["enabled"])
+        self.assertEqual(payload["causal"]["template"], "supply_chain")
+        self.assertFalse(payload["causal"]["interventions"]["enabled"])
+        self.assertTrue(payload["causal"]["counterfactuals"]["enabled"])
+
+
+class TestStreamingBlueprint(unittest.TestCase):
+    """Test with_streaming composable blueprint."""
+
+    def _base(self):
+        return blueprints.retail_small(companies=1)
+
+    def test_with_streaming_default(self):
+        config = blueprints.with_streaming(self._base())
+        payload = config.to_dict()
+        self.assertTrue(payload["streaming"]["enabled"])
+        self.assertEqual(payload["streaming"]["buffer_size"], 1000)
+        self.assertEqual(payload["streaming"]["backpressure"], "block")
+
+    def test_with_streaming_custom(self):
+        config = blueprints.with_streaming(self._base(), buffer_size=5000)
+        payload = config.to_dict()
+        self.assertTrue(payload["streaming"]["enabled"])
+        self.assertEqual(payload["streaming"]["buffer_size"], 5000)
+        self.assertEqual(payload["streaming"]["backpressure"], "block")
+
+    def test_with_streaming_invalid_backpressure(self):
+        with self.assertRaises(ValueError) as ctx:
+            blueprints.with_streaming(self._base(), backpressure="explode")
+        self.assertIn("explode", str(ctx.exception))
+        self.assertIn("Valid strategies", str(ctx.exception))
+
+    def test_with_streaming_all_valid_backpressure_strategies(self):
+        for strategy in ["block", "drop_oldest", "drop_newest", "buffer"]:
+            with self.subTest(strategy=strategy):
+                config = blueprints.with_streaming(self._base(), backpressure=strategy)
+                payload = config.to_dict()
+                self.assertEqual(payload["streaming"]["backpressure"], strategy)
+
+
+class TestNewBlueprintComposition(unittest.TestCase):
+    """Test composing the new blueprints with each other and existing ones."""
+
+    def test_composition_fraud_streaming(self):
+        config = blueprints.retail_small(companies=2)
+        config = blueprints.with_fraud_packs(
+            config, packs=["vendor_kickback", "revenue_fraud"], fraud_rate=0.08,
+        )
+        config = blueprints.with_streaming(config, buffer_size=2000)
+
+        payload = config.to_dict()
+        # Fraud settings should be present
+        self.assertTrue(payload["fraud"]["enabled"])
+        self.assertEqual(
+            payload["fraud"]["fraud_packs"],
+            ["vendor_kickback", "revenue_fraud"],
+        )
+        self.assertAlmostEqual(payload["fraud"]["rate"], 0.08)
+        # Streaming settings should be present
+        self.assertTrue(payload["streaming"]["enabled"])
+        self.assertEqual(payload["streaming"]["buffer_size"], 2000)
+        # Base config should be preserved
+        self.assertEqual(payload["global"]["industry"], "retail")
+        self.assertEqual(len(payload["companies"]), 2)
+
+    def test_composition_scenarios_fraud_streaming(self):
+        config = blueprints.manufacturing_large(companies=3)
+        config = blueprints.with_fraud_packs(config, packs=["comprehensive"])
+        config = blueprints.with_scenarios(config, template="revenue_impact")
+        config = blueprints.with_streaming(config, buffer_size=500, backpressure="drop_oldest")
+
+        payload = config.to_dict()
+        self.assertTrue(payload["fraud"]["enabled"])
+        self.assertTrue(payload["causal"]["enabled"])
+        self.assertEqual(payload["causal"]["template"], "revenue_impact")
+        self.assertTrue(payload["streaming"]["enabled"])
+        self.assertEqual(payload["streaming"]["backpressure"], "drop_oldest")
+        # Base preserved
+        self.assertEqual(payload["global"]["industry"], "manufacturing")
+        self.assertEqual(len(payload["companies"]), 3)
 
 
 if __name__ == "__main__":

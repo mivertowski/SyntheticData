@@ -71,6 +71,7 @@ class FraudSettings:
 
     enabled: Optional[bool] = None
     rate: Optional[float] = None
+    fraud_packs: Optional[List[str]] = None
 
 
 @dataclass(frozen=True)
