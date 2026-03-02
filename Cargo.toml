@@ -85,7 +85,7 @@ rust_decimal_macros = "1.36"
 
 # Random & Statistics
 rand = "0.9"
-rand_chacha = "0.9"
+rand_chacha = "0.10"
 rand_distr = "0.5"
 
 # Async runtime
