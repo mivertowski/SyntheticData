@@ -105,14 +105,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.5 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.7 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.10.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 0.11.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -503,6 +503,48 @@ do-calculus:
         impact analysis, and supply chain modeling.
 \end{itemize}
 
+\noindent
+\textit{Major expansion in v0.10.0} --- a full \textbf{Counterfactual Simulation Engine}
+for paired baseline/counterfactual dataset generation:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{CausalDAG}: 16-node default financial process DAG with 8 transfer
+        function types (Linear, Exponential, Logistic, Step, Threshold, Decay,
+        Piecewise, InverseLogistic) and forward propagation with lag support.
+  \item \textbf{8 InterventionTypes}: ParameterShift, MacroShock, ControlFailure,
+        EntityEvent, ProcessChange, RegulatoryChange, Composite, and Custom ---
+        each with timing, onset interpolation, and priority-based conflict resolution.
+  \item \textbf{ConfigMutator}: Dot-path config mutation for applying causal
+        propagation results to generation parameters.
+  \item \textbf{DiffEngine}: Baseline vs. counterfactual comparison with summary,
+        record-level, and aggregate diff formats including KPI impact analysis.
+  \item \textbf{CLI}: \texttt{scenario \{list, validate, generate, diff\}} subcommands
+        for end-to-end scenario management.
+\end{itemize}
+
+\subsection{Unified Generation Pipeline}
+
+\textit{New in v0.11.0} --- stateful multi-period generation with fraud scenario
+packs, phase-aware streaming, and enriched OCEL~2.0 event logs:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{GenerationSession}: Stateful multi-period generation that splits
+        output into fiscal-year-aligned periods, carrying forward balances, entity
+        state, and document IDs between periods via \texttt{.dss} checkpoint files.
+        Supports incremental generation (\texttt{--append --months~N}).
+  \item \textbf{5 Fraud Scenario Packs}: Pre-built YAML configurations
+        (\texttt{revenue\_fraud}, \texttt{payroll\_ghost}, \texttt{vendor\_kickback},
+        \texttt{management\_override}, \texttt{comprehensive}) applied via deep-merge
+        with \texttt{--fraud-scenario} and \texttt{--fraud-rate} CLI flags.
+  \item \textbf{StreamPipeline}: Phase-aware streaming with file, HTTP, and no-op
+        targets. JSONL envelope format with generation phase metadata for feeding
+        downstream pipelines during generation.
+  \item \textbf{OCEL 2.0 Enrichment}: Lifecycle state machines (PO, SO, VI with
+        typed state transitions), multi-object correlation events (three-way match,
+        payment allocation, bank reconciliation), and resource pool workload modeling
+        with round-robin, least-busy, and skill-based assignment strategies.
+\end{itemize}
+
 % ══════════════════════════════════════════════════════════════════════════════
 \newpage
 \section{Machine Learning \& Analytics}
@@ -846,7 +888,7 @@ Data Lineage &
   config$\to$generator$\to$output relationships, W3C PROV-JSON export,
   CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} 1.5 with blueprints (sourcing, HR, manufacturing,
+  \texttt{datasynth-py} 1.7 with blueprints (sourcing, HR, manufacturing,
   financial reporting, tax, treasury, project accounting, ESG),
   pandas/polars integration, async client, and WebSocket streaming support. \\
 \bottomrule
