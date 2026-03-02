@@ -746,6 +746,102 @@ impl JournalEntryGenerator {
         self.uuid_factory.next()
     }
 
+    /// Cost center pool used for expense account enrichment.
+    const COST_CENTER_POOL: &'static [&'static str] =
+        &["CC1000", "CC2000", "CC3000", "CC4000", "CC5000"];
+
+    /// Enrich journal entry line items with account descriptions, cost centers,
+    /// profit centers, value dates, line text, and assignment fields.
+    ///
+    /// This populates the sparse optional fields that `JournalEntryLine::debit()`
+    /// and `::credit()` leave as `None`.
+    fn enrich_line_items(&self, entry: &mut JournalEntry) {
+        let posting_date = entry.header.posting_date;
+        let company_code = &entry.header.company_code;
+        let header_text = entry.header.header_text.clone();
+        let business_process = entry.header.business_process;
+
+        // Derive a deterministic index from the document_id for cost center selection
+        let doc_id_bytes = entry.header.document_id.as_bytes();
+        let mut cc_seed: usize = 0;
+        for &b in doc_id_bytes {
+            cc_seed = cc_seed.wrapping_add(b as usize);
+        }
+
+        for (i, line) in entry.lines.iter_mut().enumerate() {
+            // 1. account_description: look up from CoA
+            if line.account_description.is_none() {
+                line.account_description = self
+                    .coa
+                    .get_account(&line.gl_account)
+                    .map(|a| a.short_description.clone());
+            }
+
+            // 2. cost_center: assign to expense accounts (5xxx/6xxx)
+            if line.cost_center.is_none() {
+                let first_char = line.gl_account.chars().next().unwrap_or('0');
+                if first_char == '5' || first_char == '6' {
+                    let idx = cc_seed.wrapping_add(i) % Self::COST_CENTER_POOL.len();
+                    line.cost_center = Some(Self::COST_CENTER_POOL[idx].to_string());
+                }
+            }
+
+            // 3. profit_center: derive from company code + business process
+            if line.profit_center.is_none() {
+                let suffix = match business_process {
+                    Some(BusinessProcess::P2P) => "-P2P",
+                    Some(BusinessProcess::O2C) => "-O2C",
+                    Some(BusinessProcess::R2R) => "-R2R",
+                    Some(BusinessProcess::H2R) => "-H2R",
+                    _ => "",
+                };
+                line.profit_center = Some(format!("PC-{}{}", company_code, suffix));
+            }
+
+            // 4. line_text: fall back to header_text if not already set
+            if line.line_text.is_none() {
+                line.line_text = header_text.clone();
+            }
+
+            // 5. value_date: set to posting_date for AR/AP accounts
+            if line.value_date.is_none() {
+                if line.gl_account.starts_with("1100") || line.gl_account.starts_with("2000") {
+                    line.value_date = Some(posting_date);
+                }
+            }
+
+            // 6. assignment: set to vendor/customer reference for AP/AR lines
+            if line.assignment.is_none() {
+                if line.gl_account.starts_with("2000") {
+                    // AP line - use vendor reference from header
+                    if let Some(ref ht) = header_text {
+                        // Try to extract vendor ID from header text patterns like "... - V-001"
+                        if let Some(vendor_part) = ht.rsplit(" - ").next() {
+                            if vendor_part.starts_with("V-")
+                                || vendor_part.starts_with("VENDOR")
+                                || vendor_part.starts_with("Vendor")
+                            {
+                                line.assignment = Some(vendor_part.to_string());
+                            }
+                        }
+                    }
+                } else if line.gl_account.starts_with("1100") {
+                    // AR line - use customer reference from header
+                    if let Some(ref ht) = header_text {
+                        if let Some(customer_part) = ht.rsplit(" - ").next() {
+                            if customer_part.starts_with("C-")
+                                || customer_part.starts_with("CUST")
+                                || customer_part.starts_with("Customer")
+                            {
+                                line.assignment = Some(customer_part.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Generate a single journal entry.
     pub fn generate(&mut self) -> JournalEntry {
         debug!(
@@ -820,6 +916,7 @@ impl JournalEntryGenerator {
         header.created_by = created_by;
         header.user_persona = user_persona;
         header.business_process = Some(business_process);
+        header.document_type = Self::document_type_for_process(business_process).to_string();
         header.is_fraud = is_fraud;
         header.fraud_type = fraud_type;
 
@@ -939,6 +1036,9 @@ impl JournalEntryGenerator {
 
             entry.add_line(line);
         }
+
+        // Enrich line items with account descriptions, cost centers, etc.
+        self.enrich_line_items(&mut entry);
 
         // Apply persona-based errors if enabled and it's a human user
         if self.persona_errors_enabled && !is_automated {
@@ -1092,6 +1192,7 @@ impl JournalEntryGenerator {
         header.created_by = created_by;
         header.user_persona = user_persona;
         header.business_process = Some(business_process);
+        header.document_type = Self::document_type_for_process(business_process).to_string();
 
         // Generate similar amount (within ±15% of base)
         let variation = self.rng.random_range(-0.15..0.15);
@@ -1116,6 +1217,9 @@ impl JournalEntryGenerator {
         let credit_line =
             JournalEntryLine::credit(entry.header.document_id, 2, credit_account, total_amount);
         entry.add_line(credit_line);
+
+        // Enrich line items with account descriptions, cost centers, etc.
+        self.enrich_line_items(&mut entry);
 
         // Apply persona-based errors if enabled
         if self.persona_errors_enabled {
@@ -1710,6 +1814,25 @@ impl JournalEntryGenerator {
 
     /// Select a business process based on configuration weights.
     #[inline]
+    /// Map a business process to a SAP-style document type code.
+    ///
+    /// - P2P → "KR" (vendor invoice)
+    /// - O2C → "DR" (customer invoice)
+    /// - R2R → "SA" (general journal)
+    /// - H2R → "HR" (HR posting)
+    /// - A2R → "AA" (asset posting)
+    /// - others → "SA"
+    fn document_type_for_process(process: BusinessProcess) -> &'static str {
+        match process {
+            BusinessProcess::P2P => "KR",
+            BusinessProcess::O2C => "DR",
+            BusinessProcess::R2R => "SA",
+            BusinessProcess::H2R => "HR",
+            BusinessProcess::A2R => "AA",
+            _ => "SA",
+        }
+    }
+
     fn select_business_process(&mut self) -> BusinessProcess {
         let roll: f64 = self.rng.random();
 
@@ -2353,6 +2476,189 @@ mod tests {
             weekend_pct * 100.0,
             weekend_count,
             total
+        );
+    }
+
+    #[test]
+    fn test_document_type_derived_from_business_process() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            99,
+        )
+        .with_persona_errors(false)
+        .with_batching(false);
+
+        let total = 200;
+        let mut doc_types = std::collections::HashSet::new();
+        let mut sa_count = 0_usize;
+
+        for _ in 0..total {
+            let entry = je_gen.generate();
+            let dt = &entry.header.document_type;
+            doc_types.insert(dt.clone());
+            if dt == "SA" {
+                sa_count += 1;
+            }
+        }
+
+        // Should have more than 3 distinct document types
+        assert!(
+            doc_types.len() > 3,
+            "Expected >3 distinct document types, got {} ({:?})",
+            doc_types.len(),
+            doc_types,
+        );
+
+        // "SA" should be less than 50% (R2R is 20% of the weight)
+        let sa_pct = sa_count as f64 / total as f64;
+        assert!(
+            sa_pct < 0.50,
+            "Expected SA <50%, got {:.1}% ({}/{})",
+            sa_pct * 100.0,
+            sa_count,
+            total,
+        );
+    }
+
+    #[test]
+    fn test_enrich_line_items_account_description() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        let total = 200;
+        let entries: Vec<JournalEntry> = (0..total).map(|_| je_gen.generate()).collect();
+
+        // Count lines with account_description populated
+        let total_lines: usize = entries.iter().map(|e| e.lines.len()).sum();
+        let lines_with_desc: usize = entries
+            .iter()
+            .flat_map(|e| &e.lines)
+            .filter(|l| l.account_description.is_some())
+            .count();
+
+        let desc_pct = lines_with_desc as f64 / total_lines as f64;
+        assert!(
+            desc_pct > 0.95,
+            "Expected >95% of lines to have account_description, got {:.1}% ({}/{})",
+            desc_pct * 100.0,
+            lines_with_desc,
+            total_lines,
+        );
+    }
+
+    #[test]
+    fn test_enrich_line_items_cost_center_for_expense_accounts() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        let total = 300;
+        let entries: Vec<JournalEntry> = (0..total).map(|_| je_gen.generate()).collect();
+
+        // Count expense account lines (5xxx/6xxx) with cost_center populated
+        let expense_lines: Vec<&JournalEntryLine> = entries
+            .iter()
+            .flat_map(|e| &e.lines)
+            .filter(|l| {
+                let first = l.gl_account.chars().next().unwrap_or('0');
+                first == '5' || first == '6'
+            })
+            .collect();
+
+        if !expense_lines.is_empty() {
+            let with_cc = expense_lines
+                .iter()
+                .filter(|l| l.cost_center.is_some())
+                .count();
+            let cc_pct = with_cc as f64 / expense_lines.len() as f64;
+            assert!(
+                cc_pct > 0.80,
+                "Expected >80% of expense lines to have cost_center, got {:.1}% ({}/{})",
+                cc_pct * 100.0,
+                with_cc,
+                expense_lines.len(),
+            );
+        }
+    }
+
+    #[test]
+    fn test_enrich_line_items_profit_center_and_line_text() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        let total = 100;
+        let entries: Vec<JournalEntry> = (0..total).map(|_| je_gen.generate()).collect();
+
+        let total_lines: usize = entries.iter().map(|e| e.lines.len()).sum();
+
+        // All lines should have profit_center
+        let with_pc = entries
+            .iter()
+            .flat_map(|e| &e.lines)
+            .filter(|l| l.profit_center.is_some())
+            .count();
+        let pc_pct = with_pc as f64 / total_lines as f64;
+        assert!(
+            pc_pct > 0.95,
+            "Expected >95% of lines to have profit_center, got {:.1}% ({}/{})",
+            pc_pct * 100.0,
+            with_pc,
+            total_lines,
+        );
+
+        // All lines should have line_text (either from template or header fallback)
+        let with_text = entries
+            .iter()
+            .flat_map(|e| &e.lines)
+            .filter(|l| l.line_text.is_some())
+            .count();
+        let text_pct = with_text as f64 / total_lines as f64;
+        assert!(
+            text_pct > 0.95,
+            "Expected >95% of lines to have line_text, got {:.1}% ({}/{})",
+            text_pct * 100.0,
+            with_text,
+            total_lines,
         );
     }
 }

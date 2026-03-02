@@ -143,6 +143,125 @@ impl DocumentFlowJeGenerator {
         self.auxiliary_account_lookup = lookup;
     }
 
+    /// Build an account description lookup from the configured accounts.
+    fn account_description_map(&self) -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.insert(
+            self.config.inventory_account.clone(),
+            "Inventory".to_string(),
+        );
+        map.insert(
+            self.config.gr_ir_clearing_account.clone(),
+            "GR/IR Clearing".to_string(),
+        );
+        map.insert(
+            self.config.ap_account.clone(),
+            "Accounts Payable".to_string(),
+        );
+        map.insert(
+            self.config.cash_account.clone(),
+            "Cash and Cash Equivalents".to_string(),
+        );
+        map.insert(
+            self.config.ar_account.clone(),
+            "Accounts Receivable".to_string(),
+        );
+        map.insert(
+            self.config.revenue_account.clone(),
+            "Product Revenue".to_string(),
+        );
+        map.insert(
+            self.config.cogs_account.clone(),
+            "Cost of Goods Sold".to_string(),
+        );
+        map.insert(
+            self.config.vat_output_account.clone(),
+            "VAT Payable".to_string(),
+        );
+        map.insert(
+            self.config.vat_input_account.clone(),
+            "Input VAT".to_string(),
+        );
+        map
+    }
+
+    /// Cost center pool used for expense account enrichment.
+    const COST_CENTER_POOL: &'static [&'static str] =
+        &["CC1000", "CC2000", "CC3000", "CC4000", "CC5000"];
+
+    /// Enrich journal entry line items with account descriptions, cost centers,
+    /// profit centers, value dates, line text, and assignment fields.
+    ///
+    /// Uses the configured accounts to derive descriptions, since the document
+    /// flow JE generator does not have access to the full chart of accounts.
+    fn enrich_line_items(&self, entry: &mut JournalEntry) {
+        let desc_map = self.account_description_map();
+        let posting_date = entry.header.posting_date;
+        let company_code = &entry.header.company_code;
+        let header_text = entry.header.header_text.clone();
+        let business_process = entry.header.business_process;
+
+        // Derive a deterministic index from document_id for cost center selection
+        let doc_id_bytes = entry.header.document_id.as_bytes();
+        let mut cc_seed: usize = 0;
+        for &b in doc_id_bytes {
+            cc_seed = cc_seed.wrapping_add(b as usize);
+        }
+
+        for (i, line) in entry.lines.iter_mut().enumerate() {
+            // 1. account_description from known accounts
+            if line.account_description.is_none() {
+                line.account_description = desc_map.get(&line.gl_account).cloned();
+            }
+
+            // 2. cost_center for expense accounts (5xxx/6xxx)
+            if line.cost_center.is_none() {
+                let first_char = line.gl_account.chars().next().unwrap_or('0');
+                if first_char == '5' || first_char == '6' {
+                    let idx = cc_seed.wrapping_add(i) % Self::COST_CENTER_POOL.len();
+                    line.cost_center = Some(Self::COST_CENTER_POOL[idx].to_string());
+                }
+            }
+
+            // 3. profit_center from company code + business process
+            if line.profit_center.is_none() {
+                let suffix = match business_process {
+                    Some(BusinessProcess::P2P) => "-P2P",
+                    Some(BusinessProcess::O2C) => "-O2C",
+                    _ => "",
+                };
+                line.profit_center = Some(format!("PC-{}{}", company_code, suffix));
+            }
+
+            // 4. line_text: fall back to header_text
+            if line.line_text.is_none() {
+                line.line_text = header_text.clone();
+            }
+
+            // 5. value_date for AR/AP accounts
+            if line.value_date.is_none() {
+                if line.gl_account == self.config.ar_account
+                    || line.gl_account == self.config.ap_account
+                {
+                    line.value_date = Some(posting_date);
+                }
+            }
+
+            // 6. assignment for AP/AR lines - extract partner ID from header text
+            if line.assignment.is_none() {
+                if line.gl_account == self.config.ap_account
+                    || line.gl_account == self.config.ar_account
+                {
+                    if let Some(ref ht) = header_text {
+                        if let Some(partner_part) = ht.rsplit(" - ").next() {
+                            line.assignment = Some(partner_part.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Set auxiliary account fields on AP/AR lines when FEC population is enabled.
     ///
     /// Only sets the fields if `populate_fec_fields` is true and the line's
@@ -333,6 +452,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::P2P);
+        header.document_type = "WE".to_string();
         header.reference = Some(format!("GR:{}", gr.header.document_id));
         header.header_text = Some(format!(
             "Goods Receipt {} - {}",
@@ -360,6 +480,7 @@ impl DocumentFlowJeGenerator {
         );
         entry.add_line(credit_line);
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 
@@ -396,6 +517,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::P2P);
+        header.document_type = "KR".to_string();
         header.reference = Some(format!("VI:{}", invoice.header.document_id));
         header.header_text = Some(format!(
             "Vendor Invoice {} - {}",
@@ -441,6 +563,7 @@ impl DocumentFlowJeGenerator {
         self.set_auxiliary_fields(&mut credit_line, &invoice.vendor_id, &invoice.vendor_id);
         entry.add_line(credit_line);
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 
@@ -466,6 +589,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::P2P);
+        header.document_type = "KZ".to_string();
         header.reference = Some(format!("PAY:{}", payment.header.document_id));
         header.header_text = Some(format!(
             "Payment {} - {}",
@@ -497,6 +621,7 @@ impl DocumentFlowJeGenerator {
         );
         entry.add_line(credit_line);
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 
@@ -533,6 +658,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::O2C);
+        header.document_type = "WL".to_string();
         header.reference = Some(format!("DEL:{}", delivery.header.document_id));
         header.header_text = Some(format!(
             "Delivery {} - {}",
@@ -559,6 +685,7 @@ impl DocumentFlowJeGenerator {
         );
         entry.add_line(credit_line);
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 
@@ -595,6 +722,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::O2C);
+        header.document_type = "DR".to_string();
         header.reference = Some(format!("CI:{}", invoice.header.document_id));
         header.header_text = Some(format!(
             "Customer Invoice {} - {}",
@@ -638,6 +766,7 @@ impl DocumentFlowJeGenerator {
             entry.add_line(vat_line);
         }
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 
@@ -663,6 +792,7 @@ impl DocumentFlowJeGenerator {
         );
         header.source = TransactionSource::Automated;
         header.business_process = Some(BusinessProcess::O2C);
+        header.document_type = "DZ".to_string();
         header.reference = Some(format!("RCP:{}", payment.header.document_id));
         header.header_text = Some(format!(
             "Customer Receipt {} - {}",
@@ -694,6 +824,7 @@ impl DocumentFlowJeGenerator {
         );
         entry.add_line(credit_line);
 
+        self.enrich_line_items(&mut entry);
         Some(entry)
     }
 }
@@ -1399,5 +1530,175 @@ mod tests {
         assert!(je.is_balanced());
         assert_eq!(je.total_debit(), Decimal::from(880));
         assert_eq!(je.total_credit(), Decimal::from(880));
+    }
+
+    #[test]
+    fn test_document_types_per_source_document() {
+        let mut generator = DocumentFlowJeGenerator::new();
+
+        let gr = create_test_gr();
+        let invoice = create_test_vendor_invoice();
+        let payment = create_test_payment();
+
+        let gr_je = generator.generate_from_goods_receipt(&gr).unwrap();
+        assert_eq!(gr_je.header.document_type, "WE", "Goods receipt should be WE");
+
+        let vi_je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+        assert_eq!(vi_je.header.document_type, "KR", "Vendor invoice should be KR");
+
+        let pay_je = generator.generate_from_ap_payment(&payment).unwrap();
+        assert_eq!(pay_je.header.document_type, "KZ", "AP payment should be KZ");
+
+        // Collect distinct document types
+        let types: std::collections::HashSet<&str> = [
+            gr_je.header.document_type.as_str(),
+            vi_je.header.document_type.as_str(),
+            pay_je.header.document_type.as_str(),
+        ]
+        .into_iter()
+        .collect();
+
+        assert!(
+            types.len() >= 3,
+            "Expected at least 3 distinct document types from P2P flow, got {:?}",
+            types,
+        );
+    }
+
+    #[test]
+    fn test_enrichment_account_descriptions_populated() {
+        let mut generator = DocumentFlowJeGenerator::new();
+        let gr = create_test_gr();
+        let invoice = create_test_vendor_invoice();
+        let payment = create_test_payment();
+
+        let gr_je = generator.generate_from_goods_receipt(&gr).unwrap();
+        let vi_je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+        let pay_je = generator.generate_from_ap_payment(&payment).unwrap();
+
+        // All lines in all JEs should have account descriptions
+        for je in [&gr_je, &vi_je, &pay_je] {
+            for line in &je.lines {
+                assert!(
+                    line.account_description.is_some(),
+                    "Line for account {} should have description, entry doc {}",
+                    line.gl_account,
+                    je.header.document_id,
+                );
+            }
+        }
+
+        // GR JE: Inventory and GR/IR Clearing
+        assert_eq!(
+            gr_je.lines[0].account_description.as_deref(),
+            Some("Inventory"),
+        );
+        assert_eq!(
+            gr_je.lines[1].account_description.as_deref(),
+            Some("GR/IR Clearing"),
+        );
+    }
+
+    #[test]
+    fn test_enrichment_profit_center_and_line_text() {
+        let mut generator = DocumentFlowJeGenerator::new();
+        let gr = create_test_gr();
+
+        let je = generator.generate_from_goods_receipt(&gr).unwrap();
+
+        for line in &je.lines {
+            // All lines should have profit_center
+            assert!(
+                line.profit_center.is_some(),
+                "Line {} should have profit_center",
+                line.gl_account,
+            );
+            let pc = line.profit_center.as_ref().unwrap();
+            assert!(
+                pc.starts_with("PC-"),
+                "Profit center should start with PC-, got {}",
+                pc,
+            );
+
+            // All lines should have line_text (from header fallback)
+            assert!(
+                line.line_text.is_some(),
+                "Line {} should have line_text",
+                line.gl_account,
+            );
+        }
+    }
+
+    #[test]
+    fn test_enrichment_cost_center_for_expense_accounts() {
+        let mut generator = DocumentFlowJeGenerator::new();
+
+        // Create a delivery which produces COGS (5000) entries
+        use datasynth_core::models::documents::{Delivery, DeliveryItem};
+        let mut delivery = Delivery::new(
+            "DEL-001".to_string(),
+            "1000",
+            "SO-001",
+            "C-001",
+            2024,
+            1,
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+            "JSMITH",
+        );
+        let item = DeliveryItem::from_sales_order(
+            10,
+            "Test Material",
+            Decimal::from(100),
+            Decimal::from(50),
+            "SO-001",
+            10,
+        );
+        delivery.add_item(item);
+        delivery.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
+
+        let je = generator.generate_from_delivery(&delivery).unwrap();
+
+        // COGS line (5000) should have cost_center
+        let cogs_line = je.lines.iter().find(|l| l.gl_account == "5000").unwrap();
+        assert!(
+            cogs_line.cost_center.is_some(),
+            "COGS line should have cost_center assigned",
+        );
+        let cc = cogs_line.cost_center.as_ref().unwrap();
+        assert!(
+            cc.starts_with("CC"),
+            "Cost center should start with CC, got {}",
+            cc,
+        );
+
+        // Inventory line (1200) should NOT have cost_center
+        let inv_line = je.lines.iter().find(|l| l.gl_account == "1200").unwrap();
+        assert!(
+            inv_line.cost_center.is_none(),
+            "Non-expense line should not have cost_center",
+        );
+    }
+
+    #[test]
+    fn test_enrichment_value_date_for_ap_ar() {
+        let mut generator = DocumentFlowJeGenerator::new();
+
+        let invoice = create_test_vendor_invoice();
+        let je = generator.generate_from_vendor_invoice(&invoice).unwrap();
+
+        // AP line should have value_date
+        let ap_line = je.lines.iter().find(|l| l.gl_account == "2000").unwrap();
+        assert!(
+            ap_line.value_date.is_some(),
+            "AP line should have value_date set",
+        );
+        assert_eq!(ap_line.value_date, Some(je.header.posting_date));
+
+        // GR/IR clearing line should NOT have value_date
+        let clearing_line = je.lines.iter().find(|l| l.gl_account == "2900").unwrap();
+        assert!(
+            clearing_line.value_date.is_none(),
+            "Non-AP/AR line should not have value_date",
+        );
     }
 }
