@@ -112,6 +112,8 @@ export interface InternalControlsConfig {
   sod_violation_rate: number;
   export_control_master_data: boolean;
   sox_materiality_threshold: number;
+  target_maturity_level: string;
+  include_entity_level_controls: boolean;
 }
 
 export interface CompressionConfig {
@@ -435,6 +437,25 @@ export interface OcpmOutputConfig {
   variants_csv: boolean;
 }
 
+export interface OcpmLifecycleStateMachines {
+  enabled: boolean;
+  purchase_order: boolean;
+  sales_order: boolean;
+  vendor_invoice: boolean;
+}
+
+export interface OcpmResourcePools {
+  enabled: boolean;
+  pool_size: number;
+  assignment_strategy: string;
+}
+
+export interface OcpmCorrelationEvents {
+  three_way_match: boolean;
+  payment_allocation: boolean;
+  bank_reconciliation: boolean;
+}
+
 export interface OcpmConfig {
   enabled: boolean;
   generate_lifecycle_events: boolean;
@@ -444,6 +465,10 @@ export interface OcpmConfig {
   p2p_process: OcpmProcessConfig;
   o2c_process: OcpmProcessConfig;
   output: OcpmOutputConfig;
+  lifecycle_state_machines: OcpmLifecycleStateMachines;
+  resource_pools: OcpmResourcePools;
+  correlation_events: OcpmCorrelationEvents;
+  coverage_threshold: number;
 }
 
 // =============================================================================
@@ -582,6 +607,8 @@ export interface BankingConfig {
   typologies: BankingTypologyConfig;
   spoofing: BankingSpoofingConfig;
   output: BankingOutputConfigSection;
+  aml_typologies: string[];
+  kyc_depth: string;
 }
 
 // =============================================================================
@@ -598,6 +625,7 @@ export interface FingerprintConfig {
   preserve_correlations: boolean;
   input_path: string;
   output_path: string;
+  evaluation_mode: boolean;
 }
 
 // =============================================================================
@@ -1313,6 +1341,10 @@ export interface QualityGatesConfig {
   balance_tolerance: number;
   completeness_threshold: number;
   fail_on_violation: boolean;
+  multi_period_coherence: number;
+  ocel_enrichment_coverage: number;
+  fraud_pack_effectiveness: number;
+  intervention_magnitude_tolerance: number;
 }
 
 // =============================================================================
@@ -1432,6 +1464,74 @@ export interface CountryPacksConfig {
   overrides: Record<string, Record<string, unknown>>;
 }
 
+// =============================================================================
+// v0.11 Feature Configurations
+// =============================================================================
+
+export interface FraudPacksConfig {
+  enabled: boolean;
+  packs: string[];
+  fraud_rate_override: number | null;
+}
+
+export interface CausalDagConstraints {
+  preserve_accounting_identity: boolean;
+  preserve_document_chains: boolean;
+  preserve_period_close: boolean;
+  preserve_balance_coherence: boolean;
+}
+
+export interface CausalDagIntervention {
+  type: string;
+  target_node: string;
+  magnitude: number;
+  timing: string;
+}
+
+export interface CausalDagConfig {
+  enabled: boolean;
+  preset: string;
+  interventions: CausalDagIntervention[];
+  constraints: CausalDagConstraints;
+}
+
+export interface GenerationSessionConfig {
+  mode: string;
+  period_count: number;
+  fiscal_year_start_month: number;
+  incremental: boolean;
+  append_months: number;
+  checkpoint_path: string;
+}
+
+export interface StreamingPhaseFilters {
+  master_data: boolean;
+  journal_entries: boolean;
+  document_flows: boolean;
+  anomaly_injection: boolean;
+  ocpm: boolean;
+}
+
+export interface StreamingConfig {
+  enabled: boolean;
+  target: string;
+  file_path: string;
+  buffer_size: number;
+  backpressure: string;
+  phase_filters: StreamingPhaseFilters;
+}
+
+export interface AuditStandardsSoxConfig {
+  enabled: boolean;
+  section_302: boolean;
+  section_404: boolean;
+  materiality_threshold: number;
+}
+
+export interface AuditStandardsConfig {
+  sox: AuditStandardsSoxConfig;
+}
+
 // Full generator config
 export interface GeneratorConfig {
   global: GlobalConfig;
@@ -1477,8 +1577,14 @@ export interface GeneratorConfig {
   cross_process_links: CrossProcessLinksConfig;
   // Standards
   accounting_standards: AccountingStandardsConfig;
+  audit_standards: AuditStandardsConfig;
   graph_export: GraphExportConfig;
   quality_gates: QualityGatesConfig;
+  // v0.11 Features
+  fraud_packs: FraudPacksConfig;
+  causal_dag: CausalDagConfig;
+  generation_session: GenerationSessionConfig;
+  streaming: StreamingConfig;
   // Quality & Drift
   data_quality: DataQualityConfig;
   anomaly_injection: AnomalyInjectionConfig;
@@ -1590,6 +1696,8 @@ export function createDefaultConfig(): GeneratorConfig {
       sod_violation_rate: 0.01,
       export_control_master_data: true,
       sox_materiality_threshold: 10000,
+      target_maturity_level: 'managed',
+      include_entity_level_controls: true,
     },
     master_data: {
       vendors: { count: 100, distribution: {} },
@@ -1825,6 +1933,23 @@ export function createDefaultConfig(): GeneratorConfig {
         object_relationship_csv: true,
         variants_csv: true,
       },
+      lifecycle_state_machines: {
+        enabled: false,
+        purchase_order: true,
+        sales_order: true,
+        vendor_invoice: true,
+      },
+      resource_pools: {
+        enabled: false,
+        pool_size: 10,
+        assignment_strategy: 'RoundRobin',
+      },
+      correlation_events: {
+        three_way_match: true,
+        payment_allocation: true,
+        bank_reconciliation: false,
+      },
+      coverage_threshold: 0.8,
     },
     audit: {
       enabled: false,
@@ -1941,6 +2066,8 @@ export function createDefaultConfig(): GeneratorConfig {
         include_case_narratives: true,
         include_graph: true,
       },
+      aml_typologies: [],
+      kyc_depth: 'standard',
     },
     fingerprint: {
       enabled: false,
@@ -1950,6 +2077,7 @@ export function createDefaultConfig(): GeneratorConfig {
       preserve_correlations: true,
       input_path: '',
       output_path: '',
+      evaluation_mode: false,
     },
     distributions: {
       enabled: false,
@@ -2254,6 +2382,14 @@ export function createDefaultConfig(): GeneratorConfig {
         test_frequency: 'annual',
       },
     },
+    audit_standards: {
+      sox: {
+        enabled: false,
+        section_302: false,
+        section_404: false,
+        materiality_threshold: 10000,
+      },
+    },
     graph_export: {
       enabled: false,
       pytorch_geometric: true,
@@ -2276,6 +2412,49 @@ export function createDefaultConfig(): GeneratorConfig {
       balance_tolerance: 0.01,
       completeness_threshold: 0.95,
       fail_on_violation: false,
+      multi_period_coherence: 0.99,
+      ocel_enrichment_coverage: 0.95,
+      fraud_pack_effectiveness: 0.80,
+      intervention_magnitude_tolerance: 0.10,
+    },
+    // v0.11 Features
+    fraud_packs: {
+      enabled: false,
+      packs: [],
+      fraud_rate_override: null,
+    },
+    causal_dag: {
+      enabled: false,
+      preset: 'minimal',
+      interventions: [],
+      constraints: {
+        preserve_accounting_identity: true,
+        preserve_document_chains: true,
+        preserve_period_close: true,
+        preserve_balance_coherence: true,
+      },
+    },
+    generation_session: {
+      mode: 'single',
+      period_count: 12,
+      fiscal_year_start_month: 1,
+      incremental: false,
+      append_months: 3,
+      checkpoint_path: '',
+    },
+    streaming: {
+      enabled: false,
+      target: 'file',
+      file_path: './output/stream.jsonl',
+      buffer_size: 1000,
+      backpressure: 'block',
+      phase_filters: {
+        master_data: true,
+        journal_entries: true,
+        document_flows: true,
+        anomaly_injection: true,
+        ocpm: true,
+      },
     },
     // Quality & Drift
     data_quality: {

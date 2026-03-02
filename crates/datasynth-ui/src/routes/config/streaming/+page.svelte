@@ -18,7 +18,7 @@
     { value: 'buffer', label: 'Unbounded Buffer', description: 'Grow buffer without limit (use with caution)' },
   ];
 
-  const PHASES = [
+  const PHASES: { id: keyof import('$lib/stores/config').StreamingPhaseFilters; label: string }[] = [
     { id: 'master_data', label: 'Master Data' },
     { id: 'journal_entries', label: 'Journal Entries' },
     { id: 'document_flows', label: 'Document Flows' },

@@ -8,12 +8,14 @@
     label = '',
     description = '',
     id = crypto.randomUUID(),
+    onchange = undefined,
   }: {
     checked?: boolean;
     disabled?: boolean;
     label?: string;
     description?: string;
     id?: string;
+    onchange?: (() => void) | undefined;
   } = $props();
 </script>
 
@@ -24,6 +26,7 @@
       {id}
       bind:checked
       {disabled}
+      {onchange}
       class="toggle-input"
     />
     <span class="toggle-track">
