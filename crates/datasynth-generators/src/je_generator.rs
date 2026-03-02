@@ -1528,7 +1528,7 @@ impl JournalEntryGenerator {
 
             let approve_action = ApprovalAction::new(
                 approver_id.clone(),
-                format!("{:?}", approver_role),
+                approver_role.to_string(),
                 approver_role,
                 ApprovalActionType::Approve,
                 level,
