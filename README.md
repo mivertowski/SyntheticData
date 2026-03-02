@@ -205,6 +205,12 @@ The generator produces statistically accurate data based on empirical research f
 - **Counterfactual Generation**: Abduction-action-prediction framework for "what-if" scenario analysis
 - **Causal Validation**: Verify edge correlations, non-edge weakness, and topological consistency
 - **Built-in Templates**: Pre-configured fraud detection and revenue cycle causal models
+- **Counterfactual Simulation Engine** (v0.10.0): Paired baseline/counterfactual dataset generation with causal DAG propagation
+  - 8 intervention types: ParameterShift, MacroShock, ControlFailure, EntityEvent, ProcessChange, RegulatoryChange, Composite, Custom
+  - CausalDAG with 8 transfer functions (Linear, Exponential, Logistic, Step, Threshold, Decay, Piecewise) and lag-aware propagation
+  - Default financial process DAG: 17 nodes (GDP, interest rates, transaction volume, control effectiveness, misstatement risk, etc.)
+  - DiffEngine: summary KPIs, record-level diffs, aggregate comparison between baseline and counterfactual
+  - CLI: `datasynth-data scenario {list, validate, generate, diff}`
 
 ### Ecosystem Integrations
 

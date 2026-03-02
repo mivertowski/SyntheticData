@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0 (2026-03-02)
+
+### Added
+
+- Matches Rust v0.10.0 counterfactual simulation engine release
+- Counterfactual scenario engine: paired baseline/counterfactual dataset generation
+- CausalDAG with 8 transfer function types and forward propagation
+- 8 InterventionType variants for what-if analysis (ParameterShift, MacroShock, ControlFailure, etc.)
+- DiffEngine for baseline vs counterfactual comparison (summary, record-level, aggregate)
+- CLI: `datasynth-data scenario {list, validate, generate, diff}` subcommands
+
 ## 1.5.5 (2026-03-01)
 
 ### Added

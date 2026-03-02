@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-03-02
+
+### Added
+
+- **Counterfactual Simulation Engine** (`datasynth-core`, `datasynth-config`, `datasynth-runtime`, `datasynth-eval`, `datasynth-cli`)
+  - **Core data models**: `Scenario`, `Intervention`, `InterventionTiming`, `OnsetType`, `ScenarioConstraints`, `ScenarioOutputConfig`, `DiffFormat`
+  - **InterventionType** tagged enum with 8 variants: `ParameterShift`, `ControlFailure`, `MacroShock`, `EntityEvent`, `ProcessChange`, `RegulatoryChange`, `Composite`, `Custom`
+  - **CausalDAG** with 8 `TransferFunction` types (Linear, Exponential, Logistic, InverseLogistic, Step, Threshold, Decay, Piecewise), topological sort via Kahn's algorithm, and forward propagation with lag and strength
+  - **Default causal DAG template**: 17 financial process nodes (GDP growth, interest rates, transaction volume, control effectiveness, fraud detection, misstatement risk, etc.) and 16 edges with transfer functions and config bindings
+  - **ScenariosConfig schema** with validation: scenario definitions, intervention timing, constraint configuration, causal model presets, probability weights
+  - **CausalPropagationEngine**: onset interpolation (Sudden, Gradual, Oscillating), lag-aware propagation, node bounds clamping, config binding resolution
+  - **InterventionManager**: timing validation, bounds checking, config path resolution, conflict detection with priority-based resolution
+  - **ConfigMutator**: dot-path config mutation with array indexing (e.g., `distributions.amounts.components[0].mu`), null-stripping for JSON roundtrip, custom constraint validation
+  - **ScenarioEngine orchestrator**: paired baseline/counterfactual generation, scenario manifest output, DAG loading from presets
+  - **ScenarioDiff types**: `ImpactSummary`, `KpiImpact`, `FinancialStatementImpact`, `AnomalyImpact`, `ControlImpact`, `RecordLevelDiff`, `AggregateComparison`, `InterventionTrace`
+  - **DiffEngine**: computes summary KPIs, record-level diffs (added/removed/modified), and aggregate metrics between baseline and counterfactual output directories
+  - **CLI subcommand**: `datasynth-data scenario {list, validate, generate, diff}` for managing counterfactual scenarios from the command line
+  - **59 new tests**: 45 unit tests + 14 integration tests across core, config, runtime, and eval crates
+
 ## [0.9.5] - 2026-03-01
 
 ### Fixed
