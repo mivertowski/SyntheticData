@@ -103,7 +103,7 @@ prost-types = "0.14"
 # HTTP/REST
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
-tower-http = { version = "0.5", features = ["cors", "trace", "timeout"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "timeout"] }
 
 # Data formats - Arrow/Parquet for analytics-ready output
 arrow = { version = "58", features = ["prettyprint"] }
