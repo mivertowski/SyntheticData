@@ -677,4 +677,229 @@ mod tests {
         let deserialized: TransferFunction = serde_json::from_str(&json).unwrap();
         assert!((deserialized.compute(2.0) - 2.0).abs() < f64::EPSILON);
     }
+
+    // ====================================================================
+    // Comprehensive transfer function tests (Task 12)
+    // ====================================================================
+
+    #[test]
+    fn test_transfer_function_linear_zero_coefficient() {
+        let tf = TransferFunction::Linear {
+            coefficient: 0.0,
+            intercept: 5.0,
+        };
+        // Any input → just the intercept
+        assert!((tf.compute(0.0) - 5.0).abs() < f64::EPSILON);
+        assert!((tf.compute(100.0) - 5.0).abs() < f64::EPSILON);
+        assert!((tf.compute(-100.0) - 5.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_linear_negative_coefficient() {
+        let tf = TransferFunction::Linear {
+            coefficient: -2.0,
+            intercept: 10.0,
+        };
+        assert!((tf.compute(3.0) - 4.0).abs() < f64::EPSILON); // -6 + 10 = 4
+        assert!((tf.compute(5.0) - 0.0).abs() < f64::EPSILON); // -10 + 10 = 0
+    }
+
+    #[test]
+    fn test_transfer_function_exponential_zero_input() {
+        let tf = TransferFunction::Exponential {
+            base: 5.0,
+            rate: 0.5,
+        };
+        // (1+0.5)^0 = 1, so result = 5.0
+        assert!((tf.compute(0.0) - 5.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transfer_function_exponential_negative_rate() {
+        let tf = TransferFunction::Exponential {
+            base: 100.0,
+            rate: -0.5,
+        };
+        // (1 + (-0.5))^2 = 0.5^2 = 0.25, result = 25.0
+        assert!((tf.compute(2.0) - 25.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transfer_function_logistic_far_from_midpoint() {
+        let tf = TransferFunction::Logistic {
+            capacity: 10.0,
+            midpoint: 5.0,
+            steepness: 2.0,
+        };
+        // Far below midpoint → near 0
+        assert!(tf.compute(-10.0) < 0.01);
+        // Far above midpoint → near capacity
+        assert!((tf.compute(20.0) - 10.0).abs() < 0.01);
+        // At midpoint → capacity/2
+        assert!((tf.compute(5.0) - 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_transfer_function_logistic_steepness_effect() {
+        // High steepness → sharper transition
+        let steep = TransferFunction::Logistic {
+            capacity: 1.0,
+            midpoint: 0.0,
+            steepness: 10.0,
+        };
+        let gentle = TransferFunction::Logistic {
+            capacity: 1.0,
+            midpoint: 0.0,
+            steepness: 0.5,
+        };
+        // Both should be ~0.5 at midpoint
+        assert!((steep.compute(0.0) - 0.5).abs() < 0.01);
+        assert!((gentle.compute(0.0) - 0.5).abs() < 0.01);
+        // Steep should be closer to 1.0 at input=1.0
+        assert!(steep.compute(1.0) > gentle.compute(1.0));
+    }
+
+    #[test]
+    fn test_transfer_function_inverse_logistic() {
+        let tf = TransferFunction::InverseLogistic {
+            capacity: 1.0,
+            midpoint: 0.0,
+            steepness: 1.0,
+        };
+        // At midpoint → capacity/2
+        assert!((tf.compute(0.0) - 0.5).abs() < 0.001);
+        // Inverse logistic decreases: far above midpoint → near 0
+        assert!(tf.compute(10.0) < 0.01);
+        // Far below midpoint → near capacity
+        assert!((tf.compute(-10.0) - 1.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_transfer_function_inverse_logistic_symmetry() {
+        let logistic = TransferFunction::Logistic {
+            capacity: 1.0,
+            midpoint: 0.0,
+            steepness: 1.0,
+        };
+        let inverse = TransferFunction::InverseLogistic {
+            capacity: 1.0,
+            midpoint: 0.0,
+            steepness: 1.0,
+        };
+        // Logistic + InverseLogistic should sum to capacity at any point
+        for x in [-5.0, -1.0, 0.0, 1.0, 5.0] {
+            let sum = logistic.compute(x) + inverse.compute(x);
+            assert!((sum - 1.0).abs() < 0.001, "Sum at x={} was {}", x, sum);
+        }
+    }
+
+    #[test]
+    fn test_transfer_function_step_at_threshold() {
+        let tf = TransferFunction::Step {
+            threshold: 5.0,
+            magnitude: 10.0,
+        };
+        // At exactly the threshold, should be 0 (not strictly greater)
+        assert!((tf.compute(5.0) - 0.0).abs() < f64::EPSILON);
+        // Just above threshold
+        assert!((tf.compute(5.001) - 10.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_step_negative_magnitude() {
+        let tf = TransferFunction::Step {
+            threshold: 0.0,
+            magnitude: -5.0,
+        };
+        assert!((tf.compute(-1.0) - 0.0).abs() < f64::EPSILON);
+        assert!((tf.compute(1.0) - (-5.0)).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_threshold_with_saturation() {
+        let tf = TransferFunction::Threshold {
+            threshold: 2.0,
+            magnitude: 10.0,
+            saturation: 8.0,
+        };
+        // Below threshold: 0
+        assert!((tf.compute(1.0) - 0.0).abs() < f64::EPSILON);
+        // Just above threshold: 10.0 * (2.5 - 2.0) / 2.0 = 2.5
+        assert!((tf.compute(2.5) - 2.5).abs() < 0.001);
+        // Way above threshold without saturation: 10.0 * (100.0 - 2.0) / 2.0 = 490
+        // But capped at saturation=8.0
+        assert!((tf.compute(100.0) - 8.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transfer_function_threshold_infinite_saturation() {
+        let tf = TransferFunction::Threshold {
+            threshold: 1.0,
+            magnitude: 5.0,
+            saturation: f64::INFINITY,
+        };
+        // No saturation cap: grows linearly
+        // 5.0 * (100.0 - 1.0) / 1.0 = 495.0
+        assert!((tf.compute(100.0) - 495.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transfer_function_decay_large_input() {
+        let tf = TransferFunction::Decay {
+            initial: 100.0,
+            decay_rate: 1.0,
+        };
+        // Large input → approaches 0
+        assert!(tf.compute(10.0) < 0.01);
+        assert!(tf.compute(20.0) < 0.0001);
+    }
+
+    #[test]
+    fn test_transfer_function_decay_zero_rate() {
+        let tf = TransferFunction::Decay {
+            initial: 50.0,
+            decay_rate: 0.0,
+        };
+        // No decay → constant
+        assert!((tf.compute(0.0) - 50.0).abs() < f64::EPSILON);
+        assert!((tf.compute(100.0) - 50.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_piecewise_single_point() {
+        let tf = TransferFunction::Piecewise {
+            points: vec![(5.0, 42.0)],
+        };
+        // Single point → always returns that value
+        assert!((tf.compute(0.0) - 42.0).abs() < f64::EPSILON);
+        assert!((tf.compute(100.0) - 42.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_piecewise_empty() {
+        let tf = TransferFunction::Piecewise { points: vec![] };
+        assert!((tf.compute(5.0) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_transfer_function_piecewise_exact_points() {
+        let tf = TransferFunction::Piecewise {
+            points: vec![(0.0, 0.0), (1.0, 10.0), (2.0, 15.0), (3.0, 30.0)],
+        };
+        // At exact breakpoints
+        assert!((tf.compute(0.0) - 0.0).abs() < 0.001);
+        assert!((tf.compute(1.0) - 10.0).abs() < 0.001);
+        assert!((tf.compute(2.0) - 15.0).abs() < 0.001);
+        assert!((tf.compute(3.0) - 30.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_transfer_function_piecewise_unsorted_points() {
+        // Points given out of order — should still interpolate correctly
+        let tf = TransferFunction::Piecewise {
+            points: vec![(2.0, 20.0), (0.0, 0.0), (1.0, 10.0)],
+        };
+        assert!((tf.compute(0.5) - 5.0).abs() < 0.001);
+        assert!((tf.compute(1.5) - 15.0).abs() < 0.001);
+    }
 }
