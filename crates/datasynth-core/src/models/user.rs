@@ -1096,8 +1096,14 @@ mod tests {
 
     #[test]
     fn test_persona_display_snake_case() {
-        assert_eq!(UserPersona::JuniorAccountant.to_string(), "junior_accountant");
-        assert_eq!(UserPersona::SeniorAccountant.to_string(), "senior_accountant");
+        assert_eq!(
+            UserPersona::JuniorAccountant.to_string(),
+            "junior_accountant"
+        );
+        assert_eq!(
+            UserPersona::SeniorAccountant.to_string(),
+            "senior_accountant"
+        );
         assert_eq!(UserPersona::Controller.to_string(), "controller");
         assert_eq!(UserPersona::Manager.to_string(), "manager");
         assert_eq!(UserPersona::Executive.to_string(), "executive");

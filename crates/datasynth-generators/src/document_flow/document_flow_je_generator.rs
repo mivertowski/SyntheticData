@@ -1539,10 +1539,16 @@ mod tests {
         let payment = create_test_payment();
 
         let gr_je = generator.generate_from_goods_receipt(&gr).unwrap();
-        assert_eq!(gr_je.header.document_type, "WE", "Goods receipt should be WE");
+        assert_eq!(
+            gr_je.header.document_type, "WE",
+            "Goods receipt should be WE"
+        );
 
         let vi_je = generator.generate_from_vendor_invoice(&invoice).unwrap();
-        assert_eq!(vi_je.header.document_type, "KR", "Vendor invoice should be KR");
+        assert_eq!(
+            vi_je.header.document_type, "KR",
+            "Vendor invoice should be KR"
+        );
 
         let pay_je = generator.generate_from_ap_payment(&payment).unwrap();
         assert_eq!(pay_je.header.document_type, "KZ", "AP payment should be KZ");

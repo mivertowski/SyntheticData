@@ -943,8 +943,8 @@ mod tests {
         }
 
         // Batch window hours (0-6, 20-23) should collectively have the majority
-        let batch_window: u32 = hour_counts[0..=6].iter().sum::<u32>()
-            + hour_counts[20..=23].iter().sum::<u32>();
+        let batch_window: u32 =
+            hour_counts[0..=6].iter().sum::<u32>() + hour_counts[20..=23].iter().sum::<u32>();
         let batch_pct = batch_window as f64 / n as f64;
         assert!(
             batch_pct > 0.40,

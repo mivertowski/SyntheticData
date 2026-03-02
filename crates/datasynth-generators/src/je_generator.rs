@@ -226,9 +226,10 @@ impl JournalEntryGenerator {
             drift_controller: None,
             // Always provide a basic BusinessDayCalculator so that weekend/holiday
             // filtering is active even when temporal_patterns is not explicitly enabled.
-            business_day_calculator: Some(BusinessDayCalculator::new(
-                HolidayCalendar::new(Region::US, start_date.year()),
-            )),
+            business_day_calculator: Some(BusinessDayCalculator::new(HolidayCalendar::new(
+                Region::US,
+                start_date.year(),
+            ))),
             processing_lag_calculator: None,
             temporal_patterns_config: None,
         }
@@ -1774,10 +1775,7 @@ impl JournalEntryGenerator {
             };
 
             if let Some(user) = pool.get_random_user(persona, &mut self.rng) {
-                return (
-                    user.user_id.clone(),
-                    user.persona.to_string(),
-                );
+                return (user.user_id.clone(), user.persona.to_string());
             }
         }
 
