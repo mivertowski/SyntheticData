@@ -73,7 +73,9 @@ impl ScenarioEngine {
                 })?
             }
             "minimal" => {
-                use datasynth_core::causal_dag::{CausalEdge, CausalNode, NodeCategory, TransferFunction};
+                use datasynth_core::causal_dag::{
+                    CausalEdge, CausalNode, NodeCategory, TransferFunction,
+                };
                 // Minimal DAG: macro → operational → outcome (3 nodes, 2 edges)
                 CausalDAG {
                     nodes: vec![
@@ -93,9 +95,7 @@ impl ScenarioEngine {
                             baseline_value: 1.0,
                             bounds: Some((0.2, 3.0)),
                             interventionable: true,
-                            config_bindings: vec![
-                                "transactions.volume_multiplier".to_string(),
-                            ],
+                            config_bindings: vec!["transactions.volume_multiplier".to_string()],
                         },
                         CausalNode {
                             id: "error_rate".to_string(),
@@ -104,9 +104,7 @@ impl ScenarioEngine {
                             baseline_value: 0.02,
                             bounds: Some((0.0, 0.30)),
                             interventionable: false,
-                            config_bindings: vec![
-                                "anomaly_injection.base_rate".to_string(),
-                            ],
+                            config_bindings: vec!["anomaly_injection.base_rate".to_string()],
                         },
                     ],
                     edges: vec![

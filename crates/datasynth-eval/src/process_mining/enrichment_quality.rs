@@ -96,10 +96,7 @@ impl OcelEnrichmentAnalyzer {
         let state_coverage = with_states as f64 / total as f64;
 
         // Workload coverage
-        let with_workload = events
-            .iter()
-            .filter(|e| e.has_resource_workload)
-            .count();
+        let with_workload = events.iter().filter(|e| e.has_resource_workload).count();
         let workload_coverage = with_workload as f64 / total as f64;
 
         // Correlation coverage
@@ -136,8 +133,7 @@ impl OcelEnrichmentAnalyzer {
             if workloads.len() < 2 {
                 0.0
             } else {
-                workloads
-                    .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+                workloads.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
                 let n = workloads.len() as f64;
                 let sum: f64 = workloads.iter().sum();
                 if sum == 0.0 {
@@ -265,7 +261,10 @@ mod tests {
             .collect();
         let result = analyzer.analyze(&events);
         assert!(!result.passes);
-        assert!(result.issues.iter().any(|i| i.contains("Workload coverage")));
+        assert!(result
+            .issues
+            .iter()
+            .any(|i| i.contains("Workload coverage")));
     }
 
     #[test]

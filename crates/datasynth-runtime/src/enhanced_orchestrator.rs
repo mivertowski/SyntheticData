@@ -1031,12 +1031,7 @@ impl EnhancedOrchestrator {
     }
 
     /// Emit a batch of items to the phase sink (if configured).
-    fn emit_phase_items<T: serde::Serialize>(
-        &self,
-        phase: &str,
-        type_name: &str,
-        items: &[T],
-    ) {
+    fn emit_phase_items<T: serde::Serialize>(&self, phase: &str, type_name: &str, items: &[T]) {
         if let Some(ref sink) = self.phase_sink {
             for item in items {
                 if let Ok(value) = serde_json::to_value(item) {
@@ -1436,9 +1431,21 @@ impl EnhancedOrchestrator {
             self.phase_document_flows(&mut stats)?;
 
         // Emit document flows to stream sink
-        self.emit_phase_items("document_flows", "PurchaseOrder", &document_flows.purchase_orders);
-        self.emit_phase_items("document_flows", "GoodsReceipt", &document_flows.goods_receipts);
-        self.emit_phase_items("document_flows", "VendorInvoice", &document_flows.vendor_invoices);
+        self.emit_phase_items(
+            "document_flows",
+            "PurchaseOrder",
+            &document_flows.purchase_orders,
+        );
+        self.emit_phase_items(
+            "document_flows",
+            "GoodsReceipt",
+            &document_flows.goods_receipts,
+        );
+        self.emit_phase_items(
+            "document_flows",
+            "VendorInvoice",
+            &document_flows.vendor_invoices,
+        );
         self.emit_phase_items("document_flows", "SalesOrder", &document_flows.sales_orders);
         self.emit_phase_items("document_flows", "Delivery", &document_flows.deliveries);
 
@@ -1547,7 +1554,11 @@ impl EnhancedOrchestrator {
         let anomaly_labels = self.phase_anomaly_injection(&mut entries, &actions, &mut stats)?;
 
         // Emit anomaly labels to stream sink
-        self.emit_phase_items("anomaly_injection", "LabeledAnomaly", &anomaly_labels.labels);
+        self.emit_phase_items(
+            "anomaly_injection",
+            "LabeledAnomaly",
+            &anomaly_labels.labels,
+        );
 
         // Phase 9: Balance Validation (after all JEs including payroll, manufacturing, IC)
         let balance_validation = self.phase_balance_validation(&entries)?;

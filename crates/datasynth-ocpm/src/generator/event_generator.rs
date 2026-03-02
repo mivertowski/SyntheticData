@@ -557,10 +557,7 @@ impl OcpmEventGenerator {
 
         // Use the activity's first state transition (primary object type)
         if let Some(transition) = activity.state_transitions.first() {
-            let from = transition
-                .from_state
-                .as_deref()
-                .unwrap_or("initial");
+            let from = transition.from_state.as_deref().unwrap_or("initial");
             event = event.with_state_transition(from, &transition.to_state);
         }
 

@@ -783,9 +783,7 @@ mod tests {
                     baseline_value: 0.85,
                     bounds: Some((0.0, 1.0)),
                     interventionable: true,
-                    config_bindings: vec![
-                        "internal_controls.exception_rate".to_string(),
-                    ],
+                    config_bindings: vec!["internal_controls.exception_rate".to_string()],
                 },
                 CausalNode {
                     id: "sod_compliance".to_string(),
@@ -794,9 +792,7 @@ mod tests {
                     baseline_value: 0.90,
                     bounds: Some((0.0, 1.0)),
                     interventionable: true,
-                    config_bindings: vec![
-                        "internal_controls.sod_violation_rate".to_string(),
-                    ],
+                    config_bindings: vec!["internal_controls.sod_violation_rate".to_string()],
                 },
                 CausalNode {
                     id: "misstatement_risk".to_string(),
@@ -805,9 +801,7 @@ mod tests {
                     baseline_value: 0.05,
                     bounds: Some((0.0, 1.0)),
                     interventionable: false,
-                    config_bindings: vec![
-                        "fraud.fraud_rate".to_string(),
-                    ],
+                    config_bindings: vec!["fraud.fraud_rate".to_string()],
                 },
             ],
             edges: vec![CausalEdge {
@@ -850,9 +844,7 @@ mod tests {
         // Automation should reduce processing_lag (baseline 2.0 * 0.7 = 1.4)
         assert!(!result.changes_by_month.is_empty());
         if let Some(changes) = result.changes_by_month.get(&1) {
-            let lag_change = changes
-                .iter()
-                .find(|c| c.source_node == "processing_lag");
+            let lag_change = changes.iter().find(|c| c.source_node == "processing_lag");
             assert!(lag_change.is_some(), "Should have processing_lag change");
         }
     }
@@ -938,9 +930,7 @@ mod tests {
         // System migration should increase processing_lag (disruptive)
         assert!(!result.changes_by_month.is_empty());
         if let Some(changes) = result.changes_by_month.get(&1) {
-            let lag_change = changes
-                .iter()
-                .find(|c| c.source_node == "processing_lag");
+            let lag_change = changes.iter().find(|c| c.source_node == "processing_lag");
             assert!(lag_change.is_some(), "Should have processing_lag change");
         }
     }

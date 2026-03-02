@@ -166,7 +166,8 @@ impl ConfigMutator {
         constraints: &ScenarioConstraints,
     ) -> Result<(), MutationError> {
         // Validate built-in preserve_* constraints
-        if constraints.preserve_document_chains && !config.document_flows.generate_document_references
+        if constraints.preserve_document_chains
+            && !config.document_flows.generate_document_references
         {
             return Err(MutationError::ConstraintViolation(
                 "preserve_document_chains requires document_flows.generate_document_references=true"

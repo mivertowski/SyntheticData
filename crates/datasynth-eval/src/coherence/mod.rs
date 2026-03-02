@@ -65,7 +65,9 @@ pub use manufacturing::{
     CycleCountData, ManufacturingEvaluation, ManufacturingEvaluator, ManufacturingThresholds,
     ProductionOrderData, QualityInspectionData, RoutingOperationData,
 };
-pub use multi_period::{MultiPeriodAnalysis, MultiPeriodAnalyzer, MultiPeriodThresholds, PeriodData};
+pub use multi_period::{
+    MultiPeriodAnalysis, MultiPeriodAnalyzer, MultiPeriodThresholds, PeriodData,
+};
 pub use multi_table::{
     get_o2c_flow_relationships, get_p2p_flow_relationships, AnomalyRecord, CascadeAnomalyAnalysis,
     CascadePath, ConsistencyViolation, MultiTableConsistencyEvaluator, MultiTableData,

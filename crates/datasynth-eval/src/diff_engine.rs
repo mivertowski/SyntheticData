@@ -553,7 +553,11 @@ impl DiffEngine {
             let fields: Vec<&str> = line.split(',').collect();
             if let (Some(name), Some(val_str)) = (fields.get(name_col), fields.get(value_col)) {
                 let name = name.trim().trim_matches('"').to_lowercase();
-                let val = val_str.trim().trim_matches('"').parse::<f64>().unwrap_or(0.0);
+                let val = val_str
+                    .trim()
+                    .trim_matches('"')
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
                 items.insert(name, val);
             }
         }

@@ -597,9 +597,7 @@ mod tests {
         let payment_alloc = result
             .correlation_events
             .iter()
-            .find(|c| {
-                c.correlation_type == crate::models::CorrelationEventType::PaymentAllocation
-            });
+            .find(|c| c.correlation_type == crate::models::CorrelationEventType::PaymentAllocation);
         assert!(
             payment_alloc.is_some(),
             "O2C with receipt should have payment allocation correlation"

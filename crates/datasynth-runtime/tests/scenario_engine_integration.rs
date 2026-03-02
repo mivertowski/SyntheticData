@@ -7,11 +7,14 @@ use datasynth_config::{
 };
 use datasynth_core::{
     Intervention, InterventionTiming, InterventionType, OnsetType, ParameterShiftIntervention,
+    ScenarioConstraints,
 };
-use datasynth_runtime::config_mutator::ConfigMutator;
+use datasynth_runtime::causal_engine::PropagatedInterventions;
+use datasynth_runtime::config_mutator::{ConfigMutator, MutationError};
 use datasynth_runtime::intervention_manager::{InterventionError, InterventionManager};
 use datasynth_runtime::scenario_engine::ScenarioEngine;
 use datasynth_test_utils::fixtures::minimal_config;
+use std::collections::BTreeMap;
 use tempfile::TempDir;
 use uuid::Uuid;
 

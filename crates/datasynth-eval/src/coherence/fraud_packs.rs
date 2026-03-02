@@ -122,7 +122,10 @@ impl FraudPackAnalyzer {
         if rate_accuracy < self.thresholds.min_rate_accuracy {
             issues.push(format!(
                 "Rate accuracy {:.3} < threshold {:.3} (configured={:.4}, actual={:.4})",
-                rate_accuracy, self.thresholds.min_rate_accuracy, data.configured_fraud_rate, actual_rate
+                rate_accuracy,
+                self.thresholds.min_rate_accuracy,
+                data.configured_fraud_rate,
+                actual_rate
             ));
         }
         if scheme_coverage < self.thresholds.min_scheme_coverage {
@@ -264,11 +267,7 @@ mod tests {
             total_records: 2000,
             configured_scheme_types: vec!["A".into(), "B".into(), "C".into()],
             actual_scheme_types: vec!["A".into(), "B".into(), "C".into()],
-            scheme_type_counts: HashMap::from([
-                ("A".into(), 98),
-                ("B".into(), 1),
-                ("C".into(), 1),
-            ]),
+            scheme_type_counts: HashMap::from([("A".into(), 98), ("B".into(), 1), ("C".into(), 1)]),
         };
         let result = analyzer.analyze(&data);
         assert!(result.scheme_distribution_entropy < 0.5);

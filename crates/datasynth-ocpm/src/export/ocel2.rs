@@ -419,8 +419,7 @@ impl Ocel2Exporter {
                     attributes.insert("resource_workload".into(), Ocel2Value::Float(workload));
                 }
                 if let Some(ref corr_id) = event.correlation_id {
-                    attributes
-                        .insert("correlation_id".into(), Ocel2Value::String(corr_id.clone()));
+                    attributes.insert("correlation_id".into(), Ocel2Value::String(corr_id.clone()));
                 }
 
                 let relationships: Vec<Ocel2EventObjectRelationship> = event
