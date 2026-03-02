@@ -64,7 +64,7 @@ impl ScenarioEngine {
         let mut dag: CausalDAG = match causal_config.preset.as_str() {
             "default" | "" => {
                 let yaml =
-                    include_str!("../../datasynth-config/src/templates/causal_dag_default.yaml");
+                    include_str!("causal_dag_default.yaml");
                 serde_yaml::from_str(yaml).map_err(|e| {
                     ScenarioError::Serialization(format!(
                         "failed to parse default causal DAG: {}",

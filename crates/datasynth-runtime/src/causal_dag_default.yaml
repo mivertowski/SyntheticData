@@ -1,0 +1,271 @@
+# Default Causal DAG for Financial Process Simulation
+# Covers the primary causal relationships between macro conditions,
+# operational parameters, and financial outcomes.
+
+nodes:
+  # ── Macro / External ───────────────────────
+  - id: gdp_growth
+    label: "GDP Growth Rate"
+    category: macro
+    baseline_value: 0.025
+    bounds: [-0.10, 0.15]
+    interventionable: true
+    config_bindings: []
+
+  - id: interest_rate
+    label: "Interest Rate"
+    category: macro
+    baseline_value: 0.05
+    bounds: [0.0, 0.20]
+    interventionable: true
+    config_bindings: []
+
+  - id: inflation_rate
+    label: "Inflation Rate"
+    category: macro
+    baseline_value: 0.02
+    bounds: [-0.02, 0.25]
+    interventionable: true
+    config_bindings:
+      - distributions.drift.economic_cycle.amplitude
+
+  - id: unemployment_rate
+    label: "Unemployment Rate"
+    category: macro
+    baseline_value: 0.04
+    bounds: [0.02, 0.15]
+    interventionable: true
+    config_bindings: []
+
+  # ── Operational ────────────────────────────
+  - id: transaction_volume
+    label: "Transaction Volume Multiplier"
+    category: operational
+    baseline_value: 1.0
+    bounds: [0.2, 3.0]
+    interventionable: true
+    config_bindings:
+      - transactions.volume_multiplier
+
+  - id: staffing_pressure
+    label: "Staffing Pressure"
+    category: operational
+    baseline_value: 1.0
+    bounds: [0.5, 3.0]
+    interventionable: false
+    config_bindings: []
+
+  - id: processing_lag
+    label: "Processing Lag Days"
+    category: operational
+    baseline_value: 2.0
+    bounds: [0.5, 30.0]
+    interventionable: true
+    config_bindings:
+      - temporal_patterns.processing_lags.invoice_receipt_lag.mu
+
+  - id: vendor_default_rate
+    label: "Vendor Default Rate"
+    category: operational
+    baseline_value: 0.02
+    bounds: [0.0, 0.30]
+    interventionable: true
+    config_bindings:
+      - vendor_network.dependencies.max_single_vendor_concentration
+
+  - id: customer_churn_rate
+    label: "Customer Churn Rate"
+    category: operational
+    baseline_value: 0.08
+    bounds: [0.0, 0.40]
+    interventionable: true
+    config_bindings:
+      - customer_segmentation.lifecycle.churned_rate
+
+  # ── Controls ───────────────────────────────
+  - id: control_effectiveness
+    label: "Control Effectiveness"
+    category: control
+    baseline_value: 0.95
+    bounds: [0.0, 1.0]
+    interventionable: true
+    config_bindings:
+      - internal_controls.exception_rate
+
+  - id: sod_compliance
+    label: "SOD Compliance Rate"
+    category: control
+    baseline_value: 0.99
+    bounds: [0.5, 1.0]
+    interventionable: true
+    config_bindings:
+      - internal_controls.sod_violation_rate
+
+  # ── Financial Outcomes ─────────────────────
+  - id: error_rate
+    label: "Transaction Error Rate"
+    category: outcome
+    baseline_value: 0.02
+    bounds: [0.0, 0.30]
+    interventionable: false
+    config_bindings:
+      - anomaly_injection.base_rate
+
+  - id: fraud_detection_rate
+    label: "Fraud Detection Rate"
+    category: outcome
+    baseline_value: 0.85
+    bounds: [0.0, 1.0]
+    interventionable: false
+    config_bindings: []
+
+  - id: bad_debt_rate
+    label: "Bad Debt Rate"
+    category: outcome
+    baseline_value: 0.01
+    bounds: [0.0, 0.20]
+    interventionable: false
+    config_bindings: []
+
+  - id: purchase_price_index
+    label: "Purchase Price Index"
+    category: financial
+    baseline_value: 1.0
+    bounds: [0.5, 3.0]
+    interventionable: true
+    config_bindings:
+      - distributions.amounts.components[0].mu
+
+  - id: revenue_growth
+    label: "Revenue Growth"
+    category: financial
+    baseline_value: 0.05
+    bounds: [-0.40, 0.50]
+    interventionable: false
+    config_bindings:
+      - distributions.drift.amount_mean_drift
+
+  - id: misstatement_risk
+    label: "Material Misstatement Risk"
+    category: outcome
+    baseline_value: 0.02
+    bounds: [0.0, 1.0]
+    interventionable: false
+    config_bindings: []
+
+edges:
+  # ── Macro → Operational ────────────────────
+  - from: gdp_growth
+    to: transaction_volume
+    transfer: { type: linear, coefficient: 0.8, intercept: 1.0 }
+    lag_months: 1
+    strength: 0.7
+    mechanism: "Economic growth drives transaction volume"
+
+  - from: gdp_growth
+    to: customer_churn_rate
+    transfer: { type: linear, coefficient: -0.5, intercept: 0.08 }
+    lag_months: 2
+    strength: 0.6
+    mechanism: "Growth reduces churn; contraction increases it"
+
+  - from: gdp_growth
+    to: vendor_default_rate
+    transfer: { type: inverse_logistic, capacity: 0.20, midpoint: -0.02, steepness: 15.0 }
+    lag_months: 3
+    strength: 0.7
+    mechanism: "Recession drives vendor defaults via logistic curve"
+
+  - from: unemployment_rate
+    to: staffing_pressure
+    transfer: { type: inverse_logistic, capacity: 2.5, midpoint: 0.06, steepness: 20.0 }
+    lag_months: 1
+    strength: 0.5
+    mechanism: "Low unemployment = hard to hire = staffing pressure"
+
+  - from: inflation_rate
+    to: purchase_price_index
+    transfer: { type: linear, coefficient: 1.0, intercept: 1.0 }
+    lag_months: 1
+    strength: 0.8
+    mechanism: "Inflation directly impacts purchase prices"
+
+  - from: interest_rate
+    to: bad_debt_rate
+    transfer: { type: logistic, capacity: 0.15, midpoint: 0.08, steepness: 30.0 }
+    lag_months: 3
+    strength: 0.6
+    mechanism: "Higher rates increase default probability"
+
+  # ── Operational → Controls ─────────────────
+  - from: staffing_pressure
+    to: control_effectiveness
+    transfer: { type: inverse_logistic, capacity: 0.95, midpoint: 1.8, steepness: 5.0 }
+    lag_months: 0
+    strength: 0.8
+    mechanism: "Understaffing degrades control execution"
+
+  - from: transaction_volume
+    to: staffing_pressure
+    transfer: { type: threshold, threshold: 1.3, magnitude: 0.5, saturation: 2.5 }
+    lag_months: 0
+    strength: 0.6
+    mechanism: "Volume above 130% of capacity creates pressure"
+
+  - from: staffing_pressure
+    to: processing_lag
+    transfer: { type: linear, coefficient: 3.0, intercept: 0.0 }
+    lag_months: 0
+    strength: 0.5
+    mechanism: "Pressure increases processing delays"
+
+  # ── Controls → Outcomes ────────────────────
+  - from: control_effectiveness
+    to: error_rate
+    transfer: { type: inverse_logistic, capacity: 0.20, midpoint: 0.70, steepness: 8.0 }
+    lag_months: 0
+    strength: 0.9
+    mechanism: "Weaker controls → more errors slip through"
+
+  - from: control_effectiveness
+    to: fraud_detection_rate
+    transfer: { type: logistic, capacity: 0.95, midpoint: 0.60, steepness: 6.0 }
+    lag_months: 0
+    strength: 0.8
+    mechanism: "Effective controls detect more fraud"
+
+  - from: sod_compliance
+    to: fraud_detection_rate
+    transfer: { type: linear, coefficient: 0.3, intercept: 0.55 }
+    lag_months: 0
+    strength: 0.4
+    mechanism: "SOD compliance is a secondary fraud deterrent"
+
+  # ── Outcomes → Financial ───────────────────
+  - from: customer_churn_rate
+    to: revenue_growth
+    transfer: { type: linear, coefficient: -2.0, intercept: 0.05 }
+    lag_months: 1
+    strength: 0.7
+    mechanism: "Churn directly reduces revenue"
+
+  - from: bad_debt_rate
+    to: revenue_growth
+    transfer: { type: linear, coefficient: -0.5, intercept: 0.0 }
+    lag_months: 1
+    strength: 0.3
+    mechanism: "Bad debt reduces effective revenue"
+
+  - from: error_rate
+    to: misstatement_risk
+    transfer: { type: logistic, capacity: 0.80, midpoint: 0.08, steepness: 25.0 }
+    lag_months: 0
+    strength: 0.9
+    mechanism: "Errors accumulate into misstatement risk"
+
+  - from: fraud_detection_rate
+    to: misstatement_risk
+    transfer: { type: linear, coefficient: -0.3, intercept: 0.30 }
+    lag_months: 0
+    strength: 0.5
+    mechanism: "Better detection reduces undetected fraud → lower misstatement"
