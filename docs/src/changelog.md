@@ -4,6 +4,49 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [0.11.0] - 2026-03-02
+
+**Multi-Period Sessions, Fraud Packs, Streaming Pipeline, OCEL Enrichment**
+
+- **GenerationSession**: Stateful multi-period generation with `.dss` checkpoint files, fiscal-year-aligned period splitting, deterministic seed advancement
+- **Incremental generation**: `--append --months N` adds more periods to an existing session
+- **Fraud scenario packs**: 5 built-in YAML packs (`revenue_fraud`, `payroll_ghost`, `vendor_kickback`, `management_override`, `comprehensive`) with deep-merge and `--fraud-rate` override
+- **StreamPipeline**: Phase-aware streaming via `PhaseSink` trait with file (JSONL), HTTP, and no-op targets
+- **OCEL 2.0 enrichment**: Lifecycle state machines (PO, SO, VI), correlation events (ThreeWayMatch, PaymentAllocation, BankReconciliation), resource pool modeling (RoundRobin, LeastBusy, SkillBased)
+- **4 new evaluators**: Multi-period coherence, fraud pack effectiveness, OCEL enrichment quality, causal intervention magnitude
+- **DiffEngine completion**: Record-level diffs and aggregate metric comparison for counterfactual analysis
+- **ConfigMutator constraints**: `preserve_accounting_identity`, `preserve_document_chains`, `preserve_period_close`, `preserve_balance_coherence`
+- **Minimal DAG preset**: 6-node causal DAG for lightweight counterfactual analysis
+- **ProcessChange and RegulatoryChange** intervention types for causal mapping
+- **Desktop UI**: Fraud Scenario Packs, Causal DAG, Generation Session, Streaming, OCPM enrichment pages
+- **Python v1.8.0**: `with_fraud_packs()`, `with_scenarios()`, `with_streaming()` blueprints
+- **5 new documentation pages**: Fraud Scenario Packs, Counterfactual Scenarios, OCEL 2.0 Enrichment, Streaming Pipeline, Evaluation Framework
+- CLI flags: `--fiscal-year-months`, `--append`, `--months`, `--fraud-scenario`, `--fraud-rate`, `--stream-file`
+- 13 integration tests across session, OCEL, and fraud pack modules
+
+### [0.10.0] - 2026-03-02
+
+**Counterfactual Simulation Engine**
+
+- Causal DAG with 17 financial process nodes, 8 transfer function types, topological sort via Kahn's algorithm
+- `Scenario`, `Intervention`, `InterventionTiming` core data models with 8 `InterventionType` variants
+- `CausalPropagationEngine`: onset interpolation (Sudden, Gradual, Oscillating), lag-aware propagation, bounds clamping
+- `InterventionManager`: timing validation, bounds checking, conflict detection with priority-based resolution
+- `ConfigMutator`: dot-path config mutation with array indexing, null-stripping, custom constraint validation
+- `ScenarioEngine` orchestrator: paired baseline/counterfactual generation, scenario manifest, DAG presets
+- `ScenarioDiff` types: `ImpactSummary`, `KpiImpact`, `RecordLevelDiff`, `AggregateComparison`, `InterventionTrace`
+- CLI subcommand: `datasynth-data scenario {list, validate, generate, diff}`
+- 59 new tests (45 unit + 14 integration) across core, config, runtime, and eval crates
+
+### [0.9.5] - 2026-03-01
+
+- Mutex poisoning recovery in streaming channel (11 calls replaced with graceful recovery)
+- 7 new country packs: France, Japan, China, India, Italy, Spain, Canada
+- 4 new holiday calendars (FR, IT, ES, CA)
+- Progressive tax bracket computation, credit memo wiring in O2C flow
+- 4 new generators: OrganizationalEvent, ProcessEvolution, DriftEvent, Confirmation
+- 39 new integration tests across eval, output, config, and banking crates
+
 ### [0.9.4] - 2026-03-01
 
 **RustGraph Round 2 — Graph Property Mapping & Entity/Edge Registry (DS-001 through DS-012)**

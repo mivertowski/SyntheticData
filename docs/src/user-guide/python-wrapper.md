@@ -501,3 +501,82 @@ spark.sql("SELECT * FROM journal_entries WHERE amount > 10000").show()
 ```
 
 For comprehensive integration documentation, see the [Ecosystem Integrations](ecosystem-integrations.md) guide.
+
+## Fraud Scenario Packs (v1.8.0)
+
+Apply pre-configured fraud pattern bundles using the `with_fraud_packs()` blueprint:
+
+```python
+from datasynth_py import DataSynth
+from datasynth_py.config import blueprints
+
+# Apply fraud packs to a base config
+config = blueprints.retail_small()
+config = blueprints.with_fraud_packs(
+    config,
+    packs=["revenue_fraud", "vendor_kickback"],
+    fraud_rate=0.03,
+)
+
+synth = DataSynth()
+result = synth.generate(config=config, output={"format": "csv", "sink": "temp_dir"})
+```
+
+You can also pass fraud packs directly to `generate()`:
+
+```python
+result = synth.generate(
+    config=config,
+    fraud_scenario=["comprehensive"],
+    fraud_rate=0.05,
+    output={"format": "csv", "sink": "temp_dir"},
+)
+```
+
+Available packs: `revenue_fraud`, `payroll_ghost`, `vendor_kickback`, `management_override`, `comprehensive`.
+
+See [Fraud Scenario Packs](../advanced/fraud-scenario-packs.md) for full documentation.
+
+## Counterfactual Scenarios (v1.8.0)
+
+Generate paired baseline and counterfactual datasets using the `with_scenarios()` blueprint:
+
+```python
+from datasynth_py.config import blueprints
+
+config = blueprints.retail_small()
+config = blueprints.with_scenarios(
+    config,
+    template="fraud_detection",
+    with_interventions=True,
+)
+
+synth = DataSynth()
+result = synth.generate(config=config, output={"format": "csv", "sink": "temp_dir"})
+```
+
+Available scenario templates include `fraud_detection`, `recession_impact`, and `control_failure`. See [Counterfactual Scenarios](../advanced/counterfactual-scenarios.md) for full documentation.
+
+## Streaming Output (v1.8.0)
+
+Configure phase-aware streaming output using the `with_streaming()` blueprint:
+
+```python
+from datasynth_py.config import blueprints
+
+config = blueprints.retail_small()
+config = blueprints.with_streaming(
+    config,
+    buffer_size=5000,
+    backpressure="block",
+)
+
+synth = DataSynth()
+result = synth.generate(
+    config=config,
+    stream_file="./output/stream.jsonl",
+    output={"format": "csv", "sink": "path", "path": "./output"},
+)
+```
+
+The `stream_file` parameter writes JSONL output alongside the standard batch output. See [Streaming Pipeline](../advanced/streaming-pipeline.md) for full documentation.

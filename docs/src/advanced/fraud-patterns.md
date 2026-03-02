@@ -269,3 +269,7 @@ pub struct AcfeAlignment {
 3. **Use red flags for training**: Red flags provide weak supervision signals
 4. **Validate against benchmarks**: Use ACFE benchmarks to verify model performance
 5. **Consider detection difficulty**: Use `detection_difficulty` labels for curriculum learning
+
+## See Also
+
+- [Fraud Scenario Packs](fraud-scenario-packs.md) -- Pre-configured fraud pattern bundles for quick deployment

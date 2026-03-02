@@ -12,6 +12,11 @@ Advanced features for specialized use cases.
 | [Intercompany Processing](intercompany.md) | Multi-entity transactions |
 | [Period Close Engine](period-close.md) | Month/quarter/year-end processes |
 | [Performance Tuning](performance.md) | Optimization strategies |
+| [Fraud Scenario Packs](fraud-scenario-packs.md) | Pre-configured fraud pattern bundles |
+| [Counterfactual Scenarios](counterfactual-scenarios.md) | Causal DAG what-if analysis |
+| [OCEL 2.0 Enrichment](ocel-enrichment.md) | Lifecycle, correlation, resource pools |
+| [Streaming Pipeline](streaming-pipeline.md) | Phase-aware real-time output |
+| [Evaluation Framework](evaluation-framework.md) | Data quality evaluation suite |
 
 ## Feature Matrix
 

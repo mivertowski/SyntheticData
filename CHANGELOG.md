@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI flags**: `--fiscal-year-months`, `--append`, `--months`, `--fraud-scenario`, `--fraud-rate`, `--stream-file` (`datasynth-cli`)
 - **SessionSchemaConfig**: Config schema for session behavior (checkpointing, per-period output) (`datasynth-config`)
 - 13 integration tests across session, OCEL, and fraud pack modules
+- **4 new evaluators** (`datasynth-eval`)
+  - Multi-period coherence: validates opening balance = prior closing balance, sequential document IDs, consistent entity references
+  - Fraud pack effectiveness: detection rate at configurable thresholds, false positive analysis, pack coverage metrics
+  - OCEL enrichment quality: state transition coverage, correlation event linking accuracy, resource utilization distribution
+  - Causal intervention magnitude: KPI delta vs. expected magnitude, propagation path verification, constraint preservation checks
+- **DiffEngine completion** (`datasynth-runtime`): Record-level diffs (added/removed/modified) and aggregate metric comparison between baseline and counterfactual output directories
+- **ConfigMutator constraint validation** (`datasynth-runtime`): `preserve_accounting_identity`, `preserve_document_chains`, `preserve_period_close`, `preserve_balance_coherence` constraints enforced during counterfactual generation
+- **Minimal DAG preset** (`datasynth-core`): 6-node causal DAG for lightweight counterfactual analysis
+- **ProcessChange and RegulatoryChange** causal mapping (`datasynth-core`): Two new `InterventionType` variants for modeling process and regulatory interventions
+- **Desktop UI pages** (`datasynth-ui`): Fraud Scenario Packs, Causal DAG visualization, Generation Session management, Streaming monitor, OCPM enrichment configuration
+- **Python v1.8.0** (`python/`): `with_fraud_packs()`, `with_scenarios()`, `with_streaming()` blueprints; `fraud_scenario`, `fraud_rate`, `stream_file` parameters on `generate()`
+- **5 new documentation pages** (`docs/`): Fraud Scenario Packs, Counterfactual Scenarios, OCEL 2.0 Enrichment, Streaming Pipeline, Evaluation Framework
 
 ## [0.10.0] - 2026-03-02
 

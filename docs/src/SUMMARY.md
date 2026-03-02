@@ -106,6 +106,11 @@
 - [Treasury & Cash Management](advanced/treasury.md)
 - [Project Accounting](advanced/project-accounting.md)
 - [ESG / Sustainability](advanced/esg-sustainability.md)
+- [Fraud Scenario Packs](advanced/fraud-scenario-packs.md)
+- [Counterfactual Scenarios](advanced/counterfactual-scenarios.md)
+- [OCEL 2.0 Enrichment](advanced/ocel-enrichment.md)
+- [Streaming Pipeline](advanced/streaming-pipeline.md)
+- [Evaluation Framework](advanced/evaluation-framework.md)
 
 ---
 
