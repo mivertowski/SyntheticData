@@ -122,10 +122,12 @@ pub use process_evolution_generator::*;
 pub use sales_quote_generator::*;
 pub use tax::*;
 
+// Control generator
+pub use control_generator::{ControlGenerator, ControlGeneratorConfig};
+
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:
 //   datasynth_generators::company_selector::WeightedCompanySelector
-//   datasynth_generators::control_generator::ControlGenerator
 //   datasynth_generators::counterfactual::CounterfactualGenerator
 //   datasynth_generators::disruption::DisruptionManager
 //   datasynth_generators::fraud::{RedFlagGenerator, CollusionNetwork, ...}

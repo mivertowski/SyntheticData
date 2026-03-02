@@ -68,6 +68,9 @@ use datasynth_generators::{
     // Core generators
     ChartOfAccountsGenerator,
     ContractGenerator,
+    // Control generator
+    ControlGenerator,
+    ControlGeneratorConfig,
     CustomerGenerator,
     DataQualityConfig,
     // Data quality
@@ -1544,6 +1547,33 @@ impl EnhancedOrchestrator {
             debug!(
                 "Final entry count: {}, line items: {} (after all JE-generating phases)",
                 stats.total_entries, stats.total_line_items
+            );
+        }
+
+        // Phase 7b: Apply internal controls to journal entries
+        if self.config.internal_controls.enabled && !entries.is_empty() {
+            info!("Phase 7b: Applying internal controls to journal entries");
+            let control_config = ControlGeneratorConfig {
+                exception_rate: self.config.internal_controls.exception_rate,
+                sod_violation_rate: self.config.internal_controls.sod_violation_rate,
+                enable_sox_marking: true,
+                sox_materiality_threshold: rust_decimal::Decimal::from_f64_retain(
+                    self.config.internal_controls.sox_materiality_threshold,
+                )
+                .unwrap_or_else(|| rust_decimal::Decimal::from(10000)),
+            };
+            let mut control_gen = ControlGenerator::with_config(self.seed + 99, control_config);
+            for entry in &mut entries {
+                control_gen.apply_controls(entry, &coa);
+            }
+            let with_controls = entries
+                .iter()
+                .filter(|e| !e.header.control_ids.is_empty())
+                .count();
+            info!(
+                "Applied controls to {} entries ({} with control IDs assigned)",
+                entries.len(),
+                with_controls
             );
         }
 

@@ -1654,7 +1654,7 @@ mod tests {
             10,
         );
         delivery.add_item(item);
-        delivery.post("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
+        delivery.post_goods_issue("JSMITH", NaiveDate::from_ymd_opt(2024, 1, 15).unwrap());
 
         let je = generator.generate_from_delivery(&delivery).unwrap();
 
