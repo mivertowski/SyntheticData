@@ -162,14 +162,35 @@ impl ConfigMutator {
 
     /// Validate that constraints are satisfied by the mutated config.
     fn validate_constraints(
-        _config: &GeneratorConfig,
+        config: &GeneratorConfig,
         constraints: &ScenarioConstraints,
     ) -> Result<(), MutationError> {
+        // Validate built-in preserve_* constraints
+        if constraints.preserve_document_chains && !config.document_flows.generate_document_references
+        {
+            return Err(MutationError::ConstraintViolation(
+                "preserve_document_chains requires document_flows.generate_document_references=true"
+                    .into(),
+            ));
+        }
+
+        if constraints.preserve_balance_coherence && !config.balance.validate_balance_equation {
+            return Err(MutationError::ConstraintViolation(
+                "preserve_balance_coherence requires balance.validate_balance_equation=true".into(),
+            ));
+        }
+
+        if constraints.preserve_balance_coherence && !config.balance.generate_trial_balances {
+            return Err(MutationError::ConstraintViolation(
+                "preserve_balance_coherence requires balance.generate_trial_balances=true".into(),
+            ));
+        }
+
         // Check custom constraints
         for constraint in &constraints.custom {
             // Custom constraints reference config paths with min/max bounds
             // These are validated against the config values
-            let config_json = serde_json::to_value(_config)
+            let config_json = serde_json::to_value(config)
                 .map_err(|e| MutationError::SerializationError(e.to_string()))?;
 
             let segments = Self::parse_path(&constraint.config_path);
@@ -368,5 +389,73 @@ mod tests {
         let constraints = ScenarioConstraints::default();
         // No custom constraints → always passes
         assert!(constraints.custom.is_empty());
+    }
+
+    #[test]
+    fn test_constraint_preserves_document_chains() {
+        use datasynth_test_utils::fixtures::minimal_config;
+
+        let mut config = minimal_config();
+        config.document_flows.generate_document_references = false;
+
+        let constraints = ScenarioConstraints {
+            preserve_document_chains: true,
+            ..Default::default()
+        };
+
+        let propagated = PropagatedInterventions {
+            changes_by_month: BTreeMap::new(),
+        };
+
+        let result = ConfigMutator::apply(&config, &propagated, &constraints);
+        assert!(matches!(result, Err(MutationError::ConstraintViolation(_))));
+        if let Err(MutationError::ConstraintViolation(msg)) = result {
+            assert!(msg.contains("document_flows"));
+        }
+    }
+
+    #[test]
+    fn test_constraint_preserves_balance() {
+        use datasynth_test_utils::fixtures::minimal_config;
+
+        let mut config = minimal_config();
+        config.balance.validate_balance_equation = false;
+
+        let constraints = ScenarioConstraints {
+            preserve_balance_coherence: true,
+            ..Default::default()
+        };
+
+        let propagated = PropagatedInterventions {
+            changes_by_month: BTreeMap::new(),
+        };
+
+        let result = ConfigMutator::apply(&config, &propagated, &constraints);
+        assert!(matches!(result, Err(MutationError::ConstraintViolation(_))));
+    }
+
+    #[test]
+    fn test_constraint_allows_when_not_preserved() {
+        use datasynth_test_utils::fixtures::minimal_config;
+
+        let mut config = minimal_config();
+        config.document_flows.generate_document_references = false;
+        config.balance.validate_balance_equation = false;
+
+        // All preserve flags off — should succeed
+        let constraints = ScenarioConstraints {
+            preserve_document_chains: false,
+            preserve_balance_coherence: false,
+            preserve_period_close: false,
+            preserve_accounting_identity: false,
+            custom: vec![],
+        };
+
+        let propagated = PropagatedInterventions {
+            changes_by_month: BTreeMap::new(),
+        };
+
+        let result = ConfigMutator::apply(&config, &propagated, &constraints);
+        assert!(result.is_ok());
     }
 }

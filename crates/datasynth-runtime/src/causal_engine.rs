@@ -264,34 +264,92 @@ impl<'a> CausalPropagationEngine<'a> {
             }
             InterventionType::EntityEvent(ee) => {
                 use datasynth_core::InterventionEntityEvent;
+                let rate_increase = ee
+                    .parameters
+                    .get("rate_increase")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.05);
                 match ee.subtype {
                     InterventionEntityEvent::VendorDefault => {
                         if let Some(node) = self.dag.find_node("vendor_default_rate") {
-                            let increase = ee
-                                .parameters
-                                .get("rate_increase")
-                                .and_then(|v| v.as_f64())
-                                .unwrap_or(0.05);
                             effects.insert(
                                 "vendor_default_rate".to_string(),
-                                node.baseline_value + increase * onset_factor,
+                                node.baseline_value + rate_increase * onset_factor,
                             );
                         }
                     }
                     InterventionEntityEvent::CustomerChurn => {
                         if let Some(node) = self.dag.find_node("customer_churn_rate") {
-                            let increase = ee
-                                .parameters
-                                .get("rate_increase")
-                                .and_then(|v| v.as_f64())
-                                .unwrap_or(0.05);
                             effects.insert(
                                 "customer_churn_rate".to_string(),
-                                node.baseline_value + increase * onset_factor,
+                                node.baseline_value + rate_increase * onset_factor,
                             );
                         }
                     }
-                    _ => {}
+                    InterventionEntityEvent::EmployeeDeparture
+                    | InterventionEntityEvent::KeyPersonRisk => {
+                        // Staff-related events increase processing lag and error rates
+                        if let Some(node) = self.dag.find_node("processing_lag") {
+                            effects.insert(
+                                "processing_lag".to_string(),
+                                node.baseline_value * (1.0 + 0.2 * onset_factor),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("error_rate") {
+                            effects.insert(
+                                "error_rate".to_string(),
+                                node.baseline_value * (1.0 + 0.15 * onset_factor),
+                            );
+                        }
+                    }
+                    InterventionEntityEvent::NewVendorOnboarding => {
+                        // Onboarding temporarily increases transaction volume
+                        if let Some(node) = self.dag.find_node("transaction_volume") {
+                            effects.insert(
+                                "transaction_volume".to_string(),
+                                node.baseline_value * (1.0 + 0.1 * onset_factor),
+                            );
+                        }
+                    }
+                    InterventionEntityEvent::MergerAcquisition => {
+                        // M&A increases volume and temporarily increases error rate
+                        if let Some(node) = self.dag.find_node("transaction_volume") {
+                            effects.insert(
+                                "transaction_volume".to_string(),
+                                node.baseline_value * (1.0 + 0.5 * onset_factor),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("error_rate") {
+                            effects.insert(
+                                "error_rate".to_string(),
+                                node.baseline_value * (1.0 + 0.3 * onset_factor),
+                            );
+                        }
+                    }
+                    InterventionEntityEvent::VendorCollusion => {
+                        // Collusion impacts fraud risk and control effectiveness
+                        if let Some(node) = self.dag.find_node("misstatement_risk") {
+                            effects.insert(
+                                "misstatement_risk".to_string(),
+                                (node.baseline_value + 0.15 * onset_factor).min(1.0),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("control_effectiveness") {
+                            effects.insert(
+                                "control_effectiveness".to_string(),
+                                node.baseline_value * (1.0 - 0.2 * onset_factor),
+                            );
+                        }
+                    }
+                    InterventionEntityEvent::CustomerConsolidation => {
+                        // Consolidation reduces customer count, increases avg transaction size
+                        if let Some(node) = self.dag.find_node("customer_churn_rate") {
+                            effects.insert(
+                                "customer_churn_rate".to_string(),
+                                node.baseline_value + rate_increase * onset_factor,
+                            );
+                        }
+                    }
                 }
             }
             InterventionType::Custom(ci) => {
@@ -308,12 +366,92 @@ impl<'a> CausalPropagationEngine<'a> {
                     }
                 }
             }
+            InterventionType::ProcessChange(pc) => {
+                use datasynth_core::ProcessChangeType;
+                match pc.subtype {
+                    ProcessChangeType::ProcessAutomation => {
+                        // Automation reduces processing lag and staffing pressure
+                        if let Some(node) = self.dag.find_node("processing_lag") {
+                            effects.insert(
+                                "processing_lag".to_string(),
+                                node.baseline_value * (1.0 - 0.3 * onset_factor),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("error_rate") {
+                            effects.insert(
+                                "error_rate".to_string(),
+                                node.baseline_value * (1.0 - 0.2 * onset_factor),
+                            );
+                        }
+                    }
+                    ProcessChangeType::ApprovalThresholdChange
+                    | ProcessChangeType::NewApprovalLevel => {
+                        // Approval changes affect control effectiveness
+                        if let Some(node) = self.dag.find_node("control_effectiveness") {
+                            effects.insert(
+                                "control_effectiveness".to_string(),
+                                (node.baseline_value + 0.1 * onset_factor).min(1.0),
+                            );
+                        }
+                    }
+                    ProcessChangeType::PolicyChange => {
+                        if let Some(node) = self.dag.find_node("sod_compliance") {
+                            effects.insert(
+                                "sod_compliance".to_string(),
+                                (node.baseline_value + 0.05 * onset_factor).min(1.0),
+                            );
+                        }
+                    }
+                    ProcessChangeType::SystemMigration
+                    | ProcessChangeType::OutsourcingTransition
+                    | ProcessChangeType::ReorganizationRestructuring => {
+                        // Disruptive changes temporarily increase processing lag
+                        if let Some(node) = self.dag.find_node("processing_lag") {
+                            effects.insert(
+                                "processing_lag".to_string(),
+                                node.baseline_value * (1.0 + 0.15 * onset_factor),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("error_rate") {
+                            effects.insert(
+                                "error_rate".to_string(),
+                                node.baseline_value * (1.0 + 0.1 * onset_factor),
+                            );
+                        }
+                    }
+                }
+            }
+            InterventionType::RegulatoryChange(rc) => {
+                let severity = rc
+                    .parameters
+                    .get("severity")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.5);
+                // Regulatory changes tighten compliance and controls
+                if let Some(node) = self.dag.find_node("sod_compliance") {
+                    effects.insert(
+                        "sod_compliance".to_string(),
+                        (node.baseline_value + severity * 0.2 * onset_factor).min(1.0),
+                    );
+                }
+                if let Some(node) = self.dag.find_node("control_effectiveness") {
+                    effects.insert(
+                        "control_effectiveness".to_string(),
+                        (node.baseline_value + severity * 0.15 * onset_factor).min(1.0),
+                    );
+                }
+                if let Some(node) = self.dag.find_node("misstatement_risk") {
+                    effects.insert(
+                        "misstatement_risk".to_string(),
+                        node.baseline_value * (1.0 - severity * 0.1 * onset_factor),
+                    );
+                }
+            }
             InterventionType::Composite(comp) => {
                 for child in &comp.children {
                     self.map_intervention_to_nodes(child, onset_factor, effects);
                 }
             }
-            _ => {}
         }
     }
 }
@@ -615,5 +753,195 @@ mod tests {
         // GDP should be clamped to bounds [-0.10, 0.15]
         // The propagation in the DAG clamps values
         assert!(!result.changes_by_month.is_empty());
+    }
+
+    fn make_dag_with_operational_nodes() -> CausalDAG {
+        let mut dag = CausalDAG {
+            nodes: vec![
+                CausalNode {
+                    id: "processing_lag".to_string(),
+                    label: "Processing Lag".to_string(),
+                    category: NodeCategory::Operational,
+                    baseline_value: 2.0,
+                    bounds: Some((0.5, 10.0)),
+                    interventionable: true,
+                    config_bindings: vec!["temporal_patterns.processing_lags.base_mu".to_string()],
+                },
+                CausalNode {
+                    id: "error_rate".to_string(),
+                    label: "Error Rate".to_string(),
+                    category: NodeCategory::Outcome,
+                    baseline_value: 0.02,
+                    bounds: Some((0.0, 0.30)),
+                    interventionable: false,
+                    config_bindings: vec!["anomaly_injection.base_rate".to_string()],
+                },
+                CausalNode {
+                    id: "control_effectiveness".to_string(),
+                    label: "Control Effectiveness".to_string(),
+                    category: NodeCategory::Operational,
+                    baseline_value: 0.85,
+                    bounds: Some((0.0, 1.0)),
+                    interventionable: true,
+                    config_bindings: vec![
+                        "internal_controls.exception_rate".to_string(),
+                    ],
+                },
+                CausalNode {
+                    id: "sod_compliance".to_string(),
+                    label: "SoD Compliance".to_string(),
+                    category: NodeCategory::Operational,
+                    baseline_value: 0.90,
+                    bounds: Some((0.0, 1.0)),
+                    interventionable: true,
+                    config_bindings: vec![
+                        "internal_controls.sod_violation_rate".to_string(),
+                    ],
+                },
+                CausalNode {
+                    id: "misstatement_risk".to_string(),
+                    label: "Misstatement Risk".to_string(),
+                    category: NodeCategory::Outcome,
+                    baseline_value: 0.05,
+                    bounds: Some((0.0, 1.0)),
+                    interventionable: false,
+                    config_bindings: vec![
+                        "fraud.fraud_rate".to_string(),
+                    ],
+                },
+            ],
+            edges: vec![CausalEdge {
+                from: "processing_lag".to_string(),
+                to: "error_rate".to_string(),
+                transfer: TransferFunction::Linear {
+                    coefficient: 0.01,
+                    intercept: 0.0,
+                },
+                lag_months: 0,
+                strength: 1.0,
+                mechanism: Some("Lag increases errors".to_string()),
+            }],
+            topological_order: vec![],
+        };
+        dag.validate().expect("DAG should be valid");
+        dag
+    }
+
+    #[test]
+    fn test_propagation_process_change_automation() {
+        let dag = make_dag_with_operational_nodes();
+        let engine = CausalPropagationEngine::new(&dag);
+
+        let intervention = make_intervention(
+            InterventionType::ProcessChange(datasynth_core::ProcessChangeIntervention {
+                subtype: datasynth_core::ProcessChangeType::ProcessAutomation,
+                parameters: HashMap::new(),
+            }),
+            1,
+            OnsetType::Sudden,
+        );
+
+        let validated = vec![ValidatedIntervention {
+            intervention,
+            affected_config_paths: vec![],
+        }];
+
+        let result = engine.propagate(&validated, 3).unwrap();
+        // Automation should reduce processing_lag (baseline 2.0 * 0.7 = 1.4)
+        assert!(!result.changes_by_month.is_empty());
+        if let Some(changes) = result.changes_by_month.get(&1) {
+            let lag_change = changes
+                .iter()
+                .find(|c| c.source_node == "processing_lag");
+            assert!(lag_change.is_some(), "Should have processing_lag change");
+        }
+    }
+
+    #[test]
+    fn test_propagation_regulatory_change() {
+        let dag = make_dag_with_operational_nodes();
+        let engine = CausalPropagationEngine::new(&dag);
+
+        let mut params = HashMap::new();
+        params.insert("severity".to_string(), serde_json::json!(0.8));
+
+        let intervention = make_intervention(
+            InterventionType::RegulatoryChange(datasynth_core::RegulatoryChangeIntervention {
+                subtype: datasynth_core::RegulatoryChangeType::NewStandardAdoption,
+                parameters: params,
+            }),
+            1,
+            OnsetType::Sudden,
+        );
+
+        let validated = vec![ValidatedIntervention {
+            intervention,
+            affected_config_paths: vec![],
+        }];
+
+        let result = engine.propagate(&validated, 3).unwrap();
+        // Regulatory change should increase sod_compliance above baseline 0.90
+        assert!(!result.changes_by_month.is_empty());
+    }
+
+    #[test]
+    fn test_propagation_entity_event_employee_departure() {
+        let dag = make_dag_with_operational_nodes();
+        let engine = CausalPropagationEngine::new(&dag);
+
+        let intervention = make_intervention(
+            InterventionType::EntityEvent(datasynth_core::EntityEventIntervention {
+                subtype: datasynth_core::InterventionEntityEvent::EmployeeDeparture,
+                target: datasynth_core::EntityTarget {
+                    cluster: None,
+                    entity_ids: None,
+                    filter: None,
+                    count: Some(3),
+                    fraction: None,
+                },
+                parameters: HashMap::new(),
+            }),
+            1,
+            OnsetType::Sudden,
+        );
+
+        let validated = vec![ValidatedIntervention {
+            intervention,
+            affected_config_paths: vec![],
+        }];
+
+        let result = engine.propagate(&validated, 2).unwrap();
+        // Employee departure should increase processing_lag
+        assert!(!result.changes_by_month.is_empty());
+    }
+
+    #[test]
+    fn test_propagation_process_change_system_migration() {
+        let dag = make_dag_with_operational_nodes();
+        let engine = CausalPropagationEngine::new(&dag);
+
+        let intervention = make_intervention(
+            InterventionType::ProcessChange(datasynth_core::ProcessChangeIntervention {
+                subtype: datasynth_core::ProcessChangeType::SystemMigration,
+                parameters: HashMap::new(),
+            }),
+            1,
+            OnsetType::Sudden,
+        );
+
+        let validated = vec![ValidatedIntervention {
+            intervention,
+            affected_config_paths: vec![],
+        }];
+
+        let result = engine.propagate(&validated, 2).unwrap();
+        // System migration should increase processing_lag (disruptive)
+        assert!(!result.changes_by_month.is_empty());
+        if let Some(changes) = result.changes_by_month.get(&1) {
+            let lag_change = changes
+                .iter()
+                .find(|c| c.source_node == "processing_lag");
+            assert!(lag_change.is_some(), "Should have processing_lag change");
+        }
     }
 }

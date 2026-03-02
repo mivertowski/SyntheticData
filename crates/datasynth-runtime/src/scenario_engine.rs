@@ -73,10 +73,66 @@ impl ScenarioEngine {
                 })?
             }
             "minimal" => {
-                // Minimal DAG: just macro → operational → outcome
+                use datasynth_core::causal_dag::{CausalEdge, CausalNode, NodeCategory, TransferFunction};
+                // Minimal DAG: macro → operational → outcome (3 nodes, 2 edges)
                 CausalDAG {
-                    nodes: vec![],
-                    edges: vec![],
+                    nodes: vec![
+                        CausalNode {
+                            id: "gdp_growth".to_string(),
+                            label: "GDP Growth".to_string(),
+                            category: NodeCategory::Macro,
+                            baseline_value: 0.025,
+                            bounds: Some((-0.10, 0.15)),
+                            interventionable: true,
+                            config_bindings: vec![],
+                        },
+                        CausalNode {
+                            id: "transaction_volume".to_string(),
+                            label: "Transaction Volume".to_string(),
+                            category: NodeCategory::Operational,
+                            baseline_value: 1.0,
+                            bounds: Some((0.2, 3.0)),
+                            interventionable: true,
+                            config_bindings: vec![
+                                "transactions.volume_multiplier".to_string(),
+                            ],
+                        },
+                        CausalNode {
+                            id: "error_rate".to_string(),
+                            label: "Error Rate".to_string(),
+                            category: NodeCategory::Outcome,
+                            baseline_value: 0.02,
+                            bounds: Some((0.0, 0.30)),
+                            interventionable: false,
+                            config_bindings: vec![
+                                "anomaly_injection.base_rate".to_string(),
+                            ],
+                        },
+                    ],
+                    edges: vec![
+                        CausalEdge {
+                            from: "gdp_growth".to_string(),
+                            to: "transaction_volume".to_string(),
+                            transfer: TransferFunction::Linear {
+                                coefficient: 0.8,
+                                intercept: 1.0,
+                            },
+                            lag_months: 1,
+                            strength: 1.0,
+                            mechanism: Some("GDP growth drives transaction volume".to_string()),
+                        },
+                        CausalEdge {
+                            from: "transaction_volume".to_string(),
+                            to: "error_rate".to_string(),
+                            transfer: TransferFunction::Linear {
+                                coefficient: 0.01,
+                                intercept: 0.0,
+                            },
+                            lag_months: 0,
+                            strength: 1.0,
+                            mechanism: Some("Higher volume increases error rate".to_string()),
+                        },
+                    ],
                     topological_order: vec![],
                 }
             }
@@ -392,6 +448,54 @@ mod tests {
             interventions[0].intervention_type,
             InterventionType::ParameterShift(_)
         ));
+    }
+
+    #[test]
+    fn test_minimal_dag_preset_valid() {
+        let mut config = minimal_config();
+        config.scenarios = ScenariosConfig {
+            enabled: true,
+            scenarios: vec![ScenarioSchemaConfig {
+                name: "minimal_test".to_string(),
+                description: "Test with minimal DAG".to_string(),
+                tags: vec![],
+                base: None,
+                probability_weight: None,
+                interventions: vec![InterventionSchemaConfig {
+                    intervention_type: serde_json::json!({
+                        "type": "parameter_shift",
+                        "target": "transactions.volume_multiplier",
+                        "to": 2.0,
+                        "interpolation": "linear"
+                    }),
+                    timing: InterventionTimingSchemaConfig {
+                        start_month: 1,
+                        duration_months: None,
+                        onset: "sudden".to_string(),
+                        ramp_months: None,
+                    },
+                    label: Some("Volume increase".to_string()),
+                    priority: 0,
+                }],
+                constraints: ScenarioConstraintsSchemaConfig::default(),
+                output: ScenarioOutputSchemaConfig::default(),
+                metadata: Default::default(),
+            }],
+            causal_model: datasynth_config::CausalModelSchemaConfig {
+                preset: "minimal".to_string(),
+                ..Default::default()
+            },
+            defaults: Default::default(),
+        };
+
+        let engine = ScenarioEngine::new(config).expect("should create engine with minimal DAG");
+        assert_eq!(engine.causal_dag().nodes.len(), 3);
+        assert_eq!(engine.causal_dag().edges.len(), 2);
+
+        // Validate all scenarios pass
+        let results = engine.validate_all();
+        assert_eq!(results.len(), 1);
+        assert!(results[0].valid, "validation error: {:?}", results[0].error);
     }
 
     #[test]

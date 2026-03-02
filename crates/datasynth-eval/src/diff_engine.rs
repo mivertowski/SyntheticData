@@ -131,23 +131,35 @@ impl DiffEngine {
             } else {
                 0.0
             };
+
+            // Parse anomaly types from both files
+            let b_types = Self::extract_anomaly_types(&baseline_al)?;
+            let c_types = Self::extract_anomaly_types(&counter_al)?;
+
+            let new_types: Vec<String> = c_types.difference(&b_types).cloned().collect();
+            let removed_types: Vec<String> = b_types.difference(&c_types).cloned().collect();
+
             Some(AnomalyImpact {
                 baseline_count: b_count,
                 counterfactual_count: c_count,
-                new_types: vec![],
-                removed_types: vec![],
+                new_types,
+                removed_types,
                 rate_change_pct: rate_change,
             })
         } else {
             None
         };
 
+        // Compute financial statement impacts if trial_balance.csv exists
+        let financial_statement_impacts =
+            Self::compute_financial_impacts(baseline_path, counterfactual_path)?;
+
         Ok(ImpactSummary {
             scenario_name: String::new(),
             generation_timestamp: chrono::Utc::now().to_rfc3339(),
             interventions_applied: 0,
             kpi_impacts,
-            financial_statement_impacts: None,
+            financial_statement_impacts,
             anomaly_impact,
             control_impact: None,
         })
@@ -388,6 +400,166 @@ impl DiffEngine {
         })
     }
 
+    /// Extract unique anomaly type values from an anomaly_labels CSV.
+    /// Looks for a column named "anomaly_type" or "type" in the header.
+    fn extract_anomaly_types(path: &Path) -> Result<HashSet<String>, DiffError> {
+        let content = std::fs::read_to_string(path)?;
+        let mut lines = content.lines();
+        let header = lines.next().unwrap_or("");
+        let columns: Vec<&str> = header.split(',').collect();
+
+        // Find the type column index
+        let type_col = columns
+            .iter()
+            .position(|c| {
+                let trimmed = c.trim().trim_matches('"').to_lowercase();
+                trimmed == "anomaly_type" || trimmed == "type"
+            })
+            .unwrap_or(1); // Default to second column if not found
+
+        let mut types = HashSet::new();
+        for line in lines {
+            if line.trim().is_empty() {
+                continue;
+            }
+            let fields: Vec<&str> = line.split(',').collect();
+            if let Some(field) = fields.get(type_col) {
+                let val = field.trim().trim_matches('"').to_string();
+                if !val.is_empty() {
+                    types.insert(val);
+                }
+            }
+        }
+        Ok(types)
+    }
+
+    /// Compute financial statement impacts by comparing trial_balance.csv
+    /// or balance_sheet.csv between baseline and counterfactual.
+    fn compute_financial_impacts(
+        baseline_path: &Path,
+        counterfactual_path: &Path,
+    ) -> Result<Option<FinancialStatementImpact>, DiffError> {
+        // Try trial_balance.csv first, then balance_sheet.csv
+        let file_candidates = ["trial_balance.csv", "balance_sheet.csv"];
+        let mut b_file = None;
+        let mut c_file = None;
+
+        for candidate in &file_candidates {
+            let bp = baseline_path.join(candidate);
+            let cp = counterfactual_path.join(candidate);
+            if bp.exists() && cp.exists() {
+                b_file = Some(bp);
+                c_file = Some(cp);
+                break;
+            }
+        }
+
+        let (b_path, c_path) = match (b_file, c_file) {
+            (Some(b), Some(c)) => (b, c),
+            _ => return Ok(None),
+        };
+
+        let b_items = Self::parse_financial_line_items(&b_path)?;
+        let c_items = Self::parse_financial_line_items(&c_path)?;
+
+        let pct_change = |key: &str| -> f64 {
+            let b_val = b_items.get(key).copied().unwrap_or(0.0);
+            let c_val = c_items.get(key).copied().unwrap_or(0.0);
+            if b_val.abs() > f64::EPSILON {
+                ((c_val - b_val) / b_val) * 100.0
+            } else {
+                0.0
+            }
+        };
+
+        // Collect top changed line items
+        let mut line_item_impacts: Vec<LineItemImpact> = b_items
+            .keys()
+            .chain(c_items.keys())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .filter_map(|key| {
+                let b_val = b_items.get(key).copied().unwrap_or(0.0);
+                let c_val = c_items.get(key).copied().unwrap_or(0.0);
+                let change = if b_val.abs() > f64::EPSILON {
+                    ((c_val - b_val) / b_val) * 100.0
+                } else {
+                    0.0
+                };
+                if change.abs() > f64::EPSILON {
+                    Some(LineItemImpact {
+                        line_item: key.clone(),
+                        baseline: b_val,
+                        counterfactual: c_val,
+                        change_pct: change,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Sort by absolute change percentage, descending
+        line_item_impacts.sort_by(|a, b| {
+            b.change_pct
+                .abs()
+                .partial_cmp(&a.change_pct.abs())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        line_item_impacts.truncate(10);
+
+        Ok(Some(FinancialStatementImpact {
+            revenue_change_pct: pct_change("revenue"),
+            cogs_change_pct: pct_change("cogs"),
+            margin_change_pct: pct_change("gross_margin"),
+            net_income_change_pct: pct_change("net_income"),
+            total_assets_change_pct: pct_change("total_assets"),
+            total_liabilities_change_pct: pct_change("total_liabilities"),
+            cash_flow_change_pct: pct_change("cash_flow"),
+            top_changed_line_items: line_item_impacts,
+        }))
+    }
+
+    /// Parse a financial CSV into a map of line item name → value.
+    /// Expects columns like: account/line_item, amount/balance/value.
+    fn parse_financial_line_items(path: &Path) -> Result<HashMap<String, f64>, DiffError> {
+        let content = std::fs::read_to_string(path)?;
+        let mut lines = content.lines();
+        let header = lines.next().unwrap_or("");
+        let columns: Vec<&str> = header.split(',').collect();
+
+        // Find name and value column indices
+        let name_col = columns
+            .iter()
+            .position(|c| {
+                let t = c.trim().trim_matches('"').to_lowercase();
+                t == "account" || t == "line_item" || t == "item" || t == "name"
+            })
+            .unwrap_or(0);
+
+        let value_col = columns
+            .iter()
+            .position(|c| {
+                let t = c.trim().trim_matches('"').to_lowercase();
+                t == "amount" || t == "balance" || t == "value" || t == "total"
+            })
+            .unwrap_or(1);
+
+        let mut items = HashMap::new();
+        for line in lines {
+            if line.trim().is_empty() {
+                continue;
+            }
+            let fields: Vec<&str> = line.split(',').collect();
+            if let (Some(name), Some(val_str)) = (fields.get(name_col), fields.get(value_col)) {
+                let name = name.trim().trim_matches('"').to_lowercase();
+                let val = val_str.trim().trim_matches('"').parse::<f64>().unwrap_or(0.0);
+                items.insert(name, val);
+            }
+        }
+        Ok(items)
+    }
+
     /// Parse CSV content into a map of (first-column value) -> (full line).
     fn parse_csv_records(content: &str) -> HashMap<&str, &str> {
         let mut records = HashMap::new();
@@ -525,6 +697,71 @@ mod tests {
         assert_eq!(tx_kpi.baseline_value, 2.0);
         assert_eq!(tx_kpi.counterfactual_value, 3.0);
         assert_eq!(tx_kpi.direction, ChangeDirection::Increase);
+    }
+
+    #[test]
+    fn test_diff_anomaly_types_new_and_removed() {
+        let baseline = TempDir::new().unwrap();
+        let counter = TempDir::new().unwrap();
+
+        write_csv(
+            baseline.path(),
+            "anomaly_labels.csv",
+            "id,anomaly_type,severity\n1,FictitiousTransaction,high\n2,DuplicateEntry,medium\n",
+        );
+        write_csv(
+            counter.path(),
+            "anomaly_labels.csv",
+            "id,anomaly_type,severity\n1,DuplicateEntry,medium\n2,SplitTransaction,high\n3,BenfordViolation,low\n",
+        );
+
+        let config = DiffConfig {
+            formats: vec![DiffFormat::Summary],
+            ..Default::default()
+        };
+
+        let diff = DiffEngine::compute(baseline.path(), counter.path(), &config).unwrap();
+        let summary = diff.summary.unwrap();
+        let anomaly = summary.anomaly_impact.unwrap();
+
+        assert_eq!(anomaly.baseline_count, 2);
+        assert_eq!(anomaly.counterfactual_count, 3);
+        assert!(anomaly.new_types.contains(&"SplitTransaction".to_string()));
+        assert!(anomaly.new_types.contains(&"BenfordViolation".to_string()));
+        assert!(anomaly
+            .removed_types
+            .contains(&"FictitiousTransaction".to_string()));
+        assert!(!anomaly.new_types.contains(&"DuplicateEntry".to_string()));
+    }
+
+    #[test]
+    fn test_diff_financial_statement_impacts() {
+        let baseline = TempDir::new().unwrap();
+        let counter = TempDir::new().unwrap();
+
+        write_csv(
+            baseline.path(),
+            "trial_balance.csv",
+            "account,amount\nrevenue,1000000.0\ncogs,600000.0\ntotal_assets,5000000.0\n",
+        );
+        write_csv(
+            counter.path(),
+            "trial_balance.csv",
+            "account,amount\nrevenue,850000.0\ncogs,550000.0\ntotal_assets,4800000.0\n",
+        );
+
+        let config = DiffConfig {
+            formats: vec![DiffFormat::Summary],
+            ..Default::default()
+        };
+
+        let diff = DiffEngine::compute(baseline.path(), counter.path(), &config).unwrap();
+        let summary = diff.summary.unwrap();
+        let fi = summary.financial_statement_impacts.unwrap();
+
+        assert!(fi.revenue_change_pct < 0.0); // Revenue decreased
+        assert!(fi.total_assets_change_pct < 0.0); // Assets decreased
+        assert!(!fi.top_changed_line_items.is_empty());
     }
 
     #[test]
