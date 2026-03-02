@@ -9,8 +9,8 @@ use std::collections::{BTreeMap, HashMap};
 use uuid::Uuid;
 
 use super::{
-    ActivityType, CaseTrace, ObjectGraph, ObjectInstance, ObjectRelationship, ObjectType,
-    OcpmEvent, ProcessVariant, RelationshipIndex, Resource,
+    ActivityType, CaseTrace, CorrelationEvent, ObjectGraph, ObjectInstance, ObjectRelationship,
+    ObjectType, OcpmEvent, ProcessVariant, RelationshipIndex, Resource,
 };
 
 /// Complete OCPM event log with all events, objects, and relationships.
@@ -34,6 +34,8 @@ pub struct OcpmEventLog {
     pub variants: HashMap<String, ProcessVariant>,
     /// Case traces
     pub cases: HashMap<Uuid, CaseTrace>,
+    /// Correlation events (three-way match, payment allocation, etc.)
+    pub correlation_events: Vec<CorrelationEvent>,
     /// Event index by object ID
     #[serde(skip)]
     events_by_object: HashMap<Uuid, Vec<usize>>,
@@ -64,6 +66,7 @@ impl OcpmEventLog {
             resources: HashMap::new(),
             variants: HashMap::new(),
             cases: HashMap::new(),
+            correlation_events: Vec::new(),
             events_by_object: HashMap::new(),
             events_by_activity: HashMap::new(),
             events_by_date: BTreeMap::new(),
@@ -137,6 +140,11 @@ impl OcpmEventLog {
     pub fn add_case(&mut self, case: CaseTrace) {
         self.cases.insert(case.case_id, case);
         self.metadata.case_count = self.cases.len();
+    }
+
+    /// Add a correlation event.
+    pub fn add_correlation_event(&mut self, correlation: CorrelationEvent) {
+        self.correlation_events.push(correlation);
     }
 
     /// Get events for an object.

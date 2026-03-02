@@ -11,11 +11,13 @@ use rand_chacha::ChaCha8Rng;
 use uuid::Uuid;
 
 use crate::models::{
-    ActivityType, CaseTrace, EventLifecycle, EventObjectRef, ObjectAttributeValue, ObjectInstance,
-    ObjectQualifier, ObjectRelationship, ObjectType, OcpmEvent,
+    ActivityType, CaseTrace, CorrelationEvent, EventLifecycle, EventObjectRef,
+    LifecycleStateMachine, ObjectAttributeValue, ObjectInstance, ObjectQualifier,
+    ObjectRelationship, ObjectType, OcpmEvent, ResourcePool,
 };
 use datasynth_core::models::BusinessProcess;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
+use std::collections::HashMap;
 
 /// Sub-discriminator values for OCPM UUID streams.
 ///
@@ -191,11 +193,22 @@ pub struct OcpmEventGenerator {
     audit_activities: Vec<ActivityType>,
     /// Deterministic UUID factory for reproducible generation
     uuid_factory: OcpmUuidFactory,
+    /// Lifecycle state machines keyed by object type
+    state_machines: HashMap<String, LifecycleStateMachine>,
+    /// Resource pools for assignment
+    resource_pools: Vec<ResourcePool>,
 }
 
 impl OcpmEventGenerator {
     /// Create a new OCPM event generator with a seed.
     pub fn new(seed: u64) -> Self {
+        use crate::models::{all_state_machines, default_resource_pools};
+
+        let sm_map = all_state_machines()
+            .into_iter()
+            .map(|sm| (sm.object_type.clone(), sm))
+            .collect();
+
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             config: OcpmGeneratorConfig::default(),
@@ -208,11 +221,20 @@ impl OcpmEventGenerator {
             bank_activities: ActivityType::bank_activities(),
             audit_activities: ActivityType::audit_activities(),
             uuid_factory: OcpmUuidFactory::new(seed),
+            state_machines: sm_map,
+            resource_pools: default_resource_pools(),
         }
     }
 
     /// Create with custom configuration.
     pub fn with_config(seed: u64, config: OcpmGeneratorConfig) -> Self {
+        use crate::models::{all_state_machines, default_resource_pools};
+
+        let sm_map = all_state_machines()
+            .into_iter()
+            .map(|sm| (sm.object_type.clone(), sm))
+            .collect();
+
         Self {
             rng: ChaCha8Rng::seed_from_u64(seed),
             config,
@@ -225,6 +247,8 @@ impl OcpmEventGenerator {
             bank_activities: ActivityType::bank_activities(),
             audit_activities: ActivityType::audit_activities(),
             uuid_factory: OcpmUuidFactory::new(seed),
+            state_machines: sm_map,
+            resource_pools: default_resource_pools(),
         }
     }
 
@@ -478,6 +502,80 @@ impl OcpmEventGenerator {
     pub fn random_bool(&mut self, probability: f64) -> bool {
         self.rng.random::<f64>() < probability
     }
+
+    /// Look up state transition for an activity on an object type using the
+    /// lifecycle state machine.
+    ///
+    /// Returns `(from_state, to_state)` if a matching transition is found.
+    pub fn find_state_transition(
+        &self,
+        object_type: &str,
+        activity_name: &str,
+    ) -> Option<(String, String)> {
+        if let Some(sm) = self.state_machines.get(object_type) {
+            for t in &sm.transitions {
+                if t.activity_name == activity_name {
+                    return Some((t.from_state.clone(), t.to_state.clone()));
+                }
+            }
+        }
+        None
+    }
+
+    /// Assign a resource from the named pool, returning the resource ID and
+    /// the resource's current workload after assignment.
+    pub fn assign_resource_from_pool(&mut self, pool_id: &str) -> Option<(String, f64)> {
+        for pool in &mut self.resource_pools {
+            if pool.pool_id == pool_id {
+                if let Some(resource_id) = pool.assign() {
+                    let resource_id = resource_id.to_string();
+                    let workload = pool
+                        .resources
+                        .iter()
+                        .find(|r| r.resource_id == resource_id)
+                        .map(|r| r.current_workload)
+                        .unwrap_or(0.0);
+                    return Some((resource_id, workload));
+                }
+            }
+        }
+        None
+    }
+
+    /// Enrich an event with state transition and resource workload.
+    ///
+    /// Uses the `ActivityType`'s own state transitions (which define the primary
+    /// object type's from_state → to_state for this activity) and assigns a
+    /// resource from the specified pool for workload tracking.
+    pub fn enrich_event(
+        &mut self,
+        event: OcpmEvent,
+        activity: &ActivityType,
+        pool_id: &str,
+    ) -> OcpmEvent {
+        let mut event = event;
+
+        // Use the activity's first state transition (primary object type)
+        if let Some(transition) = activity.state_transitions.first() {
+            let from = transition
+                .from_state
+                .as_deref()
+                .unwrap_or("initial");
+            event = event.with_state_transition(from, &transition.to_state);
+        }
+
+        // Add resource workload from pool
+        if let Some((_resource_id, workload)) = self.assign_resource_from_pool(pool_id) {
+            event = event.with_resource_workload(workload);
+        }
+
+        event
+    }
+
+    /// Get a reference to the lifecycle state machines.
+    pub fn state_machines(&self) -> &HashMap<String, LifecycleStateMachine> {
+        &self.state_machines
+    }
 }
 
 /// Type of process variant.
@@ -515,6 +613,8 @@ pub struct CaseGenerationResult {
     pub case_trace: CaseTrace,
     /// Variant type used
     pub variant_type: VariantType,
+    /// Correlation events (three-way match, payment allocation, etc.)
+    pub correlation_events: Vec<CorrelationEvent>,
 }
 
 #[cfg(test)]

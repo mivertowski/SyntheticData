@@ -133,7 +133,7 @@ pub struct Ocel2EventObjectRelationship {
 }
 
 /// OCEL 2.0 attribute value.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Ocel2Value {
     /// String value
@@ -408,6 +408,21 @@ impl Ocel2Exporter {
                     attributes.insert("is_anomaly".into(), Ocel2Value::Boolean(event.is_anomaly));
                 }
 
+                // OCEL 2.0 enrichment fields
+                if let Some(ref from) = event.from_state {
+                    attributes.insert("from_state".into(), Ocel2Value::String(from.clone()));
+                }
+                if let Some(ref to) = event.to_state {
+                    attributes.insert("to_state".into(), Ocel2Value::String(to.clone()));
+                }
+                if let Some(workload) = event.resource_workload {
+                    attributes.insert("resource_workload".into(), Ocel2Value::Float(workload));
+                }
+                if let Some(ref corr_id) = event.correlation_id {
+                    attributes
+                        .insert("correlation_id".into(), Ocel2Value::String(corr_id.clone()));
+                }
+
                 let relationships: Vec<Ocel2EventObjectRelationship> = event
                     .object_refs
                     .iter()
@@ -573,5 +588,75 @@ mod tests {
         assert_eq!(qualifier_to_string(&ObjectQualifier::Updated), "updated");
         assert_eq!(qualifier_to_string(&ObjectQualifier::Read), "read");
         assert_eq!(qualifier_to_string(&ObjectQualifier::Consumed), "consumed");
+    }
+
+    #[test]
+    fn test_ocel2_export_includes_enrichment_fields() {
+        use chrono::Utc;
+        let mut log = OcpmEventLog::new().with_standard_types();
+
+        // Create an event with enrichment fields populated
+        let event = OcpmEvent::new(
+            "create_po",
+            "Create Purchase Order",
+            Utc::now(),
+            "ap-001",
+            "1000",
+        )
+        .with_state_transition("initial", "created")
+        .with_resource_workload(0.35)
+        .with_correlation_id("3WAY-abc12345");
+        log.add_event(event);
+
+        let exporter = Ocel2Exporter::new().with_pretty_print(false);
+        let ocel2 = exporter.convert(&log);
+
+        assert_eq!(ocel2.events.len(), 1);
+        let exported_event = &ocel2.events[0];
+
+        // Verify enrichment fields are in the attributes
+        assert_eq!(
+            exported_event.attributes.get("from_state"),
+            Some(&Ocel2Value::String("initial".into()))
+        );
+        assert_eq!(
+            exported_event.attributes.get("to_state"),
+            Some(&Ocel2Value::String("created".into()))
+        );
+        assert_eq!(
+            exported_event.attributes.get("resource_workload"),
+            Some(&Ocel2Value::Float(0.35))
+        );
+        assert_eq!(
+            exported_event.attributes.get("correlation_id"),
+            Some(&Ocel2Value::String("3WAY-abc12345".into()))
+        );
+    }
+
+    #[test]
+    fn test_ocel2_export_omits_none_enrichment_fields() {
+        use chrono::Utc;
+        let mut log = OcpmEventLog::new().with_standard_types();
+
+        // Create an event WITHOUT enrichment fields
+        let event = OcpmEvent::new(
+            "create_po",
+            "Create Purchase Order",
+            Utc::now(),
+            "ap-001",
+            "1000",
+        );
+        log.add_event(event);
+
+        let exporter = Ocel2Exporter::new();
+        let ocel2 = exporter.convert(&log);
+
+        let exported_event = &ocel2.events[0];
+
+        // Enrichment fields should NOT be present when None
+        assert!(!exported_event.attributes.contains_key("from_state"));
+        assert!(!exported_event.attributes.contains_key("to_state"));
+        assert!(!exported_event.attributes.contains_key("resource_workload"));
+        assert!(!exported_event.attributes.contains_key("correlation_id"));
     }
 }

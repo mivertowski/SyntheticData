@@ -9,7 +9,9 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
+use crate::models::{
+    ActivityType, CorrelationEvent, EventObjectRef, ObjectAttributeValue, ObjectType,
+};
 use datasynth_core::models::BusinessProcess;
 
 /// P2P document references for event generation.
@@ -99,7 +101,11 @@ impl P2pDocuments {
 }
 
 impl OcpmEventGenerator {
-    /// Generate complete P2P process events.
+    /// Generate complete P2P process events with OCEL 2.0 enrichment.
+    ///
+    /// Events are enriched with state transitions (from `ActivityType` transitions),
+    /// resource workload (from resource pools), and correlation events (three-way
+    /// match at verify, payment allocation at execute_payment).
     pub fn generate_p2p_case(
         &mut self,
         documents: &P2pDocuments,
@@ -112,6 +118,7 @@ impl OcpmEventGenerator {
         let mut events = Vec::new();
         let mut objects = Vec::new();
         let mut relationships = Vec::new();
+        let mut correlation_events = Vec::new();
         let mut current_time = start_time;
 
         // Create object types
@@ -161,6 +168,7 @@ impl OcpmEventGenerator {
                 ObjectAttributeValue::String(cc.clone()),
             );
         }
+        event = self.enrich_event(event, &create_po, "pool-approver");
         events.push(event);
 
         // Activity: Approve PO
@@ -182,6 +190,7 @@ impl OcpmEventGenerator {
                     .with_external_id(&documents.po_number),
             )
             .with_document_ref(&documents.po_number);
+        event = self.enrich_event(event, &approve_po, "pool-approver");
         events.push(event);
 
         // Activity: Release PO
@@ -202,6 +211,7 @@ impl OcpmEventGenerator {
                     .with_external_id(&documents.po_number),
             )
             .with_document_ref(&documents.po_number);
+        event = self.enrich_event(event, &release_po, "pool-approver");
         events.push(event);
 
         // Skip remaining steps for error paths
@@ -220,6 +230,7 @@ impl OcpmEventGenerator {
                 relationships,
                 case_trace,
                 variant_type,
+                correlation_events,
             };
         }
 
@@ -260,6 +271,7 @@ impl OcpmEventGenerator {
                         .with_external_id(&documents.po_number),
                 )
                 .with_document_ref(gr_number);
+            event = self.enrich_event(event, &create_gr, "pool-warehouse");
             events.push(event);
 
             // Activity: Post GR
@@ -280,6 +292,7 @@ impl OcpmEventGenerator {
                         .with_external_id(gr_number),
                 )
                 .with_document_ref(gr_number);
+            event = self.enrich_event(event, &post_gr, "pool-warehouse");
             events.push(event);
         }
 
@@ -325,6 +338,7 @@ impl OcpmEventGenerator {
                 "invoice_amount",
                 ObjectAttributeValue::Decimal(documents.amount),
             );
+            event = self.enrich_event(event, &receive_invoice, "pool-ap");
             events.push(event);
 
             // Skip verify for exception paths sometimes
@@ -356,6 +370,18 @@ impl OcpmEventGenerator {
 
                 if let Some(gr_id) = documents.gr_id {
                     event = event.with_object(EventObjectRef::read(gr_id, &gr_type.type_id));
+
+                    // Create three-way match correlation event
+                    let corr = CorrelationEvent::three_way_match(
+                        documents.po_id,
+                        gr_id,
+                        invoice_object.object_id,
+                        current_time,
+                        &resource,
+                        &documents.company_code,
+                    );
+                    event = event.with_correlation_id(&corr.correlation_id);
+                    correlation_events.push(corr);
                 }
 
                 Self::add_event_attribute(
@@ -363,6 +389,7 @@ impl OcpmEventGenerator {
                     "match_result",
                     ObjectAttributeValue::String("matched".into()),
                 );
+                event = self.enrich_event(event, &verify_invoice, "pool-ap");
                 events.push(event);
             }
 
@@ -388,6 +415,7 @@ impl OcpmEventGenerator {
                         .with_external_id(&documents.po_number),
                 )
                 .with_document_ref(invoice_number);
+            event = self.enrich_event(event, &post_invoice, "pool-ap");
             events.push(event);
 
             // Activity: Execute Payment
@@ -419,6 +447,21 @@ impl OcpmEventGenerator {
                     "payment_amount",
                     ObjectAttributeValue::Decimal(documents.amount),
                 );
+
+                // Create payment allocation correlation event
+                if let Some(payment_id) = documents.payment_id {
+                    let corr = CorrelationEvent::payment_allocation(
+                        payment_id,
+                        &[invoice_object.object_id],
+                        current_time,
+                        &resource,
+                        &documents.company_code,
+                    );
+                    event = event.with_correlation_id(&corr.correlation_id);
+                    correlation_events.push(corr);
+                }
+
+                event = self.enrich_event(event, &execute_payment, "pool-ap");
                 events.push(event);
             }
         }
@@ -438,6 +481,7 @@ impl OcpmEventGenerator {
             relationships,
             case_trace,
             variant_type,
+            correlation_events,
         }
     }
 }
@@ -507,5 +551,176 @@ mod tests {
         // Error path should stop early (only create, approve, release)
         assert_eq!(result.variant_type, VariantType::ErrorPath);
         assert_eq!(result.events.len(), 3);
+    }
+
+    #[test]
+    fn test_p2p_events_have_state_transitions() {
+        let mut generator = OcpmEventGenerator::with_config(
+            42,
+            super::super::OcpmGeneratorConfig {
+                happy_path_rate: 1.0,
+                exception_path_rate: 0.0,
+                error_path_rate: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let factory = OcpmUuidFactory::new(42);
+        let documents = P2pDocuments::new(
+            "PO-000010",
+            "V000001",
+            "1000",
+            Decimal::new(10000, 0),
+            "USD",
+            &factory,
+        )
+        .with_goods_receipt("GR-000010", &factory)
+        .with_invoice("INV-000010", &factory)
+        .with_payment("PAY-000010", &factory);
+
+        let result = generator.generate_p2p_case(
+            &documents,
+            Utc::now(),
+            &["user001".into(), "user002".into()],
+        );
+
+        // All events should have state transitions (from_state populated)
+        let events_with_state: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.from_state.is_some())
+            .collect();
+        assert!(
+            !events_with_state.is_empty(),
+            "At least some events should have state transitions"
+        );
+
+        // First event (create PO) should transition to "created"
+        let first = &result.events[0];
+        assert_eq!(first.to_state.as_deref(), Some("created"));
+    }
+
+    #[test]
+    fn test_p2p_events_have_resource_workload() {
+        let mut generator = OcpmEventGenerator::with_config(
+            42,
+            super::super::OcpmGeneratorConfig {
+                happy_path_rate: 1.0,
+                exception_path_rate: 0.0,
+                error_path_rate: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let factory = OcpmUuidFactory::new(42);
+        let documents = P2pDocuments::new(
+            "PO-000020",
+            "V000001",
+            "1000",
+            Decimal::new(10000, 0),
+            "USD",
+            &factory,
+        )
+        .with_goods_receipt("GR-000020", &factory)
+        .with_invoice("INV-000020", &factory)
+        .with_payment("PAY-000020", &factory);
+
+        let result = generator.generate_p2p_case(
+            &documents,
+            Utc::now(),
+            &["user001".into(), "user002".into()],
+        );
+
+        // All events should have resource workload populated
+        let events_with_workload: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.resource_workload.is_some())
+            .collect();
+        assert!(
+            !events_with_workload.is_empty(),
+            "At least some events should have resource workload"
+        );
+
+        // Resource workload should be positive
+        for event in &events_with_workload {
+            assert!(event.resource_workload.unwrap() > 0.0);
+        }
+    }
+
+    #[test]
+    fn test_p2p_three_way_match_correlation() {
+        let mut generator = OcpmEventGenerator::with_config(
+            42,
+            super::super::OcpmGeneratorConfig {
+                happy_path_rate: 1.0,
+                exception_path_rate: 0.0,
+                error_path_rate: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let factory = OcpmUuidFactory::new(42);
+        let documents = P2pDocuments::new(
+            "PO-000030",
+            "V000001",
+            "1000",
+            Decimal::new(10000, 0),
+            "USD",
+            &factory,
+        )
+        .with_goods_receipt("GR-000030", &factory)
+        .with_invoice("INV-000030", &factory)
+        .with_payment("PAY-000030", &factory);
+
+        let result = generator.generate_p2p_case(
+            &documents,
+            Utc::now(),
+            &["user001".into(), "user002".into()],
+        );
+
+        // Should have correlation events
+        assert!(
+            !result.correlation_events.is_empty(),
+            "Happy path P2P should produce correlation events"
+        );
+
+        // Should have a three-way match correlation
+        let three_way = result
+            .correlation_events
+            .iter()
+            .find(|c| {
+                c.correlation_type == crate::models::CorrelationEventType::ThreeWayMatch
+            });
+        assert!(
+            three_way.is_some(),
+            "Should have a three-way match correlation"
+        );
+
+        // The verify_invoice event should have a correlation_id
+        let verify_events: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.activity_id == "verify_invoice")
+            .collect();
+        assert!(!verify_events.is_empty());
+        assert!(verify_events[0].correlation_id.is_some());
+        assert!(verify_events[0]
+            .correlation_id
+            .as_deref()
+            .unwrap()
+            .starts_with("3WAY-"));
+
+        // Should also have a payment allocation
+        let payment_alloc = result
+            .correlation_events
+            .iter()
+            .find(|c| {
+                c.correlation_type == crate::models::CorrelationEventType::PaymentAllocation
+            });
+        assert!(
+            payment_alloc.is_some(),
+            "Should have a payment allocation correlation"
+        );
     }
 }

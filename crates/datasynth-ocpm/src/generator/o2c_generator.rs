@@ -9,7 +9,9 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use super::{CaseGenerationResult, OcpmEventGenerator, OcpmUuidFactory, VariantType};
-use crate::models::{ActivityType, EventObjectRef, ObjectAttributeValue, ObjectType};
+use crate::models::{
+    ActivityType, CorrelationEvent, EventObjectRef, ObjectAttributeValue, ObjectType,
+};
 use datasynth_core::models::BusinessProcess;
 
 /// O2C document references for event generation.
@@ -99,7 +101,11 @@ impl O2cDocuments {
 }
 
 impl OcpmEventGenerator {
-    /// Generate complete O2C process events.
+    /// Generate complete O2C process events with OCEL 2.0 enrichment.
+    ///
+    /// Events are enriched with state transitions (from `ActivityType` transitions),
+    /// resource workload (from resource pools), and correlation events (payment
+    /// allocation at receive_payment).
     pub fn generate_o2c_case(
         &mut self,
         documents: &O2cDocuments,
@@ -112,6 +118,7 @@ impl OcpmEventGenerator {
         let mut events = Vec::new();
         let mut objects = Vec::new();
         let mut relationships = Vec::new();
+        let mut correlation_events = Vec::new();
         let mut current_time = start_time;
 
         // Create object types
@@ -161,6 +168,7 @@ impl OcpmEventGenerator {
                 ObjectAttributeValue::String(cc.clone()),
             );
         }
+        event = self.enrich_event(event, &create_so, "pool-ar");
         events.push(event);
 
         // Activity: Check Credit
@@ -184,6 +192,7 @@ impl OcpmEventGenerator {
             "credit_result",
             ObjectAttributeValue::String("approved".into()),
         );
+        event = self.enrich_event(event, &check_credit, "pool-ar");
         events.push(event);
 
         // Activity: Release SO
@@ -202,6 +211,7 @@ impl OcpmEventGenerator {
             EventObjectRef::updated(so_object.object_id, &so_type.type_id)
                 .with_external_id(&documents.so_number),
         );
+        event = self.enrich_event(event, &release_so, "pool-ar");
         events.push(event);
 
         // Skip remaining steps for error paths
@@ -220,6 +230,7 @@ impl OcpmEventGenerator {
                 relationships,
                 case_trace,
                 variant_type,
+                correlation_events,
             };
         }
 
@@ -260,6 +271,7 @@ impl OcpmEventGenerator {
                         .with_external_id(delivery_number),
                 )
                 .with_document_ref(delivery_number);
+            event = self.enrich_event(event, &create_delivery, "pool-warehouse");
             events.push(event);
 
             // Activity: Pick
@@ -278,6 +290,7 @@ impl OcpmEventGenerator {
                 EventObjectRef::updated(delivery_object.object_id, &delivery_type.type_id)
                     .with_external_id(delivery_number),
             );
+            event = self.enrich_event(event, &pick, "pool-warehouse");
             events.push(event);
 
             // Activity: Pack
@@ -296,6 +309,7 @@ impl OcpmEventGenerator {
                 EventObjectRef::updated(delivery_object.object_id, &delivery_type.type_id)
                     .with_external_id(delivery_number),
             );
+            event = self.enrich_event(event, &pack, "pool-warehouse");
             events.push(event);
 
             // Activity: Ship
@@ -319,6 +333,7 @@ impl OcpmEventGenerator {
                     EventObjectRef::updated(so_object.object_id, &so_type.type_id)
                         .with_external_id(&documents.so_number),
                 );
+            event = self.enrich_event(event, &ship, "pool-warehouse");
             events.push(event);
         }
 
@@ -368,6 +383,7 @@ impl OcpmEventGenerator {
                 "invoice_amount",
                 ObjectAttributeValue::Decimal(documents.amount),
             );
+            event = self.enrich_event(event, &create_invoice, "pool-ar");
             events.push(event);
 
             // Activity: Post Customer Invoice
@@ -386,6 +402,7 @@ impl OcpmEventGenerator {
                 EventObjectRef::updated(invoice_object.object_id, &invoice_type.type_id)
                     .with_external_id(invoice_number),
             );
+            event = self.enrich_event(event, &post_invoice, "pool-ar");
             events.push(event);
 
             // Activity: Receive Payment
@@ -417,6 +434,21 @@ impl OcpmEventGenerator {
                     "payment_amount",
                     ObjectAttributeValue::Decimal(documents.amount),
                 );
+
+                // Create payment allocation correlation event
+                if let Some(receipt_id) = documents.receipt_id {
+                    let corr = CorrelationEvent::payment_allocation(
+                        receipt_id,
+                        &[invoice_object.object_id],
+                        current_time,
+                        &resource,
+                        &documents.company_code,
+                    );
+                    event = event.with_correlation_id(&corr.correlation_id);
+                    correlation_events.push(corr);
+                }
+
+                event = self.enrich_event(event, &receive_payment, "pool-ar");
                 events.push(event);
             }
         }
@@ -436,6 +468,7 @@ impl OcpmEventGenerator {
             relationships,
             case_trace,
             variant_type,
+            correlation_events,
         }
     }
 }
@@ -473,5 +506,117 @@ mod tests {
         assert!(!result.objects.is_empty());
         // Should have case trace
         assert!(!result.case_trace.activity_sequence.is_empty());
+    }
+
+    #[test]
+    fn test_o2c_events_have_state_transitions() {
+        let mut generator = OcpmEventGenerator::with_config(
+            42,
+            super::super::OcpmGeneratorConfig {
+                happy_path_rate: 1.0,
+                exception_path_rate: 0.0,
+                error_path_rate: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let factory = OcpmUuidFactory::new(42);
+        let documents = O2cDocuments::new(
+            "SO-000010",
+            "C000001",
+            "1000",
+            Decimal::new(15000, 0),
+            "USD",
+            &factory,
+        )
+        .with_delivery("DEL-000010", &factory)
+        .with_invoice("INV-000010", &factory)
+        .with_receipt("REC-000010", &factory);
+
+        let result = generator.generate_o2c_case(
+            &documents,
+            Utc::now(),
+            &["user001".into(), "user002".into()],
+        );
+
+        // Events should have state transitions
+        let events_with_state: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.from_state.is_some())
+            .collect();
+        assert!(
+            !events_with_state.is_empty(),
+            "O2C events should have state transitions"
+        );
+
+        // Events should have resource workload
+        let events_with_workload: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.resource_workload.is_some())
+            .collect();
+        assert!(
+            !events_with_workload.is_empty(),
+            "O2C events should have resource workload"
+        );
+    }
+
+    #[test]
+    fn test_o2c_payment_allocation_correlation() {
+        let mut generator = OcpmEventGenerator::with_config(
+            42,
+            super::super::OcpmGeneratorConfig {
+                happy_path_rate: 1.0,
+                exception_path_rate: 0.0,
+                error_path_rate: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let factory = OcpmUuidFactory::new(42);
+        let documents = O2cDocuments::new(
+            "SO-000020",
+            "C000001",
+            "1000",
+            Decimal::new(15000, 0),
+            "USD",
+            &factory,
+        )
+        .with_delivery("DEL-000020", &factory)
+        .with_invoice("INV-000020", &factory)
+        .with_receipt("REC-000020", &factory);
+
+        let result = generator.generate_o2c_case(
+            &documents,
+            Utc::now(),
+            &["user001".into(), "user002".into()],
+        );
+
+        // Should have payment allocation correlation
+        let payment_alloc = result
+            .correlation_events
+            .iter()
+            .find(|c| {
+                c.correlation_type == crate::models::CorrelationEventType::PaymentAllocation
+            });
+        assert!(
+            payment_alloc.is_some(),
+            "O2C with receipt should have payment allocation correlation"
+        );
+
+        // Receive payment event should have correlation_id
+        let receive_events: Vec<_> = result
+            .events
+            .iter()
+            .filter(|e| e.activity_id == "receive_payment")
+            .collect();
+        assert!(!receive_events.is_empty());
+        assert!(receive_events[0].correlation_id.is_some());
+        assert!(receive_events[0]
+            .correlation_id
+            .as_deref()
+            .unwrap()
+            .starts_with("PAY-"));
     }
 }

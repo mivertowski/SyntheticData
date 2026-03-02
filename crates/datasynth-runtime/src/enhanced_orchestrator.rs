@@ -5645,6 +5645,9 @@ impl EnhancedOrchestrator {
             for relationship in result.relationships {
                 event_log.add_relationship(relationship);
             }
+            for corr in result.correlation_events {
+                event_log.add_correlation_event(corr);
+            }
             event_log.add_case(result.case_trace);
         };
 

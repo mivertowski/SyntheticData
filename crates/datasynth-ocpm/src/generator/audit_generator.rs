@@ -162,6 +162,7 @@ impl OcpmEventGenerator {
                 relationships,
                 case_trace,
                 variant_type,
+                correlation_events: Vec::new(),
             };
         }
 
@@ -439,6 +440,7 @@ impl OcpmEventGenerator {
             relationships,
             case_trace,
             variant_type,
+            correlation_events: Vec::new(),
         }
     }
 }
