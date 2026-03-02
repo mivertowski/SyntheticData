@@ -239,23 +239,21 @@ impl DocumentFlowJeGenerator {
             }
 
             // 5. value_date for AR/AP accounts
-            if line.value_date.is_none() {
-                if line.gl_account == self.config.ar_account
-                    || line.gl_account == self.config.ap_account
-                {
-                    line.value_date = Some(posting_date);
-                }
+            if line.value_date.is_none()
+                && (line.gl_account == self.config.ar_account
+                    || line.gl_account == self.config.ap_account)
+            {
+                line.value_date = Some(posting_date);
             }
 
             // 6. assignment for AP/AR lines - extract partner ID from header text
-            if line.assignment.is_none() {
-                if line.gl_account == self.config.ap_account
-                    || line.gl_account == self.config.ar_account
-                {
-                    if let Some(ref ht) = header_text {
-                        if let Some(partner_part) = ht.rsplit(" - ").next() {
-                            line.assignment = Some(partner_part.to_string());
-                        }
+            if line.assignment.is_none()
+                && (line.gl_account == self.config.ap_account
+                    || line.gl_account == self.config.ar_account)
+            {
+                if let Some(ref ht) = header_text {
+                    if let Some(partner_part) = ht.rsplit(" - ").next() {
+                        line.assignment = Some(partner_part.to_string());
                     }
                 }
             }

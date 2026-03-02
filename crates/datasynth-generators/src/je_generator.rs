@@ -804,10 +804,10 @@ impl JournalEntryGenerator {
             }
 
             // 5. value_date: set to posting_date for AR/AP accounts
-            if line.value_date.is_none() {
-                if line.gl_account.starts_with("1100") || line.gl_account.starts_with("2000") {
-                    line.value_date = Some(posting_date);
-                }
+            if line.value_date.is_none()
+                && (line.gl_account.starts_with("1100") || line.gl_account.starts_with("2000"))
+            {
+                line.value_date = Some(posting_date);
             }
 
             // 6. assignment: set to vendor/customer reference for AP/AR lines
