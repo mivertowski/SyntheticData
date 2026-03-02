@@ -2,7 +2,8 @@
 //!
 //! Tests memory efficiency and performance at scale.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
 use std::sync::Arc;
 
 use datasynth_config::schema::TransactionConfig;

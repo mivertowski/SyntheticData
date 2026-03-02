@@ -2,7 +2,8 @@
 //!
 //! Tests the performance of amount, temporal, and line item samplers.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
 
 use chrono::NaiveDate;
 use datasynth_core::distributions::{

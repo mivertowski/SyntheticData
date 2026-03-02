@@ -200,9 +200,10 @@ pub fn create_router_full_with_backend(
         .layer(axum::middleware::from_fn(request_validation_middleware))
         .layer(axum::middleware::from_fn(backend_rate_limit_middleware))
         .layer(axum::Extension(rate_limit_backend))
-        .layer(TimeoutLayer::new(Duration::from_secs(
-            timeout_config.request_timeout_secs,
-        )))
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(timeout_config.request_timeout_secs),
+        ))
         .with_state(state)
 }
 

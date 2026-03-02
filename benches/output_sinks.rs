@@ -3,7 +3,8 @@
 //! Tests the throughput of writing journal entries to different formats.
 //! Includes Phase 3 benchmarks for fast_csv utilities and compressed output.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
 use std::io::Write;
 use tempfile::NamedTempFile;
 
