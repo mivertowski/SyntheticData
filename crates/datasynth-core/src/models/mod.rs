@@ -100,6 +100,9 @@ pub mod causal_dag;
 mod intervention;
 mod scenario;
 
+// Unified generation pipeline session models
+pub mod generation_session;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -167,3 +170,6 @@ pub use technology_transition::*;
 pub use causal_dag::*;
 pub use intervention::*;
 pub use scenario::*;
+
+// Unified generation pipeline session exports
+pub use generation_session::*;
