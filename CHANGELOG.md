@@ -40,6 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Python v1.8.0** (`python/`): `with_fraud_packs()`, `with_scenarios()`, `with_streaming()` blueprints; `fraud_scenario`, `fraud_rate`, `stream_file` parameters on `generate()`
 - **5 new documentation pages** (`docs/`): Fraud Scenario Packs, Counterfactual Scenarios, OCEL 2.0 Enrichment, Streaming Pipeline, Evaluation Framework
 
+### Fixed
+
+- **Automated posting time distribution** (`datasynth-core`): Batch-processing times now spread across overnight (0-6) and evening (20-23) windows instead of spiking at hour 23 due to broken clamping arithmetic
+- **Weekend entry filtering** (`datasynth-generators`): Default `BusinessDayCalculator` with US holidays always created, so weekend entries are filtered even without explicit `temporal_patterns` config
+- **Journal entry line item enrichment** (`datasynth-generators`): `account_description`, `cost_center`, `profit_center`, `line_text`, `value_date`, and `assignment` fields now populated via `enrich_line_items()` on both standard and document-flow JEs
+- **Document type derivation** (`datasynth-generators`): `document_type` derived from business process (P2P→KR, O2C→DR, H2R→HR) and document source (WE, KZ, WL, DZ) instead of hardcoded "SA"
+- **Persona naming consistency** (`datasynth-core`): `Display` impl for `UserPersona` outputs snake_case (`automated_system`, `junior_accountant`) instead of concatenated Debug format
+- **Banking transaction type** (`datasynth-banking`): Added `transaction_type` field to `BankTransaction`, derived from channel and category (e.g., `CARD_PRESENT_SHOPPING`)
+- **Banking sparse field population** (`datasynth-banking`): `device_id`, `ip_address`, `location_country`, `location_city`, `timestamp_settled`, `auth_code`, and `mcc` now populated based on transaction channel
+- **Internal controls application** (`datasynth-runtime`): `ControlGenerator::apply_controls()` wired into orchestrator pipeline; JEs receive `control_ids` when `internal_controls.enabled=true`
+
 ## [0.10.0] - 2026-03-02
 
 ### Added
