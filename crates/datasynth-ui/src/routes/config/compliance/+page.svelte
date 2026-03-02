@@ -315,6 +315,63 @@
         {/snippet}
       </FormSection>
 
+      <FormSection title="SOX Compliance" description="Sarbanes-Oxley Act compliance assessment generation">
+          {#snippet children()}
+            <div class="form-stack">
+              <Toggle
+                bind:checked={$config.audit_standards.sox.enabled}
+                label="Enable SOX Assessment"
+                description="Generate SOX 302 and 404 compliance assessments"
+              />
+              {#if $config.audit_standards?.sox?.enabled}
+                <div class="form-grid">
+                  <FormGroup
+                    label="SOX 302 Certification"
+                    htmlFor="sox-302"
+                    helpText="Generate CEO/CFO certification assessments"
+                  >
+                    {#snippet children()}
+                      <Toggle
+                        bind:checked={$config.audit_standards.sox.section_302}
+                        label="Section 302"
+                        description="Disclosure controls and procedures certification"
+                      />
+                    {/snippet}
+                  </FormGroup>
+                  <FormGroup
+                    label="SOX 404 Assessment"
+                    htmlFor="sox-404"
+                    helpText="Generate internal control over financial reporting assessments"
+                  >
+                    {#snippet children()}
+                      <Toggle
+                        bind:checked={$config.audit_standards.sox.section_404}
+                        label="Section 404"
+                        description="Internal control effectiveness assessment"
+                      />
+                    {/snippet}
+                  </FormGroup>
+                </div>
+                <FormGroup
+                  label="Materiality Threshold"
+                  htmlFor="sox-materiality"
+                  helpText="Threshold for material weakness determination"
+                >
+                  {#snippet children()}
+                    <input
+                      type="number"
+                      id="sox-materiality"
+                      bind:value={$config.audit_standards.sox.materiality_threshold}
+                      min="0"
+                      step="1000"
+                    />
+                  {/snippet}
+                </FormGroup>
+              {/if}
+            </div>
+          {/snippet}
+        </FormSection>
+
       <div class="info-section">
         <h2>About Fraud & Controls</h2>
         <div class="info-grid">

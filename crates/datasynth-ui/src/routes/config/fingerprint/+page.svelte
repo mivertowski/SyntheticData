@@ -150,6 +150,43 @@
             </div>
           {/snippet}
         </FormSection>
+        <FormSection title="Evaluation & Privacy" description="Configure fingerprint evaluation and privacy settings">
+          {#snippet children()}
+            <div class="form-stack">
+              <Toggle
+                bind:checked={$config.fingerprint.evaluation_mode}
+                label="Evaluation Mode"
+                description="Enable evaluation of fingerprint fidelity against source data"
+              />
+              <FormGroup
+                label="Privacy Level"
+                htmlFor="privacy-level-detail"
+                helpText="Level of privacy protection applied during fingerprint extraction"
+              >
+                {#snippet children()}
+                  <div class="privacy-selector">
+                    {#each [
+                      { value: 'basic', label: 'Basic', desc: 'Minimal noise, higher fidelity' },
+                      { value: 'standard', label: 'Standard', desc: 'Balanced privacy and fidelity' },
+                      { value: 'strict', label: 'Strict', desc: 'Maximum privacy, differential privacy guarantees' },
+                    ] as level}
+                      <label class="privacy-option" class:selected={$config.fingerprint?.privacy_level === level.value}>
+                        <input
+                          type="radio"
+                          name="privacy-level-detail"
+                          value={level.value}
+                          bind:group={$config.fingerprint.privacy_level}
+                        />
+                        <span class="privacy-label">{level.label}</span>
+                        <span class="privacy-desc">{level.desc}</span>
+                      </label>
+                    {/each}
+                  </div>
+                {/snippet}
+              </FormGroup>
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-section">
@@ -401,12 +438,21 @@
     color: var(--color-text-secondary);
   }
 
+  .privacy-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .privacy-option { display: flex; flex-direction: column; padding: var(--space-3); border: 2px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); }
+  .privacy-option:hover { border-color: var(--color-accent); }
+  .privacy-option.selected { border-color: var(--color-accent); background-color: rgba(59, 130, 246, 0.05); }
+  .privacy-option input { display: none; }
+  .privacy-label { font-weight: 600; font-size: 0.8125rem; color: var(--color-text-primary); }
+  .privacy-desc { font-size: 0.75rem; color: var(--color-text-secondary); }
+
   @media (max-width: 768px) {
     .privacy-level-selector {
       grid-template-columns: repeat(2, 1fr);
     }
 
     .privacy-info,
+    .privacy-selector,
     .info-grid {
       grid-template-columns: 1fr;
     }

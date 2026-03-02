@@ -133,6 +133,61 @@
             </div>
           {/snippet}
         </FormSection>
+
+        <FormSection title="Quick Apply Fraud Packs" description="Quickly apply pre-configured fraud scenario packs">
+          {#snippet children()}
+            <div class="form-stack">
+              <p class="hint-text">Click a pack to apply its settings. This enables anomaly injection and configures fraud patterns.</p>
+              <div class="pack-buttons">
+                <button class="pack-btn" onclick={() => {
+                  if ($config) {
+                    $config.anomaly_injection.enabled = true;
+                    $config.anomaly_injection.base_rate = 0.03;
+                    if (!$config.fraud_packs) $config.fraud_packs = { enabled: true, packs: [], fraud_rate_override: null };
+                    $config.fraud_packs.enabled = true;
+                    $config.fraud_packs.packs = ['revenue_fraud'];
+                  }
+                }}>Revenue Fraud</button>
+                <button class="pack-btn" onclick={() => {
+                  if ($config) {
+                    $config.anomaly_injection.enabled = true;
+                    $config.anomaly_injection.base_rate = 0.02;
+                    if (!$config.fraud_packs) $config.fraud_packs = { enabled: true, packs: [], fraud_rate_override: null };
+                    $config.fraud_packs.enabled = true;
+                    $config.fraud_packs.packs = ['payroll_ghost'];
+                  }
+                }}>Payroll Ghost</button>
+                <button class="pack-btn" onclick={() => {
+                  if ($config) {
+                    $config.anomaly_injection.enabled = true;
+                    $config.anomaly_injection.base_rate = 0.025;
+                    if (!$config.fraud_packs) $config.fraud_packs = { enabled: true, packs: [], fraud_rate_override: null };
+                    $config.fraud_packs.enabled = true;
+                    $config.fraud_packs.packs = ['vendor_kickback'];
+                  }
+                }}>Vendor Kickback</button>
+                <button class="pack-btn" onclick={() => {
+                  if ($config) {
+                    $config.anomaly_injection.enabled = true;
+                    $config.anomaly_injection.base_rate = 0.015;
+                    if (!$config.fraud_packs) $config.fraud_packs = { enabled: true, packs: [], fraud_rate_override: null };
+                    $config.fraud_packs.enabled = true;
+                    $config.fraud_packs.packs = ['management_override'];
+                  }
+                }}>Management Override</button>
+                <button class="pack-btn pack-btn-primary" onclick={() => {
+                  if ($config) {
+                    $config.anomaly_injection.enabled = true;
+                    $config.anomaly_injection.base_rate = 0.05;
+                    if (!$config.fraud_packs) $config.fraud_packs = { enabled: true, packs: [], fraud_rate_override: null };
+                    $config.fraud_packs.enabled = true;
+                    $config.fraud_packs.packs = ['comprehensive'];
+                  }
+                }}>Comprehensive</button>
+              </div>
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-cards">
@@ -193,6 +248,12 @@
   .difficulty-option input { display: none; }
   .difficulty-label { font-weight: 600; font-size: 0.875rem; color: var(--color-text-primary); margin-bottom: var(--space-1); }
   .difficulty-desc { font-size: 0.75rem; color: var(--color-text-secondary); }
+  .hint-text { font-size: 0.8125rem; color: var(--color-text-secondary); margin: 0; }
+  .pack-buttons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .pack-btn { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background-color: var(--color-surface); color: var(--color-text-primary); font-size: 0.8125rem; cursor: pointer; transition: all var(--transition-fast); }
+  .pack-btn:hover { border-color: var(--color-accent); background-color: rgba(59, 130, 246, 0.05); }
+  .pack-btn-primary { background-color: var(--color-accent); color: white; border-color: var(--color-accent); }
+  .pack-btn-primary:hover { background-color: var(--color-accent-hover, #0052cc); }
   .loading { display: flex; align-items: center; justify-content: center; padding: var(--space-10); color: var(--color-text-secondary); }
   @media (max-width: 768px) { .form-grid, .distribution-grid, .difficulty-selector { grid-template-columns: 1fr; } .event-item { grid-template-columns: 1fr; } }
 </style>

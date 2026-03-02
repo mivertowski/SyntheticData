@@ -426,6 +426,14 @@
               data quality for ML training or testing.
             </p>
           </div>
+          <div class="info-card">
+            <h3>Drift & Regime</h3>
+            <p>
+              Economic cycles and regime changes create realistic temporal shifts in transaction patterns.
+              Configure cycle periods, recession probabilities, and amplitude to model real-world
+              business volatility and structural breaks.
+            </p>
+          </div>
         </div>
       </div>
     </div>

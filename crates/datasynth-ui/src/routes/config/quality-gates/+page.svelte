@@ -142,6 +142,93 @@
             </div>
           {/snippet}
         </FormSection>
+        <FormSection title="v0.11 Evaluator Thresholds" description="Thresholds for new evaluation dimensions">
+          {#snippet children()}
+            <div class="form-stack">
+              <div class="form-grid">
+                <FormGroup
+                  label="Multi-Period Coherence"
+                  htmlFor="multi-period-coherence"
+                  helpText="Minimum acceptable coherence score across periods (0-1)"
+                >
+                  {#snippet children()}
+                    <div class="slider-with-value">
+                      <input
+                        type="range"
+                        id="multi-period-coherence"
+                        bind:value={$config.quality_gates.multi_period_coherence}
+                        min="0"
+                        max="1"
+                        step="0.01"
+                      />
+                      <span>{(($config.quality_gates.multi_period_coherence ?? 0.99) * 100).toFixed(0)}%</span>
+                    </div>
+                  {/snippet}
+                </FormGroup>
+
+                <FormGroup
+                  label="OCEL Enrichment Coverage"
+                  htmlFor="ocel-enrichment"
+                  helpText="Minimum state transition coverage for OCEL enrichment (0-1)"
+                >
+                  {#snippet children()}
+                    <div class="slider-with-value">
+                      <input
+                        type="range"
+                        id="ocel-enrichment"
+                        bind:value={$config.quality_gates.ocel_enrichment_coverage}
+                        min="0"
+                        max="1"
+                        step="0.01"
+                      />
+                      <span>{(($config.quality_gates.ocel_enrichment_coverage ?? 0.95) * 100).toFixed(0)}%</span>
+                    </div>
+                  {/snippet}
+                </FormGroup>
+
+                <FormGroup
+                  label="Fraud Pack Effectiveness"
+                  htmlFor="fraud-effectiveness"
+                  helpText="Minimum detection rate for fraud pack evaluation (0-1)"
+                >
+                  {#snippet children()}
+                    <div class="slider-with-value">
+                      <input
+                        type="range"
+                        id="fraud-effectiveness"
+                        bind:value={$config.quality_gates.fraud_pack_effectiveness}
+                        min="0"
+                        max="1"
+                        step="0.01"
+                      />
+                      <span>{(($config.quality_gates.fraud_pack_effectiveness ?? 0.80) * 100).toFixed(0)}%</span>
+                    </div>
+                  {/snippet}
+                </FormGroup>
+
+                <FormGroup
+                  label="Intervention Magnitude Tolerance"
+                  htmlFor="intervention-tolerance"
+                  helpText="Acceptable deviation from expected intervention effect (0-1)"
+                >
+                  {#snippet children()}
+                    <div class="slider-with-value">
+                      <input
+                        type="range"
+                        id="intervention-tolerance"
+                        bind:value={$config.quality_gates.intervention_magnitude_tolerance}
+                        min="0"
+                        max="0.5"
+                        step="0.01"
+                      />
+                      <span>{(($config.quality_gates.intervention_magnitude_tolerance ?? 0.10) * 100).toFixed(0)}%</span>
+                    </div>
+                  {/snippet}
+                </FormGroup>
+              </div>
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-cards">

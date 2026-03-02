@@ -627,6 +627,51 @@
             </div>
           {/snippet}
         </FormSection>
+
+        <FormSection title="AML Typologies" description="Configure which AML typology patterns to inject">
+          {#snippet children()}
+            <div class="form-stack">
+              <div class="aml-typology-grid">
+                {#each ['structuring', 'layering', 'funnel', 'mule', 'round_tripping', 'fraud', 'spoofing'] as typology}
+                  <label class="typology-option">
+                    <input
+                      type="checkbox"
+                      checked={$config.banking?.aml_typologies?.includes(typology) ?? false}
+                      onchange={() => {
+                        if (!$config.banking) return;
+                        if (!$config.banking.aml_typologies) $config.banking.aml_typologies = [];
+                        const idx = $config.banking.aml_typologies.indexOf(typology);
+                        if (idx >= 0) { $config.banking.aml_typologies.splice(idx, 1); $config.banking.aml_typologies = [...$config.banking.aml_typologies]; }
+                        else { $config.banking.aml_typologies = [...$config.banking.aml_typologies, typology]; }
+                      }}
+                    />
+                    <span>{typology.replace(/_/g, ' ')}</span>
+                  </label>
+                {/each}
+              </div>
+            </div>
+          {/snippet}
+        </FormSection>
+
+        <FormSection title="KYC Profile Depth" description="Configure the level of KYC profile detail">
+          {#snippet children()}
+            <div class="form-stack">
+              <FormGroup
+                label="KYC Depth"
+                htmlFor="kyc-depth"
+                helpText="Level of KYC profile detail (basic, standard, enhanced)"
+              >
+                {#snippet children()}
+                  <select id="kyc-depth" bind:value={$config.banking.kyc_depth}>
+                    <option value="basic">Basic</option>
+                    <option value="standard">Standard</option>
+                    <option value="enhanced">Enhanced</option>
+                  </select>
+                {/snippet}
+              </FormGroup>
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-section">
@@ -885,13 +930,17 @@
     color: var(--color-text-secondary);
   }
 
+  .aml-typology-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-2); }
+  .typology-option { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); background-color: var(--color-background); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8125rem; text-transform: capitalize; }
+
   @media (max-width: 768px) {
     .form-grid,
     .typology-grid,
     .distribution-grid,
     .toggle-grid,
     .risk-appetite-selector,
-    .info-grid {
+    .info-grid,
+    .aml-typology-grid {
       grid-template-columns: 1fr;
     }
 

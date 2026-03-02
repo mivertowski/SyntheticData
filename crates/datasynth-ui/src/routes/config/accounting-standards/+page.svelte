@@ -265,6 +265,34 @@
             </div>
           {/snippet}
         </FormSection>
+        <FormSection title="COSO Framework" description="Configure COSO 2013 Internal Control framework settings">
+          {#snippet children()}
+            <div class="form-stack">
+              <FormGroup
+                label="Target Maturity Level"
+                htmlFor="coso-maturity"
+                helpText="Target maturity level for generated internal controls"
+              >
+                {#snippet children()}
+                  <select id="coso-maturity" bind:value={$config.internal_controls.target_maturity_level}>
+                    <option value="ad_hoc">Ad Hoc</option>
+                    <option value="repeatable">Repeatable</option>
+                    <option value="defined">Defined</option>
+                    <option value="managed">Managed</option>
+                    <option value="optimized">Optimized</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                {/snippet}
+              </FormGroup>
+
+              <Toggle
+                bind:checked={$config.internal_controls.include_entity_level_controls}
+                label="Include Entity-Level Controls"
+                description="Generate C070-C081 entity-level controls in addition to transaction-level controls"
+              />
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-cards">
