@@ -65,8 +65,9 @@ impl GenerationSession {
     /// based on `config.global.fiscal_year_months` (defaults to `period_months`
     /// if not set, yielding a single period).
     pub fn new(config: GeneratorConfig, output_path: PathBuf) -> SynthResult<Self> {
-        let start_date = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
+        let start_date =
+            chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
+                .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
 
         let total_months = config.global.period_months;
         let fy_months = config.global.fiscal_year_months.unwrap_or(total_months);
@@ -118,8 +119,9 @@ impl GenerationSession {
             ));
         }
 
-        let start_date = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
+        let start_date =
+            chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
+                .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
 
         let total_months = config.global.period_months;
         let fy_months = config.global.fiscal_year_months.unwrap_or(total_months);

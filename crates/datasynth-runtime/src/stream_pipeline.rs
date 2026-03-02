@@ -188,10 +188,7 @@ impl PhaseSink for StreamPipeline {
     }
 
     fn stats(&self) -> StreamStats {
-        self.stats
-            .lock()
-            .map(|s| s.clone())
-            .unwrap_or_default()
+        self.stats.lock().map(|s| s.clone()).unwrap_or_default()
     }
 }
 
