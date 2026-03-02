@@ -43,6 +43,18 @@ pub struct OcpmEvent {
     pub anomaly_type: Option<String>,
     /// Case ID for process instance tracking
     pub case_id: Option<Uuid>,
+    /// Source state for lifecycle transition (e.g., "Submitted")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_state: Option<String>,
+    /// Target state for lifecycle transition (e.g., "Approved")
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to_state: Option<String>,
+    /// Resource workload at time of event (0.0 to 1.0)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_workload: Option<f64>,
+    /// Correlation ID linking related multi-object events
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub correlation_id: Option<String>,
 }
 
 impl OcpmEvent {
@@ -70,6 +82,10 @@ impl OcpmEvent {
             is_anomaly: false,
             anomaly_type: None,
             case_id: None,
+            from_state: None,
+            to_state: None,
+            resource_workload: None,
+            correlation_id: None,
         }
     }
 
@@ -124,6 +140,25 @@ impl OcpmEvent {
     /// Set case ID.
     pub fn with_case(mut self, case_id: Uuid) -> Self {
         self.case_id = Some(case_id);
+        self
+    }
+
+    /// Set state transition (from_state -> to_state).
+    pub fn with_state_transition(mut self, from: &str, to: &str) -> Self {
+        self.from_state = Some(from.to_string());
+        self.to_state = Some(to.to_string());
+        self
+    }
+
+    /// Set resource workload at time of event (0.0 to 1.0).
+    pub fn with_resource_workload(mut self, workload: f64) -> Self {
+        self.resource_workload = Some(workload);
+        self
+    }
+
+    /// Set correlation ID linking related multi-object events.
+    pub fn with_correlation_id(mut self, id: &str) -> Self {
+        self.correlation_id = Some(id.to_string());
         self
     }
 
@@ -311,5 +346,46 @@ mod tests {
         assert!(ObjectQualifier::Updated.changes_object());
         assert!(!ObjectQualifier::Read.changes_object());
         assert!(!ObjectQualifier::Context.changes_object());
+    }
+
+    #[test]
+    fn test_enriched_event_state_transition() {
+        let event = OcpmEvent::new("ACT-001", "Submit PO", Utc::now(), "USER-001", "C001")
+            .with_state_transition("Draft", "Submitted")
+            .with_resource_workload(0.72)
+            .with_correlation_id("3WAY-MATCH-0042");
+        assert_eq!(event.from_state.as_deref(), Some("Draft"));
+        assert_eq!(event.to_state.as_deref(), Some("Submitted"));
+        assert_eq!(event.resource_workload, Some(0.72));
+        assert_eq!(event.correlation_id.as_deref(), Some("3WAY-MATCH-0042"));
+    }
+
+    #[test]
+    fn test_enriched_fields_default_to_none() {
+        let event = OcpmEvent::new("ACT-001", "Test", Utc::now(), "USER-001", "C001");
+        assert!(event.from_state.is_none());
+        assert!(event.to_state.is_none());
+        assert!(event.resource_workload.is_none());
+        assert!(event.correlation_id.is_none());
+    }
+
+    #[test]
+    fn test_enriched_event_serde_backward_compatible() {
+        // Old events without enriched fields should deserialize fine
+        let json = r#"{
+            "event_id": "00000000-0000-0000-0000-000000000001",
+            "activity_id": "ACT-001",
+            "activity_name": "Test",
+            "timestamp": "2024-01-01T00:00:00Z",
+            "lifecycle": "complete",
+            "resource_id": "USER-001",
+            "company_code": "C001",
+            "object_refs": [],
+            "attributes": {},
+            "is_anomaly": false
+        }"#;
+        let event: OcpmEvent = serde_json::from_str(json).unwrap();
+        assert!(event.from_state.is_none());
+        assert!(event.correlation_id.is_none());
     }
 }
