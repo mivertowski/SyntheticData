@@ -44,6 +44,7 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
+#[allow(clippy::large_enum_variant)] // CLI args enum, parsed once at startup
 enum Commands {
     /// Generate synthetic accounting data
     Generate {
@@ -110,6 +111,30 @@ enum Commands {
         /// Quality gate profile (none/lenient/default/strict)
         #[arg(long, default_value = "none")]
         quality_gate: String,
+
+        /// Number of months per fiscal year for multi-period generation
+        #[arg(long)]
+        fiscal_year_months: Option<u32>,
+
+        /// Append incremental data to existing output (requires previous session.dss)
+        #[arg(long)]
+        append: bool,
+
+        /// Number of additional months for incremental generation (used with --append)
+        #[arg(long)]
+        months: Option<u32>,
+
+        /// Apply a fraud scenario pack (repeatable: --fraud-scenario revenue_fraud --fraud-scenario payroll_ghost)
+        #[arg(long, action = clap::ArgAction::Append)]
+        fraud_scenario: Vec<String>,
+
+        /// Override fraud rate when using fraud scenarios
+        #[arg(long)]
+        fraud_rate: Option<f64>,
+
+        /// Stream output to a JSONL file during generation
+        #[arg(long)]
+        stream_file: Option<std::path::PathBuf>,
     },
 
     /// Validate a configuration file
@@ -328,6 +353,12 @@ fn main() -> Result<()> {
             stream_api_key,
             stream_batch_size,
             quality_gate,
+            fiscal_year_months,
+            append,
+            months,
+            fraud_scenario,
+            fraud_rate,
+            stream_file,
         } => {
             // ========================================
             // CPU SAFEGUARD: Limit thread pool size
@@ -467,6 +498,32 @@ fn main() -> Result<()> {
                         tracing::info!("Streaming unified hypergraph to: {}", target);
                     }
 
+                    // Apply fiscal_year_months if provided via CLI
+                    if let Some(fy_months) = fiscal_year_months {
+                        cfg.global.fiscal_year_months = Some(fy_months);
+                    }
+
+                    // Apply fraud scenario packs
+                    if !fraud_scenario.is_empty() {
+                        cfg =
+                            datasynth_config::fraud_packs::apply_fraud_packs(&cfg, &fraud_scenario)
+                                .map_err(|e| {
+                                    anyhow::anyhow!("Failed to apply fraud packs: {}", e)
+                                })?;
+                        tracing::info!("Applied fraud packs: {:?}", fraud_scenario);
+                    }
+
+                    // Apply fraud rate override
+                    if let Some(rate) = fraud_rate {
+                        cfg.fraud.enabled = true;
+                        cfg.fraud.fraud_rate = rate;
+                    }
+
+                    // Stream file notification (wired to pipeline in future)
+                    if let Some(ref stream_path) = stream_file {
+                        tracing::info!("Streaming to: {}", stream_path.display());
+                    }
+
                     // Apply output and resource settings
                     cfg.output.output_directory = output.clone();
                     cfg.global.parallel = false;
@@ -545,7 +602,72 @@ fn main() -> Result<()> {
             }
 
             // ========================================
-            // GENERATE DATA
+            // SESSION-AWARE GENERATION (multi-period / append)
+            // ========================================
+            // Handle incremental append mode
+            if append {
+                if let ConfigOrOrchestrator::Config(cfg) = config_or_orchestrator {
+                    use datasynth_runtime::generation_session::GenerationSession;
+                    let dss_path = output.join("session.dss");
+                    if !dss_path.exists() {
+                        eprintln!(
+                            "Error: No session.dss found in output directory. Cannot append."
+                        );
+                        std::process::exit(1);
+                    }
+                    let additional = months.unwrap_or(12);
+                    let mut session = GenerationSession::resume(&dss_path, cfg)?;
+                    let results = session.generate_delta(additional)?;
+                    session.save(&dss_path)?;
+                    println!(
+                        "\nIncremental generation complete ({} new months):",
+                        additional
+                    );
+                    for r in &results {
+                        println!(
+                            "  {} - {} JEs, {:.1}s",
+                            r.period.label, r.journal_entry_count, r.duration_secs
+                        );
+                    }
+                    return Ok(());
+                } else {
+                    return Err(anyhow::anyhow!(
+                        "--append is not supported with fingerprint-based generation"
+                    ));
+                }
+            }
+
+            // Check if multi-period generation is needed
+            if let ConfigOrOrchestrator::Config(ref cfg) = config_or_orchestrator {
+                let fy_months = cfg.global.fiscal_year_months;
+                let total_months = cfg.global.period_months;
+                let use_session = fy_months.is_some() && fy_months.unwrap() < total_months;
+
+                if use_session {
+                    // Move config out of the enum for session use
+                    if let ConfigOrOrchestrator::Config(cfg) = config_or_orchestrator {
+                        use datasynth_runtime::generation_session::GenerationSession;
+                        let mut session = GenerationSession::new(cfg, output.clone())?;
+                        let results = session.generate_all()?;
+                        let dss_path = output.join("session.dss");
+                        session.save(&dss_path)?;
+                        println!("\nMulti-period generation complete:");
+                        for r in &results {
+                            println!(
+                                "  {} - {} JEs, {} docs, {:.1}s",
+                                r.period.label,
+                                r.journal_entry_count,
+                                r.document_count,
+                                r.duration_secs
+                            );
+                        }
+                        return Ok(());
+                    }
+                }
+            }
+
+            // ========================================
+            // GENERATE DATA (single-period, standard path)
             // ========================================
             // Capture values for manifest before potentially moving config
             let effective_seed = generator_config.global.seed.unwrap_or(42);
