@@ -60,6 +60,8 @@ from datasynth_py.config.models import (
 
 BlueprintFactory = Callable[..., Config]
 
+FRAUD_PACKS = ["revenue_fraud", "payroll_ghost", "vendor_kickback", "management_override", "comprehensive"]
+
 
 def retail_small(
     companies: int = 3,
@@ -1073,6 +1075,104 @@ def with_process_mining(
     return base_config.override(ocpm=ocpm_dict, graph_export=ge_dict)
 
 
+def with_fraud_packs(
+    base_config: Config,
+    packs: Optional[List[str]] = None,
+    fraud_rate: Optional[float] = None,
+) -> Config:
+    """Add fraud scenario packs to an existing configuration.
+
+    Fraud packs are pre-configured bundles of fraud patterns that can be
+    layered onto any configuration for ML training and audit testing.
+
+    Args:
+        base_config: Base configuration to extend.
+        packs: List of fraud pack names to enable. Defaults to ["comprehensive"].
+            Valid packs: revenue_fraud, payroll_ghost, vendor_kickback,
+            management_override, comprehensive.
+        fraud_rate: Optional fraud rate override (0.0-1.0).
+
+    Returns:
+        New Config with fraud packs enabled.
+
+    Raises:
+        ValueError: If an unknown pack name is provided.
+    """
+    if packs is None:
+        packs = ["comprehensive"]
+    for pack in packs:
+        if pack not in FRAUD_PACKS:
+            raise ValueError(
+                f"Unknown fraud pack '{pack}'. Valid packs: {', '.join(FRAUD_PACKS)}"
+            )
+    fraud_dict: Dict[str, Any] = {
+        "enabled": True,
+        "fraud_packs": packs,
+    }
+    if fraud_rate is not None:
+        fraud_dict["rate"] = fraud_rate
+    return base_config.override(fraud=fraud_dict)
+
+
+def with_scenarios(
+    base_config: Config,
+    template: str = "fraud_detection",
+    with_interventions: bool = True,
+) -> Config:
+    """Add counterfactual scenario configuration to an existing configuration.
+
+    Enables causal DAG-based scenario generation with interventions
+    and counterfactual analysis for what-if modeling.
+
+    Args:
+        base_config: Base configuration to extend.
+        template: Scenario template (fraud_detection, revenue_impact, supply_chain).
+        with_interventions: Enable intervention support for what-if analysis.
+
+    Returns:
+        New Config with scenario generation enabled.
+    """
+    scenario_dict: Dict[str, Any] = {
+        "enabled": True,
+        "template": template,
+        "interventions": {"enabled": with_interventions},
+        "counterfactuals": {"enabled": True, "samples_per_record": 5},
+    }
+    return base_config.override(causal=scenario_dict)
+
+
+def with_streaming(
+    base_config: Config,
+    buffer_size: int = 1000,
+    backpressure: str = "block",
+) -> Config:
+    """Add streaming pipeline configuration to an existing configuration.
+
+    Enables the streaming output pipeline for real-time data generation
+    with configurable buffering and backpressure strategies.
+
+    Args:
+        base_config: Base configuration to extend.
+        buffer_size: Size of the stream buffer (default: 1000).
+        backpressure: Backpressure strategy (block, drop_oldest, drop_newest, buffer).
+
+    Returns:
+        New Config with streaming pipeline enabled.
+    """
+    valid_strategies = ["block", "drop_oldest", "drop_newest", "buffer"]
+    if backpressure not in valid_strategies:
+        raise ValueError(
+            f"Unknown backpressure strategy '{backpressure}'. "
+            f"Valid strategies: {', '.join(valid_strategies)}"
+        )
+    streaming_dict: Dict[str, Any] = {
+        "enabled": True,
+        "buffer_size": buffer_size,
+        "backpressure": backpressure,
+    }
+    return base_config.override(streaming=streaming_dict)
+
+
 def _transactions_to_volume(count: int) -> str:
     """Map transaction count to volume preset."""
     if count <= 10_000:
@@ -1104,6 +1204,9 @@ _REGISTRY: Dict[str, BlueprintFactory] = {
     "with_manufacturing": with_manufacturing,
     "with_process_mining": with_process_mining,
     "with_sales_quotes": with_sales_quotes,
+    "with_fraud_packs": with_fraud_packs,
+    "with_scenarios": with_scenarios,
+    "with_streaming": with_streaming,
 }
 
 

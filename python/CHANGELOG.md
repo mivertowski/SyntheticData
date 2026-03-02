@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.8.0 (2026-03-02)
+
+### Added
+
+- `with_fraud_packs()` blueprint for applying pre-configured fraud scenario packs
+- `with_scenarios()` blueprint for counterfactual scenario generation with causal DAGs
+- `with_streaming()` blueprint for streaming pipeline configuration
+- `FRAUD_PACKS` constant listing all 5 available fraud packs
+- `fraud_scenario` parameter on `generate()` for CLI fraud pack selection
+- `fraud_rate` parameter on `generate()` for fraud rate override
+- `stream_file` parameter on `generate()` for JSONL streaming output
+
+### Changed
+
+- Version bump from 1.7.0 to 1.8.0
+
 ## 1.7.0 (2026-03-02)
 
 ### Added

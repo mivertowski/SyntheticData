@@ -71,6 +71,9 @@ class DataSynth:
         config: Config,
         output: Optional[OutputSpec | Dict[str, Any]] = None,
         seed: Optional[int] = None,
+        fraud_scenario: Optional[List[str]] = None,
+        fraud_rate: Optional[float] = None,
+        stream_file: Optional[str] = None,
     ) -> GenerationResult:
         config.validate()
         output_spec = _coerce_output_spec(output)
@@ -81,7 +84,7 @@ class DataSynth:
 
         output_dir = self._resolve_output_dir(output_spec)
         config_path = self._write_config(config, output_dir, output_spec)
-        self._run_cli(config_path=config_path, output_dir=output_dir)
+        self._run_cli(config_path=config_path, output_dir=output_dir, fraud_scenario=fraud_scenario, fraud_rate=fraud_rate, stream_file=stream_file)
 
         if output_spec.sink == "memory":
             tables = _load_tables(output_dir, output_spec)
@@ -150,7 +153,7 @@ class DataSynth:
             return tempfile.mkdtemp(prefix="datasynth_output_")
         raise ValueError(f"Unknown output sink: {output.sink}")
 
-    def _run_cli(self, config_path: str, output_dir: str) -> None:
+    def _run_cli(self, config_path: str, output_dir: str, fraud_scenario: Optional[List[str]] = None, fraud_rate: Optional[float] = None, stream_file: Optional[str] = None) -> None:
         command = [
             self._binary_path,
             "generate",
@@ -159,6 +162,13 @@ class DataSynth:
             "--output",
             output_dir,
         ]
+        if fraud_scenario:
+            for pack in fraud_scenario:
+                command.extend(["--fraud-scenario", pack])
+        if fraud_rate is not None:
+            command.extend(["--fraud-rate", str(fraud_rate)])
+        if stream_file is not None:
+            command.extend(["--stream-file", stream_file])
         try:
             subprocess.run(command, check=True, capture_output=True, text=True)
         except FileNotFoundError as exc:
