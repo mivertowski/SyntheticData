@@ -980,6 +980,8 @@ pub struct EnhancedOrchestrator {
     copula_generators: Vec<CopulaGeneratorSpec>,
     /// Country pack registry for localized data generation
     country_pack_registry: datasynth_core::CountryPackRegistry,
+    /// Optional streaming sink for phase-by-phase output
+    phase_sink: Option<Box<dyn crate::stream_pipeline::PhaseSink>>,
 }
 
 impl EnhancedOrchestrator {
@@ -1013,12 +1015,36 @@ impl EnhancedOrchestrator {
             output_path: None,
             copula_generators: Vec::new(),
             country_pack_registry,
+            phase_sink: None,
         })
     }
 
     /// Create with default phase config.
     pub fn with_defaults(config: GeneratorConfig) -> SynthResult<Self> {
         Self::new(config, PhaseConfig::default())
+    }
+
+    /// Set a streaming phase sink for real-time output.
+    pub fn with_phase_sink(mut self, sink: Box<dyn crate::stream_pipeline::PhaseSink>) -> Self {
+        self.phase_sink = Some(sink);
+        self
+    }
+
+    /// Emit a batch of items to the phase sink (if configured).
+    fn emit_phase_items<T: serde::Serialize>(
+        &self,
+        phase: &str,
+        type_name: &str,
+        items: &[T],
+    ) {
+        if let Some(ref sink) = self.phase_sink {
+            for item in items {
+                if let Ok(value) = serde_json::to_value(item) {
+                    let _ = sink.emit(phase, type_name, &value);
+                }
+            }
+            let _ = sink.phase_complete(phase);
+        }
     }
 
     /// Enable/disable progress bars.
@@ -1400,9 +1426,21 @@ impl EnhancedOrchestrator {
         // Phase 2: Master Data
         self.phase_master_data(&mut stats)?;
 
+        // Emit master data to stream sink
+        self.emit_phase_items("master_data", "Vendor", &self.master_data.vendors);
+        self.emit_phase_items("master_data", "Customer", &self.master_data.customers);
+        self.emit_phase_items("master_data", "Material", &self.master_data.materials);
+
         // Phase 3: Document Flows + Subledger Linking
         let (mut document_flows, subledger, fa_journal_entries) =
             self.phase_document_flows(&mut stats)?;
+
+        // Emit document flows to stream sink
+        self.emit_phase_items("document_flows", "PurchaseOrder", &document_flows.purchase_orders);
+        self.emit_phase_items("document_flows", "GoodsReceipt", &document_flows.goods_receipts);
+        self.emit_phase_items("document_flows", "VendorInvoice", &document_flows.vendor_invoices);
+        self.emit_phase_items("document_flows", "SalesOrder", &document_flows.sales_orders);
+        self.emit_phase_items("document_flows", "Delivery", &document_flows.deliveries);
 
         // Phase 3b: Opening Balances (before JE generation)
         let opening_balances = self.phase_opening_balances(&coa, &mut stats)?;
@@ -1502,8 +1540,14 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // Emit journal entries to stream sink (after all JE-generating phases)
+        self.emit_phase_items("journal_entries", "JournalEntry", &entries);
+
         // Phase 8: Anomaly Injection (after all JE-generating phases)
         let anomaly_labels = self.phase_anomaly_injection(&mut entries, &actions, &mut stats)?;
+
+        // Emit anomaly labels to stream sink
+        self.emit_phase_items("anomaly_injection", "LabeledAnomaly", &anomaly_labels.labels);
 
         // Phase 9: Balance Validation (after all JEs including payroll, manufacturing, IC)
         let balance_validation = self.phase_balance_validation(&entries)?;
@@ -1552,6 +1596,11 @@ impl EnhancedOrchestrator {
             &financial_reporting,
             &mut stats,
         )?;
+
+        // Emit OCPM events to stream sink
+        if let Some(ref event_log) = ocpm.event_log {
+            self.emit_phase_items("ocpm", "OcpmEvent", &event_log.events);
+        }
 
         // Phase 19: Sales Quotes, Management KPIs, Budgets
         let sales_kpi_budgets =
@@ -1609,6 +1658,11 @@ impl EnhancedOrchestrator {
             resource_stats.disk.estimated_bytes_written,
             resource_stats.degradation_level
         );
+
+        // Flush any remaining stream sink data
+        if let Some(ref sink) = self.phase_sink {
+            let _ = sink.flush();
+        }
 
         // Build data lineage graph
         let lineage = self.build_lineage_graph();

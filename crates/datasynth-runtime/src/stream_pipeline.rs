@@ -283,4 +283,105 @@ mod tests {
         let strategy = BackpressureStrategy::default();
         assert!(matches!(strategy, BackpressureStrategy::Block));
     }
+
+    /// A mock PhaseSink that records all emitted items for testing.
+    pub struct MockPhaseSink {
+        pub items: Mutex<Vec<(String, String, serde_json::Value)>>,
+        pub completed_phases: Mutex<Vec<String>>,
+        pub flushed: Mutex<bool>,
+    }
+
+    impl MockPhaseSink {
+        pub fn new() -> Self {
+            Self {
+                items: Mutex::new(Vec::new()),
+                completed_phases: Mutex::new(Vec::new()),
+                flushed: Mutex::new(false),
+            }
+        }
+    }
+
+    impl PhaseSink for MockPhaseSink {
+        fn emit(
+            &self,
+            phase: &str,
+            item_type: &str,
+            item: &serde_json::Value,
+        ) -> Result<(), StreamError> {
+            self.items.lock().unwrap().push((
+                phase.to_string(),
+                item_type.to_string(),
+                item.clone(),
+            ));
+            Ok(())
+        }
+
+        fn phase_complete(&self, phase: &str) -> Result<(), StreamError> {
+            self.completed_phases
+                .lock()
+                .unwrap()
+                .push(phase.to_string());
+            Ok(())
+        }
+
+        fn flush(&self) -> Result<(), StreamError> {
+            *self.flushed.lock().unwrap() = true;
+            Ok(())
+        }
+
+        fn stats(&self) -> StreamStats {
+            let items = self.items.lock().unwrap();
+            let phases = self.completed_phases.lock().unwrap();
+            StreamStats {
+                items_emitted: items.len() as u64,
+                phases_completed: phases.len() as u64,
+                bytes_sent: 0,
+                errors: 0,
+            }
+        }
+    }
+
+    #[test]
+    fn test_mock_phase_sink_records_emissions() {
+        let mock = MockPhaseSink::new();
+        let item1 = serde_json::json!({"id": "V001", "name": "Acme Corp"});
+        let item2 = serde_json::json!({"id": "V002", "name": "Global Parts"});
+        mock.emit("master_data", "Vendor", &item1).unwrap();
+        mock.emit("master_data", "Vendor", &item2).unwrap();
+        mock.phase_complete("master_data").unwrap();
+
+        let items = mock.items.lock().unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].0, "master_data");
+        assert_eq!(items[0].1, "Vendor");
+        assert_eq!(items[1].2["name"], "Global Parts");
+
+        let phases = mock.completed_phases.lock().unwrap();
+        assert_eq!(phases.len(), 1);
+        assert_eq!(phases[0], "master_data");
+    }
+
+    #[test]
+    fn test_mock_phase_sink_multi_phase_emission() {
+        let mock = MockPhaseSink::new();
+        let je = serde_json::json!({"entry_id": "JE-001"});
+        let anomaly = serde_json::json!({"label": "DuplicateEntry"});
+
+        mock.emit("journal_entries", "JournalEntry", &je).unwrap();
+        mock.phase_complete("journal_entries").unwrap();
+        mock.emit("anomaly_injection", "LabeledAnomaly", &anomaly)
+            .unwrap();
+        mock.phase_complete("anomaly_injection").unwrap();
+        mock.flush().unwrap();
+
+        let stats = mock.stats();
+        assert_eq!(stats.items_emitted, 2);
+        assert_eq!(stats.phases_completed, 2);
+        assert!(*mock.flushed.lock().unwrap());
+
+        let items = mock.items.lock().unwrap();
+        // Verify items from different phases are properly tagged
+        assert_eq!(items[0].0, "journal_entries");
+        assert_eq!(items[1].0, "anomaly_injection");
+    }
 }
