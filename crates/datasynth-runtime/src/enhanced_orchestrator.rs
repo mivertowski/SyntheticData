@@ -7381,6 +7381,7 @@ mod tests {
                 group_currency: "USD".to_string(),
                 worker_threads: 0,
                 memory_limit_mb: 0,
+                fiscal_year_months: None,
             },
             companies: vec![CompanyConfig {
                 code: "1000".to_string(),
@@ -7454,6 +7455,7 @@ mod tests {
             esg: Default::default(),
             country_packs: None,
             scenarios: Default::default(),
+            session: Default::default(),
         }
     }
 

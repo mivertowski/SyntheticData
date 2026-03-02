@@ -294,6 +294,7 @@ mod tests {
                 group_currency: "USD".to_string(),
                 worker_threads: 1,
                 memory_limit_mb: 512,
+                fiscal_year_months: None,
             },
             companies: vec![CompanyConfig {
                 code: "TEST".to_string(),
@@ -361,6 +362,7 @@ mod tests {
             esg: Default::default(),
             country_packs: None,
             scenarios: Default::default(),
+            session: Default::default(),
         };
 
         let mut manifest = RunManifest::new(&config, 42);

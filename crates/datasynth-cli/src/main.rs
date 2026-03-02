@@ -2017,6 +2017,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
             group_currency: "USD".to_string(),
             worker_threads: 2,
             memory_limit_mb: 512,
+            fiscal_year_months: None,
         },
         companies: vec![CompanyConfig {
             code: "DEMO".to_string(),
@@ -2096,6 +2097,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         esg: Default::default(),
         country_packs: None,
         scenarios: Default::default(),
+        session: Default::default(),
     }
 }
 

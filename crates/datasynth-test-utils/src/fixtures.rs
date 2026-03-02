@@ -32,6 +32,7 @@ pub fn minimal_config() -> GeneratorConfig {
             parallel: false,
             worker_threads: 0,
             memory_limit_mb: 0,
+            fiscal_year_months: None,
         },
         companies: vec![CompanyConfig {
             code: "TEST".to_string(),
@@ -108,6 +109,7 @@ pub fn minimal_config() -> GeneratorConfig {
         esg: Default::default(),
         country_packs: None,
         scenarios: Default::default(),
+        session: Default::default(),
     }
 }
 

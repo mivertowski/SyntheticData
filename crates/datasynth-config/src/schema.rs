@@ -186,6 +186,9 @@ pub struct GeneratorConfig {
     /// Counterfactual simulation scenario configuration
     #[serde(default)]
     pub scenarios: ScenariosConfig,
+    /// Generation session configuration (period-by-period generation with balance carry-forward)
+    #[serde(default)]
+    pub session: SessionSchemaConfig,
 }
 
 /// LLM enrichment configuration.
@@ -1186,6 +1189,10 @@ pub struct GlobalConfig {
     /// Memory limit in MB (0 = unlimited)
     #[serde(default)]
     pub memory_limit_mb: usize,
+    /// Fiscal year length in months (defaults to 12 if not set).
+    /// Used by session-based generation to split the total period into fiscal years.
+    #[serde(default)]
+    pub fiscal_year_months: Option<u32>,
 }
 
 fn default_currency() -> String {
@@ -1193,6 +1200,37 @@ fn default_currency() -> String {
 }
 fn default_true() -> bool {
     true
+}
+
+/// Configuration for generation session behavior.
+///
+/// When enabled, the generation pipeline splits the total period into fiscal years
+/// and generates data period-by-period, carrying forward balance state.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionSchemaConfig {
+    /// Whether session-based (period-by-period) generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Optional path for saving/loading session checkpoint files.
+    #[serde(default)]
+    pub checkpoint_path: Option<String>,
+    /// Whether to write output files per fiscal period (e.g., `period_01/`).
+    #[serde(default = "default_true")]
+    pub per_period_output: bool,
+    /// Whether to also produce a single consolidated output across all periods.
+    #[serde(default = "default_true")]
+    pub consolidated_output: bool,
+}
+
+impl Default for SessionSchemaConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            checkpoint_path: None,
+            per_period_output: true,
+            consolidated_output: true,
+        }
+    }
 }
 
 /// Company code configuration.
@@ -13464,5 +13502,88 @@ mod tests {
         assert_eq!(config.tax.anomaly_rate, 0.03);
         assert!(config.tax.provisions.enabled); // provisions default to enabled=true
         assert_eq!(config.tax.provisions.statutory_rate, 0.21);
+    }
+
+    // ==========================================================================
+    // SessionSchemaConfig Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_session_config_default_disabled() {
+        let yaml = "{}";
+        let config: SessionSchemaConfig =
+            serde_yaml::from_str(yaml).expect("Failed to parse empty session config");
+        assert!(!config.enabled);
+        assert!(config.checkpoint_path.is_none());
+        assert!(config.per_period_output);
+        assert!(config.consolidated_output);
+    }
+
+    #[test]
+    fn test_config_backward_compatible_without_session() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 12
+              industry: retail
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+        "#;
+
+        let config: GeneratorConfig =
+            serde_yaml::from_str(yaml).expect("Failed to parse config without session");
+        // Session should default to disabled
+        assert!(!config.session.enabled);
+        assert!(config.session.per_period_output);
+        assert!(config.session.consolidated_output);
+        // fiscal_year_months should be None
+        assert!(config.global.fiscal_year_months.is_none());
+    }
+
+    #[test]
+    fn test_fiscal_year_months_parsed() {
+        let yaml = r#"
+            global:
+              seed: 42
+              start_date: "2024-01-01"
+              period_months: 24
+              industry: retail
+              fiscal_year_months: 12
+            companies:
+              - code: C001
+                name: Test Corp
+                currency: USD
+                country: US
+                annual_transaction_volume: ten_k
+            chart_of_accounts:
+              complexity: small
+            output:
+              output_directory: ./output
+            session:
+              enabled: true
+              checkpoint_path: /tmp/checkpoints
+              per_period_output: true
+              consolidated_output: false
+        "#;
+
+        let config: GeneratorConfig =
+            serde_yaml::from_str(yaml).expect("Failed to parse config with fiscal_year_months");
+        assert_eq!(config.global.fiscal_year_months, Some(12));
+        assert!(config.session.enabled);
+        assert_eq!(
+            config.session.checkpoint_path,
+            Some("/tmp/checkpoints".to_string())
+        );
+        assert!(config.session.per_period_output);
+        assert!(!config.session.consolidated_output);
     }
 }

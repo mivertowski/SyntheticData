@@ -52,6 +52,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_compliance(config)?;
     validate_country_packs(config)?;
     validate_scenarios(config)?;
+    validate_session(config)?;
     Ok(())
 }
 
@@ -2250,6 +2251,32 @@ fn validate_scenarios(config: &GeneratorConfig) -> SynthResult<()> {
     Ok(())
 }
 
+/// Validate session configuration.
+fn validate_session(config: &GeneratorConfig) -> SynthResult<()> {
+    // Validate fiscal_year_months if set
+    if let Some(fy_months) = config.global.fiscal_year_months {
+        if fy_months == 0 {
+            return Err(SynthError::validation(
+                "fiscal_year_months must be greater than 0",
+            ));
+        }
+        if fy_months > MAX_PERIOD_MONTHS {
+            return Err(SynthError::validation(format!(
+                "fiscal_year_months must be at most {} (10 years), got {}",
+                MAX_PERIOD_MONTHS, fy_months
+            )));
+        }
+        if fy_months > config.global.period_months {
+            return Err(SynthError::validation(format!(
+                "fiscal_year_months ({}) must not exceed period_months ({})",
+                fy_months, config.global.period_months
+            )));
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -2270,6 +2297,7 @@ mod tests {
                 parallel: true,
                 worker_threads: 0,
                 memory_limit_mb: 0,
+                fiscal_year_months: None,
             },
             companies: vec![CompanyConfig {
                 code: "TEST".to_string(),
@@ -2343,6 +2371,7 @@ mod tests {
             esg: EsgConfig::default(),
             country_packs: None,
             scenarios: ScenariosConfig::default(),
+            session: SessionSchemaConfig::default(),
         }
     }
 
@@ -3307,5 +3336,51 @@ mod tests {
         let result = validate_config(&config);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("timezone"));
+    }
+
+    // ==========================================================================
+    // Session Validation Tests
+    // ==========================================================================
+
+    #[test]
+    fn test_session_fiscal_year_months_zero_rejected() {
+        let mut config = minimal_valid_config();
+        config.global.fiscal_year_months = Some(0);
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("fiscal_year_months must be greater than 0"));
+    }
+
+    #[test]
+    fn test_session_fiscal_year_months_exceeds_period() {
+        let mut config = minimal_valid_config();
+        config.global.period_months = 6;
+        config.global.fiscal_year_months = Some(12);
+        let result = validate_config(&config);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("must not exceed period_months"));
+    }
+
+    #[test]
+    fn test_session_fiscal_year_months_valid() {
+        let mut config = minimal_valid_config();
+        config.global.period_months = 24;
+        config.global.fiscal_year_months = Some(12);
+        let result = validate_config(&config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_session_fiscal_year_months_none_valid() {
+        let config = minimal_valid_config();
+        assert!(config.global.fiscal_year_months.is_none());
+        let result = validate_config(&config);
+        assert!(result.is_ok());
     }
 }

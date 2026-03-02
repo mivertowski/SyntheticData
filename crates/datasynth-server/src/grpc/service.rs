@@ -276,6 +276,7 @@ impl SynthService {
                         parallel: true,
                         worker_threads: 0,
                         memory_limit_mb: 0,
+                        fiscal_year_months: None,
                     },
                     companies,
                     chart_of_accounts: ChartOfAccountsConfig {
@@ -839,6 +840,7 @@ pub fn default_generator_config() -> GeneratorConfig {
             parallel: true,
             worker_threads: 0,
             memory_limit_mb: 0,
+            fiscal_year_months: None,
         },
         companies: vec![CompanyConfig {
             code: "1000".to_string(),
@@ -912,6 +914,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         esg: Default::default(),
         country_packs: None,
         scenarios: Default::default(),
+        session: Default::default(),
     }
 }
 

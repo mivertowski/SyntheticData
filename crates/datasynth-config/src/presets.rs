@@ -37,6 +37,7 @@ pub fn create_preset(
             parallel: true,
             worker_threads: 0,
             memory_limit_mb: 0,
+            fiscal_year_months: None,
         },
         companies,
         chart_of_accounts: ChartOfAccountsConfig {
@@ -107,6 +108,7 @@ pub fn create_preset(
         // the _default pack which provides sensible baseline data.
         country_packs: None,
         scenarios: ScenariosConfig::default(),
+        session: SessionSchemaConfig::default(),
     }
 }
 
