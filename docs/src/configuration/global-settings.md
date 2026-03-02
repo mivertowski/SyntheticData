@@ -10,6 +10,7 @@ global:
   industry: manufacturing            # Industry preset
   start_date: 2024-01-01             # Generation start date
   period_months: 12                  # Duration in months
+  fiscal_year_months: 12             # Fiscal year length for multi-period (optional)
   group_currency: USD                # Base/reporting currency
   worker_threads: 4                  # Parallel workers (optional)
   memory_limit: 2147483648           # Memory limit in bytes (optional)
@@ -100,6 +101,25 @@ global:
 - Longer periods = more data
 - Period close features require at least 1 month
 - Year-end close requires at least 12 months
+
+### fiscal_year_months
+
+Length of the fiscal year in months, used for multi-period generation sessions.
+
+| Property | Value |
+|----------|-------|
+| Type | `u32` |
+| Required | No |
+| Default | `12` |
+| Range | 1-120, must be ≤ `period_months` |
+
+```yaml
+global:
+  fiscal_year_months: 12   # Standard 12-month fiscal year (default)
+  fiscal_year_months: 6    # Semi-annual fiscal periods
+```
+
+When used with `--append --months N`, the generation session splits output into fiscal-year-aligned periods, carrying forward balances and entity state between periods via `.dss` checkpoint files.
 
 ### group_currency
 
@@ -197,6 +217,7 @@ global:
   industry: financial_services
   start_date: 2023-01-01
   period_months: 36
+  fiscal_year_months: 12
   group_currency: USD
   worker_threads: 8
   memory_limit: 8589934592  # 8 GB
@@ -219,6 +240,7 @@ global:
 | Check | Rule |
 |-------|------|
 | `period_months` | 1 ≤ value ≤ 120 |
+| `fiscal_year_months` | 1 ≤ value ≤ 120, must be ≤ `period_months` |
 | `start_date` | Valid date |
 | `industry` | Known industry preset |
 | `group_currency` | Valid ISO 4217 code |

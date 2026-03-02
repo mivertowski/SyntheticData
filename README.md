@@ -211,6 +211,12 @@ The generator produces statistically accurate data based on empirical research f
   - Default financial process DAG: 17 nodes (GDP, interest rates, transaction volume, control effectiveness, misstatement risk, etc.)
   - DiffEngine: summary KPIs, record-level diffs, aggregate comparison between baseline and counterfactual
   - CLI: `datasynth-data scenario {list, validate, generate, diff}`
+- **Unified Generation Pipeline** (v0.11.0): Multi-period, incremental, and streaming generation via `GenerationSession`
+  - Fiscal-year-aligned period splitting with `.dss` checkpoint files for session resume
+  - Incremental delta generation: `--append --months N` extends existing sessions
+  - 5 built-in fraud scenario packs: `--fraud-scenario revenue_fraud|payroll_ghost|vendor_kickback|management_override|comprehensive`
+  - Phase-aware streaming via `PhaseSink` trait with File (JSONL), HTTP, and no-op sinks
+  - OCEL 2.0 enrichment: lifecycle state machines (PO/SO/VendorInvoice), multi-object correlation events (ThreeWayMatch, PaymentAllocation, BankReconciliation), resource pool workload modeling
 
 ### Ecosystem Integrations
 

@@ -164,6 +164,23 @@ curl -X POST http://localhost:3000/api/stream/start \
 wscat -c ws://localhost:3000/ws/events
 ```
 
+## CLI Streaming
+
+The `--stream-file` flag enables phase-aware streaming output during generation, writing JSONL envelopes to a file as data is produced:
+
+```bash
+datasynth-data generate --config config.yaml --output ./output --stream-file events.jsonl
+```
+
+Each line is a JSON envelope with generation phase metadata:
+
+```json
+{"phase":"journal_entries","item_type":"JournalEntry","data":{...}}
+{"phase":"vendors","item_type":"Vendor","data":{...}}
+```
+
+This is useful for feeding generated data into downstream pipelines (Kafka, log aggregators) as it is produced, rather than waiting for batch completion.
+
 ## Backpressure
 
 Streaming sinks monitor write throughput and provide backpressure signals:

@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.10.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v0.11.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -322,7 +322,7 @@ on existing structs use \texttt{Option<>} for backward compatibility.
 
 \subsection{Country Pack Architecture}
 
-\textit{New in v0.8.0, expanded in v0.10.0} --- pluggable JSON-based country configuration replacing
+\textit{New in v0.8.0, expanded in v0.11.0} --- pluggable JSON-based country configuration replacing
 $\sim$7\,500 lines of hardcoded country-specific data:
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
@@ -371,7 +371,7 @@ Generates ISA-compliant audit artifacts:
   \item Workpapers per ISA 230, evidence per ISA 500.
   \item Risk assessments (ISA 315/330), findings (ISA 265), and
         professional judgment documentation (ISA 200).
-  \item \textit{New in v0.10.0}: External confirmations per ISA 505 --- AR (40\%),
+  \item \textit{New in v0.11.0}: External confirmations per ISA 505 --- AR (40\%),
         AP (30\%), Bank (20\%), Legal (10\%) with positive/negative response
         modeling, reconciliation for disagreements, and alternative procedures
         for non-responses.
@@ -573,7 +573,7 @@ Realistic enterprise network modeling with configurable relationships:
 
 \subsection{Pattern \& Process Drift}
 
-\textit{Expanded in v0.10.0} --- comprehensive drift modeling with dedicated generators
+\textit{Expanded in v0.11.0} --- comprehensive drift modeling with dedicated generators
 for realistic temporal evolution:
 
 \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
@@ -1213,7 +1213,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.10.0 \textbullet{}
+  DataSynth v0.11.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]

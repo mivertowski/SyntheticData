@@ -39,6 +39,14 @@ datasynth-data generate [OPTIONS]
 | `--output <DIR>` | Path | Output directory (required) |
 | `--format <FMT>` | String | Output format: csv, json |
 | `--seed <NUM>` | u64 | Override random seed |
+| `--fiscal-year-months <N>` | u32 | Months per fiscal year for multi-period generation |
+| `--append` | Flag | Append incremental data to existing session |
+| `--months <N>` | u32 | Additional months for incremental generation (with `--append`) |
+| `--fraud-scenario <NAME>` | String | Apply a fraud scenario pack (repeatable) |
+| `--fraud-rate <RATE>` | f64 | Override fraud rate when using fraud scenarios |
+| `--stream-file <PATH>` | Path | Stream output to a JSONL file during generation |
+
+**Fraud scenario packs:** `revenue_fraud`, `payroll_ghost`, `vendor_kickback`, `management_override`, `comprehensive`
 
 **Examples:**
 
@@ -54,6 +62,22 @@ datasynth-data generate --config config.yaml --output ./output --seed 12345
 
 # JSON output format
 datasynth-data generate --config config.yaml --output ./output --format json
+
+# Multi-period generation (3 fiscal years)
+datasynth-data generate --config config.yaml --output ./output --fiscal-year-months 12
+
+# Append 12 more months to existing session
+datasynth-data generate --config config.yaml --output ./output --append --months 12
+
+# Generate with fraud scenario
+datasynth-data generate --config config.yaml --output ./output --fraud-scenario revenue_fraud
+
+# Multiple fraud scenarios with rate override
+datasynth-data generate --config config.yaml --output ./output \
+  --fraud-scenario vendor_kickback --fraud-scenario payroll_ghost --fraud-rate 0.05
+
+# Stream output to JSONL while generating
+datasynth-data generate --config config.yaml --output ./output --stream-file ./stream.jsonl
 ```
 
 ### init
