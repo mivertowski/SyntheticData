@@ -11,6 +11,27 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// Derive a transaction type string from channel and category.
+///
+/// Converts `TransactionChannel` and `TransactionCategory` Debug names from
+/// CamelCase to SCREAMING_SNAKE_CASE and joins them with an underscore.
+/// For example, `CardPresent` + `Shopping` becomes `"CARD_PRESENT_SHOPPING"`.
+fn derive_transaction_type(channel: TransactionChannel, category: TransactionCategory) -> String {
+    fn to_screaming_snake(name: &str) -> String {
+        let mut result = String::with_capacity(name.len() + 4);
+        for (i, ch) in name.chars().enumerate() {
+            if ch.is_uppercase() && i > 0 {
+                result.push('_');
+            }
+            result.push(ch.to_ascii_uppercase());
+        }
+        result
+    }
+    let channel_str = to_screaming_snake(&format!("{:?}", channel));
+    let category_str = to_screaming_snake(&format!("{:?}", category));
+    format!("{}_{}", channel_str, category_str)
+}
+
 /// A bank transaction with full metadata and ground truth labels.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BankTransaction {
@@ -89,6 +110,8 @@ pub struct BankTransaction {
     pub scenario_id: Option<String>,
     /// Transaction sequence number within scenario
     pub scenario_sequence: Option<u32>,
+    /// Derived transaction type (e.g., "CARD_PRESENT_SHOPPING")
+    pub transaction_type: String,
 }
 
 impl BankTransaction {
@@ -105,6 +128,7 @@ impl BankTransaction {
         reference: &str,
         timestamp: DateTime<Utc>,
     ) -> Self {
+        let transaction_type = derive_transaction_type(channel, category);
         Self {
             transaction_id,
             account_id,
@@ -140,6 +164,7 @@ impl BankTransaction {
             spoofing_intensity: None,
             scenario_id: None,
             scenario_sequence: None,
+            transaction_type,
         }
     }
 
@@ -516,6 +541,7 @@ mod tests {
 
         assert!(!txn.is_suspicious);
         assert!(!txn.is_cross_border());
+        assert!(!txn.transaction_type.is_empty());
     }
 
     #[test]
@@ -567,5 +593,100 @@ mod tests {
         );
 
         assert!(high_risk.calculate_risk_score() > low_risk.calculate_risk_score());
+    }
+
+    #[test]
+    fn test_transaction_type_derivation() {
+        let txn = BankTransaction::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Decimal::from(100),
+            "USD",
+            Direction::Outbound,
+            TransactionChannel::CardPresent,
+            TransactionCategory::Shopping,
+            CounterpartyRef::merchant(Uuid::new_v4(), "Test Store"),
+            "Purchase",
+            Utc::now(),
+        );
+        assert_eq!(txn.transaction_type, "CARD_PRESENT_SHOPPING");
+
+        let txn2 = BankTransaction::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Decimal::from(500),
+            "USD",
+            Direction::Outbound,
+            TransactionChannel::Wire,
+            TransactionCategory::InternationalTransfer,
+            CounterpartyRef::unknown("Recipient"),
+            "Wire transfer",
+            Utc::now(),
+        );
+        assert_eq!(txn2.transaction_type, "WIRE_INTERNATIONAL_TRANSFER");
+
+        let txn3 = BankTransaction::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Decimal::from(200),
+            "USD",
+            Direction::Outbound,
+            TransactionChannel::Atm,
+            TransactionCategory::AtmWithdrawal,
+            CounterpartyRef::atm("Branch"),
+            "ATM",
+            Utc::now(),
+        );
+        assert_eq!(txn3.transaction_type, "ATM_ATM_WITHDRAWAL");
+    }
+
+    #[test]
+    fn test_transaction_type_all_channels_non_empty() {
+        // Ensure transaction_type is never empty for any channel/category combo
+        let channels = [
+            TransactionChannel::CardPresent,
+            TransactionChannel::CardNotPresent,
+            TransactionChannel::Atm,
+            TransactionChannel::Ach,
+            TransactionChannel::Wire,
+            TransactionChannel::InternalTransfer,
+            TransactionChannel::Mobile,
+            TransactionChannel::Online,
+            TransactionChannel::Branch,
+            TransactionChannel::Cash,
+            TransactionChannel::Check,
+            TransactionChannel::RealTimePayment,
+            TransactionChannel::Swift,
+            TransactionChannel::PeerToPeer,
+        ];
+
+        for channel in channels {
+            let txn = BankTransaction::new(
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                Decimal::from(100),
+                "USD",
+                Direction::Outbound,
+                channel,
+                TransactionCategory::Other,
+                CounterpartyRef::unknown("Test"),
+                "Test",
+                Utc::now(),
+            );
+            assert!(
+                !txn.transaction_type.is_empty(),
+                "transaction_type was empty for channel {:?}",
+                channel
+            );
+            // Should be SCREAMING_SNAKE_CASE: only uppercase letters, digits, underscores
+            assert!(
+                txn.transaction_type
+                    .chars()
+                    .all(|c| c.is_ascii_uppercase() || c == '_' || c.is_ascii_digit()),
+                "transaction_type '{}' is not SCREAMING_SNAKE_CASE for channel {:?}",
+                txn.transaction_type,
+                channel
+            );
+        }
     }
 }
