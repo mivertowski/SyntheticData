@@ -4,6 +4,7 @@
 //! Configuration schema, validation, and presets for synthetic data generation.
 
 pub mod env_interpolation;
+pub mod fraud_packs;
 pub mod presets;
 pub mod schema;
 pub mod validation;

@@ -1,0 +1,19 @@
+fraud:
+  enabled: true
+  fraud_rate: 0.015
+  fraud_type_distribution:
+    suspense_account_abuse: 0.10
+    fictitious_transaction: 0.40
+    revenue_manipulation: 0.0
+    expense_capitalization: 0.0
+    split_transaction: 0.0
+    timing_anomaly: 0.10
+    unauthorized_access: 0.30
+    duplicate_payment: 0.10
+anomaly_injection:
+  enabled: true
+  rates:
+    total_rate: 0.025
+    fraud_rate: 0.015
+    error_rate: 0.005
+    process_rate: 0.005
