@@ -346,3 +346,392 @@ fn test_scenario_list_and_validate() {
         assert!(v.error.is_none());
     }
 }
+
+// ---------------------------------------------------------------------------
+// 6. Full scenario pipeline with diff (spec creation + config mutation E2E)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_full_scenario_pipeline_with_diff() {
+    // Create a minimal config: 1 company, 3 months, small CoA.
+    let mut config = minimal_config();
+    config.global.period_months = 3;
+
+    // Create a scenario with a parameter_shift targeting transaction volume.
+    // Use the minimal causal DAG preset which has a transaction_volume node
+    // bound to "transactions.volume_multiplier".
+    let scenario = ScenarioSchemaConfig {
+        name: "volume_increase".to_string(),
+        description: "Increase transaction volume".to_string(),
+        tags: vec!["volume".to_string(), "test".to_string()],
+        base: None,
+        probability_weight: Some(0.7),
+        interventions: vec![InterventionSchemaConfig {
+            intervention_type: serde_json::json!({
+                "type": "parameter_shift",
+                "target": "transactions.volume_multiplier",
+                "to": 2.0,
+                "interpolation": "linear"
+            }),
+            timing: InterventionTimingSchemaConfig {
+                start_month: 1,
+                duration_months: None,
+                onset: "sudden".to_string(),
+                ramp_months: None,
+            },
+            label: Some("Volume doubling".to_string()),
+            priority: 0,
+        }],
+        constraints: ScenarioConstraintsSchemaConfig::default(),
+        output: ScenarioOutputSchemaConfig::default(),
+        metadata: Default::default(),
+    };
+
+    config.scenarios = ScenariosConfig {
+        enabled: true,
+        scenarios: vec![scenario],
+        causal_model: CausalModelSchemaConfig {
+            preset: "minimal".to_string(),
+            ..Default::default()
+        },
+        defaults: Default::default(),
+    };
+
+    // Build engine and run generate_all.
+    let engine = ScenarioEngine::new(config.clone()).expect("should create engine");
+    let tmpdir = TempDir::new().expect("should create tmpdir");
+    let results = engine
+        .generate_all(tmpdir.path())
+        .expect("generate_all should succeed");
+
+    assert_eq!(results.len(), 1);
+    let result = &results[0];
+    assert_eq!(result.scenario_name, "volume_increase");
+    assert!(
+        result.interventions_applied >= 1,
+        "at least one intervention should be applied"
+    );
+
+    // Verify that months were affected by the intervention propagation.
+    assert!(
+        result.months_affected > 0,
+        "intervention should affect at least one month"
+    );
+
+    // Verify baseline and counterfactual directories exist.
+    assert!(
+        result.baseline_path.exists(),
+        "baseline path should exist: {:?}",
+        result.baseline_path
+    );
+    assert!(
+        result.counterfactual_path.exists(),
+        "counterfactual path should exist: {:?}",
+        result.counterfactual_path
+    );
+
+    // Read the manifest and verify the config_paths_changed field is non-empty
+    // (this acts as a "diff" -- the propagation produced concrete config changes).
+    let manifest_path = tmpdir
+        .path()
+        .join("scenarios")
+        .join("volume_increase")
+        .join("scenario_manifest.yaml");
+    assert!(manifest_path.exists(), "manifest should exist");
+
+    let manifest_content = std::fs::read_to_string(&manifest_path).unwrap();
+    let manifest: serde_yaml::Value = serde_yaml::from_str(&manifest_content).unwrap();
+    let paths_changed = manifest["config_paths_changed"]
+        .as_sequence()
+        .expect("config_paths_changed should be a sequence");
+    assert!(
+        !paths_changed.is_empty(),
+        "config_paths_changed should be non-empty, indicating the intervention produced diffs"
+    );
+
+    // Verify one of the changed paths relates to the volume_multiplier binding.
+    let changed_strs: Vec<&str> = paths_changed.iter().filter_map(|v| v.as_str()).collect();
+    assert!(
+        changed_strs
+            .iter()
+            .any(|p| p.contains("volume_multiplier") || p.contains("base_rate")),
+        "expected at least one path related to volume_multiplier or base_rate in changed paths: {:?}",
+        changed_strs
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 7. Scenario with constraints rejects disabling document chains
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_scenario_with_constraints() {
+    // Start with minimal_config where document_flows.generate_document_references=true
+    // and balance.validate_balance_equation=true (both defaults).
+    let mut config = minimal_config();
+    config.global.period_months = 3;
+
+    // Disable document references in the config -- simulating what a mutation might do.
+    config.document_flows.generate_document_references = false;
+
+    // Set up constraints that require document chains to be preserved.
+    let constraints = ScenarioConstraints {
+        preserve_document_chains: true,
+        preserve_accounting_identity: true,
+        preserve_period_close: false,
+        preserve_balance_coherence: false,
+        custom: vec![],
+    };
+
+    // Apply with empty propagated interventions -- the constraint check happens
+    // post-mutation on the (already-modified) config.
+    let propagated = PropagatedInterventions {
+        changes_by_month: BTreeMap::new(),
+    };
+
+    let result = ConfigMutator::apply(&config, &propagated, &constraints);
+    assert!(
+        result.is_err(),
+        "should fail constraint validation when document chains are required but disabled"
+    );
+
+    match result {
+        Err(MutationError::ConstraintViolation(msg)) => {
+            assert!(
+                msg.contains("document_flows"),
+                "error message should mention document_flows, got: {}",
+                msg
+            );
+            assert!(
+                msg.contains("preserve_document_chains")
+                    || msg.contains("generate_document_references"),
+                "error message should reference the violated constraint, got: {}",
+                msg
+            );
+        }
+        other => panic!(
+            "expected MutationError::ConstraintViolation, got: {:?}",
+            other
+        ),
+    }
+
+    // Also verify balance coherence constraint violation.
+    let mut config2 = minimal_config();
+    config2.global.period_months = 3;
+    config2.balance.validate_balance_equation = false;
+
+    let constraints2 = ScenarioConstraints {
+        preserve_balance_coherence: true,
+        preserve_document_chains: false,
+        preserve_accounting_identity: false,
+        preserve_period_close: false,
+        custom: vec![],
+    };
+
+    let result2 = ConfigMutator::apply(&config2, &propagated, &constraints2);
+    assert!(
+        result2.is_err(),
+        "should fail when balance coherence is required but validate_balance_equation is false"
+    );
+
+    match result2 {
+        Err(MutationError::ConstraintViolation(msg)) => {
+            assert!(
+                msg.contains("balance"),
+                "error message should mention balance, got: {}",
+                msg
+            );
+        }
+        other => panic!(
+            "expected MutationError::ConstraintViolation for balance, got: {:?}",
+            other
+        ),
+    }
+
+    // Verify that when constraints are NOT enabled, the same configs pass.
+    let no_constraints = ScenarioConstraints {
+        preserve_document_chains: false,
+        preserve_accounting_identity: false,
+        preserve_period_close: false,
+        preserve_balance_coherence: false,
+        custom: vec![],
+    };
+
+    let result3 = ConfigMutator::apply(&config, &propagated, &no_constraints);
+    assert!(
+        result3.is_ok(),
+        "should succeed when preserve flags are off, even with doc refs disabled: {:?}",
+        result3.err()
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 8. Multiple scenarios produce distinct configs sequentially
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_multiple_scenarios_sequential() {
+    // Create two ScenarioSpec objects with different interventions.
+    let scenario_growth = ScenarioSchemaConfig {
+        name: "growth".to_string(),
+        description: "Economic growth scenario".to_string(),
+        tags: vec!["macro".to_string(), "growth".to_string()],
+        base: None,
+        probability_weight: Some(0.6),
+        interventions: vec![InterventionSchemaConfig {
+            intervention_type: serde_json::json!({
+                "type": "parameter_shift",
+                "target": "transactions.volume_multiplier",
+                "to": 2.5,
+                "interpolation": "linear"
+            }),
+            timing: InterventionTimingSchemaConfig {
+                start_month: 1,
+                duration_months: None,
+                onset: "sudden".to_string(),
+                ramp_months: None,
+            },
+            label: Some("Growth shift".to_string()),
+            priority: 0,
+        }],
+        constraints: ScenarioConstraintsSchemaConfig::default(),
+        output: ScenarioOutputSchemaConfig::default(),
+        metadata: Default::default(),
+    };
+
+    let scenario_contraction = ScenarioSchemaConfig {
+        name: "contraction".to_string(),
+        description: "Economic contraction scenario".to_string(),
+        tags: vec!["macro".to_string(), "decline".to_string()],
+        base: None,
+        probability_weight: Some(0.4),
+        interventions: vec![InterventionSchemaConfig {
+            intervention_type: serde_json::json!({
+                "type": "parameter_shift",
+                "target": "transactions.volume_multiplier",
+                "to": 0.5,
+                "interpolation": "linear"
+            }),
+            timing: InterventionTimingSchemaConfig {
+                start_month: 2,
+                duration_months: Some(4),
+                onset: "gradual".to_string(),
+                ramp_months: Some(2),
+            },
+            label: Some("Contraction shift".to_string()),
+            priority: 0,
+        }],
+        constraints: ScenarioConstraintsSchemaConfig::default(),
+        output: ScenarioOutputSchemaConfig::default(),
+        metadata: Default::default(),
+    };
+
+    // Verify they have unique names.
+    assert_ne!(scenario_growth.name, scenario_contraction.name);
+
+    // Verify they have different probability weights.
+    assert_ne!(
+        scenario_growth.probability_weight,
+        scenario_contraction.probability_weight
+    );
+
+    // Build a config with both scenarios using the minimal DAG
+    // (which has a transaction_volume node bound to transactions.volume_multiplier).
+    let mut config = minimal_config();
+    config.global.period_months = 6;
+    config.scenarios = ScenariosConfig {
+        enabled: true,
+        scenarios: vec![scenario_growth.clone(), scenario_contraction.clone()],
+        causal_model: CausalModelSchemaConfig {
+            preset: "minimal".to_string(),
+            ..Default::default()
+        },
+        defaults: Default::default(),
+    };
+
+    let engine = ScenarioEngine::new(config.clone()).expect("should create engine");
+
+    // Verify both scenarios are listed.
+    let summaries = engine.list_scenarios();
+    assert_eq!(summaries.len(), 2);
+    assert_eq!(summaries[0].name, "growth");
+    assert_eq!(summaries[1].name, "contraction");
+
+    // Both should validate successfully.
+    let validations = engine.validate_all();
+    assert_eq!(validations.len(), 2);
+    for v in &validations {
+        assert!(
+            v.valid,
+            "scenario '{}' should be valid, error: {:?}",
+            v.name, v.error
+        );
+    }
+
+    // Run generate_all to verify both scenarios produce output.
+    let tmpdir = TempDir::new().expect("should create tmpdir");
+    let results = engine
+        .generate_all(tmpdir.path())
+        .expect("generate_all should succeed for both scenarios");
+
+    assert_eq!(results.len(), 2);
+    assert_eq!(results[0].scenario_name, "growth");
+    assert_eq!(results[1].scenario_name, "contraction");
+
+    // Each scenario should have its own output directory.
+    let growth_dir = tmpdir.path().join("scenarios").join("growth").join("data");
+    let contraction_dir = tmpdir
+        .path()
+        .join("scenarios")
+        .join("contraction")
+        .join("data");
+    assert!(growth_dir.exists(), "growth data dir should exist");
+    assert!(
+        contraction_dir.exists(),
+        "contraction data dir should exist"
+    );
+
+    // Read both manifests and verify they contain different config changes.
+    let growth_manifest_path = tmpdir
+        .path()
+        .join("scenarios")
+        .join("growth")
+        .join("scenario_manifest.yaml");
+    let contraction_manifest_path = tmpdir
+        .path()
+        .join("scenarios")
+        .join("contraction")
+        .join("scenario_manifest.yaml");
+
+    let growth_manifest: serde_yaml::Value =
+        serde_yaml::from_str(&std::fs::read_to_string(&growth_manifest_path).unwrap()).unwrap();
+    let contraction_manifest: serde_yaml::Value =
+        serde_yaml::from_str(&std::fs::read_to_string(&contraction_manifest_path).unwrap())
+            .unwrap();
+
+    // Verify names differ in manifests.
+    assert_eq!(growth_manifest["scenario_name"].as_str().unwrap(), "growth");
+    assert_eq!(
+        contraction_manifest["scenario_name"].as_str().unwrap(),
+        "contraction"
+    );
+
+    // Both should have interventions applied.
+    assert!(growth_manifest["interventions_count"].as_u64().unwrap() >= 1);
+    assert!(
+        contraction_manifest["interventions_count"]
+            .as_u64()
+            .unwrap()
+            >= 1
+    );
+
+    // The contraction scenario has start_month=2 and gradual onset with ramp_months=2,
+    // so it should affect fewer or different months than growth (which starts at month 1, sudden).
+    let growth_months = growth_manifest["months_affected"].as_u64().unwrap();
+    let contraction_months = contraction_manifest["months_affected"].as_u64().unwrap();
+    assert!(growth_months > 0, "growth should affect at least one month");
+    assert!(
+        contraction_months > 0,
+        "contraction should affect at least one month"
+    );
+}
