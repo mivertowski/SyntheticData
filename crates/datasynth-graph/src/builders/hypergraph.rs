@@ -585,7 +585,7 @@ impl HypergraphBuilder {
                     let mut p = HashMap::new();
                     p.insert(
                         "persona".to_string(),
-                        Value::String(format!("{:?}", employee.persona)),
+                        Value::String(employee.persona.to_string()),
                     );
                     p.insert(
                         "job_level".to_string(),

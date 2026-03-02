@@ -97,7 +97,7 @@ impl UserGenerator {
             (user_id, name.display_name, Some(email))
         } else {
             let user_id = User::generate_username(persona, self.user_counter);
-            let display_name = format!("{:?} {}", persona, self.user_counter);
+            let display_name = format!("{} {}", persona, self.user_counter);
             (user_id, display_name, None)
         };
 

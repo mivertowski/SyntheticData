@@ -5,6 +5,8 @@
 //! and transaction volumes. Also includes Employee model with
 //! manager hierarchy for organizational structure simulation.
 
+use std::fmt;
+
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -32,6 +34,21 @@ pub enum UserPersona {
     ExternalAuditor,
     /// Fraud actor for simulation scenarios
     FraudActor,
+}
+
+impl fmt::Display for UserPersona {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::JuniorAccountant => write!(f, "junior_accountant"),
+            Self::SeniorAccountant => write!(f, "senior_accountant"),
+            Self::Controller => write!(f, "controller"),
+            Self::Manager => write!(f, "manager"),
+            Self::Executive => write!(f, "executive"),
+            Self::AutomatedSystem => write!(f, "automated_system"),
+            Self::ExternalAuditor => write!(f, "external_auditor"),
+            Self::FraudActor => write!(f, "fraud_actor"),
+        }
+    }
 }
 
 impl UserPersona {
@@ -1075,6 +1092,37 @@ mod tests {
         assert!(!UserPersona::AutomatedSystem.is_human());
         assert!(UserPersona::Controller.has_approval_authority());
         assert!(!UserPersona::JuniorAccountant.has_approval_authority());
+    }
+
+    #[test]
+    fn test_persona_display_snake_case() {
+        assert_eq!(UserPersona::JuniorAccountant.to_string(), "junior_accountant");
+        assert_eq!(UserPersona::SeniorAccountant.to_string(), "senior_accountant");
+        assert_eq!(UserPersona::Controller.to_string(), "controller");
+        assert_eq!(UserPersona::Manager.to_string(), "manager");
+        assert_eq!(UserPersona::Executive.to_string(), "executive");
+        assert_eq!(UserPersona::AutomatedSystem.to_string(), "automated_system");
+        assert_eq!(UserPersona::ExternalAuditor.to_string(), "external_auditor");
+        assert_eq!(UserPersona::FraudActor.to_string(), "fraud_actor");
+
+        // Verify no persona produces concatenated words (the bug this fixes)
+        for persona in [
+            UserPersona::JuniorAccountant,
+            UserPersona::SeniorAccountant,
+            UserPersona::Controller,
+            UserPersona::Manager,
+            UserPersona::Executive,
+            UserPersona::AutomatedSystem,
+            UserPersona::ExternalAuditor,
+            UserPersona::FraudActor,
+        ] {
+            let s = persona.to_string();
+            assert!(
+                !s.contains(char::is_uppercase),
+                "Display output '{}' should be all lowercase snake_case",
+                s
+            );
+        }
     }
 
     #[test]
