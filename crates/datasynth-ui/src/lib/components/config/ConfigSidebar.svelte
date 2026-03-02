@@ -7,6 +7,7 @@
     'Enterprise': true,
     'Interconnectivity': true,
     'Standards': true,
+    'Simulation': true,
     'Specialized': true,
   });
 
@@ -111,6 +112,15 @@
         { href: '/config/accounting-standards', label: 'Accounting Standards', icon: 'standards' },
         { href: '/config/graph-export', label: 'Graph Export', icon: 'graph' },
         { href: '/config/quality-gates', label: 'Quality Gates', icon: 'gate' },
+      ],
+    },
+    {
+      section: 'Simulation',
+      items: [
+        { href: '/config/fraud-packs', label: 'Fraud Packs', icon: 'shield' },
+        { href: '/config/causal-dag', label: 'Causal DAG', icon: 'scenario' },
+        { href: '/config/generation-session', label: 'Gen Session', icon: 'clock' },
+        { href: '/config/streaming', label: 'Streaming', icon: 'stream' },
       ],
     },
     {

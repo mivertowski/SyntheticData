@@ -1,6 +1,6 @@
 <script lang="ts">
   import { configStore } from '$lib/stores/config';
-  import { FormSection, FormGroup, Toggle } from '$lib/components/forms';
+  import { FormSection, FormGroup, Toggle, InputNumber } from '$lib/components/forms';
   import ConfigPageHeader from '$lib/components/config/ConfigPageHeader.svelte';
 
   const config = configStore.config;
@@ -243,6 +243,125 @@
             </div>
           {/snippet}
         </FormSection>
+
+        <FormSection title="Lifecycle State Machines" description="Enable state machine-based lifecycle tracking for process objects">
+          {#snippet children()}
+            <div class="form-stack">
+              <Toggle
+                bind:checked={$config.ocpm.lifecycle_state_machines.enabled}
+                label="Enable Lifecycle State Machines"
+                description="Track object state transitions through defined lifecycle stages"
+              />
+
+              {#if $config.ocpm.lifecycle_state_machines?.enabled}
+                <div class="state-machine-grid">
+                  <Toggle
+                    bind:checked={$config.ocpm.lifecycle_state_machines.purchase_order}
+                    label="Purchase Order"
+                    description="Draft -> Approved -> Ordered -> Received -> Closed"
+                  />
+                  <Toggle
+                    bind:checked={$config.ocpm.lifecycle_state_machines.sales_order}
+                    label="Sales Order"
+                    description="Created -> Confirmed -> Shipped -> Delivered -> Invoiced"
+                  />
+                  <Toggle
+                    bind:checked={$config.ocpm.lifecycle_state_machines.vendor_invoice}
+                    label="Vendor Invoice"
+                    description="Received -> Verified -> Matched -> Approved -> Paid"
+                  />
+                </div>
+              {/if}
+            </div>
+          {/snippet}
+        </FormSection>
+
+        <FormSection title="Resource Pools" description="Configure resource pool assignment for process activities">
+          {#snippet children()}
+            <div class="form-stack">
+              <Toggle
+                bind:checked={$config.ocpm.resource_pools.enabled}
+                label="Enable Resource Pools"
+                description="Assign activities to resources from configured pools"
+              />
+
+              {#if $config.ocpm.resource_pools?.enabled}
+                <FormGroup label="Pool Size" htmlFor="pool-size" helpText="Number of resources in each pool">
+                  {#snippet children()}
+                    <InputNumber bind:value={$config.ocpm.resource_pools.pool_size} id="pool-size" min={1} max={200} />
+                  {/snippet}
+                </FormGroup>
+
+                <FormGroup label="Assignment Strategy" htmlFor="assignment-strategy" helpText="How resources are assigned to activities">
+                  {#snippet children()}
+                    <div class="strategy-options">
+                      {#each ['RoundRobin', 'LeastBusy', 'SkillBased'] as strategy}
+                        <label class="strategy-chip" class:selected={$config.ocpm.resource_pools.assignment_strategy === strategy}>
+                          <input
+                            type="radio"
+                            name="assignment-strategy"
+                            value={strategy}
+                            checked={$config.ocpm.resource_pools.assignment_strategy === strategy}
+                            onchange={() => { $config.ocpm.resource_pools.assignment_strategy = strategy; }}
+                          />
+                          {strategy}
+                        </label>
+                      {/each}
+                    </div>
+                  {/snippet}
+                </FormGroup>
+              {/if}
+            </div>
+          {/snippet}
+        </FormSection>
+
+        <FormSection title="Correlation Events" description="Enable cross-process event correlation for richer process models">
+          {#snippet children()}
+            <div class="form-stack">
+              <Toggle
+                bind:checked={$config.ocpm.correlation_events.three_way_match}
+                label="Three-Way Match"
+                description="Correlate PO, Goods Receipt, and Invoice events"
+              />
+              <Toggle
+                bind:checked={$config.ocpm.correlation_events.payment_allocation}
+                label="Payment Allocation"
+                description="Correlate payment events with invoice line items"
+              />
+              <Toggle
+                bind:checked={$config.ocpm.correlation_events.bank_reconciliation}
+                label="Bank Reconciliation"
+                description="Correlate bank statement entries with internal payments"
+              />
+            </div>
+          {/snippet}
+        </FormSection>
+
+        <FormSection title="Coverage Threshold" description="Minimum state transition coverage required for generated event logs">
+          {#snippet children()}
+            <div class="form-stack">
+              <FormGroup
+                label="State Transition Coverage"
+                htmlFor="coverage-threshold"
+                helpText="Minimum percentage of defined state transitions that must appear in generated logs"
+              >
+                {#snippet children()}
+                  <div class="slider-with-value">
+                    <input
+                      type="range"
+                      id="coverage-threshold"
+                      bind:value={$config.ocpm.coverage_threshold}
+                      min="0"
+                      max="1"
+                      step="0.05"
+                    />
+                    <span class="slider-value">{(($config.ocpm.coverage_threshold ?? 0.8) * 100).toFixed(0)}%</span>
+                  </div>
+                {/snippet}
+              </FormGroup>
+            </div>
+          {/snippet}
+        </FormSection>
       {/if}
 
       <div class="info-section">
@@ -384,6 +503,42 @@
     color: var(--color-text-secondary);
   }
 
+  .state-machine-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .strategy-options {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .strategy-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    transition: all var(--transition-fast);
+  }
+
+  .strategy-chip:hover {
+    border-color: var(--color-accent);
+  }
+
+  .strategy-chip.selected {
+    border-color: var(--color-accent);
+    background-color: rgba(59, 130, 246, 0.05);
+  }
+
+  .strategy-chip input {
+    display: none;
+  }
+
   @media (max-width: 768px) {
     .form-grid,
     .output-toggles,
@@ -391,5 +546,8 @@
       grid-template-columns: 1fr;
     }
 
+    .strategy-options {
+      flex-direction: column;
+    }
   }
 </style>
