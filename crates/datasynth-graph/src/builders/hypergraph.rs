@@ -416,6 +416,10 @@ impl HypergraphBuilder {
                         Value::String(format!("{:?}", control.control_type)),
                     );
                     p.insert(
+                        "controlType".to_string(),
+                        Value::String(format!("{}", control.control_type).to_lowercase()),
+                    );
+                    p.insert(
                         "risk_level".to_string(),
                         Value::String(format!("{:?}", control.risk_level)),
                     );
@@ -424,8 +428,68 @@ impl HypergraphBuilder {
                         Value::Bool(control.is_key_control),
                     );
                     p.insert(
+                        "isKeyControl".to_string(),
+                        Value::Bool(control.is_key_control),
+                    );
+                    p.insert(
                         "maturity_level".to_string(),
                         Value::String(format!("{:?}", control.maturity_level)),
+                    );
+                    let effectiveness = match control.maturity_level.level() {
+                        4 | 5 => "effective",
+                        3 => "partially-effective",
+                        _ => "not-tested",
+                    };
+                    p.insert(
+                        "effectiveness".to_string(),
+                        Value::String(effectiveness.to_string()),
+                    );
+                    p.insert(
+                        "description".to_string(),
+                        Value::String(control.description.clone()),
+                    );
+                    p.insert(
+                        "objective".to_string(),
+                        Value::String(control.objective.clone()),
+                    );
+                    p.insert(
+                        "frequency".to_string(),
+                        Value::String(format!("{}", control.frequency).to_lowercase()),
+                    );
+                    p.insert(
+                        "owner".to_string(),
+                        Value::String(format!("{}", control.owner_role)),
+                    );
+                    p.insert(
+                        "controlId".to_string(),
+                        Value::String(control.control_id.clone()),
+                    );
+                    p.insert(
+                        "name".to_string(),
+                        Value::String(control.control_name.clone()),
+                    );
+                    p.insert(
+                        "category".to_string(),
+                        Value::String(format!("{}", control.control_type)),
+                    );
+                    p.insert(
+                        "automated".to_string(),
+                        Value::Bool(matches!(
+                            control.control_type,
+                            datasynth_core::models::ControlType::Monitoring
+                        )),
+                    );
+                    p.insert(
+                        "coso_component".to_string(),
+                        Value::String(format!("{:?}", control.coso_component)),
+                    );
+                    p.insert(
+                        "sox_assertion".to_string(),
+                        Value::String(format!("{:?}", control.sox_assertion)),
+                    );
+                    p.insert(
+                        "control_scope".to_string(),
+                        Value::String(format!("{:?}", control.control_scope)),
                     );
                     p
                 },
@@ -597,6 +661,23 @@ impl HypergraphBuilder {
                     p.insert(
                         "company_code".to_string(),
                         Value::String(employee.company_code.clone()),
+                    );
+                    p.insert(
+                        "fullName".to_string(),
+                        Value::String(employee.display_name.clone()),
+                    );
+                    p.insert("email".to_string(), Value::String(employee.email.clone()));
+                    p.insert(
+                        "department".to_string(),
+                        Value::String(employee.department_id.clone().unwrap_or_default()),
+                    );
+                    p.insert(
+                        "job_title".to_string(),
+                        Value::String(employee.job_title.clone()),
+                    );
+                    p.insert(
+                        "status".to_string(),
+                        Value::String(format!("{:?}", employee.status)),
                     );
                     p
                 },
@@ -1499,10 +1580,31 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: cid,
                 label: format!("BCUST {}", cust.customer_id),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "customer_type".into(),
+                        Value::String(format!("{:?}", cust.customer_type)),
+                    );
+                    p.insert("name".into(), Value::String(cust.name.legal_name.clone()));
+                    p.insert(
+                        "residence_country".into(),
+                        Value::String(cust.residence_country.clone()),
+                    );
+                    p.insert(
+                        "risk_tier".into(),
+                        Value::String(format!("{:?}", cust.risk_tier)),
+                    );
+                    p.insert("is_pep".into(), Value::Bool(cust.is_pep));
+                    p
+                },
                 features: vec![],
-                is_anomaly: false,
-                anomaly_type: None,
+                is_anomaly: cust.is_mule,
+                anomaly_type: if cust.is_mule {
+                    Some("mule_account".into())
+                } else {
+                    None
+                },
                 is_aggregate: false,
                 aggregate_count: 0,
             });
@@ -1517,15 +1619,34 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: aid,
                 label: format!("BACCT {}", acct.account_number),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "account_type".into(),
+                        Value::String(format!("{:?}", acct.account_type)),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", acct.status)));
+                    p.insert("currency".into(), Value::String(acct.currency.clone()));
+                    let balance: f64 = acct.current_balance.to_string().parse().unwrap_or(0.0);
+                    p.insert("balance".into(), serde_json::json!(balance));
+                    p.insert(
+                        "account_number".into(),
+                        Value::String(acct.account_number.clone()),
+                    );
+                    p
+                },
                 features: vec![acct
                     .current_balance
                     .to_string()
                     .parse::<f64>()
                     .unwrap_or(0.0)
                     .ln_1p()],
-                is_anomaly: false,
-                anomaly_type: None,
+                is_anomaly: acct.is_mule_account,
+                anomaly_type: if acct.is_mule_account {
+                    Some("mule_account".into())
+                } else {
+                    None
+                },
                 is_aggregate: false,
                 aggregate_count: 0,
             });
@@ -1540,7 +1661,47 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: tid,
                 label: format!("BTXN {}", txn.reference),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    let amount: f64 = txn.amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("amount".into(), serde_json::json!(amount));
+                    p.insert("currency".into(), Value::String(txn.currency.clone()));
+                    p.insert("reference".into(), Value::String(txn.reference.clone()));
+                    p.insert(
+                        "direction".into(),
+                        Value::String(format!("{:?}", txn.direction)),
+                    );
+                    p.insert(
+                        "channel".into(),
+                        Value::String(format!("{:?}", txn.channel)),
+                    );
+                    p.insert(
+                        "category".into(),
+                        Value::String(format!("{:?}", txn.category)),
+                    );
+                    p.insert(
+                        "transaction_type".into(),
+                        Value::String(txn.transaction_type.clone()),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", txn.status)));
+                    if txn.is_suspicious {
+                        p.insert("isAnomalous".into(), Value::Bool(true));
+                        p.insert("is_suspicious".into(), Value::Bool(true));
+                        if let Some(ref reason) = txn.suspicion_reason {
+                            p.insert(
+                                "suspicion_reason".into(),
+                                Value::String(format!("{:?}", reason)),
+                            );
+                        }
+                        if let Some(ref stage) = txn.laundering_stage {
+                            p.insert(
+                                "laundering_stage".into(),
+                                Value::String(format!("{:?}", stage)),
+                            );
+                        }
+                    }
+                    p
+                },
                 features: vec![txn
                     .amount
                     .to_string()
@@ -1549,7 +1710,7 @@ impl HypergraphBuilder {
                     .abs()
                     .ln_1p()],
                 is_anomaly: txn.is_suspicious,
-                anomaly_type: None,
+                anomaly_type: txn.suspicion_reason.as_ref().map(|r| format!("{:?}", r)),
                 is_aggregate: false,
                 aggregate_count: 0,
             });
@@ -1580,7 +1741,31 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: eid,
                 label: format!("AENG {}", eng.engagement_ref),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "engagement_ref".into(),
+                        Value::String(eng.engagement_ref.clone()),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", eng.status)));
+                    p.insert(
+                        "engagement_type".into(),
+                        Value::String(format!("{:?}", eng.engagement_type)),
+                    );
+                    p.insert("client_name".into(), Value::String(eng.client_name.clone()));
+                    p.insert("fiscal_year".into(), serde_json::json!(eng.fiscal_year));
+                    let mat: f64 = eng.materiality.to_string().parse().unwrap_or(0.0);
+                    p.insert("materiality".into(), serde_json::json!(mat));
+                    p.insert(
+                        "fieldwork_start".into(),
+                        Value::String(eng.fieldwork_start.to_string()),
+                    );
+                    p.insert(
+                        "fieldwork_end".into(),
+                        Value::String(eng.fieldwork_end.to_string()),
+                    );
+                    p
+                },
                 features: vec![eng
                     .materiality
                     .to_string()
@@ -1603,7 +1788,17 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: wid,
                 label: format!("WP {}", wp.workpaper_ref),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "workpaper_ref".into(),
+                        Value::String(wp.workpaper_ref.clone()),
+                    );
+                    p.insert("title".into(), Value::String(wp.title.clone()));
+                    p.insert("status".into(), Value::String(format!("{:?}", wp.status)));
+                    p.insert("section".into(), Value::String(format!("{:?}", wp.section)));
+                    p
+                },
                 features: vec![],
                 is_anomaly: false,
                 anomaly_type: None,
@@ -1621,8 +1816,23 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: fid,
                 label: format!("AFIND {}", f.finding_ref),
-                properties: HashMap::new(),
-                features: vec![],
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("finding_ref".into(), Value::String(f.finding_ref.clone()));
+                    p.insert("title".into(), Value::String(f.title.clone()));
+                    p.insert("description".into(), Value::String(f.condition.clone()));
+                    p.insert(
+                        "severity".into(),
+                        Value::String(format!("{:?}", f.severity)),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", f.status)));
+                    p.insert(
+                        "finding_type".into(),
+                        Value::String(format!("{:?}", f.finding_type)),
+                    );
+                    p
+                },
+                features: vec![f.severity.score() as f64 / 5.0],
                 is_anomaly: false,
                 anomaly_type: None,
                 is_aggregate: false,
@@ -1639,8 +1849,27 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: evid,
                 label: format!("AEV {}", ev.evidence_id),
-                properties: HashMap::new(),
-                features: vec![],
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "evidence_type".into(),
+                        Value::String(format!("{:?}", ev.evidence_type)),
+                    );
+                    p.insert("description".into(), Value::String(ev.description.clone()));
+                    p.insert(
+                        "source_type".into(),
+                        Value::String(format!("{:?}", ev.source_type)),
+                    );
+                    p.insert(
+                        "reliability".into(),
+                        Value::String(format!(
+                            "{:?}",
+                            ev.reliability_assessment.overall_reliability
+                        )),
+                    );
+                    p
+                },
+                features: vec![ev.reliability_assessment.overall_reliability.score() as f64 / 3.0],
                 is_anomaly: false,
                 anomaly_type: None,
                 is_aggregate: false,
@@ -1656,9 +1885,59 @@ impl HypergraphBuilder {
                 entity_type_code: type_codes::RISK_ASSESSMENT,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: rid,
-                label: format!("ARISK {}", r.risk_id),
-                properties: HashMap::new(),
-                features: vec![],
+                label: format!("ARISK {}", r.risk_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("status".into(), Value::String("active".into()));
+                    p.insert("risk_ref".into(), Value::String(r.risk_ref.clone()));
+                    p.insert("name".into(), Value::String(r.risk_ref.clone()));
+                    p.insert("description".into(), Value::String(r.description.clone()));
+                    p.insert(
+                        "category".into(),
+                        Value::String(format!("{:?}", r.risk_category)),
+                    );
+                    p.insert(
+                        "account_or_process".into(),
+                        Value::String(r.account_or_process.clone()),
+                    );
+                    // Risk levels as lowercase strings for dashboard consumption
+                    let inherent = match r.inherent_risk {
+                        datasynth_core::models::audit::RiskLevel::Low => "low",
+                        datasynth_core::models::audit::RiskLevel::Medium => "medium",
+                        datasynth_core::models::audit::RiskLevel::High => "high",
+                        datasynth_core::models::audit::RiskLevel::Significant => "critical",
+                    };
+                    let control = match r.control_risk {
+                        datasynth_core::models::audit::RiskLevel::Low => "low",
+                        datasynth_core::models::audit::RiskLevel::Medium => "medium",
+                        datasynth_core::models::audit::RiskLevel::High => "high",
+                        datasynth_core::models::audit::RiskLevel::Significant => "critical",
+                    };
+                    p.insert("inherentImpact".into(), Value::String(inherent.into()));
+                    p.insert("inherentLikelihood".into(), Value::String(inherent.into()));
+                    p.insert("residualImpact".into(), Value::String(control.into()));
+                    p.insert("residualLikelihood".into(), Value::String(control.into()));
+                    p.insert(
+                        "riskScore".into(),
+                        serde_json::json!(r.inherent_risk.score() as f64 * 25.0),
+                    );
+                    p.insert("owner".into(), Value::String(r.assessed_by.clone()));
+                    p.insert("isSignificant".into(), Value::Bool(r.is_significant_risk));
+                    p.insert(
+                        "is_significant_risk".into(),
+                        Value::Bool(r.is_significant_risk),
+                    );
+                    p.insert(
+                        "response_nature".into(),
+                        Value::String(format!("{:?}", r.response_nature)),
+                    );
+                    p
+                },
+                features: vec![
+                    r.inherent_risk.score() as f64 / 4.0,
+                    r.control_risk.score() as f64 / 4.0,
+                    if r.is_significant_risk { 1.0 } else { 0.0 },
+                ],
                 is_anomaly: false,
                 anomaly_type: None,
                 is_aggregate: false,
@@ -1675,7 +1954,21 @@ impl HypergraphBuilder {
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: jid,
                 label: format!("AJUDG {}", j.judgment_id),
-                properties: HashMap::new(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("judgment_ref".into(), Value::String(j.judgment_ref.clone()));
+                    p.insert("subject".into(), Value::String(j.subject.clone()));
+                    p.insert(
+                        "description".into(),
+                        Value::String(j.issue_description.clone()),
+                    );
+                    p.insert("conclusion".into(), Value::String(j.conclusion.clone()));
+                    p.insert(
+                        "judgment_type".into(),
+                        Value::String(format!("{:?}", j.judgment_type)),
+                    );
+                    p
+                },
                 features: vec![],
                 is_anomaly: false,
                 anomaly_type: None,
