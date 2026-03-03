@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-03-03
+
+### Changed
+
+- **Hypergraph type codes** (`datasynth-graph`): Aligned entity type codes with AssureTwin's canonical `entity_registry.rs` — added `JOURNAL_ENTRY` (101), `BANKING_CUSTOMER` (203), `BANK_STATEMENT_LINE` (352), `KYC_PROFILE` (504); renumbered MFG and banking codes for consistency; moved governance codes (COSO/SOX) to Layer 1 block (500–504); fixed `INTERNAL_CONTROL` code from 504 to 503
+- **Journal entry nodes** (`datasynth-graph`): Added `add_journal_entry_nodes()` to `HypergraphBuilder` — creates standalone Layer 3 JE nodes with amount, date, anomaly info, and line count for dashboard counting alongside existing hyperedge representation
+
 ## [0.11.0] - 2026-03-02
 
 ### Added

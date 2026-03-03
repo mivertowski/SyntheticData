@@ -42,20 +42,18 @@ const DAY_OF_MONTH_NORMALIZER: f64 = 31.0;
 /// Normalizer for month feature.
 const MONTH_NORMALIZER: f64 = 12.0;
 
-/// RustGraph entity type codes for Layer 1 governance nodes.
+/// RustGraph entity type codes — canonical codes from AssureTwin's entity_registry.rs.
 #[allow(dead_code)]
 mod type_codes {
-    // Existing codes used by RustGraph
+    // Layer 3 — Accounting / Master Data
     pub const ACCOUNT: u32 = 100;
+    pub const JOURNAL_ENTRY: u32 = 101;
+
+    // People / Organizations
     pub const VENDOR: u32 = 200;
     pub const CUSTOMER: u32 = 201;
     pub const EMPLOYEE: u32 = 202;
-
-    // Layer 1 governance type codes (proposed CR-02)
-    pub const COSO_COMPONENT: u32 = 500;
-    pub const COSO_PRINCIPLE: u32 = 501;
-    pub const SOX_ASSERTION: u32 = 502;
-    pub const INTERNAL_CONTROL: u32 = 504;
+    pub const BANKING_CUSTOMER: u32 = 203;
 
     // Layer 2 process type codes — P2P
     pub const PURCHASE_ORDER: u32 = 300;
@@ -80,13 +78,12 @@ mod type_codes {
     pub const PAYROLL_LINE_ITEM: u32 = 333;
     // Layer 2 — MFG
     pub const PRODUCTION_ORDER: u32 = 340;
-    pub const ROUTING_OPERATION: u32 = 341;
-    pub const QUALITY_INSPECTION: u32 = 342;
-    pub const CYCLE_COUNT: u32 = 343;
+    pub const QUALITY_INSPECTION: u32 = 341;
+    pub const CYCLE_COUNT: u32 = 342;
     // Layer 2 — BANK
-    pub const BANKING_CUSTOMER: u32 = 350;
-    pub const BANK_ACCOUNT: u32 = 351;
-    pub const BANK_TRANSACTION: u32 = 352;
+    pub const BANK_ACCOUNT: u32 = 350;
+    pub const BANK_TRANSACTION: u32 = 351;
+    pub const BANK_STATEMENT_LINE: u32 = 352;
     // Layer 2 — AUDIT
     pub const AUDIT_ENGAGEMENT: u32 = 360;
     pub const WORKPAPER: u32 = 361;
@@ -96,14 +93,20 @@ mod type_codes {
     pub const PROFESSIONAL_JUDGMENT: u32 = 365;
     // Layer 2 — Bank Recon (R2R subfamily)
     pub const BANK_RECONCILIATION: u32 = 370;
-    pub const BANK_STATEMENT_LINE: u32 = 371;
     pub const RECONCILING_ITEM: u32 = 372;
     // Layer 2 — OCPM events
     pub const OCPM_EVENT: u32 = 400;
     // Pool / aggregate
     pub const POOL_NODE: u32 = 399;
 
-    // Edge type codes (proposed CR-03)
+    // Layer 1 — Governance
+    pub const COSO_COMPONENT: u32 = 500;
+    pub const COSO_PRINCIPLE: u32 = 501;
+    pub const SOX_ASSERTION: u32 = 502;
+    pub const INTERNAL_CONTROL: u32 = 503;
+    pub const KYC_PROFILE: u32 = 504;
+
+    // Edge type codes
     pub const IMPLEMENTS_CONTROL: u32 = 40;
     pub const GOVERNED_BY_STANDARD: u32 = 41;
     pub const OWNS_CONTROL: u32 = 42;
@@ -763,6 +766,72 @@ impl HypergraphBuilder {
                         .map(|ft| format!("{:?}", ft))
                 }),
                 features: compute_je_features(entry),
+            });
+        }
+    }
+
+    /// Add journal entries as standalone Layer 3 nodes.
+    ///
+    /// Creates a node per JE with amount, date, anomaly info, and line count.
+    /// Use alongside `add_journal_entries_as_hyperedges` so the dashboard can
+    /// count JE nodes while the accounting network still has proper hyperedges.
+    pub fn add_journal_entry_nodes(&mut self, entries: &[JournalEntry]) {
+        for entry in entries {
+            let node_id = format!("je_{}", entry.header.document_id);
+            let total_amount: f64 = entry
+                .lines
+                .iter()
+                .map(|l| l.debit_amount.to_string().parse::<f64>().unwrap_or(0.0))
+                .sum();
+
+            let is_anomaly = entry.header.is_anomaly || entry.header.is_fraud;
+            let anomaly_type = entry.header.anomaly_type.clone().or_else(|| {
+                entry
+                    .header
+                    .fraud_type
+                    .as_ref()
+                    .map(|ft| format!("{:?}", ft))
+            });
+
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "JournalEntry".to_string(),
+                entity_type_code: type_codes::JOURNAL_ENTRY,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: entry.header.document_id.to_string(),
+                label: format!("JE-{}", entry.header.document_id),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "amount".into(),
+                        Value::Number(
+                            serde_json::Number::from_f64(total_amount)
+                                .unwrap_or_else(|| serde_json::Number::from(0)),
+                        ),
+                    );
+                    p.insert(
+                        "date".into(),
+                        Value::String(entry.header.posting_date.to_string()),
+                    );
+                    p.insert(
+                        "company_code".into(),
+                        Value::String(entry.header.company_code.clone()),
+                    );
+                    p.insert(
+                        "line_count".into(),
+                        Value::Number((entry.lines.len() as u64).into()),
+                    );
+                    p.insert("is_anomaly".into(), Value::Bool(is_anomaly));
+                    if let Some(ref at) = anomaly_type {
+                        p.insert("anomaly_type".into(), Value::String(at.clone()));
+                    }
+                    p
+                },
+                features: vec![total_amount / 100_000.0],
+                is_anomaly,
+                anomaly_type,
+                is_aggregate: false,
+                aggregate_count: 0,
             });
         }
     }
