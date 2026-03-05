@@ -19,7 +19,8 @@ use datasynth_core::models::{
     documents::{
         CustomerInvoice, Delivery, GoodsReceipt, Payment, PurchaseOrder, SalesOrder, VendorInvoice,
     },
-    ChartOfAccounts, Customer, Employee, JournalEntry, Material, Vendor,
+    AnomalyRateConfig, ChartOfAccounts, Customer, Employee, JournalEntry, LabeledAnomaly, Material,
+    Vendor,
 };
 use datasynth_core::streaming::{stream_channel, StreamReceiver, StreamSender};
 use datasynth_core::traits::{
@@ -55,6 +56,8 @@ pub enum GeneratedItem {
     Delivery(Box<Delivery>),
     /// A customer invoice (O2C).
     CustomerInvoice(Box<CustomerInvoice>),
+    /// An anomaly label (injected during JE generation).
+    AnomalyLabel(Box<LabeledAnomaly>),
     /// Progress update.
     Progress(StreamProgress),
     /// Phase completion marker.
@@ -78,6 +81,7 @@ impl GeneratedItem {
             GeneratedItem::SalesOrder(_) => "sales_order",
             GeneratedItem::Delivery(_) => "delivery",
             GeneratedItem::CustomerInvoice(_) => "customer_invoice",
+            GeneratedItem::AnomalyLabel(_) => "anomaly_label",
             GeneratedItem::Progress(_) => "progress",
             GeneratedItem::PhaseComplete(_) => "phase_complete",
         }
@@ -292,11 +296,11 @@ impl StreamingOrchestrator {
                     )?;
                     items_generated += result;
                 }
-                GenerationPhase::AnomalyInjection | GenerationPhase::DataQuality => {
-                    warn!(
-                        "Phase {:?} requires post-processing of existing data and is skipped in streaming mode",
-                        phase
-                    );
+                GenerationPhase::AnomalyInjection => {
+                    info!("Anomaly injection applied inline during JE generation phase in streaming mode");
+                }
+                GenerationPhase::DataQuality => {
+                    info!("Data quality injection is not yet supported in streaming mode; skipping");
                 }
                 GenerationPhase::BalanceValidation | GenerationPhase::Complete => {
                     info!("Phase {:?} is not applicable in streaming mode", phase);
@@ -484,6 +488,9 @@ impl StreamingOrchestrator {
     ///
     /// Note: This is a simplified version that generates basic journal entries.
     /// For full-featured generation with all options, use EnhancedOrchestrator.
+    ///
+    /// When anomaly injection is enabled in config, anomalies are applied inline
+    /// to each batch of generated JEs before streaming them out.
     fn generate_journal_entries_phase(
         config: &GeneratorConfig,
         sender: &StreamSender<GeneratedItem>,
@@ -491,7 +498,10 @@ impl StreamingOrchestrator {
         progress_interval: u64,
         progress: &mut StreamProgress,
     ) -> SynthResult<u64> {
-        use datasynth_generators::{ChartOfAccountsGenerator, JournalEntryGenerator};
+        use datasynth_generators::{
+            AnomalyInjector, AnomalyInjectorConfig, ChartOfAccountsGenerator,
+            JournalEntryGenerator,
+        };
         use std::sync::Arc;
 
         let mut count: u64 = 0;
@@ -540,29 +550,113 @@ impl StreamingOrchestrator {
             seed,
         );
 
-        for _ in 0..total_entries {
+        // Create anomaly injector if enabled.
+        // Priority: anomaly_injection config > fraud config
+        let anomaly_enabled = config.anomaly_injection.enabled || config.fraud.enabled;
+        let mut anomaly_injector = if anomaly_enabled {
+            let total_rate = if config.anomaly_injection.enabled {
+                config.anomaly_injection.rates.total_rate
+            } else {
+                config.fraud.fraud_rate
+            };
+            let fraud_rate = if config.anomaly_injection.enabled {
+                config.anomaly_injection.rates.fraud_rate
+            } else {
+                AnomalyRateConfig::default().fraud_rate
+            };
+            let error_rate = if config.anomaly_injection.enabled {
+                config.anomaly_injection.rates.error_rate
+            } else {
+                AnomalyRateConfig::default().error_rate
+            };
+            let process_issue_rate = if config.anomaly_injection.enabled {
+                config.anomaly_injection.rates.process_rate
+            } else {
+                AnomalyRateConfig::default().process_issue_rate
+            };
+
+            let injector_config = AnomalyInjectorConfig {
+                rates: AnomalyRateConfig {
+                    total_rate,
+                    fraud_rate,
+                    error_rate,
+                    process_issue_rate,
+                    ..Default::default()
+                },
+                seed: seed + 5000,
+                ..Default::default()
+            };
+
+            info!(
+                "Anomaly injection enabled for streaming JE phase (total_rate={:.3})",
+                total_rate
+            );
+            Some(AnomalyInjector::new(injector_config))
+        } else {
+            None
+        };
+
+        // Generate JEs in batches when anomaly injection is active,
+        // or one-by-one when it is not.
+        let batch_size: usize = if anomaly_injector.is_some() { 100 } else { 1 };
+        let mut remaining = total_entries;
+
+        while remaining > 0 {
             if control.is_cancelled() {
                 break;
             }
 
-            // Handle pause
-            while control.is_paused() {
-                std::thread::sleep(std::time::Duration::from_millis(100));
+            let current_batch = remaining.min(batch_size);
+            let mut batch: Vec<JournalEntry> = Vec::with_capacity(current_batch);
+
+            for _ in 0..current_batch {
                 if control.is_cancelled() {
                     break;
                 }
+
+                // Handle pause
+                while control.is_paused() {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    if control.is_cancelled() {
+                        break;
+                    }
+                }
+
+                batch.push(je_gen.generate());
             }
 
-            let je = je_gen.generate();
-            sender.send(StreamEvent::Data(GeneratedItem::JournalEntry(Box::new(je))))?;
-            count += 1;
-
-            // Send progress updates
-            if count.is_multiple_of(progress_interval) {
-                progress.items_generated = count;
-                progress.items_remaining = Some(total_entries as u64 - count);
-                sender.send(StreamEvent::Progress(progress.clone()))?;
+            if batch.is_empty() {
+                break;
             }
+
+            // Apply anomaly injection to the batch if enabled
+            if let Some(ref mut injector) = anomaly_injector {
+                let result = injector.process_entries(&mut batch);
+
+                // Stream any generated anomaly labels
+                for label in result.labels {
+                    sender.send(StreamEvent::Data(GeneratedItem::AnomalyLabel(Box::new(
+                        label,
+                    ))))?;
+                }
+            }
+
+            // Send the (possibly mutated) JEs
+            for je in batch {
+                sender.send(StreamEvent::Data(GeneratedItem::JournalEntry(Box::new(
+                    je,
+                ))))?;
+                count += 1;
+
+                // Send progress updates
+                if count.is_multiple_of(progress_interval) {
+                    progress.items_generated = count;
+                    progress.items_remaining = Some(total_entries as u64 - count);
+                    sender.send(StreamEvent::Progress(progress.clone()))?;
+                }
+            }
+
+            remaining = remaining.saturating_sub(current_batch);
         }
 
         Ok(count)
@@ -918,6 +1012,101 @@ mod tests {
         }
 
         assert!(control.is_cancelled());
+    }
+
+    #[test]
+    fn test_streaming_anomaly_injection() {
+        let mut config = create_test_config();
+        // Reduce volume for fast testing but keep enough entries for anomalies
+        config.master_data.vendors.count = 3;
+        config.master_data.customers.count = 3;
+        config.master_data.employees.count = 3;
+        config.global.period_months = 1;
+
+        // Enable anomaly injection with a high rate to guarantee some are created
+        config.anomaly_injection.enabled = true;
+        config.anomaly_injection.rates.total_rate = 0.20; // 20% to ensure hits
+        config.anomaly_injection.rates.fraud_rate = 0.40;
+        config.anomaly_injection.rates.error_rate = 0.40;
+        config.anomaly_injection.rates.process_rate = 0.20;
+
+        let streaming_config = StreamingOrchestratorConfig::new(config)
+            .with_phases(vec![GenerationPhase::JournalEntries])
+            .with_stream_config(StreamConfig {
+                buffer_size: 500,
+                progress_interval: 50,
+                ..Default::default()
+            });
+
+        let orchestrator = StreamingOrchestrator::new(streaming_config);
+        let (receiver, _control) = orchestrator.stream().unwrap();
+
+        let mut je_count = 0;
+        let mut label_count = 0;
+        let mut has_completion = false;
+
+        for event in receiver {
+            match event {
+                StreamEvent::Data(item) => match item {
+                    GeneratedItem::JournalEntry(_) => je_count += 1,
+                    GeneratedItem::AnomalyLabel(_) => label_count += 1,
+                    _ => {}
+                },
+                StreamEvent::Complete(_) => {
+                    has_completion = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        assert!(has_completion, "Stream should complete");
+        assert!(je_count > 0, "Should generate journal entries");
+        assert!(
+            label_count > 0,
+            "Should generate anomaly labels (got {} JEs, {} labels)",
+            je_count,
+            label_count
+        );
+    }
+
+    #[test]
+    fn test_streaming_no_anomalies_when_disabled() {
+        let mut config = create_test_config();
+        config.master_data.vendors.count = 3;
+        config.master_data.customers.count = 3;
+        config.master_data.employees.count = 3;
+        config.global.period_months = 1;
+
+        // Ensure anomaly injection is disabled
+        config.anomaly_injection.enabled = false;
+        config.fraud.enabled = false;
+
+        let streaming_config = StreamingOrchestratorConfig::new(config)
+            .with_phases(vec![GenerationPhase::JournalEntries])
+            .with_stream_config(StreamConfig {
+                buffer_size: 500,
+                progress_interval: 50,
+                ..Default::default()
+            });
+
+        let orchestrator = StreamingOrchestrator::new(streaming_config);
+        let (receiver, _control) = orchestrator.stream().unwrap();
+
+        let mut label_count = 0;
+
+        for event in receiver {
+            match event {
+                StreamEvent::Data(GeneratedItem::AnomalyLabel(_)) => label_count += 1,
+                StreamEvent::Complete(_) => break,
+                _ => {}
+            }
+        }
+
+        assert_eq!(
+            label_count, 0,
+            "Should not generate anomaly labels when disabled"
+        );
     }
 
     #[test]
