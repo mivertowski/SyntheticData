@@ -6,6 +6,7 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::collections::HashMap;
 
 use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
@@ -76,7 +77,7 @@ pub struct QualityInspection {
     /// Overall inspection result
     pub result: InspectionResult,
     /// Individual inspection characteristics measured
-    pub characteristics: Vec<InspectionCharacteristic>,
+    pub characteristics: SmallVec<[InspectionCharacteristic; 4]>,
     /// Disposition action (e.g., "use_as_is", "return_to_vendor", "scrap")
     pub disposition: Option<String>,
     /// Additional notes or observations

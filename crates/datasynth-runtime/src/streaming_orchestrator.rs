@@ -300,7 +300,9 @@ impl StreamingOrchestrator {
                     info!("Anomaly injection applied inline during JE generation phase in streaming mode");
                 }
                 GenerationPhase::DataQuality => {
-                    info!("Data quality injection is not yet supported in streaming mode; skipping");
+                    info!(
+                        "Data quality injection is not yet supported in streaming mode; skipping"
+                    );
                 }
                 GenerationPhase::BalanceValidation | GenerationPhase::Complete => {
                     info!("Phase {:?} is not applicable in streaming mode", phase);
@@ -499,8 +501,7 @@ impl StreamingOrchestrator {
         progress: &mut StreamProgress,
     ) -> SynthResult<u64> {
         use datasynth_generators::{
-            AnomalyInjector, AnomalyInjectorConfig, ChartOfAccountsGenerator,
-            JournalEntryGenerator,
+            AnomalyInjector, AnomalyInjectorConfig, ChartOfAccountsGenerator, JournalEntryGenerator,
         };
         use std::sync::Arc;
 
@@ -643,9 +644,7 @@ impl StreamingOrchestrator {
 
             // Send the (possibly mutated) JEs
             for je in batch {
-                sender.send(StreamEvent::Data(GeneratedItem::JournalEntry(Box::new(
-                    je,
-                ))))?;
+                sender.send(StreamEvent::Data(GeneratedItem::JournalEntry(Box::new(je))))?;
                 count += 1;
 
                 // Send progress updates

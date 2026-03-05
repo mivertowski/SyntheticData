@@ -108,21 +108,24 @@ impl NettingRunGenerator {
             }
 
             // Build NettingPosition for each participating entity
-            let mut all_entities: Vec<&str> = receivables
-                .keys()
-                .chain(payables.keys())
-                .copied()
-                .collect();
+            let mut all_entities: Vec<&str> =
+                receivables.keys().chain(payables.keys()).copied().collect();
             all_entities.sort();
             all_entities.dedup();
 
             let positions: Vec<NettingPosition> = all_entities
                 .into_iter()
                 .map(|eid| {
-                    let gross_receivable =
-                        receivables.get(eid).copied().unwrap_or(Decimal::ZERO).round_dp(2);
-                    let gross_payable =
-                        payables.get(eid).copied().unwrap_or(Decimal::ZERO).round_dp(2);
+                    let gross_receivable = receivables
+                        .get(eid)
+                        .copied()
+                        .unwrap_or(Decimal::ZERO)
+                        .round_dp(2);
+                    let gross_payable = payables
+                        .get(eid)
+                        .copied()
+                        .unwrap_or(Decimal::ZERO)
+                        .round_dp(2);
                     let net_position = (gross_receivable - gross_payable).round_dp(2);
                     let settlement_direction = if net_position > Decimal::ZERO {
                         PayOrReceive::Receive

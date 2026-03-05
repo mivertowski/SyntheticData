@@ -82,8 +82,13 @@ fn test_hr_pipeline_coherence() {
     let mut payroll_gen =
         PayrollGenerator::new(seed + 1).with_pools(employee_ids.clone(), cost_center_ids.clone());
 
-    let (run, line_items) =
-        payroll_gen.generate(company_code, &employees_with_salary, start_date, end_date, currency);
+    let (run, line_items) = payroll_gen.generate(
+        company_code,
+        &employees_with_salary,
+        start_date,
+        end_date,
+        currency,
+    );
 
     assert!(!run.payroll_id.is_empty(), "Payroll run should have an ID");
     assert!(
@@ -110,8 +115,8 @@ fn test_hr_pipeline_coherence() {
     }
 
     // ── Phase 3: Time entries ────────────────────────────────────────────
-    let mut time_gen = TimeEntryGenerator::new(seed + 2)
-        .with_pools(employee_ids.clone(), cost_center_ids.clone());
+    let mut time_gen =
+        TimeEntryGenerator::new(seed + 2).with_pools(employee_ids.clone(), cost_center_ids.clone());
 
     let config_time = TimeAttendanceConfig::default();
     let time_entries = time_gen.generate(&employee_ids, start_date, end_date, &config_time);
@@ -265,8 +270,11 @@ fn test_hr_pipeline_deterministic() {
             (date(2020, 1, 1), date(2024, 12, 31)),
         );
 
-        let employee_ids: Vec<String> =
-            pool.employees.iter().map(|e| e.employee_id.clone()).collect();
+        let employee_ids: Vec<String> = pool
+            .employees
+            .iter()
+            .map(|e| e.employee_id.clone())
+            .collect();
         let employee_pairs: Vec<(String, String)> = pool
             .employees
             .iter()
@@ -296,13 +304,22 @@ fn test_hr_pipeline_deterministic() {
         let mut benefit_gen = BenefitEnrollmentGenerator::new(s + 4);
         let enrollments = benefit_gen.generate(company_code, &employee_pairs, start, "USD");
 
-        (pool.employees.len(), run.payroll_id, items.len(), time_entries.len(), enrollments.len())
+        (
+            pool.employees.len(),
+            run.payroll_id,
+            items.len(),
+            time_entries.len(),
+            enrollments.len(),
+        )
     };
 
     let run1 = generate(seed);
     let run2 = generate(seed);
 
-    assert_eq!(run1, run2, "Deterministic runs should produce identical results");
+    assert_eq!(
+        run1, run2,
+        "Deterministic runs should produce identical results"
+    );
 }
 
 // =============================================================================
@@ -324,7 +341,11 @@ fn test_time_entry_approvers_from_pool() {
         (date(2020, 1, 1), date(2024, 12, 31)),
     );
 
-    let employee_ids: Vec<String> = pool.employees.iter().map(|e| e.employee_id.clone()).collect();
+    let employee_ids: Vec<String> = pool
+        .employees
+        .iter()
+        .map(|e| e.employee_id.clone())
+        .collect();
     let employee_id_set: HashSet<String> = employee_ids.iter().cloned().collect();
     let cost_center_ids: Vec<String> = pool
         .employees
@@ -332,8 +353,8 @@ fn test_time_entry_approvers_from_pool() {
         .filter_map(|e| e.cost_center.clone())
         .collect();
 
-    let mut time_gen = TimeEntryGenerator::new(seed + 10)
-        .with_pools(employee_ids.clone(), cost_center_ids);
+    let mut time_gen =
+        TimeEntryGenerator::new(seed + 10).with_pools(employee_ids.clone(), cost_center_ids);
 
     let config = TimeAttendanceConfig::default();
     let entries = time_gen.generate(&employee_ids, date(2025, 6, 1), date(2025, 6, 30), &config);

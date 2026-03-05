@@ -13,6 +13,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use smallvec::SmallVec;
 use tracing::debug;
 
 /// Characteristic names used in quality inspections.
@@ -198,7 +199,10 @@ impl QualityInspectionGenerator {
     }
 
     /// Generate inspection characteristics with target/actual values and limits.
-    fn generate_characteristics(&mut self, count: usize) -> Vec<InspectionCharacteristic> {
+    fn generate_characteristics(
+        &mut self,
+        count: usize,
+    ) -> SmallVec<[InspectionCharacteristic; 4]> {
         // Shuffle and pick `count` characteristic names
         let mut indices: Vec<usize> = (0..CHARACTERISTIC_NAMES.len()).collect();
         indices.shuffle(&mut self.rng);

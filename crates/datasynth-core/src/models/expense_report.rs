@@ -6,6 +6,7 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::collections::HashMap;
 
 use super::graph_properties::{GraphPropertyValue, ToNodeProperties};
@@ -68,7 +69,7 @@ pub struct ExpenseReport {
     /// Currency code (e.g., USD, EUR)
     pub currency: String,
     /// Individual expense line items
-    pub line_items: Vec<ExpenseLineItem>,
+    pub line_items: SmallVec<[ExpenseLineItem; 4]>,
     /// Manager who approved/rejected the report
     pub approved_by: Option<String>,
     /// Date the report was approved

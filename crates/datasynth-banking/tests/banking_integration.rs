@@ -78,7 +78,8 @@ fn test_banking_pipeline_coherence() {
     }
 
     // ── Transaction labels reference valid transaction IDs ───────────────
-    let transaction_ids: HashSet<Uuid> = data.transactions.iter().map(|t| t.transaction_id).collect();
+    let transaction_ids: HashSet<Uuid> =
+        data.transactions.iter().map(|t| t.transaction_id).collect();
 
     for label in &data.transaction_labels {
         assert!(
@@ -149,7 +150,8 @@ fn test_banking_aml_typology_coherence() {
     let data = orchestrator.generate();
 
     let customer_ids: HashSet<Uuid> = data.customers.iter().map(|c| c.customer_id).collect();
-    let transaction_ids: HashSet<Uuid> = data.transactions.iter().map(|t| t.transaction_id).collect();
+    let transaction_ids: HashSet<Uuid> =
+        data.transactions.iter().map(|t| t.transaction_id).collect();
 
     // Verify scenario references
     for scenario in &data.scenarios {

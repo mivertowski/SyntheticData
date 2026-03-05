@@ -12,6 +12,7 @@ use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use smallvec::SmallVec;
 use std::collections::HashMap;
 use tracing::debug;
 
@@ -173,7 +174,7 @@ impl ExpenseReportGenerator {
 
         // 1-5 line items per report
         let item_count = self.rng.random_range(1..=5);
-        let mut line_items = Vec::with_capacity(item_count);
+        let mut line_items = SmallVec::with_capacity(item_count);
         let mut total_amount = Decimal::ZERO;
 
         for _ in 0..item_count {
@@ -185,7 +186,7 @@ impl ExpenseReportGenerator {
         // Submission date: usually within a few days after the last expense
         let max_expense_date = line_items
             .iter()
-            .map(|li| li.date)
+            .map(|li: &ExpenseLineItem| li.date)
             .max()
             .unwrap_or(period_end);
         let submission_lag = self.rng.random_range(0..=5);

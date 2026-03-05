@@ -151,10 +151,7 @@ fn test_manufacturing_pipeline_coherence() {
             "Quality inspection references unknown material: {}",
             insp.material_id
         );
-        assert!(
-            insp.lot_size > Decimal::ZERO,
-            "Lot size should be positive"
-        );
+        assert!(insp.lot_size > Decimal::ZERO, "Lot size should be positive");
         assert!(
             insp.sample_size > Decimal::ZERO,
             "Sample size should be positive"
@@ -177,8 +174,14 @@ fn test_manufacturing_pipeline_coherence() {
 
         // Verify characteristic consistency
         for c in &insp.characteristics {
-            assert!(c.lower_limit < c.target_value, "Lower limit should be below target");
-            assert!(c.upper_limit > c.target_value, "Upper limit should be above target");
+            assert!(
+                c.lower_limit < c.target_value,
+                "Lower limit should be below target"
+            );
+            assert!(
+                c.upper_limit > c.target_value,
+                "Upper limit should be above target"
+            );
             let within = c.actual_value >= c.lower_limit && c.actual_value <= c.upper_limit;
             assert_eq!(
                 c.passed, within,
@@ -221,8 +224,7 @@ fn test_manufacturing_pipeline_coherence() {
         );
         // Component should not be its own parent
         assert_ne!(
-            comp.component_material_id,
-            *parent,
+            comp.component_material_id, *parent,
             "BOM component should not be its own parent"
         );
     }
@@ -238,10 +240,7 @@ fn test_manufacturing_pipeline_coherence() {
         currency,
     );
 
-    assert!(
-        !movements.is_empty(),
-        "Should generate inventory movements"
-    );
+    assert!(!movements.is_empty(), "Should generate inventory movements");
 
     for mv in &movements {
         assert_eq!(mv.entity_code, company_code);
@@ -311,7 +310,15 @@ fn test_manufacturing_pipeline_deterministic() {
         };
         let costing = ManufacturingCostingConfig::default();
         let routing = RoutingConfig::default();
-        let orders = prod_gen.generate(company_code, &material_tuples, start, end, &config, &costing, &routing);
+        let orders = prod_gen.generate(
+            company_code,
+            &material_tuples,
+            start,
+            end,
+            &config,
+            &costing,
+            &routing,
+        );
 
         let mut bom_gen = BomGenerator::new(s + 2);
         let bom = bom_gen.generate(company_code, &material_tuples);
@@ -331,7 +338,10 @@ fn test_manufacturing_pipeline_deterministic() {
     let run1 = generate(seed);
     let run2 = generate(seed);
 
-    assert_eq!(run1, run2, "Deterministic runs should produce identical results");
+    assert_eq!(
+        run1, run2,
+        "Deterministic runs should produce identical results"
+    );
 }
 
 // =============================================================================

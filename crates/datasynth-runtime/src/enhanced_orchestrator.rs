@@ -117,8 +117,8 @@ use datasynth_generators::{
 };
 use datasynth_graph::{
     ApprovalGraphBuilder, ApprovalGraphConfig, BankingGraphBuilder, BankingGraphConfig,
-    EntityGraphBuilder, EntityGraphConfig, PyGExportConfig, PyGExporter,
-    TransactionGraphBuilder, TransactionGraphConfig,
+    EntityGraphBuilder, EntityGraphConfig, PyGExportConfig, PyGExporter, TransactionGraphBuilder,
+    TransactionGraphConfig,
 };
 use datasynth_ocpm::{
     AuditDocuments, BankDocuments, BankReconDocuments, EventLogMetadata, H2rDocuments,
@@ -1683,7 +1683,8 @@ impl EnhancedOrchestrator {
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
 
         // Phase 22: Treasury Data Generation
-        let treasury = self.phase_treasury_data(&document_flows, &subledger, &intercompany, &mut stats)?;
+        let treasury =
+            self.phase_treasury_data(&document_flows, &subledger, &intercompany, &mut stats)?;
 
         // Phase 23: Project Accounting Data Generation
         let project_accounting = self.phase_project_accounting(&document_flows, &hr, &mut stats)?;
@@ -1807,8 +1808,8 @@ impl EnhancedOrchestrator {
         };
 
         Ok(EnhancedGenerationResult {
-            chart_of_accounts: (*coa).clone(),
-            master_data: self.master_data.clone(),
+            chart_of_accounts: Arc::try_unwrap(coa).unwrap_or_else(|arc| (*arc).clone()),
+            master_data: std::mem::take(&mut self.master_data),
             document_flows,
             subledger,
             ocpm,
@@ -4904,7 +4905,13 @@ impl EnhancedOrchestrator {
             let ic_amounts: Vec<(String, String, rust_decimal::Decimal)> = intercompany
                 .matched_pairs
                 .iter()
-                .map(|mp| (mp.seller_company.clone(), mp.buyer_company.clone(), mp.amount))
+                .map(|mp| {
+                    (
+                        mp.seller_company.clone(),
+                        mp.buyer_company.clone(),
+                        mp.amount,
+                    )
+                })
                 .collect();
             if entity_ids.len() >= 2 {
                 let mut netting_gen = datasynth_generators::treasury::NettingRunGenerator::new(
@@ -7252,9 +7259,8 @@ impl EnhancedOrchestrator {
                 self.config.companies.len()
             );
 
-            let start_date =
-                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date"));
+            let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+                .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date"));
 
             // Map CompanyConfig → Company objects
             let parent_code = &self.config.companies[0].code;
@@ -7283,27 +7289,25 @@ impl EnhancedOrchestrator {
             }
 
             // Build IntercompanyRelationship records (same logic as phase_intercompany)
-            let relationships: Vec<
-                datasynth_core::models::intercompany::IntercompanyRelationship,
-            > = self
-                .config
-                .companies
-                .iter()
-                .skip(1)
-                .enumerate()
-                .map(|(i, cc)| {
-                    let mut rel =
-                        datasynth_core::models::intercompany::IntercompanyRelationship::new(
-                            format!("REL{:03}", i + 1),
-                            parent_code.clone(),
-                            cc.code.clone(),
-                            rust_decimal::Decimal::from(100),
-                            start_date,
-                        );
-                    rel.functional_currency = cc.currency.clone();
-                    rel
-                })
-                .collect();
+            let relationships: Vec<datasynth_core::models::intercompany::IntercompanyRelationship> =
+                self.config
+                    .companies
+                    .iter()
+                    .skip(1)
+                    .enumerate()
+                    .map(|(i, cc)| {
+                        let mut rel =
+                            datasynth_core::models::intercompany::IntercompanyRelationship::new(
+                                format!("REL{:03}", i + 1),
+                                parent_code.clone(),
+                                cc.code.clone(),
+                                rust_decimal::Decimal::from(100),
+                                start_date,
+                            );
+                        rel.functional_currency = cc.currency.clone();
+                        rel
+                    })
+                    .collect();
 
             let mut builder = EntityGraphBuilder::new(EntityGraphConfig::default());
             builder.add_companies(&companies);
@@ -7331,8 +7335,7 @@ impl EnhancedOrchestrator {
                     format,
                     datasynth_config::schema::GraphExportFormat::PytorchGeometric
                 ) {
-                    let format_dir =
-                        graph_dir.join("entity_network").join("pytorch_geometric");
+                    let format_dir = graph_dir.join("entity_network").join("pytorch_geometric");
                     if let Err(e) = std::fs::create_dir_all(&format_dir) {
                         warn!("Failed to create entity graph output dir: {}", e);
                         continue;
@@ -8222,10 +8225,10 @@ mod tests {
         };
 
         let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
-        let _ = orchestrator.generate().unwrap();
+        let result = orchestrator.generate().unwrap();
 
-        let master_data = orchestrator.get_master_data();
-        assert!(!master_data.vendors.is_empty());
+        // After generate(), master_data is moved into the result
+        assert!(!result.master_data.vendors.is_empty());
     }
 
     #[test]
