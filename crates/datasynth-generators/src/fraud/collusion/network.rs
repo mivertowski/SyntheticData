@@ -598,6 +598,33 @@ impl CollusionRing {
             }
             _ => {}
         }
+
+        // Simulate transactions for operational rings
+        // (Forming needs transactions too, since Forming→Active requires transaction_count >= 3)
+        if matches!(
+            self.status,
+            RingStatus::Forming | RingStatus::Active | RingStatus::Escalating
+        ) {
+            let txns_per_month = (30 / self.behavior.transaction_interval_days.max(1)).max(1);
+            for _ in 0..txns_per_month {
+                // Variance: ±30% around avg_transaction_amount
+                let variance = 0.7 + rng.random::<f64>() * 0.6; // 0.7 to 1.3
+                let amount = self
+                    .behavior
+                    .avg_transaction_amount
+                    .saturating_mul(Decimal::try_from(variance).unwrap_or(Decimal::ONE));
+                let amount = amount.min(self.behavior.max_transaction_amount);
+                let tx_id = format!("TX-{}-{:04}", self.ring_id, self.transaction_count + 1);
+                self.record_transaction(amount, tx_id);
+            }
+            // Apply escalation factor for escalating rings
+            if self.status == RingStatus::Escalating {
+                self.behavior.avg_transaction_amount =
+                    self.behavior.avg_transaction_amount.saturating_mul(
+                        Decimal::try_from(self.behavior.escalation_factor).unwrap_or(Decimal::ONE),
+                    );
+            }
+        }
     }
 
     /// Checks if any member defects.

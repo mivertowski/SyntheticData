@@ -573,7 +573,7 @@ impl P2PGenerator {
             if received_qty > Decimal::ZERO {
                 let description =
                     self.pick_line_description("goods_receipt", &po_item.base.description);
-                let gr_item = GoodsReceiptItem::from_po(
+                let mut gr_item = GoodsReceiptItem::from_po(
                     po_item.base.line_number,
                     &description,
                     received_qty,
@@ -582,6 +582,11 @@ impl P2PGenerator {
                     po_item.base.line_number,
                 )
                 .with_movement_type(MovementType::GrForPo);
+
+                // Carry material_id from PO item to GR item
+                if let Some(ref mat_id) = po_item.base.material_id {
+                    gr_item = gr_item.with_material(mat_id);
+                }
 
                 gr.add_item(gr_item);
             }

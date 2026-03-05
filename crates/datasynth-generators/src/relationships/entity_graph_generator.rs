@@ -232,38 +232,50 @@ impl EntityGraphGenerator {
             as_of_date,
         ));
 
-        // Add vendor nodes
+        // Add vendor nodes (edges added below after transaction summary check)
         for vendor in vendors {
             let vendor_id = GraphEntityId::new(GraphEntityType::Vendor, &vendor.entity_id);
             let node = EntityNode::new(vendor_id.clone(), &vendor.name, as_of_date)
                 .with_company(company_code);
             graph.add_node(node);
 
-            // Add relationship: Company buys from Vendor
-            let edge = RelationshipEdge::new(
-                company_id.clone(),
-                vendor_id,
-                RelationshipType::BuysFrom,
-                vendor.first_activity_date,
-            );
-            graph.add_edge(edge);
+            // Only add a default-strength edge if no transaction summary will
+            // supply a computed-strength edge for this vendor.
+            let has_txn = transaction_summaries
+                .keys()
+                .any(|(_, to)| to == &vendor.entity_id);
+            if !has_txn {
+                let edge = RelationshipEdge::new(
+                    company_id.clone(),
+                    vendor_id,
+                    RelationshipType::BuysFrom,
+                    vendor.first_activity_date,
+                );
+                graph.add_edge(edge);
+            }
         }
 
-        // Add customer nodes
+        // Add customer nodes (edges added below after transaction summary check)
         for customer in customers {
             let customer_id = GraphEntityId::new(GraphEntityType::Customer, &customer.entity_id);
             let node = EntityNode::new(customer_id.clone(), &customer.name, as_of_date)
                 .with_company(company_code);
             graph.add_node(node);
 
-            // Add relationship: Company sells to Customer
-            let edge = RelationshipEdge::new(
-                company_id.clone(),
-                customer_id,
-                RelationshipType::SellsTo,
-                customer.first_activity_date,
-            );
-            graph.add_edge(edge);
+            // Only add a default-strength edge if no transaction summary will
+            // supply a computed-strength edge for this customer.
+            let has_txn = transaction_summaries
+                .keys()
+                .any(|(_, to)| to == &customer.entity_id);
+            if !has_txn {
+                let edge = RelationshipEdge::new(
+                    company_id.clone(),
+                    customer_id,
+                    RelationshipType::SellsTo,
+                    customer.first_activity_date,
+                );
+                graph.add_edge(edge);
+            }
         }
 
         // Add transactional relationships with strength

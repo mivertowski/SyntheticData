@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-03-XX
 
 ### Added
+- **Process evolution & organizational event generation** (Phase 24): workflow changes, automation events, policy updates, acquisitions, divestitures, reorganizations (`datasynth-runtime`)
+- **Disruption event generation** (Phase 24b): new `DisruptionGenerator` producing outage, migration, process change, recovery, and regulatory disruption events (`datasynth-generators`, `datasynth-runtime`)
+- **Counterfactual pair generation** (Phase 25): generates (original, mutated) journal entry pairs for ML training when `generate_counterfactuals` is enabled (`datasynth-runtime`)
+- **Fraud red-flag indicators** (Phase 26): `RedFlagGenerator` attaches risk indicators to P2P/O2C document chains when fraud labels exist (`datasynth-runtime`)
+- **Collusion ring generation** (Phase 26b): new `CollusionRingGenerator` creates coordinated fraud networks from employee/vendor pools when `fraud.clustering_enabled` (`datasynth-generators`, `datasynth-runtime`)
+- **Bi-temporal vendor versioning** (Phase 27): `TemporalAttributeGenerator` creates version chains with valid-time/transaction-time dimensions (`datasynth-runtime`)
+- **Entity relationship graph** (Phase 28): `EntityGraphGenerator` builds relationship graphs with strength scores and cross-process links (P2P↔O2C via inventory) (`datasynth-runtime`)
+- **Industry transaction factory** (Phase 29): dispatches industry-specific GL accounts for Retail, Manufacturing, Healthcare, FinancialServices (`datasynth-generators`, `datasynth-runtime`)
+- 11 integration tests for all newly wired generators covering enabled/disabled toggles, deterministic output, and structural validation (`datasynth-runtime`)
 - Benefit enrollment generation in HR pipeline (`datasynth-runtime`)
 - BOM component and inventory movement generation in manufacturing pipeline (`datasynth-runtime`)
 - Cash forecasting from AR/AP aging and cash pooling with sweep transactions (`datasynth-runtime`)
@@ -23,7 +32,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streaming orchestrator applies anomaly injection inline during JE generation instead of skipping
 - Bank reconciliation generator already wired (confirmed existing)
 
+### Performance
+- SmallVec optimization for `ExpenseReport.line_items` and `QualityInspection.characteristics` (avoids heap allocation for ≤4 items)
+- Zero-copy `std::mem::take()` for master data transfer to result (eliminates clone of full vendor/customer/material/asset/employee vectors)
+- `Arc::try_unwrap()` for chart of accounts when refcount is 1
+
 ### Fixed
+- Temporal version chains now config-driven (uses `TemporalAttributeConfigBuilder` instead of `with_defaults()`) producing multi-version chains
+- Collusion rings now simulate transactions during `advance_month()` for Forming/Active/Escalating states
+- Entity graph no longer produces duplicate edges; transaction summaries extracted from P2P/O2C document flows for computed relationship strengths
+- Cross-process links auto-enable when both P2P and O2C data exist; material_id now propagated from PO items to GR items in P2P generator
 - Non-workspace reqwest dependency in datasynth-test-utils
 - Benefit enrollment generation now gated behind payroll.enabled config flag
 

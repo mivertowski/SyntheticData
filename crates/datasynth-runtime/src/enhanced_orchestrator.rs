@@ -5456,7 +5456,50 @@ impl EnhancedOrchestrator {
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
-        let mut gen = datasynth_generators::temporal::TemporalAttributeGenerator::with_defaults(
+        // Build a TemporalAttributeConfig from the user's config.
+        // Since Phase 27 is already gated on temporal_attributes.enabled,
+        // default to enabling version chains so users get actual mutations.
+        let generate_version_chains = self.config.temporal_attributes.generate_version_chains
+            || self.config.temporal_attributes.enabled;
+        let temporal_config = {
+            let ta = &self.config.temporal_attributes;
+            datasynth_generators::temporal::TemporalAttributeConfigBuilder::new()
+                .enabled(ta.enabled)
+                .closed_probability(ta.valid_time.closed_probability)
+                .avg_validity_days(ta.valid_time.avg_validity_days)
+                .avg_recording_delay(ta.transaction_time.avg_recording_delay_seconds)
+                .with_version_chains(if generate_version_chains {
+                    ta.avg_versions_per_entity
+                } else {
+                    1.0
+                })
+                .build()
+        };
+        // Apply backdating settings if configured
+        let temporal_config = if self
+            .config
+            .temporal_attributes
+            .transaction_time
+            .allow_backdating
+        {
+            let mut c = temporal_config;
+            c.transaction_time.allow_backdating = true;
+            c.transaction_time.backdating_probability = self
+                .config
+                .temporal_attributes
+                .transaction_time
+                .backdating_probability;
+            c.transaction_time.max_backdate_days = self
+                .config
+                .temporal_attributes
+                .transaction_time
+                .max_backdate_days;
+            c
+        } else {
+            temporal_config
+        };
+        let mut gen = datasynth_generators::temporal::TemporalAttributeGenerator::new(
+            temporal_config,
             self.seed + 130,
             start_date,
         );
@@ -5507,7 +5550,8 @@ impl EnhancedOrchestrator {
         };
 
         let rs_enabled = self.config.relationship_strength.enabled;
-        let cpl_enabled = self.config.cross_process_links.enabled;
+        let cpl_enabled = self.config.cross_process_links.enabled
+            || (!document_flows.p2p_chains.is_empty() && !document_flows.o2c_chains.is_empty());
 
         if !rs_enabled && !cpl_enabled {
             debug!(
@@ -5639,6 +5683,61 @@ impl EnhancedOrchestrator {
                         entry.related_entities.insert(cc.clone());
                     }
                 }
+            }
+
+            // Also extract transaction relationships from document flow chains.
+            // P2P chains: Company → Vendor relationships
+            for chain in &document_flows.p2p_chains {
+                let cc = chain.purchase_order.header.company_code.clone();
+                let vendor_id = chain.purchase_order.vendor_id.clone();
+                let po_date = chain.purchase_order.header.document_date;
+                let amount = chain.purchase_order.total_net_amount;
+
+                let entry = txn_summaries
+                    .entry((cc.clone(), vendor_id))
+                    .or_insert_with(|| TransactionSummary {
+                        total_volume: rust_decimal::Decimal::ZERO,
+                        transaction_count: 0,
+                        first_transaction_date: po_date,
+                        last_transaction_date: po_date,
+                        related_entities: std::collections::HashSet::new(),
+                    });
+                entry.total_volume += amount;
+                entry.transaction_count += 1;
+                if po_date < entry.first_transaction_date {
+                    entry.first_transaction_date = po_date;
+                }
+                if po_date > entry.last_transaction_date {
+                    entry.last_transaction_date = po_date;
+                }
+                entry.related_entities.insert(cc);
+            }
+
+            // O2C chains: Company → Customer relationships
+            for chain in &document_flows.o2c_chains {
+                let cc = chain.sales_order.header.company_code.clone();
+                let customer_id = chain.sales_order.customer_id.clone();
+                let so_date = chain.sales_order.header.document_date;
+                let amount = chain.sales_order.total_net_amount;
+
+                let entry = txn_summaries
+                    .entry((cc.clone(), customer_id))
+                    .or_insert_with(|| TransactionSummary {
+                        total_volume: rust_decimal::Decimal::ZERO,
+                        transaction_count: 0,
+                        first_transaction_date: so_date,
+                        last_transaction_date: so_date,
+                        related_entities: std::collections::HashSet::new(),
+                    });
+                entry.total_volume += amount;
+                entry.transaction_count += 1;
+                if so_date < entry.first_transaction_date {
+                    entry.first_transaction_date = so_date;
+                }
+                if so_date > entry.last_transaction_date {
+                    entry.last_transaction_date = so_date;
+                }
+                entry.related_entities.insert(cc);
             }
 
             let as_of_date = journal_entries
