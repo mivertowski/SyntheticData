@@ -585,6 +585,8 @@ pub fn write_all_output(
     if !result.manufacturing.production_orders.is_empty()
         || !result.manufacturing.quality_inspections.is_empty()
         || !result.manufacturing.cycle_counts.is_empty()
+        || !result.manufacturing.bom_components.is_empty()
+        || !result.manufacturing.inventory_movements.is_empty()
     {
         std::fs::create_dir_all(&mfg_dir)?;
         info!("Writing manufacturing data...");
@@ -603,6 +605,16 @@ pub fn write_all_output(
             &result.manufacturing.cycle_counts,
             &mfg_dir.join("cycle_counts.json"),
             "Cycle counts",
+        );
+        write_json_safe(
+            &result.manufacturing.bom_components,
+            &mfg_dir.join("bom_components.json"),
+            "BOM components",
+        );
+        write_json_safe(
+            &result.manufacturing.inventory_movements,
+            &mfg_dir.join("inventory_movements.json"),
+            "Inventory movements",
         );
     }
 

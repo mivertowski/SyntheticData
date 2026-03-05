@@ -553,7 +553,7 @@ pub struct AccountingStandardsSnapshot {
     pub impairment_test_count: usize,
 }
 
-/// Manufacturing data snapshot (production orders, quality inspections, cycle counts).
+/// Manufacturing data snapshot (production orders, quality inspections, cycle counts, BOMs, inventory movements).
 #[derive(Debug, Clone, Default)]
 pub struct ManufacturingSnapshot {
     /// Production orders (actual data).
@@ -562,12 +562,20 @@ pub struct ManufacturingSnapshot {
     pub quality_inspections: Vec<QualityInspection>,
     /// Cycle counts (actual data).
     pub cycle_counts: Vec<CycleCount>,
+    /// BOM components (actual data).
+    pub bom_components: Vec<BomComponent>,
+    /// Inventory movements (actual data).
+    pub inventory_movements: Vec<InventoryMovement>,
     /// Production order count.
     pub production_order_count: usize,
     /// Quality inspection count.
     pub quality_inspection_count: usize,
     /// Cycle count count.
     pub cycle_count_count: usize,
+    /// BOM component count.
+    pub bom_component_count: usize,
+    /// Inventory movement count.
+    pub inventory_movement_count: usize,
 }
 
 /// Sales, KPI, and budget data snapshot.
@@ -910,6 +918,10 @@ pub struct EnhancedGenerationStatistics {
     pub quality_inspection_count: usize,
     #[serde(default)]
     pub cycle_count_count: usize,
+    #[serde(default)]
+    pub bom_component_count: usize,
+    #[serde(default)]
+    pub inventory_movement_count: usize,
     /// Sales & reporting counts.
     #[serde(default)]
     pub sales_quote_count: usize,
@@ -4000,13 +4012,41 @@ impl EnhancedOrchestrator {
         }
         snapshot.cycle_count_count = cycle_count_total;
 
+        // Generate BOM components
+        let mut bom_gen = datasynth_generators::BomGenerator::new(seed + 53);
+        let bom_components = bom_gen.generate(company_code, &material_data);
+        snapshot.bom_component_count = bom_components.len();
+        snapshot.bom_components = bom_components;
+
+        // Generate inventory movements
+        let currency = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.currency.as_str())
+            .unwrap_or("USD");
+        let mut inv_mov_gen = datasynth_generators::InventoryMovementGenerator::new(seed + 54);
+        let inventory_movements = inv_mov_gen.generate(
+            company_code,
+            &material_data,
+            start_date,
+            end_date,
+            2,
+            currency,
+        );
+        snapshot.inventory_movement_count = inventory_movements.len();
+        snapshot.inventory_movements = inventory_movements;
+
         stats.production_order_count = snapshot.production_order_count;
         stats.quality_inspection_count = snapshot.quality_inspection_count;
         stats.cycle_count_count = snapshot.cycle_count_count;
+        stats.bom_component_count = snapshot.bom_component_count;
+        stats.inventory_movement_count = snapshot.inventory_movement_count;
 
         info!(
-            "Manufacturing data generated: {} production orders, {} quality inspections, {} cycle counts",
-            snapshot.production_order_count, snapshot.quality_inspection_count, snapshot.cycle_count_count
+            "Manufacturing data generated: {} production orders, {} quality inspections, {} cycle counts, {} BOM components, {} inventory movements",
+            snapshot.production_order_count, snapshot.quality_inspection_count, snapshot.cycle_count_count,
+            snapshot.bom_component_count, snapshot.inventory_movement_count
         );
         self.check_resources_with_log("post-manufacturing")?;
 
