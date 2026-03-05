@@ -983,6 +983,12 @@ pub struct EnhancedGenerationStatistics {
     /// Cash position count.
     #[serde(default)]
     pub cash_position_count: usize,
+    /// Cash forecast count.
+    #[serde(default)]
+    pub cash_forecast_count: usize,
+    /// Cash pool count.
+    #[serde(default)]
+    pub cash_pool_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1672,7 +1678,7 @@ impl EnhancedOrchestrator {
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
 
         // Phase 22: Treasury Data Generation
-        let treasury = self.phase_treasury_data(&document_flows, &mut stats)?;
+        let treasury = self.phase_treasury_data(&document_flows, &subledger, &mut stats)?;
 
         // Phase 23: Project Accounting Data Generation
         let project_accounting = self.phase_project_accounting(&document_flows, &hr, &mut stats)?;
@@ -4614,6 +4620,7 @@ impl EnhancedOrchestrator {
     fn phase_treasury_data(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
+        subledger: &SubledgerSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TreasurySnapshot> {
         if !self.config.treasury.enabled {
@@ -4766,15 +4773,117 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Generate cash forecasts from AR/AP aging
+        if self.config.treasury.cash_forecasting.enabled {
+            let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+
+            // Build AR aging items from subledger AR invoices
+            let ar_items: Vec<datasynth_generators::treasury::ArAgingItem> = subledger
+                .ar_invoices
+                .iter()
+                .filter(|inv| inv.amount_remaining > rust_decimal::Decimal::ZERO)
+                .map(|inv| {
+                    let days_past_due = if inv.due_date < end_date {
+                        (end_date - inv.due_date).num_days().max(0) as u32
+                    } else {
+                        0
+                    };
+                    datasynth_generators::treasury::ArAgingItem {
+                        expected_date: inv.due_date,
+                        amount: inv.amount_remaining,
+                        days_past_due,
+                        document_id: inv.invoice_number.clone(),
+                    }
+                })
+                .collect();
+
+            // Build AP aging items from subledger AP invoices
+            let ap_items: Vec<datasynth_generators::treasury::ApAgingItem> = subledger
+                .ap_invoices
+                .iter()
+                .filter(|inv| inv.amount_remaining > rust_decimal::Decimal::ZERO)
+                .map(|inv| datasynth_generators::treasury::ApAgingItem {
+                    payment_date: inv.due_date,
+                    amount: inv.amount_remaining,
+                    document_id: inv.invoice_number.clone(),
+                })
+                .collect();
+
+            let mut forecast_gen = datasynth_generators::treasury::CashForecastGenerator::new(
+                self.config.treasury.cash_forecasting.clone(),
+                seed + 94,
+            );
+            let forecast = forecast_gen.generate(
+                entity_id,
+                currency,
+                end_date,
+                &ar_items,
+                &ap_items,
+                &[], // scheduled disbursements - empty for now
+            );
+            snapshot.cash_forecasts.push(forecast);
+        }
+
+        // Generate cash pools and sweeps
+        if self.config.treasury.cash_pooling.enabled && !snapshot.cash_positions.is_empty() {
+            let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+            let mut pool_gen = datasynth_generators::treasury::CashPoolGenerator::new(
+                self.config.treasury.cash_pooling.clone(),
+                seed + 95,
+            );
+
+            // Create a pool from available accounts
+            let account_ids: Vec<String> = snapshot
+                .cash_positions
+                .iter()
+                .map(|cp| cp.bank_account_id.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
+
+            if let Some(pool) = pool_gen.create_pool(
+                &format!("{}_MAIN_POOL", entity_id),
+                currency,
+                &account_ids,
+            ) {
+                // Generate sweeps - build participant balances from last cash position per account
+                let mut latest_balances: HashMap<String, rust_decimal::Decimal> = HashMap::new();
+                for cp in &snapshot.cash_positions {
+                    latest_balances.insert(cp.bank_account_id.clone(), cp.closing_balance);
+                }
+
+                let participant_balances: Vec<datasynth_generators::treasury::AccountBalance> =
+                    latest_balances
+                        .into_iter()
+                        .filter(|(id, _)| pool.participant_accounts.contains(id))
+                        .map(
+                            |(id, balance)| datasynth_generators::treasury::AccountBalance {
+                                account_id: id,
+                                balance,
+                            },
+                        )
+                        .collect();
+
+                let sweeps =
+                    pool_gen.generate_sweeps(&pool, end_date, currency, &participant_balances);
+                snapshot.cash_pool_sweeps = sweeps;
+                snapshot.cash_pools.push(pool);
+            }
+        }
+
         stats.treasury_debt_instrument_count = snapshot.debt_instruments.len();
         stats.treasury_hedging_instrument_count = snapshot.hedging_instruments.len();
         stats.cash_position_count = snapshot.cash_positions.len();
+        stats.cash_forecast_count = snapshot.cash_forecasts.len();
+        stats.cash_pool_count = snapshot.cash_pools.len();
 
         info!(
-            "Treasury data generated: {} debt instruments, {} hedging instruments, {} cash positions",
+            "Treasury data generated: {} debt instruments, {} hedging instruments, {} cash positions, {} forecasts, {} pools",
             snapshot.debt_instruments.len(),
             snapshot.hedging_instruments.len(),
-            snapshot.cash_positions.len()
+            snapshot.cash_positions.len(),
+            snapshot.cash_forecasts.len(),
+            snapshot.cash_pools.len()
         );
         self.check_resources_with_log("post-treasury")?;
 
