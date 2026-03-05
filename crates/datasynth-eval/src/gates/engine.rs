@@ -370,18 +370,14 @@ impl GateEngine {
                 (rate, "document chain evaluation not available".to_string())
             }
             QualityMetric::CorrelationPreservation => {
-                let rate = evaluation
-                    .statistical
-                    .correlation
-                    .as_ref()
-                    .map(|c| {
-                        let total = c.checks_passed + c.checks_failed;
-                        if total > 0 {
-                            c.checks_passed as f64 / total as f64
-                        } else {
-                            1.0 // No checks = perfect score
-                        }
-                    });
+                let rate = evaluation.statistical.correlation.as_ref().map(|c| {
+                    let total = c.checks_passed + c.checks_failed;
+                    if total > 0 {
+                        c.checks_passed as f64 / total as f64
+                    } else {
+                        1.0 // No checks = perfect score
+                    }
+                });
                 (rate, "correlation analysis not available".to_string())
             }
             QualityMetric::TemporalConsistency => {
