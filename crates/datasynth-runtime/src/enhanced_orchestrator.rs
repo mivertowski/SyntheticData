@@ -3730,6 +3730,7 @@ impl EnhancedOrchestrator {
         if self.config.hr.expenses.enabled {
             let mut expense_gen = datasynth_generators::ExpenseReportGenerator::new(seed + 32)
                 .with_pools(employee_ids.clone(), cost_center_ids.clone());
+            expense_gen.set_country_pack(self.primary_pack().clone());
             let company_currency = self
                 .config
                 .companies
@@ -3749,8 +3750,7 @@ impl EnhancedOrchestrator {
 
         // Generate benefit enrollments (gated on payroll, since benefits require employees)
         if self.config.hr.payroll.enabled {
-            let mut benefit_gen =
-                datasynth_generators::BenefitEnrollmentGenerator::new(seed + 33);
+            let mut benefit_gen = datasynth_generators::BenefitEnrollmentGenerator::new(seed + 33);
             let employee_pairs: Vec<(String, String)> = self
                 .master_data
                 .employees
@@ -4841,11 +4841,9 @@ impl EnhancedOrchestrator {
                 .into_iter()
                 .collect();
 
-            if let Some(pool) = pool_gen.create_pool(
-                &format!("{}_MAIN_POOL", entity_id),
-                currency,
-                &account_ids,
-            ) {
+            if let Some(pool) =
+                pool_gen.create_pool(&format!("{}_MAIN_POOL", entity_id), currency, &account_ids)
+            {
                 // Generate sweeps - build participant balances from last cash position per account
                 let mut latest_balances: HashMap<String, rust_decimal::Decimal> = HashMap::new();
                 for cp in &snapshot.cash_positions {
@@ -5287,7 +5285,7 @@ impl EnhancedOrchestrator {
 
                 // Generate materials
                 let mut material_gen = MaterialGenerator::new(company_seed + 200);
-                material_gen.set_country_pack(pack);
+                material_gen.set_country_pack(pack.clone());
                 let material_pool = material_gen.generate_material_pool(
                     materials_per_company,
                     &company.code,
@@ -5304,6 +5302,7 @@ impl EnhancedOrchestrator {
 
                 // Generate employees
                 let mut employee_gen = EmployeeGenerator::new(company_seed + 400);
+                employee_gen.set_country_pack(pack);
                 let employee_pool =
                     employee_gen.generate_company_pool(&company.code, (start_date, end_date));
 

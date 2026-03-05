@@ -192,6 +192,8 @@ pub struct EmployeeGenerator {
     config: EmployeeGeneratorConfig,
     name_generator: MultiCultureNameGenerator,
     employee_counter: usize,
+    /// Optional country pack for locale-aware generation.
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl EmployeeGenerator {
@@ -212,7 +214,18 @@ impl EmployeeGenerator {
             name_generator: name_gen,
             config,
             employee_counter: 0,
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware generation.
+    ///
+    /// When set, the generator can use locale-specific names and
+    /// business rules from the country pack.  Currently the pack is
+    /// stored for future expansion; existing behaviour is unchanged
+    /// when no pack is provided.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Generate a single employee.
@@ -677,5 +690,21 @@ mod tests {
         assert!(manager.approval_limit > staff.approval_limit);
         assert!(!staff.can_approve_pr);
         assert!(manager.can_approve_pr);
+    }
+
+    #[test]
+    fn test_country_pack_does_not_break_generation() {
+        let mut gen = EmployeeGenerator::new(42);
+        // Setting a default country pack should not alter basic generation behaviour.
+        gen.set_country_pack(datasynth_core::CountryPack::default());
+
+        let dept = DepartmentDefinition::finance("1000");
+        let employee =
+            gen.generate_employee("1000", &dept, NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+
+        assert!(!employee.employee_id.is_empty());
+        assert!(!employee.display_name.is_empty());
+        assert!(!employee.email.is_empty());
+        assert!(employee.approval_limit > Decimal::ZERO);
     }
 }

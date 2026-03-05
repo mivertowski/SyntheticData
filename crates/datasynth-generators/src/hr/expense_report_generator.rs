@@ -29,6 +29,9 @@ pub struct ExpenseReportGenerator {
     cost_center_ids_pool: Vec<String>,
     /// Mapping of employee_id → employee_name for denormalization (DS-011).
     employee_names: HashMap<String, String>,
+    /// Optional country pack for locale-aware generation.
+    #[allow(dead_code)]
+    country_pack: Option<datasynth_core::CountryPack>,
 }
 
 impl ExpenseReportGenerator {
@@ -46,6 +49,7 @@ impl ExpenseReportGenerator {
             employee_ids_pool: Vec::new(),
             cost_center_ids_pool: Vec::new(),
             employee_names: HashMap::new(),
+            country_pack: None,
         }
     }
 
@@ -63,7 +67,18 @@ impl ExpenseReportGenerator {
             employee_ids_pool: Vec::new(),
             cost_center_ids_pool: Vec::new(),
             employee_names: HashMap::new(),
+            country_pack: None,
         }
+    }
+
+    /// Set the country pack for locale-aware generation.
+    ///
+    /// When set, the generator can use locale-specific currencies and
+    /// business rules from the country pack.  Currently the pack is
+    /// stored for future expansion; existing behaviour is unchanged
+    /// when no pack is provided.
+    pub fn set_country_pack(&mut self, pack: datasynth_core::CountryPack) {
+        self.country_pack = Some(pack);
     }
 
     /// Set ID pools for cross-reference coherence.
@@ -587,5 +602,25 @@ mod tests {
             "Expected at least some policy violations across {} reports",
             reports.len()
         );
+    }
+
+    #[test]
+    fn test_country_pack_does_not_break_generation() {
+        let mut gen = ExpenseReportGenerator::new(42);
+        // Setting a default country pack should not alter basic generation behaviour.
+        gen.set_country_pack(datasynth_core::CountryPack::default());
+
+        let employees = test_employee_ids();
+        let period_start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let period_end = NaiveDate::from_ymd_opt(2024, 1, 31).unwrap();
+        let config = ExpenseConfig::default();
+
+        let reports = gen.generate(&employees, period_start, period_end, &config);
+
+        assert!(!reports.is_empty());
+        for report in &reports {
+            assert!(!report.report_id.is_empty());
+            assert!(report.total_amount > Decimal::ZERO);
+        }
     }
 }
