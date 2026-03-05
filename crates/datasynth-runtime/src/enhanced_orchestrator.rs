@@ -117,7 +117,8 @@ use datasynth_generators::{
 };
 use datasynth_graph::{
     ApprovalGraphBuilder, ApprovalGraphConfig, BankingGraphBuilder, BankingGraphConfig,
-    PyGExportConfig, PyGExporter, TransactionGraphBuilder, TransactionGraphConfig,
+    EntityGraphBuilder, EntityGraphConfig, PyGExportConfig, PyGExporter,
+    TransactionGraphBuilder, TransactionGraphConfig,
 };
 use datasynth_ocpm::{
     AuditDocuments, BankDocuments, BankReconDocuments, EventLogMetadata, H2rDocuments,
@@ -7068,7 +7069,7 @@ impl EnhancedOrchestrator {
     fn build_additional_graphs(
         &self,
         banking: &BankingSnapshot,
-        _intercompany: &IntercompanySnapshot,
+        intercompany: &IntercompanySnapshot,
         entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) {
@@ -7191,12 +7192,116 @@ impl EnhancedOrchestrator {
             }
         }
 
-        // EntityGraphBuilder requires Company objects and IntercompanyRelationship records.
-        // These require mapping from CompanyConfig, which is deferred to a future update.
-        debug!(
-            "EntityGraphBuilder: skipped (requires Company→CompanyConfig mapping; \
-             available when intercompany relationships are modeled as IntercompanyRelationship)"
-        );
+        // Entity graph: map CompanyConfig → Company and wire intercompany relationships
+        if self.config.companies.len() >= 2 {
+            info!(
+                "Phase 10c: Building entity relationship graph ({} companies)",
+                self.config.companies.len()
+            );
+
+            let start_date =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+                    .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2024, 1, 1).expect("valid date"));
+
+            // Map CompanyConfig → Company objects
+            let parent_code = &self.config.companies[0].code;
+            let mut companies: Vec<datasynth_core::models::Company> =
+                Vec::with_capacity(self.config.companies.len());
+
+            // First company is the parent
+            let first = &self.config.companies[0];
+            companies.push(datasynth_core::models::Company::parent(
+                &first.code,
+                &first.name,
+                &first.country,
+                &first.currency,
+            ));
+
+            // Remaining companies are subsidiaries (100% owned by parent)
+            for cc in self.config.companies.iter().skip(1) {
+                companies.push(datasynth_core::models::Company::subsidiary(
+                    &cc.code,
+                    &cc.name,
+                    &cc.country,
+                    &cc.currency,
+                    parent_code,
+                    rust_decimal::Decimal::from(100),
+                ));
+            }
+
+            // Build IntercompanyRelationship records (same logic as phase_intercompany)
+            let relationships: Vec<
+                datasynth_core::models::intercompany::IntercompanyRelationship,
+            > = self
+                .config
+                .companies
+                .iter()
+                .skip(1)
+                .enumerate()
+                .map(|(i, cc)| {
+                    let mut rel =
+                        datasynth_core::models::intercompany::IntercompanyRelationship::new(
+                            format!("REL{:03}", i + 1),
+                            parent_code.clone(),
+                            cc.code.clone(),
+                            rust_decimal::Decimal::from(100),
+                            start_date,
+                        );
+                    rel.functional_currency = cc.currency.clone();
+                    rel
+                })
+                .collect();
+
+            let mut builder = EntityGraphBuilder::new(EntityGraphConfig::default());
+            builder.add_companies(&companies);
+            builder.add_ownership_relationships(&relationships);
+
+            // Thread IC matched-pair transaction edges into the entity graph
+            for pair in &intercompany.matched_pairs {
+                builder.add_intercompany_edge(
+                    &pair.seller_company,
+                    &pair.buyer_company,
+                    pair.amount,
+                    &format!("{:?}", pair.transaction_type),
+                );
+            }
+
+            let graph = builder.build();
+            let node_count = graph.node_count();
+            let edge_count = graph.edge_count();
+            stats.graph_node_count += node_count;
+            stats.graph_edge_count += edge_count;
+
+            // Export as PyG if configured
+            for format in &self.config.graph_export.formats {
+                if matches!(
+                    format,
+                    datasynth_config::schema::GraphExportFormat::PytorchGeometric
+                ) {
+                    let format_dir =
+                        graph_dir.join("entity_network").join("pytorch_geometric");
+                    if let Err(e) = std::fs::create_dir_all(&format_dir) {
+                        warn!("Failed to create entity graph output dir: {}", e);
+                        continue;
+                    }
+                    let pyg_config = PyGExportConfig::default();
+                    let exporter = PyGExporter::new(pyg_config);
+                    if let Err(e) = exporter.export(&graph, &format_dir) {
+                        warn!("Failed to export entity graph as PyG: {}", e);
+                    } else {
+                        info!(
+                            "Entity relationship graph exported: {} nodes, {} edges",
+                            node_count, edge_count
+                        );
+                    }
+                }
+            }
+        } else {
+            debug!(
+                "EntityGraphBuilder: skipped (requires 2+ companies, found {})",
+                self.config.companies.len()
+            );
+        }
     }
 
     /// Export a multi-layer hypergraph for RustGraph integration.
