@@ -830,6 +830,10 @@ pub struct EnhancedGenerationResult {
     /// Bi-temporal version chains for vendor entities.
     pub temporal_vendor_chains:
         Vec<datasynth_core::models::TemporalVersionChain<datasynth_core::models::Vendor>>,
+    /// Entity relationship graph (nodes + edges with strength scores).
+    pub entity_relationship_graph: Option<datasynth_core::models::EntityGraph>,
+    /// Cross-process links (P2P ↔ O2C via inventory movements).
+    pub cross_process_links: Vec<datasynth_core::models::CrossProcessLink>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1027,6 +1031,15 @@ pub struct EnhancedGenerationStatistics {
     /// Number of bi-temporal vendor version chains generated.
     #[serde(default)]
     pub temporal_version_chain_count: usize,
+    /// Number of nodes in the entity relationship graph.
+    #[serde(default)]
+    pub entity_relationship_node_count: usize,
+    /// Number of edges in the entity relationship graph.
+    #[serde(default)]
+    pub entity_relationship_edge_count: usize,
+    /// Number of cross-process links generated.
+    #[serde(default)]
+    pub cross_process_link_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1737,6 +1750,10 @@ impl EnhancedOrchestrator {
         // Phase 27: Bi-Temporal Vendor Version Chains
         let temporal_vendor_chains = self.phase_temporal_attributes(&mut stats)?;
 
+        // Phase 28: Entity Relationship Graph + Cross-Process Links
+        let (entity_relationship_graph, cross_process_links) =
+            self.phase_entity_relationships(&entries, &document_flows, &mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1890,6 +1907,8 @@ impl EnhancedOrchestrator {
             counterfactual_pairs,
             red_flags,
             temporal_vendor_chains,
+            entity_relationship_graph,
+            cross_process_links,
         })
     }
 
@@ -5356,6 +5375,263 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-temporal-attributes")?;
 
         Ok(chains)
+    }
+
+    /// Phase 28: Build entity relationship graph and cross-process links.
+    ///
+    /// Part 1 (gated on `relationship_strength.enabled`): builds an
+    /// `EntityGraph` from master-data vendor/customer entities and
+    /// journal-entry-derived transaction summaries.
+    ///
+    /// Part 2 (gated on `cross_process_links.enabled`): extracts
+    /// `GoodsReceiptRef` / `DeliveryRef` from document flow chains and
+    /// generates inventory-movement cross-process links.
+    fn phase_entity_relationships(
+        &self,
+        journal_entries: &[JournalEntry],
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<(
+        Option<datasynth_core::models::EntityGraph>,
+        Vec<datasynth_core::models::CrossProcessLink>,
+    )> {
+        use datasynth_generators::relationships::{
+            DeliveryRef, EntityGraphConfig, EntityGraphGenerator, EntitySummary, GoodsReceiptRef,
+            TransactionSummary,
+        };
+
+        let rs_enabled = self.config.relationship_strength.enabled;
+        let cpl_enabled = self.config.cross_process_links.enabled;
+
+        if !rs_enabled && !cpl_enabled {
+            debug!("Phase 28: Skipped (relationship_strength and cross_process_links both disabled)");
+            return Ok((None, Vec::new()));
+        }
+
+        info!("Phase 28: Generating Entity Relationship Graph + Cross-Process Links");
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+
+        let company_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.as_str())
+            .unwrap_or("1000");
+
+        // Build the generator with matching config flags
+        let gen_config = EntityGraphConfig {
+            enabled: rs_enabled,
+            cross_process: datasynth_generators::relationships::CrossProcessConfig {
+                enable_inventory_links: self.config.cross_process_links.inventory_p2p_o2c,
+                enable_return_flows: false,
+                enable_payment_links: self.config.cross_process_links.payment_bank_reconciliation,
+                enable_ic_bilateral: self.config.cross_process_links.intercompany_bilateral,
+                ..Default::default()
+            },
+            strength_config: datasynth_generators::relationships::StrengthConfig {
+                transaction_volume_weight: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .transaction_volume_weight,
+                transaction_count_weight: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .transaction_count_weight,
+                duration_weight: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .relationship_duration_weight,
+                recency_weight: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .recency_weight,
+                mutual_connections_weight: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .mutual_connections_weight,
+                recency_half_life_days: self
+                    .config
+                    .relationship_strength
+                    .calculation
+                    .recency_half_life_days
+                    as u32,
+            },
+            ..Default::default()
+        };
+
+        let mut gen = EntityGraphGenerator::with_config(self.seed + 140, gen_config);
+
+        // --- Part 1: Entity Relationship Graph ---
+        let entity_graph = if rs_enabled {
+            // Build EntitySummary lists from master data
+            let vendor_summaries: Vec<EntitySummary> = self
+                .master_data
+                .vendors
+                .iter()
+                .map(|v| {
+                    EntitySummary::new(
+                        &v.vendor_id,
+                        &v.name,
+                        datasynth_core::models::GraphEntityType::Vendor,
+                        start_date,
+                    )
+                })
+                .collect();
+
+            let customer_summaries: Vec<EntitySummary> = self
+                .master_data
+                .customers
+                .iter()
+                .map(|c| {
+                    EntitySummary::new(
+                        &c.customer_id,
+                        &c.name,
+                        datasynth_core::models::GraphEntityType::Customer,
+                        start_date,
+                    )
+                })
+                .collect();
+
+            // Build transaction summaries from journal entries.
+            // Key = (company_code, trading_partner) for entries that have a
+            // trading partner.  This captures intercompany flows and any JE
+            // whose line items carry a trading_partner reference.
+            let mut txn_summaries: std::collections::HashMap<(String, String), TransactionSummary> =
+                std::collections::HashMap::new();
+
+            for je in journal_entries {
+                let cc = je.header.company_code.clone();
+                let posting_date = je.header.posting_date;
+                for line in &je.lines {
+                    if let Some(ref tp) = line.trading_partner {
+                        let amount = if line.debit_amount > line.credit_amount {
+                            line.debit_amount
+                        } else {
+                            line.credit_amount
+                        };
+                        let entry = txn_summaries
+                            .entry((cc.clone(), tp.clone()))
+                            .or_insert_with(|| TransactionSummary {
+                                total_volume: rust_decimal::Decimal::ZERO,
+                                transaction_count: 0,
+                                first_transaction_date: posting_date,
+                                last_transaction_date: posting_date,
+                                related_entities: std::collections::HashSet::new(),
+                            });
+                        entry.total_volume += amount;
+                        entry.transaction_count += 1;
+                        if posting_date < entry.first_transaction_date {
+                            entry.first_transaction_date = posting_date;
+                        }
+                        if posting_date > entry.last_transaction_date {
+                            entry.last_transaction_date = posting_date;
+                        }
+                        entry.related_entities.insert(cc.clone());
+                    }
+                }
+            }
+
+            let as_of_date = journal_entries
+                .last()
+                .map(|je| je.header.posting_date)
+                .unwrap_or(start_date);
+
+            let graph = gen.generate_entity_graph(
+                company_code,
+                as_of_date,
+                &vendor_summaries,
+                &customer_summaries,
+                &txn_summaries,
+            );
+
+            info!(
+                "Entity relationship graph: {} nodes, {} edges",
+                graph.nodes.len(),
+                graph.edges.len()
+            );
+            stats.entity_relationship_node_count = graph.nodes.len();
+            stats.entity_relationship_edge_count = graph.edges.len();
+            Some(graph)
+        } else {
+            None
+        };
+
+        // --- Part 2: Cross-Process Links ---
+        let cross_process_links = if cpl_enabled {
+            // Build GoodsReceiptRef from P2P chains
+            let gr_refs: Vec<GoodsReceiptRef> = document_flows
+                .p2p_chains
+                .iter()
+                .flat_map(|chain| {
+                    let vendor_id = chain.purchase_order.vendor_id.clone();
+                    let cc = chain.purchase_order.header.company_code.clone();
+                    chain.goods_receipts.iter().flat_map(move |gr| {
+                        gr.items.iter().filter_map({
+                            let doc_id = gr.header.document_id.clone();
+                            let v_id = vendor_id.clone();
+                            let company = cc.clone();
+                            let receipt_date = gr.header.document_date;
+                            move |item| {
+                                item.base.material_id.as_ref().map(|mat_id| GoodsReceiptRef {
+                                    document_id: doc_id.clone(),
+                                    material_id: mat_id.clone(),
+                                    quantity: item.base.quantity,
+                                    receipt_date,
+                                    vendor_id: v_id.clone(),
+                                    company_code: company.clone(),
+                                })
+                            }
+                        })
+                    })
+                })
+                .collect();
+
+            // Build DeliveryRef from O2C chains
+            let del_refs: Vec<DeliveryRef> = document_flows
+                .o2c_chains
+                .iter()
+                .flat_map(|chain| {
+                    let customer_id = chain.sales_order.customer_id.clone();
+                    let cc = chain.sales_order.header.company_code.clone();
+                    chain.deliveries.iter().flat_map(move |del| {
+                        let delivery_date =
+                            del.actual_gi_date.unwrap_or(del.planned_gi_date);
+                        del.items.iter().filter_map({
+                            let doc_id = del.header.document_id.clone();
+                            let c_id = customer_id.clone();
+                            let company = cc.clone();
+                            move |item| {
+                                item.base.material_id.as_ref().map(|mat_id| DeliveryRef {
+                                    document_id: doc_id.clone(),
+                                    material_id: mat_id.clone(),
+                                    quantity: item.base.quantity,
+                                    delivery_date,
+                                    customer_id: c_id.clone(),
+                                    company_code: company.clone(),
+                                })
+                            }
+                        })
+                    })
+                })
+                .collect();
+
+            let links = gen.generate_cross_process_links(&gr_refs, &del_refs);
+            info!("Cross-process links generated: {} links", links.len());
+            stats.cross_process_link_count = links.len();
+            links
+        } else {
+            Vec::new()
+        };
+
+        self.check_resources_with_log("post-entity-relationships")?;
+        Ok((entity_graph, cross_process_links))
     }
 
     /// Phase 3b: Generate opening balances for each company.

@@ -1128,6 +1128,40 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Entity Relationship Graph + Cross-Process Links
+    // ========================================================================
+    if result.entity_relationship_graph.is_some() || !result.cross_process_links.is_empty() {
+        let rel_dir = output_dir.join("relationships");
+        std::fs::create_dir_all(&rel_dir)?;
+        info!("Writing entity relationship data...");
+
+        if let Some(ref graph) = result.entity_relationship_graph {
+            match serde_json::to_string_pretty(graph) {
+                Ok(json) => {
+                    let path = rel_dir.join("entity_relationship_graph.json");
+                    if let Err(e) = std::fs::write(&path, json) {
+                        warn!("Failed to write entity relationship graph: {}", e);
+                    } else {
+                        info!(
+                            "  Entity relationship graph written: {} nodes, {} edges -> {}",
+                            graph.nodes.len(),
+                            graph.edges.len(),
+                            path.display()
+                        );
+                    }
+                }
+                Err(e) => warn!("Failed to serialize entity relationship graph: {}", e),
+            }
+        }
+
+        write_json_safe(
+            &result.cross_process_links,
+            &rel_dir.join("cross_process_links.json"),
+            "Cross-process links",
+        );
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {
