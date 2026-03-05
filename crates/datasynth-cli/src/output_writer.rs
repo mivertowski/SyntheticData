@@ -1003,6 +1003,16 @@ pub fn write_all_output(
             &treasury_dir.join("cash_pool_sweeps.json"),
             "Cash pool sweeps",
         );
+        write_json_safe(
+            &result.treasury.bank_guarantees,
+            &treasury_dir.join("bank_guarantees.json"),
+            "Bank guarantees",
+        );
+        write_json_safe(
+            &result.treasury.netting_runs,
+            &treasury_dir.join("netting_runs.json"),
+            "Netting runs",
+        );
         if !result.treasury.treasury_anomaly_labels.is_empty() {
             write_json_safe(
                 &result.treasury.treasury_anomaly_labels,

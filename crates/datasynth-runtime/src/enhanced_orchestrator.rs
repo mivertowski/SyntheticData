@@ -726,6 +726,10 @@ pub struct TreasurySnapshot {
     pub hedge_relationships: Vec<HedgeRelationship>,
     /// Debt instruments.
     pub debt_instruments: Vec<DebtInstrument>,
+    /// Bank guarantees and letters of credit.
+    pub bank_guarantees: Vec<BankGuarantee>,
+    /// Intercompany netting runs.
+    pub netting_runs: Vec<NettingRun>,
     /// Treasury anomaly labels.
     pub treasury_anomaly_labels: Vec<datasynth_generators::treasury::TreasuryAnomalyLabel>,
 }
@@ -1679,7 +1683,7 @@ impl EnhancedOrchestrator {
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
 
         // Phase 22: Treasury Data Generation
-        let treasury = self.phase_treasury_data(&document_flows, &subledger, &mut stats)?;
+        let treasury = self.phase_treasury_data(&document_flows, &subledger, &intercompany, &mut stats)?;
 
         // Phase 23: Project Accounting Data Generation
         let project_accounting = self.phase_project_accounting(&document_flows, &hr, &mut stats)?;
@@ -4617,11 +4621,12 @@ impl EnhancedOrchestrator {
         Ok(snapshot)
     }
 
-    /// Phase 22: Generate Treasury data (cash management, hedging, debt, pooling).
+    /// Phase 22: Generate Treasury data (cash management, hedging, debt, pooling, guarantees, netting).
     fn phase_treasury_data(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
         subledger: &SubledgerSnapshot,
+        intercompany: &IntercompanySnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TreasurySnapshot> {
         if !self.config.treasury.enabled {
@@ -4870,6 +4875,52 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Generate bank guarantees
+        if self.config.treasury.bank_guarantees.enabled {
+            let vendor_names: Vec<String> = self
+                .master_data
+                .vendors
+                .iter()
+                .map(|v| v.name.clone())
+                .collect();
+            if !vendor_names.is_empty() {
+                let mut bg_gen = datasynth_generators::treasury::BankGuaranteeGenerator::new(
+                    self.config.treasury.bank_guarantees.clone(),
+                    seed + 96,
+                );
+                snapshot.bank_guarantees =
+                    bg_gen.generate(entity_id, currency, start_date, &vendor_names);
+            }
+        }
+
+        // Generate netting runs from intercompany matched pairs
+        if self.config.treasury.netting.enabled && !intercompany.matched_pairs.is_empty() {
+            let entity_ids: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let ic_amounts: Vec<(String, String, rust_decimal::Decimal)> = intercompany
+                .matched_pairs
+                .iter()
+                .map(|mp| (mp.seller_company.clone(), mp.buyer_company.clone(), mp.amount))
+                .collect();
+            if entity_ids.len() >= 2 {
+                let mut netting_gen = datasynth_generators::treasury::NettingRunGenerator::new(
+                    self.config.treasury.netting.clone(),
+                    seed + 97,
+                );
+                snapshot.netting_runs = netting_gen.generate(
+                    &entity_ids,
+                    currency,
+                    start_date,
+                    self.config.global.period_months,
+                    &ic_amounts,
+                );
+            }
+        }
+
         stats.treasury_debt_instrument_count = snapshot.debt_instruments.len();
         stats.treasury_hedging_instrument_count = snapshot.hedging_instruments.len();
         stats.cash_position_count = snapshot.cash_positions.len();
@@ -4877,12 +4928,14 @@ impl EnhancedOrchestrator {
         stats.cash_pool_count = snapshot.cash_pools.len();
 
         info!(
-            "Treasury data generated: {} debt instruments, {} hedging instruments, {} cash positions, {} forecasts, {} pools",
+            "Treasury data generated: {} debt instruments, {} hedging instruments, {} cash positions, {} forecasts, {} pools, {} guarantees, {} netting runs",
             snapshot.debt_instruments.len(),
             snapshot.hedging_instruments.len(),
             snapshot.cash_positions.len(),
             snapshot.cash_forecasts.len(),
-            snapshot.cash_pools.len()
+            snapshot.cash_pools.len(),
+            snapshot.bank_guarantees.len(),
+            snapshot.netting_runs.len(),
         );
         self.check_resources_with_log("post-treasury")?;
 
