@@ -1098,6 +1098,21 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Fraud Red-Flag Indicators
+    // ========================================================================
+    if !result.red_flags.is_empty() {
+        let labels_dir = output_dir.join("labels");
+        std::fs::create_dir_all(&labels_dir)?;
+        info!("Writing fraud red-flag indicators...");
+
+        write_json_safe(
+            &result.red_flags,
+            &labels_dir.join("fraud_red_flags.json"),
+            "Fraud red flags",
+        );
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {

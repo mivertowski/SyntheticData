@@ -825,6 +825,8 @@ pub struct EnhancedGenerationResult {
     pub subledger_reconciliation: Vec<datasynth_generators::ReconciliationResult>,
     /// Counterfactual (original, mutated) JE pairs for ML training.
     pub counterfactual_pairs: Vec<datasynth_generators::counterfactual::CounterfactualPair>,
+    /// Fraud red-flag indicators on P2P/O2C documents.
+    pub red_flags: Vec<datasynth_generators::fraud::RedFlag>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1016,6 +1018,9 @@ pub struct EnhancedGenerationStatistics {
     /// Counterfactual pair count.
     #[serde(default)]
     pub counterfactual_pair_count: usize,
+    /// Number of fraud red-flag indicators generated.
+    #[serde(default)]
+    pub red_flag_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1644,6 +1649,12 @@ impl EnhancedOrchestrator {
             &anomaly_labels.labels,
         );
 
+        // Phase 26: Red Flag Indicators (after anomaly injection so fraud labels are available)
+        let red_flags = self.phase_red_flags(&anomaly_labels, &document_flows, &mut stats)?;
+
+        // Emit red flags to stream sink
+        self.emit_phase_items("red_flags", "RedFlag", &red_flags);
+
         // Phase 9: Balance Validation (after all JEs including payroll, manufacturing, IC)
         let balance_validation = self.phase_balance_validation(&entries)?;
 
@@ -1868,6 +1879,7 @@ impl EnhancedOrchestrator {
             opening_balances,
             subledger_reconciliation,
             counterfactual_pairs,
+            red_flags,
         })
     }
 
@@ -5224,6 +5236,66 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-counterfactuals")?;
 
         Ok(pairs)
+    }
+
+    /// Phase 26: Inject fraud red-flag indicators onto P2P/O2C documents.
+    ///
+    /// Uses the anomaly labels (from Phase 8) to determine which documents are
+    /// fraudulent, then generates probabilistic red flags on all chain documents.
+    /// Non-fraud documents also receive red flags at a lower rate (false positives)
+    /// to produce realistic ML training data.
+    fn phase_red_flags(
+        &self,
+        anomaly_labels: &AnomalyLabels,
+        document_flows: &DocumentFlowSnapshot,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<datasynth_generators::fraud::RedFlag>> {
+        if !self.config.fraud.enabled {
+            debug!("Phase 26: Skipped (fraud generation disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 26: Generating Fraud Red-Flag Indicators");
+
+        use datasynth_generators::fraud::RedFlagGenerator;
+
+        let generator = RedFlagGenerator::new();
+        let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(self.seed + 120);
+
+        // Build a set of document IDs that are known-fraudulent from anomaly labels.
+        let fraud_doc_ids: std::collections::HashSet<&str> = anomaly_labels
+            .labels
+            .iter()
+            .filter(|label| label.anomaly_type.is_intentional())
+            .map(|label| label.document_id.as_str())
+            .collect();
+
+        let mut flags = Vec::new();
+
+        // Iterate P2P chains: use the purchase order document ID as the chain key.
+        for chain in &document_flows.p2p_chains {
+            let doc_id = &chain.purchase_order.header.document_id;
+            let is_fraud = fraud_doc_ids.contains(doc_id.as_str());
+            flags.extend(generator.inject_flags(doc_id, is_fraud, &mut rng));
+        }
+
+        // Iterate O2C chains: use the sales order document ID as the chain key.
+        for chain in &document_flows.o2c_chains {
+            let doc_id = &chain.sales_order.header.document_id;
+            let is_fraud = fraud_doc_ids.contains(doc_id.as_str());
+            flags.extend(generator.inject_flags(doc_id, is_fraud, &mut rng));
+        }
+
+        stats.red_flag_count = flags.len();
+        info!(
+            "Red flags generated: {} flags across {} P2P + {} O2C chains ({} fraud docs)",
+            flags.len(),
+            document_flows.p2p_chains.len(),
+            document_flows.o2c_chains.len(),
+            fraud_doc_ids.len()
+        );
+        self.check_resources_with_log("post-red-flags")?;
+
+        Ok(flags)
     }
 
     /// Phase 3b: Generate opening balances for each company.
