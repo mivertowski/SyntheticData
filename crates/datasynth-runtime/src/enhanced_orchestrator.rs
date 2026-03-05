@@ -5564,7 +5564,7 @@ impl EnhancedOrchestrator {
                     .config
                     .relationship_strength
                     .calculation
-                    .recency_half_life_days as u32,
+                    .recency_half_life_days,
             },
             ..Default::default()
         };
