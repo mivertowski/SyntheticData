@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-03-XX
+
+### Added
+- Benefit enrollment generation in HR pipeline (`datasynth-runtime`)
+- BOM component and inventory movement generation in manufacturing pipeline (`datasynth-runtime`)
+- Cash forecasting from AR/AP aging and cash pooling with sweep transactions (`datasynth-runtime`)
+- Bank guarantee and intercompany netting run generators (`datasynth-generators`)
+- CorrelationPreservation quality gate wired to statistical correlation analysis (`datasynth-eval`)
+- EntityGraphBuilder wired with Company→CompanyConfig mapping and IC relationships (`datasynth-runtime`)
+- Country pack support for EmployeeGenerator and ExpenseReportGenerator (`datasynth-generators`)
+- Inline anomaly injection in streaming mode (`datasynth-runtime`)
+- Complete crates.io metadata (keywords, categories) for all crates
+
+### Changed
+- Treasury phase now accepts subledger data for AR/AP-driven cash forecasting
+- Streaming orchestrator applies anomaly injection inline during JE generation instead of skipping
+- Bank reconciliation generator already wired (confirmed existing)
+
+### Fixed
+- Non-workspace reqwest dependency in datasynth-test-utils
+- Benefit enrollment generation now gated behind payroll.enabled config flag
+
 ## [0.11.1] - 2026-03-03
 
 ### Changed
