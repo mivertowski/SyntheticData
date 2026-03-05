@@ -115,10 +115,8 @@ mod tests {
             result.organizational_events.is_empty(),
             "organizational_events should be empty when evolution events are disabled"
         );
-        assert!(
-            result.disruption_events.is_empty(),
-            "disruption_events should be empty when evolution events are disabled"
-        );
+        // Note: disruption_events are gated by config.organizational_events.enabled,
+        // not by phase_config.generate_evolution_events. See test_disruption_events_generated.
     }
 
     // ========================================================================
@@ -298,10 +296,8 @@ mod tests {
 
     #[test]
     fn test_red_flags_with_fraud_enabled() {
-        let mut config = fraud_enabled_config();
-        // Red flags need document flows to have chains to attach flags to
-        config.fraud.enabled = true;
-        config.fraud.fraud_rate = 0.1;
+        let config = fraud_enabled_config();
+        // fraud_enabled_config() already sets fraud.enabled = true and fraud_rate = 0.1
 
         let phase_config = PhaseConfig {
             generate_master_data: true,
