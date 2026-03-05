@@ -278,6 +278,8 @@ pub struct PhaseConfig {
     pub generate_esg: bool,
     /// Generate intercompany transactions and eliminations.
     pub generate_intercompany: bool,
+    /// Generate process evolution and organizational events.
+    pub generate_evolution_events: bool,
 }
 
 impl Default for PhaseConfig {
@@ -316,6 +318,7 @@ impl Default for PhaseConfig {
             generate_tax: false,                  // Off by default
             generate_esg: false,                  // Off by default
             generate_intercompany: false,         // Off by default
+            generate_evolution_events: true,      // On by default
         }
     }
 }
@@ -790,6 +793,10 @@ pub struct EnhancedGenerationResult {
     pub treasury: TreasurySnapshot,
     /// Project accounting data snapshot (projects, costs, revenue, EVM, milestones).
     pub project_accounting: ProjectAccountingSnapshot,
+    /// Process evolution events (workflow changes, automation, policy changes, control enhancements).
+    pub process_evolution: Vec<ProcessEvolutionEvent>,
+    /// Organizational events (acquisitions, divestitures, reorganizations, leadership changes).
+    pub organizational_events: Vec<OrganizationalEvent>,
     /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
     pub intercompany: IntercompanySnapshot,
     /// Generated journal entries.
@@ -994,6 +1001,12 @@ pub struct EnhancedGenerationStatistics {
     /// Cash pool count.
     #[serde(default)]
     pub cash_pool_count: usize,
+    /// Process evolution event count.
+    #[serde(default)]
+    pub process_evolution_event_count: usize,
+    /// Organizational event count.
+    #[serde(default)]
+    pub organizational_event_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1689,6 +1702,9 @@ impl EnhancedOrchestrator {
         // Phase 23: Project Accounting Data Generation
         let project_accounting = self.phase_project_accounting(&document_flows, &hr, &mut stats)?;
 
+        // Phase 24: Process Evolution + Organizational Events
+        let (process_evolution, organizational_events) = self.phase_evolution_events(&mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1826,6 +1842,8 @@ impl EnhancedOrchestrator {
             esg: esg_snap,
             treasury,
             project_accounting,
+            process_evolution,
+            organizational_events,
             intercompany,
             journal_entries: entries,
             anomaly_labels,
@@ -5095,6 +5113,55 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-project-accounting")?;
 
         Ok(snapshot)
+    }
+
+    /// Phase 24: Generate process evolution and organizational events.
+    fn phase_evolution_events(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<(Vec<ProcessEvolutionEvent>, Vec<OrganizationalEvent>)> {
+        if !self.phase_config.generate_evolution_events {
+            debug!("Phase 24: Skipped (evolution events disabled)");
+            return Ok((Vec::new(), Vec::new()));
+        }
+        info!("Phase 24: Generating Process Evolution + Organizational Events");
+
+        let seed = self.seed;
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+
+        // Process evolution events
+        let mut proc_gen =
+            datasynth_generators::process_evolution_generator::ProcessEvolutionGenerator::new(
+                seed + 100,
+            );
+        let process_events = proc_gen.generate_events(start_date, end_date);
+
+        // Organizational events
+        let company_codes: Vec<String> = self
+            .config
+            .companies
+            .iter()
+            .map(|c| c.code.clone())
+            .collect();
+        let mut org_gen =
+            datasynth_generators::organizational_event_generator::OrganizationalEventGenerator::new(
+                seed + 101,
+            );
+        let org_events = org_gen.generate_events(start_date, end_date, &company_codes);
+
+        stats.process_evolution_event_count = process_events.len();
+        stats.organizational_event_count = org_events.len();
+
+        info!(
+            "Evolution events generated: {} process evolution, {} organizational",
+            process_events.len(),
+            org_events.len()
+        );
+        self.check_resources_with_log("post-evolution-events")?;
+
+        Ok((process_events, org_events))
     }
 
     /// Phase 3b: Generate opening balances for each company.

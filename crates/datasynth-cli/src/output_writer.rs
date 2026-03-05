@@ -1063,6 +1063,26 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Evolution Events (Process Evolution + Organizational Events)
+    // ========================================================================
+    if !result.process_evolution.is_empty() || !result.organizational_events.is_empty() {
+        let events_dir = output_dir.join("events");
+        std::fs::create_dir_all(&events_dir)?;
+        info!("Writing evolution events...");
+
+        write_json_safe(
+            &result.process_evolution,
+            &events_dir.join("process_evolution_events.json"),
+            "Process evolution events",
+        );
+        write_json_safe(
+            &result.organizational_events,
+            &events_dir.join("organizational_events.json"),
+            "Organizational events",
+        );
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {
