@@ -515,7 +515,7 @@ pub struct FinancialReportingSnapshot {
     pub trial_balances: Vec<PeriodTrialBalance>,
 }
 
-/// HR data snapshot (payroll runs, time entries, expense reports).
+/// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments).
 #[derive(Debug, Clone, Default)]
 pub struct HrSnapshot {
     /// Payroll runs (actual data).
@@ -526,6 +526,8 @@ pub struct HrSnapshot {
     pub time_entries: Vec<TimeEntry>,
     /// Expense reports (actual data).
     pub expense_reports: Vec<ExpenseReport>,
+    /// Benefit enrollments (actual data).
+    pub benefit_enrollments: Vec<BenefitEnrollment>,
     /// Payroll runs.
     pub payroll_run_count: usize,
     /// Payroll line item count.
@@ -534,6 +536,8 @@ pub struct HrSnapshot {
     pub time_entry_count: usize,
     /// Expense report count.
     pub expense_report_count: usize,
+    /// Benefit enrollment count.
+    pub benefit_enrollment_count: usize,
 }
 
 /// Accounting standards data snapshot (revenue recognition, impairment).
@@ -892,6 +896,8 @@ pub struct EnhancedGenerationStatistics {
     pub time_entry_count: usize,
     #[serde(default)]
     pub expense_report_count: usize,
+    #[serde(default)]
+    pub benefit_enrollment_count: usize,
     /// Accounting standards counts.
     #[serde(default)]
     pub revenue_contract_count: usize,
@@ -3723,14 +3729,32 @@ impl EnhancedOrchestrator {
             snapshot.expense_reports = reports;
         }
 
+        // Generate benefit enrollments
+        {
+            let mut benefit_gen =
+                datasynth_generators::BenefitEnrollmentGenerator::new(seed + 33);
+            let employee_pairs: Vec<(String, String)> = self
+                .master_data
+                .employees
+                .iter()
+                .map(|e| (e.employee_id.clone(), e.display_name.clone()))
+                .collect();
+            let enrollments =
+                benefit_gen.generate(company_code, &employee_pairs, start_date, currency);
+            snapshot.benefit_enrollment_count = enrollments.len();
+            snapshot.benefit_enrollments = enrollments;
+        }
+
         stats.payroll_run_count = snapshot.payroll_run_count;
         stats.time_entry_count = snapshot.time_entry_count;
         stats.expense_report_count = snapshot.expense_report_count;
+        stats.benefit_enrollment_count = snapshot.benefit_enrollment_count;
 
         info!(
-            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports",
+            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments",
             snapshot.payroll_run_count, snapshot.payroll_line_item_count,
-            snapshot.time_entry_count, snapshot.expense_report_count
+            snapshot.time_entry_count, snapshot.expense_report_count,
+            snapshot.benefit_enrollment_count
         );
         self.check_resources_with_log("post-hr")?;
 
