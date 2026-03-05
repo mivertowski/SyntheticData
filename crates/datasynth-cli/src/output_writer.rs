@@ -1121,6 +1121,21 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Collusion Rings
+    // ========================================================================
+    if !result.collusion_rings.is_empty() {
+        let labels_dir = output_dir.join("labels");
+        std::fs::create_dir_all(&labels_dir)?;
+        info!("Writing collusion rings...");
+
+        write_json_safe(
+            &result.collusion_rings,
+            &labels_dir.join("collusion_rings.json"),
+            "Collusion rings",
+        );
+    }
+
+    // ========================================================================
     // Temporal Vendor Version Chains
     // ========================================================================
     if !result.temporal_vendor_chains.is_empty() {

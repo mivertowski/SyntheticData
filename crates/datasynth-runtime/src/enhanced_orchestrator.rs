@@ -829,6 +829,8 @@ pub struct EnhancedGenerationResult {
     pub counterfactual_pairs: Vec<datasynth_generators::counterfactual::CounterfactualPair>,
     /// Fraud red-flag indicators on P2P/O2C documents.
     pub red_flags: Vec<datasynth_generators::fraud::RedFlag>,
+    /// Collusion rings (coordinated fraud networks).
+    pub collusion_rings: Vec<datasynth_generators::fraud::CollusionRing>,
     /// Bi-temporal version chains for vendor entities.
     pub temporal_vendor_chains:
         Vec<datasynth_core::models::TemporalVersionChain<datasynth_core::models::Vendor>>,
@@ -1030,6 +1032,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of fraud red-flag indicators generated.
     #[serde(default)]
     pub red_flag_count: usize,
+    /// Number of collusion rings generated.
+    #[serde(default)]
+    pub collusion_ring_count: usize,
     /// Number of bi-temporal vendor version chains generated.
     #[serde(default)]
     pub temporal_version_chain_count: usize,
@@ -1679,6 +1684,12 @@ impl EnhancedOrchestrator {
         // Emit red flags to stream sink
         self.emit_phase_items("red_flags", "RedFlag", &red_flags);
 
+        // Phase 26b: Collusion Ring Generation (after red flags)
+        let collusion_rings = self.phase_collusion_rings(&mut stats)?;
+
+        // Emit collusion rings to stream sink
+        self.emit_phase_items("collusion_rings", "CollusionRing", &collusion_rings);
+
         // Phase 9: Balance Validation (after all JEs including payroll, manufacturing, IC)
         let balance_validation = self.phase_balance_validation(&entries)?;
 
@@ -1915,6 +1926,7 @@ impl EnhancedOrchestrator {
             subledger_reconciliation,
             counterfactual_pairs,
             red_flags,
+            collusion_rings,
             temporal_vendor_chains,
             entity_relationship_graph,
             cross_process_links,
@@ -5369,6 +5381,53 @@ impl EnhancedOrchestrator {
         Ok(flags)
     }
 
+    /// Phase 26b: Generate collusion rings from employee/vendor pools.
+    ///
+    /// Gated on `fraud.enabled && fraud.clustering_enabled`. Uses the
+    /// `CollusionRingGenerator` to create 1-3 coordinated fraud networks and
+    /// advance them over the simulation period.
+    fn phase_collusion_rings(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<datasynth_generators::fraud::CollusionRing>> {
+        if !(self.config.fraud.enabled && self.config.fraud.clustering_enabled) {
+            debug!("Phase 26b: Skipped (fraud collusion generation disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 26b: Generating Collusion Rings");
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let months = self.config.global.period_months;
+
+        let employee_ids: Vec<String> = self
+            .master_data
+            .employees
+            .iter()
+            .map(|e| e.employee_id.clone())
+            .collect();
+        let vendor_ids: Vec<String> = self
+            .master_data
+            .vendors
+            .iter()
+            .map(|v| v.vendor_id.clone())
+            .collect();
+
+        let mut generator =
+            datasynth_generators::fraud::CollusionRingGenerator::new(self.seed + 160);
+        let rings = generator.generate(&employee_ids, &vendor_ids, start_date, months);
+
+        stats.collusion_ring_count = rings.len();
+        info!(
+            "Collusion rings generated: {} rings, total members: {}",
+            rings.len(),
+            rings.iter().map(|r| r.size()).sum::<usize>()
+        );
+        self.check_resources_with_log("post-collusion-rings")?;
+
+        Ok(rings)
+    }
+
     /// Phase 27: Generate bi-temporal version chains for vendor entities.
     ///
     /// Creates `TemporalVersionChain<Vendor>` records that model how vendor
@@ -5388,11 +5447,10 @@ impl EnhancedOrchestrator {
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
 
-        let mut gen =
-            datasynth_generators::temporal::TemporalAttributeGenerator::with_defaults(
-                self.seed + 130,
-                start_date,
-            );
+        let mut gen = datasynth_generators::temporal::TemporalAttributeGenerator::with_defaults(
+            self.seed + 130,
+            start_date,
+        );
 
         let uuid_factory = datasynth_core::DeterministicUuidFactory::new(
             self.seed + 130,
@@ -5410,10 +5468,7 @@ impl EnhancedOrchestrator {
             .collect();
 
         stats.temporal_version_chain_count = chains.len();
-        info!(
-            "Temporal version chains generated: {} chains",
-            chains.len()
-        );
+        info!("Temporal version chains generated: {} chains", chains.len());
         self.check_resources_with_log("post-temporal-attributes")?;
 
         Ok(chains)
@@ -5446,7 +5501,9 @@ impl EnhancedOrchestrator {
         let cpl_enabled = self.config.cross_process_links.enabled;
 
         if !rs_enabled && !cpl_enabled {
-            debug!("Phase 28: Skipped (relationship_strength and cross_process_links both disabled)");
+            debug!(
+                "Phase 28: Skipped (relationship_strength and cross_process_links both disabled)"
+            );
             return Ok((None, Vec::new()));
         }
 
@@ -5488,11 +5545,7 @@ impl EnhancedOrchestrator {
                     .relationship_strength
                     .calculation
                     .relationship_duration_weight,
-                recency_weight: self
-                    .config
-                    .relationship_strength
-                    .calculation
-                    .recency_weight,
+                recency_weight: self.config.relationship_strength.calculation.recency_weight,
                 mutual_connections_weight: self
                     .config
                     .relationship_strength
@@ -5502,8 +5555,7 @@ impl EnhancedOrchestrator {
                     .config
                     .relationship_strength
                     .calculation
-                    .recency_half_life_days
-                    as u32,
+                    .recency_half_life_days as u32,
             },
             ..Default::default()
         };
@@ -5621,14 +5673,17 @@ impl EnhancedOrchestrator {
                             let company = cc.clone();
                             let receipt_date = gr.header.document_date;
                             move |item| {
-                                item.base.material_id.as_ref().map(|mat_id| GoodsReceiptRef {
-                                    document_id: doc_id.clone(),
-                                    material_id: mat_id.clone(),
-                                    quantity: item.base.quantity,
-                                    receipt_date,
-                                    vendor_id: v_id.clone(),
-                                    company_code: company.clone(),
-                                })
+                                item.base
+                                    .material_id
+                                    .as_ref()
+                                    .map(|mat_id| GoodsReceiptRef {
+                                        document_id: doc_id.clone(),
+                                        material_id: mat_id.clone(),
+                                        quantity: item.base.quantity,
+                                        receipt_date,
+                                        vendor_id: v_id.clone(),
+                                        company_code: company.clone(),
+                                    })
                             }
                         })
                     })
@@ -5643,8 +5698,7 @@ impl EnhancedOrchestrator {
                     let customer_id = chain.sales_order.customer_id.clone();
                     let cc = chain.sales_order.header.company_code.clone();
                     chain.deliveries.iter().flat_map(move |del| {
-                        let delivery_date =
-                            del.actual_gi_date.unwrap_or(del.planned_gi_date);
+                        let delivery_date = del.actual_gi_date.unwrap_or(del.planned_gi_date);
                         del.items.iter().filter_map({
                             let doc_id = del.header.document_id.clone();
                             let c_id = customer_id.clone();

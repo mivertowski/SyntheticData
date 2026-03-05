@@ -13,7 +13,8 @@ pub mod management_override;
 pub mod red_flags;
 
 pub use collusion::{
-    CollusionRing, CollusionRingType, Conspirator, ConspiratorRole, RingBehavior, RingStatus,
+    CollusionRing, CollusionRingGenerator, CollusionRingType, Conspirator, ConspiratorRole,
+    RingBehavior, RingStatus,
 };
 pub use management_override::{
     ManagementConcealment, ManagementOverrideScheme, OverrideType, RevenueOverrideTechnique,

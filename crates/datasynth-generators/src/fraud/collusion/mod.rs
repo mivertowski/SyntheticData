@@ -5,10 +5,13 @@
 //! - Trust and loyalty dynamics
 //! - Coordinated transaction generation
 //! - Defection and detection risk modeling
+//! - Bulk ring generation from employee/vendor pools
 
+mod generator;
 mod network;
 
+pub use generator::CollusionRingGenerator;
 pub use network::{
     CollusionRing, CollusionRingConfig, CollusionRingType, Conspirator, ConspiratorRole,
-    RingBehavior, RingStatus,
+    EntityType, RingBehavior, RingStatus,
 };

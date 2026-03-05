@@ -579,7 +579,10 @@ impl DisruptionGenerator {
 
             let description = match &disruption_type {
                 DisruptionType::SystemOutage(c) => {
-                    format!("System outage ({:?}) affecting {:?}", c.cause, c.affected_systems)
+                    format!(
+                        "System outage ({:?}) affecting {:?}",
+                        c.cause, c.affected_systems
+                    )
                 }
                 DisruptionType::SystemMigration(c) => {
                     format!(
@@ -588,7 +591,10 @@ impl DisruptionGenerator {
                     )
                 }
                 DisruptionType::ProcessChange(c) => {
-                    format!("Process change ({:?}) effective {}", c.change_type, c.effective_date)
+                    format!(
+                        "Process change ({:?}) effective {}",
+                        c.change_type, c.effective_date
+                    )
                 }
                 DisruptionType::DataRecovery(c) => {
                     format!(
@@ -1049,7 +1055,11 @@ mod tests {
 
         // ~2 events per year over 2 years => ~4 events
         assert!(!events.is_empty());
-        assert!(events.len() >= 2, "expected at least 2 events, got {}", events.len());
+        assert!(
+            events.len() >= 2,
+            "expected at least 2 events, got {}",
+            events.len()
+        );
 
         // Verify sorted by date
         for window in events.windows(2) {
