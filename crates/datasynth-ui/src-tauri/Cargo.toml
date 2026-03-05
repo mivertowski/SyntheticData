@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Tauri desktop UI for synthetic data generation"
+keywords.workspace = true
+categories.workspace = true
 
 [[bin]]
 name = "datasynth-ui"

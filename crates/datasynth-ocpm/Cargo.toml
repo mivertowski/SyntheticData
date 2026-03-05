@@ -7,6 +7,8 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Object-Centric Process Mining (OCPM) models and generators for synthetic data"
+keywords = ["process-mining", "ocel", "event-log", "bpm", "synthetic-data"]
+categories.workspace = true
 
 [dependencies]
 datasynth-core = { workspace = true }

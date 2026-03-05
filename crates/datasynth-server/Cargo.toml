@@ -7,6 +7,8 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "gRPC and REST server for synthetic data generation"
+keywords.workspace = true
+categories.workspace = true
 
 [features]
 default = []

@@ -7,6 +7,8 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Graph/network export for synthetic accounting data - supports PyTorch Geometric, Neo4j, and DGL formats"
+keywords = ["graph", "pytorch-geometric", "neo4j", "dgl", "synthetic-data"]
+categories.workspace = true
 
 [features]
 default = []

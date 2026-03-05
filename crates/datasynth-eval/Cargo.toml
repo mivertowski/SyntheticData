@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 description = "Evaluation framework for synthetic financial data quality and coherence"
+keywords = ["evaluation", "data-quality", "benford", "statistical-testing", "synthetic-data"]
+categories.workspace = true
 
 [dependencies]
 # Internal crates

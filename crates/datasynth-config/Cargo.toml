@@ -7,6 +7,8 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Configuration schema, validation, and presets for synthetic data generation"
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
 datasynth-core = { workspace = true }

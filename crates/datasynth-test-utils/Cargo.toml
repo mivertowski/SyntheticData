@@ -7,6 +7,8 @@ rust-version.workspace = true
 repository.workspace = true
 homepage.workspace = true
 description = "Test utilities for synthetic data generation"
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
 # Internal crates
@@ -44,7 +46,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 
 # HTTP client for testing
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { workspace = true }
 
 # Testing utilities
 tempfile = { workspace = true }

@@ -51,8 +51,8 @@ repository = "https://github.com/ey-asu-rnd/SyntheticData"
 homepage = "https://github.com/ey-asu-rnd/SyntheticData"
 documentation = "https://github.com/ey-asu-rnd/SyntheticData"
 description = "High-performance synthetic data generator for enterprise accounting data"
-keywords = ["synthetic-data", "accounting", "audit", "machine-learning", "fraud-detection"]
-categories = ["simulation", "finance", "data-structures"]
+keywords = ["synthetic-data", "accounting", "financial", "test-data", "data-generation"]
+categories = ["simulation", "command-line-utilities"]
 
 [workspace.dependencies]
 # Internal crates - version required for crates.io publishing
