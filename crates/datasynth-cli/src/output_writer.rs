@@ -1065,7 +1065,10 @@ pub fn write_all_output(
     // ========================================================================
     // Evolution Events (Process Evolution + Organizational Events)
     // ========================================================================
-    if !result.process_evolution.is_empty() || !result.organizational_events.is_empty() {
+    if !result.process_evolution.is_empty()
+        || !result.organizational_events.is_empty()
+        || !result.disruption_events.is_empty()
+    {
         let events_dir = output_dir.join("events");
         std::fs::create_dir_all(&events_dir)?;
         info!("Writing evolution events...");
@@ -1079,6 +1082,11 @@ pub fn write_all_output(
             &result.organizational_events,
             &events_dir.join("organizational_events.json"),
             "Organizational events",
+        );
+        write_json_safe(
+            &result.disruption_events,
+            &events_dir.join("disruption_events.json"),
+            "Disruption events",
         );
     }
 

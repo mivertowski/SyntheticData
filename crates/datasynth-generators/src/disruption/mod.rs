@@ -7,6 +7,9 @@
 //! - Data recovery patterns (backfill, catch-up processing)
 
 use chrono::NaiveDate;
+use datasynth_core::utils::seeded_rng;
+use rand::Rng;
+use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -501,6 +504,326 @@ impl Default for DisruptionManager {
     }
 }
 
+/// Seed discriminator for the disruption generator RNG stream.
+const DISRUPTION_SEED_DISCRIMINATOR: u64 = 0xD1_5E;
+
+/// Bulk generator that creates realistic disruption events over a date range.
+///
+/// Produces approximately 2 events per year, rotating through the five
+/// disruption categories: system outage, system migration, process change,
+/// data recovery, and regulatory change.
+pub struct DisruptionGenerator {
+    rng: ChaCha8Rng,
+    event_counter: usize,
+}
+
+impl DisruptionGenerator {
+    /// Create a new disruption generator with the given seed.
+    pub fn new(seed: u64) -> Self {
+        Self {
+            rng: seeded_rng(seed, DISRUPTION_SEED_DISCRIMINATOR),
+            event_counter: 0,
+        }
+    }
+
+    /// Generate disruption events spanning `[start_date, end_date)`.
+    ///
+    /// Events are returned sorted by their primary date (outage start, go-live,
+    /// effective date, recovery start, or regulatory effective date).
+    pub fn generate(
+        &mut self,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        company_codes: &[String],
+    ) -> Vec<DisruptionEvent> {
+        let total_days = (end_date - start_date).num_days().max(1) as f64;
+        let total_years = total_days / 365.25;
+        let expected_count = (2.0 * total_years).round().max(1.0) as usize;
+
+        let mut events = Vec::with_capacity(expected_count);
+
+        for i in 0..expected_count {
+            // Pick a random date within the range
+            let day_offset = self.rng.random_range(0..total_days as i64);
+            let event_date = start_date + chrono::Duration::days(day_offset);
+
+            // Pick affected companies (1-N from the provided list, or all if empty)
+            let affected = if company_codes.is_empty() {
+                Vec::new()
+            } else {
+                let count = self.rng.random_range(1..=company_codes.len().min(3));
+                let mut selected = Vec::with_capacity(count);
+                for _ in 0..count {
+                    let idx = self.rng.random_range(0..company_codes.len());
+                    let code = company_codes[idx].clone();
+                    if !selected.contains(&code) {
+                        selected.push(code);
+                    }
+                }
+                selected
+            };
+
+            let severity: u8 = self.rng.random_range(1..=5);
+
+            // Rotate through disruption categories
+            let disruption_type = match i % 5 {
+                0 => self.build_outage(event_date),
+                1 => self.build_migration(event_date),
+                2 => self.build_process_change(event_date),
+                3 => self.build_recovery(event_date),
+                _ => self.build_regulatory_change(event_date),
+            };
+
+            self.event_counter += 1;
+            let event_id = format!("DISRUPT-{:06}", self.event_counter);
+
+            let description = match &disruption_type {
+                DisruptionType::SystemOutage(c) => {
+                    format!("System outage ({:?}) affecting {:?}", c.cause, c.affected_systems)
+                }
+                DisruptionType::SystemMigration(c) => {
+                    format!(
+                        "Migration from {} to {} on {}",
+                        c.source_system, c.target_system, c.go_live_date
+                    )
+                }
+                DisruptionType::ProcessChange(c) => {
+                    format!("Process change ({:?}) effective {}", c.change_type, c.effective_date)
+                }
+                DisruptionType::DataRecovery(c) => {
+                    format!(
+                        "Data recovery ({:?}) from {} to {}",
+                        c.recovery_type, c.recovery_start, c.recovery_end
+                    )
+                }
+                DisruptionType::RegulatoryChange(c) => {
+                    format!(
+                        "Regulatory change: {} effective {}",
+                        c.regulation_name, c.effective_date
+                    )
+                }
+            };
+
+            let mut labels = HashMap::new();
+            labels.insert(
+                "disruption_category".to_string(),
+                match &disruption_type {
+                    DisruptionType::SystemOutage(_) => "outage",
+                    DisruptionType::SystemMigration(_) => "migration",
+                    DisruptionType::ProcessChange(_) => "process_change",
+                    DisruptionType::DataRecovery(_) => "recovery",
+                    DisruptionType::RegulatoryChange(_) => "regulatory",
+                }
+                .to_string(),
+            );
+            labels.insert("severity".to_string(), severity.to_string());
+
+            events.push(DisruptionEvent {
+                event_id,
+                disruption_type,
+                description,
+                severity,
+                affected_companies: affected,
+                labels,
+            });
+        }
+
+        // Sort by the primary date of each event
+        events.sort_by_key(|e| self.primary_date(e));
+        events
+    }
+
+    /// Extract the primary date from a disruption event for sorting.
+    fn primary_date(&self, event: &DisruptionEvent) -> NaiveDate {
+        match &event.disruption_type {
+            DisruptionType::SystemOutage(c) => c.start_date,
+            DisruptionType::SystemMigration(c) => c.go_live_date,
+            DisruptionType::ProcessChange(c) => c.effective_date,
+            DisruptionType::DataRecovery(c) => c.recovery_start,
+            DisruptionType::RegulatoryChange(c) => c.effective_date,
+        }
+    }
+
+    /// Build a system outage disruption type.
+    fn build_outage(&mut self, base_date: NaiveDate) -> DisruptionType {
+        let duration_days = self.rng.random_range(1..=5);
+        let end_date = base_date + chrono::Duration::days(duration_days);
+
+        let systems = ["GL", "AP", "AR", "MM", "SD", "FI", "CO"];
+        let system_count = self.rng.random_range(1..=3);
+        let affected_systems: Vec<String> = (0..system_count)
+            .map(|_| {
+                let idx = self.rng.random_range(0..systems.len());
+                systems[idx].to_string()
+            })
+            .collect();
+
+        let causes = [
+            OutageCause::PlannedMaintenance,
+            OutageCause::SystemFailure,
+            OutageCause::NetworkOutage,
+            OutageCause::DatabaseFailure,
+            OutageCause::VendorOutage,
+            OutageCause::SecurityIncident,
+            OutageCause::Disaster,
+        ];
+        let cause = causes[self.rng.random_range(0..causes.len())].clone();
+
+        let data_loss = self.rng.random_bool(0.2);
+        let recovery_mode = if data_loss {
+            None
+        } else {
+            let modes = [
+                RecoveryMode::BackdatedRecovery,
+                RecoveryMode::CurrentDateRecovery,
+                RecoveryMode::MixedRecovery,
+                RecoveryMode::ManualReconciliation,
+            ];
+            Some(modes[self.rng.random_range(0..modes.len())].clone())
+        };
+
+        DisruptionType::SystemOutage(OutageConfig {
+            start_date: base_date,
+            end_date,
+            affected_systems,
+            data_loss,
+            recovery_mode,
+            cause,
+        })
+    }
+
+    /// Build a system migration disruption type.
+    fn build_migration(&mut self, base_date: NaiveDate) -> DisruptionType {
+        let dual_run_before = self.rng.random_range(7..=30);
+        let dual_run_after = self.rng.random_range(7..=30);
+
+        let source_systems = ["Legacy ERP", "SAP ECC", "Oracle 11i", "JDE"];
+        let target_systems = ["SAP S/4HANA", "Oracle Cloud", "Workday", "NetSuite"];
+
+        let src_idx = self.rng.random_range(0..source_systems.len());
+        let tgt_idx = self.rng.random_range(0..target_systems.len());
+
+        DisruptionType::SystemMigration(MigrationConfig {
+            go_live_date: base_date,
+            dual_run_start: Some(base_date - chrono::Duration::days(dual_run_before)),
+            dual_run_end: Some(base_date + chrono::Duration::days(dual_run_after)),
+            source_system: source_systems[src_idx].to_string(),
+            target_system: target_systems[tgt_idx].to_string(),
+            format_changes: vec![FormatChange::DateFormat {
+                old_format: "MM/DD/YYYY".to_string(),
+                new_format: "YYYY-MM-DD".to_string(),
+            }],
+            account_remapping: HashMap::new(),
+            migration_issues: Vec::new(),
+        })
+    }
+
+    /// Build a process change disruption type.
+    fn build_process_change(&mut self, base_date: NaiveDate) -> DisruptionType {
+        let transition_days = self.rng.random_range(14..=90);
+        let retroactive = self.rng.random_bool(0.15);
+
+        let change_type = match self.rng.random_range(0..4) {
+            0 => {
+                let old_threshold = self.rng.random_range(5000.0..50000.0);
+                let new_threshold = old_threshold * self.rng.random_range(0.5..1.5);
+                ProcessChangeType::ApprovalThreshold {
+                    old_threshold,
+                    new_threshold,
+                }
+            }
+            1 => ProcessChangeType::NewApprovalLevel {
+                level_name: "Director Review".to_string(),
+                threshold: self.rng.random_range(10000.0..100000.0),
+            },
+            2 => ProcessChangeType::PostingRuleChange {
+                affected_accounts: vec!["4100".to_string(), "4200".to_string()],
+            },
+            _ => {
+                let old_day = self.rng.random_range(3..=10);
+                let new_day = self.rng.random_range(3..=10);
+                ProcessChangeType::CloseProcessChange {
+                    old_close_day: old_day,
+                    new_close_day: new_day,
+                }
+            }
+        };
+
+        DisruptionType::ProcessChange(ProcessChangeConfig {
+            effective_date: base_date,
+            change_type,
+            transition_days,
+            retroactive,
+        })
+    }
+
+    /// Build a data recovery disruption type.
+    fn build_recovery(&mut self, base_date: NaiveDate) -> DisruptionType {
+        let affected_duration = self.rng.random_range(3..=14);
+        let recovery_duration = self.rng.random_range(2..=10);
+        let recovery_start = base_date;
+        let recovery_end = base_date + chrono::Duration::days(recovery_duration);
+        let affected_period_start = base_date - chrono::Duration::days(affected_duration);
+        let affected_period_end = base_date;
+
+        let recovery_types = [
+            RecoveryType::BackupRestore,
+            RecoveryType::SourceReconstruction,
+            RecoveryType::InterfaceReplay,
+            RecoveryType::ManualReentry,
+            RecoveryType::PartialWithEstimates,
+        ];
+        let data_qualities = [
+            RecoveredDataQuality::Complete,
+            RecoveredDataQuality::MinorDiscrepancies,
+            RecoveredDataQuality::EstimatedValues,
+            RecoveredDataQuality::PartialRecovery,
+        ];
+
+        DisruptionType::DataRecovery(RecoveryConfig {
+            recovery_start,
+            recovery_end,
+            affected_period_start,
+            affected_period_end,
+            recovery_type: recovery_types[self.rng.random_range(0..recovery_types.len())].clone(),
+            data_quality: data_qualities[self.rng.random_range(0..data_qualities.len())].clone(),
+        })
+    }
+
+    /// Build a regulatory change disruption type.
+    fn build_regulatory_change(&mut self, base_date: NaiveDate) -> DisruptionType {
+        let grace_period_days = self.rng.random_range(30..=180);
+
+        let regulations = [
+            ("IFRS 17", RegulatoryChangeType::RevenueRecognition),
+            ("ASC 842", RegulatoryChangeType::LeaseAccounting),
+            (
+                "GDPR Extension",
+                RegulatoryChangeType::DataPrivacy {
+                    regulation: "GDPR".to_string(),
+                },
+            ),
+            ("SOX Update", RegulatoryChangeType::CoaRestructure),
+            (
+                "Local Tax Reform",
+                RegulatoryChangeType::TaxChange {
+                    jurisdiction: "US-Federal".to_string(),
+                },
+            ),
+        ];
+
+        let idx = self.rng.random_range(0..regulations.len());
+        let (name, change_type) = regulations[idx].clone();
+
+        DisruptionType::RegulatoryChange(RegulatoryConfig {
+            effective_date: base_date,
+            regulation_name: name.to_string(),
+            change_type,
+            grace_period_days,
+        })
+    }
+}
+
 /// Effects that a disruption can have on generated data.
 #[derive(Debug, Clone, Default)]
 pub struct DisruptionEffect {
@@ -713,5 +1036,61 @@ mod tests {
 
         assert!(effect.skip_generation);
         assert!(effect.labels.contains_key("outage_event"));
+    }
+
+    #[test]
+    fn test_disruption_generator_produces_events() {
+        let mut gen = DisruptionGenerator::new(42);
+        let start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2025, 12, 31).unwrap();
+        let companies = vec!["1000".to_string(), "2000".to_string()];
+
+        let events = gen.generate(start, end, &companies);
+
+        // ~2 events per year over 2 years => ~4 events
+        assert!(!events.is_empty());
+        assert!(events.len() >= 2, "expected at least 2 events, got {}", events.len());
+
+        // Verify sorted by date
+        for window in events.windows(2) {
+            let d0 = primary_date_of(&window[0]);
+            let d1 = primary_date_of(&window[1]);
+            assert!(d0 <= d1, "events should be sorted by date");
+        }
+
+        // Verify all events have valid fields
+        for event in &events {
+            assert!(!event.event_id.is_empty());
+            assert!(!event.description.is_empty());
+            assert!(event.severity >= 1 && event.severity <= 5);
+            assert!(event.labels.contains_key("disruption_category"));
+        }
+    }
+
+    #[test]
+    fn test_disruption_generator_deterministic() {
+        let start = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2024, 12, 31).unwrap();
+        let companies = vec!["C001".to_string()];
+
+        let events1 = DisruptionGenerator::new(99).generate(start, end, &companies);
+        let events2 = DisruptionGenerator::new(99).generate(start, end, &companies);
+
+        assert_eq!(events1.len(), events2.len());
+        for (a, b) in events1.iter().zip(events2.iter()) {
+            assert_eq!(a.event_id, b.event_id);
+            assert_eq!(a.severity, b.severity);
+        }
+    }
+
+    /// Helper to extract primary date without needing access to private method.
+    fn primary_date_of(event: &DisruptionEvent) -> NaiveDate {
+        match &event.disruption_type {
+            DisruptionType::SystemOutage(c) => c.start_date,
+            DisruptionType::SystemMigration(c) => c.go_live_date,
+            DisruptionType::ProcessChange(c) => c.effective_date,
+            DisruptionType::DataRecovery(c) => c.recovery_start,
+            DisruptionType::RegulatoryChange(c) => c.effective_date,
+        }
     }
 }

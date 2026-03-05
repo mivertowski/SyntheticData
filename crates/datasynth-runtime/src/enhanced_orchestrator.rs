@@ -801,6 +801,8 @@ pub struct EnhancedGenerationResult {
     pub process_evolution: Vec<ProcessEvolutionEvent>,
     /// Organizational events (acquisitions, divestitures, reorganizations, leadership changes).
     pub organizational_events: Vec<OrganizationalEvent>,
+    /// Disruption events (outages, migrations, process changes, recoveries, regulatory).
+    pub disruption_events: Vec<datasynth_generators::disruption::DisruptionEvent>,
     /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
     pub intercompany: IntercompanySnapshot,
     /// Generated journal entries.
@@ -1040,6 +1042,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of cross-process links generated.
     #[serde(default)]
     pub cross_process_link_count: usize,
+    /// Number of disruption events generated.
+    #[serde(default)]
+    pub disruption_event_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1747,6 +1752,9 @@ impl EnhancedOrchestrator {
         // Phase 24: Process Evolution + Organizational Events
         let (process_evolution, organizational_events) = self.phase_evolution_events(&mut stats)?;
 
+        // Phase 24b: Disruption Events
+        let disruption_events = self.phase_disruption_events(&mut stats)?;
+
         // Phase 27: Bi-Temporal Vendor Version Chains
         let temporal_vendor_chains = self.phase_temporal_attributes(&mut stats)?;
 
@@ -1893,6 +1901,7 @@ impl EnhancedOrchestrator {
             project_accounting,
             process_evolution,
             organizational_events,
+            disruption_events,
             intercompany,
             journal_entries: entries,
             anomaly_labels,
@@ -5216,6 +5225,39 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-evolution-events")?;
 
         Ok((process_events, org_events))
+    }
+
+    /// Phase 24b: Generate disruption events (outages, migrations, process changes,
+    /// data recovery, and regulatory changes).
+    fn phase_disruption_events(
+        &self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<datasynth_generators::disruption::DisruptionEvent>> {
+        if !self.config.organizational_events.enabled {
+            debug!("Phase 24b: Skipped (organizational events disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 24b: Generating Disruption Events");
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+
+        let company_codes: Vec<String> = self
+            .config
+            .companies
+            .iter()
+            .map(|c| c.code.clone())
+            .collect();
+
+        let mut gen = datasynth_generators::disruption::DisruptionGenerator::new(self.seed + 150);
+        let events = gen.generate(start_date, end_date, &company_codes);
+
+        stats.disruption_event_count = events.len();
+        info!("Disruption events generated: {} events", events.len());
+        self.check_resources_with_log("post-disruption-events")?;
+
+        Ok(events)
     }
 
     /// Phase 25: Generate counterfactual (original, mutated) JE pairs for ML training.

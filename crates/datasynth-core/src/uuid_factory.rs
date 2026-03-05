@@ -122,6 +122,8 @@ pub enum GeneratorType {
     InventoryMovement = 0x40,
     /// Benefit enrollment generator
     BenefitEnrollment = 0x41,
+    /// Disruption event generator
+    Disruption = 0x42,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique
