@@ -3729,8 +3729,8 @@ impl EnhancedOrchestrator {
             snapshot.expense_reports = reports;
         }
 
-        // Generate benefit enrollments
-        {
+        // Generate benefit enrollments (gated on payroll, since benefits require employees)
+        if self.config.hr.payroll.enabled {
             let mut benefit_gen =
                 datasynth_generators::BenefitEnrollmentGenerator::new(seed + 33);
             let employee_pairs: Vec<(String, String)> = self
