@@ -827,6 +827,9 @@ pub struct EnhancedGenerationResult {
     pub counterfactual_pairs: Vec<datasynth_generators::counterfactual::CounterfactualPair>,
     /// Fraud red-flag indicators on P2P/O2C documents.
     pub red_flags: Vec<datasynth_generators::fraud::RedFlag>,
+    /// Bi-temporal version chains for vendor entities.
+    pub temporal_vendor_chains:
+        Vec<datasynth_core::models::TemporalVersionChain<datasynth_core::models::Vendor>>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1021,6 +1024,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of fraud red-flag indicators generated.
     #[serde(default)]
     pub red_flag_count: usize,
+    /// Number of bi-temporal vendor version chains generated.
+    #[serde(default)]
+    pub temporal_version_chain_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1728,6 +1734,9 @@ impl EnhancedOrchestrator {
         // Phase 24: Process Evolution + Organizational Events
         let (process_evolution, organizational_events) = self.phase_evolution_events(&mut stats)?;
 
+        // Phase 27: Bi-Temporal Vendor Version Chains
+        let temporal_vendor_chains = self.phase_temporal_attributes(&mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1880,6 +1889,7 @@ impl EnhancedOrchestrator {
             subledger_reconciliation,
             counterfactual_pairs,
             red_flags,
+            temporal_vendor_chains,
         })
     }
 
@@ -5296,6 +5306,56 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-red-flags")?;
 
         Ok(flags)
+    }
+
+    /// Phase 27: Generate bi-temporal version chains for vendor entities.
+    ///
+    /// Creates `TemporalVersionChain<Vendor>` records that model how vendor
+    /// master data changes over time, supporting bi-temporal audit queries.
+    fn phase_temporal_attributes(
+        &mut self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<
+        Vec<datasynth_core::models::TemporalVersionChain<datasynth_core::models::Vendor>>,
+    > {
+        if !self.config.temporal_attributes.enabled {
+            debug!("Phase 27: Skipped (temporal attributes disabled)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 27: Generating Bi-Temporal Vendor Version Chains");
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+
+        let mut gen =
+            datasynth_generators::temporal::TemporalAttributeGenerator::with_defaults(
+                self.seed + 130,
+                start_date,
+            );
+
+        let uuid_factory = datasynth_core::DeterministicUuidFactory::new(
+            self.seed + 130,
+            datasynth_core::GeneratorType::Vendor,
+        );
+
+        let chains: Vec<_> = self
+            .master_data
+            .vendors
+            .iter()
+            .map(|vendor| {
+                let id = uuid_factory.next();
+                gen.generate_version_chain(vendor.clone(), id)
+            })
+            .collect();
+
+        stats.temporal_version_chain_count = chains.len();
+        info!(
+            "Temporal version chains generated: {} chains",
+            chains.len()
+        );
+        self.check_resources_with_log("post-temporal-attributes")?;
+
+        Ok(chains)
     }
 
     /// Phase 3b: Generate opening balances for each company.

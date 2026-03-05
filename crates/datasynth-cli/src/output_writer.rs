@@ -1113,6 +1113,21 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Temporal Vendor Version Chains
+    // ========================================================================
+    if !result.temporal_vendor_chains.is_empty() {
+        let temporal_dir = output_dir.join("temporal");
+        std::fs::create_dir_all(&temporal_dir)?;
+        info!("Writing temporal vendor version chains...");
+
+        write_json_safe(
+            &result.temporal_vendor_chains,
+            &temporal_dir.join("vendor_version_chains.json"),
+            "Vendor version chains",
+        );
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {
