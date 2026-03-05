@@ -1185,6 +1185,31 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Industry-Specific Data
+    // ========================================================================
+    if let Some(ref industry_output) = result.industry_output {
+        if !industry_output.gl_accounts.is_empty() {
+            let industry_dir = output_dir.join("industry");
+            std::fs::create_dir_all(&industry_dir).ok();
+            info!("Writing industry-specific data...");
+            match serde_json::to_string_pretty(industry_output) {
+                Ok(json) => {
+                    if let Err(e) = std::fs::write(industry_dir.join("industry_data.json"), json) {
+                        warn!("Failed to write industry data: {}", e);
+                    } else {
+                        info!(
+                            "  Industry data written: {} GL accounts for {}",
+                            industry_output.gl_accounts.len(),
+                            industry_output.industry
+                        );
+                    }
+                }
+                Err(e) => warn!("Failed to serialize industry data: {}", e),
+            }
+        }
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {

@@ -10,6 +10,7 @@
 //! - Financial Services: Banking, investments, insurance
 //! - Professional Services: Time/billing, engagements, trust accounts
 
+pub mod factory;
 pub mod healthcare;
 pub mod manufacturing;
 pub mod retail;

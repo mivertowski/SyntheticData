@@ -838,6 +838,8 @@ pub struct EnhancedGenerationResult {
     pub entity_relationship_graph: Option<datasynth_core::models::EntityGraph>,
     /// Cross-process links (P2P ↔ O2C via inventory movements).
     pub cross_process_links: Vec<datasynth_core::models::CrossProcessLink>,
+    /// Industry-specific GL accounts and metadata.
+    pub industry_output: Option<datasynth_generators::industry::factory::IndustryOutput>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1050,6 +1052,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of disruption events generated.
     #[serde(default)]
     pub disruption_event_count: usize,
+    /// Number of industry-specific GL accounts generated.
+    #[serde(default)]
+    pub industry_gl_account_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1773,6 +1778,9 @@ impl EnhancedOrchestrator {
         let (entity_relationship_graph, cross_process_links) =
             self.phase_entity_relationships(&entries, &document_flows, &mut stats)?;
 
+        // Phase 29: Industry-specific GL accounts
+        let industry_output = self.phase_industry_data(&mut stats);
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1930,6 +1938,7 @@ impl EnhancedOrchestrator {
             temporal_vendor_chains,
             entity_relationship_graph,
             cross_process_links,
+            industry_output,
         })
     }
 
@@ -5728,6 +5737,27 @@ impl EnhancedOrchestrator {
 
         self.check_resources_with_log("post-entity-relationships")?;
         Ok((entity_graph, cross_process_links))
+    }
+
+    /// Phase 29: Generate industry-specific GL accounts via factory dispatch.
+    fn phase_industry_data(
+        &self,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> Option<datasynth_generators::industry::factory::IndustryOutput> {
+        if !self.config.industry_specific.enabled {
+            return None;
+        }
+        info!("Phase 29: Generating industry-specific data");
+        let output = datasynth_generators::industry::factory::generate_industry_output(
+            self.config.global.industry,
+        );
+        stats.industry_gl_account_count = output.gl_accounts.len();
+        info!(
+            "Industry data generated: {} GL accounts for {:?}",
+            output.gl_accounts.len(),
+            self.config.global.industry
+        );
+        Some(output)
     }
 
     /// Phase 3b: Generate opening balances for each company.
