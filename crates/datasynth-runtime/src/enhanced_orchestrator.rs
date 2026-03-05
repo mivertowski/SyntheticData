@@ -17,6 +17,7 @@
 //! 14. Source-to-Contract (S2C) sourcing data generation
 //! 15. Bank reconciliation generation
 //! 16. Financial statement generation
+//! 25. Counterfactual pair generation (ML training)
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -280,6 +281,8 @@ pub struct PhaseConfig {
     pub generate_intercompany: bool,
     /// Generate process evolution and organizational events.
     pub generate_evolution_events: bool,
+    /// Generate counterfactual (original, mutated) JE pairs for ML training.
+    pub generate_counterfactuals: bool,
 }
 
 impl Default for PhaseConfig {
@@ -319,6 +322,7 @@ impl Default for PhaseConfig {
             generate_esg: false,                  // Off by default
             generate_intercompany: false,         // Off by default
             generate_evolution_events: true,      // On by default
+            generate_counterfactuals: false,      // Off by default (opt-in for ML workloads)
         }
     }
 }
@@ -819,6 +823,8 @@ pub struct EnhancedGenerationResult {
     pub opening_balances: Vec<GeneratedOpeningBalance>,
     /// GL-to-subledger reconciliation results (if reconciliation enabled).
     pub subledger_reconciliation: Vec<datasynth_generators::ReconciliationResult>,
+    /// Counterfactual (original, mutated) JE pairs for ML training.
+    pub counterfactual_pairs: Vec<datasynth_generators::counterfactual::CounterfactualPair>,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1007,6 +1013,9 @@ pub struct EnhancedGenerationStatistics {
     /// Organizational event count.
     #[serde(default)]
     pub organizational_event_count: usize,
+    /// Counterfactual pair count.
+    #[serde(default)]
+    pub counterfactual_pair_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1515,6 +1524,9 @@ impl EnhancedOrchestrator {
             entries.extend(fa_journal_entries);
         }
 
+        // Phase 25: Counterfactual Pairs (before anomaly injection, using clean JEs)
+        let counterfactual_pairs = self.phase_counterfactuals(&entries, &mut stats)?;
+
         // Get current degradation actions for optional phases
         let actions = self.get_degradation_actions();
 
@@ -1855,6 +1867,7 @@ impl EnhancedOrchestrator {
             internal_controls,
             opening_balances,
             subledger_reconciliation,
+            counterfactual_pairs,
         })
     }
 
@@ -5162,6 +5175,55 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-evolution-events")?;
 
         Ok((process_events, org_events))
+    }
+
+    /// Phase 25: Generate counterfactual (original, mutated) JE pairs for ML training.
+    ///
+    /// Produces paired examples where each pair contains the original clean JE
+    /// and a controlled mutation (scaled amount, shifted date, self-approval, or
+    /// split transaction). Useful for training anomaly detection models with
+    /// known ground truth.
+    fn phase_counterfactuals(
+        &self,
+        journal_entries: &[JournalEntry],
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<Vec<datasynth_generators::counterfactual::CounterfactualPair>> {
+        if !self.phase_config.generate_counterfactuals || journal_entries.is_empty() {
+            debug!("Phase 25: Skipped (counterfactual generation disabled or no JEs)");
+            return Ok(Vec::new());
+        }
+        info!("Phase 25: Generating Counterfactual Pairs for ML Training");
+
+        use datasynth_generators::counterfactual::{CounterfactualGenerator, CounterfactualSpec};
+
+        let mut gen = CounterfactualGenerator::new(self.seed + 110);
+
+        // Rotating set of specs to produce diverse mutation types
+        let specs = [
+            CounterfactualSpec::ScaleAmount { factor: 2.5 },
+            CounterfactualSpec::ShiftDate { days: -14 },
+            CounterfactualSpec::SelfApprove,
+            CounterfactualSpec::SplitTransaction { split_count: 3 },
+        ];
+
+        let pairs: Vec<_> = journal_entries
+            .iter()
+            .enumerate()
+            .map(|(i, je)| {
+                let spec = &specs[i % specs.len()];
+                gen.generate(je, spec)
+            })
+            .collect();
+
+        stats.counterfactual_pair_count = pairs.len();
+        info!(
+            "Counterfactual pairs generated: {} pairs from {} journal entries",
+            pairs.len(),
+            journal_entries.len()
+        );
+        self.check_resources_with_log("post-counterfactuals")?;
+
+        Ok(pairs)
     }
 
     /// Phase 3b: Generate opening balances for each company.
@@ -8474,6 +8536,44 @@ mod tests {
         assert_eq!(result.statistics.causal_generation_ms, 0);
         assert_eq!(result.statistics.causal_samples_generated, 0);
         assert!(result.statistics.causal_validation_passed.is_none());
+        assert_eq!(result.statistics.counterfactual_pair_count, 0);
+        assert!(result.counterfactual_pairs.is_empty());
+    }
+
+    #[test]
+    fn test_counterfactual_generation_enabled() {
+        let config = create_test_config();
+        let phase_config = PhaseConfig {
+            generate_master_data: false,
+            generate_document_flows: false,
+            generate_journal_entries: true,
+            inject_anomalies: false,
+            show_progress: false,
+            generate_counterfactuals: true,
+            ..Default::default()
+        };
+
+        let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).unwrap();
+        let result = orchestrator.generate().unwrap();
+
+        // With JE generation enabled, counterfactual pairs should be generated
+        if !result.journal_entries.is_empty() {
+            assert_eq!(
+                result.counterfactual_pairs.len(),
+                result.journal_entries.len()
+            );
+            assert_eq!(
+                result.statistics.counterfactual_pair_count,
+                result.journal_entries.len()
+            );
+            // Each pair should have a distinct pair_id
+            let ids: std::collections::HashSet<_> = result
+                .counterfactual_pairs
+                .iter()
+                .map(|p| p.pair_id.clone())
+                .collect();
+            assert_eq!(ids.len(), result.counterfactual_pairs.len());
+        }
     }
 
     #[test]

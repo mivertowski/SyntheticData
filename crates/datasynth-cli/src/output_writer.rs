@@ -1083,6 +1083,21 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // ML Training: Counterfactual Pairs
+    // ========================================================================
+    if !result.counterfactual_pairs.is_empty() {
+        let ml_dir = output_dir.join("ml_training");
+        std::fs::create_dir_all(&ml_dir)?;
+        info!("Writing ML training data...");
+
+        write_json_safe(
+            &result.counterfactual_pairs,
+            &ml_dir.join("counterfactual_pairs.json"),
+            "Counterfactual pairs",
+        );
+    }
+
+    // ========================================================================
     // Graph Export Summary
     // ========================================================================
     if result.graph_export.exported {
