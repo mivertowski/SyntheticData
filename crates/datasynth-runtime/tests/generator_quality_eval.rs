@@ -309,6 +309,7 @@ mod eval {
     // ========================================================================
 
     #[test]
+    #[ignore] // Long-running (~minutes): run with `cargo test -- --ignored`
     fn evaluate_all_generators() {
         let config = full_config();
         let phase_config = all_phases();
