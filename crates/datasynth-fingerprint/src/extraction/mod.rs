@@ -474,7 +474,11 @@ impl FingerprintExtractor {
             .has_headers(true)
             .from_path(path)?;
 
-        let headers: Vec<String> = reader.headers()?.iter().map(|s| s.to_string()).collect();
+        let headers: Vec<String> = reader
+            .headers()?
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect();
 
         // Initialize streaming accumulators for each column
         let mut numeric_accumulators: HashMap<usize, StreamingNumericStats> = HashMap::new();
@@ -775,7 +779,7 @@ impl FingerprintExtractor {
             let ext = file_path
                 .extension()
                 .and_then(|e| e.to_str())
-                .map(|s| s.to_lowercase())
+                .map(str::to_lowercase)
                 .unwrap_or_default();
 
             let source = match ext.as_str() {
@@ -861,7 +865,7 @@ fn build_source_metadata(source: &DataSource, schema: &SchemaFingerprint) -> Sou
                 .unwrap_or("unknown")
                 .to_string();
             let rows = schema.tables.values().map(|t| t.row_count).sum();
-            (format!("CSV file: {}", name), vec![name], rows)
+            (format!("CSV file: {name}"), vec![name], rows)
         }
         DataSource::Parquet(pq) => {
             let name = pq
@@ -871,7 +875,7 @@ fn build_source_metadata(source: &DataSource, schema: &SchemaFingerprint) -> Sou
                 .unwrap_or("unknown")
                 .to_string();
             let rows = schema.tables.values().map(|t| t.row_count).sum();
-            (format!("Parquet file: {}", name), vec![name], rows)
+            (format!("Parquet file: {name}"), vec![name], rows)
         }
         DataSource::Json(json) => {
             let name = json
@@ -882,7 +886,7 @@ fn build_source_metadata(source: &DataSource, schema: &SchemaFingerprint) -> Sou
                 .to_string();
             let rows = schema.tables.values().map(|t| t.row_count).sum();
             let format_type = if json.is_array { "JSON" } else { "JSONL" };
-            (format!("{} file: {}", format_type, name), vec![name], rows)
+            (format!("{format_type} file: {name}"), vec![name], rows)
         }
         DataSource::Memory(mem) => {
             let rows = mem.row_count() as u64;
@@ -895,7 +899,7 @@ fn build_source_metadata(source: &DataSource, schema: &SchemaFingerprint) -> Sou
         DataSource::Directory(dir) => {
             // This shouldn't be called for directories - they're handled separately
             let name = dir.path.display().to_string();
-            (format!("Directory: {}", name), vec![], 0)
+            (format!("Directory: {name}"), vec![], 0)
         }
     };
 

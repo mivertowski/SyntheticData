@@ -773,7 +773,7 @@ impl DriftDetectionAnalyzer {
             }
             if let Some(delay) = metrics.mean_detection_delay {
                 if delay > 3.0 {
-                    issues.push(format!("High detection delay ({:.1} periods)", delay));
+                    issues.push(format!("High detection delay ({delay:.1} periods)"));
                 }
             }
         }

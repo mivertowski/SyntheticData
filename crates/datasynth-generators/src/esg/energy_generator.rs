@@ -50,7 +50,7 @@ impl EnergyGenerator {
 
         // Generate facility IDs
         let facilities: Vec<String> = (1..=facility_count)
-            .map(|i| format!("FAC-{:03}", i))
+            .map(|i| format!("FAC-{i:03}"))
             .collect();
 
         // Determine which sources each facility uses
@@ -193,7 +193,7 @@ impl WaterGenerator {
         let mut records = Vec::new();
 
         for fac in 1..=self.facility_count {
-            let facility_id = format!("FAC-{:03}", fac);
+            let facility_id = format!("FAC-{fac:03}");
             let is_stressed = self.rng.random::<f64>() < 0.15; // 15% in water-stressed areas
             let mut month = start_date;
 
@@ -273,7 +273,7 @@ impl WasteGenerator {
         let mut records = Vec::new();
 
         for fac in 1..=self.facility_count {
-            let facility_id = format!("FAC-{:03}", fac);
+            let facility_id = format!("FAC-{fac:03}");
             let mut month = start_date;
 
             while month <= end_date {

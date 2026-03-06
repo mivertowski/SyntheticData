@@ -360,7 +360,7 @@ impl BalanceCoherenceValidator {
                     ValidationResult::fail(
                         rule,
                         equation_diff,
-                        format!("Balance sheet is out of balance by {:.2}", equation_diff),
+                        format!("Balance sheet is out of balance by {equation_diff:.2}"),
                     )
                 }
             }
@@ -382,7 +382,7 @@ impl BalanceCoherenceValidator {
                         ValidationResult::fail(
                             rule,
                             ratio,
-                            format!("Current ratio {:.2} is outside acceptable range", ratio),
+                            format!("Current ratio {ratio:.2} is outside acceptable range"),
                         )
                     }
                 }
@@ -398,10 +398,7 @@ impl BalanceCoherenceValidator {
                         ValidationResult::fail(
                             rule,
                             ratio,
-                            format!(
-                                "Debt-to-equity ratio {:.2} is outside acceptable range",
-                                ratio
-                            ),
+                            format!("Debt-to-equity ratio {ratio:.2} is outside acceptable range"),
                         )
                     }
                 }

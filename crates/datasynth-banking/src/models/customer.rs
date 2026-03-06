@@ -28,7 +28,7 @@ impl CustomerName {
     /// Create a new individual name.
     pub fn individual(first: &str, last: &str) -> Self {
         Self {
-            legal_name: format!("{} {}", first, last),
+            legal_name: format!("{first} {last}"),
             first_name: Some(first.to_string()),
             last_name: Some(last.to_string()),
             middle_name: None,
@@ -39,7 +39,7 @@ impl CustomerName {
     /// Create a new individual name with middle name.
     pub fn individual_full(first: &str, middle: &str, last: &str) -> Self {
         Self {
-            legal_name: format!("{} {} {}", first, middle, last),
+            legal_name: format!("{first} {middle} {last}"),
             first_name: Some(first.to_string()),
             last_name: Some(last.to_string()),
             middle_name: Some(middle.to_string()),

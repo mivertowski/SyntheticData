@@ -40,7 +40,7 @@ impl StructuralCausalModel {
                 let var = self
                     .graph
                     .get_variable(var_name)
-                    .ok_or_else(|| format!("Variable '{}' not found", var_name))?;
+                    .ok_or_else(|| format!("Variable '{var_name}' not found"))?;
 
                 // Sample exogenous noise
                 let noise = self.sample_exogenous(var, &mut rng);
@@ -129,10 +129,7 @@ impl StructuralCausalModel {
     pub fn intervene(&self, variable: &str, value: f64) -> Result<IntervenedScm<'_>, String> {
         // Verify variable exists
         if self.graph.get_variable(variable).is_none() {
-            return Err(format!(
-                "Variable '{}' not found for intervention",
-                variable
-            ));
+            return Err(format!("Variable '{variable}' not found for intervention"));
         }
         Ok(IntervenedScm {
             base: self,
@@ -183,7 +180,7 @@ impl<'a> IntervenedScm<'a> {
                     .base
                     .graph
                     .get_variable(var_name)
-                    .ok_or_else(|| format!("Variable '{}' not found", var_name))?;
+                    .ok_or_else(|| format!("Variable '{var_name}' not found"))?;
 
                 let noise = self.base.sample_exogenous(var, &mut rng);
                 let parent_edges = self.base.graph.parent_edges(var_name);

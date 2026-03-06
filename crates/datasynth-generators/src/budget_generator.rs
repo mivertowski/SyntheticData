@@ -126,7 +126,7 @@ impl BudgetGenerator {
             budget_id,
             company_code: company_code.to_string(),
             fiscal_year,
-            name: format!("FY{} Operating Budget", fiscal_year),
+            name: format!("FY{fiscal_year} Operating Budget"),
             status,
             total_budget: total_budget.round_dp(2),
             total_actual: total_actual.round_dp(2),
@@ -200,8 +200,7 @@ impl BudgetGenerator {
         // Add a note for large variances
         let notes = if variance_percent.abs() > 5.0 {
             Some(format!(
-                "Variance of {:.1}% requires management review",
-                variance_percent
+                "Variance of {variance_percent:.1}% requires management review"
             ))
         } else {
             None

@@ -116,7 +116,7 @@ impl CTAGenerator {
         let entry_id = format!("CTA-{:08}", self.cta_counter);
 
         let opening_net_assets = prior_period
-            .map(|tb| tb.local_net_assets())
+            .map(super::currency_translator::TranslatedTrialBalance::local_net_assets)
             .unwrap_or(Decimal::ZERO);
 
         let opening_rate = prior_period

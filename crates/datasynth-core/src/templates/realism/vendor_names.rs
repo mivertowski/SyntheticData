@@ -209,25 +209,25 @@ impl VendorNameGenerator {
                 // Prefix + Descriptor
                 let prefix = template.prefixes.choose(rng).unwrap_or(&"National");
                 let descriptor = template.descriptors.choose(rng).unwrap_or(&"Services");
-                format!("{} {}", prefix, descriptor)
+                format!("{prefix} {descriptor}")
             }
             1 => {
                 // Prefix + Suffix
                 let prefix = template.prefixes.choose(rng).unwrap_or(&"Premier");
                 let suffix = template.suffixes.choose(rng).unwrap_or(&"Supply");
-                format!("{} {}", prefix, suffix)
+                format!("{prefix} {suffix}")
             }
             2 => {
                 // Descriptor + Generic Suffix
                 let descriptor = template.descriptors.choose(rng).unwrap_or(&"Professional");
                 let suffix = self.generic_suffixes.choose(rng).unwrap_or(&"Services");
-                format!("{} {}", descriptor, suffix)
+                format!("{descriptor} {suffix}")
             }
             _ => {
                 // Full: Prefix + Descriptor + Suffix
                 let prefix = template.prefixes.choose(rng).unwrap_or(&"American");
                 let descriptor = template.descriptors.choose(rng).unwrap_or(&"Business");
-                format!("{} {} Group", prefix, descriptor)
+                format!("{prefix} {descriptor} Group")
             }
         }
     }

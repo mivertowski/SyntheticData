@@ -184,15 +184,15 @@ impl AmountFormat {
         match self {
             AmountFormat::Plain => {
                 if is_negative {
-                    format!("-{:.2}", amount_f64)
+                    format!("-{amount_f64:.2}")
                 } else {
-                    format!("{:.2}", amount_f64)
+                    format!("{amount_f64:.2}")
                 }
             }
             AmountFormat::USComma => {
                 let formatted = format_with_thousands(amount_f64, ',', '.');
                 if is_negative {
-                    format!("-{}", formatted)
+                    format!("-{formatted}")
                 } else {
                     formatted
                 }
@@ -200,7 +200,7 @@ impl AmountFormat {
             AmountFormat::EUFormat => {
                 let formatted = format_with_thousands(amount_f64, '.', ',');
                 if is_negative {
-                    format!("-{}", formatted)
+                    format!("-{formatted}")
                 } else {
                     formatted
                 }
@@ -208,7 +208,7 @@ impl AmountFormat {
             AmountFormat::SpaceSeparator => {
                 let formatted = format_with_thousands(amount_f64, ' ', '.');
                 if is_negative {
-                    format!("-{}", formatted)
+                    format!("-{formatted}")
                 } else {
                     formatted
                 }
@@ -216,32 +216,32 @@ impl AmountFormat {
             AmountFormat::CurrencyPrefix(symbol) => {
                 let formatted = format_with_thousands(amount_f64, ',', '.');
                 if is_negative {
-                    format!("-{}{}", symbol, formatted)
+                    format!("-{symbol}{formatted}")
                 } else {
-                    format!("{}{}", symbol, formatted)
+                    format!("{symbol}{formatted}")
                 }
             }
             AmountFormat::CurrencySuffix(code) => {
                 let formatted = format_with_thousands(amount_f64, ',', '.');
                 if is_negative {
-                    format!("-{} {}", formatted, code)
+                    format!("-{formatted} {code}")
                 } else {
-                    format!("{} {}", formatted, code)
+                    format!("{formatted} {code}")
                 }
             }
             AmountFormat::Accounting => {
                 let formatted = format_with_thousands(amount_f64, ',', '.');
                 if is_negative {
-                    format!("({})", formatted)
+                    format!("({formatted})")
                 } else {
                     formatted
                 }
             }
             AmountFormat::Scientific => {
                 if is_negative {
-                    format!("-{:.5E}", amount_f64)
+                    format!("-{amount_f64:.5E}")
                 } else {
-                    format!("{:.5E}", amount_f64)
+                    format!("{amount_f64:.5E}")
                 }
             }
             AmountFormat::NoDecimals => {
@@ -254,9 +254,9 @@ impl AmountFormat {
             }
             AmountFormat::FourDecimals => {
                 if is_negative {
-                    format!("-{:.4}", amount_f64)
+                    format!("-{amount_f64:.4}")
                 } else {
-                    format!("{:.4}", amount_f64)
+                    format!("{amount_f64:.4}")
                 }
             }
         }
@@ -279,7 +279,7 @@ fn format_with_thousands(value: f64, thousand_sep: char, decimal_sep: char) -> S
     }
 
     let integer_formatted: String = result.chars().rev().collect();
-    format!("{}{}{:02}", integer_formatted, decimal_sep, decimal_part)
+    format!("{integer_formatted}{decimal_sep}{decimal_part:02}")
 }
 
 /// Identifier format variations.
@@ -310,20 +310,20 @@ impl IdentifierFormat {
             IdentifierFormat::Original => id.to_string(),
             IdentifierFormat::Upper => id.to_uppercase(),
             IdentifierFormat::Lower => id.to_lowercase(),
-            IdentifierFormat::WithPrefix(prefix) => format!("{}{}", prefix, id),
-            IdentifierFormat::WithSuffix(suffix) => format!("{}{}", id, suffix),
+            IdentifierFormat::WithPrefix(prefix) => format!("{prefix}{id}"),
+            IdentifierFormat::WithSuffix(suffix) => format!("{id}{suffix}"),
             IdentifierFormat::ZeroPadded(len) => {
                 if id.len() >= *len {
                     id.to_string()
                 } else {
-                    format!("{:0>width$}", id, width = len)
+                    format!("{id:0>len$}")
                 }
             }
             IdentifierFormat::SpacePadded(len) => {
                 if id.len() >= *len {
                     id.to_string()
                 } else {
-                    format!("{:>width$}", id, width = len)
+                    format!("{id:>len$}")
                 }
             }
             IdentifierFormat::WithSeparator {

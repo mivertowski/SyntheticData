@@ -184,10 +184,7 @@ pub async fn backend_rate_limit_middleware(
                 ("X-RateLimit-Remaining", "0".to_string()),
                 ("Retry-After", window_secs.to_string()),
             ],
-            format!(
-                "Rate limit exceeded. Max {} requests per {} seconds.",
-                max_requests, window_secs
-            ),
+            format!("Rate limit exceeded. Max {max_requests} requests per {window_secs} seconds."),
         )
             .into_response()
     }

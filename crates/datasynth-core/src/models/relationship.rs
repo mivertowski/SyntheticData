@@ -1109,7 +1109,10 @@ impl RelationshipType {
             Self::AssertionCovers,
             Self::JudgmentWithin,
         ];
-        all_types.iter().filter_map(|t| t.constraint()).collect()
+        all_types
+            .iter()
+            .filter_map(RelationshipType::constraint)
+            .collect()
     }
 }
 
@@ -1364,7 +1367,7 @@ impl StrengthWeights {
             + self.mutual_connections_weight;
 
         if (sum - 1.0).abs() > 0.01 {
-            Err(format!("Strength weights must sum to 1.0, got {}", sum))
+            Err(format!("Strength weights must sum to 1.0, got {sum}"))
         } else {
             Ok(())
         }
@@ -1666,13 +1669,13 @@ impl EntityGraph {
             .indexes
             .outgoing_edges
             .get(&key)
-            .map(|v| v.len())
+            .map(std::vec::Vec::len)
             .unwrap_or(0);
         let in_degree = self
             .indexes
             .incoming_edges
             .get(&key)
-            .map(|v| v.len())
+            .map(std::vec::Vec::len)
             .unwrap_or(0);
         out_degree + in_degree
     }
@@ -1750,7 +1753,7 @@ impl EntityGraph {
         for edge in &self.edges {
             let classification = RelationshipStrength::from_value(edge.strength);
             *strength_distribution
-                .entry(format!("{:?}", classification))
+                .entry(format!("{classification:?}"))
                 .or_insert(0) += 1;
         }
 

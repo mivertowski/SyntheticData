@@ -52,8 +52,7 @@ impl CounterfactualGenerator {
         // Validate intervention variable exists
         if graph.get_variable(intervention_var).is_none() {
             return Err(SynthError::generation(format!(
-                "Intervention variable '{}' not found in causal graph",
-                intervention_var
+                "Intervention variable '{intervention_var}' not found in causal graph"
             )));
         }
 

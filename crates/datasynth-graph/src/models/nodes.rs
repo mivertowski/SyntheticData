@@ -254,7 +254,7 @@ impl AccountNode {
             id,
             NodeType::Account,
             account_code.clone(),
-            format!("{} - {}", account_code, account_name),
+            format!("{account_code} - {account_name}"),
         );
 
         Self {

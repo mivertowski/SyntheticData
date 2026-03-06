@@ -131,20 +131,17 @@ impl CrossProcessEvaluator {
         let min_rate = self.thresholds.min_link_rate;
         if data.inventory_total > 0 && inventory_rate < min_rate {
             issues.push(format!(
-                "Inventory P2P↔O2C link rate {:.3} < {:.3}",
-                inventory_rate, min_rate
+                "Inventory P2P↔O2C link rate {inventory_rate:.3} < {min_rate:.3}"
             ));
         }
         if data.payment_total > 0 && payment_rate < min_rate {
             issues.push(format!(
-                "Payment↔Bank link rate {:.3} < {:.3}",
-                payment_rate, min_rate
+                "Payment↔Bank link rate {payment_rate:.3} < {min_rate:.3}"
             ));
         }
         if data.ic_bilateral_total > 0 && ic_rate < min_rate {
             issues.push(format!(
-                "IC bilateral trace rate {:.3} < {:.3}",
-                ic_rate, min_rate
+                "IC bilateral trace rate {ic_rate:.3} < {min_rate:.3}"
             ));
         }
 

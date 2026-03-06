@@ -121,15 +121,15 @@ impl ConfirmationGenerator {
     fn generate_confirmee_name(&mut self, conf_type: ConfirmationType) -> String {
         let n = self.confirmation_counter;
         match conf_type {
-            ConfirmationType::AccountsReceivable => format!("Customer-{}", n),
-            ConfirmationType::AccountsPayable => format!("Vendor-{}", n),
+            ConfirmationType::AccountsReceivable => format!("Customer-{n}"),
+            ConfirmationType::AccountsPayable => format!("Vendor-{n}"),
             ConfirmationType::Bank => {
                 let cities = ["New York", "London", "Chicago", "Dallas", "Boston"];
                 let idx = self.rng.random_range(0..cities.len());
                 format!("Bank of {}", cities[idx])
             }
-            ConfirmationType::Legal => format!("Law Office {}", n),
-            _ => format!("Confirmee-{}", n),
+            ConfirmationType::Legal => format!("Law Office {n}"),
+            _ => format!("Confirmee-{n}"),
         }
     }
 

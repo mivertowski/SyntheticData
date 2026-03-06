@@ -104,7 +104,7 @@ impl ARGenerator {
             let amount = self.generate_line_amount();
             let line = ARInvoiceLine::new(
                 line_num as u32,
-                format!("Product/Service {}", line_num),
+                format!("Product/Service {line_num}"),
                 dec!(1),
                 "EA".to_string(),
                 amount,
@@ -176,7 +176,7 @@ impl ARGenerator {
             memo_date,
             invoice.invoice_number.clone(),
             reason,
-            format!("{:?}", reason),
+            format!("{reason:?}"),
             invoice.gross_amount.document_currency.clone(),
         );
 

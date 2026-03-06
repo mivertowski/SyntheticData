@@ -297,7 +297,7 @@ impl TransactionGenerator {
                     TransactionChannel::Ach,
                     category,
                     counterparty,
-                    &format!("{:?} payment", category),
+                    &format!("{category:?} payment"),
                     self.random_timestamp(date),
                 )
                 .with_balance(*balance + amount, *balance);
@@ -384,7 +384,7 @@ impl TransactionGenerator {
             TransactionChannel::Online | TransactionChannel::Mobile
         ) {
             let hash = Self::deterministic_hash(txn.transaction_id.as_bytes());
-            txn.device_id = Some(format!("DEV-{:08X}", hash));
+            txn.device_id = Some(format!("DEV-{hash:08X}"));
         }
 
         // ip_address: For online channels, generate a test-range IP (RFC 5737: 198.51.100.0/24)
@@ -392,7 +392,7 @@ impl TransactionGenerator {
             let octet = (Self::deterministic_hash(txn.transaction_id.as_bytes()) & 0xFF) as u8;
             // Avoid .0 (network) and .255 (broadcast)
             let octet = (octet % 254) + 1;
-            txn.ip_address = Some(format!("198.51.100.{}", octet));
+            txn.ip_address = Some(format!("198.51.100.{octet}"));
         }
 
         // location_country: Copy from customer's residence country

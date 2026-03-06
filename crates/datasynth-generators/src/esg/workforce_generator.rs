@@ -224,7 +224,7 @@ impl WorkforceGenerator {
                 SafetyIncident {
                     id: format!("SI-{:06}", self.counter),
                     entity_id: entity_id.to_string(),
-                    facility_id: format!("FAC-{:03}", fac),
+                    facility_id: format!("FAC-{fac:03}"),
                     date,
                     incident_type,
                     days_away,

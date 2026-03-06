@@ -292,7 +292,7 @@ impl BankingGraphBuilder {
         cp_type: &str,
         category: Option<&str>,
     ) -> NodeId {
-        let key = format!("{}_{}", cp_type, name);
+        let key = format!("{cp_type}_{name}");
 
         if let Some(&id) = self.counterparty_nodes.get(&key) {
             return id;
@@ -469,11 +469,11 @@ impl BankingGraphBuilder {
             ));
 
             if let Some(typology) = txn.suspicion_reason {
-                edge.labels.push(format!("{:?}", typology));
+                edge.labels.push(format!("{typology:?}"));
             }
 
             if let Some(stage) = txn.laundering_stage {
-                edge.labels.push(format!("{:?}", stage));
+                edge.labels.push(format!("{stage:?}"));
             }
 
             if txn.is_spoofed {

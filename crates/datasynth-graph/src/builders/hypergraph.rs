@@ -43,6 +43,8 @@ const DAY_OF_MONTH_NORMALIZER: f64 = 31.0;
 const MONTH_NORMALIZER: f64 = 12.0;
 
 /// RustGraph entity type codes — canonical codes from AssureTwin's entity_registry.rs.
+/// Not all codes are consumed yet; the full set is kept for parity with the
+/// upstream registry so that new layer builders can reference them immediately.
 #[allow(dead_code)]
 mod type_codes {
     // Layer 3 — Accounting / Master Data
@@ -252,7 +254,7 @@ impl HypergraphBuilder {
                 entity_type: "CosoComponent".to_string(),
                 entity_type_code: type_codes::COSO_COMPONENT,
                 layer: HypergraphLayer::GovernanceControls,
-                external_id: format!("{:?}", component),
+                external_id: format!("{component:?}"),
                 label: name.to_string(),
                 properties: HashMap::new(),
                 features: vec![component_to_feature(component)],
@@ -261,8 +263,7 @@ impl HypergraphBuilder {
                 is_aggregate: false,
                 aggregate_count: 0,
             }) {
-                self.coso_component_ids
-                    .insert(format!("{:?}", component), id);
+                self.coso_component_ids.insert(format!("{component:?}"), id);
             }
         }
 
@@ -361,7 +362,7 @@ impl HypergraphBuilder {
                 entity_type: "CosoPrinciple".to_string(),
                 entity_type_code: type_codes::COSO_PRINCIPLE,
                 layer: HypergraphLayer::GovernanceControls,
-                external_id: format!("{:?}", principle),
+                external_id: format!("{principle:?}"),
                 label: name.to_string(),
                 properties: {
                     let mut p = HashMap::new();
@@ -378,7 +379,7 @@ impl HypergraphBuilder {
                 aggregate_count: 0,
             }) {
                 // Link principle to its parent component
-                let comp_key = format!("{:?}", parent_component);
+                let comp_key = format!("{parent_component:?}");
                 if let Some(comp_id) = self.coso_component_ids.get(&comp_key) {
                     self.edges.push(CrossLayerEdge {
                         source_id: principle_id,
@@ -811,11 +812,11 @@ impl HypergraphBuilder {
                 .header
                 .business_process
                 .as_ref()
-                .map(|bp| format!("{:?}", bp))
+                .map(|bp| format!("{bp:?}"))
                 .unwrap_or_else(|| "General".to_string());
 
             self.hyperedges.push(Hyperedge {
-                id: format!("je_{}", doc_id),
+                id: format!("je_{doc_id}"),
                 hyperedge_type: "JournalEntry".to_string(),
                 subtype,
                 participants,
@@ -839,13 +840,11 @@ impl HypergraphBuilder {
                 },
                 timestamp: Some(entry.header.posting_date),
                 is_anomaly: entry.header.is_anomaly || entry.header.is_fraud,
-                anomaly_type: entry.header.anomaly_type.clone().or_else(|| {
-                    entry
-                        .header
-                        .fraud_type
-                        .as_ref()
-                        .map(|ft| format!("{:?}", ft))
-                }),
+                anomaly_type: entry
+                    .header
+                    .anomaly_type
+                    .clone()
+                    .or_else(|| entry.header.fraud_type.as_ref().map(|ft| format!("{ft:?}"))),
                 features: compute_je_features(entry),
             });
         }
@@ -866,13 +865,11 @@ impl HypergraphBuilder {
                 .sum();
 
             let is_anomaly = entry.header.is_anomaly || entry.header.is_fraud;
-            let anomaly_type = entry.header.anomaly_type.clone().or_else(|| {
-                entry
-                    .header
-                    .fraud_type
-                    .as_ref()
-                    .map(|ft| format!("{:?}", ft))
-            });
+            let anomaly_type = entry
+                .header
+                .anomaly_type
+                .clone()
+                .or_else(|| entry.header.fraud_type.as_ref().map(|ft| format!("{ft:?}")));
 
             self.try_add_node(HypergraphNode {
                 id: node_id,
@@ -957,14 +954,14 @@ impl HypergraphBuilder {
         // Create pool nodes for high-volume vendors
         for vendor_id in &vendors_needing_pools {
             let count = vendor_doc_counts[vendor_id];
-            let pool_id = format!("pool_p2p_{}", vendor_id);
+            let pool_id = format!("pool_p2p_{vendor_id}");
             if self.try_add_node(HypergraphNode {
                 id: pool_id.clone(),
                 entity_type: "P2PPool".to_string(),
                 entity_type_code: type_codes::POOL_NODE,
                 layer: HypergraphLayer::ProcessEvents,
-                external_id: format!("pool_p2p_{}", vendor_id),
-                label: format!("P2P Pool ({}): {} docs", vendor_id, count),
+                external_id: format!("pool_p2p_{vendor_id}"),
+                label: format!("P2P Pool ({vendor_id}): {count} docs"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert("vendor_id".to_string(), Value::String(vendor_id.clone()));
@@ -993,14 +990,14 @@ impl HypergraphBuilder {
             }
 
             let doc_id = &po.header.document_id;
-            let node_id = format!("po_{}", doc_id);
+            let node_id = format!("po_{doc_id}");
             if self.try_add_node(HypergraphNode {
                 id: node_id.clone(),
                 entity_type: "PurchaseOrder".to_string(),
                 entity_type_code: type_codes::PURCHASE_ORDER,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("PO {}", doc_id),
+                label: format!("PO {doc_id}"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert("vendor_id".to_string(), Value::String(po.vendor_id.clone()));
@@ -1036,14 +1033,14 @@ impl HypergraphBuilder {
                 continue;
             }
             let doc_id = &gr.header.document_id;
-            let node_id = format!("gr_{}", doc_id);
+            let node_id = format!("gr_{doc_id}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "GoodsReceipt".to_string(),
                 entity_type_code: type_codes::GOODS_RECEIPT,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("GR {}", doc_id),
+                label: format!("GR {doc_id}"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert(
@@ -1071,14 +1068,14 @@ impl HypergraphBuilder {
                 continue;
             }
             let doc_id = &inv.header.document_id;
-            let node_id = format!("vinv_{}", doc_id);
+            let node_id = format!("vinv_{doc_id}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "VendorInvoice".to_string(),
                 entity_type_code: type_codes::VENDOR_INVOICE,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("VI {}", doc_id),
+                label: format!("VI {doc_id}"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert(
@@ -1103,14 +1100,14 @@ impl HypergraphBuilder {
         // Add payment nodes
         for pmt in payments {
             let doc_id = &pmt.header.document_id;
-            let node_id = format!("pmt_{}", doc_id);
+            let node_id = format!("pmt_{doc_id}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "Payment".to_string(),
                 entity_type_code: type_codes::PAYMENT,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("PMT {}", doc_id),
+                label: format!("PMT {doc_id}"),
                 properties: HashMap::new(),
                 features: vec![pmt.amount.to_string().parse::<f64>().unwrap_or(0.0).ln_1p()],
                 is_anomaly: false,
@@ -1159,14 +1156,14 @@ impl HypergraphBuilder {
         // Create pool nodes
         for customer_id in &customers_needing_pools {
             let count = customer_doc_counts[customer_id];
-            let pool_id = format!("pool_o2c_{}", customer_id);
+            let pool_id = format!("pool_o2c_{customer_id}");
             if self.try_add_node(HypergraphNode {
                 id: pool_id.clone(),
                 entity_type: "O2CPool".to_string(),
                 entity_type_code: type_codes::POOL_NODE,
                 layer: HypergraphLayer::ProcessEvents,
-                external_id: format!("pool_o2c_{}", customer_id),
-                label: format!("O2C Pool ({}): {} docs", customer_id, count),
+                external_id: format!("pool_o2c_{customer_id}"),
+                label: format!("O2C Pool ({customer_id}): {count} docs"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert(
@@ -1196,14 +1193,14 @@ impl HypergraphBuilder {
                 continue;
             }
             let doc_id = &so.header.document_id;
-            let node_id = format!("so_{}", doc_id);
+            let node_id = format!("so_{doc_id}");
             if self.try_add_node(HypergraphNode {
                 id: node_id.clone(),
                 entity_type: "SalesOrder".to_string(),
                 entity_type_code: type_codes::SALES_ORDER,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("SO {}", doc_id),
+                label: format!("SO {doc_id}"),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert(
@@ -1236,14 +1233,14 @@ impl HypergraphBuilder {
                 continue;
             }
             let doc_id = &del.header.document_id;
-            let node_id = format!("del_{}", doc_id);
+            let node_id = format!("del_{doc_id}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "Delivery".to_string(),
                 entity_type_code: type_codes::DELIVERY,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("DEL {}", doc_id),
+                label: format!("DEL {doc_id}"),
                 properties: HashMap::new(),
                 features: vec![],
                 is_anomaly: false,
@@ -1258,14 +1255,14 @@ impl HypergraphBuilder {
                 continue;
             }
             let doc_id = &inv.header.document_id;
-            let node_id = format!("cinv_{}", doc_id);
+            let node_id = format!("cinv_{doc_id}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "CustomerInvoice".to_string(),
                 entity_type_code: type_codes::CUSTOMER_INVOICE,
                 layer: HypergraphLayer::ProcessEvents,
                 external_id: doc_id.clone(),
-                label: format!("CI {}", doc_id),
+                label: format!("CI {doc_id}"),
                 properties: HashMap::new(),
                 features: vec![inv
                     .total_gross_amount
@@ -1572,7 +1569,7 @@ impl HypergraphBuilder {
         }
         for cust in customers {
             let cid = cust.customer_id.to_string();
-            let node_id = format!("bank_cust_{}", cid);
+            let node_id = format!("bank_cust_{cid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "BankingCustomer".into(),
@@ -1611,7 +1608,7 @@ impl HypergraphBuilder {
         }
         for acct in accounts {
             let aid = acct.account_id.to_string();
-            let node_id = format!("bank_acct_{}", aid);
+            let node_id = format!("bank_acct_{aid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "BankAccount".into(),
@@ -1653,7 +1650,7 @@ impl HypergraphBuilder {
         }
         for txn in transactions {
             let tid = txn.transaction_id.to_string();
-            let node_id = format!("bank_txn_{}", tid);
+            let node_id = format!("bank_txn_{tid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "BankTransaction".into(),
@@ -1690,13 +1687,13 @@ impl HypergraphBuilder {
                         if let Some(ref reason) = txn.suspicion_reason {
                             p.insert(
                                 "suspicion_reason".into(),
-                                Value::String(format!("{:?}", reason)),
+                                Value::String(format!("{reason:?}")),
                             );
                         }
                         if let Some(ref stage) = txn.laundering_stage {
                             p.insert(
                                 "laundering_stage".into(),
-                                Value::String(format!("{:?}", stage)),
+                                Value::String(format!("{stage:?}")),
                             );
                         }
                     }
@@ -1710,7 +1707,7 @@ impl HypergraphBuilder {
                     .abs()
                     .ln_1p()],
                 is_anomaly: txn.is_suspicious,
-                anomaly_type: txn.suspicion_reason.as_ref().map(|r| format!("{:?}", r)),
+                anomaly_type: txn.suspicion_reason.as_ref().map(|r| format!("{r:?}")),
                 is_aggregate: false,
                 aggregate_count: 0,
             });
@@ -1733,7 +1730,7 @@ impl HypergraphBuilder {
         }
         for eng in engagements {
             let eid = eng.engagement_id.to_string();
-            let node_id = format!("audit_eng_{}", eid);
+            let node_id = format!("audit_eng_{eid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "AuditEngagement".into(),
@@ -1780,7 +1777,7 @@ impl HypergraphBuilder {
         }
         for wp in workpapers {
             let wid = wp.workpaper_id.to_string();
-            let node_id = format!("audit_wp_{}", wid);
+            let node_id = format!("audit_wp_{wid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "Workpaper".into(),
@@ -1808,7 +1805,7 @@ impl HypergraphBuilder {
         }
         for f in findings {
             let fid = f.finding_id.to_string();
-            let node_id = format!("audit_find_{}", fid);
+            let node_id = format!("audit_find_{fid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "AuditFinding".into(),
@@ -1841,7 +1838,7 @@ impl HypergraphBuilder {
         }
         for ev in evidence {
             let evid = ev.evidence_id.to_string();
-            let node_id = format!("audit_ev_{}", evid);
+            let node_id = format!("audit_ev_{evid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "AuditEvidence".into(),
@@ -1878,7 +1875,7 @@ impl HypergraphBuilder {
         }
         for r in risks {
             let rid = r.risk_id.to_string();
-            let node_id = format!("audit_risk_{}", rid);
+            let node_id = format!("audit_risk_{rid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "RiskAssessment".into(),
@@ -1946,7 +1943,7 @@ impl HypergraphBuilder {
         }
         for j in judgments {
             let jid = j.judgment_id.to_string();
-            let node_id = format!("audit_judg_{}", jid);
+            let node_id = format!("audit_judg_{jid}");
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "ProfessionalJudgment".into(),

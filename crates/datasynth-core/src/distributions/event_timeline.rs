@@ -578,7 +578,7 @@ impl EventTimeline {
         match &event.event_type {
             TechnologyTransitionType::ErpMigration(config) => {
                 let phase = config.phases.phase_at(date);
-                effects.migration_phase = Some(format!("{:?}", phase));
+                effects.migration_phase = Some(format!("{phase:?}"));
 
                 // Error rate multiplier based on phase
                 effects.error_rate_delta +=

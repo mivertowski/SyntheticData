@@ -83,7 +83,7 @@ impl std::fmt::Display for RateType {
             RateType::Budget => write!(f, "BUDGET"),
             RateType::Historical => write!(f, "HISTORICAL"),
             RateType::Negotiated => write!(f, "NEGOTIATED"),
-            RateType::Custom(s) => write!(f, "{}", s),
+            RateType::Custom(s) => write!(f, "{s}"),
         }
     }
 }
@@ -307,7 +307,7 @@ impl FxRateTable {
 
     /// Returns the number of rates in the table.
     pub fn len(&self) -> usize {
-        self.rates.values().map(|v| v.len()).sum()
+        self.rates.values().map(std::vec::Vec::len).sum()
     }
 
     /// Returns true if the table is empty.

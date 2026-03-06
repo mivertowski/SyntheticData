@@ -477,7 +477,7 @@ impl BankReconciliationGenerator {
             document_id: None,
             amount,
             date: statement_date,
-            description: format!("{} ({})", desc, currency),
+            description: format!("{desc} ({currency})"),
             expected_clearing_date: if rt == ReconcilingItemType::ReturnedCheck {
                 Some(period_end + chrono::Duration::days(self.rng.random_range(3..=14) as i64))
             } else {

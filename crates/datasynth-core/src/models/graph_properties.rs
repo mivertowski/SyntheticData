@@ -29,7 +29,7 @@ impl GraphPropertyValue {
         match self {
             Self::String(s) => s.clone(),
             Self::Int(i) => i.to_string(),
-            Self::Float(f) => format!("{:.6}", f),
+            Self::Float(f) => format!("{f:.6}"),
             Self::Decimal(d) => d.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::Date(d) => d.to_string(),

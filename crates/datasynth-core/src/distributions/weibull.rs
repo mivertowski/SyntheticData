@@ -166,7 +166,7 @@ impl WeibullSampler {
         config.validate()?;
 
         let distribution = Weibull::new(config.scale, config.shape)
-            .map_err(|e| format!("Invalid Weibull distribution: {}", e))?;
+            .map_err(|e| format!("Invalid Weibull distribution: {e}"))?;
 
         Ok(Self {
             rng: ChaCha8Rng::seed_from_u64(seed),

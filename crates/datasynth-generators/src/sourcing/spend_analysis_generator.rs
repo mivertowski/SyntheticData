@@ -79,7 +79,7 @@ impl SpendAnalysisGenerator {
                 .zip(raw_shares.iter())
                 .map(|(vid, share)| VendorSpendShare {
                     vendor_id: vid.to_string(),
-                    vendor_name: format!("Vendor {}", vid),
+                    vendor_name: format!("Vendor {vid}"),
                     spend_amount: Decimal::from_f64_retain(
                         total_spend.to_string().parse::<f64>().unwrap_or(0.0) * share,
                     )

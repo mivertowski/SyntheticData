@@ -414,7 +414,7 @@ impl TemplateProvider for DefaultTemplateProvider {
         }
 
         // Fall back to generic
-        format!("{} material", material_type)
+        format!("{material_type} material")
     }
 
     fn get_asset_description(&self, category: &str, rng: &mut dyn RngCore) -> String {
@@ -430,7 +430,7 @@ impl TemplateProvider for DefaultTemplateProvider {
         }
 
         // Fall back to generic
-        format!("{} asset", category)
+        format!("{category} asset")
     }
 
     fn get_line_text(

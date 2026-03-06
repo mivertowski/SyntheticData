@@ -147,7 +147,7 @@ impl MembershipInferenceAttack {
             .map(|other| euclidean_distance(record, other))
             .collect();
 
-        distances.sort_by(|a, b| a.total_cmp(b));
+        distances.sort_by(f64::total_cmp);
 
         let k = self.config.k_neighbors.min(distances.len());
         if k == 0 {

@@ -363,8 +363,7 @@ impl FrameworkAccounts {
             "german_gaap" | "GermanGaap" | "hgb" => Self::german_gaap(),
             other => {
                 eprintln!(
-                    "FrameworkAccounts::for_framework: unknown framework {:?}, defaulting to US GAAP",
-                    other
+                    "FrameworkAccounts::for_framework: unknown framework {other:?}, defaulting to US GAAP"
                 );
                 Self::us_gaap()
             }

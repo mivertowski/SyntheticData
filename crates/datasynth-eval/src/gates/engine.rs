@@ -83,7 +83,7 @@ impl std::fmt::Display for QualityMetric {
             Self::FeatureQualityScore => write!(f, "feature_quality_score"),
             Self::GnnReadinessScore => write!(f, "gnn_readiness_score"),
             Self::DomainGapScore => write!(f, "domain_gap_score"),
-            Self::Custom(name) => write!(f, "custom:{}", name),
+            Self::Custom(name) => write!(f, "custom:{name}"),
         }
     }
 }
@@ -549,10 +549,7 @@ impl GateEngine {
                 );
                 (
                     None,
-                    format!(
-                        "custom metric '{}' not implemented — gate cannot be evaluated",
-                        name
-                    ),
+                    format!("custom metric '{name}' not implemented — gate cannot be evaluated"),
                 )
             }
         }

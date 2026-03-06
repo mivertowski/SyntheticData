@@ -224,7 +224,7 @@ impl O2CGenerator {
                 }
             })
             .unwrap_or_else(|| default_prefix.to_string());
-        format!("{}-{}-{:010}", prefix, company_code, counter)
+        format!("{prefix}-{company_code}-{counter:010}")
     }
 
     /// Pick a random line description from the country pack for the given
@@ -564,7 +564,7 @@ impl O2CGenerator {
         memo.add_line(ARCreditMemoLine {
             line_number: 1,
             material_id: None,
-            description: format!("{:?} - {}", reason, reason_desc),
+            description: format!("{reason:?} - {reason_desc}"),
             quantity: Decimal::ONE,
             unit: "EA".to_string(),
             unit_price: credit_amount,
@@ -724,7 +724,7 @@ impl O2CGenerator {
             company_code,
             &so.header.document_id,
             &customer.customer_id,
-            format!("SP{}", company_code),
+            format!("SP{company_code}"),
             fiscal_year,
             fiscal_period,
             delivery_date,

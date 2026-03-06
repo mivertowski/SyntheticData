@@ -158,8 +158,7 @@ impl NarrativeGenerator {
             AmlTypology::FunnelAccount => {
                 let source_count = self.rng.random_range(8..25);
                 points.push(format!(
-                    "{} unrelated inbound transfers from different sources",
-                    source_count
+                    "{source_count} unrelated inbound transfers from different sources"
                 ));
                 points.push("Rapid outward transfers within 24-48 hours of receipt".to_string());
                 points.push("No business relationship with senders documented".to_string());
@@ -167,8 +166,7 @@ impl NarrativeGenerator {
             AmlTypology::Layering => {
                 let hop_count = self.rng.random_range(3..8);
                 points.push(format!(
-                    "Funds traced through {} intermediary accounts",
-                    hop_count
+                    "Funds traced through {hop_count} intermediary accounts"
                 ));
                 points.push("Systematic splitting and recombination of amounts".to_string());
                 points.push("Time delays inserted between hops to avoid detection".to_string());
@@ -218,8 +216,8 @@ impl NarrativeGenerator {
         let actual_freq = self.rng.random_range(25..100);
         violations.push(ViolatedExpectation::new(
             "Monthly transaction count",
-            &format!("{}", expected_freq),
-            &format!("{}", actual_freq),
+            &format!("{expected_freq}"),
+            &format!("{actual_freq}"),
             (actual_freq as f64 - expected_freq as f64) / expected_freq as f64 * 100.0,
         ));
 
@@ -232,8 +230,8 @@ impl NarrativeGenerator {
             let actual_cash = self.rng.random_range(40..80);
             violations.push(ViolatedExpectation::new(
                 "Cash activity percentage",
-                &format!("{}%", expected_cash),
-                &format!("{}%", actual_cash),
+                &format!("{expected_cash}%"),
+                &format!("{actual_cash}%"),
                 (actual_cash - expected_cash) as f64,
             ));
         }
@@ -243,8 +241,8 @@ impl NarrativeGenerator {
         let actual_vol = self.rng.random_range(50000..250000);
         violations.push(ViolatedExpectation::new(
             "Monthly transaction volume",
-            &format!("${}", expected_vol),
-            &format!("${}", actual_vol),
+            &format!("${expected_vol}"),
+            &format!("${actual_vol}"),
             (actual_vol as f64 - expected_vol as f64) / expected_vol as f64 * 100.0,
         ));
 
@@ -434,7 +432,7 @@ impl ExportedNarrative {
             metadata: NarrativeMetadata {
                 typology: format!("{:?}", scenario.typology),
                 sophistication: format!("{:?}", scenario.sophistication),
-                stages: scenario.stages.iter().map(|s| format!("{:?}", s)).collect(),
+                stages: scenario.stages.iter().map(|s| format!("{s:?}")).collect(),
                 start_date: scenario.start_date.format("%Y-%m-%d").to_string(),
                 end_date: scenario.end_date.format("%Y-%m-%d").to_string(),
                 account_count: scenario.involved_accounts.len(),

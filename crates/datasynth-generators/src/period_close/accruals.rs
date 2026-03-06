@@ -136,7 +136,7 @@ impl AccrualGenerator {
             doc_number.clone(),
             company_code.to_string(),
             posting_date,
-            format!("Accrued Expense: {}", description),
+            format!("Accrued Expense: {description}"),
         );
 
         // Debit Expense
@@ -144,7 +144,7 @@ impl AccrualGenerator {
             line_number: 1,
             gl_account: expense_account.to_string(),
             debit_amount: amount,
-            cost_center: cost_center.map(|s| s.to_string()),
+            cost_center: cost_center.map(std::string::ToString::to_string),
             reference: Some(doc_number.clone()),
             text: Some(description.to_string()),
             ..Default::default()
@@ -190,7 +190,7 @@ impl AccrualGenerator {
             doc_number.clone(),
             company_code.to_string(),
             posting_date,
-            format!("Accrued Revenue: {}", description),
+            format!("Accrued Revenue: {description}"),
         );
 
         // Debit Accrued Revenue Receivable
@@ -208,7 +208,7 @@ impl AccrualGenerator {
             line_number: 2,
             gl_account: revenue_account.to_string(),
             credit_amount: amount,
-            cost_center: cost_center.map(|s| s.to_string()),
+            cost_center: cost_center.map(std::string::ToString::to_string),
             reference: Some(doc_number.clone()),
             ..Default::default()
         });
@@ -244,7 +244,7 @@ impl AccrualGenerator {
             doc_number.clone(),
             company_code.to_string(),
             posting_date,
-            format!("Prepaid Amortization: {}", description),
+            format!("Prepaid Amortization: {description}"),
         );
 
         // Debit Expense
@@ -252,7 +252,7 @@ impl AccrualGenerator {
             line_number: 1,
             gl_account: expense_account.to_string(),
             debit_amount: amount,
-            cost_center: cost_center.map(|s| s.to_string()),
+            cost_center: cost_center.map(std::string::ToString::to_string),
             reference: Some(doc_number.clone()),
             text: Some(description.to_string()),
             ..Default::default()
@@ -288,7 +288,7 @@ impl AccrualGenerator {
             doc_number.clone(),
             company_code.to_string(),
             posting_date,
-            format!("Deferred Revenue Recognition: {}", description),
+            format!("Deferred Revenue Recognition: {description}"),
         );
 
         // Debit Deferred Revenue (Liability)
@@ -306,7 +306,7 @@ impl AccrualGenerator {
             line_number: 2,
             gl_account: revenue_account.to_string(),
             credit_amount: amount,
-            cost_center: cost_center.map(|s| s.to_string()),
+            cost_center: cost_center.map(std::string::ToString::to_string),
             reference: Some(doc_number.clone()),
             ..Default::default()
         });

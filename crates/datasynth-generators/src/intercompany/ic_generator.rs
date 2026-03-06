@@ -225,7 +225,7 @@ impl ICGenerator {
         let base_amount = self.generate_base_amount(tx_type);
 
         // Find relationship for transfer pricing
-        let relationship_id = format!("{}-{}", seller, buyer);
+        let relationship_id = format!("{seller}-{buyer}");
         let transfer_price = self.apply_transfer_pricing(base_amount, &relationship_id);
 
         let ic_reference = self.generate_ic_reference(date);
@@ -561,7 +561,7 @@ impl ICGenerator {
             );
             pair.seller_document = seller_doc;
             pair.buyer_document = buyer_doc;
-            pair.description = format!("Interest on loan {}", loan_id);
+            pair.description = format!("Interest on loan {loan_id}");
 
             let (seller_je, buyer_je) =
                 self.generate_journal_entries(&pair, fiscal_year, fiscal_period);

@@ -207,10 +207,10 @@ impl std::fmt::Display for TimezoneError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             TimezoneError::InvalidTimezone(tz) => {
-                write!(f, "Invalid timezone: '{}'. Use IANA timezone names.", tz)
+                write!(f, "Invalid timezone: '{tz}'. Use IANA timezone names.")
             }
             TimezoneError::AmbiguousTime(dt) => {
-                write!(f, "Ambiguous local time: {}", dt)
+                write!(f, "Ambiguous local time: {dt}")
             }
         }
     }

@@ -92,7 +92,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         // Check if buffer is full
         if buffer.len() >= self.capacity {
@@ -106,7 +106,7 @@ impl<T> BoundedChannel<T> {
                         .wait_while(buffer, |b| {
                             b.len() >= self.capacity && !self.inner.closed.load(Ordering::SeqCst)
                         })
-                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
 
                     if self.inner.closed.load(Ordering::SeqCst) {
                         return Err(SynthError::ChannelClosed);
@@ -133,7 +133,7 @@ impl<T> BoundedChannel<T> {
                                 b.len() >= self.capacity + max_overflow
                                     && !self.inner.closed.load(Ordering::SeqCst)
                             })
-                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
                         if self.inner.closed.load(Ordering::SeqCst) {
                             return Err(SynthError::ChannelClosed);
@@ -178,7 +178,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         // Check if buffer is full
         while buffer.len() >= self.capacity {
@@ -209,7 +209,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_full
                 .wait_timeout(buffer, remaining)
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             buffer = new_buffer;
 
             if wait_result.timed_out() && buffer.len() >= self.capacity {
@@ -246,7 +246,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         while buffer.is_empty() {
             if self.inner.closed.load(Ordering::SeqCst) {
@@ -257,7 +257,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_empty
                 .wait(buffer)
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
         }
 
         let item = buffer.pop_front();
@@ -277,7 +277,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         while buffer.is_empty() {
             if self.inner.closed.load(Ordering::SeqCst) {
@@ -293,7 +293,7 @@ impl<T> BoundedChannel<T> {
                 .inner
                 .not_empty
                 .wait_timeout(buffer, remaining)
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             buffer = new_buffer;
 
             if wait_result.timed_out() && buffer.is_empty() {
@@ -317,7 +317,7 @@ impl<T> BoundedChannel<T> {
             .inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let item = buffer.pop_front();
         if item.is_some() {
             self.inner.items_received.fetch_add(1, Ordering::Relaxed);
@@ -344,7 +344,7 @@ impl<T> BoundedChannel<T> {
         self.inner
             .buffer
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .len()
     }
 

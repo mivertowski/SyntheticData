@@ -196,7 +196,7 @@ impl FingerprintValidator {
             Err(e) => {
                 return Ok(ValidationResult::failure(vec![ValidationError::new(
                     "INVALID_FORMAT",
-                    format!("Not a valid ZIP archive: {}", e),
+                    format!("Not a valid ZIP archive: {e}"),
                 )]));
             }
         };
@@ -219,7 +219,7 @@ impl FingerprintValidator {
                 errors.push(
                     ValidationError::new(
                         "MISSING_REQUIRED_FILE",
-                        format!("Required file '{}' is missing", required),
+                        format!("Required file '{required}' is missing"),
                     )
                     .with_component(required),
                 );
@@ -240,7 +240,7 @@ impl FingerprintValidator {
                 Err(e) => {
                     return Ok(ValidationResult::failure(vec![ValidationError::new(
                         "INVALID_MANIFEST",
-                        format!("Failed to parse manifest: {}", e),
+                        format!("Failed to parse manifest: {e}"),
                     )
                     .with_component(file_names::MANIFEST)]));
                 }
@@ -270,8 +270,7 @@ impl FingerprintValidator {
                             ValidationError::new(
                                 "CHECKSUM_MISMATCH",
                                 format!(
-                                    "Checksum mismatch for '{}': expected {}, got {}",
-                                    file_name, expected_checksum, actual
+                                    "Checksum mismatch for '{file_name}': expected {expected_checksum}, got {actual}"
                                 ),
                             )
                             .with_component(file_name),
@@ -282,7 +281,7 @@ impl FingerprintValidator {
                     errors.push(
                         ValidationError::new(
                             "MISSING_CHECKSUMMED_FILE",
-                            format!("File '{}' listed in checksums is missing", file_name),
+                            format!("File '{file_name}' listed in checksums is missing"),
                         )
                         .with_component(file_name),
                     );
@@ -307,7 +306,7 @@ impl FingerprintValidator {
                 Err(e) => {
                     return Ok(ValidationResult::failure(vec![ValidationError::new(
                         "INVALID_SCHEMA",
-                        format!("Failed to parse schema: {}", e),
+                        format!("Failed to parse schema: {e}"),
                     )
                     .with_component(file_names::SCHEMA)]));
                 }
@@ -323,7 +322,7 @@ impl FingerprintValidator {
                 Err(e) => {
                     return Ok(ValidationResult::failure(vec![ValidationError::new(
                         "INVALID_PRIVACY_AUDIT",
-                        format!("Failed to parse privacy audit: {}", e),
+                        format!("Failed to parse privacy audit: {e}"),
                     )
                     .with_component(file_names::PRIVACY_AUDIT)]));
                 }

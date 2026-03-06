@@ -214,7 +214,7 @@ impl ToNodeProperties for CosoComponent {
         p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
         p.insert(
             "code".into(),
-            GraphPropertyValue::String(format!("{:?}", self)),
+            GraphPropertyValue::String(format!("{self:?}")),
         );
         // Number of principles in this component
         let principle_count = match self {
@@ -244,7 +244,7 @@ impl ToNodeProperties for CosoPrinciple {
         p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
         p.insert(
             "code".into(),
-            GraphPropertyValue::String(format!("{:?}", self)),
+            GraphPropertyValue::String(format!("{self:?}")),
         );
         p.insert(
             "number".into(),

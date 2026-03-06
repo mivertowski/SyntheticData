@@ -191,7 +191,7 @@ impl BetaSampler {
         config.validate()?;
 
         let distribution = Beta::new(config.alpha, config.beta)
-            .map_err(|e| format!("Invalid Beta distribution: {}", e))?;
+            .map_err(|e| format!("Invalid Beta distribution: {e}"))?;
 
         let decimal_multiplier = 10_f64.powi(config.decimal_places as i32);
         let range = config.upper_bound - config.lower_bound;

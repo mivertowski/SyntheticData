@@ -254,13 +254,13 @@ impl NetSuiteExporter {
                     custom_fields.insert(fraud_field.clone(), "T".to_string());
                     if let Some(fraud_type) = je.header.fraud_type {
                         custom_fields
-                            .insert(format!("{}_type", fraud_field), format!("{:?}", fraud_type));
+                            .insert(format!("{fraud_field}_type"), format!("{fraud_type:?}"));
                     }
                 }
             }
             if let Some(ref process_field) = self.config.process_custom_field {
                 if let Some(business_process) = je.header.business_process {
-                    custom_fields.insert(process_field.clone(), format!("{:?}", business_process));
+                    custom_fields.insert(process_field.clone(), format!("{business_process:?}"));
                 }
             }
         }
@@ -368,13 +368,13 @@ impl NetSuiteExporter {
             .to_string();
         if self.config.include_custom_fields {
             if let Some(ref fraud_field) = self.config.fraud_custom_field {
-                je_header.push_str(&format!(",{},{}_type", fraud_field, fraud_field));
+                je_header.push_str(&format!(",{fraud_field},{fraud_field}_type"));
             }
             if let Some(ref process_field) = self.config.process_custom_field {
-                je_header.push_str(&format!(",{}", process_field));
+                je_header.push_str(&format!(",{process_field}"));
             }
         }
-        writeln!(je_writer, "{}", je_header)?;
+        writeln!(je_writer, "{je_header}")?;
 
         let mut line_header = "Journal Internal ID,Line,Account,Account Name,Debit,Credit,Memo,\
             Department,Class,Location,Eliminate,Tax Code,Tax Amount"
@@ -382,7 +382,7 @@ impl NetSuiteExporter {
         if self.config.include_custom_fields {
             line_header.push_str(",custcol_cost_center,custcol_profit_center");
         }
-        writeln!(lines_writer, "{}", line_header)?;
+        writeln!(lines_writer, "{line_header}")?;
 
         for je in entries {
             let (header, lines) = self.convert(je);
@@ -411,12 +411,12 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(fraud_field)
-                            .map(|s| s.as_str())
+                            .map(std::string::String::as_str)
                             .unwrap_or(""),
                         header
                             .custom_fields
-                            .get(&format!("{}_type", fraud_field))
-                            .map(|s| s.as_str())
+                            .get(&format!("{fraud_field}_type"))
+                            .map(std::string::String::as_str)
                             .unwrap_or(""),
                     ));
                 }
@@ -426,12 +426,12 @@ impl NetSuiteExporter {
                         header
                             .custom_fields
                             .get(process_field)
-                            .map(|s| s.as_str())
+                            .map(std::string::String::as_str)
                             .unwrap_or(""),
                     ));
                 }
             }
-            writeln!(je_writer, "{}", je_row)?;
+            writeln!(je_writer, "{je_row}")?;
 
             // Write lines
             for line in lines {
@@ -457,15 +457,15 @@ impl NetSuiteExporter {
                         ",{},{}",
                         line.custom_fields
                             .get("custcol_cost_center")
-                            .map(|s| s.as_str())
+                            .map(std::string::String::as_str)
                             .unwrap_or(""),
                         line.custom_fields
                             .get("custcol_profit_center")
-                            .map(|s| s.as_str())
+                            .map(std::string::String::as_str)
                             .unwrap_or(""),
                     ));
                 }
-                writeln!(lines_writer, "{}", line_row)?;
+                writeln!(lines_writer, "{line_row}")?;
             }
         }
 
@@ -569,7 +569,7 @@ impl NetSuiteExporter {
         }
 
         let json_output = serde_json::to_string_pretty(&records)
-            .map_err(|e| SynthError::generation(format!("JSON serialization error: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("JSON serialization error: {e}")))?;
         writer.write_all(json_output.as_bytes())?;
         writer.flush()?;
 

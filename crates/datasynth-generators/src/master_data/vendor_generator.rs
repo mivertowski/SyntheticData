@@ -170,7 +170,7 @@ impl ClusterDistribution {
             + self.transactional
             + self.problematic;
         if (sum - 1.0).abs() > 0.01 {
-            Err(format!("Cluster distribution must sum to 1.0, got {}", sum))
+            Err(format!("Cluster distribution must sum to 1.0, got {sum}"))
         } else {
             Ok(())
         }
@@ -370,7 +370,7 @@ impl VendorGenerator {
         // Check if intercompany
         if self.rng.random::<f64>() < self.config.intercompany_rate {
             vendor.is_intercompany = true;
-            vendor.intercompany_code = Some(format!("IC-{}", company_code));
+            vendor.intercompany_code = Some(format!("IC-{company_code}"));
         }
 
         // Generate bank accounts
@@ -397,7 +397,7 @@ impl VendorGenerator {
         let mut vendor = self.generate_vendor(company_code, effective_date);
         vendor.is_intercompany = true;
         vendor.intercompany_code = Some(partner_company_code.to_string());
-        vendor.name = format!("{} - IC", partner_company_code);
+        vendor.name = format!("{partner_company_code} - IC");
         vendor.payment_terms = PaymentTerms::Immediate; // IC usually immediate
         vendor
     }
@@ -492,7 +492,7 @@ impl VendorGenerator {
             ];
             let mut found_unique = false;
             for suffix in &suffixes {
-                let candidate = format!("{}{}", name, suffix);
+                let candidate = format!("{name}{suffix}");
                 if !self.used_names.contains(&candidate) {
                     name = candidate;
                     found_unique = true;
@@ -580,7 +580,7 @@ impl VendorGenerator {
             bank_country: "US".to_string(),
             account_number: account,
             routing_code: routing,
-            holder_name: format!("Vendor {}", vendor_id),
+            holder_name: format!("Vendor {vendor_id}"),
             is_primary: self.vendor_counter == 1,
         }
     }
@@ -888,7 +888,7 @@ impl VendorGenerator {
         if !is_single_source {
             let alt_count = self.rng.random_range(1..4);
             for i in 0..alt_count {
-                dep.alternatives.push(format!("ALT-{}-{:03}", vendor_id, i));
+                dep.alternatives.push(format!("ALT-{vendor_id}-{i:03}"));
             }
         }
 

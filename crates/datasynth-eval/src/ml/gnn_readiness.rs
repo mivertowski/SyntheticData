@@ -215,7 +215,7 @@ impl GnnReadinessAnalyzer {
         for i in 0..total_nodes {
             if let Some(Some(ref label)) = data.node_labels.get(i) {
                 if let Some(&idx) = label_map.get(label.as_str()) {
-                    let degree = adjacency.get(&i).map_or(0, |v| v.len());
+                    let degree = adjacency.get(&i).map_or(0, std::vec::Vec::len);
                     degrees.push(degree as f64);
                     label_indices.push(idx);
                 }

@@ -149,8 +149,8 @@ impl PaymentTerms {
     /// Creates standard net terms.
     pub fn net(days: u32) -> Self {
         Self {
-            terms_code: format!("NET{}", days),
-            description: format!("Net {} days", days),
+            terms_code: format!("NET{days}"),
+            description: format!("Net {days} days"),
             net_due_days: days,
             discount_percent: None,
             discount_days: None,
@@ -162,10 +162,9 @@ impl PaymentTerms {
     /// Creates terms with early payment discount.
     pub fn with_discount(net_days: u32, discount_percent: Decimal, discount_days: u32) -> Self {
         Self {
-            terms_code: format!("{}/{}NET{}", discount_percent, discount_days, net_days),
+            terms_code: format!("{discount_percent}/{discount_days}NET{net_days}"),
             description: format!(
-                "{}% discount if paid within {} days, net {} days",
-                discount_percent, discount_days, net_days
+                "{discount_percent}% discount if paid within {discount_days} days, net {net_days} days"
             ),
             net_due_days: net_days,
             discount_percent: Some(discount_percent),

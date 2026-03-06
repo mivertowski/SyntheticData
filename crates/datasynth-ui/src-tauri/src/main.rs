@@ -123,15 +123,15 @@ async fn check_health(state: State<'_, Arc<AppState>>) -> Result<HealthResponse,
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .get(format!("{}/health", url))
+        .get(format!("{url}/health"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<HealthResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Get server metrics.
@@ -140,15 +140,15 @@ async fn get_metrics(state: State<'_, Arc<AppState>>) -> Result<MetricsResponse,
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .get(format!("{}/api/metrics", url))
+        .get(format!("{url}/api/metrics"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<MetricsResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Get current configuration.
@@ -157,15 +157,15 @@ async fn get_config(state: State<'_, Arc<AppState>>) -> Result<ConfigResponse, S
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .get(format!("{}/api/config", url))
+        .get(format!("{url}/api/config"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<ConfigResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Update configuration.
@@ -177,16 +177,16 @@ async fn set_config(
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/config", url))
+        .post(format!("{url}/api/config"))
         .json(&config)
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<ConfigResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Start bulk generation.
@@ -198,16 +198,16 @@ async fn bulk_generate(
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/generate/bulk", url))
+        .post(format!("{url}/api/generate/bulk"))
         .json(&request)
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<BulkGenerateResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Start streaming.
@@ -216,16 +216,16 @@ async fn start_stream(state: State<'_, Arc<AppState>>) -> Result<StreamResponse,
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/stream/start", url))
+        .post(format!("{url}/api/stream/start"))
         .json(&serde_json::json!({}))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<StreamResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Stop streaming.
@@ -234,15 +234,15 @@ async fn stop_stream(state: State<'_, Arc<AppState>>) -> Result<StreamResponse, 
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/stream/stop", url))
+        .post(format!("{url}/api/stream/stop"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<StreamResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Pause streaming.
@@ -251,15 +251,15 @@ async fn pause_stream(state: State<'_, Arc<AppState>>) -> Result<StreamResponse,
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/stream/pause", url))
+        .post(format!("{url}/api/stream/pause"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<StreamResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Resume streaming.
@@ -268,15 +268,15 @@ async fn resume_stream(state: State<'_, Arc<AppState>>) -> Result<StreamResponse
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/stream/resume", url))
+        .post(format!("{url}/api/stream/resume"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<StreamResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 /// Trigger a specific pattern.
@@ -288,15 +288,15 @@ async fn trigger_pattern(
     let url = state.server_url.read().await.clone();
     let response = state
         .client
-        .post(format!("{}/api/stream/trigger/{}", url, pattern))
+        .post(format!("{url}/api/stream/trigger/{pattern}"))
         .send()
         .await
-        .map_err(|e| format!("Failed to connect: {}", e))?;
+        .map_err(|e| format!("Failed to connect: {e}"))?;
 
     response
         .json::<StreamResponse>()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))
+        .map_err(|e| format!("Failed to parse response: {e}"))
 }
 
 fn main() {

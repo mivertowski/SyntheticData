@@ -245,7 +245,7 @@ impl FeatureAnalyzer {
         }
         if let Some(s) = skewness {
             if s.abs() > 2.0 {
-                issues.push(format!("High skewness: {:.2}", s));
+                issues.push(format!("High skewness: {s:.2}"));
             }
         }
 
@@ -289,7 +289,7 @@ impl FeatureAnalyzer {
         } else if unique_count == 1 {
             issues.push("Only one unique value".to_string());
         } else if unique_count > self.max_categorical_cardinality {
-            issues.push(format!("High cardinality: {} unique values", unique_count));
+            issues.push(format!("High cardinality: {unique_count} unique values"));
         }
 
         if missing_rate > self.missing_threshold {

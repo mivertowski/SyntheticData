@@ -117,7 +117,7 @@ impl Address {
         let unit_part = self
             .unit
             .as_ref()
-            .map(|u| format!(", {}", u))
+            .map(|u| format!(", {u}"))
             .unwrap_or_default();
         format!(
             "{} {} {}{}, {}, {} {}, {}",
@@ -271,7 +271,7 @@ impl AddressGenerator {
                     let num2 = rng.random_range(1..9);
                     let letter3 = (b'A' + rng.random_range(0..26)) as char;
                     let num3 = rng.random_range(1..9);
-                    format!("{}{}{} {}{}{}", letter1, num1, letter2, num2, letter3, num3)
+                    format!("{letter1}{num1}{letter2} {num2}{letter3}{num3}")
                 }
             }
             AddressRegion::Europe => {

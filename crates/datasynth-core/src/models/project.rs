@@ -337,22 +337,22 @@ impl ProjectPool {
 
             // Add WBS elements
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.01", id), id, "Planning & Design").with_budget(
+                WbsElement::new(&format!("{id}.01"), id, "Planning & Design").with_budget(
                     budget * Decimal::from_f64_retain(0.1).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.02", id), id, "Procurement").with_budget(
+                WbsElement::new(&format!("{id}.02"), id, "Procurement").with_budget(
                     budget * Decimal::from_f64_retain(0.4).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.03", id), id, "Implementation").with_budget(
+                WbsElement::new(&format!("{id}.03"), id, "Implementation").with_budget(
                     budget * Decimal::from_f64_retain(0.4).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.04", id), id, "Testing & Validation").with_budget(
+                WbsElement::new(&format!("{id}.04"), id, "Testing & Validation").with_budget(
                     budget * Decimal::from_f64_retain(0.1).expect("valid decimal fraction"),
                 ),
             );
@@ -385,12 +385,12 @@ impl ProjectPool {
                 .with_company(company_code);
 
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.01", id), id, "Phase 1").with_budget(
+                WbsElement::new(&format!("{id}.01"), id, "Phase 1").with_budget(
                     budget * Decimal::from_f64_retain(0.5).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.02", id), id, "Phase 2").with_budget(
+                WbsElement::new(&format!("{id}.02"), id, "Phase 2").with_budget(
                     budget * Decimal::from_f64_retain(0.5).expect("valid decimal fraction"),
                 ),
             );
@@ -419,22 +419,22 @@ impl ProjectPool {
                 .with_company(company_code);
 
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.01", id), id, "Assessment").with_budget(
+                WbsElement::new(&format!("{id}.01"), id, "Assessment").with_budget(
                     budget * Decimal::from_f64_retain(0.15).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.02", id), id, "Development").with_budget(
+                WbsElement::new(&format!("{id}.02"), id, "Development").with_budget(
                     budget * Decimal::from_f64_retain(0.50).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.03", id), id, "Deployment").with_budget(
+                WbsElement::new(&format!("{id}.03"), id, "Deployment").with_budget(
                     budget * Decimal::from_f64_retain(0.25).expect("valid decimal fraction"),
                 ),
             );
             project.add_wbs_element(
-                WbsElement::new(&format!("{}.04", id), id, "Support").with_budget(
+                WbsElement::new(&format!("{id}.04"), id, "Support").with_budget(
                     budget * Decimal::from_f64_retain(0.10).expect("valid decimal fraction"),
                 ),
             );

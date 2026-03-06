@@ -62,8 +62,7 @@ impl LifecycleStateMachine {
         for (state, prob) in &state_probs {
             if (*prob - 1.0).abs() > 0.05 {
                 return Err(format!(
-                    "State '{}' transitions sum to {:.2}, expected ~1.0",
-                    state, prob
+                    "State '{state}' transitions sum to {prob:.2}, expected ~1.0"
                 ));
             }
         }

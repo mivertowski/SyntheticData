@@ -87,16 +87,14 @@ impl NlConfigGenerator {
         // Validate inputs
         if !(1..=120).contains(&period_months) {
             return Err(SynthError::generation(format!(
-                "Period months must be between 1 and 120, got {}",
-                period_months
+                "Period months must be between 1 and 120, got {period_months}"
             )));
         }
 
         let valid_complexities = ["small", "medium", "large"];
         if !valid_complexities.contains(&complexity) {
             return Err(SynthError::generation(format!(
-                "Invalid company size '{}', must be one of: small, medium, large",
-                complexity
+                "Invalid company size '{complexity}', must be one of: small, medium, large"
             )));
         }
 
@@ -107,27 +105,23 @@ impl NlConfigGenerator {
 
         // Global settings
         yaml.push_str(&format!(
-            "global:\n  industry: {}\n  start_date: \"2024-01-01\"\n  period_months: {}\n  seed: 42\n\n",
-            industry, period_months
+            "global:\n  industry: {industry}\n  start_date: \"2024-01-01\"\n  period_months: {period_months}\n  seed: 42\n\n"
         ));
 
         // Companies
         yaml.push_str(&format!(
-            "companies:\n  - code: \"C001\"\n    name: \"{}\"\n    currency: \"{}\"\n    country: \"{}\"\n\n",
-            company_name, currency, country
+            "companies:\n  - code: \"C001\"\n    name: \"{company_name}\"\n    currency: \"{currency}\"\n    country: \"{country}\"\n\n"
         ));
 
         // Chart of accounts
         yaml.push_str(&format!(
-            "chart_of_accounts:\n  complexity: {}\n\n",
-            complexity
+            "chart_of_accounts:\n  complexity: {complexity}\n\n"
         ));
 
         // Transactions
         let tx_count = Self::complexity_to_tx_count(complexity);
         yaml.push_str(&format!(
-            "transactions:\n  count: {}\n  anomaly_rate: 0.02\n\n",
-            tx_count
+            "transactions:\n  count: {tx_count}\n  anomaly_rate: 0.02\n\n"
         ));
 
         // Output
@@ -168,8 +162,7 @@ impl NlConfigGenerator {
                 }
                 "distributions" => {
                     yaml.push_str(&format!(
-                        "distributions:\n  enabled: true\n  industry_profile: {}\n  amounts:\n    enabled: true\n    distribution_type: lognormal\n    benford_compliance: true\n\n",
-                        industry
+                        "distributions:\n  enabled: true\n  industry_profile: {industry}\n  amounts:\n    enabled: true\n    distribution_type: lognormal\n    benford_compliance: true\n\n"
                     ));
                 }
                 other => {
@@ -207,7 +200,7 @@ impl NlConfigGenerator {
             .ok_or_else(|| SynthError::generation("No JSON found in LLM response"))?;
 
         let value: serde_json::Value = serde_json::from_str(json_str)
-            .map_err(|e| SynthError::generation(format!("Failed to parse LLM JSON: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to parse LLM JSON: {e}")))?;
 
         let industry = value
             .get("industry")
@@ -223,7 +216,7 @@ impl NlConfigGenerator {
             .map(String::from);
         let period_months = value
             .get("period_months")
-            .and_then(|v| v.as_u64())
+            .and_then(serde_json::Value::as_u64)
             .map(|v| v as u32);
         let features = value
             .get("features")
@@ -359,7 +352,7 @@ impl NlConfigGenerator {
         // Fall back to short codes (padded with spaces).
         // Excluded: "in" (India - clashes with preposition "in"),
         //           "de" (Germany - clashes with various uses).
-        let padded = format!(" {} ", text);
+        let padded = format!(" {text} ");
         let safe_codes = [
             (" us ", "US"),
             (" uk ", "GB"),
@@ -424,10 +417,10 @@ impl NlConfigGenerator {
 
         // Try "N year(s)" pattern
         for (word, num) in &word_numbers {
-            if text.contains(&format!("{} year", word)) {
+            if text.contains(&format!("{word} year")) {
                 return Some(num * 12);
             }
-            if text.contains(&format!("{} month", word)) {
+            if text.contains(&format!("{word} month")) {
                 return Some(*num);
             }
         }

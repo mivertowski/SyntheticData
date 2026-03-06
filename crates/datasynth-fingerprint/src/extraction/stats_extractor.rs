@@ -54,7 +54,11 @@ fn extract_from_csv(
         .delimiter(csv.delimiter)
         .from_path(&csv.path)?;
 
-    let headers: Vec<String> = reader.headers()?.iter().map(|s| s.to_string()).collect();
+    let headers: Vec<String> = reader
+        .headers()?
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
 
     // Collect all values by column
     let mut columns: Vec<Vec<String>> = vec![Vec::new(); headers.len()];
@@ -226,12 +230,12 @@ fn extract_column_stats(
 
         if numeric_values.len() > values.len() / 2 {
             // Treat as numeric
-            let target = format!("{}.{}", table_name, header);
+            let target = format!("{table_name}.{header}");
             let numeric_stats = compute_numeric_stats(&numeric_values, &target, privacy)?;
             stats.add_numeric(table_name, header, numeric_stats);
         } else {
             // Treat as categorical
-            let target = format!("{}.{}", table_name, header);
+            let target = format!("{table_name}.{header}");
             let cat_stats = compute_categorical_stats(values, &target, privacy)?;
             stats.add_categorical(table_name, header, cat_stats);
         }
@@ -296,7 +300,7 @@ fn extract_column_stats(
             class_stats.row_count = *class_row_counts.get(&key).unwrap_or(&0);
 
             if !amounts.is_empty() {
-                let target = format!("account_class.{}", pattern);
+                let target = format!("account_class.{pattern}");
                 if let Ok(numeric) = compute_numeric_stats(amounts, &target, privacy) {
                     class_stats.numeric = Some(numeric);
                 }
@@ -321,7 +325,7 @@ fn compute_numeric_stats(
 
     let count = values.len() as u64;
     let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.total_cmp(b));
+    sorted.sort_by(f64::total_cmp);
 
     // Winsorize before computing stats
     privacy.winsorize(&mut sorted, target);
@@ -336,9 +340,9 @@ fn compute_numeric_stats(
     let std_dev = variance.sqrt();
 
     // Add noise to statistics
-    let noised_mean = privacy.add_noise(mean, max - min, &format!("{}.mean", target))?;
+    let noised_mean = privacy.add_noise(mean, max - min, &format!("{target}.mean"))?;
     let noised_std_dev =
-        privacy.add_noise(std_dev, (max - min) / 2.0, &format!("{}.std_dev", target))?;
+        privacy.add_noise(std_dev, (max - min) / 2.0, &format!("{target}.std_dev"))?;
 
     // Compute percentiles
     let percentiles = compute_percentiles(&sorted);
@@ -459,7 +463,7 @@ fn compute_benford_first_digit(values: &[f64]) -> [f64; 9] {
     for v in values {
         let abs_v = v.abs();
         if abs_v > 0.0 {
-            let s = format!("{:.15}", abs_v);
+            let s = format!("{abs_v:.15}");
             for c in s.chars() {
                 if c.is_ascii_digit() && c != '0' {
                     if let Some(digit) = c.to_digit(10) {
@@ -588,7 +592,7 @@ fn account_class(account: &str) -> Option<(String, &'static str)> {
         return None;
     }
     let digit = first_char.to_digit(10)?;
-    let pattern = format!("{}XXX", digit);
+    let pattern = format!("{digit}XXX");
     let label = match digit {
         0 => "Fixed Assets",
         1 => "Assets",

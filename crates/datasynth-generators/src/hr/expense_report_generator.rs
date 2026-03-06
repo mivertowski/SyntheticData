@@ -21,7 +21,8 @@ pub struct ExpenseReportGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     item_uuid_factory: DeterministicUuidFactory,
-    // Stored for future use by with_config(); generate() currently takes config as a parameter.
+    /// Stored via `with_config()`; will be used when per-generator config
+    /// drives expense category weights and policy thresholds.
     #[allow(dead_code)]
     config: ExpenseConfig,
     /// Pool of real employee IDs for approved_by references.
@@ -30,7 +31,9 @@ pub struct ExpenseReportGenerator {
     cost_center_ids_pool: Vec<String>,
     /// Mapping of employee_id → employee_name for denormalization (DS-011).
     employee_names: HashMap<String, String>,
-    /// Optional country pack for locale-aware generation.
+    /// Optional country pack for locale-aware generation (set via
+    /// `set_country_pack`); will drive locale-specific currencies and
+    /// business rules in a future release.
     #[allow(dead_code)]
     country_pack: Option<datasynth_core::CountryPack>,
 }

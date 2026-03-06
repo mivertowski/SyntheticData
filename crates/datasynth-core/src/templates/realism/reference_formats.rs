@@ -107,7 +107,7 @@ impl EnhancedReferenceGenerator {
     ) -> String {
         let prefix = doc_type.prefix();
         let seq = self.next_sequence(EnhancedReferenceFormat::Standard, year);
-        format!("{}-{}-{:06}", prefix, year, seq)
+        format!("{prefix}-{year}-{seq:06}")
     }
 
     /// Generate an external reference (vendor/bank style).
@@ -117,22 +117,22 @@ impl EnhancedReferenceGenerator {
 
     fn generate_standard(&self, year: i32) -> String {
         let seq = self.next_sequence(EnhancedReferenceFormat::Standard, year);
-        format!("DOC-{}-{:06}", year, seq)
+        format!("DOC-{year}-{seq:06}")
     }
 
     fn generate_sap_style(&self) -> String {
         let num = self.sap_counter.fetch_add(1, Ordering::Relaxed);
-        format!("{:010}", num)
+        format!("{num:010}")
     }
 
     fn generate_oracle_style(&self, year: i32) -> String {
         let seq = self.next_sequence(EnhancedReferenceFormat::OracleStyle, year);
-        format!("ORG1-{}-{:05}", year, seq)
+        format!("ORG1-{year}-{seq:05}")
     }
 
     fn generate_netsuite_style(&self) -> String {
         let seq = self.next_sequence(EnhancedReferenceFormat::NetSuiteStyle, 0);
-        format!("INV{:05}", seq)
+        format!("INV{seq:05}")
     }
 
     fn generate_alphanumeric(&self, rng: &mut impl Rng) -> String {
@@ -141,7 +141,7 @@ impl EnhancedReferenceGenerator {
             .collect();
         let numbers = rng.random_range(100000..999999);
         let check = (b'A' + rng.random_range(0..26)) as char;
-        format!("{}{:06}{}", letters, numbers, check)
+        format!("{letters}{numbers:06}{check}")
     }
 
     fn generate_short_uuid(&self, rng: &mut impl Rng) -> String {
@@ -162,7 +162,7 @@ impl EnhancedReferenceGenerator {
         let month = rng.random_range(1..=12);
         let day = rng.random_range(1..=28);
         let seq = rng.random_range(1..=9999);
-        format!("{}{:02}{:02}-{:04}", year, month, day, seq)
+        format!("{year}{month:02}{day:02}-{seq:04}")
     }
 
     fn generate_vendor_invoice(&self, rng: &mut impl Rng) -> String {
@@ -220,12 +220,12 @@ impl EnhancedReferenceGenerator {
         let month = rng.random_range(1..=12);
         let day = rng.random_range(1..=28);
         let seq = rng.random_range(1..=999999);
-        format!("BNK{}{:02}{:02}{:06}", year, month, day, seq)
+        format!("BNK{year}{month:02}{day:02}{seq:06}")
     }
 
     fn generate_check_number(&self) -> String {
         let num = self.check_counter.fetch_add(1, Ordering::Relaxed);
-        format!("{:06}", num)
+        format!("{num:06}")
     }
 
     fn next_sequence(&self, format: EnhancedReferenceFormat, year: i32) -> u64 {

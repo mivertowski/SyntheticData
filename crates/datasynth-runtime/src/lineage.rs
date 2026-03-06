@@ -226,26 +226,23 @@ pub fn build_generation_lineage(
     let mut builder = LineageGraphBuilder::new();
 
     for section in config_sections {
-        builder.add_config_section(
-            &format!("config:{}", section),
-            &format!("Config: {}", section),
-        );
+        builder.add_config_section(&format!("config:{section}"), &format!("Config: {section}"));
     }
 
     for (id, label) in phases {
-        builder.add_generator_phase(&format!("phase:{}", id), label);
+        builder.add_generator_phase(&format!("phase:{id}"), label);
     }
 
     for (id, label, path) in output_files {
-        builder.add_output_file(&format!("output:{}", id), label, path);
+        builder.add_output_file(&format!("output:{id}"), label, path);
     }
 
     for (phase, config) in phase_config_map {
-        builder.configured_by(&format!("phase:{}", phase), &format!("config:{}", config));
+        builder.configured_by(&format!("phase:{phase}"), &format!("config:{config}"));
     }
 
     for (phase, output) in phase_output_map {
-        builder.produced_by(&format!("output:{}", output), &format!("phase:{}", phase));
+        builder.produced_by(&format!("output:{output}"), &format!("phase:{phase}"));
     }
 
     builder.build()

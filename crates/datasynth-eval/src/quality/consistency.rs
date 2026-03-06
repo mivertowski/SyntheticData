@@ -292,7 +292,7 @@ impl ConsistencyAnalyzer {
                     *violations_by_type.entry(rule.name.clone()).or_insert(0) += 1;
 
                     if example_violations.len() < self.max_examples {
-                        example_violations.push(format!("Record {}: {:?}", idx, record));
+                        example_violations.push(format!("Record {idx}: {record:?}"));
                     }
                 }
             }

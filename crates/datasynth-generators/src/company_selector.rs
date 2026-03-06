@@ -110,7 +110,7 @@ impl WeightedCompanySelector {
             // Fallback to last company (should rarely happen due to floating point)
             self.company_codes
                 .last()
-                .map(|s| s.as_str())
+                .map(std::string::String::as_str)
                 .unwrap_or("1000")
         }
     }

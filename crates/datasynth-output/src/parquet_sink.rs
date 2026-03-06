@@ -149,14 +149,13 @@ impl ParquetSink {
 
         let props = WriterProperties::builder()
             .set_compression(Compression::ZSTD(ZstdLevel::try_new(3).map_err(|e| {
-                SynthError::generation(format!("Failed to create Zstd compression level: {}", e))
+                SynthError::generation(format!("Failed to create Zstd compression level: {e}"))
             })?))
             .set_max_row_group_row_count(Some(batch_size))
             .build();
 
-        let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props)).map_err(|e| {
-            SynthError::generation(format!("Failed to create Parquet writer: {}", e))
-        })?;
+        let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props))
+            .map_err(|e| SynthError::generation(format!("Failed to create Parquet writer: {e}")))?;
 
         Ok(Self {
             writer,
@@ -176,7 +175,7 @@ impl ParquetSink {
         let batch = self.build_record_batch()?;
         self.writer
             .write(&batch)
-            .map_err(|e| SynthError::generation(format!("Failed to write Parquet batch: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to write Parquet batch: {e}")))?;
         self.buffer.clear();
         Ok(())
     }
@@ -220,9 +219,8 @@ impl ParquetSink {
             Arc::new(StringArray::from(cost_center)),
         ];
 
-        RecordBatch::try_new(Arc::clone(&self.schema), columns).map_err(|e| {
-            SynthError::generation(format!("Failed to build Arrow RecordBatch: {}", e))
-        })
+        RecordBatch::try_new(Arc::clone(&self.schema), columns)
+            .map_err(|e| SynthError::generation(format!("Failed to build Arrow RecordBatch: {e}")))
     }
 }
 
@@ -264,17 +262,17 @@ impl Sink for ParquetSink {
 
     fn flush(&mut self) -> SynthResult<()> {
         self.flush_buffer()?;
-        self.writer.flush().map_err(|e| {
-            SynthError::generation(format!("Failed to flush Parquet writer: {}", e))
-        })?;
+        self.writer
+            .flush()
+            .map_err(|e| SynthError::generation(format!("Failed to flush Parquet writer: {e}")))?;
         Ok(())
     }
 
     fn close(mut self) -> SynthResult<()> {
         self.flush_buffer()?;
-        self.writer.close().map_err(|e| {
-            SynthError::generation(format!("Failed to close Parquet writer: {}", e))
-        })?;
+        self.writer
+            .close()
+            .map_err(|e| SynthError::generation(format!("Failed to close Parquet writer: {e}")))?;
         Ok(())
     }
 

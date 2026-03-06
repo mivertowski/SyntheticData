@@ -103,8 +103,7 @@ impl BankingConfig {
         let retail_sum: f64 = self.population.retail_persona_weights.values().sum();
         if (retail_sum - 1.0).abs() > 0.01 {
             errors.push(format!(
-                "Retail persona weights must sum to 1.0, got {}",
-                retail_sum
+                "Retail persona weights must sum to 1.0, got {retail_sum}"
             ));
         }
 

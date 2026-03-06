@@ -650,7 +650,7 @@ impl CollusionRing {
             .behavior
             .concealment_techniques
             .iter()
-            .map(|c| c.difficulty_bonus())
+            .map(datasynth_core::ConcealmentTechnique::difficulty_bonus)
             .sum();
 
         // Ring type multiplier

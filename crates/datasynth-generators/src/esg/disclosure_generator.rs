@@ -328,31 +328,31 @@ impl DisclosureGenerator {
         match topic {
             "GHG Emissions - Scope 1" | "GHG Emissions - Scope 2" | "GHG Emissions - Scope 3" => {
                 let val: f64 = self.rng.random_range(100.0..50000.0);
-                (format!("{:.1}", val), "tonnes CO2e".to_string())
+                (format!("{val:.1}"), "tonnes CO2e".to_string())
             }
             "Energy Consumption" => {
                 let val: f64 = self.rng.random_range(1_000_000.0..50_000_000.0);
-                (format!("{:.0}", val), "kWh".to_string())
+                (format!("{val:.0}"), "kWh".to_string())
             }
             "Water Withdrawal" => {
                 let val: f64 = self.rng.random_range(10_000.0..500_000.0);
-                (format!("{:.0}", val), "m3".to_string())
+                (format!("{val:.0}"), "m3".to_string())
             }
             "Waste Generation" => {
                 let val: f64 = self.rng.random_range(100.0..10_000.0);
-                (format!("{:.1}", val), "tonnes".to_string())
+                (format!("{val:.1}"), "tonnes".to_string())
             }
             "Workforce Diversity" => {
                 let val: f64 = self.rng.random_range(30.0..55.0);
-                (format!("{:.1}%", val), "percent female".to_string())
+                (format!("{val:.1}%"), "percent female".to_string())
             }
             "Pay Equity" => {
                 let val: f64 = self.rng.random_range(0.85..1.05);
-                (format!("{:.3}", val), "ratio".to_string())
+                (format!("{val:.3}"), "ratio".to_string())
             }
             "Occupational Safety" => {
                 let val: f64 = self.rng.random_range(0.5..5.0);
-                (format!("{:.2}", val), "TRIR".to_string())
+                (format!("{val:.2}"), "TRIR".to_string())
             }
             "Board Composition" => {
                 let val: f64 = self.rng.random_range(0.50..0.80);
@@ -367,7 +367,7 @@ impl DisclosureGenerator {
             }
             "Supply Chain Assessment" => {
                 let val: f64 = self.rng.random_range(60.0..95.0);
-                (format!("{:.1}%", val), "percent assessed".to_string())
+                (format!("{val:.1}%"), "percent assessed".to_string())
             }
             _ => ("N/A".to_string(), "N/A".to_string()),
         }

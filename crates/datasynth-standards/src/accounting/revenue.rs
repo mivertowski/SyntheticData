@@ -148,7 +148,7 @@ impl CustomerContract {
     pub fn is_fully_satisfied(&self) -> bool {
         self.performance_obligations
             .iter()
-            .all(|po| po.is_satisfied())
+            .all(PerformanceObligation::is_satisfied)
     }
 }
 

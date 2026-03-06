@@ -165,59 +165,53 @@ impl InjectionStrategy {
     pub fn description(&self) -> String {
         match self {
             InjectionStrategy::AmountManipulation { factor, .. } => {
-                format!("Amount multiplied by {:.2}", factor)
+                format!("Amount multiplied by {factor:.2}")
             }
             InjectionStrategy::ThresholdAvoidance { threshold, .. } => {
-                format!("Amount adjusted to avoid {} threshold", threshold)
+                format!("Amount adjusted to avoid {threshold} threshold")
             }
             InjectionStrategy::DateShift { days_shifted, .. } => {
                 if *days_shifted < 0 {
                     format!("Date backdated by {} days", days_shifted.abs())
                 } else {
-                    format!("Date forward-dated by {} days", days_shifted)
+                    format!("Date forward-dated by {days_shifted} days")
                 }
             }
             InjectionStrategy::SelfApproval { user_id } => {
-                format!("Self-approval by user {}", user_id)
+                format!("Self-approval by user {user_id}")
             }
             InjectionStrategy::SoDViolation { duty1, duty2, .. } => {
-                format!("SoD violation: {} and {}", duty1, duty2)
+                format!("SoD violation: {duty1} and {duty2}")
             }
             InjectionStrategy::ExactDuplicate { original_doc_id } => {
-                format!("Exact duplicate of {}", original_doc_id)
+                format!("Exact duplicate of {original_doc_id}")
             }
             InjectionStrategy::NearDuplicate {
                 original_doc_id,
                 varied_fields,
             } => {
-                format!(
-                    "Near-duplicate of {} (varied: {:?})",
-                    original_doc_id, varied_fields
-                )
+                format!("Near-duplicate of {original_doc_id} (varied: {varied_fields:?})")
             }
             InjectionStrategy::CircularFlow { entity_chain } => {
                 format!("Circular flow through {} entities", entity_chain.len())
             }
             InjectionStrategy::SplitTransaction { split_count, .. } => {
-                format!("Split into {} transactions", split_count)
+                format!("Split into {split_count} transactions")
             }
             InjectionStrategy::RoundNumbering { .. } => "Amount rounded to even number".to_string(),
             InjectionStrategy::TimingManipulation { timing_type, .. } => {
-                format!("Timing manipulation: {}", timing_type)
+                format!("Timing manipulation: {timing_type}")
             }
             InjectionStrategy::AccountMisclassification {
                 correct_account,
                 incorrect_account,
             } => {
-                format!(
-                    "Misclassified from {} to {}",
-                    correct_account, incorrect_account
-                )
+                format!("Misclassified from {correct_account} to {incorrect_account}")
             }
             InjectionStrategy::MissingField { field_name } => {
-                format!("Missing required field: {}", field_name)
+                format!("Missing required field: {field_name}")
             }
-            InjectionStrategy::Custom { name, .. } => format!("Custom: {}", name),
+            InjectionStrategy::Custom { name, .. } => format!("Custom: {name}"),
         }
     }
 
@@ -275,11 +269,11 @@ impl AnomalyType {
     /// Returns the specific type name.
     pub fn type_name(&self) -> String {
         match self {
-            AnomalyType::Fraud(t) => format!("{:?}", t),
-            AnomalyType::Error(t) => format!("{:?}", t),
-            AnomalyType::ProcessIssue(t) => format!("{:?}", t),
-            AnomalyType::Statistical(t) => format!("{:?}", t),
-            AnomalyType::Relational(t) => format!("{:?}", t),
+            AnomalyType::Fraud(t) => format!("{t:?}"),
+            AnomalyType::Error(t) => format!("{t:?}"),
+            AnomalyType::ProcessIssue(t) => format!("{t:?}"),
+            AnomalyType::Statistical(t) => format!("{t:?}"),
+            AnomalyType::Relational(t) => format!("{t:?}"),
             AnomalyType::Custom(s) => s.clone(),
         }
     }
@@ -2938,7 +2932,7 @@ impl Default for AcfeCalibration {
         let mut detection_method_distribution = HashMap::new();
         for method in AcfeDetectionMethod::all_variants() {
             detection_method_distribution.insert(
-                format!("{:?}", method).to_lowercase(),
+                format!("{method:?}").to_lowercase(),
                 method.typical_detection_rate(),
             );
         }
@@ -3039,7 +3033,7 @@ impl FraudTriangle {
         let opportunity_score: f64 = self
             .opportunities
             .iter()
-            .map(|o| o.risk_weight())
+            .map(OpportunityFactor::risk_weight)
             .sum::<f64>()
             / self.opportunities.len().max(1) as f64;
         let rationalization_score = self.rationalization.risk_weight();
@@ -3359,10 +3353,7 @@ impl AnomalyRateConfig {
             + self.relational_rate;
 
         if (sum - 1.0).abs() > 0.01 {
-            return Err(format!(
-                "Anomaly category rates must sum to 1.0, got {}",
-                sum
-            ));
+            return Err(format!("Anomaly category rates must sum to 1.0, got {sum}"));
         }
 
         if self.total_rate < 0.0 || self.total_rate > 1.0 {

@@ -39,19 +39,19 @@ impl StatisticsFingerprint {
 
     /// Add numeric statistics for a column.
     pub fn add_numeric(&mut self, table: &str, column: &str, stats: NumericStats) {
-        let key = format!("{}.{}", table, column);
+        let key = format!("{table}.{column}");
         self.numeric_columns.insert(key, stats);
     }
 
     /// Add categorical statistics for a column.
     pub fn add_categorical(&mut self, table: &str, column: &str, stats: CategoricalStats) {
-        let key = format!("{}.{}", table, column);
+        let key = format!("{table}.{column}");
         self.categorical_columns.insert(key, stats);
     }
 
     /// Add temporal statistics for a column.
     pub fn add_temporal(&mut self, table: &str, column: &str, stats: TemporalStats) {
-        let key = format!("{}.{}", table, column);
+        let key = format!("{table}.{column}");
         self.temporal_columns.insert(key, stats);
     }
 

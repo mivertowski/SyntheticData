@@ -159,7 +159,7 @@ impl PhaseSink for StreamPipeline {
         if let Ok(mut writer_guard) = self.writer.lock() {
             if let Some(writer) = writer_guard.as_mut() {
                 use std::io::Write;
-                writeln!(writer, "{}", json)?;
+                writeln!(writer, "{json}")?;
             }
         }
 

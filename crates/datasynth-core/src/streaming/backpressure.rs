@@ -290,7 +290,7 @@ impl BackpressureAwareProducer {
             BackpressureState::SlowingDown | BackpressureState::Recovering => self
                 .adaptive
                 .as_ref()
-                .map(|a| a.current_delay())
+                .map(AdaptiveBackpressure::current_delay)
                 .unwrap_or(Duration::from_micros(100)),
             BackpressureState::Blocked => Duration::from_millis(1),
         }

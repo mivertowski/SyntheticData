@@ -213,12 +213,12 @@ impl AuditEngagementGenerator {
 
         // Partner
         let partner_num = self.rng.random_range(1..=20);
-        let partner_id = format!("PARTNER{:03}", partner_num);
+        let partner_id = format!("PARTNER{partner_num:03}");
         let partner_name = self.generate_auditor_name(partner_num);
 
         // Manager
         let manager_num = self.rng.random_range(1..=50);
-        let manager_id = format!("MANAGER{:03}", manager_num);
+        let manager_id = format!("MANAGER{manager_num:03}");
         let manager_name = self.generate_auditor_name(manager_num + 100);
 
         // Team members (seniors and staff)
@@ -226,9 +226,9 @@ impl AuditEngagementGenerator {
         for i in 0..team_size {
             let member_num = self.rng.random_range(1..=200);
             if i < team_size / 2 {
-                team_members.push(format!("SENIOR{:03}", member_num));
+                team_members.push(format!("SENIOR{member_num:03}"));
             } else {
-                team_members.push(format!("STAFF{:03}", member_num));
+                team_members.push(format!("STAFF{member_num:03}"));
             }
         }
 

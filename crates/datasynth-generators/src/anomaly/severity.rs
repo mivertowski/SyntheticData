@@ -60,7 +60,7 @@ impl SeverityConfig {
             + self.timing_weight;
 
         if (sum - 1.0).abs() > 0.01 {
-            return Err(format!("Severity weights must sum to 1.0, got {}", sum));
+            return Err(format!("Severity weights must sum to 1.0, got {sum}"));
         }
 
         Ok(())
@@ -164,7 +164,7 @@ impl SeverityCalculator {
             0.5,
             true,
             self.config.base_type_weight,
-            &format!("Base type severity: {:.2}", base_severity),
+            &format!("Base type severity: {base_severity:.2}"),
         ));
 
         // Component 2: Monetary Impact
@@ -176,7 +176,7 @@ impl SeverityCalculator {
                 0.3,
                 true,
                 self.config.monetary_weight,
-                &format!("Monetary impact severity: {:.2}", monetary_severity),
+                &format!("Monetary impact severity: {monetary_severity:.2}"),
             ));
         }
 
@@ -220,7 +220,7 @@ impl SeverityCalculator {
             0.3,
             true,
             self.config.timing_weight,
-            &format!("Timing factor: {:.2}", timing_severity),
+            &format!("Timing factor: {timing_severity:.2}"),
         ));
 
         // Calculate weighted sum

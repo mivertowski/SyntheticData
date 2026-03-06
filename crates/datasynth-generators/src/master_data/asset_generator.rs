@@ -239,8 +239,8 @@ impl AssetGenerator {
         asset.account_determination = self.generate_account_determination(&asset_class);
 
         // Set location info
-        asset.location = Some(format!("P{}", company_code));
-        asset.cost_center = Some(format!("CC-{}-ADMIN", company_code));
+        asset.location = Some(format!("P{company_code}"));
+        asset.cost_center = Some(format!("CC-{company_code}-ADMIN"));
 
         // Generate serial number for equipment
         if matches!(
@@ -293,8 +293,8 @@ impl AssetGenerator {
         .round_dp(2);
 
         asset.account_determination = self.generate_account_determination(&asset_class);
-        asset.location = Some(format!("P{}", company_code));
-        asset.cost_center = Some(format!("CC-{}-ADMIN", company_code));
+        asset.location = Some(format!("P{company_code}"));
+        asset.cost_center = Some(format!("CC-{company_code}-ADMIN"));
 
         if matches!(
             asset_class,

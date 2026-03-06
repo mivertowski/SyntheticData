@@ -153,7 +153,7 @@ impl BenfordAnalyzer {
 
         // Calculate p-value from chi-squared distribution (df = 8)
         let chi_sq_dist = ChiSquared::new(8.0).map_err(|e| {
-            EvalError::StatisticalError(format!("Failed to create chi-squared distribution: {}", e))
+            EvalError::StatisticalError(format!("Failed to create chi-squared distribution: {e}"))
         })?;
         let p_value = 1.0 - chi_sq_dist.cdf(chi_squared);
 
@@ -255,7 +255,7 @@ impl BenfordAnalyzer {
             .sum();
 
         let chi_sq_dist = ChiSquared::new(9.0).map_err(|e| {
-            EvalError::StatisticalError(format!("Failed to create chi-squared distribution: {}", e))
+            EvalError::StatisticalError(format!("Failed to create chi-squared distribution: {e}"))
         })?;
         let p_value = 1.0 - chi_sq_dist.cdf(chi_squared);
 

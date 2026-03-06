@@ -96,7 +96,7 @@ impl QualificationGenerator {
             qualifications.push(SupplierQualification {
                 qualification_id: self.uuid_factory.next().to_string(),
                 vendor_id: vendor_id.clone(),
-                sourcing_project_id: sourcing_project_id.map(|s| s.to_string()),
+                sourcing_project_id: sourcing_project_id.map(std::string::ToString::to_string),
                 company_code: company_code.to_string(),
                 status,
                 start_date: qualification_date - chrono::Duration::days(14),

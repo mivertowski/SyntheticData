@@ -147,7 +147,7 @@ impl CorrelationAnalyzer {
         }
 
         // Verify all columns have same length
-        let lengths: Vec<usize> = data.values().map(|v| v.len()).collect();
+        let lengths: Vec<usize> = data.values().map(std::vec::Vec::len).collect();
         if !lengths.iter().all(|&l| l == lengths[0]) {
             return Err(EvalError::InvalidParameter(
                 "All fields must have same number of values".to_string(),

@@ -193,7 +193,7 @@ impl FixedAssetRecord {
         self.depreciation_areas
             .iter()
             .find(|a| a.area_type == area_type)
-            .map(|a| a.remaining_life_months())
+            .map(DepreciationArea::remaining_life_months)
             .unwrap_or(0)
     }
 
@@ -257,7 +257,7 @@ impl FixedAssetRecord {
             "{}Retired on {}",
             self.notes
                 .as_ref()
-                .map(|n| format!("{}. ", n))
+                .map(|n| format!("{n}. "))
                 .unwrap_or_default(),
             retirement_date
         ));

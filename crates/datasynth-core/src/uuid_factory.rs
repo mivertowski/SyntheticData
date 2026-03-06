@@ -359,7 +359,7 @@ impl UuidFactoryRegistry {
     pub fn get_counter(&self, generator_type: GeneratorType) -> Option<u64> {
         self.factories
             .get(&generator_type)
-            .map(|f| f.current_counter())
+            .map(DeterministicUuidFactory::current_counter)
     }
 }
 

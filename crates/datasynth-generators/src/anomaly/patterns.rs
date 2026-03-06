@@ -278,8 +278,9 @@ struct ActiveCluster {
     size: usize,
     /// Start date.
     start_date: NaiveDate,
-    /// Fraud category (clusters are keyed by category in the HashMap; retained
-    /// here for debug/display and future per-cluster analytics).
+    /// Fraud category — clusters are keyed by category in the parent HashMap;
+    /// retained here so `Debug` output and future per-cluster analytics can
+    /// identify the category without a reverse-lookup.
     #[allow(dead_code)]
     category: FraudCategory,
     /// Time window for this cluster.
@@ -485,14 +486,14 @@ impl ClusterManager {
     pub fn get_related_account(&self, cluster_id: &str) -> Option<&str> {
         self.cluster_stats
             .get(cluster_id)
-            .and_then(|s| s.accounts.first().map(|a| a.as_str()))
+            .and_then(|s| s.accounts.first().map(std::string::String::as_str))
     }
 
     /// Get suggested entity for relationship preservation within a cluster.
     pub fn get_related_entity(&self, cluster_id: &str) -> Option<&str> {
         self.cluster_stats
             .get(cluster_id)
-            .and_then(|s| s.entities.first().map(|e| e.as_str()))
+            .and_then(|s| s.entities.first().map(std::string::String::as_str))
     }
 
     /// Gets cluster statistics.
@@ -951,7 +952,7 @@ impl FraudActorManager {
                 _ => EscalationPattern::TestThenStrike,
             };
 
-            let actor = FraudActor::new(user_id.clone(), format!("Fraudster {}", user_id), pattern);
+            let actor = FraudActor::new(user_id.clone(), format!("Fraudster {user_id}"), pattern);
             let idx = self.actors.len();
             self.user_index.insert(user_id.clone(), idx);
             self.actors.push(actor);

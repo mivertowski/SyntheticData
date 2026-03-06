@@ -77,7 +77,7 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
     pub fn with_header(path: PathBuf, header: &str) -> SynthResult<Self> {
         let file = File::create(&path)?;
         let mut writer = BufWriter::with_capacity(256 * 1024, file);
-        let header_line = format!("{}\n", header);
+        let header_line = format!("{header}\n");
         writer.write_all(header_line.as_bytes())?;
         let bytes_written = header_line.len() as u64;
 
@@ -113,13 +113,12 @@ impl<T: Serialize + Send> CsvStreamingSink<T> {
                 .from_writer(&mut self.serialize_buf);
 
             wtr.serialize(item).map_err(|e| {
-                SynthError::generation(format!("Failed to serialize item to CSV: {}", e))
+                SynthError::generation(format!("Failed to serialize item to CSV: {e}"))
             })?;
 
             // Flush the csv writer into our buffer (not into the file)
-            wtr.flush().map_err(|e| {
-                SynthError::generation(format!("Failed to flush CSV writer: {}", e))
-            })?;
+            wtr.flush()
+                .map_err(|e| SynthError::generation(format!("Failed to flush CSV writer: {e}")))?;
         }
 
         self.writer.write_all(&self.serialize_buf)?;

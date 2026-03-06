@@ -150,14 +150,14 @@ impl TransactionGraphBuilder {
                         .header
                         .business_process
                         .as_ref()
-                        .map(|bp| format!("{:?}", bp));
+                        .map(|bp| format!("{bp:?}"));
                     tx_edge.compute_features();
 
                     // Propagate anomaly flag from journal entry to graph edge
                     if entry.header.is_anomaly {
                         tx_edge.edge.is_anomaly = true;
                         if let Some(ref anomaly_type) = entry.header.anomaly_type {
-                            tx_edge.edge.anomaly_type = Some(format!("{:?}", anomaly_type));
+                            tx_edge.edge.anomaly_type = Some(format!("{anomaly_type:?}"));
                         }
                     }
 
@@ -203,14 +203,14 @@ impl TransactionGraphBuilder {
                 .header
                 .business_process
                 .as_ref()
-                .map(|bp| format!("{:?}", bp));
+                .map(|bp| format!("{bp:?}"));
             tx_edge.compute_features();
 
             // Propagate anomaly flag from journal entry to graph edge
             if entry.header.is_anomaly {
                 tx_edge.edge.is_anomaly = true;
                 if let Some(ref anomaly_type) = entry.header.anomaly_type {
-                    tx_edge.edge.anomaly_type = Some(format!("{:?}", anomaly_type));
+                    tx_edge.edge.anomaly_type = Some(format!("{anomaly_type:?}"));
                 }
             }
 
@@ -225,7 +225,7 @@ impl TransactionGraphBuilder {
         account_name: &str,
         company_code: &str,
     ) -> NodeId {
-        let key = format!("{}_{}", company_code, account_code);
+        let key = format!("{company_code}_{account_code}");
 
         if let Some(&id) = self.account_nodes.get(&key) {
             return id;
@@ -254,7 +254,7 @@ impl TransactionGraphBuilder {
 
     /// Gets or creates a document node.
     fn get_or_create_document_node(&mut self, document_number: &str, company_code: &str) -> NodeId {
-        let key = format!("{}_{}", company_code, document_number);
+        let key = format!("{company_code}_{document_number}");
 
         if let Some(&id) = self.document_nodes.get(&key) {
             return id;

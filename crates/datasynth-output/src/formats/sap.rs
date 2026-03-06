@@ -385,7 +385,7 @@ impl SapExporter {
                 ZSIM_CONTROL_IDS,ZSIM_SOX_RELEVANT,ZSIM_SOD_VIOLATION",
             );
         }
-        writeln!(writer, "{}", header)?;
+        writeln!(writer, "{header}")?;
 
         // Reset document counter for ACDOCA
         self.document_counter.clear();
@@ -457,7 +457,7 @@ impl SapExporter {
                     ));
                 }
 
-                writeln!(writer, "{}", line)?;
+                writeln!(writer, "{line}")?;
             }
         }
 

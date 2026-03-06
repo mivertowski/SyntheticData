@@ -465,8 +465,8 @@ impl OracleExporter {
                 } else {
                     None
                 },
-                attribute2: je.header.fraud_type.map(|ft| format!("{:?}", ft)),
-                attribute3: je.header.business_process.map(|bp| format!("{:?}", bp)),
+                attribute2: je.header.fraud_type.map(|ft| format!("{ft:?}")),
+                attribute3: je.header.business_process.map(|bp| format!("{bp:?}")),
                 creation_date: je.header.created_at.date_naive(),
                 created_by: self.config.user_id,
             };
@@ -602,7 +602,7 @@ impl OracleExporter {
             let segment2 = parts.get(1).unwrap_or(&"");
             let segment3 = parts.get(2).unwrap_or(&"0000");
 
-            writeln!(writer, "{},{},{},{},Y", ccid, segment1, segment2, segment3)?;
+            writeln!(writer, "{ccid},{segment1},{segment2},{segment3},Y")?;
         }
 
         writer.flush()?;

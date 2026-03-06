@@ -141,8 +141,7 @@ impl CorrelationConfig {
         for (i, &corr) in self.matrix.iter().enumerate() {
             if !(-1.0..=1.0).contains(&corr) {
                 return Err(format!(
-                    "Correlation at index {} must be in [-1, 1], got {}",
-                    i, corr
+                    "Correlation at index {i} must be in [-1, 1], got {corr}"
                 ));
             }
         }

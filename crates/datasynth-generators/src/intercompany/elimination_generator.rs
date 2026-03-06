@@ -314,7 +314,7 @@ impl EliminationGenerator {
 
         for (parent, subsidiary, ownership_pct) in relationships_to_process {
             let investment = investment_amounts
-                .get(&format!("{}_{}", parent, subsidiary))
+                .get(&format!("{parent}_{subsidiary}"))
                 .copied()
                 .unwrap_or(Decimal::ZERO);
 
@@ -394,10 +394,8 @@ impl EliminationGenerator {
         );
 
         entry.related_companies = vec![paying_company.to_string(), receiving_company.to_string()];
-        entry.description = format!(
-            "Eliminate IC dividend from {} to {}",
-            paying_company, receiving_company
-        );
+        entry.description =
+            format!("Eliminate IC dividend from {paying_company} to {receiving_company}");
 
         // Debit dividend income (reduce income)
         entry.add_line(datasynth_core::models::intercompany::EliminationLine {
@@ -456,7 +454,7 @@ impl EliminationGenerator {
         );
 
         entry.related_companies = vec![subsidiary.to_string()];
-        entry.description = format!("Minority interest share of {} profit/loss", subsidiary);
+        entry.description = format!("Minority interest share of {subsidiary} profit/loss");
 
         if net_income > Decimal::ZERO {
             // Profit: DR consolidated income, CR NCI

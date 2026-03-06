@@ -116,8 +116,8 @@ impl EntityReferenceData {
 pub struct ReferentialIntegrityEvaluator {
     /// Minimum integrity score threshold.
     min_integrity_score: f64,
-    /// Minimum usage rate threshold.
-    #[allow(dead_code)]
+    /// Minimum usage rate threshold — entity types whose usage rate falls
+    /// below this value cause the overall evaluation to fail.
     min_usage_rate: f64,
 }
 
@@ -162,7 +162,13 @@ impl ReferentialIntegrityEvaluator {
             1.0
         };
 
-        let passes = overall_integrity_score >= self.min_integrity_score;
+        // Check usage rate: any entity type with defined entities must meet
+        // the minimum usage threshold.
+        let usage_ok = integrities
+            .iter()
+            .all(|i| i.total_entities == 0 || i.usage_rate >= self.min_usage_rate);
+
+        let passes = overall_integrity_score >= self.min_integrity_score && usage_ok;
 
         Ok(ReferentialIntegrityEvaluation {
             vendor_integrity,

@@ -95,8 +95,7 @@ impl GaussianMixtureConfig {
         let weight_sum: f64 = self.components.iter().map(|c| c.weight).sum();
         if (weight_sum - 1.0).abs() > 0.01 {
             return Err(format!(
-                "Component weights must sum to 1.0, got {}",
-                weight_sum
+                "Component weights must sum to 1.0, got {weight_sum}"
             ));
         }
 
@@ -232,8 +231,7 @@ impl LogNormalMixtureConfig {
         let weight_sum: f64 = self.components.iter().map(|c| c.weight).sum();
         if (weight_sum - 1.0).abs() > 0.01 {
             return Err(format!(
-                "Component weights must sum to 1.0, got {}",
-                weight_sum
+                "Component weights must sum to 1.0, got {weight_sum}"
             ));
         }
 
@@ -299,8 +297,7 @@ impl GaussianMixtureSampler {
             .components
             .iter()
             .map(|c| {
-                Normal::new(c.mu, c.sigma)
-                    .map_err(|e| format!("Invalid normal distribution: {}", e))
+                Normal::new(c.mu, c.sigma).map_err(|e| format!("Invalid normal distribution: {e}"))
             })
             .collect();
 
@@ -415,7 +412,7 @@ impl LogNormalMixtureSampler {
             .iter()
             .map(|c| {
                 LogNormal::new(c.mu, c.sigma)
-                    .map_err(|e| format!("Invalid log-normal distribution: {}", e))
+                    .map_err(|e| format!("Invalid log-normal distribution: {e}"))
             })
             .collect();
 

@@ -87,9 +87,9 @@ impl DepartmentDefinition {
     /// Finance department.
     pub fn finance(company_code: &str) -> Self {
         Self {
-            code: format!("{}-FIN", company_code),
+            code: format!("{company_code}-FIN"),
             name: "Finance".to_string(),
-            cost_center: format!("CC-{}-FIN", company_code),
+            cost_center: format!("CC-{company_code}-FIN"),
             headcount: 15,
             system_roles: vec![
                 SystemRole::ApAccountant,
@@ -111,9 +111,9 @@ impl DepartmentDefinition {
     /// Procurement department.
     pub fn procurement(company_code: &str) -> Self {
         Self {
-            code: format!("{}-PROC", company_code),
+            code: format!("{company_code}-PROC"),
             name: "Procurement".to_string(),
-            cost_center: format!("CC-{}-PROC", company_code),
+            cost_center: format!("CC-{company_code}-PROC"),
             headcount: 10,
             system_roles: vec![SystemRole::Buyer, SystemRole::Approver],
             transaction_codes: vec![
@@ -129,9 +129,9 @@ impl DepartmentDefinition {
     /// Sales department.
     pub fn sales(company_code: &str) -> Self {
         Self {
-            code: format!("{}-SALES", company_code),
+            code: format!("{company_code}-SALES"),
             name: "Sales".to_string(),
-            cost_center: format!("CC-{}-SALES", company_code),
+            cost_center: format!("CC-{company_code}-SALES"),
             headcount: 20,
             system_roles: vec![SystemRole::Creator, SystemRole::Approver],
             transaction_codes: vec![
@@ -147,9 +147,9 @@ impl DepartmentDefinition {
     /// Warehouse/Logistics department.
     pub fn warehouse(company_code: &str) -> Self {
         Self {
-            code: format!("{}-WH", company_code),
+            code: format!("{company_code}-WH"),
             name: "Warehouse".to_string(),
-            cost_center: format!("CC-{}-WH", company_code),
+            cost_center: format!("CC-{company_code}-WH"),
             headcount: 12,
             system_roles: vec![SystemRole::Creator, SystemRole::Viewer],
             transaction_codes: vec![
@@ -164,9 +164,9 @@ impl DepartmentDefinition {
     /// IT department.
     pub fn it(company_code: &str) -> Self {
         Self {
-            code: format!("{}-IT", company_code),
+            code: format!("{company_code}-IT"),
             name: "Information Technology".to_string(),
-            cost_center: format!("CC-{}-IT", company_code),
+            cost_center: format!("CC-{company_code}-IT"),
             headcount: 8,
             system_roles: vec![SystemRole::Admin],
             transaction_codes: vec!["SU01".to_string(), "PFCG".to_string(), "SM21".to_string()],
@@ -482,7 +482,7 @@ impl EmployeeGenerator {
         employee.job_level = JobLevel::Executive;
         employee.job_title = title.to_string();
         employee.department_id = Some("Executive".to_string());
-        employee.cost_center = Some(format!("CC-{}-EXEC", company_code));
+        employee.cost_center = Some(format!("CC-{company_code}-EXEC"));
         employee.hire_date = Some(hire_date);
         employee.approval_limit = Decimal::from(100_000_000);
         employee.can_approve_pr = true;

@@ -206,7 +206,7 @@ impl APPayment {
             "{}Voided: {}",
             self.notes
                 .as_ref()
-                .map(|n| format!("{}. ", n))
+                .map(|n| format!("{n}. "))
                 .unwrap_or_default(),
             reason
         ));
@@ -216,7 +216,7 @@ impl APPayment {
     pub fn total_settlement(&self) -> Decimal {
         self.paid_invoices
             .iter()
-            .map(|a| a.total_settlement())
+            .map(PaymentAllocation::total_settlement)
             .sum()
     }
 

@@ -85,9 +85,8 @@ impl<T: ToParquetBatch + Send> ParquetStreamingSink<T> {
             .set_max_row_group_row_count(Some(self.row_group_size))
             .build();
 
-        let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props)).map_err(|e| {
-            SynthError::generation(format!("Failed to create Parquet writer: {}", e))
-        })?;
+        let writer = ArrowWriter::try_new(file, Arc::clone(&schema), Some(props))
+            .map_err(|e| SynthError::generation(format!("Failed to create Parquet writer: {e}")))?;
 
         self.writer = Some(writer);
         self.schema = Some(schema);
@@ -110,7 +109,7 @@ impl<T: ToParquetBatch + Send> ParquetStreamingSink<T> {
 
         if let Some(writer) = &mut self.writer {
             writer.write(&batch).map_err(|e| {
-                SynthError::generation(format!("Failed to write Parquet batch: {}", e))
+                SynthError::generation(format!("Failed to write Parquet batch: {e}"))
             })?;
         }
 
@@ -136,7 +135,7 @@ impl<T: ToParquetBatch + Send> StreamingSink<T> for ParquetStreamingSink<T> {
                 self.flush_buffer()?;
                 if let Some(writer) = self.writer.take() {
                     writer.close().map_err(|e| {
-                        SynthError::generation(format!("Failed to close Parquet writer: {}", e))
+                        SynthError::generation(format!("Failed to close Parquet writer: {e}"))
                     })?;
                 }
             }
@@ -153,7 +152,7 @@ impl<T: ToParquetBatch + Send> StreamingSink<T> for ParquetStreamingSink<T> {
         self.flush_buffer()?;
         if let Some(writer) = &mut self.writer {
             writer.flush().map_err(|e| {
-                SynthError::generation(format!("Failed to flush Parquet writer: {}", e))
+                SynthError::generation(format!("Failed to flush Parquet writer: {e}"))
             })?;
         }
         Ok(())
@@ -163,7 +162,7 @@ impl<T: ToParquetBatch + Send> StreamingSink<T> for ParquetStreamingSink<T> {
         self.flush_buffer()?;
         if let Some(writer) = self.writer.take() {
             writer.close().map_err(|e| {
-                SynthError::generation(format!("Failed to close Parquet writer: {}", e))
+                SynthError::generation(format!("Failed to close Parquet writer: {e}"))
             })?;
         }
         Ok(())

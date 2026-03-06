@@ -415,7 +415,7 @@ fn extract_bearer_token(request: &Request<Body>) -> Option<String> {
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
 }
 
 /// Extract API key from X-API-Key header.
@@ -424,7 +424,7 @@ fn extract_x_api_key(request: &Request<Body>) -> Option<String> {
         .headers()
         .get("X-API-Key")
         .and_then(|h| h.to_str().ok())
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
 }
 
 #[cfg(test)]

@@ -98,14 +98,14 @@ impl TemporalWindow {
     /// Returns a descriptive name for this window.
     pub fn name(&self) -> String {
         match self {
-            TemporalWindow::LastBusinessDays(n) => format!("last_{}_business_days", n),
+            TemporalWindow::LastBusinessDays(n) => format!("last_{n}_business_days"),
             TemporalWindow::FirstBusinessDaysAfterHoliday(n) => {
-                format!("first_{}_days_after_holiday", n)
+                format!("first_{n}_days_after_holiday")
             }
             TemporalWindow::LastWeekOfQuarter => "last_week_of_quarter".to_string(),
             TemporalWindow::December => "december".to_string(),
-            TemporalWindow::LastDaysOfYear(n) => format!("last_{}_days_of_year", n),
-            TemporalWindow::FirstDaysOfMonth(n) => format!("first_{}_days_of_month", n),
+            TemporalWindow::LastDaysOfYear(n) => format!("last_{n}_days_of_year"),
+            TemporalWindow::FirstDaysOfMonth(n) => format!("first_{n}_days_of_month"),
             TemporalWindow::Custom { .. } => "custom".to_string(),
         }
     }

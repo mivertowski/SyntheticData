@@ -87,18 +87,18 @@ pub mod generalization {
     /// Generalize a date to month.
     pub fn date_to_month(date: &str) -> Option<String> {
         // Assumes YYYY-MM-DD format
-        date.get(0..7).map(|s| s.to_string())
+        date.get(0..7).map(std::string::ToString::to_string)
     }
 
     /// Generalize a date to year.
     pub fn date_to_year(date: &str) -> Option<String> {
-        date.get(0..4).map(|s| s.to_string())
+        date.get(0..4).map(std::string::ToString::to_string)
     }
 
     /// Generalize a zip code to prefix.
     pub fn zip_to_prefix(zip: &str, digits: usize) -> String {
         let prefix = zip.chars().take(digits).collect::<String>();
-        format!("{}*", prefix)
+        format!("{prefix}*")
     }
 }
 

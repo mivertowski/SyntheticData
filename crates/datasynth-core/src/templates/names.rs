@@ -66,7 +66,7 @@ impl PersonName {
         let last_part: String = self
             .last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .take(5)
             .collect();
         format!("{}{}{:03}", first_initial, last_part.to_uppercase(), index)
@@ -77,16 +77,16 @@ impl PersonName {
         let first = self
             .first_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
         let last = self
             .last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
-        format!("{}.{}@{}", first, last, domain)
+        format!("{first}.{last}@{domain}")
     }
 }
 
@@ -1056,7 +1056,7 @@ impl NamePool {
         PersonName {
             first_name: first_name.clone(),
             last_name: last_name.clone(),
-            display_name: format!("{} {}", first_name, last_name),
+            display_name: format!("{first_name} {last_name}"),
             culture: self.culture,
             is_male,
         }

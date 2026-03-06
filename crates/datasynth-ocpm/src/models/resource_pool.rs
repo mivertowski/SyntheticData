@@ -58,8 +58,8 @@ impl ResourcePool {
     pub fn new(pool_id: &str, pool_name: &str, count: usize, prefix: &str) -> Self {
         let resources = (1..=count)
             .map(|i| PoolResource {
-                resource_id: format!("{}-{:03}", prefix, i),
-                name: format!("{} {}", pool_name, i),
+                resource_id: format!("{prefix}-{i:03}"),
+                name: format!("{pool_name} {i}"),
                 max_concurrent: 10,
                 current_workload: 0.0,
                 total_assigned: 0,

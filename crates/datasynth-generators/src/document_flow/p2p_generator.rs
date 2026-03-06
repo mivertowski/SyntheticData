@@ -226,7 +226,7 @@ impl P2PGenerator {
                 }
             })
             .unwrap_or_else(|| default_prefix.to_string());
-        format!("{}-{}-{:010}", prefix, company_code, counter)
+        format!("{prefix}-{company_code}-{counter:010}")
     }
 
     /// Pick a random line description from the country pack for the given
@@ -556,7 +556,7 @@ impl P2PGenerator {
             company_code,
             &po.header.document_id,
             &po.vendor_id,
-            format!("P{}", company_code),
+            format!("P{company_code}"),
             "0001",
             fiscal_year,
             fiscal_period,

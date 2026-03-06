@@ -156,60 +156,60 @@ impl UserIdGenerator {
             .to_ascii_uppercase();
         let last_part: String = last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .take(7)
             .collect::<String>()
             .to_uppercase();
 
         if index == 0 {
-            format!("{}{}", first_initial, last_part)
+            format!("{first_initial}{last_part}")
         } else {
-            format!("{}{}{}", first_initial, last_part, index)
+            format!("{first_initial}{last_part}{index}")
         }
     }
 
     fn dot_separated(&self, first_name: &str, last_name: &str, index: usize) -> String {
         let first: String = first_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
         let last: String = last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
 
         if index == 0 {
-            format!("{}.{}", first, last)
+            format!("{first}.{last}")
         } else {
-            format!("{}.{}{}", first, last, index)
+            format!("{first}.{last}{index}")
         }
     }
 
     fn underscore_separated(&self, first_name: &str, last_name: &str, index: usize) -> String {
         let first: String = first_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
         let last: String = last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase();
 
         if index == 0 {
-            format!("{}_{}", first, last)
+            format!("{first}_{last}")
         } else {
-            format!("{}_{}{}", first, last, index)
+            format!("{first}_{last}{index}")
         }
     }
 
     fn last_name_initial(&self, first_name: &str, last_name: &str, index: usize) -> String {
         let last: String = last_name
             .chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .take(8)
             .collect::<String>()
             .to_lowercase();
@@ -220,27 +220,27 @@ impl UserIdGenerator {
             .to_ascii_lowercase();
 
         if index == 0 {
-            format!("{}{}", last, first_initial)
+            format!("{last}{first_initial}")
         } else {
-            format!("{}{}{}", last, first_initial, index)
+            format!("{last}{first_initial}{index}")
         }
     }
 
     fn employee_number(&self, index: usize) -> String {
-        format!("E{:08}", index)
+        format!("E{index:08}")
     }
 
     fn system_account(&self, rng: &mut impl Rng) -> String {
         let prefix = self.system_prefixes.choose(rng).unwrap_or(&"SVC_");
         let suffix = self.system_suffixes.choose(rng).unwrap_or(&"BATCH");
-        format!("{}{}", prefix, suffix)
+        format!("{prefix}{suffix}")
     }
 
     fn admin_account(&self, rng: &mut impl Rng) -> String {
         let prefix = self.admin_prefixes.choose(rng).unwrap_or(&"admin_");
         let systems = ["gl", "ap", "ar", "fa", "mm", "sd", "fi", "co", "hr", "pm"];
         let system = systems.choose(rng).unwrap_or(&"gl");
-        format!("{}{}", prefix, system)
+        format!("{prefix}{system}")
     }
 
     fn interface_account(&self, rng: &mut impl Rng) -> String {
@@ -262,7 +262,7 @@ impl UserIdGenerator {
             "ANAPLAN",
         ];
         let system = systems.choose(rng).unwrap_or(&"SAP");
-        format!("{}{}", prefix, system)
+        format!("{prefix}{system}")
     }
 }
 
@@ -331,13 +331,13 @@ impl EmailGenerator {
         let last = self.sanitize_for_email(last_name);
 
         let local_part = match pattern {
-            EmailPattern::FirstDotLast => format!("{}.{}", first, last),
+            EmailPattern::FirstDotLast => format!("{first}.{last}"),
             EmailPattern::FirstInitialLast => {
                 let initial = first.chars().next().unwrap_or('x');
-                format!("{}{}", initial, last)
+                format!("{initial}{last}")
             }
-            EmailPattern::FirstUnderscoreLast => format!("{}_{}", first, last),
-            EmailPattern::LastDotFirst => format!("{}.{}", last, first),
+            EmailPattern::FirstUnderscoreLast => format!("{first}_{last}"),
+            EmailPattern::LastDotFirst => format!("{last}.{first}"),
             EmailPattern::FirstOnly => first,
         };
 
@@ -351,7 +351,7 @@ impl EmailGenerator {
 
     fn sanitize_for_email(&self, name: &str) -> String {
         name.chars()
-            .filter(|c| c.is_ascii_alphabetic())
+            .filter(char::is_ascii_alphabetic)
             .collect::<String>()
             .to_lowercase()
     }

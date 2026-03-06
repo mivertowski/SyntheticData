@@ -157,7 +157,7 @@ impl Neo4jExporter {
             if self.config.export_features {
                 if let Some(node) = sample_node {
                     for i in 0..node.features.len() {
-                        header.push(format!("feature_{}", i));
+                        header.push(format!("feature_{i}"));
                     }
                 }
             }
@@ -195,7 +195,7 @@ impl Neo4jExporter {
 
                     if self.config.export_features {
                         for &feat in &node.features {
-                            row.push(format!("{:.6}", feat));
+                            row.push(format!("{feat:.6}"));
                         }
                     }
 
@@ -243,7 +243,7 @@ impl Neo4jExporter {
             if self.config.export_edge_properties {
                 if let Some(edge) = sample_edge {
                     for key in edge.properties.keys() {
-                        header.push(format!("{}:string", key));
+                        header.push(format!("{key}:string"));
                     }
                 }
             }
@@ -251,7 +251,7 @@ impl Neo4jExporter {
             if self.config.export_features {
                 if let Some(edge) = sample_edge {
                     for i in 0..edge.features.len() {
-                        header.push(format!("feature_{}:double", i));
+                        header.push(format!("feature_{i}:double"));
                     }
                 }
             }
@@ -281,7 +281,7 @@ impl Neo4jExporter {
 
                     if self.config.export_features {
                         for &feat in &edge.features {
-                            row.push(format!("{:.6}", feat));
+                            row.push(format!("{feat:.6}"));
                         }
                     }
 
@@ -317,8 +317,7 @@ impl Neo4jExporter {
         for label in node_labels {
             writeln!(
                 writer,
-                "CREATE CONSTRAINT IF NOT EXISTS FOR (n:{}) REQUIRE n.nodeId IS UNIQUE;",
-                label
+                "CREATE CONSTRAINT IF NOT EXISTS FOR (n:{label}) REQUIRE n.nodeId IS UNIQUE;"
             )?;
         }
         writeln!(writer)?;
@@ -327,12 +326,11 @@ impl Neo4jExporter {
         writeln!(writer, "// Import nodes")?;
         for label in node_labels {
             let filename = format!("nodes_{}.csv", label.to_lowercase());
-            writeln!(writer, "LOAD CSV WITH HEADERS FROM 'file:///{}'", filename)?;
+            writeln!(writer, "LOAD CSV WITH HEADERS FROM 'file:///{filename}'")?;
             writeln!(writer, "AS row")?;
             writeln!(
                 writer,
-                "CREATE (n:{} {{nodeId: toInteger(row.`nodeId:ID`), code: row.code, name: row.name, isAnomaly: toBoolean(row.`isAnomaly:boolean`)}});",
-                label
+                "CREATE (n:{label} {{nodeId: toInteger(row.`nodeId:ID`), code: row.code, name: row.name, isAnomaly: toBoolean(row.`isAnomaly:boolean`)}});"
             )?;
             writeln!(writer)?;
         }
@@ -341,7 +339,7 @@ impl Neo4jExporter {
         writeln!(writer, "// Import relationships")?;
         for rel_type in relationship_types {
             let filename = format!("edges_{}.csv", rel_type.to_lowercase());
-            writeln!(writer, "LOAD CSV WITH HEADERS FROM 'file:///{}'", filename)?;
+            writeln!(writer, "LOAD CSV WITH HEADERS FROM 'file:///{filename}'")?;
             writeln!(writer, "AS row")?;
             writeln!(
                 writer,
@@ -402,7 +400,7 @@ impl Neo4jExporter {
         // Add node files
         for label in node_labels {
             let filename = format!("nodes_{}.csv", label.to_lowercase());
-            writeln!(writer, "  --nodes={}=$DATA_DIR/{} \\", label, filename)?;
+            writeln!(writer, "  --nodes={label}=$DATA_DIR/{filename} \\")?;
         }
 
         // Add relationship files
@@ -483,8 +481,7 @@ impl CypherQueryBuilder {
         };
 
         self.queries.push(format!(
-            "MATCH (a:{} {{nodeId: '{}'}}), (b:{} {{nodeId: '{}'}}) CREATE (a)-[:{}{}]->(b)",
-            from_label, from_id, to_label, to_id, rel_type, props_str
+            "MATCH (a:{from_label} {{nodeId: '{from_id}'}}), (b:{to_label} {{nodeId: '{to_id}'}}) CREATE (a)-[:{rel_type}{props_str}]->(b)"
         ));
         self
     }

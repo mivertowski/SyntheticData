@@ -218,7 +218,7 @@ impl InjectionStrategy for AmountModificationStrategy {
                     }
                 ))
                 .with_impact(impact)
-                .with_metadata("multiplier", &format!("{:.2}", multiplier))
+                .with_metadata("multiplier", &format!("{multiplier:.2}"))
             }
             _ => InjectionResult::success(&format!(
                 "Modified amount to {}{}",
@@ -274,11 +274,11 @@ impl InjectionStrategy for DateModificationStrategy {
         let (days_offset, description) = match anomaly_type {
             AnomalyType::Error(ErrorType::BackdatedEntry) => {
                 let days = rng.random_range(1..=self.max_backdate_days);
-                (-days, format!("Backdated by {} days", days))
+                (-days, format!("Backdated by {days} days"))
             }
             AnomalyType::Error(ErrorType::FutureDatedEntry) => {
                 let days = rng.random_range(1..=self.max_future_days);
-                (days, format!("Future-dated by {} days", days))
+                (days, format!("Future-dated by {days} days"))
             }
             AnomalyType::Error(ErrorType::WrongPeriod) => {
                 // Move to previous or next month
@@ -291,8 +291,7 @@ impl InjectionStrategy for DateModificationStrategy {
                 entry.header.document_date = entry.header.posting_date; // Document date stays same
                 entry.header.posting_date = original_date + chrono::Duration::days(days);
                 return InjectionResult::success(&format!(
-                    "Late posting: {} days after transaction",
-                    days
+                    "Late posting: {days} days after transaction"
                 ))
                 .with_metadata("delay_days", &days.to_string());
             }
@@ -497,8 +496,7 @@ impl InjectionStrategy for DescriptionAnomalyStrategy {
         entry.set_description(vague.clone());
 
         InjectionResult::success(&format!(
-            "Changed description from '{}' to '{}'",
-            original, vague
+            "Changed description from '{original}' to '{vague}'"
         ))
         .with_metadata("original_description", &original)
     }
@@ -606,7 +604,7 @@ impl InjectionStrategy for BenfordViolationStrategy {
         ))
         .with_impact(impact)
         .with_metadata("first_digit", &first_digit.to_string())
-        .with_metadata("benford_probability", &format!("{:.4}", benford_prob))
+        .with_metadata("benford_probability", &format!("{benford_prob:.4}"))
     }
 }
 
@@ -995,8 +993,7 @@ impl InjectionStrategy for DormantAccountStrategy {
         };
 
         InjectionResult::success(&format!(
-            "Changed account from {} to dormant account {}",
-            original_account, dormant_account
+            "Changed account from {original_account} to dormant account {dormant_account}"
         ))
         .with_impact(amount)
         .with_entity(dormant_account)

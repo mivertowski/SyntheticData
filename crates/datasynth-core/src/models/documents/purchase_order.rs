@@ -384,7 +384,7 @@ impl PurchaseOrder {
         self.items
             .iter()
             .filter(|i| i.ir_indicator)
-            .map(|i| i.open_amount_iv())
+            .map(PurchaseOrderItem::open_amount_iv)
             .sum()
     }
 

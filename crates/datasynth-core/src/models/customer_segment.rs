@@ -808,7 +808,7 @@ impl SegmentedCustomerPool {
             let actual = self
                 .segment_index
                 .get(&segment)
-                .map(|v| v.len())
+                .map(std::vec::Vec::len)
                 .unwrap_or(0) as f64
                 / total;
 

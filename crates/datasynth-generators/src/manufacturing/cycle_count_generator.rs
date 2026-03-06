@@ -195,7 +195,7 @@ impl CycleCountGenerator {
         let adjustment_reason = if adjusted {
             ADJUSTMENT_REASONS
                 .choose(&mut self.rng)
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
         } else {
             None
         };

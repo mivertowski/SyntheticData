@@ -208,7 +208,7 @@ impl OwnershipStructure {
     pub fn get_direct_subsidiaries(&self, parent: &str) -> Vec<&str> {
         self.subsidiaries_by_parent
             .get(parent)
-            .map(|subs| subs.iter().map(|s| s.as_str()).collect())
+            .map(|subs| subs.iter().map(std::string::String::as_str).collect())
             .unwrap_or_default()
     }
 
@@ -345,12 +345,12 @@ impl IntercompanyAccountMapping {
     pub fn new_standard(relationship_id: String, company_code: &str) -> Self {
         Self {
             relationship_id,
-            ic_receivable_account: format!("1310{}", company_code),
-            ic_payable_account: format!("2110{}", company_code),
-            ic_revenue_account: format!("4100{}", company_code),
-            ic_expense_account: format!("5100{}", company_code),
-            ic_investment_account: Some(format!("1510{}", company_code)),
-            ic_equity_account: Some(format!("3100{}", company_code)),
+            ic_receivable_account: format!("1310{company_code}"),
+            ic_payable_account: format!("2110{company_code}"),
+            ic_revenue_account: format!("4100{company_code}"),
+            ic_expense_account: format!("5100{company_code}"),
+            ic_investment_account: Some(format!("1510{company_code}")),
+            ic_equity_account: Some(format!("3100{company_code}")),
         }
     }
 }

@@ -126,7 +126,7 @@ impl APGenerator {
             let amount = self.generate_line_amount();
             let line = APInvoiceLine::new(
                 line_num as u32,
-                format!("Item/Service {}", line_num),
+                format!("Item/Service {line_num}"),
                 dec!(1),
                 "EA".to_string(),
                 amount,
@@ -205,7 +205,7 @@ impl APGenerator {
             memo_date,
             invoice.invoice_number.clone(),
             reason,
-            format!("{:?}", reason),
+            format!("{reason:?}"),
             invoice.gross_amount.document_currency.clone(),
         );
 

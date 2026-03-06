@@ -193,7 +193,7 @@ impl<'a> CausalPropagationEngine<'a> {
                             let from_val = ps
                                 .from
                                 .as_ref()
-                                .and_then(|v| v.as_f64())
+                                .and_then(serde_json::Value::as_f64)
                                 .unwrap_or(node.baseline_value);
                             let interpolated = from_val + (to_val - from_val) * onset_factor;
                             effects.insert(node.id.clone(), interpolated);
@@ -267,7 +267,7 @@ impl<'a> CausalPropagationEngine<'a> {
                 let rate_increase = ee
                     .parameters
                     .get("rate_increase")
-                    .and_then(|v| v.as_f64())
+                    .and_then(serde_json::Value::as_f64)
                     .unwrap_or(0.05);
                 match ee.subtype {
                     InterventionEntityEvent::VendorDefault => {
@@ -425,7 +425,7 @@ impl<'a> CausalPropagationEngine<'a> {
                 let severity = rc
                     .parameters
                     .get("severity")
-                    .and_then(|v| v.as_f64())
+                    .and_then(serde_json::Value::as_f64)
                     .unwrap_or(0.5);
                 // Regulatory changes tighten compliance and controls
                 if let Some(node) = self.dag.find_node("sod_compliance") {

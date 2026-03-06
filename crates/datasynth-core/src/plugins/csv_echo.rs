@@ -97,7 +97,7 @@ impl SinkPlugin for CsvEchoSink {
     }
 
     fn finalize(&mut self) -> Result<SinkSummary, SynthError> {
-        let total_bytes: usize = self.buffer.iter().map(|l| l.len()).sum();
+        let total_bytes: usize = self.buffer.iter().map(std::string::String::len).sum();
         let mut summary = SinkSummary::new(self.record_count);
         summary.bytes_written = Some(total_bytes as u64);
         summary

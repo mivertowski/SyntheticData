@@ -78,8 +78,7 @@ impl LineItemDistributionConfig {
 
         if (sum - 1.0).abs() > 0.01 {
             return Err(format!(
-                "Line item distribution probabilities sum to {}, expected ~1.0",
-                sum
+                "Line item distribution probabilities sum to {sum}, expected ~1.0"
             ));
         }
         Ok(())

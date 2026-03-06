@@ -35,9 +35,8 @@ impl VendorLlmEnricher {
         country: &str,
     ) -> Result<String, SynthError> {
         let prompt = format!(
-            "Generate a single realistic vendor/supplier company name for a {} company \
-             in {} that provides {}. Return ONLY the company name, nothing else.",
-            industry, country, spend_category
+            "Generate a single realistic vendor/supplier company name for a {industry} company \
+             in {country} that provides {spend_category}. Return ONLY the company name, nothing else."
         );
 
         let request = LlmRequest::new(prompt)
@@ -84,9 +83,8 @@ impl VendorLlmEnricher {
             .enumerate()
             .map(|(i, (industry, spend_category, country))| {
                 let prompt = format!(
-                    "Generate a single realistic vendor/supplier company name for a {} company \
-                     in {} that provides {}. Return ONLY the company name, nothing else.",
-                    industry, country, spend_category
+                    "Generate a single realistic vendor/supplier company name for a {industry} company \
+                     in {country} that provides {spend_category}. Return ONLY the company name, nothing else."
                 );
                 LlmRequest::new(prompt)
                     .with_system(
@@ -159,7 +157,7 @@ impl VendorLlmEnricher {
             _ => " Intl",
         };
 
-        format!("{} {}{}", industry_prefix, category_suffix, country_tag)
+        format!("{industry_prefix} {category_suffix}{country_tag}")
     }
 }
 

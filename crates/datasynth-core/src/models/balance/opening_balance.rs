@@ -86,8 +86,7 @@ impl OpeningBalanceSpec {
         let asset_total = self.asset_composition.total_percentage();
         if (asset_total - dec!(100)).abs() > dec!(0.01) {
             errors.push(format!(
-                "Asset composition should sum to 100%, got {}%",
-                asset_total
+                "Asset composition should sum to 100%, got {asset_total}%"
             ));
         }
 
@@ -96,8 +95,7 @@ impl OpeningBalanceSpec {
             self.capital_structure.debt_percent + self.capital_structure.equity_percent;
         if (capital_total - dec!(100)).abs() > dec!(0.01) {
             errors.push(format!(
-                "Capital structure should sum to 100%, got {}%",
-                capital_total
+                "Capital structure should sum to 100%, got {capital_total}%"
             ));
         }
 

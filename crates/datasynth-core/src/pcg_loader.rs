@@ -167,8 +167,8 @@ pub fn build_chart_of_accounts_from_pcg_2024(
         flatten_pcg(&class_node.accounts, class, &mut flat, max_accounts);
     }
 
-    let coa_id = format!("COA_PCG_2024_{:?}_{}", industry, max_accounts);
-    let name = format!("Plan Comptable Général 2024 – {:?}", industry);
+    let coa_id = format!("COA_PCG_2024_{industry:?}_{max_accounts}");
+    let name = format!("Plan Comptable Général 2024 – {industry:?}");
     let mut coa = ChartOfAccounts::new(coa_id, name, "FR".to_string(), industry, complexity);
     coa.account_format = "######".to_string();
 

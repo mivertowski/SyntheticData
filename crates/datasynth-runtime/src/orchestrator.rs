@@ -132,7 +132,7 @@ impl GenerationOrchestrator {
         // Parse dates
         let start_date =
             chrono::NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-                .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+                .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 

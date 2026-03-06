@@ -51,7 +51,11 @@ fn extract_from_csv(
         .delimiter(csv.delimiter)
         .from_path(&csv.path)?;
 
-    let headers: Vec<String> = reader.headers()?.iter().map(|s| s.to_string()).collect();
+    let headers: Vec<String> = reader
+        .headers()?
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
 
     // Sample rows to infer types
     let mut sample_rows: Vec<Vec<String>> = Vec::new();
@@ -62,7 +66,12 @@ fn extract_from_csv(
         row_count += 1;
 
         if sample_rows.len() < 1000 {
-            sample_rows.push(record.iter().map(|s| s.to_string()).collect());
+            sample_rows.push(
+                record
+                    .iter()
+                    .map(std::string::ToString::to_string)
+                    .collect(),
+            );
         }
     }
 
@@ -81,7 +90,7 @@ fn extract_from_csv(
         .map(|(i, name)| {
             let values: Vec<&str> = sample_rows
                 .iter()
-                .filter_map(|row| row.get(i).map(|s| s.as_str()))
+                .filter_map(|row| row.get(i).map(std::string::String::as_str))
                 .collect();
 
             let data_type = infer_data_type(&values);
@@ -176,7 +185,10 @@ fn extract_from_parquet(
             0.0
         };
         let cardinality = if sample_data.len() > i {
-            let values: Vec<&str> = sample_data[i].iter().map(|s| s.as_str()).collect();
+            let values: Vec<&str> = sample_data[i]
+                .iter()
+                .map(std::string::String::as_str)
+                .collect();
             estimate_cardinality(&values)
         } else {
             0
@@ -330,7 +342,10 @@ fn extract_from_json(
         let null_rate = null_count as f64 / sample_rows.len().max(1) as f64;
 
         let string_values: Vec<String> = values.iter().map(|v| json_value_to_string(v)).collect();
-        let str_values: Vec<&str> = string_values.iter().map(|s| s.as_str()).collect();
+        let str_values: Vec<&str> = string_values
+            .iter()
+            .map(std::string::String::as_str)
+            .collect();
         let cardinality = estimate_cardinality(&str_values);
 
         columns.push(
@@ -444,7 +459,7 @@ fn extract_from_memory(
             let values: Vec<&str> = mem
                 .rows
                 .iter()
-                .filter_map(|row| row.get(i).map(|s| s.as_str()))
+                .filter_map(|row| row.get(i).map(std::string::String::as_str))
                 .collect();
 
             let data_type = infer_data_type(&values);

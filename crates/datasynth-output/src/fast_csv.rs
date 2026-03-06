@@ -60,7 +60,7 @@ pub fn write_csv_decimal<W: Write>(w: &mut W, val: &rust_decimal::Decimal) -> st
     use std::fmt::Write as FmtWrite;
     let mut buf = DecimalBuffer::new();
     // This cannot fail since DecimalBuffer always has capacity
-    let _ = write!(buf, "{}", val);
+    let _ = write!(buf, "{val}");
     w.write_all(buf.as_bytes())
 }
 

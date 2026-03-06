@@ -185,8 +185,7 @@ impl NearMissGenerator {
                         },
                         FalsePositiveTrigger::SimilarTransaction,
                         format!(
-                            "Similar transaction {} days apart - different business event",
-                            days_diff
+                            "Similar transaction {days_diff} days apart - different business event"
                         ),
                     ));
                 }
@@ -347,10 +346,7 @@ impl NearMissGenerator {
             pattern,
             0.60,
             FalsePositiveTrigger::SimilarTransaction,
-            format!(
-                "Error caught and corrected within {} days",
-                correction_lag_days
-            ),
+            format!("Error caught and corrected within {correction_lag_days} days"),
         );
 
         self.labels.push(label.clone());

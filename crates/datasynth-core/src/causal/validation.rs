@@ -120,10 +120,7 @@ impl CausalValidator {
 
         let passed = mismatches.is_empty();
         let details = if passed {
-            format!(
-                "All {}/{} edges have correct correlation signs",
-                correct_signs, total_edges
-            )
+            format!("All {correct_signs}/{total_edges} edges have correct correlation signs")
         } else {
             format!(
                 "{}/{} edges have incorrect signs: {}",
@@ -203,8 +200,7 @@ impl CausalValidator {
         let passed = non_edge_corrs.is_empty() || avg_non_edge <= avg_edge + 0.1;
 
         let details = format!(
-            "Avg edge correlation: {:.4}, avg non-edge correlation: {:.4}",
-            avg_edge, avg_non_edge
+            "Avg edge correlation: {avg_edge:.4}, avg non-edge correlation: {avg_non_edge:.4}"
         );
 
         CausalCheck {
@@ -281,10 +277,8 @@ impl CausalValidator {
         }
 
         let passed = total_checked == 0 || consistent >= total_checked / 2;
-        let details = format!(
-            "{}/{} edges show consistent conditional mean ordering",
-            consistent, total_checked
-        );
+        let details =
+            format!("{consistent}/{total_checked} edges show consistent conditional mean ordering");
 
         CausalCheck {
             name: "topological_consistency".to_string(),

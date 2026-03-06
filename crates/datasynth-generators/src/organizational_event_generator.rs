@@ -153,7 +153,7 @@ impl OrganizationalEventGenerator {
                 c.divested_entity_code, company_code
             )),
             OrganizationalEventType::Reorganization(_) => {
-                Some(format!("Organizational restructuring at {}", company_code))
+                Some(format!("Organizational restructuring at {company_code}"))
             }
             OrganizationalEventType::LeadershipChange(c) => {
                 Some(format!("{} transition at {}", c.role, company_code))
@@ -193,7 +193,7 @@ impl OrganizationalEventGenerator {
         company_code: &str,
     ) -> OrganizationalEventType {
         let seq = self.event_counter;
-        let entity_code = format!("ACQ-{}-{:04}", company_code, seq);
+        let entity_code = format!("ACQ-{company_code}-{seq:04}");
         let volume_mult = self.rng.random_range(1.10..1.60);
         let parallel_days = self.rng.random_range(15..60_u32);
 
@@ -202,7 +202,7 @@ impl OrganizationalEventGenerator {
 
         OrganizationalEventType::Acquisition(AcquisitionConfig {
             acquired_entity_code: entity_code.clone(),
-            acquired_entity_name: Some(format!("Acquired Entity {}", seq)),
+            acquired_entity_name: Some(format!("Acquired Entity {seq}")),
             acquisition_date: effective_date,
             volume_multiplier: volume_mult,
             integration_error_rate: self.rng.random_range(0.02..0.08),
@@ -228,12 +228,12 @@ impl OrganizationalEventGenerator {
         company_code: &str,
     ) -> OrganizationalEventType {
         let seq = self.event_counter;
-        let entity_code = format!("DIV-{}-{:04}", company_code, seq);
+        let entity_code = format!("DIV-{company_code}-{seq:04}");
         let transition = self.rng.random_range(2..6_u32);
 
         OrganizationalEventType::Divestiture(DivestitureConfig {
             divested_entity_code: entity_code,
-            divested_entity_name: Some(format!("Divested Unit {}", seq)),
+            divested_entity_name: Some(format!("Divested Unit {seq}")),
             divestiture_date: effective_date,
             volume_reduction: self.rng.random_range(0.50..0.85),
             transition_months: transition,
@@ -331,7 +331,7 @@ impl OrganizationalEventGenerator {
         company_code: &str,
     ) -> OrganizationalEventType {
         let seq = self.event_counter;
-        let entity_code = format!("MRG-{}-{:04}", company_code, seq);
+        let entity_code = format!("MRG-{company_code}-{seq:04}");
         let volume_mult = self.rng.random_range(1.50..2.20);
 
         let cutover = effective_date + chrono::Duration::days(self.rng.random_range(30..90));
@@ -339,7 +339,7 @@ impl OrganizationalEventGenerator {
 
         OrganizationalEventType::Merger(MergerConfig {
             merged_entity_code: entity_code,
-            merged_entity_name: Some(format!("Merged Entity {}", seq)),
+            merged_entity_name: Some(format!("Merged Entity {seq}")),
             merger_date: effective_date,
             volume_multiplier: volume_mult,
             integration_error_rate: self.rng.random_range(0.03..0.08),

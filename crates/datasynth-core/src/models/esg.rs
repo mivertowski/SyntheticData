@@ -619,7 +619,7 @@ impl ToNodeProperties for EmissionRecord {
         if let Some(ref cat) = self.scope3_category {
             p.insert(
                 "scope3Category".into(),
-                GraphPropertyValue::String(format!("{:?}", cat)),
+                GraphPropertyValue::String(format!("{cat:?}")),
             );
         }
         if let Some(ref fid) = self.facility_id {

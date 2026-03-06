@@ -260,8 +260,8 @@ impl DuplicateGenerator {
                     if let Some(desc) = record.get_field("description") {
                         // Add minor variation
                         let variations = [
-                            format!("{} ", desc),
-                            format!(" {}", desc),
+                            format!("{desc} "),
+                            format!(" {desc}"),
                             desc.to_uppercase(),
                             desc.to_lowercase(),
                         ];
@@ -272,7 +272,7 @@ impl DuplicateGenerator {
                 _ => {
                     // Generic variation: add whitespace
                     if let Some(value) = record.get_field(field) {
-                        record.set_field(field, &format!("{} ", value));
+                        record.set_field(field, &format!("{value} "));
                     }
                 }
             }

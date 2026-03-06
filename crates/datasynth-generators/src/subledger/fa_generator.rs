@@ -119,7 +119,7 @@ impl FAGenerator {
         // Add serial number and inventory number
         asset.serial_number = Some(format!("SN-{:010}", self.rng.random::<u32>()));
         asset.inventory_number = Some(format!("INV-{:08}", self.asset_counter));
-        asset.cost_center = cost_center.map(|s| s.to_string());
+        asset.cost_center = cost_center.map(std::string::ToString::to_string);
 
         // Add a depreciation area
         let mut depreciation_area = DepreciationArea::new(

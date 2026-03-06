@@ -73,7 +73,7 @@ fn flatten_skr04(
 /// - 3-digit (200) → "0200"
 /// - 4-digit (1200) → "1200"
 fn normalize_skr04_account_number(number: u32) -> String {
-    format!("{:04}", number)
+    format!("{number:04}")
 }
 
 /// Map SKR04 class and account number to AccountType and AccountSubType.
@@ -216,8 +216,8 @@ pub fn build_chart_of_accounts_from_skr04(
         flatten_skr04(&class_node.accounts, class, &mut flat, max_accounts);
     }
 
-    let coa_id = format!("COA_SKR04_2024_{:?}_{}", industry, max_accounts);
-    let name = format!("Standardkontenrahmen 04 – {:?}", industry);
+    let coa_id = format!("COA_SKR04_2024_{industry:?}_{max_accounts}");
+    let name = format!("Standardkontenrahmen 04 – {industry:?}");
     let mut coa = ChartOfAccounts::new(coa_id, name, "DE".to_string(), industry, complexity);
     coa.account_format = "####".to_string();
 

@@ -129,7 +129,7 @@ impl FormatAnalyzer {
             "MXN", "KRW", "RUB", "ZAR", "SEK", "NOK", "DKK", "NZD", "THB", "MYR", "IDR", "PHP",
         ]
         .iter()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
         Self {
@@ -239,7 +239,7 @@ impl FormatAnalyzer {
             .iter()
             .map(|(format, examples)| FormatVariation {
                 field_name: field_name.to_string(),
-                format_type: format!("{:?}", format),
+                format_type: format!("{format:?}"),
                 count: examples.len(),
                 percentage: if total > 0 {
                     examples.len() as f64 / total as f64
@@ -251,7 +251,11 @@ impl FormatAnalyzer {
             .collect();
 
         let mut issues = Vec::new();
-        let dominant_count = format_counts.values().map(|v| v.len()).max().unwrap_or(0);
+        let dominant_count = format_counts
+            .values()
+            .map(std::vec::Vec::len)
+            .max()
+            .unwrap_or(0);
         let consistency = if total > 0 {
             dominant_count as f64 / total as f64
         } else {
@@ -339,7 +343,7 @@ impl FormatAnalyzer {
             .iter()
             .map(|(format, examples)| FormatVariation {
                 field_name: field_name.to_string(),
-                format_type: format!("{:?}", format),
+                format_type: format!("{format:?}"),
                 count: examples.len(),
                 percentage: if total > 0 {
                     examples.len() as f64 / total as f64
@@ -351,7 +355,11 @@ impl FormatAnalyzer {
             .collect();
 
         let mut issues = Vec::new();
-        let dominant_count = format_counts.values().map(|v| v.len()).max().unwrap_or(0);
+        let dominant_count = format_counts
+            .values()
+            .map(std::vec::Vec::len)
+            .max()
+            .unwrap_or(0);
         let consistency = if total > 0 {
             dominant_count as f64 / total as f64
         } else {
@@ -427,13 +435,13 @@ impl FormatAnalyzer {
             if value
                 .chars()
                 .filter(|c| c.is_alphabetic())
-                .all(|c| c.is_uppercase())
+                .all(char::is_uppercase)
             {
                 upper_count += 1;
             } else if value
                 .chars()
                 .filter(|c| c.is_alphabetic())
-                .all(|c| c.is_lowercase())
+                .all(char::is_lowercase)
             {
                 lower_count += 1;
             } else {
@@ -455,7 +463,7 @@ impl FormatAnalyzer {
                     .filter(|v| {
                         v.chars()
                             .filter(|c| c.is_alphabetic())
-                            .all(|c| c.is_uppercase())
+                            .all(char::is_uppercase)
                     })
                     .take(3)
                     .cloned()
@@ -474,7 +482,7 @@ impl FormatAnalyzer {
                     .filter(|v| {
                         v.chars()
                             .filter(|c| c.is_alphabetic())
-                            .all(|c| c.is_lowercase())
+                            .all(char::is_lowercase)
                     })
                     .take(3)
                     .cloned()

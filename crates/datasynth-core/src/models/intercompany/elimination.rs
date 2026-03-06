@@ -179,7 +179,7 @@ impl EliminationEntry {
         );
 
         entry.related_companies = vec![company1.to_string(), company2.to_string()];
-        entry.description = format!("Eliminate IC balance between {} and {}", company1, company2);
+        entry.description = format!("Eliminate IC balance between {company1} and {company2}");
 
         // Debit the payable (reduce liability)
         entry.add_line(EliminationLine {
@@ -189,7 +189,7 @@ impl EliminationEntry {
             is_debit: true,
             amount,
             currency: currency.clone(),
-            description: format!("Eliminate IC payable to {}", company1),
+            description: format!("Eliminate IC payable to {company1}"),
         });
 
         // Credit the receivable (reduce asset)
@@ -200,7 +200,7 @@ impl EliminationEntry {
             is_debit: false,
             amount,
             currency,
-            description: format!("Eliminate IC receivable from {}", company2),
+            description: format!("Eliminate IC receivable from {company2}"),
         });
 
         entry
@@ -230,10 +230,7 @@ impl EliminationEntry {
         );
 
         entry.related_companies = vec![seller.to_string(), buyer.to_string()];
-        entry.description = format!(
-            "Eliminate IC revenue/expense between {} and {}",
-            seller, buyer
-        );
+        entry.description = format!("Eliminate IC revenue/expense between {seller} and {buyer}");
 
         // Debit revenue (reduce income)
         entry.add_line(EliminationLine {
@@ -243,7 +240,7 @@ impl EliminationEntry {
             is_debit: true,
             amount,
             currency: currency.clone(),
-            description: format!("Eliminate IC revenue from {}", buyer),
+            description: format!("Eliminate IC revenue from {buyer}"),
         });
 
         // Credit expense (reduce expense)
@@ -254,7 +251,7 @@ impl EliminationEntry {
             is_debit: false,
             amount,
             currency,
-            description: format!("Eliminate IC expense to {}", seller),
+            description: format!("Eliminate IC expense to {seller}"),
         });
 
         entry
@@ -282,10 +279,8 @@ impl EliminationEntry {
         );
 
         entry.related_companies = vec![seller.to_string(), buyer.to_string()];
-        entry.description = format!(
-            "Eliminate unrealized profit in inventory from {} to {}",
-            seller, buyer
-        );
+        entry.description =
+            format!("Eliminate unrealized profit in inventory from {seller} to {buyer}");
 
         // Debit retained earnings/COGS (reduce profit)
         entry.add_line(EliminationLine {
@@ -339,7 +334,7 @@ impl EliminationEntry {
 
         entry.related_companies = vec![parent.to_string(), subsidiary.to_string()];
         entry.is_permanent = true;
-        entry.description = format!("Eliminate investment in {} against equity", subsidiary);
+        entry.description = format!("Eliminate investment in {subsidiary} against equity");
 
         let mut line_number = 1;
 

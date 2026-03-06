@@ -24,7 +24,7 @@ fn escape_fec_field(s: &str) -> String {
 }
 
 fn format_decimal(d: rust_decimal::Decimal) -> String {
-    format!("{:.2}", d)
+    format!("{d:.2}")
 }
 
 /// Write journal entries to a FEC-compliant CSV file (semicolon-separated, UTF-8).
@@ -40,7 +40,7 @@ pub fn write_fec_csv(
     let file = File::create(path)?;
     let mut w = BufWriter::with_capacity(256 * 1024, file);
 
-    writeln!(w, "{}", FEC_HEADER)?;
+    writeln!(w, "{FEC_HEADER}")?;
 
     let mut ecriture_num: u64 = 1;
     for je in entries {

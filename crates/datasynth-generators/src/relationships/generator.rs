@@ -204,8 +204,7 @@ impl RelationshipGenerator {
 
         let Some(type_config) = type_config else {
             return RelationshipValidation::invalid(format!(
-                "Unknown relationship type: {}",
-                rel_type
+                "Unknown relationship type: {rel_type}"
             ));
         };
 
@@ -216,13 +215,12 @@ impl RelationshipGenerator {
             .relationships_by_source
             .get(source_id)
             .and_then(|m| m.get(rel_type))
-            .map(|v| v.len())
+            .map(std::vec::Vec::len)
             .unwrap_or(0);
 
         if current_count >= max as usize {
             return RelationshipValidation::invalid(format!(
-                "Source {} already has maximum {} {} relationships",
-                source_id, max, rel_type
+                "Source {source_id} already has maximum {max} {rel_type} relationships"
             ));
         }
 
@@ -235,13 +233,12 @@ impl RelationshipGenerator {
                 .relationships_by_target
                 .get(target_id)
                 .and_then(|m| m.get(rel_type))
-                .map(|v| v.len())
+                .map(std::vec::Vec::len)
                 .unwrap_or(0);
 
             if target_count > 0 {
                 return RelationshipValidation::invalid(format!(
-                    "Target {} already has a {} relationship",
-                    target_id, rel_type
+                    "Target {target_id} already has a {rel_type} relationship"
                 ));
             }
         }

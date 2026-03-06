@@ -36,9 +36,8 @@ impl AnomalyLlmExplainer {
     ) -> Result<String, SynthError> {
         let prompt = format!(
             "Explain the following anomaly detected in accounting data in 1-2 sentences. \
-             Anomaly type: {}. Affected records: {}. Statistical details: {}. \
-             Write a concise, professional explanation suitable for an audit workpaper.",
-            anomaly_type, affected_records, statistical_details
+             Anomaly type: {anomaly_type}. Affected records: {affected_records}. Statistical details: {statistical_details}. \
+             Write a concise, professional explanation suitable for an audit workpaper."
         );
 
         let request = LlmRequest::new(prompt)
@@ -128,8 +127,7 @@ impl AnomalyLlmExplainer {
         };
 
         format!(
-            "{} anomaly ({}, {} affected record(s)): {}. Statistical basis: {}.",
-            anomaly_type, severity, affected_records, type_description, statistical_details
+            "{anomaly_type} anomaly ({severity}, {affected_records} affected record(s)): {type_description}. Statistical basis: {statistical_details}."
         )
     }
 }

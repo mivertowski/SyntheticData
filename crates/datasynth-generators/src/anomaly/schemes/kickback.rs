@@ -349,8 +349,7 @@ impl FraudScheme for VendorKickbackScheme {
                     .with_user(&self.perpetrator_id)
                     .with_difficulty(stage.detection_difficulty)
                     .with_description(format!(
-                        "Inflated invoice - base: {}, inflation: {}",
-                        base_amount, inflation
+                        "Inflated invoice - base: {base_amount}, inflation: {inflation}"
                     ));
 
                     for technique in &stage.concealment_techniques {

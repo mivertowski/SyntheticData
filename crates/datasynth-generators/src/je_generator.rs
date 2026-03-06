@@ -168,7 +168,10 @@ impl JournalEntryGenerator {
         // Initialize reference generator
         let mut ref_gen = ReferenceGenerator::new(
             start_date.year(),
-            companies.first().map(|s| s.as_str()).unwrap_or("1000"),
+            companies
+                .first()
+                .map(std::string::String::as_str)
+                .unwrap_or("1000"),
         );
         ref_gen.set_prefix(
             ReferenceType::Invoice,
@@ -796,7 +799,7 @@ impl JournalEntryGenerator {
                     Some(BusinessProcess::H2R) => "-H2R",
                     _ => "",
                 };
-                line.profit_center = Some(format!("PC-{}{}", company_code, suffix));
+                line.profit_center = Some(format!("PC-{company_code}{suffix}"));
             }
 
             // 4. line_text: fall back to header_text if not already set
@@ -1437,7 +1440,7 @@ impl JournalEntryGenerator {
                         let chars: Vec<char> = s.chars().collect();
                         let pos = self.rng.random_range(0..chars.len().saturating_sub(1));
                         if chars[pos].is_ascii_digit()
-                            && chars.get(pos + 1).is_some_and(|c| c.is_ascii_digit())
+                            && chars.get(pos + 1).is_some_and(char::is_ascii_digit)
                         {
                             let mut new_chars = chars;
                             new_chars.swap(pos, pos + 1);
@@ -1502,7 +1505,7 @@ impl JournalEntryGenerator {
                     let idx = self.rng.random_range(0..typos.len());
                     if text.to_lowercase().contains(correct[idx]) {
                         *text = text.replace(correct[idx], typos[idx]);
-                        *text = format!("{} [HUMAN_ERROR:TYPO]", text);
+                        *text = format!("{text} [HUMAN_ERROR:TYPO]");
                     }
                 }
             }
@@ -1918,7 +1921,10 @@ impl Generator for JournalEntryGenerator {
         // Reset reference generator by recreating it
         let mut ref_gen = ReferenceGenerator::new(
             self.start_date.year(),
-            self.companies.first().map(|s| s.as_str()).unwrap_or("1000"),
+            self.companies
+                .first()
+                .map(std::string::String::as_str)
+                .unwrap_or("1000"),
         );
         ref_gen.set_prefix(
             ReferenceType::Invoice,

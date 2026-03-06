@@ -230,7 +230,7 @@ impl DocumentFlowJeGenerator {
                     Some(BusinessProcess::O2C) => "-O2C",
                     _ => "",
                 };
-                line.profit_center = Some(format!("PC-{}{}", company_code, suffix));
+                line.profit_center = Some(format!("PC-{company_code}{suffix}"));
             }
 
             // 4. line_text: fall back to header_text

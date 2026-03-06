@@ -145,7 +145,7 @@ impl std::fmt::Display for EntityType {
             Self::Invoice => "INVOICE",
             Self::Payment => "PAYMENT",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -399,7 +399,7 @@ impl EntityRegistry {
 
     /// Get count of entities by type.
     pub fn count_by_type(&self, entity_type: EntityType) -> usize {
-        self.by_type.get(&entity_type).map_or(0, |ids| ids.len())
+        self.by_type.get(&entity_type).map_or(0, std::vec::Vec::len)
     }
 
     /// Get total count of all entities.
@@ -435,8 +435,7 @@ impl EntityRegistry {
                 event_type,
                 event_date: date,
                 description: Some(format!(
-                    "Status changed from {:?} to {:?}",
-                    old_status, new_status
+                    "Status changed from {old_status:?} to {new_status:?}"
                 )),
             };
             self.entity_timeline.entry(date).or_default().push(event);
@@ -461,7 +460,7 @@ impl EntityRegistry {
     pub fn get_events_on(&self, date: NaiveDate) -> &[EntityEvent] {
         self.entity_timeline
             .get(&date)
-            .map(|v| v.as_slice())
+            .map(std::vec::Vec::as_slice)
             .unwrap_or(&[])
     }
 
@@ -486,7 +485,7 @@ impl EntityRegistry {
         transaction_date: NaiveDate,
     ) -> Result<(), String> {
         match self.entities.get(entity_id) {
-            None => Err(format!("Entity {} does not exist", entity_id)),
+            None => Err(format!("Entity {entity_id} does not exist")),
             Some(record) => {
                 if transaction_date < record.valid_from {
                     Err(format!(
@@ -496,8 +495,7 @@ impl EntityRegistry {
                 } else if let Some(valid_to) = record.valid_to {
                     if transaction_date > valid_to {
                         Err(format!(
-                            "Entity {} validity expired on {} (transaction date: {})",
-                            entity_id, valid_to, transaction_date
+                            "Entity {entity_id} validity expired on {valid_to} (transaction date: {transaction_date})"
                         ))
                     } else if record.status != EntityStatus::Active {
                         Err(format!(

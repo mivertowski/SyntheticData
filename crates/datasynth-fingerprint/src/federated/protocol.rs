@@ -356,8 +356,8 @@ impl FederatedFingerprintProtocol {
                 .map(|p| p.stds[i])
                 .collect();
 
-            col_means.sort_by(|a, b| a.total_cmp(b));
-            col_stds.sort_by(|a, b| a.total_cmp(b));
+            col_means.sort_by(f64::total_cmp);
+            col_stds.sort_by(f64::total_cmp);
 
             agg_means[i] = compute_median(&col_means);
             agg_stds[i] = compute_median(&col_stds);
@@ -413,8 +413,8 @@ impl FederatedFingerprintProtocol {
                 .map(|p| p.stds[i])
                 .collect();
 
-            col_means.sort_by(|a, b| a.total_cmp(b));
-            col_stds.sort_by(|a, b| a.total_cmp(b));
+            col_means.sort_by(f64::total_cmp);
+            col_stds.sort_by(f64::total_cmp);
 
             // Trim top/bottom
             let trimmed_means = trim_slice(&col_means, trim_count);

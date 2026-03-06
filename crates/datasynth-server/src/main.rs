@@ -141,9 +141,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         // 0 means automatic - tokio defaults to num_cpus
         let num_cpus = std::thread::available_parallelism()
-            .map(|p| p.get())
+            .map(std::num::NonZero::get)
             .unwrap_or(4);
-        eprintln!("Using {} worker threads (auto-detected)", num_cpus);
+        eprintln!("Using {num_cpus} worker threads (auto-detected)");
     }
 
     let runtime = runtime_builder.build()?;

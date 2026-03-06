@@ -65,10 +65,7 @@ impl ScenarioEngine {
             "default" | "" => {
                 let yaml = include_str!("causal_dag_default.yaml");
                 serde_yaml::from_str(yaml).map_err(|e| {
-                    ScenarioError::Serialization(format!(
-                        "failed to parse default causal DAG: {}",
-                        e
-                    ))
+                    ScenarioError::Serialization(format!("failed to parse default causal DAG: {e}"))
                 })?
             }
             "minimal" => {
@@ -135,8 +132,7 @@ impl ScenarioEngine {
             }
             other => {
                 return Err(ScenarioError::Serialization(format!(
-                    "unknown causal DAG preset: '{}'",
-                    other
+                    "unknown causal DAG preset: '{other}'"
                 )));
             }
         };
@@ -250,10 +246,7 @@ impl ScenarioEngine {
         for schema in schema_interventions {
             let intervention_type: InterventionType =
                 serde_json::from_value(schema.intervention_type.clone()).map_err(|e| {
-                    ScenarioError::Serialization(format!(
-                        "failed to parse intervention type: {}",
-                        e
-                    ))
+                    ScenarioError::Serialization(format!("failed to parse intervention type: {e}"))
                 })?;
 
             let onset = match schema.timing.onset.to_lowercase().as_str() {

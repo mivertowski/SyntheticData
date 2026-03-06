@@ -232,7 +232,11 @@ impl fmt::Debug for CountryPackRegistry {
             .field("default", &self.default_pack.country_code)
             .field(
                 "countries",
-                &self.packs.keys().map(|c| c.as_str()).collect::<Vec<_>>(),
+                &self
+                    .packs
+                    .keys()
+                    .map(CountryCode::as_str)
+                    .collect::<Vec<_>>(),
             )
             .finish()
     }

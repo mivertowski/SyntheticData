@@ -398,7 +398,7 @@ impl IsaProcedureMapping {
     /// Get unique standards covered by this mapping.
     pub fn standards_covered(&self) -> Vec<IsaStandard> {
         let mut standards: Vec<_> = self.isa_requirements.iter().map(|r| r.standard).collect();
-        standards.sort_by_key(|s| s.number());
+        standards.sort_by_key(IsaStandard::number);
         standards.dedup();
         standards
     }
@@ -472,9 +472,9 @@ impl IsaCoverageSummary {
     pub fn calculate_coverage(&mut self, mappings: &[IsaProcedureMapping]) {
         self.standards_addressed = mappings
             .iter()
-            .flat_map(|m| m.standards_covered())
+            .flat_map(IsaProcedureMapping::standards_covered)
             .collect();
-        self.standards_addressed.sort_by_key(|s| s.number());
+        self.standards_addressed.sort_by_key(IsaStandard::number);
         self.standards_addressed.dedup();
 
         // Calculate gaps

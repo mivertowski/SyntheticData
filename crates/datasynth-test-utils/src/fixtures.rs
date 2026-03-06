@@ -221,7 +221,7 @@ pub fn test_gl_account(
 ) -> GLAccount {
     GLAccount::new(
         number.to_string(),
-        format!("Test Account {}", number),
+        format!("Test Account {number}"),
         account_type,
         sub_type,
     )

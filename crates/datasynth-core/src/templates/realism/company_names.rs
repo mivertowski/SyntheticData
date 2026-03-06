@@ -674,12 +674,12 @@ impl CompanyNameGenerator {
             CompanyNameStyle::FounderBased => {
                 let founder = self.founder_names.choose(rng).expect("non-empty name pool");
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
-                format!("{} {}", founder, descriptor)
+                format!("{founder} {descriptor}")
             }
             CompanyNameStyle::Descriptive => {
                 let adjective = self.select_adjective(rng);
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
-                format!("{} {}", adjective, descriptor)
+                format!("{adjective} {descriptor}")
             }
             CompanyNameStyle::LocationBased => {
                 let location = self
@@ -687,14 +687,14 @@ impl CompanyNameGenerator {
                     .choose(rng)
                     .expect("non-empty name pool");
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
-                format!("{} {}", location, descriptor)
+                format!("{location} {descriptor}")
             }
             CompanyNameStyle::Acronym => {
                 let letters: String = (0..3)
                     .map(|_| (b'A' + rng.random_range(0..26)) as char)
                     .collect();
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
-                format!("{} {}", letters, descriptor)
+                format!("{letters} {descriptor}")
             }
             CompanyNameStyle::Abstract => {
                 let abstract_name = self
@@ -702,7 +702,7 @@ impl CompanyNameGenerator {
                     .choose(rng)
                     .expect("non-empty name pool");
                 let descriptor = descriptors.choose(rng).expect("non-empty name pool");
-                format!("{} {}", abstract_name, descriptor)
+                format!("{abstract_name} {descriptor}")
             }
         }
     }

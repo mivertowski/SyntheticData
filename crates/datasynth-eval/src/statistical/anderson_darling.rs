@@ -256,8 +256,7 @@ impl AndersonDarlingAnalyzer {
         let skipped = values.len() - positive_values.len();
         if skipped > 0 {
             issues.push(format!(
-                "Skipped {} non-positive values for log-normal test",
-                skipped
+                "Skipped {skipped} non-positive values for log-normal test"
             ));
         }
 
@@ -294,8 +293,7 @@ impl AndersonDarlingAnalyzer {
         let skipped = values.len() - positive_values.len();
         if skipped > 0 {
             issues.push(format!(
-                "Skipped {} non-positive values for exponential test",
-                skipped
+                "Skipped {skipped} non-positive values for exponential test"
             ));
         }
 

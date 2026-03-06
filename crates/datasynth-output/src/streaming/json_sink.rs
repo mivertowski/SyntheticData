@@ -102,7 +102,7 @@ impl<T: Serialize + Send> JsonStreamingSink<T> {
         if self.pretty_print {
             // Pretty print: serialize to a temporary buffer, then indent
             let json = serde_json::to_string_pretty(item).map_err(|e| {
-                SynthError::generation(format!("Failed to serialize item to JSON: {}", e))
+                SynthError::generation(format!("Failed to serialize item to JSON: {e}"))
             })?;
             // Write each line with 2-space indent directly to the writer
             for (i, line) in json.lines().enumerate() {
@@ -116,7 +116,7 @@ impl<T: Serialize + Send> JsonStreamingSink<T> {
         } else {
             // Compact mode: serialize directly to BufWriter — zero intermediate allocation
             serde_json::to_writer(&mut self.writer, item).map_err(|e| {
-                SynthError::generation(format!("Failed to serialize item to JSON: {}", e))
+                SynthError::generation(format!("Failed to serialize item to JSON: {e}"))
             })?;
             self.bytes_written += 100; // estimate
         }
@@ -224,7 +224,7 @@ impl<T: Serialize + Send> NdjsonStreamingSink<T> {
     /// Serializes directly to the BufWriter, avoiding intermediate String allocation.
     fn write_item(&mut self, item: &T) -> SynthResult<()> {
         serde_json::to_writer(&mut self.writer, item).map_err(|e| {
-            SynthError::generation(format!("Failed to serialize item to JSON: {}", e))
+            SynthError::generation(format!("Failed to serialize item to JSON: {e}"))
         })?;
 
         self.writer.write_all(b"\n")?;

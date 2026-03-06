@@ -51,7 +51,7 @@ impl MockLlmProvider {
         ];
         let prefix = PREFIXES[rng.random_range(0..PREFIXES.len())];
         let suffix = TYPES[rng.random_range(0..TYPES.len())];
-        format!("{} {}", prefix, suffix)
+        format!("{prefix} {suffix}")
     }
 
     fn generate_description(rng: &mut ChaCha8Rng) -> String {

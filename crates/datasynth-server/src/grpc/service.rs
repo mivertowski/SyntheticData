@@ -131,8 +131,7 @@ impl ServerState {
         let max = self.max_concurrent_generations.load(Ordering::Relaxed);
         if active >= max {
             return Err(Status::resource_exhausted(format!(
-                "Too many concurrent generations ({}/{}). Try again later.",
-                active, max
+                "Too many concurrent generations ({active}/{max}). Try again later."
             )));
         }
 
@@ -151,8 +150,7 @@ impl ServerState {
                 }
             }
             Err(e) => Err(Status::resource_exhausted(format!(
-                "Resource check failed: {}",
-                e
+                "Resource check failed: {e}"
             ))),
         }
     }
@@ -212,8 +210,7 @@ impl SynthService {
                     "" => IndustrySector::Manufacturing, // empty defaults to manufacturing
                     other => {
                         return Err(Status::invalid_argument(format!(
-                            "Unknown industry '{}'. Valid values: manufacturing, retail, financial_services, healthcare, technology",
-                            other
+                            "Unknown industry '{other}'. Valid values: manufacturing, retail, financial_services, healthcare, technology"
                         )));
                     }
                 };
@@ -225,8 +222,7 @@ impl SynthService {
                     "" => CoAComplexity::Small, // empty defaults to small
                     other => {
                         return Err(Status::invalid_argument(format!(
-                            "Unknown coa_complexity '{}'. Valid values: small, medium, large",
-                            other
+                            "Unknown coa_complexity '{other}'. Valid values: small, medium, large"
                         )));
                     }
                 };
@@ -316,7 +312,7 @@ impl SynthService {
             document_date: entry.header.document_date.to_string(),
             created_at: entry.header.created_at.to_rfc3339(),
             source: format!("{:?}", entry.header.source),
-            business_process: entry.header.business_process.map(|bp| format!("{:?}", bp)),
+            business_process: entry.header.business_process.map(|bp| format!("{bp:?}")),
             lines: entry
                 .lines
                 .iter()
@@ -344,7 +340,7 @@ impl SynthService {
                 })
                 .collect(),
             is_anomaly: entry.header.is_fraud,
-            anomaly_type: entry.header.fraud_type.map(|ft| format!("{:?}", ft)),
+            anomaly_type: entry.header.fraud_type.map(|ft| format!("{ft:?}")),
         }
     }
 
@@ -422,11 +418,11 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
         };
 
         let mut orchestrator = EnhancedOrchestrator::new(config, phase_config)
-            .map_err(|e| Status::internal(format!("Failed to create orchestrator: {}", e)))?;
+            .map_err(|e| Status::internal(format!("Failed to create orchestrator: {e}")))?;
 
         let result = orchestrator
             .generate()
-            .map_err(|e| Status::internal(format!("Generation failed: {}", e)))?;
+            .map_err(|e| Status::internal(format!("Generation failed: {e}")))?;
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
 
@@ -724,15 +720,14 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
                         info!("Pattern trigger activated: {}", pattern);
                         (
                             true,
-                            format!("Pattern '{}' will be applied to upcoming entries", pattern),
+                            format!("Pattern '{pattern}' will be applied to upcoming entries"),
                             StreamStatus::Running,
                         )
                     } else {
                         (
                             false,
                             format!(
-                                "Unknown pattern '{}'. Valid patterns: {:?}",
-                                pattern, valid_patterns
+                                "Unknown pattern '{pattern}'. Valid patterns: {valid_patterns:?}"
                             ),
                             StreamStatus::Running,
                         )

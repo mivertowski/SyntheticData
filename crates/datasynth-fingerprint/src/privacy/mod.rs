@@ -270,7 +270,7 @@ impl PrivacyEngine {
         // Record with the accountant for composition-aware tracking
         let mechanism_record = MechanismRecord::new(
             epsilon_per_query,
-            format!("Laplace noise on {} (sensitivity={})", target, sensitivity),
+            format!("Laplace noise on {target} (sensitivity={sensitivity})"),
         );
         self.accountant.record_mechanism(mechanism_record);
 
@@ -278,8 +278,7 @@ impl PrivacyEngine {
             PrivacyActionType::LaplaceNoise,
             target,
             format!(
-                "Added Laplace noise with sensitivity={}, epsilon={}",
-                sensitivity, epsilon_per_query
+                "Added Laplace noise with sensitivity={sensitivity}, epsilon={epsilon_per_query}"
             ),
             "Differential privacy protection",
         )
@@ -330,8 +329,7 @@ impl PrivacyEngine {
                 PrivacyActionType::Winsorization,
                 target,
                 format!(
-                    "Winsorized {} low and {} high outliers at {}th percentile",
-                    low_count, high_count, percentile
+                    "Winsorized {low_count} low and {high_count} high outliers at {percentile}th percentile"
                 ),
                 "Outlier protection",
             );
@@ -423,7 +421,7 @@ fn winsorize_values(values: &mut [f64], percentile: f64) -> (usize, usize) {
 
     // Sort to find percentile values
     let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.total_cmp(b));
+    sorted.sort_by(f64::total_cmp);
 
     let low_threshold = sorted.get(low_idx).copied().unwrap_or(f64::MIN);
     let high_threshold = sorted.get(high_idx.min(n - 1)).copied().unwrap_or(f64::MAX);

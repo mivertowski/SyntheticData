@@ -156,7 +156,7 @@ impl StatisticalEvaluation {
         if let Some(ref correlation) = self.correlation {
             if !correlation.passes {
                 for issue in &correlation.issues {
-                    self.failures.push(format!("Correlation: {}", issue));
+                    self.failures.push(format!("Correlation: {issue}"));
                 }
             }
             // Score based on pass rate
@@ -170,7 +170,7 @@ impl StatisticalEvaluation {
         if let Some(ref ad) = self.anderson_darling {
             if !ad.passes {
                 for issue in &ad.issues {
-                    self.failures.push(format!("Anderson-Darling: {}", issue));
+                    self.failures.push(format!("Anderson-Darling: {issue}"));
                 }
             }
             // Score based on p-value (higher is better for goodness-of-fit)
@@ -181,7 +181,7 @@ impl StatisticalEvaluation {
         if let Some(ref chi_sq) = self.chi_squared {
             if !chi_sq.passes {
                 for issue in &chi_sq.issues {
-                    self.failures.push(format!("Chi-squared: {}", issue));
+                    self.failures.push(format!("Chi-squared: {issue}"));
                 }
             }
             // Score based on p-value (higher is better for goodness-of-fit)
@@ -192,7 +192,7 @@ impl StatisticalEvaluation {
         if let Some(ref drift) = self.drift_detection {
             if !drift.passes {
                 for issue in &drift.issues {
-                    self.failures.push(format!("Drift detection: {}", issue));
+                    self.failures.push(format!("Drift detection: {issue}"));
                 }
             }
             // Score based on F1 score if drift was significant
@@ -223,7 +223,7 @@ impl StatisticalEvaluation {
         if let Some(ref events) = self.drift_events {
             if !events.passes {
                 for issue in &events.issues {
-                    self.failures.push(format!("Drift events: {}", issue));
+                    self.failures.push(format!("Drift events: {issue}"));
                 }
             }
             // Score based on event coverage
@@ -237,7 +237,7 @@ impl StatisticalEvaluation {
         if let Some(ref anomaly_realism) = self.anomaly_realism {
             if !anomaly_realism.passes {
                 for issue in &anomaly_realism.issues {
-                    self.failures.push(format!("Anomaly realism: {}", issue));
+                    self.failures.push(format!("Anomaly realism: {issue}"));
                 }
             }
             // Score based on detectability

@@ -38,11 +38,10 @@ impl PluginRegistry {
         let mut generators = self
             .generators
             .write()
-            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {e}")))?;
         if generators.contains_key(&name) {
             return Err(SynthError::generation(format!(
-                "Generator plugin '{}' is already registered",
-                name
+                "Generator plugin '{name}' is already registered"
             )));
         }
         generators.insert(name, Arc::from(plugin));
@@ -57,11 +56,10 @@ impl PluginRegistry {
         let mut sinks = self
             .sinks
             .write()
-            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {e}")))?;
         if sinks.contains_key(&name) {
             return Err(SynthError::generation(format!(
-                "Sink plugin '{}' is already registered",
-                name
+                "Sink plugin '{name}' is already registered"
             )));
         }
         sinks.insert(name, Arc::new(RwLock::new(plugin)));
@@ -76,11 +74,10 @@ impl PluginRegistry {
         let mut transforms = self
             .transforms
             .write()
-            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to acquire write lock: {e}")))?;
         if transforms.contains_key(&name) {
             return Err(SynthError::generation(format!(
-                "Transform plugin '{}' is already registered",
-                name
+                "Transform plugin '{name}' is already registered"
             )));
         }
         transforms.insert(name, Arc::from(plugin));

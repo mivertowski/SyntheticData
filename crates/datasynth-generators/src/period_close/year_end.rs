@@ -502,7 +502,9 @@ pub struct YearEndCloseResult {
 impl YearEndCloseResult {
     /// Returns true if all entries are balanced.
     pub fn all_entries_balanced(&self) -> bool {
-        self.closing_entries.iter().all(|je| je.is_balanced())
+        self.closing_entries
+            .iter()
+            .all(datasynth_core::JournalEntry::is_balanced)
     }
 }
 

@@ -82,16 +82,16 @@ impl OverrideType {
     pub fn description(&self) -> String {
         match self {
             OverrideType::Revenue(techniques) => {
-                format!("Revenue override: {:?}", techniques)
+                format!("Revenue override: {techniques:?}")
             }
             OverrideType::Expense(techniques) => {
-                format!("Expense override: {:?}", techniques)
+                format!("Expense override: {techniques:?}")
             }
             OverrideType::Asset(techniques) => {
-                format!("Asset valuation override: {:?}", techniques)
+                format!("Asset valuation override: {techniques:?}")
             }
             OverrideType::Reserve(techniques) => {
-                format!("Reserve manipulation: {:?}", techniques)
+                format!("Reserve manipulation: {techniques:?}")
             }
         }
     }

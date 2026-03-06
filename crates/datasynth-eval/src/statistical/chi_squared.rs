@@ -265,8 +265,7 @@ impl ChiSquaredAnalyzer {
                 let sum: f64 = props.iter().sum();
                 if (sum - 1.0).abs() > 0.01 {
                     return Err(EvalError::InvalidParameter(format!(
-                        "Proportions must sum to 1.0, got {}",
-                        sum
+                        "Proportions must sum to 1.0, got {sum}"
                     )));
                 }
                 Ok(props.iter().map(|&p| p * total).collect())

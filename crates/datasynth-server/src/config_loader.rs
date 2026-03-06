@@ -33,7 +33,7 @@ pub async fn load_config(source: &ConfigSource) -> Result<GeneratorConfig, Confi
                 ConfigLoadError::Io(format!("Failed to read {}: {}", path.display(), e))
             })?;
             let config: GeneratorConfig = serde_yaml::from_str(&content)
-                .map_err(|e| ConfigLoadError::Parse(format!("Failed to parse YAML: {}", e)))?;
+                .map_err(|e| ConfigLoadError::Parse(format!("Failed to parse YAML: {e}")))?;
             Ok(config)
         }
         ConfigSource::Url { url } => {
@@ -42,14 +42,13 @@ pub async fn load_config(source: &ConfigSource) -> Result<GeneratorConfig, Confi
                 url
             );
             Err(ConfigLoadError::Io(format!(
-                "URL config loading not yet supported. Use file or inline config instead. URL: {}",
-                url
+                "URL config loading not yet supported. Use file or inline config instead. URL: {url}"
             )))
         }
         ConfigSource::Inline { content } => {
             info!("Loading inline config ({} bytes)", content.len());
             let config: GeneratorConfig = serde_yaml::from_str(content)
-                .map_err(|e| ConfigLoadError::Parse(format!("Failed to parse YAML: {}", e)))?;
+                .map_err(|e| ConfigLoadError::Parse(format!("Failed to parse YAML: {e}")))?;
             Ok(config)
         }
         ConfigSource::Default => {
@@ -83,8 +82,8 @@ pub enum ConfigLoadError {
 impl std::fmt::Display for ConfigLoadError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Io(msg) => write!(f, "Config I/O error: {}", msg),
-            Self::Parse(msg) => write!(f, "Config parse error: {}", msg),
+            Self::Io(msg) => write!(f, "Config I/O error: {msg}"),
+            Self::Parse(msg) => write!(f, "Config parse error: {msg}"),
         }
     }
 }

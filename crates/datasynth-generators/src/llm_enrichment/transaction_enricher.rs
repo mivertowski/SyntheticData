@@ -35,9 +35,8 @@ impl TransactionLlmEnricher {
     ) -> Result<String, SynthError> {
         let prompt = format!(
             "Generate a single realistic transaction description for a journal entry. \
-             Context: GL account '{}', amount range {}, {} industry, fiscal period {}. \
-             Return ONLY the description text, nothing else.",
-            account_name, amount_range, industry, fiscal_period
+             Context: GL account '{account_name}', amount range {amount_range}, {industry} industry, fiscal period {fiscal_period}. \
+             Return ONLY the description text, nothing else."
         );
 
         let request = LlmRequest::new(prompt)
@@ -83,9 +82,8 @@ impl TransactionLlmEnricher {
         amount: &str,
     ) -> Result<String, SynthError> {
         let prompt = format!(
-            "Generate a short memo/note for a {} document from vendor '{}' \
-             for amount {}. Return ONLY the memo text, nothing else.",
-            doc_type, vendor_name, amount
+            "Generate a short memo/note for a {doc_type} document from vendor '{vendor_name}' \
+             for amount {amount}. Return ONLY the memo text, nothing else."
         );
 
         let request = LlmRequest::new(prompt)
@@ -125,17 +123,13 @@ impl TransactionLlmEnricher {
             _ => "period",
         };
         format!(
-            "{} {} posting - {} {} operations ({})",
-            industry, account_name, period_label, amount_range, fiscal_period
+            "{industry} {account_name} posting - {period_label} {amount_range} operations ({fiscal_period})"
         )
     }
 
     /// Deterministic fallback memo based on document context.
     fn fallback_memo(doc_type: &str, vendor_name: &str, amount: &str) -> String {
-        format!(
-            "{} from {} for {} - processed per standard policy",
-            doc_type, vendor_name, amount
-        )
+        format!("{doc_type} from {vendor_name} for {amount} - processed per standard policy")
     }
 }
 

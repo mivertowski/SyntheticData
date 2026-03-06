@@ -135,7 +135,7 @@ pub fn check_audit_issues(audit: &PrivacyAudit) -> Vec<String> {
         .filter(|w| w.level == WarningLevel::Critical)
         .count();
     if critical_count > 0 {
-        issues.push(format!("{} critical warnings present", critical_count));
+        issues.push(format!("{critical_count} critical warnings present"));
     }
 
     issues

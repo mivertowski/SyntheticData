@@ -183,10 +183,8 @@ impl OcpmEventLog {
                 // Check if variant exists, if not create it
                 if !variant_map.contains_key(&key) {
                     variant_counter += 1;
-                    let mut v = ProcessVariant::new(
-                        &format!("V{}", variant_counter),
-                        case.business_process,
-                    );
+                    let mut v =
+                        ProcessVariant::new(&format!("V{variant_counter}"), case.business_process);
                     v.activity_sequence = key.clone();
                     variant_map.insert(key.clone(), v);
                 }

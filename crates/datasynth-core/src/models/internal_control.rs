@@ -116,7 +116,7 @@ impl ToNodeProperties for SoxAssertion {
         p.insert("name".into(), GraphPropertyValue::String(self.to_string()));
         p.insert(
             "code".into(),
-            GraphPropertyValue::String(format!("{:?}", self)),
+            GraphPropertyValue::String(format!("{self:?}")),
         );
         p
     }

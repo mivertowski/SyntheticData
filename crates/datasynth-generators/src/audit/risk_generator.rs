@@ -393,32 +393,27 @@ impl RiskAssessmentGenerator {
         let description = match category {
             RiskCategory::AssertionLevel => {
                 format!(
-                    "Risk that {} is materially misstated due to {}",
-                    account_or_process, assertion_name
+                    "Risk that {account_or_process} is materially misstated due to {assertion_name}"
                 )
             }
             RiskCategory::FinancialStatementLevel => {
                 format!(
-                    "Pervasive risk affecting {} due to control environment weaknesses",
-                    account_or_process
+                    "Pervasive risk affecting {account_or_process} due to control environment weaknesses"
                 )
             }
             RiskCategory::EstimateRisk => {
                 format!(
-                    "Risk of material misstatement in {} estimates due to estimation uncertainty",
-                    account_or_process
+                    "Risk of material misstatement in {account_or_process} estimates due to estimation uncertainty"
                 )
             }
             RiskCategory::ItGeneralControl => {
                 format!(
-                    "IT general control risk affecting {} data integrity and processing",
-                    account_or_process
+                    "IT general control risk affecting {account_or_process} data integrity and processing"
                 )
             }
             RiskCategory::RelatedParty => {
                 format!(
-                    "Risk of undisclosed related party transactions affecting {}",
-                    account_or_process
+                    "Risk of undisclosed related party transactions affecting {account_or_process}"
                 )
             }
             RiskCategory::GoingConcern => {
@@ -426,12 +421,11 @@ impl RiskAssessmentGenerator {
             }
             RiskCategory::RegulatoryCompliance => {
                 format!(
-                    "Risk of non-compliance with laws and regulations affecting {}",
-                    account_or_process
+                    "Risk of non-compliance with laws and regulations affecting {account_or_process}"
                 )
             }
             RiskCategory::FraudRisk => {
-                format!("Fraud risk in {}", account_or_process)
+                format!("Fraud risk in {account_or_process}")
             }
         };
 
@@ -704,28 +698,24 @@ impl RiskAssessmentGenerator {
     ) -> String {
         match procedure_type {
             ResponseProcedureType::TestOfControls => {
-                format!("Test operating effectiveness of controls over {}", account)
+                format!("Test operating effectiveness of controls over {account}")
             }
             ResponseProcedureType::TestOfDetails => {
                 format!(
-                    "Select sample of {} transactions and vouch to supporting documentation",
-                    account
+                    "Select sample of {account} transactions and vouch to supporting documentation"
                 )
             }
             ResponseProcedureType::AnalyticalProcedure => {
-                format!(
-                    "Perform analytical procedures on {} and investigate variances",
-                    account
-                )
+                format!("Perform analytical procedures on {account} and investigate variances")
             }
             ResponseProcedureType::Confirmation => {
-                format!("Send confirmations for {} balances", account)
+                format!("Send confirmations for {account} balances")
             }
             ResponseProcedureType::PhysicalInspection => {
-                format!("Physically inspect {} items", account)
+                format!("Physically inspect {account} items")
             }
             ResponseProcedureType::Inquiry => {
-                format!("Inquire of management regarding {} processes", account)
+                format!("Inquire of management regarding {account} processes")
             }
         }
     }

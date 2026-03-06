@@ -127,7 +127,7 @@ impl ContractGenerator {
                 "Contract with {} for {}",
                 winning_bid.vendor_id, category_id
             ),
-            sourcing_project_id: sourcing_project_id.map(|s| s.to_string()),
+            sourcing_project_id: sourcing_project_id.map(std::string::ToString::to_string),
             bid_id: Some(winning_bid.bid_id.clone()),
             start_date,
             end_date,

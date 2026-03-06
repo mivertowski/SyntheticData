@@ -250,7 +250,7 @@ impl EsgAnomalyInjector {
                 record_type: "safety_metric".to_string(),
                 record_id: metric.id.clone(),
                 description: "Safety metrics suspiciously zeroed — possible data gap".to_string(),
-                original_value: Some(format!("TRIR={}", original_trir)),
+                original_value: Some(format!("TRIR={original_trir}")),
                 anomalous_value: Some("TRIR=0".to_string()),
             });
         }
@@ -291,8 +291,7 @@ impl EsgAnomalyInjector {
                     assessment.topic
                 ),
                 original_value: Some(format!(
-                    "impact={}, financial={}",
-                    original_impact, original_financial
+                    "impact={original_impact}, financial={original_financial}"
                 )),
                 anomalous_value: Some("impact=0.20, financial=0.20".to_string()),
             });

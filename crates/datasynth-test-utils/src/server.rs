@@ -86,7 +86,7 @@ pub async fn wait_for_health(
     interval_ms: u64,
 ) -> Result<(), TestServerError> {
     let client = reqwest::Client::new();
-    let health_url = format!("{}/health", base_url);
+    let health_url = format!("{base_url}/health");
 
     let result = timeout(Duration::from_secs(timeout_secs), async {
         loop {
@@ -119,7 +119,7 @@ pub async fn wait_for_health(
 /// Check if a server is healthy.
 pub async fn is_healthy(base_url: &str) -> bool {
     let client = reqwest::Client::new();
-    let health_url = format!("{}/health", base_url);
+    let health_url = format!("{base_url}/health");
 
     match client.get(&health_url).send().await {
         Ok(response) => response.status().is_success(),

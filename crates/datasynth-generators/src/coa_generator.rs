@@ -236,7 +236,7 @@ impl ChartOfAccountsGenerator {
         // Add additional accounts to reach target count
         let mut num = 4100u32;
         while coa.account_count() < target_count && num < 9900 {
-            let code = format!("{:04}", num);
+            let code = format!("{num:04}");
             if coa.get_account(&code).is_none() {
                 let class = (num / 1000) as u8;
                 let (acc_type, sub_type) = match class {
@@ -251,7 +251,7 @@ impl ChartOfAccountsGenerator {
                 };
                 coa.add_account(GLAccount::new(
                     code,
-                    format!("Konto {}", num),
+                    format!("Konto {num}"),
                     acc_type,
                     sub_type,
                 ));
@@ -317,7 +317,7 @@ impl ChartOfAccountsGenerator {
             for i in 0..count.max(1) {
                 let num = base * 1000 + (i as u32 % 100);
                 coa.add_account(GLAccount::new(
-                    format!("{:06}", num),
+                    format!("{num:06}"),
                     format!("{} {}", name, i + 1),
                     acc_type,
                     sub_type,
@@ -330,7 +330,7 @@ impl ChartOfAccountsGenerator {
         for i in 0..count.max(1) {
             let num = 215000 + (i as u32 % 100);
             coa.add_account(GLAccount::new(
-                format!("{:06}", num),
+                format!("{num:06}"),
                 format!("Immobilisations {}", i + 1),
                 AccountType::Asset,
                 AccountSubType::FixedAssets,
@@ -339,7 +339,7 @@ impl ChartOfAccountsGenerator {
         for i in 0..(count / 2).max(1) {
             let num = 281000 + (i as u32 % 100);
             coa.add_account(GLAccount::new(
-                format!("{:06}", num),
+                format!("{num:06}"),
                 format!("Amortissements {}", i + 1),
                 AccountType::Asset,
                 AccountSubType::AccumulatedDepreciation,
@@ -351,7 +351,7 @@ impl ChartOfAccountsGenerator {
         for i in 0..count.max(1) {
             let num = 310000 + (i as u32 % 1000);
             coa.add_account(GLAccount::new(
-                format!("{:06}", num),
+                format!("{num:06}"),
                 format!("Stocks {}", i + 1),
                 AccountType::Asset,
                 AccountSubType::Inventory,
@@ -363,7 +363,7 @@ impl ChartOfAccountsGenerator {
         for i in 0..count.max(1) {
             let num = 411000 + (i as u32 % 1000);
             coa.add_account(GLAccount::new(
-                format!("{:06}", num),
+                format!("{num:06}"),
                 format!("Clients {}", i + 1),
                 AccountType::Asset,
                 AccountSubType::AccountsReceivable,
@@ -372,7 +372,7 @@ impl ChartOfAccountsGenerator {
         for i in 0..count.max(1) {
             let num = 401000 + (i as u32 % 1000);
             coa.add_account(GLAccount::new(
-                format!("{:06}", num),
+                format!("{num:06}"),
                 format!("Fournisseurs {}", i + 1),
                 AccountType::Liability,
                 AccountSubType::AccountsPayable,
@@ -397,7 +397,7 @@ impl ChartOfAccountsGenerator {
             for i in 0..(count / 3).max(1) {
                 let num = base * 1000 + (i as u32 % 100);
                 coa.add_account(GLAccount::new(
-                    format!("{:06}", num),
+                    format!("{num:06}"),
                     format!("{} {}", name, i + 1),
                     AccountType::Asset,
                     AccountSubType::Cash,
@@ -418,7 +418,7 @@ impl ChartOfAccountsGenerator {
             for i in 0..(count / 5).max(1) {
                 let num = base * 1000 + (i as u32 % 100);
                 let mut account = GLAccount::new(
-                    format!("{:06}", num),
+                    format!("{num:06}"),
                     format!("{} {}", name, i + 1),
                     AccountType::Expense,
                     AccountSubType::OperatingExpenses,
@@ -439,7 +439,7 @@ impl ChartOfAccountsGenerator {
             for i in 0..(count / 3).max(1) {
                 let num = base * 1000 + (i as u32 % 100);
                 coa.add_account(GLAccount::new(
-                    format!("{:06}", num),
+                    format!("{num:06}"),
                     format!("{} {}", name, i + 1),
                     AccountType::Revenue,
                     AccountSubType::ProductRevenue,
@@ -968,7 +968,7 @@ impl ChartOfAccountsGenerator {
             let sub_count = ((count as f64) * weight).round() as usize;
             for i in 0..sub_count.max(1) {
                 let account = GLAccount::new(
-                    format!("{}", account_num),
+                    format!("{account_num}"),
                     format!("{} {}", name_prefix, i + 1),
                     AccountType::Asset,
                     sub_type,
@@ -998,7 +998,7 @@ impl ChartOfAccountsGenerator {
             let sub_count = ((count as f64) * weight).round() as usize;
             for i in 0..sub_count.max(1) {
                 let account = GLAccount::new(
-                    format!("{}", account_num),
+                    format!("{account_num}"),
                     format!("{} {}", name_prefix, i + 1),
                     AccountType::Liability,
                     sub_type,
@@ -1022,7 +1022,7 @@ impl ChartOfAccountsGenerator {
             let sub_count = ((count as f64) * weight).round() as usize;
             for i in 0..sub_count.max(1) {
                 let account = GLAccount::new(
-                    format!("{}", account_num),
+                    format!("{account_num}"),
                     format!("{} {}", name_prefix, i + 1),
                     AccountType::Equity,
                     sub_type,
@@ -1046,7 +1046,7 @@ impl ChartOfAccountsGenerator {
             let sub_count = ((count as f64) * weight).round() as usize;
             for i in 0..sub_count.max(1) {
                 let account = GLAccount::new(
-                    format!("{}", account_num),
+                    format!("{account_num}"),
                     format!("{} {}", name_prefix, i + 1),
                     AccountType::Revenue,
                     sub_type,
@@ -1082,7 +1082,7 @@ impl ChartOfAccountsGenerator {
             let sub_count = ((count as f64) * weight).round() as usize;
             for i in 0..sub_count.max(1) {
                 let mut account = GLAccount::new(
-                    format!("{}", account_num),
+                    format!("{account_num}"),
                     format!("{} {}", name_prefix, i + 1),
                     AccountType::Expense,
                     sub_type,
@@ -1108,7 +1108,7 @@ impl ChartOfAccountsGenerator {
         let mut account_num = 199000u32;
         for (sub_type, name) in suspense_types {
             let mut account = GLAccount::new(
-                format!("{}", account_num),
+                format!("{account_num}"),
                 name.to_string(),
                 AccountType::Asset,
                 sub_type,

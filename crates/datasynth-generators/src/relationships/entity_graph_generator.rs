@@ -228,7 +228,7 @@ impl EntityGraphGenerator {
         let company_id = GraphEntityId::new(GraphEntityType::Company, company_code);
         graph.add_node(EntityNode::new(
             company_id.clone(),
-            format!("Company {}", company_code),
+            format!("Company {company_code}"),
             as_of_date,
         ));
 

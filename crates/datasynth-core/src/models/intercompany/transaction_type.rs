@@ -218,10 +218,8 @@ impl ICMatchedPair {
         currency: String,
         transaction_date: NaiveDate,
     ) -> Self {
-        let description = format!(
-            "IC {:?} from {} to {}",
-            transaction_type, seller_company, buyer_company
-        );
+        let description =
+            format!("IC {transaction_type:?} from {seller_company} to {buyer_company}");
 
         Self {
             ic_reference,

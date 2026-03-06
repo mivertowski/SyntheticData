@@ -387,8 +387,7 @@ impl XesExporter {
                     crate::models::ObjectAttributeValue::Date(date) => {
                         writeln!(
                             writer,
-                            r#"{iii}<date key="{escaped_key}" value="{}T00:00:00.000+00:00"/>"#,
-                            date
+                            r#"{iii}<date key="{escaped_key}" value="{date}T00:00:00.000+00:00"/>"#
                         )?;
                     }
                     crate::models::ObjectAttributeValue::DateTime(dt) => {
@@ -399,7 +398,7 @@ impl XesExporter {
                         )?;
                     }
                     crate::models::ObjectAttributeValue::Reference(id) => {
-                        writeln!(writer, r#"{iii}<id key="{escaped_key}" value="{}"/>"#, id)?;
+                        writeln!(writer, r#"{iii}<id key="{escaped_key}" value="{id}"/>"#)?;
                     }
                     crate::models::ObjectAttributeValue::Null => {
                         // Skip null values in XES

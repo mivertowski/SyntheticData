@@ -311,7 +311,7 @@ impl SchemeAdvancer {
         self.active_schemes
             .iter()
             .find(|s| s.scheme_id() == scheme_id)
-            .map(|s| s.as_ref())
+            .map(std::convert::AsRef::as_ref)
     }
 
     /// Resets the advancer state.

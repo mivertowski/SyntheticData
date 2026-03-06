@@ -484,7 +484,7 @@ impl EntityAwareInjector {
         }
 
         // Remove duplicates
-        types.sort_by(|a, b| format!("{:?}", a).cmp(&format!("{:?}", b)));
+        types.sort_by(|a, b| format!("{a:?}").cmp(&format!("{b:?}")));
         types.dedup();
 
         types

@@ -203,7 +203,7 @@ impl CustomerGenerator {
             };
             let ubo = BeneficialOwner::new(
                 self.uuid_factory.next(),
-                &format!("{} {}", first, last),
+                &format!("{first} {last}"),
                 &country,
                 Decimal::from_f64_retain(pct).unwrap_or(Decimal::from(25)),
             );
@@ -263,7 +263,7 @@ impl CustomerGenerator {
             };
             let mut ubo = BeneficialOwner::new(
                 self.uuid_factory.next(),
-                &format!("{} {}", first, last),
+                &format!("{first} {last}"),
                 &country,
                 Decimal::from_f64_retain(pct).unwrap_or(Decimal::from(25)),
             );
@@ -434,18 +434,18 @@ impl CustomerGenerator {
 
         let prefix = prefixes.choose(&mut self.rng).expect("non-empty array");
         let suffix = industries.choose(&mut self.rng).expect("non-empty array");
-        format!("{} {}", prefix, suffix)
+        format!("{prefix} {suffix}")
     }
 
     /// Generate a trust name.
     fn generate_trust_name(&mut self, persona: TrustPersona) -> String {
         let (first_name, last_name) = self.generate_person_name();
         match persona {
-            TrustPersona::FamilyTrust => format!("{} Family Trust", last_name),
-            TrustPersona::PrivateFoundation => format!("{} {} Foundation", first_name, last_name),
-            TrustPersona::CharitableTrust => format!("{} Charitable Trust", last_name),
-            TrustPersona::InvestmentHolding => format!("{} Holdings Ltd", last_name),
-            TrustPersona::SpecialPurposeVehicle => format!("{} SPV LLC", last_name),
+            TrustPersona::FamilyTrust => format!("{last_name} Family Trust"),
+            TrustPersona::PrivateFoundation => format!("{first_name} {last_name} Foundation"),
+            TrustPersona::CharitableTrust => format!("{last_name} Charitable Trust"),
+            TrustPersona::InvestmentHolding => format!("{last_name} Holdings Ltd"),
+            TrustPersona::SpecialPurposeVehicle => format!("{last_name} SPV LLC"),
         }
     }
 
@@ -728,7 +728,7 @@ impl CustomerGenerator {
             "High St",
         ];
         let street = streets.choose(&mut self.rng).expect("non-empty array");
-        let addr = format!("{} {}", number, street);
+        let addr = format!("{number} {street}");
 
         let (city, state, postal) = match country {
             "US" => {
@@ -746,7 +746,7 @@ impl CustomerGenerator {
                 ];
                 let (c, s) = cities.choose(&mut self.rng).expect("non-empty array");
                 let zip: u32 = self.rng.random_range(10001..=99999);
-                (c.to_string(), s.to_string(), format!("{:05}", zip))
+                (c.to_string(), s.to_string(), format!("{zip:05}"))
             }
             "GB" => {
                 let cities = [
@@ -778,12 +778,12 @@ impl CustomerGenerator {
                 (
                     c.to_string(),
                     s.to_string(),
-                    format!("{}{}{} {}{}{}", l1, d1, l2, d1, l1, d1),
+                    format!("{l1}{d1}{l2} {d1}{l1}{d1}"),
                 )
             }
             _ => {
                 let zip: u32 = self.rng.random_range(10000..=99999);
-                ("City".to_string(), "State".to_string(), format!("{}", zip))
+                ("City".to_string(), "State".to_string(), format!("{zip}"))
             }
         };
         (addr, city, state, postal)
@@ -913,7 +913,7 @@ impl CustomerGenerator {
                 .expect("non-empty vec")
                 .clone()
         };
-        let addr = format!("{} {}", number, street);
+        let addr = format!("{number} {street}");
 
         // --- City ---
         let city = if cities.is_empty() {
@@ -942,7 +942,7 @@ impl CustomerGenerator {
         // --- Postal code ---
         let postal = if postal_format.is_empty() {
             let zip: u32 = self.rng.random_range(10000..=99999);
-            format!("{}", zip)
+            format!("{zip}")
         } else {
             self.expand_postal_format(postal_format)
         };

@@ -189,7 +189,7 @@ impl LabelAnalyzer {
         }
 
         if imbalance_ratio > self.max_imbalance_ratio {
-            issues.push(format!("High class imbalance: {:.1}:1", imbalance_ratio));
+            issues.push(format!("High class imbalance: {imbalance_ratio:.1}:1"));
         }
 
         // Calculate quality score

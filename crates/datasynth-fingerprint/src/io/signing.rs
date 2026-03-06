@@ -53,7 +53,7 @@ impl SigningKey {
         let secret = hex::decode(hex_secret).map_err(|e| {
             FingerprintError::Io(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
-                format!("Invalid hex key: {}", e),
+                format!("Invalid hex key: {e}"),
             ))
         })?;
 
@@ -92,7 +92,7 @@ impl SigningKey {
 
         // Decode signature
         let expected_signature = hex::decode(&signature.signature).map_err(|e| {
-            FingerprintError::InvalidFormat(format!("Invalid signature encoding: {}", e))
+            FingerprintError::InvalidFormat(format!("Invalid signature encoding: {e}"))
         })?;
 
         // Compute and compare

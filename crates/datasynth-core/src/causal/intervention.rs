@@ -61,8 +61,7 @@ impl InterventionEngine {
         for (var_name, _) in interventions {
             if self.scm.graph().get_variable(var_name).is_none() {
                 return Err(SynthError::generation(format!(
-                    "Intervention variable '{}' not found in causal graph",
-                    var_name
+                    "Intervention variable '{var_name}' not found in causal graph"
                 )));
             }
         }

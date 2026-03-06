@@ -181,7 +181,7 @@ impl SegmentDistribution {
     pub fn validate(&self) -> Result<(), String> {
         let sum = self.enterprise + self.mid_market + self.smb + self.consumer;
         if (sum - 1.0).abs() > 0.01 {
-            Err(format!("Segment distribution must sum to 1.0, got {}", sum))
+            Err(format!("Segment distribution must sum to 1.0, got {sum}"))
         } else {
             Ok(())
         }
@@ -246,10 +246,7 @@ impl LifecycleDistribution {
         let sum =
             self.prospect + self.new + self.growth + self.mature + self.at_risk + self.churned;
         if (sum - 1.0).abs() > 0.01 {
-            Err(format!(
-                "Lifecycle distribution must sum to 1.0, got {}",
-                sum
-            ))
+            Err(format!("Lifecycle distribution must sum to 1.0, got {sum}"))
         } else {
             Ok(())
         }
@@ -525,7 +522,7 @@ impl CustomerGenerator {
         // Check if intercompany
         if self.rng.random::<f64>() < self.config.intercompany_rate {
             customer.is_intercompany = true;
-            customer.intercompany_code = Some(format!("IC-{}", company_code));
+            customer.intercompany_code = Some(format!("IC-{company_code}"));
         }
 
         // Note: address, contact_name, contact_email are not fields on Customer
@@ -543,7 +540,7 @@ impl CustomerGenerator {
         let mut customer = self.generate_customer(company_code, effective_date);
         customer.is_intercompany = true;
         customer.intercompany_code = Some(partner_company_code.to_string());
-        customer.name = format!("{} - IC", partner_company_code);
+        customer.name = format!("{partner_company_code} - IC");
         customer.credit_rating = CreditRating::AAA; // IC always highest rating
         customer.credit_limit = Decimal::from(100_000_000); // High limit for IC
         customer.payment_behavior = CustomerPaymentBehavior::OnTime;
@@ -692,7 +689,7 @@ impl CustomerGenerator {
             ];
             let mut found_unique = false;
             for suffix in &suffixes {
-                let candidate = format!("{}{}", name, suffix);
+                let candidate = format!("{name}{suffix}");
                 if !self.used_names.contains(&candidate) {
                     name = candidate;
                     found_unique = true;

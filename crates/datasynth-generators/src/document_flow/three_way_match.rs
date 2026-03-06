@@ -203,10 +203,7 @@ impl ThreeWayMatcher {
                     actual: gr_qty,
                     variance: qty_variance,
                     variance_pct: qty_variance_pct,
-                    description: format!(
-                        "Under-delivery: received {} vs ordered {}",
-                        gr_qty, po_qty
-                    ),
+                    description: format!("Under-delivery: received {gr_qty} vs ordered {po_qty}"),
                 });
             }
 
@@ -223,10 +220,7 @@ impl ThreeWayMatcher {
                     actual: gr_qty,
                     variance: qty_variance,
                     variance_pct: qty_variance_pct,
-                    description: format!(
-                        "Over-delivery: received {} vs ordered {}",
-                        gr_qty, po_qty
-                    ),
+                    description: format!("Over-delivery: received {gr_qty} vs ordered {po_qty}"),
                 });
             }
 
@@ -280,10 +274,7 @@ impl ThreeWayMatcher {
                         actual: inv_qty,
                         variance: inv_gr_variance,
                         variance_pct: inv_gr_variance_pct,
-                        description: format!(
-                            "Invoice qty {} doesn't match GR qty {}",
-                            inv_qty, gr_qty
-                        ),
+                        description: format!("Invoice qty {inv_qty} doesn't match GR qty {gr_qty}"),
                     });
                 }
             } else {
@@ -295,7 +286,7 @@ impl ThreeWayMatcher {
                     actual: Decimal::ZERO,
                     variance: po_qty,
                     variance_pct: dec!(100),
-                    description: format!("PO line {} not found on invoice", po_line),
+                    description: format!("PO line {po_line} not found on invoice"),
                 });
                 all_amount_matched = false;
             }
@@ -323,8 +314,7 @@ impl ThreeWayMatcher {
                 variance: total_variance,
                 variance_pct: total_variance_pct,
                 description: format!(
-                    "Total amount variance: invoice {} vs PO {}",
-                    invoice_total, po_total
+                    "Total amount variance: invoice {invoice_total} vs PO {po_total}"
                 ),
             });
         }
@@ -337,7 +327,7 @@ impl ThreeWayMatcher {
 
         if !result.passed {
             let issues = result.variances.len();
-            result.message = format!("Three-way match failed with {} variance(s)", issues);
+            result.message = format!("Three-way match failed with {issues} variance(s)");
         }
 
         result

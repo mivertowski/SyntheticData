@@ -161,8 +161,7 @@ fn validate_output(config: &GeneratorConfig) -> SynthResult<()> {
     let level = config.output.compression.level;
     if config.output.compression.enabled && !(1..=9).contains(&level) {
         return Err(SynthError::validation(format!(
-            "compression.level must be between 1 and 9, got {}",
-            level
+            "compression.level must be between 1 and 9, got {level}"
         )));
     }
 
@@ -547,8 +546,7 @@ fn validate_sum_to_one(name: &str, values: &[f64]) -> SynthResult<()> {
     let sum: f64 = values.iter().sum();
     if (sum - 1.0).abs() > 0.01 {
         return Err(SynthError::validation(format!(
-            "{} must sum to 1.0, got {}",
-            name, sum
+            "{name} must sum to 1.0, got {sum}"
         )));
     }
     Ok(())
@@ -558,8 +556,7 @@ fn validate_sum_to_one(name: &str, values: &[f64]) -> SynthResult<()> {
 fn validate_range_f64(name: &str, value: f64, min: f64, max: f64) -> SynthResult<()> {
     if value < min || value > max {
         return Err(SynthError::validation(format!(
-            "{} must be between {} and {}, got {}",
-            name, min, max, value
+            "{name} must be between {min} and {max}, got {value}"
         )));
     }
     Ok(())
@@ -570,8 +567,7 @@ fn validate_ascending(name: &str, values: &[f64]) -> SynthResult<()> {
     for i in 1..values.len() {
         if values[i] <= values[i - 1] {
             return Err(SynthError::validation(format!(
-                "{} must be in ascending order",
-                name
+                "{name} must be in ascending order"
             )));
         }
     }
@@ -582,8 +578,7 @@ fn validate_ascending(name: &str, values: &[f64]) -> SynthResult<()> {
 fn validate_positive(name: &str, value: f64) -> SynthResult<()> {
     if value <= 0.0 {
         return Err(SynthError::validation(format!(
-            "{} must be positive, got {}",
-            name, value
+            "{name} must be positive, got {value}"
         )));
     }
     Ok(())
@@ -812,12 +807,12 @@ fn validate_mixture_config(
     // Validate individual components
     for (i, comp) in config.components.iter().enumerate() {
         validate_rate(
-            &format!("distributions.amounts.components[{}].weight", i),
+            &format!("distributions.amounts.components[{i}].weight"),
             comp.weight,
         )?;
 
         validate_positive(
-            &format!("distributions.amounts.components[{}].sigma", i),
+            &format!("distributions.amounts.components[{i}].sigma"),
             comp.sigma,
         )?;
     }
@@ -869,8 +864,7 @@ fn validate_correlation_config(config: &crate::schema::CorrelationSchemaConfig) 
     for (i, &r) in config.matrix.iter().enumerate() {
         if !(-1.0..=1.0).contains(&r) {
             return Err(SynthError::validation(format!(
-                "distributions.correlations.matrix[{}] must be in [-1, 1], got {}",
-                i, r
+                "distributions.correlations.matrix[{i}] must be in [-1, 1], got {r}"
             )));
         }
     }
@@ -901,22 +895,20 @@ fn validate_conditional_config(
 ) -> SynthResult<()> {
     if config.output_field.is_empty() {
         return Err(SynthError::validation(format!(
-            "distributions.conditional[{}].output_field cannot be empty",
-            index
+            "distributions.conditional[{index}].output_field cannot be empty"
         )));
     }
 
     if config.input_field.is_empty() {
         return Err(SynthError::validation(format!(
-            "distributions.conditional[{}].input_field cannot be empty",
-            index
+            "distributions.conditional[{index}].input_field cannot be empty"
         )));
     }
 
     // Validate breakpoints are in ascending order
     let thresholds: Vec<f64> = config.breakpoints.iter().map(|b| b.threshold).collect();
     validate_ascending(
-        &format!("distributions.conditional[{}].breakpoints", index),
+        &format!("distributions.conditional[{index}].breakpoints"),
         &thresholds,
     )?;
 
@@ -924,8 +916,7 @@ fn validate_conditional_config(
     if let (Some(min), Some(max)) = (config.min_value, config.max_value) {
         if max <= min {
             return Err(SynthError::validation(format!(
-                "distributions.conditional[{}].max_value ({}) must be greater than min_value ({})",
-                index, max, min
+                "distributions.conditional[{index}].max_value ({max}) must be greater than min_value ({min})"
             )));
         }
     }
@@ -944,8 +935,7 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
         // Validate date format (basic check)
         if change.date.is_empty() {
             return Err(SynthError::validation(format!(
-                "distributions.regime_changes.changes[{}].date cannot be empty",
-                i
+                "distributions.regime_changes.changes[{i}].date cannot be empty"
             )));
         }
 
@@ -978,15 +968,13 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
             for (i, recession) in cycle.recessions.iter().enumerate() {
                 if recession.duration_months == 0 {
                     return Err(SynthError::validation(format!(
-                        "distributions.regime_changes.economic_cycle.recessions[{}].duration_months must be > 0",
-                        i
+                        "distributions.regime_changes.economic_cycle.recessions[{i}].duration_months must be > 0"
                     )));
                 }
 
                 validate_rate(
                     &format!(
-                        "distributions.regime_changes.economic_cycle.recessions[{}].severity",
-                        i
+                        "distributions.regime_changes.economic_cycle.recessions[{i}].severity"
                     ),
                     recession.severity,
                 )?;
@@ -998,8 +986,7 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
     for (i, drift) in config.parameter_drifts.iter().enumerate() {
         if drift.parameter.is_empty() {
             return Err(SynthError::validation(format!(
-                "distributions.regime_changes.parameter_drifts[{}].parameter cannot be empty",
-                i
+                "distributions.regime_changes.parameter_drifts[{i}].parameter cannot be empty"
             )));
         }
 
@@ -1032,11 +1019,11 @@ fn validate_statistical_validation(
                 warning_mad,
             } => {
                 validate_positive(
-                    &format!("distributions.validation.tests[{}].threshold_mad", i),
+                    &format!("distributions.validation.tests[{i}].threshold_mad"),
                     *threshold_mad,
                 )?;
                 validate_positive(
-                    &format!("distributions.validation.tests[{}].warning_mad", i),
+                    &format!("distributions.validation.tests[{i}].warning_mad"),
                     *warning_mad,
                 )?;
             }
@@ -1045,30 +1032,26 @@ fn validate_statistical_validation(
             } => {
                 if *ks_significance <= 0.0 || *ks_significance >= 1.0 {
                     return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].ks_significance must be in (0, 1), got {}",
-                        i, ks_significance
+                        "distributions.validation.tests[{i}].ks_significance must be in (0, 1), got {ks_significance}"
                     )));
                 }
             }
             crate::schema::StatisticalTestConfig::ChiSquared { bins, significance } => {
                 if *bins < 2 {
                     return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].bins must be >= 2, got {}",
-                        i, bins
+                        "distributions.validation.tests[{i}].bins must be >= 2, got {bins}"
                     )));
                 }
                 if *significance <= 0.0 || *significance >= 1.0 {
                     return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].significance must be in (0, 1), got {}",
-                        i, significance
+                        "distributions.validation.tests[{i}].significance must be in (0, 1), got {significance}"
                     )));
                 }
             }
             crate::schema::StatisticalTestConfig::AndersonDarling { significance, .. } => {
                 if *significance <= 0.0 || *significance >= 1.0 {
                     return Err(SynthError::validation(format!(
-                        "distributions.validation.tests[{}].significance must be in (0, 1), got {}",
-                        i, significance
+                        "distributions.validation.tests[{i}].significance must be in (0, 1), got {significance}"
                     )));
                 }
             }
@@ -1078,8 +1061,7 @@ fn validate_statistical_validation(
                 for expected in expected_correlations {
                     if !(-1.0..=1.0).contains(&expected.expected_r) {
                         return Err(SynthError::validation(format!(
-                            "distributions.validation.tests[{}]: expected_r must be in [-1, 1]",
-                            i
+                            "distributions.validation.tests[{i}]: expected_r must be in [-1, 1]"
                         )));
                     }
                 }
@@ -1193,8 +1175,7 @@ fn validate_business_day_config(
         for day in weekend_days {
             if !valid_days.contains(&day.to_lowercase().as_str()) {
                 return Err(SynthError::validation(format!(
-                    "temporal_patterns.business_days.weekend_days contains invalid day '{}', must be one of {:?}",
-                    day, valid_days
+                    "temporal_patterns.business_days.weekend_days contains invalid day '{day}', must be one of {valid_days:?}"
                 )));
             }
         }
@@ -1210,8 +1191,7 @@ fn validate_period_end_config(config: &crate::schema::PeriodEndSchemaConfig) -> 
         let valid_models = ["flat", "exponential", "extended_crunch", "daily_profile"];
         if !valid_models.contains(&model.as_str()) {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.model must be one of {:?}, got '{}'",
-                valid_models, model
+                "temporal_patterns.period_end.model must be one of {valid_models:?}, got '{model}'"
             )));
         }
     }
@@ -1242,24 +1222,21 @@ fn validate_period_end_model_config(
     // Validate multipliers are positive
     if let Some(mult) = config.additional_multiplier {
         validate_positive(
-            &format!(
-                "temporal_patterns.period_end.{}.additional_multiplier",
-                name
-            ),
+            &format!("temporal_patterns.period_end.{name}.additional_multiplier"),
             mult,
         )?;
     }
 
     if let Some(mult) = config.base_multiplier {
         validate_positive(
-            &format!("temporal_patterns.period_end.{}.base_multiplier", name),
+            &format!("temporal_patterns.period_end.{name}.base_multiplier"),
             mult,
         )?;
     }
 
     if let Some(mult) = config.peak_multiplier {
         validate_positive(
-            &format!("temporal_patterns.period_end.{}.peak_multiplier", name),
+            &format!("temporal_patterns.period_end.{name}.peak_multiplier"),
             mult,
         )?;
     }
@@ -1268,8 +1245,7 @@ fn validate_period_end_model_config(
     if let Some(rate) = config.decay_rate {
         if rate <= 0.0 || rate > 1.0 {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.decay_rate must be in (0, 1], got {}",
-                name, rate
+                "temporal_patterns.period_end.{name}.decay_rate must be in (0, 1], got {rate}"
             )));
         }
     }
@@ -1278,8 +1254,7 @@ fn validate_period_end_model_config(
     if let Some(day) = config.start_day {
         if day > 0 {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.start_day must be <= 0 (days before period end), got {}",
-                name, day
+                "temporal_patterns.period_end.{name}.start_day must be <= 0 (days before period end), got {day}"
             )));
         }
     }
@@ -1288,8 +1263,7 @@ fn validate_period_end_model_config(
     if let Some(days) = config.sustained_high_days {
         if days <= 0 {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.period_end.{}.sustained_high_days must be positive, got {}",
-                name, days
+                "temporal_patterns.period_end.{name}.sustained_high_days must be positive, got {days}"
             )));
         }
     }
@@ -1327,14 +1301,12 @@ fn validate_processing_lag_config(
         for (hour, prob) in &cross_day.probability_by_hour {
             if *hour > 23 {
                 return Err(SynthError::validation(format!(
-                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour contains invalid hour {}, must be 0-23",
-                    hour
+                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour contains invalid hour {hour}, must be 0-23"
                 )));
             }
             validate_rate(
                 &format!(
-                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour[{}]",
-                    hour
+                    "temporal_patterns.processing_lags.cross_day_posting.probability_by_hour[{hour}]"
                 ),
                 *prob,
             )?;
@@ -1351,7 +1323,7 @@ fn validate_lag_distribution(
 ) -> SynthResult<()> {
     // Sigma must be positive for log-normal
     validate_positive(
-        &format!("temporal_patterns.processing_lags.{}.sigma", name),
+        &format!("temporal_patterns.processing_lags.{name}.sigma"),
         config.sigma,
     )?;
 
@@ -1359,8 +1331,7 @@ fn validate_lag_distribution(
     if let Some(min) = config.min_hours {
         if min < 0.0 {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.processing_lags.{}.min_hours must be non-negative, got {}",
-                name, min
+                "temporal_patterns.processing_lags.{name}.min_hours must be non-negative, got {min}"
             )));
         }
     }
@@ -1368,16 +1339,14 @@ fn validate_lag_distribution(
     if let Some(max) = config.max_hours {
         if max < 0.0 {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.processing_lags.{}.max_hours must be non-negative, got {}",
-                name, max
+                "temporal_patterns.processing_lags.{name}.max_hours must be non-negative, got {max}"
             )));
         }
 
         if let Some(min) = config.min_hours {
             if max < min {
                 return Err(SynthError::validation(format!(
-                    "temporal_patterns.processing_lags.{}.max_hours ({}) must be >= min_hours ({})",
-                    name, max, min
+                    "temporal_patterns.processing_lags.{name}.max_hours ({max}) must be >= min_hours ({min})"
                 )));
             }
         }
@@ -1396,8 +1365,7 @@ fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> Syn
         let region_upper = region.to_uppercase();
         if !valid_regions.contains(&region_upper.as_str()) {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.calendars.regions contains invalid region '{}', must be one of {:?}",
-                region, valid_regions
+                "temporal_patterns.calendars.regions contains invalid region '{region}', must be one of {valid_regions:?}"
             )));
         }
     }
@@ -1406,8 +1374,7 @@ fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> Syn
     for (i, holiday) in config.custom_holidays.iter().enumerate() {
         if holiday.name.is_empty() {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.calendars.custom_holidays[{}].name cannot be empty",
-                i
+                "temporal_patterns.calendars.custom_holidays[{i}].name cannot be empty"
             )));
         }
 
@@ -1426,10 +1393,7 @@ fn validate_calendar_config(config: &crate::schema::CalendarSchemaConfig) -> Syn
         }
 
         validate_rate(
-            &format!(
-                "temporal_patterns.calendars.custom_holidays[{}].activity_multiplier",
-                i
-            ),
+            &format!("temporal_patterns.calendars.custom_holidays[{i}].activity_multiplier"),
             holiday.activity_multiplier,
         )?;
     }
@@ -1464,8 +1428,7 @@ fn validate_fiscal_calendar_config(
         if let Some(month) = config.year_start_month {
             if !(1..=12).contains(&month) {
                 return Err(SynthError::validation(format!(
-                    "temporal_patterns.fiscal_calendar.year_start_month must be 1-12, got {}",
-                    month
+                    "temporal_patterns.fiscal_calendar.year_start_month must be 1-12, got {month}"
                 )));
             }
         } else {
@@ -1477,8 +1440,7 @@ fn validate_fiscal_calendar_config(
         if let Some(day) = config.year_start_day {
             if !(1..=31).contains(&day) {
                 return Err(SynthError::validation(format!(
-                    "temporal_patterns.fiscal_calendar.year_start_day must be 1-31, got {}",
-                    day
+                    "temporal_patterns.fiscal_calendar.year_start_day must be 1-31, got {day}"
                 )));
             }
         }
@@ -1534,8 +1496,7 @@ fn validate_intraday_config(config: &crate::schema::IntraDaySchemaConfig) -> Syn
         // Validate segment name is not empty
         if segment.name.is_empty() {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.intraday.segments[{}].name cannot be empty",
-                i
+                "temporal_patterns.intraday.segments[{i}].name cannot be empty"
             )));
         }
 
@@ -1600,8 +1561,7 @@ fn validate_timezone_config(config: &crate::schema::TimezoneSchemaConfig) -> Syn
     for (i, mapping) in config.entity_mappings.iter().enumerate() {
         if mapping.pattern.is_empty() {
             return Err(SynthError::validation(format!(
-                "temporal_patterns.timezones.entity_mappings[{}].pattern cannot be empty",
-                i
+                "temporal_patterns.timezones.entity_mappings[{i}].pattern cannot be empty"
             )));
         }
 
@@ -1768,17 +1728,11 @@ fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
         ("consumer", &segments.consumer),
     ] {
         validate_rate(
-            &format!(
-                "customer_segmentation.value_segments.{}.revenue_share",
-                name
-            ),
+            &format!("customer_segmentation.value_segments.{name}.revenue_share"),
             seg.revenue_share,
         )?;
         validate_rate(
-            &format!(
-                "customer_segmentation.value_segments.{}.customer_share",
-                name
-            ),
+            &format!("customer_segmentation.value_segments.{name}.customer_share"),
             seg.customer_share,
         )?;
     }
@@ -2243,8 +2197,7 @@ fn validate_scenarios(config: &GeneratorConfig) -> SynthResult<()> {
 
     if total_weight > 1.01 {
         return Err(SynthError::validation(format!(
-            "scenario probability_weights sum to {} (must be <= 1.0)",
-            total_weight
+            "scenario probability_weights sum to {total_weight} (must be <= 1.0)"
         )));
     }
 
@@ -2262,8 +2215,7 @@ fn validate_session(config: &GeneratorConfig) -> SynthResult<()> {
         }
         if fy_months > MAX_PERIOD_MONTHS {
             return Err(SynthError::validation(format!(
-                "fiscal_year_months must be at most {} (10 years), got {}",
-                MAX_PERIOD_MONTHS, fy_months
+                "fiscal_year_months must be at most {MAX_PERIOD_MONTHS} (10 years), got {fy_months}"
             )));
         }
         if fy_months > config.global.period_months {

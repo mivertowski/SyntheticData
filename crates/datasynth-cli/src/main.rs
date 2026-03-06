@@ -375,8 +375,7 @@ fn main() -> Result<()> {
                 .build_global()
             {
                 eprintln!(
-                    "Warning: failed to configure thread pool with {} threads: {}",
-                    effective_threads, e
+                    "Warning: failed to configure thread pool with {effective_threads} threads: {e}"
                 );
             }
 
@@ -507,9 +506,7 @@ fn main() -> Result<()> {
                     if !fraud_scenario.is_empty() {
                         cfg =
                             datasynth_config::fraud_packs::apply_fraud_packs(&cfg, &fraud_scenario)
-                                .map_err(|e| {
-                                    anyhow::anyhow!("Failed to apply fraud packs: {}", e)
-                                })?;
+                                .map_err(|e| anyhow::anyhow!("Failed to apply fraud packs: {e}"))?;
                         tracing::info!("Applied fraud packs: {:?}", fraud_scenario);
                     }
 
@@ -619,10 +616,7 @@ fn main() -> Result<()> {
                     let mut session = GenerationSession::resume(&dss_path, cfg)?;
                     let results = session.generate_delta(additional)?;
                     session.save(&dss_path)?;
-                    println!(
-                        "\nIncremental generation complete ({} new months):",
-                        additional
-                    );
+                    println!("\nIncremental generation complete ({additional} new months):");
                     for r in &results {
                         println!(
                             "  {} - {} JEs, {:.1}s",
@@ -1477,8 +1471,7 @@ fn main() -> Result<()> {
                 "technology" | "tech" => IndustrySector::Technology,
                 _ => {
                     eprintln!(
-                        "Warning: unrecognized industry '{}'. Valid values: manufacturing, retail, financial_services, healthcare, technology. Defaulting to manufacturing.",
-                        industry
+                        "Warning: unrecognized industry '{industry}'. Valid values: manufacturing, retail, financial_services, healthcare, technology. Defaulting to manufacturing."
                     );
                     IndustrySector::Manufacturing
                 }
@@ -1491,8 +1484,7 @@ fn main() -> Result<()> {
                 "large" => CoAComplexity::Large,
                 _ => {
                     eprintln!(
-                        "Warning: unrecognized complexity '{}'. Valid values: small, medium, large. Defaulting to medium.",
-                        complexity
+                        "Warning: unrecognized complexity '{complexity}'. Valid values: small, medium, large. Defaulting to medium."
                     );
                     CoAComplexity::Medium
                 }
@@ -1593,8 +1585,8 @@ fn main() -> Result<()> {
                             if let (Some(ref exp), Some(ref act)) =
                                 (&result.expected, &result.actual)
                             {
-                                println!("         expected: {}", exp);
-                                println!("         actual:   {}", act);
+                                println!("         expected: {exp}");
+                                println!("         actual:   {act}");
                             }
                             failed += 1;
                             all_pass = false;
@@ -1660,16 +1652,13 @@ fn main() -> Result<()> {
             }
 
             println!();
-            println!(
-                "Summary: {} checked, {} passed, {} failed",
-                checked, passed, failed
-            );
+            println!("Summary: {checked} checked, {passed} passed, {failed} failed");
 
             if all_pass {
                 println!("Verification: PASSED");
                 Ok(())
             } else {
-                anyhow::bail!("Verification: FAILED ({} failures)", failed);
+                anyhow::bail!("Verification: FAILED ({failed} failures)");
             }
         }
 
@@ -1723,7 +1712,7 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
             } else {
                 // For directories, find CSV files
                 let csv_files: Vec<_> = std::fs::read_dir(&input)?
-                    .filter_map(|e| e.ok())
+                    .filter_map(std::result::Result::ok)
                     .filter(|e| e.path().extension().is_some_and(|ext| ext == "csv"))
                     .collect();
 
@@ -1776,18 +1765,18 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
                         if !report.warnings.is_empty() {
                             println!("  Warnings:");
                             for warning in &report.warnings {
-                                println!("    - {}", warning);
+                                println!("    - {warning}");
                             }
                         }
                     } else {
                         println!("✗ Fingerprint validation failed");
                         for error in &report.errors {
-                            println!("  Error: {}", error);
+                            println!("  Error: {error}");
                         }
                     }
                 }
                 Err(e) => {
-                    println!("✗ Failed to validate fingerprint: {}", e);
+                    println!("✗ Failed to validate fingerprint: {e}");
                     return Err(e.into());
                 }
             }
@@ -1812,7 +1801,7 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
             println!("  Tables: {}", fingerprint.manifest.source.table_count);
             println!("  Total Rows: {}", fingerprint.manifest.source.total_rows);
             if let Some(ref industry) = fingerprint.manifest.source.industry {
-                println!("  Industry: {}", industry);
+                println!("  Industry: {industry}");
             }
             println!();
             println!("Privacy:");
@@ -1843,14 +1832,14 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
                 println!();
                 println!("Detailed Statistics:");
                 for (name, stats) in &fingerprint.statistics.numeric_columns {
-                    println!("  {}:", name);
+                    println!("  {name}:");
                     println!("    Count: {}", stats.count);
                     println!("    Min: {:.2}, Max: {:.2}", stats.min, stats.max);
                     println!("    Mean: {:.2}, StdDev: {:.2}", stats.mean, stats.std_dev);
                     println!("    Distribution: {:?}", stats.distribution);
                 }
                 for (name, stats) in &fingerprint.statistics.categorical_columns {
-                    println!("  {}:", name);
+                    println!("  {name}:");
                     println!("    Count: {}", stats.count);
                     println!("    Cardinality: {}", stats.cardinality);
                     println!("    Top values: {}", stats.top_values.len());
@@ -1943,7 +1932,7 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
                     let mean_diff = (s1.mean - s2.mean).abs();
                     let std_diff = (s1.std_dev - s2.std_dev).abs();
                     if mean_diff > 0.01 || std_diff > 0.01 {
-                        println!("  {}:", col);
+                        println!("  {col}:");
                         println!(
                             "    Mean: {:.2} vs {:.2} (diff: {:.2})",
                             s1.mean, s2.mean, mean_diff
@@ -1975,7 +1964,7 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
 
             // Find CSV files in synthetic directory
             let csv_files: Vec<PathBuf> = std::fs::read_dir(&synthetic)?
-                .filter_map(|e| e.ok())
+                .filter_map(std::result::Result::ok)
                 .filter(|e| e.path().extension().is_some_and(|ext| ext == "csv"))
                 .map(|e| e.path())
                 .collect();
@@ -2071,12 +2060,12 @@ fn find_scenario_pack(pack: &str) -> Result<PathBuf> {
 
     // Search paths in order of priority
     let search_paths = [
-        PathBuf::from(format!("templates/scenarios/{}.yaml", pack_name)),
-        PathBuf::from(format!("./templates/scenarios/{}.yaml", pack_name)),
+        PathBuf::from(format!("templates/scenarios/{pack_name}.yaml")),
+        PathBuf::from(format!("./templates/scenarios/{pack_name}.yaml")),
         std::env::current_exe()
             .ok()
-            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-            .map(|p| p.join(format!("templates/scenarios/{}.yaml", pack_name)))
+            .and_then(|p| p.parent().map(std::path::Path::to_path_buf))
+            .map(|p| p.join(format!("templates/scenarios/{pack_name}.yaml")))
             .unwrap_or_default(),
     ];
 
@@ -2110,7 +2099,7 @@ fn list_available_scenarios() -> Vec<String> {
                         let file_name = file.file_name().to_string_lossy().to_string();
                         if file_name.ends_with(".yaml") {
                             let scenario_name = file_name.trim_end_matches(".yaml");
-                            scenarios.push(format!("  - {}/{}", industry_name, scenario_name));
+                            scenarios.push(format!("  - {industry_name}/{scenario_name}"));
                         }
                     }
                 }
@@ -2337,7 +2326,7 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
                 }
                 println!("  Interventions: {}", s.intervention_count);
                 if let Some(w) = s.probability_weight {
-                    println!("  Probability Weight: {:.2}", w);
+                    println!("  Probability Weight: {w:.2}");
                 }
                 println!("{:-<60}", "");
             }
@@ -2364,7 +2353,7 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
 
             if filtered.is_empty() {
                 if let Some(name) = scenario {
-                    anyhow::bail!("Scenario '{}' not found.", name);
+                    anyhow::bail!("Scenario '{name}' not found.");
                 }
                 println!("No scenarios to validate.");
                 return Ok(());
@@ -2436,8 +2425,7 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
                     DiffFormat::Aggregate,
                 ],
                 other => anyhow::bail!(
-                    "Unknown diff format: '{}'. Use: summary, record_level, aggregate, all",
-                    other
+                    "Unknown diff format: '{other}'. Use: summary, record_level, aggregate, all"
                 ),
             };
 
@@ -2453,7 +2441,7 @@ fn handle_scenario_command(command: ScenarioCommands) -> Result<()> {
                 std::fs::write(&out_path, &json)?;
                 println!("Diff written to {}", out_path.display());
             } else {
-                println!("{}", json);
+                println!("{json}");
             }
 
             Ok(())

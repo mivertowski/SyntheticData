@@ -514,8 +514,7 @@ impl FidelityEvaluator {
             // Different number of tables and no name overlap - truly different schemas
             let missing = orig_tables.difference(&syn_tables).count();
             details.warnings.push(format!(
-                "{} tables missing in synthetic data (no overlap)",
-                missing
+                "{missing} tables missing in synthetic data (no overlap)"
             ));
             return 0.0;
         }
@@ -524,7 +523,7 @@ impl FidelityEvaluator {
         if missing > 0 && common_tables > 0 {
             details
                 .warnings
-                .push(format!("{} tables missing in synthetic data", missing));
+                .push(format!("{missing} tables missing in synthetic data"));
         }
 
         // Calculate column match score
@@ -945,12 +944,12 @@ pub fn generate_html_report(report: &FidelityReport) -> String {
         report
             .details
             .benford_mad
-            .map(|m| format!("<p>Benford MAD: {:.4}</p>", m))
+            .map(|m| format!("<p>Benford MAD: {m:.4}</p>"))
             .unwrap_or_default(),
         report
             .details
             .correlation_rmse
-            .map(|r| format!("<p>Correlation RMSE: {:.4}</p>", r))
+            .map(|r| format!("<p>Correlation RMSE: {r:.4}</p>"))
             .unwrap_or_default(),
     )
 }

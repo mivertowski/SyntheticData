@@ -544,7 +544,7 @@ fn esc(s: &str) -> String {
 
 fn opt_debug<T: std::fmt::Debug>(opt: &Option<T>) -> String {
     match opt {
-        Some(v) => format!("{:?}", v),
+        Some(v) => format!("{v:?}"),
         None => String::new(),
     }
 }

@@ -598,7 +598,7 @@ impl DescriptionGenerator {
             .collect();
 
         if matching.is_empty() {
-            return format!("{:?} Transaction", process);
+            return format!("{process:?} Transaction");
         }
 
         let pattern = matching.choose(rng).expect("non-empty collection");

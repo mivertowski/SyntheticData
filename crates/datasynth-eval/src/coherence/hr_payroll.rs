@@ -259,26 +259,22 @@ impl HrPayrollEvaluator {
         let min_acc = self.thresholds.min_calculation_accuracy;
         if gross_to_net_accuracy < min_acc {
             issues.push(format!(
-                "Gross-to-net accuracy {:.4} < {:.4}",
-                gross_to_net_accuracy, min_acc
+                "Gross-to-net accuracy {gross_to_net_accuracy:.4} < {min_acc:.4}"
             ));
         }
         if component_sum_accuracy < min_acc {
             issues.push(format!(
-                "Component sum accuracy {:.4} < {:.4}",
-                component_sum_accuracy, min_acc
+                "Component sum accuracy {component_sum_accuracy:.4} < {min_acc:.4}"
             ));
         }
         if deduction_sum_accuracy < min_acc {
             issues.push(format!(
-                "Deduction sum accuracy {:.4} < {:.4}",
-                deduction_sum_accuracy, min_acc
+                "Deduction sum accuracy {deduction_sum_accuracy:.4} < {min_acc:.4}"
             ));
         }
         if run_sum_accuracy < min_acc {
             issues.push(format!(
-                "Run sum accuracy {:.4} < {:.4}",
-                run_sum_accuracy, min_acc
+                "Run sum accuracy {run_sum_accuracy:.4} < {min_acc:.4}"
             ));
         }
 

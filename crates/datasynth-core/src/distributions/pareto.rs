@@ -137,7 +137,7 @@ impl ParetoSampler {
         config.validate()?;
 
         let distribution = Pareto::new(config.x_min, config.alpha)
-            .map_err(|e| format!("Invalid Pareto distribution: {}", e))?;
+            .map_err(|e| format!("Invalid Pareto distribution: {e}"))?;
 
         let decimal_multiplier = 10_f64.powi(config.decimal_places as i32);
 

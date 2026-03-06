@@ -349,15 +349,13 @@ impl FindingGenerator {
                     self.rng.random_range(20..40)
                 );
                 let criteria = format!(
-                    "Company policy and SOX requirements mandate that all {} transactions receive appropriate \
-                    review and approval prior to processing.",
-                    account
+                    "Company policy and SOX requirements mandate that all {account} transactions receive appropriate \
+                    review and approval prior to processing."
                 );
                 let cause = "Staffing constraints and competing priorities resulted in reduced focus on control execution.".into();
                 let effect = format!(
                     "Transactions may be processed without appropriate oversight, increasing the risk of errors \
-                    or fraud in the {} balance.",
-                    account
+                    or fraud in the {account} balance."
                 );
                 (condition, criteria, cause, effect)
             }
@@ -366,9 +364,8 @@ impl FindingGenerator {
                     self.config.misstatement_range.0..self.config.misstatement_range.1,
                 );
                 let condition = format!(
-                    "Our testing identified a misstatement in {} of approximately ${}. \
-                    The error resulted from incorrect application of accounting standards.",
-                    account, amount
+                    "Our testing identified a misstatement in {account} of approximately ${amount}. \
+                    The error resulted from incorrect application of accounting standards."
                 );
                 let criteria = "US GAAP and company accounting policy require accurate recording of all transactions.".into();
                 let cause =
@@ -392,8 +389,7 @@ impl FindingGenerator {
             }
             FindingType::ComplianceException => {
                 let condition = format!(
-                    "The Company did not comply with {} regulatory requirements during the period under audit.",
-                    account
+                    "The Company did not comply with {account} regulatory requirements during the period under audit."
                 );
                 let criteria =
                     "Applicable laws and regulations require timely and accurate compliance."
@@ -404,10 +400,8 @@ impl FindingGenerator {
                 (condition, criteria, cause, effect)
             }
             _ => {
-                let condition = format!(
-                    "We identified an opportunity to enhance the {} process.",
-                    account
-                );
+                let condition =
+                    format!("We identified an opportunity to enhance the {account} process.");
                 let criteria =
                     "Industry best practices suggest continuous improvement in control processes."
                         .into();
@@ -426,17 +420,15 @@ impl FindingGenerator {
         match finding_type {
             FindingType::MaterialWeakness | FindingType::SignificantDeficiency => {
                 format!(
-                    "We recommend that management: (1) Implement additional review procedures for {} transactions, \
+                    "We recommend that management: (1) Implement additional review procedures for {account} transactions, \
                     (2) Document all control activities contemporaneously, and \
-                    (3) Provide additional training to personnel responsible for control execution.",
-                    account
+                    (3) Provide additional training to personnel responsible for control execution."
                 )
             }
             FindingType::ControlDeficiency => {
                 format!(
-                    "We recommend that management strengthen the {} control by ensuring timely execution \
-                    and documentation of all required review activities.",
-                    account
+                    "We recommend that management strengthen the {account} control by ensuring timely execution \
+                    and documentation of all required review activities."
                 )
             }
             FindingType::MaterialMisstatement | FindingType::ImmaterialMisstatement => {
@@ -453,9 +445,8 @@ impl FindingGenerator {
             }
             _ => {
                 format!(
-                    "We recommend that management evaluate the {} process for potential \
-                    efficiency improvements and implement changes as appropriate.",
-                    account
+                    "We recommend that management evaluate the {account} process for potential \
+                    efficiency improvements and implement changes as appropriate."
                 )
             }
         }
@@ -632,10 +623,9 @@ impl FindingGenerator {
         let target_date = finding.identified_date + Duration::days(self.rng.random_range(60..180));
 
         let description = format!(
-            "Implement enhanced controls and monitoring procedures for {} to address \
+            "Implement enhanced controls and monitoring procedures for {account} to address \
             the identified deficiency. This includes updated policies, additional training, \
-            and implementation of automated controls where feasible.",
-            account
+            and implementation of automated controls where feasible."
         );
 
         let responsible_party = format!(

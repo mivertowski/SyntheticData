@@ -190,7 +190,7 @@ impl InventoryGenerator {
             "SYSTEM".to_string(),
         );
 
-        movement.cost_center = cost_center.map(|s| s.to_string());
+        movement.cost_center = cost_center.map(std::string::ToString::to_string);
         if let Some(po) = production_order {
             movement.reference_doc_type = Some(ReferenceDocType::ProductionOrder);
             movement.reference_doc_number = Some(po.to_string());
@@ -238,7 +238,7 @@ impl InventoryGenerator {
         );
         issue.reference_doc_type = Some(ReferenceDocType::MaterialDocument);
         issue.reference_doc_number = Some(receipt_id.clone());
-        issue.reason_code = Some(format!("Transfer to {}/{}", to_plant, to_storage_location));
+        issue.reason_code = Some(format!("Transfer to {to_plant}/{to_storage_location}"));
 
         let mut receipt = InventoryMovement::new(
             receipt_id,

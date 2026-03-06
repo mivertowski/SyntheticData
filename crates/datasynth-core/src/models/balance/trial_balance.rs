@@ -188,12 +188,12 @@ impl TrialBalance {
     pub fn total_assets(&self) -> Decimal {
         self.category_summary
             .get(&AccountCategory::CurrentAssets)
-            .map(|s| s.net_balance())
+            .map(CategorySummary::net_balance)
             .unwrap_or(Decimal::ZERO)
             + self
                 .category_summary
                 .get(&AccountCategory::NonCurrentAssets)
-                .map(|s| s.net_balance())
+                .map(CategorySummary::net_balance)
                 .unwrap_or(Decimal::ZERO)
     }
 
@@ -201,12 +201,12 @@ impl TrialBalance {
     pub fn total_liabilities(&self) -> Decimal {
         self.category_summary
             .get(&AccountCategory::CurrentLiabilities)
-            .map(|s| s.net_balance())
+            .map(CategorySummary::net_balance)
             .unwrap_or(Decimal::ZERO)
             + self
                 .category_summary
                 .get(&AccountCategory::NonCurrentLiabilities)
-                .map(|s| s.net_balance())
+                .map(CategorySummary::net_balance)
                 .unwrap_or(Decimal::ZERO)
     }
 
@@ -214,7 +214,7 @@ impl TrialBalance {
     pub fn total_equity(&self) -> Decimal {
         self.category_summary
             .get(&AccountCategory::Equity)
-            .map(|s| s.net_balance())
+            .map(CategorySummary::net_balance)
             .unwrap_or(Decimal::ZERO)
     }
 
@@ -222,7 +222,7 @@ impl TrialBalance {
     pub fn total_revenue(&self) -> Decimal {
         self.category_summary
             .get(&AccountCategory::Revenue)
-            .map(|s| s.net_balance())
+            .map(CategorySummary::net_balance)
             .unwrap_or(Decimal::ZERO)
     }
 
@@ -230,17 +230,17 @@ impl TrialBalance {
     pub fn total_expenses(&self) -> Decimal {
         self.category_summary
             .get(&AccountCategory::CostOfGoodsSold)
-            .map(|s| s.net_balance())
+            .map(CategorySummary::net_balance)
             .unwrap_or(Decimal::ZERO)
             + self
                 .category_summary
                 .get(&AccountCategory::OperatingExpenses)
-                .map(|s| s.net_balance())
+                .map(CategorySummary::net_balance)
                 .unwrap_or(Decimal::ZERO)
             + self
                 .category_summary
                 .get(&AccountCategory::OtherExpenses)
-                .map(|s| s.net_balance())
+                .map(CategorySummary::net_balance)
                 .unwrap_or(Decimal::ZERO)
     }
 

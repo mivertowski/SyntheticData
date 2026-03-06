@@ -251,7 +251,7 @@ impl TuningAnalyzer {
                             "Amount Distribution Mismatch",
                             "Amount distribution does not match expected log-normal pattern",
                         )
-                        .with_current_value(format!("KS p-value: {:.4}", p_value))
+                        .with_current_value(format!("KS p-value: {p_value:.4}"))
                         .with_target_value("KS p-value > 0.05")
                         .with_expected_improvement("More realistic amount patterns")
                         .with_config_path("transactions.amount.distribution"),

@@ -63,7 +63,7 @@ impl MockBalanceTracker {
             .expect("MockBalanceTracker RwLock read poisoned")
             .values()
             .filter(|v| **v < Decimal::ZERO)
-            .map(|v| v.abs())
+            .map(rust_decimal::Decimal::abs)
             .sum()
     }
 

@@ -19,10 +19,7 @@ pub fn write_npy_header<W: Write>(writer: &mut W, dtype: &str, shape: &str) -> s
     writer.write_all(&[0x01, 0x00])?; // Version 1.0
 
     // Header dict
-    let header = format!(
-        "{{'descr': '{}', 'fortran_order': False, 'shape': {} }}",
-        dtype, shape
-    );
+    let header = format!("{{'descr': '{dtype}', 'fortran_order': False, 'shape': {shape} }}");
 
     // Pad header to multiple of 64 bytes (including magic, version, header_len)
     let header_len = header.len();
@@ -80,7 +77,7 @@ pub fn write_npy_2d_i64(path: &Path, data: &[Vec<i64>]) -> std::io::Result<()> {
     let rows = data.len();
     let cols = data.first().map(|r| r.len()).unwrap_or(0);
 
-    let shape = format!("({}, {})", rows, cols);
+    let shape = format!("({rows}, {cols})");
     write_npy_header(&mut writer, "<i8", &shape)?;
 
     for row in data {
@@ -106,7 +103,7 @@ pub fn write_npy_2d_f64(path: &Path, data: &[Vec<f64>]) -> std::io::Result<()> {
     let rows = data.len();
     let cols = data.first().map(|r| r.len()).unwrap_or(0);
 
-    let shape = format!("({}, {})", rows, cols);
+    let shape = format!("({rows}, {cols})");
     write_npy_header(&mut writer, "<f8", &shape)?;
 
     for row in data {

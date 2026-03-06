@@ -203,12 +203,12 @@ impl TemplateLoader {
     /// Load template data from a YAML file.
     pub fn load_from_yaml(path: &Path) -> Result<TemplateData, TemplateError> {
         let contents = std::fs::read_to_string(path).map_err(|e| {
-            TemplateError::new(format!("Failed to read file: {}", e))
+            TemplateError::new(format!("Failed to read file: {e}"))
                 .with_path(path.display().to_string())
         })?;
 
         serde_yaml::from_str(&contents).map_err(|e| {
-            TemplateError::new(format!("Failed to parse YAML: {}", e))
+            TemplateError::new(format!("Failed to parse YAML: {e}"))
                 .with_path(path.display().to_string())
         })
     }
@@ -216,12 +216,12 @@ impl TemplateLoader {
     /// Load template data from a JSON file.
     pub fn load_from_json(path: &Path) -> Result<TemplateData, TemplateError> {
         let contents = std::fs::read_to_string(path).map_err(|e| {
-            TemplateError::new(format!("Failed to read file: {}", e))
+            TemplateError::new(format!("Failed to read file: {e}"))
                 .with_path(path.display().to_string())
         })?;
 
         serde_json::from_str(&contents).map_err(|e| {
-            TemplateError::new(format!("Failed to parse JSON: {}", e))
+            TemplateError::new(format!("Failed to parse JSON: {e}"))
                 .with_path(path.display().to_string())
         })
     }
@@ -234,8 +234,7 @@ impl TemplateLoader {
             "yaml" | "yml" => Self::load_from_yaml(path),
             "json" => Self::load_from_json(path),
             _ => Err(TemplateError::new(format!(
-                "Unsupported file extension: {}. Use .yaml, .yml, or .json",
-                extension
+                "Unsupported file extension: {extension}. Use .yaml, .yml, or .json"
             ))
             .with_path(path.display().to_string())),
         }
@@ -252,13 +251,13 @@ impl TemplateLoader {
         let mut merged = TemplateData::default();
 
         let entries = std::fs::read_dir(dir).map_err(|e| {
-            TemplateError::new(format!("Failed to read directory: {}", e))
+            TemplateError::new(format!("Failed to read directory: {e}"))
                 .with_path(dir.display().to_string())
         })?;
 
         for entry in entries {
             let entry =
-                entry.map_err(|e| TemplateError::new(format!("Failed to read entry: {}", e)))?;
+                entry.map_err(|e| TemplateError::new(format!("Failed to read entry: {e}")))?;
             let path = entry.path();
 
             if path.is_file() {
@@ -302,10 +301,10 @@ impl TemplateLoader {
         // Validate culture names have required fields
         for (culture, names) in &data.person_names.cultures {
             if names.male_first_names.is_empty() && names.female_first_names.is_empty() {
-                errors.push(format!("Culture '{}': no first names defined", culture));
+                errors.push(format!("Culture '{culture}': no first names defined"));
             }
             if names.last_names.is_empty() {
-                errors.push(format!("Culture '{}': no last names defined", culture));
+                errors.push(format!("Culture '{culture}': no last names defined"));
             }
         }
 

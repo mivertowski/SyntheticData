@@ -136,7 +136,7 @@ impl TrialBalanceGenerator {
                 .account_descriptions
                 .get(account_code)
                 .cloned()
-                .unwrap_or_else(|| format!("Account {}", account_code));
+                .unwrap_or_else(|| format!("Account {account_code}"));
 
             lines.push(TrialBalanceLine {
                 account_code: account_code.clone(),
@@ -396,8 +396,7 @@ impl TrialBalanceGenerator {
 
         let mut tb = TrialBalance {
             trial_balance_id: format!(
-                "TB-CONS-{}-{}-{:02}",
-                consolidated_company_code, fiscal_year, fiscal_period
+                "TB-CONS-{consolidated_company_code}-{fiscal_year}-{fiscal_period:02}"
             ),
             company_code: consolidated_company_code.to_string(),
             company_name: None,

@@ -31,7 +31,7 @@ pub fn generate_industry_output(sector: IndustrySector) -> IndustryOutput {
 
     IndustryOutput {
         gl_accounts,
-        industry: format!("{:?}", sector),
+        industry: format!("{sector:?}"),
     }
 }
 

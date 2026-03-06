@@ -124,25 +124,23 @@ impl QualityInspectionGenerator {
         let disposition = match result {
             InspectionResult::Accepted => DISPOSITIONS_ACCEPTED
                 .choose(&mut self.rng)
-                .map(|s| s.to_string()),
+                .map(std::string::ToString::to_string),
             InspectionResult::Conditionally => DISPOSITIONS_CONDITIONAL
                 .choose(&mut self.rng)
-                .map(|s| s.to_string()),
+                .map(std::string::ToString::to_string),
             InspectionResult::Rejected => DISPOSITIONS_REJECTED
                 .choose(&mut self.rng)
-                .map(|s| s.to_string()),
+                .map(std::string::ToString::to_string),
             InspectionResult::Pending => None,
         };
 
         // Notes for non-accepted results
         let notes = match result {
             InspectionResult::Rejected => Some(format!(
-                "{} defects found in {} characteristics. Material held for disposition.",
-                defect_count, num_characteristics
+                "{defect_count} defects found in {num_characteristics} characteristics. Material held for disposition."
             )),
             InspectionResult::Conditionally => Some(format!(
-                "Minor deviations noted. {} characteristic(s) marginally out of spec.",
-                defect_count
+                "Minor deviations noted. {defect_count} characteristic(s) marginally out of spec."
             )),
             _ => None,
         };

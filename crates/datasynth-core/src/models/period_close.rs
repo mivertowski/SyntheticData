@@ -855,7 +855,7 @@ impl CloseSchedule {
     /// Creates a standard monthly close schedule.
     pub fn standard_monthly(company_code: &str) -> Self {
         Self {
-            schedule_id: format!("MONTHLY-{}", company_code),
+            schedule_id: format!("MONTHLY-{company_code}"),
             company_code: company_code.to_string(),
             period_type: FiscalPeriodType::Monthly,
             tasks: vec![
@@ -882,7 +882,7 @@ impl CloseSchedule {
     /// Creates a year-end close schedule.
     pub fn year_end(company_code: &str) -> Self {
         let mut schedule = Self::standard_monthly(company_code);
-        schedule.schedule_id = format!("YEAREND-{}", company_code);
+        schedule.schedule_id = format!("YEAREND-{company_code}");
         schedule.is_year_end = true;
 
         // Add year-end specific tasks

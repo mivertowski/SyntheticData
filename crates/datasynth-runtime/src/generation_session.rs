@@ -65,9 +65,8 @@ impl GenerationSession {
     /// based on `config.global.fiscal_year_months` (defaults to `period_months`
     /// if not set, yielding a single period).
     pub fn new(config: GeneratorConfig, output_path: PathBuf) -> SynthResult<Self> {
-        let start_date =
-            chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-                .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
+        let start_date = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::generation(format!("Invalid start_date: {e}")))?;
 
         let total_months = config.global.period_months;
         let fy_months = config.global.fiscal_year_months.unwrap_or(total_months);
@@ -107,9 +106,9 @@ impl GenerationSession {
     /// has not changed since the session was last saved.
     pub fn resume(path: &Path, config: GeneratorConfig) -> SynthResult<Self> {
         let data = fs::read_to_string(path)
-            .map_err(|e| SynthError::generation(format!("Failed to read .dss: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to read .dss: {e}")))?;
         let state: SessionState = serde_json::from_str(&data)
-            .map_err(|e| SynthError::generation(format!("Failed to parse .dss: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to parse .dss: {e}")))?;
 
         let current_hash = Self::compute_config_hash(&config);
         if state.config_hash != current_hash {
@@ -119,9 +118,8 @@ impl GenerationSession {
             ));
         }
 
-        let start_date =
-            chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
-                .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?;
+        let start_date = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::generation(format!("Invalid start_date: {e}")))?;
 
         let total_months = config.global.period_months;
         let fy_months = config.global.fiscal_year_months.unwrap_or(total_months);
@@ -146,9 +144,9 @@ impl GenerationSession {
     /// Persist the current session state to a `.dss` file.
     pub fn save(&self, path: &Path) -> SynthResult<()> {
         let data = serde_json::to_string_pretty(&self.state)
-            .map_err(|e| SynthError::generation(format!("Failed to serialize state: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to serialize state: {e}")))?;
         fs::write(path, data)
-            .map_err(|e| SynthError::generation(format!("Failed to write .dss: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to write .dss: {e}")))?;
         Ok(())
     }
 
@@ -176,7 +174,7 @@ impl GenerationSession {
         };
 
         fs::create_dir_all(&output_path)
-            .map_err(|e| SynthError::generation(format!("Failed to create output dir: {}", e)))?;
+            .map_err(|e| SynthError::generation(format!("Failed to create output dir: {e}")))?;
 
         let orchestrator = EnhancedOrchestrator::new(period_config, self.phase_config.clone())?;
         let mut orchestrator = orchestrator.with_output_path(&output_path);
@@ -234,7 +232,7 @@ impl GenerationSession {
             add_months(last_period.end_date, 1)
         } else {
             chrono::NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-                .map_err(|e| SynthError::generation(format!("Invalid start_date: {}", e)))?
+                .map_err(|e| SynthError::generation(format!("Invalid start_date: {e}")))?
         };
 
         let fy_months = self

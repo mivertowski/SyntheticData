@@ -195,8 +195,7 @@ impl CloseEngine {
                                 result.status = CloseTaskStatus::Completed;
                             } else if self.config.require_reconciliation {
                                 result.status = CloseTaskStatus::Failed(format!(
-                                    "Reconciliation difference: {}",
-                                    diff
+                                    "Reconciliation difference: {diff}"
                                 ));
                             } else {
                                 result.status =
@@ -335,9 +334,8 @@ impl CloseEngine {
                 } else {
                     // Return error status instead of silently skipping
                     result.status = CloseTaskStatus::Failed(format!(
-                        "Custom close task '{}' has no registered handler. \
-                         Register a handler via CloseContext.custom_handlers.insert(\"{}\",...)",
-                        name, name
+                        "Custom close task '{name}' has no registered handler. \
+                         Register a handler via CloseContext.custom_handlers.insert(\"{name}\",...)"
                     ));
                 }
             }

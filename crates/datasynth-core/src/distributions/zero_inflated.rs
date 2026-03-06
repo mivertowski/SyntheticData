@@ -277,17 +277,17 @@ impl ZeroInflatedSampler {
         let base_sampler = match config.base_distribution {
             ZeroInflatedBaseDistribution::LogNormal => {
                 let dist = LogNormal::new(config.lognormal_mu, config.lognormal_sigma)
-                    .map_err(|e| format!("Invalid LogNormal distribution: {}", e))?;
+                    .map_err(|e| format!("Invalid LogNormal distribution: {e}"))?;
                 BaseDistributionSampler::LogNormal(dist)
             }
             ZeroInflatedBaseDistribution::Exponential => {
                 let dist = Exp::new(config.exponential_lambda)
-                    .map_err(|e| format!("Invalid Exponential distribution: {}", e))?;
+                    .map_err(|e| format!("Invalid Exponential distribution: {e}"))?;
                 BaseDistributionSampler::Exponential(dist)
             }
             ZeroInflatedBaseDistribution::Poisson => {
                 let dist = Poisson::new(config.poisson_lambda)
-                    .map_err(|e| format!("Invalid Poisson distribution: {}", e))?;
+                    .map_err(|e| format!("Invalid Poisson distribution: {e}"))?;
                 BaseDistributionSampler::Poisson(dist)
             }
         };

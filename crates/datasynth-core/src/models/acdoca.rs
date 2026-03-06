@@ -504,8 +504,8 @@ impl AcdocaFactory {
                     kunnr: None,
                     sim_batch_id: je.header.batch_id,
                     sim_is_fraud: je.header.is_fraud,
-                    sim_fraud_type: je.header.fraud_type.map(|ft| format!("{:?}", ft)),
-                    sim_business_process: je.header.business_process.map(|bp| format!("{:?}", bp)),
+                    sim_fraud_type: je.header.fraud_type.map(|ft| format!("{ft:?}")),
+                    sim_business_process: je.header.business_process.map(|bp| format!("{bp:?}")),
                     sim_user_persona: Some(je.header.user_persona.clone()),
                     sim_je_uuid: Some(je.header.document_id),
                     sim_control_ids: if je.header.control_ids.is_empty() {

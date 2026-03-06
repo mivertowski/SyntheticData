@@ -62,12 +62,9 @@ impl ThresholdChecker {
             operator: ThresholdOperator::GreaterOrEqual,
             passed,
             explanation: if passed {
-                format!("{} ({:.4}) >= {} (threshold)", name, actual, threshold)
+                format!("{name} ({actual:.4}) >= {threshold} (threshold)")
             } else {
-                format!(
-                    "{} ({:.4}) < {} (threshold) - FAILED",
-                    name, actual, threshold
-                )
+                format!("{name} ({actual:.4}) < {threshold} (threshold) - FAILED")
             },
         }
     }
@@ -82,12 +79,9 @@ impl ThresholdChecker {
             operator: ThresholdOperator::LessOrEqual,
             passed,
             explanation: if passed {
-                format!("{} ({:.4}) <= {} (threshold)", name, actual, threshold)
+                format!("{name} ({actual:.4}) <= {threshold} (threshold)")
             } else {
-                format!(
-                    "{} ({:.4}) > {} (threshold) - FAILED",
-                    name, actual, threshold
-                )
+                format!("{name} ({actual:.4}) > {threshold} (threshold) - FAILED")
             },
         }
     }
@@ -102,12 +96,9 @@ impl ThresholdChecker {
             operator: ThresholdOperator::InRange,
             passed,
             explanation: if passed {
-                format!("{} ({:.4}) in range [{}, {}]", name, actual, min, max)
+                format!("{name} ({actual:.4}) in range [{min}, {max}]")
             } else {
-                format!(
-                    "{} ({:.4}) outside range [{}, {}] - FAILED",
-                    name, actual, min, max
-                )
+                format!("{name} ({actual:.4}) outside range [{min}, {max}] - FAILED")
             },
         }
     }

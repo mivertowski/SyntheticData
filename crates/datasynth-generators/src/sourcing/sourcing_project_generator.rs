@@ -93,7 +93,7 @@ impl SourcingProjectGenerator {
 
             projects.push(SourcingProject {
                 project_id,
-                project_name: format!("{} - {} Sourcing", cat_name, company_code),
+                project_name: format!("{cat_name} - {company_code} Sourcing"),
                 company_code: company_code.to_string(),
                 project_type,
                 status: SourcingProjectStatus::Completed,

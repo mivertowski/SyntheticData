@@ -95,7 +95,7 @@ impl RfxGenerator {
         let line_items: Vec<RfxLineItem> = (1..=line_count)
             .map(|i| RfxLineItem {
                 item_number: i,
-                description: format!("Item {}", i),
+                description: format!("Item {i}"),
                 material_id: None,
                 quantity: Decimal::from(self.rng.random_range(10..=1000)),
                 uom: "EA".to_string(),
@@ -113,10 +113,9 @@ impl RfxGenerator {
             rfx_id: self.uuid_factory.next().to_string(),
             rfx_type,
             company_code: company_code.to_string(),
-            title: format!("RFx for {}", category_id),
+            title: format!("RFx for {category_id}"),
             description: format!(
-                "Sourcing event for category {} under project {}",
-                category_id, sourcing_project_id
+                "Sourcing event for category {category_id} under project {sourcing_project_id}"
             ),
             status: RfxStatus::Awarded,
             sourcing_project_id: sourcing_project_id.to_string(),

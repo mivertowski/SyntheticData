@@ -87,7 +87,7 @@ impl StreamingNumericStats {
         // Benford's law first digit
         let abs_value = value.abs();
         if abs_value > 0.0 {
-            let s = format!("{:.15}", abs_value);
+            let s = format!("{abs_value:.15}");
             for c in s.chars() {
                 if c.is_ascii_digit() && c != '0' {
                     if let Some(digit) = c.to_digit(10) {
@@ -195,7 +195,7 @@ impl StreamingNumericStats {
     /// Estimate percentiles from the reservoir sample.
     pub fn percentiles(&self) -> crate::models::Percentiles {
         let mut sorted = self.reservoir.clone();
-        sorted.sort_by(|a, b| a.total_cmp(b));
+        sorted.sort_by(f64::total_cmp);
 
         fn percentile(sorted: &[f64], p: f64) -> f64 {
             if sorted.is_empty() {

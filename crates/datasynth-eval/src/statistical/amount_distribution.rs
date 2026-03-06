@@ -121,7 +121,10 @@ impl AmountDistributionAnalyzer {
         let std_dev = decimal_sqrt(variance);
 
         // Convert to f64 for higher moments
-        let amounts_f64: Vec<f64> = amounts.iter().filter_map(|a| a.to_f64()).collect();
+        let amounts_f64: Vec<f64> = amounts
+            .iter()
+            .filter_map(rust_decimal::prelude::ToPrimitive::to_f64)
+            .collect();
         let mean_f64 = amounts_f64.iter().sum::<f64>() / amounts_f64.len() as f64;
         let std_f64 = (amounts_f64
             .iter()
@@ -217,9 +220,9 @@ impl AmountDistributionAnalyzer {
         // Convert to log values
         let log_amounts: Vec<f64> = amounts
             .iter()
-            .filter_map(|a| a.to_f64())
+            .filter_map(rust_decimal::prelude::ToPrimitive::to_f64)
             .filter(|a| *a > 0.0)
-            .map(|a| a.ln())
+            .map(f64::ln)
             .collect();
 
         if log_amounts.len() < 10 {
@@ -238,7 +241,7 @@ impl AmountDistributionAnalyzer {
 
         // KS test against fitted normal distribution of log values
         let mut sorted_log = log_amounts.clone();
-        sorted_log.sort_by(|a, b| a.total_cmp(b));
+        sorted_log.sort_by(f64::total_cmp);
 
         // Calculate KS statistic
         let n_usize = sorted_log.len();

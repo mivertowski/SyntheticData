@@ -163,12 +163,12 @@ pub fn manifest_to_prov(manifest: &RunManifest) -> ProvDocument {
     let run_id = &manifest.run_id;
 
     // The generation run as an Activity
-    let activity_id = format!("dsf:run/{}", run_id);
+    let activity_id = format!("dsf:run/{run_id}");
     doc.activity.insert(
         activity_id.clone(),
         ProvActivity {
             prov_type: Some("dsf:GenerationRun".to_string()),
-            prov_label: Some(format!("DataSynth generation run {}", run_id)),
+            prov_label: Some(format!("DataSynth generation run {run_id}")),
             start_time: Some(manifest.started_at.to_rfc3339()),
             end_time: manifest.completed_at.map(|t| t.to_rfc3339()),
             attributes: {
@@ -217,7 +217,7 @@ pub fn manifest_to_prov(manifest: &RunManifest) -> ProvDocument {
 
     // Activity used the config
     doc.used.insert(
-        format!("dsf:usage/{}/config", run_id),
+        format!("dsf:usage/{run_id}/config"),
         ProvUsage {
             activity: activity_id.clone(),
             entity: config_entity_id,
@@ -256,7 +256,7 @@ pub fn manifest_to_prov(manifest: &RunManifest) -> ProvDocument {
 
         // wasGeneratedBy
         doc.was_generated_by.insert(
-            format!("dsf:gen/{}/{}", run_id, i),
+            format!("dsf:gen/{run_id}/{i}"),
             ProvGeneration {
                 entity: entity_id.clone(),
                 activity: activity_id.clone(),
@@ -265,7 +265,7 @@ pub fn manifest_to_prov(manifest: &RunManifest) -> ProvDocument {
 
         // wasAttributedTo
         doc.was_attributed_to.insert(
-            format!("dsf:attr/{}/{}", run_id, i),
+            format!("dsf:attr/{run_id}/{i}"),
             ProvAttribution {
                 entity: entity_id,
                 agent: agent_id.clone(),

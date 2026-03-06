@@ -17,11 +17,16 @@ use rust_decimal_macros::dec;
 /// Generates [`ProjectRevenue`] records using Percentage of Completion.
 ///
 /// Not yet wired into the runtime orchestrator; will be integrated alongside
-/// project revenue recognition support.
-#[allow(dead_code)]
+/// project revenue recognition support.  Currently exercised by unit and
+/// integration tests.
 pub struct RevenueGenerator {
     rng: ChaCha8Rng,
+    /// Will produce deterministic revenue-record IDs once wired into the
+    /// orchestrator (currently using sequential `PREV-NNNNNN` format).
+    #[allow(dead_code)]
     uuid_factory: DeterministicUuidFactory,
+    /// Stored for future configurable PoC method selection and margin thresholds.
+    #[allow(dead_code)]
     config: ProjectRevenueRecognitionConfig,
     counter: u64,
 }
@@ -139,7 +144,6 @@ impl RevenueGenerator {
 }
 
 /// Get the last day of a month.
-#[allow(dead_code)]
 fn end_of_month(date: NaiveDate) -> NaiveDate {
     let (year, month) = if date.month() == 12 {
         (date.year() + 1, 1)
@@ -153,7 +157,6 @@ fn end_of_month(date: NaiveDate) -> NaiveDate {
 }
 
 /// Get the first day of the next month.
-#[allow(dead_code)]
 fn next_month_start(date: NaiveDate) -> NaiveDate {
     let (year, month) = if date.month() == 12 {
         (date.year() + 1, 1)

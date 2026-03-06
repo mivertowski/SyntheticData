@@ -357,12 +357,8 @@ impl IndustryTransaction for RetailTransaction {
                 ..
             }) => {
                 vec![
-                    IndustryJournalLine::debit(
-                        "5300",
-                        *amount,
-                        format!("Shrinkage - {:?}", reason),
-                    )
-                    .with_dimension("store", store_id),
+                    IndustryJournalLine::debit("5300", *amount, format!("Shrinkage - {reason:?}"))
+                        .with_dimension("store", store_id),
                     IndustryJournalLine::credit("1400", *amount, "Inventory reduction"),
                 ]
             }

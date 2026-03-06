@@ -79,7 +79,7 @@ impl ControlExporter {
             let principles: Vec<String> = control
                 .coso_principles
                 .iter()
-                .map(|p| format!("{}", p))
+                .map(|p| format!("{p}"))
                 .collect();
 
             writeln!(
@@ -122,7 +122,7 @@ impl ControlExporter {
             let sub_types: Vec<String> = mapping
                 .account_sub_types
                 .iter()
-                .map(|st| format!("{:?}", st))
+                .map(|st| format!("{st:?}"))
                 .collect();
 
             writeln!(
@@ -154,7 +154,7 @@ impl ControlExporter {
             let processes: Vec<String> = mapping
                 .business_processes
                 .iter()
-                .map(|bp| format!("{:?}", bp))
+                .map(|bp| format!("{bp:?}"))
                 .collect();
 
             writeln!(

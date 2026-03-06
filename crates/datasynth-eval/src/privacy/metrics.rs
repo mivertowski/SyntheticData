@@ -75,8 +75,8 @@ impl NistAlignmentReport {
             evidence: if dp_applied {
                 format!(
                     "DP applied with epsilon={}, delta={}, method={}",
-                    epsilon.map_or("N/A".to_string(), |e| format!("{:.4}", e)),
-                    delta.map_or("N/A".to_string(), |d| format!("{:.2e}", d)),
+                    epsilon.map_or("N/A".to_string(), |e| format!("{e:.4}")),
+                    delta.map_or("N/A".to_string(), |d| format!("{d:.2e}")),
                     composition_method.as_deref().unwrap_or("naive"),
                 )
             } else {
@@ -89,7 +89,7 @@ impl NistAlignmentReport {
             description: "Epsilon within reasonable bounds (< 10.0)".to_string(),
             met: epsilon.is_some_and(|e| e < 10.0),
             evidence: epsilon.map_or("No epsilon specified".to_string(), |e| {
-                format!("Epsilon = {:.4}", e)
+                format!("Epsilon = {e:.4}")
             }),
         });
 
@@ -126,7 +126,7 @@ impl NistAlignmentReport {
             description: "MIA AUC-ROC < 0.6 (near-random)".to_string(),
             met: mia_auc_roc.is_some_and(|auc| auc < 0.6),
             evidence: mia_auc_roc.map_or("MIA not tested".to_string(), |auc| {
-                format!("AUC-ROC = {:.4}", auc)
+                format!("AUC-ROC = {auc:.4}")
             }),
         });
 

@@ -139,8 +139,8 @@ pub struct AnomalyInjector {
     type_selector: AnomalyTypeSelector,
     strategies: StrategyCollection,
     cluster_manager: ClusterManager,
-    // Constructed from config; will be consumed when entity-aware injection
-    // patterns are integrated into the main inject loop.
+    /// Constructed from config; will be consumed when entity-aware injection
+    /// patterns are integrated into the main inject loop (v0.4.0 roadmap).
     #[allow(dead_code)]
     entity_targeting: EntityTargetingManager,
     /// Tracking which documents already have anomalies.
@@ -156,10 +156,12 @@ pub struct AnomalyInjector {
     near_miss_generator: Option<NearMissGenerator>,
     /// Near-miss labels generated.
     near_miss_labels: Vec<NearMissLabel>,
-    // Constructed when correlated_injection_enabled; pending integration.
+    /// Constructed when `correlated_injection_enabled`; will drive correlated
+    /// anomaly pairs once the co-occurrence integration pass lands.
     #[allow(dead_code)]
     co_occurrence_handler: Option<AnomalyCoOccurrence>,
-    // Constructed when temporal_clustering_enabled; pending integration.
+    /// Constructed when `temporal_clustering_enabled`; will group anomalies
+    /// into temporal bursts once the clustering integration pass lands.
     #[allow(dead_code)]
     temporal_cluster_generator: Option<TemporalClusterGenerator>,
     /// Difficulty calculator.
@@ -403,8 +405,8 @@ impl AnomalyInjector {
                         let difficulty = calculator.calculate(&label);
 
                         // Store difficulty in metadata
-                        label = label
-                            .with_metadata("detection_difficulty", &format!("{:?}", difficulty));
+                        label =
+                            label.with_metadata("detection_difficulty", &format!("{difficulty:?}"));
                         label = label.with_metadata(
                             "difficulty_score",
                             &difficulty.difficulty_score().to_string(),
@@ -597,7 +599,7 @@ impl AnomalyInjector {
             if (context_multiplier - 1.0).abs() > f64::EPSILON {
                 label = label.with_metadata(
                     "entity_context_multiplier",
-                    &format!("{:.3}", context_multiplier),
+                    &format!("{context_multiplier:.3}"),
                 );
                 label = label.with_metadata(
                     "effective_rate",
@@ -666,7 +668,7 @@ impl AnomalyInjector {
             entry.company_code().to_string(),
             entry.posting_date(),
         )
-        .with_description(&format!("User {} approved their own transaction", user_id))
+        .with_description(&format!("User {user_id} approved their own transaction"))
         .with_related_entity(user_id)
         .with_injection_strategy("ManualSelfApproval")
         .with_causal_reason(AnomalyCausalReason::EntityTargeting {
@@ -748,8 +750,7 @@ impl AnomalyInjector {
             entry.posting_date(),
         )
         .with_description(&format!(
-            "Intercompany mismatch with {}: expected {} but got {}",
-            matching_company, expected_amount, actual_amount
+            "Intercompany mismatch with {matching_company}: expected {expected_amount} but got {actual_amount}"
         ))
         .with_related_entity(matching_company)
         .with_monetary_impact(actual_amount - expected_amount)

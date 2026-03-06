@@ -80,7 +80,7 @@ impl ConfigSynthesizer {
             if key.contains("amount") || key.contains("value") || key.contains("price") {
                 let amount_config = self.map_numeric_distribution(stats);
                 for (k, v) in amount_config {
-                    patch.set(&format!("transactions.amounts.{}", k), v);
+                    patch.set(&format!("transactions.amounts.{k}"), v);
                 }
                 break; // Use first matching column
             }
@@ -222,7 +222,7 @@ impl ConfigSynthesizer {
                                 CopulaGenerator::from_correlation_matrix(matrix, seed)
                             {
                                 copula_generators.push(CopulaGeneratorSpec {
-                                    name: format!("{}_copula", table_name),
+                                    name: format!("{table_name}_copula"),
                                     table: table_name.clone(),
                                     columns: matrix.columns.clone(),
                                     generator,
@@ -328,7 +328,7 @@ impl ConfigValue {
             }
             Self::String(s) => serde_yaml::Value::String(s.clone()),
             Self::Array(arr) => {
-                serde_yaml::Value::Sequence(arr.iter().map(|v| v.to_yaml_value()).collect())
+                serde_yaml::Value::Sequence(arr.iter().map(ConfigValue::to_yaml_value).collect())
             }
         }
     }

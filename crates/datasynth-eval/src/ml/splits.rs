@@ -169,8 +169,7 @@ impl SplitAnalyzer {
             self.check_distribution(&train_metrics, &test_metrics);
         if !distribution_preserved {
             issues.push(format!(
-                "Class distribution shift detected: KL divergence = {:.4}",
-                distribution_shift
+                "Class distribution shift detected: KL divergence = {distribution_shift:.4}"
             ));
         }
 
@@ -225,8 +224,7 @@ impl SplitAnalyzer {
                 if test_min < train_max {
                     leakage = true;
                     details.push(format!(
-                        "Temporal leakage: test min date {} < train max date {}",
-                        test_min, train_max
+                        "Temporal leakage: test min date {test_min} < train max date {train_max}"
                     ));
                 }
             }

@@ -186,7 +186,7 @@ impl AssetDisposal {
             "{}Rejected: {}",
             self.notes
                 .as_ref()
-                .map(|n| format!("{}. ", n))
+                .map(|n| format!("{n}. "))
                 .unwrap_or_default(),
             reason
         ));

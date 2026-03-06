@@ -201,7 +201,7 @@ impl ARInvoice {
             "{}Reversed on {}: {}",
             self.notes
                 .as_ref()
-                .map(|n| format!("{}. ", n))
+                .map(|n| format!("{n}. "))
                 .unwrap_or_default(),
             reversal_date,
             reason

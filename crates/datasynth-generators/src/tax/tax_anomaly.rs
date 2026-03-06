@@ -306,8 +306,7 @@ impl TaxAnomalyInjector {
                 original_jurisdiction, new_jurisdiction, line.id
             ),
             original_value: Some(format!(
-                "jurisdiction={}, tax_amount={}",
-                original_jurisdiction, original_amount
+                "jurisdiction={original_jurisdiction}, tax_amount={original_amount}"
             )),
             anomalous_value: Some(format!(
                 "jurisdiction={}, tax_amount={}",

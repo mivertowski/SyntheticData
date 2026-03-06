@@ -149,8 +149,7 @@ impl BehavioralBaseline {
                     label: AnomalyType::Statistical(StatisticalAnomalyType::StatisticalOutlier),
                     severity: SeverityLevel::Low,
                     description: format!(
-                        "New counterparty '{}' not in typical partners",
-                        counterparty
+                        "New counterparty '{counterparty}' not in typical partners"
                     ),
                 });
             }
@@ -168,7 +167,7 @@ impl BehavioralBaseline {
                     actual_value: 0.0,
                     label: AnomalyType::Statistical(StatisticalAnomalyType::StatisticalOutlier),
                     severity: SeverityLevel::Low,
-                    description: format!("Account '{}' not typically used by this entity", account),
+                    description: format!("Account '{account}' not typically used by this entity"),
                 });
             }
         }

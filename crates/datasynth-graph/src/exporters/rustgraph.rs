@@ -411,7 +411,7 @@ impl RustGraphExporter {
         // Build labels map
         let mut labels = HashMap::new();
         for (i, label) in node.labels.iter().enumerate() {
-            labels.insert(format!("label_{}", i), label.clone());
+            labels.insert(format!("label_{i}"), label.clone());
         }
 
         RustGraphNodeOutput {
@@ -472,7 +472,7 @@ impl RustGraphExporter {
         // Build labels map
         let mut labels = HashMap::new();
         for (i, label) in edge.labels.iter().enumerate() {
-            labels.insert(format!("label_{}", i), label.clone());
+            labels.insert(format!("label_{i}"), label.clone());
         }
 
         // Determine valid_from from timestamp

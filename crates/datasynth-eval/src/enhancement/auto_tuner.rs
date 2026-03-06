@@ -724,7 +724,7 @@ impl AutoTuner {
     ) -> Option<ConfigPatch> {
         let suggested_value = match mapping.compute_value {
             ComputeStrategy::EnableBoolean => "true".to_string(),
-            ComputeStrategy::SetFixed(v) => format!("{:.4}", v),
+            ComputeStrategy::SetFixed(v) => format!("{v:.4}"),
             ComputeStrategy::IncreaseByGap => format!("{:.4}", gap.current_value + gap.gap * 1.2),
             ComputeStrategy::DecreaseByGap => {
                 format!("{:.4}", (gap.current_value - gap.gap * 1.2).max(0.0))

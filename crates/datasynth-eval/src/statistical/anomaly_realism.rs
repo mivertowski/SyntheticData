@@ -155,8 +155,11 @@ impl AnomalyRealismEvaluator {
         let mut schemes: HashMap<&str, Vec<HashSet<&str>>> = HashMap::new();
         for a in anomalies {
             if let Some(ref sid) = a.scheme_id {
-                let participants: HashSet<&str> =
-                    a.participants.iter().map(|p| p.as_str()).collect();
+                let participants: HashSet<&str> = a
+                    .participants
+                    .iter()
+                    .map(std::string::String::as_str)
+                    .collect();
                 schemes.entry(sid.as_str()).or_default().push(participants);
             }
         }

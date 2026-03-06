@@ -288,7 +288,7 @@ impl DataQualityInjector {
                 field: Some(field.to_string()),
                 original_value: Some(value.to_string()),
                 modified_value: None,
-                description: format!("Field '{}' set to missing", field),
+                description: format!("Field '{field}' set to missing"),
             });
             return None;
         }
@@ -305,7 +305,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(result.clone()),
                     modified_value: Some(with_typos.clone()),
-                    description: format!("Typo introduced in field '{}'", field),
+                    description: format!("Typo introduced in field '{field}'"),
                 });
                 result = with_typos;
                 had_issue = true;
@@ -324,7 +324,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(result.clone()),
                     modified_value: Some(varied.clone()),
-                    description: format!("Format variation in field '{}'", field),
+                    description: format!("Format variation in field '{field}'"),
                 });
                 result = varied;
                 had_issue = true;
@@ -352,7 +352,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(result.clone()),
                     modified_value: Some(with_encoding.clone()),
-                    description: format!("Encoding issue ({:?}) in field '{}'", issue, field),
+                    description: format!("Encoding issue ({issue:?}) in field '{field}'"),
                 });
                 result = with_encoding;
                 had_issue = true;
@@ -392,7 +392,7 @@ impl DataQualityInjector {
                 field: Some(field.to_string()),
                 original_value: Some(date.to_string()),
                 modified_value: None,
-                description: format!("Date field '{}' set to missing", field),
+                description: format!("Date field '{field}' set to missing"),
             });
             return None;
         }
@@ -411,7 +411,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(standard),
                     modified_value: Some(formatted.clone()),
-                    description: format!("Date format variation in field '{}'", field),
+                    description: format!("Date format variation in field '{field}'"),
                 });
             }
 
@@ -446,7 +446,7 @@ impl DataQualityInjector {
                 field: Some(field.to_string()),
                 original_value: Some(amount.to_string()),
                 modified_value: None,
-                description: format!("Amount field '{}' set to missing", field),
+                description: format!("Amount field '{field}' set to missing"),
             });
             return None;
         }
@@ -465,7 +465,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(standard),
                     modified_value: Some(formatted.clone()),
-                    description: format!("Amount format variation in field '{}'", field),
+                    description: format!("Amount format variation in field '{field}'"),
                 });
             }
 
@@ -500,7 +500,7 @@ impl DataQualityInjector {
                 field: Some(field.to_string()),
                 original_value: Some(id.to_string()),
                 modified_value: None,
-                description: format!("Identifier field '{}' set to missing", field),
+                description: format!("Identifier field '{field}' set to missing"),
             });
             return None;
         }
@@ -518,7 +518,7 @@ impl DataQualityInjector {
                     field: Some(field.to_string()),
                     original_value: Some(id.to_string()),
                     modified_value: Some(varied.clone()),
-                    description: format!("Identifier format variation in field '{}'", field),
+                    description: format!("Identifier format variation in field '{field}'"),
                 });
             }
 

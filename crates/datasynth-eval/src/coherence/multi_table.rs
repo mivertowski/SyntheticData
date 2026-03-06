@@ -375,7 +375,7 @@ impl MultiTableConsistencyEvaluator {
                         violation_type: ViolationType::AmountInconsistency,
                         source_record_id: source.id.clone(),
                         target_record_id: Some(target.id.clone()),
-                        description: format!("Amount mismatch: source={}, target={}", s_amt, t_amt),
+                        description: format!("Amount mismatch: source={s_amt}, target={t_amt}"),
                         severity: 3,
                     });
                 }
@@ -392,8 +392,7 @@ impl MultiTableConsistencyEvaluator {
                         source_record_id: source.id.clone(),
                         target_record_id: Some(target.id.clone()),
                         description: format!(
-                            "Date inconsistency: target date {} before source date {}",
-                            t_date, s_date
+                            "Date inconsistency: target date {t_date} before source date {s_date}"
                         ),
                         severity: 2,
                     });

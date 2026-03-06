@@ -39,22 +39,18 @@ pub fn apply_fraud_packs(
     pack_names: &[String],
 ) -> Result<crate::GeneratorConfig, String> {
     let mut config_json =
-        serde_json::to_value(config).map_err(|e| format!("Failed to serialize config: {}", e))?;
+        serde_json::to_value(config).map_err(|e| format!("Failed to serialize config: {e}"))?;
 
     for name in pack_names {
-        let pack = load_fraud_pack(name).ok_or_else(|| {
-            format!(
-                "Unknown fraud pack: '{}'. Available: {:?}",
-                name, FRAUD_PACKS
-            )
-        })?;
+        let pack = load_fraud_pack(name)
+            .ok_or_else(|| format!("Unknown fraud pack: '{name}'. Available: {FRAUD_PACKS:?}"))?;
         merge_fraud_pack(&mut config_json, &pack);
     }
 
     strip_nulls(&mut config_json);
 
     serde_json::from_value(config_json)
-        .map_err(|e| format!("Failed to deserialize merged config: {}", e))
+        .map_err(|e| format!("Failed to deserialize merged config: {e}"))
 }
 
 fn strip_nulls(value: &mut Value) {

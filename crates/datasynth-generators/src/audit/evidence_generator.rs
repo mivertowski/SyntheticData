@@ -333,10 +333,10 @@ impl EvidenceGenerator {
         let source_desc = source.description();
         match evidence_type {
             EvidenceType::Confirmation => {
-                format!("External confirmation {}. Response received and agreed to client records.", source_desc)
+                format!("External confirmation {source_desc}. Response received and agreed to client records.")
             }
             EvidenceType::BankStatement => {
-                format!("Bank statement {}. Statement obtained for period-end reconciliation.", source_desc)
+                format!("Bank statement {source_desc}. Statement obtained for period-end reconciliation.")
             }
             EvidenceType::Invoice => {
                 "Invoice selected as part of sample testing. Examined for appropriate approval, accuracy, and proper period recording.".into()
@@ -345,9 +345,9 @@ impl EvidenceGenerator {
                 "Auditor-prepared analytical procedure. Expectations developed based on prior year, industry data, and management budgets.".into()
             }
             EvidenceType::SystemExtract => {
-                format!("System report {}. Extract validated for completeness and accuracy.", source_desc)
+                format!("System report {source_desc}. Extract validated for completeness and accuracy.")
             }
-            _ => format!("Supporting documentation {}.", source_desc),
+            _ => format!("Supporting documentation {source_desc}."),
         }
     }
 
@@ -406,7 +406,7 @@ impl EvidenceGenerator {
             }
         };
 
-        format!("/evidence/EV-{:06}.{}", counter, extension)
+        format!("/evidence/EV-{counter:06}.{extension}")
     }
 
     /// Select a random team member.

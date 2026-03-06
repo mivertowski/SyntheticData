@@ -51,7 +51,11 @@ fn extract_from_csv(
         .delimiter(csv.delimiter)
         .from_path(&csv.path)?;
 
-    let headers: Vec<String> = reader.headers()?.iter().map(|s| s.to_string()).collect();
+    let headers: Vec<String> = reader
+        .headers()?
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
 
     // Collect all values by column
     let mut columns: Vec<Vec<String>> = vec![Vec::new(); headers.len()];

@@ -227,8 +227,7 @@ impl GraphAnalyzer {
 
         if connected_components > 1 {
             issues.push(format!(
-                "Graph has {} connected components",
-                connected_components
+                "Graph has {connected_components} connected components"
             ));
         }
 

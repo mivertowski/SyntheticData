@@ -131,7 +131,7 @@ impl DiffusionBackend for StatisticalDiffusionBackend {
         let sqrt_alpha_bar = self.schedule.sqrt_alpha_bars[t_clamped];
         let sqrt_one_minus_alpha_bar = self.schedule.sqrt_one_minus_alpha_bars[t_clamped];
 
-        let n_features = x.first().map_or(0, |row| row.len());
+        let n_features = x.first().map_or(0, std::vec::Vec::len);
         let noise =
             super::generate_noise(x.len(), n_features, self.config.seed.wrapping_add(t as u64));
 
@@ -158,7 +158,7 @@ impl DiffusionBackend for StatisticalDiffusionBackend {
         // Noise scale decreases as we approach t=0
         let noise_scale = if t_clamped > 0 { beta_t.sqrt() } else { 0.0 };
 
-        let n_features = x_t.first().map_or(0, |row| row.len());
+        let n_features = x_t.first().map_or(0, std::vec::Vec::len);
         let noise = super::generate_noise(
             x_t.len(),
             n_features,

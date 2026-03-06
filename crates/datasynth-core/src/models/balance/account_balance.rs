@@ -559,7 +559,11 @@ pub fn compare_snapshots(
     let mut changes = Vec::new();
 
     // Get all unique account codes
-    let mut all_accounts: Vec<&str> = prior.balances.keys().map(|s| s.as_str()).collect();
+    let mut all_accounts: Vec<&str> = prior
+        .balances
+        .keys()
+        .map(std::string::String::as_str)
+        .collect();
     for code in current.balances.keys() {
         if !all_accounts.contains(&code.as_str()) {
             all_accounts.push(code.as_str());

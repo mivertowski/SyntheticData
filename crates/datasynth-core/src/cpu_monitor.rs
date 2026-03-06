@@ -436,7 +436,7 @@ mod num_cpus {
 mod num_cpus {
     pub fn get() -> usize {
         std::thread::available_parallelism()
-            .map(|p| p.get())
+            .map(std::num::NonZero::get)
             .unwrap_or(1)
     }
 }

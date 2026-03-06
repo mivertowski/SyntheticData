@@ -27,9 +27,9 @@ fn derive_transaction_type(channel: TransactionChannel, category: TransactionCat
         }
         result
     }
-    let channel_str = to_screaming_snake(&format!("{:?}", channel));
-    let category_str = to_screaming_snake(&format!("{:?}", category));
-    format!("{}_{}", channel_str, category_str)
+    let channel_str = to_screaming_snake(&format!("{channel:?}"));
+    let category_str = to_screaming_snake(&format!("{category:?}"));
+    format!("{channel_str}_{category_str}")
 }
 
 /// A bank transaction with full metadata and ground truth labels.
@@ -205,7 +205,7 @@ impl BankTransaction {
     /// Set location.
     pub fn with_location(mut self, country: &str, city: Option<&str>) -> Self {
         self.location_country = Some(country.to_string());
-        self.location_city = city.map(|c| c.to_string());
+        self.location_city = city.map(std::string::ToString::to_string);
         self
     }
 
@@ -325,7 +325,7 @@ impl CounterpartyRef {
             counterparty_type: CounterpartyType::Peer,
             counterparty_id: None,
             name: name.to_string(),
-            account_identifier: account.map(|a| a.to_string()),
+            account_identifier: account.map(std::string::ToString::to_string),
             bank_identifier: None,
             country: None,
         }
@@ -336,7 +336,7 @@ impl CounterpartyRef {
         Self {
             counterparty_type: CounterpartyType::Atm,
             counterparty_id: None,
-            name: format!("ATM - {}", location),
+            name: format!("ATM - {location}"),
             account_identifier: None,
             bank_identifier: None,
             country: None,

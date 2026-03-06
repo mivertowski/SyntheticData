@@ -430,7 +430,7 @@ impl IndustryTransaction for ManufacturingTransaction {
                 ..
             } => {
                 let account = format!("5{}", variance_type.account_suffix());
-                let desc = format!("{:?} - Order {}", variance_type, order_id);
+                let desc = format!("{variance_type:?} - Order {order_id}");
 
                 if *amount >= Decimal::ZERO {
                     vec![

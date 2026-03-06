@@ -253,7 +253,7 @@ impl User {
     pub fn system(user_id: &str) -> Self {
         Self::new(
             user_id.to_string(),
-            format!("System User {}", user_id),
+            format!("System User {user_id}"),
             UserPersona::AutomatedSystem,
         )
     }
@@ -266,14 +266,14 @@ impl User {
     /// Generate a typical username for a persona.
     pub fn generate_username(persona: UserPersona, index: usize) -> String {
         match persona {
-            UserPersona::JuniorAccountant => format!("JACC{:04}", index),
-            UserPersona::SeniorAccountant => format!("SACC{:04}", index),
-            UserPersona::Controller => format!("CTRL{:04}", index),
-            UserPersona::Manager => format!("MGR{:04}", index),
-            UserPersona::Executive => format!("EXEC{:04}", index),
-            UserPersona::AutomatedSystem => format!("BATCH{:04}", index),
-            UserPersona::ExternalAuditor => format!("AUDIT{:04}", index),
-            UserPersona::FraudActor => format!("USER{:04}", index), // Appears normal
+            UserPersona::JuniorAccountant => format!("JACC{index:04}"),
+            UserPersona::SeniorAccountant => format!("SACC{index:04}"),
+            UserPersona::Controller => format!("CTRL{index:04}"),
+            UserPersona::Manager => format!("MGR{index:04}"),
+            UserPersona::Executive => format!("EXEC{index:04}"),
+            UserPersona::AutomatedSystem => format!("BATCH{index:04}"),
+            UserPersona::ExternalAuditor => format!("AUDIT{index:04}"),
+            UserPersona::FraudActor => format!("USER{index:04}"), // Appears normal
         }
     }
 }
@@ -664,7 +664,7 @@ impl Employee {
         let first = first_name.into();
         let last = last_name.into();
         let uid = user_id.into();
-        let display_name = format!("{} {}", first, last);
+        let display_name = format!("{first} {last}");
         let email = format!(
             "{}.{}@company.com",
             first.to_lowercase(),

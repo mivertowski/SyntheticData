@@ -178,9 +178,8 @@ impl DiskSpaceGuard {
                 required_mb,
                 is_soft_limit: false,
                 message: format!(
-                    "Disk space exhausted: only {} MB available, need at least {} MB. \
-                     Free up disk space or reduce output volume.",
-                    available_mb, required_mb
+                    "Disk space exhausted: only {available_mb} MB available, need at least {required_mb} MB. \
+                     Free up disk space or reduce output volume."
                 ),
             });
         }
@@ -500,10 +499,9 @@ pub fn check_sufficient_disk_space(
 
     if available < required {
         Err(format!(
-            "Insufficient disk space: {} MB available, need {} MB \
-             (estimated output: {} MB, minimum free: {} MB). \
-             Reduce output volume or free up disk space.",
-            available, required, estimated, min_free_mb
+            "Insufficient disk space: {available} MB available, need {required} MB \
+             (estimated output: {estimated} MB, minimum free: {min_free_mb} MB). \
+             Reduce output volume or free up disk space."
         ))
     } else {
         Ok(())

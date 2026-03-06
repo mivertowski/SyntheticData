@@ -48,7 +48,7 @@ impl ConfidenceConfig {
             + self.context_weight;
 
         if (sum - 1.0).abs() > 0.01 {
-            return Err(format!("Confidence weights must sum to 1.0, got {}", sum));
+            return Err(format!("Confidence weights must sum to 1.0, got {sum}"));
         }
 
         Ok(())
@@ -113,7 +113,7 @@ impl ConfidenceCalculator {
             0.5, // Threshold for "clear" pattern
             true,
             self.config.pattern_clarity_weight,
-            &format!("Pattern clarity score: {:.2}", pattern_clarity),
+            &format!("Pattern clarity score: {pattern_clarity:.2}"),
         ));
 
         // Component 2: Anomaly Strength
@@ -124,7 +124,7 @@ impl ConfidenceCalculator {
             0.3, // Threshold for "strong" anomaly
             true,
             self.config.strength_weight,
-            &format!("Anomaly strength: {:.2}", strength),
+            &format!("Anomaly strength: {strength:.2}"),
         ));
 
         // Component 3: Detectability
@@ -135,7 +135,7 @@ impl ConfidenceCalculator {
             0.5,
             true,
             self.config.detectability_weight,
-            &format!("Auto-detectability: {:.2}", detectability),
+            &format!("Auto-detectability: {detectability:.2}"),
         ));
 
         // Component 4: Context Match
@@ -146,7 +146,7 @@ impl ConfidenceCalculator {
             0.3,
             true,
             self.config.context_weight,
-            &format!("Context match score: {:.2}", context_match),
+            &format!("Context match score: {context_match:.2}"),
         ));
 
         // Calculate weighted sum

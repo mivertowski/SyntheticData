@@ -210,26 +210,26 @@ impl CounterfactualSpec {
     pub fn description(&self) -> String {
         match self {
             CounterfactualSpec::ScaleAmount { factor } => {
-                format!("Scale amount by {:.2}x", factor)
+                format!("Scale amount by {factor:.2}x")
             }
             CounterfactualSpec::AddAmount { delta } => {
-                format!("Add {} to amount", delta)
+                format!("Add {delta} to amount")
             }
             CounterfactualSpec::SetAmount { target } => {
-                format!("Set amount to {}", target)
+                format!("Set amount to {target}")
             }
             CounterfactualSpec::ShiftDate { days } => {
                 if *days < 0 {
                     format!("Backdate by {} days", days.abs())
                 } else {
-                    format!("Forward-date by {} days", days)
+                    format!("Forward-date by {days} days")
                 }
             }
             CounterfactualSpec::ChangePeriod { target_period } => {
-                format!("Change to period {}", target_period)
+                format!("Change to period {target_period}")
             }
             CounterfactualSpec::ReclassifyAccount { new_account } => {
-                format!("Reclassify to account {}", new_account)
+                format!("Reclassify to account {new_account}")
             }
             CounterfactualSpec::AddLineItem {
                 account,
@@ -244,10 +244,10 @@ impl CounterfactualSpec {
                 )
             }
             CounterfactualSpec::RemoveLineItem { line_index } => {
-                format!("Remove line item {}", line_index)
+                format!("Remove line item {line_index}")
             }
             CounterfactualSpec::SplitTransaction { split_count } => {
-                format!("Split into {} transactions", split_count)
+                format!("Split into {split_count} transactions")
             }
             CounterfactualSpec::CreateRoundTrip { intermediaries } => {
                 format!(
@@ -257,10 +257,10 @@ impl CounterfactualSpec {
             }
             CounterfactualSpec::SelfApprove => "Apply self-approval".to_string(),
             CounterfactualSpec::InjectFraud { fraud_type } => {
-                format!("Inject {:?} fraud", fraud_type)
+                format!("Inject {fraud_type:?} fraud")
             }
             CounterfactualSpec::Custom { name, .. } => {
-                format!("Apply custom transformation: {}", name)
+                format!("Apply custom transformation: {name}")
             }
         }
     }

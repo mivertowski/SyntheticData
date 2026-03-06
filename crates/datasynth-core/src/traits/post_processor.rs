@@ -389,7 +389,8 @@ mod tests {
         value: String,
     }
 
-    // Simple test label type
+    // Test label type — fields are written but not read; the struct serves as
+    // a type parameter for PostProcessor and Pipeline tests.
     #[allow(dead_code)]
     #[derive(Debug, Clone)]
     struct TestLabel {

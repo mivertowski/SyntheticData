@@ -329,7 +329,7 @@ pub fn aggregate_node_features(
         })
         .collect();
 
-    let names: Vec<String> = (0..dim).map(|d| format!("feature_{}", d)).collect();
+    let names: Vec<String> = (0..dim).map(|d| format!("feature_{d}")).collect();
 
     MultiFeatureAggregation::new(aggregated, names)
 }

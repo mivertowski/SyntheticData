@@ -578,7 +578,7 @@ impl PurchaseRequisition {
 
     /// Check if any items can be converted.
     pub fn has_convertible_items(&self) -> bool {
-        self.items.iter().any(|i| i.can_convert())
+        self.items.iter().any(PurchaseRequisitionItem::can_convert)
     }
 }
 

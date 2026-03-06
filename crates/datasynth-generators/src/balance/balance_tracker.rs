@@ -178,7 +178,11 @@ impl RunningBalanceTracker {
         }
 
         self.stats.companies_tracked = self.balances.len();
-        self.stats.accounts_tracked = self.balances.values().map(|b| b.len()).sum();
+        self.stats.accounts_tracked = self
+            .balances
+            .values()
+            .map(std::collections::HashMap::len)
+            .sum();
     }
 
     /// Applies a journal entry to the running balances.
@@ -286,7 +290,11 @@ impl RunningBalanceTracker {
         self.stats.total_debits += entry.total_debit();
         self.stats.total_credits += entry.total_credit();
         self.stats.companies_tracked = self.balances.len();
-        self.stats.accounts_tracked = self.balances.values().map(|b| b.len()).sum();
+        self.stats.accounts_tracked = self
+            .balances
+            .values()
+            .map(std::collections::HashMap::len)
+            .sum();
 
         // Validate balance sheet if configured
         if self.config.validate_on_each_entry {
@@ -382,8 +390,7 @@ impl RunningBalanceTracker {
                 entry_id: entry_id.map(String::from),
                 error_type: ValidationErrorType::BalanceSheetImbalance,
                 message: format!(
-                    "Balance sheet imbalance: Assets ({}) != L + E + NI ({}), diff = {}",
-                    left_side, right_side, difference
+                    "Balance sheet imbalance: Assets ({left_side}) != L + E + NI ({right_side}), diff = {difference}"
                 ),
                 details: {
                     let mut d = HashMap::new();
@@ -417,7 +424,7 @@ impl RunningBalanceTracker {
         let currency = self.currency.clone();
         self.balances.get(company_code).map(|balances| {
             let mut snapshot = BalanceSnapshot::new(
-                format!("SNAP-{}-{}", company_code, as_of_date),
+                format!("SNAP-{company_code}-{as_of_date}"),
                 company_code.to_string(),
                 as_of_date,
                 as_of_date.year(),
@@ -439,7 +446,7 @@ impl RunningBalanceTracker {
             .iter()
             .map(|(company_code, balances)| {
                 let mut snapshot = BalanceSnapshot::new(
-                    format!("SNAP-{}-{}", company_code, as_of_date),
+                    format!("SNAP-{company_code}-{as_of_date}"),
                     company_code.clone(),
                     as_of_date,
                     as_of_date.year(),

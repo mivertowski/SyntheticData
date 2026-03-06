@@ -85,7 +85,11 @@ impl EmbeddingReadinessAnalyzer {
             });
         }
 
-        let total_dimensions = input.feature_matrix.first().map(|r| r.len()).unwrap_or(0);
+        let total_dimensions = input
+            .feature_matrix
+            .first()
+            .map(std::vec::Vec::len)
+            .unwrap_or(0);
 
         if total_dimensions == 0 {
             return Ok(EmbeddingReadinessAnalysis {
@@ -115,8 +119,7 @@ impl EmbeddingReadinessAnalyzer {
 
         if !contrastive_learning_viable {
             issues.push(format!(
-                "Contrastive learning not viable: {} classes, min count = {}",
-                num_classes, min_class_count
+                "Contrastive learning not viable: {num_classes} classes, min count = {min_class_count}"
             ));
         }
 

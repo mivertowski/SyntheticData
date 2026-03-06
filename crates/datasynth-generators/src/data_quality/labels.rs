@@ -361,7 +361,7 @@ impl QualityLabels {
                     format!("{:?}", l.issue_type),
                     l.subtype
                         .as_ref()
-                        .map(|s| format!("{:?}", s))
+                        .map(|s| format!("{s:?}"))
                         .unwrap_or_default(),
                     l.document_id.clone(),
                     l.field_name.clone(),

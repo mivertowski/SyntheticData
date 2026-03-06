@@ -573,7 +573,7 @@ pub fn introduce_encoding_issue<R: Rng>(text: &str, issue: EncodingIssue, rng: &
             })
             .collect(),
         EncodingIssue::BOM => {
-            format!("\u{FEFF}{}", text)
+            format!("\u{FEFF}{text}")
         }
         EncodingIssue::ControlChars => {
             let mut result = String::new();

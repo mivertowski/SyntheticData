@@ -29,7 +29,7 @@ fn escape_gobd_field(s: &str) -> String {
 }
 
 fn format_decimal(d: rust_decimal::Decimal) -> String {
-    format!("{:.2}", d)
+    format!("{d:.2}")
 }
 
 /// Write journal entries to a GoBD-compliant CSV file (semicolon-separated, UTF-8).
@@ -46,7 +46,7 @@ pub fn write_gobd_journal_csv(
     let file = File::create(path)?;
     let mut w = BufWriter::with_capacity(256 * 1024, file);
 
-    writeln!(w, "{}", GOBD_JOURNAL_HEADER)?;
+    writeln!(w, "{GOBD_JOURNAL_HEADER}")?;
 
     for je in entries {
         let beleg_datum = je.header.document_date.format("%Y%m%d").to_string();
@@ -103,20 +103,7 @@ pub fn write_gobd_journal_csv(
 
             writeln!(
                 w,
-                "{};{};{};{};{};{};{};{};{};{};{};{};{}",
-                beleg_datum,
-                buchungs_datum,
-                beleg_nummer,
-                buchungstext,
-                konto,
-                gegen_konto,
-                soll,
-                haben,
-                steuer_schluessel,
-                steuer_betrag,
-                waehrung,
-                kostenstelle,
-                beleg_kreis,
+                "{beleg_datum};{buchungs_datum};{beleg_nummer};{buchungstext};{konto};{gegen_konto};{soll};{haben};{steuer_schluessel};{steuer_betrag};{waehrung};{kostenstelle};{beleg_kreis}",
             )?;
         }
     }
@@ -130,7 +117,7 @@ pub fn write_gobd_accounts_csv(path: &Path, coa: &ChartOfAccounts) -> SynthResul
     let file = File::create(path)?;
     let mut w = BufWriter::with_capacity(64 * 1024, file);
 
-    writeln!(w, "{}", GOBD_ACCOUNTS_HEADER)?;
+    writeln!(w, "{GOBD_ACCOUNTS_HEADER}")?;
 
     for account in &coa.accounts {
         writeln!(
@@ -162,7 +149,7 @@ pub fn write_gobd_index_xml(
     writeln!(w, "<GoBD xmlns=\"urn:de:gobd:2024\" version=\"1.0\">")?;
     writeln!(w, "  <Header>")?;
     writeln!(w, "    <Company>{}</Company>", escape_xml(company_code))?;
-    writeln!(w, "    <FiscalYear>{}</FiscalYear>", fiscal_year)?;
+    writeln!(w, "    <FiscalYear>{fiscal_year}</FiscalYear>")?;
     writeln!(
         w,
         "    <ExportDate>{}</ExportDate>",

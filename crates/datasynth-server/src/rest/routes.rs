@@ -759,10 +759,7 @@ async fn bulk_generate(
         if count > MAX_ENTRY_COUNT {
             return Err((
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "entry_count ({}) exceeds maximum allowed value ({})",
-                    count, MAX_ENTRY_COUNT
-                ),
+                format!("entry_count ({count}) exceeds maximum allowed value ({MAX_ENTRY_COUNT})"),
             ));
         }
     }
@@ -782,14 +779,14 @@ async fn bulk_generate(
     let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to create orchestrator: {}", e),
+            format!("Failed to create orchestrator: {e}"),
         )
     })?;
 
     let result = orchestrator.generate().map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Generation failed: {}", e),
+            format!("Generation failed: {e}"),
         )
     })?;
 
@@ -923,8 +920,7 @@ async fn trigger_pattern(
         return Json(StreamResponse {
             success: false,
             message: format!(
-                "Unknown pattern '{}'. Valid patterns: {:?}, or use 'custom:name' for custom patterns",
-                pattern, valid_patterns
+                "Unknown pattern '{pattern}'. Valid patterns: {valid_patterns:?}, or use 'custom:name' for custom patterns"
             ),
         });
     }
@@ -935,7 +931,7 @@ async fn trigger_pattern(
             *triggered = Some(pattern.clone());
             Json(StreamResponse {
                 success: true,
-                message: format!("Pattern '{}' will be applied to upcoming entries", pattern),
+                message: format!("Pattern '{pattern}' will be applied to upcoming entries"),
             })
         }
         Err(_) => Json(StreamResponse {

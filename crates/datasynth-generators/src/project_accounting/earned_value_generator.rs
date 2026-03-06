@@ -14,7 +14,8 @@ use rust_decimal_macros::dec;
 /// Generates [`EarnedValueMetric`] records for projects.
 pub struct EarnedValueGenerator {
     rng: ChaCha8Rng,
-    // Stored for future configurable thresholds (e.g., schedule variance tolerance).
+    /// Stored for future configurable thresholds (e.g., schedule variance
+    /// tolerance, SPI/CPI alert bands).
     #[allow(dead_code)]
     config: EarnedValueSchemaConfig,
     counter: u64,

@@ -204,7 +204,7 @@ pub fn export_labels_jsonl(
 
     for label in labels {
         let json = serde_json::to_string(label)?;
-        writeln!(writer, "{}", json)?;
+        writeln!(writer, "{json}")?;
     }
 
     writer.flush()?;
@@ -223,17 +223,17 @@ pub fn export_labels_all_formats(
     let mut results = Vec::new();
 
     // CSV
-    let csv_path = output_dir.join(format!("{}.csv", base_name));
+    let csv_path = output_dir.join(format!("{base_name}.csv"));
     let count = export_labels_csv(labels, &csv_path, config)?;
     results.push((csv_path.display().to_string(), count));
 
     // JSON
-    let json_path = output_dir.join(format!("{}.json", base_name));
+    let json_path = output_dir.join(format!("{base_name}.json"));
     let count = export_labels_json(labels, &json_path, config)?;
     results.push((json_path.display().to_string(), count));
 
     // JSONL
-    let jsonl_path = output_dir.join(format!("{}.jsonl", base_name));
+    let jsonl_path = output_dir.join(format!("{base_name}.jsonl"));
     let count = export_labels_jsonl(labels, &jsonl_path, config)?;
     results.push((jsonl_path.display().to_string(), count));
 

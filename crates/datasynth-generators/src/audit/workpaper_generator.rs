@@ -433,21 +433,19 @@ impl WorkpaperGenerator {
 
         let summary = match conclusion {
             WorkpaperConclusion::Satisfactory => {
-                format!("Tested {} items with no exceptions noted", sample_size)
+                format!("Tested {sample_size} items with no exceptions noted")
             }
             WorkpaperConclusion::SatisfactoryWithExceptions => {
                 format!(
-                    "Tested {} items with {} exceptions noted. Exceptions were immaterial and have been evaluated",
-                    sample_size, exceptions
+                    "Tested {sample_size} items with {exceptions} exceptions noted. Exceptions were immaterial and have been evaluated"
                 )
             }
             WorkpaperConclusion::Unsatisfactory => {
                 format!(
-                    "Tested {} items with {} exceptions noted. Exceptions represent material misstatement requiring adjustment",
-                    sample_size, exceptions
+                    "Tested {sample_size} items with {exceptions} exceptions noted. Exceptions represent material misstatement requiring adjustment"
                 )
             }
-            _ => format!("Tested {} items", sample_size),
+            _ => format!("Tested {sample_size} items"),
         };
 
         (summary, exceptions, conclusion)
