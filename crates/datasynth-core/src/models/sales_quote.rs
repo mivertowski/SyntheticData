@@ -70,6 +70,8 @@ pub struct SalesQuote {
 /// An individual line item within a sales quote.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteLineItem {
+    /// Deterministic UUID for this line item
+    pub id: String,
     /// Sequential item number within the quote
     pub item_number: u32,
     /// Material or product identifier

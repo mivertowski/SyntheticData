@@ -25,8 +25,12 @@ pub struct ICMatchingEvaluation {
     pub total_unmatched: Decimal,
     /// Net position (receivables - payables).
     pub net_position: Decimal,
-    /// Number of discrepancies.
+    /// Number of discrepancies (outside tolerance).
     pub discrepancy_count: usize,
+    /// Number of unmatched items within tolerance.
+    pub within_tolerance_count: usize,
+    /// Number of unmatched items outside tolerance.
+    pub outside_tolerance_count: usize,
     /// Netting efficiency if applicable.
     pub netting_efficiency: Option<f64>,
 }
@@ -65,10 +69,7 @@ pub struct UnmatchedICItem {
 
 /// Evaluator for intercompany matching.
 pub struct ICMatchingEvaluator {
-    /// Tolerance for amount-level matching — will be used to classify
-    /// unmatched items as within/outside tolerance once per-item evaluation
-    /// is added.
-    #[allow(dead_code)]
+    /// Tolerance for classifying unmatched items as within/outside tolerance.
     tolerance: Decimal,
 }
 
@@ -88,7 +89,16 @@ impl ICMatchingEvaluator {
 
         let total_unmatched: Decimal = data.unmatched_items.iter().map(|i| i.amount.abs()).sum();
         let net_position = data.total_receivables - data.total_payables;
-        let discrepancy_count = data.unmatched_items.len();
+
+        // Classify unmatched items by tolerance
+        let within_tolerance_count = data
+            .unmatched_items
+            .iter()
+            .filter(|item| item.amount.abs() <= self.tolerance)
+            .count();
+        let outside_tolerance_count = data.unmatched_items.len() - within_tolerance_count;
+        // Only outside-tolerance items count as true discrepancies
+        let discrepancy_count = outside_tolerance_count;
 
         // Calculate netting efficiency if data available
         let netting_efficiency = match (data.gross_volume, data.net_settlement) {
@@ -107,6 +117,8 @@ impl ICMatchingEvaluator {
             total_unmatched,
             net_position,
             discrepancy_count,
+            within_tolerance_count,
+            outside_tolerance_count,
             netting_efficiency,
         })
     }

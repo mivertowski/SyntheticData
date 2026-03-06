@@ -17,9 +17,7 @@ use rust_decimal::Decimal;
 pub struct SalesQuoteGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
-    /// Reserved: will produce deterministic line-item IDs once `QuoteLineItem`
-    /// gains a dedicated UUID field.
-    #[allow(dead_code)]
+    /// Produces deterministic line-item IDs for QuoteLineItem.
     item_uuid_factory: DeterministicUuidFactory,
     /// Pool of real employee IDs for sales rep assignment.
     employee_ids_pool: Vec<String>,
@@ -195,6 +193,7 @@ impl SalesQuoteGenerator {
             total_amount += line_amount;
 
             line_items.push(QuoteLineItem {
+                id: self.item_uuid_factory.next().to_string(),
                 item_number: item_num as u32,
                 material_id: material_id.clone(),
                 description: description.clone(),

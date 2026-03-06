@@ -21,9 +21,7 @@ pub struct ExpenseReportGenerator {
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     item_uuid_factory: DeterministicUuidFactory,
-    /// Stored via `with_config()`; will be used when per-generator config
-    /// drives expense category weights and policy thresholds.
-    #[allow(dead_code)]
+    /// Per-generator config drives expense submission rate and policy thresholds.
     config: ExpenseConfig,
     /// Pool of real employee IDs for approved_by references.
     employee_ids_pool: Vec<String>,
@@ -32,9 +30,7 @@ pub struct ExpenseReportGenerator {
     /// Mapping of employee_id → employee_name for denormalization (DS-011).
     employee_names: HashMap<String, String>,
     /// Optional country pack for locale-aware generation (set via
-    /// `set_country_pack`); will drive locale-specific currencies and
-    /// business rules in a future release.
-    #[allow(dead_code)]
+    /// `set_country_pack`); drives locale-specific currencies.
     country_pack: Option<datasynth_core::CountryPack>,
 }
 
@@ -105,6 +101,20 @@ impl ExpenseReportGenerator {
         self
     }
 
+    /// Generate expense reports using the stored config and country pack.
+    ///
+    /// Uses `self.config` for submission rate and policy thresholds, and
+    /// `self.country_pack` for locale-specific currency.
+    pub fn generate_from_config(
+        &mut self,
+        employee_ids: &[String],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+    ) -> Vec<ExpenseReport> {
+        let config = self.config.clone();
+        self.generate(employee_ids, period_start, period_end, &config)
+    }
+
     /// Generate expense reports for employees over the given period.
     ///
     /// Only `config.submission_rate` fraction of employees submit reports each
@@ -115,7 +125,7 @@ impl ExpenseReportGenerator {
     /// * `employee_ids` - Slice of employee identifiers
     /// * `period_start` - Start of the period (inclusive)
     /// * `period_end` - End of the period (inclusive)
-    /// * `config` - Expense management configuration
+    /// * `config` - Expense management configuration (overrides stored config)
     pub fn generate(
         &mut self,
         employee_ids: &[String],
@@ -123,7 +133,13 @@ impl ExpenseReportGenerator {
         period_end: NaiveDate,
         config: &ExpenseConfig,
     ) -> Vec<ExpenseReport> {
-        self.generate_with_currency(employee_ids, period_start, period_end, config, "USD")
+        let currency = self
+            .country_pack
+            .as_ref()
+            .map(|cp| cp.locale.default_currency.clone())
+            .filter(|c| !c.is_empty())
+            .unwrap_or_else(|| "USD".to_string());
+        self.generate_with_currency(employee_ids, period_start, period_end, config, &currency)
     }
 
     /// Generate expense reports with a specific company currency.

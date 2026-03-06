@@ -276,7 +276,6 @@ pub struct OracleExporter {
     config: OracleExportConfig,
     header_counter: u64,
     line_counter: u64,
-    #[allow(dead_code)] // Reserved for future batch export feature
     batch_counter: u64,
     /// Maps company code + GL account to code_combination_id
     ccid_map: HashMap<String, u64>,
@@ -362,6 +361,11 @@ impl OracleExporter {
     pub fn convert(&mut self, je: &JournalEntry) -> (OracleJeHeader, Vec<OracleJeLine>) {
         self.header_counter += 1;
         let header_id = self.header_counter;
+        let batch_id = if self.config.include_batches {
+            self.batch_counter
+        } else {
+            0
+        };
 
         let period_name = Self::period_name(je.header.posting_date);
 
@@ -376,7 +380,7 @@ impl OracleExporter {
         let header = OracleJeHeader {
             je_header_id: header_id,
             ledger_id: self.config.ledger_id,
-            je_batch_id: 0, // Set later if batching
+            je_batch_id: batch_id,
             period_name: period_name.clone(),
             name: format!("JE-{}", je.header.document_id),
             je_category: Self::je_category(&je.header.document_type),
@@ -510,6 +514,11 @@ impl OracleExporter {
             STATUS,ENTERED_DR,ENTERED_CR,ACCOUNTED_DR,ACCOUNTED_CR,CURRENCY_CODE,\
             DESCRIPTION,REFERENCE_1,REFERENCE_2,REFERENCE_3,ATTRIBUTE1,ATTRIBUTE2,CREATION_DATE,CREATED_BY"
         )?;
+
+        // Start a new batch for this export
+        if self.config.include_batches {
+            self.batch_counter += 1;
+        }
 
         for je in entries {
             let (header, lines) = self.convert(je);

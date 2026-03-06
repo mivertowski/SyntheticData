@@ -21,14 +21,10 @@ use rust_decimal_macros::dec;
 /// integration tests.
 pub struct RevenueGenerator {
     rng: ChaCha8Rng,
-    /// Will produce deterministic revenue-record IDs once wired into the
-    /// orchestrator (currently using sequential `PREV-NNNNNN` format).
-    #[allow(dead_code)]
+    /// Produces deterministic revenue-record IDs.
     uuid_factory: DeterministicUuidFactory,
-    /// Stored for future configurable PoC method selection and margin thresholds.
-    #[allow(dead_code)]
+    /// Controls PoC method selection and completion measure.
     config: ProjectRevenueRecognitionConfig,
-    counter: u64,
 }
 
 impl RevenueGenerator {
@@ -38,7 +34,6 @@ impl RevenueGenerator {
             rng: seeded_rng(seed, 0),
             uuid_factory: DeterministicUuidFactory::new(seed, GeneratorType::ProjectAccounting),
             config,
-            counter: 0,
         }
     }
 
@@ -113,9 +108,17 @@ impl RevenueGenerator {
                     ((*contract_value - *estimated_total_cost) / *contract_value).round_dp(4)
                 };
 
-                self.counter += 1;
+                let method = match self.config.method.as_str() {
+                    "completed_contract" => RevenueMethod::CompletedContract,
+                    _ => RevenueMethod::PercentageOfCompletion,
+                };
+                let measure = match self.config.completion_measure.as_str() {
+                    "labor_hours" => CompletionMeasure::LaborHours,
+                    _ => CompletionMeasure::CostToCost,
+                };
+
                 let rev = ProjectRevenue {
-                    id: format!("PREV-{:06}", self.counter),
+                    id: self.uuid_factory.next().to_string(),
                     project_id: project_id.clone(),
                     entity_id: project.company_code.clone(),
                     period_start: current,
@@ -124,8 +127,8 @@ impl RevenueGenerator {
                     estimated_total_cost: *estimated_total_cost,
                     costs_to_date,
                     completion_pct,
-                    method: RevenueMethod::PercentageOfCompletion,
-                    measure: CompletionMeasure::CostToCost,
+                    method,
+                    measure,
                     cumulative_revenue,
                     period_revenue,
                     billed_to_date,

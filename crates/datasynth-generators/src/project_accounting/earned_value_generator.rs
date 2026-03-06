@@ -14,9 +14,7 @@ use rust_decimal_macros::dec;
 /// Generates [`EarnedValueMetric`] records for projects.
 pub struct EarnedValueGenerator {
     rng: ChaCha8Rng,
-    /// Stored for future configurable thresholds (e.g., schedule variance
-    /// tolerance, SPI/CPI alert bands).
-    #[allow(dead_code)]
+    /// Controls measurement frequency (weekly, biweekly, monthly).
     config: EarnedValueSchemaConfig,
     counter: u64,
 }
@@ -75,7 +73,7 @@ impl EarnedValueGenerator {
             // Generate metrics at measurement frequency
             let mut current = start_date;
             while current <= end_date {
-                let measurement_date = end_of_month(current);
+                let measurement_date = self.measurement_date(current);
                 if measurement_date > end_date {
                     break;
                 }
@@ -89,7 +87,7 @@ impl EarnedValueGenerator {
 
                 // Skip periods with no cost activity
                 if ac.is_zero() {
-                    current = next_month_start(current);
+                    current = self.advance_date(current);
                     continue;
                 }
 
@@ -118,11 +116,28 @@ impl EarnedValueGenerator {
                 );
                 metrics.push(metric);
 
-                current = next_month_start(current);
+                current = self.advance_date(current);
             }
         }
 
         metrics
+    }
+
+    /// Advance to the next measurement period based on configured frequency.
+    fn advance_date(&self, current: NaiveDate) -> NaiveDate {
+        match self.config.frequency.as_str() {
+            "weekly" => current + chrono::Duration::weeks(1),
+            "biweekly" => current + chrono::Duration::weeks(2),
+            _ => next_month_start(current),
+        }
+    }
+
+    /// Get the measurement date for the current period.
+    fn measurement_date(&self, current: NaiveDate) -> NaiveDate {
+        match self.config.frequency.as_str() {
+            "weekly" | "biweekly" => current,
+            _ => end_of_month(current),
+        }
     }
 }
 
