@@ -1030,6 +1030,55 @@ mod eval {
             );
         }
 
+        // IC seller JEs should be balanced
+        let mut ic_seller_unbalanced = 0;
+        for je in &result.intercompany.seller_journal_entries {
+            let dr: Decimal = je.lines.iter().map(|l| l.debit_amount).sum();
+            let cr: Decimal = je.lines.iter().map(|l| l.credit_amount).sum();
+            if dr != cr {
+                ic_seller_unbalanced += 1;
+            }
+        }
+        if ic_seller_unbalanced > 0 {
+            report.error(
+                "intercompany",
+                format!("{} IC seller JEs are UNBALANCED", ic_seller_unbalanced),
+            );
+        }
+
+        // IC buyer JEs should be balanced
+        let mut ic_buyer_unbalanced = 0;
+        for je in &result.intercompany.buyer_journal_entries {
+            let dr: Decimal = je.lines.iter().map(|l| l.debit_amount).sum();
+            let cr: Decimal = je.lines.iter().map(|l| l.credit_amount).sum();
+            if dr != cr {
+                ic_buyer_unbalanced += 1;
+            }
+        }
+        if ic_buyer_unbalanced > 0 {
+            report.error(
+                "intercompany",
+                format!("{} IC buyer JEs are UNBALANCED", ic_buyer_unbalanced),
+            );
+        }
+
+        // IC matched pairs: amounts should be positive
+        let mut ic_zero_amount = 0;
+        for pair in &result.intercompany.matched_pairs {
+            if pair.amount <= Decimal::ZERO {
+                ic_zero_amount += 1;
+            }
+        }
+        if ic_zero_amount > 0 {
+            report.error(
+                "intercompany",
+                format!(
+                    "{} IC matched pairs have zero/negative amount",
+                    ic_zero_amount
+                ),
+            );
+        }
+
         // ================================================================
         // 15. AUDIT
         // ================================================================
@@ -1072,7 +1121,7 @@ mod eval {
                 );
             }
             if eng.performance_materiality >= eng.materiality {
-                report.warn(
+                report.error(
                     "audit",
                     format!(
                         "Engagement {} has performance_materiality ({}) >= materiality ({})",
@@ -1081,7 +1130,7 @@ mod eval {
                 );
             }
             if eng.clearly_trivial >= eng.performance_materiality {
-                report.warn(
+                report.error(
                     "audit",
                     format!(
                         "Engagement {} has clearly_trivial ({}) >= performance_materiality ({})",
@@ -1458,7 +1507,705 @@ mod eval {
         );
 
         // ================================================================
-        // 31. STATISTICS CONSISTENCY
+        // 31. SUBLEDGER DEEP VALIDATION (Tier 1)
+        // ================================================================
+
+        // FA records
+        if !result.subledger.fa_records.is_empty() {
+            report.info(
+                "subledger",
+                format!("fa_records: {} items", result.subledger.fa_records.len()),
+            );
+
+            let mut fa_neg_cost = 0;
+            let mut fa_neg_nbv = 0;
+            let mut fa_date_order = 0;
+            for fa in &result.subledger.fa_records {
+                if fa.acquisition_cost < Decimal::ZERO {
+                    fa_neg_cost += 1;
+                }
+                if fa.net_book_value < Decimal::ZERO {
+                    fa_neg_nbv += 1;
+                }
+                if fa.capitalization_date < fa.acquisition_date {
+                    fa_date_order += 1;
+                }
+            }
+            if fa_neg_cost > 0 {
+                report.error(
+                    "subledger",
+                    format!("{} FA records have negative acquisition_cost", fa_neg_cost),
+                );
+            }
+            if fa_neg_nbv > 0 {
+                report.error(
+                    "subledger",
+                    format!("{} FA records have negative net_book_value", fa_neg_nbv),
+                );
+            }
+            if fa_date_order > 0 {
+                report.warn(
+                    "subledger",
+                    format!(
+                        "{} FA records have capitalization_date < acquisition_date",
+                        fa_date_order
+                    ),
+                );
+            }
+        } else {
+            report.info("subledger", "fa_records empty (depends on FA generation)");
+        }
+
+        // Inventory positions
+        if !result.subledger.inventory_positions.is_empty() {
+            report.info(
+                "subledger",
+                format!(
+                    "inventory_positions: {} items",
+                    result.subledger.inventory_positions.len()
+                ),
+            );
+
+            let mut inv_neg_qty = 0;
+            let mut inv_mat_missing = 0;
+            for pos in &result.subledger.inventory_positions {
+                if pos.quantity_on_hand < Decimal::ZERO {
+                    inv_neg_qty += 1;
+                }
+                if !material_ids.contains(&pos.material_id) {
+                    inv_mat_missing += 1;
+                }
+            }
+            if inv_neg_qty > 0 {
+                report.error(
+                    "subledger",
+                    format!(
+                        "{} inventory positions have negative quantity_on_hand",
+                        inv_neg_qty
+                    ),
+                );
+            }
+            if inv_mat_missing > 0 {
+                report.error(
+                    "subledger",
+                    format!(
+                        "{} inventory positions reference material IDs not in master data",
+                        inv_mat_missing
+                    ),
+                );
+            }
+        } else {
+            report.info(
+                "subledger",
+                "inventory_positions empty (depends on inventory generation)",
+            );
+        }
+
+        // Inventory movements (subledger)
+        if !result.subledger.inventory_movements.is_empty() {
+            report.info(
+                "subledger",
+                format!(
+                    "inventory_movements: {} items",
+                    result.subledger.inventory_movements.len()
+                ),
+            );
+        }
+
+        // ================================================================
+        // 32. SOURCING CHAIN INTEGRITY (Tier 1)
+        // ================================================================
+
+        // Bids should reference valid rfx_ids
+        let rfx_ids: HashSet<_> = result
+            .sourcing
+            .rfx_events
+            .iter()
+            .map(|r| &r.rfx_id)
+            .collect();
+        let mut bid_rfx_missing = 0;
+        let mut bid_vendor_missing = 0;
+        let mut bid_neg_amount = 0;
+        for bid in &result.sourcing.bids {
+            if !rfx_ids.contains(&bid.rfx_id) {
+                bid_rfx_missing += 1;
+            }
+            if !vendor_ids.contains(&bid.vendor_id) {
+                bid_vendor_missing += 1;
+            }
+            if bid.total_amount <= Decimal::ZERO {
+                bid_neg_amount += 1;
+            }
+        }
+        if bid_rfx_missing > 0 {
+            report.error(
+                "sourcing",
+                format!(
+                    "{} bids reference rfx_ids not in rfx_events",
+                    bid_rfx_missing
+                ),
+            );
+        }
+        if bid_vendor_missing > 0 {
+            report.error(
+                "sourcing",
+                format!(
+                    "{} bids reference vendor_ids not in master data",
+                    bid_vendor_missing
+                ),
+            );
+        }
+        if bid_neg_amount > 0 {
+            report.error(
+                "sourcing",
+                format!("{} bids have zero/negative total_amount", bid_neg_amount),
+            );
+        }
+
+        // Contracts should reference valid vendor_ids
+        let mut contract_vendor_missing = 0;
+        for c in &result.sourcing.contracts {
+            if !vendor_ids.contains(&c.vendor_id) {
+                contract_vendor_missing += 1;
+            }
+        }
+        if contract_vendor_missing > 0 {
+            report.error(
+                "sourcing",
+                format!(
+                    "{} contracts reference vendor_ids not in master data",
+                    contract_vendor_missing
+                ),
+            );
+        }
+
+        // ================================================================
+        // 33. HR DEEP CHECKS (Tier 2)
+        // ================================================================
+
+        // Expense line items: amounts should be positive
+        let mut expense_neg_items = 0;
+        let mut expense_total_items = 0;
+        for er in &result.hr.expense_reports {
+            for item in er.line_items.iter() {
+                expense_total_items += 1;
+                if item.amount <= Decimal::ZERO {
+                    expense_neg_items += 1;
+                }
+            }
+        }
+        if expense_neg_items > 0 {
+            report.error(
+                "hr",
+                format!(
+                    "{}/{} expense line items have zero/negative amount",
+                    expense_neg_items, expense_total_items
+                ),
+            );
+        }
+
+        // Benefit enrollments: employee references and contributions
+        let mut benefit_emp_missing = 0;
+        let mut benefit_neg_contrib = 0;
+        for be in &result.hr.benefit_enrollments {
+            if !employee_ids.contains(&be.employee_id) {
+                benefit_emp_missing += 1;
+            }
+            if be.employee_contribution < Decimal::ZERO || be.employer_contribution < Decimal::ZERO
+            {
+                benefit_neg_contrib += 1;
+            }
+        }
+        if benefit_emp_missing > 0 {
+            report.error(
+                "hr",
+                format!(
+                    "{} benefit enrollments reference employee IDs not in master data",
+                    benefit_emp_missing
+                ),
+            );
+        }
+        if benefit_neg_contrib > 0 {
+            report.error(
+                "hr",
+                format!(
+                    "{} benefit enrollments have negative contributions",
+                    benefit_neg_contrib
+                ),
+            );
+        }
+
+        // Time entries: total hours should be > 0
+        let mut time_zero_hours = 0;
+        let mut time_neg_hours = 0;
+        for te in &result.hr.time_entries {
+            let total = te.hours_regular + te.hours_overtime + te.hours_pto + te.hours_sick;
+            if total == 0.0 {
+                time_zero_hours += 1;
+            }
+            if te.hours_regular < 0.0
+                || te.hours_overtime < 0.0
+                || te.hours_pto < 0.0
+                || te.hours_sick < 0.0
+            {
+                time_neg_hours += 1;
+            }
+        }
+        if time_neg_hours > 0 {
+            report.error(
+                "hr",
+                format!("{} time entries have negative hour values", time_neg_hours),
+            );
+        }
+        if time_zero_hours > 0 {
+            report.warn(
+                "hr",
+                format!("{} time entries have zero total hours", time_zero_hours),
+            );
+        }
+
+        // ================================================================
+        // 34. MANUFACTURING DEEP CHECKS (Tier 2)
+        // ================================================================
+
+        // Production order date ordering
+        let mut mfg_date_order = 0;
+        let mut mfg_actual_date_order = 0;
+        let mut mfg_neg_cost = 0;
+        let mut mfg_neg_scrap = 0;
+        for po in &result.manufacturing.production_orders {
+            if po.planned_start > po.planned_end {
+                mfg_date_order += 1;
+            }
+            if let (Some(actual_start), Some(actual_end)) = (po.actual_start, po.actual_end) {
+                if actual_start > actual_end {
+                    mfg_actual_date_order += 1;
+                }
+            }
+            if po.planned_cost < Decimal::ZERO || po.actual_cost < Decimal::ZERO {
+                mfg_neg_cost += 1;
+            }
+            if po.scrap_quantity < Decimal::ZERO {
+                mfg_neg_scrap += 1;
+            }
+        }
+        if mfg_date_order > 0 {
+            report.error(
+                "manufacturing",
+                format!(
+                    "{} production orders have planned_start > planned_end",
+                    mfg_date_order
+                ),
+            );
+        }
+        if mfg_actual_date_order > 0 {
+            report.error(
+                "manufacturing",
+                format!(
+                    "{} production orders have actual_start > actual_end",
+                    mfg_actual_date_order
+                ),
+            );
+        }
+        if mfg_neg_cost > 0 {
+            report.error(
+                "manufacturing",
+                format!(
+                    "{} production orders have negative planned/actual cost",
+                    mfg_neg_cost
+                ),
+            );
+        }
+        if mfg_neg_scrap > 0 {
+            report.error(
+                "manufacturing",
+                format!(
+                    "{} production orders have negative scrap_quantity",
+                    mfg_neg_scrap
+                ),
+            );
+        }
+
+        // BOM components should reference valid materials
+        let mut bom_mat_missing = 0;
+        for bom in &result.manufacturing.bom_components {
+            if !material_ids.contains(&bom.component_material_id) {
+                bom_mat_missing += 1;
+            }
+        }
+        if bom_mat_missing > 0 {
+            report.error(
+                "manufacturing",
+                format!(
+                    "{} BOM components reference material IDs not in master data",
+                    bom_mat_missing
+                ),
+            );
+        }
+
+        // ================================================================
+        // 35. PROJECT ACCOUNTING DEEP CHECKS (Tier 2)
+        // ================================================================
+
+        // Cost lines should reference valid project IDs
+        let project_ids: HashSet<_> = result
+            .project_accounting
+            .projects
+            .iter()
+            .map(|p| &p.project_id)
+            .collect();
+        let mut cost_proj_missing = 0;
+        let mut cost_neg_amount = 0;
+        for cl in &result.project_accounting.cost_lines {
+            if !project_ids.contains(&cl.project_id) {
+                cost_proj_missing += 1;
+            }
+            if cl.amount < Decimal::ZERO {
+                cost_neg_amount += 1;
+            }
+        }
+        if cost_proj_missing > 0 {
+            report.error(
+                "project",
+                format!(
+                    "{} cost lines reference project IDs not in projects",
+                    cost_proj_missing
+                ),
+            );
+        }
+        if cost_neg_amount > 0 {
+            report.error(
+                "project",
+                format!("{} cost lines have negative amount", cost_neg_amount),
+            );
+        }
+
+        // Revenue records
+        if !result.project_accounting.revenue_records.is_empty() {
+            report.info(
+                "project",
+                format!(
+                    "revenue_records: {} items",
+                    result.project_accounting.revenue_records.len()
+                ),
+            );
+        } else {
+            report.info(
+                "project",
+                "revenue_records empty (depends on project config)",
+            );
+        }
+
+        // Earned value metrics
+        if !result.project_accounting.earned_value_metrics.is_empty() {
+            report.info(
+                "project",
+                format!(
+                    "earned_value_metrics: {} items",
+                    result.project_accounting.earned_value_metrics.len()
+                ),
+            );
+
+            // EVM: SV = EV - PV, CV = EV - AC
+            let mut evm_sv_mismatch = 0;
+            let mut evm_cv_mismatch = 0;
+            let tolerance = Decimal::new(1, 2); // 0.01
+            for evm in &result.project_accounting.earned_value_metrics {
+                let expected_sv = evm.earned_value - evm.planned_value;
+                if (evm.schedule_variance - expected_sv).abs() > tolerance {
+                    evm_sv_mismatch += 1;
+                }
+                let expected_cv = evm.earned_value - evm.actual_cost;
+                if (evm.cost_variance - expected_cv).abs() > tolerance {
+                    evm_cv_mismatch += 1;
+                }
+            }
+            if evm_sv_mismatch > 0 {
+                report.error(
+                    "project",
+                    format!(
+                        "{} EVM records have schedule_variance != earned_value - planned_value",
+                        evm_sv_mismatch
+                    ),
+                );
+            }
+            if evm_cv_mismatch > 0 {
+                report.error(
+                    "project",
+                    format!(
+                        "{} EVM records have cost_variance != earned_value - actual_cost",
+                        evm_cv_mismatch
+                    ),
+                );
+            }
+        } else {
+            report.info(
+                "project",
+                "earned_value_metrics empty (depends on project config)",
+            );
+        }
+
+        // Change orders
+        if !result.project_accounting.change_orders.is_empty() {
+            report.info(
+                "project",
+                format!(
+                    "change_orders: {} items",
+                    result.project_accounting.change_orders.len()
+                ),
+            );
+        } else {
+            report.info("project", "change_orders empty (depends on project config)");
+        }
+
+        // Milestones
+        if !result.project_accounting.milestones.is_empty() {
+            report.info(
+                "project",
+                format!(
+                    "milestones: {} items",
+                    result.project_accounting.milestones.len()
+                ),
+            );
+        } else {
+            report.info("project", "milestones empty (depends on project config)");
+        }
+
+        // ================================================================
+        // 36. ESG CONTENT CHECKS (Tier 2)
+        // ================================================================
+
+        // Energy consumption should be non-negative
+        let mut energy_neg = 0;
+        for e in &result.esg.energy {
+            if e.consumption_kwh < Decimal::ZERO {
+                energy_neg += 1;
+            }
+        }
+        if energy_neg > 0 {
+            report.error(
+                "esg",
+                format!(
+                    "{} energy records have negative consumption_kwh",
+                    energy_neg
+                ),
+            );
+        }
+
+        // Water/waste if present
+        if !result.esg.water.is_empty() {
+            report.info("esg", format!("water: {} items", result.esg.water.len()));
+        }
+        if !result.esg.waste.is_empty() {
+            report.info("esg", format!("waste: {} items", result.esg.waste.len()));
+        }
+        if !result.esg.diversity.is_empty() {
+            report.info(
+                "esg",
+                format!("diversity: {} items", result.esg.diversity.len()),
+            );
+        }
+        if !result.esg.safety_incidents.is_empty() {
+            report.info(
+                "esg",
+                format!(
+                    "safety_incidents: {} items",
+                    result.esg.safety_incidents.len()
+                ),
+            );
+        }
+        if !result.esg.supplier_assessments.is_empty() {
+            report.info(
+                "esg",
+                format!(
+                    "supplier_assessments: {} items",
+                    result.esg.supplier_assessments.len()
+                ),
+            );
+        }
+
+        // ================================================================
+        // 37. TREASURY CONTENT CHECKS (Tier 2)
+        // ================================================================
+
+        // Cash positions: closing_balance should equal opening + inflows - outflows
+        let mut cash_balance_mismatch = 0;
+        let tolerance = Decimal::new(1, 2); // 0.01
+        for cp in &result.treasury.cash_positions {
+            let expected = cp.opening_balance + cp.inflows - cp.outflows;
+            if (cp.closing_balance - expected).abs() > tolerance {
+                cash_balance_mismatch += 1;
+            }
+        }
+        if cash_balance_mismatch > 0 {
+            report.error(
+                "treasury",
+                format!(
+                    "{} cash positions have closing_balance != opening + inflows - outflows",
+                    cash_balance_mismatch
+                ),
+            );
+        }
+
+        // Cash forecasts
+        if !result.treasury.cash_forecasts.is_empty() {
+            report.info(
+                "treasury",
+                format!(
+                    "cash_forecasts: {} items",
+                    result.treasury.cash_forecasts.len()
+                ),
+            );
+        }
+
+        // Cash pools
+        if !result.treasury.cash_pools.is_empty() {
+            report.info(
+                "treasury",
+                format!("cash_pools: {} items", result.treasury.cash_pools.len()),
+            );
+        }
+
+        // ================================================================
+        // 38. SNAPSHOT COUNT CONSISTENCY (Tier 1)
+        // ================================================================
+
+        // Manufacturing snapshot counts should match Vec lengths
+        if result.manufacturing.production_order_count
+            != result.manufacturing.production_orders.len()
+        {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "manufacturing.production_order_count ({}) != production_orders.len() ({})",
+                    result.manufacturing.production_order_count,
+                    result.manufacturing.production_orders.len()
+                ),
+            );
+        }
+        if result.manufacturing.quality_inspection_count
+            != result.manufacturing.quality_inspections.len()
+        {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "manufacturing.quality_inspection_count ({}) != quality_inspections.len() ({})",
+                    result.manufacturing.quality_inspection_count,
+                    result.manufacturing.quality_inspections.len()
+                ),
+            );
+        }
+        if result.manufacturing.cycle_count_count != result.manufacturing.cycle_counts.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "manufacturing.cycle_count_count ({}) != cycle_counts.len() ({})",
+                    result.manufacturing.cycle_count_count,
+                    result.manufacturing.cycle_counts.len()
+                ),
+            );
+        }
+        if result.manufacturing.bom_component_count != result.manufacturing.bom_components.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "manufacturing.bom_component_count ({}) != bom_components.len() ({})",
+                    result.manufacturing.bom_component_count,
+                    result.manufacturing.bom_components.len()
+                ),
+            );
+        }
+        if result.manufacturing.inventory_movement_count
+            != result.manufacturing.inventory_movements.len()
+        {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "manufacturing.inventory_movement_count ({}) != inventory_movements.len() ({})",
+                    result.manufacturing.inventory_movement_count,
+                    result.manufacturing.inventory_movements.len()
+                ),
+            );
+        }
+
+        // HR snapshot counts
+        if result.hr.payroll_run_count != result.hr.payroll_runs.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "hr.payroll_run_count ({}) != payroll_runs.len() ({})",
+                    result.hr.payroll_run_count,
+                    result.hr.payroll_runs.len()
+                ),
+            );
+        }
+        if result.hr.payroll_line_item_count != result.hr.payroll_line_items.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "hr.payroll_line_item_count ({}) != payroll_line_items.len() ({})",
+                    result.hr.payroll_line_item_count,
+                    result.hr.payroll_line_items.len()
+                ),
+            );
+        }
+        if result.hr.time_entry_count != result.hr.time_entries.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "hr.time_entry_count ({}) != time_entries.len() ({})",
+                    result.hr.time_entry_count,
+                    result.hr.time_entries.len()
+                ),
+            );
+        }
+        if result.hr.expense_report_count != result.hr.expense_reports.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "hr.expense_report_count ({}) != expense_reports.len() ({})",
+                    result.hr.expense_report_count,
+                    result.hr.expense_reports.len()
+                ),
+            );
+        }
+        if result.hr.benefit_enrollment_count != result.hr.benefit_enrollments.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "hr.benefit_enrollment_count ({}) != benefit_enrollments.len() ({})",
+                    result.hr.benefit_enrollment_count,
+                    result.hr.benefit_enrollments.len()
+                ),
+            );
+        }
+
+        // IC snapshot counts
+        if result.intercompany.matched_pair_count != result.intercompany.matched_pairs.len() {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "intercompany.matched_pair_count ({}) != matched_pairs.len() ({})",
+                    result.intercompany.matched_pair_count,
+                    result.intercompany.matched_pairs.len()
+                ),
+            );
+        }
+        if result.intercompany.elimination_entry_count
+            != result.intercompany.elimination_entries.len()
+        {
+            report.error(
+                "snapshot_counts",
+                format!(
+                    "intercompany.elimination_entry_count ({}) != elimination_entries.len() ({})",
+                    result.intercompany.elimination_entry_count,
+                    result.intercompany.elimination_entries.len()
+                ),
+            );
+        }
+
+        // ================================================================
+        // 39. EXPANDED STATISTICS CONSISTENCY (Tier 1)
         // ================================================================
         let stats = &result.statistics;
 
@@ -1561,6 +2308,148 @@ mod eval {
                     "project_count stat ({}) != actual ({})",
                     stats.project_count,
                     result.project_accounting.projects.len()
+                ),
+            );
+        }
+
+        // Additional stat checks
+        if stats.material_count != result.master_data.materials.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "material_count stat ({}) != actual ({})",
+                    stats.material_count,
+                    result.master_data.materials.len()
+                ),
+            );
+        }
+        if stats.asset_count != result.master_data.assets.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "asset_count stat ({}) != actual ({})",
+                    stats.asset_count,
+                    result.master_data.assets.len()
+                ),
+            );
+        }
+        if stats.employee_count != result.master_data.employees.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "employee_count stat ({}) != actual ({})",
+                    stats.employee_count,
+                    result.master_data.employees.len()
+                ),
+            );
+        }
+        if stats.ap_invoice_count != result.subledger.ap_invoices.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "ap_invoice_count stat ({}) != actual ({})",
+                    stats.ap_invoice_count,
+                    result.subledger.ap_invoices.len()
+                ),
+            );
+        }
+        if stats.ar_invoice_count != result.subledger.ar_invoices.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "ar_invoice_count stat ({}) != actual ({})",
+                    stats.ar_invoice_count,
+                    result.subledger.ar_invoices.len()
+                ),
+            );
+        }
+        if stats.sourcing_project_count != result.sourcing.sourcing_projects.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "sourcing_project_count stat ({}) != actual ({})",
+                    stats.sourcing_project_count,
+                    result.sourcing.sourcing_projects.len()
+                ),
+            );
+        }
+        if stats.bid_count != result.sourcing.bids.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "bid_count stat ({}) != actual ({})",
+                    stats.bid_count,
+                    result.sourcing.bids.len()
+                ),
+            );
+        }
+        if stats.contract_count != result.sourcing.contracts.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "contract_count stat ({}) != actual ({})",
+                    stats.contract_count,
+                    result.sourcing.contracts.len()
+                ),
+            );
+        }
+        if stats.time_entry_count != result.hr.time_entries.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "time_entry_count stat ({}) != actual ({})",
+                    stats.time_entry_count,
+                    result.hr.time_entries.len()
+                ),
+            );
+        }
+        if stats.expense_report_count != result.hr.expense_reports.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "expense_report_count stat ({}) != actual ({})",
+                    stats.expense_report_count,
+                    result.hr.expense_reports.len()
+                ),
+            );
+        }
+        if stats.benefit_enrollment_count != result.hr.benefit_enrollments.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "benefit_enrollment_count stat ({}) != actual ({})",
+                    stats.benefit_enrollment_count,
+                    result.hr.benefit_enrollments.len()
+                ),
+            );
+        }
+        if stats.esg_emission_count != result.esg.emissions.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "esg_emission_count stat ({}) != actual ({})",
+                    stats.esg_emission_count,
+                    result.esg.emissions.len()
+                ),
+            );
+        }
+        if stats.cash_position_count != result.treasury.cash_positions.len() {
+            report.error(
+                "statistics",
+                format!(
+                    "cash_position_count stat ({}) != actual ({})",
+                    stats.cash_position_count,
+                    result.treasury.cash_positions.len()
+                ),
+            );
+        }
+        // companies_count and accounts_count
+        if stats.companies_count != 2 {
+            report.error(
+                "statistics",
+                format!(
+                    "companies_count stat ({}) != expected (2)",
+                    stats.companies_count
                 ),
             );
         }
