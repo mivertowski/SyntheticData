@@ -1,329 +1,813 @@
-/* SyntheticData Documentation - EY Brand Styling */
-/* Colors: EY Yellow (#FFE600), EY Dark (#2E2E38), EY Gray (#747480) */
+/* ============================================================
+   DataSynth Documentation — EY Brand Design System
+   Aesthetic: Swiss Precision × Financial Authority
+   ============================================================ */
 
+/* --- Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* --- Design Tokens --- */
 :root {
+    /* EY Brand */
     --ey-yellow: #FFE600;
+    --ey-yellow-muted: #FFE60026;
+    --ey-yellow-glow: #FFE60018;
     --ey-dark: #2E2E38;
     --ey-gray: #747480;
     --ey-light-gray: #F6F6FA;
     --ey-white: #FFFFFF;
-    --ey-navy: #1A237E;
+
+    /* Typography */
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --font-size-base: 1rem;
+    --line-height-body: 1.72;
+    --line-height-heading: 1.2;
+    --letter-spacing-tight: -0.02em;
+    --letter-spacing-wide: 0.04em;
+
+    /* Spacing rhythm (8px base) */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2.5rem;
+    --space-2xl: 4rem;
+
+    /* Geometry */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 400ms;
 }
 
-/* Light theme overrides */
+/* --- Light Theme --- */
 .light {
-    --bg: var(--ey-white);
-    --fg: var(--ey-dark);
-    --sidebar-bg: var(--ey-light-gray);
+    --bg: #FAFAFA;
+    --fg: #1C1C22;
+    --fg-muted: #5A5A68;
+    --fg-subtle: #9090A0;
+    --sidebar-bg: #F0F0F5;
     --sidebar-fg: var(--ey-dark);
-    --sidebar-active: var(--ey-yellow);
-    --links: var(--ey-navy);
-    --inline-code-color: var(--ey-dark);
+    --sidebar-active: var(--ey-dark);
+    --sidebar-active-bg: var(--ey-yellow);
+    --links: #1A4FD6;
+    --links-hover: #0D38A8;
+    --inline-code-color: #C7254E;
+    --inline-code-bg: #F3F0F8;
     --theme-popup-bg: var(--ey-white);
-    --theme-popup-border: var(--ey-gray);
-    --theme-hover: var(--ey-light-gray);
-    --quote-bg: var(--ey-light-gray);
+    --theme-popup-border: #E0E0E8;
+    --theme-hover: #EEEEF4;
+    --quote-bg: #F4F4FA;
     --quote-border: var(--ey-yellow);
-    --table-header-bg: var(--ey-yellow);
-    --table-alternate-bg: var(--ey-light-gray);
+    --table-header-bg: #F0F0F5;
+    --table-alternate-bg: #F8F8FC;
+    --table-border: #E4E4EC;
+    --code-bg: #1B1B2F;
+    --code-fg: #E0DEF4;
+    --card-bg: var(--ey-white);
+    --card-border: #E4E4EC;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --divider: #E4E4EC;
+    --accent-gradient: linear-gradient(135deg, #FFE600 0%, #FFD000 100%);
+    --page-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
 }
 
-/* Navy (dark) theme overrides */
+/* --- Navy (Dark) Theme --- */
 .navy {
-    --bg: #0d1117;
-    --fg: #e6edf3;
-    --sidebar-bg: #161b22;
-    --sidebar-fg: #e6edf3;
-    --sidebar-active: var(--ey-yellow);
-    --links: #58a6ff;
-    --inline-code-color: #e6edf3;
-    --theme-popup-bg: #161b22;
-    --theme-popup-border: #30363d;
-    --theme-hover: #21262d;
-    --quote-bg: #161b22;
+    --bg: #0C0C14;
+    --fg: #E2E0F0;
+    --fg-muted: #9896A8;
+    --fg-subtle: #6C6A7E;
+    --sidebar-bg: #12121C;
+    --sidebar-fg: #C8C6D8;
+    --sidebar-active: #0C0C14;
+    --sidebar-active-bg: var(--ey-yellow);
+    --links: #6EA8FF;
+    --links-hover: #9DC4FF;
+    --inline-code-color: #F0A0C0;
+    --inline-code-bg: #1E1E30;
+    --theme-popup-bg: #16162A;
+    --theme-popup-border: #2A2A44;
+    --theme-hover: #1A1A2E;
+    --quote-bg: #14142A;
     --quote-border: var(--ey-yellow);
-    --table-header-bg: #21262d;
-    --table-alternate-bg: #161b22;
+    --table-header-bg: #16162A;
+    --table-alternate-bg: #10101E;
+    --table-border: #2A2A44;
+    --code-bg: #0A0A18;
+    --code-fg: #E0DEF4;
+    --card-bg: #14142A;
+    --card-border: #2A2A44;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --divider: #2A2A44;
+    --accent-gradient: linear-gradient(135deg, #FFE600 0%, #FFD000 100%);
+    --page-shadow: none;
 }
 
-/* Hero Section Styling */
+/* ============================================================
+   Base Typography
+   ============================================================ */
+
+.content {
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+    color: var(--fg);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    max-width: 52rem;
+}
+
+.content p {
+    margin-bottom: var(--space-md);
+    color: var(--fg);
+}
+
+/* ============================================================
+   Headings — Tight, geometric, with accent markers
+   ============================================================ */
+
+.content h1 {
+    font-family: var(--font-body);
+    font-size: 2.15rem;
+    font-weight: 700;
+    letter-spacing: var(--letter-spacing-tight);
+    line-height: var(--line-height-heading);
+    color: var(--fg);
+    border-bottom: none;
+    padding-bottom: var(--space-sm);
+    margin-top: 0;
+    margin-bottom: var(--space-lg);
+    position: relative;
+}
+
+.content h1::after {
+    content: '';
+    display: block;
+    width: 3.5rem;
+    height: 3px;
+    background: var(--accent-gradient);
+    margin-top: var(--space-sm);
+    border-radius: 2px;
+}
+
+.content h2 {
+    font-family: var(--font-body);
+    font-size: 1.55rem;
+    font-weight: 600;
+    letter-spacing: var(--letter-spacing-tight);
+    line-height: var(--line-height-heading);
+    color: var(--fg);
+    border-bottom: 1px solid var(--divider);
+    padding-bottom: var(--space-sm);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-lg);
+}
+
+.content h3 {
+    font-family: var(--font-body);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: var(--letter-spacing-tight);
+    line-height: var(--line-height-heading);
+    color: var(--fg);
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+}
+
+.content h4 {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--fg-muted);
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+}
+
+/* ============================================================
+   Links
+   ============================================================ */
+
+.content a {
+    color: var(--links);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color var(--duration-fast) var(--ease-in-out),
+                border-color var(--duration-fast) var(--ease-in-out);
+}
+
+.content a:hover {
+    color: var(--links-hover);
+    border-bottom-color: var(--links-hover);
+    text-decoration: none;
+}
+
+/* ============================================================
+   Hero Section — Commanding, architectural
+   ============================================================ */
+
 .hero-section {
-    background: linear-gradient(135deg, var(--ey-dark) 0%, #1a1a24 100%);
+    background: linear-gradient(160deg, #1C1C28 0%, #14142A 40%, #0C0C18 100%);
     color: var(--ey-white);
-    padding: 3rem 2rem;
-    margin: -20px -15px 2rem -15px;
-    border-radius: 0 0 8px 8px;
+    padding: var(--space-2xl) var(--space-xl);
+    margin: -20px -15px var(--space-xl) -15px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+/* Geometric accent line */
+.hero-section::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+}
+
+/* Subtle grid pattern overlay */
+.hero-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 230, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 230, 0, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
 }
 
 .hero-section h1 {
-    color: var(--ey-yellow);
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    color: var(--ey-white);
+    font-family: var(--font-body);
+    font-size: 3rem;
     font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--space-xs);
+    position: relative;
+    z-index: 1;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.hero-section h1::after {
+    display: none;
 }
 
 .hero-section .subtitle {
-    font-size: 1.25rem;
-    color: var(--ey-white);
-    margin-bottom: 1rem;
-    opacity: 0.9;
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: #B0B0C0;
+    letter-spacing: 0.01em;
+    margin-bottom: var(--space-md);
+    position: relative;
+    z-index: 1;
 }
 
 .hero-section .attribution {
-    font-size: 0.95rem;
-    color: var(--ey-gray);
-    margin-top: 1rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #7A7A8E;
+    margin-top: var(--space-lg);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.02em;
 }
 
 .hero-section .attribution a {
     color: var(--ey-yellow);
     text-decoration: none;
+    border-bottom: 1px solid rgba(255, 230, 0, 0.3);
+    transition: border-color var(--duration-fast) var(--ease-in-out);
 }
 
 .hero-section .attribution a:hover {
-    text-decoration: underline;
+    border-bottom-color: var(--ey-yellow);
+    text-decoration: none;
 }
 
-/* Badge styling */
+/* Badge row */
 .badges {
     display: flex;
     justify-content: center;
-    gap: 0.5rem;
+    gap: var(--space-sm);
     flex-wrap: wrap;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-lg);
+    position: relative;
+    z-index: 1;
 }
 
 .badges img {
     height: 22px;
+    border-radius: 3px;
+    transition: transform var(--duration-fast) var(--ease-out-expo);
 }
 
-/* Navigation sidebar styling */
+.badges img:hover {
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   Sidebar — Clean hierarchy with yellow accent
+   ============================================================ */
+
 .sidebar {
-    font-size: 0.95rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    border-right: 1px solid var(--divider);
 }
 
 .sidebar .sidebar-scrollbox {
-    padding-top: 1rem;
+    padding: var(--space-lg) var(--space-sm) var(--space-lg) 0;
+}
+
+.sidebar ol.chapter {
+    padding-left: var(--space-md);
 }
 
 .sidebar ol.chapter li.chapter-item {
-    margin: 0.3rem 0;
+    margin: 1px 0;
+    line-height: 1.5;
 }
 
-.sidebar ol.chapter li.chapter-item.expanded > a {
+.sidebar ol.chapter li.chapter-item a {
+    display: block;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    color: var(--sidebar-fg);
+    font-weight: 400;
+    transition: background-color var(--duration-fast) var(--ease-in-out),
+                color var(--duration-fast) var(--ease-in-out);
+    text-decoration: none;
+    border-bottom: none;
+}
+
+.sidebar ol.chapter li.chapter-item a:hover {
+    background-color: var(--theme-hover);
+    color: var(--fg);
+    text-decoration: none;
+    border-bottom: none;
+}
+
+.sidebar ol.chapter li.chapter-item.expanded > a,
+.sidebar ol.chapter li.chapter-item a.active {
     font-weight: 600;
     color: var(--sidebar-active);
+    background-color: var(--sidebar-active-bg);
+    border-radius: var(--radius-sm);
 }
 
-.sidebar ol.chapter li a:hover {
-    color: var(--ey-yellow);
+/* Section dividers in sidebar */
+.sidebar .chapter li.affix {
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-xs);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--fg-subtle);
+    padding-left: 0.75rem;
 }
 
-/* Table styling */
-table {
+/* ============================================================
+   Tables — Financial-grade precision
+   ============================================================ */
+
+.content table {
     width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 0.95rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: var(--space-lg) 0;
+    font-size: 0.92rem;
+    border: 1px solid var(--table-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
-table thead {
+.content table thead {
     background-color: var(--table-header-bg);
 }
 
-.light table thead {
-    color: var(--ey-dark);
-}
-
-.navy table thead {
-    color: var(--ey-white);
-}
-
-table th {
-    padding: 0.75rem 1rem;
+.content table th {
+    padding: 0.7rem 1rem;
     text-align: left;
     font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--fg-muted);
     border-bottom: 2px solid var(--ey-yellow);
 }
 
-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--quote-border);
+.content table td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--table-border);
+    color: var(--fg);
+    vertical-align: top;
 }
 
-table tbody tr:nth-child(even) {
+.content table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.content table tbody tr:nth-child(even) {
     background-color: var(--table-alternate-bg);
 }
 
-table tbody tr:hover {
-    background-color: var(--theme-hover);
+.content table tbody tr {
+    transition: background-color var(--duration-fast) var(--ease-in-out);
 }
 
-/* Code block styling */
-pre {
-    border-radius: 6px;
-    border-left: 4px solid var(--ey-yellow);
+.content table tbody tr:hover {
+    background-color: var(--ey-yellow-glow);
 }
 
-code {
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 0.9em;
+/* Bold first column — label styling */
+.content table td:first-child strong {
+    color: var(--fg);
+    font-weight: 600;
 }
 
-/* Inline code styling */
-:not(pre) > code {
+/* ============================================================
+   Code Blocks — Dark, precise, with yellow accent
+   ============================================================ */
+
+.content pre {
+    background-color: var(--code-bg) !important;
+    color: var(--code-fg);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid var(--ey-yellow);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin: var(--space-lg) 0;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.content pre code {
+    font-family: var(--font-mono);
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+.content code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    font-variant-ligatures: none;
+}
+
+/* Inline code */
+.content :not(pre) > code {
+    background-color: var(--inline-code-bg);
+    color: var(--inline-code-color);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.86em;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.navy .content :not(pre) > code {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   Blockquotes — Accent border with subtle background
+   ============================================================ */
+
+.content blockquote {
+    border-left: 3px solid var(--ey-yellow);
     background-color: var(--quote-bg);
-    padding: 0.2em 0.4em;
-    border-radius: 4px;
+    padding: var(--space-md) var(--space-lg);
+    margin: var(--space-lg) 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--fg-muted);
+    font-style: italic;
 }
 
-/* Blockquote styling */
-blockquote {
-    border-left: 4px solid var(--ey-yellow);
-    background-color: var(--quote-bg);
-    padding: 1rem 1.5rem;
-    margin: 1rem 0;
-    border-radius: 0 6px 6px 0;
-}
-
-blockquote p {
+.content blockquote p {
     margin: 0;
+    color: inherit;
 }
 
-/* Heading styling */
-h1 {
-    border-bottom: 3px solid var(--ey-yellow);
-    padding-bottom: 0.5rem;
+/* ============================================================
+   Lists — Better rhythm and indentation
+   ============================================================ */
+
+.content ul,
+.content ol {
+    padding-left: var(--space-lg);
+    margin-bottom: var(--space-md);
 }
 
-h2 {
-    border-bottom: 1px solid var(--ey-gray);
-    padding-bottom: 0.3rem;
-    margin-top: 2rem;
+.content li {
+    margin-bottom: 0.35rem;
+    line-height: var(--line-height-body);
 }
 
-h3 {
-    margin-top: 1.5rem;
+.content li strong {
     color: var(--fg);
 }
 
-/* Link styling */
-a {
-    color: var(--links);
-    text-decoration: none;
+/* ============================================================
+   Horizontal Rules
+   ============================================================ */
+
+.content hr {
+    border: none;
+    height: 1px;
+    background: var(--divider);
+    margin: var(--space-2xl) 0;
 }
 
-a:hover {
-    text-decoration: underline;
-    color: var(--ey-yellow);
-}
+/* ============================================================
+   Warning / Info Admonitions
+   ============================================================ */
 
-/* Warning/Note boxes */
 .warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffc107;
-    border-left: 4px solid #ffc107;
-    padding: 1rem;
-    border-radius: 0 6px 6px 0;
-    margin: 1rem 0;
+    background-color: #FFFDF0;
+    border: 1px solid #F0E0A0;
+    border-left: 3px solid var(--ey-yellow);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin: var(--space-lg) 0;
+    font-size: 0.95rem;
 }
 
 .navy .warning {
-    background-color: #3d3d00;
-    border-color: #ffc107;
+    background-color: #1E1E10;
+    border-color: #3A3A20;
+    border-left-color: var(--ey-yellow);
 }
 
 .info {
-    background-color: #cfe2ff;
-    border: 1px solid #084298;
-    border-left: 4px solid #084298;
-    padding: 1rem;
-    border-radius: 0 6px 6px 0;
-    margin: 1rem 0;
+    background-color: #F0F5FF;
+    border: 1px solid #C0D4F0;
+    border-left: 3px solid var(--links);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin: var(--space-lg) 0;
+    font-size: 0.95rem;
 }
 
 .navy .info {
-    background-color: #0d1b2a;
-    border-color: #58a6ff;
+    background-color: #0E1420;
+    border-color: #1E2E48;
+    border-left-color: #6EA8FF;
 }
 
-/* Feature grid for landing page */
+/* ============================================================
+   Feature Grid — Cards with hover lift
+   ============================================================ */
+
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin: 2rem 0;
+    gap: var(--space-lg);
+    margin: var(--space-xl) 0;
 }
 
 .feature-card {
-    background-color: var(--quote-bg);
-    border: 1px solid var(--quote-border);
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--card-shadow);
+    transition: transform var(--duration-normal) var(--ease-out-expo),
+                box-shadow var(--duration-normal) var(--ease-out-expo);
 }
 
 .feature-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.navy .feature-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .feature-card h3 {
     margin-top: 0;
-    color: var(--ey-dark);
+    font-size: 1.05rem;
+    color: var(--fg);
+    padding-left: 0.85rem;
     border-left: 3px solid var(--ey-yellow);
-    padding-left: 0.75rem;
 }
 
-.navy .feature-card h3 {
-    color: var(--ey-white);
-}
+/* ============================================================
+   Quick Links Grid
+   ============================================================ */
 
-/* Quick links grid */
 .quick-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin: 1.5rem 0;
+    gap: var(--space-md);
+    margin: var(--space-lg) 0;
 }
 
 .quick-link {
     display: flex;
     align-items: center;
-    padding: 1rem;
-    background-color: var(--quote-bg);
-    border-radius: 6px;
+    padding: var(--space-md);
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
     text-decoration: none;
     color: var(--fg);
-    transition: background-color 0.2s;
+    transition: all var(--duration-normal) var(--ease-out-expo);
+    border-bottom: none;
 }
 
 .quick-link:hover {
     background-color: var(--theme-hover);
     text-decoration: none;
+    border-bottom: none;
+    transform: translateY(-1px);
+    box-shadow: var(--card-shadow);
 }
 
 .quick-link-icon {
     font-size: 1.5rem;
     margin-right: 0.75rem;
+    flex-shrink: 0;
 }
 
-/* Performance metrics styling */
+/* ============================================================
+   API Link Button
+   ============================================================ */
+
+.api-link {
+    display: inline-block;
+    background: var(--accent-gradient);
+    color: var(--ey-dark) !important;
+    padding: 0.55rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    letter-spacing: 0.01em;
+    transition: transform var(--duration-fast) var(--ease-out-expo),
+                box-shadow var(--duration-fast) var(--ease-out-expo);
+}
+
+.api-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 230, 0, 0.25);
+    border-bottom: none !important;
+}
+
+/* ============================================================
+   Version Badge
+   ============================================================ */
+
+.version-badge {
+    display: inline-block;
+    background: var(--accent-gradient);
+    color: var(--ey-dark);
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* ============================================================
+   Architecture Diagram Container
+   ============================================================ */
+
+.architecture-diagram {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin: var(--space-lg) 0;
+    overflow-x: auto;
+    box-shadow: var(--card-shadow);
+}
+
+.architecture-diagram pre {
+    margin: 0;
+    border: none;
+    background: transparent !important;
+    box-shadow: none;
+    border-left: none;
+    padding: var(--space-sm);
+}
+
+/* ============================================================
+   Performance Metrics Table
+   ============================================================ */
+
 .metrics-table {
-    margin: 1.5rem 0;
+    margin: var(--space-lg) 0;
 }
 
 .metrics-table td:first-child {
     font-weight: 600;
+    color: var(--fg);
 }
 
 .metrics-table td:last-child {
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
     color: var(--links);
 }
 
-/* Print styles */
+/* ============================================================
+   Scrollbar Styling
+   ============================================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--fg-subtle);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--fg-muted);
+}
+
+/* ============================================================
+   Menu Bar (top) — Cleaner separation
+   ============================================================ */
+
+.menu-bar {
+    border-bottom: 1px solid var(--divider);
+}
+
+.menu-bar i {
+    transition: color var(--duration-fast) var(--ease-in-out);
+}
+
+.menu-bar i:hover {
+    color: var(--ey-yellow);
+}
+
+/* ============================================================
+   Search Results
+   ============================================================ */
+
+.searchresults a {
+    border-bottom: none;
+}
+
+.searchresults a:hover {
+    border-bottom: none;
+}
+
+mark {
+    background-color: var(--ey-yellow-muted);
+    color: inherit;
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+}
+
+/* ============================================================
+   Page Navigation (prev/next)
+   ============================================================ */
+
+.nav-chapters {
+    transition: color var(--duration-fast) var(--ease-in-out);
+    opacity: 0.5;
+}
+
+.nav-chapters:hover {
+    color: var(--ey-yellow);
+    opacity: 1;
+}
+
+/* ============================================================
+   Print Styles
+   ============================================================ */
+
 @media print {
     .hero-section {
         background: var(--ey-light-gray);
@@ -333,17 +817,34 @@ a:hover {
     .hero-section h1 {
         color: var(--ey-dark);
     }
+
+    .hero-section::before,
+    .hero-section::after {
+        display: none;
+    }
+
+    .content pre {
+        border-left-color: var(--ey-dark);
+        box-shadow: none;
+    }
+
+    .content table {
+        box-shadow: none;
+    }
 }
 
-/* Responsive adjustments */
+/* ============================================================
+   Responsive
+   ============================================================ */
+
 @media (max-width: 768px) {
     .hero-section {
-        padding: 2rem 1rem;
-        margin: -10px -10px 1.5rem -10px;
+        padding: var(--space-xl) var(--space-md);
+        margin: -10px -10px var(--space-lg) -10px;
     }
 
     .hero-section h1 {
-        font-size: 1.75rem;
+        font-size: 2rem;
     }
 
     .hero-section .subtitle {
@@ -354,55 +855,39 @@ a:hover {
         grid-template-columns: 1fr;
     }
 
-    table {
+    .content table {
         font-size: 0.85rem;
     }
 
-    table th, table td {
-        padding: 0.5rem;
+    .content table th,
+    .content table td {
+        padding: 0.5rem 0.65rem;
+    }
+
+    .content h1 {
+        font-size: 1.65rem;
+    }
+
+    .content h2 {
+        font-size: 1.3rem;
     }
 }
 
-/* API reference link styling */
-.api-link {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--ey-yellow) 0%, #ffd700 100%);
-    color: var(--ey-dark) !important;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none !important;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
+@media (max-width: 480px) {
+    .badges {
+        gap: 0.3rem;
+    }
 
-.api-link:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(255, 230, 0, 0.3);
-}
+    .badges img {
+        height: 18px;
+    }
 
-/* Version badge styling */
-.version-badge {
-    display: inline-block;
-    background-color: var(--ey-yellow);
-    color: var(--ey-dark);
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
+    .hero-section h1 {
+        font-size: 1.65rem;
+    }
 
-/* Architecture diagram container */
-.architecture-diagram {
-    background-color: var(--quote-bg);
-    border: 1px solid var(--quote-border);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    overflow-x: auto;
-}
-
-.architecture-diagram pre {
-    margin: 0;
-    border: none;
-    background: transparent;
+    .content pre {
+        font-size: 0.82rem;
+        padding: var(--space-md);
+    }
 }
