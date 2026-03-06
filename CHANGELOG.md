@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Material generator now uses industry-appropriate material descriptions and realistic units of measure
 - Vendor generator now produces realistic vendor names, proper bank details, and industry-appropriate payment terms
 - Orchestrator correctly sets vendor/customer/employee counts in generation statistics
+- Orchestrator clamps `period_months` (1-120) and `statutory_rate` (0.0-1.0) before numeric casts to prevent truncation
+- Tax rate constant uses infallible `Decimal::new(25, 2)` instead of fallible `Decimal::from_f64_retain`
 
 ## [0.11.1] - 2026-03-03
 
