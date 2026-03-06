@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-03-XX
+## [1.0.0] - 2026-03-06
 
 ### Added
 - **Process evolution & organizational event generation** (Phase 24): workflow changes, automation events, policy updates, acquisitions, divestitures, reorganizations (`datasynth-runtime`)
@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-process links auto-enable when both P2P and O2C data exist; material_id now propagated from PO items to GR items in P2P generator
 - Non-workspace reqwest dependency in datasynth-test-utils
 - Benefit enrollment generation now gated behind payroll.enabled config flag
+- IC seller withholding tax JEs now debit WHT receivable (was incorrectly credited as payable)
+- Cross-process links (P2P↔O2C) no longer fail when delivery dates precede goods receipt dates
+- Division-by-zero guard in `CompanySelector` when all company weights are zero (falls back to uniform)
+- Division-by-zero guard in anomaly `SplitTransactionStrategy` when entry total debit is zero
+- Division-by-zero guard in `SchemeAdvancer` when all fraud scheme probabilities are zero
+- Customer generator now produces realistic names with proper first/last name combinations
+- Material generator now uses industry-appropriate material descriptions and realistic units of measure
+- Vendor generator now produces realistic vendor names, proper bank details, and industry-appropriate payment terms
+- Orchestrator correctly sets vendor/customer/employee counts in generation statistics
 
 ## [0.11.1] - 2026-03-03
 

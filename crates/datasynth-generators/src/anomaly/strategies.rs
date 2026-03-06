@@ -649,7 +649,7 @@ impl InjectionStrategy for SplitTransactionStrategy {
         rng: &mut R,
     ) -> InjectionResult {
         let total = entry.total_debit();
-        if total <= self.split_threshold {
+        if total <= self.split_threshold || total.is_zero() {
             return InjectionResult::failure("Amount below split threshold");
         }
 

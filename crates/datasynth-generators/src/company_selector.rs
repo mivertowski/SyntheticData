@@ -58,14 +58,20 @@ impl WeightedCompanySelector {
             weights
         };
 
-        // Calculate total weight
+        // Calculate total weight; fall back to uniform if all weights are zero
         let total_weight: f64 = weights.iter().sum();
+        let effective_weights: Vec<f64> = if total_weight == 0.0 {
+            vec![1.0; codes.len()]
+        } else {
+            weights
+        };
+        let effective_total: f64 = effective_weights.iter().sum();
 
         // Build cumulative distribution function
         let mut cumulative = Vec::with_capacity(codes.len());
         let mut running_sum = 0.0;
-        for weight in &weights {
-            running_sum += weight / total_weight;
+        for weight in &effective_weights {
+            running_sum += weight / effective_total;
             cumulative.push(running_sum);
         }
 
@@ -77,7 +83,7 @@ impl WeightedCompanySelector {
         Self {
             company_codes: codes,
             cumulative_weights: cumulative,
-            total_weight,
+            total_weight: effective_total,
         }
     }
 

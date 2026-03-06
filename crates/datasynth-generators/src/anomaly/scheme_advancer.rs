@@ -154,7 +154,7 @@ impl SchemeAdvancer {
             + self.config.revenue_manipulation_probability
             + self.config.kickback_probability;
 
-        if r > total_prob {
+        if total_prob == 0.0 || r > total_prob {
             return None;
         }
 

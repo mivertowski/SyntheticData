@@ -796,9 +796,14 @@ mod eval {
         );
 
         // Financial statements should have line items
-        // (CashFlowStatement may be empty if cash flow generation isn't fully configured)
+        // CashFlowStatement uses cash_flow_items instead of line_items
         for stmt in &result.financial_reporting.financial_statements {
-            if stmt.line_items.is_empty() {
+            use datasynth_core::models::StatementType;
+            let has_content = match stmt.statement_type {
+                StatementType::CashFlowStatement => !stmt.cash_flow_items.is_empty(),
+                _ => !stmt.line_items.is_empty(),
+            };
+            if !has_content {
                 report.warn(
                     "fin_reporting",
                     format!(
