@@ -169,6 +169,16 @@ impl MaterialGenerator {
         self.country_pack = Some(pack);
     }
 
+    /// Set a counter offset so that generated IDs start after a given value.
+    ///
+    /// This is used when generating materials for multiple companies in parallel
+    /// to ensure globally unique IDs. For example, if company 0 generates 100
+    /// materials (MAT-000001..MAT-000100), company 1 should set offset=100 so its
+    /// materials start at MAT-000101.
+    pub fn set_counter_offset(&mut self, offset: usize) {
+        self.material_counter = offset;
+    }
+
     /// Generate a single material.
     pub fn generate_material(
         &mut self,

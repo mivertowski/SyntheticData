@@ -5580,6 +5580,12 @@ impl EnhancedOrchestrator {
                 enable_return_flows: false,
                 enable_payment_links: self.config.cross_process_links.payment_bank_reconciliation,
                 enable_ic_bilateral: self.config.cross_process_links.intercompany_bilateral,
+                // Use higher link rate for small datasets to avoid probabilistic empty results
+                inventory_link_rate: if document_flows.p2p_chains.len() <= 10 {
+                    1.0
+                } else {
+                    0.30
+                },
                 ..Default::default()
             },
             strength_config: datasynth_generators::relationships::StrengthConfig {
@@ -6089,26 +6095,29 @@ impl EnhancedOrchestrator {
                 let company_seed = self.seed.wrapping_add(i as u64 * 1000);
                 let pack = pack.clone();
 
-                // Generate vendors
+                // Generate vendors (offset counter so IDs are globally unique across companies)
                 let mut vendor_gen = VendorGenerator::new(company_seed);
                 vendor_gen.set_country_pack(pack.clone());
                 vendor_gen.set_coa_framework(coa_framework);
+                vendor_gen.set_counter_offset(i * vendors_per_company);
                 let vendor_pool =
                     vendor_gen.generate_vendor_pool(vendors_per_company, &company.code, start_date);
 
-                // Generate customers
+                // Generate customers (offset counter so IDs are globally unique across companies)
                 let mut customer_gen = CustomerGenerator::new(company_seed + 100);
                 customer_gen.set_country_pack(pack.clone());
                 customer_gen.set_coa_framework(coa_framework);
+                customer_gen.set_counter_offset(i * customers_per_company);
                 let customer_pool = customer_gen.generate_customer_pool(
                     customers_per_company,
                     &company.code,
                     start_date,
                 );
 
-                // Generate materials
+                // Generate materials (offset counter so IDs are globally unique across companies)
                 let mut material_gen = MaterialGenerator::new(company_seed + 200);
                 material_gen.set_country_pack(pack.clone());
+                material_gen.set_counter_offset(i * materials_per_company);
                 let material_pool = material_gen.generate_material_pool(
                     materials_per_company,
                     &company.code,

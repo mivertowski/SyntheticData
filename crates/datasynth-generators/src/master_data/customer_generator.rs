@@ -478,6 +478,16 @@ impl CustomerGenerator {
         self.country_pack = Some(pack);
     }
 
+    /// Set a counter offset so that generated IDs start after a given value.
+    ///
+    /// This is used when generating customers for multiple companies in parallel
+    /// to ensure globally unique IDs. For example, if company 0 generates 100
+    /// customers (C-000001..C-000100), company 1 should set offset=100 so its
+    /// customers start at C-000101.
+    pub fn set_counter_offset(&mut self, offset: usize) {
+        self.customer_counter = offset;
+    }
+
     /// Generate a single customer.
     pub fn generate_customer(
         &mut self,

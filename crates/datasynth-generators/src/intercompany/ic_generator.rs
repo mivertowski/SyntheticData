@@ -339,11 +339,15 @@ impl ICGenerator {
         });
 
         // Add withholding tax line if applicable
+        // WHT is withheld by the buyer and remitted to the tax authority on
+        // behalf of the seller.  From the seller's perspective this is a tax
+        // receivable (debit) — the seller can reclaim it as a tax credit.
+        // DR WHT Receivable + DR IC Receivable(net) = CR Revenue(gross)
         if let Some(wht) = pair.withholding_tax {
             je.add_line(JournalEntryLine {
                 line_number: 3,
-                gl_account: self.framework_accounts.sales_tax_payable.clone(), // WHT payable
-                credit_amount: wht,
+                gl_account: self.framework_accounts.sales_tax_payable.clone(), // WHT receivable
+                debit_amount: wht,
                 text: Some("Withholding tax on IC transaction".to_string()),
                 assignment: Some(pair.ic_reference.clone()),
                 ..Default::default()

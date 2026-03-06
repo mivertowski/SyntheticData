@@ -454,6 +454,33 @@ impl CounterfactualGenerator {
             }
             CounterfactualSpec::SplitTransaction { split_count } => {
                 let original_amount = original.total_debit();
+                let count = (*split_count).max(1);
+                let divisor = Decimal::from_f64_retain(count as f64).unwrap_or(Decimal::ONE);
+
+                // Build new lines: for each original line, produce `count` copies
+                // with the amount divided by `count`, renumbering sequentially.
+                let mut new_lines: Vec<JournalEntryLine> = Vec::new();
+                let mut line_number: u32 = 1;
+                for orig_line in &original.lines {
+                    for _ in 0..count {
+                        let mut split_line = orig_line.clone();
+                        split_line.line_number = line_number;
+                        if split_line.debit_amount > Decimal::ZERO {
+                            let split_amt = split_line.debit_amount / divisor;
+                            split_line.debit_amount = split_amt;
+                            split_line.local_amount = split_amt;
+                        }
+                        if split_line.credit_amount > Decimal::ZERO {
+                            let split_amt = split_line.credit_amount / divisor;
+                            split_line.credit_amount = split_amt;
+                            split_line.local_amount = -split_amt;
+                        }
+                        new_lines.push(split_line);
+                        line_number += 1;
+                    }
+                }
+                entry.lines = new_lines.into();
+
                 InjectionStrategy::SplitTransaction {
                     original_amount,
                     split_count: *split_count,

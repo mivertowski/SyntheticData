@@ -329,6 +329,16 @@ impl VendorGenerator {
         self.country_pack = Some(pack);
     }
 
+    /// Set a counter offset so that generated IDs start after a given value.
+    ///
+    /// This is used when generating vendors for multiple companies in parallel
+    /// to ensure globally unique IDs. For example, if company 0 generates 100
+    /// vendors (V-000001..V-000100), company 1 should set offset=100 so its
+    /// vendors start at V-000101.
+    pub fn set_counter_offset(&mut self, offset: usize) {
+        self.vendor_counter = offset;
+    }
+
     /// Generate a single vendor.
     pub fn generate_vendor(&mut self, company_code: &str, _effective_date: NaiveDate) -> Vendor {
         self.vendor_counter += 1;

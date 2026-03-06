@@ -347,13 +347,12 @@ impl EntityGraphGenerator {
             }
 
             if let Some(matching_deliveries) = deliveries_by_material.get(&gr.material_id) {
-                // Find a delivery that could have used this inventory
-                // (delivery date after receipt date)
+                // Find a delivery in the same company that shares this material.
+                // P2P and O2C chains are generated independently, so we match
+                // on material + company without requiring a specific date order.
                 let valid_deliveries: Vec<_> = matching_deliveries
                     .iter()
-                    .filter(|d| {
-                        d.delivery_date >= gr.receipt_date && d.company_code == gr.company_code
-                    })
+                    .filter(|d| d.company_code == gr.company_code)
                     .collect();
 
                 if !valid_deliveries.is_empty() {
@@ -363,6 +362,7 @@ impl EntityGraphGenerator {
                     // Calculate linked quantity (minimum of available)
                     let linked_qty = gr.quantity.min(delivery.quantity);
 
+                    let link_date = gr.receipt_date.max(delivery.delivery_date);
                     links.push(CrossProcessLink::new(
                         &gr.material_id,
                         "P2P",
@@ -371,7 +371,7 @@ impl EntityGraphGenerator {
                         &delivery.document_id,
                         CrossProcessLinkType::InventoryMovement,
                         linked_qty,
-                        delivery.delivery_date,
+                        link_date,
                     ));
                 }
             }
