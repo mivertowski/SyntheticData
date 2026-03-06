@@ -1128,10 +1128,16 @@ impl EnhancedOrchestrator {
         if let Some(ref sink) = self.phase_sink {
             for item in items {
                 if let Ok(value) = serde_json::to_value(item) {
-                    let _ = sink.emit(phase, type_name, &value);
+                    if let Err(e) = sink.emit(phase, type_name, &value) {
+                        warn!(
+                            "Stream sink emit failed for phase '{phase}', type '{type_name}': {e}"
+                        );
+                    }
                 }
             }
-            let _ = sink.phase_complete(phase);
+            if let Err(e) = sink.phase_complete(phase) {
+                warn!("Stream sink phase_complete failed for phase '{phase}': {e}");
+            }
         }
     }
 
@@ -1267,7 +1273,7 @@ impl EnhancedOrchestrator {
         let reader = FingerprintReader::new();
         let fingerprint = reader
             .read_from_file(fingerprint_path)
-            .map_err(|e| SynthError::config(format!("Failed to read fingerprint: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Failed to read fingerprint: {e}")))?;
 
         Self::from_fingerprint_data(fingerprint, phase_config, scale)
     }
@@ -1305,10 +1311,7 @@ impl EnhancedOrchestrator {
         let synthesis_result = synthesizer
             .synthesize_full(&fingerprint, seed)
             .map_err(|e| {
-                SynthError::config(format!(
-                    "Failed to synthesize config from fingerprint: {}",
-                    e
-                ))
+                SynthError::config(format!("Failed to synthesize config from fingerprint: {e}"))
             })?;
 
         // Start with a base config from the fingerprint's industry if available
@@ -1824,7 +1827,9 @@ impl EnhancedOrchestrator {
 
         // Flush any remaining stream sink data
         if let Some(ref sink) = self.phase_sink {
-            let _ = sink.flush();
+            if let Err(e) = sink.flush() {
+                warn!("Stream sink flush failed: {e}");
+            }
         }
 
         // Build data lineage graph
@@ -2526,12 +2531,12 @@ impl EnhancedOrchestrator {
             };
 
             let scm = StructuralCausalModel::new(graph.clone())
-                .map_err(|e| SynthError::generation(format!("Failed to build SCM: {}", e)))?;
+                .map_err(|e| SynthError::generation(format!("Failed to build SCM: {e}")))?;
 
             let n_samples = self.config.causal.sample_size;
             let samples = scm
                 .generate(n_samples, self.seed)
-                .map_err(|e| SynthError::generation(format!("SCM generation failed: {}", e)))?;
+                .map_err(|e| SynthError::generation(format!("SCM generation failed: {e}")))?;
 
             // Optionally validate causal structure
             let validation_passed = if self.config.causal.validate {
@@ -2630,7 +2635,7 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.as_str())
             .unwrap_or("1000");
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let fiscal_year = start_date.year() as u16;
         let owner_ids: Vec<String> = self
@@ -2640,7 +2645,10 @@ impl EnhancedOrchestrator {
             .take(5)
             .map(|e| e.employee_id.clone())
             .collect();
-        let owner_id = owner_ids.first().map(|s| s.as_str()).unwrap_or("BUYER-001");
+        let owner_id = owner_ids
+            .first()
+            .map(std::string::String::as_str)
+            .unwrap_or("BUYER-001");
 
         // Step 1: Spend Analysis
         let mut spend_gen = SpendAnalysisGenerator::new(seed);
@@ -2840,7 +2848,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 
         // Build ownership structure from company configs
@@ -3030,7 +3038,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         let mut financial_statements = Vec::new();
         let mut bank_reconciliations = Vec::new();
@@ -3319,7 +3327,7 @@ impl EnhancedOrchestrator {
             let account_name = coa
                 .get_account(acct_number)
                 .map(|gl| gl.short_description.clone())
-                .unwrap_or_else(|| format!("Account {}", acct_number));
+                .unwrap_or_else(|| format!("Account {acct_number}"));
 
             // Map account code prefix to the category strings expected by
             // FinancialStatementGenerator (Cash, Receivables, Inventory,
@@ -3459,7 +3467,7 @@ impl EnhancedOrchestrator {
             let account_name = coa
                 .get_account(acct_number)
                 .map(|gl| gl.short_description.clone())
-                .unwrap_or_else(|| format!("Account {}", acct_number));
+                .unwrap_or_else(|| format!("Account {acct_number}"));
 
             entries.push(datasynth_generators::TrialBalanceEntry {
                 account_code: acct_number.clone(),
@@ -3732,7 +3740,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let company_code = self
             .config
@@ -3902,7 +3910,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let company_code = self
             .config
@@ -4039,7 +4047,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let company_code = self
             .config
@@ -4182,7 +4190,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let company_code = self
             .config
@@ -4392,7 +4400,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let fiscal_year = start_date.year();
         let company_code = self
             .config
@@ -4515,7 +4523,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let entity_id = self
             .config
@@ -4740,7 +4748,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let currency = self
             .config
             .companies
@@ -4801,7 +4809,7 @@ impl EnhancedOrchestrator {
                     .into_iter()
                     .map(|(foreign_ccy, (net_amount, settlement_date))| {
                         datasynth_generators::treasury::FxExposure {
-                            currency_pair: format!("{}/{}", foreign_ccy, currency),
+                            currency_pair: format!("{foreign_ccy}/{currency}"),
                             foreign_currency: foreign_ccy,
                             net_amount,
                             settlement_date,
@@ -4837,7 +4845,7 @@ impl EnhancedOrchestrator {
             for payment in &document_flows.payments {
                 cash_flows.push(datasynth_generators::treasury::CashFlow {
                     date: payment.header.document_date,
-                    account_id: format!("{}-MAIN", entity_id),
+                    account_id: format!("{entity_id}-MAIN"),
                     amount: payment.amount,
                     direction: datasynth_generators::treasury::CashFlowDirection::Outflow,
                 });
@@ -4848,7 +4856,7 @@ impl EnhancedOrchestrator {
                 if let Some(ref receipt) = chain.customer_receipt {
                     cash_flows.push(datasynth_generators::treasury::CashFlow {
                         date: receipt.header.document_date,
-                        account_id: format!("{}-MAIN", entity_id),
+                        account_id: format!("{entity_id}-MAIN"),
                         amount: receipt.amount,
                         direction: datasynth_generators::treasury::CashFlowDirection::Inflow,
                     });
@@ -4857,7 +4865,7 @@ impl EnhancedOrchestrator {
                 for receipt in &chain.remainder_receipts {
                     cash_flows.push(datasynth_generators::treasury::CashFlow {
                         date: receipt.header.document_date,
-                        account_id: format!("{}-MAIN", entity_id),
+                        account_id: format!("{entity_id}-MAIN"),
                         amount: receipt.amount,
                         direction: datasynth_generators::treasury::CashFlowDirection::Inflow,
                     });
@@ -4869,7 +4877,7 @@ impl EnhancedOrchestrator {
                     self.config.treasury.cash_positioning.clone(),
                     seed + 93,
                 );
-                let account_id = format!("{}-MAIN", entity_id);
+                let account_id = format!("{entity_id}-MAIN");
                 snapshot.cash_positions = cash_gen.generate(
                     entity_id,
                     &account_id,
@@ -4951,7 +4959,7 @@ impl EnhancedOrchestrator {
                 .collect();
 
             if let Some(pool) =
-                pool_gen.create_pool(&format!("{}_MAIN_POOL", entity_id), currency, &account_ids)
+                pool_gen.create_pool(&format!("{entity_id}_MAIN_POOL"), currency, &account_ids)
             {
                 // Generate sweeps - build participant balances from last cash position per account
                 let mut latest_balances: HashMap<String, rust_decimal::Decimal> = HashMap::new();
@@ -5066,7 +5074,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
         let company_code = self
             .config
@@ -5212,7 +5220,7 @@ impl EnhancedOrchestrator {
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 
         // Process evolution events
@@ -5261,7 +5269,7 @@ impl EnhancedOrchestrator {
         info!("Phase 24b: Generating Disruption Events");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 
         let company_codes: Vec<String> = self
@@ -5406,7 +5414,7 @@ impl EnhancedOrchestrator {
         info!("Phase 26b: Generating Collusion Rings");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let months = self.config.global.period_months;
 
         let employee_ids: Vec<String> = self
@@ -5430,7 +5438,10 @@ impl EnhancedOrchestrator {
         info!(
             "Collusion rings generated: {} rings, total members: {}",
             rings.len(),
-            rings.iter().map(|r| r.size()).sum::<usize>()
+            rings
+                .iter()
+                .map(datasynth_generators::fraud::CollusionRing::size)
+                .sum::<usize>()
         );
         self.check_resources_with_log("post-collusion-rings")?;
 
@@ -5454,7 +5465,7 @@ impl EnhancedOrchestrator {
         info!("Phase 27: Generating Bi-Temporal Vendor Version Chains");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         // Build a TemporalAttributeConfig from the user's config.
         // Since Phase 27 is already gated on temporal_attributes.enabled,
@@ -5563,7 +5574,7 @@ impl EnhancedOrchestrator {
         info!("Phase 28: Generating Entity Relationship Graph + Cross-Process Links");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         let company_code = self
             .config
@@ -5878,7 +5889,7 @@ impl EnhancedOrchestrator {
         info!("Phase 3b: Generating Opening Balances");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let fiscal_year = start_date.year();
 
         let industry = match self.config.global.industry {
@@ -5933,7 +5944,7 @@ impl EnhancedOrchestrator {
 
         let end_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map(|d| d + chrono::Months::new(self.config.global.period_months))
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         // Build GL balance map from journal entries using a balance tracker
         let tracker_config = BalanceTrackerConfig {
@@ -5949,7 +5960,16 @@ impl EnhancedOrchestrator {
             .map(|c| c.currency.clone())
             .unwrap_or_else(|| "USD".to_string());
         let mut tracker = RunningBalanceTracker::new_with_currency(tracker_config, recon_currency);
-        let _ = tracker.apply_entries(entries);
+        let validation_errors = tracker.apply_entries(entries);
+        if !validation_errors.is_empty() {
+            warn!(
+                error_count = validation_errors.len(),
+                "Balance tracker encountered validation errors during subledger reconciliation"
+            );
+            for err in &validation_errors {
+                debug!("Balance validation error: {:?}", err);
+            }
+        }
 
         let mut engine = datasynth_generators::ReconciliationEngine::new(
             datasynth_generators::ReconciliationConfig::default(),
@@ -6068,7 +6088,7 @@ impl EnhancedOrchestrator {
     /// Generate master data entities.
     fn generate_master_data(&mut self) -> SynthResult<()> {
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 
         let total = self.config.companies.len() as u64 * 5; // 5 entity types
@@ -6170,7 +6190,7 @@ impl EnhancedOrchestrator {
     /// Generate document flows (P2P and O2C).
     fn generate_document_flows(&mut self, flows: &mut DocumentFlowSnapshot) -> SynthResult<()> {
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         // Generate P2P chains
         // Cap at ~2 POs per vendor per month to keep spend concentration realistic
@@ -6330,7 +6350,7 @@ impl EnhancedOrchestrator {
         let pb = self.create_progress_bar(total, "Generating Journal Entries");
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let end_date = start_date + chrono::Months::new(self.config.global.period_months);
 
         let company_codes: Vec<String> = self
@@ -6946,7 +6966,7 @@ impl EnhancedOrchestrator {
                     .map(|o| format!("OP-{:04}", o.operation_number))
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             );
             // Link quality inspection if available (via reference_id matching order_id)
@@ -6994,7 +7014,7 @@ impl EnhancedOrchestrator {
                     .take(10)
                     .map(|t| t.transaction_id.to_string())
                     .collect();
-                let txn_ids: Vec<&str> = txn_strs.iter().map(|s| s.as_str()).collect();
+                let txn_ids: Vec<&str> = txn_strs.iter().map(std::string::String::as_str).collect();
                 let txn_amounts: Vec<rust_decimal::Decimal> = banking
                     .transactions
                     .iter()
@@ -7032,7 +7052,7 @@ impl EnhancedOrchestrator {
                     .map(|w| w.workpaper_id.to_string())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             )
             .with_evidence(
@@ -7044,7 +7064,7 @@ impl EnhancedOrchestrator {
                     .map(|e| e.evidence_id.to_string())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             )
             .with_risks(
@@ -7056,7 +7076,7 @@ impl EnhancedOrchestrator {
                     .map(|r| r.risk_id.to_string())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             )
             .with_findings(
@@ -7068,7 +7088,7 @@ impl EnhancedOrchestrator {
                     .map(|f| f.finding_id.to_string())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             )
             .with_judgments(
@@ -7080,7 +7100,7 @@ impl EnhancedOrchestrator {
                     .map(|j| j.judgment_id.to_string())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(std::string::String::as_str)
                     .collect(),
             );
             let start_time = base_datetime - chrono::Duration::days(120);
@@ -7282,7 +7302,7 @@ impl EnhancedOrchestrator {
 
         let end_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             .map(|d| d + chrono::Months::new(self.config.global.period_months))
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
 
         for company_code in &company_codes {
             if let Err(e) = tracker.validate_balance_sheet(company_code, end_date, None) {
@@ -7488,7 +7508,7 @@ impl EnhancedOrchestrator {
     /// - ISA 200: Professional judgment
     fn generate_audit_data(&mut self, entries: &[JournalEntry]) -> SynthResult<AuditSnapshot> {
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-            .map_err(|e| SynthError::config(format!("Invalid start_date: {}", e)))?;
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
         let fiscal_year = start_date.year() as u16;
         let period_end = start_date + chrono::Months::new(self.config.global.period_months);
 
@@ -8274,7 +8294,7 @@ impl EnhancedOrchestrator {
             "unified" => {
                 let exporter = RustGraphUnifiedExporter::new(UnifiedExportConfig::default());
                 let metadata = exporter.export(&hypergraph, &hg_dir).map_err(|e| {
-                    SynthError::generation(format!("Unified hypergraph export failed: {}", e))
+                    SynthError::generation(format!("Unified hypergraph export failed: {e}"))
                 })?;
                 (
                     metadata.num_nodes,
@@ -8286,7 +8306,7 @@ impl EnhancedOrchestrator {
                 // "native" or any unrecognized format → use existing exporter
                 let exporter = HypergraphExporter::new(HypergraphExportConfig::default());
                 let metadata = exporter.export(&hypergraph, &hg_dir).map_err(|e| {
-                    SynthError::generation(format!("Hypergraph export failed: {}", e))
+                    SynthError::generation(format!("Hypergraph export failed: {e}"))
                 })?;
                 (
                     metadata.num_nodes,
@@ -8438,8 +8458,7 @@ impl EnhancedOrchestrator {
         pb.set_style(
             ProgressStyle::default_bar()
                 .template(&format!(
-                    "{{spinner:.green}} {} [{{elapsed_precise}}] [{{bar:40.cyan/blue}}] {{pos}}/{{len}} ({{per_sec}})",
-                    message
+                    "{{spinner:.green}} {message} [{{elapsed_precise}}] [{{bar:40.cyan/blue}}] {{pos}}/{{len}} ({{per_sec}})"
                 ))
                 .expect("Progress bar template should be valid - uses only standard indicatif placeholders")
                 .progress_chars("#>-"),

@@ -118,7 +118,7 @@ impl ICMatchingEngine {
                 counterparty: debtor.to_string(),
                 amount,
                 is_receivable: true,
-                ic_reference: ic_reference.map(|s| s.to_string()),
+                ic_reference: ic_reference.map(std::string::ToString::to_string),
                 date,
                 matched: false,
             });
@@ -157,7 +157,7 @@ impl ICMatchingEngine {
                 counterparty: creditor.to_string(),
                 amount,
                 is_receivable: false,
-                ic_reference: ic_reference.map(|s| s.to_string()),
+                ic_reference: ic_reference.map(std::string::ToString::to_string),
                 date,
                 matched: false,
             });
@@ -494,7 +494,9 @@ impl ICMatchingEngine {
 /// An unmatched IC item for detailed matching.
 #[derive(Debug, Clone)]
 struct UnmatchedItem {
-    /// Company code (stored for diagnostics; matching uses counterparty + amount).
+    /// Company code — not used in matching logic (which keys on counterparty +
+    /// amount), but retained for `Debug` diagnostics and future reconciliation
+    /// report output.
     #[allow(dead_code)]
     company: String,
     /// Counterparty company code.

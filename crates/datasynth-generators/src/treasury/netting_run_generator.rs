@@ -6,8 +6,6 @@
 use std::collections::HashMap;
 
 use chrono::NaiveDate;
-use datasynth_core::utils::seeded_rng;
-use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 
 use datasynth_config::schema::NettingSchemaConfig;
@@ -19,20 +17,14 @@ use datasynth_core::models::{NettingCycle, NettingPosition, NettingRun, PayOrRec
 
 /// Generates intercompany netting runs from IC transaction amounts.
 pub struct NettingRunGenerator {
-    #[allow(dead_code)]
-    rng: ChaCha8Rng,
     config: NettingSchemaConfig,
     counter: u64,
 }
 
 impl NettingRunGenerator {
     /// Creates a new netting run generator.
-    pub fn new(config: NettingSchemaConfig, seed: u64) -> Self {
-        Self {
-            rng: seeded_rng(seed, 0),
-            config,
-            counter: 0,
-        }
+    pub fn new(config: NettingSchemaConfig, _seed: u64) -> Self {
+        Self { config, counter: 0 }
     }
 
     /// Generates netting runs from intercompany matched-pair amounts.

@@ -208,7 +208,7 @@ impl DepreciationRunGenerator {
                 let monthly_depr = a
                     .depreciation_areas
                     .first()
-                    .map(|area| area.calculate_monthly_depreciation())
+                    .map(datasynth_core::subledger::fa::DepreciationArea::calculate_monthly_depreciation)
                     .unwrap_or(Decimal::ZERO);
                 SimulatedAsset {
                     asset_number: a.asset_number.clone(),
@@ -223,7 +223,7 @@ impl DepreciationRunGenerator {
         let mut current_month = start_period.period;
 
         for _ in 0..months {
-            let period_key = format!("{}-{:02}", current_year, current_month);
+            let period_key = format!("{current_year}-{current_month:02}");
             let mut period_total = Decimal::ZERO;
 
             for sim_asset in &mut simulated_assets {
@@ -257,7 +257,9 @@ impl DepreciationRunGenerator {
 
 /// Simulated asset state for forecasting.
 struct SimulatedAsset {
-    // Retained for debugging/tracing individual asset forecast lines.
+    /// Asset number — not read during forecast computation but retained so
+    /// that debug/trace output can identify which asset a forecast line
+    /// belongs to.
     #[allow(dead_code)]
     asset_number: String,
     net_book_value: Decimal,
