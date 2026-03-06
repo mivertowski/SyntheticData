@@ -1392,7 +1392,7 @@ impl EnhancedOrchestrator {
                     );
                 }
                 ("global.period_months", ConfigValue::Integer(n)) => {
-                    config.global.period_months = *n as u32;
+                    config.global.period_months = (*n).clamp(1, 120) as u32;
                 }
                 ("global.start_date", ConfigValue::String(s)) => {
                     config.global.start_date = s.clone();
@@ -3684,7 +3684,7 @@ impl EnhancedOrchestrator {
         // revenue is negative (credit-normal), expenses are positive (debit-normal)
         // other_income is typically negative (credit), other_expenses is typically positive
         let operating_income = revenue - cogs - opex - other_expenses - other_income;
-        let tax_rate = Decimal::from_f64_retain(0.25).unwrap_or(Decimal::ZERO);
+        let tax_rate = Decimal::new(25, 2); // 0.25
         let tax = operating_income * tax_rate;
         operating_income - tax
     }
@@ -4415,7 +4415,7 @@ impl EnhancedOrchestrator {
             for company in &self.config.companies {
                 let pre_tax_income = rust_decimal::Decimal::from(1_000_000);
                 let statutory_rate = rust_decimal::Decimal::new(
-                    (self.config.tax.provisions.statutory_rate * 100.0) as i64,
+                    (self.config.tax.provisions.statutory_rate.clamp(0.0, 1.0) * 100.0) as i64,
                     2,
                 );
                 let provision = provision_gen.generate(
