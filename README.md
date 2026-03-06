@@ -1,12 +1,14 @@
-# SyntheticData
+# DataSynth
 
-[![Crates.io](https://img.shields.io/crates/v/datasynth-core.svg)](https://crates.io/crates/datasynth-core)
-[![Documentation](https://docs.rs/datasynth-core/badge.svg)](https://docs.rs/datasynth-core)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 [![CI](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml)
 
-A high-performance, configurable synthetic data generator for enterprise financial simulation. SyntheticData produces realistic, interconnected General Ledger journal entries, Chart of Accounts, SAP HANA-compatible ACDOCA event logs, document flows, subledger records, banking/KYC/AML transactions, OCEL 2.0 process mining data, ML-ready graph exports, and complete enterprise process chains (S2C sourcing, HR/payroll, manufacturing, financial reporting, tax accounting, treasury & cash management, project accounting, ESG/sustainability) at scale.
+**High-performance synthetic enterprise data generation for ML, audit analytics, and system testing.**
+
+DataSynth generates statistically realistic, fully interconnected enterprise financial data at scale. It produces coherent General Ledger journal entries, document flows, subledger records, banking transactions, process mining event logs, and graph exports — covering 20+ enterprise process families from Procure-to-Pay through ESG reporting.
+
+All generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
 
 **Developed by [Ernst & Young Ltd.](https://www.ey.com/ch), Zurich, Switzerland**
 
@@ -14,295 +16,206 @@ A high-performance, configurable synthetic data generator for enterprise financi
 
 ## Table of Contents
 
-- [SyntheticData](#syntheticdata)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Key Features](#key-features)
-    - [Core Data Generation](#core-data-generation)
-    - [Enterprise Simulation](#enterprise-simulation)
-    - [Machine Learning \& Analytics](#machine-learning--analytics)
-    - [Production Features](#production-features)
-    - [LLM-Augmented Generation](#llm-augmented-generation)
-    - [Diffusion Model Integration](#diffusion-model-integration)
-    - [Causal \& Counterfactual Generation](#causal--counterfactual-generation)
-    - [Ecosystem Integrations](#ecosystem-integrations)
-  - [Architecture](#architecture)
-  - [Installation](#installation)
-    - [From Source](#from-source)
-    - [Requirements](#requirements)
-  - [Quick Start](#quick-start)
-    - [Demo Mode](#demo-mode)
-  - [Configuration](#configuration)
-  - [Output Structure](#output-structure)
-  - [Use Cases](#use-cases)
-  - [Performance](#performance)
-  - [Server Usage](#server-usage)
-  - [Desktop UI](#desktop-ui)
-  - [Documentation](#documentation)
-  - [License](#license)
-  - [Support](#support)
-  - [Acknowledgments](#acknowledgments)
+- [Quick Start](#quick-start)
+- [Key Capabilities](#key-capabilities)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Output Structure](#output-structure)
+- [Python SDK](#python-sdk)
+- [Server & Deployment](#server--deployment)
+- [Desktop UI](#desktop-ui)
+- [Privacy-Preserving Fingerprinting](#privacy-preserving-fingerprinting)
+- [Use Cases](#use-cases)
+- [Performance](#performance)
+- [Documentation](#documentation)
+- [License](#license)
 
 ---
 
-## Overview
+## Quick Start
 
-SyntheticData generates coherent enterprise financial data that mirrors the characteristics of real corporate accounting systems. The generated data is suitable for:
+```bash
+# Build from source
+git clone https://github.com/ey-asu-rnd/SyntheticData.git
+cd SyntheticData
+cargo build --release
 
-- **Machine Learning Model Development**: Training fraud detection, anomaly detection, and graph neural network models
-- **Audit Analytics Testing**: Validating audit procedures and analytical tools with realistic data patterns
-- **SOX Compliance Testing**: Testing internal controls and segregation of duties monitoring systems
-- **System Integration Testing**: Load and stress testing for ERP and accounting platforms
-- **Process Mining**: Generating realistic event logs for process discovery and conformance checking
-- **Training and Education**: Providing realistic accounting data for professional development
+# Demo mode — generates a complete dataset with defaults
+./target/release/datasynth-data generate --demo --output ./demo-output
 
-The generator produces statistically accurate data based on empirical research from real-world general ledger patterns, ensuring that synthetic datasets exhibit the same characteristics as production data—including Benford's Law compliance, temporal patterns, and document flow integrity.
+# Or configure for your use case
+./target/release/datasynth-data init --industry manufacturing --complexity medium -o config.yaml
+./target/release/datasynth-data validate --config config.yaml
+./target/release/datasynth-data generate --config config.yaml --output ./output
+```
 
 ---
 
-## Key Features
+## Key Capabilities
 
-### Core Data Generation
+### Statistical Foundations
 
-| Feature | Description |
-|---------|-------------|
-| **Statistical Distributions** | Line item counts, amounts, and patterns based on empirical GL research |
-| **Mixture Models** | Gaussian and Log-Normal mixture distributions with weighted components |
-| **Copula Correlations** | Cross-field dependencies via Gaussian, Clayton, Gumbel, Frank, Student-t copulas |
-| **Benford's Law Compliance** | First and second-digit distribution following Benford's Law with anomaly injection |
-| **Regime Changes** | Economic cycles, acquisition effects, and structural breaks in time series |
-| **Industry Presets** | Manufacturing, Retail, Financial Services, Healthcare, Technology, and more |
-| **Chart of Accounts** | Small (~100), Medium (~400), Large (~2500) account structures |
-| **Temporal Patterns** | Month-end, quarter-end, year-end volume spikes with working hour modeling |
-| **Country Packs** | Pluggable JSON country packs (US, DE, GB built-in) with holidays, names, tax, address, phone, payroll — extensible via external directory |
+DataSynth models real-world financial data characteristics from the ground up:
 
-### Enterprise Simulation
+- **Distribution engine** — Log-normal mixtures, Gaussian mixtures, Pareto, Weibull, Beta, and zero-inflated distributions with configurable components
+- **Copula correlations** — Cross-field dependency modeling via Gaussian, Clayton, Gumbel, Frank, and Student-t copulas
+- **Benford's Law** — First and second-digit compliance with configurable deviation for anomaly injection
+- **Temporal patterns** — Month-end/quarter-end/year-end volume spikes, intraday segments, business day calendars (15 regions), processing lags, and fiscal calendar support
+- **Regime changes** — Economic cycles, acquisition effects, and structural breaks in time series
+- **Industry profiles** — Pre-configured distributions for Retail, Manufacturing, Financial Services, Healthcare, and Technology
 
-- **Master Data Management**: Vendors, customers, materials, fixed assets, employees with temporal validity
-- **Document Flow Engine**: Complete P2P (Procure-to-Pay) and O2C (Order-to-Cash) processes
-- **Source-to-Contract (S2C)**: Spend analysis → sourcing projects → supplier qualification → RFx → bids → evaluation → contracts → catalogs → scorecards
-- **Hire-to-Retire (H2R)**: Payroll runs with tax/deduction calculations, time & attendance tracking, expense report management
-- **Manufacturing**: Production orders with BOM explosion, routing operations, WIP costing, quality inspections, cycle counting
-- **Financial Reporting**: Balance sheet, income statement, cash flow statement, changes in equity with BS equation enforcement
-- **Sales Quotes**: Quote-to-order pipeline with win rate modeling and pricing negotiation
-- **Management KPIs & Budgets**: Financial ratio computation (liquidity, profitability, efficiency, leverage) and budget variance analysis
-- **Revenue Recognition**: ASC 606/IFRS 15 contract generation with performance obligations and standalone selling price allocation
-- **Impairment Testing**: Asset impairment workflow with fair value estimation and journal entry generation
-- **Intercompany Transactions**: IC matching, transfer pricing, consolidation eliminations
-- **Balance Coherence**: Opening balances, running balance tracking, trial balance generation
-- **Subledger Simulation**: AR, AP, Fixed Assets, Inventory with GL reconciliation
-- **Currency & FX**: Realistic exchange rates, currency translation, CTA generation
-- **Period Close Engine**: Monthly close, depreciation runs, accruals, year-end closing
-- **Bank Reconciliation**: Automated statement matching, outstanding checks, deposits in transit, net difference validation
-- **Country Pack Architecture**: Pluggable JSON-based country configuration with `_default.json` → country → override layering; built-in US/DE/GB packs; external pack directory for custom/commercial locales
-- **Banking/KYC/AML**: Customer personas, KYC profiles, AML typologies (structuring, funnel, mule, layering)
-- **Process Mining**: OCEL 2.0 and XES 2.0 event logs with object-centric relationships across 12 process families
-  - OCEL 2.0 JSON/XML export for object-centric process mining
-  - XES 2.0 XML export for ProM, Celonis, Disco, pm4py compatibility
-  - 101+ activity types across 12 process families: P2P, O2C, R2R/A2R, S2C, H2R, MFG, BANK, AUDIT, Tax, Treasury, Project Accounting, ESG
-  - 65+ object types with lifecycle states and relationships
-  - 10 OCPM generators: S2C (sourcing), H2R (payroll/time/expense), MFG (production/quality), BANK (customer/transactions), AUDIT (engagement lifecycle), Bank Recon (statement matching), Tax (returns/lines), Treasury (positions/forecasts/hedges), Project Accounting (projects/costs/milestones), ESG (emissions/disclosures)
-  - Three variant types per generator: HappyPath (75%), ExceptionPath (20%), ErrorPath (5%)
-- **Audit Simulation**: ISA-compliant engagements, workpapers, findings, risk assessments
-- **COSO 2013 Framework**: Full internal control framework with 5 components, 17 principles, and maturity levels
-- **Accounting Standards**: US GAAP, IFRS, French GAAP (PCG), and German GAAP (HGB/SKR04) support with ASC 606/IFRS 15 (revenue), ASC 842/IFRS 16 (leases), ASC 820/IFRS 13 (fair value), ASC 360/IAS 36 (impairment); generalized `FrameworkAccounts` maps ~45 semantic accounts per framework; FEC (French) and GoBD (German) audit exports; Degressiv depreciation and GWG low-value asset expensing for HGB
-- **Audit Standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance with deficiency classification
-- **Tax Accounting**: Tax jurisdictions (Federal/State/Local), tax codes with effective dates, tax line decoration on documents, VAT/GST/sales tax returns, ASC 740/IAS 12 provisions with deferred tax, FIN 48/IFRIC 23 uncertain positions, cross-border withholding with treaty benefits
-- **Treasury & Cash Management**: Daily cash positions, probability-weighted cash forecasts, cash pooling (physical/notional/zero-balance), hedging instruments (FX forwards, IR swaps, options) with ASC 815/IFRS 9 effectiveness, debt instruments with covenants & amortization, bank guarantees, intercompany netting
-- **Project Accounting**: Project WBS hierarchies, cost lines (labor/material/subcontractor/overhead), percentage-of-completion revenue recognition, earned value management (BCWS/BCWP/ACWP/SPI/CPI/EAC), milestones, change orders, retainage
-- **ESG / Sustainability**: GHG Protocol Scope 1/2/3 emissions, energy consumption with renewable tracking, water/waste management, workforce diversity & pay equity, safety incidents (TRIR/LTIR/DART), governance metrics, GRI/SASB/TCFD disclosures, supplier ESG assessments, climate scenario analysis
+### Enterprise Process Simulation
+
+Every process chain generates its own master data, documents, and journal entries — all cross-referenced:
+
+| Process Family | Scope |
+|----------------|-------|
+| **General Ledger** | Journal entries, chart of accounts (small/medium/large), ACDOCA event logs |
+| **Procure-to-Pay** | Purchase requisitions, POs, goods receipts, vendor invoices, payments, three-way match |
+| **Order-to-Cash** | Sales orders, deliveries, customer invoices, receipts, dunning |
+| **Source-to-Contract** | Spend analysis, sourcing projects, supplier qualification, RFx, bids, contracts, scorecards |
+| **Hire-to-Retire** | Payroll runs, tax/deduction calculations, time & attendance, expense reports, benefit enrollment |
+| **Manufacturing** | Production orders, BOM explosion, routing operations, WIP costing, quality inspections, cycle counts |
+| **Financial Reporting** | Balance sheet, income statement, cash flow, changes in equity, KPIs, budget variance |
+| **Tax Accounting** | Multi-jurisdiction tax (Federal/State/Local), VAT/GST returns, ASC 740/IAS 12 provisions, FIN 48 uncertain positions, withholding |
+| **Treasury** | Cash positioning, probability-weighted forecasts, cash pooling, hedging (ASC 815/IFRS 9), debt covenants, netting |
+| **Project Accounting** | WBS hierarchies, cost lines, percentage-of-completion revenue, earned value (SPI/CPI/EAC), change orders |
+| **ESG / Sustainability** | GHG Scope 1/2/3 emissions, energy/water/waste, workforce diversity, safety metrics, GRI/SASB/TCFD disclosures |
+| **Intercompany** | IC matching, transfer pricing, consolidation eliminations, currency translation |
+| **Subledgers** | AR, AP, Fixed Assets, Inventory — each with GL reconciliation |
+| **Period Close** | Monthly close engine, depreciation runs, accruals, year-end closing entries |
+| **Banking / KYC / AML** | Customer personas, KYC profiles, AML typologies (structuring, layering, mule, funnel) |
+| **Sales** | Quote-to-order pipeline with win rate modeling and pricing negotiation |
+| **Bank Reconciliation** | Statement matching, outstanding checks, deposits in transit |
+| **Audit** | ISA-compliant engagements, workpapers, evidence, risk assessments, findings |
+
+### Accounting & Audit Standards
+
+- **Accounting frameworks** — US GAAP, IFRS, French GAAP (PCG), German GAAP (HGB/SKR04), and dual reporting
+- **Revenue recognition** — ASC 606 / IFRS 15 with contract generation, performance obligations, and SSP allocation
+- **Leases** — ASC 842 / IFRS 16 with ROU assets, lease liabilities, and classification
+- **Fair value** — ASC 820 / IFRS 13 Level 1/2/3 hierarchy
+- **Impairment** — ASC 360 / IAS 36 testing with fair value estimation
+- **Audit standards** — ISA (34 standards), PCAOB (19+ standards) with procedure mapping
+- **SOX compliance** — Section 302/404 assessments with deficiency classification and material weakness detection
+- **COSO 2013** — 5 components, 17 principles, maturity levels, entity-level and transaction-level controls
+- **Localized exports** — FEC (French) and GoBD (German) audit file formats
 
 ### Interconnectivity & Relationships
 
-- **Multi-Tier Vendor Networks**: Tier1/Tier2/Tier3 supply chain modeling with parent-child hierarchies
-- **Vendor Clusters**: ReliableStrategic, StandardOperational, Transactional, Problematic behavioral segmentation
-- **Customer Value Segmentation**: Enterprise/MidMarket/SMB/Consumer with Pareto-like revenue distribution
-- **Customer Lifecycle**: Prospect, New, Growth, Mature, AtRisk, Churned, WonBack stages
-- **Relationship Strength**: Composite scoring from volume, count, duration, recency, and mutual connections
-- **Cross-Process Links**: P2P↔O2C linkage via inventory (GoodsReceipt connects to Delivery)
-- **Entity Graphs**: 16 entity types, 26 relationship types with graph metrics (connectivity, clustering, power law)
+- **Multi-tier vendor networks** — Tier 1/2/3 supply chain with behavioral clusters (Strategic, Operational, Transactional, Problematic)
+- **Customer segmentation** — Enterprise/MidMarket/SMB/Consumer with Pareto-like revenue distribution and lifecycle stages
+- **Relationship strength** — Composite scoring from volume, count, duration, recency, and mutual connections
+- **Cross-process links** — P2P and O2C linked via inventory; payments linked to bank reconciliation
+- **Entity graphs** — 16 entity types, 26 relationship types with connectivity and clustering metrics
 
-### Pattern & Process Drift
+### Fraud, Anomalies & Data Quality
 
-- **Organizational Events**: Acquisitions (volume multipliers, integration errors), divestitures, mergers, reorganizations
-- **Process Evolution**: S-curve automation rollout, workflow changes, policy updates, control enhancements
-- **Technology Transitions**: ERP migrations with phased rollout (parallel run, cutover, stabilization, hypercare)
-- **Behavioral Drift**: Vendor payment term extensions, customer payment delays, employee learning curves
-- **Market Drift**: Economic cycles (sinusoidal, asymmetric, mean-reverting), commodity price shocks, recession modeling
-- **Regulatory Events**: Accounting standard adoptions, tax rate changes, compliance requirement impacts
-- **Drift Detection Ground Truth**: Labeled drift events with magnitude and detection difficulty for ML training
+- **ACFE-aligned fraud taxonomy** — Asset misappropriation, corruption, and financial statement fraud with calibrated rates
+- **60+ anomaly types** — Fraud, errors, process issues, statistical outliers, and relational anomalies
+- **Collusion modeling** — 9 ring types with role-based conspirators, defection, and escalation dynamics
+- **Management override** — Senior-level fraud patterns with fraud triangle modeling
+- **Red flag generation** — 40+ probabilistic fraud indicators with Bayesian calibration
+- **Industry-specific patterns** — Manufacturing yield manipulation, retail sweethearting, healthcare upcoding
+- **Data quality variations** — Missing values (MCAR/MAR/MNAR), format variations, typos (keyboard-aware, OCR), duplicates, encoding issues
+- **Full labeling** — Every injected anomaly and quality issue is labeled for supervised ML training
 
-### Fraud Patterns & Industry-Specific Features
+### Process & Behavioral Drift
 
-- **ACFE-Aligned Fraud Taxonomy**: Fraud classification based on ACFE Report to the Nations statistics
-  - Asset Misappropriation (86% of cases): Cash fraud, billing schemes, expense reimbursement, payroll fraud
-  - Corruption (33% of cases): Conflicts of interest, bribery, kickbacks, bid rigging
-  - Financial Statement Fraud (10% of cases): Revenue manipulation, expense timing, improper disclosures
-- **Collusion & Conspiracy Modeling**: Multi-party fraud networks with coordinated schemes
-  - 9 ring types (EmployeePair, DepartmentRing, EmployeeVendor, VendorRing, etc.)
-  - Role-based conspirators (Initiator, Executor, Approver, Concealer, Lookout, Beneficiary)
-  - Defection and escalation modeling based on detection risk
-- **Management Override Patterns**: Senior-level fraud with override techniques and fraud triangle modeling
-- **Red Flag Generation**: 40+ probabilistic fraud indicators with calibrated Bayesian probabilities
-- **Industry-Specific Transactions**: Authentic transaction modeling per industry
-  - Manufacturing: Work orders, BOM, routings, production variances, WIP tracking
-  - Retail: POS sales, returns, inventory, promotions, shrinkage tracking
-  - Healthcare: Revenue cycle, charge capture, claims, ICD-10/CPT/DRG coding
-  - Technology: License revenue, subscription billing, R&D capitalization
-  - Financial Services: Loan origination, trading, customer deposits
-  - Professional Services: Time & billing, engagement management, trust accounts
-- **Industry-Specific Anomalies**: Authentic fraud patterns per industry
-  - Manufacturing: Yield manipulation, phantom production, obsolete inventory concealment
-  - Retail: Sweethearting, skimming, refund fraud, receiving fraud
-  - Healthcare: Upcoding, unbundling, phantom billing, physician kickbacks
-- **ACFE-Calibrated Benchmarks**: ML evaluation benchmarks aligned with ACFE statistics
+- **Organizational events** — Acquisitions, divestitures, mergers, reorganizations with volume multipliers
+- **Process evolution** — S-curve automation rollout, workflow changes, policy updates
+- **Technology transitions** — ERP migrations with phased rollout (parallel run, cutover, stabilization)
+- **Market drift** — Economic cycles, commodity price shocks, recession modeling
+- **Labeled drift events** — Ground truth labels with magnitude and detection difficulty for ML training
 
-### Machine Learning & Analytics
+### Machine Learning & Graph Export
 
-- **Graph Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats with train/val/test splits
-- **Multi-Layer Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning all 8 process families with OCPM events as hyperedges, 24 entity type codes (100-400), and cross-process edge linking
-- **Anomaly Injection**: 60+ fraud types, errors, process issues with full labeling
-- **Data Quality Variations**: Missing values, format variations, duplicates, typos
-- **Relationship Generation**: Configurable entity relationships with cardinality rules
-- **Industry Benchmarks**: Pre-configured benchmarks for fraud detection by industry
+- **Graph formats** — PyTorch Geometric (.pt), Neo4j (CSV + Cypher), DGL, RustGraph JSON
+- **Multi-layer hypergraph** — 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges
+- **Train/val/test splits** — Configurable data partitioning for ML pipelines
+- **Anomaly labels** — Fraud labels, quality issue labels, and drift labels in standardized format
+- **Counterfactual pairs** — (original, mutated) journal entry pairs for causal ML training
 
-### Privacy-Preserving Fingerprinting
+### Process Mining
 
-- **Fingerprint Extraction**: Extract statistical properties from real data into `.dsf` files
-- **Differential Privacy**: Laplace mechanism with configurable epsilon budget
-- **Formal DP Composition**: Rényi DP and zCDP accounting with tighter composition bounds
-- **K-Anonymity**: Suppression of rare categorical values
-- **Custom Privacy Levels**: Configurable (ε, δ) tuples with preset levels (minimal, standard, high, maximum)
-- **Privacy Budget Management**: Global budget tracking across multiple extraction runs
-- **Privacy Audit Trail**: Complete logging of all privacy decisions with composition metadata
-- **Fidelity Evaluation**: Wasserstein-1, Jensen-Shannon divergence, and KS statistics per column
-- **Privacy Evaluation**: Membership inference attack (MIA) testing, linkage attack assessment, NIST SP 800-226 alignment, SynQP matrix
-- **Federated Fingerprinting**: Extract partial fingerprints from distributed data sources and aggregate without centralizing raw data (weighted average, median, trimmed mean)
-- **Synthetic Data Certificates**: Cryptographic attestation of DP guarantees and quality metrics with HMAC-SHA256 signing and verification
-- **Pareto Privacy-Utility Frontier**: Explore and navigate the optimal tradeoff between privacy (epsilon) and data utility
+- **OCEL 2.0** — Object-centric event logs in JSON/XML format
+- **XES 2.0** — XML export compatible with ProM, Celonis, Disco, and pm4py
+- **101+ activity types** across 12 process families with 65+ object types
+- **10 OCPM generators** — S2C, H2R, MFG, BANK, AUDIT, Bank Recon, Tax, Treasury, Project Accounting, ESG
+- **Process variants** — Happy path (75%), exception path (20%), error path (5%)
 
-### LLM-Augmented Generation
+### Advanced Generation
 
-- **Provider Abstraction**: Pluggable `LlmProvider` trait with mock (deterministic) and HTTP (OpenAI-compatible) backends
-- **Metadata Enrichment**: LLM-generated vendor names, transaction descriptions, memo fields, and anomaly explanations
-- **Natural Language Configuration**: Generate YAML configs from plain English (e.g., "1 year of retail data for a German company")
-- **Response Caching**: In-memory LRU cache keyed by prompt hash for deduplication
-- **Graceful Fallback**: All enrichment falls back to template-based generation when LLM is disabled or unavailable
-
-### Diffusion Model Integration
-
-- **Backend Trait**: Extensible `DiffusionBackend` with forward (noise) and reverse (denoise) processes
-- **Noise Schedules**: Linear, cosine, and sigmoid schedules with precomputed alpha/beta values
-- **Statistical Diffusion**: Pure-Rust Langevin-inspired reverse process guided by fingerprint statistics (no ML framework dependency)
-- **Hybrid Generation**: Blend rule-based and diffusion outputs via interpolation, selection, or per-column ensemble strategies
-- **Training Pipeline**: Fit diffusion models from column statistics, persist as JSON, evaluate with mean/std/correlation error metrics
-
-### Causal & Counterfactual Generation
-
-- **Causal Graphs**: Directed acyclic graphs with linear, threshold, polynomial, and logistic mechanisms
-- **Structural Causal Models**: Generate samples respecting causal structure via topological traversal
-- **do-Calculus Interventions**: Fix variables to specific values and measure average treatment effects with confidence intervals
-- **Counterfactual Generation**: Abduction-action-prediction framework for "what-if" scenario analysis
-- **Causal Validation**: Verify edge correlations, non-edge weakness, and topological consistency
-- **Built-in Templates**: Pre-configured fraud detection and revenue cycle causal models
-- **Counterfactual Simulation Engine** (v0.10.0): Paired baseline/counterfactual dataset generation with causal DAG propagation
-  - 8 intervention types: ParameterShift, MacroShock, ControlFailure, EntityEvent, ProcessChange, RegulatoryChange, Composite, Custom
-  - CausalDAG with 8 transfer functions (Linear, Exponential, Logistic, Step, Threshold, Decay, Piecewise) and lag-aware propagation
-  - Default financial process DAG: 17 nodes (GDP, interest rates, transaction volume, control effectiveness, misstatement risk, etc.)
-  - DiffEngine: summary KPIs, record-level diffs, aggregate comparison between baseline and counterfactual
-  - CLI: `datasynth-data scenario {list, validate, generate, diff}`
-- **Unified Generation Pipeline** (v0.11.0): Multi-period, incremental, and streaming generation via `GenerationSession`
-  - Fiscal-year-aligned period splitting with `.dss` checkpoint files for session resume
-  - Incremental delta generation: `--append --months N` extends existing sessions
-  - 5 built-in fraud scenario packs: `--fraud-scenario revenue_fraud|payroll_ghost|vendor_kickback|management_override|comprehensive`
-  - Phase-aware streaming via `PhaseSink` trait with File (JSONL), HTTP, and no-op sinks
-  - OCEL 2.0 enrichment: lifecycle state machines (PO/SO/VendorInvoice), multi-object correlation events (ThreeWayMatch, PaymentAllocation, BankReconciliation), resource pool workload modeling
-
-### Ecosystem Integrations
-
-- **Apache Airflow**: `DataSynthOperator`, `DataSynthSensor`, and `DataSynthValidateOperator` for DAG-based orchestration
-- **dbt**: Source YAML generation, seed export, and project scaffolding from DataSynth output
-- **MLflow**: Track generation runs as experiments with parameters, metrics, and artifact logging
-- **Apache Spark**: Read DataSynth output as Spark DataFrames with schema inference and temp view registration
+| Capability | Description |
+|------------|-------------|
+| **LLM enrichment** | Pluggable `LlmProvider` trait (mock/OpenAI-compatible) for vendor names, descriptions, and anomaly explanations |
+| **Diffusion models** | Statistical diffusion with Langevin reverse process; linear/cosine/sigmoid schedules; hybrid blending |
+| **Causal models** | Structural causal models with do-calculus interventions and counterfactual abduction-action-prediction |
+| **Natural language config** | Generate YAML configurations from plain English descriptions |
+| **Scenario engine** | Built-in fraud packs: revenue_fraud, payroll_ghost, vendor_kickback, management_override, comprehensive |
+| **Counterfactual simulation** | 8 intervention types with causal DAG propagation and diff analysis |
 
 ### Production Features
 
-- **REST & gRPC APIs**: Streaming generation with Argon2id authentication and rate limiting
-- **JWT/OIDC Authentication**: RS256 JWT validation with Keycloak, Auth0, and Entra ID support (feature-gated)
-- **Role-Based Access Control**: Admin/Operator/Viewer roles with 7 permission types and structured JSON audit logging
-- **gRPC Auth Interceptor**: Bearer token validation for gRPC endpoints with API versioning headers
-- **Quality Gates**: Configurable pass/fail thresholds (strict/default/lenient) with 8 metrics and CLI enforcement
-- **Plugin SDK**: Extensible `GeneratorPlugin`, `SinkPlugin`, `TransformPlugin` traits with thread-safe registry
-- **Webhook Notifications**: Fire-and-forget event dispatch for RunStarted, RunCompleted, RunFailed, GateViolation
-- **EU AI Act Compliance**: Article 50 synthetic content marking and Article 10 data governance reports
-- **Compliance Documentation**: SOC 2 Type II readiness, ISO 27001 Annex A alignment, NIST AI RMF, GDPR templates
-- **Async Job Queue**: Submit/poll/cancel pattern for long-running generation jobs
-- **Security Hardening**: Security headers, request validation, request ID propagation, timing-safe auth
-- **TLS Support**: Native rustls TLS or reverse proxy (nginx/envoy) with documented configuration
-- **OpenTelemetry**: Feature-gated OTEL integration with OTLP traces and Prometheus metrics
-- **Structured Logging**: JSON-formatted logs with request IDs, method, path, status, and latency
-- **Docker & Compose**: Multi-stage distroless containers, local dev stack with Prometheus + Grafana
-- **Kubernetes Helm Chart**: Production-ready chart with HPA, PDB, optional Redis subchart, and Prometheus ServiceMonitor
-- **CI/CD Pipeline**: 7-job GitHub Actions (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
-- **Release Automation**: Binary builds for 5 platforms, GHCR container publishing, Trivy scanning
-- **Data Lineage & Provenance**: Per-file checksums, lineage graph, W3C PROV-JSON export, CLI `verify` command
-- **Distributed Rate Limiting**: Redis-backed sliding window rate limiting for multi-instance deployments
-- **Streaming Output API**: Async generation with backpressure handling (Block, DropOldest, DropNewest, Buffer)
-- **Rate Limiting**: Token bucket rate limiter for controlled generation throughput
-- **Load Testing**: k6 scripts for health, bulk generation, WebSocket, job queue, and soak testing
-- **Temporal Attributes**: Bi-temporal data support (valid time + transaction time) with version chains
-- **Desktop UI**: Cross-platform Tauri/SvelteKit application
-- **Resource Guards**: Memory, disk, and CPU monitoring with graceful degradation
-- **Panic-Free Library Crates**: `#![deny(clippy::unwrap_used)]` enforced across all library crates
-- **Fuzzing**: cargo-fuzz targets for config parsing, fingerprint loading, and validation
-- **Evaluation Framework**: Auto-tuning with quality gate enforcement and configuration recommendations
-- **Deterministic Generation**: Seeded RNG for reproducible output
+- **REST / gRPC / WebSocket APIs** with streaming generation and backpressure handling
+- **Authentication** — API key (Argon2id), JWT/OIDC (RS256), role-based access control (Admin/Operator/Viewer)
+- **Quality gates** — Configurable pass/fail thresholds (strict/default/lenient) with 8 metrics
+- **Plugin SDK** — `GeneratorPlugin`, `SinkPlugin`, `TransformPlugin` traits with thread-safe registry
+- **Resource guards** — Memory, disk, and CPU monitoring with graceful degradation (Normal → Reduced → Minimal → Emergency)
+- **Deterministic generation** — Seeded ChaCha8 RNG for fully reproducible output
+- **Streaming output** — Async generation with configurable backpressure (block/drop_oldest/drop_newest/buffer)
+- **Data lineage** — Per-file checksums, lineage graph, W3C PROV-JSON export
+- **Country packs** — Pluggable JSON country configuration (US/DE/GB built-in) with holidays, names, tax, addresses
+- **Observability** — OpenTelemetry traces, Prometheus metrics, structured JSON logging
+- **Docker & Kubernetes** — Multi-stage distroless containers, Helm chart with HPA/PDB, Prometheus ServiceMonitor
+- **CI/CD** — 7-job GitHub Actions pipeline (fmt, clippy, cross-platform test, MSRV, security, coverage, benchmarks)
+- **EU AI Act** — Article 50 synthetic content marking and Article 10 data governance reports
+- **Fuzzing** — cargo-fuzz targets for config parsing, fingerprint loading, and validation
+- **Panic-free** — `#![deny(clippy::unwrap_used)]` enforced across all library crates
+
+### Ecosystem Integrations
+
+| Integration | Capability |
+|-------------|------------|
+| **Apache Airflow** | `DataSynthOperator`, `DataSynthSensor`, `DataSynthValidateOperator` for DAG orchestration |
+| **dbt** | Source YAML generation, seed export, project scaffolding |
+| **MLflow** | Generation runs as experiments with parameter, metric, and artifact logging |
+| **Apache Spark** | DataFrames with schema inference and temp view registration |
 
 ---
 
 ## Architecture
 
-SyntheticData is organized as a Rust workspace with 16 modular crates:
+DataSynth is a Rust workspace organized into 15 modular crates:
 
 ```
-datasynth-cli          Command-line interface (binary: datasynth-data)
-datasynth-server       REST/gRPC/WebSocket server with auth and rate limiting
-datasynth-ui           Tauri/SvelteKit desktop application
-    │
-datasynth-runtime      Orchestration layer (parallel execution, resource guards)
-    │
-datasynth-generators   Data generators (JE, documents, subledgers, anomalies, audit)
-datasynth-banking      KYC/AML banking transaction generator
-datasynth-ocpm         Object-Centric Process Mining (OCEL 2.0, XES 2.0, 8 process families)
-datasynth-fingerprint  Privacy-preserving fingerprint extraction and synthesis
-datasynth-standards    Accounting/audit standards (IFRS, US GAAP, French GAAP, German GAAP, ISA, SOX, PCAOB)
-    │
-datasynth-graph        Graph/network export (PyTorch Geometric, Neo4j, DGL, RustGraph Multi-Layer Hypergraph)
-datasynth-eval         Evaluation framework with auto-tuning
-    │
-datasynth-config       Configuration schema, validation, industry presets
-    │
-datasynth-core         Domain models, traits, distributions, resource guards
-    │
-datasynth-output       Output sinks (CSV, JSON, NDJSON, Parquet/Zstd) with streaming support
-datasynth-test-utils   Test utilities, fixtures, mocks
+datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)
+datasynth-server         REST / gRPC / WebSocket server with auth and rate limiting
+datasynth-ui             Tauri + SvelteKit desktop application
+                │
+datasynth-runtime        Generation orchestrator (parallel execution, resource guards, streaming)
+                │
+datasynth-generators     50+ data generators across all process families
+datasynth-banking        KYC / AML banking transaction generator
+datasynth-ocpm           OCEL 2.0 / XES 2.0 process mining
+datasynth-fingerprint    Privacy-preserving fingerprint extraction and synthesis
+datasynth-standards      Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
+                │
+datasynth-graph          Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
+datasynth-eval           Statistical evaluation, quality gates, auto-tuning
+                │
+datasynth-config         Configuration schema, validation, industry presets
+                │
+datasynth-core           Domain models, traits, distributions, resource guards
+                │
+datasynth-output         Output sinks (CSV, JSON, NDJSON, Parquet + Zstd) with streaming
+datasynth-test-utils     Test utilities, fixtures, mocks
 ```
-
-See individual crate READMEs for detailed documentation.
 
 ---
 
 ## Installation
-
-### From crates.io
-
-```bash
-# Install the CLI tool
-cargo install datasynth-cli
-
-# Or add individual crates to your project
-cargo add datasynth-core datasynth-generators datasynth-config
-```
 
 ### From Source
 
@@ -314,64 +227,26 @@ cargo build --release
 
 The binary is available at `target/release/datasynth-data`.
 
-### Available Crates
-
-| Crate | Description |
-|-------|-------------|
-| [`datasynth-core`](https://crates.io/crates/datasynth-core) | Domain models, traits, distributions |
-| [`datasynth-config`](https://crates.io/crates/datasynth-config) | Configuration schema and validation |
-| [`datasynth-generators`](https://crates.io/crates/datasynth-generators) | Data generators |
-| [`datasynth-banking`](https://crates.io/crates/datasynth-banking) | KYC/AML banking transactions |
-| [`datasynth-fingerprint`](https://crates.io/crates/datasynth-fingerprint) | Privacy-preserving fingerprint extraction |
-| [`datasynth-standards`](https://crates.io/crates/datasynth-standards) | Accounting/audit standards (IFRS, US GAAP, French GAAP, German GAAP, ISA, SOX, PCAOB) |
-| [`datasynth-graph`](https://crates.io/crates/datasynth-graph) | Graph/network export |
-| [`datasynth-eval`](https://crates.io/crates/datasynth-eval) | Evaluation framework |
-| [`datasynth-runtime`](https://crates.io/crates/datasynth-runtime) | Orchestration layer |
-| [`datasynth-cli`](https://crates.io/crates/datasynth-cli) | Command-line interface |
-| [`datasynth-server`](https://crates.io/crates/datasynth-server) | REST/gRPC server |
-
 ### Requirements
 
-- Rust 1.88 or later
-- For the desktop UI: Node.js 18+ and platform-specific Tauri dependencies
-
----
-
-## Quick Start
-
-```bash
-# Generate a configuration file for a manufacturing company
-datasynth-data init --industry manufacturing --complexity medium -o config.yaml
-
-# Validate the configuration
-datasynth-data validate --config config.yaml
-
-# Generate synthetic data
-datasynth-data generate --config config.yaml --output ./output
-
-# View available presets and options
-datasynth-data info
-```
-
-### Demo Mode
-
-```bash
-# Quick demo with default settings
-datasynth-data generate --demo --output ./demo-output
-
-# Generate with graph export for ML training
-datasynth-data generate --demo --output ./demo-output --graph-export
-```
+- **Rust 1.88+**
+- **Desktop UI**: Node.js 18+ and platform-specific [Tauri prerequisites](https://tauri.app/start/prerequisites/)
 
 ---
 
 ## Configuration
 
-SyntheticData uses YAML configuration files with comprehensive options:
+DataSynth uses YAML configuration with 30+ top-level sections. Generate a starter config with `init`:
+
+```bash
+datasynth-data init --industry retail --complexity medium -o config.yaml
+```
+
+**Minimal configuration:**
 
 ```yaml
 global:
-  seed: 42                        # For reproducible generation
+  seed: 42
   industry: manufacturing
   start_date: 2024-01-01
   period_months: 12
@@ -382,445 +257,181 @@ companies:
     name: "Headquarters"
     currency: USD
     country: US
-    volume_weight: 1.0            # Transaction volume weight
 
 transactions:
   target_count: 100000
-  benford:
-    enabled: true
 
+output:
+  format: csv               # csv, json, parquet
+```
+
+**Enable specific modules by adding their sections:**
+
+```yaml
+# Fraud detection training data
 fraud:
   enabled: true
-  fraud_rate: 0.005               # 0.5% fraud rate
-
+  fraud_rate: 0.005
 anomaly_injection:
   enabled: true
   total_rate: 0.02
-  generate_labels: true           # For supervised learning
+  generate_labels: true
 
+# Graph export for GNN training
 graph_export:
   enabled: true
-  formats:
-    - pytorch_geometric
-    - neo4j
-    - rustgraph               # RustGraph/RustAssureTwin compatible JSON
-    - rustgraph_hypergraph    # 3-layer hypergraph JSONL for RustGraph
-  hypergraph:
-    enabled: true
-    max_nodes: 50000
-    aggregation_strategy: pool_by_counterparty
+  formats: [pytorch_geometric, neo4j]
 
-streaming:
-  enabled: true
-  buffer_size: 1000
-  backpressure: block         # block, drop_oldest, drop_newest, buffer
-
-rate_limit:
-  enabled: true
-  entities_per_second: 10000
-  burst_size: 100
-
+# Statistical realism
 distributions:
   enabled: true
-  industry_profile: retail        # retail, manufacturing, financial_services
+  industry_profile: retail
   amounts:
-    enabled: true
     distribution_type: lognormal
-    components:
-      - { weight: 0.60, mu: 6.0, sigma: 1.5, label: "routine" }
-      - { weight: 0.30, mu: 8.5, sigma: 1.0, label: "significant" }
-      - { weight: 0.10, mu: 11.0, sigma: 0.8, label: "major" }
     benford_compliance: true
   correlations:
     enabled: true
-    copula_type: gaussian         # gaussian, clayton, gumbel, frank, student_t
-    fields: [amount, line_items, approval_level]
-    matrix:
-      - [1.00, 0.65, 0.72]
-      - [0.65, 1.00, 0.55]
-      - [0.72, 0.55, 1.00]
-  regime_changes:
-    enabled: true
-    economic_cycle:
-      enabled: true
-      cycle_period_months: 48
-      amplitude: 0.15
-      recession_probability: 0.1
-  validation:
-    enabled: true
-    tests:
-      - { type: benford_first_digit, threshold_mad: 0.015 }
-      - { type: distribution_fit, target: lognormal, significance: 0.05 }
-      - { type: correlation_check, significance: 0.05 }
+    copula_type: gaussian
 
-accounting_standards:
+# Enterprise process chains
+document_flows:
   enabled: true
-  framework: us_gaap              # us_gaap, ifrs, dual_reporting
-  revenue_recognition:
-    enabled: true
-    generate_contracts: true
-  leases:
-    enabled: true
-    finance_lease_percent: 0.30
-
-audit_standards:
-  enabled: true
-  isa_compliance:
-    enabled: true
-    compliance_level: comprehensive
-    framework: dual               # isa, pcaob, dual
-  sox:
-    enabled: true
-    materiality_threshold: 10000.0
-
-# Enterprise Process Chain Extensions (v0.6.0)
 source_to_pay:
   enabled: true
-  sourcing:
-    projects_per_year: 20
-  qualification:
-    pass_rate: 0.80
-  rfx:
-    invited_vendors_min: 3
-    invited_vendors_max: 8
-  contracts:
-    duration_months_min: 12
-    duration_months_max: 36
-  scorecards:
-    frequency: quarterly
-
-financial_reporting:
-  enabled: true
-  generate_balance_sheet: true
-  generate_income_statement: true
-  generate_cash_flow: true
-  management_kpis:
-    enabled: true
-    frequency: monthly
-  budgets:
-    enabled: true
-    revenue_growth_rate: 0.05
-
 hr:
   enabled: true
-  payroll:
-    enabled: true
-    pay_frequency: monthly
-  time_attendance:
-    enabled: true
-    overtime_rate: 0.10
-  expenses:
-    enabled: true
-    submission_rate: 0.30
-
 manufacturing:
   enabled: true
-  production_orders:
-    orders_per_month: 50
-    yield_rate: 0.97
-  costing:
-    labor_rate_per_hour: 35.00
-    overhead_rate: 1.50
-
-sales_quotes:
+financial_reporting:
   enabled: true
-  quotes_per_month: 30
-  win_rate: 0.35
-  validity_days: 30
-
-vendor_network:
-  enabled: true
-  depth: 3                          # Tier1/Tier2/Tier3
-  clusters:
-    reliable_strategic: 0.20
-    standard_operational: 0.50
-    transactional: 0.25
-    problematic: 0.05
-  dependencies:
-    max_single_vendor_concentration: 0.15
-    top_5_concentration: 0.45
-
-customer_segmentation:
-  enabled: true
-  value_segments:
-    enterprise: { revenue_share: 0.40, customer_share: 0.05 }
-    mid_market: { revenue_share: 0.35, customer_share: 0.20 }
-    smb: { revenue_share: 0.20, customer_share: 0.50 }
-    consumer: { revenue_share: 0.05, customer_share: 0.25 }
-
-relationship_strength:
-  enabled: true
-  calculation:
-    transaction_volume_weight: 0.30
-    transaction_count_weight: 0.25
-    relationship_duration_weight: 0.20
-    recency_weight: 0.15
-    mutual_connections_weight: 0.10
-
-ocpm:
-  enabled: true
-  generate_lifecycle_events: true
-  compute_variants: true
-  output:
-    ocel_json: true               # OCEL 2.0 JSON format
-    ocel_xml: false               # OCEL 2.0 XML format
-    xes: true                     # XES 2.0 for ProM/Celonis/Disco
-    xes_include_lifecycle: true   # Include start/complete transitions
-    xes_include_resources: true   # Include resource attributes
-    export_reference_models: true # Export P2P/O2C/R2R reference models
-
-llm:
-  enabled: true
-  provider: mock                    # mock, openai, anthropic, custom
-  enrichment:
-    vendor_names: true
-    transaction_descriptions: true
-    anomaly_explanations: true
-
-diffusion:
-  enabled: true
-  n_steps: 100
-  schedule: cosine                  # linear, cosine, sigmoid
-  sample_size: 100
-
-causal:
-  enabled: true
-  template: fraud_detection         # fraud_detection, revenue_cycle
-  sample_size: 500
-  validate: true
-
-# Domain Extensions (v0.7.0)
-tax:
-  enabled: true
-  jurisdictions:
-    countries: [US, DE, GB]
-  vat_gst:
-    standard_rate: 0.19
-  provisions:
-    statutory_rate: 0.21
-
-treasury:
-  enabled: true
-  cash_positioning:
-    enabled: true
-  hedging:
-    enabled: true
-  debt:
-    enabled: true
-
-project_accounting:
-  enabled: true
-  project_count: 10
-  revenue_recognition:
-    method: percentage_of_completion
-  earned_value:
-    enabled: true
-
 esg:
   enabled: true
-  environmental:
-    scope1:
-      enabled: true
-    scope2:
-      enabled: true
-    scope3:
-      enabled: true
-  social:
-    diversity:
-      enabled: true
-    safety:
-      enabled: true
-  reporting:
-    frameworks: [gri, sasb, tcfd]
 
-output:
-  format: csv                       # csv, json, parquet
-  compression: none                 # none, gzip, zstd (parquet uses zstd by default)
+# Accounting standards
+accounting_standards:
+  enabled: true
+  framework: us_gaap         # us_gaap, ifrs, french_gaap, german_gaap, dual_reporting
+
+# Process mining
+ocpm:
+  enabled: true
+  output:
+    ocel_json: true
+    xes: true
 ```
 
-See the [Configuration Guide](docs/configuration.md) for complete documentation.
+**Industry presets** (manufacturing, retail, financial_services, healthcare, technology) and **complexity levels** (small ~100 accounts, medium ~400, large ~2500) provide sensible defaults.
+
+See the [Configuration Guide](docs/configuration.md) for the complete reference.
 
 ---
 
 ## Output Structure
 
+DataSynth generates 100+ interconnected output tables organized by domain:
+
 ```
 output/
-├── master_data/          Vendors, customers, materials, assets, employees
-├── transactions/         Journal entries, purchase orders, invoices, payments
-├── sourcing/             S2C sourcing pipeline outputs
-│   ├── sourcing_projects.csv
-│   ├── supplier_qualifications.csv
-│   ├── rfx_events.csv
-│   ├── supplier_bids.csv
-│   ├── bid_evaluations.csv
-│   ├── procurement_contracts.csv
-│   ├── catalog_items.csv
-│   └── supplier_scorecards.csv
-├── subledgers/           AR, AP, FA, inventory detail records
-├── hr/                   HR & payroll outputs
-│   ├── payroll_runs.csv
-│   ├── payslips.csv
-│   ├── time_entries.csv
-│   └── expense_reports.csv
-├── manufacturing/        Production & quality outputs
-│   ├── production_orders.csv
-│   ├── routing_operations.csv
-│   ├── quality_inspection_lots.csv
-│   └── cycle_count_records.csv
-├── period_close/         Trial balances, accruals, closing entries
-├── financial_reporting/  Financial statements & management reporting
-│   ├── balance_sheet.csv
-│   ├── income_statement.csv
-│   ├── cash_flow_statement.csv
-│   ├── changes_in_equity.csv
-│   ├── financial_kpis.csv
-│   └── budget_variance.csv
-├── sales/                Sales pipeline outputs
-│   ├── sales_quotes.csv
-│   └── sales_quote_items.csv
-├── consolidation/        Eliminations, currency translation
-├── fx/                   Exchange rates, CTA adjustments
-├── banking/              KYC profiles, bank transactions, AML typology labels
-│   ├── bank_statement_lines.csv
-│   ├── bank_reconciliations.csv
-│   └── reconciling_items.csv
-├── process_mining/       Event logs and process models
-│   ├── event_log.json    OCEL 2.0 JSON format
-│   ├── event_log.xes     XES 2.0 XML format (for ProM, Celonis, Disco)
-│   ├── process_variants/ Discovered process variants
-│   └── reference_models/ Canonical P2P, O2C, R2R process models
-├── audit/                Engagements, workpapers, findings, risk assessments
-├── graphs/               PyTorch Geometric, Neo4j, DGL, RustGraph exports
-│   └── hypergraph/       Multi-layer hypergraph (nodes.jsonl, edges.jsonl, hyperedges.jsonl)
-├── labels/               Anomaly, fraud, and data quality labels for ML
-├── tax/                 Tax accounting outputs
-│   ├── tax_jurisdictions.csv
-│   ├── tax_codes.csv
-│   ├── tax_lines.csv
-│   ├── tax_returns.csv
-│   ├── tax_provisions.csv
-│   ├── uncertain_tax_positions.csv
-│   └── withholding_records.csv
-├── treasury/            Treasury & cash management outputs
-│   ├── cash_positions.csv
-│   ├── cash_forecasts.csv
-│   ├── hedging_instruments.csv
-│   ├── debt_instruments.csv
-│   ├── netting_runs.csv
-│   └── bank_guarantees.csv
-├── project_accounting/  Project accounting outputs
-│   ├── projects.csv
-│   ├── wbs_elements.csv
-│   ├── project_cost_lines.csv
-│   ├── project_revenue.csv
-│   ├── earned_value_metrics.csv
-│   └── change_orders.csv
-├── esg/                 ESG / sustainability outputs
-│   ├── emission_records.csv
-│   ├── energy_consumption.csv
-│   ├── workforce_diversity_metrics.csv
-│   ├── safety_metrics.csv
-│   ├── esg_disclosures.csv
-│   └── supplier_esg_assessments.csv
-├── controls/             Internal controls, COSO mappings, SoD rules
-└── standards/            Accounting & audit standards outputs
-    ├── accounting/       Contracts, leases, fair value, impairment tests
-    └── audit/            ISA mappings, confirmations, opinions, SOX assessments
+├── master_data/            Vendors, customers, materials, fixed assets, employees
+├── transactions/           Journal entries, ACDOCA, purchase orders, invoices, payments
+├── sourcing/               S2C pipeline (projects, RFx, bids, contracts, scorecards)
+├── subledgers/             AR, AP, Fixed Assets, Inventory detail records
+├── hr/                     Payroll runs, payslips, time entries, expense reports
+├── manufacturing/          Production orders, routing, quality inspections, cycle counts
+├── period_close/           Trial balances, accruals, depreciation, closing entries
+├── financial_reporting/    Balance sheet, income statement, cash flow, KPIs, budgets
+├── sales/                  Sales quotes and line items
+├── consolidation/          IC eliminations, currency translation
+├── fx/                     Exchange rates, CTA adjustments
+├── banking/                KYC profiles, bank transactions, reconciliation, AML labels
+├── process_mining/         OCEL 2.0 JSON, XES 2.0, process variants, reference models
+├── audit/                  Engagements, workpapers, evidence, risks, findings
+├── graphs/                 PyTorch Geometric, Neo4j, DGL, RustGraph, hypergraph
+├── labels/                 Anomaly, fraud, quality, and drift labels for ML
+├── tax/                    Jurisdictions, codes, returns, provisions, withholding
+├── treasury/               Cash positions, forecasts, hedging, debt, netting
+├── project_accounting/     Projects, WBS, costs, revenue, earned value, change orders
+├── esg/                    Emissions, energy, diversity, safety, disclosures
+├── controls/               Internal controls, COSO mappings, SoD rules
+└── standards/              Accounting contracts/leases/impairment, audit ISA/SOX
 ```
 
 ---
 
-## Use Cases
+## Python SDK
 
-| Use Case | Description |
-|----------|-------------|
-| **Fraud Detection ML** | Train supervised models with labeled fraud patterns |
-| **Graph Neural Networks** | Entity relationship graphs for anomaly detection |
-| **AML/KYC Testing** | Banking transaction data with structuring, layering, mule patterns |
-| **Audit Analytics** | Test audit procedures with known control exceptions |
-| **Process Mining** | OCEL 2.0 and XES 2.0 event logs for process discovery and conformance checking |
-| **Conformance Checking** | Reference process models (P2P, O2C, R2R) for process validation |
-| **ERP Testing** | Load testing with realistic transaction volumes |
-| **Procurement Analytics** | Source-to-contract pipeline with spend analysis, RFx, bids, and supplier scorecards |
-| **HR & Payroll Testing** | Payroll runs, time tracking, expense management with policy compliance |
-| **Manufacturing Simulation** | Production orders, BOM explosion, WIP costing, quality inspections |
-| **Financial Reporting** | Balance sheet, income statement, cash flow, KPIs, and budget variance |
-| **Bank Reconciliation** | Statement matching, outstanding items, net difference validation |
-| **SOX Compliance** | Test internal control monitoring systems |
-| **COSO Framework** | COSO 2013 control mapping with 5 components, 17 principles, maturity levels |
-| **Standards Compliance** | IFRS/US GAAP revenue recognition, lease accounting, fair value, impairment testing |
-| **Audit Standards** | ISA/PCAOB procedure mapping, analytical procedures, confirmations, audit opinions |
-| **Data Quality ML** | Train models to detect missing values, typos, duplicates |
-| **RustGraph Integration** | Stream data directly to RustAssureTwin knowledge graphs |
-| **Hypergraph Analytics** | 3-layer hypergraph export (Governance, Process, Accounting) for multi-relational GNN models |
-| **Causal Analysis** | Generate interventional and counterfactual datasets for causal ML research |
-| **Tax Compliance Testing** | Tax return filing, ASC 740/IAS 12 provisions, withholding tax, uncertain positions |
-| **Treasury Operations** | Cash positioning, forecasting, hedging effectiveness, debt covenant monitoring |
-| **Project Cost Control** | WBS-based costing, earned value management, change order tracking, PoC revenue |
-| **ESG Reporting** | GHG Scope 1/2/3 emissions, diversity metrics, GRI/SASB/TCFD disclosures |
-| **LLM Training Data** | LLM-enriched metadata with realistic vendor names, descriptions, and explanations |
-| **Pipeline Orchestration** | Airflow operators, dbt sources, MLflow tracking, Spark DataFrames |
+```bash
+cd python && pip install -e ".[all]"
+```
 
----
+```python
+from datasynth_py import DataSynth
+from datasynth_py import to_pandas, to_polars, list_tables
+from datasynth_py.config import blueprints
 
-## Performance
+# Generate with a preset blueprint
+config = blueprints.retail_small(companies=4, transactions=10000)
+result = DataSynth().generate(config=config, output={"format": "csv", "sink": "temp_dir"})
 
-| Metric | Performance |
-|--------|-------------|
-| Single-threaded throughput | ~200,000+ entries/second |
-| Parallel scaling | Linear with available cores |
-| Memory efficiency | Streaming generation for large volumes |
+# Load as DataFrames
+tables = list_tables(result)                  # ['journal_entries', 'vendors', ...]
+df = to_pandas(result, "journal_entries")
+pl_df = to_polars(result, "vendors")
+
+# Async generation
+from datasynth_py import AsyncDataSynth
+async with AsyncDataSynth() as synth:
+    result = await synth.generate(config=config)
+
+# Fingerprint operations
+synth = DataSynth()
+synth.fingerprint.extract("./real_data/", "./fingerprint.dsf", privacy_level="standard")
+report = synth.fingerprint.evaluate("./fingerprint.dsf", "./synthetic/")
+```
+
+**Available blueprints:** `retail_small()`, `banking_medium()`, `manufacturing_large()`, `ml_training()`, `statistical_validation()`, `with_distributions()`, `with_llm_enrichment()`, `with_diffusion()`, `with_causal()`
+
+**Optional dependencies:** `[pandas]`, `[polars]`, `[jupyter]`, `[streaming]`, `[airflow]`, `[dbt]`, `[mlflow]`, `[spark]`, `[all]`
 
 ---
 
-## Server Usage
+## Server & Deployment
 
 ```bash
 # Start REST + gRPC server
-cargo run -p datasynth-server -- --rest-port 3000 --grpc-port 50051 --worker-threads 4
+cargo run -p datasynth-server -- --rest-port 3000 --grpc-port 50051
 
-# With API key authentication
+# With authentication
 cargo run -p datasynth-server -- --api-keys "key1,key2"
 
-# With JWT/OIDC authentication (requires jwt feature)
+# With JWT/OIDC (Keycloak, Auth0, Entra ID)
 cargo run -p datasynth-server --features jwt -- \
   --jwt-issuer "https://auth.example.com" \
-  --jwt-audience "datasynth-api" \
-  --jwt-public-key /path/to/public.pem
-
-# With RBAC and audit logging
-cargo run -p datasynth-server -- --api-keys "key1" --rbac-enabled --audit-log
-
-# With TLS (requires tls feature)
-cargo run -p datasynth-server --features tls -- --tls-cert cert.pem --tls-key key.pem
+  --jwt-audience "datasynth-api"
 ```
 
+**API endpoints:**
+
 ```bash
-# API endpoints
-curl http://localhost:3000/health              # Health check
-curl http://localhost:3000/ready               # Readiness probe (config + memory + disk)
-curl http://localhost:3000/metrics             # Prometheus metrics
-curl -H "Authorization: Bearer <key>" http://localhost:3000/api/config
+curl http://localhost:3000/health
+curl http://localhost:3000/ready
+curl http://localhost:3000/metrics
 curl -H "Authorization: Bearer <key>" -X POST http://localhost:3000/api/stream/start
 ```
 
-WebSocket streaming available at `ws://localhost:3000/ws/events`.
+WebSocket streaming: `ws://localhost:3000/ws/events`
 
-### Docker
+**Docker:**
 
 ```bash
-# Build and run the server
 docker build -t datasynth:latest .
-docker run -p 50051:50051 -p 3000:3000 datasynth:latest
+docker run -p 3000:3000 -p 50051:50051 datasynth:latest
 
-# Or use Docker Compose for full stack (server + Prometheus + Grafana)
+# Full stack with Prometheus + Grafana
 docker compose up -d
-# REST API: http://localhost:3000 | gRPC: localhost:50051
-# Prometheus: http://localhost:9090 | Grafana: http://localhost:3001
 ```
 
-See the [Deployment Guide](deploy/README.md) for Docker, SystemD, and reverse proxy setup.
+See the [Deployment Guide](deploy/README.md) for Docker, Kubernetes Helm chart, systemd, and reverse proxy configuration.
 
 ---
 
@@ -832,122 +443,61 @@ npm install
 npm run tauri dev
 ```
 
-The desktop application provides visual configuration, real-time streaming, and preset management.
-
-**Features:**
-- **40+ config pages** with form controls for every generation parameter
-- **Info cards** on feature pages explaining capabilities before enabling
-- **Sidebar navigation** with collapsible sections and scroll indicator for 10 section groups
-- **Web preview mode** — run `npm run dev` for config editing without Tauri; dashboard requires `npm run tauri dev`
-- **Visual regression testing** — 56 Playwright screenshot baselines for UI consistency
+Cross-platform Tauri + SvelteKit application with 40+ configuration pages, real-time streaming visualization, and preset management.
 
 ---
 
-## Fingerprinting
+## Privacy-Preserving Fingerprinting
 
-Extract privacy-preserving fingerprints from real data and generate matching synthetic data:
+Extract statistical fingerprints from real data with formal privacy guarantees, then generate matching synthetic data:
 
 ```bash
-# Extract fingerprint from CSV data
-datasynth-data fingerprint extract \
-    --input ./real_data.csv \
-    --output ./fingerprint.dsf \
-    --privacy-level standard
+# Extract with differential privacy
+datasynth-data fingerprint extract --input ./real_data.csv --output ./fp.dsf --privacy-level standard
 
-# Validate fingerprint
-datasynth-data fingerprint validate ./fingerprint.dsf
-
-# Show fingerprint info
-datasynth-data fingerprint info ./fingerprint.dsf --detailed
-
-# Compare fingerprints
-datasynth-data fingerprint diff ./fp1.dsf ./fp2.dsf
-
-# Evaluate synthetic data fidelity
-datasynth-data fingerprint evaluate \
-    --fingerprint ./fingerprint.dsf \
-    --synthetic ./synthetic_data/ \
-    --threshold 0.8
+# Validate and evaluate
+datasynth-data fingerprint validate ./fp.dsf
+datasynth-data fingerprint evaluate --fingerprint ./fp.dsf --synthetic ./synthetic/
 ```
 
-**Privacy Levels:**
+| Privacy Level | Epsilon (ε) | k-Anonymity | Description |
+|---------------|-------------|-------------|-------------|
+| minimal       | 5.0         | 3           | Higher utility, lower privacy |
+| standard      | 1.0         | 5           | Balanced (default) |
+| high          | 0.5         | 10          | Higher privacy |
+| maximum       | 0.1         | 20          | Maximum privacy |
 
-| Level | Epsilon | k | Use Case |
-|-------|---------|---|----------|
-| minimal | 5.0 | 3 | Low privacy, high utility |
-| standard | 1.0 | 5 | Balanced (default) |
-| high | 0.5 | 10 | Higher privacy |
-| maximum | 0.1 | 20 | Maximum privacy |
-
-See the [Fingerprinting Guide](docs/fingerprint/) for complete documentation.
+Features include Rényi DP and zCDP composition accounting, privacy budget management, federated fingerprinting for distributed data, membership inference attack testing, and cryptographic synthetic data certificates (HMAC-SHA256).
 
 ---
 
-## Python Wrapper
+## Use Cases
 
-A Python wrapper (v1.3.0) is available for programmatic access:
+| Domain | Application |
+|--------|-------------|
+| **Fraud Detection** | Train supervised models with ACFE-aligned labeled fraud patterns and collusion networks |
+| **Graph Neural Networks** | Entity relationship graphs with typed edges for anomaly detection |
+| **AML / KYC Testing** | Banking transactions with structuring, layering, and mule typologies |
+| **Audit Analytics** | Validate audit procedures with known control exceptions and ISA/PCAOB mappings |
+| **Process Mining** | OCEL 2.0 and XES 2.0 event logs for process discovery and conformance checking |
+| **ERP Load Testing** | Realistic transaction volumes with proper document chains |
+| **SOX Compliance** | Internal control monitoring with COSO 2013 mappings and deficiency classification |
+| **Causal ML Research** | Interventional and counterfactual datasets with causal DAG propagation |
+| **Data Quality ML** | Train models to detect missing values, format variations, typos, and duplicates |
+| **ESG Reporting** | GHG emissions, diversity metrics, and GRI/SASB/TCFD disclosure data |
+| **Tax Compliance** | Multi-jurisdiction tax returns, provisions, and withholding records |
+| **Treasury Operations** | Cash positioning, hedging effectiveness, and debt covenant monitoring |
 
-```bash
-cd python
-pip install -e ".[all]"    # Includes pandas, polars, jupyter, streaming
-```
+---
 
-```python
-from datasynth_py import DataSynth, AsyncDataSynth
-from datasynth_py import to_pandas, to_polars, list_tables
-from datasynth_py.config import blueprints
+## Performance
 
-# Basic generation
-config = blueprints.retail_small(companies=4, transactions=10000)
-synth = DataSynth()
-result = synth.generate(config=config, output={"format": "csv", "sink": "temp_dir"})
-print(result.output_dir)
-
-# DataFrame loading
-tables = list_tables(result)          # ['journal_entries', 'vendors', ...]
-df = to_pandas(result, "journal_entries")
-pl_df = to_polars(result, "vendors")
-
-# Async generation
-async with AsyncDataSynth() as synth:
-    result = await synth.generate(config=config)
-
-# Fingerprint operations
-synth.fingerprint.extract("./real_data/", "./fingerprint.dsf", privacy_level="standard")
-report = synth.fingerprint.evaluate("./fingerprint.dsf", "./synthetic/")
-print(f"Fidelity score: {report.overall_score}")
-```
-
-Optional dependencies: `[pandas]`, `[polars]`, `[jupyter]`, `[streaming]`, `[airflow]`, `[dbt]`, `[mlflow]`, `[spark]`, `[all]`.
-
-**Ecosystem Integrations:**
-
-```python
-from datasynth_py.config import blueprints
-
-# LLM-enriched generation
-config = blueprints.with_llm_enrichment(provider="mock")
-
-# Diffusion-enhanced generation
-config = blueprints.with_diffusion(schedule="cosine", hybrid_weight=0.3)
-
-# Causal data generation
-config = blueprints.with_causal(template="fraud_detection")
-
-# Airflow operator
-from datasynth_py.integrations.airflow import DataSynthOperator
-
-# dbt integration
-from datasynth_py.integrations.dbt import DbtSourceGenerator
-
-# MLflow tracking
-from datasynth_py.integrations.mlflow_tracker import DataSynthMlflowTracker
-
-# Spark connector
-from datasynth_py.integrations.spark import DataSynthSparkReader
-```
-
-See the [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md) for complete documentation.
+| Metric | Value |
+|--------|-------|
+| Single-threaded throughput | 200,000+ journal entries/second |
+| Parallel scaling | Linear with available CPU cores |
+| Memory model | Streaming generation with configurable backpressure |
+| Determinism | Fully reproducible via seeded ChaCha8 RNG |
 
 ---
 
@@ -956,15 +506,17 @@ See the [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md) for comple
 - [Configuration Guide](docs/configuration.md)
 - [API Reference](docs/api.md)
 - [Architecture Overview](docs/architecture.md)
-- [Python Wrapper Guide](docs/src/user-guide/python-wrapper.md)
+- [Python SDK Guide](docs/src/user-guide/python-wrapper.md)
+- [Deployment Guide](deploy/README.md)
+- [Fingerprinting Guide](docs/fingerprint/)
 - [Compliance & Regulatory](docs/src/compliance/README.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Contributing](CONTRIBUTING.md)
 
 ---
 
 ## License
 
-Copyright 2024-2026 Michael Ivertowski, Ernst & Young Ltd., Zurich, Switzerland
+Copyright 2024–2026 Michael Ivertowski, Ernst & Young Ltd., Zurich, Switzerland
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
@@ -972,14 +524,8 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for detai
 
 ## Support
 
-Commercial support, custom development, and enterprise licensing are available upon request. Please contact the author at [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com) for inquiries.
+Commercial support, custom development, and enterprise licensing are available. Contact [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com).
 
 ---
 
-## Acknowledgments
-
-This project incorporates research on statistical distributions in accounting data and implements industry-standard patterns for enterprise financial systems.
-
----
-
-*SyntheticData is provided "as is" without warranty of any kind. It is intended for testing, development, and educational purposes. Generated data should not be used as a substitute for real financial records.*
+*DataSynth is provided "as is" without warranty of any kind. It is intended for testing, development, and research purposes. Generated data should not be used as a substitute for real financial records.*
