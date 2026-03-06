@@ -1,6 +1,6 @@
 # Installation
 
-This guide covers installing SyntheticData from source.
+This guide covers installing DataSynth from source.
 
 ## Prerequisites
 

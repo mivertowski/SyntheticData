@@ -1,7 +1,7 @@
 [book]
-title = "SyntheticData Documentation"
+title = "DataSynth Documentation"
 authors = ["Michael Ivertowski", "Ernst & Young Ltd."]
-description = "Professional documentation for SyntheticData - High-performance synthetic enterprise financial data generator"
+description = "Professional documentation for DataSynth - High-performance synthetic enterprise financial data generator"
 language = "en"
 src = "src"
 

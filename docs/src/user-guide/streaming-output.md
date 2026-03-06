@@ -1,6 +1,6 @@
 # Streaming Output
 
-SyntheticData provides streaming output sinks for real-time data generation, enabling memory-efficient export of large datasets without loading everything into memory at once.
+DataSynth provides streaming output sinks for real-time data generation, enabling memory-efficient export of large datasets without loading everything into memory at once.
 
 ## Overview
 

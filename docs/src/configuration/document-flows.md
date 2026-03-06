@@ -37,7 +37,7 @@ Requisition → Order   → Receipt  → Invoice  → Match    → Payment
 
 ### Purchase Order Types
 
-SyntheticData models 6 PO types, each with different downstream behavior:
+DataSynth models 6 PO types, each with different downstream behavior:
 
 | Type | Description | Requires GR? | Use Case |
 |------|-------------|-------------|----------|
@@ -181,7 +181,7 @@ Revenue Recognition
 
 ### Sales Order Types
 
-SyntheticData models 9 SO types:
+DataSynth models 9 SO types:
 
 | Type | Description | Requires Delivery? |
 |------|-------------|-------------------|

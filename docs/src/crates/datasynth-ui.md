@@ -4,7 +4,7 @@ Cross-platform desktop application for synthetic data generation.
 
 ## Overview
 
-`datasynth-ui` provides a graphical interface for SyntheticData:
+`datasynth-ui` provides a graphical interface for DataSynth:
 
 - **Visual Configuration**: Comprehensive UI for all configuration sections
 - **Real-time Streaming**: Live generation viewer with WebSocket

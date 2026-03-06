@@ -1,6 +1,6 @@
 # Testing
 
-Testing guidelines and practices for SyntheticData.
+Testing guidelines and practices for DataSynth.
 
 ## Running Tests
 

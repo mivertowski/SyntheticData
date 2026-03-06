@@ -1,6 +1,6 @@
 # Accounting & Audit Standards
 
-SyntheticData includes comprehensive support for major accounting and auditing standards frameworks, enabling the generation of standards-compliant synthetic financial data suitable for audit analytics, compliance testing, and ML model training.
+DataSynth includes comprehensive support for major accounting and auditing standards frameworks, enabling the generation of standards-compliant synthetic financial data suitable for audit analytics, compliance testing, and ML model training.
 
 ## Overview
 

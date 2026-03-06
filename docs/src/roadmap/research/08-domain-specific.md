@@ -847,7 +847,7 @@ industry_terminology:
 
 ## Summary
 
-This research document series provides a comprehensive analysis of improvement opportunities for the SyntheticData system. Key themes across all documents:
+This research document series provides a comprehensive analysis of improvement opportunities for the DataSynth system. Key themes across all documents:
 
 1. **Depth over breadth**: Enhance existing features rather than adding new surface-level capabilities
 2. **Correlation modeling**: Move from independent generation to correlated, interconnected data

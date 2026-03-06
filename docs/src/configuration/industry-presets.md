@@ -1,6 +1,6 @@
 # Industry Presets
 
-SyntheticData includes pre-configured settings for common industries.
+DataSynth includes pre-configured settings for common industries.
 
 ## Using Presets
 

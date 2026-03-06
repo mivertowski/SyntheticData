@@ -1,6 +1,6 @@
 # Architecture
 
-SyntheticData is designed as a modular, high-performance data generation system.
+DataSynth is designed as a modular, high-performance data generation system.
 
 ## Overview
 
@@ -24,7 +24,7 @@ SyntheticData is designed as a modular, high-performance data generation system.
 
 | Characteristic | Description |
 |----------------|-------------|
-| **Modular** | 12 independent crates with clear boundaries |
+| **Modular** | 15 independent crates with clear boundaries |
 | **Layered** | Strict dependency hierarchy prevents cycles |
 | **High-Performance** | Parallel execution, memory-efficient streaming |
 | **Deterministic** | Seeded RNG for reproducible output |

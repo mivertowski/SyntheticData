@@ -1,6 +1,6 @@
 # Demo Mode
 
-Demo mode provides a quick way to explore SyntheticData without creating a configuration file. It uses sensible defaults to generate a complete synthetic dataset.
+Demo mode provides a quick way to explore DataSynth without creating a configuration file. It uses sensible defaults to generate a complete synthetic dataset.
 
 ## Running Demo Mode
 
@@ -149,7 +149,7 @@ datasynth-data generate --config config.yaml --output ./output
 ## Use Cases for Demo Mode
 
 ### Quick Exploration
-Test SyntheticData's capabilities before creating a custom configuration.
+Test DataSynth's capabilities before creating a custom configuration.
 
 ### Development Testing
 Generate test data quickly for development purposes.

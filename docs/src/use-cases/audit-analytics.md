@@ -4,7 +4,7 @@ Test audit procedures and analytical tools with realistic data.
 
 ## Overview
 
-SyntheticData generates comprehensive datasets for audit analytics:
+DataSynth generates comprehensive datasets for audit analytics:
 
 - Complete document trails
 - Known control exceptions

@@ -1,10 +1,10 @@
 # Resource Management
 
-How SyntheticData manages system resources during generation.
+How DataSynth manages system resources during generation.
 
 ## Overview
 
-Large-scale data generation can stress system resources. SyntheticData provides:
+Large-scale data generation can stress system resources. DataSynth provides:
 
 - **Memory Guard**: Cross-platform memory tracking with soft/hard limits
 - **Disk Space Guard**: Disk capacity monitoring and pre-write checks

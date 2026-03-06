@@ -1,6 +1,6 @@
 # Performance Tuning
 
-Optimize SyntheticData for your hardware and requirements.
+Optimize DataSynth for your hardware and requirements.
 
 ## Performance Characteristics
 

@@ -1,6 +1,6 @@
 # Interconnectivity and Relationship Modeling
 
-SyntheticData provides comprehensive relationship modeling capabilities for generating realistic enterprise networks with multi-tier vendor relationships, customer segmentation, relationship strength calculations, and cross-process linkages.
+DataSynth provides comprehensive relationship modeling capabilities for generating realistic enterprise networks with multi-tier vendor relationships, customer segmentation, relationship strength calculations, and cross-process linkages.
 
 ## Overview
 
@@ -10,7 +10,7 @@ Real enterprise data exhibits complex interconnections between entities:
 - Relationships vary in strength based on transaction history
 - Business processes connect (P2P and O2C link through inventory)
 
-SyntheticData models all of these patterns to produce realistic, interconnected data.
+DataSynth models all of these patterns to produce realistic, interconnected data.
 
 ---
 
@@ -61,7 +61,7 @@ Each stage has associated behaviors:
 
 ### Vendor Concentration Analysis
 
-SyntheticData tracks vendor concentration risks:
+DataSynth tracks vendor concentration risks:
 
 ```yaml
 dependencies:
@@ -168,7 +168,7 @@ P2P: Purchase Order → Goods Receipt → Vendor Invoice → Payment
 O2C: Sales Order → Delivery → Customer Invoice → Receipt
 ```
 
-When enabled, SyntheticData generates explicit `CrossProcessLink` records connecting:
+When enabled, DataSynth generates explicit `CrossProcessLink` records connecting:
 - `GoodsReceipt` (P2P) to `Delivery` (O2C) via inventory item
 
 ### Payment-Bank Reconciliation
@@ -316,7 +316,7 @@ cross_process_links:
 
 ## Network Evaluation
 
-SyntheticData includes network metrics evaluation:
+DataSynth includes network metrics evaluation:
 
 | Metric | Description | Typical Range |
 |--------|-------------|---------------|

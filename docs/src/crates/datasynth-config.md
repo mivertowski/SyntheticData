@@ -4,7 +4,7 @@ Configuration schema, validation, and industry presets for synthetic data genera
 
 ## Overview
 
-`datasynth-config` provides the configuration layer for SyntheticData:
+`datasynth-config` provides the configuration layer for DataSynth:
 
 - **Schema Definition**: Complete YAML configuration schema
 - **Validation**: Bounds checking, constraint validation, distribution sum verification

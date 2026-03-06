@@ -4,7 +4,7 @@ Train machine learning models for financial fraud detection.
 
 ## Overview
 
-SyntheticData generates labeled datasets for supervised fraud detection:
+DataSynth generates labeled datasets for supervised fraud detection:
 
 - 20+ fraud patterns with full labels
 - Graph representations for GNN models

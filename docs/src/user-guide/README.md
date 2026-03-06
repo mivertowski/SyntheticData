@@ -1,10 +1,10 @@
 # User Guide
 
-This section covers the different ways to use SyntheticData.
+This section covers the different ways to use DataSynth.
 
 ## Interfaces
 
-SyntheticData offers three interfaces:
+DataSynth offers three interfaces:
 
 | Interface | Use Case |
 |-----------|----------|
@@ -60,7 +60,7 @@ cd crates/datasynth-ui && npm run tauri dev
 
 ## Output Formats
 
-SyntheticData produces various output formats:
+DataSynth produces various output formats:
 - **CSV**: Standard tabular data
 - **JSON**: Structured data with nested objects
 - **ACDOCA**: SAP HANA Universal Journal format
@@ -87,7 +87,7 @@ See [Output Formats](output-formats.md) for details.
 - Prefer visual configuration
 - Want to explore options interactively
 - Need real-time monitoring
-- Are new to SyntheticData
+- Are new to DataSynth
 
 ## Next Steps
 

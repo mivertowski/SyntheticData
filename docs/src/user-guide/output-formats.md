@@ -1,6 +1,6 @@
 # Output Formats
 
-SyntheticData generates multiple file types organized into categories.
+DataSynth generates multiple file types organized into categories.
 
 ## Output Directory Structure
 
@@ -567,7 +567,7 @@ output:
 
 ## ERP-Specific Formats
 
-SyntheticData can export in native ERP table schemas:
+DataSynth can export in native ERP table schemas:
 
 | Format | Target ERP | Tables |
 |--------|-----------|--------|

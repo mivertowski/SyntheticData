@@ -1,6 +1,6 @@
 # Research: System Improvements for Enhanced Realism
 
-This research document series analyzes the current SyntheticData system and proposes comprehensive improvements across multiple dimensions to achieve greater realism, statistical validity, and domain authenticity.
+This research document series analyzes the current DataSynth system and proposes comprehensive improvements across multiple dimensions to achieve greater realism, statistical validity, and domain authenticity.
 
 ## Document Index
 
@@ -21,7 +21,7 @@ This research document series analyzes the current SyntheticData system and prop
 
 ### Current State Assessment
 
-The SyntheticData system is a mature, well-architected synthetic data generation platform with strong foundations in:
+The DataSynth system is a mature, well-architected synthetic data generation platform with strong foundations in:
 
 - **Deterministic generation** via ChaCha8 RNG with configurable seeds
 - **Domain modeling** with 50+ entity types across accounting, banking, and audit domains

@@ -4,7 +4,7 @@ Data generators for journal entries, master data, document flows, and anomalies.
 
 ## Overview
 
-`datasynth-generators` contains all data generation logic for SyntheticData:
+`datasynth-generators` contains all data generation logic for DataSynth:
 
 - **Core Generators**: Journal entries, chart of accounts, users
 - **Master Data**: Vendors, customers, materials, assets, employees

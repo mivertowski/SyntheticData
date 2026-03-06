@@ -1,6 +1,6 @@
 # Fraud Patterns & ACFE Taxonomy
 
-SyntheticData includes comprehensive fraud pattern modeling aligned with the Association of Certified Fraud Examiners (ACFE) Report to the Nations. This enables generation of realistic fraud scenarios for training machine learning models and testing audit analytics.
+DataSynth includes comprehensive fraud pattern modeling aligned with the Association of Certified Fraud Examiners (ACFE) Report to the Nations. This enables generation of realistic fraud scenarios for training machine learning models and testing audit analytics.
 
 ## ACFE Fraud Taxonomy
 
@@ -89,7 +89,7 @@ fraud:
 
 ## Collusion & Conspiracy Modeling
 
-SyntheticData models multi-party fraud networks with coordinated schemes:
+DataSynth models multi-party fraud networks with coordinated schemes:
 
 ### Collusion Ring Types
 

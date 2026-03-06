@@ -1,6 +1,6 @@
 # Use Cases
 
-Real-world applications for SyntheticData.
+Real-world applications for DataSynth.
 
 ## Overview
 

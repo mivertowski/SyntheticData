@@ -1,6 +1,6 @@
 # Server API
 
-SyntheticData provides a server component with REST, gRPC, and WebSocket APIs for application integration.
+DataSynth provides a server component with REST, gRPC, and WebSocket APIs for application integration.
 
 ## Starting the Server
 

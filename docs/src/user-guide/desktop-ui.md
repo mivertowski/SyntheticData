@@ -1,6 +1,6 @@
 # Desktop UI
 
-SyntheticData includes a cross-platform desktop application built with Tauri and SvelteKit.
+DataSynth includes a cross-platform desktop application built with Tauri and SvelteKit.
 
 ## Overview
 

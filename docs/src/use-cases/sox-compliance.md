@@ -4,7 +4,7 @@ Test internal control monitoring systems.
 
 ## Overview
 
-SyntheticData generates data for SOX 404 compliance testing:
+DataSynth generates data for SOX 404 compliance testing:
 
 - Internal control definitions
 - Control test evidence

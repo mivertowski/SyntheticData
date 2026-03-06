@@ -1,6 +1,6 @@
 # Configuration
 
-SyntheticData uses YAML configuration files to control all aspects of data generation.
+DataSynth uses YAML configuration files to control all aspects of data generation.
 
 ## Quick Start
 

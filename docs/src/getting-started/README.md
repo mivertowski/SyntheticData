@@ -1,18 +1,18 @@
 # Getting Started
 
-Welcome to SyntheticData! This section will help you get up and running quickly.
+Welcome to DataSynth! This section will help you get up and running quickly.
 
 ## What You'll Learn
 
-- **[Installation](installation.md)**: Set up SyntheticData on your system
+- **[Installation](installation.md)**: Set up DataSynth on your system
 - **[Quick Start](quick-start.md)**: Generate your first synthetic dataset
-- **[Demo Mode](demo-mode.md)**: Explore SyntheticData with built-in demo presets
+- **[Demo Mode](demo-mode.md)**: Explore DataSynth with built-in demo presets
 
 ## Prerequisites
 
 Before you begin, ensure you have:
 
-- **Rust 1.88+**: SyntheticData is written in Rust and requires the Rust toolchain
+- **Rust 1.88+**: DataSynth is written in Rust and requires the Rust toolchain
 - **Git**: For cloning the repository
 - **(Optional) Node.js 18+**: Required only for the desktop UI
 
@@ -29,7 +29,7 @@ cargo build --release
 
 ## First Steps
 
-The fastest way to explore SyntheticData is through demo mode:
+The fastest way to explore DataSynth is through demo mode:
 
 ```bash
 datasynth-data generate --demo --output ./demo-output
@@ -39,7 +39,7 @@ This generates a complete set of synthetic financial data using sensible default
 
 ## Architecture at a Glance
 
-SyntheticData generates interconnected financial data:
+DataSynth generates interconnected financial data:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -51,7 +51,7 @@ SyntheticData generates interconnected financial data:
 │  │   Data   │  │  Flows   │  │ Entries  │  │  Files   │     │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
 ├─────────────────────────────────────────────────────────────┤
-│  Output: CSV, JSON, Neo4j, PyTorch Geometric, ACDOCA        │
+│  Output: CSV, JSON, Parquet, Neo4j, PyTorch Geometric       │
 └─────────────────────────────────────────────────────────────┘
 ```
 

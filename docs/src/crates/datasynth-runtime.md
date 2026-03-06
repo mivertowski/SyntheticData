@@ -4,7 +4,7 @@ Runtime orchestration, parallel execution, and memory management.
 
 ## Overview
 
-`datasynth-runtime` provides the execution layer for SyntheticData:
+`datasynth-runtime` provides the execution layer for DataSynth:
 
 - **GenerationOrchestrator**: Coordinates the complete generation workflow
 - **Parallel Execution**: Multi-threaded generation with Rayon

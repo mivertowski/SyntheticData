@@ -1,6 +1,6 @@
 # Industry-Specific Features
 
-SyntheticData includes industry-specific transaction modeling with authentic terminology, master data structures, and anomaly patterns. Three industries have full generator implementations (Manufacturing, Retail, Healthcare), while three additional industries (Technology, Financial Services, Professional Services) are available as configuration presets with industry-appropriate GL structures and anomaly rates.
+DataSynth includes industry-specific transaction modeling with authentic terminology, master data structures, and anomaly patterns. Three industries have full generator implementations (Manufacturing, Retail, Healthcare), while three additional industries (Technology, Financial Services, Professional Services) are available as configuration presets with industry-appropriate GL structures and anomaly rates.
 
 ## Overview
 
@@ -368,7 +368,7 @@ industry_specific:
 
 ## Industry Benchmarks
 
-SyntheticData provides pre-configured ML benchmarks for each industry:
+DataSynth provides pre-configured ML benchmarks for each industry:
 
 ```rust
 // Get industry-specific benchmark

@@ -1,6 +1,6 @@
 # FX & Currency
 
-SyntheticData generates realistic foreign exchange rates, currency translation entries, and cumulative translation adjustments (CTA) for multi-currency enterprise simulation.
+DataSynth generates realistic foreign exchange rates, currency translation entries, and cumulative translation adjustments (CTA) for multi-currency enterprise simulation.
 
 ## Overview
 
@@ -104,7 +104,7 @@ This produces rates that:
 
 ### Translation Methods
 
-SyntheticData supports three standard currency translation methods:
+DataSynth supports three standard currency translation methods:
 
 #### Current Rate Method (ASC 830 / IAS 21 — default)
 

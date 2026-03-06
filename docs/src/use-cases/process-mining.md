@@ -4,7 +4,7 @@ Generate OCEL 2.0 event logs for process mining analysis across 8 enterprise pro
 
 ## Overview
 
-SyntheticData generates comprehensive process mining data:
+DataSynth generates comprehensive process mining data:
 
 - OCEL 2.0 compliant event logs with **88 activity types** and **52 object types**
 - **8 process families**: P2P, O2C, S2C, H2R, MFG, BANK, AUDIT, Bank Recon

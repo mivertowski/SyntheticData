@@ -1,6 +1,6 @@
 # Roadmap: Enterprise Simulation & ML Ground Truth
 
-This roadmap outlines completed features, planned enhancements, and the wave-based expansion strategy for enterprise process chain coverage.
+This roadmap documents the completed feature waves and outlines the direction for future development.
 
 ---
 
@@ -25,7 +25,7 @@ This roadmap outlines completed features, planned enhancements, and the wave-bas
 - **Internal controls**: COSO 2013 framework, SoD rules, 12 transaction + 6 entity controls
 - **Resource guards**: Memory, disk, CPU monitoring with graceful degradation
 - **REST/gRPC/WebSocket server** with authentication and rate limiting
-- **Desktop UI**: Tauri/SvelteKit with 15+ configuration pages
+- **Desktop UI**: Tauri/SvelteKit with configuration pages
 - **Python wrapper**: Programmatic access with blueprints and config validation
 
 ### v0.2.0 — Privacy & Standards
@@ -58,95 +58,100 @@ This roadmap outlines completed features, planned enhancements, and the wave-bas
 
 ### v0.5.0 — AI & Advanced Features
 
-- **LLM-augmented generation**: Pluggable provider abstraction (Mock, OpenAI, Anthropic) for realistic vendor names, descriptions, memo fields, and anomaly explanations
+- **LLM-augmented generation**: Pluggable provider abstraction for realistic vendor names, descriptions, and anomaly explanations
 - **Natural language configuration**: Generate YAML configs from descriptions
-- **Diffusion model backend**: Statistical diffusion with configurable noise schedules (linear, cosine, sigmoid) for learned distribution capture
+- **Diffusion model backend**: Statistical diffusion with configurable noise schedules
 - **Hybrid generation**: Blend rule-based and diffusion outputs
-- **Causal generation**: Structural Causal Models (SCMs), do-calculus interventions, counterfactual generation
-- **Built-in causal templates**: `fraud_detection` and `revenue_cycle` causal graphs
-- **Federated fingerprinting**: Secure aggregation (weighted average, median, trimmed mean) for distributed data sources
-- **Synthetic data certificates**: Cryptographic proof of DP guarantees with HMAC-SHA256 signing
+- **Causal generation**: Structural Causal Models, do-calculus interventions, counterfactual generation
+- **Federated fingerprinting**: Secure aggregation for distributed data sources
+- **Synthetic data certificates**: Cryptographic proof of DP guarantees with HMAC-SHA256
 - **Privacy-utility Pareto frontier**: Automated exploration of optimal epsilon values
 - **Ecosystem integrations**: Airflow, dbt, MLflow, Spark pipeline integration
 
----
+### v0.6.0–v0.8.x — Enterprise Process Chains & Localization
 
-## Planned Enhancements
+- **Source-to-Contract (S2C)**: Spend analysis, sourcing projects, supplier qualification, RFx, bids, evaluation, contracts, catalogs, scorecards
+- **Hire-to-Retire (H2R)**: Payroll runs, time & attendance, expense reports, benefit enrollment
+- **Manufacturing**: Production orders, BOM explosion, routing operations, WIP costing, quality inspections, cycle counting
+- **Universal OCPM**: 12 process families with 101+ activities and 65+ object types
+- **Country packs**: Pluggable JSON architecture with 10 built-in packs (US, DE, GB, FR, JP, CN, IN, IT, ES, CA)
+- **French GAAP (PCG)**: Plan Comptable General 2024 with FEC export
+- **German GAAP (HGB)**: SKR04 chart of accounts, Degressiv depreciation, GWG, GoBD export
+- **Generalized `FrameworkAccounts`**: ~45 semantic accounts per framework
 
-### Wave 1 — Foundation (enables everything else)
+### v0.9.0 — Performance & Quality
 
-These items close the most critical gaps and unblock downstream work.
+- ~2x single-threaded throughput via cached temporal CDF, fast Decimal, SmallVec, parallel generation
+- `ParallelGenerator` trait with deterministic seed splitting
+- RustGraph property mapping for 51 entity types, 28 relationship types with edge constraints
+- Comprehensive edge-case hardening across all crates
+- VAT line splitting, multipayment behavior, account-class fingerprinting
 
-| Item | Chain | Description | Dependencies |
-|------|-------|-------------|-------------|
-| **S2C completion** | S2P | Source-to-Contract: spend analysis, RFx, bid evaluation, contract management, catalog items, supplier scorecards | Extends existing P2P |
-| **Bank reconciliation** | BANK | Bank statement lines, auto-matching, reconciliation breaks, clearing | Validates all payment chains |
-| **Financial statement generator** | R2R | Balance sheet, income statement, cash flow statement from trial balance | Consumes all JE data |
+### v0.10.0–v0.11.0 — Scenarios & Streaming
 
-**Impact:** S2C creates a closed-loop procurement model. Bank reconciliation validates payment integrity across S2P and O2C. Financial statements provide the final reporting layer for R2R.
+- **Counterfactual simulation engine**: Causal DAG with 17 financial nodes, 8 transfer functions, paired baseline/counterfactual generation
+- **Scenario CLI**: `datasynth-data scenario {list, validate, generate, diff}`
+- **GenerationSession**: Multi-period generation with checkpoint files and incremental append
+- **Fraud scenario packs**: 5 built-in packs with deep-merge configuration
+- **StreamPipeline**: Phase-aware streaming via `PhaseSink` trait
+- **OCEL 2.0 enrichment**: Lifecycle state machines, correlation events, resource pool modeling
 
-### Wave 2 — Core Process Chains
+### v1.0.0 — Release
 
-| Item | Chain | Description | Dependencies |
-|------|-------|-------------|-------------|
-| **Payroll & time management** | H2R | Payroll runs, time entries, overtime, benefits, tax withholding | Employee master data |
-| **Revenue recognition generator** | O2C→R2R | Wire `CustomerContract` + `PerformanceObligation` models to SO/Invoice data | Existing ASC 606 models |
-| **Impairment generator** | A2R→R2R | Wire existing `ImpairmentTest` model to FA generator with JE output | Existing ASC 360 models |
-
-**Impact:** Payroll is the largest H2R gap and enables SoD analysis for personnel. Revenue recognition and impairment generators wire existing standards models into the generation pipeline.
-
-### Wave 3 — Operational Depth
-
-| Item | Chain | Description | Dependencies |
-|------|-------|-------------|-------------|
-| **Production orders & WIP** | MFG | Production order lifecycle, material consumption, WIP costing, variance analysis | Manufacturing industry config |
-| **Cycle counting & QA** | INV | Cycle count programs, quality inspection, inspection lots, vendor quality feedback | Inventory subledger |
-| **Expense management** | H2R | Expense reports, policy enforcement, receipt matching, reimbursement | Employee master data |
-
-**Impact:** Manufacturing becomes a fully simulated chain. Inventory completeness enables ABC analysis and obsolescence. Expenses extend H2R with AP integration.
-
-### Wave 4 — Polish
-
-| Item | Chain | Description | Dependencies |
-|------|-------|-------------|-------------|
-| **Sales quotes** | O2C | Quote-to-order conversion tracking (fills orphan `quote_id` FK) | O2C generator |
-| **Cash forecasting** | BANK | Projected cash flows from AP/AR schedules | AP/AR subledgers |
-| **KPIs & budget variance** | R2R | Management reporting, budget vs actual analysis | Financial statements |
-| **Obsolescence management** | INV | Slow-moving/excess stock identification and write-downs | Inventory aging |
-
-**Impact:** These items round out each chain with planning and reporting capabilities.
+- **Process evolution & organizational events**: Acquisitions, divestitures, mergers, reorganizations
+- **Disruption events**: Outage, migration, process change, recovery, regulatory disruption
+- **Collusion ring generation**: Coordinated fraud networks with escalation dynamics
+- **Bi-temporal vendor versioning**: Valid-time/transaction-time dimension version chains
+- **Entity relationship graph**: Strength scores and cross-process links
+- **Industry transaction factory**: Industry-specific GL accounts per vertical
+- **Red flag indicators**: Risk indicators on P2P/O2C document chains
+- **Counterfactual pairs**: (original, mutated) journal entry pairs for ML training
+- Performance optimizations, numeric safety hardening, code quality improvements
+- Complete crate metadata and documentation overhaul
 
 ---
 
-## Cross-Process Integration Vision
+## Process Coverage (v1.0.0)
 
-The wave plan steadily increases cross-process coverage:
-
-| Integration | Current | After Wave 1 | After Wave 2 | After Wave 4 |
-|-------------|---------|-------------|-------------|-------------|
-| S2P → Inventory | GR updates stock | Same | Same | Same |
-| Inventory → O2C | Delivery reduces stock | Same | Same | Obsolescence feeds write-downs |
-| S2P/O2C → BANK | Payments created | Payments reconciled | Same | Cash forecasting |
-| All → R2R | JEs → Trial Balance | JEs → Financial Statements | + Revenue recog, impairment | + Budget variance |
-| H2R → S2P | Employee authorizations | Same | Expense → AP | Same |
-| S2P → A2R | Capital PO → FA | Same | Same | Same |
-| MFG → S2P | Config only | Same | Production → PR demand | Same |
-| MFG → INV | Config only | Same | WIP → FG transfers | + QA feedback |
+| Process Chain | Coverage | Key Capabilities |
+|---------------|----------|------------------|
+| **S2P** (Source-to-Pay) | 95% | Full S2C + P2P + three-way match + bank reconciliation |
+| **O2C** (Order-to-Cash) | 99% | Quote → Order → Delivery → Invoice → Receipt → Dunning |
+| **R2R** (Record-to-Report) | 97% | GL → Trial Balance → Financial Statements → KPIs → Budgets |
+| **A2R** (Acquire-to-Retire) | 80% | FA lifecycle with 6 depreciation methods + impairment |
+| **INV** (Inventory) | 85% | 22 movement types, cycle counting, QA, obsolescence |
+| **BANK** | 90% | KYC/AML + reconciliation + cash positioning + forecasting |
+| **H2R** (Hire-to-Retire) | 75% | Payroll + time + expenses + benefits |
+| **MFG** (Manufacturing) | 60% | Production orders + BOM + routing + WIP + quality |
 
 ---
 
-## Coverage Targets
+## Cross-Process Integration
 
-| Chain | Current | Wave 1 | Wave 2 | Wave 3 | Wave 4 |
-|-------|---------|--------|--------|--------|--------|
-| S2P | 85% | 95% | 95% | 95% | 95% |
-| O2C | 93% | 93% | 97% | 97% | 99% |
-| R2R | 78% | 88% | 92% | 92% | 97% |
-| A2R | 70% | 70% | 80% | 80% | 80% |
-| INV | 55% | 55% | 55% | 75% | 85% |
-| BANK | 65% | 85% | 85% | 85% | 90% |
-| H2R | 30% | 30% | 60% | 75% | 75% |
-| MFG | 20% | 20% | 20% | 60% | 60% |
+| Integration | Status |
+|-------------|--------|
+| S2P → Inventory | GR updates stock levels |
+| Inventory → O2C | Delivery reduces stock |
+| S2P/O2C → BANK | Payments reconciled against bank statements |
+| All → R2R | JEs → Trial Balance → Financial Statements → Budget variance |
+| H2R → S2P | Employee authorizations, expense → AP |
+| S2P → A2R | Capital PO → Fixed Asset creation |
+| MFG → S2P | Production → purchase requisition demand |
+| MFG → INV | WIP → finished goods transfers, QA feedback |
+| P2P ↔ O2C | Cross-process links via inventory (GR → Delivery) |
+
+---
+
+## Future Directions
+
+With v1.0.0 delivering comprehensive enterprise coverage, future development focuses on:
+
+- **Deeper manufacturing simulation**: Full MES integration, shop floor scheduling, predictive maintenance data
+- **Advanced ESG**: Physical climate risk modeling, biodiversity metrics, Scope 3 Category 15 (investments)
+- **Real-time streaming**: Event-driven generation with Kafka/Pulsar sink support
+- **Multi-language NLP**: Multilingual LLM enrichment for non-English enterprise data
+- **Federated generation**: Distributed generation across nodes with privacy-preserving coordination
+- **Additional country packs**: LATAM, MENA, SEA region packs with local tax and regulatory compliance
 
 ---
 
@@ -159,17 +164,9 @@ The wave plan steadily increases cross-process coverage:
 
 ---
 
-## Dependencies & Risks
-
-- **Schema stability**: New models must not break existing serialization formats
-- **Performance**: Each wave adds generators; resource guards ensure stable memory/CPU
-- **Validation complexity**: Cross-chain coherence checks multiply as integration points increase
-
----
-
 ## Contributing
 
-We welcome contributions to any roadmap area. See [Contributing Guidelines](../contributing/README.md) for details.
+We welcome contributions to any area. See [Contributing Guidelines](../contributing/README.md) for details.
 
 To propose new features:
 1. Open a GitHub issue with the `enhancement` label
@@ -180,13 +177,13 @@ To propose new features:
 
 ## Feedback
 
-Roadmap priorities are influenced by user feedback. Please share your use cases and requirements:
+Priorities are influenced by user feedback. Please share your use cases and requirements:
 
 - GitHub Issues: Feature requests and bug reports
 - Email: [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com)
 
 ## See Also
 
-- [Process Chains](../architecture/process-chains.md) — Current process chain architecture and coverage matrix
+- [Process Chains](../architecture/process-chains.md) — Process chain architecture and coverage matrix
 - [S2P Spec](../../specs/s2p-process-chain-spec.md) — Source-to-Contract specification
 - [Process Chain Gaps](../../specs/enterprise-process-chain-gaps.md) — Detailed gap analysis

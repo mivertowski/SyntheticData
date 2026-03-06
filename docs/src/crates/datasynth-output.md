@@ -4,7 +4,7 @@ Output sinks for CSV, JSON, and streaming formats.
 
 ## Overview
 
-`datasynth-output` provides the output layer for SyntheticData:
+`datasynth-output` provides the output layer for DataSynth:
 
 - **CSV Sink**: High-performance CSV writing with optional compression
 - **JSON Sink**: JSON and JSONL (newline-delimited) output

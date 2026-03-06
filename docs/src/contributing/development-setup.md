@@ -1,6 +1,6 @@
 # Development Setup
 
-Set up your local development environment for SyntheticData.
+Set up your local development environment for DataSynth.
 
 ## Prerequisites
 
@@ -142,7 +142,7 @@ cargo doc --workspace --no-deps --open
 ## Project Structure
 
 ```
-SyntheticData/
+DataSynth/
 ├── crates/
 │   ├── datasynth-cli/          # CLI binary
 │   ├── datasynth-core/         # Core models and traits

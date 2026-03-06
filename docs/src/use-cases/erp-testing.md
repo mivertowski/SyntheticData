@@ -4,7 +4,7 @@ Generate high-volume data for ERP system testing.
 
 ## Overview
 
-SyntheticData generates realistic transaction volumes for:
+DataSynth generates realistic transaction volumes for:
 
 - Load testing
 - Stress testing

@@ -1,6 +1,6 @@
 # ERP Output Formats
 
-SyntheticData can export data in native ERP table formats, enabling direct load testing and integration validation against SAP S/4HANA, Oracle EBS, and NetSuite environments.
+DataSynth can export data in native ERP table formats, enabling direct load testing and integration validation against SAP S/4HANA, Oracle EBS, and NetSuite environments.
 
 ## Overview
 

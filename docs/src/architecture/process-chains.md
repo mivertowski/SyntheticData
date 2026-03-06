@@ -1,6 +1,6 @@
 # Enterprise Process Chains
 
-SyntheticData models enterprise operations as interconnected process chains — end-to-end business flows that share master data, generate journal entries, and link through common documents. This page maps the current implementation status and shows how the chains integrate.
+DataSynth models enterprise operations as interconnected process chains — end-to-end business flows that share master data, generate journal entries, and link through common documents. This page maps the current implementation status and shows how the chains integrate.
 
 ## Coverage Matrix
 

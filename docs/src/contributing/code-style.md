@@ -1,6 +1,6 @@
 # Code Style
 
-Coding standards and conventions for SyntheticData.
+Coding standards and conventions for DataSynth.
 
 ## Rust Style
 

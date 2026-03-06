@@ -1,6 +1,6 @@
 # Workspace Layout
 
-SyntheticData is organized as a Rust workspace with 15 crates following a layered architecture.
+DataSynth is organized as a Rust workspace with 15 crates following a layered architecture.
 
 ## Crate Hierarchy
 
@@ -58,7 +58,7 @@ datasynth-generators   datasynth-banking  datasynth-ocpm  datasynth-fingerprint 
 ## Directory Structure
 
 ```
-SyntheticData/
+DataSynth/
 ├── Cargo.toml              # Workspace manifest
 ├── crates/
 │   ├── datasynth-core/

@@ -1,6 +1,6 @@
 # Subledgers
 
-SyntheticData generates subsidiary ledger records for Accounts Receivable (AR), Accounts Payable (AP), Fixed Assets (FA), and Inventory, with automatic GL reconciliation and document flow linking.
+DataSynth generates subsidiary ledger records for Accounts Receivable (AR), Accounts Payable (AP), Fixed Assets (FA), and Inventory, with automatic GL reconciliation and document flow linking.
 
 ## Overview
 

@@ -4,7 +4,7 @@ REST, gRPC, and WebSocket server for synthetic data generation.
 
 ## Overview
 
-`datasynth-server` provides server-based access to SyntheticData:
+`datasynth-server` provides server-based access to DataSynth:
 
 - **REST API**: Configuration management and stream control
 - **gRPC API**: High-performance streaming generation

@@ -1,6 +1,6 @@
 # datasynth-test-utils
 
-Test utilities and helpers for the SyntheticData workspace.
+Test utilities and helpers for the DataSynth workspace.
 
 ## Overview
 

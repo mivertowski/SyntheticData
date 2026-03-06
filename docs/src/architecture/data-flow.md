@@ -1,6 +1,6 @@
 # Data Flow
 
-How data flows through the SyntheticData system.
+How data flows through the DataSynth system.
 
 ## High-Level Flow
 

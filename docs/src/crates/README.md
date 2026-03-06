@@ -1,6 +1,6 @@
 # Crate Reference
 
-SyntheticData is organized as a Rust workspace with 15 modular crates. This section provides detailed documentation for each crate.
+DataSynth is organized as a Rust workspace with 15 modular crates. This section provides detailed documentation for each crate.
 
 ## Workspace Structure
 

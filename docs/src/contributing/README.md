@@ -1,10 +1,10 @@
 # Contributing
 
-Welcome to the SyntheticData contributor guide.
+Welcome to the DataSynth contributor guide.
 
 ## Overview
 
-SyntheticData is an open-source project and we welcome contributions from the community. This section covers everything you need to know to contribute effectively.
+DataSynth is an open-source project and we welcome contributions from the community. This section covers everything you need to know to contribute effectively.
 
 ## Ways to Contribute
 
@@ -74,4 +74,4 @@ We are committed to providing a welcoming and inclusive environment. Please:
 
 ## License
 
-By contributing to SyntheticData, you agree that your contributions will be licensed under the project's MIT License.
+By contributing to DataSynth, you agree that your contributions will be licensed under the project's MIT License.

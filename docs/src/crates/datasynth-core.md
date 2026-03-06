@@ -4,7 +4,7 @@ Core domain models, traits, and distributions for synthetic accounting data gene
 
 ## Overview
 
-`datasynth-core` provides the foundational building blocks for the SyntheticData workspace:
+`datasynth-core` provides the foundational building blocks for the DataSynth workspace:
 
 - **Domain Models**: Journal entries, chart of accounts, master data, documents, anomalies
 - **Statistical Distributions**: Line item sampling, amount generation, temporal patterns
