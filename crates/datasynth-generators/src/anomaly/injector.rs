@@ -139,9 +139,7 @@ pub struct AnomalyInjector {
     type_selector: AnomalyTypeSelector,
     strategies: StrategyCollection,
     cluster_manager: ClusterManager,
-    /// Constructed from config; will be consumed when entity-aware injection
-    /// patterns are integrated into the main inject loop (v0.4.0 roadmap).
-    #[allow(dead_code)]
+    /// Selects target entities for anomaly injection (RepeatOffender, etc.).
     entity_targeting: EntityTargetingManager,
     /// Tracking which documents already have anomalies.
     document_anomaly_counts: HashMap<String, usize>,
@@ -156,13 +154,11 @@ pub struct AnomalyInjector {
     near_miss_generator: Option<NearMissGenerator>,
     /// Near-miss labels generated.
     near_miss_labels: Vec<NearMissLabel>,
-    /// Constructed when `correlated_injection_enabled`; will drive correlated
-    /// anomaly pairs once the co-occurrence integration pass lands.
-    #[allow(dead_code)]
+    /// Drives correlated anomaly pairs (e.g., FictitiousVendor + InvoiceManipulation).
     co_occurrence_handler: Option<AnomalyCoOccurrence>,
-    /// Constructed when `temporal_clustering_enabled`; will group anomalies
-    /// into temporal bursts once the clustering integration pass lands.
-    #[allow(dead_code)]
+    /// Queued correlated anomalies waiting to be injected.
+    queued_co_occurrences: Vec<QueuedAnomaly>,
+    /// Groups anomalies into temporal bursts during period-end windows.
     temporal_cluster_generator: Option<TemporalClusterGenerator>,
     /// Difficulty calculator.
     difficulty_calculator: Option<DifficultyCalculator>,
@@ -204,6 +200,18 @@ pub struct InjectorStats {
     pub skipped_company: usize,
     /// Entries skipped due to max-anomalies-per-document limit.
     pub skipped_max_per_doc: usize,
+}
+
+/// A correlated anomaly queued for future injection.
+struct QueuedAnomaly {
+    /// Anomaly type to inject.
+    anomaly_type: AnomalyType,
+    /// Target entity (if same_entity was specified in the co-occurrence pattern).
+    target_entity: Option<String>,
+    /// Earliest date this can be injected.
+    earliest_date: NaiveDate,
+    /// Description from the co-occurrence pattern.
+    description: String,
 }
 
 impl AnomalyInjector {
@@ -290,6 +298,7 @@ impl AnomalyInjector {
             near_miss_generator,
             near_miss_labels: Vec::new(),
             co_occurrence_handler,
+            queued_co_occurrences: Vec::new(),
             temporal_cluster_generator,
             difficulty_calculator,
             entity_aware_injector,
@@ -332,11 +341,37 @@ impl AnomalyInjector {
                 continue;
             }
 
-            // Calculate effective rate (temporal clustering is applied later per-type)
+            // --- Check queued co-occurrences first ---
+            let entry_date = entry.posting_date();
+            let ready_indices: Vec<usize> = self
+                .queued_co_occurrences
+                .iter()
+                .enumerate()
+                .filter(|(_, q)| entry_date >= q.earliest_date)
+                .map(|(i, _)| i)
+                .collect();
+
+            if let Some(&idx) = ready_indices.first() {
+                let queued = self.queued_co_occurrences.remove(idx);
+                if let Some(mut label) = self.inject_anomaly(entry, queued.anomaly_type) {
+                    label = label.with_metadata("co_occurrence", "true");
+                    label = label.with_metadata("co_occurrence_description", &queued.description);
+                    if let Some(ref target) = queued.target_entity {
+                        label = label.with_related_entity(target);
+                        label = label.with_metadata("co_occurrence_target", target);
+                    }
+                    modified_documents.push(entry.document_number().clone());
+                    self.labels.push(label);
+                    self.stats.total_injected += 1;
+                }
+                continue; // This entry was used for a queued co-occurrence
+            }
+
+            // Calculate effective rate
             let base_rate = self.config.rates.total_rate;
 
             // Calculate entity-aware rate adjustment using context lookup maps
-            let effective_rate = if let Some(ref injector) = self.entity_aware_injector {
+            let mut effective_rate = if let Some(ref injector) = self.entity_aware_injector {
                 let employee_id = &entry.header.created_by;
                 let first_account = entry
                     .lines
@@ -358,10 +393,20 @@ impl AnomalyInjector {
                 self.calculate_context_rate_multiplier(entry) * base_rate
             };
 
+            // --- Temporal clustering: boost rate during period-end windows ---
+            if let Some(ref tcg) = self.temporal_cluster_generator {
+                let temporal_multiplier = tcg
+                    .get_active_clusters(entry_date)
+                    .iter()
+                    .map(|c| c.rate_multiplier)
+                    .fold(1.0_f64, f64::max);
+                effective_rate = (effective_rate * temporal_multiplier).min(1.0);
+            }
+
             // Determine if we inject an anomaly
             if should_inject_anomaly(
                 effective_rate,
-                entry.posting_date(),
+                entry_date,
                 &self.config.patterns.temporal_pattern,
                 &mut self.rng,
             ) {
@@ -375,7 +420,7 @@ impl AnomalyInjector {
                         .unwrap_or_default();
                     near_miss_gen.record_transaction(
                         entry.document_number().clone(),
-                        entry.posting_date(),
+                        entry_date,
                         entry.total_debit(),
                         &account,
                         None,
@@ -384,7 +429,7 @@ impl AnomalyInjector {
                     // Check if this could be a near-miss
                     if let Some(near_miss_label) = near_miss_gen.check_near_miss(
                         entry.document_number().clone(),
-                        entry.posting_date(),
+                        entry_date,
                         entry.total_debit(),
                         &account,
                         None,
@@ -398,8 +443,35 @@ impl AnomalyInjector {
                 // Select anomaly category based on rates
                 let anomaly_type = self.select_anomaly_category();
 
+                // --- Entity targeting: select and track target entity ---
+                let target_entity = {
+                    let mut candidates: Vec<String> =
+                        self.vendor_contexts.keys().cloned().collect();
+                    candidates.extend(self.employee_contexts.keys().cloned());
+                    if candidates.is_empty() {
+                        // Fall back to entry's reference field as a candidate
+                        if let Some(ref r) = entry.header.reference {
+                            candidates.push(r.clone());
+                        }
+                    }
+                    self.entity_targeting
+                        .select_entity(&candidates, &mut self.rng)
+                };
+
                 // Apply the anomaly
-                if let Some(mut label) = self.inject_anomaly(entry, anomaly_type) {
+                if let Some(mut label) =
+                    self.inject_anomaly(entry, anomaly_type.clone())
+                {
+                    // Add entity targeting metadata
+                    if let Some(ref entity_id) = target_entity {
+                        label = label.with_metadata("entity_target", entity_id);
+                        label = label.with_related_entity(entity_id);
+                        label = label.with_causal_reason(AnomalyCausalReason::EntityTargeting {
+                            target_type: "Entity".to_string(),
+                            target_id: entity_id.clone(),
+                        });
+                    }
+
                     // Calculate detection difficulty if enabled
                     if let Some(ref calculator) = self.difficulty_calculator {
                         let difficulty = calculator.calculate(&label);
@@ -419,6 +491,25 @@ impl AnomalyInjector {
                     modified_documents.push(entry.document_number().clone());
                     self.labels.push(label);
                     self.stats.total_injected += 1;
+
+                    // --- Co-occurrence: queue correlated anomalies ---
+                    if let Some(ref co_occ) = self.co_occurrence_handler {
+                        let correlated =
+                            co_occ.get_correlated_anomalies(&anomaly_type, &mut self.rng);
+                        for result in correlated {
+                            self.queued_co_occurrences.push(QueuedAnomaly {
+                                anomaly_type: result.anomaly_type,
+                                target_entity: if result.same_entity {
+                                    target_entity.clone()
+                                } else {
+                                    None
+                                },
+                                earliest_date: entry_date
+                                    + chrono::Duration::days(i64::from(result.lag_days)),
+                                description: result.description,
+                            });
+                        }
+                    }
                 }
 
                 // Check for duplicate injection
