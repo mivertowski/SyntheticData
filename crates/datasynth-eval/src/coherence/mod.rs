@@ -60,7 +60,9 @@ pub use hr_payroll::{
     ExpenseReportData, HrPayrollEvaluation, HrPayrollEvaluator, HrPayrollThresholds,
     PayrollHoursData, PayrollLineItemData, PayrollRunData, TimeEntryData,
 };
-pub use intercompany::{ICMatchingData, ICMatchingEvaluation, ICMatchingEvaluator};
+pub use intercompany::{
+    ICMatchingData, ICMatchingEvaluation, ICMatchingEvaluator, UnmatchedICItem,
+};
 pub use manufacturing::{
     CycleCountData, ManufacturingEvaluation, ManufacturingEvaluator, ManufacturingThresholds,
     ProductionOrderData, QualityInspectionData, RoutingOperationData,

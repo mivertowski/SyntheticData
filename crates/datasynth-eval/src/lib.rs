@@ -78,7 +78,7 @@ pub use coherence::{
     EsgThresholds, ExpenseReportData, FairValueEvaluation, FinancialReportingEvaluation,
     FinancialReportingEvaluator, FinancialStatementData, FrameworkViolation, GovernanceData,
     HedgeEffectivenessData, HolidayData, HrPayrollEvaluation, HrPayrollEvaluator, ICMatchingData,
-    ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation, IsaComplianceEvaluation,
+    ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation, IsaComplianceEvaluation, UnmatchedICItem,
     KpiData, LeaseAccountingEvaluation, LeaseAccountingEvaluator, LeaseEvaluation,
     ManufacturingEvaluation, ManufacturingEvaluator, MaterialityData, NettingData, NetworkEdge,
     NetworkEvaluation, NetworkEvaluator, NetworkNode, NetworkThresholds, O2CChainData,
