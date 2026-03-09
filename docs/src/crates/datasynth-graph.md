@@ -6,9 +6,10 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 
 `datasynth-graph` provides graph construction and export capabilities:
 
-- **Graph Builders**: Transaction, approval, entity relationship, and multi-layer hypergraph builders
-- **Graph Property Mapping**: `ToNodeProperties` trait bridge via `GraphNode::from_entity()` for typed model→graph node conversion with 51 entity types
-- **Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 10 process families with 51 entity type codes and OCPM event hyperedges
+- **Graph Builders**: Transaction, approval, entity relationship, compliance, and multi-layer hypergraph builders
+- **Graph Property Mapping**: `ToNodeProperties` trait bridge via `GraphNode::from_entity()` for typed model→graph node conversion with 55+ entity types
+- **Hypergraph**: 3-layer hypergraph (Governance, Process Events, Accounting Network) spanning 10 process families with 55+ entity type codes, OCPM event hyperedges, and compliance regulation nodes
+- **Compliance Graph**: Cross-domain linking of standards to GL accounts, internal controls, companies, and business processes
 - **ML Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats
 - **Feature Engineering**: Temporal, amount, structural, and categorical features
 - **Data Splits**: Train/validation/test split generation
@@ -20,6 +21,7 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 | Transaction Network | Accounts, Entities | Transactions | Anomaly detection |
 | Approval Network | Users | Approvals | SoD analysis |
 | Entity Relationship | Legal Entities | Ownership | Consolidation analysis |
+| Compliance Network | Standards, Findings, Filings, Jurisdictions | GovernedByStandard, ImplementsStandard, FiledByCompany, FindingAffects* | Compliance coverage, risk propagation |
 
 ## Export Formats
 
@@ -301,10 +303,53 @@ The hypergraph builder supports all enterprise process families:
 | `add_audit_documents()` | AUDIT | AuditEngagement, Workpaper, AuditFinding, AuditEvidence |
 | `add_bank_recon_documents()` | Bank Recon | BankReconciliation, BankStatementLine, ReconcilingItem |
 | `add_ocpm_events()` | OCPM | Events as hyperedges (entity type 400) |
+| `add_compliance_regulations()` | Compliance | ComplianceStandard (Layer 1), ComplianceFinding, RegulatoryFiling (Layer 2) |
+
+## Compliance Graph Builder (v1.1.0)
+
+`ComplianceGraphBuilder` creates a standalone compliance network with cross-domain edges:
+
+```rust
+use datasynth_graph::{ComplianceGraphBuilder, ComplianceGraphConfig, AccountLinkInput, ControlLinkInput, FilingNodeInput};
+
+let config = ComplianceGraphConfig {
+    include_account_links: true,
+    include_control_links: true,
+    include_company_links: true,
+    ..Default::default()
+};
+let mut builder = ComplianceGraphBuilder::new(config);
+
+// Add standards, jurisdictions, procedures, findings
+builder.add_standards(&standard_inputs);
+builder.add_jurisdictions(&jurisdiction_inputs);
+builder.add_findings(&finding_inputs);
+
+// Cross-domain: link standards to GL accounts
+builder.add_account_links(&account_links);
+
+// Cross-domain: link standards to internal controls
+builder.add_control_links(&control_links);
+
+// Cross-domain: link filings to companies
+builder.add_filings(&filing_inputs);
+
+let graph = builder.build();
+```
+
+### Traversal Paths
+
+The compliance graph enables traversal across the full enterprise:
+
+```
+Company → Filing → Jurisdiction → Standard → Account → JournalEntry
+                                           → Control → Finding
+```
 
 ## See Also
 
 - [Graph Export](../advanced/graph-export.md)
 - [Process Mining](../use-cases/process-mining.md)
 - [Fraud Detection Use Case](../use-cases/fraud-detection.md)
+- [Compliance Configuration](../configuration/compliance.md)
 - [datasynth-generators](datasynth-generators.md)

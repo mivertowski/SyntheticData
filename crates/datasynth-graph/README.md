@@ -6,7 +6,8 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 
 `datasynth-graph` provides graph construction and export capabilities:
 
-- **Graph Builders**: Transaction, approval, entity relationship, and multi-layer hypergraph builders
+- **Graph Builders**: Transaction, approval, entity relationship, compliance, and multi-layer hypergraph builders
+- **Compliance Graph**: Cross-domain linking of standards to GL accounts, internal controls, companies, and business processes with full enterprise graph traversal
 - **ML Export**: PyTorch Geometric, Neo4j, DGL, RustGraph, and RustGraph Hypergraph formats
 - **Unified Config**: `CommonExportConfig` shared across all ML exporters for consistent feature/label/mask settings
 - **Feature Engineering**: Temporal, amount, structural, and categorical features
@@ -19,6 +20,8 @@ Graph/network export for synthetic accounting data with ML-ready formats.
 | Transaction Network | Accounts, Entities | Transactions | Anomaly detection |
 | Approval Network | Users | Approvals | SoD analysis |
 | Entity Relationship | Legal Entities | Ownership | Consolidation analysis |
+| Compliance Network | Standards, Findings, Filings, Jurisdictions | GovernedByStandard, ImplementsStandard, FiledByCompany | Compliance coverage, risk propagation |
+| Multi-Layer Hypergraph | 55+ entity types across 10+ families | 36+ edge types | Enterprise-wide analysis |
 
 ## Export Formats
 

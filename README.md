@@ -90,7 +90,7 @@ Every process chain generates its own master data, documents, and journal entrie
 | **Bank Reconciliation** | Statement matching, outstanding checks, deposits in transit |
 | **Audit** | ISA-compliant engagements, workpapers, evidence, risk assessments, findings |
 
-### Accounting & Audit Standards
+### Accounting, Audit & Compliance Standards
 
 - **Accounting frameworks** — US GAAP, IFRS, French GAAP (PCG), German GAAP (HGB/SKR04), and dual reporting
 - **Revenue recognition** — ASC 606 / IFRS 15 with contract generation, performance obligations, and SSP allocation
@@ -100,6 +100,8 @@ Every process chain generates its own master data, documents, and journal entrie
 - **Audit standards** — ISA (34 standards), PCAOB (19+ standards) with procedure mapping
 - **SOX compliance** — Section 302/404 assessments with deficiency classification and material weakness detection
 - **COSO 2013** — 5 components, 17 principles, maturity levels, entity-level and transaction-level controls
+- **Compliance regulations** — 45+ built-in standards registry, jurisdiction profiles (10 countries), regulatory filings, audit procedures, and compliance findings with full deficiency classification
+- **Cross-domain compliance graph** — Standards linked to GL account types and business processes; full traversal paths (Company → Jurisdiction → Standard → Account → JournalEntry)
 - **Localized exports** — FEC (French) and GoBD (German) audit file formats
 
 ### Interconnectivity & Relationships
@@ -109,6 +111,7 @@ Every process chain generates its own master data, documents, and journal entrie
 - **Relationship strength** — Composite scoring from volume, count, duration, recency, and mutual connections
 - **Cross-process links** — P2P and O2C linked via inventory; payments linked to bank reconciliation
 - **Entity graphs** — 16 entity types, 26 relationship types with connectivity and clustering metrics
+- **Compliance-to-accounting links** — Standards mapped to GL account types and processes; findings linked to controls and affected accounts; filings linked to companies and jurisdictions
 
 ### Fraud, Anomalies & Data Quality
 
@@ -132,7 +135,8 @@ Every process chain generates its own master data, documents, and journal entrie
 ### Machine Learning & Graph Export
 
 - **Graph formats** — PyTorch Geometric (.pt), Neo4j (CSV + Cypher), DGL, RustGraph JSON
-- **Multi-layer hypergraph** — 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges
+- **Multi-layer hypergraph** — 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges and compliance regulation nodes
+- **Compliance graph layer** — Standards, findings, filings, and jurisdictions as graph nodes with cross-domain edges to accounts, controls, and companies
 - **Train/val/test splits** — Configurable data partitioning for ML pipelines
 - **Anomaly labels** — Fraud labels, quality issue labels, and drift labels in standardized format
 - **Counterfactual pairs** — (original, mutated) journal entry pairs for causal ML training

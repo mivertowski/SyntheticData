@@ -19,6 +19,15 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 - 67+ tests across all compliance modules
 - 7 JSON output files in `compliance_regulations/` directory
 
+**Cross-Domain Compliance Graph Linking**
+
+- **ToNodeProperties for compliance models**: `ComplianceStandard` (510), `ComplianceFinding` (511), `RegulatoryFiling` (512), `JurisdictionProfile` (513) — typed camelCase property maps for graph nodes
+- **Standard-to-account/process mapping**: All 45+ built-in standards mapped to applicable GL account types and business processes (O2C, P2P, R2R, H2R, A2R, Intercompany)
+- **5 new cross-domain edge types**: `GovernedByStandard`, `ImplementsStandard`, `FiledByCompany`, `FindingAffectsControl`, `FindingAffectsAccount`
+- **Hypergraph integration**: Standards in Layer 1 (GovernanceControls), findings/filings in Layer 2 (ProcessEvents), with cross-layer edge resolution
+- **Full enterprise graph traversal**: Company → Filing → Jurisdiction → Standard → Account → JournalEntry
+- **3 new config fields**: `include_account_links`, `include_control_links`, `include_company_links` (all default `true`)
+
 ### [1.0.0] - 2026-03-06
 
 **v1.0.0 Release — Enterprise Simulation & ML Ground Truth**

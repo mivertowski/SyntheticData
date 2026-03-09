@@ -1,7 +1,7 @@
 # Part 6: Graph Integration & Edge Semantics
 
 > **Parent:** [Compliance & Regulations Framework](00-index.md)
-> **Status:** Implemented | **Date:** 2026-03-09
+> **Status:** Implemented (v1.1.0 — cross-domain linking complete) | **Date:** 2026-03-09
 
 ---
 
@@ -430,6 +430,71 @@ The compliance graph connects to existing graph layers through **cross-graph edg
 | Entity → Jurisdiction | Entity | Compliance | Entity subject to jurisdiction |
 | User → Procedure | Approval | Compliance | Auditor performed this procedure |
 | User → Finding | Approval | Compliance | Auditor identified this finding |
+
+### 6.6.2 Implemented Cross-Domain Edges (v1.1.0)
+
+The following cross-domain edge types are fully implemented in `ComplianceGraphBuilder`:
+
+| Edge Type | Source → Target | Builder Method | Config Gate |
+|-----------|----------------|----------------|-------------|
+| `GovernedByStandard` | Standard → Account | `add_account_links()` | `include_account_links` |
+| `ImplementsStandard` | Standard → Control | `add_control_links()` | `include_control_links` |
+| `FiledByCompany` | Filing → Company | `add_filings()` | `include_company_links` |
+| `FindingAffectsControl` | Finding → Control | `add_findings()` | always (if control_id set) |
+| `FindingAffectsAccount` | Finding → Account | `add_findings()` | always (if affected_accounts set) |
+
+### 6.6.3 Standard-to-Account/Process Metadata
+
+Every built-in standard now declares its applicable account types and business processes:
+
+```rust
+ComplianceStandard::new(StandardId::parse("IFRS-16"), "Leases", ...)
+    .with_account_types(vec!["Leases", "ROUAsset", "LeaseLiability", "Depreciation", "InterestExpense"])
+    .with_processes(vec!["R2R", "P2P"])
+```
+
+This enables automated edge creation in both the standalone compliance graph and the multi-layer hypergraph.
+
+### 6.6.4 ToNodeProperties Implementation
+
+All four compliance domain models implement `ToNodeProperties` for typed graph node conversion:
+
+| Model | Type Code | Property Count |
+|-------|-----------|---------------|
+| `ComplianceStandard` | 510 | 12 (standardId, title, issuingBody, category, domain, isSuperseded, mandatoryJurisdictions, applicableAccountTypes, applicableProcesses, requirementCount, versionCount) |
+| `ComplianceFinding` | 511 | 17 (findingId, companyCode, title, severity, severityScore, deficiencyLevel, controlId, procedureId, identifiedDate, remediationStatus, financialImpact, isRepeat, fiscalYear, affectedAssertions, relatedStandards, affectedAccounts) |
+| `RegulatoryFiling` | 512 | 9 (filingType, companyCode, jurisdiction, periodEnd, deadline, status, regulator, filingDate, filingReference) |
+| `JurisdictionProfile` | 513 | 11 (countryCode, countryName, accountingFramework, auditFramework, currency, corporateTaxRate, mandatoryStandardCount, isEuMember, ifrsRequiredForListed, memberships, stockExchanges) |
+
+### 6.6.5 Hypergraph Integration
+
+Compliance nodes are placed across hypergraph layers:
+
+- **Layer 1 (GovernanceControls)**: `ComplianceStandard` (type 505), `Jurisdiction` (type 506)
+- **Layer 2 (ProcessEvents)**: `ComplianceFinding` (type 508), `RegulatoryFiling` (type 507)
+
+Cross-layer edges are resolved in `build_cross_layer_edges()`:
+- `StandardToAccount` (type 47): Standards → matching account nodes in Layer 3
+- `StandardToControl` (type 45): Universal standards (5+ processes) → control nodes in Layer 1
+- `FindingOnControl` (type 46): Findings → control nodes referenced by control_id
+
+### 6.6.6 Enterprise Graph Traversal
+
+The full implementation enables these traversal paths:
+
+```
+Company ──FiledByCompany──▶ RegulatoryFiling ──InJurisdiction──▶ Jurisdiction
+                                                                      │
+                                                               RequiresStandard
+                                                                      ▼
+                                                            ComplianceStandard
+                                                             ╱              ╲
+                                              GovernedByStandard    ImplementsStandard
+                                                   ╱                        ╲
+                                             GlAccount               InternalControl
+                                                │                          │
+                                          JournalEntry              ComplianceFinding
+```
 
 ---
 
