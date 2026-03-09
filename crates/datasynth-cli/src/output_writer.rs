@@ -1228,6 +1228,64 @@ pub fn write_all_output(
     }
 
     // ========================================================================
+    // Compliance Regulations
+    // ========================================================================
+    let cr = &result.compliance_regulations;
+    if !cr.standard_records.is_empty() {
+        let cr_dir = output_dir.join("compliance_regulations");
+        std::fs::create_dir_all(&cr_dir)?;
+        info!("Writing compliance regulations data...");
+
+        write_json_safe(
+            &cr.standard_records,
+            &cr_dir.join("compliance_standards.json"),
+            "Compliance standards",
+        );
+        write_json_safe(
+            &cr.cross_reference_records,
+            &cr_dir.join("cross_references.json"),
+            "Cross-references",
+        );
+        write_json_safe(
+            &cr.jurisdiction_records,
+            &cr_dir.join("jurisdiction_profiles.json"),
+            "Jurisdiction profiles",
+        );
+        write_json_safe(
+            &cr.audit_procedures,
+            &cr_dir.join("audit_procedures.json"),
+            "Audit procedures",
+        );
+        write_json_safe(
+            &cr.findings,
+            &cr_dir.join("compliance_findings.json"),
+            "Compliance findings",
+        );
+        write_json_safe(
+            &cr.filings,
+            &cr_dir.join("regulatory_filings.json"),
+            "Regulatory filings",
+        );
+
+        if let Some(ref graph) = cr.compliance_graph {
+            match serde_json::to_string_pretty(graph) {
+                Ok(json) => {
+                    if let Err(e) = std::fs::write(cr_dir.join("compliance_graph.json"), json) {
+                        warn!("Failed to write compliance graph: {}", e);
+                    } else {
+                        info!(
+                            "  Compliance graph written: {} nodes, {} edges",
+                            graph.nodes.len(),
+                            graph.edges.len()
+                        );
+                    }
+                }
+                Err(e) => warn!("Failed to serialize compliance graph: {}", e),
+            }
+        }
+    }
+
+    // ========================================================================
     // Generation Statistics
     // ========================================================================
     match serde_json::to_string_pretty(&result.statistics) {

@@ -33,8 +33,11 @@ pub(crate) mod test_helpers;
 // Re-export builder types
 pub use builders::{
     ApprovalGraphBuilder, ApprovalGraphConfig, BankingGraphBuilder, BankingGraphConfig,
-    EntityGraphBuilder, EntityGraphConfig, HypergraphBuilder, HypergraphConfig, OwnershipHierarchy,
-    OwnershipHierarchyNode, SimpleApproval, TransactionGraphBuilder, TransactionGraphConfig,
+    ComplianceGraphBuilder, ComplianceGraphConfig, CrossReferenceEdgeInput, EntityGraphBuilder,
+    EntityGraphConfig, FindingNodeInput, HypergraphBuilder, HypergraphConfig,
+    JurisdictionMappingInput, JurisdictionNodeInput, OwnershipHierarchy, OwnershipHierarchyNode,
+    ProcedureNodeInput, SimpleApproval, StandardNodeInput, SupersessionEdgeInput,
+    TransactionGraphBuilder, TransactionGraphConfig,
 };
 
 // Re-export exporter types

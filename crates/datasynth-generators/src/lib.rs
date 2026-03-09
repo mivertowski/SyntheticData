@@ -39,6 +39,7 @@ pub mod user_generator;
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
 pub mod budget_generator;
+pub mod compliance;
 pub mod drift_event_generator;
 pub mod esg;
 pub mod hr;

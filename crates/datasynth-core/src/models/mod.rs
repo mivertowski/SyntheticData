@@ -103,6 +103,9 @@ mod scenario;
 // Unified generation pipeline session models
 pub mod generation_session;
 
+// Compliance & Regulations Framework models
+pub mod compliance;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;

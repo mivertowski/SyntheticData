@@ -189,6 +189,9 @@ pub struct GeneratorConfig {
     /// Generation session configuration (period-by-period generation with balance carry-forward)
     #[serde(default)]
     pub session: SessionSchemaConfig,
+    /// Compliance regulations framework configuration (standards registry, jurisdictions, temporal versioning, audit templates, graph integration)
+    #[serde(default)]
+    pub compliance_regulations: ComplianceRegulationsConfig,
 }
 
 /// LLM enrichment configuration.
@@ -12508,6 +12511,267 @@ pub struct ScenarioDefaultsConfig {
     pub constraints: ScenarioConstraintsSchemaConfig,
     #[serde(default)]
     pub output: ScenarioOutputSchemaConfig,
+}
+
+// =====================================================================
+// Compliance Regulations Framework Configuration
+// =====================================================================
+
+/// Top-level configuration for the compliance regulations framework.
+///
+/// Controls standards registry, jurisdiction profiles, temporal versioning,
+/// audit procedure templates, compliance graph integration, and output settings.
+///
+/// # Example
+///
+/// ```yaml
+/// compliance_regulations:
+///   enabled: true
+///   jurisdictions: [US, DE, GB]
+///   reference_date: "2025-06-30"
+///   standards_selection:
+///     categories: [accounting, auditing, regulatory]
+///     include: ["IFRS-16", "ASC-606"]
+///   audit_procedures:
+///     enabled: true
+///     procedures_per_standard: 3
+///   findings:
+///     enabled: true
+///     finding_rate: 0.05
+///   filings:
+///     enabled: true
+///   graph:
+///     enabled: true
+///     include_compliance_nodes: true
+///     include_compliance_edges: true
+/// ```
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ComplianceRegulationsConfig {
+    /// Master switch for the compliance regulations framework.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Jurisdictions to generate compliance data for (ISO 3166-1 alpha-2 codes).
+    /// If empty, inferred from company countries in the config.
+    #[serde(default)]
+    pub jurisdictions: Vec<String>,
+    /// Reference date for temporal standard resolution (YYYY-MM-DD).
+    /// Defaults to the global start_date if not set.
+    #[serde(default)]
+    pub reference_date: Option<String>,
+    /// Standards selection filters.
+    #[serde(default)]
+    pub standards_selection: StandardsSelectionConfig,
+    /// Audit procedure generation settings.
+    #[serde(default)]
+    pub audit_procedures: AuditProcedureGenConfig,
+    /// Compliance finding generation settings.
+    #[serde(default)]
+    pub findings: ComplianceFindingGenConfig,
+    /// Regulatory filing generation settings.
+    #[serde(default)]
+    pub filings: ComplianceFilingGenConfig,
+    /// Compliance graph integration settings.
+    #[serde(default)]
+    pub graph: ComplianceGraphConfig,
+    /// Output settings for compliance-specific files.
+    #[serde(default)]
+    pub output: ComplianceOutputConfig,
+}
+
+/// Filters which standards are included in the generation.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct StandardsSelectionConfig {
+    /// Standard categories to include (accounting, auditing, regulatory, tax, esg).
+    /// Empty = all categories.
+    #[serde(default)]
+    pub categories: Vec<String>,
+    /// Explicit standard IDs to include (e.g., ["IFRS-16", "ASC-606"]).
+    /// When non-empty, only these standards (plus mandatory ones for selected jurisdictions) are used.
+    #[serde(default)]
+    pub include: Vec<String>,
+    /// Standard IDs to exclude.
+    #[serde(default)]
+    pub exclude: Vec<String>,
+    /// Include superseded standards in the output (for historical analysis).
+    #[serde(default)]
+    pub include_superseded: bool,
+}
+
+/// Configuration for audit procedure template generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuditProcedureGenConfig {
+    /// Whether audit procedure generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Number of procedures to generate per applicable standard.
+    #[serde(default = "default_procedures_per_standard")]
+    pub procedures_per_standard: usize,
+    /// Sampling methodology: "statistical", "non_statistical", "mixed".
+    #[serde(default = "default_sampling_method")]
+    pub sampling_method: String,
+    /// Confidence level for statistical sampling (0.0-1.0).
+    #[serde(default = "default_confidence_level")]
+    pub confidence_level: f64,
+    /// Tolerable misstatement rate for sampling (0.0-1.0).
+    #[serde(default = "default_tolerable_misstatement")]
+    pub tolerable_misstatement: f64,
+}
+
+fn default_procedures_per_standard() -> usize {
+    3
+}
+
+fn default_sampling_method() -> String {
+    "statistical".to_string()
+}
+
+fn default_confidence_level() -> f64 {
+    0.95
+}
+
+fn default_tolerable_misstatement() -> f64 {
+    0.05
+}
+
+impl Default for AuditProcedureGenConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            procedures_per_standard: default_procedures_per_standard(),
+            sampling_method: default_sampling_method(),
+            confidence_level: default_confidence_level(),
+            tolerable_misstatement: default_tolerable_misstatement(),
+        }
+    }
+}
+
+/// Configuration for compliance finding generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceFindingGenConfig {
+    /// Whether finding generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Rate of findings per audit procedure (0.0-1.0).
+    #[serde(default = "default_finding_rate")]
+    pub finding_rate: f64,
+    /// Rate of material weakness findings among all findings (0.0-1.0).
+    #[serde(default = "default_cr_material_weakness_rate")]
+    pub material_weakness_rate: f64,
+    /// Rate of significant deficiency findings among all findings (0.0-1.0).
+    #[serde(default = "default_cr_significant_deficiency_rate")]
+    pub significant_deficiency_rate: f64,
+    /// Whether to generate remediation plans for findings.
+    #[serde(default = "default_true")]
+    pub generate_remediation: bool,
+}
+
+fn default_finding_rate() -> f64 {
+    0.05
+}
+
+fn default_cr_material_weakness_rate() -> f64 {
+    0.02
+}
+
+fn default_cr_significant_deficiency_rate() -> f64 {
+    0.08
+}
+
+impl Default for ComplianceFindingGenConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            finding_rate: default_finding_rate(),
+            material_weakness_rate: default_cr_material_weakness_rate(),
+            significant_deficiency_rate: default_cr_significant_deficiency_rate(),
+            generate_remediation: true,
+        }
+    }
+}
+
+/// Configuration for regulatory filing generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceFilingGenConfig {
+    /// Whether filing generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Filing types to include (e.g., ["10-K", "10-Q", "Jahresabschluss"]).
+    /// Empty = all applicable filings for the selected jurisdictions.
+    #[serde(default)]
+    pub filing_types: Vec<String>,
+    /// Generate filing status progression (draft → filed → accepted).
+    #[serde(default = "default_true")]
+    pub generate_status_progression: bool,
+}
+
+impl Default for ComplianceFilingGenConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            filing_types: Vec::new(),
+            generate_status_progression: true,
+        }
+    }
+}
+
+/// Configuration for compliance graph integration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceGraphConfig {
+    /// Whether compliance graph integration is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Include compliance nodes (Standard, Regulation, Jurisdiction, etc.).
+    #[serde(default = "default_true")]
+    pub include_compliance_nodes: bool,
+    /// Include compliance edges (MapsToStandard, TestsControl, etc.).
+    #[serde(default = "default_true")]
+    pub include_compliance_edges: bool,
+    /// Include cross-reference edges between standards.
+    #[serde(default = "default_true")]
+    pub include_cross_references: bool,
+    /// Include temporal supersession edges.
+    #[serde(default)]
+    pub include_supersession_edges: bool,
+}
+
+impl Default for ComplianceGraphConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            include_compliance_nodes: true,
+            include_compliance_edges: true,
+            include_cross_references: true,
+            include_supersession_edges: false,
+        }
+    }
+}
+
+/// Output settings for compliance-specific data files.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceOutputConfig {
+    /// Export the standards registry catalog.
+    #[serde(default = "default_true")]
+    pub export_registry: bool,
+    /// Export jurisdiction profiles.
+    #[serde(default = "default_true")]
+    pub export_jurisdictions: bool,
+    /// Export cross-reference map.
+    #[serde(default = "default_true")]
+    pub export_cross_references: bool,
+    /// Export temporal version history.
+    #[serde(default)]
+    pub export_version_history: bool,
+}
+
+impl Default for ComplianceOutputConfig {
+    fn default() -> Self {
+        Self {
+            export_registry: true,
+            export_jurisdictions: true,
+            export_cross_references: true,
+            export_version_history: false,
+        }
+    }
 }
 
 #[cfg(test)]

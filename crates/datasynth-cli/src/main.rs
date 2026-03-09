@@ -687,6 +687,7 @@ fn main() -> Result<()> {
                         generate_esg: cfg.esg.enabled,
                         generate_intercompany: cfg.intercompany.enabled,
                         generate_accounting_standards: cfg.accounting_standards.enabled,
+                        generate_compliance_regulations: cfg.compliance_regulations.enabled,
                         generate_financial_statements: cfg.financial_reporting.enabled,
                         generate_sales_kpi_budgets: cfg.sales_quotes.enabled,
                         generate_bank_reconciliation: cfg.financial_reporting.enabled,
@@ -2209,6 +2210,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         country_packs: None,
         scenarios: Default::default(),
         session: Default::default(),
+        compliance_regulations: Default::default(),
     }
 }
 
