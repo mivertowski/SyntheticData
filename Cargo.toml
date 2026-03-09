@@ -89,7 +89,7 @@ rand_chacha = "0.9"
 rand_distr = "0.5"
 
 # Async runtime
-tokio = { version = "1.42", features = ["full"] }
+tokio = { version = "1.50", features = ["full"] }
 async-trait = "0.1"
 futures = "0.3"
 
