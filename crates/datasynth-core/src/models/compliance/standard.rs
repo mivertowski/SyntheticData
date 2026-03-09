@@ -1,10 +1,13 @@
 //! Compliance standard metadata.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use super::cross_reference::CrossReference;
 use super::standard_id::StandardId;
 use super::temporal::TemporalVersion;
+use crate::models::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Category of compliance standard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -187,6 +190,12 @@ pub struct ComplianceStandard {
     pub permitted_jurisdictions: Vec<String>,
     /// Key requirements within this standard
     pub requirements: Vec<StandardRequirement>,
+    /// GL account types this standard applies to (e.g., "Revenue", "Leases", "PP&E")
+    #[serde(default)]
+    pub applicable_account_types: Vec<String>,
+    /// Business processes this standard governs (e.g., "O2C", "P2P", "R2R")
+    #[serde(default)]
+    pub applicable_processes: Vec<String>,
 }
 
 impl ComplianceStandard {
@@ -211,6 +220,8 @@ impl ComplianceStandard {
             mandatory_jurisdictions: Vec::new(),
             permitted_jurisdictions: Vec::new(),
             requirements: Vec::new(),
+            applicable_account_types: Vec::new(),
+            applicable_processes: Vec::new(),
         }
     }
 
@@ -250,9 +261,96 @@ impl ComplianceStandard {
         self
     }
 
+    /// Adds an applicable GL account type.
+    pub fn with_account_type(mut self, account_type: &str) -> Self {
+        self.applicable_account_types.push(account_type.to_string());
+        self
+    }
+
+    /// Adds applicable GL account types in bulk.
+    pub fn with_account_types(mut self, types: &[&str]) -> Self {
+        self.applicable_account_types
+            .extend(types.iter().map(|s| s.to_string()));
+        self
+    }
+
+    /// Adds an applicable business process.
+    pub fn with_process(mut self, process: &str) -> Self {
+        self.applicable_processes.push(process.to_string());
+        self
+    }
+
+    /// Adds applicable business processes in bulk.
+    pub fn with_processes(mut self, processes: &[&str]) -> Self {
+        self.applicable_processes
+            .extend(processes.iter().map(|s| s.to_string()));
+        self
+    }
+
     /// Returns true if this standard is currently superseded.
     pub fn is_superseded(&self) -> bool {
         self.superseded_by.is_some()
+    }
+}
+
+impl ToNodeProperties for ComplianceStandard {
+    fn node_type_name(&self) -> &'static str {
+        "compliance_standard"
+    }
+    fn node_type_code(&self) -> u16 {
+        510
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "standardId".into(),
+            GraphPropertyValue::String(self.id.as_str().to_string()),
+        );
+        p.insert(
+            "title".into(),
+            GraphPropertyValue::String(self.title.clone()),
+        );
+        p.insert(
+            "issuingBody".into(),
+            GraphPropertyValue::String(self.issuing_body.to_string()),
+        );
+        p.insert(
+            "category".into(),
+            GraphPropertyValue::String(self.category.to_string()),
+        );
+        p.insert(
+            "domain".into(),
+            GraphPropertyValue::String(self.domain.to_string()),
+        );
+        p.insert(
+            "isSuperseded".into(),
+            GraphPropertyValue::Bool(self.is_superseded()),
+        );
+        p.insert(
+            "mandatoryJurisdictions".into(),
+            GraphPropertyValue::StringList(self.mandatory_jurisdictions.clone()),
+        );
+        if !self.applicable_account_types.is_empty() {
+            p.insert(
+                "applicableAccountTypes".into(),
+                GraphPropertyValue::StringList(self.applicable_account_types.clone()),
+            );
+        }
+        if !self.applicable_processes.is_empty() {
+            p.insert(
+                "applicableProcesses".into(),
+                GraphPropertyValue::StringList(self.applicable_processes.clone()),
+            );
+        }
+        p.insert(
+            "requirementCount".into(),
+            GraphPropertyValue::Int(self.requirements.len() as i64),
+        );
+        p.insert(
+            "versionCount".into(),
+            GraphPropertyValue::Int(self.versions.len() as i64),
+        );
+        p
     }
 }
 

@@ -1,8 +1,11 @@
 //! Jurisdiction-specific compliance profiles.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use super::standard_id::StandardId;
+use crate::models::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Supranational body membership that propagates regulatory obligations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -201,6 +204,68 @@ impl JurisdictionProfile {
     pub fn with_mandatory_standard(mut self, js: JurisdictionStandard) -> Self {
         self.mandatory_standards.push(js);
         self
+    }
+}
+
+impl ToNodeProperties for JurisdictionProfile {
+    fn node_type_name(&self) -> &'static str {
+        "jurisdiction_profile"
+    }
+    fn node_type_code(&self) -> u16 {
+        513
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "countryCode".into(),
+            GraphPropertyValue::String(self.country_code.clone()),
+        );
+        p.insert(
+            "countryName".into(),
+            GraphPropertyValue::String(self.country_name.clone()),
+        );
+        p.insert(
+            "accountingFramework".into(),
+            GraphPropertyValue::String(format!("{:?}", self.accounting_framework)),
+        );
+        p.insert(
+            "auditFramework".into(),
+            GraphPropertyValue::String(format!("{:?}", self.audit_framework)),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        if let Some(rate) = self.corporate_tax_rate {
+            p.insert("corporateTaxRate".into(), GraphPropertyValue::Float(rate));
+        }
+        p.insert(
+            "mandatoryStandardCount".into(),
+            GraphPropertyValue::Int(self.mandatory_standards.len() as i64),
+        );
+        p.insert(
+            "isEuMember".into(),
+            GraphPropertyValue::Bool(self.is_eu_member()),
+        );
+        p.insert(
+            "ifrsRequiredForListed".into(),
+            GraphPropertyValue::Bool(self.ifrs_required_for_listed),
+        );
+        if !self.memberships.is_empty() {
+            p.insert(
+                "memberships".into(),
+                GraphPropertyValue::StringList(
+                    self.memberships.iter().map(|m| m.to_string()).collect(),
+                ),
+            );
+        }
+        if !self.stock_exchanges.is_empty() {
+            p.insert(
+                "stockExchanges".into(),
+                GraphPropertyValue::StringList(self.stock_exchanges.clone()),
+            );
+        }
+        p
     }
 }
 

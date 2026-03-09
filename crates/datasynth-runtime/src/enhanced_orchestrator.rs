@@ -1808,6 +1808,9 @@ impl EnhancedOrchestrator {
         // Phase 29: Industry-specific GL accounts
         let industry_output = self.phase_industry_data(&mut stats);
 
+        // Phase: Compliance regulations (must run before hypergraph so it can be included)
+        let compliance_regulations = self.phase_compliance_regulations(&mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1820,6 +1823,7 @@ impl EnhancedOrchestrator {
             &audit,
             &financial_reporting,
             &ocpm,
+            &compliance_regulations,
             &mut stats,
         )?;
 
@@ -1920,9 +1924,6 @@ impl EnhancedOrchestrator {
         } else {
             None
         };
-
-        // Phase: Compliance regulations
-        let compliance_regulations = self.phase_compliance_regulations(&mut stats)?;
 
         // Generate internal controls if enabled
         let internal_controls = if self.config.internal_controls.enabled {
@@ -2389,6 +2390,7 @@ impl EnhancedOrchestrator {
         audit: &AuditSnapshot,
         financial_reporting: &FinancialReportingSnapshot,
         ocpm: &OcpmSnapshot,
+        compliance: &ComplianceRegulationsSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<()> {
         if self.config.graph_export.hypergraph.enabled && !entries.is_empty() {
@@ -2404,6 +2406,7 @@ impl EnhancedOrchestrator {
                 audit,
                 financial_reporting,
                 ocpm,
+                compliance,
                 stats,
             ) {
                 Ok(info) => {
@@ -8198,6 +8201,7 @@ impl EnhancedOrchestrator {
         audit: &AuditSnapshot,
         financial_reporting: &FinancialReportingSnapshot,
         ocpm: &OcpmSnapshot,
+        compliance: &ComplianceRegulationsSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<HypergraphExportInfo> {
         use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
@@ -8240,6 +8244,7 @@ impl EnhancedOrchestrator {
             include_accounts: hg_settings.accounting_layer.include_accounts,
             je_as_hyperedges: hg_settings.accounting_layer.je_as_hyperedges,
             include_cross_layer_edges: hg_settings.cross_layer.enabled,
+            include_compliance: self.config.compliance_regulations.enabled,
         };
 
         let mut builder = HypergraphBuilder::new(builder_config);
@@ -8299,6 +8304,28 @@ impl EnhancedOrchestrator {
         // OCPM events as hyperedges
         if let Some(ref event_log) = ocpm.event_log {
             builder.add_ocpm_events(event_log);
+        }
+
+        // Compliance regulations as cross-layer nodes
+        if self.config.compliance_regulations.enabled
+            && hg_settings.governance_layer.include_controls
+        {
+            // Reconstruct ComplianceStandard objects from the registry
+            let registry = datasynth_standards::registry::StandardRegistry::with_built_in();
+            let standards: Vec<datasynth_core::models::compliance::ComplianceStandard> = compliance
+                .standard_records
+                .iter()
+                .filter_map(|r| {
+                    let sid = datasynth_core::models::compliance::StandardId::parse(&r.standard_id);
+                    registry.get(&sid).cloned()
+                })
+                .collect();
+
+            builder.add_compliance_regulations(
+                &standards,
+                &compliance.findings,
+                &compliance.filings,
+            );
         }
 
         // Layer 3: Accounting Network
@@ -8597,11 +8624,8 @@ impl EnhancedOrchestrator {
                 );
             let mut all_findings = Vec::new();
             for company in &self.config.companies {
-                let company_findings = finding_gen.generate_findings(
-                    &audit_procedures,
-                    &company.code,
-                    reference_date,
-                );
+                let company_findings =
+                    finding_gen.generate_findings(&audit_procedures, &company.code, reference_date);
                 all_findings.extend(company_findings);
             }
             info!("  Compliance findings: {}", all_findings.len());
@@ -8647,6 +8671,9 @@ impl EnhancedOrchestrator {
                 include_jurisdiction_nodes: cr_config.graph.include_compliance_nodes,
                 include_cross_references: cr_config.graph.include_cross_references,
                 include_supersession_edges: cr_config.graph.include_supersession_edges,
+                include_account_links: cr_config.graph.include_account_links,
+                include_control_links: cr_config.graph.include_control_links,
+                include_company_links: cr_config.graph.include_company_links,
             };
             let mut builder = datasynth_graph::ComplianceGraphBuilder::new(graph_config);
 
@@ -8660,6 +8687,8 @@ impl EnhancedOrchestrator {
                     domain: r.domain.clone(),
                     is_active: r.is_active,
                     features: vec![if r.is_active { 1.0 } else { 0.0 }],
+                    applicable_account_types: r.applicable_account_types.clone(),
+                    applicable_processes: r.applicable_processes.clone(),
                 })
                 .collect();
             builder.add_standards(&standard_inputs);
@@ -8724,12 +8753,91 @@ impl EnhancedOrchestrator {
                         .first()
                         .map(|s| s.as_str().to_string())
                         .unwrap_or_default(),
-                    severity: format!("{}", f.severity),
-                    deficiency_level: format!("{}", f.deficiency_level),
+                    severity: f.severity.to_string(),
+                    deficiency_level: f.deficiency_level.to_string(),
                     severity_score: f.deficiency_level.severity_score(),
+                    control_id: f.control_id.clone(),
+                    affected_accounts: f.affected_accounts.clone(),
                 })
                 .collect();
             builder.add_findings(&finding_inputs);
+
+            // Cross-domain: link standards to accounts from chart of accounts
+            if cr_config.graph.include_account_links {
+                let registry = datasynth_standards::registry::StandardRegistry::with_built_in();
+                let mut account_links: Vec<datasynth_graph::AccountLinkInput> = Vec::new();
+                for std_record in &standard_records {
+                    if let Some(std_obj) =
+                        registry.get(&datasynth_core::models::compliance::StandardId::parse(
+                            &std_record.standard_id,
+                        ))
+                    {
+                        for acct_type in &std_obj.applicable_account_types {
+                            account_links.push(datasynth_graph::AccountLinkInput {
+                                standard_id: std_record.standard_id.clone(),
+                                account_code: acct_type.clone(),
+                                account_name: acct_type.clone(),
+                            });
+                        }
+                    }
+                }
+                builder.add_account_links(&account_links);
+            }
+
+            // Cross-domain: link standards to internal controls
+            if cr_config.graph.include_control_links {
+                let mut control_links = Vec::new();
+                // SOX/PCAOB standards link to all controls
+                let sox_like_ids: Vec<String> = standard_records
+                    .iter()
+                    .filter(|r| {
+                        r.standard_id.starts_with("SOX")
+                            || r.standard_id.starts_with("PCAOB-AS-2201")
+                    })
+                    .map(|r| r.standard_id.clone())
+                    .collect();
+                // Get control IDs from config (C001-C060 standard controls)
+                let control_ids = [
+                    ("C001", "Cash Controls"),
+                    ("C002", "Large Transaction Approval"),
+                    ("C010", "PO Approval"),
+                    ("C011", "Three-Way Match"),
+                    ("C020", "Revenue Recognition"),
+                    ("C021", "Credit Check"),
+                    ("C030", "Manual JE Approval"),
+                    ("C031", "Period Close Review"),
+                    ("C032", "Account Reconciliation"),
+                    ("C040", "Payroll Processing"),
+                    ("C050", "Fixed Asset Capitalization"),
+                    ("C060", "Intercompany Elimination"),
+                ];
+                for sox_id in &sox_like_ids {
+                    for (ctrl_id, ctrl_name) in &control_ids {
+                        control_links.push(datasynth_graph::ControlLinkInput {
+                            standard_id: sox_id.clone(),
+                            control_id: ctrl_id.to_string(),
+                            control_name: ctrl_name.to_string(),
+                        });
+                    }
+                }
+                builder.add_control_links(&control_links);
+            }
+
+            // Cross-domain: filing nodes with company links
+            if cr_config.graph.include_company_links {
+                let filing_inputs: Vec<datasynth_graph::FilingNodeInput> = filings
+                    .iter()
+                    .enumerate()
+                    .map(|(i, f)| datasynth_graph::FilingNodeInput {
+                        filing_id: format!("F{:04}", i + 1),
+                        filing_type: f.filing_type.to_string(),
+                        company_code: f.company_code.clone(),
+                        jurisdiction: f.jurisdiction.clone(),
+                        status: format!("{:?}", f.status),
+                    })
+                    .collect();
+                builder.add_filings(&filing_inputs);
+            }
 
             let graph = builder.build();
             info!(

@@ -1,7 +1,11 @@
 //! Regulatory filing models.
 
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+
+use crate::models::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Type of regulatory filing.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -183,6 +187,53 @@ impl RegulatoryFiling {
     }
 }
 
+impl ToNodeProperties for RegulatoryFiling {
+    fn node_type_name(&self) -> &'static str {
+        "regulatory_filing"
+    }
+    fn node_type_code(&self) -> u16 {
+        512
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "filingType".into(),
+            GraphPropertyValue::String(self.filing_type.to_string()),
+        );
+        p.insert(
+            "companyCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "jurisdiction".into(),
+            GraphPropertyValue::String(self.jurisdiction.clone()),
+        );
+        p.insert(
+            "periodEnd".into(),
+            GraphPropertyValue::Date(self.period_end),
+        );
+        p.insert("deadline".into(), GraphPropertyValue::Date(self.deadline));
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "regulator".into(),
+            GraphPropertyValue::String(self.regulator.clone()),
+        );
+        if let Some(fd) = self.filing_date {
+            p.insert("filingDate".into(), GraphPropertyValue::Date(fd));
+        }
+        if let Some(ref fref) = self.filing_reference {
+            p.insert(
+                "filingReference".into(),
+                GraphPropertyValue::String(fref.clone()),
+            );
+        }
+        p
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,7 +305,10 @@ mod tests {
     #[test]
     fn test_filing_type_display() {
         assert_eq!(format!("{}", FilingType::Form10K), "10-K");
-        assert_eq!(format!("{}", FilingType::Jahresabschluss), "Jahresabschluss");
+        assert_eq!(
+            format!("{}", FilingType::Jahresabschluss),
+            "Jahresabschluss"
+        );
         assert_eq!(
             format!("{}", FilingType::Custom("CbCR".to_string())),
             "CbCR"

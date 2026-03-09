@@ -79,7 +79,9 @@ fn register_ifrs(registry: &mut StandardRegistry) {
             "2004",
             date(2004, 3, 31),
             ChangeImpact::High,
-        )),
+        ))
+        .with_account_types(&["PP&E", "Intangibles", "Goodwill", "ROUAsset"])
+        .with_processes(&["R2R", "A2R"]),
     );
 
     // IFRS 9 - Financial Instruments
@@ -96,7 +98,15 @@ fn register_ifrs(registry: &mut StandardRegistry) {
                 .with_change("Expected credit loss model replaces incurred loss")
                 .with_change("New classification: amortized cost, FVOCI, FVTPL"),
         )
-        .supersedes_standard(StandardId::new("IAS", "39")),
+        .supersedes_standard(StandardId::new("IAS", "39"))
+        .with_account_types(&[
+            "FinancialAssets",
+            "FinancialLiabilities",
+            "Derivatives",
+            "AccountsReceivable",
+            "Investments",
+        ])
+        .with_processes(&["R2R"]),
     );
 
     // IFRS 13 - Fair Value
@@ -112,7 +122,14 @@ fn register_ifrs(registry: &mut StandardRegistry) {
             "2013",
             date(2013, 1, 1),
             ChangeImpact::High,
-        )),
+        ))
+        .with_account_types(&[
+            "Investments",
+            "Derivatives",
+            "InvestmentProperty",
+            "BiologicalAssets",
+        ])
+        .with_processes(&["R2R"]),
     );
 
     // IFRS 15 - Revenue
@@ -127,7 +144,14 @@ fn register_ifrs(registry: &mut StandardRegistry) {
         .with_version(
             TemporalVersion::new("2018", date(2018, 1, 1), ChangeImpact::High)
                 .with_change("5-step revenue recognition model"),
-        ),
+        )
+        .with_account_types(&[
+            "Revenue",
+            "DeferredRevenue",
+            "ContractAsset",
+            "AccountsReceivable",
+        ])
+        .with_processes(&["O2C"]),
     );
 
     // IFRS 16 - Leases
@@ -144,7 +168,15 @@ fn register_ifrs(registry: &mut StandardRegistry) {
                 .with_change("All leases on balance sheet for lessees")
                 .with_change("ROU asset and lease liability recognition"),
         )
-        .supersedes_standard(StandardId::new("IAS", "17")),
+        .supersedes_standard(StandardId::new("IAS", "17"))
+        .with_account_types(&[
+            "Leases",
+            "ROUAsset",
+            "LeaseLiability",
+            "Depreciation",
+            "InterestExpense",
+        ])
+        .with_processes(&["R2R", "P2P"]),
     );
 
     // IFRS 17 - Insurance
@@ -159,7 +191,13 @@ fn register_ifrs(registry: &mut StandardRegistry) {
         .with_version(
             TemporalVersion::new("2023", date(2023, 1, 1), ChangeImpact::Replacement)
                 .with_early_adoption(date(2021, 1, 1)),
-        ),
+        )
+        .with_account_types(&[
+            "InsuranceLiabilities",
+            "InsuranceRevenue",
+            "DeferredAcquisitionCosts",
+        ])
+        .with_processes(&["R2R"]),
     );
 
     // IFRS 18 - Presentation (upcoming)
@@ -176,46 +214,117 @@ fn register_ifrs(registry: &mut StandardRegistry) {
                 .with_early_adoption(date(2025, 1, 1))
                 .with_change("New P&L categories: operating, investing, financing")
                 .with_change("Management-defined performance measures"),
-        ),
+        )
+        .with_account_types(&[
+            "Revenue",
+            "OperatingExpenses",
+            "FinancingCosts",
+            "InvestmentIncome",
+        ])
+        .with_processes(&["R2R"]),
     );
 }
 
 // ─── US GAAP ─────────────────────────────────────────────────────────────────
 
 fn register_us_gaap(registry: &mut StandardRegistry) {
-    let us_stds = vec![
+    // (body, number, title, effective_date, account_types, processes)
+    let us_stds: Vec<(&str, &str, &str, NaiveDate, &[&str], &[&str])> = vec![
         (
             "ASC",
             "606",
             "Revenue from Contracts with Customers",
             date(2018, 1, 1),
+            &[
+                "Revenue",
+                "DeferredRevenue",
+                "ContractAsset",
+                "AccountsReceivable",
+            ],
+            &["O2C"],
         ),
-        ("ASC", "842", "Leases", date(2019, 1, 1)),
-        ("ASC", "820", "Fair Value Measurement", date(2008, 1, 1)),
+        (
+            "ASC",
+            "842",
+            "Leases",
+            date(2019, 1, 1),
+            &[
+                "Leases",
+                "ROUAsset",
+                "LeaseLiability",
+                "Depreciation",
+                "InterestExpense",
+            ],
+            &["R2R", "P2P"],
+        ),
+        (
+            "ASC",
+            "820",
+            "Fair Value Measurement",
+            date(2008, 1, 1),
+            &["Investments", "Derivatives", "InvestmentProperty"],
+            &["R2R"],
+        ),
         (
             "ASC",
             "326",
             "Financial Instruments — Credit Losses (CECL)",
             date(2020, 1, 1),
+            &[
+                "AccountsReceivable",
+                "FinancialAssets",
+                "AllowanceForCreditLosses",
+            ],
+            &["O2C", "R2R"],
         ),
         (
             "ASC",
             "360",
             "Property, Plant, and Equipment",
             date(2005, 1, 1),
+            &["PP&E", "Depreciation", "Intangibles", "Goodwill"],
+            &["R2R", "A2R"],
         ),
-        ("ASC", "740", "Income Taxes", date(1992, 1, 1)),
-        ("ASC", "805", "Business Combinations", date(2009, 1, 1)),
-        ("ASC", "810", "Consolidation", date(2010, 1, 1)),
+        (
+            "ASC",
+            "740",
+            "Income Taxes",
+            date(1992, 1, 1),
+            &[
+                "IncomeTax",
+                "DeferredTaxAsset",
+                "DeferredTaxLiability",
+                "TaxProvision",
+            ],
+            &["R2R"],
+        ),
+        (
+            "ASC",
+            "805",
+            "Business Combinations",
+            date(2009, 1, 1),
+            &["Goodwill", "Intangibles", "Investments"],
+            &["R2R"],
+        ),
+        (
+            "ASC",
+            "810",
+            "Consolidation",
+            date(2010, 1, 1),
+            &["Investments", "NonControllingInterest", "Goodwill"],
+            &["R2R", "Intercompany"],
+        ),
         (
             "ASC",
             "718",
             "Compensation — Stock Compensation",
             date(2006, 1, 1),
+            &["StockCompensation", "EquityAwards", "CompensationExpense"],
+            &["H2R", "R2R"],
         ),
     ];
 
-    for (body, num, title, eff) in us_stds {
+    for (body, num, title, eff, accounts, processes) in us_stds {
         registry.register_standard(
             ComplianceStandard::new(
                 StandardId::new(body, num),
@@ -229,7 +338,9 @@ fn register_us_gaap(registry: &mut StandardRegistry) {
                 eff,
                 ChangeImpact::High,
             ))
-            .mandatory_in("US"),
+            .mandatory_in("US")
+            .with_account_types(accounts)
+            .with_processes(processes),
         );
     }
 }
@@ -337,20 +448,60 @@ fn register_isa(registry: &mut StandardRegistry) {
     ];
 
     for (num, title, eff) in isa_stds {
-        registry.register_standard(
-            ComplianceStandard::new(
-                StandardId::new("ISA", num),
-                title,
-                IssuingBody::Iaasb,
-                StandardCategory::AuditingStandard,
-                ComplianceDomain::ExternalAudit,
-            )
-            .with_version(TemporalVersion::new(
-                eff.format("%Y").to_string(),
-                eff,
-                ChangeImpact::High,
-            )),
-        );
+        // Map ISA standards to relevant account types and processes
+        let (accounts, processes): (&[&str], &[&str]) = match num {
+            "240" => (
+                &["Revenue", "Cash", "AccountsReceivable"],
+                &["O2C", "R2R", "P2P"],
+            ),
+            "315" | "330" => (&[], &["O2C", "P2P", "R2R", "H2R", "A2R", "Intercompany"]),
+            "320" | "450" => (&[], &["R2R"]),
+            "500" | "530" => (&[], &["O2C", "P2P", "R2R"]),
+            "505" => (
+                &[
+                    "AccountsReceivable",
+                    "AccountsPayable",
+                    "Cash",
+                    "Investments",
+                ],
+                &["O2C", "P2P", "R2R"],
+            ),
+            "520" => (&["Revenue", "OperatingExpenses", "COGS"], &["R2R"]),
+            "540" => (
+                &[
+                    "AllowanceForCreditLosses",
+                    "Goodwill",
+                    "Provisions",
+                    "FairValue",
+                ],
+                &["R2R"],
+            ),
+            "550" => (&[], &["Intercompany"]),
+            "570" => (&[], &["R2R"]),
+            _ => (&[], &[]),
+        };
+
+        let mut std = ComplianceStandard::new(
+            StandardId::new("ISA", num),
+            title,
+            IssuingBody::Iaasb,
+            StandardCategory::AuditingStandard,
+            ComplianceDomain::ExternalAudit,
+        )
+        .with_version(TemporalVersion::new(
+            eff.format("%Y").to_string(),
+            eff,
+            ChangeImpact::High,
+        ));
+
+        if !accounts.is_empty() {
+            std = std.with_account_types(accounts);
+        }
+        if !processes.is_empty() {
+            std = std.with_processes(processes);
+        }
+
+        registry.register_standard(std);
     }
 }
 
@@ -385,6 +536,11 @@ fn register_pcaob(registry: &mut StandardRegistry) {
     ];
 
     for (body, num, title, eff) in pcaob_stds {
+        let processes: &[&str] = match num {
+            "2201" => &["O2C", "P2P", "R2R", "H2R", "A2R", "Intercompany"],
+            "2110" | "2301" => &["O2C", "P2P", "R2R"],
+            _ => &["R2R"],
+        };
         registry.register_standard(
             ComplianceStandard::new(
                 StandardId::new(body, num),
@@ -398,7 +554,8 @@ fn register_pcaob(registry: &mut StandardRegistry) {
                 eff,
                 ChangeImpact::High,
             ))
-            .mandatory_in("US"),
+            .mandatory_in("US")
+            .with_processes(processes),
         );
     }
 }
@@ -429,7 +586,8 @@ fn register_sox(registry: &mut StandardRegistry) {
                 date(2002, 7, 30),
                 ChangeImpact::Replacement,
             ))
-            .mandatory_in("US"),
+            .mandatory_in("US")
+            .with_processes(&["O2C", "P2P", "R2R", "H2R", "A2R", "Intercompany"]),
         );
     }
 }

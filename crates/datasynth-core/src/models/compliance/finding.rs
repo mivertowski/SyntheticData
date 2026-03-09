@@ -1,5 +1,7 @@
 //! Compliance findings and deficiency classification.
 
+use std::collections::HashMap;
+
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -7,6 +9,7 @@ use uuid::Uuid;
 
 use super::assertion::ComplianceAssertion;
 use super::standard_id::StandardId;
+use crate::models::graph_properties::{GraphPropertyValue, ToNodeProperties};
 
 /// Deficiency severity level per SOX/ISA classification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -202,6 +205,103 @@ impl ComplianceFinding {
     pub fn as_repeat(mut self) -> Self {
         self.is_repeat = true;
         self
+    }
+}
+
+impl ToNodeProperties for ComplianceFinding {
+    fn node_type_name(&self) -> &'static str {
+        "compliance_finding"
+    }
+    fn node_type_code(&self) -> u16 {
+        511
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "findingId".into(),
+            GraphPropertyValue::String(self.finding_id.to_string()),
+        );
+        p.insert(
+            "companyCode".into(),
+            GraphPropertyValue::String(self.company_code.clone()),
+        );
+        p.insert(
+            "title".into(),
+            GraphPropertyValue::String(self.title.clone()),
+        );
+        p.insert(
+            "severity".into(),
+            GraphPropertyValue::String(self.severity.to_string()),
+        );
+        p.insert(
+            "severityScore".into(),
+            GraphPropertyValue::Float(self.severity.score()),
+        );
+        p.insert(
+            "deficiencyLevel".into(),
+            GraphPropertyValue::String(self.deficiency_level.to_string()),
+        );
+        p.insert(
+            "deficiencySeverityScore".into(),
+            GraphPropertyValue::Float(self.deficiency_level.severity_score()),
+        );
+        if let Some(ref cid) = self.control_id {
+            p.insert("controlId".into(), GraphPropertyValue::String(cid.clone()));
+        }
+        if let Some(ref pid) = self.procedure_id {
+            p.insert(
+                "procedureId".into(),
+                GraphPropertyValue::String(pid.clone()),
+            );
+        }
+        p.insert(
+            "identifiedDate".into(),
+            GraphPropertyValue::Date(self.identified_date),
+        );
+        p.insert(
+            "remediationStatus".into(),
+            GraphPropertyValue::String(self.remediation_status.to_string()),
+        );
+        if let Some(impact) = self.financial_impact {
+            p.insert(
+                "financialImpact".into(),
+                GraphPropertyValue::Decimal(impact),
+            );
+        }
+        p.insert("isRepeat".into(), GraphPropertyValue::Bool(self.is_repeat));
+        p.insert(
+            "fiscalYear".into(),
+            GraphPropertyValue::Int(self.fiscal_year as i64),
+        );
+        if !self.affected_assertions.is_empty() {
+            p.insert(
+                "affectedAssertions".into(),
+                GraphPropertyValue::StringList(
+                    self.affected_assertions
+                        .iter()
+                        .map(|a| a.to_string())
+                        .collect(),
+                ),
+            );
+        }
+        if !self.related_standards.is_empty() {
+            p.insert(
+                "relatedStandards".into(),
+                GraphPropertyValue::StringList(
+                    self.related_standards
+                        .iter()
+                        .map(|s| s.as_str().to_string())
+                        .collect(),
+                ),
+            );
+        }
+        if !self.affected_accounts.is_empty() {
+            p.insert(
+                "affectedAccounts".into(),
+                GraphPropertyValue::StringList(self.affected_accounts.clone()),
+            );
+        }
+        p
     }
 }
 

@@ -17,6 +17,7 @@ use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
 use datasynth_core::models::audit::{
     AuditEngagement, AuditEvidence, AuditFinding, ProfessionalJudgment, RiskAssessment, Workpaper,
 };
+use datasynth_core::models::compliance::{ComplianceFinding, ComplianceStandard, RegulatoryFiling};
 use datasynth_core::models::sourcing::{
     BidEvaluation, ProcurementContract, RfxEvent, SourcingProject, SupplierBid,
     SupplierQualification,
@@ -107,6 +108,11 @@ mod type_codes {
     pub const SOX_ASSERTION: u32 = 502;
     pub const INTERNAL_CONTROL: u32 = 503;
     pub const KYC_PROFILE: u32 = 504;
+    pub const COMPLIANCE_STANDARD: u32 = 505;
+    pub const JURISDICTION: u32 = 506;
+    // Layer 2 — Compliance events
+    pub const REGULATORY_FILING: u32 = 507;
+    pub const COMPLIANCE_FINDING: u32 = 508;
 
     // Edge type codes
     pub const IMPLEMENTS_CONTROL: u32 = 40;
@@ -114,7 +120,11 @@ mod type_codes {
     pub const OWNS_CONTROL: u32 = 42;
     pub const OVERSEE_PROCESS: u32 = 43;
     pub const ENFORCES_ASSERTION: u32 = 44;
+    pub const STANDARD_TO_CONTROL: u32 = 45;
+    pub const FINDING_ON_CONTROL: u32 = 46;
+    pub const STANDARD_TO_ACCOUNT: u32 = 47;
     pub const SUPPLIES_TO: u32 = 48;
+    pub const FILED_BY_COMPANY: u32 = 49;
     pub const COVERS_COSO_PRINCIPLE: u32 = 54;
     pub const CONTAINS_ACCOUNT: u32 = 55;
 }
@@ -141,6 +151,7 @@ pub struct HypergraphConfig {
     pub include_mfg: bool,
     pub include_bank: bool,
     pub include_audit: bool,
+    pub include_compliance: bool,
     pub include_r2r: bool,
     pub events_as_hyperedges: bool,
     /// Documents per counterparty above which aggregation is triggered.
@@ -170,6 +181,7 @@ impl Default for HypergraphConfig {
             include_mfg: true,
             include_bank: true,
             include_audit: true,
+            include_compliance: true,
             include_r2r: true,
             events_as_hyperedges: true,
             docs_per_counterparty_threshold: 20,
@@ -206,6 +218,13 @@ pub struct HypergraphBuilder {
     /// Process document node IDs to their counterparty type and ID.
     /// (node_id, entity_type) → counterparty_id
     doc_counterparty_links: Vec<(String, String, String)>, // (doc_node_id, counterparty_type, counterparty_id)
+    /// Compliance standard ID → node ID mapping.
+    standard_node_ids: HashMap<String, String>,
+    /// Compliance finding → control_id deferred edges.
+    compliance_finding_control_links: Vec<(String, String)>, // (finding_node_id, control_id)
+    /// Standard → account code deferred edges (resolved in `build_cross_layer_edges`).
+    #[allow(dead_code)]
+    standard_account_links: Vec<(String, String)>, // (standard_node_id, account_code)
 }
 
 impl HypergraphBuilder {
@@ -227,6 +246,9 @@ impl HypergraphBuilder {
             customer_node_ids: HashMap::new(),
             employee_node_ids: HashMap::new(),
             doc_counterparty_links: Vec::new(),
+            standard_node_ids: HashMap::new(),
+            compliance_finding_control_links: Vec::new(),
+            standard_account_links: Vec::new(),
         }
     }
 
@@ -2114,6 +2136,211 @@ impl HypergraphBuilder {
         }
     }
 
+    /// Adds compliance regulation nodes: standards (Layer 1), findings & filings (Layer 2).
+    ///
+    /// Creates cross-layer edges:
+    /// - Standard → Account (GovernedByStandard) via `applicable_account_types`
+    /// - Standard → Control (StandardToControl) via domain/process mapping
+    /// - Finding → Control (FindingOnControl) if finding has `control_id`
+    pub fn add_compliance_regulations(
+        &mut self,
+        standards: &[ComplianceStandard],
+        findings: &[ComplianceFinding],
+        filings: &[RegulatoryFiling],
+    ) {
+        if !self.config.include_compliance {
+            return;
+        }
+
+        // Standards → Layer 1 (Governance)
+        for std in standards {
+            if std.is_superseded() {
+                continue;
+            }
+            let sid = std.id.as_str().to_string();
+            let node_id = format!("cr_std_{sid}");
+            if self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "ComplianceStandard".into(),
+                entity_type_code: type_codes::COMPLIANCE_STANDARD,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: sid.clone(),
+                label: format!("{}: {}", sid, std.title),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("title".into(), Value::String(std.title.clone()));
+                    p.insert("category".into(), Value::String(std.category.to_string()));
+                    p.insert("domain".into(), Value::String(std.domain.to_string()));
+                    p.insert(
+                        "issuingBody".into(),
+                        Value::String(std.issuing_body.to_string()),
+                    );
+                    if !std.applicable_account_types.is_empty() {
+                        p.insert(
+                            "applicableAccountTypes".into(),
+                            Value::Array(
+                                std.applicable_account_types
+                                    .iter()
+                                    .map(|s| Value::String(s.clone()))
+                                    .collect(),
+                            ),
+                        );
+                    }
+                    if !std.applicable_processes.is_empty() {
+                        p.insert(
+                            "applicableProcesses".into(),
+                            Value::Array(
+                                std.applicable_processes
+                                    .iter()
+                                    .map(|s| Value::String(s.clone()))
+                                    .collect(),
+                            ),
+                        );
+                    }
+                    p
+                },
+                features: vec![
+                    std.versions.len() as f64,
+                    std.requirements.len() as f64,
+                    std.mandatory_jurisdictions.len() as f64,
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            }) {
+                self.standard_node_ids.insert(sid.clone(), node_id.clone());
+
+                // Collect deferred standard→account links for cross-layer edges
+                for _acct_type in &std.applicable_account_types {
+                    // Deferred: resolved in build_cross_layer_edges
+                    // We match account_type against account names/labels
+                }
+            }
+        }
+
+        // Findings → Layer 2 (ProcessEvents)
+        for finding in findings {
+            let fid = finding.finding_id.to_string();
+            let node_id = format!("cr_find_{fid}");
+            if self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "ComplianceFinding".into(),
+                entity_type_code: type_codes::COMPLIANCE_FINDING,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: fid,
+                label: format!("CF {} [{}]", finding.deficiency_level, finding.company_code),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("title".into(), Value::String(finding.title.clone()));
+                    p.insert(
+                        "severity".into(),
+                        Value::String(finding.severity.to_string()),
+                    );
+                    p.insert(
+                        "deficiencyLevel".into(),
+                        Value::String(finding.deficiency_level.to_string()),
+                    );
+                    p.insert(
+                        "companyCode".into(),
+                        Value::String(finding.company_code.clone()),
+                    );
+                    p.insert(
+                        "remediationStatus".into(),
+                        Value::String(finding.remediation_status.to_string()),
+                    );
+                    p.insert("isRepeat".into(), Value::Bool(finding.is_repeat));
+                    p.insert(
+                        "identifiedDate".into(),
+                        Value::String(finding.identified_date.to_string()),
+                    );
+                    p
+                },
+                features: vec![
+                    finding.severity.score(),
+                    finding.deficiency_level.severity_score(),
+                    if finding.is_repeat { 1.0 } else { 0.0 },
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            }) {
+                // Link finding → standard(s)
+                for std_id in &finding.related_standards {
+                    let sid = std_id.as_str().to_string();
+                    if let Some(std_node) = self.standard_node_ids.get(&sid) {
+                        self.edges.push(CrossLayerEdge {
+                            source_id: node_id.clone(),
+                            source_layer: HypergraphLayer::ProcessEvents,
+                            target_id: std_node.clone(),
+                            target_layer: HypergraphLayer::GovernanceControls,
+                            edge_type: "FindingOnStandard".to_string(),
+                            edge_type_code: type_codes::GOVERNED_BY_STANDARD,
+                            properties: HashMap::new(),
+                        });
+                    }
+                }
+
+                // Deferred: Finding → Control
+                if let Some(ref ctrl_id) = finding.control_id {
+                    self.compliance_finding_control_links
+                        .push((node_id, ctrl_id.clone()));
+                }
+            }
+        }
+
+        // Filings → Layer 2 (ProcessEvents)
+        for filing in filings {
+            let filing_key = format!(
+                "{}_{}_{}_{}",
+                filing.filing_type, filing.company_code, filing.jurisdiction, filing.period_end
+            );
+            let node_id = format!("cr_filing_{filing_key}");
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "RegulatoryFiling".into(),
+                entity_type_code: type_codes::REGULATORY_FILING,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: filing_key,
+                label: format!("{} [{}]", filing.filing_type, filing.company_code),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "filingType".into(),
+                        Value::String(filing.filing_type.to_string()),
+                    );
+                    p.insert(
+                        "companyCode".into(),
+                        Value::String(filing.company_code.clone()),
+                    );
+                    p.insert(
+                        "jurisdiction".into(),
+                        Value::String(filing.jurisdiction.clone()),
+                    );
+                    p.insert(
+                        "status".into(),
+                        Value::String(format!("{:?}", filing.status)),
+                    );
+                    p.insert(
+                        "periodEnd".into(),
+                        Value::String(filing.period_end.to_string()),
+                    );
+                    p.insert(
+                        "deadline".into(),
+                        Value::String(filing.deadline.to_string()),
+                    );
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
     /// Build cross-layer edges linking governance to accounting and process layers.
     pub fn build_cross_layer_edges(&mut self) {
         if !self.config.include_cross_layer_edges {
@@ -2141,6 +2368,103 @@ impl HypergraphBuilder {
             }
         }
         self.doc_counterparty_links = links;
+
+        // Compliance: Finding → Control edges
+        let finding_ctrl_links = std::mem::take(&mut self.compliance_finding_control_links);
+        for (finding_node_id, ctrl_id) in &finding_ctrl_links {
+            if let Some(ctrl_node_id) = self.control_node_ids.get(ctrl_id) {
+                self.edges.push(CrossLayerEdge {
+                    source_id: finding_node_id.clone(),
+                    source_layer: HypergraphLayer::ProcessEvents,
+                    target_id: ctrl_node_id.clone(),
+                    target_layer: HypergraphLayer::GovernanceControls,
+                    edge_type: "FindingOnControl".to_string(),
+                    edge_type_code: type_codes::FINDING_ON_CONTROL,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+        self.compliance_finding_control_links = finding_ctrl_links;
+
+        // Compliance: Standard → Account edges (match by account label/name)
+        let std_ids: Vec<(String, String)> = self
+            .standard_node_ids
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        for (std_id, std_node_id) in &std_ids {
+            // Look up the standard's applicable_account_types from node properties
+            if let Some(&node_idx) = self.node_index.get(std_node_id) {
+                if let Some(node) = self.nodes.get(node_idx) {
+                    if let Some(Value::Array(acct_types)) =
+                        node.properties.get("applicableAccountTypes")
+                    {
+                        let type_strings: Vec<String> = acct_types
+                            .iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_lowercase()))
+                            .collect();
+
+                        // Match against account nodes by checking if name contains
+                        for (acct_code, acct_node_id) in &self.account_node_ids {
+                            // Get account label from node
+                            if let Some(&acct_idx) = self.node_index.get(acct_node_id) {
+                                if let Some(acct_node) = self.nodes.get(acct_idx) {
+                                    let label_lower = acct_node.label.to_lowercase();
+                                    let matches = type_strings.iter().any(|t| {
+                                        label_lower.contains(t)
+                                            || acct_code.to_lowercase().contains(t)
+                                    });
+                                    if matches {
+                                        self.edges.push(CrossLayerEdge {
+                                            source_id: std_node_id.clone(),
+                                            source_layer: HypergraphLayer::GovernanceControls,
+                                            target_id: acct_node_id.clone(),
+                                            target_layer: HypergraphLayer::AccountingNetwork,
+                                            edge_type: format!("GovernedByStandard:{}", std_id),
+                                            edge_type_code: type_codes::STANDARD_TO_ACCOUNT,
+                                            properties: HashMap::new(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Compliance: Standard → Control edges (match by control process mapping)
+        for (_std_id, std_node_id) in &std_ids {
+            if let Some(&node_idx) = self.node_index.get(std_node_id) {
+                if let Some(node) = self.nodes.get(node_idx) {
+                    if let Some(Value::Array(processes)) =
+                        node.properties.get("applicableProcesses")
+                    {
+                        let proc_strings: Vec<String> = processes
+                            .iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                            .collect();
+
+                        // For SOX/audit standards, link to all controls
+                        let is_universal = proc_strings.len() >= 5;
+                        if is_universal {
+                            // Link to all controls (this standard governs all processes)
+                            for (_ctrl_id, ctrl_node_id) in &self.control_node_ids {
+                                self.edges.push(CrossLayerEdge {
+                                    source_id: std_node_id.clone(),
+                                    source_layer: HypergraphLayer::GovernanceControls,
+                                    target_id: ctrl_node_id.clone(),
+                                    target_layer: HypergraphLayer::GovernanceControls,
+                                    edge_type: "StandardToControl".to_string(),
+                                    edge_type_code: type_codes::STANDARD_TO_CONTROL,
+                                    properties: HashMap::new(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Finalize and build the Hypergraph.

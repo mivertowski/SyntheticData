@@ -22,6 +22,10 @@ pub struct ComplianceStandardRecord {
     pub version: String,
     pub is_active: bool,
     pub superseded_by: Option<String>,
+    /// GL account types this standard applies to.
+    pub applicable_account_types: Vec<String>,
+    /// Business processes this standard governs.
+    pub applicable_processes: Vec<String>,
 }
 
 /// A flattened cross-reference record.
@@ -105,6 +109,8 @@ impl RegulationGenerator {
                     version,
                     is_active: true,
                     superseded_by: std.superseded_by.as_ref().map(|s| s.as_str().to_string()),
+                    applicable_account_types: std.applicable_account_types.clone(),
+                    applicable_processes: std.applicable_processes.clone(),
                 });
             }
         }

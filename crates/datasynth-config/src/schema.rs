@@ -12732,6 +12732,15 @@ pub struct ComplianceGraphConfig {
     /// Include temporal supersession edges.
     #[serde(default)]
     pub include_supersession_edges: bool,
+    /// Include edges linking standards to the GL account types they govern.
+    #[serde(default = "default_true")]
+    pub include_account_links: bool,
+    /// Include edges linking standards to the internal controls that implement them.
+    #[serde(default = "default_true")]
+    pub include_control_links: bool,
+    /// Include edges linking filings and jurisdictions to the originating company.
+    #[serde(default = "default_true")]
+    pub include_company_links: bool,
 }
 
 impl Default for ComplianceGraphConfig {
@@ -12742,6 +12751,9 @@ impl Default for ComplianceGraphConfig {
             include_compliance_edges: true,
             include_cross_references: true,
             include_supersession_edges: false,
+            include_account_links: true,
+            include_control_links: true,
+            include_company_links: true,
         }
     }
 }
