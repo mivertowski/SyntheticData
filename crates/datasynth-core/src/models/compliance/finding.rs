@@ -1,6 +1,6 @@
 //! Compliance findings and deficiency classification.
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -158,11 +158,7 @@ impl ComplianceFinding {
             financial_impact: None,
             is_repeat: false,
             affected_accounts: Vec::new(),
-            fiscal_year: identified_date
-                .format("%Y")
-                .to_string()
-                .parse()
-                .unwrap_or(2025),
+            fiscal_year: identified_date.year(),
         }
     }
 

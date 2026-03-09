@@ -2224,13 +2224,7 @@ fn validate_compliance_regulations(config: &GeneratorConfig) -> SynthResult<()> 
 
     // Validate reference_date format if provided (YYYY-MM-DD)
     if let Some(ref date_str) = cr.reference_date {
-        let parts: Vec<&str> = date_str.split('-').collect();
-        let valid = parts.len() == 3
-            && parts[0].len() == 4
-            && parts[1].len() == 2
-            && parts[2].len() == 2
-            && parts.iter().all(|p| p.chars().all(|c| c.is_ascii_digit()));
-        if !valid {
+        if chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_err() {
             return Err(SynthError::validation(format!(
                 "compliance_regulations.reference_date: '{}' is not a valid YYYY-MM-DD date",
                 date_str

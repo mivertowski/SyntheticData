@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-09
+
+### Added
+- **Compliance Regulations Framework** (`datasynth-core`, `datasynth-standards`, `datasynth-generators`, `datasynth-graph`, `datasynth-config`, `datasynth-runtime`, `datasynth-cli`)
+  - **StandardId**: Canonical `"{BODY}-{NUMBER}"` identifier (e.g., `IFRS-16`, `SOX-404`, `ISA-315`) with `body()`, `number()`, `parse()`, and `From` impls
+  - **ComplianceStandard**: Full metadata model with issuing body, category, domain, temporal versions, cross-references, and mandatory/permitted jurisdictions
+  - **TemporalVersion**: Jurisdiction-aware date resolution with `is_active_at()` / `is_active_at_in()`, early adoption dates, and per-country effective date overrides
+  - **JurisdictionProfile**: Country-specific compliance profiles (accounting framework, audit framework, tax rate, supranational memberships) for 10 countries (US, DE, GB, FR, JP, IN, SG, AU, BR, KR)
+  - **StandardRegistry**: Central catalog with ~45 built-in standards, 9 cross-references, temporal lookup, supersession chain resolution, and jurisdiction-aware filtering
+  - **ComplianceAssertion**: 15 ISA 315 assertion types across transaction, balance, disclosure, and presentation categories with ML feature codes
+  - **ComplianceFinding**: Audit finding model with SOX/ISA deficiency classification (MaterialWeakness, SignificantDeficiency, ControlDeficiency), remediation tracking, and financial impact
+  - **RegulatoryFiling**: Filing model with 10 filing types (10-K, 10-Q, Jahresabschluss, E-Bilanz, Liasse fiscale, UK Annual Return, CT600, 有価証券報告書) and deadline tracking
+  - **CrossReference**: Typed standard relationships (Converged, Related, Complementary, DerivedFrom, AuditMapping, ControlFrameworkMapping) with convergence levels
+  - **RegulationGenerator**: Produces compliance standard records, cross-reference records, and jurisdiction profile records for CSV/JSON export
+  - **ProcedureGenerator**: Generates audit procedure instances from 9 ISA-based templates (substantive detail, analytical, controls test, inspection, confirmation, recalculation, observation, inquiry, cutoff test) with step definitions and sampling parameters
+  - **ComplianceFindingGenerator**: Generates compliance findings from 10 templates with condition/criteria/cause/effect structure, deficiency classification, and remediation status
+  - **FilingGenerator**: Generates regulatory filing records for 8 filing types across 5 jurisdictions (US, DE, FR, GB, JP) with status progression and deadline tracking
+  - **ComplianceGraphBuilder**: Builds compliance graph layer with Standard, Jurisdiction, AuditProcedure, and Finding nodes; CrossReference, Supersedes, MapsToStandard, TestsCompliance, and FindingOnStandard edges
+  - **ComplianceRegulationsConfig**: Full configuration schema with sub-configs for standards selection, audit procedures, findings, filings, graph, and output
+  - Config validation for jurisdiction codes, reference dates, standard categories, sampling methods, and rate parameters
+  - Runtime wiring in `EnhancedOrchestrator` with `phase_compliance_regulations()` producing `ComplianceRegulationsSnapshot`
+  - CLI output of 7 JSON files to `compliance_regulations/` directory (standards, cross-references, jurisdictions, procedures, findings, filings, graph)
+  - 67+ tests across all compliance modules
+
+### Fixed
+- `fiscal_year` in `ComplianceFinding` now uses `Datelike::year()` instead of format/parse roundtrip
+- Compliance reference date validation uses `chrono::NaiveDate::parse_from_str` consistent with rest of validation module
+
 ## [1.0.0] - 2026-03-06
 
 ### Added

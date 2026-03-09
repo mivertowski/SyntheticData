@@ -4,6 +4,21 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/Syn
 
 ## Recent Releases
 
+### [1.1.0] - 2026-03-09
+
+**Compliance & Regulations Framework**
+
+- **StandardId & StandardRegistry**: Canonical standard identifiers (`IFRS-16`, `SOX-404`, `ISA-315`) with ~45 built-in standards, temporal version resolution, supersession chains, and cross-reference traversal
+- **Jurisdiction profiles**: 10 country profiles (US, DE, GB, FR, JP, IN, SG, AU, BR, KR) with accounting/audit frameworks, supranational memberships, and tax rates
+- **Temporal versioning**: Jurisdiction-aware date resolution with per-country effective date overrides and early adoption dates
+- **Audit procedure generation**: 9 ISA-based templates (substantive detail, analytical, controls test, inspection, confirmation, recalculation, observation, inquiry, cutoff test) with sampling parameters
+- **Compliance finding generation**: 10 finding templates with SOX/ISA deficiency classification (MaterialWeakness, SignificantDeficiency, ControlDeficiency) and remediation tracking
+- **Regulatory filing generation**: 8 filing types across 5 jurisdictions (US, DE, FR, GB, JP) with deadline tracking and status progression
+- **Compliance graph layer**: Standard, Jurisdiction, AuditProcedure, and Finding nodes with CrossReference, Supersedes, MapsToStandard, TestsCompliance, and FindingOnStandard edges
+- **Configuration & validation**: Full `compliance_regulations` config section with standards selection, audit procedures, findings, filings, graph, and output sub-configs
+- 67+ tests across all compliance modules
+- 7 JSON output files in `compliance_regulations/` directory
+
 ### [1.0.0] - 2026-03-06
 
 **v1.0.0 Release — Enterprise Simulation & ML Ground Truth**
