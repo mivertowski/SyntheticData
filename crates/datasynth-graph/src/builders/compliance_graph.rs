@@ -265,6 +265,10 @@ impl ComplianceGraphBuilder {
     /// Adds audit procedure nodes and links them to standards.
     pub fn add_procedures(&mut self, procedures: &[ProcedureNodeInput]) {
         for proc in procedures {
+            if self.procedure_nodes.contains_key(&proc.procedure_id) {
+                continue;
+            }
+
             let node = GraphNode::new(
                 0,
                 NodeType::Custom("AuditProcedure".to_string()),
@@ -297,6 +301,10 @@ impl ComplianceGraphBuilder {
     /// Adds finding nodes and links them to standards.
     pub fn add_findings(&mut self, findings: &[FindingNodeInput]) {
         for finding in findings {
+            if self.finding_nodes.contains_key(&finding.finding_id) {
+                continue;
+            }
+
             let node = GraphNode::new(
                 0,
                 NodeType::Custom("Finding".to_string()),

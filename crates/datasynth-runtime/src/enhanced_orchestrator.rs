@@ -8595,16 +8595,17 @@ impl EnhancedOrchestrator {
                     self.seed + 9100,
                     finding_config,
                 );
-            let company_code = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.code.as_str())
-                .unwrap_or("C001");
-            let findings =
-                finding_gen.generate_findings(&audit_procedures, company_code, reference_date);
-            info!("  Compliance findings: {}", findings.len());
-            findings
+            let mut all_findings = Vec::new();
+            for company in &self.config.companies {
+                let company_findings = finding_gen.generate_findings(
+                    &audit_procedures,
+                    &company.code,
+                    reference_date,
+                );
+                all_findings.extend(company_findings);
+            }
+            info!("  Compliance findings: {}", all_findings.len());
+            all_findings
         } else {
             Vec::new()
         };

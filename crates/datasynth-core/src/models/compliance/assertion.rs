@@ -129,3 +129,70 @@ pub enum AssertionCategory {
     /// Assertions about timeliness and presentation
     Presentation,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_assertion_categories() {
+        assert_eq!(
+            ComplianceAssertion::Occurrence.category(),
+            AssertionCategory::Transaction
+        );
+        assert_eq!(
+            ComplianceAssertion::Existence.category(),
+            AssertionCategory::Balance
+        );
+        assert_eq!(
+            ComplianceAssertion::CompletenessDisclosure.category(),
+            AssertionCategory::Disclosure
+        );
+        assert_eq!(
+            ComplianceAssertion::Timeliness.category(),
+            AssertionCategory::Presentation
+        );
+    }
+
+    #[test]
+    fn test_feature_codes_unique() {
+        let assertions = [
+            ComplianceAssertion::Occurrence,
+            ComplianceAssertion::Completeness,
+            ComplianceAssertion::Accuracy,
+            ComplianceAssertion::Cutoff,
+            ComplianceAssertion::Classification,
+            ComplianceAssertion::Existence,
+            ComplianceAssertion::RightsAndObligations,
+            ComplianceAssertion::CompletenessBalance,
+            ComplianceAssertion::ValuationAndAllocation,
+            ComplianceAssertion::OccurrenceAndRightsDisclosure,
+            ComplianceAssertion::CompletenessDisclosure,
+            ComplianceAssertion::AccuracyAndValuation,
+            ComplianceAssertion::ClassificationAndUnderstandability,
+            ComplianceAssertion::Timeliness,
+            ComplianceAssertion::Presentation,
+        ];
+        let codes: Vec<f64> = assertions.iter().map(|a| a.feature_code()).collect();
+        // Each code should be unique
+        for (i, c1) in codes.iter().enumerate() {
+            for (j, c2) in codes.iter().enumerate() {
+                if i != j {
+                    assert!(
+                        (c1 - c2).abs() > f64::EPSILON,
+                        "Feature codes {i} and {j} are equal"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_assertion_display() {
+        assert_eq!(format!("{}", ComplianceAssertion::Occurrence), "Occurrence");
+        assert_eq!(
+            format!("{}", ComplianceAssertion::ValuationAndAllocation),
+            "Valuation and Allocation"
+        );
+    }
+}

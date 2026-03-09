@@ -182,3 +182,82 @@ impl RegulatoryFiling {
         (self.deadline - from).num_days()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn date(y: i32, m: u32, d: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, d).expect("valid date")
+    }
+
+    #[test]
+    fn test_filing_creation() {
+        let filing = RegulatoryFiling::new(
+            FilingType::Form10K,
+            "C001",
+            "US",
+            date(2024, 12, 31),
+            date(2025, 3, 1),
+            "SEC",
+        );
+        assert_eq!(filing.company_code, "C001");
+        assert_eq!(filing.jurisdiction, "US");
+        assert_eq!(filing.status, FilingStatus::Pending);
+        assert!(filing.filing_date.is_none());
+    }
+
+    #[test]
+    fn test_filing_on_time() {
+        let filing = RegulatoryFiling::new(
+            FilingType::Form10K,
+            "C001",
+            "US",
+            date(2024, 12, 31),
+            date(2025, 3, 1),
+            "SEC",
+        )
+        .filed_on(date(2025, 2, 15));
+        assert_eq!(filing.status, FilingStatus::Filed);
+        assert_eq!(filing.filing_date, Some(date(2025, 2, 15)));
+    }
+
+    #[test]
+    fn test_filing_late() {
+        let filing = RegulatoryFiling::new(
+            FilingType::Form10K,
+            "C001",
+            "US",
+            date(2024, 12, 31),
+            date(2025, 3, 1),
+            "SEC",
+        )
+        .filed_on(date(2025, 3, 15));
+        assert_eq!(filing.status, FilingStatus::FiledLate);
+    }
+
+    #[test]
+    fn test_days_to_deadline() {
+        let filing = RegulatoryFiling::new(
+            FilingType::Form10Q,
+            "C001",
+            "US",
+            date(2024, 9, 30),
+            date(2024, 11, 9),
+            "SEC",
+        );
+        assert_eq!(filing.days_to_deadline(date(2024, 10, 9)), 31);
+        assert_eq!(filing.days_to_deadline(date(2024, 11, 9)), 0);
+        assert_eq!(filing.days_to_deadline(date(2024, 11, 19)), -10);
+    }
+
+    #[test]
+    fn test_filing_type_display() {
+        assert_eq!(format!("{}", FilingType::Form10K), "10-K");
+        assert_eq!(format!("{}", FilingType::Jahresabschluss), "Jahresabschluss");
+        assert_eq!(
+            format!("{}", FilingType::Custom("CbCR".to_string())),
+            "CbCR"
+        );
+    }
+}

@@ -2284,6 +2284,16 @@ fn validate_compliance_regulations(config: &GeneratorConfig) -> SynthResult<()> 
             "compliance_regulations.findings.significant_deficiency_rate",
             cr.findings.significant_deficiency_rate,
         )?;
+        let combined_rate =
+            cr.findings.material_weakness_rate + cr.findings.significant_deficiency_rate;
+        if combined_rate > 1.0 {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.findings: material_weakness_rate ({}) + significant_deficiency_rate ({}) = {} exceeds 1.0",
+                cr.findings.material_weakness_rate,
+                cr.findings.significant_deficiency_rate,
+                combined_rate
+            )));
+        }
     }
 
     Ok(())

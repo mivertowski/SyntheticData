@@ -1231,7 +1231,11 @@ pub fn write_all_output(
     // Compliance Regulations
     // ========================================================================
     let cr = &result.compliance_regulations;
-    if !cr.standard_records.is_empty() {
+    let has_compliance_data = !cr.standard_records.is_empty()
+        || !cr.audit_procedures.is_empty()
+        || !cr.findings.is_empty()
+        || !cr.filings.is_empty();
+    if has_compliance_data {
         let cr_dir = output_dir.join("compliance_regulations");
         std::fs::create_dir_all(&cr_dir)?;
         info!("Writing compliance regulations data...");

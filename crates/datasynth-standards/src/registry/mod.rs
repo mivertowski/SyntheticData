@@ -145,12 +145,15 @@ impl StandardRegistry {
     /// Gets the supersession chain for a standard (oldest → newest).
     pub fn supersession_chain(&self, id: &StandardId) -> Vec<&ComplianceStandard> {
         let mut chain = Vec::new();
+        let mut visited = std::collections::HashSet::new();
 
         // Walk backwards to find predecessors
         let mut current = id.clone();
         loop {
+            if !visited.insert(current.clone()) {
+                break; // Cycle detected
+            }
             if self.standards.contains_key(&current) {
-                // Check if any standard supersedes this one
                 let predecessor = self
                     .standards
                     .values()
@@ -166,7 +169,11 @@ impl StandardRegistry {
         }
 
         // Now walk forward from the oldest
+        visited.clear();
         while let Some(std) = self.standards.get(&current) {
+            if !visited.insert(current.clone()) {
+                break; // Cycle detected
+            }
             chain.push(std);
             if let Some(ref successor) = std.superseded_by {
                 current = successor.clone();
