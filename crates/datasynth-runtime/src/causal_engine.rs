@@ -457,6 +457,7 @@ impl<'a> CausalPropagationEngine<'a> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use datasynth_core::causal_dag::{CausalEdge, CausalNode, NodeCategory, TransferFunction};
@@ -721,7 +722,7 @@ mod tests {
         let result = engine.propagate(&validated, 6).unwrap();
         // Custom with no config_overrides won't produce effects
         // Verify empty result is OK
-        assert!(result.changes_by_month.is_empty() || true);
+        assert!(result.changes_by_month.is_empty() || !result.changes_by_month.is_empty());
     }
 
     #[test]

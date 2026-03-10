@@ -193,6 +193,7 @@ impl PhaseSink for StreamPipeline {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

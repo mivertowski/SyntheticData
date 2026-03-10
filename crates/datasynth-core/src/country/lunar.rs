@@ -186,6 +186,7 @@ pub fn approximate_chuseok(year: i32) -> Option<NaiveDate> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

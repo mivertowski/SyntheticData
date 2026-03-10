@@ -718,10 +718,12 @@ mod tests {
         use rand_chacha::ChaCha8Rng;
 
         // German pack: DD.MM.YYYY
-        let mut pack = CountryPack::default();
-        pack.locale = LocaleConfig {
-            date_format: DateFormatConfig {
-                short: "DD.MM.YYYY".to_string(),
+        let pack = CountryPack {
+            locale: LocaleConfig {
+                date_format: DateFormatConfig {
+                    short: "DD.MM.YYYY".to_string(),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             ..Default::default()
@@ -749,15 +751,17 @@ mod tests {
         use rand_chacha::ChaCha8Rng;
 
         // German pack: comma decimal, dot thousands
-        let mut pack = CountryPack::default();
-        pack.locale = LocaleConfig {
-            number_format: NumberFormatConfig {
-                decimal_separator: ",".to_string(),
-                thousands_separator: ".".to_string(),
+        let pack = CountryPack {
+            locale: LocaleConfig {
+                number_format: NumberFormatConfig {
+                    decimal_separator: ",".to_string(),
+                    thousands_separator: ".".to_string(),
+                    ..Default::default()
+                },
+                currency_symbol: "\u{20ac}".to_string(),
+                default_currency: "EUR".to_string(),
                 ..Default::default()
             },
-            currency_symbol: "\u{20ac}".to_string(),
-            default_currency: "EUR".to_string(),
             ..Default::default()
         };
 

@@ -71,7 +71,7 @@ fn test_resource_pool_workload_balancing() {
         let r = pool.assign().unwrap().to_string();
         *assignments.entry(r).or_default() += 1;
     }
-    for (_resource, count) in &assignments {
+    for count in assignments.values() {
         assert_eq!(*count, 3);
     }
 }
@@ -162,7 +162,7 @@ fn test_p2p_generation_produces_enriched_events() {
     for event in &events_with_workload {
         let w = event.resource_workload.unwrap();
         assert!(
-            w >= 0.0 && w <= 1.0,
+            (0.0..=1.0).contains(&w),
             "Resource workload should be in [0.0, 1.0], got {}",
             w
         );
@@ -241,7 +241,7 @@ fn test_o2c_generation_produces_enriched_events() {
     for event in &events_with_workload {
         let w = event.resource_workload.unwrap();
         assert!(
-            w >= 0.0 && w <= 1.0,
+            (0.0..=1.0).contains(&w),
             "O2C resource workload should be in [0.0, 1.0], got {}",
             w
         );

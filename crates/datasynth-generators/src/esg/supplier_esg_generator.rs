@@ -291,8 +291,10 @@ mod tests {
 
     #[test]
     fn test_disabled_produces_nothing() {
-        let mut config = SupplyChainEsgConfig::default();
-        config.enabled = false;
+        let config = SupplyChainEsgConfig {
+            enabled: false,
+            ..Default::default()
+        };
         let vendors = test_vendors();
         let mut gen = SupplierEsgGenerator::new(config, 42);
         let assessments = gen.generate("C001", &vendors, d("2025-06-01"));

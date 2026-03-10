@@ -53,10 +53,9 @@ fn test_default_causal_dag_propagation() {
     assert!((result["gdp_growth"] - (-0.02)).abs() < 0.001);
 
     // Downstream effects should propagate (values differ from baseline)
-    // Customer churn should increase (negative GDP → higher churn)
+    // Customer churn may not change at month 3 due to lag=2, but the node should exist
     assert!(
-        result["customer_churn_rate"]
-            != dag.find_node("customer_churn_rate").unwrap().baseline_value
-            || true
-    ); // May not change at month 3 due to lag=2, but the node should exist
+        result.contains_key("customer_churn_rate"),
+        "customer_churn_rate should be present in propagation result"
+    );
 }

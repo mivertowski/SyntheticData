@@ -66,9 +66,11 @@ fn test_project_accounting_full_pipeline() {
     let end_date = d("2024-06-30");
 
     // 1. Create projects with WBS
-    let mut config = ProjectAccountingConfig::default();
-    config.enabled = true;
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        enabled: true,
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start_date, end_date);
     assert_eq!(pool.projects.len(), 5);
@@ -173,8 +175,10 @@ fn test_cost_linking_rates_match_config() {
     let start = d("2024-01-01");
     let end = d("2024-12-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 10;
+    let config = ProjectAccountingConfig {
+        project_count: 10,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -188,7 +192,7 @@ fn test_cost_linking_rates_match_config() {
 
     let linked_rate = cost_lines.len() as f64 / time_entries.len() as f64;
     assert!(
-        linked_rate >= 0.40 && linked_rate <= 0.80,
+        (0.40..=0.80).contains(&linked_rate),
         "Expected linking rate near 0.60, got {:.2}",
         linked_rate
     );
@@ -199,8 +203,10 @@ fn test_cost_categories_match_source_types() {
     let start = d("2024-01-01");
     let end = d("2024-12-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -232,8 +238,10 @@ fn test_revenue_increases_monotonically() {
     let start = d("2024-01-01");
     let end = d("2024-06-30");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 3;
+    let config = ProjectAccountingConfig {
+        project_count: 3,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -281,8 +289,10 @@ fn test_unbilled_revenue_equals_recognized_minus_billed() {
     let start = d("2024-01-01");
     let end = d("2024-03-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 2;
+    let config = ProjectAccountingConfig {
+        project_count: 2,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -321,8 +331,10 @@ fn test_evm_formulas_correct() {
     let start = d("2024-01-01");
     let end = d("2024-06-30");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 3;
+    let config = ProjectAccountingConfig {
+        project_count: 3,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -369,8 +381,10 @@ fn test_change_order_impacts_positive() {
     let start = d("2024-01-01");
     let end = d("2024-12-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 10;
+    let config = ProjectAccountingConfig {
+        project_count: 10,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -404,8 +418,10 @@ fn test_milestone_sequence_and_count() {
     let start = d("2024-01-01");
     let end = d("2024-12-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -439,8 +455,10 @@ fn test_past_milestones_have_final_status() {
     let end = d("2024-12-31");
     let reference = d("2024-09-30");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -474,8 +492,10 @@ fn test_full_pipeline_determinism() {
     let time_entries = generate_test_time_entries(100);
 
     let run = |seed: u64| {
-        let mut config = ProjectAccountingConfig::default();
-        config.project_count = 5;
+        let config = ProjectAccountingConfig {
+            project_count: 5,
+            ..Default::default()
+        };
         let mut proj_gen = ProjectGenerator::new(config, seed);
         let pool = proj_gen.generate("TEST", start, end);
 
@@ -504,8 +524,10 @@ fn test_different_seeds_produce_different_results() {
     let time_entries = generate_test_time_entries(100);
 
     let run = |seed: u64| {
-        let mut config = ProjectAccountingConfig::default();
-        config.project_count = 10;
+        let config = ProjectAccountingConfig {
+            project_count: 10,
+            ..Default::default()
+        };
         let mut proj_gen = ProjectGenerator::new(config, seed);
         let pool = proj_gen.generate("TEST", start, end);
 
@@ -535,8 +557,10 @@ fn test_cost_lines_reference_valid_wbs() {
     let start = d("2024-01-01");
     let end = d("2024-12-31");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 
@@ -575,8 +599,10 @@ fn test_evm_bac_equals_project_budget() {
     let start = d("2024-01-01");
     let end = d("2024-06-30");
 
-    let mut config = ProjectAccountingConfig::default();
-    config.project_count = 5;
+    let config = ProjectAccountingConfig {
+        project_count: 5,
+        ..Default::default()
+    };
     let mut proj_gen = ProjectGenerator::new(config, 42);
     let pool = proj_gen.generate("TEST", start, end);
 

@@ -256,7 +256,7 @@ mod tests {
 
         // Duration should be within configured range (12-36 months default)
         let duration_days = (contract.end_date - contract.start_date).num_days();
-        assert!(duration_days >= 12 * 30 && duration_days <= 36 * 30);
+        assert!((12 * 30..=36 * 30).contains(&duration_days));
 
         // Terms constraints
         assert!(contract.terms.termination_notice_days >= 30);

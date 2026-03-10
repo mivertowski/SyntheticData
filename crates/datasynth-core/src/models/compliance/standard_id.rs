@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_standard_id_ordering() {
-        let mut ids = vec![
+        let mut ids = [
             StandardId::from("SOX-404"),
             StandardId::from("ASC-606"),
             StandardId::from("IFRS-16"),

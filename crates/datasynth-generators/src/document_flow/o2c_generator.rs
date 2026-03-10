@@ -2024,8 +2024,10 @@ mod tests {
 
     #[test]
     fn test_o2c_returns_rate_generates_credit_memos() {
-        let mut config = O2CGeneratorConfig::default();
-        config.returns_rate = 1.0; // Force all chains to have returns
+        let config = O2CGeneratorConfig {
+            returns_rate: 1.0, // Force all chains to have returns
+            ..Default::default()
+        };
         let mut gen = O2CGenerator::with_config(42, config);
         let customer = create_test_customer();
         let materials = create_test_materials();
@@ -2048,8 +2050,10 @@ mod tests {
 
     #[test]
     fn test_credit_memo_references_invoice() {
-        let mut config = O2CGeneratorConfig::default();
-        config.returns_rate = 1.0;
+        let config = O2CGeneratorConfig {
+            returns_rate: 1.0,
+            ..Default::default()
+        };
         let mut gen = O2CGenerator::with_config(42, config);
         let customer = create_test_customer();
         let materials = create_test_materials();
@@ -2075,19 +2079,23 @@ mod tests {
 
     #[test]
     fn test_credit_memo_amount_bounded() {
-        let mut config = O2CGeneratorConfig::default();
-        config.returns_rate = 1.0;
+        let config = O2CGeneratorConfig {
+            returns_rate: 1.0,
+            ..Default::default()
+        };
         let _ = O2CGenerator::with_config(42, config);
         let customer = create_test_customer();
         let materials = create_test_materials();
         let material_refs: Vec<&Material> = materials.iter().collect();
 
         for seed in 0..10 {
-            let mut gen = O2CGenerator::with_config(seed, {
-                let mut c = O2CGeneratorConfig::default();
-                c.returns_rate = 1.0;
-                c
-            });
+            let mut gen = O2CGenerator::with_config(
+                seed,
+                O2CGeneratorConfig {
+                    returns_rate: 1.0,
+                    ..Default::default()
+                },
+            );
             let chain = gen.generate_chain(
                 "1000",
                 &customer,
@@ -2115,11 +2123,13 @@ mod tests {
         let material_refs: Vec<&Material> = materials.iter().collect();
 
         for seed in 0..20 {
-            let mut gen = O2CGenerator::with_config(seed, {
-                let mut c = O2CGeneratorConfig::default();
-                c.returns_rate = 0.0;
-                c
-            });
+            let mut gen = O2CGenerator::with_config(
+                seed,
+                O2CGeneratorConfig {
+                    returns_rate: 0.0,
+                    ..Default::default()
+                },
+            );
             let chain = gen.generate_chain(
                 "1000",
                 &customer,

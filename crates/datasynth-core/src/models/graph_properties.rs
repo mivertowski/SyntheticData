@@ -102,6 +102,7 @@ pub trait ToNodeProperties {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::approx_constant)]
 mod tests {
     use super::*;
 

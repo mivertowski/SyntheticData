@@ -704,6 +704,246 @@ impl EarnedValueMetric {
 }
 
 // ---------------------------------------------------------------------------
+// ToNodeProperties implementations (DS-005)
+// ---------------------------------------------------------------------------
+
+impl ToNodeProperties for ProjectCostLine {
+    fn node_type_name(&self) -> &'static str {
+        "project_cost_line"
+    }
+    fn node_type_code(&self) -> u16 {
+        451
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        p.insert(
+            "wbsElement".into(),
+            GraphPropertyValue::String(self.wbs_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "postingDate".into(),
+            GraphPropertyValue::Date(self.posting_date),
+        );
+        p.insert(
+            "costCategory".into(),
+            GraphPropertyValue::String(format!("{:?}", self.cost_category)),
+        );
+        p.insert(
+            "sourceType".into(),
+            GraphPropertyValue::String(format!("{:?}", self.source_type)),
+        );
+        if !self.source_document_id.is_empty() {
+            p.insert(
+                "sourceDocumentId".into(),
+                GraphPropertyValue::String(self.source_document_id.clone()),
+            );
+        }
+        p.insert(
+            "actualAmount".into(),
+            GraphPropertyValue::Decimal(self.amount),
+        );
+        p.insert(
+            "currency".into(),
+            GraphPropertyValue::String(self.currency.clone()),
+        );
+        if let Some(hours) = self.hours {
+            p.insert("hours".into(), GraphPropertyValue::Decimal(hours));
+        }
+        p
+    }
+}
+
+impl ToNodeProperties for ProjectRevenue {
+    fn node_type_name(&self) -> &'static str {
+        "project_revenue"
+    }
+    fn node_type_code(&self) -> u16 {
+        452
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        p.insert(
+            "entityCode".into(),
+            GraphPropertyValue::String(self.entity_id.clone()),
+        );
+        p.insert(
+            "periodStart".into(),
+            GraphPropertyValue::Date(self.period_start),
+        );
+        p.insert(
+            "periodEnd".into(),
+            GraphPropertyValue::Date(self.period_end),
+        );
+        p.insert(
+            "contractValue".into(),
+            GraphPropertyValue::Decimal(self.contract_value),
+        );
+        p.insert(
+            "completionPct".into(),
+            GraphPropertyValue::Decimal(self.completion_pct),
+        );
+        p.insert(
+            "method".into(),
+            GraphPropertyValue::String(format!("{:?}", self.method)),
+        );
+        p.insert(
+            "cumulativeRevenue".into(),
+            GraphPropertyValue::Decimal(self.cumulative_revenue),
+        );
+        p.insert(
+            "periodRevenue".into(),
+            GraphPropertyValue::Decimal(self.period_revenue),
+        );
+        p.insert(
+            "grossMarginPct".into(),
+            GraphPropertyValue::Decimal(self.gross_margin_pct),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for ProjectMilestone {
+    fn node_type_name(&self) -> &'static str {
+        "project_milestone"
+    }
+    fn node_type_code(&self) -> u16 {
+        455
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        if let Some(ref wbs) = self.wbs_id {
+            p.insert("wbsElement".into(), GraphPropertyValue::String(wbs.clone()));
+        }
+        p.insert(
+            "milestoneName".into(),
+            GraphPropertyValue::String(self.name.clone()),
+        );
+        p.insert(
+            "plannedDate".into(),
+            GraphPropertyValue::Date(self.planned_date),
+        );
+        if let Some(actual) = self.actual_date {
+            p.insert("actualDate".into(), GraphPropertyValue::Date(actual));
+        }
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "paymentAmount".into(),
+            GraphPropertyValue::Decimal(self.payment_amount),
+        );
+        p.insert("weightPct".into(), GraphPropertyValue::Decimal(self.weight));
+        p.insert(
+            "isComplete".into(),
+            GraphPropertyValue::Bool(matches!(self.status, MilestoneStatus::Completed)),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for ChangeOrder {
+    fn node_type_name(&self) -> &'static str {
+        "change_order"
+    }
+    fn node_type_code(&self) -> u16 {
+        454
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        p.insert(
+            "orderNumber".into(),
+            GraphPropertyValue::Int(self.number as i64),
+        );
+        p.insert(
+            "submittedDate".into(),
+            GraphPropertyValue::Date(self.submitted_date),
+        );
+        if let Some(approved) = self.approved_date {
+            p.insert("approvedDate".into(), GraphPropertyValue::Date(approved));
+        }
+        p.insert(
+            "status".into(),
+            GraphPropertyValue::String(format!("{:?}", self.status)),
+        );
+        p.insert(
+            "reason".into(),
+            GraphPropertyValue::String(format!("{:?}", self.reason)),
+        );
+        p.insert(
+            "costImpact".into(),
+            GraphPropertyValue::Decimal(self.cost_impact),
+        );
+        p.insert(
+            "scheduleImpactDays".into(),
+            GraphPropertyValue::Int(self.schedule_impact_days as i64),
+        );
+        p.insert(
+            "isApproved".into(),
+            GraphPropertyValue::Bool(matches!(self.status, ChangeOrderStatus::Approved)),
+        );
+        p
+    }
+}
+
+impl ToNodeProperties for EarnedValueMetric {
+    fn node_type_name(&self) -> &'static str {
+        "earned_value_metric"
+    }
+    fn node_type_code(&self) -> u16 {
+        453
+    }
+    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
+        let mut p = HashMap::new();
+        p.insert(
+            "projectId".into(),
+            GraphPropertyValue::String(self.project_id.clone()),
+        );
+        p.insert(
+            "measurementDate".into(),
+            GraphPropertyValue::Date(self.measurement_date),
+        );
+        p.insert("bac".into(), GraphPropertyValue::Decimal(self.bac));
+        p.insert(
+            "plannedValue".into(),
+            GraphPropertyValue::Decimal(self.planned_value),
+        );
+        p.insert(
+            "earnedValue".into(),
+            GraphPropertyValue::Decimal(self.earned_value),
+        );
+        p.insert(
+            "actualCost".into(),
+            GraphPropertyValue::Decimal(self.actual_cost),
+        );
+        p.insert("spi".into(), GraphPropertyValue::Decimal(self.spi));
+        p.insert("cpi".into(), GraphPropertyValue::Decimal(self.cpi));
+        p.insert("eac".into(), GraphPropertyValue::Decimal(self.eac));
+        p
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -1050,245 +1290,5 @@ mod tests {
         assert_eq!(deserialized.spi, evm.spi);
         assert_eq!(deserialized.cpi, evm.cpi);
         assert_eq!(deserialized.eac, evm.eac);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// ToNodeProperties implementations (DS-005)
-// ---------------------------------------------------------------------------
-
-impl ToNodeProperties for ProjectCostLine {
-    fn node_type_name(&self) -> &'static str {
-        "project_cost_line"
-    }
-    fn node_type_code(&self) -> u16 {
-        451
-    }
-    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
-        let mut p = HashMap::new();
-        p.insert(
-            "projectId".into(),
-            GraphPropertyValue::String(self.project_id.clone()),
-        );
-        p.insert(
-            "wbsElement".into(),
-            GraphPropertyValue::String(self.wbs_id.clone()),
-        );
-        p.insert(
-            "entityCode".into(),
-            GraphPropertyValue::String(self.entity_id.clone()),
-        );
-        p.insert(
-            "postingDate".into(),
-            GraphPropertyValue::Date(self.posting_date),
-        );
-        p.insert(
-            "costCategory".into(),
-            GraphPropertyValue::String(format!("{:?}", self.cost_category)),
-        );
-        p.insert(
-            "sourceType".into(),
-            GraphPropertyValue::String(format!("{:?}", self.source_type)),
-        );
-        if !self.source_document_id.is_empty() {
-            p.insert(
-                "sourceDocumentId".into(),
-                GraphPropertyValue::String(self.source_document_id.clone()),
-            );
-        }
-        p.insert(
-            "actualAmount".into(),
-            GraphPropertyValue::Decimal(self.amount),
-        );
-        p.insert(
-            "currency".into(),
-            GraphPropertyValue::String(self.currency.clone()),
-        );
-        if let Some(hours) = self.hours {
-            p.insert("hours".into(), GraphPropertyValue::Decimal(hours));
-        }
-        p
-    }
-}
-
-impl ToNodeProperties for ProjectRevenue {
-    fn node_type_name(&self) -> &'static str {
-        "project_revenue"
-    }
-    fn node_type_code(&self) -> u16 {
-        452
-    }
-    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
-        let mut p = HashMap::new();
-        p.insert(
-            "projectId".into(),
-            GraphPropertyValue::String(self.project_id.clone()),
-        );
-        p.insert(
-            "entityCode".into(),
-            GraphPropertyValue::String(self.entity_id.clone()),
-        );
-        p.insert(
-            "periodStart".into(),
-            GraphPropertyValue::Date(self.period_start),
-        );
-        p.insert(
-            "periodEnd".into(),
-            GraphPropertyValue::Date(self.period_end),
-        );
-        p.insert(
-            "contractValue".into(),
-            GraphPropertyValue::Decimal(self.contract_value),
-        );
-        p.insert(
-            "completionPct".into(),
-            GraphPropertyValue::Decimal(self.completion_pct),
-        );
-        p.insert(
-            "method".into(),
-            GraphPropertyValue::String(format!("{:?}", self.method)),
-        );
-        p.insert(
-            "cumulativeRevenue".into(),
-            GraphPropertyValue::Decimal(self.cumulative_revenue),
-        );
-        p.insert(
-            "periodRevenue".into(),
-            GraphPropertyValue::Decimal(self.period_revenue),
-        );
-        p.insert(
-            "grossMarginPct".into(),
-            GraphPropertyValue::Decimal(self.gross_margin_pct),
-        );
-        p
-    }
-}
-
-impl ToNodeProperties for ProjectMilestone {
-    fn node_type_name(&self) -> &'static str {
-        "project_milestone"
-    }
-    fn node_type_code(&self) -> u16 {
-        455
-    }
-    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
-        let mut p = HashMap::new();
-        p.insert(
-            "projectId".into(),
-            GraphPropertyValue::String(self.project_id.clone()),
-        );
-        if let Some(ref wbs) = self.wbs_id {
-            p.insert("wbsElement".into(), GraphPropertyValue::String(wbs.clone()));
-        }
-        p.insert(
-            "milestoneName".into(),
-            GraphPropertyValue::String(self.name.clone()),
-        );
-        p.insert(
-            "plannedDate".into(),
-            GraphPropertyValue::Date(self.planned_date),
-        );
-        if let Some(actual) = self.actual_date {
-            p.insert("actualDate".into(), GraphPropertyValue::Date(actual));
-        }
-        p.insert(
-            "status".into(),
-            GraphPropertyValue::String(format!("{:?}", self.status)),
-        );
-        p.insert(
-            "paymentAmount".into(),
-            GraphPropertyValue::Decimal(self.payment_amount),
-        );
-        p.insert("weightPct".into(), GraphPropertyValue::Decimal(self.weight));
-        p.insert(
-            "isComplete".into(),
-            GraphPropertyValue::Bool(matches!(self.status, MilestoneStatus::Completed)),
-        );
-        p
-    }
-}
-
-impl ToNodeProperties for ChangeOrder {
-    fn node_type_name(&self) -> &'static str {
-        "change_order"
-    }
-    fn node_type_code(&self) -> u16 {
-        454
-    }
-    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
-        let mut p = HashMap::new();
-        p.insert(
-            "projectId".into(),
-            GraphPropertyValue::String(self.project_id.clone()),
-        );
-        p.insert(
-            "orderNumber".into(),
-            GraphPropertyValue::Int(self.number as i64),
-        );
-        p.insert(
-            "submittedDate".into(),
-            GraphPropertyValue::Date(self.submitted_date),
-        );
-        if let Some(approved) = self.approved_date {
-            p.insert("approvedDate".into(), GraphPropertyValue::Date(approved));
-        }
-        p.insert(
-            "status".into(),
-            GraphPropertyValue::String(format!("{:?}", self.status)),
-        );
-        p.insert(
-            "reason".into(),
-            GraphPropertyValue::String(format!("{:?}", self.reason)),
-        );
-        p.insert(
-            "costImpact".into(),
-            GraphPropertyValue::Decimal(self.cost_impact),
-        );
-        p.insert(
-            "scheduleImpactDays".into(),
-            GraphPropertyValue::Int(self.schedule_impact_days as i64),
-        );
-        p.insert(
-            "isApproved".into(),
-            GraphPropertyValue::Bool(matches!(self.status, ChangeOrderStatus::Approved)),
-        );
-        p
-    }
-}
-
-impl ToNodeProperties for EarnedValueMetric {
-    fn node_type_name(&self) -> &'static str {
-        "earned_value_metric"
-    }
-    fn node_type_code(&self) -> u16 {
-        453
-    }
-    fn to_node_properties(&self) -> HashMap<String, GraphPropertyValue> {
-        let mut p = HashMap::new();
-        p.insert(
-            "projectId".into(),
-            GraphPropertyValue::String(self.project_id.clone()),
-        );
-        p.insert(
-            "measurementDate".into(),
-            GraphPropertyValue::Date(self.measurement_date),
-        );
-        p.insert("bac".into(), GraphPropertyValue::Decimal(self.bac));
-        p.insert(
-            "plannedValue".into(),
-            GraphPropertyValue::Decimal(self.planned_value),
-        );
-        p.insert(
-            "earnedValue".into(),
-            GraphPropertyValue::Decimal(self.earned_value),
-        );
-        p.insert(
-            "actualCost".into(),
-            GraphPropertyValue::Decimal(self.actual_cost),
-        );
-        p.insert("spi".into(), GraphPropertyValue::Decimal(self.spi));
-        p.insert("cpi".into(), GraphPropertyValue::Decimal(self.cpi));
-        p.insert("eac".into(), GraphPropertyValue::Decimal(self.eac));
-        p
     }
 }

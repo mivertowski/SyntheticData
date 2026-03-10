@@ -297,9 +297,11 @@ mod tests {
 
     #[test]
     fn test_generate_projects_default_config() {
-        let mut config = ProjectAccountingConfig::default();
-        config.enabled = true;
-        config.project_count = 10;
+        let config = ProjectAccountingConfig {
+            enabled: true,
+            project_count: 10,
+            ..Default::default()
+        };
 
         let mut gen = ProjectGenerator::new(config, 42);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
@@ -317,9 +319,11 @@ mod tests {
 
     #[test]
     fn test_project_type_distribution() {
-        let mut config = ProjectAccountingConfig::default();
-        config.enabled = true;
-        config.project_count = 100;
+        let config = ProjectAccountingConfig {
+            enabled: true,
+            project_count: 100,
+            ..Default::default()
+        };
 
         let mut gen = ProjectGenerator::new(config, 42);
         let pool = gen.generate("TEST", d("2024-01-01"), d("2024-12-31"));
@@ -332,7 +336,7 @@ mod tests {
 
         // With 0.30 weight for customer, expect roughly 30 out of 100
         assert!(
-            customer_count >= 15 && customer_count <= 50,
+            (15..=50).contains(&customer_count),
             "Expected ~30 customer projects, got {}",
             customer_count
         );
@@ -340,9 +344,11 @@ mod tests {
 
     #[test]
     fn test_wbs_hierarchy_depth() {
-        let mut config = ProjectAccountingConfig::default();
-        config.enabled = true;
-        config.project_count = 5;
+        let mut config = ProjectAccountingConfig {
+            enabled: true,
+            project_count: 5,
+            ..Default::default()
+        };
         config.wbs.max_depth = 2;
 
         let mut gen = ProjectGenerator::new(config, 42);

@@ -1442,9 +1442,11 @@ mod tests {
     #[test]
     fn test_vat_accounts_configurable() {
         // Verify that VAT accounts can be customized via config
-        let mut config = DocumentFlowJeConfig::default();
-        config.vat_output_account = "2999".to_string();
-        config.vat_input_account = "1999".to_string();
+        let config = DocumentFlowJeConfig {
+            vat_output_account: "2999".to_string(),
+            vat_input_account: "1999".to_string(),
+            ..Default::default()
+        };
 
         let mut generator = DocumentFlowJeGenerator::with_config_and_seed(config, 42);
 

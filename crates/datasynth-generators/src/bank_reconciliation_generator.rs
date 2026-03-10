@@ -504,61 +504,61 @@ mod tests {
         vec![
             PaymentReference {
                 id: "PAY-001".to_string(),
-                amount: Decimal::new(1_500_00, 2), // 1500.00 outflow
+                amount: Decimal::new(150_000, 2), // 1500.00 outflow
                 date: period_start + chrono::Duration::days(3),
                 reference: "CHK-10001".to_string(),
             },
             PaymentReference {
                 id: "PAY-002".to_string(),
-                amount: Decimal::new(-2_000_00, 2), // -2000.00 inflow (receipt)
+                amount: Decimal::new(-200_000, 2), // -2000.00 inflow (receipt)
                 date: period_start + chrono::Duration::days(7),
                 reference: "WIRE-20001".to_string(),
             },
             PaymentReference {
                 id: "PAY-003".to_string(),
-                amount: Decimal::new(750_00, 2), // 750.00 outflow
+                amount: Decimal::new(75_000, 2), // 750.00 outflow
                 date: period_start + chrono::Duration::days(12),
                 reference: "CHK-10002".to_string(),
             },
             PaymentReference {
                 id: "PAY-004".to_string(),
-                amount: Decimal::new(-3_500_00, 2), // -3500.00 inflow
+                amount: Decimal::new(-350_000, 2), // -3500.00 inflow
                 date: period_start + chrono::Duration::days(18),
                 reference: "WIRE-20002".to_string(),
             },
             PaymentReference {
                 id: "PAY-005".to_string(),
-                amount: Decimal::new(4_200_00, 2), // 4200.00 outflow
+                amount: Decimal::new(420_000, 2), // 4200.00 outflow
                 date: period_start + chrono::Duration::days(22),
                 reference: "CHK-10003".to_string(),
             },
             PaymentReference {
                 id: "PAY-006".to_string(),
-                amount: Decimal::new(-1_800_00, 2), // -1800.00 inflow
+                amount: Decimal::new(-180_000, 2), // -1800.00 inflow
                 date: period_start + chrono::Duration::days(25),
                 reference: "ACH-30001".to_string(),
             },
             PaymentReference {
                 id: "PAY-007".to_string(),
-                amount: Decimal::new(600_00, 2),
+                amount: Decimal::new(60_000, 2),
                 date: period_start + chrono::Duration::days(28),
                 reference: "CHK-10004".to_string(),
             },
             PaymentReference {
                 id: "PAY-008".to_string(),
-                amount: Decimal::new(-900_00, 2),
+                amount: Decimal::new(-90_000, 2),
                 date: period_start + chrono::Duration::days(5),
                 reference: "WIRE-20003".to_string(),
             },
             PaymentReference {
                 id: "PAY-009".to_string(),
-                amount: Decimal::new(2_100_00, 2),
+                amount: Decimal::new(210_000, 2),
                 date: period_start + chrono::Duration::days(15),
                 reference: "CHK-10005".to_string(),
             },
             PaymentReference {
                 id: "PAY-010".to_string(),
-                amount: Decimal::new(-6_000_00, 2),
+                amount: Decimal::new(-600_000, 2),
                 date: period_start + chrono::Duration::days(20),
                 reference: "WIRE-20004".to_string(),
             },
@@ -688,7 +688,7 @@ mod tests {
             };
             payments.push(PaymentReference {
                 id: format!("PAY-{:03}", i + 1),
-                amount: sign * Decimal::new((1000 + i * 500) as i64, 0),
+                amount: sign * Decimal::new(1000 + i * 500, 0),
                 date: period_start + chrono::Duration::days(day_offset),
                 reference: format!("REF-{:05}", i + 1),
             });

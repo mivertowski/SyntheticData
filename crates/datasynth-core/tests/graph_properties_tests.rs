@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::approx_constant)]
 
 //! Integration tests for graph property types, entity registry, edge constraints,
 //! and category helpers (Task 12 - RustGraph Round 2).

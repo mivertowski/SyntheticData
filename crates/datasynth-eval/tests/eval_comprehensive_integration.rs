@@ -203,8 +203,10 @@ fn test_evaluation_thresholds_all_passing() {
 #[test]
 fn test_evaluator_custom_config() {
     // Verify we can create an evaluator with custom configuration.
-    let mut config = EvaluationConfig::default();
-    config.thresholds = EvaluationThresholds::strict();
+    let mut config = EvaluationConfig {
+        thresholds: EvaluationThresholds::strict(),
+        ..Default::default()
+    };
     config.statistical.significance_level = 0.10;
 
     let evaluator = Evaluator::new(config);

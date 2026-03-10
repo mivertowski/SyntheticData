@@ -227,6 +227,7 @@ fn register_ifrs(registry: &mut StandardRegistry) {
 
 // ─── US GAAP ─────────────────────────────────────────────────────────────────
 
+#[allow(clippy::type_complexity)]
 fn register_us_gaap(registry: &mut StandardRegistry) {
     // (body, number, title, effective_date, account_types, processes)
     let us_stds: Vec<(&str, &str, &str, NaiveDate, &[&str], &[&str])> = vec![

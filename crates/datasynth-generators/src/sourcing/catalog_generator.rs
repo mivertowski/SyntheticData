@@ -204,7 +204,7 @@ mod tests {
             // Lead time should be within expected range
             assert!(item.lead_time_days.is_some());
             let lt = item.lead_time_days.unwrap();
-            assert!(lt >= 3 && lt <= 45);
+            assert!((3..=45).contains(&lt));
 
             // UOM should be set
             assert!(!item.uom.is_empty());

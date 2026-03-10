@@ -199,7 +199,7 @@ mod tests {
         // ~60% of 100 time entries should be linked (with variance)
         let linked_count = cost_lines.len();
         assert!(
-            linked_count >= 40 && linked_count <= 80,
+            (40..=80).contains(&linked_count),
             "Expected ~60 linked, got {}",
             linked_count
         );

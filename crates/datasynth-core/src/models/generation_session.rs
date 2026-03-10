@@ -264,6 +264,7 @@ fn last_day_of_month(year: i32, month: u32) -> u32 {
 // ===========================================================================
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::approx_constant)]
 mod tests {
     use super::*;
     use chrono::NaiveDate;

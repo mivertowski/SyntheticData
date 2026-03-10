@@ -260,7 +260,7 @@ enum PathSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::causal_engine::ConfigChange;
+
     use std::collections::BTreeMap;
 
     #[test]
@@ -383,7 +383,7 @@ mod tests {
     #[test]
     fn test_constraint_validation_passes() {
         // Test with empty propagation (no changes)
-        let json = serde_json::json!({
+        let _json = serde_json::json!({
             "global": {"seed": 42, "period_months": 12}
         });
 

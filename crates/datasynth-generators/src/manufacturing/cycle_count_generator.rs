@@ -320,7 +320,7 @@ mod tests {
 
         // With 100 items and 85% match rate, expect ~80-95 exact matches
         assert!(
-            none_count >= 70 && none_count <= 98,
+            (70..=98).contains(&none_count),
             "Expected ~85% exact matches, got {}/100",
             none_count,
         );

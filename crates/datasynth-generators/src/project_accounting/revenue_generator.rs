@@ -316,7 +316,7 @@ mod tests {
         let config = ProjectRevenueRecognitionConfig::default();
         let mut gen1 = RevenueGenerator::new(config.clone(), 42);
         let rev1 = gen1.generate(
-            &[project.clone()],
+            std::slice::from_ref(&project),
             &cost_lines,
             &contracts,
             d("2024-01-01"),

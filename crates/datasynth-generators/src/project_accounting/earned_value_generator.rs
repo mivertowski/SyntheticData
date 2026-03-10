@@ -316,14 +316,19 @@ mod tests {
 
         let mut gen1 = EarnedValueGenerator::new(config.clone(), 42);
         let m1 = gen1.generate(
-            &[project.clone()],
+            std::slice::from_ref(&project),
             &cost_lines,
             d("2024-01-01"),
             d("2024-03-31"),
         );
 
         let mut gen2 = EarnedValueGenerator::new(config, 42);
-        let m2 = gen2.generate(&[project], &cost_lines, d("2024-01-01"), d("2024-03-31"));
+        let m2 = gen2.generate(
+            std::slice::from_ref(&project),
+            &cost_lines,
+            d("2024-01-01"),
+            d("2024-03-31"),
+        );
 
         assert_eq!(m1.len(), m2.len());
         for (a, b) in m1.iter().zip(m2.iter()) {
