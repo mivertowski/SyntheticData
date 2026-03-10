@@ -363,6 +363,7 @@ mod tests {
             country_packs: None,
             scenarios: Default::default(),
             session: Default::default(),
+            compliance_regulations: Default::default(),
         };
 
         let mut manifest = RunManifest::new(&config, 42);

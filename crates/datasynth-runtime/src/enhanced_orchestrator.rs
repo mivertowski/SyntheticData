@@ -9063,6 +9063,7 @@ mod tests {
             country_packs: None,
             scenarios: Default::default(),
             session: Default::default(),
+            compliance_regulations: Default::default(),
         }
     }
 

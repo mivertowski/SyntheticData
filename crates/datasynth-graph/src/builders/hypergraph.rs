@@ -2449,7 +2449,7 @@ impl HypergraphBuilder {
                         let is_universal = proc_strings.len() >= 5;
                         if is_universal {
                             // Link to all controls (this standard governs all processes)
-                            for (_ctrl_id, ctrl_node_id) in &self.control_node_ids {
+                            for ctrl_node_id in self.control_node_ids.values() {
                                 self.edges.push(CrossLayerEdge {
                                     source_id: std_node_id.clone(),
                                     source_layer: HypergraphLayer::GovernanceControls,

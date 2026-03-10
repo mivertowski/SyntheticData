@@ -910,6 +910,7 @@ pub fn default_generator_config() -> GeneratorConfig {
         country_packs: None,
         scenarios: Default::default(),
         session: Default::default(),
+        compliance_regulations: Default::default(),
     }
 }
 

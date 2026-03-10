@@ -110,6 +110,7 @@ pub fn minimal_config() -> GeneratorConfig {
         country_packs: None,
         scenarios: Default::default(),
         session: Default::default(),
+        compliance_regulations: Default::default(),
     }
 }
 
