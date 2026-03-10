@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-10
+
+### Added
+- **Entity-aware anomaly injection**: EntityTargetingManager selects repeat-offender entities, AnomalyCoOccurrence queues correlated anomaly pairs with lag days, TemporalClusterGenerator boosts injection rates during period-end windows (`datasynth-generators`)
+- `QuoteLineItem.id` field with deterministic UUIDs from `item_uuid_factory` (`datasynth-core`, `datasynth-generators`)
+- `UnmatchedICItem` exported from `datasynth-eval` coherence module
+- Integration tests for Parquet roundtrip (5 tests), multi-framework standards (11 tests), OCEL 2.0 roundtrip (9 tests), and coherence evaluators (8 tests)
+
+### Changed
+- `ExpenseReportGenerator` now uses stored `config` and `country_pack` fields via `generate_from_config()` convenience method (`datasynth-generators`)
+- `EarnedValueGenerator` respects `config.frequency` for measurement date calculation (weekly/biweekly/monthly) (`datasynth-generators`)
+- `RevenueGenerator` uses `config.method` and `config.completion_measure` instead of hardcoded values, and generates deterministic UUIDs via `uuid_factory` (`datasynth-generators`)
+- `OracleExporter` wires `batch_counter` to `je_batch_id` when `include_batches` is enabled (`datasynth-output`)
+- `ICMatchingEvaluator` applies tolerance to classify unmatched items as within/outside tolerance, with `discrepancy_count` reflecting only outside-tolerance items (`datasynth-eval`)
+
+### Removed
+- 9 `#[allow(dead_code)]` annotations across generators, output, and eval crates (Pillar 1: 6, Pillar 2: 3)
+
 ## [1.0.0] - 2026-03-06
 
 ### Added
