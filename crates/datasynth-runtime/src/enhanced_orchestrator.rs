@@ -283,6 +283,8 @@ pub struct PhaseConfig {
     pub generate_evolution_events: bool,
     /// Generate counterfactual (original, mutated) JE pairs for ML training.
     pub generate_counterfactuals: bool,
+    /// Generate compliance regulations data (standards registry, procedures, findings, filings).
+    pub generate_compliance_regulations: bool,
 }
 
 impl Default for PhaseConfig {
@@ -310,19 +312,20 @@ impl Default for PhaseConfig {
             risks_per_engagement: 15,
             findings_per_engagement: 8,
             judgments_per_engagement: 10,
-            generate_banking: false,              // Off by default
-            generate_graph_export: false,         // Off by default
-            generate_sourcing: false,             // Off by default
-            generate_bank_reconciliation: false,  // Off by default
-            generate_financial_statements: false, // Off by default
-            generate_accounting_standards: false, // Off by default
-            generate_manufacturing: false,        // Off by default
-            generate_sales_kpi_budgets: false,    // Off by default
-            generate_tax: false,                  // Off by default
-            generate_esg: false,                  // Off by default
-            generate_intercompany: false,         // Off by default
-            generate_evolution_events: true,      // On by default
-            generate_counterfactuals: false,      // Off by default (opt-in for ML workloads)
+            generate_banking: false,                // Off by default
+            generate_graph_export: false,           // Off by default
+            generate_sourcing: false,               // Off by default
+            generate_bank_reconciliation: false,    // Off by default
+            generate_financial_statements: false,   // Off by default
+            generate_accounting_standards: false,   // Off by default
+            generate_manufacturing: false,          // Off by default
+            generate_sales_kpi_budgets: false,      // Off by default
+            generate_tax: false,                    // Off by default
+            generate_esg: false,                    // Off by default
+            generate_intercompany: false,           // Off by default
+            generate_evolution_events: true,        // On by default
+            generate_counterfactuals: false,        // Off by default (opt-in for ML workloads)
+            generate_compliance_regulations: false, // Off by default
         }
     }
 }
@@ -559,6 +562,25 @@ pub struct AccountingStandardsSnapshot {
     pub revenue_contract_count: usize,
     /// Impairment test count.
     pub impairment_test_count: usize,
+}
+
+/// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
+#[derive(Debug, Clone, Default)]
+pub struct ComplianceRegulationsSnapshot {
+    /// Flattened standard records for output.
+    pub standard_records: Vec<datasynth_generators::compliance::ComplianceStandardRecord>,
+    /// Cross-reference records.
+    pub cross_reference_records: Vec<datasynth_generators::compliance::CrossReferenceRecord>,
+    /// Jurisdiction profile records.
+    pub jurisdiction_records: Vec<datasynth_generators::compliance::JurisdictionRecord>,
+    /// Generated audit procedures.
+    pub audit_procedures: Vec<datasynth_generators::compliance::AuditProcedureRecord>,
+    /// Generated compliance findings.
+    pub findings: Vec<datasynth_core::models::compliance::ComplianceFinding>,
+    /// Generated regulatory filings.
+    pub filings: Vec<datasynth_core::models::compliance::RegulatoryFiling>,
+    /// Compliance graph (if graph integration enabled).
+    pub compliance_graph: Option<datasynth_graph::Graph>,
 }
 
 /// Manufacturing data snapshot (production orders, quality inspections, cycle counts, BOMs, inventory movements).
@@ -840,6 +862,8 @@ pub struct EnhancedGenerationResult {
     pub cross_process_links: Vec<datasynth_core::models::CrossProcessLink>,
     /// Industry-specific GL accounts and metadata.
     pub industry_output: Option<datasynth_generators::industry::factory::IndustryOutput>,
+    /// Compliance regulations framework data (standards, procedures, findings, filings, graph).
+    pub compliance_regulations: ComplianceRegulationsSnapshot,
 }
 
 /// Enhanced statistics about a generation run.
@@ -1784,6 +1808,9 @@ impl EnhancedOrchestrator {
         // Phase 29: Industry-specific GL accounts
         let industry_output = self.phase_industry_data(&mut stats);
 
+        // Phase: Compliance regulations (must run before hypergraph so it can be included)
+        let compliance_regulations = self.phase_compliance_regulations(&mut stats)?;
+
         // Phase 19b: Hypergraph Export (after all data is available)
         self.phase_hypergraph_export(
             &coa,
@@ -1796,6 +1823,7 @@ impl EnhancedOrchestrator {
             &audit,
             &financial_reporting,
             &ocpm,
+            &compliance_regulations,
             &mut stats,
         )?;
 
@@ -1944,6 +1972,7 @@ impl EnhancedOrchestrator {
             entity_relationship_graph,
             cross_process_links,
             industry_output,
+            compliance_regulations,
         })
     }
 
@@ -2361,6 +2390,7 @@ impl EnhancedOrchestrator {
         audit: &AuditSnapshot,
         financial_reporting: &FinancialReportingSnapshot,
         ocpm: &OcpmSnapshot,
+        compliance: &ComplianceRegulationsSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<()> {
         if self.config.graph_export.hypergraph.enabled && !entries.is_empty() {
@@ -2376,6 +2406,7 @@ impl EnhancedOrchestrator {
                 audit,
                 financial_reporting,
                 ocpm,
+                compliance,
                 stats,
             ) {
                 Ok(info) => {
@@ -8170,6 +8201,7 @@ impl EnhancedOrchestrator {
         audit: &AuditSnapshot,
         financial_reporting: &FinancialReportingSnapshot,
         ocpm: &OcpmSnapshot,
+        compliance: &ComplianceRegulationsSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<HypergraphExportInfo> {
         use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
@@ -8212,6 +8244,7 @@ impl EnhancedOrchestrator {
             include_accounts: hg_settings.accounting_layer.include_accounts,
             je_as_hyperedges: hg_settings.accounting_layer.je_as_hyperedges,
             include_cross_layer_edges: hg_settings.cross_layer.enabled,
+            include_compliance: self.config.compliance_regulations.enabled,
         };
 
         let mut builder = HypergraphBuilder::new(builder_config);
@@ -8271,6 +8304,28 @@ impl EnhancedOrchestrator {
         // OCPM events as hyperedges
         if let Some(ref event_log) = ocpm.event_log {
             builder.add_ocpm_events(event_log);
+        }
+
+        // Compliance regulations as cross-layer nodes
+        if self.config.compliance_regulations.enabled
+            && hg_settings.governance_layer.include_controls
+        {
+            // Reconstruct ComplianceStandard objects from the registry
+            let registry = datasynth_standards::registry::StandardRegistry::with_built_in();
+            let standards: Vec<datasynth_core::models::compliance::ComplianceStandard> = compliance
+                .standard_records
+                .iter()
+                .filter_map(|r| {
+                    let sid = datasynth_core::models::compliance::StandardId::parse(&r.standard_id);
+                    registry.get(&sid).cloned()
+                })
+                .collect();
+
+            builder.add_compliance_regulations(
+                &standards,
+                &compliance.findings,
+                &compliance.filings,
+            );
         }
 
         // Layer 3: Accounting Network
@@ -8475,6 +8530,337 @@ impl EnhancedOrchestrator {
     /// Get the generated master data.
     pub fn get_master_data(&self) -> &MasterDataSnapshot {
         &self.master_data
+    }
+
+    /// Phase: Generate compliance regulations data (standards, procedures, findings, filings, graph).
+    fn phase_compliance_regulations(
+        &mut self,
+        _stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<ComplianceRegulationsSnapshot> {
+        if !self.phase_config.generate_compliance_regulations {
+            return Ok(ComplianceRegulationsSnapshot::default());
+        }
+
+        info!("Phase: Generating Compliance Regulations Data");
+
+        let cr_config = &self.config.compliance_regulations;
+
+        // Determine jurisdictions: from config or inferred from companies
+        let jurisdictions: Vec<String> = if cr_config.jurisdictions.is_empty() {
+            self.config
+                .companies
+                .iter()
+                .map(|c| c.country.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect()
+        } else {
+            cr_config.jurisdictions.clone()
+        };
+
+        // Determine reference date
+        let fallback_date =
+            NaiveDate::from_ymd_opt(2025, 1, 1).expect("static date is always valid");
+        let reference_date = cr_config
+            .reference_date
+            .as_ref()
+            .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+            .unwrap_or_else(|| {
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+                    .unwrap_or(fallback_date)
+            });
+
+        // Generate standards registry data
+        let reg_gen = datasynth_generators::compliance::RegulationGenerator::new();
+        let standard_records = reg_gen.generate_standard_records(&jurisdictions, reference_date);
+        let cross_reference_records = reg_gen.generate_cross_reference_records();
+        let jurisdiction_records =
+            reg_gen.generate_jurisdiction_records(&jurisdictions, reference_date);
+
+        info!(
+            "  Standards: {} records, {} cross-references, {} jurisdictions",
+            standard_records.len(),
+            cross_reference_records.len(),
+            jurisdiction_records.len()
+        );
+
+        // Generate audit procedures (if enabled)
+        let audit_procedures = if cr_config.audit_procedures.enabled {
+            let proc_config = datasynth_generators::compliance::ProcedureGeneratorConfig {
+                procedures_per_standard: cr_config.audit_procedures.procedures_per_standard,
+                sampling_method: cr_config.audit_procedures.sampling_method.clone(),
+                confidence_level: cr_config.audit_procedures.confidence_level,
+                tolerable_misstatement: cr_config.audit_procedures.tolerable_misstatement,
+            };
+            let mut proc_gen = datasynth_generators::compliance::ProcedureGenerator::with_config(
+                self.seed + 9000,
+                proc_config,
+            );
+            let registry = reg_gen.registry();
+            let mut all_procs = Vec::new();
+            for jurisdiction in &jurisdictions {
+                let procs = proc_gen.generate_procedures(registry, jurisdiction, reference_date);
+                all_procs.extend(procs);
+            }
+            info!("  Audit procedures: {}", all_procs.len());
+            all_procs
+        } else {
+            Vec::new()
+        };
+
+        // Generate compliance findings (if enabled)
+        let findings = if cr_config.findings.enabled && !audit_procedures.is_empty() {
+            let finding_config =
+                datasynth_generators::compliance::ComplianceFindingGeneratorConfig {
+                    finding_rate: cr_config.findings.finding_rate,
+                    material_weakness_rate: cr_config.findings.material_weakness_rate,
+                    significant_deficiency_rate: cr_config.findings.significant_deficiency_rate,
+                    generate_remediation: cr_config.findings.generate_remediation,
+                };
+            let mut finding_gen =
+                datasynth_generators::compliance::ComplianceFindingGenerator::with_config(
+                    self.seed + 9100,
+                    finding_config,
+                );
+            let mut all_findings = Vec::new();
+            for company in &self.config.companies {
+                let company_findings =
+                    finding_gen.generate_findings(&audit_procedures, &company.code, reference_date);
+                all_findings.extend(company_findings);
+            }
+            info!("  Compliance findings: {}", all_findings.len());
+            all_findings
+        } else {
+            Vec::new()
+        };
+
+        // Generate regulatory filings (if enabled)
+        let filings = if cr_config.filings.enabled {
+            let filing_config = datasynth_generators::compliance::FilingGeneratorConfig {
+                filing_types: cr_config.filings.filing_types.clone(),
+                generate_status_progression: cr_config.filings.generate_status_progression,
+            };
+            let mut filing_gen = datasynth_generators::compliance::FilingGenerator::with_config(
+                self.seed + 9200,
+                filing_config,
+            );
+            let company_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+                .unwrap_or(fallback_date);
+            let filings = filing_gen.generate_filings(
+                &company_codes,
+                &jurisdictions,
+                start_date,
+                self.config.global.period_months,
+            );
+            info!("  Regulatory filings: {}", filings.len());
+            filings
+        } else {
+            Vec::new()
+        };
+
+        // Build compliance graph (if enabled)
+        let compliance_graph = if cr_config.graph.enabled {
+            let graph_config = datasynth_graph::ComplianceGraphConfig {
+                include_standard_nodes: cr_config.graph.include_compliance_nodes,
+                include_jurisdiction_nodes: cr_config.graph.include_compliance_nodes,
+                include_cross_references: cr_config.graph.include_cross_references,
+                include_supersession_edges: cr_config.graph.include_supersession_edges,
+                include_account_links: cr_config.graph.include_account_links,
+                include_control_links: cr_config.graph.include_control_links,
+                include_company_links: cr_config.graph.include_company_links,
+            };
+            let mut builder = datasynth_graph::ComplianceGraphBuilder::new(graph_config);
+
+            // Add standard nodes
+            let standard_inputs: Vec<datasynth_graph::StandardNodeInput> = standard_records
+                .iter()
+                .map(|r| datasynth_graph::StandardNodeInput {
+                    standard_id: r.standard_id.clone(),
+                    title: r.title.clone(),
+                    category: r.category.clone(),
+                    domain: r.domain.clone(),
+                    is_active: r.is_active,
+                    features: vec![if r.is_active { 1.0 } else { 0.0 }],
+                    applicable_account_types: r.applicable_account_types.clone(),
+                    applicable_processes: r.applicable_processes.clone(),
+                })
+                .collect();
+            builder.add_standards(&standard_inputs);
+
+            // Add jurisdiction nodes
+            let jurisdiction_inputs: Vec<datasynth_graph::JurisdictionNodeInput> =
+                jurisdiction_records
+                    .iter()
+                    .map(|r| datasynth_graph::JurisdictionNodeInput {
+                        country_code: r.country_code.clone(),
+                        country_name: r.country_name.clone(),
+                        framework: r.accounting_framework.clone(),
+                        standard_count: r.standard_count,
+                        tax_rate: r.statutory_tax_rate,
+                    })
+                    .collect();
+            builder.add_jurisdictions(&jurisdiction_inputs);
+
+            // Add cross-reference edges
+            let xref_inputs: Vec<datasynth_graph::CrossReferenceEdgeInput> =
+                cross_reference_records
+                    .iter()
+                    .map(|r| datasynth_graph::CrossReferenceEdgeInput {
+                        from_standard: r.from_standard.clone(),
+                        to_standard: r.to_standard.clone(),
+                        relationship: r.relationship.clone(),
+                        convergence_level: r.convergence_level,
+                    })
+                    .collect();
+            builder.add_cross_references(&xref_inputs);
+
+            // Add jurisdiction→standard mappings
+            let mapping_inputs: Vec<datasynth_graph::JurisdictionMappingInput> = standard_records
+                .iter()
+                .map(|r| datasynth_graph::JurisdictionMappingInput {
+                    country_code: r.jurisdiction.clone(),
+                    standard_id: r.standard_id.clone(),
+                })
+                .collect();
+            builder.add_jurisdiction_mappings(&mapping_inputs);
+
+            // Add procedure nodes
+            let proc_inputs: Vec<datasynth_graph::ProcedureNodeInput> = audit_procedures
+                .iter()
+                .map(|p| datasynth_graph::ProcedureNodeInput {
+                    procedure_id: p.procedure_id.clone(),
+                    standard_id: p.standard_id.clone(),
+                    procedure_type: p.procedure_type.clone(),
+                    sample_size: p.sample_size,
+                    confidence_level: p.confidence_level,
+                })
+                .collect();
+            builder.add_procedures(&proc_inputs);
+
+            // Add finding nodes
+            let finding_inputs: Vec<datasynth_graph::FindingNodeInput> = findings
+                .iter()
+                .map(|f| datasynth_graph::FindingNodeInput {
+                    finding_id: f.finding_id.to_string(),
+                    standard_id: f
+                        .related_standards
+                        .first()
+                        .map(|s| s.as_str().to_string())
+                        .unwrap_or_default(),
+                    severity: f.severity.to_string(),
+                    deficiency_level: f.deficiency_level.to_string(),
+                    severity_score: f.deficiency_level.severity_score(),
+                    control_id: f.control_id.clone(),
+                    affected_accounts: f.affected_accounts.clone(),
+                })
+                .collect();
+            builder.add_findings(&finding_inputs);
+
+            // Cross-domain: link standards to accounts from chart of accounts
+            if cr_config.graph.include_account_links {
+                let registry = datasynth_standards::registry::StandardRegistry::with_built_in();
+                let mut account_links: Vec<datasynth_graph::AccountLinkInput> = Vec::new();
+                for std_record in &standard_records {
+                    if let Some(std_obj) =
+                        registry.get(&datasynth_core::models::compliance::StandardId::parse(
+                            &std_record.standard_id,
+                        ))
+                    {
+                        for acct_type in &std_obj.applicable_account_types {
+                            account_links.push(datasynth_graph::AccountLinkInput {
+                                standard_id: std_record.standard_id.clone(),
+                                account_code: acct_type.clone(),
+                                account_name: acct_type.clone(),
+                            });
+                        }
+                    }
+                }
+                builder.add_account_links(&account_links);
+            }
+
+            // Cross-domain: link standards to internal controls
+            if cr_config.graph.include_control_links {
+                let mut control_links = Vec::new();
+                // SOX/PCAOB standards link to all controls
+                let sox_like_ids: Vec<String> = standard_records
+                    .iter()
+                    .filter(|r| {
+                        r.standard_id.starts_with("SOX")
+                            || r.standard_id.starts_with("PCAOB-AS-2201")
+                    })
+                    .map(|r| r.standard_id.clone())
+                    .collect();
+                // Get control IDs from config (C001-C060 standard controls)
+                let control_ids = [
+                    ("C001", "Cash Controls"),
+                    ("C002", "Large Transaction Approval"),
+                    ("C010", "PO Approval"),
+                    ("C011", "Three-Way Match"),
+                    ("C020", "Revenue Recognition"),
+                    ("C021", "Credit Check"),
+                    ("C030", "Manual JE Approval"),
+                    ("C031", "Period Close Review"),
+                    ("C032", "Account Reconciliation"),
+                    ("C040", "Payroll Processing"),
+                    ("C050", "Fixed Asset Capitalization"),
+                    ("C060", "Intercompany Elimination"),
+                ];
+                for sox_id in &sox_like_ids {
+                    for (ctrl_id, ctrl_name) in &control_ids {
+                        control_links.push(datasynth_graph::ControlLinkInput {
+                            standard_id: sox_id.clone(),
+                            control_id: ctrl_id.to_string(),
+                            control_name: ctrl_name.to_string(),
+                        });
+                    }
+                }
+                builder.add_control_links(&control_links);
+            }
+
+            // Cross-domain: filing nodes with company links
+            if cr_config.graph.include_company_links {
+                let filing_inputs: Vec<datasynth_graph::FilingNodeInput> = filings
+                    .iter()
+                    .enumerate()
+                    .map(|(i, f)| datasynth_graph::FilingNodeInput {
+                        filing_id: format!("F{:04}", i + 1),
+                        filing_type: f.filing_type.to_string(),
+                        company_code: f.company_code.clone(),
+                        jurisdiction: f.jurisdiction.clone(),
+                        status: format!("{:?}", f.status),
+                    })
+                    .collect();
+                builder.add_filings(&filing_inputs);
+            }
+
+            let graph = builder.build();
+            info!(
+                "  Compliance graph: {} nodes, {} edges",
+                graph.nodes.len(),
+                graph.edges.len()
+            );
+            Some(graph)
+        } else {
+            None
+        };
+
+        self.check_resources_with_log("post-compliance-regulations")?;
+
+        Ok(ComplianceRegulationsSnapshot {
+            standard_records,
+            cross_reference_records,
+            jurisdiction_records,
+            audit_procedures,
+            findings,
+            filings,
+            compliance_graph,
+        })
     }
 
     /// Build a lineage graph describing config → phase → output relationships.

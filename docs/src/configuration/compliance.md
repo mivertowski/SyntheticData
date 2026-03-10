@@ -317,8 +317,117 @@ datasynth-data generate --config config.yaml --output ./output --certificate
 # Certificate is written to ./output/certificate.json
 ```
 
+---
+
+## Compliance Regulations
+
+The compliance regulations framework generates a full standards registry, audit procedures, compliance findings, and regulatory filings. It also builds a compliance graph that links standards to GL accounts, controls, and business processes.
+
+### Basic Configuration
+
+```yaml
+compliance_regulations:
+  enabled: true
+  jurisdictions: [US, DE, GB]
+  reference_date: "2025-01-01"
+
+  standards:
+    categories: [AccountingStandard, AuditStandard, RegulatoryFramework]
+
+  audit_procedures:
+    enabled: true
+    procedures_per_standard: 3
+    sampling_method: statistical
+    confidence_level: 0.95
+    tolerable_misstatement: 0.05
+
+  findings:
+    enabled: true
+    finding_rate: 0.15
+    material_weakness_rate: 0.05
+    significant_deficiency_rate: 0.15
+    generate_remediation: true
+
+  filings:
+    enabled: true
+    filing_types: [AnnualReport, QuarterlyReport, TaxReturn]
+    generate_status_progression: true
+```
+
+### Graph Integration
+
+The compliance graph connects standards to other enterprise data:
+
+```yaml
+compliance_regulations:
+  graph:
+    enabled: true
+    include_compliance_nodes: true
+    include_compliance_edges: true
+    include_cross_references: true
+    include_supersession_edges: false
+    include_account_links: true     # Standard → Account edges
+    include_control_links: true     # Standard → Control edges
+    include_company_links: true     # Filing → Company edges
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `include_account_links` | `true` | Creates `GovernedByStandard` edges linking standards to the GL account types they regulate |
+| `include_control_links` | `true` | Creates `ImplementsStandard` edges linking SOX/PCAOB standards to internal controls (C001–C060) |
+| `include_company_links` | `true` | Creates `FiledByCompany` edges linking regulatory filings to company nodes |
+
+### Traversal Paths
+
+When fully enabled, the compliance graph supports traversal across the entire enterprise:
+
+```
+Company → Filing → Jurisdiction → Standard → Account → JournalEntry
+                                           → Control → Finding
+                                           → Process (O2C, P2P, R2R, ...)
+```
+
+### Standard-to-Account Mapping
+
+Each built-in standard declares which account types it governs:
+
+| Standard | Account Types |
+|----------|--------------|
+| IFRS 15 / ASC 606 | Revenue, DeferredRevenue, ContractAsset, AccountsReceivable |
+| IFRS 16 / ASC 842 | Leases, ROUAsset, LeaseLiability, Depreciation, InterestExpense |
+| IFRS 9 / ASC 326 | FinancialAssets, AccountsReceivable, Investments |
+| IAS 36 / ASC 360 | PP&E, Intangibles, Goodwill, ROUAsset |
+| ISA 240 | Revenue, Cash, AccountsReceivable |
+| SOX 302/404 | All process families (O2C, P2P, R2R, H2R, A2R, Intercompany) |
+
+### Output
+
+The compliance module generates 7 files in `compliance_regulations/`:
+
+| File | Contents |
+|------|----------|
+| `standards.json` | Standards registry records |
+| `cross_references.json` | Standard-to-standard cross-references |
+| `jurisdictions.json` | Country compliance profiles |
+| `audit_procedures.json` | Generated audit procedure instances |
+| `findings.json` | Compliance findings with deficiency classification |
+| `filings.json` | Regulatory filing records with status progression |
+| `compliance_graph.json` | Graph with nodes and edges |
+
+### Validation Rules
+
+| Check | Rule |
+|-------|------|
+| `finding_rate` | 0.0 – 1.0 |
+| `material_weakness_rate + significant_deficiency_rate` | ≤ 1.0 |
+| `jurisdictions` | Valid ISO 3166-1 alpha-2 codes |
+| `reference_date` | Valid YYYY-MM-DD |
+
+---
+
 ## See Also
 
 - [Anomaly Injection](../advanced/anomaly-injection.md)
 - [Master Data](master-data.md)
 - [SOX Compliance Use Case](../use-cases/sox-compliance.md)
+- [Graph Export](../advanced/graph-export.md)

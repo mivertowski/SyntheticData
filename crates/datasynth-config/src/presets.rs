@@ -109,6 +109,7 @@ pub fn create_preset(
         country_packs: None,
         scenarios: ScenariosConfig::default(),
         session: SessionSchemaConfig::default(),
+        compliance_regulations: ComplianceRegulationsConfig::default(),
     }
 }
 

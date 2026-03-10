@@ -53,6 +53,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_country_packs(config)?;
     validate_scenarios(config)?;
     validate_session(config)?;
+    validate_compliance_regulations(config)?;
     Ok(())
 }
 
@@ -2205,6 +2206,99 @@ fn validate_scenarios(config: &GeneratorConfig) -> SynthResult<()> {
 }
 
 /// Validate session configuration.
+fn validate_compliance_regulations(config: &GeneratorConfig) -> SynthResult<()> {
+    let cr = &config.compliance_regulations;
+    if !cr.enabled {
+        return Ok(());
+    }
+
+    // Validate jurisdiction codes are 2-letter ISO codes
+    for code in &cr.jurisdictions {
+        if code.len() != 2 || !code.chars().all(|c| c.is_ascii_uppercase()) {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.jurisdictions: '{}' is not a valid ISO 3166-1 alpha-2 code",
+                code
+            )));
+        }
+    }
+
+    // Validate reference_date format if provided (YYYY-MM-DD)
+    if let Some(ref date_str) = cr.reference_date {
+        if chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_err() {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.reference_date: '{}' is not a valid YYYY-MM-DD date",
+                date_str
+            )));
+        }
+    }
+
+    // Validate standard selection categories
+    let valid_categories = [
+        "accounting",
+        "auditing",
+        "regulatory",
+        "tax",
+        "esg",
+        "banking",
+        "local_gaap",
+    ];
+    for cat in &cr.standards_selection.categories {
+        if !valid_categories.contains(&cat.as_str()) {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.standards_selection.categories: unknown category '{}'. Valid: {:?}",
+                cat, valid_categories
+            )));
+        }
+    }
+
+    // Validate audit procedure settings
+    if cr.audit_procedures.enabled {
+        validate_rate(
+            "compliance_regulations.audit_procedures.confidence_level",
+            cr.audit_procedures.confidence_level,
+        )?;
+        validate_rate(
+            "compliance_regulations.audit_procedures.tolerable_misstatement",
+            cr.audit_procedures.tolerable_misstatement,
+        )?;
+        let valid_methods = ["statistical", "non_statistical", "mixed"];
+        if !valid_methods.contains(&cr.audit_procedures.sampling_method.as_str()) {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.audit_procedures.sampling_method: unknown method '{}'. Valid: {:?}",
+                cr.audit_procedures.sampling_method, valid_methods
+            )));
+        }
+    }
+
+    // Validate finding rates
+    if cr.findings.enabled {
+        validate_rate(
+            "compliance_regulations.findings.finding_rate",
+            cr.findings.finding_rate,
+        )?;
+        validate_rate(
+            "compliance_regulations.findings.material_weakness_rate",
+            cr.findings.material_weakness_rate,
+        )?;
+        validate_rate(
+            "compliance_regulations.findings.significant_deficiency_rate",
+            cr.findings.significant_deficiency_rate,
+        )?;
+        let combined_rate =
+            cr.findings.material_weakness_rate + cr.findings.significant_deficiency_rate;
+        if combined_rate > 1.0 {
+            return Err(SynthError::validation(format!(
+                "compliance_regulations.findings: material_weakness_rate ({}) + significant_deficiency_rate ({}) = {} exceeds 1.0",
+                cr.findings.material_weakness_rate,
+                cr.findings.significant_deficiency_rate,
+                combined_rate
+            )));
+        }
+    }
+
+    Ok(())
+}
+
 fn validate_session(config: &GeneratorConfig) -> SynthResult<()> {
     // Validate fiscal_year_months if set
     if let Some(fy_months) = config.global.fiscal_year_months {
@@ -2324,6 +2418,7 @@ mod tests {
             country_packs: None,
             scenarios: ScenariosConfig::default(),
             session: SessionSchemaConfig::default(),
+            compliance_regulations: ComplianceRegulationsConfig::default(),
         }
     }
 

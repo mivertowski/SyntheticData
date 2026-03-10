@@ -58,6 +58,7 @@ pub mod framework;
 
 pub mod accounting;
 pub mod audit;
+pub mod registry;
 pub mod regulatory;
 
 // Re-export key types at crate root for convenience

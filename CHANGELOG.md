@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2026-03-10
 
 ### Added
+- **Compliance Regulations Framework** (`datasynth-core`, `datasynth-standards`, `datasynth-generators`, `datasynth-graph`, `datasynth-config`, `datasynth-runtime`, `datasynth-cli`)
+  - **StandardId**: Canonical `"{BODY}-{NUMBER}"` identifier (e.g., `IFRS-16`, `SOX-404`, `ISA-315`) with `body()`, `number()`, `parse()`, and `From` impls
+  - **ComplianceStandard**: Full metadata model with issuing body, category, domain, temporal versions, cross-references, mandatory/permitted jurisdictions, and **applicable account types / business processes** for cross-domain linking
+  - **TemporalVersion**: Jurisdiction-aware date resolution with `is_active_at()` / `is_active_at_in()`, early adoption dates, and per-country effective date overrides
+  - **JurisdictionProfile**: Country-specific compliance profiles (accounting framework, audit framework, tax rate, supranational memberships) for 10 countries (US, DE, GB, FR, JP, IN, SG, AU, BR, KR)
+  - **StandardRegistry**: Central catalog with ~45 built-in standards, 9 cross-references, temporal lookup, supersession chain resolution, and jurisdiction-aware filtering
+  - **ComplianceAssertion**: 15 ISA 315 assertion types across transaction, balance, disclosure, and presentation categories with ML feature codes
+  - **ComplianceFinding**: Audit finding model with SOX/ISA deficiency classification (MaterialWeakness, SignificantDeficiency, ControlDeficiency), remediation tracking, and financial impact
+  - **RegulatoryFiling**: Filing model with 10 filing types (10-K, 10-Q, Jahresabschluss, E-Bilanz, Liasse fiscale, UK Annual Return, CT600, 有価証券報告書) and deadline tracking
+  - **CrossReference**: Typed standard relationships (Converged, Related, Complementary, DerivedFrom, AuditMapping, ControlFrameworkMapping) with convergence levels
+  - **RegulationGenerator**: Produces compliance standard records, cross-reference records, and jurisdiction profile records for CSV/JSON export
+  - **ProcedureGenerator**: Generates audit procedure instances from 9 ISA-based templates (substantive detail, analytical, controls test, inspection, confirmation, recalculation, observation, inquiry, cutoff test) with step definitions and sampling parameters
+  - **ComplianceFindingGenerator**: Generates compliance findings from 10 templates with condition/criteria/cause/effect structure, deficiency classification, and remediation status
+  - **FilingGenerator**: Generates regulatory filing records for 8 filing types across 5 jurisdictions (US, DE, FR, GB, JP) with status progression and deadline tracking
+  - **ComplianceGraphBuilder**: Builds compliance graph layer with Standard, Jurisdiction, AuditProcedure, and Finding nodes; CrossReference, Supersedes, MapsToStandard, TestsCompliance, and FindingOnStandard edges
+  - **ComplianceRegulationsConfig**: Full configuration schema with sub-configs for standards selection, audit procedures, findings, filings, graph, and output
+  - Config validation for jurisdiction codes, reference dates, standard categories, sampling methods, and rate parameters
+  - Runtime wiring in `EnhancedOrchestrator` with `phase_compliance_regulations()` producing `ComplianceRegulationsSnapshot`
+  - CLI output of 7 JSON files to `compliance_regulations/` directory (standards, cross-references, jurisdictions, procedures, findings, filings, graph)
+  - 67+ tests across all compliance modules
+- **Cross-Domain Compliance Graph Linking** (`datasynth-core`, `datasynth-standards`, `datasynth-graph`, `datasynth-config`, `datasynth-runtime`)
+  - **ToNodeProperties for compliance models**: `ComplianceStandard` (type code 510), `ComplianceFinding` (511), `RegulatoryFiling` (512), `JurisdictionProfile` (513) — all compliance models now export typed camelCase property maps for graph node conversion
+  - **Standard-to-account mapping**: Every built-in standard (IFRS 9/13/15/16/17/18, IAS 36, ASC 606/326/360/740/805/810/718/820/842, ISA 240–720, SOX, PCAOB) declares which GL account types it governs (`applicable_account_types`) and which business processes it applies to (`applicable_processes`)
+  - **5 new cross-domain edge types**: `GovernedByStandard` (Standard→Account), `ImplementsStandard` (Standard→Control), `FiledByCompany` (Filing→Company), `FindingAffectsControl`, `FindingAffectsAccount`
+  - **ComplianceGraphBuilder cross-domain support**: `add_account_links()`, `add_control_links()`, `add_filings()` with company node linking; `AccountLinkInput`, `ControlLinkInput`, `FilingNodeInput` input types
+  - **Hypergraph compliance integration**: Standards added to Layer 1 (GovernanceControls, type code 505), findings and filings added to Layer 2 (ProcessEvents, type codes 508/507); cross-layer edge resolution for Standard→Account and Standard→Control edges in `build_cross_layer_edges()`
+  - **Full enterprise graph traversal**: Enabled paths like Company → Filing → Jurisdiction → Standard → Account → JournalEntry and Standard → Control → Finding
+  - **3 new config fields**: `include_account_links`, `include_control_links`, `include_company_links` on `ComplianceGraphConfig` (all default `true`)
+  - Orchestrator wires compliance data into hypergraph export, compliance regulations phase now runs before hypergraph export for data availability
 - **Entity-aware anomaly injection**: EntityTargetingManager selects repeat-offender entities, AnomalyCoOccurrence queues correlated anomaly pairs with lag days, TemporalClusterGenerator boosts injection rates during period-end windows (`datasynth-generators`)
 - `QuoteLineItem.id` field with deterministic UUIDs from `item_uuid_factory` (`datasynth-core`, `datasynth-generators`)
 - `UnmatchedICItem` exported from `datasynth-eval` coherence module
@@ -19,6 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RevenueGenerator` uses `config.method` and `config.completion_measure` instead of hardcoded values, and generates deterministic UUIDs via `uuid_factory` (`datasynth-generators`)
 - `OracleExporter` wires `batch_counter` to `je_batch_id` when `include_batches` is enabled (`datasynth-output`)
 - `ICMatchingEvaluator` applies tolerance to classify unmatched items as within/outside tolerance, with `discrepancy_count` reflecting only outside-tolerance items (`datasynth-eval`)
+
+### Fixed
+- `fiscal_year` in `ComplianceFinding` now uses `Datelike::year()` instead of format/parse roundtrip
+- Compliance reference date validation uses `chrono::NaiveDate::parse_from_str` consistent with rest of validation module
+- Supersession chain cycle guard with `HashSet<StandardId>` prevents infinite loops in both backward and forward walks
+- Compliance findings now generated for all companies (was previously only first company)
+- Material weakness + significant deficiency rate sum validated to be <= 1.0
 
 ### Removed
 - 9 `#[allow(dead_code)]` annotations across generators, output, and eval crates (Pillar 1: 6, Pillar 2: 3)

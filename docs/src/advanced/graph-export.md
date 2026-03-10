@@ -489,6 +489,8 @@ The RustGraph Hypergraph exporter supports all enterprise process families with 
 | 430-442 | ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
 | 450-455 | Project | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
 | 500-504 | GOV | CosoComponent, CosoPrinciple, SoxAssertion, AuditEngagement, ProfessionalJudgment |
+| 505-508 | Compliance | ComplianceStandard, Jurisdiction, RegulatoryFiling, ComplianceFinding |
+| 510-513 | Compliance (ToNodeProperties) | ComplianceStandard, ComplianceFinding, RegulatoryFiling, JurisdictionProfile |
 
 ### Edge Type Registry (v0.9.4)
 
@@ -525,6 +527,14 @@ The RustGraph Hypergraph exporter supports all enterprise process families with 
 | GOV | PrincipleUnder | CosoPrinciple → CosoComponent |
 | GOV | AssertionCovers | SoxAssertion → GlAccount |
 | GOV | JudgmentWithin | ProfessionalJudgment → AuditEngagement |
+| Compliance | StandardToControl | ComplianceStandard → InternalControl |
+| Compliance | FindingOnControl | ComplianceFinding → InternalControl |
+| Compliance | StandardToAccount | ComplianceStandard → GlAccount |
+| Compliance | FiledByCompany | RegulatoryFiling → Company |
+| Compliance | GovernedByStandard | GlAccount → ComplianceStandard |
+| Compliance | ImplementsStandard | InternalControl → ComplianceStandard |
+| Compliance | FindingAffectsControl | ComplianceFinding → InternalControl |
+| Compliance | FindingAffectsAccount | ComplianceFinding → GlAccount |
 
 Each edge has a typed `EdgeConstraint` with `Cardinality` (OneToOne, OneToMany, ManyToMany) and optional edge properties.
 
@@ -550,9 +560,63 @@ graph_export:
       events_as_hyperedges: true
 ```
 
+## Compliance Graph Integration (v1.1.0)
+
+The compliance regulations framework integrates with both the standalone `ComplianceGraphBuilder` and the multi-layer hypergraph, enabling full enterprise graph traversal between regulatory standards, accounting data, and process documents.
+
+### Cross-Domain Edges
+
+When compliance regulations are enabled, the graph includes cross-domain edges:
+
+```
+Company ──FiledByCompany──▶ RegulatoryFiling
+                                  │
+                           Jurisdiction
+                                  │
+                        ComplianceStandard
+                         ╱              ╲
+          GovernedByStandard      ImplementsStandard
+               ╱                          ╲
+         GlAccount                 InternalControl
+             │                           │
+       JournalEntry              ComplianceFinding
+```
+
+### Hypergraph Placement
+
+| Compliance Type | Hypergraph Layer | Type Code |
+|-----------------|-----------------|-----------|
+| ComplianceStandard | Layer 1 (GovernanceControls) | 505 |
+| Jurisdiction | Layer 1 (GovernanceControls) | 506 |
+| RegulatoryFiling | Layer 2 (ProcessEvents) | 507 |
+| ComplianceFinding | Layer 2 (ProcessEvents) | 508 |
+
+### Configuration
+
+```yaml
+compliance_regulations:
+  graph:
+    enabled: true
+    include_account_links: true     # Standard → Account edges
+    include_control_links: true     # Standard → Control edges
+    include_company_links: true     # Filing → Company edges
+```
+
+### ToNodeProperties
+
+All four compliance models implement `ToNodeProperties` for typed graph node conversion:
+
+| Model | Type Code | Key Properties |
+|-------|-----------|---------------|
+| `ComplianceStandard` | 510 | standardId, title, issuingBody, category, domain, applicableAccountTypes, applicableProcesses |
+| `ComplianceFinding` | 511 | findingId, severity, deficiencyLevel, controlId, affectedAccounts, remediationStatus |
+| `RegulatoryFiling` | 512 | filingType, companyCode, jurisdiction, status, deadline |
+| `JurisdictionProfile` | 513 | countryCode, accountingFramework, auditFramework, corporateTaxRate |
+
 ## See Also
 
 - [Anomaly Injection](anomaly-injection.md)
 - [Fraud Detection Use Case](../use-cases/fraud-detection.md)
 - [datasynth-graph Crate](../crates/datasynth-graph.md)
 - [Process Mining](../use-cases/process-mining.md)
+- [Compliance Configuration](../configuration/compliance.md)
