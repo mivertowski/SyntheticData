@@ -459,9 +459,7 @@ impl AnomalyInjector {
                 };
 
                 // Apply the anomaly
-                if let Some(mut label) =
-                    self.inject_anomaly(entry, anomaly_type.clone())
-                {
+                if let Some(mut label) = self.inject_anomaly(entry, anomaly_type.clone()) {
                     // Add entity targeting metadata
                     if let Some(ref entity_id) = target_entity {
                         label = label.with_metadata("entity_target", entity_id);

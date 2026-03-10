@@ -9,7 +9,7 @@ use rust_decimal::Decimal;
 use std::collections::HashSet;
 
 use datasynth_ocpm::{
-    OcpmEventGenerator, OcpmEventLog, OcpmUuidFactory, O2cDocuments, P2pDocuments,
+    O2cDocuments, OcpmEventGenerator, OcpmEventLog, OcpmUuidFactory, P2pDocuments,
 };
 
 const USERS: &[&str] = &["user001", "user002", "user003"];
@@ -21,21 +21,34 @@ fn user_list() -> Vec<String> {
 fn make_p2p_case(seed: u64) -> datasynth_ocpm::CaseGenerationResult {
     let mut gen = OcpmEventGenerator::new(seed);
     let factory = OcpmUuidFactory::new(seed);
-    let docs = P2pDocuments::new("PO-001", "V001", "1000", Decimal::new(10000, 0), "USD", &factory)
-        .with_goods_receipt("GR-001", &factory)
-        .with_invoice("INV-001", &factory)
-        .with_payment("PAY-001", &factory);
+    let docs = P2pDocuments::new(
+        "PO-001",
+        "V001",
+        "1000",
+        Decimal::new(10000, 0),
+        "USD",
+        &factory,
+    )
+    .with_goods_receipt("GR-001", &factory)
+    .with_invoice("INV-001", &factory)
+    .with_payment("PAY-001", &factory);
     gen.generate_p2p_case(&docs, chrono::Utc::now(), &user_list())
 }
 
 fn make_o2c_case(seed: u64) -> datasynth_ocpm::CaseGenerationResult {
     let mut gen = OcpmEventGenerator::new(seed);
     let factory = OcpmUuidFactory::new(seed);
-    let docs =
-        O2cDocuments::new("SO-001", "C001", "1000", Decimal::new(8000, 0), "USD", &factory)
-            .with_delivery("DEL-001", &factory)
-            .with_invoice("CI-001", &factory)
-            .with_receipt("REC-001", &factory);
+    let docs = O2cDocuments::new(
+        "SO-001",
+        "C001",
+        "1000",
+        Decimal::new(8000, 0),
+        "USD",
+        &factory,
+    )
+    .with_delivery("DEL-001", &factory)
+    .with_invoice("CI-001", &factory)
+    .with_receipt("REC-001", &factory);
     gen.generate_o2c_case(&docs, chrono::Utc::now(), &user_list())
 }
 
@@ -47,10 +60,7 @@ fn make_o2c_case(seed: u64) -> datasynth_ocpm::CaseGenerationResult {
 fn test_p2p_generates_events_and_objects() {
     let result = make_p2p_case(42);
 
-    assert!(
-        !result.events.is_empty(),
-        "P2P case should produce events"
-    );
+    assert!(!result.events.is_empty(), "P2P case should produce events");
     assert!(
         !result.objects.is_empty(),
         "P2P case should produce objects"

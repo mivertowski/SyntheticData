@@ -66,18 +66,32 @@ fn test_parquet_schema_columns() {
     let reader = SerializedFileReader::new(file).unwrap();
     let schema = reader.metadata().file_metadata().schema();
 
-    let field_names: Vec<&str> = schema
-        .get_fields()
-        .iter()
-        .map(|f| f.name())
-        .collect();
+    let field_names: Vec<&str> = schema.get_fields().iter().map(|f| f.name()).collect();
 
-    assert!(field_names.contains(&"document_id"), "Missing document_id column");
-    assert!(field_names.contains(&"company_code"), "Missing company_code column");
-    assert!(field_names.contains(&"gl_account"), "Missing gl_account column");
-    assert!(field_names.contains(&"debit_amount"), "Missing debit_amount column");
-    assert!(field_names.contains(&"credit_amount"), "Missing credit_amount column");
-    assert!(field_names.contains(&"is_anomaly"), "Missing is_anomaly column");
+    assert!(
+        field_names.contains(&"document_id"),
+        "Missing document_id column"
+    );
+    assert!(
+        field_names.contains(&"company_code"),
+        "Missing company_code column"
+    );
+    assert!(
+        field_names.contains(&"gl_account"),
+        "Missing gl_account column"
+    );
+    assert!(
+        field_names.contains(&"debit_amount"),
+        "Missing debit_amount column"
+    );
+    assert!(
+        field_names.contains(&"credit_amount"),
+        "Missing credit_amount column"
+    );
+    assert!(
+        field_names.contains(&"is_anomaly"),
+        "Missing is_anomaly column"
+    );
     assert!(field_names.contains(&"is_fraud"), "Missing is_fraud column");
 }
 
@@ -119,7 +133,11 @@ fn test_parquet_items_written_count() {
     for _ in 0..7 {
         sink.write(make_journal_entry("C001", 500)).unwrap();
     }
-    assert_eq!(sink.items_written(), 7, "items_written should track entries, not rows");
+    assert_eq!(
+        sink.items_written(),
+        7,
+        "items_written should track entries, not rows"
+    );
     sink.close().unwrap();
 }
 

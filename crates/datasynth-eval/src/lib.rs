@@ -78,7 +78,7 @@ pub use coherence::{
     EsgThresholds, ExpenseReportData, FairValueEvaluation, FinancialReportingEvaluation,
     FinancialReportingEvaluator, FinancialStatementData, FrameworkViolation, GovernanceData,
     HedgeEffectivenessData, HolidayData, HrPayrollEvaluation, HrPayrollEvaluator, ICMatchingData,
-    ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation, IsaComplianceEvaluation, UnmatchedICItem,
+    ICMatchingEvaluation, ICMatchingEvaluator, ImpairmentEvaluation, IsaComplianceEvaluation,
     KpiData, LeaseAccountingEvaluation, LeaseAccountingEvaluator, LeaseEvaluation,
     ManufacturingEvaluation, ManufacturingEvaluator, MaterialityData, NettingData, NetworkEdge,
     NetworkEvaluation, NetworkEvaluator, NetworkNode, NetworkThresholds, O2CChainData,
@@ -94,7 +94,8 @@ pub use coherence::{
     StandardsThresholds, StrengthStats, SubledgerEvaluator, SubledgerReconciliationEvaluation,
     SupplierEsgData, TaxEvaluation, TaxEvaluator, TaxLineData, TaxRateData, TaxReturnData,
     TaxThresholds, TimeEntryData, TreasuryEvaluation, TreasuryEvaluator, TreasuryThresholds,
-    VariableConsideration, ViolationSeverity, WaterUsageData, WithholdingData, WorkpaperData,
+    UnmatchedICItem, VariableConsideration, ViolationSeverity, WaterUsageData, WithholdingData,
+    WorkpaperData,
 };
 
 pub use quality::{
