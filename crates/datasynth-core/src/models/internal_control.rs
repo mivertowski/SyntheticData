@@ -3,6 +3,7 @@
 //! Provides structures for modeling internal controls, control testing,
 //! and SOX 404 compliance markers in synthetic accounting data.
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -134,6 +135,58 @@ impl std::fmt::Display for SoxAssertion {
     }
 }
 
+/// Result of control testing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum TestResult {
+    /// Control test passed — no exceptions found
+    Pass,
+    /// Control test partially passed — minor exceptions
+    Partial,
+    /// Control test failed — material exception
+    Fail,
+    /// Control has not been tested
+    #[default]
+    NotTested,
+}
+
+impl std::fmt::Display for TestResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pass => write!(f, "Pass"),
+            Self::Partial => write!(f, "Partial"),
+            Self::Fail => write!(f, "Fail"),
+            Self::NotTested => write!(f, "NotTested"),
+        }
+    }
+}
+
+/// Derived control effectiveness rating.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ControlEffectiveness {
+    /// Control is operating effectively
+    Effective,
+    /// Control is partially effective — some deficiencies
+    PartiallyEffective,
+    /// Control has not been tested for effectiveness
+    #[default]
+    NotTested,
+    /// Control is not effective — material weakness or significant deficiency
+    Ineffective,
+}
+
+impl std::fmt::Display for ControlEffectiveness {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Effective => write!(f, "Effective"),
+            Self::PartiallyEffective => write!(f, "PartiallyEffective"),
+            Self::NotTested => write!(f, "NotTested"),
+            Self::Ineffective => write!(f, "Ineffective"),
+        }
+    }
+}
+
 /// Control status for transaction-level tracking.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -191,6 +244,28 @@ pub struct InternalControl {
     pub control_scope: ControlScope,
     /// Control maturity level
     pub maturity_level: CosoMaturityLevel,
+
+    // --- New fields for test history, effectiveness, owner resolution, risk linkage ---
+
+    /// Employee ID of the control owner (resolved from owner_role at generation time)
+    pub owner_employee_id: Option<String>,
+    /// Display name of the control owner
+    pub owner_name: String,
+
+    /// Number of times this control has been tested
+    pub test_count: u32,
+    /// Date of the most recent test
+    pub last_tested_date: Option<NaiveDate>,
+    /// Result of the most recent test
+    pub test_result: TestResult,
+
+    /// Derived effectiveness rating (from maturity_level + test_result)
+    pub effectiveness: ControlEffectiveness,
+
+    /// IDs of risks this control mitigates (populated at generation time)
+    pub mitigates_risk_ids: Vec<String>,
+    /// Account classes this control covers (derived from sox_assertion)
+    pub covers_account_classes: Vec<String>,
 }
 
 impl InternalControl {
@@ -216,6 +291,14 @@ impl InternalControl {
             coso_principles: vec![CosoPrinciple::ControlActions],
             control_scope: ControlScope::TransactionLevel,
             maturity_level: CosoMaturityLevel::Defined,
+            owner_employee_id: None,
+            owner_name: String::new(),
+            test_count: 0,
+            last_tested_date: None,
+            test_result: TestResult::NotTested,
+            effectiveness: ControlEffectiveness::NotTested,
+            mitigates_risk_ids: Vec::new(),
+            covers_account_classes: Vec::new(),
         }
     }
 
@@ -277,6 +360,111 @@ impl InternalControl {
     pub fn with_maturity_level(mut self, level: CosoMaturityLevel) -> Self {
         self.maturity_level = level;
         self
+    }
+
+    /// Builder method to set owner employee ID and name.
+    pub fn with_owner_employee(
+        mut self,
+        employee_id: impl Into<String>,
+        name: impl Into<String>,
+    ) -> Self {
+        self.owner_employee_id = Some(employee_id.into());
+        self.owner_name = name.into();
+        self
+    }
+
+    /// Builder method to set test history.
+    pub fn with_test_history(
+        mut self,
+        test_count: u32,
+        last_tested_date: Option<NaiveDate>,
+        test_result: TestResult,
+    ) -> Self {
+        self.test_count = test_count;
+        self.last_tested_date = last_tested_date;
+        self.test_result = test_result;
+        self
+    }
+
+    /// Builder method to set effectiveness.
+    pub fn with_effectiveness(mut self, effectiveness: ControlEffectiveness) -> Self {
+        self.effectiveness = effectiveness;
+        self
+    }
+
+    /// Builder method to set mitigated risk IDs.
+    pub fn with_mitigates_risk_ids(mut self, risk_ids: Vec<String>) -> Self {
+        self.mitigates_risk_ids = risk_ids;
+        self
+    }
+
+    /// Builder method to set covered account classes.
+    pub fn with_covers_account_classes(mut self, classes: Vec<String>) -> Self {
+        self.covers_account_classes = classes;
+        self
+    }
+
+    /// Derive test history and effectiveness from the current `maturity_level`.
+    ///
+    /// Call this after setting `maturity_level` to populate `test_count`,
+    /// `last_tested_date`, `test_result`, and `effectiveness`.
+    ///
+    /// - Maturity >= 4 (Managed/Optimized): tested multiple times, Pass, Effective
+    /// - Maturity == 3 (Defined): tested once, Partial, PartiallyEffective
+    /// - Maturity <= 2 (NonExistent/AdHoc/Repeatable): not tested
+    ///
+    /// `assessed_date` is the reference date from which `last_tested_date` is
+    /// back-computed: `assessed_date - 30 * (5 - maturity_level)` days.
+    pub fn derive_from_maturity(&mut self, assessed_date: NaiveDate) {
+        let level = self.maturity_level.level();
+
+        if level >= 4 {
+            // Managed (4) or Optimized (5)
+            self.test_count = (level as u32).saturating_sub(2); // 2 or 3
+            let days_back = 30_i64 * (5 - level as i64);
+            self.last_tested_date =
+                assessed_date.checked_sub_signed(chrono::Duration::days(days_back));
+            self.test_result = TestResult::Pass;
+            self.effectiveness = ControlEffectiveness::Effective;
+        } else if level == 3 {
+            // Defined
+            self.test_count = 1;
+            let days_back = 30_i64 * (5 - 3);
+            self.last_tested_date =
+                assessed_date.checked_sub_signed(chrono::Duration::days(days_back));
+            self.test_result = TestResult::Partial;
+            self.effectiveness = ControlEffectiveness::PartiallyEffective;
+        } else {
+            // NonExistent (0), AdHoc (1), Repeatable (2)
+            self.test_count = 0;
+            self.last_tested_date = None;
+            self.test_result = TestResult::NotTested;
+            self.effectiveness = ControlEffectiveness::NotTested;
+        }
+    }
+
+    /// Derive `covers_account_classes` from `sox_assertion`.
+    ///
+    /// Maps SOX assertions to the account classes they cover:
+    /// - Existence -> Assets
+    /// - Completeness -> Revenue, Liabilities
+    /// - Valuation -> Assets, Liabilities, Equity, Revenue, Expenses
+    /// - RightsAndObligations -> Assets, Liabilities
+    /// - PresentationAndDisclosure -> Revenue, Equity
+    pub fn derive_account_classes(&mut self) {
+        self.covers_account_classes = match self.sox_assertion {
+            SoxAssertion::Existence => vec!["Assets".into()],
+            SoxAssertion::Completeness => vec!["Revenue".into(), "Liabilities".into()],
+            SoxAssertion::Valuation => vec![
+                "Assets".into(),
+                "Liabilities".into(),
+                "Equity".into(),
+                "Revenue".into(),
+                "Expenses".into(),
+            ],
+            SoxAssertion::RightsAndObligations => vec!["Assets".into(), "Liabilities".into()],
+            SoxAssertion::PresentationAndDisclosure => vec!["Revenue".into(), "Equity".into()],
+        };
     }
 
     /// Generate standard controls for a typical organization.

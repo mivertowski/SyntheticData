@@ -27,7 +27,7 @@ mod entity_registry;
 mod fixed_asset;
 mod fx;
 pub mod graph_properties;
-mod internal_control;
+pub mod internal_control;
 mod journal_entry;
 mod master_data;
 mod material;

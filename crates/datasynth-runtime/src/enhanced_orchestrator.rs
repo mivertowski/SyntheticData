@@ -1681,6 +1681,7 @@ impl EnhancedOrchestrator {
                     self.config.internal_controls.sox_materiality_threshold,
                 )
                 .unwrap_or_else(|| rust_decimal::Decimal::from(10000)),
+                ..Default::default()
             };
             let mut control_gen = ControlGenerator::with_config(self.seed + 99, control_config);
             for entry in &mut entries {
