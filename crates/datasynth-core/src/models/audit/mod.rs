@@ -14,7 +14,7 @@ mod engagement;
 mod evidence;
 mod finding;
 mod judgment;
-mod risk;
+pub mod risk;
 mod workpaper;
 
 pub use engagement::*;

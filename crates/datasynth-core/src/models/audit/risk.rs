@@ -4,12 +4,65 @@
 //! identifying risks of material misstatement at both the financial
 //! statement level and assertion level.
 
+use std::hash::{Hash, Hasher};
+
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::engagement::RiskLevel;
 use super::workpaper::Assertion;
+
+/// Risk lifecycle status — tracks whether the risk is active, mitigated, etc.
+///
+/// Distinct from [`RiskReviewStatus`] which tracks the *review workflow*
+/// (Draft/PendingReview/Approved). `RiskStatus` tracks the *risk lifecycle state*.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RiskStatus {
+    /// Risk is active and requires monitoring/mitigation
+    Active,
+    /// Risk has been mitigated by controls
+    Mitigated,
+    /// Risk has been accepted (residual risk within tolerance)
+    Accepted,
+    /// Risk is closed (no longer applicable)
+    Closed,
+}
+
+impl Default for RiskStatus {
+    fn default() -> Self {
+        Self::Active
+    }
+}
+
+/// Derive a continuous score in `[lo, hi]` from a [`RiskLevel`] enum,
+/// using deterministic jitter seeded from `risk_id`.
+///
+/// The jitter is derived by hashing `risk_id` to get a stable fraction in `[0, 1)`,
+/// then mapping it into the `[lo, hi]` range for the given level:
+///   - Low:         `[0.15, 0.35]`
+///   - Medium:      `[0.35, 0.55]`
+///   - High:        `[0.55, 0.80]`
+///   - Significant: `[0.80, 0.95]`
+fn continuous_score(level: &RiskLevel, risk_id: &Uuid, discriminator: u8) -> f64 {
+    let (lo, hi) = match level {
+        RiskLevel::Low => (0.15, 0.35),
+        RiskLevel::Medium => (0.35, 0.55),
+        RiskLevel::High => (0.55, 0.80),
+        RiskLevel::Significant => (0.80, 0.95),
+    };
+
+    // Deterministic jitter: hash risk_id + discriminator
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    risk_id.hash(&mut hasher);
+    discriminator.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    // Map hash to [0, 1) fraction, then scale to [lo, hi]
+    let frac = (hash as f64) / (u64::MAX as f64);
+    lo + frac * (hi - lo)
+}
 
 /// Risk assessment for an account or process.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +93,32 @@ pub struct RiskAssessment {
     pub is_significant_risk: bool,
     /// Rationale for significant risk designation
     pub significant_risk_rationale: Option<String>,
+
+    // === Continuous Risk Scores (for heatmap placement) ===
+    /// Inherent impact score (0.0-1.0), derived from `inherent_risk` level
+    pub inherent_impact: f64,
+    /// Inherent likelihood score (0.0-1.0), derived from `inherent_risk` level
+    pub inherent_likelihood: f64,
+    /// Residual impact score (0.0-1.0), derived from `control_risk` level
+    pub residual_impact: f64,
+    /// Residual likelihood score (0.0-1.0), derived from `control_risk` level
+    pub residual_likelihood: f64,
+    /// Composite risk score: `inherent_impact * inherent_likelihood * 100`
+    pub risk_score: f64,
+
+    // === Display ===
+    /// Human-readable risk name (e.g. "Revenue Recognition Risk [High]")
+    pub risk_name: String,
+
+    // === Control Linkage ===
+    /// Number of mitigating controls linked to this risk
+    pub mitigating_control_count: u32,
+    /// Number of effective (passing) controls among mitigating controls
+    pub effective_control_count: u32,
+
+    // === Lifecycle Status ===
+    /// Risk lifecycle status (Active, Mitigated, Accepted, Closed)
+    pub status: RiskStatus,
 
     // === Fraud Risk ===
     /// Fraud risk factors identified
@@ -90,8 +169,17 @@ impl RiskAssessment {
         description: &str,
     ) -> Self {
         let now = Utc::now();
+        let risk_id = Uuid::new_v4();
+        let default_level = RiskLevel::Medium;
+        let inherent_impact = continuous_score(&default_level, &risk_id, 0);
+        let inherent_likelihood = continuous_score(&default_level, &risk_id, 1);
+        let residual_impact = continuous_score(&default_level, &risk_id, 2);
+        let residual_likelihood = continuous_score(&default_level, &risk_id, 3);
+        let risk_score = inherent_impact * inherent_likelihood * 100.0;
+        let risk_name = format!("{} Risk [{:?}]", account_or_process, default_level);
+
         Self {
-            risk_id: Uuid::new_v4(),
+            risk_id,
             risk_ref: format!(
                 "RISK-{}",
                 Uuid::new_v4().simple().to_string()[..8].to_uppercase()
@@ -101,11 +189,20 @@ impl RiskAssessment {
             account_or_process: account_or_process.into(),
             assertion: None,
             description: description.into(),
-            inherent_risk: RiskLevel::Medium,
-            control_risk: RiskLevel::Medium,
-            risk_of_material_misstatement: RiskLevel::Medium,
+            inherent_risk: default_level,
+            control_risk: default_level,
+            risk_of_material_misstatement: default_level,
             is_significant_risk: false,
             significant_risk_rationale: None,
+            inherent_impact,
+            inherent_likelihood,
+            residual_impact,
+            residual_likelihood,
+            risk_score,
+            risk_name,
+            mitigating_control_count: 0,
+            effective_control_count: 0,
+            status: RiskStatus::Active,
             fraud_risk_factors: Vec::new(),
             presumed_revenue_fraud_risk: false,
             presumed_management_override: true,
@@ -131,11 +228,12 @@ impl RiskAssessment {
         self
     }
 
-    /// Set risk levels.
+    /// Set risk levels and recompute continuous scores.
     pub fn with_risk_levels(mut self, inherent: RiskLevel, control: RiskLevel) -> Self {
         self.inherent_risk = inherent;
         self.control_risk = control;
         self.risk_of_material_misstatement = self.calculate_romm();
+        self.recompute_continuous_scores();
         self
     }
 
@@ -171,6 +269,19 @@ impl RiskAssessment {
         let cr_score = self.control_risk.score();
         let combined = (ir_score + cr_score) / 2;
         RiskLevel::from_score(combined)
+    }
+
+    /// Recompute continuous scores and risk_name from current enum levels.
+    fn recompute_continuous_scores(&mut self) {
+        self.inherent_impact = continuous_score(&self.inherent_risk, &self.risk_id, 0);
+        self.inherent_likelihood = continuous_score(&self.inherent_risk, &self.risk_id, 1);
+        self.residual_impact = continuous_score(&self.control_risk, &self.risk_id, 2);
+        self.residual_likelihood = continuous_score(&self.control_risk, &self.risk_id, 3);
+        self.risk_score = self.inherent_impact * self.inherent_likelihood * 100.0;
+        self.risk_name = format!(
+            "{} Risk [{:?}]",
+            self.account_or_process, self.inherent_risk
+        );
     }
 
     /// Get the detection risk needed to achieve acceptable audit risk.
