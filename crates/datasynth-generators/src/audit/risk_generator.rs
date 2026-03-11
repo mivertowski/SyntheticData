@@ -121,10 +121,13 @@ impl RiskAssessmentGenerator {
             risk = risk.with_assertion(assertion);
         }
 
-        // Set risk levels
+        // Set risk levels (also computes continuous scores via model)
         let inherent_risk = self.generate_inherent_risk();
         let control_risk = self.generate_control_risk(&inherent_risk);
         risk = risk.with_risk_levels(inherent_risk, control_risk);
+
+        // Override default risk_name with a more descriptive category-specific name
+        risk.risk_name = self.generate_risk_name(account_or_process, risk_category, inherent_risk);
 
         // Maybe mark as significant
         if self.rng.random::<f64>() < self.config.significant_risk_probability
@@ -191,6 +194,7 @@ impl RiskAssessmentGenerator {
         risk.risk_ref = format!("RISK-{:04}", self.risk_counter);
         risk = risk.with_assertion(Assertion::Occurrence);
         risk = risk.with_risk_levels(RiskLevel::High, RiskLevel::Medium);
+        risk.risk_name = "Revenue Recognition Fraud Risk [High]".into();
         risk = risk.mark_significant("Presumed fraud risk per ISA 240 - revenue recognition");
         risk.presumed_revenue_fraud_risk = true;
 
@@ -261,6 +265,7 @@ impl RiskAssessmentGenerator {
 
         risk.risk_ref = format!("RISK-{:04}", self.risk_counter);
         risk = risk.with_risk_levels(RiskLevel::High, RiskLevel::High);
+        risk.risk_name = "Management Override of Controls Risk [High]".into();
         risk = risk.mark_significant("Presumed fraud risk per ISA 240 - management override");
         risk.presumed_management_override = true;
 
@@ -366,6 +371,45 @@ impl RiskAssessmentGenerator {
             }
         }
         RiskCategory::AssertionLevel
+    }
+
+    /// Generate a meaningful risk name from a category-specific pool.
+    fn generate_risk_name(
+        &mut self,
+        account_or_process: &str,
+        category: RiskCategory,
+        inherent_risk: RiskLevel,
+    ) -> String {
+        let qualifier = match category {
+            RiskCategory::AssertionLevel => {
+                let qualifiers = [
+                    "Accuracy",
+                    "Completeness",
+                    "Valuation",
+                    "Existence",
+                    "Cutoff",
+                    "Classification",
+                ];
+                let idx = self.rng.random_range(0..qualifiers.len());
+                qualifiers[idx]
+            }
+            RiskCategory::FinancialStatementLevel => "Pervasive",
+            RiskCategory::FraudRisk => "Fraud",
+            RiskCategory::GoingConcern => "Going Concern",
+            RiskCategory::RelatedParty => "Related Party",
+            RiskCategory::EstimateRisk => {
+                let qualifiers = ["Estimation Uncertainty", "Fair Value", "Impairment"];
+                let idx = self.rng.random_range(0..qualifiers.len());
+                qualifiers[idx]
+            }
+            RiskCategory::ItGeneralControl => "ITGC",
+            RiskCategory::RegulatoryCompliance => "Compliance",
+        };
+
+        format!(
+            "{} {} Risk [{:?}]",
+            account_or_process, qualifier, inherent_risk
+        )
     }
 
     /// Generate risk description and assertion.
