@@ -12,7 +12,7 @@
 
 mod engagement;
 mod evidence;
-mod finding;
+pub mod finding;
 mod judgment;
 pub mod risk;
 mod workpaper;

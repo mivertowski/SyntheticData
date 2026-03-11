@@ -14,6 +14,28 @@ use datasynth_core::models::audit::{
     MilestoneStatus, RemediationPlan, RemediationStatus, Workpaper,
 };
 
+/// A control available for linkage during finding generation.
+#[derive(Debug, Clone)]
+pub struct AvailableControl {
+    /// Control ID (external reference, e.g., "CTRL-001")
+    pub control_id: String,
+    /// Assertions this control addresses
+    pub assertions: Vec<Assertion>,
+    /// Process areas this control covers
+    pub process_areas: Vec<String>,
+}
+
+/// A risk assessment available for linkage during finding generation.
+#[derive(Debug, Clone)]
+pub struct AvailableRisk {
+    /// Risk ID (external reference, e.g., "RISK-001")
+    pub risk_id: String,
+    /// Engagement ID this risk belongs to
+    pub engagement_id: uuid::Uuid,
+    /// Account or process being assessed
+    pub account_or_process: String,
+}
+
 /// Configuration for finding generation.
 #[derive(Debug, Clone)]
 pub struct FindingGeneratorConfig {
@@ -148,6 +170,10 @@ impl FindingGenerator {
                 let idx = self.rng.random_range(0..workpapers.len());
                 finding.workpaper_refs.push(workpapers[idx].workpaper_id);
             }
+            // Set the primary workpaper_id to the first linked workpaper
+            if let Some(first_wp) = finding.workpaper_refs.first() {
+                finding.workpaper_id = Some(first_wp.to_string());
+            }
         }
 
         // Set identified by
@@ -186,6 +212,101 @@ impl FindingGenerator {
         }
 
         finding
+    }
+
+    /// Generate findings for an engagement with control and risk context.
+    ///
+    /// This extended version populates `related_control_ids` and `related_risk_id`
+    /// by matching finding assertions/process areas against available controls and risks.
+    pub fn generate_findings_with_context(
+        &mut self,
+        engagement: &AuditEngagement,
+        workpapers: &[Workpaper],
+        team_members: &[String],
+        controls: &[AvailableControl],
+        risks: &[AvailableRisk],
+    ) -> Vec<AuditFinding> {
+        let mut findings =
+            self.generate_findings_for_engagement(engagement, workpapers, team_members);
+
+        for finding in &mut findings {
+            self.link_controls_and_risks(finding, controls, risks);
+        }
+
+        findings
+    }
+
+    /// Link a finding to related controls and risks based on assertion/process overlap.
+    fn link_controls_and_risks(
+        &mut self,
+        finding: &mut AuditFinding,
+        controls: &[AvailableControl],
+        risks: &[AvailableRisk],
+    ) {
+        // Link controls: find controls whose assertions overlap with this finding's assertions
+        let finding_assertions = &finding.assertions_affected;
+        let finding_process_areas = &finding.process_areas;
+
+        let mut matched_controls: Vec<&AvailableControl> = controls
+            .iter()
+            .filter(|ctrl| {
+                // Match if any assertion overlaps
+                let assertion_match = ctrl
+                    .assertions
+                    .iter()
+                    .any(|a| finding_assertions.contains(a));
+                // Or if any process area overlaps (case-insensitive)
+                let process_match = ctrl.process_areas.iter().any(|pa| {
+                    finding_process_areas
+                        .iter()
+                        .any(|fp| fp.to_lowercase().contains(&pa.to_lowercase()))
+                });
+                assertion_match || process_match
+            })
+            .collect();
+
+        // If no matches, pick 1-2 random controls (findings should still link to something)
+        if matched_controls.is_empty() && !controls.is_empty() {
+            let count = self.rng.random_range(1..=2.min(controls.len()));
+            for _ in 0..count {
+                let idx = self.rng.random_range(0..controls.len());
+                matched_controls.push(&controls[idx]);
+            }
+        }
+
+        // Cap at 3 related controls
+        if matched_controls.len() > 3 {
+            matched_controls.truncate(3);
+        }
+
+        finding.related_control_ids = matched_controls
+            .iter()
+            .map(|c| c.control_id.clone())
+            .collect();
+
+        // Link risk: find a risk in the same engagement whose account/process matches
+        let engagement_risks: Vec<&AvailableRisk> = risks
+            .iter()
+            .filter(|r| r.engagement_id == finding.engagement_id)
+            .collect();
+
+        if !engagement_risks.is_empty() {
+            // Try to find a risk whose account_or_process matches one of our affected accounts
+            let matching_risk = engagement_risks.iter().find(|r| {
+                finding
+                    .accounts_affected
+                    .iter()
+                    .any(|a| r.account_or_process.to_lowercase().contains(&a.to_lowercase()))
+            });
+
+            if let Some(risk) = matching_risk {
+                finding.related_risk_id = Some(risk.risk_id.clone());
+            } else {
+                // Fall back to a random risk from the same engagement
+                let idx = self.rng.random_range(0..engagement_risks.len());
+                finding.related_risk_id = Some(engagement_risks[idx].risk_id.clone());
+            }
+        }
     }
 
     /// Select finding type based on probabilities.
@@ -807,5 +928,127 @@ mod tests {
 
         assert!(finding.report_to_governance);
         assert!(finding.include_in_management_letter);
+    }
+
+    #[test]
+    fn test_generate_findings_with_context_links_controls_and_risks() {
+        use datasynth_core::models::audit::Assertion;
+
+        let mut generator = FindingGenerator::new(42);
+        let engagement = create_test_engagement();
+        let team = vec!["STAFF001".into(), "SENIOR001".into(), "MANAGER001".into()];
+
+        let controls = vec![
+            AvailableControl {
+                control_id: "CTRL-001".into(),
+                assertions: vec![Assertion::Accuracy, Assertion::Completeness],
+                process_areas: vec!["Revenue Recognition".into()],
+            },
+            AvailableControl {
+                control_id: "CTRL-002".into(),
+                assertions: vec![Assertion::Occurrence],
+                process_areas: vec!["Procure to Pay".into()],
+            },
+        ];
+
+        let risks = vec![AvailableRisk {
+            risk_id: "RISK-001".into(),
+            engagement_id: engagement.engagement_id,
+            account_or_process: "Revenue".into(),
+        }];
+
+        let findings =
+            generator.generate_findings_with_context(&engagement, &[], &team, &controls, &risks);
+
+        assert!(!findings.is_empty());
+
+        // Every finding should have at least one related control or risk
+        for finding in &findings {
+            let has_controls = !finding.related_control_ids.is_empty();
+            let has_risk = finding.related_risk_id.is_some();
+            assert!(
+                has_controls || has_risk,
+                "Finding {} should have related controls or risk",
+                finding.finding_ref
+            );
+        }
+
+        // At least one finding should have a related risk from same engagement
+        let with_risk = findings.iter().filter(|f| f.related_risk_id.is_some()).count();
+        assert!(with_risk > 0, "At least one finding should link to a risk");
+    }
+
+    #[test]
+    fn test_generate_findings_with_context_caps_controls_at_three() {
+        use datasynth_core::models::audit::Assertion;
+
+        let config = FindingGeneratorConfig {
+            findings_per_engagement: (5, 5),
+            ..Default::default()
+        };
+        let mut generator = FindingGenerator::with_config(42, config);
+        let engagement = create_test_engagement();
+        let team = vec!["STAFF001".into()];
+
+        // Create many controls covering all assertions
+        let controls: Vec<AvailableControl> = (0..10)
+            .map(|i| AvailableControl {
+                control_id: format!("CTRL-{:03}", i),
+                assertions: vec![
+                    Assertion::Accuracy,
+                    Assertion::Completeness,
+                    Assertion::Occurrence,
+                    Assertion::Classification,
+                ],
+                process_areas: vec![
+                    "Revenue Recognition".into(),
+                    "Procure to Pay".into(),
+                    "Financial Close".into(),
+                ],
+            })
+            .collect();
+
+        let findings =
+            generator.generate_findings_with_context(&engagement, &[], &team, &controls, &[]);
+
+        for finding in &findings {
+            assert!(
+                finding.related_control_ids.len() <= 3,
+                "Finding {} has {} controls, expected max 3",
+                finding.finding_ref,
+                finding.related_control_ids.len()
+            );
+        }
+    }
+
+    #[test]
+    fn test_workpaper_id_populated_from_workpaper_refs() {
+        let mut generator = FindingGenerator::new(42);
+        let engagement = create_test_engagement();
+        let team = vec!["STAFF001".into()];
+
+        // Create a workpaper to reference
+        use datasynth_core::models::audit::{WorkpaperSection, Workpaper};
+        let workpaper = Workpaper::new(
+            engagement.engagement_id,
+            "WP-001",
+            "Test Workpaper",
+            WorkpaperSection::ControlTesting,
+        );
+
+        let findings =
+            generator.generate_findings_for_engagement(&engagement, &[workpaper], &team);
+
+        // All findings should have at least one workpaper ref, and workpaper_id should be set
+        for finding in &findings {
+            assert!(
+                !finding.workpaper_refs.is_empty(),
+                "Finding should have workpaper refs when workpapers provided"
+            );
+            assert!(
+                finding.workpaper_id.is_some(),
+                "Finding should have workpaper_id set when workpaper_refs is populated"
+            );
+        }
     }
 }
