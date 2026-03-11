@@ -13,6 +13,51 @@ use uuid::Uuid;
 use super::anomaly::FraudType;
 use super::approval::ApprovalWorkflow;
 
+/// Typed reference to a source document that originated this journal entry.
+///
+/// Allows downstream consumers to identify the document type without
+/// parsing prefix strings from the `reference` field.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum DocumentRef {
+    /// Purchase order reference (e.g., "PO-2024-000001")
+    PurchaseOrder(String),
+    /// Vendor invoice reference (e.g., "INV-2024-000001")
+    VendorInvoice(String),
+    /// Customer invoice / sales order reference (e.g., "SO-2024-000001")
+    CustomerInvoice(String),
+    /// Goods receipt reference (e.g., "GR-2024-000001")
+    GoodsReceipt(String),
+    /// Delivery reference
+    Delivery(String),
+    /// Payment reference (e.g., "PAY-2024-000001")
+    Payment(String),
+    /// Receipt reference
+    Receipt(String),
+    /// Manual entry with no source document
+    Manual,
+}
+
+impl DocumentRef {
+    /// Parse a reference string into a `DocumentRef` based on known prefixes.
+    ///
+    /// Returns `None` if the prefix is not recognized as a typed document reference.
+    pub fn parse(reference: &str) -> Option<Self> {
+        if reference.starts_with("PO-") || reference.starts_with("PO ") {
+            Some(Self::PurchaseOrder(reference.to_string()))
+        } else if reference.starts_with("INV-") || reference.starts_with("INV ") {
+            Some(Self::VendorInvoice(reference.to_string()))
+        } else if reference.starts_with("SO-") || reference.starts_with("SO ") {
+            Some(Self::CustomerInvoice(reference.to_string()))
+        } else if reference.starts_with("GR-") || reference.starts_with("GR ") {
+            Some(Self::GoodsReceipt(reference.to_string()))
+        } else if reference.starts_with("PAY-") || reference.starts_with("PAY ") {
+            Some(Self::Payment(reference.to_string()))
+        } else {
+            None
+        }
+    }
+}
+
 /// Source of a journal entry transaction.
 ///
 /// Distinguishes between manual human entries and automated system postings,
@@ -287,6 +332,17 @@ pub struct JournalEntryHeader {
     #[serde(default)]
     pub approval_workflow: Option<ApprovalWorkflow>,
 
+    // --- Source Document + Approval Tracking ---
+    /// Typed reference to the source document (derived from `reference` field prefix)
+    #[serde(default)]
+    pub source_document: Option<DocumentRef>,
+    /// Employee ID of the approver (for SOD analysis)
+    #[serde(default)]
+    pub approved_by: Option<String>,
+    /// Date of approval
+    #[serde(default)]
+    pub approval_date: Option<NaiveDate>,
+
     // --- OCPM (Object-Centric Process Mining) Traceability ---
     /// OCPM event IDs that triggered this journal entry
     #[serde(default)]
@@ -337,6 +393,10 @@ impl JournalEntryHeader {
             sod_conflict_type: None,
             // Approval workflow
             approval_workflow: None,
+            // Source document + approval tracking
+            source_document: None,
+            approved_by: None,
+            approval_date: None,
             // OCPM traceability
             ocpm_event_ids: Vec::new(),
             ocpm_object_ids: Vec::new(),
@@ -386,6 +446,10 @@ impl JournalEntryHeader {
             sod_conflict_type: None,
             // Approval workflow
             approval_workflow: None,
+            // Source document + approval tracking
+            source_document: None,
+            approved_by: None,
+            approval_date: None,
             // OCPM traceability
             ocpm_event_ids: Vec::new(),
             ocpm_object_ids: Vec::new(),

@@ -28,7 +28,7 @@ mod fixed_asset;
 mod fx;
 pub mod graph_properties;
 pub mod internal_control;
-mod journal_entry;
+pub mod journal_entry;
 mod master_data;
 mod material;
 mod period_close;

@@ -62,6 +62,8 @@ pub struct JournalEntryGenerator {
     // Approval threshold enforcement
     approval_enabled: bool,
     approval_threshold: rust_decimal::Decimal,
+    // SOD violation rate for approval tracking (0.0 to 1.0)
+    sod_violation_rate: f64,
     // Batching behavior - humans often process similar items together
     batch_state: Option<BatchState>,
     // Temporal drift controller for simulating distribution changes over time
@@ -225,6 +227,7 @@ impl JournalEntryGenerator {
             persona_errors_enabled: true, // Enable by default for realism
             approval_enabled: true,       // Enable by default for realism
             approval_threshold: rust_decimal::Decimal::new(10000, 0), // $10,000 default threshold
+            sod_violation_rate: 0.10,  // 10% default SOD violation rate
             batch_state: None,
             drift_controller: None,
             // Always provide a basic BusinessDayCalculator so that weekend/holiday
@@ -960,6 +963,19 @@ impl JournalEntryGenerator {
             );
         }
 
+        // Derive typed source document from reference prefix
+        header.source_document = header
+            .reference
+            .as_deref()
+            .and_then(DocumentRef::parse)
+            .or_else(|| {
+                if header.source == TransactionSource::Manual {
+                    Some(DocumentRef::Manual)
+                } else {
+                    None
+                }
+            });
+
         // Generate line items
         let mut entry = JournalEntry::new(header);
 
@@ -1053,6 +1069,9 @@ impl JournalEntryGenerator {
         if self.approval_enabled {
             self.maybe_apply_approval_workflow(&mut entry, posting_date);
         }
+
+        // Populate approved_by / approval_date from the approval workflow
+        self.populate_approval_fields(&mut entry, posting_date);
 
         // Maybe start a batch of similar entries for realism
         self.maybe_start_batch(&entry);
@@ -1198,6 +1217,9 @@ impl JournalEntryGenerator {
         header.business_process = Some(business_process);
         header.document_type = Self::document_type_for_process(business_process).to_string();
 
+        // Batched manual entries have Manual source document
+        header.source_document = Some(DocumentRef::Manual);
+
         // Generate similar amount (within ±15% of base)
         let variation = self.rng.random_range(-0.15..0.15);
         let varied_amount =
@@ -1234,6 +1256,9 @@ impl JournalEntryGenerator {
         if self.approval_enabled {
             self.maybe_apply_approval_workflow(&mut entry, posting_date);
         }
+
+        // Populate approved_by / approval_date from the approval workflow
+        self.populate_approval_fields(&mut entry, posting_date);
 
         // Clear batch state if no more entries remaining
         if batch.remaining <= 1 {
@@ -1705,6 +1730,47 @@ impl JournalEntryGenerator {
         self
     }
 
+    /// Set the SOD violation rate for approval tracking.
+    ///
+    /// When a transaction is approved, there is a `rate` probability (0.0 to 1.0)
+    /// that the approver is the same as the creator, which constitutes a SOD violation.
+    /// Default is 0.10 (10%).
+    pub fn with_sod_violation_rate(mut self, rate: f64) -> Self {
+        self.sod_violation_rate = rate;
+        self
+    }
+
+    /// Populate `approved_by` and `approval_date` from the approval workflow,
+    /// and flag SOD violations when the approver matches the creator.
+    fn populate_approval_fields(&mut self, entry: &mut JournalEntry, posting_date: NaiveDate) {
+        if let Some(ref workflow) = entry.header.approval_workflow {
+            // Extract the last approver from the workflow actions
+            let last_approver = workflow
+                .actions
+                .iter()
+                .rev()
+                .find(|a| matches!(a.action, ApprovalActionType::Approve));
+
+            if let Some(approver_action) = last_approver {
+                entry.header.approved_by = Some(approver_action.actor_id.clone());
+                entry.header.approval_date = Some(approver_action.action_timestamp.date_naive());
+            } else {
+                // No explicit approver (auto-approved); use the preparer
+                entry.header.approved_by = Some(workflow.preparer_id.clone());
+                entry.header.approval_date = Some(posting_date);
+            }
+
+            // Inject SOD violation: with configured probability, set approver = creator
+            if self.rng.random::<f64>() < self.sod_violation_rate {
+                let creator = entry.header.created_by.clone();
+                entry.header.approved_by = Some(creator);
+                entry.header.sod_violation = true;
+                entry.header.sod_conflict_type =
+                    Some(SodConflictType::PreparerApprover);
+            }
+        }
+    }
+
     /// Set the temporal drift controller for simulating distribution changes over time.
     ///
     /// When drift is enabled, amounts and other distributions will shift based on
@@ -1988,6 +2054,7 @@ impl ParallelGenerator for JournalEntryGenerator {
                 gen.persona_errors_enabled = self.persona_errors_enabled;
                 gen.approval_enabled = self.approval_enabled;
                 gen.approval_threshold = self.approval_threshold;
+                gen.sod_violation_rate = self.sod_violation_rate;
 
                 // Use partitioned UUID factory to eliminate atomic contention
                 gen.uuid_factory = DeterministicUuidFactory::for_partition(

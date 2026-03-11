@@ -73,6 +73,14 @@ pub struct AuditFinding {
     /// Process areas affected
     pub process_areas: Vec<String>,
 
+    // === Relationship Linkage ===
+    /// Control IDs related to this finding (populated at generation time)
+    pub related_control_ids: Vec<String>,
+    /// Risk ID this finding was raised against (populated at generation time)
+    pub related_risk_id: Option<String>,
+    /// Primary workpaper ID that documents this finding
+    pub workpaper_id: Option<String>,
+
     // === References ===
     /// Supporting workpaper IDs
     pub workpaper_refs: Vec<Uuid>,
@@ -134,6 +142,9 @@ impl AuditFinding {
             assertions_affected: Vec::new(),
             accounts_affected: Vec::new(),
             process_areas: Vec::new(),
+            related_control_ids: Vec::new(),
+            related_risk_id: None,
+            workpaper_id: None,
             workpaper_refs: Vec::new(),
             evidence_refs: Vec::new(),
             related_findings: Vec::new(),
