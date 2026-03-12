@@ -38,7 +38,7 @@ impl PropertySerializer for BankingCustomerPropertySerializer {
         );
         props.insert(
             "customerType".into(),
-            Value::String(format!("{:?}", cust.customer_type)),
+            serde_json::to_value(&cust.customer_type).unwrap_or(Value::Null),
         );
         props.insert(
             "name".into(),
@@ -54,7 +54,7 @@ impl PropertySerializer for BankingCustomerPropertySerializer {
         );
         props.insert(
             "riskTier".into(),
-            Value::String(format!("{:?}", cust.risk_tier)),
+            serde_json::to_value(&cust.risk_tier).unwrap_or(Value::Null),
         );
         props.insert(
             "accountCount".into(),
@@ -62,7 +62,7 @@ impl PropertySerializer for BankingCustomerPropertySerializer {
         );
         props.insert(
             "status".into(),
-            Value::String("active".into()),
+            serde_json::to_value(&cust.status).unwrap_or(Value::Null),
         );
 
         Some(props)
@@ -103,7 +103,7 @@ impl PropertySerializer for BankAccountPropertySerializer {
         );
         props.insert(
             "accountType".into(),
-            Value::String(format!("{:?}", acct.account_type)),
+            serde_json::to_value(&acct.account_type).unwrap_or(Value::Null),
         );
         props.insert(
             "primaryOwnerId".into(),
@@ -111,7 +111,7 @@ impl PropertySerializer for BankAccountPropertySerializer {
         );
         props.insert(
             "status".into(),
-            Value::String(format!("{:?}", acct.status)),
+            serde_json::to_value(&acct.status).unwrap_or(Value::Null),
         );
         props.insert("currency".into(), Value::String(acct.currency.clone()));
         props.insert(
@@ -173,20 +173,20 @@ impl PropertySerializer for BankTransactionPropertySerializer {
         props.insert("currency".into(), Value::String(txn.currency.clone()));
         props.insert(
             "direction".into(),
-            Value::String(format!("{:?}", txn.direction)),
+            serde_json::to_value(&txn.direction).unwrap_or(Value::Null),
         );
         props.insert(
             "channel".into(),
-            Value::String(format!("{:?}", txn.channel)),
+            serde_json::to_value(&txn.channel).unwrap_or(Value::Null),
         );
         props.insert(
             "category".into(),
-            Value::String(format!("{:?}", txn.category)),
+            serde_json::to_value(&txn.category).unwrap_or(Value::Null),
         );
         props.insert("reference".into(), Value::String(txn.reference.clone()));
         props.insert(
             "status".into(),
-            Value::String(format!("{:?}", txn.status)),
+            serde_json::to_value(&txn.status).unwrap_or(Value::Null),
         );
         props.insert(
             "isAnomalous".into(),

@@ -47,7 +47,7 @@ impl PropertySerializer for RiskPropertySerializer {
         // Classification
         props.insert(
             "category".into(),
-            Value::String(format!("{:?}", risk.risk_category)),
+            serde_json::to_value(&risk.risk_category).unwrap_or(Value::Null),
         );
         props.insert(
             "accountOrProcess".into(),
@@ -56,14 +56,14 @@ impl PropertySerializer for RiskPropertySerializer {
         if let Some(ref assertion) = risk.assertion {
             props.insert(
                 "assertion".into(),
-                Value::String(format!("{assertion:?}")),
+                serde_json::to_value(assertion).unwrap_or(Value::Null),
             );
         }
 
         // Lifecycle status
         props.insert(
             "status".into(),
-            Value::String(format!("{:?}", risk.status)),
+            serde_json::to_value(&risk.status).unwrap_or(Value::Null),
         );
 
         // Risk scores (continuous, pre-computed by Task 1)
@@ -100,15 +100,15 @@ impl PropertySerializer for RiskPropertySerializer {
         // Risk levels (enum)
         props.insert(
             "inherentRisk".into(),
-            Value::String(format!("{:?}", risk.inherent_risk)),
+            serde_json::to_value(&risk.inherent_risk).unwrap_or(Value::Null),
         );
         props.insert(
             "controlRisk".into(),
-            Value::String(format!("{:?}", risk.control_risk)),
+            serde_json::to_value(&risk.control_risk).unwrap_or(Value::Null),
         );
         props.insert(
             "riskOfMaterialMisstatement".into(),
-            Value::String(format!("{:?}", risk.risk_of_material_misstatement)),
+            serde_json::to_value(&risk.risk_of_material_misstatement).unwrap_or(Value::Null),
         );
 
         // Owner / assessor
@@ -139,7 +139,7 @@ impl PropertySerializer for RiskPropertySerializer {
                 .iter()
                 .map(|f| {
                     serde_json::json!({
-                        "factorType": format!("{:?}", f.factor_type),
+                        "factorType": serde_json::to_value(&f.factor_type).unwrap_or(Value::Null),
                         "indicator": f.indicator,
                         "score": f.score,
                     })

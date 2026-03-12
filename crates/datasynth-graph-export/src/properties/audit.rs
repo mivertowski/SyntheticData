@@ -46,7 +46,7 @@ impl PropertySerializer for EngagementPropertySerializer {
         );
         props.insert(
             "engagementType".into(),
-            Value::String(format!("{:?}", eng.engagement_type)),
+            serde_json::to_value(&eng.engagement_type).unwrap_or(Value::Null),
         );
         props.insert(
             "fiscalYear".into(),
@@ -76,7 +76,7 @@ impl PropertySerializer for EngagementPropertySerializer {
             "fieldworkStart".into(),
             Value::String(eng.fieldwork_start.format("%Y-%m-%d").to_string()),
         );
-        props.insert("status".into(), Value::String("active".into()));
+        props.insert("status".into(), serde_json::to_value(&eng.status).unwrap_or(Value::Null));
         props.insert("type".into(), Value::String("engagement".into()));
 
         Some(props)
@@ -118,11 +118,11 @@ impl PropertySerializer for WorkpaperPropertySerializer {
         props.insert("title".into(), Value::String(wp.title.clone()));
         props.insert(
             "section".into(),
-            Value::String(format!("{:?}", wp.section)),
+            serde_json::to_value(&wp.section).unwrap_or(Value::Null),
         );
         props.insert(
             "procedureType".into(),
-            Value::String(format!("{:?}", wp.procedure_type)),
+            serde_json::to_value(&wp.procedure_type).unwrap_or(Value::Null),
         );
         props.insert(
             "populationSize".into(),
@@ -140,7 +140,7 @@ impl PropertySerializer for WorkpaperPropertySerializer {
             "resultsSummary".into(),
             Value::String(wp.results_summary.clone()),
         );
-        props.insert("status".into(), Value::String("completed".into()));
+        props.insert("status".into(), serde_json::to_value(&wp.status).unwrap_or(Value::Null));
         props.insert("type".into(), Value::String("workpaper".into()));
 
         Some(props)
@@ -182,11 +182,11 @@ impl PropertySerializer for EvidencePropertySerializer {
         props.insert("title".into(), Value::String(ev.title.clone()));
         props.insert(
             "evidenceType".into(),
-            Value::String(format!("{:?}", ev.evidence_type)),
+            serde_json::to_value(&ev.evidence_type).unwrap_or(Value::Null),
         );
         props.insert(
             "sourceType".into(),
-            Value::String(format!("{:?}", ev.source_type)),
+            serde_json::to_value(&ev.source_type).unwrap_or(Value::Null),
         );
         props.insert(
             "obtainedDate".into(),
@@ -198,9 +198,9 @@ impl PropertySerializer for EvidencePropertySerializer {
         );
         props.insert(
             "reliability".into(),
-            Value::String(format!("{:?}", ev.reliability_assessment)),
+            serde_json::to_value(&ev.reliability_assessment).unwrap_or(Value::Null),
         );
-        props.insert("status".into(), Value::String("obtained".into()));
+        props.insert("status".into(), serde_json::to_value(&ev.status).unwrap_or(Value::Null));
         props.insert("type".into(), Value::String("evidence".into()));
 
         Some(props)
@@ -242,11 +242,11 @@ impl PropertySerializer for FindingPropertySerializer {
         props.insert("title".into(), Value::String(f.title.clone()));
         props.insert(
             "findingType".into(),
-            Value::String(format!("{:?}", f.finding_type)),
+            serde_json::to_value(&f.finding_type).unwrap_or(Value::Null),
         );
         props.insert(
             "severity".into(),
-            Value::String(format!("{:?}", f.severity)),
+            serde_json::to_value(&f.severity).unwrap_or(Value::Null),
         );
         props.insert(
             "condition".into(),
@@ -265,7 +265,7 @@ impl PropertySerializer for FindingPropertySerializer {
         if let Some(impact) = f.monetary_impact {
             props.insert("monetaryImpact".into(), serde_json::json!(impact));
         }
-        props.insert("status".into(), Value::String("open".into()));
+        props.insert("status".into(), serde_json::to_value(&f.status).unwrap_or(Value::Null));
         props.insert("type".into(), Value::String("finding".into()));
 
         Some(props)
@@ -306,7 +306,7 @@ impl PropertySerializer for JudgmentPropertySerializer {
         );
         props.insert(
             "judgmentType".into(),
-            Value::String(format!("{:?}", j.judgment_type)),
+            serde_json::to_value(&j.judgment_type).unwrap_or(Value::Null),
         );
         props.insert("subject".into(), Value::String(j.subject.clone()));
         props.insert(
@@ -325,7 +325,7 @@ impl PropertySerializer for JudgmentPropertySerializer {
             "consultationRequired".into(),
             Value::Bool(j.consultation_required),
         );
-        props.insert("status".into(), Value::String("documented".into()));
+        props.insert("status".into(), serde_json::to_value(&j.status).unwrap_or(Value::Null));
         props.insert("type".into(), Value::String("judgment".into()));
 
         Some(props)
