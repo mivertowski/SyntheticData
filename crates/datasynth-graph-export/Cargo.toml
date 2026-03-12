@@ -26,6 +26,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 tracing = { workspace = true }
 rust_decimal = { workspace = true }
+uuid = { workspace = true }
 
 [dependencies.rustgraph-api-types]
 path = "../../../../RustGraph/RustGraph/crates/rustgraph-api-types"

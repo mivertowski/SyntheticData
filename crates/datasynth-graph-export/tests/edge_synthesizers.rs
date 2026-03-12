@@ -661,11 +661,19 @@ fn risk_control_all_edges_reference_valid_ids() {
 // ──────────────────────────── Module-Level Tests ────────────────────────
 
 #[test]
-fn all_edge_synthesizers_returns_both() {
+fn all_edge_synthesizers_returns_all() {
     let synthesizers = datasynth_graph_export::edges::all_synthesizers();
-    assert_eq!(synthesizers.len(), 2);
+    assert_eq!(synthesizers.len(), 10);
     assert_eq!(synthesizers[0].name(), "document_chain");
     assert_eq!(synthesizers[1].name(), "risk_control");
+    assert_eq!(synthesizers[2].name(), "audit_trail");
+    assert_eq!(synthesizers[3].name(), "banking");
+    assert_eq!(synthesizers[4].name(), "s2c");
+    assert_eq!(synthesizers[5].name(), "h2r");
+    assert_eq!(synthesizers[6].name(), "mfg");
+    assert_eq!(synthesizers[7].name(), "accounting");
+    assert_eq!(synthesizers[8].name(), "entity_relationships");
+    assert_eq!(synthesizers[9].name(), "process_sequence");
 }
 
 #[test]
@@ -674,7 +682,7 @@ fn standard_pipeline_includes_edge_synthesizers() {
 
     let pipeline = GraphExportPipeline::standard(ExportConfig::default());
     let debug_str = format!("{:?}", pipeline);
-    assert!(debug_str.contains("edge_synthesizers: 2"));
+    assert!(debug_str.contains("edge_synthesizers: 10"));
 }
 
 #[test]
