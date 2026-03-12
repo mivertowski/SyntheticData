@@ -19,8 +19,8 @@ fn empty_pipeline_builds_correctly() {
 #[test]
 fn standard_pipeline_builds_correctly() {
     let pipeline = GraphExportPipeline::standard(ExportConfig::default());
-    // Currently empty; will grow as serializers/synthesizers are added.
-    assert_eq!(pipeline.property_serializers().len(), 0);
+    // Task 8: 2 property serializers (control + risk).
+    assert_eq!(pipeline.property_serializers().len(), 2);
 }
 
 #[test]
