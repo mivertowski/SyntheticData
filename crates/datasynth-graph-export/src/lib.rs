@@ -27,6 +27,7 @@
 
 pub mod budget;
 pub mod config;
+pub mod edges;
 pub mod error;
 pub mod helpers;
 pub mod id_map;
