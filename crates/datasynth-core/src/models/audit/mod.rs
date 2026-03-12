@@ -10,6 +10,7 @@
 //! - Professional judgment (ISA 200)
 //! - Findings and issues (ISA 265)
 
+pub mod confirmation;
 mod engagement;
 mod evidence;
 pub mod finding;
@@ -17,6 +18,7 @@ mod judgment;
 pub mod risk;
 mod workpaper;
 
+pub use confirmation::*;
 pub use engagement::*;
 pub use evidence::*;
 pub use finding::*;
