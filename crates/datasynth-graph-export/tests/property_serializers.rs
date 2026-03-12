@@ -457,11 +457,23 @@ fn risk_serializer_omits_empty_optional_fields() {
 #[test]
 fn all_serializers_returns_both() {
     let serializers = datasynth_graph_export::properties::all_serializers();
-    assert_eq!(serializers.len(), 2);
+    assert_eq!(serializers.len(), 30);
 
     let types: Vec<&str> = serializers.iter().map(|s| s.entity_type()).collect();
+    // Original Task 8 serializers
     assert!(types.contains(&"internal_control"));
     assert!(types.contains(&"risk_assessment"));
+    // Task 9 additions — spot-check representative types
+    assert!(types.contains(&"journal_entry"));
+    assert!(types.contains(&"gl_account"));
+    assert!(types.contains(&"employee"));
+    assert!(types.contains(&"purchase_order"));
+    assert!(types.contains(&"sales_order"));
+    assert!(types.contains(&"banking_customer"));
+    assert!(types.contains(&"audit_engagement"));
+    assert!(types.contains(&"sourcing_project"));
+    assert!(types.contains(&"payroll_run"));
+    assert!(types.contains(&"production_order"));
 }
 
 // ── Cross-Serializer Tests ───────────────────────────────────
