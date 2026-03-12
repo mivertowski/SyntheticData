@@ -16,6 +16,7 @@ members = [
     "crates/datasynth-banking",
     "crates/datasynth-fingerprint",
     "crates/datasynth-standards",
+    "crates/datasynth-graph-export",
 ]
 exclude = ["fuzz"]
 
