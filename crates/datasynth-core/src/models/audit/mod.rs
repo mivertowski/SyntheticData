@@ -15,7 +15,9 @@ mod engagement;
 mod evidence;
 pub mod finding;
 mod judgment;
+pub mod procedure_step;
 pub mod risk;
+pub mod sample;
 mod workpaper;
 
 pub use confirmation::*;
@@ -23,5 +25,7 @@ pub use engagement::*;
 pub use evidence::*;
 pub use finding::*;
 pub use judgment::*;
+pub use procedure_step::*;
 pub use risk::*;
+pub use sample::*;
 pub use workpaper::*;
