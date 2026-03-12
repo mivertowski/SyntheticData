@@ -22,12 +22,18 @@ use datasynth_core::models::sourcing::{
     BidEvaluation, ProcurementContract, RfxEvent, SourcingProject, SupplierBid,
     SupplierQualification,
 };
+use datasynth_core::models::intercompany::{EliminationEntry, ICMatchedPair};
 use datasynth_core::models::ExpenseReport;
 use datasynth_core::models::{
-    BankReconciliation, ChartOfAccounts, CosoComponent, CosoPrinciple, Customer, CycleCount,
-    Employee, FixedAsset, InternalControl, JournalEntry, Material, PayrollRun, ProductionOrder,
-    QualityInspection, TimeEntry, Vendor,
+    BankReconciliation, CashForecast, CashPosition, ChartOfAccounts, ClimateScenario,
+    CosoComponent, CosoPrinciple, Customer, CycleCount, DebtInstrument, EarnedValueMetric,
+    EmissionRecord, Employee, EsgDisclosure, FixedAsset, HedgeRelationship, InternalControl,
+    JournalEntry, Material, OrganizationalEvent, PayrollRun, ProcessEvolutionEvent,
+    ProductionOrder, Project, ProjectMilestone, QualityInspection, SupplierEsgAssessment,
+    TaxCode, TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeEntry, Vendor,
+    WithholdingTaxRecord,
 };
+use datasynth_generators::disruption::DisruptionEvent;
 
 use crate::models::hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
@@ -117,6 +123,44 @@ mod type_codes {
     pub const REGULATORY_FILING: u32 = 507;
     pub const COMPLIANCE_FINDING: u32 = 508;
 
+    // Layer 3 — Tax
+    pub const TAX_JURISDICTION: u32 = 410;
+    pub const TAX_CODE: u32 = 411;
+    pub const TAX_LINE: u32 = 412;
+    pub const TAX_RETURN: u32 = 413;
+    pub const TAX_PROVISION: u32 = 414;
+    pub const WITHHOLDING_TAX: u32 = 415;
+
+    // Layer 3 — Treasury
+    pub const CASH_POSITION: u32 = 420;
+    pub const CASH_FORECAST: u32 = 421;
+    pub const HEDGE_RELATIONSHIP: u32 = 422;
+    pub const DEBT_INSTRUMENT: u32 = 423;
+
+    // Layer 1 — ESG
+    pub const EMISSION_RECORD: u32 = 430;
+    pub const ESG_DISCLOSURE: u32 = 431;
+    pub const SUPPLIER_ESG_ASSESSMENT: u32 = 432;
+    pub const CLIMATE_SCENARIO: u32 = 433;
+
+    // Layer 3 — Project Accounting
+    pub const PROJECT: u32 = 451;
+    pub const EARNED_VALUE: u32 = 452;
+    pub const PROJECT_MILESTONE: u32 = 454;
+
+    // Layer 3 — Intercompany
+    pub const IC_MATCHED_PAIR: u32 = 460;
+    pub const ELIMINATION_ENTRY: u32 = 461;
+
+    // Layer 2 — Temporal Events
+    pub const PROCESS_EVOLUTION: u32 = 470;
+    pub const ORGANIZATIONAL_EVENT: u32 = 471;
+    pub const DISRUPTION_EVENT: u32 = 472;
+
+    // Layer 2 — AML/KYC (from banking)
+    pub const AML_ALERT: u32 = 505;
+    // KYC_PROFILE already defined above as 504
+
     // Edge type codes
     pub const IMPLEMENTS_CONTROL: u32 = 40;
     pub const GOVERNED_BY_STANDARD: u32 = 41;
@@ -156,6 +200,12 @@ pub struct HypergraphConfig {
     pub include_audit: bool,
     pub include_compliance: bool,
     pub include_r2r: bool,
+    pub include_tax: bool,
+    pub include_treasury: bool,
+    pub include_esg: bool,
+    pub include_project: bool,
+    pub include_intercompany: bool,
+    pub include_temporal_events: bool,
     pub events_as_hyperedges: bool,
     /// Documents per counterparty above which aggregation is triggered.
     pub docs_per_counterparty_threshold: usize,
@@ -186,6 +236,12 @@ impl Default for HypergraphConfig {
             include_audit: true,
             include_compliance: true,
             include_r2r: true,
+            include_tax: true,
+            include_treasury: true,
+            include_esg: true,
+            include_project: true,
+            include_intercompany: true,
+            include_temporal_events: true,
             events_as_hyperedges: true,
             docs_per_counterparty_threshold: 20,
             include_accounts: true,
@@ -2431,6 +2487,1190 @@ impl HypergraphBuilder {
                 is_aggregate: false,
                 aggregate_count: 0,
             });
+        }
+    }
+
+    // =========================================================================
+    // New Domain Builder Methods
+    // =========================================================================
+
+    /// Add tax documents as Layer 3 (Accounting Network) nodes.
+    ///
+    /// Creates nodes for jurisdictions, tax codes, tax lines, tax returns,
+    /// tax provisions, and withholding tax records.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_tax_documents(
+        &mut self,
+        jurisdictions: &[TaxJurisdiction],
+        codes: &[TaxCode],
+        tax_lines: &[TaxLine],
+        tax_returns: &[TaxReturn],
+        tax_provisions: &[TaxProvision],
+        withholding_records: &[WithholdingTaxRecord],
+    ) {
+        if !self.config.include_tax {
+            return;
+        }
+
+        for jur in jurisdictions {
+            let node_id = format!("tax_jur_{}", jur.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "tax_jurisdiction".into(),
+                entity_type_code: type_codes::TAX_JURISDICTION,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: jur.id.clone(),
+                label: jur.name.clone(),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("country_code".into(), Value::String(jur.country_code.clone()));
+                    p.insert(
+                        "jurisdiction_type".into(),
+                        Value::String(format!("{:?}", jur.jurisdiction_type)),
+                    );
+                    p.insert("vat_registered".into(), Value::Bool(jur.vat_registered));
+                    if let Some(ref region) = jur.region_code {
+                        p.insert("region_code".into(), Value::String(region.clone()));
+                    }
+                    p
+                },
+                features: vec![if jur.vat_registered { 1.0 } else { 0.0 }],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for code in codes {
+            let node_id = format!("tax_code_{}", code.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "tax_code".into(),
+                entity_type_code: type_codes::TAX_CODE,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: code.id.clone(),
+                label: format!("{} ({})", code.code, code.description),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("code".into(), Value::String(code.code.clone()));
+                    p.insert(
+                        "tax_type".into(),
+                        Value::String(format!("{:?}", code.tax_type)),
+                    );
+                    let rate: f64 = code.rate.to_string().parse().unwrap_or(0.0);
+                    p.insert("rate".into(), serde_json::json!(rate));
+                    p.insert(
+                        "jurisdiction_id".into(),
+                        Value::String(code.jurisdiction_id.clone()),
+                    );
+                    p.insert("is_exempt".into(), Value::Bool(code.is_exempt));
+                    p.insert("is_reverse_charge".into(), Value::Bool(code.is_reverse_charge));
+                    p
+                },
+                features: vec![code.rate.to_string().parse::<f64>().unwrap_or(0.0)],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for line in tax_lines {
+            let node_id = format!("tax_line_{}", line.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "tax_line".into(),
+                entity_type_code: type_codes::TAX_LINE,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: line.id.clone(),
+                label: format!("TAXL {} L{}", line.document_id, line.line_number),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "document_type".into(),
+                        Value::String(format!("{:?}", line.document_type)),
+                    );
+                    p.insert("document_id".into(), Value::String(line.document_id.clone()));
+                    p.insert(
+                        "tax_code_id".into(),
+                        Value::String(line.tax_code_id.clone()),
+                    );
+                    let amt: f64 = line.tax_amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("tax_amount".into(), serde_json::json!(amt));
+                    p
+                },
+                features: vec![line
+                    .tax_amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for ret in tax_returns {
+            let node_id = format!("tax_ret_{}", ret.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "tax_return".into(),
+                entity_type_code: type_codes::TAX_RETURN,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: ret.id.clone(),
+                label: format!("TAXR {} [{:?}]", ret.entity_id, ret.return_type),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(ret.entity_id.clone()));
+                    p.insert(
+                        "jurisdiction_id".into(),
+                        Value::String(ret.jurisdiction_id.clone()),
+                    );
+                    p.insert(
+                        "return_type".into(),
+                        Value::String(format!("{:?}", ret.return_type)),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", ret.status)));
+                    p.insert(
+                        "period_start".into(),
+                        Value::String(ret.period_start.to_string()),
+                    );
+                    p.insert(
+                        "period_end".into(),
+                        Value::String(ret.period_end.to_string()),
+                    );
+                    p.insert("is_late".into(), Value::Bool(ret.is_late));
+                    let net: f64 = ret.net_payable.to_string().parse().unwrap_or(0.0);
+                    p.insert("net_payable".into(), serde_json::json!(net));
+                    p
+                },
+                features: vec![
+                    ret.net_payable
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p(),
+                    if ret.is_late { 1.0 } else { 0.0 },
+                ],
+                is_anomaly: ret.is_late,
+                anomaly_type: if ret.is_late {
+                    Some("late_filing".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for prov in tax_provisions {
+            let node_id = format!("tax_prov_{}", prov.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "tax_provision".into(),
+                entity_type_code: type_codes::TAX_PROVISION,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: prov.id.clone(),
+                label: format!("TAXPROV {} {}", prov.entity_id, prov.period),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(prov.entity_id.clone()));
+                    p.insert("period".into(), Value::String(prov.period.to_string()));
+                    let eff: f64 = prov.effective_rate.to_string().parse().unwrap_or(0.0);
+                    p.insert("effective_rate".into(), serde_json::json!(eff));
+                    let stat: f64 = prov.statutory_rate.to_string().parse().unwrap_or(0.0);
+                    p.insert("statutory_rate".into(), serde_json::json!(stat));
+                    let expense: f64 = prov.current_tax_expense.to_string().parse().unwrap_or(0.0);
+                    p.insert("current_tax_expense".into(), serde_json::json!(expense));
+                    p
+                },
+                features: vec![
+                    prov.effective_rate
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                    prov.current_tax_expense
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p(),
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for wht in withholding_records {
+            let node_id = format!("tax_wht_{}", wht.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "withholding_tax_record".into(),
+                entity_type_code: type_codes::WITHHOLDING_TAX,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: wht.id.clone(),
+                label: format!("WHT {} → {}", wht.payment_id, wht.vendor_id),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("payment_id".into(), Value::String(wht.payment_id.clone()));
+                    p.insert("vendor_id".into(), Value::String(wht.vendor_id.clone()));
+                    p.insert(
+                        "withholding_type".into(),
+                        Value::String(format!("{:?}", wht.withholding_type)),
+                    );
+                    let amt: f64 = wht.withheld_amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("withheld_amount".into(), serde_json::json!(amt));
+                    let rate: f64 = wht.applied_rate.to_string().parse().unwrap_or(0.0);
+                    p.insert("applied_rate".into(), serde_json::json!(rate));
+                    p
+                },
+                features: vec![wht
+                    .withheld_amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add treasury documents as Layer 3 (Accounting Network) nodes.
+    ///
+    /// Creates nodes for cash positions, cash forecasts, hedge relationships,
+    /// and debt instruments.
+    pub fn add_treasury_documents(
+        &mut self,
+        cash_positions: &[CashPosition],
+        cash_forecasts: &[CashForecast],
+        hedge_relationships: &[HedgeRelationship],
+        debt_instruments: &[DebtInstrument],
+    ) {
+        if !self.config.include_treasury {
+            return;
+        }
+
+        for pos in cash_positions {
+            let node_id = format!("treas_pos_{}", pos.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "cash_position".into(),
+                entity_type_code: type_codes::CASH_POSITION,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: pos.id.clone(),
+                label: format!("CPOS {} {}", pos.bank_account_id, pos.date),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(pos.entity_id.clone()));
+                    p.insert(
+                        "bank_account_id".into(),
+                        Value::String(pos.bank_account_id.clone()),
+                    );
+                    p.insert("currency".into(), Value::String(pos.currency.clone()));
+                    p.insert("date".into(), Value::String(pos.date.to_string()));
+                    let closing: f64 = pos.closing_balance.to_string().parse().unwrap_or(0.0);
+                    p.insert("closing_balance".into(), serde_json::json!(closing));
+                    p
+                },
+                features: vec![pos
+                    .closing_balance
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for fc in cash_forecasts {
+            let node_id = format!("treas_fc_{}", fc.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "cash_forecast".into(),
+                entity_type_code: type_codes::CASH_FORECAST,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: fc.id.clone(),
+                label: format!("CFOR {} {}d", fc.entity_id, fc.horizon_days),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(fc.entity_id.clone()));
+                    p.insert("currency".into(), Value::String(fc.currency.clone()));
+                    p.insert(
+                        "forecast_date".into(),
+                        Value::String(fc.forecast_date.to_string()),
+                    );
+                    p.insert(
+                        "horizon_days".into(),
+                        Value::Number((fc.horizon_days as u64).into()),
+                    );
+                    let net: f64 = fc.net_position.to_string().parse().unwrap_or(0.0);
+                    p.insert("net_position".into(), serde_json::json!(net));
+                    let conf: f64 = fc.confidence_level.to_string().parse().unwrap_or(0.0);
+                    p.insert("confidence_level".into(), serde_json::json!(conf));
+                    p
+                },
+                features: vec![
+                    fc.net_position
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p(),
+                    fc.confidence_level
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for hr in hedge_relationships {
+            let node_id = format!("treas_hedge_{}", hr.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "hedge_relationship".into(),
+                entity_type_code: type_codes::HEDGE_RELATIONSHIP,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: hr.id.clone(),
+                label: format!("HEDGE {:?} {}", hr.hedge_type, hr.hedged_item_description),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "hedged_item_type".into(),
+                        Value::String(format!("{:?}", hr.hedged_item_type)),
+                    );
+                    p.insert(
+                        "hedge_type".into(),
+                        Value::String(format!("{:?}", hr.hedge_type)),
+                    );
+                    p.insert(
+                        "designation_date".into(),
+                        Value::String(hr.designation_date.to_string()),
+                    );
+                    p.insert("is_effective".into(), Value::Bool(hr.is_effective));
+                    let ratio: f64 = hr.effectiveness_ratio.to_string().parse().unwrap_or(0.0);
+                    p.insert("effectiveness_ratio".into(), serde_json::json!(ratio));
+                    p
+                },
+                features: vec![
+                    hr.effectiveness_ratio
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                    if hr.is_effective { 1.0 } else { 0.0 },
+                ],
+                is_anomaly: !hr.is_effective,
+                anomaly_type: if !hr.is_effective {
+                    Some("ineffective_hedge".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for debt in debt_instruments {
+            let node_id = format!("treas_debt_{}", debt.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "debt_instrument".into(),
+                entity_type_code: type_codes::DEBT_INSTRUMENT,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: debt.id.clone(),
+                label: format!("DEBT {:?} {}", debt.instrument_type, debt.lender),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(debt.entity_id.clone()));
+                    p.insert(
+                        "instrument_type".into(),
+                        Value::String(format!("{:?}", debt.instrument_type)),
+                    );
+                    p.insert("lender".into(), Value::String(debt.lender.clone()));
+                    p.insert("currency".into(), Value::String(debt.currency.clone()));
+                    let principal: f64 = debt.principal.to_string().parse().unwrap_or(0.0);
+                    p.insert("principal".into(), serde_json::json!(principal));
+                    let rate: f64 = debt.interest_rate.to_string().parse().unwrap_or(0.0);
+                    p.insert("interest_rate".into(), serde_json::json!(rate));
+                    p.insert(
+                        "maturity_date".into(),
+                        Value::String(debt.maturity_date.to_string()),
+                    );
+                    p.insert(
+                        "covenant_count".into(),
+                        Value::Number((debt.covenants.len() as u64).into()),
+                    );
+                    p
+                },
+                features: vec![
+                    debt.principal
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .ln_1p(),
+                    debt.interest_rate
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add ESG documents as Layer 1 (Governance & Controls) nodes.
+    ///
+    /// Creates nodes for emissions, disclosures, supplier assessments,
+    /// and climate scenarios.
+    pub fn add_esg_documents(
+        &mut self,
+        emissions: &[EmissionRecord],
+        disclosures: &[EsgDisclosure],
+        supplier_assessments: &[SupplierEsgAssessment],
+        climate_scenarios: &[ClimateScenario],
+    ) {
+        if !self.config.include_esg {
+            return;
+        }
+
+        for em in emissions {
+            let node_id = format!("esg_em_{}", em.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "emission_record".into(),
+                entity_type_code: type_codes::EMISSION_RECORD,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: em.id.clone(),
+                label: format!("EM {:?} {}", em.scope, em.period),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(em.entity_id.clone()));
+                    p.insert("scope".into(), Value::String(format!("{:?}", em.scope)));
+                    p.insert("period".into(), Value::String(em.period.to_string()));
+                    let co2e: f64 = em.co2e_tonnes.to_string().parse().unwrap_or(0.0);
+                    p.insert("co2e_tonnes".into(), serde_json::json!(co2e));
+                    p.insert(
+                        "estimation_method".into(),
+                        Value::String(format!("{:?}", em.estimation_method)),
+                    );
+                    if let Some(ref fid) = em.facility_id {
+                        p.insert("facility_id".into(), Value::String(String::clone(fid)));
+                    }
+                    p
+                },
+                features: vec![em
+                    .co2e_tonnes
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for disc in disclosures {
+            let node_id = format!("esg_disc_{}", disc.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "esg_disclosure".into(),
+                entity_type_code: type_codes::ESG_DISCLOSURE,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: disc.id.clone(),
+                label: format!("{:?}: {}", disc.framework, disc.disclosure_topic),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(disc.entity_id.clone()));
+                    p.insert(
+                        "framework".into(),
+                        Value::String(format!("{:?}", disc.framework)),
+                    );
+                    p.insert(
+                        "disclosure_topic".into(),
+                        Value::String(disc.disclosure_topic.clone()),
+                    );
+                    p.insert(
+                        "assurance_level".into(),
+                        Value::String(format!("{:?}", disc.assurance_level)),
+                    );
+                    p.insert("is_assured".into(), Value::Bool(disc.is_assured));
+                    p.insert(
+                        "reporting_period_start".into(),
+                        Value::String(disc.reporting_period_start.to_string()),
+                    );
+                    p.insert(
+                        "reporting_period_end".into(),
+                        Value::String(disc.reporting_period_end.to_string()),
+                    );
+                    p
+                },
+                features: vec![if disc.is_assured { 1.0 } else { 0.0 }],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for sa in supplier_assessments {
+            let node_id = format!("esg_sa_{}", sa.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "supplier_esg_assessment".into(),
+                entity_type_code: type_codes::SUPPLIER_ESG_ASSESSMENT,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: sa.id.clone(),
+                label: format!("ESG-SA {} ({})", sa.vendor_id, sa.assessment_date),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(sa.entity_id.clone()));
+                    p.insert("vendor_id".into(), Value::String(sa.vendor_id.clone()));
+                    p.insert(
+                        "assessment_date".into(),
+                        Value::String(sa.assessment_date.to_string()),
+                    );
+                    let overall: f64 = sa.overall_score.to_string().parse().unwrap_or(0.0);
+                    p.insert("overall_score".into(), serde_json::json!(overall));
+                    p.insert(
+                        "risk_flag".into(),
+                        Value::String(format!("{:?}", sa.risk_flag)),
+                    );
+                    p
+                },
+                features: vec![sa
+                    .overall_score
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for cs in climate_scenarios {
+            let node_id = format!("esg_cs_{}", cs.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "climate_scenario".into(),
+                entity_type_code: type_codes::CLIMATE_SCENARIO,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: cs.id.clone(),
+                label: format!("{:?} {:?}", cs.scenario_type, cs.time_horizon),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(cs.entity_id.clone()));
+                    p.insert(
+                        "scenario_type".into(),
+                        Value::String(format!("{:?}", cs.scenario_type)),
+                    );
+                    p.insert(
+                        "time_horizon".into(),
+                        Value::String(format!("{:?}", cs.time_horizon)),
+                    );
+                    p.insert("description".into(), Value::String(cs.description.clone()));
+                    let temp: f64 = cs.temperature_rise_c.to_string().parse().unwrap_or(0.0);
+                    p.insert("temperature_rise_c".into(), serde_json::json!(temp));
+                    let fin: f64 = cs.financial_impact.to_string().parse().unwrap_or(0.0);
+                    p.insert("financial_impact".into(), serde_json::json!(fin));
+                    p
+                },
+                features: vec![
+                    cs.temperature_rise_c
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                    cs.financial_impact
+                        .to_string()
+                        .parse::<f64>()
+                        .unwrap_or(0.0)
+                        .abs()
+                        .ln_1p(),
+                ],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add project accounting documents as Layer 3 (Accounting Network) nodes.
+    ///
+    /// Creates nodes for projects, earned value metrics, and milestones.
+    pub fn add_project_documents(
+        &mut self,
+        projects: &[Project],
+        earned_value_metrics: &[EarnedValueMetric],
+        milestones: &[ProjectMilestone],
+    ) {
+        if !self.config.include_project {
+            return;
+        }
+
+        for proj in projects {
+            let node_id = format!("proj_{}", proj.project_id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "project".into(),
+                entity_type_code: type_codes::PROJECT,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: proj.project_id.clone(),
+                label: format!("{} ({})", proj.name, proj.project_id),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("name".into(), Value::String(proj.name.clone()));
+                    p.insert(
+                        "project_type".into(),
+                        Value::String(format!("{:?}", proj.project_type)),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", proj.status)));
+                    p.insert(
+                        "company_code".into(),
+                        Value::String(proj.company_code.clone()),
+                    );
+                    let budget: f64 = proj.budget.to_string().parse().unwrap_or(0.0);
+                    p.insert("budget".into(), serde_json::json!(budget));
+                    p
+                },
+                features: vec![proj
+                    .budget
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for evm in earned_value_metrics {
+            let node_id = format!("proj_evm_{}", evm.id);
+            let spi: f64 = evm.spi.to_string().parse().unwrap_or(1.0);
+            let cpi: f64 = evm.cpi.to_string().parse().unwrap_or(1.0);
+            // Flag as anomaly if schedule or cost performance is significantly off
+            let is_anomaly = spi < 0.8 || cpi < 0.8;
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "earned_value_metric".into(),
+                entity_type_code: type_codes::EARNED_VALUE,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: evm.id.clone(),
+                label: format!("EVM {} {}", evm.project_id, evm.measurement_date),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("project_id".into(), Value::String(evm.project_id.clone()));
+                    p.insert(
+                        "measurement_date".into(),
+                        Value::String(evm.measurement_date.to_string()),
+                    );
+                    p.insert("spi".into(), serde_json::json!(spi));
+                    p.insert("cpi".into(), serde_json::json!(cpi));
+                    let eac: f64 = evm.eac.to_string().parse().unwrap_or(0.0);
+                    p.insert("eac".into(), serde_json::json!(eac));
+                    p
+                },
+                features: vec![spi, cpi],
+                is_anomaly,
+                anomaly_type: if is_anomaly {
+                    Some("poor_project_performance".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for ms in milestones {
+            let node_id = format!("proj_ms_{}", ms.id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "project_milestone".into(),
+                entity_type_code: type_codes::PROJECT_MILESTONE,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: ms.id.clone(),
+                label: format!("MS {} ({})", ms.name, ms.project_id),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("project_id".into(), Value::String(ms.project_id.clone()));
+                    p.insert("name".into(), Value::String(ms.name.clone()));
+                    p.insert(
+                        "planned_date".into(),
+                        Value::String(ms.planned_date.to_string()),
+                    );
+                    p.insert("status".into(), Value::String(format!("{:?}", ms.status)));
+                    p.insert("sequence".into(), Value::Number((ms.sequence as u64).into()));
+                    let amt: f64 = ms.payment_amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("payment_amount".into(), serde_json::json!(amt));
+                    if let Some(ref actual) = ms.actual_date {
+                        p.insert("actual_date".into(), Value::String(actual.to_string()));
+                    }
+                    p
+                },
+                features: vec![ms
+                    .payment_amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add intercompany documents as Layer 3 (Accounting Network) nodes.
+    ///
+    /// Creates nodes for IC matched pairs and elimination entries.
+    pub fn add_intercompany_documents(
+        &mut self,
+        matched_pairs: &[ICMatchedPair],
+        elimination_entries: &[EliminationEntry],
+    ) {
+        if !self.config.include_intercompany {
+            return;
+        }
+
+        for pair in matched_pairs {
+            let node_id = format!("ic_pair_{}", pair.ic_reference);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "ic_matched_pair".into(),
+                entity_type_code: type_codes::IC_MATCHED_PAIR,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: pair.ic_reference.clone(),
+                label: format!(
+                    "IC {} → {}",
+                    pair.seller_company, pair.buyer_company
+                ),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "transaction_type".into(),
+                        Value::String(format!("{:?}", pair.transaction_type)),
+                    );
+                    p.insert(
+                        "seller_company".into(),
+                        Value::String(pair.seller_company.clone()),
+                    );
+                    p.insert(
+                        "buyer_company".into(),
+                        Value::String(pair.buyer_company.clone()),
+                    );
+                    let amt: f64 = pair.amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("amount".into(), serde_json::json!(amt));
+                    p.insert("currency".into(), Value::String(pair.currency.clone()));
+                    p.insert(
+                        "settlement_status".into(),
+                        Value::String(format!("{:?}", pair.settlement_status)),
+                    );
+                    p.insert(
+                        "transaction_date".into(),
+                        Value::String(pair.transaction_date.to_string()),
+                    );
+                    p
+                },
+                features: vec![pair
+                    .amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for elim in elimination_entries {
+            let node_id = format!("ic_elim_{}", elim.entry_id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "elimination_entry".into(),
+                entity_type_code: type_codes::ELIMINATION_ENTRY,
+                layer: HypergraphLayer::AccountingNetwork,
+                external_id: elim.entry_id.clone(),
+                label: format!(
+                    "ELIM {:?} {} {}",
+                    elim.elimination_type, elim.consolidation_entity, elim.fiscal_period
+                ),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "elimination_type".into(),
+                        Value::String(format!("{:?}", elim.elimination_type)),
+                    );
+                    p.insert(
+                        "consolidation_entity".into(),
+                        Value::String(elim.consolidation_entity.clone()),
+                    );
+                    p.insert(
+                        "fiscal_period".into(),
+                        Value::String(elim.fiscal_period.clone()),
+                    );
+                    p.insert("currency".into(), Value::String(elim.currency.clone()));
+                    p.insert(
+                        "is_permanent".into(),
+                        Value::Bool(elim.is_permanent),
+                    );
+                    let debit: f64 = elim.total_debit.to_string().parse().unwrap_or(0.0);
+                    p.insert("total_debit".into(), serde_json::json!(debit));
+                    p
+                },
+                features: vec![elim
+                    .total_debit
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add temporal events as Layer 2 (Process Events) nodes.
+    ///
+    /// Creates nodes for process evolution events, organizational events,
+    /// and disruption events.
+    pub fn add_temporal_events(
+        &mut self,
+        process_events: &[ProcessEvolutionEvent],
+        organizational_events: &[OrganizationalEvent],
+        disruption_events: &[DisruptionEvent],
+    ) {
+        if !self.config.include_temporal_events {
+            return;
+        }
+
+        for pe in process_events {
+            let node_id = format!("tevt_proc_{}", pe.event_id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "process_evolution".into(),
+                entity_type_code: type_codes::PROCESS_EVOLUTION,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: pe.event_id.clone(),
+                label: format!("PEVOL {} {}", pe.event_id, pe.effective_date),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "event_type".into(),
+                        Value::String(format!("{:?}", pe.event_type)),
+                    );
+                    p.insert(
+                        "effective_date".into(),
+                        Value::String(pe.effective_date.to_string()),
+                    );
+                    if let Some(ref desc) = pe.description {
+                        p.insert("description".into(), Value::String(desc.clone()));
+                    }
+                    if !pe.tags.is_empty() {
+                        p.insert(
+                            "tags".into(),
+                            Value::Array(pe.tags.iter().map(|t| Value::String(t.clone())).collect()),
+                        );
+                    }
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for oe in organizational_events {
+            let node_id = format!("tevt_org_{}", oe.event_id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "organizational_event".into(),
+                entity_type_code: type_codes::ORGANIZATIONAL_EVENT,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: oe.event_id.clone(),
+                label: format!("ORGEV {} {}", oe.event_id, oe.effective_date),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "event_type".into(),
+                        Value::String(format!("{:?}", oe.event_type)),
+                    );
+                    p.insert(
+                        "effective_date".into(),
+                        Value::String(oe.effective_date.to_string()),
+                    );
+                    if let Some(ref desc) = oe.description {
+                        p.insert("description".into(), Value::String(desc.clone()));
+                    }
+                    if !oe.tags.is_empty() {
+                        p.insert(
+                            "tags".into(),
+                            Value::Array(oe.tags.iter().map(|t| Value::String(t.clone())).collect()),
+                        );
+                    }
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        for de in disruption_events {
+            let node_id = format!("tevt_dis_{}", de.event_id);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "disruption_event".into(),
+                entity_type_code: type_codes::DISRUPTION_EVENT,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: de.event_id.clone(),
+                label: format!("DISRUPT {} sev={}", de.event_id, de.severity),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "disruption_type".into(),
+                        Value::String(format!("{:?}", de.disruption_type)),
+                    );
+                    p.insert("description".into(), Value::String(de.description.clone()));
+                    p.insert("severity".into(), Value::Number(de.severity.into()));
+                    if !de.affected_companies.is_empty() {
+                        p.insert(
+                            "affected_companies".into(),
+                            Value::Array(
+                                de.affected_companies
+                                    .iter()
+                                    .map(|c| Value::String(c.clone()))
+                                    .collect(),
+                            ),
+                        );
+                    }
+                    p
+                },
+                features: vec![de.severity as f64 / 5.0],
+                is_anomaly: de.severity >= 4,
+                anomaly_type: if de.severity >= 4 {
+                    Some("high_severity_disruption".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add AML alert nodes derived from suspicious banking transactions (Layer 2).
+    ///
+    /// Creates an `aml_alert` node for each suspicious transaction. These are
+    /// separate from the `bank_transaction` nodes produced by `add_bank_documents`.
+    pub fn add_aml_alerts(&mut self, transactions: &[BankTransaction]) {
+        let suspicious: Vec<&BankTransaction> =
+            transactions.iter().filter(|t| t.is_suspicious).collect();
+
+        for txn in suspicious {
+            let tid = txn.transaction_id.to_string();
+            let node_id = format!("aml_alert_{tid}");
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "aml_alert".into(),
+                entity_type_code: type_codes::AML_ALERT,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: format!("AML-{tid}"),
+                label: format!("AML {}", txn.reference),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "transaction_id".into(),
+                        Value::String(tid.clone()),
+                    );
+                    let amount: f64 = txn.amount.to_string().parse().unwrap_or(0.0);
+                    p.insert("amount".into(), serde_json::json!(amount));
+                    p.insert("currency".into(), Value::String(txn.currency.clone()));
+                    p.insert("reference".into(), Value::String(txn.reference.clone()));
+                    if let Some(ref reason) = txn.suspicion_reason {
+                        p.insert(
+                            "suspicion_reason".into(),
+                            Value::String(format!("{reason:?}")),
+                        );
+                    }
+                    if let Some(ref stage) = txn.laundering_stage {
+                        p.insert(
+                            "laundering_stage".into(),
+                            Value::String(format!("{stage:?}")),
+                        );
+                    }
+                    p
+                },
+                features: vec![txn
+                    .amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: true,
+                anomaly_type: txn.suspicion_reason.as_ref().map(|r| format!("{r:?}")),
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Add KYC profile nodes derived from banking customers (Layer 2).
+    ///
+    /// Creates a `kyc_profile` node for each banking customer. These capture
+    /// the KYC/AML risk profile rather than the transactional behavior.
+    pub fn add_kyc_profiles(&mut self, customers: &[BankingCustomer]) {
+        for cust in customers {
+            let cid = cust.customer_id.to_string();
+            let node_id = format!("kyc_{cid}");
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "kyc_profile".into(),
+                entity_type_code: type_codes::KYC_PROFILE,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: format!("KYC-{cid}"),
+                label: format!("KYC {}", cust.name.legal_name),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "customer_id".into(),
+                        Value::String(cid.clone()),
+                    );
+                    p.insert("name".into(), Value::String(cust.name.legal_name.clone()));
+                    p.insert(
+                        "customer_type".into(),
+                        Value::String(format!("{:?}", cust.customer_type)),
+                    );
+                    p.insert(
+                        "risk_tier".into(),
+                        Value::String(format!("{:?}", cust.risk_tier)),
+                    );
+                    p.insert(
+                        "residence_country".into(),
+                        Value::String(cust.residence_country.clone()),
+                    );
+                    p.insert("is_pep".into(), Value::Bool(cust.is_pep));
+                    p.insert("is_mule".into(), Value::Bool(cust.is_mule));
+                    p
+                },
+                features: vec![
+                    if cust.is_pep { 1.0 } else { 0.0 },
+                    if cust.is_mule { 1.0 } else { 0.0 },
+                ],
+                is_anomaly: cust.is_mule,
+                anomaly_type: if cust.is_mule {
+                    Some("mule_account".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+    }
+
+    /// Tag all nodes with a `process_family` property based on their entity type.
+    ///
+    /// This replaces AssureTwin's entity_registry logic. Call after all nodes
+    /// have been added and before `build()`.
+    pub fn tag_process_family(&mut self) {
+        for node in &mut self.nodes {
+            let family = match node.entity_type.as_str() {
+                // P2P (Procure-to-Pay)
+                "purchase_order" | "goods_receipt" | "vendor_invoice" | "payment" | "p2p_pool" => {
+                    "P2P"
+                }
+                // O2C (Order-to-Cash)
+                "sales_order" | "delivery" | "customer_invoice" | "o2c_pool" => "O2C",
+                // S2C (Source-to-Contract)
+                "sourcing_project" | "supplier_qualification" | "rfx_event" | "supplier_bid"
+                | "bid_evaluation" | "procurement_contract" => "S2C",
+                // H2R (Hire-to-Retire)
+                "payroll_run" | "time_entry" | "expense_report" | "payroll_line_item" => "H2R",
+                // MFG (Manufacturing)
+                "production_order" | "quality_inspection" | "cycle_count" => "MFG",
+                // BANK (Banking)
+                "banking_customer" | "bank_account" | "bank_transaction" | "aml_alert"
+                | "kyc_profile" => "BANK",
+                // AUDIT
+                "audit_engagement" | "workpaper" | "audit_finding" | "audit_evidence"
+                | "risk_assessment" | "professional_judgment" => "AUDIT",
+                // R2R (Record-to-Report)
+                "bank_reconciliation" | "bank_statement_line" | "reconciling_item" => "R2R",
+                // TAX
+                "tax_jurisdiction" | "tax_code" | "tax_line" | "tax_return" | "tax_provision"
+                | "withholding_tax_record" => "TAX",
+                // TREASURY
+                "cash_position" | "cash_forecast" | "hedge_relationship" | "debt_instrument" => {
+                    "TREASURY"
+                }
+                // ESG
+                "emission_record" | "esg_disclosure" | "supplier_esg_assessment"
+                | "climate_scenario" => "ESG",
+                // PROJECT
+                "project" | "earned_value_metric" | "project_milestone" => "PROJECT",
+                // IC (Intercompany)
+                "ic_matched_pair" | "elimination_entry" => "IC",
+                // TEMPORAL
+                "process_evolution" | "organizational_event" | "disruption_event" => "TEMPORAL",
+                // COMPLIANCE
+                "compliance_standard" | "compliance_finding" | "regulatory_filing" => "COMPLIANCE",
+                // GOVERNANCE (COSO/Controls)
+                "coso_component" | "coso_principle" | "sox_assertion" | "internal_control" => {
+                    "GOVERNANCE"
+                }
+                // MASTER DATA
+                "vendor" | "customer" | "employee" | "material" | "fixed_asset" => "MASTER_DATA",
+                // ACCOUNTING
+                "account" | "journal_entry" => "ACCOUNTING",
+                // OCPM
+                "ocpm_object" => "OCPM",
+                // Unknown/other
+                _ => "OTHER",
+            };
+            node.properties.insert(
+                "process_family".into(),
+                Value::String(family.to_string()),
+            );
         }
     }
 

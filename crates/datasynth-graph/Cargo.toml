@@ -19,6 +19,7 @@ rustgraph = []
 [dependencies]
 datasynth-core = { workspace = true }
 datasynth-banking = { workspace = true }
+datasynth-generators = { workspace = true }
 datasynth-ocpm = { workspace = true }
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
