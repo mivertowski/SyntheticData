@@ -66,6 +66,10 @@ pub struct AuditEvidence {
     /// AI summary
     pub ai_summary: Option<String>,
 
+    // === Status ===
+    /// Current status of this evidence item
+    pub status: EvidenceStatus,
+
     // === Metadata ===
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -102,6 +106,7 @@ impl AuditEvidence {
             ai_extracted_terms: None,
             ai_confidence: None,
             ai_summary: None,
+            status: EvidenceStatus::Obtained,
             created_at: now,
             updated_at: now,
         }
@@ -248,6 +253,25 @@ impl EvidenceSource {
             Self::InternalClientPrepared => "Prepared internally by client personnel",
         }
     }
+}
+
+/// Status of an evidence item through its lifecycle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceStatus {
+    /// Evidence has been requested but not yet received
+    Requested,
+    /// Evidence has been obtained
+    #[default]
+    Obtained,
+    /// Evidence is under review
+    UnderReview,
+    /// Evidence has been accepted
+    Accepted,
+    /// Evidence has been rejected
+    Rejected,
+    /// Evidence has been superseded by newer evidence
+    Superseded,
 }
 
 /// Reliability assessment per ISA 500.A31.

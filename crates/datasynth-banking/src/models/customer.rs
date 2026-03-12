@@ -196,6 +196,8 @@ pub struct BankingCustomer {
     pub state: Option<String>,
     /// Postal code
     pub postal_code: Option<String>,
+    /// Customer lifecycle status
+    pub status: CustomerStatus,
     /// Whether customer is active
     pub is_active: bool,
     /// Whether customer is a PEP (Politically Exposed Person)
@@ -258,6 +260,7 @@ impl BankingCustomer {
             city: None,
             state: None,
             postal_code: None,
+            status: CustomerStatus::Active,
             is_active: true,
             is_pep: false,
             pep_category: None,
@@ -304,6 +307,7 @@ impl BankingCustomer {
             city: None,
             state: None,
             postal_code: None,
+            status: CustomerStatus::Active,
             is_active: true,
             is_pep: false,
             pep_category: None,
@@ -372,6 +376,23 @@ impl BankingCustomer {
 
         score.min(100.0) as u8
     }
+}
+
+/// Customer lifecycle status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CustomerStatus {
+    /// Customer is active and in good standing
+    #[default]
+    Active,
+    /// Customer has no recent activity
+    Dormant,
+    /// Customer account is temporarily suspended
+    Suspended,
+    /// Customer account has been closed
+    Closed,
+    /// Customer is under compliance review
+    UnderReview,
 }
 
 /// PEP (Politically Exposed Person) category.
