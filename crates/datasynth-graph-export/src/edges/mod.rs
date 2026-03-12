@@ -12,8 +12,10 @@
 //! - [`mfg::MFGEdgeSynthesizer`] — Quality inspection to production/material edges.
 //! - [`entity_relationships::EntityRelationshipEdgeSynthesizer`] — Doc/JE creator, vendor/customer links.
 //! - [`process_sequence::ProcessSequenceEdgeSynthesizer`] — OCEL directly-follows edges.
+//! - [`audit_procedures::AuditProcedureEdgeSynthesizer`] — ISA 505/330/530/520/610/550 procedure edges.
 
 pub mod accounting;
+pub mod audit_procedures;
 pub mod audit_trail;
 pub mod banking;
 pub mod document_chain;
@@ -39,6 +41,7 @@ use crate::traits::EdgeSynthesizer;
 /// 8. `accounting` — depends on document_chain (DOC_POSTS_JE uses doc nodes).
 /// 9. `entity_relationships` — depends on document_chain (DOC_CREATED_BY needs doc nodes).
 /// 10. `process_sequence` — depends on audit_trail (DirectlyFollows uses OCPM event nodes).
+/// 11. `audit_procedures` — no inter-edge dependencies; depends on audit_trail nodes (workpapers, engagements, evidence).
 pub fn all_synthesizers() -> Vec<Box<dyn EdgeSynthesizer>> {
     vec![
         Box::new(document_chain::DocumentChainEdgeSynthesizer),
@@ -51,6 +54,7 @@ pub fn all_synthesizers() -> Vec<Box<dyn EdgeSynthesizer>> {
         Box::new(accounting::AccountingEdgeSynthesizer),
         Box::new(entity_relationships::EntityRelationshipEdgeSynthesizer),
         Box::new(process_sequence::ProcessSequenceEdgeSynthesizer),
+        Box::new(audit_procedures::AuditProcedureEdgeSynthesizer),
     ]
 }
 
@@ -76,7 +80,7 @@ mod tests {
                 s.name()
             );
         }
-        assert_eq!(names.len(), 10, "Expected 10 edge synthesizers");
+        assert_eq!(names.len(), 11, "Expected 11 edge synthesizers");
 
         // Verify all known edge type codes are unique across synthesizers.
         // These are the codes defined as constants in each module.
@@ -94,6 +98,10 @@ mod tests {
             ("mfg", &[48, 95]),
             ("entity_relationships", &[96, 98, 135, 136, 137]),
             ("process_sequence", &[121]),
+            (
+                "audit_procedures",
+                &[138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152],
+            ),
         ];
 
         for (synth_name, codes) in all_codes {
@@ -109,7 +117,7 @@ mod tests {
     }
 
     #[test]
-    fn all_synthesizers_returns_ten() {
-        assert_eq!(all_synthesizers().len(), 10);
+    fn all_synthesizers_returns_eleven() {
+        assert_eq!(all_synthesizers().len(), 11);
     }
 }
