@@ -9,21 +9,27 @@
 //! - Risk assessment (ISA 315, ISA 330)
 //! - Professional judgment (ISA 200)
 //! - Findings and issues (ISA 265)
+//! - Analytical procedures (ISA 520)
+//! - Internal audit (ISA 610)
 
+pub mod analytical_procedure;
 pub mod confirmation;
 mod engagement;
 mod evidence;
 pub mod finding;
+pub mod internal_audit;
 mod judgment;
 pub mod procedure_step;
 pub mod risk;
 pub mod sample;
 mod workpaper;
 
+pub use analytical_procedure::*;
 pub use confirmation::*;
 pub use engagement::*;
 pub use evidence::*;
 pub use finding::*;
+pub use internal_audit::*;
 pub use judgment::*;
 pub use procedure_step::*;
 pub use risk::*;
