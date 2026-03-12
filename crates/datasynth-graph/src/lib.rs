@@ -33,12 +33,12 @@ pub(crate) mod test_helpers;
 // Re-export builder types
 pub use builders::{
     AccountLinkInput, ApprovalGraphBuilder, ApprovalGraphConfig, BankingGraphBuilder,
-    BankingGraphConfig, ComplianceGraphBuilder, ComplianceGraphConfig, ControlLinkInput,
-    CrossReferenceEdgeInput, EntityGraphBuilder, EntityGraphConfig, FilingNodeInput,
-    FindingNodeInput, HypergraphBuilder, HypergraphConfig, JurisdictionMappingInput,
-    JurisdictionNodeInput, OwnershipHierarchy, OwnershipHierarchyNode, ProcedureNodeInput,
-    SimpleApproval, StandardNodeInput, SupersessionEdgeInput, TransactionGraphBuilder,
-    TransactionGraphConfig,
+    BankingGraphConfig, BuilderInput, ComplianceGraphBuilder, ComplianceGraphConfig,
+    ControlLinkInput, CrossReferenceEdgeInput, EntityGraphBuilder, EntityGraphConfig,
+    FilingNodeInput, FindingNodeInput, HypergraphBuilder, HypergraphConfig,
+    JurisdictionMappingInput, JurisdictionNodeInput, LayerDemand, OwnershipHierarchy,
+    OwnershipHierarchyNode, ProcedureNodeInput, SimpleApproval, StandardNodeInput,
+    SupersessionEdgeInput, TransactionGraphBuilder, TransactionGraphConfig,
 };
 
 // Re-export exporter types
@@ -63,6 +63,6 @@ pub use models::{
     AccountNode, AggregationStrategy, ApprovalEdge, CompanyNode, CrossLayerEdge, EdgeDirection,
     EdgeId, EdgeProperty, EdgeType, Graph, GraphEdge, GraphMetadata, GraphNode, GraphType,
     HeterogeneousGraph, Hyperedge, HyperedgeParticipant, Hypergraph, HypergraphLayer,
-    HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport, NodeId, NodeProperty,
-    NodeType, OwnershipEdge, TransactionEdge, UserNode,
+    HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport, NodeBudgetSuggestion,
+    NodeId, NodeProperty, NodeType, OwnershipEdge, TransactionEdge, UserNode,
 };

@@ -11,5 +11,5 @@ pub use approval_graph::*;
 pub use banking_graph::*;
 pub use compliance_graph::*;
 pub use entity_graph::*;
-pub use hypergraph::{HypergraphBuilder, HypergraphConfig};
+pub use hypergraph::{BuilderInput, HypergraphBuilder, HypergraphConfig, LayerDemand};
 pub use transaction_graph::*;

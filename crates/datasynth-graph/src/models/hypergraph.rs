@@ -160,6 +160,25 @@ const DEFAULT_L1_BUDGET_DIVISOR: usize = 5;
 /// Fraction of total budget for Layer 3 (Accounting): 1/10 = 10%.
 const DEFAULT_L3_BUDGET_DIVISOR: usize = 10;
 
+/// Suggested per-layer budget allocation based on actual demand analysis.
+///
+/// Returned by [`NodeBudget::suggest`] after analyzing entity counts.
+/// The suggestion redistributes unused capacity from low-demand layers
+/// to high-demand layers while respecting the total budget.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct NodeBudgetSuggestion {
+    /// Suggested L1 (Governance) budget.
+    pub l1_suggested: usize,
+    /// Suggested L2 (Process) budget.
+    pub l2_suggested: usize,
+    /// Suggested L3 (Accounting) budget.
+    pub l3_suggested: usize,
+    /// Total budget (unchanged).
+    pub total: usize,
+    /// Surplus redistributed from low-demand layers.
+    pub surplus_redistributed: usize,
+}
+
 /// Per-layer node budget allocation and tracking.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NodeBudget {
@@ -222,24 +241,74 @@ impl NodeBudget {
         self.layer1_max + self.layer2_max + self.layer3_max
     }
 
-    /// Rebalance the budget based on actual demand per layer.
-    /// Unused budget from layers with fewer entities than max is redistributed.
-    pub fn rebalance(&mut self, l1_demand: usize, l2_demand: usize, l3_demand: usize) {
+    /// Compute a suggested budget allocation based on actual demand per layer.
+    ///
+    /// Each layer gets at least its demand (up to its current max). Surplus from
+    /// layers that need less than their max is redistributed proportionally to
+    /// layers that need more than their max.
+    pub fn suggest(
+        &self,
+        l1_demand: usize,
+        l2_demand: usize,
+        l3_demand: usize,
+    ) -> NodeBudgetSuggestion {
         let total = self.total_max();
 
-        // Clamp each layer to its demand
-        let l1_actual = l1_demand.min(self.layer1_max);
-        let l3_actual = l3_demand.min(self.layer3_max);
+        // Phase 1: clamp each layer to min(demand, current_max).
+        let l1_clamped = l1_demand.min(self.layer1_max);
+        let l2_clamped = l2_demand.min(self.layer2_max);
+        let l3_clamped = l3_demand.min(self.layer3_max);
 
-        // Give surplus to L2
-        let surplus = (self.layer1_max - l1_actual) + (self.layer3_max - l3_actual);
-        let l2_actual = (self.layer2_max + surplus)
-            .min(l2_demand)
-            .min(total - l1_actual - l3_actual.min(total.saturating_sub(l1_actual)));
+        // Phase 2: compute surplus from layers that need less than max.
+        let surplus = (self.layer1_max - l1_clamped)
+            + (self.layer2_max - l2_clamped)
+            + (self.layer3_max - l3_clamped);
 
-        self.layer1_max = l1_actual;
-        self.layer3_max = total.saturating_sub(l1_actual).saturating_sub(l2_actual);
-        self.layer2_max = l2_actual;
+        // Phase 3: compute unsatisfied demand per layer.
+        let l1_unsat = l1_demand.saturating_sub(self.layer1_max);
+        let l2_unsat = l2_demand.saturating_sub(self.layer2_max);
+        let l3_unsat = l3_demand.saturating_sub(self.layer3_max);
+        let total_unsat = l1_unsat + l2_unsat + l3_unsat;
+
+        // Phase 4: distribute surplus proportionally to unsatisfied demand.
+        let (l1_bonus, l2_bonus, l3_bonus) = if total_unsat > 0 && surplus > 0 {
+            let l1_b = (surplus as f64 * l1_unsat as f64 / total_unsat as f64).floor() as usize;
+            let l2_b = (surplus as f64 * l2_unsat as f64 / total_unsat as f64).floor() as usize;
+            // Give remainder to L3 (or whichever has unsat) to avoid rounding loss
+            let l3_b = surplus.saturating_sub(l1_b).saturating_sub(l2_b);
+            (l1_b, l2_b, l3_b)
+        } else if surplus > 0 {
+            // No unsatisfied demand — give surplus to L2 (largest consumer by convention)
+            (0, surplus, 0)
+        } else {
+            (0, 0, 0)
+        };
+
+        let l1_suggested = l1_clamped + l1_bonus;
+        let l2_suggested = l2_clamped + l2_bonus;
+        let l3_suggested = l3_clamped + l3_bonus;
+        let redistributed = l1_bonus + l2_bonus + l3_bonus;
+
+        NodeBudgetSuggestion {
+            l1_suggested,
+            l2_suggested,
+            l3_suggested,
+            total,
+            surplus_redistributed: redistributed,
+        }
+    }
+
+    /// Rebalance the budget based on actual demand per layer.
+    ///
+    /// Each layer gets at least its demand (capped at the total budget).
+    /// Surplus from low-demand layers is redistributed proportionally to
+    /// layers with unsatisfied demand. If no layer has unsatisfied demand,
+    /// surplus goes to L2 (the largest consumer by convention).
+    pub fn rebalance(&mut self, l1_demand: usize, l2_demand: usize, l3_demand: usize) {
+        let suggestion = self.suggest(l1_demand, l2_demand, l3_demand);
+        self.layer1_max = suggestion.l1_suggested;
+        self.layer2_max = suggestion.l2_suggested;
+        self.layer3_max = suggestion.l3_suggested;
     }
 }
 
