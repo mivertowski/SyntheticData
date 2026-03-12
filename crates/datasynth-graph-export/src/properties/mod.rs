@@ -15,6 +15,7 @@
 //! - O2C: [`SalesOrderPropertySerializer`], [`DeliveryPropertySerializer`], [`CustomerInvoicePropertySerializer`]
 //! - Banking: [`BankingCustomerPropertySerializer`], [`BankAccountPropertySerializer`], [`BankTransactionPropertySerializer`]
 //! - Audit: [`EngagementPropertySerializer`], [`WorkpaperPropertySerializer`], [`EvidencePropertySerializer`], [`FindingPropertySerializer`], [`JudgmentPropertySerializer`]
+//! - Audit Procedures: [`ConfirmationPropertySerializer`], [`ConfirmationResponsePropertySerializer`], [`ProcedureStepPropertySerializer`], [`SamplePropertySerializer`], [`AnalyticalProcedurePropertySerializer`], [`IaFunctionPropertySerializer`], [`IaReportPropertySerializer`], [`RelatedPartyPropertySerializer`], [`RelatedPartyTransactionPropertySerializer`]
 //! - S2C: [`SourcingProjectPropertySerializer`], [`RfxEventPropertySerializer`], [`SupplierBidPropertySerializer`], [`ProcurementContractPropertySerializer`]
 //! - H2R: [`PayrollRunPropertySerializer`], [`TimeEntryPropertySerializer`], [`ExpenseReportPropertySerializer`]
 //! - MFG: [`ProductionOrderPropertySerializer`], [`QualityInspectionPropertySerializer`], [`CycleCountPropertySerializer`]
@@ -67,6 +68,16 @@ pub fn all_serializers() -> Vec<Box<dyn PropertySerializer>> {
         Box::new(audit::EvidencePropertySerializer),
         Box::new(audit::FindingPropertySerializer),
         Box::new(audit::JudgmentPropertySerializer),
+        // Audit Procedures (ISA 505/330/530/520/610/550)
+        Box::new(audit::ConfirmationPropertySerializer),
+        Box::new(audit::ConfirmationResponsePropertySerializer),
+        Box::new(audit::ProcedureStepPropertySerializer),
+        Box::new(audit::SamplePropertySerializer),
+        Box::new(audit::AnalyticalProcedurePropertySerializer),
+        Box::new(audit::IaFunctionPropertySerializer),
+        Box::new(audit::IaReportPropertySerializer),
+        Box::new(audit::RelatedPartyPropertySerializer),
+        Box::new(audit::RelatedPartyTransactionPropertySerializer),
         // S2C (Source-to-Contract)
         Box::new(s2c::SourcingProjectPropertySerializer),
         Box::new(s2c::RfxEventPropertySerializer),
@@ -107,8 +118,9 @@ mod tests {
     fn all_serializers_count() {
         let serializers = all_serializers();
         // 2 (control, risk) + 2 (je, account) + 1 (employee)
-        // + 4 (p2p) + 3 (o2c) + 3 (banking) + 5 (audit) + 4 (s2c) + 3 (h2r) + 3 (mfg)
-        // = 30 total
-        assert_eq!(serializers.len(), 30);
+        // + 4 (p2p) + 3 (o2c) + 3 (banking) + 5 (audit) + 9 (audit procedures)
+        // + 4 (s2c) + 3 (h2r) + 3 (mfg)
+        // = 39 total
+        assert_eq!(serializers.len(), 39);
     }
 }

@@ -559,8 +559,8 @@ fn node_ids_are_unique_and_sequential() {
 fn standard_pipeline_has_all_stages() {
     let pipeline = GraphExportPipeline::standard(ExportConfig::default());
 
-    // 30 property serializers (Task 9)
-    assert_eq!(pipeline.property_serializers().len(), 30);
+    // 30 property serializers (Task 9) + 9 audit procedure serializers (Task 14) = 39
+    assert_eq!(pipeline.property_serializers().len(), 39);
 }
 
 #[test]
