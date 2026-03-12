@@ -11,6 +11,7 @@
 //! - Findings and issues (ISA 265)
 //! - Analytical procedures (ISA 520)
 //! - Internal audit (ISA 610)
+//! - Related parties (ISA 550)
 
 pub mod analytical_procedure;
 pub mod confirmation;
@@ -20,6 +21,7 @@ pub mod finding;
 pub mod internal_audit;
 mod judgment;
 pub mod procedure_step;
+pub mod related_party;
 pub mod risk;
 pub mod sample;
 mod workpaper;
@@ -32,6 +34,7 @@ pub use finding::*;
 pub use internal_audit::*;
 pub use judgment::*;
 pub use procedure_step::*;
+pub use related_party::*;
 pub use risk::*;
 pub use sample::*;
 pub use workpaper::*;
