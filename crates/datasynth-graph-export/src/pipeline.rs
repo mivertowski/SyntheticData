@@ -52,9 +52,17 @@ impl GraphExportPipeline {
     /// This registers the default property serializers, node synthesizers,
     /// edge synthesizers, and post-processors for all supported domains.
     pub fn standard(config: ExportConfig) -> Self {
-        // Built-in stages will be registered as they are implemented in Tasks 8-13.
-        // For now, return an empty pipeline that produces a valid but empty result.
-        Self::new(config)
+        let mut pipeline = Self::new(config);
+
+        // Stage 1: Property serializers (Task 8)
+        for serializer in crate::properties::all_serializers() {
+            pipeline.property_serializers.push(serializer);
+        }
+
+        // Stages 2-4: Node synthesizers, edge synthesizers, post-processors
+        // will be registered as they are implemented in Tasks 9-13.
+
+        pipeline
     }
 
     /// Add a property serializer for a specific entity type.
@@ -408,8 +416,8 @@ mod tests {
     #[test]
     fn standard_returns_pipeline() {
         let pipeline = GraphExportPipeline::standard(ExportConfig::default());
-        // Currently empty; will have stages after Tasks 8-13.
-        assert!(pipeline.property_serializers.is_empty());
+        // Task 8: 2 property serializers (control + risk).
+        assert_eq!(pipeline.property_serializers.len(), 2);
     }
 
     #[test]
