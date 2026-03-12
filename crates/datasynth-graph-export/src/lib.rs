@@ -25,14 +25,17 @@
 //! let (nodes, edges) = result.into_bulk();
 //! ```
 
+pub mod budget;
 pub mod config;
 pub mod error;
+pub mod helpers;
 pub mod id_map;
 pub mod pipeline;
 pub mod traits;
 pub mod types;
 
 // Re-export primary types for convenience.
+pub use budget::BudgetManager;
 pub use config::{
     BudgetConfig, EdgeSamplingStrategy, EdgeSynthesisConfig, ExportConfig, GroundTruthConfig,
     OcelExportConfig, PropertyCase, PropertyInclusionPolicy, RiskControlStrategy,
