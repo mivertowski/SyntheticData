@@ -219,9 +219,10 @@ impl AccountSubType {
 }
 
 /// Industry sector for account relevance weighting.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum IndustrySector {
+    #[default]
     Manufacturing,
     Retail,
     FinancialServices,
@@ -396,10 +397,11 @@ impl GLAccount {
 }
 
 /// Chart of Accounts complexity levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum CoAComplexity {
     /// ~100 accounts - small business
+    #[default]
     Small,
     /// ~400 accounts - mid-market
     Medium,
@@ -422,7 +424,7 @@ impl CoAComplexity {
 ///
 /// Contains all GL accounts for an entity along with metadata about
 /// the overall structure.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ChartOfAccounts {
     /// Unique identifier for this CoA
     pub coa_id: String,
