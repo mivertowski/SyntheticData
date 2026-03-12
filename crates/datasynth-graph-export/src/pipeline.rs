@@ -59,7 +59,10 @@ impl GraphExportPipeline {
             pipeline.property_serializers.push(serializer);
         }
 
-        // Stage 2: Node synthesizers — will be registered in Task 12.
+        // Stage 2: Node synthesizers (Task 12)
+        for synthesizer in crate::nodes::all_synthesizers() {
+            pipeline.node_synthesizers.push(synthesizer);
+        }
 
         // Stage 3: Edge synthesizers (Task 10)
         for synthesizer in crate::edges::all_synthesizers() {
@@ -424,6 +427,8 @@ mod tests {
         let pipeline = GraphExportPipeline::standard(ExportConfig::default());
         // Task 9: 30 property serializers across all domains.
         assert_eq!(pipeline.property_serializers.len(), 30);
+        // Task 12: 13 node synthesizers across all domains.
+        assert_eq!(pipeline.node_synthesizers.len(), 13);
     }
 
     #[test]

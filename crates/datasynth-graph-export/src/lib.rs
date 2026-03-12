@@ -31,6 +31,7 @@ pub mod edges;
 pub mod error;
 pub mod helpers;
 pub mod id_map;
+pub mod nodes;
 pub mod pipeline;
 pub mod properties;
 pub mod traits;

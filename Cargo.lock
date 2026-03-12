@@ -1540,6 +1540,7 @@ dependencies = [
  "chrono",
  "datasynth-banking",
  "datasynth-core",
+ "datasynth-generators",
  "datasynth-graph",
  "datasynth-ocpm",
  "datasynth-runtime",
