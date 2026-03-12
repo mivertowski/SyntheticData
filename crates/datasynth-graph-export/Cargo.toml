@@ -21,6 +21,7 @@ datasynth-graph = { workspace = true }
 datasynth-runtime = { workspace = true }
 datasynth-ocpm = { workspace = true }
 datasynth-banking = { workspace = true }
+datasynth-generators = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
