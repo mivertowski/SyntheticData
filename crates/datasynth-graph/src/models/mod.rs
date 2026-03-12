@@ -10,5 +10,6 @@ pub use graph::*;
 pub use hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
     HypergraphLayer, HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport,
+    NodeBudgetSuggestion,
 };
 pub use nodes::*;

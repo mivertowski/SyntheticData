@@ -38,6 +38,7 @@ use datasynth_generators::disruption::DisruptionEvent;
 use crate::models::hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
     HypergraphLayer, HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport,
+    NodeBudgetSuggestion,
 };
 
 /// Day-of-month threshold for considering a date as "month-end" in features.
@@ -251,6 +252,167 @@ impl Default for HypergraphConfig {
     }
 }
 
+/// Per-layer demand counts for budget rebalancing.
+///
+/// Used by [`HypergraphBuilder::suggest_budget`] and
+/// [`HypergraphBuilder::rebalance_with_demand`] to redistribute unused
+/// capacity from low-demand layers to high-demand layers.
+#[derive(Debug, Clone, Default)]
+pub struct LayerDemand {
+    /// Number of L1 (Governance) entities expected.
+    pub l1: usize,
+    /// Number of L2 (Process) entities expected.
+    pub l2: usize,
+    /// Number of L3 (Accounting) entities expected.
+    pub l3: usize,
+}
+
+/// Input data for [`HypergraphBuilder::add_all_ordered`].
+///
+/// Groups all entity slices by phase so the builder can enforce the correct
+/// insertion order: governance first, then critical L2 entities (audit),
+/// then volume L2 entities (banking, P2P, etc.), then L3 accounting.
+///
+/// All fields are optional — pass empty slices for phases you don't need.
+#[derive(Default)]
+pub struct BuilderInput<'a> {
+    // --- Phase 1: L1 Governance ---
+    /// Internal controls (L1).
+    pub controls: &'a [InternalControl],
+    /// Vendors (L1 master data).
+    pub vendors: &'a [Vendor],
+    /// Customers (L1 master data).
+    pub customers: &'a [Customer],
+    /// Employees (L1 master data).
+    pub employees: &'a [Employee],
+    /// Materials (L1/L3 master data).
+    pub materials: &'a [Material],
+    /// Fixed assets (L1/L3 master data).
+    pub fixed_assets: &'a [FixedAsset],
+    /// Compliance standards (L1 governance).
+    pub compliance_standards: &'a [ComplianceStandard],
+    /// Compliance findings (L2 events).
+    pub compliance_findings: &'a [ComplianceFinding],
+    /// Regulatory filings (L2 events).
+    pub regulatory_filings: &'a [RegulatoryFiling],
+    /// Emission records (L1 ESG).
+    pub emissions: &'a [EmissionRecord],
+    /// ESG disclosures (L1 ESG).
+    pub esg_disclosures: &'a [EsgDisclosure],
+    /// Supplier ESG assessments (L1 ESG).
+    pub supplier_esg_assessments: &'a [SupplierEsgAssessment],
+    /// Climate scenarios (L1 ESG).
+    pub climate_scenarios: &'a [ClimateScenario],
+
+    // --- Phase 2: L2 Critical (audit — small, must not be dropped) ---
+    /// Audit engagements.
+    pub audit_engagements: &'a [AuditEngagement],
+    /// Workpapers.
+    pub workpapers: &'a [Workpaper],
+    /// Audit findings.
+    pub audit_findings: &'a [AuditFinding],
+    /// Audit evidence.
+    pub audit_evidence: &'a [AuditEvidence],
+    /// Risk assessments.
+    pub risk_assessments: &'a [RiskAssessment],
+    /// Professional judgments.
+    pub professional_judgments: &'a [ProfessionalJudgment],
+
+    // --- Phase 3: L2 Volume ---
+    /// P2P: Purchase orders.
+    pub purchase_orders: &'a [datasynth_core::models::documents::PurchaseOrder],
+    /// P2P: Goods receipts.
+    pub goods_receipts: &'a [datasynth_core::models::documents::GoodsReceipt],
+    /// P2P: Vendor invoices.
+    pub vendor_invoices: &'a [datasynth_core::models::documents::VendorInvoice],
+    /// P2P: Payments.
+    pub payments: &'a [datasynth_core::models::documents::Payment],
+    /// O2C: Sales orders.
+    pub sales_orders: &'a [datasynth_core::models::documents::SalesOrder],
+    /// O2C: Deliveries.
+    pub deliveries: &'a [datasynth_core::models::documents::Delivery],
+    /// O2C: Customer invoices.
+    pub customer_invoices: &'a [datasynth_core::models::documents::CustomerInvoice],
+    /// S2C: Sourcing projects.
+    pub sourcing_projects: &'a [SourcingProject],
+    /// S2C: Supplier qualifications.
+    pub supplier_qualifications: &'a [SupplierQualification],
+    /// S2C: RFx events.
+    pub rfx_events: &'a [RfxEvent],
+    /// S2C: Supplier bids.
+    pub supplier_bids: &'a [SupplierBid],
+    /// S2C: Bid evaluations.
+    pub bid_evaluations: &'a [BidEvaluation],
+    /// S2C: Procurement contracts.
+    pub procurement_contracts: &'a [ProcurementContract],
+    /// H2R: Payroll runs.
+    pub payroll_runs: &'a [PayrollRun],
+    /// H2R: Time entries.
+    pub time_entries: &'a [TimeEntry],
+    /// H2R: Expense reports.
+    pub expense_reports: &'a [ExpenseReport],
+    /// MFG: Production orders.
+    pub production_orders: &'a [ProductionOrder],
+    /// MFG: Quality inspections.
+    pub quality_inspections: &'a [QualityInspection],
+    /// MFG: Cycle counts.
+    pub cycle_counts: &'a [CycleCount],
+    /// Banking customers.
+    pub banking_customers: &'a [BankingCustomer],
+    /// Bank accounts.
+    pub bank_accounts: &'a [BankAccount],
+    /// Bank transactions.
+    pub bank_transactions: &'a [BankTransaction],
+    /// Bank reconciliations.
+    pub bank_reconciliations: &'a [BankReconciliation],
+    /// Temporal: process evolution events.
+    pub process_evolution_events: &'a [ProcessEvolutionEvent],
+    /// Temporal: organizational events.
+    pub organizational_events: &'a [OrganizationalEvent],
+    /// Temporal: disruption events.
+    pub disruption_events: &'a [DisruptionEvent],
+    /// Intercompany matched pairs.
+    pub ic_matched_pairs: &'a [ICMatchedPair],
+    /// Intercompany elimination entries.
+    pub elimination_entries: &'a [EliminationEntry],
+    /// OCPM event log (optional).
+    pub ocpm_event_log: Option<&'a datasynth_ocpm::OcpmEventLog>,
+
+    // --- Phase 4: L3 Accounting ---
+    /// Chart of accounts.
+    pub chart_of_accounts: Option<&'a ChartOfAccounts>,
+    /// Journal entries.
+    pub journal_entries: &'a [JournalEntry],
+
+    // --- Phase 5: L3 domain extensions ---
+    /// Tax jurisdictions.
+    pub tax_jurisdictions: &'a [TaxJurisdiction],
+    /// Tax codes.
+    pub tax_codes: &'a [TaxCode],
+    /// Tax lines.
+    pub tax_lines: &'a [TaxLine],
+    /// Tax returns.
+    pub tax_returns: &'a [TaxReturn],
+    /// Tax provisions.
+    pub tax_provisions: &'a [TaxProvision],
+    /// Withholding tax records.
+    pub withholding_records: &'a [WithholdingTaxRecord],
+    /// Treasury: cash positions.
+    pub cash_positions: &'a [CashPosition],
+    /// Treasury: cash forecasts.
+    pub cash_forecasts: &'a [CashForecast],
+    /// Treasury: hedge relationships.
+    pub hedge_relationships: &'a [HedgeRelationship],
+    /// Treasury: debt instruments.
+    pub debt_instruments: &'a [DebtInstrument],
+    /// Project accounting: projects.
+    pub projects: &'a [Project],
+    /// Project accounting: earned value metrics.
+    pub earned_value_metrics: &'a [EarnedValueMetric],
+    /// Project accounting: milestones.
+    pub project_milestones: &'a [ProjectMilestone],
+}
+
 /// Builder for constructing a multi-layer hypergraph.
 pub struct HypergraphBuilder {
     config: HypergraphConfig,
@@ -318,6 +480,245 @@ impl HypergraphBuilder {
     /// adding large L2 producers like OCPM events.
     pub fn rebalance_budget(&mut self, l1_demand: usize, l2_demand: usize, l3_demand: usize) {
         self.budget.rebalance(l1_demand, l2_demand, l3_demand);
+    }
+
+    /// Compute a budget suggestion based on actual demand per layer.
+    ///
+    /// Does **not** modify the builder's budget — call [`rebalance_with_demand`]
+    /// to actually apply the suggestion.
+    pub fn suggest_budget(&self, demand: &LayerDemand) -> NodeBudgetSuggestion {
+        self.budget.suggest(demand.l1, demand.l2, demand.l3)
+    }
+
+    /// Rebalance the budget and apply the suggested allocation.
+    ///
+    /// Surplus from layers that need fewer entities than their default max is
+    /// redistributed proportionally to layers with unsatisfied demand.
+    pub fn rebalance_with_demand(&mut self, demand: &LayerDemand) {
+        self.budget.rebalance(demand.l1, demand.l2, demand.l3);
+    }
+
+    /// Return a snapshot of the current budget for inspection.
+    pub fn budget(&self) -> &NodeBudget {
+        &self.budget
+    }
+
+    /// Count entities per layer from a [`BuilderInput`] to compute demand.
+    ///
+    /// This is a convenience method that tallies the entities from each slice
+    /// according to which layer they belong to. The returned [`LayerDemand`]
+    /// can be passed to [`suggest_budget`] or [`rebalance_with_demand`].
+    pub fn count_demand(input: &BuilderInput<'_>) -> LayerDemand {
+        // COSO framework: 5 components + 17 principles = 22 fixed nodes.
+        let coso_count = 22;
+
+        // L1: Governance, controls, master data, compliance standards, ESG
+        let l1 = coso_count
+            + input.controls.len()
+            + input.vendors.len()
+            + input.customers.len()
+            + input.employees.len()
+            + input.materials.len()
+            + input.fixed_assets.len()
+            + input.compliance_standards.len()
+            + input.emissions.len()
+            + input.esg_disclosures.len()
+            + input.supplier_esg_assessments.len()
+            + input.climate_scenarios.len();
+
+        // L2: Process events, audit, banking, compliance findings/filings,
+        //     H2R, MFG, S2C, temporal, intercompany, OCPM
+        let ocpm_count = input
+            .ocpm_event_log
+            .map(|log| log.events.len())
+            .unwrap_or(0);
+        let l2 = input.audit_engagements.len()
+            + input.workpapers.len()
+            + input.audit_findings.len()
+            + input.audit_evidence.len()
+            + input.risk_assessments.len()
+            + input.professional_judgments.len()
+            + input.purchase_orders.len()
+            + input.goods_receipts.len()
+            + input.vendor_invoices.len()
+            + input.payments.len()
+            + input.sales_orders.len()
+            + input.deliveries.len()
+            + input.customer_invoices.len()
+            + input.sourcing_projects.len()
+            + input.supplier_qualifications.len()
+            + input.rfx_events.len()
+            + input.supplier_bids.len()
+            + input.bid_evaluations.len()
+            + input.procurement_contracts.len()
+            + input.payroll_runs.len()
+            + input.time_entries.len()
+            + input.expense_reports.len()
+            + input.production_orders.len()
+            + input.quality_inspections.len()
+            + input.cycle_counts.len()
+            + input.banking_customers.len()
+            + input.bank_accounts.len()
+            + input.bank_transactions.len()
+            + input.bank_reconciliations.len()
+            + input.compliance_findings.len()
+            + input.regulatory_filings.len()
+            + input.process_evolution_events.len()
+            + input.organizational_events.len()
+            + input.disruption_events.len()
+            + input.ic_matched_pairs.len()
+            + input.elimination_entries.len()
+            + ocpm_count;
+
+        // L3: Accounting network — accounts, journal entries, tax, treasury, project
+        let account_count = input
+            .chart_of_accounts
+            .map(|coa| coa.accounts.len())
+            .unwrap_or(0);
+        let l3 = account_count
+            + input.journal_entries.len()
+            + input.tax_jurisdictions.len()
+            + input.tax_codes.len()
+            + input.tax_lines.len()
+            + input.tax_returns.len()
+            + input.tax_provisions.len()
+            + input.withholding_records.len()
+            + input.cash_positions.len()
+            + input.cash_forecasts.len()
+            + input.hedge_relationships.len()
+            + input.debt_instruments.len()
+            + input.projects.len()
+            + input.earned_value_metrics.len()
+            + input.project_milestones.len();
+
+        LayerDemand { l1, l2, l3 }
+    }
+
+    /// Add all entities from a [`BuilderInput`] in the correct phase order.
+    ///
+    /// **Phase ordering** guarantees that critical small-count entities (like
+    /// audit documents) are inserted before large-volume producers (like banking
+    /// transactions) so they are never silently dropped by budget exhaustion.
+    ///
+    /// Phases:
+    /// 1. L1 Governance (COSO, controls, master data, compliance standards, ESG)
+    /// 2. L2 Critical (audit — small count, must not be dropped)
+    /// 3. L2 Volume (P2P, O2C, S2C, H2R, MFG, banking, temporal, IC, OCPM)
+    /// 4. L3 Accounting (chart of accounts, journal entries)
+    /// 5. L3 Domain extensions (tax, treasury, project accounting)
+    /// 6. Process family tagging
+    pub fn add_all_ordered(&mut self, input: &BuilderInput<'_>) {
+        // -- Phase 1: L1 Governance --
+        self.add_coso_framework();
+        self.add_controls(input.controls);
+        self.add_vendors(input.vendors);
+        self.add_customers(input.customers);
+        self.add_employees(input.employees);
+        self.add_materials(input.materials);
+        self.add_fixed_assets(input.fixed_assets);
+        self.add_compliance_regulations(
+            input.compliance_standards,
+            input.compliance_findings,
+            input.regulatory_filings,
+        );
+        self.add_esg_documents(
+            input.emissions,
+            input.esg_disclosures,
+            input.supplier_esg_assessments,
+            input.climate_scenarios,
+        );
+
+        // -- Phase 2: L2 Critical (audit first — small, must not be dropped) --
+        self.add_audit_documents(
+            input.audit_engagements,
+            input.workpapers,
+            input.audit_findings,
+            input.audit_evidence,
+            input.risk_assessments,
+            input.professional_judgments,
+        );
+
+        // -- Phase 3: L2 Volume --
+        self.add_p2p_documents(
+            input.purchase_orders,
+            input.goods_receipts,
+            input.vendor_invoices,
+            input.payments,
+        );
+        self.add_o2c_documents(
+            input.sales_orders,
+            input.deliveries,
+            input.customer_invoices,
+        );
+        self.add_s2c_documents(
+            input.sourcing_projects,
+            input.supplier_qualifications,
+            input.rfx_events,
+            input.supplier_bids,
+            input.bid_evaluations,
+            input.procurement_contracts,
+        );
+        self.add_h2r_documents(
+            input.payroll_runs,
+            input.time_entries,
+            input.expense_reports,
+        );
+        self.add_mfg_documents(
+            input.production_orders,
+            input.quality_inspections,
+            input.cycle_counts,
+        );
+        self.add_bank_documents(
+            input.banking_customers,
+            input.bank_accounts,
+            input.bank_transactions,
+        );
+        self.add_aml_alerts(input.bank_transactions);
+        self.add_kyc_profiles(input.banking_customers);
+        self.add_bank_recon_documents(input.bank_reconciliations);
+        self.add_temporal_events(
+            input.process_evolution_events,
+            input.organizational_events,
+            input.disruption_events,
+        );
+        self.add_intercompany_documents(input.ic_matched_pairs, input.elimination_entries);
+        if let Some(ocpm) = input.ocpm_event_log {
+            self.add_ocpm_events(ocpm);
+        }
+
+        // -- Phase 4: L3 Accounting --
+        if let Some(coa) = input.chart_of_accounts {
+            self.add_accounts(coa);
+        }
+        if self.config.je_as_hyperedges {
+            self.add_journal_entries_as_hyperedges(input.journal_entries);
+        } else {
+            self.add_journal_entry_nodes(input.journal_entries);
+        }
+
+        // -- Phase 5: L3 Domain extensions --
+        self.add_tax_documents(
+            input.tax_jurisdictions,
+            input.tax_codes,
+            input.tax_lines,
+            input.tax_returns,
+            input.tax_provisions,
+            input.withholding_records,
+        );
+        self.add_treasury_documents(
+            input.cash_positions,
+            input.cash_forecasts,
+            input.hedge_relationships,
+            input.debt_instruments,
+        );
+        self.add_project_documents(
+            input.projects,
+            input.earned_value_metrics,
+            input.project_milestones,
+        );
+
+        // -- Phase 6: Process family tagging --
+        self.tag_process_family();
     }
 
     /// Add COSO framework as Layer 1 nodes (5 components + 17 principles).
