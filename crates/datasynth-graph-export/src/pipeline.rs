@@ -69,7 +69,14 @@ impl GraphExportPipeline {
             pipeline.edge_synthesizers.push(synthesizer);
         }
 
-        // Stage 4: Post-processors — will be registered in Task 13.
+        // Stage 4: Post-processors (Task 13)
+        for processor in crate::post_process::all_post_processors() {
+            pipeline.post_processors.push(processor);
+        }
+        // OCEL exporter runs last (after all node/edge mutations).
+        pipeline
+            .post_processors
+            .push(Box::new(crate::ocel::OcelExporterPostProcessor));
 
         pipeline
     }
@@ -429,6 +436,8 @@ mod tests {
         assert_eq!(pipeline.property_serializers.len(), 30);
         // Task 12: 13 node synthesizers across all domains.
         assert_eq!(pipeline.node_synthesizers.len(), 13);
+        // Task 13: 4 post-processors + 1 OCEL exporter = 5 total.
+        assert_eq!(pipeline.post_processors.len(), 5);
     }
 
     #[test]

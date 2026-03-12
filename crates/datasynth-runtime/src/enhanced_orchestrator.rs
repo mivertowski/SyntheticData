@@ -781,7 +781,7 @@ pub struct ProjectAccountingSnapshot {
 }
 
 /// Complete result of enhanced generation run.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct EnhancedGenerationResult {
     /// Generated chart of accounts.
     pub chart_of_accounts: ChartOfAccounts,
