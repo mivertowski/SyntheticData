@@ -225,7 +225,10 @@ impl<'a> BudgetManager<'a> {
         let (governance, process): (Vec<ExportEdge>, Vec<ExportEdge>) =
             edges.into_iter().partition(|e| {
                 // Governance: 40-59 + 96-120 (governance linkage + cross-layer people)
-                (40..60).contains(&e.edge_type) || (96..=120).contains(&e.edge_type)
+                // + 138-152 (audit procedure linkage — ISA 505/330/530/520/610/550)
+                (40..60).contains(&e.edge_type)
+                    || (96..=120).contains(&e.edge_type)
+                    || (138..=152).contains(&e.edge_type)
             });
 
         let mut result = Vec::with_capacity(max_edges);
@@ -424,10 +427,11 @@ mod tests {
         id_map.get_or_insert("b"); // id=2
         let mut warnings = ExportWarnings::new();
 
-        // 2 governance edges (type 40, 100) + 3 process edges (type 60, 70, 80)
+        // 3 governance edges (type 40, 100, 140) + 3 process edges (type 60, 70, 80)
         let edges = vec![
-            make_edge(1, 2, 40),  // governance
-            make_edge(2, 1, 100), // governance (cross-layer people)
+            make_edge(1, 2, 40),  // governance (40-59 range)
+            make_edge(2, 1, 100), // governance (cross-layer people, 96-120 range)
+            make_edge(1, 2, 140), // governance (audit procedure linkage, 138-152 range)
             make_edge(1, 2, 60),  // process
             make_edge(2, 1, 70),  // process
             make_edge(1, 2, 80),  // process
@@ -440,11 +444,15 @@ mod tests {
             &mut warnings,
         );
         assert_eq!(result.len(), 3);
-        // Both governance edges should be kept
+        // All 3 governance edges should be kept (budget=3, all governance fit)
         let gov_count = result
             .iter()
-            .filter(|e| (40..60).contains(&e.edge_type) || (96..=120).contains(&e.edge_type))
+            .filter(|e| {
+                (40..60).contains(&e.edge_type)
+                    || (96..=120).contains(&e.edge_type)
+                    || (138..=152).contains(&e.edge_type)
+            })
             .count();
-        assert_eq!(gov_count, 2);
+        assert_eq!(gov_count, 3);
     }
 }
