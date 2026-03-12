@@ -1523,6 +1523,7 @@ dependencies = [
  "chrono",
  "datasynth-banking",
  "datasynth-core",
+ "datasynth-generators",
  "datasynth-ocpm",
  "rust_decimal",
  "rust_decimal_macros",

@@ -8246,6 +8246,12 @@ impl EnhancedOrchestrator {
             je_as_hyperedges: hg_settings.accounting_layer.je_as_hyperedges,
             include_cross_layer_edges: hg_settings.cross_layer.enabled,
             include_compliance: self.config.compliance_regulations.enabled,
+            include_tax: true,
+            include_treasury: true,
+            include_esg: true,
+            include_project: true,
+            include_intercompany: true,
+            include_temporal_events: true,
         };
 
         let mut builder = HypergraphBuilder::new(builder_config);
