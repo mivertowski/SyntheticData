@@ -343,6 +343,16 @@ pub struct DocumentHeader {
     /// Last change timestamp
     pub changed_at: Option<NaiveDateTime>,
 
+    /// Employee ID of the creator (bridges user_id ↔ employee_id)
+    ///
+    /// `created_by` stores the user login (e.g. "JSMITH") while
+    /// employee nodes use `employee_id` (e.g. "E-001234"). This
+    /// field stores the employee_id when it is known at generation
+    /// time, allowing the export pipeline to emit
+    /// `DOC_CREATED_BY` edges directly without an expensive lookup.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_by_employee_id: Option<String>,
+
     /// Currency
     pub currency: String,
 
@@ -385,12 +395,19 @@ impl DocumentHeader {
             created_by: created_by.into(),
             changed_by: None,
             changed_at: None,
+            created_by_employee_id: None,
             currency: "USD".to_string(),
             reference: None,
             header_text: None,
             journal_entry_id: None,
             document_references: Vec::new(),
         }
+    }
+
+    /// Set the employee ID of the document creator.
+    pub fn with_created_by_employee_id(mut self, employee_id: impl Into<String>) -> Self {
+        self.created_by_employee_id = Some(employee_id.into());
+        self
     }
 
     /// Set posting date.
