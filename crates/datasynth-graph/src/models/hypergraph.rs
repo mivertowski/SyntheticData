@@ -105,7 +105,7 @@ pub struct Hyperedge {
 pub struct HypergraphNode {
     /// Unique node identifier.
     pub id: String,
-    /// Entity type name (e.g., "Account", "Vendor", "CosoComponent").
+    /// Entity type name in snake_case (e.g., "account", "vendor", "coso_component").
     pub entity_type: String,
     /// RustGraph entity type code for import.
     pub entity_type_code: u32,
@@ -360,7 +360,7 @@ mod tests {
     fn test_hypergraph_node_serialization() {
         let node = HypergraphNode {
             id: "node_1".to_string(),
-            entity_type: "Account".to_string(),
+            entity_type: "account".to_string(),
             entity_type_code: 100,
             layer: HypergraphLayer::AccountingNetwork,
             external_id: "1000".to_string(),
