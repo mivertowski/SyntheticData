@@ -32,7 +32,7 @@ impl GraphPropertyValue {
             Self::Float(f) => format!("{f:.6}"),
             Self::Decimal(d) => d.to_string(),
             Self::Bool(b) => b.to_string(),
-            Self::Date(d) => d.to_string(),
+            Self::Date(d) => format!("{d}T00:00:00Z"),
             Self::StringList(v) => v.join(";"),
         }
     }
@@ -86,6 +86,32 @@ impl GraphPropertyValue {
     }
 }
 
+/// Convert a CamelCase or PascalCase string to snake_case.
+///
+/// Examples: `"CosoComponent"` → `"coso_component"`, `"P2PPool"` → `"p2p_pool"`.
+pub fn camel_to_snake(s: &str) -> String {
+    let mut result = String::with_capacity(s.len() + 4);
+    let chars: Vec<char> = s.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if c.is_uppercase() {
+            // Insert underscore before uppercase if:
+            // - not the first character, AND
+            // - previous char is lowercase, OR next char is lowercase (for "XMLParser" → "xml_parser")
+            if i > 0 {
+                let prev_lower = chars[i - 1].is_lowercase();
+                let next_lower = chars.get(i + 1).map_or(false, |nc| nc.is_lowercase());
+                if prev_lower || (next_lower && chars[i - 1].is_uppercase()) {
+                    result.push('_');
+                }
+            }
+            result.push(c.to_lowercase().next().unwrap_or(c));
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 /// Trait for converting typed model structs to graph node property maps.
 ///
 /// Implementations map struct fields to camelCase property keys matching
@@ -127,7 +153,7 @@ mod tests {
         assert_eq!(
             GraphPropertyValue::Date(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap())
                 .to_string_value(),
-            "2024-01-15"
+            "2024-01-15T00:00:00Z"
         );
         assert_eq!(
             GraphPropertyValue::StringList(vec!["a".into(), "b".into(), "c".into()])
@@ -159,5 +185,43 @@ mod tests {
     #[test]
     fn test_empty_string_list() {
         assert_eq!(GraphPropertyValue::StringList(vec![]).to_string_value(), "");
+    }
+
+    #[test]
+    fn test_date_rfc3339_format() {
+        let d = NaiveDate::from_ymd_opt(2024, 12, 1).unwrap();
+        assert_eq!(
+            GraphPropertyValue::Date(d).to_string_value(),
+            "2024-12-01T00:00:00Z"
+        );
+    }
+
+    #[test]
+    fn test_camel_to_snake_basic() {
+        assert_eq!(super::camel_to_snake("CosoComponent"), "coso_component");
+        assert_eq!(super::camel_to_snake("InternalControl"), "internal_control");
+        assert_eq!(super::camel_to_snake("Account"), "account");
+        assert_eq!(super::camel_to_snake("JournalEntry"), "journal_entry");
+        assert_eq!(super::camel_to_snake("PurchaseOrder"), "purchase_order");
+        assert_eq!(super::camel_to_snake("SoxAssertion"), "sox_assertion");
+    }
+
+    #[test]
+    fn test_camel_to_snake_consecutive_uppercase() {
+        assert_eq!(super::camel_to_snake("P2PPool"), "p2p_pool");
+        assert_eq!(super::camel_to_snake("O2CPool"), "o2c_pool");
+        assert_eq!(super::camel_to_snake("BankTransaction"), "bank_transaction");
+    }
+
+    #[test]
+    fn test_camel_to_snake_already_snake() {
+        assert_eq!(super::camel_to_snake("already_snake"), "already_snake");
+        assert_eq!(super::camel_to_snake("vendor"), "vendor");
+    }
+
+    #[test]
+    fn test_camel_to_snake_single_word() {
+        assert_eq!(super::camel_to_snake("Vendor"), "vendor");
+        assert_eq!(super::camel_to_snake("Employee"), "employee");
     }
 }
