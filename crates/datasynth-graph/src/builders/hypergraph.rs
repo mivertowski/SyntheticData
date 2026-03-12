@@ -15,7 +15,10 @@ use serde_json::Value;
 
 use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
 use datasynth_core::models::audit::{
-    AuditEngagement, AuditEvidence, AuditFinding, ProfessionalJudgment, RiskAssessment, Workpaper,
+    AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
+    AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
+    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
+    RiskAssessment, Workpaper,
 };
 use datasynth_core::models::compliance::{ComplianceFinding, ComplianceStandard, RegulatoryFiling};
 use datasynth_core::models::sourcing::{
@@ -162,6 +165,17 @@ mod type_codes {
     pub const AML_ALERT: u32 = 505;
     // KYC_PROFILE already defined above as 504
 
+    // Layer 1 — Audit Procedure entities
+    pub const EXTERNAL_CONFIRMATION: u32 = 366;
+    pub const CONFIRMATION_RESPONSE: u32 = 367;
+    pub const AUDIT_PROCEDURE_STEP: u32 = 368;
+    pub const AUDIT_SAMPLE: u32 = 369;
+    pub const ANALYTICAL_PROCEDURE_RESULT: u32 = 375;
+    pub const INTERNAL_AUDIT_FUNCTION: u32 = 376;
+    pub const INTERNAL_AUDIT_REPORT: u32 = 377;
+    pub const RELATED_PARTY: u32 = 378;
+    pub const RELATED_PARTY_TRANSACTION: u32 = 379;
+
     // Edge type codes
     pub const IMPLEMENTS_CONTROL: u32 = 40;
     pub const GOVERNED_BY_STANDARD: u32 = 41;
@@ -175,6 +189,23 @@ mod type_codes {
     pub const FILED_BY_COMPANY: u32 = 49;
     pub const COVERS_COSO_PRINCIPLE: u32 = 54;
     pub const CONTAINS_ACCOUNT: u32 = 55;
+
+    // Audit Procedure edge type codes
+    pub const CONFIRMATION_FOR_ACCOUNT: u32 = 138;
+    pub const CONFIRMATION_RESPONSE_EDGE: u32 = 139;
+    pub const CONFIRMATION_IN_WORKPAPER: u32 = 140;
+    pub const STEP_IN_WORKPAPER: u32 = 141;
+    pub const STEP_USES_SAMPLE: u32 = 142;
+    pub const STEP_EVIDENCE: u32 = 143;
+    pub const SAMPLE_FROM_WORKPAPER: u32 = 144;
+    pub const AP_FOR_ACCOUNT: u32 = 145;
+    pub const AP_IN_WORKPAPER: u32 = 146;
+    pub const IAF_FOR_ENGAGEMENT: u32 = 147;
+    pub const REPORT_FROM_IAF: u32 = 148;
+    pub const IA_REPORT_FOR_ENGAGEMENT: u32 = 149;
+    pub const RP_FOR_ENGAGEMENT: u32 = 150;
+    pub const RPT_WITH_PARTY: u32 = 151;
+    pub const RPT_JOURNAL_ENTRY: u32 = 152;
 }
 
 /// Configuration for the hypergraph builder.
@@ -317,6 +348,24 @@ pub struct BuilderInput<'a> {
     pub risk_assessments: &'a [RiskAssessment],
     /// Professional judgments.
     pub professional_judgments: &'a [ProfessionalJudgment],
+    /// External confirmation requests (ISA 505).
+    pub external_confirmations: &'a [ExternalConfirmation],
+    /// Confirmation responses (ISA 505).
+    pub confirmation_responses: &'a [ConfirmationResponse],
+    /// Audit procedure steps (ISA 330/530).
+    pub audit_procedure_steps: &'a [AuditProcedureStep],
+    /// Audit samples (ISA 530).
+    pub audit_samples: &'a [AuditSample],
+    /// Analytical procedure results (ISA 520).
+    pub analytical_procedure_results: &'a [AnalyticalProcedureResult],
+    /// Internal audit functions assessed (ISA 610).
+    pub internal_audit_functions: &'a [InternalAuditFunction],
+    /// Internal audit reports reviewed (ISA 610).
+    pub internal_audit_reports: &'a [InternalAuditReport],
+    /// Related parties identified (ISA 550).
+    pub related_parties: &'a [RelatedParty],
+    /// Related party transactions (ISA 550).
+    pub related_party_transactions: &'a [RelatedPartyTransaction],
 
     // --- Phase 3: L2 Volume ---
     /// P2P: Purchase orders.
@@ -538,6 +587,15 @@ impl HypergraphBuilder {
             + input.audit_evidence.len()
             + input.risk_assessments.len()
             + input.professional_judgments.len()
+            + input.external_confirmations.len()
+            + input.confirmation_responses.len()
+            + input.audit_procedure_steps.len()
+            + input.audit_samples.len()
+            + input.analytical_procedure_results.len()
+            + input.internal_audit_functions.len()
+            + input.internal_audit_reports.len()
+            + input.related_parties.len()
+            + input.related_party_transactions.len()
             + input.purchase_orders.len()
             + input.goods_receipts.len()
             + input.vendor_invoices.len()
@@ -636,6 +694,17 @@ impl HypergraphBuilder {
             input.audit_evidence,
             input.risk_assessments,
             input.professional_judgments,
+        );
+        self.add_audit_procedure_entities(
+            input.external_confirmations,
+            input.confirmation_responses,
+            input.audit_procedure_steps,
+            input.audit_samples,
+            input.analytical_procedure_results,
+            input.internal_audit_functions,
+            input.internal_audit_reports,
+            input.related_parties,
+            input.related_party_transactions,
         );
 
         // -- Phase 3: L2 Volume --
@@ -2469,6 +2538,426 @@ impl HypergraphBuilder {
                 is_aggregate: false,
                 aggregate_count: 0,
             });
+        }
+    }
+
+    /// Add audit procedure entities as Layer 1/2 nodes (ISA 505, 520, 530, 550, 610).
+    ///
+    /// Covers 9 entity types:
+    /// - ExternalConfirmation, ConfirmationResponse (ISA 505)
+    /// - AuditProcedureStep, AuditSample (ISA 330/530)
+    /// - AnalyticalProcedureResult (ISA 520)
+    /// - InternalAuditFunction, InternalAuditReport (ISA 610)
+    /// - RelatedParty, RelatedPartyTransaction (ISA 550)
+    pub fn add_audit_procedure_entities(
+        &mut self,
+        confirmations: &[ExternalConfirmation],
+        responses: &[ConfirmationResponse],
+        steps: &[AuditProcedureStep],
+        samples: &[AuditSample],
+        analytical_results: &[AnalyticalProcedureResult],
+        ia_functions: &[InternalAuditFunction],
+        ia_reports: &[InternalAuditReport],
+        related_parties: &[RelatedParty],
+        rp_transactions: &[RelatedPartyTransaction],
+    ) {
+        if !self.config.include_audit {
+            return;
+        }
+
+        // ExternalConfirmation → Layer 1 (Governance)
+        for conf in confirmations {
+            let ext_id = conf.confirmation_id.to_string();
+            let node_id = format!("audit_conf_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "external_confirmation".into(),
+                entity_type_code: type_codes::EXTERNAL_CONFIRMATION,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("CONF {}", conf.confirmation_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(conf.confirmation_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                if let Some(wp_id) = &conf.workpaper_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id.clone(),
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("audit_wp_{wp_id}"),
+                        target_layer: HypergraphLayer::ProcessEvents,
+                        edge_type: "CONFIRMATION_IN_WORKPAPER".into(),
+                        edge_type_code: type_codes::CONFIRMATION_IN_WORKPAPER,
+                        properties: HashMap::new(),
+                    });
+                }
+                if let Some(acct_id) = &conf.account_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id,
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("acct_{acct_id}"),
+                        target_layer: HypergraphLayer::AccountingNetwork,
+                        edge_type: "CONFIRMATION_FOR_ACCOUNT".into(),
+                        edge_type_code: type_codes::CONFIRMATION_FOR_ACCOUNT,
+                        properties: HashMap::new(),
+                    });
+                }
+            }
+        }
+
+        // ConfirmationResponse → Layer 1 (Governance)
+        for resp in responses {
+            let ext_id = resp.response_id.to_string();
+            let node_id = format!("audit_resp_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "confirmation_response".into(),
+                entity_type_code: type_codes::CONFIRMATION_RESPONSE,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("RESP {}", resp.response_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(resp.response_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_conf_{}", resp.confirmation_id),
+                    target_layer: HypergraphLayer::GovernanceControls,
+                    edge_type: "CONFIRMATION_RESPONSE".into(),
+                    edge_type_code: type_codes::CONFIRMATION_RESPONSE_EDGE,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // AuditProcedureStep → Layer 1 (Governance)
+        for step in steps {
+            let ext_id = step.step_id.to_string();
+            let node_id = format!("audit_step_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "audit_procedure_step".into(),
+                entity_type_code: type_codes::AUDIT_PROCEDURE_STEP,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("STEP {}", step.step_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(step.step_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id.clone(),
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_wp_{}", step.workpaper_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "STEP_IN_WORKPAPER".into(),
+                    edge_type_code: type_codes::STEP_IN_WORKPAPER,
+                    properties: HashMap::new(),
+                });
+                if let Some(sid) = &step.sample_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id.clone(),
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("audit_samp_{sid}"),
+                        target_layer: HypergraphLayer::GovernanceControls,
+                        edge_type: "STEP_USES_SAMPLE".into(),
+                        edge_type_code: type_codes::STEP_USES_SAMPLE,
+                        properties: HashMap::new(),
+                    });
+                }
+                for eid in &step.evidence_ids {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id.clone(),
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("audit_ev_{eid}"),
+                        target_layer: HypergraphLayer::ProcessEvents,
+                        edge_type: "STEP_EVIDENCE".into(),
+                        edge_type_code: type_codes::STEP_EVIDENCE,
+                        properties: HashMap::new(),
+                    });
+                }
+            }
+        }
+
+        // AuditSample → Layer 1 (Governance)
+        for sample in samples {
+            let ext_id = sample.sample_id.to_string();
+            let node_id = format!("audit_samp_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "audit_sample".into(),
+                entity_type_code: type_codes::AUDIT_SAMPLE,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("SAMP {}", sample.sample_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(sample.sample_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_wp_{}", sample.workpaper_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "SAMPLE_FROM_WORKPAPER".into(),
+                    edge_type_code: type_codes::SAMPLE_FROM_WORKPAPER,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // AnalyticalProcedureResult → Layer 1 (Governance)
+        for ap in analytical_results {
+            let ext_id = ap.result_id.to_string();
+            let node_id = format!("audit_ap_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "analytical_procedure_result".into(),
+                entity_type_code: type_codes::ANALYTICAL_PROCEDURE_RESULT,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("AP {}", ap.result_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(ap.result_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![ap.variance_percentage.abs().ln_1p()],
+                is_anomaly: ap.requires_investigation,
+                anomaly_type: if ap.requires_investigation {
+                    Some("analytical_variance".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                if let Some(wp_id) = &ap.workpaper_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id.clone(),
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("audit_wp_{wp_id}"),
+                        target_layer: HypergraphLayer::ProcessEvents,
+                        edge_type: "AP_IN_WORKPAPER".into(),
+                        edge_type_code: type_codes::AP_IN_WORKPAPER,
+                        properties: HashMap::new(),
+                    });
+                }
+                if let Some(acct_id) = &ap.account_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: node_id,
+                        source_layer: HypergraphLayer::GovernanceControls,
+                        target_id: format!("acct_{acct_id}"),
+                        target_layer: HypergraphLayer::AccountingNetwork,
+                        edge_type: "AP_FOR_ACCOUNT".into(),
+                        edge_type_code: type_codes::AP_FOR_ACCOUNT,
+                        properties: HashMap::new(),
+                    });
+                }
+            }
+        }
+
+        // InternalAuditFunction → Layer 1 (Governance)
+        for iaf in ia_functions {
+            let ext_id = iaf.function_id.to_string();
+            let node_id = format!("audit_iaf_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "internal_audit_function".into(),
+                entity_type_code: type_codes::INTERNAL_AUDIT_FUNCTION,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("IAF {}", iaf.function_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(iaf.function_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![iaf.annual_plan_coverage],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_eng_{}", iaf.engagement_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "IAF_FOR_ENGAGEMENT".into(),
+                    edge_type_code: type_codes::IAF_FOR_ENGAGEMENT,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // InternalAuditReport → Layer 1 (Governance)
+        for iar in ia_reports {
+            let ext_id = iar.report_id.to_string();
+            let node_id = format!("audit_iar_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "internal_audit_report".into(),
+                entity_type_code: type_codes::INTERNAL_AUDIT_REPORT,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("IAR {}", iar.report_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(iar.report_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id.clone(),
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_iaf_{}", iar.ia_function_id),
+                    target_layer: HypergraphLayer::GovernanceControls,
+                    edge_type: "REPORT_FROM_IAF".into(),
+                    edge_type_code: type_codes::REPORT_FROM_IAF,
+                    properties: HashMap::new(),
+                });
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_eng_{}", iar.engagement_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "IA_REPORT_FOR_ENGAGEMENT".into(),
+                    edge_type_code: type_codes::IA_REPORT_FOR_ENGAGEMENT,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // RelatedParty → Layer 1 (Governance)
+        for rp in related_parties {
+            let ext_id = rp.party_id.to_string();
+            let node_id = format!("audit_rp_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "related_party".into(),
+                entity_type_code: type_codes::RELATED_PARTY,
+                layer: HypergraphLayer::GovernanceControls,
+                external_id: ext_id.clone(),
+                label: format!("RP {}", rp.party_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(rp.party_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::GovernanceControls,
+                    target_id: format!("audit_eng_{}", rp.engagement_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "RP_FOR_ENGAGEMENT".into(),
+                    edge_type_code: type_codes::RP_FOR_ENGAGEMENT,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // RelatedPartyTransaction → Layer 2 (Process Events — financial event)
+        for rpt in rp_transactions {
+            let ext_id = rpt.transaction_id.to_string();
+            let node_id = format!("audit_rpt_{ext_id}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "related_party_transaction".into(),
+                entity_type_code: type_codes::RELATED_PARTY_TRANSACTION,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: ext_id.clone(),
+                label: format!("RPT {}", rpt.transaction_ref),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_id".into(), Value::String(rpt.transaction_ref.clone()));
+                    p.insert("process_family".into(), Value::String("AUDIT".into()));
+                    p
+                },
+                features: vec![rpt
+                    .amount
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .abs()
+                    .ln_1p()],
+                is_anomaly: rpt.management_override_risk,
+                anomaly_type: if rpt.management_override_risk {
+                    Some("management_override_risk".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id,
+                    source_layer: HypergraphLayer::ProcessEvents,
+                    target_id: format!("audit_rp_{}", rpt.related_party_id),
+                    target_layer: HypergraphLayer::GovernanceControls,
+                    edge_type: "RPT_WITH_PARTY".into(),
+                    edge_type_code: type_codes::RPT_WITH_PARTY,
+                    properties: HashMap::new(),
+                });
+            }
         }
     }
 
