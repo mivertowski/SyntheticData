@@ -19,8 +19,8 @@
 //! };
 //! ```
 //!
-//! Similarly, the three new generators below are NOT wildcard-re-exported to
-//! avoid potential name collisions.  Import them via their full module paths:
+//! Similarly, the generators below are NOT wildcard-re-exported to avoid
+//! potential name collisions.  Import them via their full module paths:
 //! ```ignore
 //! use datasynth_generators::audit::procedure_step_generator::{
 //!     ProcedureStepGenerator, ProcedureStepGeneratorConfig,
@@ -31,11 +31,19 @@
 //! use datasynth_generators::audit::analytical_procedure_generator::{
 //!     AnalyticalProcedureGenerator, AnalyticalProcedureGeneratorConfig,
 //! };
+//! use datasynth_generators::audit::internal_audit_generator::{
+//!     InternalAuditGenerator, InternalAuditGeneratorConfig,
+//! };
+//! use datasynth_generators::audit::related_party_generator::{
+//!     RelatedPartyGenerator, RelatedPartyGeneratorConfig,
+//! };
 //! ```
 
 pub mod analytical_procedure_generator;
 pub mod confirmation_generator;
+pub mod internal_audit_generator;
 pub mod procedure_step_generator;
+pub mod related_party_generator;
 pub mod sample_generator;
 mod engagement_generator;
 mod evidence_generator;
