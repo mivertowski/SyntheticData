@@ -814,6 +814,9 @@ impl O2CGenerator {
             customer.payment_terms.discount_percent(),
         );
 
+        // Populate top-level sales_order_id FK (DS-GEP-004)
+        invoice.sales_order_id = Some(so.header.document_id.clone());
+
         // Denormalize customer name (DS-011)
         invoice.customer_name = Some(customer.name.clone());
 

@@ -637,6 +637,12 @@ impl P2PGenerator {
         )
         .with_payment_terms(vendor.payment_terms.code(), net_days);
 
+        // Populate top-level FK fields (DS-GEP-004)
+        invoice.purchase_order_id = Some(po.header.document_id.clone());
+        invoice.goods_receipt_id = goods_receipts
+            .first()
+            .map(|gr| gr.header.document_id.clone());
+
         // Denormalize vendor name (DS-011)
         invoice.vendor_name = Some(vendor.name.clone());
 
