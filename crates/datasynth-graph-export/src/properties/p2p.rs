@@ -64,7 +64,7 @@ impl PropertySerializer for PurchaseOrderPropertySerializer {
         );
         props.insert(
             "currency".into(),
-            Value::String(po.header.company_code.clone()), // currency not on PO header directly
+            Value::String(po.header.currency.clone()),
         );
         props.insert(
             "lineCount".into(),

@@ -261,10 +261,10 @@ fn control_serializer_owner_fallback_to_role() {
     let s = ControlPropertySerializer;
     let props = s.serialize("C999", &ctx).expect("should find control");
 
-    // When owner_name is empty, should format from owner_role
+    // When owner_name is empty, should format from owner_role (snake_case via serde)
     let owner = props["owner"].as_str().unwrap();
     assert!(!owner.is_empty());
-    assert!(owner.contains("Controller")); // default owner_role
+    assert!(owner.contains("controller")); // default owner_role, snake_case
 }
 
 #[test]
@@ -355,11 +355,11 @@ fn risk_serializer_produces_required_fields() {
     assert!(rl > 0.0 && rl <= 1.0, "residualLikelihood={rl} out of range");
     assert!(rs > 0.0, "riskScore should be positive");
 
-    // Risk levels
+    // Risk levels (snake_case via serde)
     assert!(props.contains_key("inherentRisk"));
-    assert_eq!(props["inherentRisk"], serde_json::json!("High"));
+    assert_eq!(props["inherentRisk"], serde_json::json!("high"));
     assert!(props.contains_key("controlRisk"));
-    assert_eq!(props["controlRisk"], serde_json::json!("Medium"));
+    assert_eq!(props["controlRisk"], serde_json::json!("medium"));
     assert!(props.contains_key("riskOfMaterialMisstatement"));
 
     // Significance
@@ -371,9 +371,9 @@ fn risk_serializer_produces_required_fields() {
         serde_json::json!("Presumed fraud risk per ISA 240")
     );
 
-    // Lifecycle
+    // Lifecycle (snake_case via serde)
     assert!(props.contains_key("status"));
-    assert_eq!(props["status"], serde_json::json!("Active"));
+    assert_eq!(props["status"], serde_json::json!("active"));
 
     // Owner resolved from employee map
     assert!(props.contains_key("owner"));

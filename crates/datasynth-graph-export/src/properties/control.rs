@@ -53,7 +53,7 @@ impl PropertySerializer for ControlPropertySerializer {
         );
         props.insert(
             "category".into(),
-            Value::String(format!("{:?}", control.coso_component)),
+            serde_json::to_value(&control.coso_component).unwrap_or(Value::Null),
         );
         props.insert("isKeyControl".into(), Value::Bool(control.is_key_control));
         props.insert(
@@ -71,11 +71,11 @@ impl PropertySerializer for ControlPropertySerializer {
         );
         props.insert(
             "cosoComponent".into(),
-            Value::String(format!("{:?}", control.coso_component)),
+            serde_json::to_value(&control.coso_component).unwrap_or(Value::Null),
         );
         props.insert(
             "controlScope".into(),
-            Value::String(format!("{:?}", control.control_scope)),
+            serde_json::to_value(&control.control_scope).unwrap_or(Value::Null),
         );
         props.insert(
             "objective".into(),
@@ -90,7 +90,7 @@ impl PropertySerializer for ControlPropertySerializer {
         props.insert(
             "owner".into(),
             if control.owner_name.is_empty() {
-                Value::String(format!("{:?}", control.owner_role))
+                serde_json::to_value(&control.owner_role).unwrap_or(Value::Null)
             } else {
                 Value::String(control.owner_name.clone())
             },
