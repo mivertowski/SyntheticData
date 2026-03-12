@@ -36,7 +36,10 @@ use datasynth_banking::{
 use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
-    AuditEngagement, AuditEvidence, AuditFinding, ProfessionalJudgment, RiskAssessment, Workpaper,
+    AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
+    AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
+    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
+    RiskAssessment, Workpaper,
 };
 use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
@@ -134,6 +137,12 @@ use datasynth_core::llm::MockLlmProvider;
 use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
+use datasynth_generators::audit::analytical_procedure_generator::AnalyticalProcedureGenerator;
+use datasynth_generators::audit::confirmation_generator::ConfirmationGenerator;
+use datasynth_generators::audit::internal_audit_generator::InternalAuditGenerator;
+use datasynth_generators::audit::procedure_step_generator::ProcedureStepGenerator;
+use datasynth_generators::audit::related_party_generator::RelatedPartyGenerator;
+use datasynth_generators::audit::sample_generator::SampleGenerator;
 use datasynth_generators::coa_generator::CoAFramework;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 use rayon::prelude::*;
@@ -424,6 +433,24 @@ pub struct AuditSnapshot {
     pub findings: Vec<AuditFinding>,
     /// Professional judgments per ISA 200.
     pub judgments: Vec<ProfessionalJudgment>,
+    /// External confirmations per ISA 505.
+    pub confirmations: Vec<ExternalConfirmation>,
+    /// Confirmation responses per ISA 505.
+    pub confirmation_responses: Vec<ConfirmationResponse>,
+    /// Audit procedure steps per ISA 330/530.
+    pub procedure_steps: Vec<AuditProcedureStep>,
+    /// Audit samples per ISA 530.
+    pub samples: Vec<AuditSample>,
+    /// Analytical procedure results per ISA 520.
+    pub analytical_results: Vec<AnalyticalProcedureResult>,
+    /// Internal audit functions per ISA 610.
+    pub ia_functions: Vec<InternalAuditFunction>,
+    /// Internal audit reports per ISA 610.
+    pub ia_reports: Vec<InternalAuditReport>,
+    /// Related parties per ISA 550.
+    pub related_parties: Vec<RelatedParty>,
+    /// Related party transactions per ISA 550.
+    pub related_party_transactions: Vec<RelatedPartyTransaction>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -902,6 +929,29 @@ pub struct EnhancedGenerationStatistics {
     pub audit_risk_count: usize,
     pub audit_finding_count: usize,
     pub audit_judgment_count: usize,
+    /// ISA 505 confirmation counts.
+    #[serde(default)]
+    pub audit_confirmation_count: usize,
+    #[serde(default)]
+    pub audit_confirmation_response_count: usize,
+    /// ISA 330/530 procedure step and sample counts.
+    #[serde(default)]
+    pub audit_procedure_step_count: usize,
+    #[serde(default)]
+    pub audit_sample_count: usize,
+    /// ISA 520 analytical procedure counts.
+    #[serde(default)]
+    pub audit_analytical_result_count: usize,
+    /// ISA 610 internal audit counts.
+    #[serde(default)]
+    pub audit_ia_function_count: usize,
+    #[serde(default)]
+    pub audit_ia_report_count: usize,
+    /// ISA 550 related party counts.
+    #[serde(default)]
+    pub audit_related_party_count: usize,
+    #[serde(default)]
+    pub audit_related_party_transaction_count: usize,
     /// Anomaly counts.
     pub anomalies_injected: usize,
     /// Data quality issue counts.
@@ -2308,11 +2358,29 @@ impl EnhancedOrchestrator {
             stats.audit_risk_count = audit_snapshot.risk_assessments.len();
             stats.audit_finding_count = audit_snapshot.findings.len();
             stats.audit_judgment_count = audit_snapshot.judgments.len();
+            stats.audit_confirmation_count = audit_snapshot.confirmations.len();
+            stats.audit_confirmation_response_count =
+                audit_snapshot.confirmation_responses.len();
+            stats.audit_procedure_step_count = audit_snapshot.procedure_steps.len();
+            stats.audit_sample_count = audit_snapshot.samples.len();
+            stats.audit_analytical_result_count = audit_snapshot.analytical_results.len();
+            stats.audit_ia_function_count = audit_snapshot.ia_functions.len();
+            stats.audit_ia_report_count = audit_snapshot.ia_reports.len();
+            stats.audit_related_party_count = audit_snapshot.related_parties.len();
+            stats.audit_related_party_transaction_count =
+                audit_snapshot.related_party_transactions.len();
             info!(
-                "Audit data generated: {} engagements, {} workpapers, {} evidence, {} risks, {} findings, {} judgments",
+                "Audit data generated: {} engagements, {} workpapers, {} evidence, {} risks, \
+                 {} findings, {} judgments, {} confirmations, {} procedure steps, {} samples, \
+                 {} analytical results, {} IA functions, {} IA reports, {} related parties, \
+                 {} RP transactions",
                 stats.audit_engagement_count, stats.audit_workpaper_count,
                 stats.audit_evidence_count, stats.audit_risk_count,
-                stats.audit_finding_count, stats.audit_judgment_count
+                stats.audit_finding_count, stats.audit_judgment_count,
+                stats.audit_confirmation_count, stats.audit_procedure_step_count,
+                stats.audit_sample_count, stats.audit_analytical_result_count,
+                stats.audit_ia_function_count, stats.audit_ia_report_count,
+                stats.audit_related_party_count, stats.audit_related_party_transaction_count,
             );
             self.check_resources_with_log("post-audit")?;
             Ok(audit_snapshot)
@@ -7564,6 +7632,12 @@ impl EnhancedOrchestrator {
         let mut risk_gen = RiskAssessmentGenerator::new(self.seed + 7300);
         let mut finding_gen = FindingGenerator::new(self.seed + 7400);
         let mut judgment_gen = JudgmentGenerator::new(self.seed + 7500);
+        let mut confirmation_gen = ConfirmationGenerator::new(self.seed + 7600);
+        let mut procedure_step_gen = ProcedureStepGenerator::new(self.seed + 7700);
+        let mut sample_gen = SampleGenerator::new(self.seed + 7800);
+        let mut analytical_gen = AnalyticalProcedureGenerator::new(self.seed + 7900);
+        let mut ia_gen = InternalAuditGenerator::new(self.seed + 8000);
+        let mut related_party_gen = RelatedPartyGenerator::new(self.seed + 8100);
 
         // Get list of accounts from CoA for risk assessment
         let accounts: Vec<String> = self
@@ -7696,6 +7770,76 @@ impl EnhancedOrchestrator {
                 }
                 snapshot.judgments.extend(judgments);
 
+                // ISA 505: External confirmations and responses
+                let (confs, resps) = confirmation_gen.generate_confirmations(
+                    &engagement,
+                    &workpapers,
+                    &accounts,
+                );
+                snapshot.confirmations.extend(confs);
+                snapshot.confirmation_responses.extend(resps);
+
+                // ISA 330: Procedure steps per workpaper
+                let team_pairs: Vec<(String, String)> = team_members
+                    .iter()
+                    .map(|id| {
+                        let name = self
+                            .master_data
+                            .employees
+                            .iter()
+                            .find(|e| e.employee_id == *id)
+                            .map(|e| e.display_name.clone())
+                            .unwrap_or_else(|| {
+                                format!("Employee {}", &id[..8.min(id.len())])
+                            });
+                        (id.clone(), name)
+                    })
+                    .collect();
+                for wp in &workpapers {
+                    let steps = procedure_step_gen.generate_steps(wp, &team_pairs);
+                    snapshot.procedure_steps.extend(steps);
+                }
+
+                // ISA 530: Samples per workpaper
+                for wp in &workpapers {
+                    if let Some(sample) =
+                        sample_gen.generate_sample(wp, engagement.engagement_id)
+                    {
+                        snapshot.samples.push(sample);
+                    }
+                }
+
+                // ISA 520: Analytical procedures
+                let analytical =
+                    analytical_gen.generate_procedures(&engagement, &accounts);
+                snapshot.analytical_results.extend(analytical);
+
+                // ISA 610: Internal audit function and reports
+                let (ia_func, ia_reports) = ia_gen.generate(&engagement);
+                snapshot.ia_functions.push(ia_func);
+                snapshot.ia_reports.extend(ia_reports);
+
+                // ISA 550: Related parties and transactions
+                let vendor_names: Vec<String> = self
+                    .master_data
+                    .vendors
+                    .iter()
+                    .map(|v| v.name.clone())
+                    .collect();
+                let customer_names: Vec<String> = self
+                    .master_data
+                    .customers
+                    .iter()
+                    .map(|c| c.name.clone())
+                    .collect();
+                let (parties, rp_txns) = related_party_gen.generate(
+                    &engagement,
+                    &vendor_names,
+                    &customer_names,
+                );
+                snapshot.related_parties.extend(parties);
+                snapshot.related_party_transactions.extend(rp_txns);
+
                 // Add workpapers after findings since findings need them
                 snapshot.workpapers.extend(workpapers);
                 snapshot.engagements.push(engagement);
@@ -7704,10 +7848,18 @@ impl EnhancedOrchestrator {
 
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
-                "Audit data: {} engagements, {} workpapers, {} evidence",
+                "Audit data: {} engagements, {} workpapers, {} evidence, \
+                 {} confirmations, {} procedure steps, {} samples, \
+                 {} analytical, {} IA funcs, {} related parties",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
-                snapshot.evidence.len()
+                snapshot.evidence.len(),
+                snapshot.confirmations.len(),
+                snapshot.procedure_steps.len(),
+                snapshot.samples.len(),
+                snapshot.analytical_results.len(),
+                snapshot.ia_functions.len(),
+                snapshot.related_parties.len(),
             ));
         }
 
@@ -9536,6 +9688,33 @@ mod tests {
         assert!(!result.audit.findings.is_empty());
         assert!(!result.audit.judgments.is_empty());
 
+        // New ISA entity collections should also be populated
+        assert!(
+            !result.audit.confirmations.is_empty(),
+            "ISA 505 confirmations should be generated"
+        );
+        assert!(
+            !result.audit.confirmation_responses.is_empty(),
+            "ISA 505 confirmation responses should be generated"
+        );
+        assert!(
+            !result.audit.procedure_steps.is_empty(),
+            "ISA 330 procedure steps should be generated"
+        );
+        // Samples may or may not be generated depending on workpaper sampling methods
+        assert!(
+            !result.audit.analytical_results.is_empty(),
+            "ISA 520 analytical procedures should be generated"
+        );
+        assert!(
+            !result.audit.ia_functions.is_empty(),
+            "ISA 610 IA functions should be generated (one per engagement)"
+        );
+        assert!(
+            !result.audit.related_parties.is_empty(),
+            "ISA 550 related parties should be generated"
+        );
+
         // Statistics should match
         assert_eq!(
             result.statistics.audit_engagement_count,
@@ -9560,6 +9739,42 @@ mod tests {
         assert_eq!(
             result.statistics.audit_judgment_count,
             result.audit.judgments.len()
+        );
+        assert_eq!(
+            result.statistics.audit_confirmation_count,
+            result.audit.confirmations.len()
+        );
+        assert_eq!(
+            result.statistics.audit_confirmation_response_count,
+            result.audit.confirmation_responses.len()
+        );
+        assert_eq!(
+            result.statistics.audit_procedure_step_count,
+            result.audit.procedure_steps.len()
+        );
+        assert_eq!(
+            result.statistics.audit_sample_count,
+            result.audit.samples.len()
+        );
+        assert_eq!(
+            result.statistics.audit_analytical_result_count,
+            result.audit.analytical_results.len()
+        );
+        assert_eq!(
+            result.statistics.audit_ia_function_count,
+            result.audit.ia_functions.len()
+        );
+        assert_eq!(
+            result.statistics.audit_ia_report_count,
+            result.audit.ia_reports.len()
+        );
+        assert_eq!(
+            result.statistics.audit_related_party_count,
+            result.audit.related_parties.len()
+        );
+        assert_eq!(
+            result.statistics.audit_related_party_transaction_count,
+            result.audit.related_party_transactions.len()
         );
     }
 
