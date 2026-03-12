@@ -7,7 +7,19 @@
 //! - Risk assessments per ISA 315/330
 //! - Audit findings per ISA 265
 //! - Professional judgments per ISA 200
+//! - External confirmations per ISA 505 (`audit::confirmation_generator`)
+//!
+//! Note: `ConfirmationGenerator` / `ConfirmationGeneratorConfig` are NOT
+//! wildcard-re-exported from this module to avoid a name collision with the
+//! identically-named types in `standards::confirmation_generator`.  Import
+//! them via the full path:
+//! ```ignore
+//! use datasynth_generators::audit::confirmation_generator::{
+//!     ConfirmationGenerator, ConfirmationGeneratorConfig,
+//! };
+//! ```
 
+pub mod confirmation_generator;
 mod engagement_generator;
 mod evidence_generator;
 mod finding_generator;
