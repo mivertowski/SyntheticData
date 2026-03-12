@@ -908,10 +908,6 @@ impl HypergraphBuilder {
                         Value::String(format!("{:?}", control.control_type)),
                     );
                     p.insert(
-                        "controlType".to_string(),
-                        Value::String(format!("{}", control.control_type).to_lowercase()),
-                    );
-                    p.insert(
                         "risk_level".to_string(),
                         Value::String(format!("{:?}", control.risk_level)),
                     );
@@ -920,21 +916,8 @@ impl HypergraphBuilder {
                         Value::Bool(control.is_key_control),
                     );
                     p.insert(
-                        "isKeyControl".to_string(),
-                        Value::Bool(control.is_key_control),
-                    );
-                    p.insert(
                         "maturity_level".to_string(),
                         Value::String(format!("{:?}", control.maturity_level)),
-                    );
-                    let effectiveness = match control.maturity_level.level() {
-                        4 | 5 => "effective",
-                        3 => "partially-effective",
-                        _ => "not-tested",
-                    };
-                    p.insert(
-                        "effectiveness".to_string(),
-                        Value::String(effectiveness.to_string()),
                     );
                     p.insert(
                         "description".to_string(),
@@ -951,25 +934,6 @@ impl HypergraphBuilder {
                     p.insert(
                         "owner".to_string(),
                         Value::String(format!("{}", control.owner_role)),
-                    );
-                    p.insert(
-                        "controlId".to_string(),
-                        Value::String(control.control_id.clone()),
-                    );
-                    p.insert(
-                        "name".to_string(),
-                        Value::String(control.control_name.clone()),
-                    );
-                    p.insert(
-                        "category".to_string(),
-                        Value::String(format!("{}", control.control_type)),
-                    );
-                    p.insert(
-                        "automated".to_string(),
-                        Value::Bool(matches!(
-                            control.control_type,
-                            datasynth_core::models::ControlType::Monitoring
-                        )),
                     );
                     p.insert(
                         "coso_component".to_string(),
@@ -1153,10 +1117,6 @@ impl HypergraphBuilder {
                     p.insert(
                         "company_code".to_string(),
                         Value::String(employee.company_code.clone()),
-                    );
-                    p.insert(
-                        "fullName".to_string(),
-                        Value::String(employee.display_name.clone()),
                     );
                     p.insert("email".to_string(), Value::String(employee.email.clone()));
                     p.insert(
@@ -2254,7 +2214,6 @@ impl HypergraphBuilder {
                     );
                     p.insert("status".into(), Value::String(format!("{:?}", txn.status)));
                     if txn.is_suspicious {
-                        p.insert("isAnomalous".into(), Value::Bool(true));
                         p.insert("is_suspicious".into(), Value::Bool(true));
                         if let Some(ref reason) = txn.suspicion_reason {
                             p.insert(
@@ -2457,44 +2416,10 @@ impl HypergraphBuilder {
                 label: format!("ARISK {}", r.risk_ref),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert("status".into(), Value::String("active".into()));
                     p.insert("risk_ref".into(), Value::String(r.risk_ref.clone()));
-                    p.insert("name".into(), Value::String(r.risk_ref.clone()));
-                    p.insert("description".into(), Value::String(r.description.clone()));
-                    p.insert(
-                        "category".into(),
-                        Value::String(format!("{:?}", r.risk_category)),
-                    );
                     p.insert(
                         "account_or_process".into(),
                         Value::String(r.account_or_process.clone()),
-                    );
-                    // Risk levels as lowercase strings for dashboard consumption
-                    let inherent = match r.inherent_risk {
-                        datasynth_core::models::audit::RiskLevel::Low => "low",
-                        datasynth_core::models::audit::RiskLevel::Medium => "medium",
-                        datasynth_core::models::audit::RiskLevel::High => "high",
-                        datasynth_core::models::audit::RiskLevel::Significant => "critical",
-                    };
-                    let control = match r.control_risk {
-                        datasynth_core::models::audit::RiskLevel::Low => "low",
-                        datasynth_core::models::audit::RiskLevel::Medium => "medium",
-                        datasynth_core::models::audit::RiskLevel::High => "high",
-                        datasynth_core::models::audit::RiskLevel::Significant => "critical",
-                    };
-                    p.insert("inherentImpact".into(), Value::String(inherent.into()));
-                    p.insert("inherentLikelihood".into(), Value::String(inherent.into()));
-                    p.insert("residualImpact".into(), Value::String(control.into()));
-                    p.insert("residualLikelihood".into(), Value::String(control.into()));
-                    p.insert(
-                        "riskScore".into(),
-                        serde_json::json!(r.inherent_risk.score() as f64 * 25.0),
-                    );
-                    p.insert("owner".into(), Value::String(r.assessed_by.clone()));
-                    p.insert("isSignificant".into(), Value::Bool(r.is_significant_risk));
-                    p.insert(
-                        "is_significant_risk".into(),
-                        Value::Bool(r.is_significant_risk),
                     );
                     p.insert(
                         "response_nature".into(),
