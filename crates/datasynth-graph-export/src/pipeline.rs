@@ -59,8 +59,14 @@ impl GraphExportPipeline {
             pipeline.property_serializers.push(serializer);
         }
 
-        // Stages 2-4: Node synthesizers, edge synthesizers, post-processors
-        // will be registered as they are implemented in Tasks 9-13.
+        // Stage 2: Node synthesizers — will be registered in Task 12.
+
+        // Stage 3: Edge synthesizers (Task 10)
+        for synthesizer in crate::edges::all_synthesizers() {
+            pipeline.edge_synthesizers.push(synthesizer);
+        }
+
+        // Stage 4: Post-processors — will be registered in Task 13.
 
         pipeline
     }
