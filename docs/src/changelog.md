@@ -4,6 +4,22 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/Sy
 
 ## Recent Releases
 
+### [1.2.0] - 2026-03-15
+
+**Unified Graph Export Pipeline & Audit Procedures**
+
+- **`datasynth-graph-export` crate**: New standalone crate with budget-managed, topologically-sorted export pipeline replacing the monolithic adapter pattern
+- **30 property serializers**: Typed extraction for all domain models (accounting, P2P, O2C, S2C, H2R, MFG, audit, banking, controls, risk)
+- **13 node synthesizers**: AML alerts, collusion rings, compliance, ESG, intercompany, KYC, OCEL events, projects, red flags, subledger recon, tax, temporal events, treasury
+- **10 edge synthesizer domains**: Accounting, audit trail, banking, document chain, entity relationships, H2R, MFG, process sequence, risk-control, S2C
+- **Audit procedure models & generators**: ISA 505 confirmations, ISA 330/530 procedure steps & samples, ISA 520/610 analytical procedures & internal audit, ISA 550 related parties
+- **Post-processors**: EffectiveControlCount, AnomalyFlag, RedFlag, DuplicateEdge passes
+- **OCEL exporter**: Process mining export from graph structure
+- **Budget rebalancing API**: Enforced phase ordering (audit before banking) with configurable node/edge budgets
+- **8 new graph builder domains**: Tax, treasury, ESG, project, intercompany, temporal, AML, KYC
+- **Core model enhancements**: Risk linkage on InternalControl, continuous risk scores on RiskAssessment, DocumentRef enum on JournalEntry
+- Integration tests for full pipeline, budget enforcement, property serializers, and edge synthesizers
+
 ### [1.1.0] - 2026-03-09
 
 **Compliance & Regulations Framework**

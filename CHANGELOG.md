@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-15
+
+### Added
+- **`datasynth-graph-export` crate** — New standalone crate for unified graph export pipeline, replacing the monolithic adapter pattern
+  - **Pipeline orchestrator**: Budget-managed, topologically-sorted export pipeline with phase ordering (audit before banking)
+  - **30 property serializers**: Typed property extraction for all domain models — accounting, P2P, O2C, S2C, H2R, manufacturing, audit, banking, controls, and risk
+  - **13 node synthesizers**: Adapter-originated entity types including AML alerts, collusion rings, compliance, ESG, intercompany, KYC profiles, OCEL events, projects, red flags, subledger reconciliation, tax, temporal events, and treasury
+  - **10 edge synthesizer domains**: Accounting, audit trail, banking, document chain, entity relationships, H2R, manufacturing, process sequence, risk-control, and S2C with topological ordering
+  - **Audit procedure edge synthesizer**: 15 edge types for ISA-based audit procedure linking
+  - **Audit procedure node synthesizer**: 9 node types with property serializers for procedure steps, samples, confirmations, and analytical results
+  - **Post-processors**: EffectiveControlCount, AnomalyFlag, RedFlag, and DuplicateEdge post-processing passes
+  - **OCEL exporter**: Process mining export from graph structure
+  - **Budget manager**: Configurable node/edge budgets with rebalancing API and enforcement
+  - **IdMap**: Collision-free ID mapping between domain UUIDs and graph node indices
+  - **Config schema**: Full `GraphExportConfig` with per-domain enable/disable, budget limits, and output format selection
+- **Audit procedure models** (`datasynth-core`)
+  - `ExternalConfirmation` and `ConfirmationResponse` (ISA 505)
+  - `AuditProcedureStep` and `AuditSample` (ISA 330/530)
+  - `AnalyticalProcedureResult`, `InternalAuditFunction`, `InternalAuditReport` (ISA 520/610)
+  - `RelatedParty` and `RelatedPartyTransaction` (ISA 550)
+  - `EvidenceStatus` and `CustomerStatus` enums
+- **Audit procedure generators** (`datasynth-generators`)
+  - `ConfirmationGenerator` (ISA 505)
+  - `ProcedureStepGenerator`, `SampleGenerator`, `AnalyticalProcedureGenerator` (ISA 330/530/520)
+  - `InternalAuditGenerator` and `RelatedPartyGenerator` (ISA 610/550)
+- **Runtime integration**: 9 new audit entity generators wired into `AuditSnapshot` and orchestrator
+- **Hypergraph builder**: 9 audit procedure entity types and 15 edge types added
+- **Graph builder**: 8 new domain builder methods (tax, treasury, ESG, project, intercompany, temporal, AML, KYC)
+- **Budget rebalancing API** with enforced phase ordering (audit before banking)
+- **Core model enhancements**:
+  - Relationship fields on `AuditFinding`, `DocumentRef` enum, and approval tracking on `JournalEntry`
+  - Test history, effectiveness metrics, and risk linkage on `InternalControl`
+  - Continuous risk scores, risk names, and `RiskStatus` on `RiskAssessment`
+- Integration tests: full pipeline tests, budget enforcement, property serializer coverage, edge synthesizer tests
+- Document FK population in P2P/O2C chains with `created_by_employee_id`
+
+### Changed
+- Graph entity naming uses snake_case; dates serialized as RFC 3339
+
+### Fixed
+- Hardcoded status strings in graph export replaced with `serde_json::to_value()`
+- Dashboard-style camelCase properties removed from HypergraphBuilder
+
 ## [1.1.0] - 2026-03-10
 
 ### Added

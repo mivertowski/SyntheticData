@@ -23,7 +23,7 @@ exclude = ["fuzz"]
 # Root package for workspace-level benchmarks
 [package]
 name = "datasynth-workspace"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 publish = false
 
@@ -43,7 +43,7 @@ tempfile = { workspace = true }
 serde_json = { workspace = true }
 
 [workspace.package]
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 license = "Apache-2.0"
 rust-version = "1.88"
