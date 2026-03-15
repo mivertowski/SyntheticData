@@ -10,8 +10,6 @@ DataSynth generates statistically realistic, fully interconnected enterprise fin
 
 All generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
 
-**Developed by Michael Ivertowski, Zurich, Switzerland**
-
 ---
 
 ## Table of Contents
