@@ -176,7 +176,7 @@ axum-server = { version = "0.8", features = ["tls-rustls"] }
 
 # Testing
 proptest = "1.5"
-tempfile = "3.26"
+tempfile = "3.27"
 assert_cmd = "2.0"
 predicates = "3.0"
 
