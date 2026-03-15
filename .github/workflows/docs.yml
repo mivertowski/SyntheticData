@@ -62,6 +62,9 @@ jobs:
           cd docs
           mdbook build
 
+      - name: Exclude graph-export (requires private sibling repo)
+        run: sed -i '/"crates\/datasynth-graph-export",/d' Cargo.toml
+
       - name: Generate Rust API documentation
         run: |
           # Exclude datasynth-ui (Tauri app requires GTK system libraries)

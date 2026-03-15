@@ -78,6 +78,10 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
+      - name: Exclude graph-export (requires private sibling repo)
+        run: sed -i''"" '/"crates\/datasynth-graph-export",/d' Cargo.toml
+        shell: bash
+
       - name: Install cross
         if: matrix.cross
         run: cargo install cross --locked

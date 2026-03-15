@@ -25,6 +25,9 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
 
+      - name: Exclude graph-export (requires private sibling repo)
+        run: sed -i '/"crates\/datasynth-graph-export",/d' Cargo.toml
+
       - name: Run benchmarks
         run: cargo bench --bench generation_throughput --bench distribution_sampling
 
