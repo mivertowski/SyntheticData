@@ -180,7 +180,7 @@ To propose new features:
 Priorities are influenced by user feedback. Please share your use cases and requirements:
 
 - GitHub Issues: Feature requests and bug reports
-- Email: [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com)
+- GitHub: [Issues](https://github.com/mivertowski/SyntheticData/issues)
 
 ## See Also
 

@@ -10,7 +10,7 @@ DataSynth generates statistically realistic, fully interconnected enterprise fin
 
 All generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
 
-**Developed by [Ernst & Young Ltd.](https://www.ey.com/ch), Zurich, Switzerland**
+**Developed by Michael Ivertowski, Zurich, Switzerland**
 
 ---
 
@@ -520,7 +520,7 @@ Features include Rényi DP and zCDP composition accounting, privacy budget manag
 
 ## License
 
-Copyright 2024–2026 Michael Ivertowski, Ernst & Young Ltd., Zurich, Switzerland
+Copyright 2024–2026 Michael Ivertowski
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
@@ -528,7 +528,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for detai
 
 ## Support
 
-Commercial support, custom development, and enterprise licensing are available. Contact [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com).
+Commercial support, custom development, and enterprise licensing are available. Open an issue on [GitHub](https://github.com/mivertowski/SyntheticData/issues).
 
 ---
 

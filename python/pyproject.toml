@@ -10,10 +10,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [
-    { name = "EY ASU RnD", email = "michael.ivertowski@ch.ey.com" }
+    { name = "Michael Ivertowski" }
 ]
 maintainers = [
-    { name = "EY ASU RnD", email = "michael.ivertowski@ch.ey.com" }
+    { name = "Michael Ivertowski" }
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
