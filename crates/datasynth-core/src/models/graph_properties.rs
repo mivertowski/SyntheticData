@@ -99,7 +99,7 @@ pub fn camel_to_snake(s: &str) -> String {
             // - previous char is lowercase, OR next char is lowercase (for "XMLParser" → "xml_parser")
             if i > 0 {
                 let prev_lower = chars[i - 1].is_lowercase();
-                let next_lower = chars.get(i + 1).map_or(false, |nc| nc.is_lowercase());
+                let next_lower = chars.get(i + 1).is_some_and(|nc| nc.is_lowercase());
                 if prev_lower || (next_lower && chars[i - 1].is_uppercase()) {
                     result.push('_');
                 }

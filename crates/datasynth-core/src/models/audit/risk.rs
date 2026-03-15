@@ -17,10 +17,11 @@ use super::workpaper::Assertion;
 ///
 /// Distinct from [`RiskReviewStatus`] which tracks the *review workflow*
 /// (Draft/PendingReview/Approved). `RiskStatus` tracks the *risk lifecycle state*.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RiskStatus {
     /// Risk is active and requires monitoring/mitigation
+    #[default]
     Active,
     /// Risk has been mitigated by controls
     Mitigated,
@@ -28,12 +29,6 @@ pub enum RiskStatus {
     Accepted,
     /// Risk is closed (no longer applicable)
     Closed,
-}
-
-impl Default for RiskStatus {
-    fn default() -> Self {
-        Self::Active
-    }
 }
 
 /// Derive a continuous score in `[lo, hi]` from a [`RiskLevel`] enum,
