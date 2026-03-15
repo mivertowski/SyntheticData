@@ -1,6 +1,6 @@
 [book]
 title = "DataSynth Documentation"
-authors = ["Michael Ivertowski", "Ernst & Young Ltd."]
+authors = ["Michael Ivertowski"]
 description = "Professional documentation for DataSynth - High-performance synthetic enterprise financial data generator"
 language = "en"
 src = "src"

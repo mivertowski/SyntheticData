@@ -21,7 +21,7 @@ Set up your local development environment for DataSynth.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/EY-ASU-RnD/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 ```
 

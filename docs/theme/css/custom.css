@@ -1,5 +1,5 @@
 /* ============================================================
-   DataSynth Documentation — EY Brand Design System
+   DataSynth Documentation — Design System
    Aesthetic: Swiss Precision × Financial Authority
    ============================================================ */
 
@@ -8,14 +8,14 @@
 
 /* --- Design Tokens --- */
 :root {
-    /* EY Brand */
-    --ey-yellow: #FFE600;
-    --ey-yellow-muted: #FFE60026;
-    --ey-yellow-glow: #FFE60018;
-    --ey-dark: #2E2E38;
-    --ey-gray: #747480;
-    --ey-light-gray: #F6F6FA;
-    --ey-white: #FFFFFF;
+    /* Brand */
+    --ds-yellow: #FFE600;
+    --ds-yellow-muted: #FFE60026;
+    --ds-yellow-glow: #FFE60018;
+    --ds-dark: #2E2E38;
+    --ds-gray: #747480;
+    --ds-light-gray: #F6F6FA;
+    --ds-white: #FFFFFF;
 
     /* Typography */
     --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -54,24 +54,24 @@
     --fg-muted: #5A5A68;
     --fg-subtle: #9090A0;
     --sidebar-bg: #F0F0F5;
-    --sidebar-fg: var(--ey-dark);
-    --sidebar-active: var(--ey-dark);
-    --sidebar-active-bg: var(--ey-yellow);
+    --sidebar-fg: var(--ds-dark);
+    --sidebar-active: var(--ds-dark);
+    --sidebar-active-bg: var(--ds-yellow);
     --links: #1A4FD6;
     --links-hover: #0D38A8;
     --inline-code-color: #C7254E;
     --inline-code-bg: #F3F0F8;
-    --theme-popup-bg: var(--ey-white);
+    --theme-popup-bg: var(--ds-white);
     --theme-popup-border: #E0E0E8;
     --theme-hover: #EEEEF4;
     --quote-bg: #F4F4FA;
-    --quote-border: var(--ey-yellow);
+    --quote-border: var(--ds-yellow);
     --table-header-bg: #F0F0F5;
     --table-alternate-bg: #F8F8FC;
     --table-border: #E4E4EC;
     --code-bg: #1B1B2F;
     --code-fg: #E0DEF4;
-    --card-bg: var(--ey-white);
+    --card-bg: var(--ds-white);
     --card-border: #E4E4EC;
     --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
     --divider: #E4E4EC;
@@ -88,7 +88,7 @@
     --sidebar-bg: #12121C;
     --sidebar-fg: #C8C6D8;
     --sidebar-active: #0C0C14;
-    --sidebar-active-bg: var(--ey-yellow);
+    --sidebar-active-bg: var(--ds-yellow);
     --links: #6EA8FF;
     --links-hover: #9DC4FF;
     --inline-code-color: #F0A0C0;
@@ -97,7 +97,7 @@
     --theme-popup-border: #2A2A44;
     --theme-hover: #1A1A2E;
     --quote-bg: #14142A;
-    --quote-border: var(--ey-yellow);
+    --quote-border: var(--ds-yellow);
     --table-header-bg: #16162A;
     --table-alternate-bg: #10101E;
     --table-border: #2A2A44;
@@ -218,7 +218,7 @@
 
 .hero-section {
     background: linear-gradient(160deg, #1C1C28 0%, #14142A 40%, #0C0C18 100%);
-    color: var(--ey-white);
+    color: var(--ds-white);
     padding: var(--space-2xl) var(--space-xl);
     margin: -20px -15px var(--space-xl) -15px;
     text-align: center;
@@ -251,7 +251,7 @@
 }
 
 .hero-section h1 {
-    color: var(--ey-white);
+    color: var(--ds-white);
     font-family: var(--font-body);
     font-size: 3rem;
     font-weight: 700;
@@ -289,14 +289,14 @@
 }
 
 .hero-section .attribution a {
-    color: var(--ey-yellow);
+    color: var(--ds-yellow);
     text-decoration: none;
     border-bottom: 1px solid rgba(255, 230, 0, 0.3);
     transition: border-color var(--duration-fast) var(--ease-in-out);
 }
 
 .hero-section .attribution a:hover {
-    border-bottom-color: var(--ey-yellow);
+    border-bottom-color: var(--ds-yellow);
     text-decoration: none;
 }
 
@@ -410,7 +410,7 @@
     text-transform: uppercase;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--fg-muted);
-    border-bottom: 2px solid var(--ey-yellow);
+    border-bottom: 2px solid var(--ds-yellow);
 }
 
 .content table td {
@@ -433,7 +433,7 @@
 }
 
 .content table tbody tr:hover {
-    background-color: var(--ey-yellow-glow);
+    background-color: var(--ds-yellow-glow);
 }
 
 /* Bold first column — label styling */
@@ -450,7 +450,7 @@
     background-color: var(--code-bg) !important;
     color: var(--code-fg);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-left: 3px solid var(--ey-yellow);
+    border-left: 3px solid var(--ds-yellow);
     border-radius: var(--radius-md);
     padding: var(--space-lg);
     margin: var(--space-lg) 0;
@@ -495,7 +495,7 @@
    ============================================================ */
 
 .content blockquote {
-    border-left: 3px solid var(--ey-yellow);
+    border-left: 3px solid var(--ds-yellow);
     background-color: var(--quote-bg);
     padding: var(--space-md) var(--space-lg);
     margin: var(--space-lg) 0;
@@ -546,7 +546,7 @@
 .warning {
     background-color: #FFFDF0;
     border: 1px solid #F0E0A0;
-    border-left: 3px solid var(--ey-yellow);
+    border-left: 3px solid var(--ds-yellow);
     padding: var(--space-md) var(--space-lg);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     margin: var(--space-lg) 0;
@@ -556,7 +556,7 @@
 .navy .warning {
     background-color: #1E1E10;
     border-color: #3A3A20;
-    border-left-color: var(--ey-yellow);
+    border-left-color: var(--ds-yellow);
 }
 
 .info {
@@ -610,7 +610,7 @@
     font-size: 1.05rem;
     color: var(--fg);
     padding-left: 0.85rem;
-    border-left: 3px solid var(--ey-yellow);
+    border-left: 3px solid var(--ds-yellow);
 }
 
 /* ============================================================
@@ -658,7 +658,7 @@
 .api-link {
     display: inline-block;
     background: var(--accent-gradient);
-    color: var(--ey-dark) !important;
+    color: var(--ds-dark) !important;
     padding: 0.55rem 1.25rem;
     border-radius: var(--radius-md);
     font-weight: 600;
@@ -683,7 +683,7 @@
 .version-badge {
     display: inline-block;
     background: var(--accent-gradient);
-    color: var(--ey-dark);
+    color: var(--ds-dark);
     padding: 0.2rem 0.65rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);
@@ -768,7 +768,7 @@
 }
 
 .menu-bar i:hover {
-    color: var(--ey-yellow);
+    color: var(--ds-yellow);
 }
 
 /* ============================================================
@@ -784,7 +784,7 @@
 }
 
 mark {
-    background-color: var(--ey-yellow-muted);
+    background-color: var(--ds-yellow-muted);
     color: inherit;
     padding: 0.1em 0.2em;
     border-radius: 2px;
@@ -800,7 +800,7 @@ mark {
 }
 
 .nav-chapters:hover {
-    color: var(--ey-yellow);
+    color: var(--ds-yellow);
     opacity: 1;
 }
 
@@ -810,12 +810,12 @@ mark {
 
 @media print {
     .hero-section {
-        background: var(--ey-light-gray);
-        color: var(--ey-dark);
+        background: var(--ds-light-gray);
+        color: var(--ds-dark);
     }
 
     .hero-section h1 {
-        color: var(--ey-dark);
+        color: var(--ds-dark);
     }
 
     .hero-section::before,
@@ -824,7 +824,7 @@ mark {
     }
 
     .content pre {
-        border-left-color: var(--ey-dark);
+        border-left-color: var(--ds-dark);
         box-shadow: none;
     }
 

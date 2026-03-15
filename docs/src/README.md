@@ -12,7 +12,7 @@
 
 </div>
 
-<p class="attribution">Developed by <a href="https://www.ey.com/ch">Ernst & Young Ltd.</a>, Zurich, Switzerland</p>
+<p class="attribution">Developed by Michael Ivertowski, Zurich, Switzerland</p>
 
 </div>
 
@@ -185,13 +185,13 @@ datasynth-test-utils     Test utilities, fixtures, mocks
 
 ## License
 
-Copyright 2024-2026 Michael Ivertowski, Ernst & Young Ltd., Zurich, Switzerland
+Copyright 2024-2026 Michael Ivertowski
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/mivertowski/SyntheticData/blob/main/LICENSE) for details.
 
 ## Support
 
-Commercial support, custom development, and enterprise licensing are available upon request. Please contact the author at [michael.ivertowski@ch.ey.com](mailto:michael.ivertowski@ch.ey.com) for inquiries.
+Commercial support, custom development, and enterprise licensing are available upon request. Open an issue on [GitHub](https://github.com/mivertowski/SyntheticData/issues).
 
 ---
 
