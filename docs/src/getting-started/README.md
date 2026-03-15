@@ -20,7 +20,7 @@ Before you begin, ensure you have:
 
 ```bash
 # Clone and build
-git clone https://github.com/ey-asu-rnd/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release
 

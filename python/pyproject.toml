@@ -70,11 +70,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ey-asu-rnd/SyntheticData"
-Documentation = "https://ey-asu-rnd.github.io/SyntheticData/"
-Repository = "https://github.com/ey-asu-rnd/SyntheticData"
-Changelog = "https://github.com/ey-asu-rnd/SyntheticData/blob/main/CHANGELOG.md"
-Issues = "https://github.com/ey-asu-rnd/SyntheticData/issues"
+Homepage = "https://github.com/mivertowski/SyntheticData"
+Documentation = "https://mivertowski.github.io/SyntheticData/"
+Repository = "https://github.com/mivertowski/SyntheticData"
+Changelog = "https://github.com/mivertowski/SyntheticData/blob/main/CHANGELOG.md"
+Issues = "https://github.com/mivertowski/SyntheticData/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

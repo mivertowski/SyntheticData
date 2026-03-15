@@ -11,7 +11,7 @@ edition = "2021"
 [output.html]
 default-theme = "light"
 preferred-dark-theme = "navy"
-git-repository-url = "https://github.com/ey-asu-rnd/SyntheticData"
+git-repository-url = "https://github.com/mivertowski/SyntheticData"
 site-url = "/SyntheticData/"
 additional-css = ["theme/css/custom.css"]
 additional-js = []

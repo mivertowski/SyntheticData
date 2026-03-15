@@ -14,7 +14,7 @@ This guide covers installing and running DataSynth directly on a Linux server us
 
 ```bash
 # Download the latest release
-curl -L https://github.com/ey-asu-rnd/SyntheticData/releases/latest/download/datasynth-server-linux-x86_64.tar.gz \
+curl -L https://github.com/mivertowski/SyntheticData/releases/latest/download/datasynth-server-linux-x86_64.tar.gz \
   -o datasynth-server.tar.gz
 
 # Extract
@@ -41,7 +41,7 @@ sudo apt-get install -y protobuf-compiler   # Debian/Ubuntu
 sudo dnf install -y protobuf-compiler       # RHEL/Fedora
 
 # Clone and build
-git clone https://github.com/ey-asu-rnd/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release -p datasynth-server -p datasynth-cli
 
@@ -129,7 +129,7 @@ sudo systemctl daemon-reload
 ```ini
 [Unit]
 Description=DataSynth Synthetic Data Server
-Documentation=https://github.com/ey-asu-rnd/SyntheticData
+Documentation=https://github.com/mivertowski/SyntheticData
 After=network-online.target
 Wants=network-online.target
 
