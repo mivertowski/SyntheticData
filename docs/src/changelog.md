@@ -1,6 +1,6 @@
 # Changelog
 
-For the full changelog, see the [CHANGELOG.md](https://github.com/ey-asu-rnd/SyntheticData/blob/main/CHANGELOG.md) in the repository root.
+For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/SyntheticData/blob/main/CHANGELOG.md) in the repository root.
 
 ## Recent Releases
 

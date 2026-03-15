@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
-[![CI](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/ey-asu-rnd/SyntheticData/actions/workflows/ci.yml)
+[![CI](https://github.com/mivertowski/SyntheticData/actions/workflows/ci.yml/badge.svg)](https://github.com/mivertowski/SyntheticData/actions/workflows/ci.yml)
 
 **High-performance synthetic enterprise data generation for ML, audit analytics, and system testing.**
 
@@ -37,7 +37,7 @@ All generated data respects accounting identities (debits = credits, Assets = Li
 
 ```bash
 # Build from source
-git clone https://github.com/ey-asu-rnd/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release
 
@@ -224,7 +224,7 @@ datasynth-test-utils     Test utilities, fixtures, mocks
 ### From Source
 
 ```bash
-git clone https://github.com/ey-asu-rnd/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release
 ```

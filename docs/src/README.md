@@ -6,8 +6,8 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ey-asu-rnd/SyntheticData)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mivertowski/SyntheticData)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/mivertowski/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
 </div>
@@ -134,7 +134,7 @@ DataSynth covers the full enterprise process landscape:
 
 ```bash
 # Install from source
-git clone https://github.com/ey-asu-rnd/SyntheticData.git
+git clone https://github.com/mivertowski/SyntheticData.git
 cd SyntheticData
 cargo build --release
 
@@ -187,7 +187,7 @@ datasynth-test-utils     Test utilities, fixtures, mocks
 
 Copyright 2024-2026 Michael Ivertowski, Ernst & Young Ltd., Zurich, Switzerland
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/ey-asu-rnd/SyntheticData/blob/main/LICENSE) for details.
+Licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/mivertowski/SyntheticData/blob/main/LICENSE) for details.
 
 ## Support
 

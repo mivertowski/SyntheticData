@@ -1,6 +1,6 @@
 [Unit]
 Description=DataSynth Synthetic Data Server
-Documentation=https://github.com/ey-asu-rnd/SyntheticData
+Documentation=https://github.com/mivertowski/SyntheticData
 After=network-online.target
 Wants=network-online.target
 
