@@ -481,7 +481,8 @@ fn add_all_ordered_inserts_audit_before_banking() {
         first_audit_idx < first_bank_txn_idx,
         "Audit nodes (idx={}) must appear before bank transactions (idx={}) \
          due to phase ordering",
-        first_audit_idx, first_bank_txn_idx
+        first_audit_idx,
+        first_bank_txn_idx
     );
 }
 
@@ -623,7 +624,8 @@ fn add_all_ordered_produces_valid_metadata() {
         assert!(
             node.properties.contains_key("process_family"),
             "Node {} ({}) missing process_family tag",
-            node.id, node.entity_type
+            node.id,
+            node.entity_type
         );
     }
 }

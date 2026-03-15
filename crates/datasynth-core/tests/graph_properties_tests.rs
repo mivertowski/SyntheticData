@@ -980,7 +980,10 @@ fn to_string_value_for_bool() {
 #[test]
 fn to_string_value_for_date() {
     let d = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
-    assert_eq!(GraphPropertyValue::Date(d).to_string_value(), "2024-01-15T00:00:00Z");
+    assert_eq!(
+        GraphPropertyValue::Date(d).to_string_value(),
+        "2024-01-15T00:00:00Z"
+    );
 }
 
 #[test]

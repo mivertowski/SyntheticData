@@ -47,12 +47,11 @@ impl NodeSynthesizer for AmlAlertNodeSynthesizer {
             props.insert("alertId".into(), serde_json::json!(external_id));
             props.insert(
                 "alertType".into(),
-                serde_json::json!(
-                    txn.suspicion_reason
-                        .as_ref()
-                        .map(|r| format!("{r:?}"))
-                        .unwrap_or_else(|| "Unknown".to_string())
-                ),
+                serde_json::json!(txn
+                    .suspicion_reason
+                    .as_ref()
+                    .map(|r| format!("{r:?}"))
+                    .unwrap_or_else(|| "Unknown".to_string())),
             );
             props.insert(
                 "severity".into(),

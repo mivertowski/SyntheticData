@@ -48,10 +48,7 @@ impl NodeSynthesizer for ComplianceNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert(
-                "standardId".into(),
-                serde_json::json!(std_rec.standard_id),
-            );
+            props.insert("standardId".into(), serde_json::json!(std_rec.standard_id));
             props.insert("body".into(), serde_json::json!(std_rec.body));
             props.insert("number".into(), serde_json::json!(std_rec.number));
             props.insert("title".into(), serde_json::json!(std_rec.title));
@@ -89,10 +86,7 @@ impl NodeSynthesizer for ComplianceNodeSynthesizer {
                 serde_json::json!(finding.finding_id.to_string()),
             );
             props.insert("title".into(), serde_json::json!(finding.title));
-            props.insert(
-                "description".into(),
-                serde_json::json!(finding.description),
-            );
+            props.insert("description".into(), serde_json::json!(finding.description));
             props.insert(
                 "severity".into(),
                 serde_json::json!(format!("{:?}", finding.severity)),
@@ -144,10 +138,7 @@ impl NodeSynthesizer for ComplianceNodeSynthesizer {
                 "filingType".into(),
                 serde_json::json!(format!("{:?}", filing.filing_type)),
             );
-            props.insert(
-                "companyCode".into(),
-                serde_json::json!(filing.company_code),
-            );
+            props.insert("companyCode".into(), serde_json::json!(filing.company_code));
             props.insert(
                 "jurisdiction".into(),
                 serde_json::json!(filing.jurisdiction),
@@ -202,22 +193,13 @@ impl NodeSynthesizer for ComplianceNodeSynthesizer {
                 "procedureType".into(),
                 serde_json::json!(proc_rec.procedure_type),
             );
-            props.insert(
-                "standardId".into(),
-                serde_json::json!(proc_rec.standard_id),
-            );
+            props.insert("standardId".into(), serde_json::json!(proc_rec.standard_id));
             props.insert(
                 "samplingMethod".into(),
                 serde_json::json!(proc_rec.sampling_method),
             );
-            props.insert(
-                "sampleSize".into(),
-                serde_json::json!(proc_rec.sample_size),
-            );
-            props.insert(
-                "nodeTypeName".into(),
-                serde_json::json!("audit_procedure"),
-            );
+            props.insert("sampleSize".into(), serde_json::json!(proc_rec.sample_size));
+            props.insert("nodeTypeName".into(), serde_json::json!("audit_procedure"));
 
             nodes.push(ExportNode {
                 id: Some(numeric_id),
@@ -229,10 +211,7 @@ impl NodeSynthesizer for ComplianceNodeSynthesizer {
             });
         }
 
-        debug!(
-            "ComplianceNodeSynthesizer: produced {} nodes",
-            nodes.len()
-        );
+        debug!("ComplianceNodeSynthesizer: produced {} nodes", nodes.len());
         Ok(nodes)
     }
 }

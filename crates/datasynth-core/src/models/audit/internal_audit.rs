@@ -469,13 +469,20 @@ mod tests {
 
     #[test]
     fn test_ia_report_status_serde() {
-        let variants = [IaReportStatus::Draft, IaReportStatus::Final, IaReportStatus::Retracted];
+        let variants = [
+            IaReportStatus::Draft,
+            IaReportStatus::Final,
+            IaReportStatus::Retracted,
+        ];
         for v in variants {
             let json = serde_json::to_string(&v).unwrap();
             let rt: IaReportStatus = serde_json::from_str(&json).unwrap();
             assert_eq!(v, rt);
         }
-        assert_eq!(serde_json::to_string(&IaReportStatus::Final).unwrap(), "\"final\"");
+        assert_eq!(
+            serde_json::to_string(&IaReportStatus::Final).unwrap(),
+            "\"final\""
+        );
     }
 
     #[test]

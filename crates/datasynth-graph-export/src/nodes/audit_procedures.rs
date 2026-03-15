@@ -57,8 +57,14 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert("confirmationRef".into(), serde_json::json!(conf.confirmation_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("external_confirmation"));
+            props.insert(
+                "confirmationRef".into(),
+                serde_json::json!(conf.confirmation_ref),
+            );
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("external_confirmation"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -78,7 +84,10 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("responseRef".into(), serde_json::json!(resp.response_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("confirmation_response"));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("confirmation_response"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -98,7 +107,10 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("stepRef".into(), serde_json::json!(step.step_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("audit_procedure_step"));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("audit_procedure_step"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -138,7 +150,10 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("resultRef".into(), serde_json::json!(ap.result_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("analytical_procedure_result"));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("analytical_procedure_result"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -158,7 +173,10 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("functionRef".into(), serde_json::json!(iaf.function_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("internal_audit_function"));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("internal_audit_function"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -178,7 +196,10 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("reportRef".into(), serde_json::json!(iar.report_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("internal_audit_report"));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("internal_audit_report"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {
@@ -217,8 +238,14 @@ impl NodeSynthesizer for AuditProcedureNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert("transactionRef".into(), serde_json::json!(rpt.transaction_ref));
-            props.insert("nodeTypeName".into(), serde_json::json!("related_party_transaction"));
+            props.insert(
+                "transactionRef".into(),
+                serde_json::json!(rpt.transaction_ref),
+            );
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!("related_party_transaction"),
+            );
             props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
             nodes.push(ExportNode {

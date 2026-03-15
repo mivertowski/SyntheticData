@@ -174,14 +174,8 @@ fn from_ocpm_event_log(
         .iter()
         .map(|obj| {
             let mut properties = serde_json::Map::new();
-            properties.insert(
-                "current_state".into(),
-                serde_json::json!(obj.current_state),
-            );
-            properties.insert(
-                "company_code".into(),
-                serde_json::json!(obj.company_code),
-            );
+            properties.insert("current_state".into(), serde_json::json!(obj.current_state));
+            properties.insert("company_code".into(), serde_json::json!(obj.company_code));
 
             OcelObject {
                 id: obj.external_id.clone(),
@@ -396,9 +390,7 @@ fn from_document_flows(
     let doc = OcelDocument { events, objects };
     let data = serde_json::to_value(&doc)?;
 
-    debug!(
-        "OcelExporter: synthesized {event_count} events from document flows"
-    );
+    debug!("OcelExporter: synthesized {event_count} events from document flows");
 
     Ok(OcelExport { data, event_count })
 }
@@ -427,9 +419,7 @@ fn make_flow_event(
 
 /// Convert a NaiveDate to DateTime<Utc> at midnight.
 fn to_utc(date: chrono::NaiveDate) -> DateTime<Utc> {
-    date.and_hms_opt(0, 0, 0)
-        .unwrap_or_default()
-        .and_utc()
+    date.and_hms_opt(0, 0, 0).unwrap_or_default().and_utc()
 }
 
 // ──────────────────────────── Tests ─────────────────────────────

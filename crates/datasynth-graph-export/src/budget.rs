@@ -68,20 +68,14 @@ impl<'a> BudgetManager<'a> {
                 warnings.add(
                     "budget",
                     WarningSeverity::Medium,
-                    format!(
-                        "Layer {} trimmed from {original} to {budget} nodes",
-                        i + 1
-                    ),
+                    format!("Layer {} trimmed from {original} to {budget} nodes", i + 1),
                 );
             }
             kept.append(bucket);
         }
 
         // Clean up id_map: retain only IDs present in kept nodes
-        let kept_ids: HashSet<u64> = kept
-            .iter()
-            .filter_map(|n| n.id)
-            .collect();
+        let kept_ids: HashSet<u64> = kept.iter().filter_map(|n| n.id).collect();
         id_map.retain_nodes(&kept_ids);
 
         let trimmed = total - kept.len();
@@ -183,9 +177,9 @@ impl<'a> BudgetManager<'a> {
 
         let mut result = Vec::with_capacity(max_edges);
         for (_edge_type, mut type_edges) in by_type {
-            let proportion =
-                (type_edges.len() as f64 / original_count as f64 * remaining_budget as f64).round()
-                    as usize;
+            let proportion = (type_edges.len() as f64 / original_count as f64
+                * remaining_budget as f64)
+                .round() as usize;
             let keep = min_per_type + proportion;
             let keep = keep.min(type_edges.len());
             type_edges.truncate(keep);
@@ -347,7 +341,7 @@ mod tests {
         let mut warnings = ExportWarnings::new();
 
         let edges = vec![
-            make_edge(1, 2, 60), // valid
+            make_edge(1, 2, 60),  // valid
             make_edge(1, 99, 60), // dangling target
             make_edge(99, 2, 60), // dangling source
         ];

@@ -53,6 +53,6 @@ pub use traits::{
     PropertySerializer, SerializationContext,
 };
 pub use types::{
-    ExportEdge, ExportMetadata, ExportNode, GraphExportResult, GroundTruthRecord,
-    HyperedgeExport, NodeFeatureVector, OcelExport,
+    ExportEdge, ExportMetadata, ExportNode, GraphExportResult, GroundTruthRecord, HyperedgeExport,
+    NodeFeatureVector, OcelExport,
 };

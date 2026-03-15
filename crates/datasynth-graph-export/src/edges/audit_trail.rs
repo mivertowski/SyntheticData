@@ -328,7 +328,10 @@ impl AuditTrailEdgeSynthesizer {
     ///
     /// Uses `remediation_plan.responsible_party` to link findings to the
     /// employee responsible for remediation.
-    fn synthesize_finding_responsible(&self, ctx: &mut EdgeSynthesisContext<'_>) -> Vec<ExportEdge> {
+    fn synthesize_finding_responsible(
+        &self,
+        ctx: &mut EdgeSynthesisContext<'_>,
+    ) -> Vec<ExportEdge> {
         if !ctx.config.edge_synthesis.people_edges {
             return Vec::new();
         }

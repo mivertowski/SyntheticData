@@ -98,7 +98,10 @@ pub trait EdgeSynthesizer: Send + Sync {
     ///
     /// The implementation should use `ctx.id_map` to resolve string IDs to numeric IDs,
     /// and push warnings to `ctx.warnings` for non-fatal issues.
-    fn synthesize(&self, ctx: &mut EdgeSynthesisContext<'_>) -> Result<Vec<ExportEdge>, ExportError>;
+    fn synthesize(
+        &self,
+        ctx: &mut EdgeSynthesisContext<'_>,
+    ) -> Result<Vec<ExportEdge>, ExportError>;
 }
 
 /// Synthesizes ExportNodes for a domain of entity types.

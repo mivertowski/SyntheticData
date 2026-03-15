@@ -36,11 +36,11 @@ impl PropertySerializer for ControlPropertySerializer {
         let mut props = HashMap::with_capacity(20);
 
         // Identity
-        props.insert("controlId".into(), Value::String(control.control_id.clone()));
         props.insert(
-            "name".into(),
-            Value::String(control.control_name.clone()),
+            "controlId".into(),
+            Value::String(control.control_id.clone()),
         );
+        props.insert("name".into(), Value::String(control.control_name.clone()));
         props.insert(
             "description".into(),
             Value::String(control.description.clone()),
@@ -77,10 +77,7 @@ impl PropertySerializer for ControlPropertySerializer {
             "controlScope".into(),
             serde_json::to_value(&control.control_scope).unwrap_or(Value::Null),
         );
-        props.insert(
-            "objective".into(),
-            Value::String(control.objective.clone()),
-        );
+        props.insert("objective".into(), Value::String(control.objective.clone()));
 
         // Operational
         props.insert(
@@ -105,10 +102,7 @@ impl PropertySerializer for ControlPropertySerializer {
             "effectiveness".into(),
             Value::String(control.effectiveness.to_string()),
         );
-        props.insert(
-            "testCount".into(),
-            Value::Number(control.test_count.into()),
-        );
+        props.insert("testCount".into(), Value::Number(control.test_count.into()));
         props.insert(
             "testResult".into(),
             Value::String(control.test_result.to_string()),

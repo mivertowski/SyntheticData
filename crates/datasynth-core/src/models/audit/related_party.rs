@@ -342,7 +342,10 @@ mod tests {
             let rt: RelatedPartyType = serde_json::from_str(&json).unwrap();
             assert_eq!(v, rt);
         }
-        assert_eq!(serde_json::to_string(&RelatedPartyType::JointVenture).unwrap(), "\"joint_venture\"");
+        assert_eq!(
+            serde_json::to_string(&RelatedPartyType::JointVenture).unwrap(),
+            "\"joint_venture\""
+        );
         assert_eq!(
             serde_json::to_string(&RelatedPartyType::ShareholderSignificant).unwrap(),
             "\"shareholder_significant\""
@@ -425,7 +428,10 @@ mod tests {
             let rt: RptTransactionType = serde_json::from_str(&json).unwrap();
             assert_eq!(v, rt);
         }
-        assert_eq!(serde_json::to_string(&RptTransactionType::Sale).unwrap(), "\"sale\"");
+        assert_eq!(
+            serde_json::to_string(&RptTransactionType::Sale).unwrap(),
+            "\"sale\""
+        );
         assert_eq!(
             serde_json::to_string(&RptTransactionType::ManagementFee).unwrap(),
             "\"management_fee\""
@@ -465,7 +471,11 @@ mod tests {
             RptTransactionType::Other,
         ];
 
-        assert_eq!(all_types.len(), 12, "must have exactly 12 transaction types");
+        assert_eq!(
+            all_types.len(),
+            12,
+            "must have exactly 12 transaction types"
+        );
 
         for txn_type in all_types {
             let rpt = RelatedPartyTransaction::new(

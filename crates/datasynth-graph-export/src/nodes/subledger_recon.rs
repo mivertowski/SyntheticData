@@ -42,10 +42,7 @@ impl NodeSynthesizer for SubledgerReconNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert(
-                "reconId".into(),
-                serde_json::json!(recon.reconciliation_id),
-            );
+            props.insert("reconId".into(), serde_json::json!(recon.reconciliation_id));
             props.insert(
                 "subledger".into(),
                 serde_json::json!(format!("{:?}", recon.subledger_type)),
@@ -67,10 +64,7 @@ impl NodeSynthesizer for SubledgerReconNodeSynthesizer {
                 "status".into(),
                 serde_json::json!(format!("{:?}", recon.status)),
             );
-            props.insert(
-                "companyCode".into(),
-                serde_json::json!(recon.company_code),
-            );
+            props.insert("companyCode".into(), serde_json::json!(recon.company_code));
             props.insert(
                 "asOfDate".into(),
                 serde_json::json!(format!("{}T00:00:00Z", recon.as_of_date)),

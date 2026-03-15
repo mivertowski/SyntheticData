@@ -2359,8 +2359,7 @@ impl EnhancedOrchestrator {
             stats.audit_finding_count = audit_snapshot.findings.len();
             stats.audit_judgment_count = audit_snapshot.judgments.len();
             stats.audit_confirmation_count = audit_snapshot.confirmations.len();
-            stats.audit_confirmation_response_count =
-                audit_snapshot.confirmation_responses.len();
+            stats.audit_confirmation_response_count = audit_snapshot.confirmation_responses.len();
             stats.audit_procedure_step_count = audit_snapshot.procedure_steps.len();
             stats.audit_sample_count = audit_snapshot.samples.len();
             stats.audit_analytical_result_count = audit_snapshot.analytical_results.len();
@@ -2374,13 +2373,20 @@ impl EnhancedOrchestrator {
                  {} findings, {} judgments, {} confirmations, {} procedure steps, {} samples, \
                  {} analytical results, {} IA functions, {} IA reports, {} related parties, \
                  {} RP transactions",
-                stats.audit_engagement_count, stats.audit_workpaper_count,
-                stats.audit_evidence_count, stats.audit_risk_count,
-                stats.audit_finding_count, stats.audit_judgment_count,
-                stats.audit_confirmation_count, stats.audit_procedure_step_count,
-                stats.audit_sample_count, stats.audit_analytical_result_count,
-                stats.audit_ia_function_count, stats.audit_ia_report_count,
-                stats.audit_related_party_count, stats.audit_related_party_transaction_count,
+                stats.audit_engagement_count,
+                stats.audit_workpaper_count,
+                stats.audit_evidence_count,
+                stats.audit_risk_count,
+                stats.audit_finding_count,
+                stats.audit_judgment_count,
+                stats.audit_confirmation_count,
+                stats.audit_procedure_step_count,
+                stats.audit_sample_count,
+                stats.audit_analytical_result_count,
+                stats.audit_ia_function_count,
+                stats.audit_ia_report_count,
+                stats.audit_related_party_count,
+                stats.audit_related_party_transaction_count,
             );
             self.check_resources_with_log("post-audit")?;
             Ok(audit_snapshot)
@@ -7771,11 +7777,8 @@ impl EnhancedOrchestrator {
                 snapshot.judgments.extend(judgments);
 
                 // ISA 505: External confirmations and responses
-                let (confs, resps) = confirmation_gen.generate_confirmations(
-                    &engagement,
-                    &workpapers,
-                    &accounts,
-                );
+                let (confs, resps) =
+                    confirmation_gen.generate_confirmations(&engagement, &workpapers, &accounts);
                 snapshot.confirmations.extend(confs);
                 snapshot.confirmation_responses.extend(resps);
 
@@ -7789,9 +7792,7 @@ impl EnhancedOrchestrator {
                             .iter()
                             .find(|e| e.employee_id == *id)
                             .map(|e| e.display_name.clone())
-                            .unwrap_or_else(|| {
-                                format!("Employee {}", &id[..8.min(id.len())])
-                            });
+                            .unwrap_or_else(|| format!("Employee {}", &id[..8.min(id.len())]));
                         (id.clone(), name)
                     })
                     .collect();
@@ -7802,16 +7803,13 @@ impl EnhancedOrchestrator {
 
                 // ISA 530: Samples per workpaper
                 for wp in &workpapers {
-                    if let Some(sample) =
-                        sample_gen.generate_sample(wp, engagement.engagement_id)
-                    {
+                    if let Some(sample) = sample_gen.generate_sample(wp, engagement.engagement_id) {
                         snapshot.samples.push(sample);
                     }
                 }
 
                 // ISA 520: Analytical procedures
-                let analytical =
-                    analytical_gen.generate_procedures(&engagement, &accounts);
+                let analytical = analytical_gen.generate_procedures(&engagement, &accounts);
                 snapshot.analytical_results.extend(analytical);
 
                 // ISA 610: Internal audit function and reports
@@ -7832,11 +7830,8 @@ impl EnhancedOrchestrator {
                     .iter()
                     .map(|c| c.name.clone())
                     .collect();
-                let (parties, rp_txns) = related_party_gen.generate(
-                    &engagement,
-                    &vendor_names,
-                    &customer_names,
-                );
+                let (parties, rp_txns) =
+                    related_party_gen.generate(&engagement, &vendor_names, &customer_names);
                 snapshot.related_parties.extend(parties);
                 snapshot.related_party_transactions.extend(rp_txns);
 

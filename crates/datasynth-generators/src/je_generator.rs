@@ -227,7 +227,7 @@ impl JournalEntryGenerator {
             persona_errors_enabled: true, // Enable by default for realism
             approval_enabled: true,       // Enable by default for realism
             approval_threshold: rust_decimal::Decimal::new(10000, 0), // $10,000 default threshold
-            sod_violation_rate: 0.10,  // 10% default SOD violation rate
+            sod_violation_rate: 0.10,     // 10% default SOD violation rate
             batch_state: None,
             drift_controller: None,
             // Always provide a basic BusinessDayCalculator so that weekend/holiday
@@ -1765,8 +1765,7 @@ impl JournalEntryGenerator {
                 let creator = entry.header.created_by.clone();
                 entry.header.approved_by = Some(creator);
                 entry.header.sod_violation = true;
-                entry.header.sod_conflict_type =
-                    Some(SodConflictType::PreparerApprover);
+                entry.header.sod_conflict_type = Some(SodConflictType::PreparerApprover);
             }
         }
     }

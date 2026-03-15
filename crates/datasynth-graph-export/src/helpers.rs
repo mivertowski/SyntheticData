@@ -101,10 +101,7 @@ pub fn entity_type_process_family(entity_type: &str) -> Option<&'static str> {
         {
             Some("S2C")
         }
-        s if s.contains("payroll")
-            || s.contains("time_entry")
-            || s.contains("expense_report") =>
-        {
+        s if s.contains("payroll") || s.contains("time_entry") || s.contains("expense_report") => {
             Some("H2R")
         }
         s if s.contains("production")
@@ -122,10 +119,7 @@ pub fn entity_type_process_family(entity_type: &str) -> Option<&'static str> {
         {
             Some("TCM")
         }
-        s if s.contains("project")
-            || s.contains("earned_value")
-            || s.contains("milestone") =>
-        {
+        s if s.contains("project") || s.contains("earned_value") || s.contains("milestone") => {
             Some("PROJECT")
         }
         s if s.contains("emission")
@@ -211,10 +205,7 @@ mod tests {
 
         inject_standard_properties(&mut props, &hg, &PropertyCase::SnakeCase);
 
-        assert_eq!(
-            props.get("process_family"),
-            Some(&serde_json::json!("P2P"))
-        );
+        assert_eq!(props.get("process_family"), Some(&serde_json::json!("P2P")));
         assert_eq!(
             props.get("node_type_name"),
             Some(&serde_json::json!("purchase_order"))

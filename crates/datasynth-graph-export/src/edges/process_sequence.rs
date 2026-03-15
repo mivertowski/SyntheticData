@@ -48,8 +48,7 @@ impl crate::traits::EdgeSynthesizer for ProcessSequenceEdgeSynthesizer {
 
         // Group events by case_id and sort by timestamp within each case.
         // Events without a case_id are skipped (can't determine sequence).
-        let mut cases: HashMap<Uuid, Vec<(usize, chrono::DateTime<chrono::Utc>)>> =
-            HashMap::new();
+        let mut cases: HashMap<Uuid, Vec<(usize, chrono::DateTime<chrono::Utc>)>> = HashMap::new();
         for (idx, event) in events.iter().enumerate() {
             if let Some(case_id) = event.case_id {
                 cases

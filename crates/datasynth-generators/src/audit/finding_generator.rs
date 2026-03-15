@@ -293,10 +293,11 @@ impl FindingGenerator {
         if !engagement_risks.is_empty() {
             // Try to find a risk whose account_or_process matches one of our affected accounts
             let matching_risk = engagement_risks.iter().find(|r| {
-                finding
-                    .accounts_affected
-                    .iter()
-                    .any(|a| r.account_or_process.to_lowercase().contains(&a.to_lowercase()))
+                finding.accounts_affected.iter().any(|a| {
+                    r.account_or_process
+                        .to_lowercase()
+                        .contains(&a.to_lowercase())
+                })
             });
 
             if let Some(risk) = matching_risk {
@@ -974,7 +975,10 @@ mod tests {
         }
 
         // At least one finding should have a related risk from same engagement
-        let with_risk = findings.iter().filter(|f| f.related_risk_id.is_some()).count();
+        let with_risk = findings
+            .iter()
+            .filter(|f| f.related_risk_id.is_some())
+            .count();
         assert!(with_risk > 0, "At least one finding should link to a risk");
     }
 
@@ -1028,7 +1032,7 @@ mod tests {
         let team = vec!["STAFF001".into()];
 
         // Create a workpaper to reference
-        use datasynth_core::models::audit::{WorkpaperSection, Workpaper};
+        use datasynth_core::models::audit::{Workpaper, WorkpaperSection};
         let workpaper = Workpaper::new(
             engagement.engagement_id,
             "WP-001",
@@ -1036,8 +1040,7 @@ mod tests {
             WorkpaperSection::ControlTesting,
         );
 
-        let findings =
-            generator.generate_findings_for_engagement(&engagement, &[workpaper], &team);
+        let findings = generator.generate_findings_for_engagement(&engagement, &[workpaper], &team);
 
         // All findings should have at least one workpaper ref, and workpaper_id should be set
         for finding in &findings {

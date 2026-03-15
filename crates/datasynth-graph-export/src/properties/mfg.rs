@@ -33,14 +33,8 @@ impl PropertySerializer for ProductionOrderPropertySerializer {
         let mut props = HashMap::with_capacity(12);
 
         props.insert("orderId".into(), Value::String(po.order_id.clone()));
-        props.insert(
-            "companyCode".into(),
-            Value::String(po.company_code.clone()),
-        );
-        props.insert(
-            "materialId".into(),
-            Value::String(po.material_id.clone()),
-        );
+        props.insert("companyCode".into(), Value::String(po.company_code.clone()));
+        props.insert("materialId".into(), Value::String(po.material_id.clone()));
         props.insert(
             "materialDescription".into(),
             Value::String(po.material_description.clone()),
@@ -49,10 +43,7 @@ impl PropertySerializer for ProductionOrderPropertySerializer {
             "orderType".into(),
             Value::String(format!("{:?}", po.order_type)),
         );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", po.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", po.status)));
         props.insert(
             "plannedQuantity".into(),
             serde_json::json!(po.planned_quantity),
@@ -61,10 +52,7 @@ impl PropertySerializer for ProductionOrderPropertySerializer {
             "actualQuantity".into(),
             serde_json::json!(po.actual_quantity),
         );
-        props.insert(
-            "scrapQuantity".into(),
-            serde_json::json!(po.scrap_quantity),
-        );
+        props.insert("scrapQuantity".into(), serde_json::json!(po.scrap_quantity));
         props.insert(
             "plannedStart".into(),
             Value::String(po.planned_start.format("%Y-%m-%d").to_string()),
@@ -107,18 +95,12 @@ impl PropertySerializer for QualityInspectionPropertySerializer {
             "inspectionId".into(),
             Value::String(qi.inspection_id.clone()),
         );
-        props.insert(
-            "companyCode".into(),
-            Value::String(qi.company_code.clone()),
-        );
+        props.insert("companyCode".into(), Value::String(qi.company_code.clone()));
         props.insert(
             "inspectionType".into(),
             Value::String(format!("{:?}", qi.inspection_type)),
         );
-        props.insert(
-            "materialId".into(),
-            Value::String(qi.material_id.clone()),
-        );
+        props.insert("materialId".into(), Value::String(qi.material_id.clone()));
         props.insert(
             "materialDescription".into(),
             Value::String(qi.material_description.clone()),
@@ -129,18 +111,12 @@ impl PropertySerializer for QualityInspectionPropertySerializer {
         );
         props.insert("lotSize".into(), serde_json::json!(qi.lot_size));
         props.insert("sampleSize".into(), serde_json::json!(qi.sample_size));
-        props.insert(
-            "defectsFound".into(),
-            Value::Number(qi.defect_count.into()),
-        );
+        props.insert("defectsFound".into(), Value::Number(qi.defect_count.into()));
         props.insert(
             "referenceType".into(),
             Value::String(qi.reference_type.clone()),
         );
-        props.insert(
-            "referenceId".into(),
-            Value::String(qi.reference_id.clone()),
-        );
+        props.insert("referenceId".into(), Value::String(qi.reference_id.clone()));
         props.insert("type".into(), Value::String("quality_inspection".into()));
 
         Some(props)
@@ -172,22 +148,13 @@ impl PropertySerializer for CycleCountPropertySerializer {
         let mut props = HashMap::with_capacity(10);
 
         props.insert("countId".into(), Value::String(cc.count_id.clone()));
-        props.insert(
-            "companyCode".into(),
-            Value::String(cc.company_code.clone()),
-        );
-        props.insert(
-            "warehouseId".into(),
-            Value::String(cc.warehouse_id.clone()),
-        );
+        props.insert("companyCode".into(), Value::String(cc.company_code.clone()));
+        props.insert("warehouseId".into(), Value::String(cc.warehouse_id.clone()));
         props.insert(
             "countDate".into(),
             Value::String(cc.count_date.format("%Y-%m-%d").to_string()),
         );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", cc.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", cc.status)));
         props.insert(
             "totalItemsCounted".into(),
             Value::Number(cc.total_items_counted.into()),
@@ -196,10 +163,7 @@ impl PropertySerializer for CycleCountPropertySerializer {
             "totalVariances".into(),
             Value::Number(cc.total_variances.into()),
         );
-        props.insert(
-            "varianceRate".into(),
-            serde_json::json!(cc.variance_rate),
-        );
+        props.insert("varianceRate".into(), serde_json::json!(cc.variance_rate));
         props.insert("type".into(), Value::String("cycle_count".into()));
 
         Some(props)

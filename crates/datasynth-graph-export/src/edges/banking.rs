@@ -58,10 +58,7 @@ impl crate::traits::EdgeSynthesizer for BankingEdgeSynthesizer {
 
 impl BankingEdgeSynthesizer {
     /// BANK_ACCOUNT_OWNER (code 80): bank_account -> customer.
-    fn synthesize_bank_account_owner(
-        &self,
-        ctx: &mut EdgeSynthesisContext<'_>,
-    ) -> Vec<ExportEdge> {
+    fn synthesize_bank_account_owner(&self, ctx: &mut EdgeSynthesisContext<'_>) -> Vec<ExportEdge> {
         let accounts = &ctx.ds_result.banking.accounts;
         let mut edges = Vec::new();
 

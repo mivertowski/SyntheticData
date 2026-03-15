@@ -32,10 +32,7 @@ impl PropertySerializer for SourcingProjectPropertySerializer {
 
         let mut props = HashMap::with_capacity(10);
 
-        props.insert(
-            "projectId".into(),
-            Value::String(proj.project_id.clone()),
-        );
+        props.insert("projectId".into(), Value::String(proj.project_id.clone()));
         props.insert(
             "projectName".into(),
             Value::String(proj.project_name.clone()),
@@ -44,10 +41,7 @@ impl PropertySerializer for SourcingProjectPropertySerializer {
             "projectType".into(),
             Value::String(format!("{:?}", proj.project_type)),
         );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", proj.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", proj.status)));
         props.insert(
             "estimatedAnnualSpend".into(),
             serde_json::json!(proj.estimated_annual_spend),
@@ -97,10 +91,7 @@ impl PropertySerializer for RfxEventPropertySerializer {
             Value::String(format!("{:?}", rfx.rfx_type)),
         );
         props.insert("title".into(), Value::String(rfx.title.clone()));
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", rfx.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", rfx.status)));
         props.insert(
             "sourcingProjectId".into(),
             Value::String(rfx.sourcing_project_id.clone()),
@@ -142,10 +133,7 @@ impl PropertySerializer for SupplierBidPropertySerializer {
         props.insert("bidId".into(), Value::String(bid.bid_id.clone()));
         props.insert("rfxId".into(), Value::String(bid.rfx_id.clone()));
         props.insert("vendorId".into(), Value::String(bid.vendor_id.clone()));
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", bid.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", bid.status)));
         props.insert("amount".into(), serde_json::json!(bid.total_amount));
         props.insert(
             "submissionDate".into(),
@@ -194,14 +182,8 @@ impl PropertySerializer for ProcurementContractPropertySerializer {
             "status".into(),
             Value::String(format!("{:?}", contract.status)),
         );
-        props.insert(
-            "vendorId".into(),
-            Value::String(contract.vendor_id.clone()),
-        );
-        props.insert(
-            "totalValue".into(),
-            serde_json::json!(contract.total_value),
-        );
+        props.insert("vendorId".into(), Value::String(contract.vendor_id.clone()));
+        props.insert("totalValue".into(), serde_json::json!(contract.total_value));
         props.insert(
             "consumedValue".into(),
             serde_json::json!(contract.consumed_value),

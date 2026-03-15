@@ -4,8 +4,8 @@
 //! analysis of plausible relationships among both financial and non-financial data.
 
 use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -194,7 +194,11 @@ mod tests {
     use super::*;
     use rust_decimal_macros::dec;
 
-    fn make_result(expectation: Decimal, actual: Decimal, threshold: Decimal) -> AnalyticalProcedureResult {
+    fn make_result(
+        expectation: Decimal,
+        actual: Decimal,
+        threshold: Decimal,
+    ) -> AnalyticalProcedureResult {
         AnalyticalProcedureResult::new(
             Uuid::new_v4(),
             "Revenue",
@@ -261,8 +265,14 @@ mod tests {
             let roundtripped: AnalyticalPhase = serde_json::from_str(&json).unwrap();
             assert_eq!(phase, roundtripped);
         }
-        assert_eq!(serde_json::to_string(&AnalyticalPhase::Planning).unwrap(), "\"planning\"");
-        assert_eq!(serde_json::to_string(&AnalyticalPhase::FinalReview).unwrap(), "\"final_review\"");
+        assert_eq!(
+            serde_json::to_string(&AnalyticalPhase::Planning).unwrap(),
+            "\"planning\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AnalyticalPhase::FinalReview).unwrap(),
+            "\"final_review\""
+        );
     }
 
     #[test]
@@ -279,8 +289,14 @@ mod tests {
             let roundtripped: AnalyticalMethod = serde_json::from_str(&json).unwrap();
             assert_eq!(method, roundtripped);
         }
-        assert_eq!(serde_json::to_string(&AnalyticalMethod::TrendAnalysis).unwrap(), "\"trend_analysis\"");
-        assert_eq!(serde_json::to_string(&AnalyticalMethod::ReasonablenessTest).unwrap(), "\"reasonableness_test\"");
+        assert_eq!(
+            serde_json::to_string(&AnalyticalMethod::TrendAnalysis).unwrap(),
+            "\"trend_analysis\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AnalyticalMethod::ReasonablenessTest).unwrap(),
+            "\"reasonableness_test\""
+        );
     }
 
     #[test]

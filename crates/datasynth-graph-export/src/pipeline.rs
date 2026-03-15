@@ -148,8 +148,7 @@ impl GraphExportPipeline {
 
         // ── Stage 1: Build SerializationContext lookup maps ──────────
         debug!("Stage 1: Building serialization context lookup maps");
-        let (employee_by_id, employee_by_role, user_to_employee) =
-            build_employee_maps(ds_result);
+        let (employee_by_id, employee_by_role, user_to_employee) = build_employee_maps(ds_result);
         let opening_balances = build_opening_balance_map(ds_result);
         let risk_names = build_risk_name_map(ds_result);
 
@@ -171,7 +170,10 @@ impl GraphExportPipeline {
         );
 
         // ── Stage 2: Node synthesis ─────────────────────────────────
-        debug!("Stage 2: Running {} node synthesizers", self.node_synthesizers.len());
+        debug!(
+            "Stage 2: Running {} node synthesizers",
+            self.node_synthesizers.len()
+        );
         let mut nodes = Vec::new();
 
         for synthesizer in &self.node_synthesizers {
@@ -276,7 +278,10 @@ impl GraphExportPipeline {
         );
 
         // ── Stage 6: Build result + post-processing ─────────────────
-        debug!("Stage 6: Building result and running {} post-processors", self.post_processors.len());
+        debug!(
+            "Stage 6: Building result and running {} post-processors",
+            self.post_processors.len()
+        );
 
         // Compute metadata before post-processors (they may augment it)
         let metadata = build_metadata(&nodes, &edges, start);
@@ -323,10 +328,7 @@ impl std::fmt::Debug for GraphExportPipeline {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GraphExportPipeline")
             .field("config", &self.config)
-            .field(
-                "property_serializers",
-                &self.property_serializers.len(),
-            )
+            .field("property_serializers", &self.property_serializers.len())
             .field("node_synthesizers", &self.node_synthesizers.len())
             .field("edge_synthesizers", &self.edge_synthesizers.len())
             .field("post_processors", &self.post_processors.len())
@@ -344,7 +346,11 @@ impl std::fmt::Debug for GraphExportPipeline {
 /// - `user_to_employee`: user_id → employee_id
 fn build_employee_maps(
     ds_result: &EnhancedGenerationResult,
-) -> (HashMap<String, String>, HashMap<String, String>, HashMap<String, String>) {
+) -> (
+    HashMap<String, String>,
+    HashMap<String, String>,
+    HashMap<String, String>,
+) {
     let employees = &ds_result.master_data.employees;
     let capacity = employees.len();
 
@@ -450,7 +456,9 @@ mod tests {
 
         struct TestNodeSynth;
         impl NodeSynthesizer for TestNodeSynth {
-            fn name(&self) -> &'static str { "test_node" }
+            fn name(&self) -> &'static str {
+                "test_node"
+            }
             fn synthesize(
                 &self,
                 _ctx: &mut NodeSynthesisContext<'_>,
@@ -461,7 +469,9 @@ mod tests {
 
         struct TestEdgeSynth;
         impl EdgeSynthesizer for TestEdgeSynth {
-            fn name(&self) -> &'static str { "test_edge" }
+            fn name(&self) -> &'static str {
+                "test_edge"
+            }
             fn synthesize(
                 &self,
                 _ctx: &mut EdgeSynthesisContext<'_>,
@@ -472,7 +482,9 @@ mod tests {
 
         struct TestPostProc;
         impl PostProcessor for TestPostProc {
-            fn name(&self) -> &'static str { "test_post" }
+            fn name(&self) -> &'static str {
+                "test_post"
+            }
             fn process(
                 &self,
                 _result: &mut GraphExportResult,

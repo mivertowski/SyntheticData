@@ -62,10 +62,7 @@ impl NodeSynthesizer for OcelEventsNodeSynthesizer {
                 "eventId".into(),
                 serde_json::json!(event.event_id.to_string()),
             );
-            props.insert(
-                "eventType".into(),
-                serde_json::json!(event.activity_id),
-            );
+            props.insert("eventType".into(), serde_json::json!(event.activity_id));
             props.insert(
                 "timestamp".into(),
                 serde_json::json!(event.timestamp.to_rfc3339()),
@@ -78,17 +75,11 @@ impl NodeSynthesizer for OcelEventsNodeSynthesizer {
                 "lifecycle".into(),
                 serde_json::json!(format!("{:?}", event.lifecycle)),
             );
-            props.insert(
-                "resourceId".into(),
-                serde_json::json!(event.resource_id),
-            );
+            props.insert("resourceId".into(), serde_json::json!(event.resource_id));
             if let Some(ref res_name) = event.resource_name {
                 props.insert("resourceName".into(), serde_json::json!(res_name));
             }
-            props.insert(
-                "companyCode".into(),
-                serde_json::json!(event.company_code),
-            );
+            props.insert("companyCode".into(), serde_json::json!(event.company_code));
             if let Some(ref doc_ref) = event.document_ref {
                 props.insert("documentRef".into(), serde_json::json!(doc_ref));
             }
@@ -96,20 +87,15 @@ impl NodeSynthesizer for OcelEventsNodeSynthesizer {
                 props.insert("isAnomalous".into(), serde_json::json!(true));
                 props.insert("is_anomaly".into(), serde_json::json!(true));
                 if let Some(ref anomaly_type) = event.anomaly_type {
-                    props.insert(
-                        "anomalyType".into(),
-                        serde_json::json!(anomaly_type),
-                    );
+                    props.insert("anomalyType".into(), serde_json::json!(anomaly_type));
                 }
             }
             if let Some(ref case_id) = event.case_id {
-                props.insert(
-                    "caseId".into(),
-                    serde_json::json!(case_id.to_string()),
-                );
+                props.insert("caseId".into(), serde_json::json!(case_id.to_string()));
             }
             // Derive process family from activity name or document ref
-            let process_family = derive_process_family(&event.activity_name, event.document_ref.as_deref());
+            let process_family =
+                derive_process_family(&event.activity_name, event.document_ref.as_deref());
             props.insert("processFamily".into(), serde_json::json!(process_family));
             props.insert("nodeTypeName".into(), serde_json::json!("ocel_event"));
 
@@ -178,7 +164,10 @@ mod tests {
 
     #[test]
     fn derive_process_family_maps_correctly() {
-        assert_eq!(derive_process_family("Create Purchase Order", Some("PO-001")), "P2P");
+        assert_eq!(
+            derive_process_family("Create Purchase Order", Some("PO-001")),
+            "P2P"
+        );
         assert_eq!(derive_process_family("Create Sales Order", None), "O2C");
         assert_eq!(derive_process_family("Post Journal Entry", None), "R2R");
         assert_eq!(derive_process_family("Process Bank Payment", None), "BANK");

@@ -38,8 +38,7 @@ impl Default for ControlGeneratorConfig {
             sod_violation_rate: 0.01, // 1% SoD violation rate
             enable_sox_marking: true,
             sox_materiality_threshold: Decimal::from(10000),
-            assessed_date: NaiveDate::from_ymd_opt(2025, 1, 15)
-                .expect("valid date"),
+            assessed_date: NaiveDate::from_ymd_opt(2025, 1, 15).expect("valid date"),
         }
     }
 }
@@ -478,7 +477,11 @@ mod tests {
 
             if level >= 4 {
                 // Managed or Optimized: should be tested and effective
-                assert!(ctrl.test_count >= 2, "maturity {} should have test_count >= 2", level);
+                assert!(
+                    ctrl.test_count >= 2,
+                    "maturity {} should have test_count >= 2",
+                    level
+                );
                 assert!(ctrl.last_tested_date.is_some());
                 assert_eq!(ctrl.test_result, TestResult::Pass);
                 assert_eq!(ctrl.effectiveness, ControlEffectiveness::Effective);
@@ -497,9 +500,11 @@ mod tests {
             }
 
             // All controls should have account classes derived
-            assert!(!ctrl.covers_account_classes.is_empty(),
+            assert!(
+                !ctrl.covers_account_classes.is_empty(),
                 "control {} should have non-empty covers_account_classes",
-                ctrl.control_id);
+                ctrl.control_id
+            );
         }
     }
 
@@ -508,18 +513,30 @@ mod tests {
         let gen = ControlGenerator::new(42);
 
         // Find a control with Existence assertion (e.g., C001)
-        let c001 = gen.controls().iter().find(|c| c.control_id == "C001").unwrap();
+        let c001 = gen
+            .controls()
+            .iter()
+            .find(|c| c.control_id == "C001")
+            .unwrap();
         assert_eq!(c001.covers_account_classes, vec!["Assets"]);
 
         // Find a control with Valuation assertion (e.g., C020)
-        let c020 = gen.controls().iter().find(|c| c.control_id == "C020").unwrap();
+        let c020 = gen
+            .controls()
+            .iter()
+            .find(|c| c.control_id == "C020")
+            .unwrap();
         assert_eq!(
             c020.covers_account_classes,
             vec!["Assets", "Liabilities", "Equity", "Revenue", "Expenses"]
         );
 
         // Find a control with Completeness assertion (e.g., C010)
-        let c010 = gen.controls().iter().find(|c| c.control_id == "C010").unwrap();
+        let c010 = gen
+            .controls()
+            .iter()
+            .find(|c| c.control_id == "C010")
+            .unwrap();
         assert_eq!(c010.covers_account_classes, vec!["Revenue", "Liabilities"]);
     }
 

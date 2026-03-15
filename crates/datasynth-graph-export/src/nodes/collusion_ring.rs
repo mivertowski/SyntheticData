@@ -42,10 +42,7 @@ impl NodeSynthesizer for CollusionRingNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert(
-                "ringId".into(),
-                serde_json::json!(ring.ring_id.to_string()),
-            );
+            props.insert("ringId".into(), serde_json::json!(ring.ring_id.to_string()));
             props.insert(
                 "ringType".into(),
                 serde_json::json!(format!("{:?}", ring.ring_type)),
@@ -54,10 +51,7 @@ impl NodeSynthesizer for CollusionRingNodeSynthesizer {
                 "fraudCategory".into(),
                 serde_json::json!(format!("{:?}", ring.fraud_category)),
             );
-            props.insert(
-                "memberCount".into(),
-                serde_json::json!(ring.members.len()),
-            );
+            props.insert("memberCount".into(), serde_json::json!(ring.members.len()));
             props.insert(
                 "totalAmount".into(),
                 serde_json::json!(ring.total_stolen.to_f64().unwrap_or(0.0)),
@@ -79,10 +73,7 @@ impl NodeSynthesizer for CollusionRingNodeSynthesizer {
                 serde_json::json!(ring.detection_risk),
             );
             props.insert("activeMonths".into(), serde_json::json!(ring.active_months));
-            props.insert(
-                "nodeTypeName".into(),
-                serde_json::json!("collusion_ring"),
-            );
+            props.insert("nodeTypeName".into(), serde_json::json!("collusion_ring"));
 
             nodes.push(ExportNode {
                 id: Some(numeric_id),

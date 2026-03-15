@@ -459,9 +459,7 @@ fn classify_control_domain(
     {
         return ControlDomain::Asset;
     }
-    if name_lower.contains("cash")
-        || name_lower.contains("bank")
-        || name_lower.contains("treasury")
+    if name_lower.contains("cash") || name_lower.contains("bank") || name_lower.contains("treasury")
     {
         return ControlDomain::Treasury;
     }
@@ -553,58 +551,104 @@ fn domains_compatible(risk: &ControlDomain, control: &ControlDomain) -> bool {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use datasynth_core::models::internal_control::{
-        ControlType, InternalControl, SoxAssertion,
-    };
+    use datasynth_core::models::internal_control::{ControlType, InternalControl, SoxAssertion};
 
     #[test]
     fn classify_revenue_control() {
-        let control = InternalControl::new("C020", "Revenue Recognition Review", ControlType::Detective, "Review revenue")
-            .with_assertion(SoxAssertion::Valuation);
+        let control = InternalControl::new(
+            "C020",
+            "Revenue Recognition Review",
+            ControlType::Detective,
+            "Review revenue",
+        )
+        .with_assertion(SoxAssertion::Valuation);
         assert_eq!(classify_control_domain(&control), ControlDomain::Revenue);
     }
 
     #[test]
     fn classify_expenditure_control() {
-        let control = InternalControl::new("C010", "Three-Way Match", ControlType::Preventive, "Match PO/GR/Invoice")
-            .with_assertion(SoxAssertion::Completeness);
-        assert_eq!(classify_control_domain(&control), ControlDomain::Expenditure);
+        let control = InternalControl::new(
+            "C010",
+            "Three-Way Match",
+            ControlType::Preventive,
+            "Match PO/GR/Invoice",
+        )
+        .with_assertion(SoxAssertion::Completeness);
+        assert_eq!(
+            classify_control_domain(&control),
+            ControlDomain::Expenditure
+        );
     }
 
     #[test]
     fn classify_treasury_control() {
-        let control = InternalControl::new("C001", "Cash Account Daily Review", ControlType::Detective, "Review cash")
-            .with_assertion(SoxAssertion::Existence);
+        let control = InternalControl::new(
+            "C001",
+            "Cash Account Daily Review",
+            ControlType::Detective,
+            "Review cash",
+        )
+        .with_assertion(SoxAssertion::Existence);
         assert_eq!(classify_control_domain(&control), ControlDomain::Treasury);
     }
 
     #[test]
     fn classify_reporting_control() {
-        let control = InternalControl::new("C030", "GL Account Reconciliation", ControlType::Detective, "Reconcile GL")
-            .with_assertion(SoxAssertion::Completeness);
+        let control = InternalControl::new(
+            "C030",
+            "GL Account Reconciliation",
+            ControlType::Detective,
+            "Reconcile GL",
+        )
+        .with_assertion(SoxAssertion::Completeness);
         assert_eq!(classify_control_domain(&control), ControlDomain::Reporting);
     }
 
     #[test]
     fn classify_asset_control() {
-        let control = InternalControl::new("C050", "Fixed Asset Addition Approval", ControlType::Preventive, "Approve assets")
-            .with_assertion(SoxAssertion::Existence);
+        let control = InternalControl::new(
+            "C050",
+            "Fixed Asset Addition Approval",
+            ControlType::Preventive,
+            "Approve assets",
+        )
+        .with_assertion(SoxAssertion::Existence);
         assert_eq!(classify_control_domain(&control), ControlDomain::Asset);
     }
 
     #[test]
     fn classify_general_fallback() {
-        let control = InternalControl::new("C070", "Code of Conduct and Ethics", ControlType::Preventive, "Ethics")
-            .with_assertion(SoxAssertion::PresentationAndDisclosure);
+        let control = InternalControl::new(
+            "C070",
+            "Code of Conduct and Ethics",
+            ControlType::Preventive,
+            "Ethics",
+        )
+        .with_assertion(SoxAssertion::PresentationAndDisclosure);
         assert_eq!(classify_control_domain(&control), ControlDomain::General);
     }
 
     #[test]
     fn domain_compatibility() {
-        assert!(domains_compatible(&ControlDomain::Revenue, &ControlDomain::Revenue));
-        assert!(!domains_compatible(&ControlDomain::Revenue, &ControlDomain::Expenditure));
-        assert!(domains_compatible(&ControlDomain::Revenue, &ControlDomain::General));
-        assert!(domains_compatible(&ControlDomain::General, &ControlDomain::Revenue));
-        assert!(domains_compatible(&ControlDomain::General, &ControlDomain::General));
+        assert!(domains_compatible(
+            &ControlDomain::Revenue,
+            &ControlDomain::Revenue
+        ));
+        assert!(!domains_compatible(
+            &ControlDomain::Revenue,
+            &ControlDomain::Expenditure
+        ));
+        assert!(domains_compatible(
+            &ControlDomain::Revenue,
+            &ControlDomain::General
+        ));
+        assert!(domains_compatible(
+            &ControlDomain::General,
+            &ControlDomain::Revenue
+        ));
+        assert!(domains_compatible(
+            &ControlDomain::General,
+            &ControlDomain::General
+        ));
     }
 }

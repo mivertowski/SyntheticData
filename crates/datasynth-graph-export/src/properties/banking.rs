@@ -188,14 +188,8 @@ impl PropertySerializer for BankTransactionPropertySerializer {
             "status".into(),
             serde_json::to_value(&txn.status).unwrap_or(Value::Null),
         );
-        props.insert(
-            "isAnomalous".into(),
-            Value::Bool(txn.is_suspicious),
-        );
-        props.insert(
-            "isSuspicious".into(),
-            Value::Bool(txn.is_suspicious),
-        );
+        props.insert("isAnomalous".into(), Value::Bool(txn.is_suspicious));
+        props.insert("isSuspicious".into(), Value::Bool(txn.is_suspicious));
         props.insert(
             "timestamp".into(),
             Value::String(txn.timestamp_booked.to_rfc3339()),
@@ -216,10 +210,7 @@ mod tests {
             BankingCustomerPropertySerializer.entity_type(),
             "banking_customer"
         );
-        assert_eq!(
-            BankAccountPropertySerializer.entity_type(),
-            "bank_account"
-        );
+        assert_eq!(BankAccountPropertySerializer.entity_type(), "bank_account");
         assert_eq!(
             BankTransactionPropertySerializer.entity_type(),
             "bank_transaction"

@@ -43,10 +43,20 @@ mod fixtures {
 
         // --- Tax domain ---
         ds.tax.jurisdictions = vec![
-            TaxJurisdiction::new("JURIS-US-FED", "US Federal", "US", JurisdictionType::Federal),
-            TaxJurisdiction::new("JURIS-US-CA", "US California", "US", JurisdictionType::State)
-                .with_region_code("CA")
-                .with_parent_jurisdiction_id("JURIS-US-FED"),
+            TaxJurisdiction::new(
+                "JURIS-US-FED",
+                "US Federal",
+                "US",
+                JurisdictionType::Federal,
+            ),
+            TaxJurisdiction::new(
+                "JURIS-US-CA",
+                "US California",
+                "US",
+                JurisdictionType::State,
+            )
+            .with_region_code("CA")
+            .with_parent_jurisdiction_id("JURIS-US-FED"),
         ];
 
         ds.tax.codes = vec![
@@ -121,7 +131,9 @@ mod fixtures {
                 ControlType::Preventive,
                 "Match PO/GR/Invoice",
             )
-            .with_description("Automated three-way match of purchase order, goods receipt, and vendor invoice"),
+            .with_description(
+                "Automated three-way match of purchase order, goods receipt, and vendor invoice",
+            ),
             InternalControl::new(
                 "C020",
                 "Revenue Recognition Review",
@@ -149,7 +161,9 @@ mod fixtures {
                 ControlType::Preventive,
                 "Approve asset additions",
             )
-            .with_description("Authorization for fixed asset additions above capitalization threshold"),
+            .with_description(
+                "Authorization for fixed asset additions above capitalization threshold",
+            ),
         ];
 
         // --- Risk Assessments (for edge synthesizer) ---
@@ -220,21 +234,23 @@ mod fixtures {
 
         // 50 compliance standards (L1 — governance)
         ds.compliance_regulations.standard_records = (0..50)
-            .map(|i| datasynth_generators::compliance::ComplianceStandardRecord {
-                standard_id: format!("STD-{i:04}"),
-                body: "TEST".into(),
-                number: format!("{i}"),
-                title: format!("Standard {i}"),
-                category: "Test".into(),
-                domain: "Testing".into(),
-                jurisdiction: "Global".into(),
-                effective_date: "2024-01-01".into(),
-                version: "1.0".into(),
-                is_active: true,
-                superseded_by: None,
-                applicable_account_types: vec![],
-                applicable_processes: vec![],
-            })
+            .map(
+                |i| datasynth_generators::compliance::ComplianceStandardRecord {
+                    standard_id: format!("STD-{i:04}"),
+                    body: "TEST".into(),
+                    number: format!("{i}"),
+                    title: format!("Standard {i}"),
+                    category: "Test".into(),
+                    domain: "Testing".into(),
+                    jurisdiction: "Global".into(),
+                    effective_date: "2024-01-01".into(),
+                    version: "1.0".into(),
+                    is_active: true,
+                    superseded_by: None,
+                    applicable_account_types: vec![],
+                    applicable_processes: vec![],
+                },
+            )
             .collect();
 
         ds
@@ -272,11 +288,7 @@ fn full_pipeline_produces_valid_graph() {
     );
 
     // Compliance synthesizer should produce: 2 standard nodes
-    let compliance_nodes: Vec<_> = result
-        .nodes
-        .iter()
-        .filter(|n| n.node_type == 480)
-        .collect();
+    let compliance_nodes: Vec<_> = result.nodes.iter().filter(|n| n.node_type == 480).collect();
     assert_eq!(
         compliance_nodes.len(),
         2,
@@ -501,7 +513,12 @@ fn metadata_edge_types_produced_is_accurate() {
 
     // The edge_types_produced list should match what's actually in edges
     let actual_types: HashSet<u32> = result.edges.iter().map(|e| e.edge_type).collect();
-    let reported_types: HashSet<u32> = result.metadata.edge_types_produced.iter().copied().collect();
+    let reported_types: HashSet<u32> = result
+        .metadata
+        .edge_types_produced
+        .iter()
+        .copied()
+        .collect();
 
     assert_eq!(
         actual_types, reported_types,
@@ -509,7 +526,11 @@ fn metadata_edge_types_produced_is_accurate() {
     );
 
     // The list should be sorted
-    let sorted = result.metadata.edge_types_produced.windows(2).all(|w| w[0] <= w[1]);
+    let sorted = result
+        .metadata
+        .edge_types_produced
+        .windows(2)
+        .all(|w| w[0] <= w[1]);
     assert!(sorted, "edge_types_produced should be sorted");
 }
 

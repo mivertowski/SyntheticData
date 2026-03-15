@@ -397,8 +397,14 @@ mod tests {
             .unwrap();
 
         let risk = &result.nodes[0];
-        assert_eq!(risk.properties["mitigatingControlCount"], serde_json::json!(2));
-        assert_eq!(risk.properties["effectiveControlCount"], serde_json::json!(1));
+        assert_eq!(
+            risk.properties["mitigatingControlCount"],
+            serde_json::json!(2)
+        );
+        assert_eq!(
+            risk.properties["effectiveControlCount"],
+            serde_json::json!(1)
+        );
     }
 
     #[test]
@@ -416,8 +422,14 @@ mod tests {
             .unwrap();
 
         let risk = &result.nodes[0];
-        assert_eq!(risk.properties["mitigatingControlCount"], serde_json::json!(0));
-        assert_eq!(risk.properties["effectiveControlCount"], serde_json::json!(0));
+        assert_eq!(
+            risk.properties["mitigatingControlCount"],
+            serde_json::json!(0)
+        );
+        assert_eq!(
+            risk.properties["effectiveControlCount"],
+            serde_json::json!(0)
+        );
     }
 
     #[test]
@@ -454,15 +466,15 @@ mod tests {
             .unwrap();
 
         let risk = &result.nodes[0];
-        assert_eq!(risk.properties["effectiveControlCount"], serde_json::json!(2));
+        assert_eq!(
+            risk.properties["effectiveControlCount"],
+            serde_json::json!(2)
+        );
     }
 
     #[test]
     fn effective_control_count_ignores_non_risk_mitigated_edges() {
-        let nodes = vec![
-            risk_node(1, "active"),
-            control_node(2, "Effective"),
-        ];
+        let nodes = vec![risk_node(1, "active"), control_node(2, "Effective")];
         // Edge type 60 (document chain), not 75
         let edges = vec![ExportEdge {
             source: 1,
@@ -482,7 +494,10 @@ mod tests {
             .unwrap();
 
         let risk = &result.nodes[0];
-        assert_eq!(risk.properties["mitigatingControlCount"], serde_json::json!(0));
+        assert_eq!(
+            risk.properties["mitigatingControlCount"],
+            serde_json::json!(0)
+        );
     }
 
     // ─── AnomalyFlagNormalizer ──────────────────────────────────
@@ -509,8 +524,14 @@ mod tests {
             .process(&mut result, &ds, &config, &id_map)
             .unwrap();
 
-        assert_eq!(result.nodes[0].properties["isAnomalous"], serde_json::json!(true));
-        assert_eq!(result.nodes[0].properties["is_anomaly"], serde_json::json!(true));
+        assert_eq!(
+            result.nodes[0].properties["isAnomalous"],
+            serde_json::json!(true)
+        );
+        assert_eq!(
+            result.nodes[0].properties["is_anomaly"],
+            serde_json::json!(true)
+        );
     }
 
     #[test]
@@ -535,7 +556,10 @@ mod tests {
             .process(&mut result, &ds, &config, &id_map)
             .unwrap();
 
-        assert_eq!(result.nodes[0].properties["is_anomaly"], serde_json::json!(true));
+        assert_eq!(
+            result.nodes[0].properties["is_anomaly"],
+            serde_json::json!(true)
+        );
     }
 
     #[test]
@@ -606,15 +630,18 @@ mod tests {
         let po_id = id_map.get_or_insert("PO-001");
         assert_eq!(po_id, 1);
         id_map.get_or_insert("VI-001"); // id=2
-        // We need node IDs to match id_map, so manually set id_map to start from 1
-        // The id_map was created fresh, so PO-001=1, VI-001=2
+                                        // We need node IDs to match id_map, so manually set id_map to start from 1
+                                        // The id_map was created fresh, so PO-001=1, VI-001=2
 
         RedFlagAnnotator
             .process(&mut result, &ds, &config, &id_map)
             .unwrap();
 
         // PO-001 should have hasRedFlag
-        assert_eq!(result.nodes[0].properties["hasRedFlag"], serde_json::json!(true));
+        assert_eq!(
+            result.nodes[0].properties["hasRedFlag"],
+            serde_json::json!(true)
+        );
         // VI-001 should not
         assert!(!result.nodes[1].properties.contains_key("hasRedFlag"));
     }

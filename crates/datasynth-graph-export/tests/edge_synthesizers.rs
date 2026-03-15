@@ -19,11 +19,11 @@ use datasynth_core::models::internal_control::{ControlType, InternalControl, Sox
 use datasynth_core::models::{ChartOfAccounts, CoAComplexity, IndustrySector};
 use datasynth_runtime::enhanced_orchestrator::{
     AccountingStandardsSnapshot, AnomalyLabels, AuditSnapshot, BalanceValidationResult,
-    BankingSnapshot, ComplianceRegulationsSnapshot, DocumentFlowSnapshot,
-    EnhancedGenerationResult, EnhancedGenerationStatistics, EsgSnapshot,
-    FinancialReportingSnapshot, GraphExportSnapshot, HrSnapshot, IntercompanySnapshot,
-    ManufacturingSnapshot, MasterDataSnapshot, OcpmSnapshot, ProjectAccountingSnapshot,
-    SalesKpiBudgetsSnapshot, SourcingSnapshot, SubledgerSnapshot, TaxSnapshot, TreasurySnapshot,
+    BankingSnapshot, ComplianceRegulationsSnapshot, DocumentFlowSnapshot, EnhancedGenerationResult,
+    EnhancedGenerationStatistics, EsgSnapshot, FinancialReportingSnapshot, GraphExportSnapshot,
+    HrSnapshot, IntercompanySnapshot, ManufacturingSnapshot, MasterDataSnapshot, OcpmSnapshot,
+    ProjectAccountingSnapshot, SalesKpiBudgetsSnapshot, SourcingSnapshot, SubledgerSnapshot,
+    TaxSnapshot, TreasurySnapshot,
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -94,7 +94,14 @@ fn make_po(id: &str) -> PurchaseOrder {
 
 fn make_vendor_invoice(id: &str, po_id: Option<&str>) -> VendorInvoice {
     let mut inv = VendorInvoice::new(
-        id, "1000", "V-000001", "EXT-INV-001", 2025, 1, date(2025, 1, 20), "USER01",
+        id,
+        "1000",
+        "V-000001",
+        "EXT-INV-001",
+        2025,
+        1,
+        date(2025, 1, 20),
+        "USER01",
     );
     inv.purchase_order_id = po_id.map(String::from);
     inv
@@ -102,7 +109,14 @@ fn make_vendor_invoice(id: &str, po_id: Option<&str>) -> VendorInvoice {
 
 fn make_goods_receipt(id: &str, po_id: Option<&str>) -> GoodsReceipt {
     let mut gr = GoodsReceipt::new(
-        id, "1000", "PLANT01", "SLOC01", 2025, 1, date(2025, 1, 18), "USER01",
+        id,
+        "1000",
+        "PLANT01",
+        "SLOC01",
+        2025,
+        1,
+        date(2025, 1, 18),
+        "USER01",
     );
     gr.purchase_order_id = po_id.map(String::from);
     gr
@@ -111,9 +125,21 @@ fn make_goods_receipt(id: &str, po_id: Option<&str>) -> GoodsReceipt {
 fn make_payment(id: &str, invoice_id: &str) -> Payment {
     use datasynth_core::models::documents::DocumentType;
     let mut pay = Payment::new_ap_payment(
-        id, "1000", "V-000001", Decimal::from(1000), 2025, 1, date(2025, 2, 15), "USER01",
+        id,
+        "1000",
+        "V-000001",
+        Decimal::from(1000),
+        2025,
+        1,
+        date(2025, 2, 15),
+        "USER01",
     );
-    pay.allocate_to_invoice(invoice_id, DocumentType::VendorInvoice, Decimal::from(1000), Decimal::ZERO);
+    pay.allocate_to_invoice(
+        invoice_id,
+        DocumentType::VendorInvoice,
+        Decimal::from(1000),
+        Decimal::ZERO,
+    );
     pay
 }
 
@@ -123,15 +149,33 @@ fn make_sales_order(id: &str) -> SalesOrder {
 
 fn make_delivery(id: &str, so_id: Option<&str>) -> Delivery {
     let mut del = Delivery::new(
-        id, "1000", "C-000001", "SHIP01", 2025, 1, date(2025, 1, 12), "USER01",
+        id,
+        "1000",
+        "C-000001",
+        "SHIP01",
+        2025,
+        1,
+        date(2025, 1, 12),
+        "USER01",
     );
     del.sales_order_id = so_id.map(String::from);
     del
 }
 
-fn make_customer_invoice(id: &str, so_id: Option<&str>, delivery_id: Option<&str>) -> CustomerInvoice {
+fn make_customer_invoice(
+    id: &str,
+    so_id: Option<&str>,
+    delivery_id: Option<&str>,
+) -> CustomerInvoice {
     let mut inv = CustomerInvoice::new(
-        id, "1000", "C-000001", 2025, 1, date(2025, 1, 20), date(2025, 2, 19), "USER01",
+        id,
+        "1000",
+        "C-000001",
+        2025,
+        1,
+        date(2025, 1, 20),
+        date(2025, 2, 19),
+        "USER01",
     );
     inv.sales_order_id = so_id.map(String::from);
     inv.delivery_id = delivery_id.map(String::from);
@@ -154,8 +198,16 @@ fn make_risk(risk_ref: &str, account_or_process: &str) -> RiskAssessment {
     risk
 }
 
-fn make_finding(finding_ref: &str, control_ids: Vec<String>, workpaper_id: Option<String>) -> AuditFinding {
-    let mut finding = AuditFinding::new(Uuid::new_v4(), FindingType::ControlDeficiency, "Test finding");
+fn make_finding(
+    finding_ref: &str,
+    control_ids: Vec<String>,
+    workpaper_id: Option<String>,
+) -> AuditFinding {
+    let mut finding = AuditFinding::new(
+        Uuid::new_v4(),
+        FindingType::ControlDeficiency,
+        "Test finding",
+    );
     finding.finding_ref = finding_ref.to_string();
     finding.related_control_ids = control_ids;
     finding.workpaper_id = workpaper_id;
@@ -168,21 +220,48 @@ fn build_doc_chain_result() -> EnhancedGenerationResult {
     let mut result = empty_result();
 
     // P2P documents
-    result.document_flows.purchase_orders.push(make_po("PO-001"));
-    result.document_flows.vendor_invoices.push(make_vendor_invoice("VI-001", Some("PO-001")));
-    result.document_flows.goods_receipts.push(make_goods_receipt("GR-001", Some("PO-001")));
-    result.document_flows.payments.push(make_payment("PAY-001", "VI-001"));
+    result
+        .document_flows
+        .purchase_orders
+        .push(make_po("PO-001"));
+    result
+        .document_flows
+        .vendor_invoices
+        .push(make_vendor_invoice("VI-001", Some("PO-001")));
+    result
+        .document_flows
+        .goods_receipts
+        .push(make_goods_receipt("GR-001", Some("PO-001")));
+    result
+        .document_flows
+        .payments
+        .push(make_payment("PAY-001", "VI-001"));
 
     // O2C documents
-    result.document_flows.sales_orders.push(make_sales_order("SO-001"));
-    result.document_flows.deliveries.push(make_delivery("DEL-001", Some("SO-001")));
-    result.document_flows.customer_invoices.push(make_customer_invoice("CI-001", Some("SO-001"), Some("DEL-001")));
+    result
+        .document_flows
+        .sales_orders
+        .push(make_sales_order("SO-001"));
+    result
+        .document_flows
+        .deliveries
+        .push(make_delivery("DEL-001", Some("SO-001")));
+    result
+        .document_flows
+        .customer_invoices
+        .push(make_customer_invoice(
+            "CI-001",
+            Some("SO-001"),
+            Some("DEL-001"),
+        ));
 
     result
 }
 
 fn register_doc_ids(id_map: &mut IdMap) {
-    for ext_id in &["PO-001", "VI-001", "GR-001", "PAY-001", "SO-001", "DEL-001", "CI-001"] {
+    for ext_id in &[
+        "PO-001", "VI-001", "GR-001", "PAY-001", "SO-001", "DEL-001", "CI-001",
+    ] {
         id_map.get_or_insert(ext_id);
     }
 }
@@ -207,7 +286,12 @@ fn document_chain_produces_p2p_edges() {
 
     // P2P: VI->PO (60), PAY->VI (62), GR->PO (64)
     let p2p_edges: Vec<_> = edges.iter().filter(|e| e.edge_type <= 64).collect();
-    assert_eq!(p2p_edges.len(), 3, "Expected 3 P2P edges, got {}", p2p_edges.len());
+    assert_eq!(
+        p2p_edges.len(),
+        3,
+        "Expected 3 P2P edges, got {}",
+        p2p_edges.len()
+    );
 
     // Check ReferencesOrder (60): VI-001 -> PO-001
     let ref_order = edges.iter().find(|e| e.edge_type == 60).unwrap();
@@ -245,7 +329,12 @@ fn document_chain_produces_o2c_edges() {
 
     // O2C: CI->SO (66), DEL->SO (68), CI->DEL (69)
     let o2c_edges: Vec<_> = edges.iter().filter(|e| e.edge_type >= 66).collect();
-    assert_eq!(o2c_edges.len(), 3, "Expected 3 O2C edges, got {}", o2c_edges.len());
+    assert_eq!(
+        o2c_edges.len(),
+        3,
+        "Expected 3 O2C edges, got {}",
+        o2c_edges.len()
+    );
 
     // Check BillsOrder (66): CI-001 -> SO-001
     let bills = edges.iter().find(|e| e.edge_type == 66).unwrap();
@@ -356,8 +445,14 @@ fn document_chain_edge_types_exclude_accounting() {
     let edges = synthesizer.synthesize(&mut ctx).unwrap();
     let types: std::collections::HashSet<u32> = edges.iter().map(|e| e.edge_type).collect();
 
-    assert!(!types.contains(&70), "Code 70 (PostsToAccount) belongs in AccountingEdgeSynthesizer");
-    assert!(!types.contains(&99), "Code 99 (DocPostsJe) belongs in AccountingEdgeSynthesizer");
+    assert!(
+        !types.contains(&70),
+        "Code 70 (PostsToAccount) belongs in AccountingEdgeSynthesizer"
+    );
+    assert!(
+        !types.contains(&99),
+        "Code 99 (DocPostsJe) belongs in AccountingEdgeSynthesizer"
+    );
 }
 
 // ──────────────────────────── RiskControl Tests ────────────────────────
@@ -365,7 +460,11 @@ fn document_chain_edge_types_exclude_accounting() {
 fn build_risk_control_result() -> EnhancedGenerationResult {
     let mut result = empty_result();
 
-    let mut c1 = make_control("C020", "Revenue Recognition Review", SoxAssertion::Valuation);
+    let mut c1 = make_control(
+        "C020",
+        "Revenue Recognition Review",
+        SoxAssertion::Valuation,
+    );
     c1.mitigates_risk_ids = vec!["R001".to_string()];
     c1.owner_employee_id = Some("EMP-001".to_string());
 
@@ -380,14 +479,20 @@ fn build_risk_control_result() -> EnhancedGenerationResult {
 
     result.audit.risk_assessments = vec![r1, r2, r3];
 
-    let f1 = make_finding("FIND-001", vec!["C020".to_string()], Some("WP-001".to_string()));
+    let f1 = make_finding(
+        "FIND-001",
+        vec!["C020".to_string()],
+        Some("WP-001".to_string()),
+    );
     result.audit.findings = vec![f1];
 
     result
 }
 
 fn register_risk_control_ids(id_map: &mut IdMap) {
-    for ext_id in &["C020", "C010", "C001", "R001", "R002", "R003", "EMP-001", "FIND-001", "WP-001"] {
+    for ext_id in &[
+        "C020", "C010", "C001", "R001", "R002", "R003", "EMP-001", "FIND-001", "WP-001",
+    ] {
         id_map.get_or_insert(ext_id);
     }
 }
@@ -413,10 +518,13 @@ fn risk_control_produces_fk_edges() {
     // Check RISK_MITIGATED_BY (75): R001 -> C020 (FK match, weight=1.0)
     let r001_id = id_map.get("R001").unwrap();
     let c020_id = id_map.get("C020").unwrap();
-    let fk_edge = edges
-        .iter()
-        .find(|e| e.edge_type == 75 && e.source == r001_id && e.target == c020_id && e.weight == 1.0);
-    assert!(fk_edge.is_some(), "Should have FK edge R001 -> C020 with weight 1.0");
+    let fk_edge = edges.iter().find(|e| {
+        e.edge_type == 75 && e.source == r001_id && e.target == c020_id && e.weight == 1.0
+    });
+    assert!(
+        fk_edge.is_some(),
+        "Should have FK edge R001 -> C020 with weight 1.0"
+    );
 }
 
 #[test]
@@ -443,8 +551,14 @@ fn risk_control_produces_name_matched_edges() {
     let name_match = edges
         .iter()
         .find(|e| e.edge_type == 75 && e.source == r002_id && e.target == c010_id);
-    assert!(name_match.is_some(), "R002 (Expenditure) should match C010 (Three-Way Match)");
-    assert!(name_match.unwrap().weight < 1.0, "Name-matched edge should have weight < 1.0");
+    assert!(
+        name_match.is_some(),
+        "R002 (Expenditure) should match C010 (Three-Way Match)"
+    );
+    assert!(
+        name_match.unwrap().weight < 1.0,
+        "Name-matched edge should have weight < 1.0"
+    );
 }
 
 #[test]
@@ -475,8 +589,16 @@ fn risk_control_direction_is_risk_to_control() {
         .collect();
 
     for edge in edges.iter().filter(|e| e.edge_type == 75) {
-        assert!(risk_ids.contains(&edge.source), "Source {} should be a risk", edge.source);
-        assert!(control_ids.contains(&edge.target), "Target {} should be a control", edge.target);
+        assert!(
+            risk_ids.contains(&edge.source),
+            "Source {} should be a risk",
+            edge.source
+        );
+        assert!(
+            control_ids.contains(&edge.target),
+            "Target {} should be a control",
+            edge.target
+        );
     }
 }
 
@@ -623,7 +745,10 @@ fn risk_control_edge_types_are_correct() {
     assert!(types.contains(&75), "Missing RISK_MITIGATED_BY (75)");
     assert!(types.contains(&127), "Missing CONTROL_OWNED_BY (127)");
     assert!(types.contains(&128), "Missing CONTROL_HAS_FINDING (128)");
-    assert!(types.contains(&129), "Missing WORKPAPER_TESTS_CONTROL (129)");
+    assert!(
+        types.contains(&129),
+        "Missing WORKPAPER_TESTS_CONTROL (129)"
+    );
 }
 
 #[test]
@@ -648,12 +773,14 @@ fn risk_control_all_edges_reference_valid_ids() {
         assert!(
             id_map.reverse_get(edge.source).is_some(),
             "Edge source {} not in id_map (edge_type={})",
-            edge.source, edge.edge_type
+            edge.source,
+            edge.edge_type
         );
         assert!(
             id_map.reverse_get(edge.target).is_some(),
             "Edge target {} not in id_map (edge_type={})",
-            edge.target, edge.edge_type
+            edge.target,
+            edge.edge_type
         );
     }
 }
@@ -692,10 +819,19 @@ fn workpaper_tests_control_deduplicates() {
     // should produce only one edge.
     let mut ds_result = empty_result();
 
-    let f1 = make_finding("FIND-001", vec!["C001".to_string()], Some("WP-001".to_string()));
-    let f2 = make_finding("FIND-002", vec!["C001".to_string()], Some("WP-001".to_string()));
+    let f1 = make_finding(
+        "FIND-001",
+        vec!["C001".to_string()],
+        Some("WP-001".to_string()),
+    );
+    let f2 = make_finding(
+        "FIND-002",
+        vec!["C001".to_string()],
+        Some("WP-001".to_string()),
+    );
     ds_result.audit.findings = vec![f1, f2];
-    ds_result.internal_controls = vec![make_control("C001", "Cash Review", SoxAssertion::Existence)];
+    ds_result.internal_controls =
+        vec![make_control("C001", "Cash Review", SoxAssertion::Existence)];
 
     let config = ExportConfig::default();
     let mut id_map = IdMap::new();

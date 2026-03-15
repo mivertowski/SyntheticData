@@ -99,8 +99,12 @@ fn budget_manager_edge_budget_with_dangling() {
         },
     ];
 
-    let result =
-        mgr.enforce_edge_budget(edges, &id_map, EdgeSamplingStrategy::Truncate, &mut warnings);
+    let result = mgr.enforce_edge_budget(
+        edges,
+        &id_map,
+        EdgeSamplingStrategy::Truncate,
+        &mut warnings,
+    );
     assert_eq!(result.len(), 1);
 }
 

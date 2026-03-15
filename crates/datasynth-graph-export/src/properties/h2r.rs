@@ -32,14 +32,8 @@ impl PropertySerializer for PayrollRunPropertySerializer {
 
         let mut props = HashMap::with_capacity(10);
 
-        props.insert(
-            "payrollId".into(),
-            Value::String(pr.payroll_id.clone()),
-        );
-        props.insert(
-            "companyCode".into(),
-            Value::String(pr.company_code.clone()),
-        );
+        props.insert("payrollId".into(), Value::String(pr.payroll_id.clone()));
+        props.insert("companyCode".into(), Value::String(pr.company_code.clone()));
         props.insert(
             "payPeriodStart".into(),
             Value::String(pr.pay_period_start.format("%Y-%m-%d").to_string()),
@@ -52,10 +46,7 @@ impl PropertySerializer for PayrollRunPropertySerializer {
             "runDate".into(),
             Value::String(pr.run_date.format("%Y-%m-%d").to_string()),
         );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", pr.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", pr.status)));
         props.insert("totalGross".into(), serde_json::json!(pr.total_gross));
         props.insert("totalNet".into(), serde_json::json!(pr.total_net));
         props.insert(
@@ -96,22 +87,13 @@ impl PropertySerializer for TimeEntryPropertySerializer {
         let mut props = HashMap::with_capacity(10);
 
         props.insert("entryId".into(), Value::String(te.entry_id.clone()));
-        props.insert(
-            "employeeId".into(),
-            Value::String(te.employee_id.clone()),
-        );
+        props.insert("employeeId".into(), Value::String(te.employee_id.clone()));
         props.insert(
             "date".into(),
             Value::String(te.date.format("%Y-%m-%d").to_string()),
         );
-        props.insert(
-            "hoursRegular".into(),
-            serde_json::json!(te.hours_regular),
-        );
-        props.insert(
-            "hoursOvertime".into(),
-            serde_json::json!(te.hours_overtime),
-        );
+        props.insert("hoursRegular".into(), serde_json::json!(te.hours_regular));
+        props.insert("hoursOvertime".into(), serde_json::json!(te.hours_overtime));
         props.insert("hoursPto".into(), serde_json::json!(te.hours_pto));
         props.insert("hoursSick".into(), serde_json::json!(te.hours_sick));
         props.insert(
@@ -154,22 +136,13 @@ impl PropertySerializer for ExpenseReportPropertySerializer {
         let mut props = HashMap::with_capacity(10);
 
         props.insert("reportId".into(), Value::String(er.report_id.clone()));
-        props.insert(
-            "employeeId".into(),
-            Value::String(er.employee_id.clone()),
-        );
+        props.insert("employeeId".into(), Value::String(er.employee_id.clone()));
         props.insert(
             "submissionDate".into(),
             Value::String(er.submission_date.format("%Y-%m-%d").to_string()),
         );
-        props.insert(
-            "description".into(),
-            Value::String(er.description.clone()),
-        );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", er.status)),
-        );
+        props.insert("description".into(), Value::String(er.description.clone()));
+        props.insert("status".into(), Value::String(format!("{:?}", er.status)));
         props.insert("amount".into(), serde_json::json!(er.total_amount));
         props.insert("currency".into(), Value::String(er.currency.clone()));
         props.insert(

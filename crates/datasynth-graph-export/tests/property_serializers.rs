@@ -125,7 +125,11 @@ fn make_test_control() -> InternalControl {
     .with_assertion(SoxAssertion::Existence)
     .with_description("Daily reconciliation of cash accounts")
     .with_owner_employee("EMP-001", "Jane Smith")
-    .with_test_history(3, Some(chrono::NaiveDate::from_ymd_opt(2025, 12, 15).unwrap()), TestResult::Pass)
+    .with_test_history(
+        3,
+        Some(chrono::NaiveDate::from_ymd_opt(2025, 12, 15).unwrap()),
+        TestResult::Pass,
+    )
     .with_effectiveness(ControlEffectiveness::Effective)
     .with_mitigates_risk_ids(vec!["RISK-001".into(), "RISK-002".into()])
     .with_covers_account_classes(vec!["Assets".into()])
@@ -141,7 +145,10 @@ fn make_test_risk() -> RiskAssessment {
     )
     .with_risk_levels(AuditRiskLevel::High, AuditRiskLevel::Medium)
     .mark_significant("Presumed fraud risk per ISA 240")
-    .with_assessed_by("EMP-002", chrono::NaiveDate::from_ymd_opt(2025, 11, 1).unwrap())
+    .with_assessed_by(
+        "EMP-002",
+        chrono::NaiveDate::from_ymd_opt(2025, 11, 1).unwrap(),
+    )
 }
 
 // ── Control Serializer Tests ─────────────────────────────────
@@ -166,13 +173,18 @@ fn control_serializer_produces_required_fields() {
     let ctx = build_context(&ds_result, &config, &emp_id, &emp_role, &u2e, &ob, &rn);
 
     let s = ControlPropertySerializer;
-    let props = s.serialize(&control_id, &ctx).expect("serialize should return Some");
+    let props = s
+        .serialize(&control_id, &ctx)
+        .expect("serialize should return Some");
 
     // Identity
     assert!(props.contains_key("controlId"));
     assert_eq!(props["controlId"], serde_json::json!("C001"));
     assert!(props.contains_key("name"));
-    assert_eq!(props["name"], serde_json::json!("Cash Account Daily Review"));
+    assert_eq!(
+        props["name"],
+        serde_json::json!("Cash Account Daily Review")
+    );
     assert!(props.contains_key("description"));
 
     // Classification
@@ -216,10 +228,7 @@ fn control_serializer_produces_required_fields() {
 
     // Account class coverage
     assert!(props.contains_key("coversAccountClasses"));
-    assert_eq!(
-        props["coversAccountClasses"],
-        serde_json::json!(["Assets"])
-    );
+    assert_eq!(props["coversAccountClasses"], serde_json::json!(["Assets"]));
 }
 
 #[test]
@@ -319,7 +328,9 @@ fn risk_serializer_produces_required_fields() {
     let ctx = build_context(&ds_result, &config, &emp_id, &emp_role, &u2e, &ob, &rn);
 
     let s = RiskPropertySerializer;
-    let props = s.serialize(&risk_ref, &ctx).expect("serialize should return Some");
+    let props = s
+        .serialize(&risk_ref, &ctx)
+        .expect("serialize should return Some");
 
     // Identity
     assert!(props.contains_key("riskRef"));
@@ -350,9 +361,15 @@ fn risk_serializer_produces_required_fields() {
     let rl = props["residualLikelihood"].as_f64().unwrap();
     let rs = props["riskScore"].as_f64().unwrap();
     assert!(ii > 0.0 && ii <= 1.0, "inherentImpact={ii} out of range");
-    assert!(il > 0.0 && il <= 1.0, "inherentLikelihood={il} out of range");
+    assert!(
+        il > 0.0 && il <= 1.0,
+        "inherentLikelihood={il} out of range"
+    );
     assert!(ri > 0.0 && ri <= 1.0, "residualImpact={ri} out of range");
-    assert!(rl > 0.0 && rl <= 1.0, "residualLikelihood={rl} out of range");
+    assert!(
+        rl > 0.0 && rl <= 1.0,
+        "residualLikelihood={rl} out of range"
+    );
     assert!(rs > 0.0, "riskScore should be positive");
 
     // Risk levels (snake_case via serde)
@@ -511,8 +528,16 @@ fn control_and_risk_serialize_from_same_result() {
     let risk_props = risk_s.serialize(&risk_ref, &ctx).unwrap();
 
     // Both should have produced non-empty property maps
-    assert!(ctrl_props.len() >= 15, "control should have at least 15 properties, got {}", ctrl_props.len());
-    assert!(risk_props.len() >= 12, "risk should have at least 12 properties, got {}", risk_props.len());
+    assert!(
+        ctrl_props.len() >= 15,
+        "control should have at least 15 properties, got {}",
+        ctrl_props.len()
+    );
+    assert!(
+        risk_props.len() >= 12,
+        "risk should have at least 12 properties, got {}",
+        risk_props.len()
+    );
 
     // Both should serialize to valid JSON
     let ctrl_json = serde_json::to_string(&ctrl_props).unwrap();

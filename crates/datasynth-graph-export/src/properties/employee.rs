@@ -35,37 +35,19 @@ impl PropertySerializer for EmployeePropertySerializer {
         let mut props = HashMap::with_capacity(14);
 
         // Identity
-        props.insert(
-            "employeeId".into(),
-            Value::String(emp.employee_id.clone()),
-        );
-        props.insert(
-            "fullName".into(),
-            Value::String(emp.display_name.clone()),
-        );
-        props.insert(
-            "firstName".into(),
-            Value::String(emp.first_name.clone()),
-        );
-        props.insert(
-            "lastName".into(),
-            Value::String(emp.last_name.clone()),
-        );
+        props.insert("employeeId".into(), Value::String(emp.employee_id.clone()));
+        props.insert("fullName".into(), Value::String(emp.display_name.clone()));
+        props.insert("firstName".into(), Value::String(emp.first_name.clone()));
+        props.insert("lastName".into(), Value::String(emp.last_name.clone()));
         props.insert("email".into(), Value::String(emp.email.clone()));
 
         // Role / classification
-        props.insert(
-            "role".into(),
-            Value::String(format!("{:?}", emp.persona)),
-        );
+        props.insert("role".into(), Value::String(format!("{:?}", emp.persona)));
         props.insert(
             "jobLevel".into(),
             Value::String(format!("{:?}", emp.job_level)),
         );
-        props.insert(
-            "jobTitle".into(),
-            Value::String(emp.job_title.clone()),
-        );
+        props.insert("jobTitle".into(), Value::String(emp.job_title.clone()));
 
         // Organization
         if let Some(ref dept) = emp.department_id {
@@ -90,10 +72,7 @@ impl PropertySerializer for EmployeePropertySerializer {
                 datasynth_core::models::EmployeeStatus::Active
             )),
         );
-        props.insert(
-            "status".into(),
-            Value::String(format!("{:?}", emp.status)),
-        );
+        props.insert("status".into(), Value::String(format!("{:?}", emp.status)));
 
         Some(props)
     }

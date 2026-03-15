@@ -1,7 +1,7 @@
 //! Integration tests for RiskAssessment continuous scores and RiskStatus.
 
-use datasynth_core::models::audit::{RiskAssessment, RiskCategory, RiskLevel};
 use datasynth_core::models::audit::risk::RiskStatus;
+use datasynth_core::models::audit::{RiskAssessment, RiskCategory, RiskLevel};
 use uuid::Uuid;
 
 #[test]
@@ -176,21 +176,11 @@ fn risk_status_serde_roundtrip() {
 fn continuous_scores_deterministic_for_same_risk_id() {
     let id = Uuid::new_v4();
 
-    let risk1 = RiskAssessment::new(
-        id,
-        RiskCategory::AssertionLevel,
-        "Revenue",
-        "Test",
-    )
-    .with_risk_levels(RiskLevel::High, RiskLevel::Medium);
+    let risk1 = RiskAssessment::new(id, RiskCategory::AssertionLevel, "Revenue", "Test")
+        .with_risk_levels(RiskLevel::High, RiskLevel::Medium);
 
-    let risk2 = RiskAssessment::new(
-        id,
-        RiskCategory::AssertionLevel,
-        "Revenue",
-        "Test",
-    )
-    .with_risk_levels(RiskLevel::High, RiskLevel::Medium);
+    let risk2 = RiskAssessment::new(id, RiskCategory::AssertionLevel, "Revenue", "Test")
+        .with_risk_levels(RiskLevel::High, RiskLevel::Medium);
 
     // Note: risk_id is generated inside new(), so two calls produce different risk_ids.
     // This test verifies the jitter derivation mechanism works, not exact equality.

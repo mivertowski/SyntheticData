@@ -53,7 +53,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("TAX-JURIS-{}", item.id);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {
@@ -71,7 +74,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("TAX-CODE-{}", item.code);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {
@@ -89,7 +95,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("TAX-LINE-{}-{}", item.document_id, item.line_number);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {
@@ -107,7 +116,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("TAX-RETURN-{}", item.id);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {
@@ -125,7 +137,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("TAX-PROV-{}", item.id);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {
@@ -143,7 +158,10 @@ impl NodeSynthesizer for TaxNodeSynthesizer {
             let external_id = format!("WHT-{}", item.id);
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
             let mut props = graph_props_to_json(item.to_node_properties());
-            props.insert("nodeTypeName".into(), serde_json::json!(item.node_type_name()));
+            props.insert(
+                "nodeTypeName".into(),
+                serde_json::json!(item.node_type_name()),
+            );
             props.insert("processFamily".into(), serde_json::json!("TAX"));
 
             nodes.push(ExportNode {

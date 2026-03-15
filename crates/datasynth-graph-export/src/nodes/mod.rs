@@ -79,7 +79,10 @@ pub fn all_synthesizers() -> Vec<Box<dyn NodeSynthesizer>> {
 /// Used by synthesizers that leverage `ToNodeProperties` trait implementations
 /// from `datasynth-core`.
 pub(crate) fn graph_props_to_json(
-    props: std::collections::HashMap<String, datasynth_core::models::graph_properties::GraphPropertyValue>,
+    props: std::collections::HashMap<
+        String,
+        datasynth_core::models::graph_properties::GraphPropertyValue,
+    >,
 ) -> std::collections::HashMap<String, serde_json::Value> {
     props
         .into_iter()
@@ -104,9 +107,7 @@ pub(crate) fn graph_props_to_json(
                     serde_json::Value::String(format!("{d}T00:00:00Z"))
                 }
                 datasynth_core::models::graph_properties::GraphPropertyValue::StringList(v) => {
-                    serde_json::Value::Array(
-                        v.into_iter().map(serde_json::Value::String).collect(),
-                    )
+                    serde_json::Value::Array(v.into_iter().map(serde_json::Value::String).collect())
                 }
             };
             (k, json_val)

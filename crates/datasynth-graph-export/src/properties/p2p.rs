@@ -50,26 +50,11 @@ impl PropertySerializer for PurchaseOrderPropertySerializer {
             Value::String(format!("{:?}", po.header.status)),
         );
         props.insert("vendorId".into(), Value::String(po.vendor_id.clone()));
-        props.insert(
-            "poType".into(),
-            Value::String(format!("{:?}", po.po_type)),
-        );
-        props.insert(
-            "amount".into(),
-            serde_json::json!(po.total_gross_amount),
-        );
-        props.insert(
-            "netAmount".into(),
-            serde_json::json!(po.total_net_amount),
-        );
-        props.insert(
-            "currency".into(),
-            Value::String(po.header.currency.clone()),
-        );
-        props.insert(
-            "lineCount".into(),
-            Value::Number(po.items.len().into()),
-        );
+        props.insert("poType".into(), Value::String(format!("{:?}", po.po_type)));
+        props.insert("amount".into(), serde_json::json!(po.total_gross_amount));
+        props.insert("netAmount".into(), serde_json::json!(po.total_net_amount));
+        props.insert("currency".into(), Value::String(po.header.currency.clone()));
+        props.insert("lineCount".into(), Value::Number(po.items.len().into()));
         props.insert(
             "purchasingOrg".into(),
             Value::String(po.purchasing_org.clone()),
@@ -121,15 +106,9 @@ impl PropertySerializer for GoodsReceiptPropertySerializer {
             Value::String(format!("{:?}", gr.header.status)),
         );
         props.insert("amount".into(), serde_json::json!(gr.total_value));
-        props.insert(
-            "totalQuantity".into(),
-            serde_json::json!(gr.total_quantity),
-        );
+        props.insert("totalQuantity".into(), serde_json::json!(gr.total_quantity));
         if let Some(ref po_id) = gr.purchase_order_id {
-            props.insert(
-                "purchaseOrderId".into(),
-                Value::String(po_id.clone()),
-            );
+            props.insert("purchaseOrderId".into(), Value::String(po_id.clone()));
         }
         if let Some(ref vendor) = gr.vendor_id {
             props.insert("vendorId".into(), Value::String(vendor.clone()));
@@ -168,10 +147,7 @@ impl PropertySerializer for VendorInvoicePropertySerializer {
             "documentId".into(),
             Value::String(inv.header.document_id.clone()),
         );
-        props.insert(
-            "documentType".into(),
-            Value::String("VendorInvoice".into()),
-        );
+        props.insert("documentType".into(), Value::String("VendorInvoice".into()));
         props.insert(
             "companyCode".into(),
             Value::String(inv.header.company_code.clone()),
@@ -196,10 +172,7 @@ impl PropertySerializer for VendorInvoicePropertySerializer {
             "payableAmount".into(),
             serde_json::json!(inv.payable_amount),
         );
-        props.insert(
-            "lineCount".into(),
-            Value::Number(inv.items.len().into()),
-        );
+        props.insert("lineCount".into(), Value::Number(inv.items.len().into()));
 
         Some(props)
     }
@@ -273,8 +246,14 @@ mod tests {
 
     #[test]
     fn entity_types_are_correct() {
-        assert_eq!(PurchaseOrderPropertySerializer.entity_type(), "purchase_order");
-        assert_eq!(GoodsReceiptPropertySerializer.entity_type(), "goods_receipt");
+        assert_eq!(
+            PurchaseOrderPropertySerializer.entity_type(),
+            "purchase_order"
+        );
+        assert_eq!(
+            GoodsReceiptPropertySerializer.entity_type(),
+            "goods_receipt"
+        );
         assert_eq!(
             VendorInvoicePropertySerializer.entity_type(),
             "vendor_invoice"

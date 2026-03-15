@@ -246,7 +246,6 @@ pub struct InternalControl {
     pub maturity_level: CosoMaturityLevel,
 
     // --- New fields for test history, effectiveness, owner resolution, risk linkage ---
-
     /// Employee ID of the control owner (resolved from owner_role at generation time)
     pub owner_employee_id: Option<String>,
     /// Display name of the control owner

@@ -21,20 +21,19 @@ use datasynth_core::models::audit::{
     RiskAssessment, Workpaper,
 };
 use datasynth_core::models::compliance::{ComplianceFinding, ComplianceStandard, RegulatoryFiling};
+use datasynth_core::models::intercompany::{EliminationEntry, ICMatchedPair};
 use datasynth_core::models::sourcing::{
     BidEvaluation, ProcurementContract, RfxEvent, SourcingProject, SupplierBid,
     SupplierQualification,
 };
-use datasynth_core::models::intercompany::{EliminationEntry, ICMatchedPair};
 use datasynth_core::models::ExpenseReport;
 use datasynth_core::models::{
     BankReconciliation, CashForecast, CashPosition, ChartOfAccounts, ClimateScenario,
     CosoComponent, CosoPrinciple, Customer, CycleCount, DebtInstrument, EarnedValueMetric,
     EmissionRecord, Employee, EsgDisclosure, FixedAsset, HedgeRelationship, InternalControl,
     JournalEntry, Material, OrganizationalEvent, PayrollRun, ProcessEvolutionEvent,
-    ProductionOrder, Project, ProjectMilestone, QualityInspection, SupplierEsgAssessment,
-    TaxCode, TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeEntry, Vendor,
-    WithholdingTaxRecord,
+    ProductionOrder, Project, ProjectMilestone, QualityInspection, SupplierEsgAssessment, TaxCode,
+    TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeEntry, Vendor, WithholdingTaxRecord,
 };
 use datasynth_generators::disruption::DisruptionEvent;
 
@@ -2549,6 +2548,7 @@ impl HypergraphBuilder {
     /// - AnalyticalProcedureResult (ISA 520)
     /// - InternalAuditFunction, InternalAuditReport (ISA 610)
     /// - RelatedParty, RelatedPartyTransaction (ISA 550)
+    #[allow(clippy::too_many_arguments)]
     pub fn add_audit_procedure_entities(
         &mut self,
         confirmations: &[ExternalConfirmation],
@@ -2578,7 +2578,10 @@ impl HypergraphBuilder {
                 label: format!("CONF {}", conf.confirmation_ref),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert("entity_id".into(), Value::String(conf.confirmation_ref.clone()));
+                    p.insert(
+                        "entity_id".into(),
+                        Value::String(conf.confirmation_ref.clone()),
+                    );
                     p.insert("process_family".into(), Value::String("AUDIT".into()));
                     p
                 },
@@ -2927,7 +2930,10 @@ impl HypergraphBuilder {
                 label: format!("RPT {}", rpt.transaction_ref),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert("entity_id".into(), Value::String(rpt.transaction_ref.clone()));
+                    p.insert(
+                        "entity_id".into(),
+                        Value::String(rpt.transaction_ref.clone()),
+                    );
                     p.insert("process_family".into(), Value::String("AUDIT".into()));
                     p
                 },
@@ -3338,7 +3344,10 @@ impl HypergraphBuilder {
                 label: jur.name.clone(),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert("country_code".into(), Value::String(jur.country_code.clone()));
+                    p.insert(
+                        "country_code".into(),
+                        Value::String(jur.country_code.clone()),
+                    );
                     p.insert(
                         "jurisdiction_type".into(),
                         Value::String(format!("{:?}", jur.jurisdiction_type)),
@@ -3380,7 +3389,10 @@ impl HypergraphBuilder {
                         Value::String(code.jurisdiction_id.clone()),
                     );
                     p.insert("is_exempt".into(), Value::Bool(code.is_exempt));
-                    p.insert("is_reverse_charge".into(), Value::Bool(code.is_reverse_charge));
+                    p.insert(
+                        "is_reverse_charge".into(),
+                        Value::Bool(code.is_reverse_charge),
+                    );
                     p
                 },
                 features: vec![code.rate.to_string().parse::<f64>().unwrap_or(0.0)],
@@ -3406,7 +3418,10 @@ impl HypergraphBuilder {
                         "document_type".into(),
                         Value::String(format!("{:?}", line.document_type)),
                     );
-                    p.insert("document_id".into(), Value::String(line.document_id.clone()));
+                    p.insert(
+                        "document_id".into(),
+                        Value::String(line.document_id.clone()),
+                    );
                     p.insert(
                         "tax_code_id".into(),
                         Value::String(line.tax_code_id.clone()),
@@ -3742,10 +3757,7 @@ impl HypergraphBuilder {
                         .parse::<f64>()
                         .unwrap_or(0.0)
                         .ln_1p(),
-                    debt.interest_rate
-                        .to_string()
-                        .parse::<f64>()
-                        .unwrap_or(0.0),
+                    debt.interest_rate.to_string().parse::<f64>().unwrap_or(0.0),
                 ],
                 is_anomaly: false,
                 anomaly_type: None,
@@ -3876,11 +3888,7 @@ impl HypergraphBuilder {
                     );
                     p
                 },
-                features: vec![sa
-                    .overall_score
-                    .to_string()
-                    .parse::<f64>()
-                    .unwrap_or(0.0)],
+                features: vec![sa.overall_score.to_string().parse::<f64>().unwrap_or(0.0)],
                 is_anomaly: false,
                 anomaly_type: None,
                 is_aggregate: false,
@@ -4042,7 +4050,10 @@ impl HypergraphBuilder {
                         Value::String(ms.planned_date.to_string()),
                     );
                     p.insert("status".into(), Value::String(format!("{:?}", ms.status)));
-                    p.insert("sequence".into(), Value::Number((ms.sequence as u64).into()));
+                    p.insert(
+                        "sequence".into(),
+                        Value::Number((ms.sequence as u64).into()),
+                    );
                     let amt: f64 = ms.payment_amount.to_string().parse().unwrap_or(0.0);
                     p.insert("payment_amount".into(), serde_json::json!(amt));
                     if let Some(ref actual) = ms.actual_date {
@@ -4084,10 +4095,7 @@ impl HypergraphBuilder {
                 entity_type_code: type_codes::IC_MATCHED_PAIR,
                 layer: HypergraphLayer::AccountingNetwork,
                 external_id: pair.ic_reference.clone(),
-                label: format!(
-                    "IC {} → {}",
-                    pair.seller_company, pair.buyer_company
-                ),
+                label: format!("IC {} → {}", pair.seller_company, pair.buyer_company),
                 properties: {
                     let mut p = HashMap::new();
                     p.insert(
@@ -4156,10 +4164,7 @@ impl HypergraphBuilder {
                         Value::String(elim.fiscal_period.clone()),
                     );
                     p.insert("currency".into(), Value::String(elim.currency.clone()));
-                    p.insert(
-                        "is_permanent".into(),
-                        Value::Bool(elim.is_permanent),
-                    );
+                    p.insert("is_permanent".into(), Value::Bool(elim.is_permanent));
                     let debit: f64 = elim.total_debit.to_string().parse().unwrap_or(0.0);
                     p.insert("total_debit".into(), serde_json::json!(debit));
                     p
@@ -4218,7 +4223,9 @@ impl HypergraphBuilder {
                     if !pe.tags.is_empty() {
                         p.insert(
                             "tags".into(),
-                            Value::Array(pe.tags.iter().map(|t| Value::String(t.clone())).collect()),
+                            Value::Array(
+                                pe.tags.iter().map(|t| Value::String(t.clone())).collect(),
+                            ),
                         );
                     }
                     p
@@ -4256,7 +4263,9 @@ impl HypergraphBuilder {
                     if !oe.tags.is_empty() {
                         p.insert(
                             "tags".into(),
-                            Value::Array(oe.tags.iter().map(|t| Value::String(t.clone())).collect()),
+                            Value::Array(
+                                oe.tags.iter().map(|t| Value::String(t.clone())).collect(),
+                            ),
                         );
                     }
                     p
@@ -4332,10 +4341,7 @@ impl HypergraphBuilder {
                 label: format!("AML {}", txn.reference),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert(
-                        "transaction_id".into(),
-                        Value::String(tid.clone()),
-                    );
+                    p.insert("transaction_id".into(), Value::String(tid.clone()));
                     let amount: f64 = txn.amount.to_string().parse().unwrap_or(0.0);
                     p.insert("amount".into(), serde_json::json!(amount));
                     p.insert("currency".into(), Value::String(txn.currency.clone()));
@@ -4386,10 +4392,7 @@ impl HypergraphBuilder {
                 label: format!("KYC {}", cust.name.legal_name),
                 properties: {
                     let mut p = HashMap::new();
-                    p.insert(
-                        "customer_id".into(),
-                        Value::String(cid.clone()),
-                    );
+                    p.insert("customer_id".into(), Value::String(cid.clone()));
                     p.insert("name".into(), Value::String(cust.name.legal_name.clone()));
                     p.insert(
                         "customer_type".into(),
@@ -4437,8 +4440,12 @@ impl HypergraphBuilder {
                 // O2C (Order-to-Cash)
                 "sales_order" | "delivery" | "customer_invoice" | "o2c_pool" => "O2C",
                 // S2C (Source-to-Contract)
-                "sourcing_project" | "supplier_qualification" | "rfx_event" | "supplier_bid"
-                | "bid_evaluation" | "procurement_contract" => "S2C",
+                "sourcing_project"
+                | "supplier_qualification"
+                | "rfx_event"
+                | "supplier_bid"
+                | "bid_evaluation"
+                | "procurement_contract" => "S2C",
                 // H2R (Hire-to-Retire)
                 "payroll_run" | "time_entry" | "expense_report" | "payroll_line_item" => "H2R",
                 // MFG (Manufacturing)
@@ -4447,19 +4454,29 @@ impl HypergraphBuilder {
                 "banking_customer" | "bank_account" | "bank_transaction" | "aml_alert"
                 | "kyc_profile" => "BANK",
                 // AUDIT
-                "audit_engagement" | "workpaper" | "audit_finding" | "audit_evidence"
-                | "risk_assessment" | "professional_judgment" => "AUDIT",
+                "audit_engagement"
+                | "workpaper"
+                | "audit_finding"
+                | "audit_evidence"
+                | "risk_assessment"
+                | "professional_judgment" => "AUDIT",
                 // R2R (Record-to-Report)
                 "bank_reconciliation" | "bank_statement_line" | "reconciling_item" => "R2R",
                 // TAX
-                "tax_jurisdiction" | "tax_code" | "tax_line" | "tax_return" | "tax_provision"
+                "tax_jurisdiction"
+                | "tax_code"
+                | "tax_line"
+                | "tax_return"
+                | "tax_provision"
                 | "withholding_tax_record" => "TAX",
                 // TREASURY
                 "cash_position" | "cash_forecast" | "hedge_relationship" | "debt_instrument" => {
                     "TREASURY"
                 }
                 // ESG
-                "emission_record" | "esg_disclosure" | "supplier_esg_assessment"
+                "emission_record"
+                | "esg_disclosure"
+                | "supplier_esg_assessment"
                 | "climate_scenario" => "ESG",
                 // PROJECT
                 "project" | "earned_value_metric" | "project_milestone" => "PROJECT",
@@ -4482,10 +4499,8 @@ impl HypergraphBuilder {
                 // Unknown/other
                 _ => "OTHER",
             };
-            node.properties.insert(
-                "process_family".into(),
-                Value::String(family.to_string()),
-            );
+            node.properties
+                .insert("process_family".into(), Value::String(family.to_string()));
         }
     }
 
@@ -4826,7 +4841,8 @@ mod tests {
             test_count: 0,
             last_tested_date: None,
             test_result: datasynth_core::models::internal_control::TestResult::default(),
-            effectiveness: datasynth_core::models::internal_control::ControlEffectiveness::default(),
+            effectiveness: datasynth_core::models::internal_control::ControlEffectiveness::default(
+            ),
             mitigates_risk_ids: Vec::new(),
             covers_account_classes: Vec::new(),
         }

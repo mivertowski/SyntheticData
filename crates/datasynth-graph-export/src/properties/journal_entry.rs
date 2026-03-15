@@ -57,10 +57,7 @@ impl PropertySerializer for JournalEntryPropertySerializer {
         let total_credit = entry.total_credit();
         props.insert("totalDebit".into(), serde_json::json!(total_debit));
         props.insert("totalCredit".into(), serde_json::json!(total_credit));
-        props.insert(
-            "lineCount".into(),
-            Value::Number(entry.lines.len().into()),
-        );
+        props.insert("lineCount".into(), Value::Number(entry.lines.len().into()));
 
         // Reference and description
         if let Some(ref reference) = entry.header.reference {
@@ -93,10 +90,7 @@ impl PropertySerializer for JournalEntryPropertySerializer {
             "sodViolation".into(),
             Value::Bool(entry.header.sod_violation),
         );
-        props.insert(
-            "soxRelevant".into(),
-            Value::Bool(entry.header.sox_relevant),
-        );
+        props.insert("soxRelevant".into(), Value::Bool(entry.header.sox_relevant));
         props.insert("isAnomaly".into(), Value::Bool(entry.header.is_anomaly));
         props.insert("isFraud".into(), Value::Bool(entry.header.is_fraud));
 

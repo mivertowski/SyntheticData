@@ -122,11 +122,7 @@ impl AuditProcedureStep {
         assertion: Assertion,
     ) -> Self {
         let now = Utc::now();
-        let step_ref = format!(
-            "STEP-{}-{:02}",
-            &workpaper_id.to_string()[..8],
-            step_number,
-        );
+        let step_ref = format!("STEP-{}-{:02}", &workpaper_id.to_string()[..8], step_number,);
         Self {
             step_id: Uuid::new_v4(),
             step_ref,
@@ -167,13 +163,7 @@ impl AuditProcedureStep {
     ///
     /// Sets the performer, date, result, status (`Complete`), and
     /// `exception_noted` (true when `result` is `Exception`).
-    pub fn perform(
-        &mut self,
-        by: String,
-        by_name: String,
-        date: NaiveDate,
-        result: StepResult,
-    ) {
+    pub fn perform(&mut self, by: String, by_name: String, date: NaiveDate, result: StepResult) {
         self.performed_by = Some(by);
         self.performed_by_name = Some(by_name);
         self.performed_date = Some(date);
@@ -229,7 +219,12 @@ mod tests {
     fn test_perform_exception_noted() {
         let mut step = make_step();
         let date = NaiveDate::from_ymd_opt(2026, 3, 2).unwrap();
-        step.perform("u456".into(), "Bob Check".into(), date, StepResult::Exception);
+        step.perform(
+            "u456".into(),
+            "Bob Check".into(),
+            date,
+            StepResult::Exception,
+        );
 
         assert!(step.exception_noted);
         assert_eq!(step.result, Some(StepResult::Exception));

@@ -63,6 +63,6 @@ pub use models::{
     AccountNode, AggregationStrategy, ApprovalEdge, CompanyNode, CrossLayerEdge, EdgeDirection,
     EdgeId, EdgeProperty, EdgeType, Graph, GraphEdge, GraphMetadata, GraphNode, GraphType,
     HeterogeneousGraph, Hyperedge, HyperedgeParticipant, Hypergraph, HypergraphLayer,
-    HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport, NodeBudgetSuggestion,
-    NodeId, NodeProperty, NodeType, OwnershipEdge, TransactionEdge, UserNode,
+    HypergraphMetadata, HypergraphNode, NodeBudget, NodeBudgetReport, NodeBudgetSuggestion, NodeId,
+    NodeProperty, NodeType, OwnershipEdge, TransactionEdge, UserNode,
 };

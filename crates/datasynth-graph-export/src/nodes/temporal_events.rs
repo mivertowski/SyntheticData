@@ -107,10 +107,7 @@ impl NodeSynthesizer for TemporalEventsNodeSynthesizer {
 
             let mut props = HashMap::new();
             props.insert("eventId".into(), serde_json::json!(evt.event_id));
-            props.insert(
-                "eventType".into(),
-                serde_json::json!(event_type_name),
-            );
+            props.insert("eventType".into(), serde_json::json!(event_type_name));
             props.insert(
                 "timestamp".into(),
                 serde_json::json!(format!("{}T00:00:00Z", evt.effective_date)),
@@ -128,10 +125,7 @@ impl NodeSynthesizer for TemporalEventsNodeSynthesizer {
                 id: Some(numeric_id),
                 node_type: 471,
                 node_type_name: "organizational_event".into(),
-                label: format!(
-                    "Org Event: {} ({})",
-                    event_type_name, evt.effective_date
-                ),
+                label: format!("Org Event: {} ({})", event_type_name, evt.effective_date),
                 layer: 1, // Governance
                 properties: props,
             });
@@ -148,10 +142,7 @@ impl NodeSynthesizer for TemporalEventsNodeSynthesizer {
                 "eventType".into(),
                 serde_json::json!(format!("{:?}", evt.disruption_type)),
             );
-            props.insert(
-                "description".into(),
-                serde_json::json!(evt.description),
-            );
+            props.insert("description".into(), serde_json::json!(evt.description));
             props.insert("severity".into(), serde_json::json!(evt.severity));
             if !evt.affected_companies.is_empty() {
                 props.insert(
@@ -164,19 +155,13 @@ impl NodeSynthesizer for TemporalEventsNodeSynthesizer {
                     ),
                 );
             }
-            props.insert(
-                "nodeTypeName".into(),
-                serde_json::json!("disruption_event"),
-            );
+            props.insert("nodeTypeName".into(), serde_json::json!("disruption_event"));
 
             nodes.push(ExportNode {
                 id: Some(numeric_id),
                 node_type: 472,
                 node_type_name: "disruption_event".into(),
-                label: format!(
-                    "Disruption: {:?} ({})",
-                    evt.disruption_type, evt.event_id
-                ),
+                label: format!("Disruption: {:?} ({})", evt.disruption_type, evt.event_id),
                 layer: 2, // Process
                 properties: props,
             });

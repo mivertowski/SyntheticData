@@ -6,18 +6,19 @@ use chrono::NaiveDate;
 use rust_decimal_macros::dec;
 
 use datasynth_core::models::intercompany::{EliminationEntry, EliminationType, ICMatchedPair};
-use datasynth_core::models::{
-    AssuranceLevel, CashForecast, CashPosition, ClimateScenario, DebtInstrument,
-    EarnedValueMetric, EmissionRecord, EmissionScope, EsgDisclosure, EsgFramework, EsgRiskFlag,
-    EstimationMethod, HedgeRelationship, OrganizationalEvent, OrganizationalEventType,
-    ProcessEvolutionEvent, ProcessEvolutionType, Project, ProjectMilestone, ScenarioType,
-    SupplierEsgAssessment, TaxCode, TaxJurisdiction, TaxLine, TaxProvision, TaxReturn,
-    TimeHorizon, WithholdingTaxRecord,
-};
 use datasynth_core::models::organizational_event::ReorganizationConfig;
 use datasynth_core::models::process_evolution::{PolicyCategory, PolicyChangeConfig};
 use datasynth_core::models::AssessmentMethod;
-use datasynth_generators::disruption::{DisruptionEvent, DisruptionType, OutageConfig, OutageCause};
+use datasynth_core::models::{
+    AssuranceLevel, CashForecast, CashPosition, ClimateScenario, DebtInstrument, EarnedValueMetric,
+    EmissionRecord, EmissionScope, EsgDisclosure, EsgFramework, EsgRiskFlag, EstimationMethod,
+    HedgeRelationship, OrganizationalEvent, OrganizationalEventType, ProcessEvolutionEvent,
+    ProcessEvolutionType, Project, ProjectMilestone, ScenarioType, SupplierEsgAssessment, TaxCode,
+    TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeHorizon, WithholdingTaxRecord,
+};
+use datasynth_generators::disruption::{
+    DisruptionEvent, DisruptionType, OutageCause, OutageConfig,
+};
 use datasynth_graph::builders::hypergraph::{HypergraphBuilder, HypergraphConfig};
 use datasynth_graph::models::hypergraph::HypergraphLayer;
 
@@ -40,8 +41,12 @@ fn default_config() -> HypergraphConfig {
 fn builder_creates_tax_nodes() {
     let mut builder = HypergraphBuilder::new(default_config());
 
-    let jurisdictions =
-        vec![TaxJurisdiction::new("US-FED", "US Federal", "US", Default::default())];
+    let jurisdictions = vec![TaxJurisdiction::new(
+        "US-FED",
+        "US Federal",
+        "US",
+        Default::default(),
+    )];
     let codes = vec![TaxCode::new(
         "TC-001",
         "VAT-STD-20",
@@ -215,10 +220,7 @@ fn builder_creates_treasury_nodes() {
         .nodes
         .iter()
         .any(|n| n.entity_type == "hedge_relationship"));
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "debt_instrument"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "debt_instrument"));
 
     // All treasury nodes -> Layer 3
     assert!(hg
@@ -321,22 +323,13 @@ fn builder_creates_esg_nodes() {
     let hg = builder.build();
 
     assert_eq!(hg.nodes.len(), 4);
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "emission_record"));
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "esg_disclosure"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "emission_record"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "esg_disclosure"));
     assert!(hg
         .nodes
         .iter()
         .any(|n| n.entity_type == "supplier_esg_assessment"));
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "climate_scenario"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "climate_scenario"));
 
     // ESG -> Layer 1 (Governance)
     assert!(hg
@@ -359,8 +352,9 @@ fn builder_creates_esg_nodes() {
 fn builder_creates_project_nodes() {
     let mut builder = HypergraphBuilder::new(default_config());
 
-    let projects = vec![Project::new("P-001", "ERP Implementation", Default::default())
-        .with_budget(dec!(5000000))];
+    let projects = vec![
+        Project::new("P-001", "ERP Implementation", Default::default()).with_budget(dec!(5000000)),
+    ];
     let evms = vec![EarnedValueMetric::compute(
         "EVM-001",
         "P-001",
@@ -460,10 +454,7 @@ fn builder_creates_intercompany_nodes() {
     let hg = builder.build();
 
     assert_eq!(hg.nodes.len(), 2);
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "ic_matched_pair"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "ic_matched_pair"));
     assert!(hg
         .nodes
         .iter()
@@ -538,10 +529,7 @@ fn builder_creates_temporal_event_nodes() {
         .nodes
         .iter()
         .any(|n| n.entity_type == "organizational_event"));
-    assert!(hg
-        .nodes
-        .iter()
-        .any(|n| n.entity_type == "disruption_event"));
+    assert!(hg.nodes.iter().any(|n| n.entity_type == "disruption_event"));
 
     // All -> Layer 2 (Process Events)
     assert!(hg
@@ -651,8 +639,12 @@ fn tag_process_family_sets_correct_families() {
     let mut builder = HypergraphBuilder::new(default_config());
 
     // Add a mix of nodes from different domains
-    let jurisdictions =
-        vec![TaxJurisdiction::new("US-FED", "US Federal", "US", Default::default())];
+    let jurisdictions = vec![TaxJurisdiction::new(
+        "US-FED",
+        "US Federal",
+        "US",
+        Default::default(),
+    )];
     let positions = vec![CashPosition::new(
         "CP-001",
         "ENTITY-1",
@@ -764,8 +756,12 @@ fn config_toggle_disables_tax() {
         ..Default::default()
     };
     let mut builder = HypergraphBuilder::new(config);
-    let jurisdictions =
-        vec![TaxJurisdiction::new("US-FED", "US Federal", "US", Default::default())];
+    let jurisdictions = vec![TaxJurisdiction::new(
+        "US-FED",
+        "US Federal",
+        "US",
+        Default::default(),
+    )];
     builder.add_tax_documents(&jurisdictions, &[], &[], &[], &[], &[]);
     let hg = builder.build();
     assert_eq!(hg.nodes.len(), 0);

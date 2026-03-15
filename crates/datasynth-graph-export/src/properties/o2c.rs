@@ -50,26 +50,11 @@ impl PropertySerializer for SalesOrderPropertySerializer {
             Value::String(format!("{:?}", so.header.status)),
         );
         props.insert("customerId".into(), Value::String(so.customer_id.clone()));
-        props.insert(
-            "soType".into(),
-            Value::String(format!("{:?}", so.so_type)),
-        );
-        props.insert(
-            "amount".into(),
-            serde_json::json!(so.total_gross_amount),
-        );
-        props.insert(
-            "netAmount".into(),
-            serde_json::json!(so.total_net_amount),
-        );
-        props.insert(
-            "salesOrg".into(),
-            Value::String(so.sales_org.clone()),
-        );
-        props.insert(
-            "lineCount".into(),
-            Value::Number(so.items.len().into()),
-        );
+        props.insert("soType".into(), Value::String(format!("{:?}", so.so_type)));
+        props.insert("amount".into(), serde_json::json!(so.total_gross_amount));
+        props.insert("netAmount".into(), serde_json::json!(so.total_net_amount));
+        props.insert("salesOrg".into(), Value::String(so.sales_org.clone()));
+        props.insert("lineCount".into(), Value::Number(so.items.len().into()));
 
         Some(props)
     }
@@ -186,26 +171,11 @@ impl PropertySerializer for CustomerInvoicePropertySerializer {
             "invoiceType".into(),
             Value::String(format!("{:?}", inv.invoice_type)),
         );
-        props.insert(
-            "amount".into(),
-            serde_json::json!(inv.total_gross_amount),
-        );
-        props.insert(
-            "netAmount".into(),
-            serde_json::json!(inv.total_net_amount),
-        );
-        props.insert(
-            "taxAmount".into(),
-            serde_json::json!(inv.total_tax_amount),
-        );
-        props.insert(
-            "salesOrg".into(),
-            Value::String(inv.sales_org.clone()),
-        );
-        props.insert(
-            "lineCount".into(),
-            Value::Number(inv.items.len().into()),
-        );
+        props.insert("amount".into(), serde_json::json!(inv.total_gross_amount));
+        props.insert("netAmount".into(), serde_json::json!(inv.total_net_amount));
+        props.insert("taxAmount".into(), serde_json::json!(inv.total_tax_amount));
+        props.insert("salesOrg".into(), Value::String(inv.sales_org.clone()));
+        props.insert("lineCount".into(), Value::Number(inv.items.len().into()));
 
         Some(props)
     }

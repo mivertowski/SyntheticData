@@ -220,10 +220,7 @@ impl EntityRelationshipEdgeSynthesizer {
     /// CUSTOMER_HAS_ORDER (code 136): customer -> document (SO / customer invoice).
     ///
     /// Links customers to the O2C documents they are associated with via customer_id.
-    fn synthesize_customer_has_order(
-        &self,
-        ctx: &mut EdgeSynthesisContext<'_>,
-    ) -> Vec<ExportEdge> {
+    fn synthesize_customer_has_order(&self, ctx: &mut EdgeSynthesisContext<'_>) -> Vec<ExportEdge> {
         let flows = &ctx.ds_result.document_flows;
         let mut edges = Vec::new();
 

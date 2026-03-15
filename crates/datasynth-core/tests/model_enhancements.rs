@@ -36,10 +36,7 @@ fn audit_finding_set_relationship_fields() {
 
 #[test]
 fn journal_entry_has_document_ref_and_approval() {
-    let je = JournalEntryHeader::new(
-        "1000".into(),
-        NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
-    );
+    let je = JournalEntryHeader::new("1000".into(), NaiveDate::from_ymd_opt(2024, 12, 1).unwrap());
     assert!(je.source_document.is_none());
     assert!(je.approved_by.is_none());
     assert!(je.approval_date.is_none());
@@ -101,10 +98,8 @@ fn document_ref_parse_from_reference_string() {
 
 #[test]
 fn journal_entry_set_approval_fields() {
-    let mut je = JournalEntryHeader::new(
-        "1000".into(),
-        NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
-    );
+    let mut je =
+        JournalEntryHeader::new("1000".into(), NaiveDate::from_ymd_opt(2024, 12, 1).unwrap());
     je.approved_by = Some("MGR0001".into());
     je.approval_date = Some(NaiveDate::from_ymd_opt(2024, 12, 2).unwrap());
     je.source_document = Some(DocumentRef::PurchaseOrder("PO-2024-000001".into()));

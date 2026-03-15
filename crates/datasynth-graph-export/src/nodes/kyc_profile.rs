@@ -62,11 +62,7 @@ impl NodeSynthesizer for KycProfileNodeSynthesizer {
             }
             props.insert(
                 "status".into(),
-                serde_json::json!(if cust.is_active {
-                    "active"
-                } else {
-                    "inactive"
-                }),
+                serde_json::json!(if cust.is_active { "active" } else { "inactive" }),
             );
             props.insert(
                 "customerType".into(),

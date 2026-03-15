@@ -41,10 +41,7 @@ impl NodeSynthesizer for RedFlagNodeSynthesizer {
             let numeric_id = ctx.id_map.get_or_insert(&external_id);
 
             let mut props = HashMap::new();
-            props.insert(
-                "documentId".into(),
-                serde_json::json!(flag.document_id),
-            );
+            props.insert("documentId".into(), serde_json::json!(flag.document_id));
             props.insert(
                 "category".into(),
                 serde_json::json!(format!("{:?}", flag.category)),
@@ -53,10 +50,7 @@ impl NodeSynthesizer for RedFlagNodeSynthesizer {
                 "severity".into(),
                 serde_json::json!(format!("{:?}", flag.strength)),
             );
-            props.insert(
-                "description".into(),
-                serde_json::json!(flag.pattern_name),
-            );
+            props.insert("description".into(), serde_json::json!(flag.pattern_name));
             props.insert("confidence".into(), serde_json::json!(flag.confidence));
             props.insert("isFraudulent".into(), serde_json::json!(flag.is_fraudulent));
             // Serialize details as a JSON object

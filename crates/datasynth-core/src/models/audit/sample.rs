@@ -179,8 +179,7 @@ impl AuditSample {
             }
             None => {
                 // No population value — scale by population count / sample count
-                let pop_count =
-                    Decimal::from(self.population_size);
+                let pop_count = Decimal::from(self.population_size);
                 let samp_count = Decimal::from(self.items.len() as u64);
                 if samp_count == Decimal::ZERO {
                     Decimal::ZERO
@@ -304,7 +303,10 @@ mod tests {
         s.add_item(item);
 
         s.conclude();
-        assert_eq!(s.conclusion, Some(SampleConclusion::ProjectedBelowTolerable));
+        assert_eq!(
+            s.conclusion,
+            Some(SampleConclusion::ProjectedBelowTolerable)
+        );
     }
 
     #[test]
@@ -318,7 +320,10 @@ mod tests {
         s.add_item(item);
 
         s.conclude();
-        assert_eq!(s.conclusion, Some(SampleConclusion::ProjectedExceedsTolerable));
+        assert_eq!(
+            s.conclusion,
+            Some(SampleConclusion::ProjectedExceedsTolerable)
+        );
     }
 
     #[test]

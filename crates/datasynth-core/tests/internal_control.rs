@@ -1,9 +1,7 @@
 //! Integration tests for InternalControl test history, effectiveness, and risk linkage.
 
-use datasynth_core::models::{
-    ControlType, InternalControl,
-};
-use datasynth_core::models::internal_control::{TestResult, ControlEffectiveness};
+use datasynth_core::models::internal_control::{ControlEffectiveness, TestResult};
+use datasynth_core::models::{ControlType, InternalControl};
 
 #[test]
 fn internal_control_has_test_history_and_effectiveness() {
@@ -24,7 +22,10 @@ fn internal_control_has_test_history_and_effectiveness() {
     assert!(matches!(ctrl.test_result, TestResult::NotTested));
 
     // Derived effectiveness defaults
-    assert!(matches!(ctrl.effectiveness, ControlEffectiveness::NotTested));
+    assert!(matches!(
+        ctrl.effectiveness,
+        ControlEffectiveness::NotTested
+    ));
 
     // Risk linkage defaults
     assert!(ctrl.mitigates_risk_ids.is_empty());
@@ -38,7 +39,10 @@ fn test_result_default_is_not_tested() {
 
 #[test]
 fn control_effectiveness_default_is_not_tested() {
-    assert_eq!(ControlEffectiveness::default(), ControlEffectiveness::NotTested);
+    assert_eq!(
+        ControlEffectiveness::default(),
+        ControlEffectiveness::NotTested
+    );
 }
 
 #[test]
@@ -82,7 +86,11 @@ fn builder_methods_for_new_fields() {
         "Test objective",
     )
     .with_owner_employee("EMP-001", "Jane Smith")
-    .with_test_history(3, Some(chrono::NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()), TestResult::Pass)
+    .with_test_history(
+        3,
+        Some(chrono::NaiveDate::from_ymd_opt(2025, 6, 15).unwrap()),
+        TestResult::Pass,
+    )
     .with_effectiveness(ControlEffectiveness::Effective)
     .with_mitigates_risk_ids(vec!["R001".into(), "R002".into()])
     .with_covers_account_classes(vec!["Revenue".into(), "Receivables".into()]);
@@ -95,7 +103,10 @@ fn builder_methods_for_new_fields() {
         Some(chrono::NaiveDate::from_ymd_opt(2025, 6, 15).unwrap())
     );
     assert!(matches!(ctrl.test_result, TestResult::Pass));
-    assert!(matches!(ctrl.effectiveness, ControlEffectiveness::Effective));
+    assert!(matches!(
+        ctrl.effectiveness,
+        ControlEffectiveness::Effective
+    ));
     assert_eq!(ctrl.mitigates_risk_ids, vec!["R001", "R002"]);
     assert_eq!(ctrl.covers_account_classes, vec!["Revenue", "Receivables"]);
 }
@@ -110,7 +121,10 @@ fn standard_controls_have_default_new_fields() {
         assert_eq!(ctrl.test_count, 0);
         assert!(ctrl.last_tested_date.is_none());
         assert!(matches!(ctrl.test_result, TestResult::NotTested));
-        assert!(matches!(ctrl.effectiveness, ControlEffectiveness::NotTested));
+        assert!(matches!(
+            ctrl.effectiveness,
+            ControlEffectiveness::NotTested
+        ));
         assert!(ctrl.mitigates_risk_ids.is_empty());
         assert!(ctrl.covers_account_classes.is_empty());
     }

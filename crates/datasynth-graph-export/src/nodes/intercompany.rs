@@ -76,10 +76,7 @@ impl NodeSynthesizer for IntercompanyNodeSynthesizer {
                 "transactionDate".into(),
                 serde_json::json!(format!("{}T00:00:00Z", pair.transaction_date)),
             );
-            props.insert(
-                "nodeTypeName".into(),
-                serde_json::json!("ic_matched_pair"),
-            );
+            props.insert("nodeTypeName".into(), serde_json::json!("ic_matched_pair"));
 
             nodes.push(ExportNode {
                 id: Some(numeric_id),
@@ -109,10 +106,7 @@ impl NodeSynthesizer for IntercompanyNodeSynthesizer {
                 "consolidationEntity".into(),
                 serde_json::json!(elim.consolidation_entity),
             );
-            props.insert(
-                "fiscalPeriod".into(),
-                serde_json::json!(elim.fiscal_period),
-            );
+            props.insert("fiscalPeriod".into(), serde_json::json!(elim.fiscal_period));
             props.insert(
                 "totalDebit".into(),
                 serde_json::json!(elim.total_debit.to_f64().unwrap_or(0.0)),
@@ -122,19 +116,13 @@ impl NodeSynthesizer for IntercompanyNodeSynthesizer {
                 serde_json::json!(elim.total_credit.to_f64().unwrap_or(0.0)),
             );
             props.insert("currency".into(), serde_json::json!(elim.currency));
-            props.insert(
-                "nodeTypeName".into(),
-                serde_json::json!("ic_elimination"),
-            );
+            props.insert("nodeTypeName".into(), serde_json::json!("ic_elimination"));
 
             nodes.push(ExportNode {
                 id: Some(numeric_id),
                 node_type: 461,
                 node_type_name: "ic_elimination".into(),
-                label: format!(
-                    "IC Elim: {} ({})",
-                    elim.entry_id, elim.consolidation_entity
-                ),
+                label: format!("IC Elim: {} ({})", elim.entry_id, elim.consolidation_entity),
                 layer: 3, // Accounting
                 properties: props,
             });
