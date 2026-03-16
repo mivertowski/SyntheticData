@@ -190,6 +190,7 @@ pub fn balanced_journal_entry(amount: Decimal) -> JournalEntry {
             control_status: Default::default(),
             sod_violation: false,
             sod_conflict_type: None,
+            is_elimination: false,
             approval_workflow: None,
             source_document: None,
             approved_by: None,

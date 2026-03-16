@@ -56,6 +56,9 @@ use datasynth_fingerprint::{
     synthesis::{ConfigSynthesizer, CopulaGeneratorSpec, SynthesisOptions},
 };
 use datasynth_generators::{
+    // Subledger linker + settlement
+    apply_ap_settlements,
+    apply_ar_settlements,
     // Anomaly injection
     AnomalyInjector,
     AnomalyInjectorConfig,
@@ -83,9 +86,6 @@ use datasynth_generators::{
     // Document flow JE generator
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
-    // Subledger linker + settlement
-    apply_ap_settlements,
-    apply_ar_settlements,
     DocumentFlowLinker,
     EmployeeGenerator,
     // ESG anomaly labels
@@ -1689,6 +1689,20 @@ impl EnhancedOrchestrator {
                 "Appended {} IC journal entries to main entries",
                 ic_je_count
             );
+        }
+
+        // Phase 5d: Convert IC elimination entries to GL journal entries and append
+        if !intercompany.elimination_entries.is_empty() {
+            let elim_jes = datasynth_generators::elimination_to_journal_entries(
+                &intercompany.elimination_entries,
+            );
+            if !elim_jes.is_empty() {
+                debug!(
+                    "Appended {} elimination journal entries to main entries",
+                    elim_jes.len()
+                );
+                entries.extend(elim_jes);
+            }
         }
 
         // Phase 6: HR Data (Payroll, Time Entries, Expenses)

@@ -307,5 +307,8 @@ fn multiple_invoices_settled_independently() {
     apply_ap_settlements(&mut ap_invoices, &payments);
 
     assert_eq!(ap_invoices[0].amount_remaining, Decimal::ZERO);
-    assert_eq!(ap_invoices[1].amount_remaining, gross1, "unsettled invoice must be unchanged");
+    assert_eq!(
+        ap_invoices[1].amount_remaining, gross1,
+        "unsettled invoice must be unchanged"
+    );
 }
