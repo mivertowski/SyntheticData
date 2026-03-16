@@ -178,8 +178,8 @@ fn equity_account_is_credited() {
     let coa = small_coa();
     let mut balances = HashMap::new();
     balances.insert("110000".to_string(), dec!(1000000)); // Cash
-    balances.insert("310000".to_string(), dec!(300000));  // Common Stock
-    balances.insert("320000".to_string(), dec!(700000));  // RE
+    balances.insert("310000".to_string(), dec!(300000)); // Common Stock
+    balances.insert("320000".to_string(), dec!(700000)); // RE
     let ob = ob_from_balances("C001", balances);
 
     let je = &opening_balance_to_jes(&ob, &coa)[0];
@@ -241,7 +241,10 @@ fn multiple_companies_produce_one_je_each() {
         .collect();
 
     assert_eq!(jes.len(), 3);
-    let codes: Vec<_> = jes.iter().map(|je| je.header.company_code.as_str()).collect();
+    let codes: Vec<_> = jes
+        .iter()
+        .map(|je| je.header.company_code.as_str())
+        .collect();
     assert!(codes.contains(&"C001"));
     assert!(codes.contains(&"C002"));
     assert!(codes.contains(&"C003"));

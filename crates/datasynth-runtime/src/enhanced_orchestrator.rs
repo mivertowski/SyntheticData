@@ -56,11 +56,11 @@ use datasynth_fingerprint::{
     synthesis::{ConfigSynthesizer, CopulaGeneratorSpec, SynthesisOptions},
 };
 use datasynth_generators::{
-    // Opening balance → JE conversion
-    opening_balance_to_jes,
     // Subledger linker + settlement
     apply_ap_settlements,
     apply_ar_settlements,
+    // Opening balance → JE conversion
+    opening_balance_to_jes,
     // Anomaly injection
     AnomalyInjector,
     AnomalyInjectorConfig,
@@ -2430,7 +2430,12 @@ impl EnhancedOrchestrator {
         let tax_rate = Decimal::new(21, 2); // 0.21
 
         // Collect company codes from config
-        let company_codes: Vec<String> = self.config.companies.iter().map(|c| c.code.clone()).collect();
+        let company_codes: Vec<String> = self
+            .config
+            .companies
+            .iter()
+            .map(|c| c.code.clone())
+            .collect();
 
         let mut close_jes: Vec<JournalEntry> = Vec::new();
 
@@ -2485,11 +2490,9 @@ impl EnhancedOrchestrator {
             };
 
             if tax_amount > Decimal::ZERO {
-                let mut tax_header =
-                    JournalEntryHeader::new(company_code.clone(), close_date);
+                let mut tax_header = JournalEntryHeader::new(company_code.clone(), close_date);
                 tax_header.document_type = "CL".to_string();
-                tax_header.header_text =
-                    Some(format!("Tax provision - {}", company_code));
+                tax_header.header_text = Some(format!("Tax provision - {}", company_code));
                 tax_header.created_by = "CLOSE_ENGINE".to_string();
                 tax_header.source = TransactionSource::Automated;
                 tax_header.business_process = Some(BusinessProcess::R2R);
@@ -2512,10 +2515,7 @@ impl EnhancedOrchestrator {
                     tax_amount,
                 ));
 
-                debug_assert!(
-                    tax_je.is_balanced(),
-                    "Tax provision JE must be balanced"
-                );
+                debug_assert!(tax_je.is_balanced(), "Tax provision JE must be balanced");
                 close_jes.push(tax_je);
             }
 
@@ -2524,8 +2524,7 @@ impl EnhancedOrchestrator {
             let net_income = pre_tax_income - tax_amount;
 
             if net_income != Decimal::ZERO {
-                let mut close_header =
-                    JournalEntryHeader::new(company_code.clone(), close_date);
+                let mut close_header = JournalEntryHeader::new(company_code.clone(), close_date);
                 close_header.document_type = "CL".to_string();
                 close_header.header_text =
                     Some(format!("Income statement close - {}", company_code));
@@ -2578,10 +2577,7 @@ impl EnhancedOrchestrator {
 
         let close_count = close_jes.len();
         if close_count > 0 {
-            info!(
-                "Generated {} period-close journal entries",
-                close_count
-            );
+            info!("Generated {} period-close journal entries", close_count);
             self.emit_phase_items("period_close", "JournalEntry", &close_jes);
             entries.extend(close_jes);
             stats.period_close_je_count = close_count;

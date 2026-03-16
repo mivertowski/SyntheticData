@@ -46,10 +46,7 @@ pub fn opening_balance_to_jes(
     header.created_by = "SYSTEM".to_string();
     header.source = TransactionSource::Automated;
     header.business_process = Some(BusinessProcess::R2R);
-    header.header_text = Some(format!(
-        "Opening balance as of {}",
-        ob.as_of_date
-    ));
+    header.header_text = Some(format!("Opening balance as of {}", ob.as_of_date));
 
     let document_id = header.document_id;
     let mut je = JournalEntry::new(header);
@@ -68,19 +65,9 @@ pub fn opening_balance_to_jes(
         let is_debit_normal = resolve_debit_normal(account_code, coa);
 
         let line = if is_debit_normal {
-            JournalEntryLine::debit(
-                document_id,
-                line_number,
-                account_code.to_string(),
-                amount,
-            )
+            JournalEntryLine::debit(document_id, line_number, account_code.to_string(), amount)
         } else {
-            JournalEntryLine::credit(
-                document_id,
-                line_number,
-                account_code.to_string(),
-                amount,
-            )
+            JournalEntryLine::credit(document_id, line_number, account_code.to_string(), amount)
         };
 
         je.add_line(line);
@@ -105,11 +92,11 @@ fn resolve_debit_normal(account_code: &str, coa: &ChartOfAccounts) -> bool {
 
     // Fallback: first-digit heuristic (US GAAP account numbering)
     match account_code.chars().next().unwrap_or('1') {
-        '1' => true,          // Assets — debit normal
-        '2' | '3' => false,   // Liabilities / Equity — credit normal
-        '4' => false,         // Revenue — credit normal
+        '1' => true,                   // Assets — debit normal
+        '2' | '3' => false,            // Liabilities / Equity — credit normal
+        '4' => false,                  // Revenue — credit normal
         '5' | '6' | '7' | '8' => true, // Expenses — debit normal
-        _ => true,            // Conservative default: treat as asset
+        _ => true,                     // Conservative default: treat as asset
     }
 }
 
@@ -118,10 +105,10 @@ fn resolve_debit_normal(account_code: &str, coa: &ChartOfAccounts) -> bool {
 mod tests {
     use super::*;
     use chrono::NaiveDate;
+    use datasynth_core::models::balance::CalculatedRatios;
     use datasynth_core::models::{
         AccountSubType, AccountType, ChartOfAccounts, CoAComplexity, GLAccount, IndustrySector,
     };
-    use datasynth_core::models::balance::CalculatedRatios;
     use rust_decimal_macros::dec;
     use std::collections::HashMap;
 

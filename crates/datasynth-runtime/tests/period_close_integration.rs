@@ -9,7 +9,9 @@ use datasynth_test_utils::fixtures::minimal_config;
 use rust_decimal::Decimal;
 
 /// Helper: extract period-close JEs (document_type == "CL") from the result.
-fn close_entries(entries: &[datasynth_core::models::JournalEntry]) -> Vec<&datasynth_core::models::JournalEntry> {
+fn close_entries(
+    entries: &[datasynth_core::models::JournalEntry],
+) -> Vec<&datasynth_core::models::JournalEntry> {
     entries
         .iter()
         .filter(|e| e.header.document_type == "CL")
@@ -132,7 +134,11 @@ fn test_tax_provision_accounts() {
         let tax_je = tax_jes[0];
 
         // Should have exactly 2 lines
-        assert_eq!(tax_je.line_count(), 2, "Tax provision JE should have 2 lines");
+        assert_eq!(
+            tax_je.line_count(),
+            2,
+            "Tax provision JE should have 2 lines"
+        );
 
         // Verify accounts used
         let accounts: Vec<&str> = tax_je.lines.iter().map(|l| l.gl_account.as_str()).collect();
@@ -188,11 +194,7 @@ fn test_closing_entry_retained_earnings() {
         let closing_je = closing_jes[0];
 
         // Should have exactly 2 lines
-        assert_eq!(
-            closing_je.line_count(),
-            2,
-            "Closing JE should have 2 lines"
-        );
+        assert_eq!(closing_je.line_count(), 2, "Closing JE should have 2 lines");
 
         // Verify accounts used
         let accounts: Vec<&str> = closing_je
@@ -301,7 +303,8 @@ fn test_period_close_amount_consistency() {
         // Verify: close_amount = pre_tax_income * (1 - 0.21)
         // pre_tax_income = tax_amount / 0.21
         // Expected: close_amount = pre_tax_income - tax_amount
-        let expected_pre_tax = (tax_amount * Decimal::new(100, 0) / Decimal::new(21, 0)).round_dp(2);
+        let expected_pre_tax =
+            (tax_amount * Decimal::new(100, 0) / Decimal::new(21, 0)).round_dp(2);
         let expected_close = (expected_pre_tax - tax_amount).round_dp(2);
 
         // Allow small rounding tolerance (1 cent)
