@@ -90,6 +90,9 @@ pub mod balance;
 // Subledger models (Phase 5)
 pub mod subledger;
 
+// Business combination models (IFRS 3 / ASC 805)
+pub mod business_combination;
+
 // Audit models (Phase 13-14: RustAssureTwin integration)
 pub mod audit;
 
@@ -175,6 +178,9 @@ pub use technology_transition::*;
 pub use causal_dag::*;
 pub use intervention::*;
 pub use scenario::*;
+
+// Business combination exports
+pub use business_combination::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;

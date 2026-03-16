@@ -74,6 +74,8 @@ use datasynth_generators::{
     // S2C sourcing generators
     BidEvaluationGenerator,
     BidGenerator,
+    // Business combination generator (IFRS 3 / ASC 805)
+    BusinessCombinationGenerator,
     CatalogGenerator,
     // Core generators
     ChartOfAccountsGenerator,
@@ -620,17 +622,24 @@ pub struct HrSnapshot {
     pub benefit_enrollment_count: usize,
 }
 
-/// Accounting standards data snapshot (revenue recognition, impairment).
+/// Accounting standards data snapshot (revenue recognition, impairment, business combinations).
 #[derive(Debug, Clone, Default)]
 pub struct AccountingStandardsSnapshot {
     /// Revenue recognition contracts (actual data).
     pub contracts: Vec<datasynth_standards::accounting::revenue::CustomerContract>,
     /// Impairment tests (actual data).
     pub impairment_tests: Vec<datasynth_standards::accounting::impairment::ImpairmentTest>,
+    /// Business combinations (IFRS 3 / ASC 805).
+    pub business_combinations:
+        Vec<datasynth_core::models::business_combination::BusinessCombination>,
+    /// Journal entries generated from business combinations (Day 1 + amortization).
+    pub business_combination_journal_entries: Vec<JournalEntry>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
     pub impairment_test_count: usize,
+    /// Business combination count.
+    pub business_combination_count: usize,
 }
 
 /// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
@@ -1064,6 +1073,8 @@ pub struct EnhancedGenerationStatistics {
     pub revenue_contract_count: usize,
     #[serde(default)]
     pub impairment_test_count: usize,
+    #[serde(default)]
+    pub business_combination_count: usize,
     /// Manufacturing counts.
     #[serde(default)]
     pub production_order_count: usize,
@@ -4656,12 +4667,41 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Business combinations (IFRS 3 / ASC 805)
+        if self
+            .config
+            .accounting_standards
+            .business_combinations
+            .enabled
+        {
+            let bc_config = &self.config.accounting_standards.business_combinations;
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS",
+                _ => "US_GAAP",
+            };
+            let mut bc_gen = BusinessCombinationGenerator::new(seed + 42);
+            let bc_snap = bc_gen.generate(
+                company_code,
+                currency,
+                start_date,
+                end_date,
+                bc_config.acquisition_count,
+                framework_str,
+            );
+            snapshot.business_combination_count = bc_snap.combinations.len();
+            snapshot.business_combination_journal_entries = bc_snap.journal_entries;
+            snapshot.business_combinations = bc_snap.combinations;
+        }
+
         stats.revenue_contract_count = snapshot.revenue_contract_count;
         stats.impairment_test_count = snapshot.impairment_test_count;
+        stats.business_combination_count = snapshot.business_combination_count;
 
         info!(
-            "Accounting standards data generated: {} revenue contracts, {} impairment tests",
-            snapshot.revenue_contract_count, snapshot.impairment_test_count
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations",
+            snapshot.revenue_contract_count,
+            snapshot.impairment_test_count,
+            snapshot.business_combination_count
         );
         self.check_resources_with_log("post-accounting-standards")?;
 

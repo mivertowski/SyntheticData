@@ -1247,6 +1247,17 @@ fn main() -> Result<()> {
                 "accounting_standards/impairment_tests.json",
                 result.accounting_standards.impairment_tests.len(),
             );
+            register(
+                "accounting_standards/business_combinations.json",
+                result.accounting_standards.business_combinations.len(),
+            );
+            register(
+                "accounting_standards/business_combination_journal_entries.json",
+                result
+                    .accounting_standards
+                    .business_combination_journal_entries
+                    .len(),
+            );
 
             // Treasury
             register(

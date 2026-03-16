@@ -4,6 +4,30 @@
 //! to ensure consistency between document flow JE generation, subledger
 //! generation, and reconciliation.
 
+/// Goodwill and intangible asset accounts (used in business combinations).
+pub mod intangible_accounts {
+    /// Goodwill arising from business combinations
+    pub const GOODWILL: &str = "1900";
+
+    /// Customer relationships intangible asset
+    pub const CUSTOMER_RELATIONSHIPS: &str = "1910";
+
+    /// Trade name / brand intangible asset
+    pub const TRADE_NAME: &str = "1920";
+
+    /// Technology / developed software intangible asset
+    pub const TECHNOLOGY: &str = "1930";
+
+    /// Accumulated amortization – intangible assets
+    pub const ACCUMULATED_AMORTIZATION: &str = "1950";
+
+    /// Amortization expense – intangible assets
+    pub const AMORTIZATION_EXPENSE: &str = "6010";
+
+    /// Bargain purchase gain (when consideration < net identifiable assets FV)
+    pub const BARGAIN_PURCHASE_GAIN: &str = "4850";
+}
+
 /// Control accounts for subledger integration.
 pub mod control_accounts {
     /// Accounts Receivable control account

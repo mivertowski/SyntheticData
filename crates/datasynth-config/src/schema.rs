@@ -4734,6 +4734,10 @@ pub struct AccountingStandardsConfig {
     #[serde(default)]
     pub impairment: ImpairmentConfig,
 
+    /// Business combination configuration (IFRS 3 / ASC 805)
+    #[serde(default)]
+    pub business_combinations: BusinessCombinationsConfig,
+
     /// Generate framework differences for dual reporting
     #[serde(default)]
     pub generate_differences: bool,
@@ -4967,6 +4971,35 @@ impl Default for ImpairmentConfig {
             impairment_rate: default_impairment_rate(),
             generate_projections: true,
             include_goodwill: false,
+        }
+    }
+}
+
+// =============================================================================
+// Business Combinations Configuration (IFRS 3 / ASC 805)
+// =============================================================================
+
+/// Configuration for generating business combination (acquisition) data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BusinessCombinationsConfig {
+    /// Enable business combination generation
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Number of acquisitions to generate per company (1-5)
+    #[serde(default = "default_bc_acquisition_count")]
+    pub acquisition_count: usize,
+}
+
+fn default_bc_acquisition_count() -> usize {
+    2
+}
+
+impl Default for BusinessCombinationsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            acquisition_count: default_bc_acquisition_count(),
         }
     }
 }

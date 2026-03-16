@@ -124,6 +124,8 @@ pub enum GeneratorType {
     BenefitEnrollment = 0x41,
     /// Disruption event generator
     Disruption = 0x42,
+    /// Business combination generator (IFRS 3 / ASC 805)
+    BusinessCombination = 0x43,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique
