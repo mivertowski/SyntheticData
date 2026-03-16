@@ -7,6 +7,7 @@
 use std::io::Write;
 use std::path::Path;
 
+use datasynth_core::documents::PaymentType;
 use datasynth_runtime::enhanced_orchestrator::EnhancedGenerationResult;
 use tracing::{info, warn};
 
@@ -233,6 +234,17 @@ pub fn write_all_output(
             &result.document_flows.payments,
             &df_dir.join("payments.json"),
             "Payments",
+        );
+        let customer_receipts: Vec<_> = result
+            .document_flows
+            .payments
+            .iter()
+            .filter(|p| p.payment_type == PaymentType::ArReceipt)
+            .collect();
+        write_json_safe(
+            &customer_receipts,
+            &df_dir.join("customer_receipts.json"),
+            "Customer receipts",
         );
         write_json_safe(
             &result.document_flows.sales_orders,
