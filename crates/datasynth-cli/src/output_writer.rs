@@ -499,9 +499,20 @@ pub fn write_all_output(
     // Intercompany
     // ========================================================================
     let ic_dir = output_dir.join("intercompany");
-    if !result.intercompany.matched_pairs.is_empty() {
+    if result.intercompany.group_structure.is_some()
+        || !result.intercompany.matched_pairs.is_empty()
+    {
         std::fs::create_dir_all(&ic_dir)?;
         info!("Writing intercompany data...");
+
+        // Always write group structure when present (independent of IC transactions).
+        if let Some(gs) = &result.intercompany.group_structure {
+            write_json_single_safe(
+                gs,
+                &ic_dir.join("group_structure.json"),
+                "Group structure",
+            );
+        }
 
         write_json_safe(
             &result.intercompany.matched_pairs,
@@ -1355,6 +1366,26 @@ pub fn write_all_output(
 /// Write JSON with error handling - logs a warning on failure but does not abort.
 fn write_json_safe<T: serde::Serialize>(data: &[T], path: &Path, label: &str) {
     if let Err(e) = write_json(data, path, label) {
+        warn!("Failed to write {}: {}", label, e);
+    }
+}
+
+/// Write a single serializable value as a JSON file.
+fn write_json_single<T: serde::Serialize>(
+    data: &T,
+    path: &Path,
+    label: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let file = std::fs::File::create(path)?;
+    let writer = std::io::BufWriter::with_capacity(256 * 1024, file);
+    serde_json::to_writer_pretty(writer, data)?;
+    info!("  {} written -> {}", label, path.display());
+    Ok(())
+}
+
+/// Write a single serializable value as a JSON file, logging a warning on failure.
+fn write_json_single_safe<T: serde::Serialize>(data: &T, path: &Path, label: &str) {
+    if let Err(e) = write_json_single(data, path, label) {
         warn!("Failed to write {}: {}", label, e);
     }
 }

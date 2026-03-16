@@ -719,6 +719,8 @@ pub struct TaxSnapshot {
 /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IntercompanySnapshot {
+    /// Group ownership structure (parent/subsidiary/associate relationships).
+    pub group_structure: Option<datasynth_core::models::intercompany::GroupStructure>,
     /// IC matched pairs (transaction pairs between related entities).
     pub matched_pairs: Vec<datasynth_core::models::intercompany::ICMatchedPair>,
     /// IC journal entries generated from matched pairs (seller side).
@@ -3179,6 +3181,36 @@ impl EnhancedOrchestrator {
         })
     }
 
+    /// Build a [`GroupStructure`] from the current company configuration.
+    ///
+    /// The first company in the configuration is treated as the ultimate parent.
+    /// All remaining companies become wholly-owned (100 %) subsidiaries with
+    /// [`GroupConsolidationMethod::FullConsolidation`] by default.
+    fn build_group_structure(
+        &self,
+    ) -> datasynth_core::models::intercompany::GroupStructure {
+        use datasynth_core::models::intercompany::{GroupStructure, SubsidiaryRelationship};
+
+        let parent_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.clone())
+            .unwrap_or_else(|| "PARENT".to_string());
+
+        let mut group = GroupStructure::new(parent_code);
+
+        for company in self.config.companies.iter().skip(1) {
+            let sub = SubsidiaryRelationship::new_full(
+                company.code.clone(),
+                company.currency.clone(),
+            );
+            group.add_subsidiary(sub);
+        }
+
+        group
+    }
+
     /// Phase 14b: Generate intercompany transactions, matching, and eliminations.
     fn phase_intercompany(
         &mut self,
@@ -3200,6 +3232,15 @@ impl EnhancedOrchestrator {
         }
 
         info!("Phase 14b: Generating Intercompany Transactions");
+
+        // Build the group structure early — used by ISA 600 component auditor scope
+        // and consolidated financial statement generators downstream.
+        let group_structure = self.build_group_structure();
+        debug!(
+            "Group structure built: parent={}, subsidiaries={}",
+            group_structure.parent_entity,
+            group_structure.subsidiaries.len()
+        );
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
@@ -3362,6 +3403,7 @@ impl EnhancedOrchestrator {
         self.check_resources_with_log("post-intercompany")?;
 
         Ok(IntercompanySnapshot {
+            group_structure: Some(group_structure),
             matched_pairs,
             seller_journal_entries: seller_entries,
             buyer_journal_entries: buyer_entries,
