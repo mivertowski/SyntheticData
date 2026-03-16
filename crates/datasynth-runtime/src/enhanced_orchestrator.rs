@@ -85,6 +85,9 @@ use datasynth_generators::{
     // Data quality
     DataQualityInjector,
     DataQualityStats,
+    // Subledger depreciation schedule generator
+    FaDepreciationScheduleConfig,
+    FaDepreciationScheduleGenerator,
     // Document flow JE generator
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
@@ -98,6 +101,9 @@ use datasynth_generators::{
     // Financial statement generator
     FinancialStatementGenerator,
     FindingGenerator,
+    // Inventory valuation generator
+    InventoryValuationGenerator,
+    InventoryValuationGeneratorConfig,
     JournalEntryGenerator,
     JudgmentGenerator,
     LatePaymentDistribution,
@@ -417,6 +423,10 @@ pub struct SubledgerSnapshot {
     pub ar_aging_reports: Vec<ARAgingReport>,
     /// AP aging reports, one per company, computed after payment settlement.
     pub ap_aging_reports: Vec<APAgingReport>,
+    /// Depreciation runs — one per fiscal period per company (from DepreciationRunGenerator).
+    pub depreciation_runs: Vec<datasynth_core::models::subledger::fa::DepreciationRun>,
+    /// Inventory valuation results — one per company (lower-of-cost-or-NRV, IAS 2 / ASC 330).
+    pub inventory_valuations: Vec<datasynth_generators::InventoryValuationResult>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -2301,6 +2311,67 @@ impl EnhancedOrchestrator {
                 "Inventory subledger records generated: {}",
                 stats.inventory_subledger_count
             );
+        }
+
+        // Phase 3-depr: Run depreciation for each fiscal period covered by the config.
+        if !subledger.fa_records.is_empty() {
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let company_code = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.code.as_str())
+                    .unwrap_or("1000");
+                let fiscal_year = start_date.year();
+                let start_period = start_date.month();
+                let end_period =
+                    (start_period + self.config.global.period_months.saturating_sub(1)).min(12);
+
+                let depr_cfg = FaDepreciationScheduleConfig {
+                    fiscal_year,
+                    start_period,
+                    end_period,
+                    seed_offset: 800,
+                };
+                let depr_gen = FaDepreciationScheduleGenerator::new(depr_cfg, self.seed);
+                let runs = depr_gen.generate(company_code, &subledger.fa_records);
+                let run_count = runs.len();
+                subledger.depreciation_runs = runs;
+                debug!(
+                    "Depreciation runs generated: {} runs for {} periods",
+                    run_count,
+                    self.config.global.period_months
+                );
+            }
+        }
+
+        // Phase 3-inv-val: Build inventory valuation report (lower-of-cost-or-NRV).
+        if !subledger.inventory_positions.is_empty() {
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let as_of_date = start_date
+                    + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+
+                let inv_val_cfg = InventoryValuationGeneratorConfig::default();
+                let inv_val_gen = InventoryValuationGenerator::new(inv_val_cfg, self.seed);
+
+                for company in &self.config.companies {
+                    let result = inv_val_gen.generate(
+                        &company.code,
+                        &subledger.inventory_positions,
+                        as_of_date,
+                    );
+                    subledger.inventory_valuations.push(result);
+                }
+                debug!(
+                    "Inventory valuations generated: {} company reports",
+                    subledger.inventory_valuations.len()
+                );
+            }
         }
 
         Ok((document_flows, subledger, fa_journal_entries))
@@ -7276,6 +7347,9 @@ impl EnhancedOrchestrator {
             // Aging reports are computed after payment settlement in phase_document_flows.
             ar_aging_reports: Vec::new(),
             ap_aging_reports: Vec::new(),
+            // Depreciation runs and inventory valuations are populated after FA/inventory generation.
+            depreciation_runs: Vec::new(),
+            inventory_valuations: Vec::new(),
         })
     }
 

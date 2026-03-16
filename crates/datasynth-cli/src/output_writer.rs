@@ -325,6 +325,16 @@ pub fn write_all_output(
             &sl_dir.join("ap_aging.json"),
             "AP aging reports",
         );
+        write_json_safe(
+            &result.subledger.depreciation_runs,
+            &sl_dir.join("depreciation_runs.json"),
+            "Depreciation runs",
+        );
+        write_json_safe(
+            &result.subledger.inventory_valuations,
+            &sl_dir.join("inventory_valuation.json"),
+            "Inventory valuations",
+        );
     }
 
     // ========================================================================

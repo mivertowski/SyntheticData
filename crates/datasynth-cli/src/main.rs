@@ -1072,6 +1072,14 @@ fn main() -> Result<()> {
                 "subledger/ap_aging.json",
                 result.subledger.ap_aging_reports.len(),
             );
+            register(
+                "subledger/depreciation_runs.json",
+                result.subledger.depreciation_runs.len(),
+            );
+            register(
+                "subledger/inventory_valuation.json",
+                result.subledger.inventory_valuations.len(),
+            );
 
             // Audit
             register(
