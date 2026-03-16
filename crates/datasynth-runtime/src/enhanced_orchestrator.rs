@@ -734,6 +734,8 @@ pub struct TaxSnapshot {
     pub jurisdiction_count: usize,
     /// Code count.
     pub code_count: usize,
+    /// Deferred tax engine output (temporary differences, ETR reconciliation, rollforwards, JEs).
+    pub deferred_tax: datasynth_generators::DeferredTaxSnapshot,
 }
 
 /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
@@ -1897,7 +1899,7 @@ impl EnhancedOrchestrator {
             self.phase_sales_kpi_budgets(&coa, &financial_reporting, &mut stats)?;
 
         // Phase 20: Tax Generation
-        let tax = self.phase_tax_generation(&document_flows, &mut stats)?;
+        let tax = self.phase_tax_generation(&document_flows, &entries, &mut stats)?;
 
         // Phase 21: ESG Data Generation
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
@@ -4928,6 +4930,7 @@ impl EnhancedOrchestrator {
     fn phase_tax_generation(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
+        journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TaxSnapshot> {
         if !self.phase_config.generate_tax || !self.config.tax.enabled {
@@ -5019,6 +5022,19 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Generate deferred tax data (IAS 12 / ASC 740) for each company
+        let deferred_tax = {
+            let companies: Vec<(&str, &str)> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| (c.code.as_str(), c.country.as_str()))
+                .collect();
+            let mut deferred_gen =
+                datasynth_generators::DeferredTaxGenerator::new(seed + 73);
+            deferred_gen.generate(&companies, start_date, journal_entries)
+        };
+
         let snapshot = TaxSnapshot {
             jurisdiction_count: jurisdictions.len(),
             code_count: codes.len(),
@@ -5029,6 +5045,7 @@ impl EnhancedOrchestrator {
             tax_returns: Vec::new(),
             withholding_records: Vec::new(),
             tax_anomaly_labels: Vec::new(),
+            deferred_tax,
         };
 
         stats.tax_jurisdiction_count = snapshot.jurisdiction_count;
@@ -5037,10 +5054,12 @@ impl EnhancedOrchestrator {
         stats.tax_line_count = snapshot.tax_lines.len();
 
         info!(
-            "Tax data generated: {} jurisdictions, {} codes, {} provisions",
+            "Tax data generated: {} jurisdictions, {} codes, {} provisions, {} temp diffs, {} deferred JEs",
             snapshot.jurisdiction_count,
             snapshot.code_count,
-            snapshot.tax_provisions.len()
+            snapshot.tax_provisions.len(),
+            snapshot.deferred_tax.temporary_differences.len(),
+            snapshot.deferred_tax.journal_entries.len(),
         );
         self.check_resources_with_log("post-tax")?;
 

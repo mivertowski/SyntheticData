@@ -810,6 +810,29 @@ pub fn write_all_output(
                 "Tax anomaly labels",
             );
         }
+        // Deferred tax engine output (IAS 12 / ASC 740)
+        if !result.tax.deferred_tax.temporary_differences.is_empty() {
+            write_json_safe(
+                &result.tax.deferred_tax.temporary_differences,
+                &tax_dir.join("temporary_differences.json"),
+                "Temporary differences",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.etr_reconciliations,
+                &tax_dir.join("etr_reconciliation.json"),
+                "ETR reconciliation",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.rollforwards,
+                &tax_dir.join("deferred_tax_rollforward.json"),
+                "Deferred tax rollforward",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.journal_entries,
+                &tax_dir.join("deferred_tax_journal_entries.json"),
+                "Deferred tax journal entries",
+            );
+        }
     }
 
     // ========================================================================

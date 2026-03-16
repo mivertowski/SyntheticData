@@ -1303,6 +1303,22 @@ fn main() -> Result<()> {
                 "tax/tax_anomaly_labels.json",
                 result.tax.tax_anomaly_labels.len(),
             );
+            register(
+                "tax/temporary_differences.json",
+                result.tax.deferred_tax.temporary_differences.len(),
+            );
+            register(
+                "tax/etr_reconciliation.json",
+                result.tax.deferred_tax.etr_reconciliations.len(),
+            );
+            register(
+                "tax/deferred_tax_rollforward.json",
+                result.tax.deferred_tax.rollforwards.len(),
+            );
+            register(
+                "tax/deferred_tax_journal_entries.json",
+                result.tax.deferred_tax.journal_entries.len(),
+            );
 
             // ESG
             register("esg/emission_records.json", result.esg.emissions.len());

@@ -9,11 +9,13 @@
 
 mod tax_anomaly;
 mod tax_code_generator;
+pub mod deferred_tax_generator;
 mod tax_line_generator;
 mod tax_provision_generator;
 mod tax_return_generator;
 mod withholding_generator;
 
+pub use deferred_tax_generator::*;
 pub use tax_anomaly::*;
 pub use tax_code_generator::*;
 pub use tax_line_generator::*;

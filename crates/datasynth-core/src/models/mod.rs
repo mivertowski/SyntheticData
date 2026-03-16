@@ -38,6 +38,7 @@ mod relationship;
 mod sod;
 mod tax;
 mod temporal;
+pub mod deferred_tax;
 mod treasury;
 mod user;
 
@@ -128,6 +129,7 @@ pub use project::*;
 pub use project_accounting::*;
 pub use relationship::*;
 pub use sod::*;
+pub use deferred_tax::*;
 pub use tax::*;
 pub use temporal::*;
 pub use treasury::*;
