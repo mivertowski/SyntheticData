@@ -37,9 +37,9 @@ use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
-    AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
-    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
-    RiskAssessment, Workpaper,
+    AuditSample, ComponentAuditor, ComponentAuditorReport, ComponentInstruction, ConfirmationResponse,
+    ExternalConfirmation, GroupAuditPlan, InternalAuditFunction, InternalAuditReport,
+    ProfessionalJudgment, RelatedParty, RelatedPartyTransaction, RiskAssessment, Workpaper,
 };
 use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
@@ -142,6 +142,7 @@ use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, Ope
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
 use datasynth_generators::audit::analytical_procedure_generator::AnalyticalProcedureGenerator;
+use datasynth_generators::audit::component_audit_generator::ComponentAuditGenerator;
 use datasynth_generators::audit::confirmation_generator::ConfirmationGenerator;
 use datasynth_generators::audit::internal_audit_generator::InternalAuditGenerator;
 use datasynth_generators::audit::procedure_step_generator::ProcedureStepGenerator;
@@ -458,6 +459,15 @@ pub struct AuditSnapshot {
     pub related_parties: Vec<RelatedParty>,
     /// Related party transactions per ISA 550.
     pub related_party_transactions: Vec<RelatedPartyTransaction>,
+    // ---- ISA 600: Group Audits ----
+    /// Component auditors assigned by jurisdiction (ISA 600).
+    pub component_auditors: Vec<ComponentAuditor>,
+    /// Group audit plan with materiality allocations (ISA 600).
+    pub group_audit_plan: Option<GroupAuditPlan>,
+    /// Component instructions issued to component auditors (ISA 600).
+    pub component_instructions: Vec<ComponentInstruction>,
+    /// Reports received from component auditors (ISA 600).
+    pub component_reports: Vec<ComponentAuditorReport>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -8132,11 +8142,54 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // ----------------------------------------------------------------
+        // ISA 600: Group audit — component auditors, plan, instructions, reports
+        // ----------------------------------------------------------------
+        if self.config.companies.len() > 1 {
+            // Use materiality from the first engagement if available, otherwise
+            // derive a reasonable figure from total revenue.
+            let group_materiality = snapshot
+                .engagements
+                .first()
+                .map(|e| e.materiality)
+                .unwrap_or_else(|| {
+                    let pct = rust_decimal::Decimal::try_from(0.005_f64).unwrap_or_default();
+                    total_revenue * pct
+                });
+
+            let mut component_gen = ComponentAuditGenerator::new(self.seed + 8200);
+            let group_engagement_id = snapshot
+                .engagements
+                .first()
+                .map(|e| e.engagement_id.to_string())
+                .unwrap_or_else(|| "GROUP-ENG".to_string());
+
+            let component_snapshot = component_gen.generate(
+                &self.config.companies,
+                group_materiality,
+                &group_engagement_id,
+                period_end,
+            );
+
+            snapshot.component_auditors = component_snapshot.component_auditors;
+            snapshot.group_audit_plan = component_snapshot.group_audit_plan;
+            snapshot.component_instructions = component_snapshot.component_instructions;
+            snapshot.component_reports = component_snapshot.component_reports;
+
+            info!(
+                "ISA 600 group audit: {} component auditors, {} instructions, {} reports",
+                snapshot.component_auditors.len(),
+                snapshot.component_instructions.len(),
+                snapshot.component_reports.len(),
+            );
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
-                 {} analytical, {} IA funcs, {} related parties",
+                 {} analytical, {} IA funcs, {} related parties, \
+                 {} component auditors",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -8146,6 +8199,7 @@ impl EnhancedOrchestrator {
                 snapshot.analytical_results.len(),
                 snapshot.ia_functions.len(),
                 snapshot.related_parties.len(),
+                snapshot.component_auditors.len(),
             ));
         }
 

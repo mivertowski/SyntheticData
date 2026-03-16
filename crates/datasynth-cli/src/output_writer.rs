@@ -388,6 +388,31 @@ pub fn write_all_output(
             &audit_dir.join("audit_related_party_transactions.json"),
             "Audit related party transactions",
         );
+        // ISA 600: Group audit artefacts
+        if !result.audit.component_auditors.is_empty() {
+            write_json_safe(
+                &result.audit.component_auditors,
+                &audit_dir.join("component_auditors.json"),
+                "Component auditors (ISA 600)",
+            );
+            if let Some(plan) = &result.audit.group_audit_plan {
+                write_json_single_safe(
+                    plan,
+                    &audit_dir.join("group_audit_plan.json"),
+                    "Group audit plan (ISA 600)",
+                );
+            }
+            write_json_safe(
+                &result.audit.component_instructions,
+                &audit_dir.join("component_instructions.json"),
+                "Component instructions (ISA 600)",
+            );
+            write_json_safe(
+                &result.audit.component_reports,
+                &audit_dir.join("component_reports.json"),
+                "Component auditor reports (ISA 600)",
+            );
+        }
     }
 
     // ========================================================================

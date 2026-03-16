@@ -14,6 +14,7 @@
 //! - Related parties (ISA 550)
 
 pub mod analytical_procedure;
+pub mod component_audit;
 pub mod confirmation;
 mod engagement;
 mod evidence;
@@ -27,6 +28,7 @@ pub mod sample;
 mod workpaper;
 
 pub use analytical_procedure::*;
+pub use component_audit::*;
 pub use confirmation::*;
 pub use engagement::*;
 pub use evidence::*;

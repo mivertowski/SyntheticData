@@ -40,6 +40,7 @@
 //! ```
 
 pub mod analytical_procedure_generator;
+pub mod component_audit_generator;
 pub mod confirmation_generator;
 mod engagement_generator;
 mod evidence_generator;
