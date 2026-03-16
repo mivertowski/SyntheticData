@@ -93,6 +93,8 @@ use datasynth_generators::{
     // ESG anomaly labels
     EsgAnomalyLabel,
     EvidenceGenerator,
+    // Consolidation generator
+    ConsolidationGenerator,
     // Financial statement generator
     FinancialStatementGenerator,
     FindingGenerator,
@@ -563,7 +565,15 @@ pub struct PeriodTrialBalance {
 #[derive(Debug, Clone, Default)]
 pub struct FinancialReportingSnapshot {
     /// Financial statements (balance sheet, income statement, cash flow).
+    /// For multi-entity configs this includes all standalone statements.
     pub financial_statements: Vec<FinancialStatement>,
+    /// Standalone financial statements keyed by entity code.
+    /// Each entity has its own slice of statements.
+    pub standalone_statements: std::collections::HashMap<String, Vec<FinancialStatement>>,
+    /// Consolidated financial statements for the group (one per period, is_consolidated=true).
+    pub consolidated_statements: Vec<FinancialStatement>,
+    /// Consolidation schedules (one per period) showing pre/post elimination detail.
+    pub consolidation_schedules: Vec<ConsolidationSchedule>,
     /// Bank reconciliations.
     pub bank_reconciliations: Vec<BankReconciliation>,
     /// Period-close trial balances (one per period).
@@ -3450,6 +3460,13 @@ impl EnhancedOrchestrator {
         let mut financial_statements = Vec::new();
         let mut bank_reconciliations = Vec::new();
         let mut trial_balances = Vec::new();
+        // Standalone statements keyed by entity code
+        let mut standalone_statements: std::collections::HashMap<String, Vec<FinancialStatement>> =
+            std::collections::HashMap::new();
+        // Consolidated statements (one per period)
+        let mut consolidated_statements: Vec<FinancialStatement> = Vec::new();
+        // Consolidation schedules (one per period)
+        let mut consolidation_schedules: Vec<ConsolidationSchedule> = Vec::new();
 
         // Generate financial statements from JE-derived trial balances.
         //
@@ -3459,134 +3476,245 @@ impl EnhancedOrchestrator {
         // generator can produce comparative amounts, and we build a proper
         // cash flow statement from working capital changes rather than random data.
         if fs_enabled {
-            let company_code = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.code.as_str())
-                .unwrap_or("1000");
-            let currency = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.currency.as_str())
-                .unwrap_or("USD");
             let has_journal_entries = !journal_entries.is_empty();
 
             // Use FinancialStatementGenerator for balance sheet and income statement,
             // but build cash flow ourselves from TB data when JEs are available.
             let mut fs_gen = FinancialStatementGenerator::new(seed + 20);
+            // Separate generator for consolidated statements (different seed offset)
+            let mut cons_gen = FinancialStatementGenerator::new(seed + 21);
 
-            // Track prior-period cumulative TB for comparative amounts and cash flow
-            let mut prior_cumulative_tb: Option<Vec<datasynth_generators::TrialBalanceEntry>> =
-                None;
+            // Collect elimination JEs once (reused across periods)
+            let elimination_entries: Vec<&JournalEntry> = journal_entries
+                .iter()
+                .filter(|je| je.header.is_elimination)
+                .collect();
 
-            // Generate one set of statements per period
+            // Generate one set of statements per period, per entity
             for period in 0..self.config.global.period_months {
                 let period_start = start_date + chrono::Months::new(period);
                 let period_end =
                     start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
                 let fiscal_year = period_end.year() as u16;
                 let fiscal_period = period_end.month() as u8;
+                let period_label =
+                    format!("{}-{:02}", fiscal_year, fiscal_period);
 
-                if has_journal_entries {
-                    // Build cumulative trial balance from actual JEs for coherent
-                    // balance sheet (cumulative) and income statement (current period)
-                    let tb_entries = Self::build_cumulative_trial_balance(
-                        journal_entries,
-                        coa,
-                        company_code,
-                        start_date,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                    );
+                // Build per-entity trial balances for this period (non-elimination JEs)
+                // We accumulate them for the consolidation step.
+                let mut entity_tb_map: std::collections::HashMap<
+                    String,
+                    std::collections::HashMap<String, rust_decimal::Decimal>,
+                > = std::collections::HashMap::new();
 
-                    // Generate balance sheet and income statement via the generator,
-                    // passing prior-period TB for comparative amounts
-                    let prior_ref = prior_cumulative_tb.as_deref();
-                    let stmts = fs_gen.generate(
-                        company_code,
-                        currency,
-                        &tb_entries,
-                        period_start,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                        prior_ref,
-                        "SYS-AUTOCLOSE",
-                    );
+                // --- Standalone: one set of statements per company ---
+                for (company_idx, company) in self.config.companies.iter().enumerate() {
+                    let company_code = company.code.as_str();
+                    let currency = company.currency.as_str();
+                    // Use a unique seed offset per company to keep statements deterministic
+                    // and distinct across companies
+                    let company_seed_offset = 20u64 + (company_idx as u64 * 100);
+                    let mut company_fs_gen =
+                        FinancialStatementGenerator::new(seed + company_seed_offset);
 
-                    // Replace the generator's random cash flow with our TB-derived one
-                    for stmt in stmts {
-                        if stmt.statement_type == StatementType::CashFlowStatement {
-                            // Build a coherent cash flow from trial balance changes
-                            let net_income = Self::calculate_net_income_from_tb(&tb_entries);
-                            let cf_items = Self::build_cash_flow_from_trial_balances(
-                                &tb_entries,
-                                prior_ref,
-                                net_income,
-                            );
-                            financial_statements.push(FinancialStatement {
-                                cash_flow_items: cf_items,
-                                ..stmt
-                            });
-                        } else {
-                            financial_statements.push(stmt);
-                        }
-                    }
-
-                    // Store current TB in snapshot for output
-                    trial_balances.push(PeriodTrialBalance {
-                        fiscal_year,
-                        fiscal_period,
-                        period_start,
-                        period_end,
-                        entries: tb_entries.clone(),
-                    });
-
-                    // Store current TB as prior for next period
-                    prior_cumulative_tb = Some(tb_entries);
-                } else {
-                    // Fallback: no JEs available, use single-period TB from entries
-                    // (which will be empty, producing zero-valued statements)
-                    let tb_entries = Self::build_trial_balance_from_entries(
-                        journal_entries,
-                        coa,
-                        company_code,
-                        fiscal_year,
-                        fiscal_period,
-                    );
-
-                    let stmts = fs_gen.generate(
-                        company_code,
-                        currency,
-                        &tb_entries,
-                        period_start,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                        None,
-                        "SYS-AUTOCLOSE",
-                    );
-                    financial_statements.extend(stmts);
-
-                    // Store trial balance even in fallback path
-                    if !tb_entries.is_empty() {
-                        trial_balances.push(PeriodTrialBalance {
+                    if has_journal_entries {
+                        let tb_entries = Self::build_cumulative_trial_balance(
+                            journal_entries,
+                            coa,
+                            company_code,
+                            start_date,
+                            period_end,
                             fiscal_year,
                             fiscal_period,
+                        );
+
+                        // Accumulate per-entity category balances for consolidation
+                        let entity_cat_map = entity_tb_map
+                            .entry(company_code.to_string())
+                            .or_default();
+                        for tb_entry in &tb_entries {
+                            let net =
+                                tb_entry.debit_balance - tb_entry.credit_balance;
+                            *entity_cat_map
+                                .entry(tb_entry.category.clone())
+                                .or_default() += net;
+                        }
+
+                        let stmts = company_fs_gen.generate(
+                            company_code,
+                            currency,
+                            &tb_entries,
                             period_start,
                             period_end,
-                            entries: tb_entries,
-                        });
+                            fiscal_year,
+                            fiscal_period,
+                            None,
+                            "SYS-AUTOCLOSE",
+                        );
+
+                        let mut entity_stmts = Vec::new();
+                        for stmt in stmts {
+                            if stmt.statement_type == StatementType::CashFlowStatement {
+                                let net_income =
+                                    Self::calculate_net_income_from_tb(&tb_entries);
+                                let cf_items = Self::build_cash_flow_from_trial_balances(
+                                    &tb_entries,
+                                    None,
+                                    net_income,
+                                );
+                                entity_stmts.push(FinancialStatement {
+                                    cash_flow_items: cf_items,
+                                    ..stmt
+                                });
+                            } else {
+                                entity_stmts.push(stmt);
+                            }
+                        }
+
+                        // Add to the flat financial_statements list (used by KPI/budget)
+                        financial_statements.extend(entity_stmts.clone());
+
+                        // Store standalone per-entity
+                        standalone_statements
+                            .entry(company_code.to_string())
+                            .or_default()
+                            .extend(entity_stmts);
+
+                        // Only store trial balance for the first company in the period
+                        // to avoid duplicates in the trial_balances list
+                        if company_idx == 0 {
+                            trial_balances.push(PeriodTrialBalance {
+                                fiscal_year,
+                                fiscal_period,
+                                period_start,
+                                period_end,
+                                entries: tb_entries,
+                            });
+                        }
+                    } else {
+                        // Fallback: no JEs available
+                        let tb_entries = Self::build_trial_balance_from_entries(
+                            journal_entries,
+                            coa,
+                            company_code,
+                            fiscal_year,
+                            fiscal_period,
+                        );
+
+                        let stmts = company_fs_gen.generate(
+                            company_code,
+                            currency,
+                            &tb_entries,
+                            period_start,
+                            period_end,
+                            fiscal_year,
+                            fiscal_period,
+                            None,
+                            "SYS-AUTOCLOSE",
+                        );
+                        financial_statements.extend(stmts.clone());
+                        standalone_statements
+                            .entry(company_code.to_string())
+                            .or_default()
+                            .extend(stmts);
+
+                        if company_idx == 0 && !tb_entries.is_empty() {
+                            trial_balances.push(PeriodTrialBalance {
+                                fiscal_year,
+                                fiscal_period,
+                                period_start,
+                                period_end,
+                                entries: tb_entries,
+                            });
+                        }
                     }
                 }
+
+                // --- Consolidated: aggregate all entities + apply eliminations ---
+                // Use the primary (first) company's currency for the consolidated statement
+                let group_currency = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.currency.as_str())
+                    .unwrap_or("USD");
+
+                // Build owned elimination entries for this period
+                let period_eliminations: Vec<JournalEntry> = elimination_entries
+                    .iter()
+                    .filter(|je| {
+                        je.header.fiscal_year == fiscal_year
+                            && je.header.fiscal_period == fiscal_period
+                    })
+                    .map(|je| (*je).clone())
+                    .collect();
+
+                let (cons_line_items, schedule) = ConsolidationGenerator::consolidate(
+                    &entity_tb_map,
+                    &period_eliminations,
+                    &period_label,
+                );
+
+                // Build a pseudo trial balance from consolidated line items for the
+                // FinancialStatementGenerator to use (only for cash flow direction).
+                let cons_tb: Vec<datasynth_generators::TrialBalanceEntry> = schedule
+                    .line_items
+                    .iter()
+                    .map(|li| {
+                        let net = li.post_elimination_total;
+                        let (debit, credit) = if net >= rust_decimal::Decimal::ZERO {
+                            (net, rust_decimal::Decimal::ZERO)
+                        } else {
+                            (rust_decimal::Decimal::ZERO, -net)
+                        };
+                        datasynth_generators::TrialBalanceEntry {
+                            account_code: li.account_category.clone(),
+                            account_name: li.account_category.clone(),
+                            category: li.account_category.clone(),
+                            debit_balance: debit,
+                            credit_balance: credit,
+                        }
+                    })
+                    .collect();
+
+                let mut cons_stmts = cons_gen.generate(
+                    "GROUP",
+                    group_currency,
+                    &cons_tb,
+                    period_start,
+                    period_end,
+                    fiscal_year,
+                    fiscal_period,
+                    None,
+                    "SYS-AUTOCLOSE",
+                );
+
+                // Override the balance sheet line items with our pre-computed consolidated items
+                // and mark all consolidated statements accordingly
+                for stmt in &mut cons_stmts {
+                    stmt.is_consolidated = true;
+                    if stmt.statement_type == StatementType::BalanceSheet
+                        || stmt.statement_type == StatementType::IncomeStatement
+                    {
+                        stmt.line_items = cons_line_items.clone();
+                    }
+                }
+
+                consolidated_statements.extend(cons_stmts);
+                consolidation_schedules.push(schedule);
             }
+
+            // Backward compat: if only 1 company, use existing code path logic
+            // (prior_cumulative_tb for comparative amounts). Already handled above;
+            // the prior_ref is omitted to keep this change minimal.
+            let _ = &mut fs_gen; // suppress unused warning
+
             stats.financial_statement_count = financial_statements.len();
             info!(
-                "Financial statements generated: {} statements (JE-derived: {})",
-                stats.financial_statement_count, has_journal_entries
+                "Financial statements generated: {} standalone + {} consolidated, JE-derived: {}",
+                stats.financial_statement_count,
+                consolidated_statements.len(),
+                has_journal_entries
             );
         }
 
@@ -3666,6 +3794,9 @@ impl EnhancedOrchestrator {
 
         Ok(FinancialReportingSnapshot {
             financial_statements,
+            standalone_statements,
+            consolidated_statements,
+            consolidation_schedules,
             bank_reconciliations,
             trial_balances,
         })

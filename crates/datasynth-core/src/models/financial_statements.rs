@@ -3,6 +3,7 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Type of financial statement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -87,6 +88,36 @@ pub struct CashFlowItem {
     pub sort_order: u32,
     /// Is this a subtotal line
     pub is_total: bool,
+}
+
+/// A single line in a consolidation schedule, showing per-entity amounts plus
+/// pre-elimination total, elimination adjustments, and post-elimination total.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsolidationLineItem {
+    /// Account category (e.g. "Revenue", "Cash", "Payables")
+    pub account_category: String,
+    /// Per-entity amounts: entity_code → net balance
+    #[serde(default)]
+    pub entity_amounts: HashMap<String, Decimal>,
+    /// Sum of all entity amounts before eliminations
+    #[serde(with = "rust_decimal::serde::str")]
+    pub pre_elimination_total: Decimal,
+    /// Net elimination adjustment (positive = increases total, negative = decreases)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub elimination_adjustments: Decimal,
+    /// post_elimination_total = pre_elimination_total + elimination_adjustments
+    #[serde(with = "rust_decimal::serde::str")]
+    pub post_elimination_total: Decimal,
+}
+
+/// A consolidation schedule showing how individual entity amounts roll up into
+/// the consolidated group total with elimination entries applied.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsolidationSchedule {
+    /// Fiscal period label, e.g. "2024-Q1" or "2024-03"
+    pub period: String,
+    /// One line per account category
+    pub line_items: Vec<ConsolidationLineItem>,
 }
 
 /// A complete financial statement.

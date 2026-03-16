@@ -567,15 +567,50 @@ pub fn write_all_output(
     let fin_dir = output_dir.join("financial_reporting");
     if !result.financial_reporting.financial_statements.is_empty()
         || !result.financial_reporting.bank_reconciliations.is_empty()
+        || !result.financial_reporting.consolidated_statements.is_empty()
     {
         std::fs::create_dir_all(&fin_dir)?;
         info!("Writing financial reporting data...");
 
+        // Legacy flat file (all standalone statements combined)
         write_json_safe(
             &result.financial_reporting.financial_statements,
             &fin_dir.join("financial_statements.json"),
             "Financial statements",
         );
+
+        // Per-entity standalone statements
+        if !result.financial_reporting.standalone_statements.is_empty() {
+            let standalone_dir = fin_dir.join("standalone");
+            std::fs::create_dir_all(&standalone_dir)?;
+            for (entity_code, stmts) in &result.financial_reporting.standalone_statements {
+                let file_name = format!("{}_financial_statements.json", entity_code);
+                write_json_safe(
+                    stmts,
+                    &standalone_dir.join(&file_name),
+                    &format!("Standalone statements for {}", entity_code),
+                );
+            }
+        }
+
+        // Consolidated statements + schedule
+        if !result.financial_reporting.consolidated_statements.is_empty()
+            || !result.financial_reporting.consolidation_schedules.is_empty()
+        {
+            let consolidated_dir = fin_dir.join("consolidated");
+            std::fs::create_dir_all(&consolidated_dir)?;
+            write_json_safe(
+                &result.financial_reporting.consolidated_statements,
+                &consolidated_dir.join("consolidated_financial_statements.json"),
+                "Consolidated financial statements",
+            );
+            write_json_safe(
+                &result.financial_reporting.consolidation_schedules,
+                &consolidated_dir.join("consolidation_schedule.json"),
+                "Consolidation schedule",
+            );
+        }
+
         write_json_safe(
             &result.financial_reporting.bank_reconciliations,
             &fin_dir.join("bank_reconciliations.json"),
