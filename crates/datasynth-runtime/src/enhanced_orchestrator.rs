@@ -83,7 +83,9 @@ use datasynth_generators::{
     // Document flow JE generator
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
-    // Subledger linker
+    // Subledger linker + settlement
+    apply_ap_settlements,
+    apply_ar_settlements,
     DocumentFlowLinker,
     EmployeeGenerator,
     // ESG anomaly labels
@@ -2096,6 +2098,15 @@ impl EnhancedOrchestrator {
                 "Subledgers linked: {} AP invoices, {} AR invoices",
                 stats.ap_invoice_count, stats.ar_invoice_count
             );
+
+            // Phase 3b-settle: Apply payment settlements to reduce amount_remaining.
+            // Without this step the subledger is systematically overstated because
+            // amount_remaining is set at invoice creation and never reduced by
+            // the payments that were generated in the document-flow phase.
+            debug!("Phase 3b-settle: Applying payment settlements to subledgers");
+            apply_ap_settlements(&mut subledger.ap_invoices, &document_flows.payments);
+            apply_ar_settlements(&mut subledger.ar_invoices, &document_flows.payments);
+            debug!("Payment settlements applied to AP and AR subledgers");
 
             self.check_resources_with_log("post-document-flows")?;
         } else {
