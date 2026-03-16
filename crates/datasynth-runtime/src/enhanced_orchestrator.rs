@@ -296,6 +296,8 @@ pub struct PhaseConfig {
     pub generate_counterfactuals: bool,
     /// Generate compliance regulations data (standards registry, procedures, findings, filings).
     pub generate_compliance_regulations: bool,
+    /// Generate period-close journal entries (tax provision, income statement close).
+    pub generate_period_close: bool,
 }
 
 impl Default for PhaseConfig {
@@ -337,6 +339,7 @@ impl Default for PhaseConfig {
             generate_evolution_events: true,        // On by default
             generate_counterfactuals: false,        // Off by default (opt-in for ML workloads)
             generate_compliance_regulations: false, // Off by default
+            generate_period_close: true,            // On by default
         }
     }
 }
@@ -1131,6 +1134,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of industry-specific GL accounts generated.
     #[serde(default)]
     pub industry_gl_account_count: usize,
+    /// Number of period-close journal entries generated (tax provision + closing entries).
+    #[serde(default)]
+    pub period_close_je_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1800,6 +1806,9 @@ impl EnhancedOrchestrator {
         let data_quality_stats =
             self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
 
+        // Phase 10b: Period Close (tax provision + income statement closing entries)
+        self.phase_period_close(&mut entries, &mut stats)?;
+
         // Phase 11: Audit Data
         let audit = self.phase_audit_data(&entries, &mut stats)?;
 
@@ -2366,6 +2375,206 @@ impl EnhancedOrchestrator {
             debug!("Phase 7: Skipped (data quality injection disabled or no entries)");
             Ok(DataQualityStats::default())
         }
+    }
+
+    /// Phase 10b: Generate period-close journal entries.
+    ///
+    /// Stub implementation that generates:
+    /// 1. Tax provision JE per company: DR Tax Expense (8000) / CR Sales Tax Payable (2100)
+    /// 2. Income statement closing JE per company: transfer net income after tax to retained
+    ///    earnings via the Income Summary (3600) clearing account.
+    ///
+    /// The full CloseEngine integration with depreciation, accruals, and FX revaluation
+    /// handlers will come in later tiers.
+    fn phase_period_close(
+        &mut self,
+        entries: &mut Vec<JournalEntry>,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<()> {
+        if !self.phase_config.generate_period_close || entries.is_empty() {
+            debug!("Phase 10b: Skipped (period close disabled or no entries)");
+            return Ok(());
+        }
+
+        info!("Phase 10b: Generating period-close journal entries");
+
+        use datasynth_core::accounts::{equity_accounts, tax_accounts, AccountCategory};
+        use rust_decimal::Decimal;
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        // Posting date for close entries is the last day of the period
+        let close_date = end_date - chrono::Days::new(1);
+
+        // Statutory tax rate (21% — configurable rates come in later tiers)
+        let tax_rate = Decimal::new(21, 2); // 0.21
+
+        // Collect company codes from config
+        let company_codes: Vec<String> = self.config.companies.iter().map(|c| c.code.clone()).collect();
+
+        let mut close_jes: Vec<JournalEntry> = Vec::new();
+
+        for company_code in &company_codes {
+            // Calculate net income for this company from existing JEs:
+            // Net income = sum of credit-normal revenue postings - sum of debit-normal expense postings
+            // Revenue (4xxx): credit-normal, so net = credits - debits
+            // COGS (5xxx), OpEx (6xxx), Other I/E (7xxx), Tax (8xxx): debit-normal, so net = debits - credits
+            let mut total_revenue = Decimal::ZERO;
+            let mut total_expenses = Decimal::ZERO;
+
+            for entry in entries.iter() {
+                if entry.header.company_code != *company_code {
+                    continue;
+                }
+                for line in &entry.lines {
+                    let category = AccountCategory::from_account(&line.gl_account);
+                    match category {
+                        AccountCategory::Revenue => {
+                            // Revenue is credit-normal: net revenue = credits - debits
+                            total_revenue += line.credit_amount - line.debit_amount;
+                        }
+                        AccountCategory::Cogs
+                        | AccountCategory::OperatingExpense
+                        | AccountCategory::OtherIncomeExpense
+                        | AccountCategory::Tax => {
+                            // Expenses are debit-normal: net expense = debits - credits
+                            total_expenses += line.debit_amount - line.credit_amount;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            let pre_tax_income = total_revenue - total_expenses;
+
+            // Skip if no income statement activity
+            if pre_tax_income == Decimal::ZERO {
+                debug!(
+                    "Company {}: no pre-tax income, skipping period close",
+                    company_code
+                );
+                continue;
+            }
+
+            // --- Tax provision JE ---
+            // Only generate if pre_tax_income > 0 (no tax on losses in this stub)
+            let tax_amount = if pre_tax_income > Decimal::ZERO {
+                (pre_tax_income * tax_rate).round_dp(2)
+            } else {
+                Decimal::ZERO
+            };
+
+            if tax_amount > Decimal::ZERO {
+                let mut tax_header =
+                    JournalEntryHeader::new(company_code.clone(), close_date);
+                tax_header.document_type = "CL".to_string();
+                tax_header.header_text =
+                    Some(format!("Tax provision - {}", company_code));
+                tax_header.created_by = "CLOSE_ENGINE".to_string();
+                tax_header.source = TransactionSource::Automated;
+                tax_header.business_process = Some(BusinessProcess::R2R);
+
+                let doc_id = tax_header.document_id;
+                let mut tax_je = JournalEntry::new(tax_header);
+
+                // DR Tax Expense (8000)
+                tax_je.add_line(JournalEntryLine::debit(
+                    doc_id,
+                    1,
+                    tax_accounts::TAX_EXPENSE.to_string(),
+                    tax_amount,
+                ));
+                // CR Sales Tax Payable (2100) — used as income tax payable in this stub
+                tax_je.add_line(JournalEntryLine::credit(
+                    doc_id,
+                    2,
+                    tax_accounts::SALES_TAX_PAYABLE.to_string(),
+                    tax_amount,
+                ));
+
+                debug_assert!(
+                    tax_je.is_balanced(),
+                    "Tax provision JE must be balanced"
+                );
+                close_jes.push(tax_je);
+            }
+
+            // --- Income statement closing JE ---
+            // Net income after tax
+            let net_income = pre_tax_income - tax_amount;
+
+            if net_income != Decimal::ZERO {
+                let mut close_header =
+                    JournalEntryHeader::new(company_code.clone(), close_date);
+                close_header.document_type = "CL".to_string();
+                close_header.header_text =
+                    Some(format!("Income statement close - {}", company_code));
+                close_header.created_by = "CLOSE_ENGINE".to_string();
+                close_header.source = TransactionSource::Automated;
+                close_header.business_process = Some(BusinessProcess::R2R);
+
+                let doc_id = close_header.document_id;
+                let mut close_je = JournalEntry::new(close_header);
+
+                let abs_net_income = net_income.abs();
+
+                if net_income > Decimal::ZERO {
+                    // Profit: DR Income Summary (3600) / CR Retained Earnings (3200)
+                    close_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        equity_accounts::INCOME_SUMMARY.to_string(),
+                        abs_net_income,
+                    ));
+                    close_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        equity_accounts::RETAINED_EARNINGS.to_string(),
+                        abs_net_income,
+                    ));
+                } else {
+                    // Loss: DR Retained Earnings (3200) / CR Income Summary (3600)
+                    close_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        equity_accounts::RETAINED_EARNINGS.to_string(),
+                        abs_net_income,
+                    ));
+                    close_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        equity_accounts::INCOME_SUMMARY.to_string(),
+                        abs_net_income,
+                    ));
+                }
+
+                debug_assert!(
+                    close_je.is_balanced(),
+                    "Income statement closing JE must be balanced"
+                );
+                close_jes.push(close_je);
+            }
+        }
+
+        let close_count = close_jes.len();
+        if close_count > 0 {
+            info!(
+                "Generated {} period-close journal entries",
+                close_count
+            );
+            self.emit_phase_items("period_close", "JournalEntry", &close_jes);
+            entries.extend(close_jes);
+            stats.period_close_je_count = close_count;
+
+            // Update total entry/line-item stats
+            stats.total_entries = entries.len() as u64;
+            stats.total_line_items = entries.iter().map(|e| e.line_count() as u64).sum();
+        } else {
+            debug!("No period-close entries generated (no income statement activity)");
+        }
+
+        Ok(())
     }
 
     /// Phase 8: Generate audit data (engagements, workpapers, evidence, risks, findings).
@@ -9840,6 +10049,7 @@ mod tests {
             inject_anomalies: false,
             show_progress: false,
             generate_counterfactuals: true,
+            generate_period_close: false, // Disable so entry count matches counterfactual pairs
             ..Default::default()
         };
 
