@@ -127,6 +127,9 @@ use datasynth_generators::{
     // Balance validation
     RunningBalanceTracker,
     ScorecardGenerator,
+    // Segment reporting generator (IFRS 8 / ASC 280)
+    SegmentGenerator,
+    SegmentSeed,
     SourcingProjectGenerator,
     SpendAnalysisGenerator,
     ValidationError,
@@ -595,6 +598,10 @@ pub struct FinancialReportingSnapshot {
     pub bank_reconciliations: Vec<BankReconciliation>,
     /// Period-close trial balances (one per period).
     pub trial_balances: Vec<PeriodTrialBalance>,
+    /// IFRS 8 / ASC 280 operating segment reports (one per segment per period).
+    pub segment_reports: Vec<datasynth_core::models::OperatingSegment>,
+    /// IFRS 8 / ASC 280 segment reconciliations (one per period tying segments to consolidated FS).
+    pub segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation>,
 }
 
 /// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments).
@@ -3573,6 +3580,9 @@ impl EnhancedOrchestrator {
         let mut financial_statements = Vec::new();
         let mut bank_reconciliations = Vec::new();
         let mut trial_balances = Vec::new();
+        let mut segment_reports: Vec<datasynth_core::models::OperatingSegment> = Vec::new();
+        let mut segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation> =
+            Vec::new();
         // Standalone statements keyed by entity code
         let mut standalone_statements: std::collections::HashMap<String, Vec<FinancialStatement>> =
             std::collections::HashMap::new();
@@ -3823,6 +3833,111 @@ impl EnhancedOrchestrator {
                 consolidated_statements.len(),
                 has_journal_entries
             );
+
+            // ----------------------------------------------------------------
+            // IFRS 8 / ASC 280: Operating Segment Reporting
+            // ----------------------------------------------------------------
+            // Build entity seeds from the company configuration.
+            let entity_seeds: Vec<SegmentSeed> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| SegmentSeed {
+                    code: c.code.clone(),
+                    name: c.name.clone(),
+                    currency: c.currency.clone(),
+                })
+                .collect();
+
+            let mut seg_gen = SegmentGenerator::new(seed + 30);
+
+            // Generate one set of segment reports per period.
+            // We extract consolidated revenue / profit / assets from the consolidated
+            // financial statements produced above, falling back to simple sums when
+            // no consolidated statements were generated (single-entity path).
+            for period in 0..self.config.global.period_months {
+                let period_end =
+                    start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
+                let fiscal_year = period_end.year() as u16;
+                let fiscal_period = period_end.month() as u8;
+                let period_label = format!("{}-{:02}", fiscal_year, fiscal_period);
+
+                use datasynth_core::models::StatementType;
+
+                // Try to find consolidated income statement for this period
+                let cons_is = consolidated_statements.iter().find(|s| {
+                    s.fiscal_year == fiscal_year
+                        && s.fiscal_period == fiscal_period
+                        && s.statement_type == StatementType::IncomeStatement
+                });
+                let cons_bs = consolidated_statements.iter().find(|s| {
+                    s.fiscal_year == fiscal_year
+                        && s.fiscal_period == fiscal_period
+                        && s.statement_type == StatementType::BalanceSheet
+                });
+
+                // If consolidated statements not available fall back to the flat list
+                let is_stmt = cons_is.or_else(|| {
+                    financial_statements.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.fiscal_period == fiscal_period
+                            && s.statement_type == StatementType::IncomeStatement
+                    })
+                });
+                let bs_stmt = cons_bs.or_else(|| {
+                    financial_statements.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.fiscal_period == fiscal_period
+                            && s.statement_type == StatementType::BalanceSheet
+                    })
+                });
+
+                let consolidated_revenue = is_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
+                    .map(|li| -li.amount) // revenue is stored as negative in IS
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                let consolidated_profit = is_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-OI"))
+                    .map(|li| li.amount)
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                let consolidated_assets = bs_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-TA"))
+                    .map(|li| li.amount)
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                // Skip periods where we have no financial data
+                if consolidated_revenue == rust_decimal::Decimal::ZERO
+                    && consolidated_assets == rust_decimal::Decimal::ZERO
+                {
+                    continue;
+                }
+
+                let group_code = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.code.as_str())
+                    .unwrap_or("GROUP");
+
+                let (segs, recon) = seg_gen.generate(
+                    group_code,
+                    &period_label,
+                    consolidated_revenue,
+                    consolidated_profit,
+                    consolidated_assets,
+                    &entity_seeds,
+                );
+                segment_reports.extend(segs);
+                segment_reconciliations.push(recon);
+            }
+
+            info!(
+                "Segment reports generated: {} segments, {} reconciliations",
+                segment_reports.len(),
+                segment_reconciliations.len()
+            );
         }
 
         // Generate bank reconciliations from payment data
@@ -3906,6 +4021,8 @@ impl EnhancedOrchestrator {
             consolidation_schedules,
             bank_reconciliations,
             trial_balances,
+            segment_reports,
+            segment_reconciliations,
         })
     }
 

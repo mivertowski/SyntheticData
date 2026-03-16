@@ -126,6 +126,8 @@ pub enum GeneratorType {
     Disruption = 0x42,
     /// Business combination generator (IFRS 3 / ASC 805)
     BusinessCombination = 0x43,
+    /// Segment reporting generator (IFRS 8 / ASC 280)
+    SegmentReport = 0x44,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

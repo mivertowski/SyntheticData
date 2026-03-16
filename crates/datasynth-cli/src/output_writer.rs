@@ -653,6 +653,27 @@ pub fn write_all_output(
             &fin_dir.join("bank_reconciliations.json"),
             "Bank reconciliations",
         );
+
+        // IFRS 8 / ASC 280 Segment Reporting
+        if !result.financial_reporting.segment_reports.is_empty()
+            || !result
+                .financial_reporting
+                .segment_reconciliations
+                .is_empty()
+        {
+            let seg_dir = fin_dir.join("segment_reporting");
+            std::fs::create_dir_all(&seg_dir)?;
+            write_json_safe(
+                &result.financial_reporting.segment_reports,
+                &seg_dir.join("segment_reports.json"),
+                "Segment reports",
+            );
+            write_json_safe(
+                &result.financial_reporting.segment_reconciliations,
+                &seg_dir.join("segment_reconciliations.json"),
+                "Segment reconciliations",
+            );
+        }
     }
 
     // ========================================================================
