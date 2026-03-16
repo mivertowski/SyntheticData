@@ -56,6 +56,8 @@ use datasynth_fingerprint::{
     synthesis::{ConfigSynthesizer, CopulaGeneratorSpec, SynthesisOptions},
 };
 use datasynth_generators::{
+    // Opening balance → JE conversion
+    opening_balance_to_jes,
     // Subledger linker + settlement
     apply_ap_settlements,
     apply_ar_settlements,
@@ -1630,16 +1632,33 @@ impl EnhancedOrchestrator {
         // Phase 3b: Opening Balances (before JE generation)
         let opening_balances = self.phase_opening_balances(&coa, &mut stats)?;
 
-        // Note: Opening balances are exported as balance/opening_balances.json but are not
-        // converted to journal entries. Converting to JEs requires richer type information
-        // (GeneratedOpeningBalance.balances loses AccountType, making contra-asset accounts
-        // like Accumulated Depreciation indistinguishable from regular assets by code prefix).
-        // A future enhancement could store (Decimal, AccountType) in the balances map.
+        // Phase 3c: Convert opening balances to journal entries and prepend them.
+        // The CoA lookup resolves each account's normal_debit_balance flag, solving the
+        // contra-asset problem (e.g., Accumulated Depreciation) without requiring a richer
+        // balance map type.
+        let opening_balance_jes: Vec<JournalEntry> = opening_balances
+            .iter()
+            .flat_map(|ob| opening_balance_to_jes(ob, &coa))
+            .collect();
+        if !opening_balance_jes.is_empty() {
+            debug!(
+                "Prepending {} opening balance JEs to entries",
+                opening_balance_jes.len()
+            );
+        }
 
         // Phase 4: Journal Entries
         let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
 
-        // Phase 4b: Append FA acquisition journal entries to main entries
+        // Phase 4b: Prepend opening balance JEs so the RunningBalanceTracker
+        // starts from the correct initial state.
+        if !opening_balance_jes.is_empty() {
+            let mut combined = opening_balance_jes;
+            combined.extend(entries);
+            entries = combined;
+        }
+
+        // Phase 4c: Append FA acquisition journal entries to main entries
         if !fa_journal_entries.is_empty() {
             debug!(
                 "Appending {} FA acquisition JEs to main entries",
