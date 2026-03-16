@@ -654,7 +654,11 @@ fn last_day_of_month(year: i32, month: u32) -> NaiveDate {
     let next_year = if month == 12 { year + 1 } else { year };
     NaiveDate::from_ymd_opt(next_year, next_month, 1)
         .and_then(|d| d.pred_opt())
-        .unwrap_or(NaiveDate::from_ymd_opt(year, month, 28).unwrap())
+        .unwrap_or_else(|| {
+            // Fallback: use the 28th which is always valid.
+            NaiveDate::from_ymd_opt(year, month, 28)
+                .unwrap_or(NaiveDate::from_ymd_opt(year, 1, 28).unwrap_or(NaiveDate::MIN))
+        })
 }
 
 // ============================================================================

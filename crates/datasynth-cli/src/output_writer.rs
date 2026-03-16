@@ -1119,6 +1119,7 @@ pub fn write_all_output(
     if !result.accounting_standards.contracts.is_empty()
         || !result.accounting_standards.impairment_tests.is_empty()
         || !result.accounting_standards.business_combinations.is_empty()
+        || !result.accounting_standards.ecl_models.is_empty()
     {
         let acct_dir = output_dir.join("accounting_standards");
         std::fs::create_dir_all(&acct_dir)?;
@@ -1145,6 +1146,21 @@ pub fn write_all_output(
                 .business_combination_journal_entries,
             &acct_dir.join("business_combination_journal_entries.json"),
             "Business combination journal entries",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_models,
+            &acct_dir.join("ecl_models.json"),
+            "ECL models",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_provision_movements,
+            &acct_dir.join("ecl_provision_movements.json"),
+            "ECL provision movements",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_journal_entries,
+            &acct_dir.join("ecl_journal_entries.json"),
+            "ECL journal entries",
         );
     }
 

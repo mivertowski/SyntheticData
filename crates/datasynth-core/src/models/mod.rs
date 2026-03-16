@@ -93,6 +93,9 @@ pub mod subledger;
 // Business combination models (IFRS 3 / ASC 805)
 pub mod business_combination;
 
+// Expected Credit Loss models (IFRS 9 / ASC 326)
+pub mod expected_credit_loss;
+
 // Audit models (Phase 13-14: RustAssureTwin integration)
 pub mod audit;
 
@@ -181,6 +184,9 @@ pub use scenario::*;
 
 // Business combination exports
 pub use business_combination::*;
+
+// Expected Credit Loss exports (IFRS 9 / ASC 326)
+pub use expected_credit_loss::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;

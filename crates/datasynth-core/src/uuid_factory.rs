@@ -128,6 +128,8 @@ pub enum GeneratorType {
     BusinessCombination = 0x43,
     /// Segment reporting generator (IFRS 8 / ASC 280)
     SegmentReport = 0x44,
+    /// Expected Credit Loss generator (IFRS 9 / ASC 326)
+    ExpectedCreditLoss = 0x45,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

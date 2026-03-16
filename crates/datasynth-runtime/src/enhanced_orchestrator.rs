@@ -94,6 +94,8 @@ use datasynth_generators::{
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
     DocumentFlowLinker,
+    // Expected Credit Loss generator (IFRS 9 / ASC 326)
+    EclGenerator,
     EmployeeGenerator,
     // ESG anomaly labels
     EsgAnomalyLabel,
@@ -641,12 +643,21 @@ pub struct AccountingStandardsSnapshot {
         Vec<datasynth_core::models::business_combination::BusinessCombination>,
     /// Journal entries generated from business combinations (Day 1 + amortization).
     pub business_combination_journal_entries: Vec<JournalEntry>,
+    /// ECL models (IFRS 9 / ASC 326).
+    pub ecl_models: Vec<datasynth_core::models::expected_credit_loss::EclModel>,
+    /// ECL provision movements.
+    pub ecl_provision_movements:
+        Vec<datasynth_core::models::expected_credit_loss::EclProvisionMovement>,
+    /// Journal entries from ECL provision.
+    pub ecl_journal_entries: Vec<JournalEntry>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
     pub impairment_test_count: usize,
     /// Business combination count.
     pub business_combination_count: usize,
+    /// ECL model count.
+    pub ecl_model_count: usize,
 }
 
 /// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
@@ -1082,6 +1093,8 @@ pub struct EnhancedGenerationStatistics {
     pub impairment_test_count: usize,
     #[serde(default)]
     pub business_combination_count: usize,
+    #[serde(default)]
+    pub ecl_model_count: usize,
     /// Manufacturing counts.
     #[serde(default)]
     pub production_order_count: usize,
@@ -1907,8 +1920,9 @@ impl EnhancedOrchestrator {
         let financial_reporting =
             self.phase_financial_reporting(&document_flows, &entries, &coa, &mut stats)?;
 
-        // Phase 18: Accounting Standards (Revenue Recognition, Impairment)
-        let accounting_standards = self.phase_accounting_standards(&mut stats)?;
+        // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
+        let accounting_standards =
+            self.phase_accounting_standards(&subledger.ar_aging_reports, &mut stats)?;
 
         // Phase 18b: OCPM Events (after all process data is available)
         let ocpm = self.phase_ocpm_events(
@@ -4657,9 +4671,10 @@ impl EnhancedOrchestrator {
         Ok(snapshot)
     }
 
-    /// Phase 17: Generate accounting standards data (revenue recognition, impairment).
+    /// Phase 17: Generate accounting standards data (revenue recognition, impairment, ECL).
     fn phase_accounting_standards(
         &mut self,
+        ar_aging_reports: &[datasynth_core::models::subledger::ar::ARAgingReport],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<AccountingStandardsSnapshot> {
         if !self.phase_config.generate_accounting_standards
@@ -4810,15 +4825,97 @@ impl EnhancedOrchestrator {
             snapshot.business_combinations = bc_snap.combinations;
         }
 
+        // Expected Credit Loss (IFRS 9 / ASC 326)
+        if self
+            .config
+            .accounting_standards
+            .expected_credit_loss
+            .enabled
+        {
+            let ecl_config = &self.config.accounting_standards.expected_credit_loss;
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS_9",
+                _ => "ASC_326",
+            };
+
+            // Use AR aging data from the subledger snapshot if available;
+            // otherwise generate synthetic bucket exposures.
+            let period_label =
+                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+
+            let mut ecl_gen = EclGenerator::new(seed + 43);
+
+            // Collect combined bucket totals across all company AR aging reports.
+            let bucket_exposures: Vec<(
+                datasynth_core::models::subledger::ar::AgingBucket,
+                rust_decimal::Decimal,
+            )> = if ar_aging_reports.is_empty() {
+                // No AR aging data — synthesise plausible bucket exposures.
+                use datasynth_core::models::subledger::ar::AgingBucket;
+                vec![
+                    (
+                        AgingBucket::Current,
+                        rust_decimal::Decimal::from(500_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days1To30,
+                        rust_decimal::Decimal::from(120_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days31To60,
+                        rust_decimal::Decimal::from(45_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days61To90,
+                        rust_decimal::Decimal::from(15_000_u32),
+                    ),
+                    (
+                        AgingBucket::Over90Days,
+                        rust_decimal::Decimal::from(8_000_u32),
+                    ),
+                ]
+            } else {
+                use datasynth_core::models::subledger::ar::AgingBucket;
+                // Sum bucket totals from all reports.
+                let mut totals: std::collections::HashMap<AgingBucket, rust_decimal::Decimal> =
+                    std::collections::HashMap::new();
+                for report in ar_aging_reports {
+                    for (bucket, amount) in &report.bucket_totals {
+                        *totals.entry(*bucket).or_default() += amount;
+                    }
+                }
+                AgingBucket::all()
+                    .into_iter()
+                    .map(|b| (b, totals.get(&b).copied().unwrap_or_default()))
+                    .collect()
+            };
+
+            let ecl_snap = ecl_gen.generate(
+                company_code,
+                end_date,
+                &bucket_exposures,
+                ecl_config,
+                &period_label,
+                framework_str,
+            );
+
+            snapshot.ecl_model_count = ecl_snap.ecl_models.len();
+            snapshot.ecl_models = ecl_snap.ecl_models;
+            snapshot.ecl_provision_movements = ecl_snap.provision_movements;
+            snapshot.ecl_journal_entries = ecl_snap.journal_entries;
+        }
+
         stats.revenue_contract_count = snapshot.revenue_contract_count;
         stats.impairment_test_count = snapshot.impairment_test_count;
         stats.business_combination_count = snapshot.business_combination_count;
+        stats.ecl_model_count = snapshot.ecl_model_count;
 
         info!(
-            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations",
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models",
             snapshot.revenue_contract_count,
             snapshot.impairment_test_count,
-            snapshot.business_combination_count
+            snapshot.business_combination_count,
+            snapshot.ecl_model_count
         );
         self.check_resources_with_log("post-accounting-standards")?;
 
