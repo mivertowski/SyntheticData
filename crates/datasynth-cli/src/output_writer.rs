@@ -343,6 +343,51 @@ pub fn write_all_output(
             &audit_dir.join("audit_judgments.json"),
             "Audit judgments",
         );
+        write_json_safe(
+            &result.audit.confirmations,
+            &audit_dir.join("audit_confirmations.json"),
+            "Audit confirmations",
+        );
+        write_json_safe(
+            &result.audit.confirmation_responses,
+            &audit_dir.join("audit_confirmation_responses.json"),
+            "Audit confirmation responses",
+        );
+        write_json_safe(
+            &result.audit.procedure_steps,
+            &audit_dir.join("audit_procedure_steps.json"),
+            "Audit procedure steps",
+        );
+        write_json_safe(
+            &result.audit.samples,
+            &audit_dir.join("audit_samples.json"),
+            "Audit samples",
+        );
+        write_json_safe(
+            &result.audit.analytical_results,
+            &audit_dir.join("audit_analytical_results.json"),
+            "Audit analytical results",
+        );
+        write_json_safe(
+            &result.audit.ia_functions,
+            &audit_dir.join("audit_ia_functions.json"),
+            "Audit IA functions",
+        );
+        write_json_safe(
+            &result.audit.ia_reports,
+            &audit_dir.join("audit_ia_reports.json"),
+            "Audit IA reports",
+        );
+        write_json_safe(
+            &result.audit.related_parties,
+            &audit_dir.join("audit_related_parties.json"),
+            "Audit related parties",
+        );
+        write_json_safe(
+            &result.audit.related_party_transactions,
+            &audit_dir.join("audit_related_party_transactions.json"),
+            "Audit related party transactions",
+        );
     }
 
     // ========================================================================
