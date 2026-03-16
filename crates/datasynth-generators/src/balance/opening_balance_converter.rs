@@ -75,10 +75,31 @@ pub fn opening_balance_to_jes(
     }
 
     if je.lines.is_empty() {
-        Vec::new()
-    } else {
-        vec![je]
+        return Vec::new();
     }
+
+    // Guarantee the JE is balanced.  The opening-balance map satisfies A = L + E,
+    // but CoA-lookup or heuristic misclassification can assign the wrong side.
+    // If unbalanced, add a plug line to Retained Earnings (3100) to absorb the
+    // difference rather than emitting an unbalanced JE.
+    let diff = je.total_debit() - je.total_credit();
+    if diff != Decimal::ZERO {
+        let plug_line = if diff > Decimal::ZERO {
+            // Debits exceed credits → add credit plug
+            JournalEntryLine::credit(
+                document_id,
+                line_number,
+                "3100".to_string(), // Retained Earnings
+                diff,
+            )
+        } else {
+            // Credits exceed debits → add debit plug
+            JournalEntryLine::debit(document_id, line_number, "3100".to_string(), diff.abs())
+        };
+        je.add_line(plug_line);
+    }
+
+    vec![je]
 }
 
 /// Resolve whether `account_code` has a debit-normal balance.
