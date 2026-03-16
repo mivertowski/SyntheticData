@@ -52,9 +52,7 @@ impl ConsolidationGenerator {
             for line in &je.lines {
                 let category = category_from_account_code(&line.gl_account);
                 let net = line.debit_amount - line.credit_amount;
-                *elim_by_category
-                    .entry(category)
-                    .or_insert(Decimal::ZERO) += net;
+                *elim_by_category.entry(category).or_insert(Decimal::ZERO) += net;
             }
         }
 
@@ -213,8 +211,7 @@ mod tests {
     #[test]
     fn test_consolidate_no_eliminations() {
         let tbs = make_entity_tbs();
-        let (items, schedule) =
-            ConsolidationGenerator::consolidate(&tbs, &[], "2024-03");
+        let (items, schedule) = ConsolidationGenerator::consolidate(&tbs, &[], "2024-03");
 
         // Schedule period label
         assert_eq!(schedule.period, "2024-03");
@@ -233,13 +230,22 @@ mod tests {
         // Pre-elimination = sum of entity amounts; eliminations = 0
         for li in &schedule.line_items {
             let entity_sum: Decimal = li.entity_amounts.values().copied().sum();
-            assert_eq!(li.pre_elimination_total, entity_sum,
+            assert_eq!(
+                li.pre_elimination_total, entity_sum,
                 "pre_elimination_total should equal sum of entity amounts for {}",
-                li.account_category);
-            assert_eq!(li.elimination_adjustments, Decimal::ZERO,
-                "no eliminations expected for {}", li.account_category);
-            assert_eq!(li.post_elimination_total, li.pre_elimination_total,
-                "post should equal pre when no eliminations for {}", li.account_category);
+                li.account_category
+            );
+            assert_eq!(
+                li.elimination_adjustments,
+                Decimal::ZERO,
+                "no eliminations expected for {}",
+                li.account_category
+            );
+            assert_eq!(
+                li.post_elimination_total, li.pre_elimination_total,
+                "post should equal pre when no eliminations for {}",
+                li.account_category
+            );
         }
 
         // Consolidated line items should match schedule count

@@ -17,22 +17,16 @@ fn test_group_structure_roundtrip_json() {
         "SUB_A".to_string(),
         "USD".to_string(),
     ));
-    group.add_subsidiary(
-        SubsidiaryRelationship::new_with_ownership(
-            "SUB_B".to_string(),
-            dec!(75),
-            "EUR".to_string(),
-            None,
-        ),
-    );
-    group.add_associate(AssociateRelationship::new(
-        "ASSOC_C".to_string(),
-        dec!(30),
+    group.add_subsidiary(SubsidiaryRelationship::new_with_ownership(
+        "SUB_B".to_string(),
+        dec!(75),
+        "EUR".to_string(),
+        None,
     ));
+    group.add_associate(AssociateRelationship::new("ASSOC_C".to_string(), dec!(30)));
 
     let json = serde_json::to_string(&group).expect("serialization failed");
-    let deserialized: GroupStructure =
-        serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: GroupStructure = serde_json::from_str(&json).expect("deserialization failed");
 
     assert_eq!(deserialized.parent_entity, "PARENT");
     assert_eq!(deserialized.subsidiaries.len(), 2);
@@ -162,8 +156,14 @@ fn test_group_structure_entity_count() {
     let mut group = GroupStructure::new("P".to_string());
     assert_eq!(group.entity_count(), 1, "only parent");
 
-    group.add_subsidiary(SubsidiaryRelationship::new_full("S1".to_string(), "USD".to_string()));
-    group.add_subsidiary(SubsidiaryRelationship::new_full("S2".to_string(), "EUR".to_string()));
+    group.add_subsidiary(SubsidiaryRelationship::new_full(
+        "S1".to_string(),
+        "USD".to_string(),
+    ));
+    group.add_subsidiary(SubsidiaryRelationship::new_full(
+        "S2".to_string(),
+        "EUR".to_string(),
+    ));
     group.add_associate(AssociateRelationship::new("A1".to_string(), dec!(25)));
 
     assert_eq!(group.entity_count(), 4, "parent + 2 subs + 1 associate");

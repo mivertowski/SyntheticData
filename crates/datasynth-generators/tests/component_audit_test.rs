@@ -44,10 +44,21 @@ fn test_single_entity_produces_correct_counts() {
 
     let snapshot = gen.generate(&companies, group_mat, "ENG-001", period_end());
 
-    assert_eq!(snapshot.component_auditors.len(), 1, "1 auditor for 1 jurisdiction");
-    assert_eq!(snapshot.component_instructions.len(), 1, "1 instruction for 1 entity");
+    assert_eq!(
+        snapshot.component_auditors.len(),
+        1,
+        "1 auditor for 1 jurisdiction"
+    );
+    assert_eq!(
+        snapshot.component_instructions.len(),
+        1,
+        "1 instruction for 1 entity"
+    );
     assert_eq!(snapshot.component_reports.len(), 1, "1 report for 1 entity");
-    assert!(snapshot.group_audit_plan.is_some(), "group plan must be present");
+    assert!(
+        snapshot.group_audit_plan.is_some(),
+        "group plan must be present"
+    );
 }
 
 // =============================================================================
@@ -226,8 +237,7 @@ fn test_all_entities_covered_by_exactly_one_instruction() {
             .filter(|i| i.entity_code == company.code)
             .count();
         assert_eq!(
-            count,
-            1,
+            count, 1,
             "Entity {} should have exactly 1 instruction, found {count}",
             company.code
         );

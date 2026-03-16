@@ -104,12 +104,7 @@ impl DeferredTaxGenerator {
             let rollforward = self.build_rollforward(company_code, &period_label, dta, dtl);
 
             // 4. Journal entries
-            let jes = self.build_journal_entries(
-                company_code,
-                posting_date,
-                dta,
-                dtl,
-            );
+            let jes = self.build_journal_entries(company_code, posting_date, dta, dtl);
 
             snapshot.temporary_differences.extend(diffs);
             snapshot.etr_reconciliations.push(etr);
@@ -320,8 +315,7 @@ impl DeferredTaxGenerator {
             })
             .collect();
 
-        let total_perm_effect: Decimal =
-            permanent_differences.iter().map(|p| p.tax_effect).sum();
+        let total_perm_effect: Decimal = permanent_differences.iter().map(|p| p.tax_effect).sum();
         let actual_tax = (expected_tax + total_perm_effect).round_dp(2);
         let effective_rate = if pre_tax_income != Decimal::ZERO {
             (actual_tax / pre_tax_income).round_dp(6)
@@ -384,8 +378,7 @@ impl DeferredTaxGenerator {
         // DTL entry: DR Tax Expense / CR Deferred Tax Liability
         if dtl > Decimal::ZERO {
             self.counter += 1;
-            let mut header =
-                JournalEntryHeader::new(company_code.to_string(), posting_date);
+            let mut header = JournalEntryHeader::new(company_code.to_string(), posting_date);
             header.document_type = "TAX_DEFERRED".to_string();
             header.created_by = "DEFERRED_TAX_ENGINE".to_string();
             header.source = TransactionSource::Automated;
@@ -415,8 +408,7 @@ impl DeferredTaxGenerator {
         // DTA entry: DR Deferred Tax Asset / CR Tax Benefit (credit to Tax Expense)
         if dta > Decimal::ZERO {
             self.counter += 1;
-            let mut header =
-                JournalEntryHeader::new(company_code.to_string(), posting_date);
+            let mut header = JournalEntryHeader::new(company_code.to_string(), posting_date);
             header.document_type = "TAX_DEFERRED".to_string();
             header.created_by = "DEFERRED_TAX_ENGINE".to_string();
             header.source = TransactionSource::Automated;
@@ -535,7 +527,10 @@ impl DeferredTaxGenerator {
 ///
 /// `dta = Σ |difference| × statutory_rate` for DTA-type diffs.
 /// `dtl = Σ |difference| × statutory_rate` for DTL-type diffs.
-pub fn compute_dta_dtl(diffs: &[TemporaryDifference], statutory_rate: Decimal) -> (Decimal, Decimal) {
+pub fn compute_dta_dtl(
+    diffs: &[TemporaryDifference],
+    statutory_rate: Decimal,
+) -> (Decimal, Decimal) {
     let mut dta = Decimal::ZERO;
     let mut dtl = Decimal::ZERO;
     for d in diffs {
@@ -691,7 +686,13 @@ mod tests {
             snap1.temporary_differences.len(),
             snap2.temporary_differences.len()
         );
-        assert_eq!(snap1.etr_reconciliations[0].actual_tax, snap2.etr_reconciliations[0].actual_tax);
-        assert_eq!(snap1.rollforwards[0].closing_dta, snap2.rollforwards[0].closing_dta);
+        assert_eq!(
+            snap1.etr_reconciliations[0].actual_tax,
+            snap2.etr_reconciliations[0].actual_tax
+        );
+        assert_eq!(
+            snap1.rollforwards[0].closing_dta,
+            snap2.rollforwards[0].closing_dta
+        );
     }
 }

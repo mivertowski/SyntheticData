@@ -564,11 +564,7 @@ pub fn write_all_output(
 
         // Always write group structure when present (independent of IC transactions).
         if let Some(gs) = &result.intercompany.group_structure {
-            write_json_single_safe(
-                gs,
-                &ic_dir.join("group_structure.json"),
-                "Group structure",
-            );
+            write_json_single_safe(gs, &ic_dir.join("group_structure.json"), "Group structure");
         }
 
         write_json_safe(
@@ -599,7 +595,10 @@ pub fn write_all_output(
     let fin_dir = output_dir.join("financial_reporting");
     if !result.financial_reporting.financial_statements.is_empty()
         || !result.financial_reporting.bank_reconciliations.is_empty()
-        || !result.financial_reporting.consolidated_statements.is_empty()
+        || !result
+            .financial_reporting
+            .consolidated_statements
+            .is_empty()
     {
         std::fs::create_dir_all(&fin_dir)?;
         info!("Writing financial reporting data...");
@@ -626,8 +625,14 @@ pub fn write_all_output(
         }
 
         // Consolidated statements + schedule
-        if !result.financial_reporting.consolidated_statements.is_empty()
-            || !result.financial_reporting.consolidation_schedules.is_empty()
+        if !result
+            .financial_reporting
+            .consolidated_statements
+            .is_empty()
+            || !result
+                .financial_reporting
+                .consolidation_schedules
+                .is_empty()
         {
             let consolidated_dir = fin_dir.join("consolidated");
             std::fs::create_dir_all(&consolidated_dir)?;

@@ -23,8 +23,8 @@
 
 use chrono::NaiveDate;
 use rand::Rng;
-use rand_chacha::ChaCha8Rng;
 use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -150,7 +150,8 @@ impl InventoryValuationGenerator {
             let total_cost_pos = (quantity * cost_per_unit).round_dp(2);
 
             // Sample NRV factor for this position.
-            let variation: f64 = rng.random_range(-self.config.nrv_factor_variation..=self.config.nrv_factor_variation);
+            let variation: f64 = rng
+                .random_range(-self.config.nrv_factor_variation..=self.config.nrv_factor_variation);
             let nrv_factor = (self.config.avg_nrv_factor + variation).max(0.0);
             let nrv_factor_dec = Decimal::try_from(nrv_factor).unwrap_or(dec!(1));
 
@@ -158,7 +159,9 @@ impl InventoryValuationGenerator {
             let total_nrv_pos = (quantity * nrv_per_unit).round_dp(2);
 
             // IAS 2: carrying value = min(cost, NRV)
-            let write_down = (total_cost_pos - total_nrv_pos).max(Decimal::ZERO).round_dp(2);
+            let write_down = (total_cost_pos - total_nrv_pos)
+                .max(Decimal::ZERO)
+                .round_dp(2);
             let carrying_value = total_cost_pos - write_down;
             let is_impaired = write_down > Decimal::ZERO;
 
@@ -193,8 +196,11 @@ impl InventoryValuationGenerator {
         let total_carrying_value = total_cost - total_write_down;
 
         // Build the standard InventoryValuationReport as well.
-        let valuation_report =
-            InventoryValuationReport::from_positions(company_code.to_string(), positions, as_of_date);
+        let valuation_report = InventoryValuationReport::from_positions(
+            company_code.to_string(),
+            positions,
+            as_of_date,
+        );
 
         InventoryValuationResult {
             company_code: company_code.to_string(),
@@ -256,7 +262,11 @@ mod tests {
         };
         let gen = InventoryValuationGenerator::new(cfg, 42);
         let positions = vec![make_position("MAT001", "1000", dec!(100), dec!(10))];
-        let result = gen.generate("1000", &positions, NaiveDate::from_ymd_opt(2024, 12, 31).unwrap());
+        let result = gen.generate(
+            "1000",
+            &positions,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+        );
 
         // cost = 100 * 10 = 1000, nrv = 1000 * 0.8 = 800, write-down = 200
         assert_eq!(result.lines.len(), 1);
@@ -276,10 +286,17 @@ mod tests {
         };
         let gen = InventoryValuationGenerator::new(cfg, 77);
         let positions = vec![make_position("MAT002", "1000", dec!(50), dec!(20))];
-        let result = gen.generate("1000", &positions, NaiveDate::from_ymd_opt(2024, 12, 31).unwrap());
+        let result = gen.generate(
+            "1000",
+            &positions,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+        );
 
         assert_eq!(result.lines.len(), 1);
-        assert!(!result.lines[0].is_impaired, "Position should not be impaired");
+        assert!(
+            !result.lines[0].is_impaired,
+            "Position should not be impaired"
+        );
         assert_eq!(result.total_write_down, Decimal::ZERO);
         assert_eq!(result.impaired_count, 0);
     }
@@ -293,7 +310,11 @@ mod tests {
         };
         let gen = InventoryValuationGenerator::new(cfg, 55);
         let positions = vec![make_position("MAT003", "1000", dec!(200), dec!(5))];
-        let result = gen.generate("1000", &positions, NaiveDate::from_ymd_opt(2024, 12, 31).unwrap());
+        let result = gen.generate(
+            "1000",
+            &positions,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+        );
 
         let line = &result.lines[0];
         assert_eq!(
@@ -315,7 +336,11 @@ mod tests {
         ];
         let cfg = InventoryValuationGeneratorConfig::default();
         let gen = InventoryValuationGenerator::new(cfg, 1);
-        let result = gen.generate("1000", &positions, NaiveDate::from_ymd_opt(2024, 12, 31).unwrap());
+        let result = gen.generate(
+            "1000",
+            &positions,
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+        );
 
         assert_eq!(result.lines.len(), 1, "Only MAT010 belongs to company 1000");
         assert_eq!(result.lines[0].material_id, "MAT010");

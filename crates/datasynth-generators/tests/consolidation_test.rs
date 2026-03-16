@@ -38,8 +38,7 @@ fn test_pre_elimination_equals_sum_of_entity_amounts() {
     for li in &schedule.line_items {
         let entity_sum: Decimal = li.entity_amounts.values().copied().sum();
         assert_eq!(
-            li.pre_elimination_total,
-            entity_sum,
+            li.pre_elimination_total, entity_sum,
             "pre_elimination_total should equal sum of entity amounts for category '{}'",
             li.account_category
         );
@@ -105,8 +104,7 @@ fn test_single_entity_consolidated_equals_standalone() {
     for li in &schedule.line_items {
         let entity_amount = *li.entity_amounts.get("C001").unwrap();
         assert_eq!(
-            li.post_elimination_total,
-            entity_amount,
+            li.post_elimination_total, entity_amount,
             "single-entity: consolidated '{}' should equal standalone",
             li.account_category
         );

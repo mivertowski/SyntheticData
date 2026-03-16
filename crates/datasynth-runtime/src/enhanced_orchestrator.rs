@@ -37,9 +37,10 @@ use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
-    AuditSample, ComponentAuditor, ComponentAuditorReport, ComponentInstruction, ConfirmationResponse,
-    ExternalConfirmation, GroupAuditPlan, InternalAuditFunction, InternalAuditReport,
-    ProfessionalJudgment, RelatedParty, RelatedPartyTransaction, RiskAssessment, Workpaper,
+    AuditSample, ComponentAuditor, ComponentAuditorReport, ComponentInstruction,
+    ConfirmationResponse, ExternalConfirmation, GroupAuditPlan, InternalAuditFunction,
+    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
+    RiskAssessment, Workpaper,
 };
 use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
@@ -76,6 +77,8 @@ use datasynth_generators::{
     CatalogGenerator,
     // Core generators
     ChartOfAccountsGenerator,
+    // Consolidation generator
+    ConsolidationGenerator,
     ContractGenerator,
     // Control generator
     ControlGenerator,
@@ -85,9 +88,6 @@ use datasynth_generators::{
     // Data quality
     DataQualityInjector,
     DataQualityStats,
-    // Subledger depreciation schedule generator
-    FaDepreciationScheduleConfig,
-    FaDepreciationScheduleGenerator,
     // Document flow JE generator
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
@@ -96,8 +96,9 @@ use datasynth_generators::{
     // ESG anomaly labels
     EsgAnomalyLabel,
     EvidenceGenerator,
-    // Consolidation generator
-    ConsolidationGenerator,
+    // Subledger depreciation schedule generator
+    FaDepreciationScheduleConfig,
+    FaDepreciationScheduleGenerator,
     // Financial statement generator
     FinancialStatementGenerator,
     FindingGenerator,
@@ -2193,8 +2194,7 @@ impl EnhancedOrchestrator {
             if let Ok(start_date) =
                 NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             {
-                let as_of_date = start_date
-                    + chrono::Months::new(self.config.global.period_months)
+                let as_of_date = start_date + chrono::Months::new(self.config.global.period_months)
                     - chrono::Days::new(1);
                 debug!("Phase 3b-aging: Building AR/AP aging reports as of {as_of_date}");
                 for company in &self.config.companies {
@@ -2341,8 +2341,7 @@ impl EnhancedOrchestrator {
                 subledger.depreciation_runs = runs;
                 debug!(
                     "Depreciation runs generated: {} runs for {} periods",
-                    run_count,
-                    self.config.global.period_months
+                    run_count, self.config.global.period_months
                 );
             }
         }
@@ -2352,8 +2351,7 @@ impl EnhancedOrchestrator {
             if let Ok(start_date) =
                 NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
             {
-                let as_of_date = start_date
-                    + chrono::Months::new(self.config.global.period_months)
+                let as_of_date = start_date + chrono::Months::new(self.config.global.period_months)
                     - chrono::Days::new(1);
 
                 let inv_val_cfg = InventoryValuationGeneratorConfig::default();
@@ -3314,9 +3312,7 @@ impl EnhancedOrchestrator {
     /// The first company in the configuration is treated as the ultimate parent.
     /// All remaining companies become wholly-owned (100 %) subsidiaries with
     /// [`GroupConsolidationMethod::FullConsolidation`] by default.
-    fn build_group_structure(
-        &self,
-    ) -> datasynth_core::models::intercompany::GroupStructure {
+    fn build_group_structure(&self) -> datasynth_core::models::intercompany::GroupStructure {
         use datasynth_core::models::intercompany::{GroupStructure, SubsidiaryRelationship};
 
         let parent_code = self
@@ -3329,10 +3325,8 @@ impl EnhancedOrchestrator {
         let mut group = GroupStructure::new(parent_code);
 
         for company in self.config.companies.iter().skip(1) {
-            let sub = SubsidiaryRelationship::new_full(
-                company.code.clone(),
-                company.currency.clone(),
-            );
+            let sub =
+                SubsidiaryRelationship::new_full(company.code.clone(), company.currency.clone());
             group.add_subsidiary(sub);
         }
 
@@ -3605,8 +3599,7 @@ impl EnhancedOrchestrator {
                     start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
                 let fiscal_year = period_end.year() as u16;
                 let fiscal_period = period_end.month() as u8;
-                let period_label =
-                    format!("{}-{:02}", fiscal_year, fiscal_period);
+                let period_label = format!("{}-{:02}", fiscal_year, fiscal_period);
 
                 // Build per-entity trial balances for this period (non-elimination JEs)
                 // We accumulate them for the consolidation step.
@@ -3637,15 +3630,11 @@ impl EnhancedOrchestrator {
                         );
 
                         // Accumulate per-entity category balances for consolidation
-                        let entity_cat_map = entity_tb_map
-                            .entry(company_code.to_string())
-                            .or_default();
+                        let entity_cat_map =
+                            entity_tb_map.entry(company_code.to_string()).or_default();
                         for tb_entry in &tb_entries {
-                            let net =
-                                tb_entry.debit_balance - tb_entry.credit_balance;
-                            *entity_cat_map
-                                .entry(tb_entry.category.clone())
-                                .or_default() += net;
+                            let net = tb_entry.debit_balance - tb_entry.credit_balance;
+                            *entity_cat_map.entry(tb_entry.category.clone()).or_default() += net;
                         }
 
                         let stmts = company_fs_gen.generate(
@@ -3663,8 +3652,7 @@ impl EnhancedOrchestrator {
                         let mut entity_stmts = Vec::new();
                         for stmt in stmts {
                             if stmt.statement_type == StatementType::CashFlowStatement {
-                                let net_income =
-                                    Self::calculate_net_income_from_tb(&tb_entries);
+                                let net_income = Self::calculate_net_income_from_tb(&tb_entries);
                                 let cf_items = Self::build_cash_flow_from_trial_balances(
                                     &tb_entries,
                                     None,
@@ -5136,8 +5124,7 @@ impl EnhancedOrchestrator {
                 .iter()
                 .map(|c| (c.code.as_str(), c.country.as_str()))
                 .collect();
-            let mut deferred_gen =
-                datasynth_generators::DeferredTaxGenerator::new(seed + 73);
+            let mut deferred_gen = datasynth_generators::DeferredTaxGenerator::new(seed + 73);
             deferred_gen.generate(&companies, start_date, journal_entries)
         };
 

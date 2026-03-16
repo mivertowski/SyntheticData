@@ -7,9 +7,9 @@
 //! - Tax provisions (ASC 740 / IAS 12)
 //! - Withholding tax on cross-border payments
 
+pub mod deferred_tax_generator;
 mod tax_anomaly;
 mod tax_code_generator;
-pub mod deferred_tax_generator;
 mod tax_line_generator;
 mod tax_provision_generator;
 mod tax_return_generator;

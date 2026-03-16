@@ -15,9 +15,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use datasynth_core::models::deferred_tax::{DeferredTaxType, TemporaryDifference};
-use datasynth_generators::tax::deferred_tax_generator::{
-    compute_dta_dtl, DeferredTaxGenerator,
-};
+use datasynth_generators::tax::deferred_tax_generator::{compute_dta_dtl, DeferredTaxGenerator};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -260,10 +258,17 @@ fn test_dta_dtl_equals_diff_times_rate() {
         .filter(|d| d.entity_code == "C001")
         .collect();
 
-    let (computed_dta, computed_dtl) = compute_dta_dtl(&diffs.iter().map(|d| (*d).clone()).collect::<Vec<_>>(), dec!(0.21));
+    let (computed_dta, computed_dtl) = compute_dta_dtl(
+        &diffs.iter().map(|d| (*d).clone()).collect::<Vec<_>>(),
+        dec!(0.21),
+    );
 
     // Verify rollforward closing balances equal computed values
-    let rf = snap.rollforwards.iter().find(|r| r.entity_code == "C001").unwrap();
+    let rf = snap
+        .rollforwards
+        .iter()
+        .find(|r| r.entity_code == "C001")
+        .unwrap();
     assert_eq!(
         rf.closing_dta, computed_dta,
         "Rollforward closing_dta {} != computed DTA {}",
@@ -292,18 +297,15 @@ fn test_deterministic_output() {
         "Temp diff count not deterministic"
     );
     assert_eq!(
-        snap1.etr_reconciliations[0].actual_tax,
-        snap2.etr_reconciliations[0].actual_tax,
+        snap1.etr_reconciliations[0].actual_tax, snap2.etr_reconciliations[0].actual_tax,
         "actual_tax not deterministic"
     );
     assert_eq!(
-        snap1.rollforwards[0].closing_dta,
-        snap2.rollforwards[0].closing_dta,
+        snap1.rollforwards[0].closing_dta, snap2.rollforwards[0].closing_dta,
         "closing_dta not deterministic"
     );
     assert_eq!(
-        snap1.rollforwards[0].closing_dtl,
-        snap2.rollforwards[0].closing_dtl,
+        snap1.rollforwards[0].closing_dtl, snap2.rollforwards[0].closing_dtl,
         "closing_dtl not deterministic"
     );
     assert_eq!(
@@ -317,15 +319,43 @@ fn test_deterministic_output() {
 fn test_statutory_rates_by_country() {
     // US = 21%, DE = 30%, GB = 25%
     let mut gen = DeferredTaxGenerator::new(1);
-    let snap = gen.generate(&[("C001", "US"), ("C002", "DE"), ("C003", "GB")], period_end(), &[]);
+    let snap = gen.generate(
+        &[("C001", "US"), ("C002", "DE"), ("C003", "GB")],
+        period_end(),
+        &[],
+    );
 
-    let us_etr = snap.etr_reconciliations.iter().find(|e| e.entity_code == "C001").unwrap();
-    let de_etr = snap.etr_reconciliations.iter().find(|e| e.entity_code == "C002").unwrap();
-    let gb_etr = snap.etr_reconciliations.iter().find(|e| e.entity_code == "C003").unwrap();
+    let us_etr = snap
+        .etr_reconciliations
+        .iter()
+        .find(|e| e.entity_code == "C001")
+        .unwrap();
+    let de_etr = snap
+        .etr_reconciliations
+        .iter()
+        .find(|e| e.entity_code == "C002")
+        .unwrap();
+    let gb_etr = snap
+        .etr_reconciliations
+        .iter()
+        .find(|e| e.entity_code == "C003")
+        .unwrap();
 
-    assert_eq!(us_etr.statutory_rate, dec!(0.21), "US statutory rate should be 21%");
-    assert_eq!(de_etr.statutory_rate, dec!(0.30), "DE statutory rate should be 30%");
-    assert_eq!(gb_etr.statutory_rate, dec!(0.25), "GB statutory rate should be 25%");
+    assert_eq!(
+        us_etr.statutory_rate,
+        dec!(0.21),
+        "US statutory rate should be 21%"
+    );
+    assert_eq!(
+        de_etr.statutory_rate,
+        dec!(0.30),
+        "DE statutory rate should be 30%"
+    );
+    assert_eq!(
+        gb_etr.statutory_rate,
+        dec!(0.25),
+        "GB statutory rate should be 25%"
+    );
 }
 
 #[test]

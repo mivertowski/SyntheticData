@@ -92,8 +92,7 @@ impl SubsidiaryRelationship {
         functional_currency: String,
         acquisition_date: Option<NaiveDate>,
     ) -> Self {
-        let consolidation_method =
-            GroupConsolidationMethod::from_ownership(ownership_percentage);
+        let consolidation_method = GroupConsolidationMethod::from_ownership(ownership_percentage);
         let nci_percentage = Decimal::from(100) - ownership_percentage;
         Self {
             entity_code,

@@ -95,10 +95,7 @@ impl ComponentAuditGenerator {
                 }
             };
 
-            let assigned_entities = jurisdiction_map
-                .get(country)
-                .cloned()
-                .unwrap_or_default();
+            let assigned_entities = jurisdiction_map.get(country).cloned().unwrap_or_default();
 
             country_to_auditor_id.insert(country.clone(), auditor_id.clone());
 
@@ -135,10 +132,10 @@ impl ComponentAuditGenerator {
 
             // component_materiality = group_materiality * entity_share * 0.75
             let cm_f64 = group_mat_f64 * entity_share * 0.75;
-            let component_materiality = Decimal::from_f64_retain(cm_f64)
-                .unwrap_or(Decimal::new(100_000, 2));
-            let clearly_trivial = Decimal::from_f64_retain(cm_f64 * 0.05)
-                .unwrap_or(Decimal::new(5_000, 2));
+            let component_materiality =
+                Decimal::from_f64_retain(cm_f64).unwrap_or(Decimal::new(100_000, 2));
+            let clearly_trivial =
+                Decimal::from_f64_retain(cm_f64 * 0.05).unwrap_or(Decimal::new(5_000, 2));
 
             let allocation_basis = if entity_share >= 0.05 {
                 // Both significant (≥15%) and mid-size (5–15%) entities use
@@ -285,7 +282,9 @@ impl ComponentAuditGenerator {
                 })
                 .collect();
 
-            let conclusion = if misstatements.iter().all(|m| m.corrected) && scope_limitations.is_empty() {
+            let conclusion = if misstatements.iter().all(|m| m.corrected)
+                && scope_limitations.is_empty()
+            {
                 format!(
                     "No uncorrected misstatements identified in {} that exceed component materiality.",
                     company.name
@@ -370,7 +369,10 @@ impl ComponentAuditGenerator {
     fn build_procedures(&mut self, scope: &ComponentScope, company: &CompanyConfig) -> Vec<String> {
         match scope {
             ComponentScope::FullScope => vec![
-                format!("Perform full audit of {} financial statements", company.name),
+                format!(
+                    "Perform full audit of {} financial statements",
+                    company.name
+                ),
                 "Test internal controls over financial reporting".to_string(),
                 "Perform substantive testing on all material account balances".to_string(),
                 "Attend physical inventory count".to_string(),
@@ -378,9 +380,8 @@ impl ComponentAuditGenerator {
                 "Review subsequent events through reporting deadline".to_string(),
             ],
             ComponentScope::SpecificScope { account_areas } => {
-                let mut procs = vec![
-                    "Perform substantive procedures on specified account areas".to_string(),
-                ];
+                let mut procs =
+                    vec!["Perform substantive procedures on specified account areas".to_string()];
                 for area in account_areas {
                     procs.push(format!("Obtain audit evidence for {area} balance"));
                 }
@@ -417,10 +418,7 @@ impl ComponentAuditGenerator {
 }
 
 /// Look up the auditor ID for a given country, falling back to a generic ID.
-fn company_to_auditor_id(
-    country: &str,
-    country_to_auditor_id: &HashMap<String, String>,
-) -> String {
+fn company_to_auditor_id(country: &str, country_to_auditor_id: &HashMap<String, String>) -> String {
     country_to_auditor_id
         .get(country)
         .cloned()
@@ -454,10 +452,21 @@ mod tests {
 
         let snapshot = gen.generate(&companies, group_mat, "ENG-001", period_end);
 
-        assert_eq!(snapshot.component_auditors.len(), 1, "one auditor per jurisdiction");
-        assert_eq!(snapshot.component_instructions.len(), 1, "one instruction per entity");
+        assert_eq!(
+            snapshot.component_auditors.len(),
+            1,
+            "one auditor per jurisdiction"
+        );
+        assert_eq!(
+            snapshot.component_instructions.len(),
+            1,
+            "one instruction per entity"
+        );
         assert_eq!(snapshot.component_reports.len(), 1, "one report per entity");
-        assert!(snapshot.group_audit_plan.is_some(), "group plan should be present");
+        assert!(
+            snapshot.group_audit_plan.is_some(),
+            "group plan should be present"
+        );
     }
 
     #[test]
@@ -473,7 +482,11 @@ mod tests {
 
         let snapshot = gen.generate(&companies, group_mat, "ENG-002", period_end);
 
-        assert_eq!(snapshot.component_auditors.len(), 2, "US and DE → 2 auditors");
+        assert_eq!(
+            snapshot.component_auditors.len(),
+            2,
+            "US and DE → 2 auditors"
+        );
         assert_eq!(snapshot.component_instructions.len(), 3, "one per entity");
         assert_eq!(snapshot.component_reports.len(), 3, "one per entity");
     }
@@ -573,7 +586,11 @@ mod tests {
                 .iter()
                 .filter(|i| i.entity_code == company.code)
                 .count();
-            assert_eq!(count, 1, "entity {} should have exactly 1 instruction", company.code);
+            assert_eq!(
+                count, 1,
+                "entity {} should have exactly 1 instruction",
+                company.code
+            );
         }
     }
 

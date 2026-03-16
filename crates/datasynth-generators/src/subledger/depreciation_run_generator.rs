@@ -200,8 +200,7 @@ mod tests {
         }
         // Straight-line gives equal per-period amounts.
         assert_eq!(
-            runs[0].total_depreciation,
-            runs[1].total_depreciation,
+            runs[0].total_depreciation, runs[1].total_depreciation,
             "Straight-line gives equal depreciation each period"
         );
     }
