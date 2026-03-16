@@ -45,8 +45,8 @@ use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
     SupplierBid, SupplierQualification, SupplierScorecard,
 };
-use datasynth_core::models::subledger::ap::APInvoice;
-use datasynth_core::models::subledger::ar::ARInvoice;
+use datasynth_core::models::subledger::ap::{APAgingReport, APInvoice};
+use datasynth_core::models::subledger::ar::{ARAgingReport, ARInvoice};
 use datasynth_core::models::*;
 use datasynth_core::traits::Generator;
 use datasynth_core::{DegradationActions, DegradationLevel, ResourceGuard, ResourceGuardBuilder};
@@ -413,6 +413,10 @@ pub struct SubledgerSnapshot {
     pub inventory_positions: Vec<datasynth_core::models::subledger::inventory::InventoryPosition>,
     /// Inventory movements from inventory generator.
     pub inventory_movements: Vec<datasynth_core::models::subledger::inventory::InventoryMovement>,
+    /// AR aging reports, one per company, computed after payment settlement.
+    pub ar_aging_reports: Vec<ARAgingReport>,
+    /// AP aging reports, one per company, computed after payment settlement.
+    pub ap_aging_reports: Vec<APAgingReport>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -2173,6 +2177,37 @@ impl EnhancedOrchestrator {
             apply_ap_settlements(&mut subledger.ap_invoices, &document_flows.payments);
             apply_ar_settlements(&mut subledger.ar_invoices, &document_flows.payments);
             debug!("Payment settlements applied to AP and AR subledgers");
+
+            // Phase 3b-aging: Build AR/AP aging reports (one per company) after settlement.
+            // The as-of date is the last day of the configured period.
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let as_of_date = start_date
+                    + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+                debug!("Phase 3b-aging: Building AR/AP aging reports as of {as_of_date}");
+                for company in &self.config.companies {
+                    let ar_report = ARAgingReport::from_invoices(
+                        company.code.clone(),
+                        &subledger.ar_invoices,
+                        as_of_date,
+                    );
+                    subledger.ar_aging_reports.push(ar_report);
+
+                    let ap_report = APAgingReport::from_invoices(
+                        company.code.clone(),
+                        &subledger.ap_invoices,
+                        as_of_date,
+                    );
+                    subledger.ap_aging_reports.push(ap_report);
+                }
+                debug!(
+                    "AR/AP aging reports built: {} AR, {} AP",
+                    subledger.ar_aging_reports.len(),
+                    subledger.ap_aging_reports.len()
+                );
+            }
 
             self.check_resources_with_log("post-document-flows")?;
         } else {
@@ -7238,6 +7273,9 @@ impl EnhancedOrchestrator {
             fa_records: Vec::new(),
             inventory_positions: Vec::new(),
             inventory_movements: Vec::new(),
+            // Aging reports are computed after payment settlement in phase_document_flows.
+            ar_aging_reports: Vec::new(),
+            ap_aging_reports: Vec::new(),
         })
     }
 

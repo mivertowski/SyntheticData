@@ -315,6 +315,16 @@ pub fn write_all_output(
             &sl_dir.join("inventory_movements.json"),
             "Inventory movements",
         );
+        write_json_safe(
+            &result.subledger.ar_aging_reports,
+            &sl_dir.join("ar_aging.json"),
+            "AR aging reports",
+        );
+        write_json_safe(
+            &result.subledger.ap_aging_reports,
+            &sl_dir.join("ap_aging.json"),
+            "AP aging reports",
+        );
     }
 
     // ========================================================================
