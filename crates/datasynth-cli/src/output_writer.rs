@@ -714,13 +714,14 @@ pub fn write_all_output(
     }
 
     // ========================================================================
-    // HR (Payroll, Time Entries, Expense Reports, Benefit Enrollments)
+    // HR (Payroll, Time Entries, Expense Reports, Benefit Enrollments, Pensions)
     // ========================================================================
     let hr_dir = output_dir.join("hr");
     if !result.hr.payroll_runs.is_empty()
         || !result.hr.time_entries.is_empty()
         || !result.hr.expense_reports.is_empty()
         || !result.hr.benefit_enrollments.is_empty()
+        || !result.hr.pension_plans.is_empty()
     {
         std::fs::create_dir_all(&hr_dir)?;
         info!("Writing HR data...");
@@ -749,6 +750,26 @@ pub fn write_all_output(
             &result.hr.benefit_enrollments,
             &hr_dir.join("benefit_enrollments.json"),
             "Benefit enrollments",
+        );
+        write_json_safe(
+            &result.hr.pension_plans,
+            &hr_dir.join("pension_plans.json"),
+            "Pension plans",
+        );
+        write_json_safe(
+            &result.hr.pension_obligations,
+            &hr_dir.join("pension_obligations.json"),
+            "Pension obligations",
+        );
+        write_json_safe(
+            &result.hr.pension_plan_assets,
+            &hr_dir.join("plan_assets.json"),
+            "Plan assets",
+        );
+        write_json_safe(
+            &result.hr.pension_disclosures,
+            &hr_dir.join("pension_disclosures.json"),
+            "Pension disclosures",
         );
     }
 

@@ -606,7 +606,7 @@ pub struct FinancialReportingSnapshot {
     pub segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation>,
 }
 
-/// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments).
+/// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments, pensions).
 #[derive(Debug, Clone, Default)]
 pub struct HrSnapshot {
     /// Payroll runs (actual data).
@@ -619,6 +619,16 @@ pub struct HrSnapshot {
     pub expense_reports: Vec<ExpenseReport>,
     /// Benefit enrollments (actual data).
     pub benefit_enrollments: Vec<BenefitEnrollment>,
+    /// Defined benefit pension plans (IAS 19 / ASC 715).
+    pub pension_plans: Vec<datasynth_core::models::pension::DefinedBenefitPlan>,
+    /// Pension obligation (DBO) roll-forwards.
+    pub pension_obligations: Vec<datasynth_core::models::pension::PensionObligation>,
+    /// Plan asset roll-forwards.
+    pub pension_plan_assets: Vec<datasynth_core::models::pension::PlanAssets>,
+    /// Pension disclosures.
+    pub pension_disclosures: Vec<datasynth_core::models::pension::PensionDisclosure>,
+    /// Journal entries generated from pension expense and OCI remeasurements.
+    pub pension_journal_entries: Vec<JournalEntry>,
     /// Payroll runs.
     pub payroll_run_count: usize,
     /// Payroll line item count.
@@ -629,6 +639,8 @@ pub struct HrSnapshot {
     pub expense_report_count: usize,
     /// Benefit enrollment count.
     pub benefit_enrollment_count: usize,
+    /// Pension plan count.
+    pub pension_plan_count: usize,
 }
 
 /// Accounting standards data snapshot (revenue recognition, impairment, business combinations).
@@ -1086,6 +1098,8 @@ pub struct EnhancedGenerationStatistics {
     pub expense_report_count: usize,
     #[serde(default)]
     pub benefit_enrollment_count: usize,
+    #[serde(default)]
+    pub pension_plan_count: usize,
     /// Accounting standards counts.
     #[serde(default)]
     pub revenue_contract_count: usize,
@@ -1808,6 +1822,15 @@ impl EnhancedOrchestrator {
             let payroll_jes = Self::generate_payroll_jes(&hr.payroll_runs);
             debug!("Generated {} JEs from payroll runs", payroll_jes.len());
             entries.extend(payroll_jes);
+        }
+
+        // Phase 6c: Pension expense + OCI JEs (IAS 19 / ASC 715)
+        if !hr.pension_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from pension plans",
+                hr.pension_journal_entries.len()
+            );
+            entries.extend(hr.pension_journal_entries.iter().cloned());
         }
 
         // Phase 7: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
@@ -4655,16 +4678,60 @@ impl EnhancedOrchestrator {
             snapshot.benefit_enrollments = enrollments;
         }
 
+        // Generate defined benefit pension plans (IAS 19 / ASC 715)
+        if self.config.hr.enabled {
+            let entity_name = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.name.as_str())
+                .unwrap_or("Entity");
+            let period_months = self.config.global.period_months;
+            let period_label = {
+                let y = start_date.year();
+                let m = start_date.month();
+                if period_months >= 12 {
+                    format!("FY{y}")
+                } else {
+                    format!("{y}-{m:02}")
+                }
+            };
+            let reporting_date =
+                start_date + chrono::Months::new(period_months) - chrono::Days::new(1);
+
+            let mut pension_gen =
+                datasynth_generators::PensionGenerator::new(seed.wrapping_add(34));
+            let pension_snap = pension_gen.generate(
+                company_code,
+                entity_name,
+                &period_label,
+                reporting_date,
+                employee_ids.len(),
+                currency,
+            );
+            snapshot.pension_plan_count = pension_snap.plans.len();
+            snapshot.pension_plans = pension_snap.plans;
+            snapshot.pension_obligations = pension_snap.obligations;
+            snapshot.pension_plan_assets = pension_snap.plan_assets;
+            snapshot.pension_disclosures = pension_snap.disclosures;
+            // Pension JEs are returned here so they can be added to entries
+            // in the caller (stored temporarily on snapshot for transfer).
+            // We embed them in the hr snapshot for simplicity; the orchestrator
+            // will extract and extend `entries`.
+            snapshot.pension_journal_entries = pension_snap.journal_entries;
+        }
+
         stats.payroll_run_count = snapshot.payroll_run_count;
         stats.time_entry_count = snapshot.time_entry_count;
         stats.expense_report_count = snapshot.expense_report_count;
         stats.benefit_enrollment_count = snapshot.benefit_enrollment_count;
+        stats.pension_plan_count = snapshot.pension_plan_count;
 
         info!(
-            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments",
+            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments, {} pension plans",
             snapshot.payroll_run_count, snapshot.payroll_line_item_count,
             snapshot.time_entry_count, snapshot.expense_report_count,
-            snapshot.benefit_enrollment_count
+            snapshot.benefit_enrollment_count, snapshot.pension_plan_count
         );
         self.check_resources_with_log("post-hr")?;
 

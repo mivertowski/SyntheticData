@@ -93,6 +93,9 @@ pub mod subledger;
 // Business combination models (IFRS 3 / ASC 805)
 pub mod business_combination;
 
+// Pension models (IAS 19 / ASC 715)
+pub mod pension;
+
 // Expected Credit Loss models (IFRS 9 / ASC 326)
 pub mod expected_credit_loss;
 
@@ -184,6 +187,9 @@ pub use scenario::*;
 
 // Business combination exports
 pub use business_combination::*;
+
+// Pension exports (IAS 19 / ASC 715)
+pub use pension::*;
 
 // Expected Credit Loss exports (IFRS 9 / ASC 326)
 pub use expected_credit_loss::*;

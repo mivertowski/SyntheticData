@@ -130,6 +130,8 @@ pub enum GeneratorType {
     SegmentReport = 0x44,
     /// Expected Credit Loss generator (IFRS 9 / ASC 326)
     ExpectedCreditLoss = 0x45,
+    /// Defined benefit pension generator (IAS 19 / ASC 715)
+    Pension = 0x46,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique
