@@ -56,6 +56,9 @@ mod bank_reconciliation;
 // Financial statement models
 mod financial_statements;
 
+// Notes to financial statements models (IAS 1 / ASC 235)
+mod financial_statement_notes;
+
 // Hire-to-Retire (H2R) models
 mod expense_report;
 mod payroll;
@@ -164,6 +167,9 @@ pub use bank_reconciliation::*;
 
 // Financial statement exports
 pub use financial_statements::*;
+
+// Notes to financial statements exports (IAS 1 / ASC 235)
+pub use financial_statement_notes::*;
 
 // Hire-to-Retire (H2R) exports
 pub use expense_report::*;

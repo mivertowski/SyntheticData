@@ -42,10 +42,11 @@
 pub mod analytical_procedure_generator;
 pub mod component_audit_generator;
 pub mod confirmation_generator;
-pub mod engagement_letter_generator;
 mod engagement_generator;
+pub mod engagement_letter_generator;
 mod evidence_generator;
 mod finding_generator;
+pub mod going_concern_generator;
 pub mod internal_audit_generator;
 mod judgment_generator;
 pub mod procedure_step_generator;

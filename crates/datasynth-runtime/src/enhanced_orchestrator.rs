@@ -511,6 +511,10 @@ pub struct AuditSnapshot {
     pub soc_reports: Vec<SocReport>,
     /// User entity controls documented per ISA 402.
     pub user_entity_controls: Vec<UserEntityControl>,
+    // ---- ISA 570: Going Concern ----
+    /// Going concern assessments per ISA 570 / ASC 205-40 (one per entity per period).
+    pub going_concern_assessments:
+        Vec<datasynth_core::models::audit::going_concern::GoingConcernAssessment>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -623,6 +627,8 @@ pub struct FinancialReportingSnapshot {
     pub segment_reports: Vec<datasynth_core::models::OperatingSegment>,
     /// IFRS 8 / ASC 280 segment reconciliations (one per period tying segments to consolidated FS).
     pub segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation>,
+    /// Notes to the financial statements (IAS 1 / ASC 235) — one set per entity.
+    pub notes_to_financial_statements: Vec<datasynth_core::models::FinancialStatementNote>,
 }
 
 /// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments, pensions).
@@ -4106,6 +4112,80 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // Notes to financial statements (IAS 1 / ASC 235)
+        // ----------------------------------------------------------------
+        let mut notes_to_financial_statements = Vec::new();
+        {
+            use datasynth_generators::period_close::notes_generator::{
+                NotesGenerator, NotesGeneratorContext,
+            };
+            let mut notes_gen = NotesGenerator::new(seed + 4235);
+
+            for company in &self.config.companies {
+                // Determine period_end as the last period's end date
+                let last_period_end = start_date
+                    + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+                let fiscal_year = last_period_end.year() as u16;
+
+                // Extract relevant amounts from financial statements
+                use datasynth_core::models::StatementType;
+                let entity_is = standalone_statements.get(&company.code).and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::IncomeStatement
+                    })
+                });
+                let entity_bs = standalone_statements.get(&company.code).and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::BalanceSheet
+                    })
+                });
+
+                let revenue_amount = entity_is
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
+                    .map(|li| -li.amount); // stored negative
+                let ppe_gross = entity_bs
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-FA"))
+                    .map(|li| li.amount);
+
+                use datasynth_config::schema::AccountingFrameworkConfig;
+                let framework = match self
+                    .config
+                    .accounting_standards
+                    .framework
+                    .unwrap_or_default()
+                {
+                    AccountingFrameworkConfig::Ifrs | AccountingFrameworkConfig::DualReporting => {
+                        "IFRS".to_string()
+                    }
+                    _ => "US GAAP".to_string(),
+                };
+
+                let ctx = NotesGeneratorContext {
+                    entity_code: company.code.clone(),
+                    framework,
+                    period: format!("FY{}", fiscal_year),
+                    period_end: last_period_end,
+                    currency: company.currency.clone(),
+                    revenue_amount,
+                    total_ppe_gross: ppe_gross,
+                    statutory_tax_rate: Some(rust_decimal::Decimal::new(21, 2)),
+                    ..NotesGeneratorContext::default()
+                };
+
+                let entity_notes = notes_gen.generate(&ctx);
+                info!(
+                    "Notes to FS for {}: {} notes generated",
+                    company.code,
+                    entity_notes.len()
+                );
+                notes_to_financial_statements.extend(entity_notes);
+            }
+        }
+
         Ok(FinancialReportingSnapshot {
             financial_statements,
             standalone_statements,
@@ -4115,6 +4195,7 @@ impl EnhancedOrchestrator {
             trial_balances,
             segment_reports,
             segment_reconciliations,
+            notes_to_financial_statements,
         })
     }
 
@@ -8990,8 +9071,12 @@ impl EnhancedOrchestrator {
         // ----------------------------------------------------------------
         {
             let mut event_gen = SubsequentEventGenerator::new(self.seed + 8400);
-            let entity_codes: Vec<String> =
-                self.config.companies.iter().map(|c| c.code.clone()).collect();
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
             let subsequent = event_gen.generate_for_entities(&entity_codes, period_end);
             info!(
                 "ISA 560 subsequent events: {} generated ({} adjusting, {} non-adjusting)",
@@ -9019,8 +9104,12 @@ impl EnhancedOrchestrator {
         // ----------------------------------------------------------------
         {
             let mut soc_gen = ServiceOrgGenerator::new(self.seed + 8500);
-            let entity_codes: Vec<String> =
-                self.config.companies.iter().map(|c| c.code.clone()).collect();
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
             let soc_snapshot = soc_gen.generate(&entity_codes, period_end);
             info!(
                 "ISA 402 service orgs: {} orgs, {} SOC reports, {} user entity controls",
@@ -9033,13 +9122,49 @@ impl EnhancedOrchestrator {
             snapshot.user_entity_controls = soc_snapshot.user_entity_controls;
         }
 
+        // ----------------------------------------------------------------
+        // ISA 570: Going concern assessments
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::going_concern_generator::GoingConcernGenerator;
+            let mut gc_gen = GoingConcernGenerator::new(self.seed + 8570);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            // Assessment date = period end + 75 days (typical sign-off window).
+            let assessment_date = period_end + chrono::Duration::days(75);
+            let period_label = format!("FY{}", period_end.year());
+            let assessments =
+                gc_gen.generate_for_entities(&entity_codes, assessment_date, &period_label);
+            info!(
+                "ISA 570 going concern: {} assessments ({} clean, {} material uncertainty, {} doubt)",
+                assessments.len(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::NoMaterialUncertainty
+                )).count(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::MaterialUncertaintyExists
+                )).count(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::GoingConcernDoubt
+                )).count(),
+            );
+            snapshot.going_concern_assessments = assessments;
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
                  {} analytical, {} IA funcs, {} related parties, \
                  {} component auditors, {} letters, {} subsequent events, \
-                 {} service orgs",
+                 {} service orgs, {} going concern",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -9053,6 +9178,7 @@ impl EnhancedOrchestrator {
                 snapshot.engagement_letters.len(),
                 snapshot.subsequent_events.len(),
                 snapshot.service_organizations.len(),
+                snapshot.going_concern_assessments.len(),
             ));
         }
 

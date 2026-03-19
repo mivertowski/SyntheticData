@@ -473,6 +473,13 @@ pub fn write_all_output(
             &audit_dir.join("user_entity_controls.json"),
             "User entity controls (ISA 402)",
         );
+
+        // ISA 570: Going concern assessments
+        write_json_safe(
+            &result.audit.going_concern_assessments,
+            &audit_dir.join("going_concern_assessments.json"),
+            "Going concern assessments (ISA 570)",
+        );
     }
 
     // ========================================================================
@@ -702,6 +709,13 @@ pub fn write_all_output(
                 "Segment reconciliations",
             );
         }
+
+        // IAS 1 / ASC 235: Notes to financial statements
+        write_json_safe(
+            &result.financial_reporting.notes_to_financial_statements,
+            &fin_dir.join("notes_to_financial_statements.json"),
+            "Notes to financial statements",
+        );
     }
 
     // ========================================================================
