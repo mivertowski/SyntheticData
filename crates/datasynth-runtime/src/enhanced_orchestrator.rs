@@ -631,6 +631,12 @@ pub struct HrSnapshot {
     pub pension_disclosures: Vec<datasynth_core::models::pension::PensionDisclosure>,
     /// Journal entries generated from pension expense and OCI remeasurements.
     pub pension_journal_entries: Vec<JournalEntry>,
+    /// Stock grants (ASC 718 / IFRS 2).
+    pub stock_grants: Vec<datasynth_core::models::stock_compensation::StockGrant>,
+    /// Stock-based compensation period expense records.
+    pub stock_comp_expenses: Vec<datasynth_core::models::stock_compensation::StockCompExpense>,
+    /// Journal entries generated from stock-based compensation expense.
+    pub stock_comp_journal_entries: Vec<JournalEntry>,
     /// Payroll runs.
     pub payroll_run_count: usize,
     /// Payroll line item count.
@@ -643,6 +649,8 @@ pub struct HrSnapshot {
     pub benefit_enrollment_count: usize,
     /// Pension plan count.
     pub pension_plan_count: usize,
+    /// Stock grant count.
+    pub stock_grant_count: usize,
 }
 
 /// Accounting standards data snapshot (revenue recognition, impairment, business combinations).
@@ -1112,6 +1120,8 @@ pub struct EnhancedGenerationStatistics {
     pub benefit_enrollment_count: usize,
     #[serde(default)]
     pub pension_plan_count: usize,
+    #[serde(default)]
+    pub stock_grant_count: usize,
     /// Accounting standards counts.
     #[serde(default)]
     pub revenue_contract_count: usize,
@@ -1845,6 +1855,15 @@ impl EnhancedOrchestrator {
                 hr.pension_journal_entries.len()
             );
             entries.extend(hr.pension_journal_entries.iter().cloned());
+        }
+
+        // Phase 6d: Stock-based compensation JEs (ASC 718 / IFRS 2)
+        if !hr.stock_comp_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from stock-based compensation",
+                hr.stock_comp_journal_entries.len()
+            );
+            entries.extend(hr.stock_comp_journal_entries.iter().cloned());
         }
 
         // Phase 7: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
@@ -4735,17 +4754,50 @@ impl EnhancedOrchestrator {
             snapshot.pension_journal_entries = pension_snap.journal_entries;
         }
 
+        // Generate stock-based compensation (ASC 718 / IFRS 2)
+        if self.config.hr.enabled && !employee_ids.is_empty() {
+            let period_months = self.config.global.period_months;
+            let period_label = {
+                let y = start_date.year();
+                let m = start_date.month();
+                if period_months >= 12 {
+                    format!("FY{y}")
+                } else {
+                    format!("{y}-{m:02}")
+                }
+            };
+            let reporting_date =
+                start_date + chrono::Months::new(period_months) - chrono::Days::new(1);
+
+            let mut stock_comp_gen =
+                datasynth_generators::StockCompGenerator::new(seed.wrapping_add(35));
+            let stock_snap = stock_comp_gen.generate(
+                company_code,
+                &employee_ids,
+                start_date,
+                &period_label,
+                reporting_date,
+                currency,
+            );
+            snapshot.stock_grant_count = stock_snap.grants.len();
+            snapshot.stock_grants = stock_snap.grants;
+            snapshot.stock_comp_expenses = stock_snap.expenses;
+            snapshot.stock_comp_journal_entries = stock_snap.journal_entries;
+        }
+
         stats.payroll_run_count = snapshot.payroll_run_count;
         stats.time_entry_count = snapshot.time_entry_count;
         stats.expense_report_count = snapshot.expense_report_count;
         stats.benefit_enrollment_count = snapshot.benefit_enrollment_count;
         stats.pension_plan_count = snapshot.pension_plan_count;
+        stats.stock_grant_count = snapshot.stock_grant_count;
 
         info!(
-            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments, {} pension plans",
+            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments, {} pension plans, {} stock grants",
             snapshot.payroll_run_count, snapshot.payroll_line_item_count,
             snapshot.time_entry_count, snapshot.expense_report_count,
-            snapshot.benefit_enrollment_count, snapshot.pension_plan_count
+            snapshot.benefit_enrollment_count, snapshot.pension_plan_count,
+            snapshot.stock_grant_count
         );
         self.check_resources_with_log("post-hr")?;
 

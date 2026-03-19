@@ -134,6 +134,8 @@ pub enum GeneratorType {
     Pension = 0x46,
     /// Provisions and contingencies generator (IAS 37 / ASC 450)
     Provision = 0x47,
+    /// Stock-based compensation generator (ASC 718 / IFRS 2)
+    StockCompensation = 0x48,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

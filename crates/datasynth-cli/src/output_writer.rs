@@ -722,6 +722,7 @@ pub fn write_all_output(
         || !result.hr.expense_reports.is_empty()
         || !result.hr.benefit_enrollments.is_empty()
         || !result.hr.pension_plans.is_empty()
+        || !result.hr.stock_grants.is_empty()
     {
         std::fs::create_dir_all(&hr_dir)?;
         info!("Writing HR data...");
@@ -770,6 +771,16 @@ pub fn write_all_output(
             &result.hr.pension_disclosures,
             &hr_dir.join("pension_disclosures.json"),
             "Pension disclosures",
+        );
+        write_json_safe(
+            &result.hr.stock_grants,
+            &hr_dir.join("stock_grants.json"),
+            "Stock grants",
+        );
+        write_json_safe(
+            &result.hr.stock_comp_expenses,
+            &hr_dir.join("stock_comp_expense.json"),
+            "Stock comp expense",
         );
     }
 

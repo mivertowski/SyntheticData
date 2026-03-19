@@ -102,6 +102,9 @@ pub mod expected_credit_loss;
 // Provisions and Contingencies models (IAS 37 / ASC 450)
 pub mod provision;
 
+// Stock-based compensation models (ASC 718 / IFRS 2)
+pub mod stock_compensation;
+
 // Audit models (Phase 13-14: RustAssureTwin integration)
 pub mod audit;
 
@@ -199,6 +202,9 @@ pub use expected_credit_loss::*;
 
 // Provisions and Contingencies exports (IAS 37 / ASC 450)
 pub use provision::*;
+
+// Stock-based compensation exports (ASC 718 / IFRS 2)
+pub use stock_compensation::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;
