@@ -5143,7 +5143,7 @@ impl EnhancedOrchestrator {
             // Use AR aging data from the subledger snapshot if available;
             // otherwise generate synthetic bucket exposures.
             let period_label =
-                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+                format!("{}-{:02}", end_date.year(), end_date.month());
 
             let mut ecl_gen = EclGenerator::new(seed + 43);
 
@@ -5218,7 +5218,7 @@ impl EnhancedOrchestrator {
             let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
 
             let period_label =
-                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+                format!("{}-{:02}", end_date.year(), end_date.month());
 
             let mut prov_gen = ProvisionGenerator::new(seed + 44);
             let prov_snap = prov_gen.generate(
@@ -5242,7 +5242,7 @@ impl EnhancedOrchestrator {
         // currency, generate a CurrencyTranslationResult with CTA (OCI).
         {
             let ias21_period_label =
-                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+                format!("{}-{:02}", end_date.year(), end_date.month());
 
             let presentation_currency = self
                 .config

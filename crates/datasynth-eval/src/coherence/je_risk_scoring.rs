@@ -323,7 +323,9 @@ pub fn score_entries(entries: &[JournalEntry]) -> JeRiskScoringResult {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use datasynth_core::models::{JournalEntry, JournalEntryHeader, JournalEntryLine, TransactionSource};
+    use datasynth_core::models::{
+        JournalEntry, JournalEntryHeader, JournalEntryLine, TransactionSource,
+    };
     use rust_decimal_macros::dec;
 
     fn make_date(year: i32, month: u32, day: u32) -> chrono::NaiveDate {
@@ -370,7 +372,15 @@ mod tests {
     }
 
     fn simple_je(amount: Decimal) -> JournalEntry {
-        make_je("C001", weekday_date(), "6000", "2000", amount, "alice", TransactionSource::Automated)
+        make_je(
+            "C001",
+            weekday_date(),
+            "6000",
+            "2000",
+            amount,
+            "alice",
+            TransactionSource::Automated,
+        )
     }
 
     // ── Round-number detection ────────────────────────────────────────────────
@@ -393,7 +403,15 @@ mod tests {
 
     #[test]
     fn test_weekend_detected() {
-        let entry = make_je("C001", weekend_date(), "6000", "2000", dec!(500), "alice", TransactionSource::Automated);
+        let entry = make_je(
+            "C001",
+            weekend_date(),
+            "6000",
+            "2000",
+            dec!(500),
+            "alice",
+            TransactionSource::Automated,
+        );
         let counts = build_user_posting_counts(&[entry.clone()]);
         let (_score, triggered) = score_entry(&entry, &counts);
         assert!(
@@ -404,10 +422,28 @@ mod tests {
 
     #[test]
     fn test_weekday_not_flagged() {
-        let entry = make_je("C001", weekday_date(), "6000", "2000", dec!(500), "alice", TransactionSource::Automated);
+        let entry = make_je(
+            "C001",
+            weekday_date(),
+            "6000",
+            "2000",
+            dec!(500),
+            "alice",
+            TransactionSource::Automated,
+        );
         // post alice 10 times so she's not a NonStandardUser
         let mut entries: Vec<JournalEntry> = (0..10)
-            .map(|_| make_je("C001", weekday_date(), "6000", "2000", dec!(500), "alice", TransactionSource::Automated))
+            .map(|_| {
+                make_je(
+                    "C001",
+                    weekday_date(),
+                    "6000",
+                    "2000",
+                    dec!(500),
+                    "alice",
+                    TransactionSource::Automated,
+                )
+            })
             .collect();
         entries.push(entry.clone());
         let counts = build_user_posting_counts(&entries);
@@ -454,7 +490,15 @@ mod tests {
         let mut entries = vec![risky.clone()];
         // 10 alice postings so she's not NonStandardUser in clean entry
         for _ in 0..10 {
-            entries.push(make_je("C001", weekday_date(), "6000", "2000", dec!(100), "alice", TransactionSource::Automated));
+            entries.push(make_je(
+                "C001",
+                weekday_date(),
+                "6000",
+                "2000",
+                dec!(100),
+                "alice",
+                TransactionSource::Automated,
+            ));
         }
         entries.push(clean.clone());
         let counts = build_user_posting_counts(&entries);
@@ -484,15 +528,31 @@ mod tests {
         let doc_id = header.document_id;
         let mut entry = JournalEntry::new(header);
         // Same account on both sides
-        entry.add_line(JournalEntryLine::debit(doc_id, 1, "1000".to_string(), dec!(100)));
-        entry.add_line(JournalEntryLine::credit(doc_id, 2, "1000".to_string(), dec!(100)));
-        assert!(has_round_trip(&entry), "Same account debit+credit should be detected");
+        entry.add_line(JournalEntryLine::debit(
+            doc_id,
+            1,
+            "1000".to_string(),
+            dec!(100),
+        ));
+        entry.add_line(JournalEntryLine::credit(
+            doc_id,
+            2,
+            "1000".to_string(),
+            dec!(100),
+        ));
+        assert!(
+            has_round_trip(&entry),
+            "Same account debit+credit should be detected"
+        );
     }
 
     #[test]
     fn test_no_round_trip() {
         let entry = simple_je(dec!(100));
-        assert!(!has_round_trip(&entry), "Different accounts should not trigger round-trip");
+        assert!(
+            !has_round_trip(&entry),
+            "Different accounts should not trigger round-trip"
+        );
     }
 
     // ── Aggregate scoring ─────────────────────────────────────────────────────
@@ -538,14 +598,30 @@ mod tests {
 
         // 5 clean entries (low-risk amounts, no round numbers, weekday)
         for _ in 0..5 {
-            let mut e = make_je("C001", weekday_date(), "6000", "2000", dec!(123), "bob", TransactionSource::Automated);
+            let mut e = make_je(
+                "C001",
+                weekday_date(),
+                "6000",
+                "2000",
+                dec!(123),
+                "bob",
+                TransactionSource::Automated,
+            );
             // post bob many times
             e.header.is_anomaly = false;
             entries.push(e);
         }
         // Force bob to have many postings
         for _ in 0..10 {
-            entries.push(make_je("C001", weekday_date(), "6000", "2000", dec!(50), "bob", TransactionSource::Automated));
+            entries.push(make_je(
+                "C001",
+                weekday_date(),
+                "6000",
+                "2000",
+                dec!(50),
+                "bob",
+                TransactionSource::Automated,
+            ));
         }
 
         // 5 anomaly entries: weekend + round number

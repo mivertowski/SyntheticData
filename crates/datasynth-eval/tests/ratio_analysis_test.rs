@@ -13,12 +13,27 @@ fn date(year: i32, month: u32, day: u32) -> chrono::NaiveDate {
 }
 
 /// Build a balanced two-line JE: debit `da`, credit `ca`, amount `amt`.
-fn je(company: &str, debit_account: &str, credit_account: &str, amount: rust_decimal::Decimal) -> JournalEntry {
+fn je(
+    company: &str,
+    debit_account: &str,
+    credit_account: &str,
+    amount: rust_decimal::Decimal,
+) -> JournalEntry {
     let header = JournalEntryHeader::new(company.to_string(), date(2024, 6, 30));
     let doc_id = header.document_id;
     let mut entry = JournalEntry::new(header);
-    entry.add_line(JournalEntryLine::debit(doc_id, 1, debit_account.to_string(), amount));
-    entry.add_line(JournalEntryLine::credit(doc_id, 2, credit_account.to_string(), amount));
+    entry.add_line(JournalEntryLine::debit(
+        doc_id,
+        1,
+        debit_account.to_string(),
+        amount,
+    ));
+    entry.add_line(JournalEntryLine::credit(
+        doc_id,
+        2,
+        credit_account.to_string(),
+        amount,
+    ));
     entry
 }
 
@@ -139,7 +154,10 @@ fn test_reasonableness_flags_low_current_ratio_retail() {
         ..Default::default()
     };
     let checks = check_reasonableness(&ratios, "retail");
-    let cr = checks.iter().find(|c| c.ratio_name == "current_ratio").unwrap();
+    let cr = checks
+        .iter()
+        .find(|c| c.ratio_name == "current_ratio")
+        .unwrap();
     assert!(!cr.is_reasonable, "0.5 < 1.0 min for retail → unreasonable");
 }
 
@@ -174,7 +192,7 @@ fn test_reasonableness_none_ratios_vacuously_pass() {
 #[test]
 fn test_reasonableness_manufacturing_bounds() {
     let ratios = FinancialRatios {
-        current_ratio: Some(dec!(1.5)), // within 1.2–3.0
+        current_ratio: Some(dec!(1.5)),      // within 1.2–3.0
         inventory_turnover: Some(dec!(8.0)), // within 3.0–20.0
         ..Default::default()
     };
@@ -196,7 +214,10 @@ fn test_reasonableness_high_dso_flagged() {
     };
     let checks = check_reasonableness(&ratios, "retail");
     let dso_check = checks.iter().find(|c| c.ratio_name == "dso").unwrap();
-    assert!(!dso_check.is_reasonable, "DSO 200 > retail max 45 → unreasonable");
+    assert!(
+        !dso_check.is_reasonable,
+        "DSO 200 > retail max 45 → unreasonable"
+    );
 }
 
 // ─── Entity isolation ─────────────────────────────────────────────────────────
@@ -214,7 +235,10 @@ fn test_entity_filter_isolates_companies() {
     let r1 = compute_ratios(&entries, "C001");
     let r2 = compute_ratios(&entries, "C002");
     // Different COGS → different gross margins
-    assert_ne!(r1.gross_margin, r2.gross_margin, "Per-entity isolation failed");
+    assert_ne!(
+        r1.gross_margin, r2.gross_margin,
+        "Per-entity isolation failed"
+    );
 }
 
 // ─── analyze end-to-end ───────────────────────────────────────────────────────
@@ -229,7 +253,11 @@ fn test_analyze_returns_complete_result() {
     let result = analyze(&entries, "C001", "2024-H1", "retail");
     assert_eq!(result.entity_code, "C001");
     assert_eq!(result.period, "2024-H1");
-    assert_eq!(result.reasonableness_checks.len(), 12, "Should check all 12 ratios");
+    assert_eq!(
+        result.reasonableness_checks.len(),
+        12,
+        "Should check all 12 ratios"
+    );
 }
 
 #[test]

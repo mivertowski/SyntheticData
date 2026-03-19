@@ -13,20 +13,25 @@ fn date(y: i32, m: u32, d: u32) -> chrono::NaiveDate {
     chrono::NaiveDate::from_ymd_opt(y, m, d).unwrap()
 }
 
-fn make_entry(
-    amount: Decimal,
-    anomaly: bool,
-    company: &str,
-    period: u8,
-) -> JournalEntry {
+fn make_entry(amount: Decimal, anomaly: bool, company: &str, period: u8) -> JournalEntry {
     let posting_date = date(2024, period.clamp(1, 12) as u32, 1);
     let mut header = JournalEntryHeader::new(company.to_string(), posting_date);
     header.fiscal_period = period;
     header.is_anomaly = anomaly;
     let doc_id = header.document_id;
     let mut entry = JournalEntry::new(header);
-    entry.add_line(JournalEntryLine::debit(doc_id, 1, "6000".to_string(), amount));
-    entry.add_line(JournalEntryLine::credit(doc_id, 2, "2000".to_string(), amount));
+    entry.add_line(JournalEntryLine::debit(
+        doc_id,
+        1,
+        "6000".to_string(),
+        amount,
+    ));
+    entry.add_line(JournalEntryLine::credit(
+        doc_id,
+        2,
+        "2000".to_string(),
+        amount,
+    ));
     entry
 }
 
@@ -37,8 +42,18 @@ fn make_fraud_entry(amount: Decimal, company: &str, period: u8) -> JournalEntry 
     header.is_fraud = true;
     let doc_id = header.document_id;
     let mut entry = JournalEntry::new(header);
-    entry.add_line(JournalEntryLine::debit(doc_id, 1, "6000".to_string(), amount));
-    entry.add_line(JournalEntryLine::credit(doc_id, 2, "2000".to_string(), amount));
+    entry.add_line(JournalEntryLine::debit(
+        doc_id,
+        1,
+        "6000".to_string(),
+        amount,
+    ));
+    entry.add_line(JournalEntryLine::credit(
+        doc_id,
+        2,
+        "2000".to_string(),
+        amount,
+    ));
     entry
 }
 
@@ -99,10 +114,10 @@ fn test_clearly_trivial_stratum() {
 #[test]
 fn test_all_strata_present() {
     let entries = vec![
-        make_entry(dec!(200_000), true, "C001", 1),  // AboveMateriality
-        make_entry(dec!(80_000), false, "C001", 2),  // BetweenPerformanceAndOverall
-        make_entry(dec!(10_000), false, "C001", 3),  // BelowPerformanceMateriality
-        make_entry(dec!(500), false, "C001", 4),     // ClearlyTrivial
+        make_entry(dec!(200_000), true, "C001", 1), // AboveMateriality
+        make_entry(dec!(80_000), false, "C001", 2), // BetweenPerformanceAndOverall
+        make_entry(dec!(10_000), false, "C001", 3), // BelowPerformanceMateriality
+        make_entry(dec!(500), false, "C001", 4),    // ClearlyTrivial
     ];
     let result = validate_sampling(&entries, dec!(100_000), dec!(60_000));
     assert_eq!(result.total_population, 4);
@@ -172,8 +187,8 @@ fn test_entity_coverage_single_company() {
 fn test_entity_coverage_partial() {
     // Two companies, one has anomaly, one does not
     let entries = vec![
-        make_entry(dec!(200_000), true, "C001", 1),  // C001 anomaly + above mat
-        make_entry(dec!(50_000), false, "C002", 1),  // C002 clean
+        make_entry(dec!(200_000), true, "C001", 1), // C001 anomaly + above mat
+        make_entry(dec!(50_000), false, "C002", 1), // C002 clean
     ];
     let result = validate_sampling(&entries, dec!(100_000), dec!(60_000));
     // C001: has anomaly; C002: no anomaly → 1/2 = 0.5
@@ -184,9 +199,9 @@ fn test_entity_coverage_partial() {
 fn test_temporal_coverage() {
     // 3 fiscal periods, anomalies in 2 of them
     let entries = vec![
-        make_entry(dec!(200_000), true, "C001", 1),  // period 1 has anomaly + above mat
-        make_entry(dec!(50_000), true, "C001", 2),   // period 2 has anomaly
-        make_entry(dec!(50_000), false, "C001", 3),  // period 3 no anomaly
+        make_entry(dec!(200_000), true, "C001", 1), // period 1 has anomaly + above mat
+        make_entry(dec!(50_000), true, "C001", 2),  // period 2 has anomaly
+        make_entry(dec!(50_000), false, "C001", 3), // period 3 no anomaly
     ];
     let result = validate_sampling(&entries, dec!(100_000), dec!(60_000));
     assert!((result.temporal_coverage - 2.0 / 3.0).abs() < 1e-9);
@@ -196,10 +211,10 @@ fn test_temporal_coverage() {
 fn test_anomaly_stratum_coverage() {
     // Anomalies in all 3 non-trivial strata → coverage = 1.0
     let entries = vec![
-        make_entry(dec!(200_000), true, "C001", 1),  // AboveMateriality
-        make_entry(dec!(80_000), true, "C001", 2),   // Between
-        make_entry(dec!(10_000), true, "C001", 3),   // Below
-        make_entry(dec!(100), false, "C001", 4),     // ClearlyTrivial (excluded)
+        make_entry(dec!(200_000), true, "C001", 1), // AboveMateriality
+        make_entry(dec!(80_000), true, "C001", 2),  // Between
+        make_entry(dec!(10_000), true, "C001", 3),  // Below
+        make_entry(dec!(100), false, "C001", 4),    // ClearlyTrivial (excluded)
     ];
     let result = validate_sampling(&entries, dec!(100_000), dec!(60_000));
     assert!((result.anomaly_stratum_coverage - 1.0).abs() < 1e-9);

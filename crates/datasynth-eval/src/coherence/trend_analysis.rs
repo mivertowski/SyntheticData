@@ -178,9 +178,7 @@ fn check_revenue_stability(periods: &[&PeriodTotals]) -> TrendConsistencyCheck {
     let details = if comparisons == 0 {
         "All revenue values near zero; check vacuously passes".to_string()
     } else {
-        format!(
-            "{violations} of {comparisons} period-over-period revenue swings exceeded 50%"
-        )
+        format!("{violations} of {comparisons} period-over-period revenue swings exceeded 50%")
     };
 
     TrendConsistencyCheck {
@@ -233,9 +231,7 @@ fn check_expense_ratio_stability(periods: &[&PeriodTotals]) -> TrendConsistencyC
         check_type,
         periods_analyzed: ratios.len(),
         is_consistent,
-        details: format!(
-            "Expense/revenue ratio CV = {cv:.3} (threshold: < 0.30)"
-        ),
+        details: format!("Expense/revenue ratio CV = {cv:.3} (threshold: < 0.30)"),
     }
 }
 
@@ -314,7 +310,9 @@ fn check_directional_consistency(periods: &[&PeriodTotals]) -> TrendConsistencyC
         let ar_delta = to_f64(window[1].ar_net) - to_f64(window[0].ar_net);
 
         // Only test if both revenue and AR are non-trivially present
-        let rev_magnitude = to_f64(window[0].revenue).abs().max(to_f64(window[1].revenue).abs());
+        let rev_magnitude = to_f64(window[0].revenue)
+            .abs()
+            .max(to_f64(window[1].revenue).abs());
         if rev_magnitude < 1.0 {
             continue;
         }
@@ -394,12 +392,7 @@ mod tests {
     }
 
     /// Create a JE with one debit and one credit line in a given fiscal period.
-    fn make_je(
-        period: u8,
-        debit_acct: &str,
-        credit_acct: &str,
-        amount: Decimal,
-    ) -> JournalEntry {
+    fn make_je(period: u8, debit_acct: &str, credit_acct: &str, amount: Decimal) -> JournalEntry {
         // Use month = period for simplicity (valid for periods 1–12)
         let m = period.clamp(1, 12);
         let posting_date = date(2024, m as u32, 1);
@@ -407,8 +400,18 @@ mod tests {
         header.fiscal_period = period;
         let doc_id = header.document_id;
         let mut entry = JournalEntry::new(header);
-        entry.add_line(JournalEntryLine::debit(doc_id, 1, debit_acct.to_string(), amount));
-        entry.add_line(JournalEntryLine::credit(doc_id, 2, credit_acct.to_string(), amount));
+        entry.add_line(JournalEntryLine::debit(
+            doc_id,
+            1,
+            debit_acct.to_string(),
+            amount,
+        ));
+        entry.add_line(JournalEntryLine::credit(
+            doc_id,
+            2,
+            credit_acct.to_string(),
+            amount,
+        ));
         entry
     }
 
@@ -473,8 +476,7 @@ mod tests {
         let entries = stable_revenue_entries(4, dec!(50_000));
         let result = analyze_trends(&entries);
         assert!(
-            result.overall_plausibility_score >= 0.0
-                && result.overall_plausibility_score <= 1.0
+            result.overall_plausibility_score >= 0.0 && result.overall_plausibility_score <= 1.0
         );
     }
 

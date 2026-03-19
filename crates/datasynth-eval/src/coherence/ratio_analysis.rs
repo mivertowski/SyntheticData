@@ -445,11 +445,7 @@ fn bounds_for(industry: &str) -> IndustryBounds {
 }
 
 /// Build a single [`RatioCheck`] comparing an optional value against bounds.
-fn make_check(
-    name: &str,
-    value: Option<Decimal>,
-    bounds: (Decimal, Decimal),
-) -> RatioCheck {
+fn make_check(name: &str, value: Option<Decimal>, bounds: (Decimal, Decimal)) -> RatioCheck {
     let is_reasonable = match value {
         None => true, // not computable → skip
         Some(v) => v >= bounds.0 && v <= bounds.1,
@@ -477,7 +473,11 @@ pub fn check_reasonableness(ratios: &FinancialRatios, industry: &str) -> Vec<Rat
             b.inventory_turnover,
         ),
         make_check("gross_margin", ratios.gross_margin, b.gross_margin),
-        make_check("operating_margin", ratios.operating_margin, b.operating_margin),
+        make_check(
+            "operating_margin",
+            ratios.operating_margin,
+            b.operating_margin,
+        ),
         make_check("net_margin", ratios.net_margin, b.net_margin),
         make_check("roa", ratios.roa, b.roa),
         make_check("roe", ratios.roe, b.roe),
@@ -598,7 +598,10 @@ mod tests {
             ..Default::default()
         };
         let checks = check_reasonableness(&ratios, "retail");
-        let cr_check = checks.iter().find(|c| c.ratio_name == "current_ratio").unwrap();
+        let cr_check = checks
+            .iter()
+            .find(|c| c.ratio_name == "current_ratio")
+            .unwrap();
         assert!(
             !cr_check.is_reasonable,
             "current_ratio 0.1 should be flagged as unreasonable for retail"
@@ -687,8 +690,13 @@ mod tests {
             ..Default::default()
         };
         let checks = check_reasonableness(&ratios, "manufacturing");
-        let cr = checks.iter().find(|c| c.ratio_name == "current_ratio").unwrap();
-        assert!(cr.is_reasonable, "2.0 is within manufacturing bounds 1.2–3.0");
+        let cr = checks
+            .iter()
+            .find(|c| c.ratio_name == "current_ratio")
+            .unwrap();
+        assert!(
+            cr.is_reasonable,
+            "2.0 is within manufacturing bounds 1.2–3.0"
+        );
     }
-
 }

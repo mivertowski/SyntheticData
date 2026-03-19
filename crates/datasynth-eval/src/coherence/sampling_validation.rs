@@ -247,8 +247,18 @@ mod tests {
         header.is_anomaly = anomaly;
         let doc_id = header.document_id;
         let mut entry = JournalEntry::new(header);
-        entry.add_line(JournalEntryLine::debit(doc_id, 1, "6000".to_string(), amount));
-        entry.add_line(JournalEntryLine::credit(doc_id, 2, "2000".to_string(), amount));
+        entry.add_line(JournalEntryLine::debit(
+            doc_id,
+            1,
+            "6000".to_string(),
+            amount,
+        ));
+        entry.add_line(JournalEntryLine::credit(
+            doc_id,
+            2,
+            "2000".to_string(),
+            amount,
+        ));
         entry
     }
 
@@ -259,8 +269,14 @@ mod tests {
         let mat = dec!(100_000);
         let perf = dec!(60_000);
 
-        assert_eq!(classify(dec!(200_000), mat, perf), Stratum::AboveMateriality);
-        assert_eq!(classify(dec!(100_001), mat, perf), Stratum::AboveMateriality);
+        assert_eq!(
+            classify(dec!(200_000), mat, perf),
+            Stratum::AboveMateriality
+        );
+        assert_eq!(
+            classify(dec!(100_001), mat, perf),
+            Stratum::AboveMateriality
+        );
         assert_eq!(
             classify(dec!(80_000), mat, perf),
             Stratum::BetweenPerformanceAndOverall
@@ -342,17 +358,33 @@ mod tests {
     #[test]
     fn test_stratum_counts() {
         let entries = vec![
-            make_entry(dec!(200_000), true, "C001", 1),  // AboveMateriality
-            make_entry(dec!(80_000), false, "C001", 2),  // Between
-            make_entry(dec!(10_000), false, "C001", 3),  // Below
-            make_entry(dec!(500), false, "C001", 4),     // ClearlyTrivial
+            make_entry(dec!(200_000), true, "C001", 1), // AboveMateriality
+            make_entry(dec!(80_000), false, "C001", 2), // Between
+            make_entry(dec!(10_000), false, "C001", 3), // Below
+            make_entry(dec!(500), false, "C001", 4),    // ClearlyTrivial
         ];
         let result = validate_sampling(&entries, dec!(100_000), dec!(60_000));
         assert_eq!(result.total_population, 4);
-        let above = result.strata.iter().find(|s| s.stratum == Stratum::AboveMateriality).unwrap();
-        let between = result.strata.iter().find(|s| s.stratum == Stratum::BetweenPerformanceAndOverall).unwrap();
-        let below = result.strata.iter().find(|s| s.stratum == Stratum::BelowPerformanceMateriality).unwrap();
-        let trivial = result.strata.iter().find(|s| s.stratum == Stratum::ClearlyTrivial).unwrap();
+        let above = result
+            .strata
+            .iter()
+            .find(|s| s.stratum == Stratum::AboveMateriality)
+            .unwrap();
+        let between = result
+            .strata
+            .iter()
+            .find(|s| s.stratum == Stratum::BetweenPerformanceAndOverall)
+            .unwrap();
+        let below = result
+            .strata
+            .iter()
+            .find(|s| s.stratum == Stratum::BelowPerformanceMateriality)
+            .unwrap();
+        let trivial = result
+            .strata
+            .iter()
+            .find(|s| s.stratum == Stratum::ClearlyTrivial)
+            .unwrap();
         assert_eq!(above.item_count, 1);
         assert_eq!(between.item_count, 1);
         assert_eq!(below.item_count, 1);

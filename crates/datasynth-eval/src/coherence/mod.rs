@@ -68,6 +68,7 @@ pub use hr_payroll::{
 pub use intercompany::{
     ICMatchingData, ICMatchingEvaluation, ICMatchingEvaluator, UnmatchedICItem,
 };
+pub use je_risk_scoring::{JeRiskScoringResult, RiskAttributeStats, RiskDistribution};
 pub use manufacturing::{
     CycleCountData, ManufacturingEvaluation, ManufacturingEvaluator, ManufacturingThresholds,
     ProductionOrderData, QualityInspectionData, RoutingOperationData,
@@ -89,12 +90,16 @@ pub use project_accounting::{
     EarnedValueData, ProjectAccountingEvaluation, ProjectAccountingEvaluator,
     ProjectAccountingThresholds, ProjectRevenueData, RetainageData,
 };
+pub use ratio_analysis::{FinancialRatios, RatioAnalysisResult, RatioCheck};
 pub use referential::{
     EntityReferenceData, ReferentialData, ReferentialIntegrityEvaluation,
     ReferentialIntegrityEvaluator,
 };
 pub use sales_quotes::{
     QuoteLineData, SalesQuoteData, SalesQuoteEvaluation, SalesQuoteEvaluator, SalesQuoteThresholds,
+};
+pub use sampling_validation::{
+    validate_sampling, SamplingValidationResult, Stratum, StratumResult,
 };
 pub use sourcing::{
     BidEvaluationData, ScorecardCoverageData, SourcingEvaluation, SourcingEvaluator,
@@ -116,18 +121,7 @@ pub use treasury::{
     CashPositionData, CovenantData, HedgeEffectivenessData, NettingData, TreasuryEvaluation,
     TreasuryEvaluator, TreasuryThresholds,
 };
-pub use je_risk_scoring::{
-    JeRiskScoringResult, RiskAttributeStats, RiskDistribution,
-};
-pub use ratio_analysis::{
-    FinancialRatios, RatioAnalysisResult, RatioCheck,
-};
-pub use sampling_validation::{
-    SamplingValidationResult, Stratum, StratumResult, validate_sampling,
-};
-pub use trend_analysis::{
-    TrendConsistencyCheck, TrendPlausibilityResult, analyze_trends,
-};
+pub use trend_analysis::{analyze_trends, TrendConsistencyCheck, TrendPlausibilityResult};
 
 use serde::{Deserialize, Serialize};
 

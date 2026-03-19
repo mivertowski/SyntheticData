@@ -23,7 +23,10 @@ fn overlay_config() -> datasynth_config::GeneratorConfig {
 #[test]
 fn test_audit_standards_enabled() {
     let config = overlay_config();
-    assert!(config.audit_standards.enabled, "audit_standards must be enabled");
+    assert!(
+        config.audit_standards.enabled,
+        "audit_standards must be enabled"
+    );
 }
 
 #[test]
@@ -62,7 +65,10 @@ fn test_sox_enabled() {
 #[test]
 fn test_pcaob_enabled() {
     let config = overlay_config();
-    assert!(config.audit_standards.pcaob.enabled, "PCAOB must be enabled");
+    assert!(
+        config.audit_standards.pcaob.enabled,
+        "PCAOB must be enabled"
+    );
 }
 
 // ─── Accounting standards ─────────────────────────────────────────────────────
@@ -88,19 +94,28 @@ fn test_revenue_recognition_enabled() {
 #[test]
 fn test_leases_enabled() {
     let config = overlay_config();
-    assert!(config.accounting_standards.leases.enabled, "Leases must be enabled");
+    assert!(
+        config.accounting_standards.leases.enabled,
+        "Leases must be enabled"
+    );
 }
 
 #[test]
 fn test_fair_value_enabled() {
     let config = overlay_config();
-    assert!(config.accounting_standards.fair_value.enabled, "Fair value must be enabled");
+    assert!(
+        config.accounting_standards.fair_value.enabled,
+        "Fair value must be enabled"
+    );
 }
 
 #[test]
 fn test_impairment_enabled() {
     let config = overlay_config();
-    assert!(config.accounting_standards.impairment.enabled, "Impairment must be enabled");
+    assert!(
+        config.accounting_standards.impairment.enabled,
+        "Impairment must be enabled"
+    );
 }
 
 // ─── Internal controls ────────────────────────────────────────────────────────
@@ -108,13 +123,19 @@ fn test_impairment_enabled() {
 #[test]
 fn test_internal_controls_enabled() {
     let config = overlay_config();
-    assert!(config.internal_controls.enabled, "Internal controls must be enabled");
+    assert!(
+        config.internal_controls.enabled,
+        "Internal controls must be enabled"
+    );
 }
 
 #[test]
 fn test_coso_enabled() {
     let config = overlay_config();
-    assert!(config.internal_controls.coso_enabled, "COSO must be enabled");
+    assert!(
+        config.internal_controls.coso_enabled,
+        "COSO must be enabled"
+    );
 }
 
 #[test]
@@ -149,7 +170,10 @@ fn test_exception_rate() {
 #[test]
 fn test_anomaly_injection_enabled() {
     let config = overlay_config();
-    assert!(config.anomaly_injection.enabled, "Anomaly injection must be enabled");
+    assert!(
+        config.anomaly_injection.enabled,
+        "Anomaly injection must be enabled"
+    );
 }
 
 #[test]
@@ -175,25 +199,37 @@ fn test_anomaly_fraud_rate() {
 #[test]
 fn test_vendor_network_enabled() {
     let config = overlay_config();
-    assert!(config.vendor_network.enabled, "Vendor network must be enabled");
+    assert!(
+        config.vendor_network.enabled,
+        "Vendor network must be enabled"
+    );
 }
 
 #[test]
 fn test_customer_segmentation_enabled() {
     let config = overlay_config();
-    assert!(config.customer_segmentation.enabled, "Customer segmentation must be enabled");
+    assert!(
+        config.customer_segmentation.enabled,
+        "Customer segmentation must be enabled"
+    );
 }
 
 #[test]
 fn test_cross_process_links_enabled() {
     let config = overlay_config();
-    assert!(config.cross_process_links.enabled, "Cross-process links must be enabled");
+    assert!(
+        config.cross_process_links.enabled,
+        "Cross-process links must be enabled"
+    );
 }
 
 #[test]
 fn test_relationship_strength_enabled() {
     let config = overlay_config();
-    assert!(config.relationship_strength.enabled, "Relationship strength must be enabled");
+    assert!(
+        config.relationship_strength.enabled,
+        "Relationship strength must be enabled"
+    );
 }
 
 // ─── Intercompany ─────────────────────────────────────────────────────────────
@@ -236,13 +272,19 @@ fn test_opening_balances_enabled() {
 #[test]
 fn test_trial_balances_enabled() {
     let config = overlay_config();
-    assert!(config.balance.generate_trial_balances, "Trial balances must be enabled");
+    assert!(
+        config.balance.generate_trial_balances,
+        "Trial balances must be enabled"
+    );
 }
 
 #[test]
 fn test_subledger_reconciliation_enabled() {
     let config = overlay_config();
-    assert!(config.balance.reconcile_subledgers, "Subledger reconciliation must be enabled");
+    assert!(
+        config.balance.reconcile_subledgers,
+        "Subledger reconciliation must be enabled"
+    );
 }
 
 // ─── Scenario tags ────────────────────────────────────────────────────────────
@@ -260,7 +302,10 @@ fn test_scenario_tags_contain_audit_group() {
 fn test_scenario_tags_contain_audit_simulation() {
     let config = overlay_config();
     assert!(
-        config.scenario.tags.contains(&"audit_simulation".to_string()),
+        config
+            .scenario
+            .tags
+            .contains(&"audit_simulation".to_string()),
         "Tags should contain 'audit_simulation'"
     );
 }
@@ -326,8 +371,14 @@ fn test_double_overlay_idempotent() {
     let twice = audit_group_overlay(once.clone());
     // Key fields remain the same
     assert_eq!(once.audit_standards.enabled, twice.audit_standards.enabled);
-    assert_eq!(once.internal_controls.enabled, twice.internal_controls.enabled);
-    assert_eq!(once.accounting_standards.enabled, twice.accounting_standards.enabled);
+    assert_eq!(
+        once.internal_controls.enabled,
+        twice.internal_controls.enabled
+    );
+    assert_eq!(
+        once.accounting_standards.enabled,
+        twice.accounting_standards.enabled
+    );
     assert_eq!(
         once.internal_controls.target_maturity_level,
         twice.internal_controls.target_maturity_level

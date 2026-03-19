@@ -22,8 +22,18 @@ fn make_je(period: u8, debit_acct: &str, credit_acct: &str, amount: Decimal) -> 
     header.fiscal_period = period;
     let doc_id = header.document_id;
     let mut entry = JournalEntry::new(header);
-    entry.add_line(JournalEntryLine::debit(doc_id, 1, debit_acct.to_string(), amount));
-    entry.add_line(JournalEntryLine::credit(doc_id, 2, credit_acct.to_string(), amount));
+    entry.add_line(JournalEntryLine::debit(
+        doc_id,
+        1,
+        debit_acct.to_string(),
+        amount,
+    ));
+    entry.add_line(JournalEntryLine::credit(
+        doc_id,
+        2,
+        credit_acct.to_string(),
+        amount,
+    ));
     entry
 }
 
@@ -79,13 +89,22 @@ fn test_check_names_present() {
         .iter()
         .map(|c| c.check_type.as_str())
         .collect();
-    assert!(names.contains(&"RevenueStability"), "Missing RevenueStability");
-    assert!(names.contains(&"ExpenseRatioStability"), "Missing ExpenseRatioStability");
+    assert!(
+        names.contains(&"RevenueStability"),
+        "Missing RevenueStability"
+    );
+    assert!(
+        names.contains(&"ExpenseRatioStability"),
+        "Missing ExpenseRatioStability"
+    );
     assert!(
         names.contains(&"BalanceSheetGrowthConsistency"),
         "Missing BalanceSheetGrowthConsistency"
     );
-    assert!(names.contains(&"DirectionalConsistency"), "Missing DirectionalConsistency");
+    assert!(
+        names.contains(&"DirectionalConsistency"),
+        "Missing DirectionalConsistency"
+    );
 }
 
 // ─── Revenue stability ────────────────────────────────────────────────────────
@@ -100,7 +119,11 @@ fn test_stable_revenue_passes() {
         .iter()
         .find(|c| c.check_type == "RevenueStability")
         .unwrap();
-    assert!(check.is_consistent, "Stable revenue should pass. {}", check.details);
+    assert!(
+        check.is_consistent,
+        "Stable revenue should pass. {}",
+        check.details
+    );
 }
 
 #[test]
@@ -118,7 +141,11 @@ fn test_volatile_revenue_fails() {
         .iter()
         .find(|c| c.check_type == "RevenueStability")
         .unwrap();
-    assert!(!check.is_consistent, "3× revenue growth should fail. {}", check.details);
+    assert!(
+        !check.is_consistent,
+        "3× revenue growth should fail. {}",
+        check.details
+    );
 }
 
 #[test]
@@ -137,7 +164,11 @@ fn test_moderate_revenue_growth_passes() {
         .iter()
         .find(|c| c.check_type == "RevenueStability")
         .unwrap();
-    assert!(check.is_consistent, "20% growth should pass. {}", check.details);
+    assert!(
+        check.is_consistent,
+        "20% growth should pass. {}",
+        check.details
+    );
 }
 
 // ─── Expense ratio stability ──────────────────────────────────────────────────
@@ -152,7 +183,11 @@ fn test_stable_expense_ratio_passes() {
         .iter()
         .find(|c| c.check_type == "ExpenseRatioStability")
         .unwrap();
-    assert!(check.is_consistent, "Constant ratio should pass. {}", check.details);
+    assert!(
+        check.is_consistent,
+        "Constant ratio should pass. {}",
+        check.details
+    );
 }
 
 // ─── Plausibility score and pass threshold ────────────────────────────────────
@@ -177,7 +212,11 @@ fn test_stable_data_passes() {
         result.passes,
         "Stable data should pass. Score: {}, checks: {:?}",
         result.overall_plausibility_score,
-        result.consistency_checks.iter().map(|c| (&c.check_type, c.is_consistent)).collect::<Vec<_>>()
+        result
+            .consistency_checks
+            .iter()
+            .map(|c| (&c.check_type, c.is_consistent))
+            .collect::<Vec<_>>()
     );
 }
 
@@ -185,7 +224,11 @@ fn test_stable_data_passes() {
 fn test_score_is_fraction_of_passing_checks() {
     let entries = stable_full_entries(4, dec!(100_000), dec!(60_000));
     let result = analyze_trends(&entries);
-    let passing = result.consistency_checks.iter().filter(|c| c.is_consistent).count();
+    let passing = result
+        .consistency_checks
+        .iter()
+        .filter(|c| c.is_consistent)
+        .count();
     let expected_score = passing as f64 / result.consistency_checks.len() as f64;
     assert!(
         (result.overall_plausibility_score - expected_score).abs() < 1e-9,
@@ -211,7 +254,11 @@ fn test_multiple_entries_same_period_aggregated() {
         .iter()
         .find(|c| c.check_type == "RevenueStability")
         .unwrap();
-    assert!(check.is_consistent, "Aggregated stable revenue should pass. {}", check.details);
+    assert!(
+        check.is_consistent,
+        "Aggregated stable revenue should pass. {}",
+        check.details
+    );
 }
 
 // ─── Periods analyzed field ───────────────────────────────────────────────────
