@@ -2014,6 +2014,24 @@ impl EnhancedOrchestrator {
         let accounting_standards =
             self.phase_accounting_standards(&subledger.ar_aging_reports, &mut stats)?;
 
+        // Phase 18a: Merge ECL journal entries into main GL
+        if !accounting_standards.ecl_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from ECL provision (IFRS 9 / ASC 326)",
+                accounting_standards.ecl_journal_entries.len()
+            );
+            entries.extend(accounting_standards.ecl_journal_entries.iter().cloned());
+        }
+
+        // Phase 18a: Merge provision journal entries into main GL
+        if !accounting_standards.provision_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from provisions (IAS 37 / ASC 450)",
+                accounting_standards.provision_journal_entries.len()
+            );
+            entries.extend(accounting_standards.provision_journal_entries.iter().cloned());
+        }
+
         // Phase 18b: OCPM Events (after all process data is available)
         let ocpm = self.phase_ocpm_events(
             &document_flows,

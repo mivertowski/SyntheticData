@@ -384,7 +384,7 @@ impl FinancialStatementGenerator {
             .get("OperatingExpenses")
             .unwrap_or(&Decimal::ZERO);
         let operating_income = gross_profit - operating_expenses;
-        let tax = operating_income * Decimal::from_f64_retain(0.25).unwrap_or(Decimal::ZERO);
+        let tax = operating_income * Decimal::new(21, 2); // 21% statutory rate
         let net_income = operating_income - tax;
 
         let mut line_items = Vec::new();
@@ -619,7 +619,7 @@ impl FinancialStatementGenerator {
             .get("OperatingExpenses")
             .unwrap_or(&Decimal::ZERO);
         let operating_income = revenue - cogs - opex;
-        let tax = operating_income * Decimal::from_f64_retain(0.25).unwrap_or(Decimal::ZERO);
+        let tax = operating_income * Decimal::new(21, 2); // 21% statutory rate
         operating_income - tax
     }
 
