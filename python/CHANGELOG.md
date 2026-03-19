@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.9.0 (2026-03-19)
+
+### Added
+
+- Support for `audit_group` preset via `--preset audit-group`
+- `--export-format` pass-through for SAP/FEC/GoBD format exports
+- Compatibility with DataSynth v1.3.0 (enterprise group audit simulation)
+
+### Changed
+
+- Version bump from 1.8.0 to 1.9.0
+
 ## 1.8.0 (2026-03-02)
 
 ### Added

@@ -67,18 +67,24 @@ datasynth-test-utils   → Test utilities
 | Manufacturing | ProductionOrder, RoutingOperation, QualityInspection, InspectionCharacteristic, CycleCount, CycleCountItem, BomComponent, InventoryMovement |
 | Sales | SalesQuote, QuoteLineItem |
 | Bank Reconciliation | BankReconciliation, BankStatementLine, ReconcilingItem |
-| Intercompany | IntercompanyRelationship, ICTransactionType, ICMatchedPair, TransferPricingMethod |
-| Subledger | AccountBalance, TrialBalance, AR*/AP*/FA*/Inventory* records |
-| FX/Close | FxRate, CurrencyTranslation, FiscalPeriod, AccrualEntry |
+| Intercompany | IntercompanyRelationship, ICTransactionType, ICMatchedPair, TransferPricingMethod, GroupStructure, SubsidiaryRelationship, NciMeasurement |
+| Subledger | AccountBalance, TrialBalance, AR*/AP*/FA*/Inventory* records, ARAgingReport, APAgingReport, DepreciationRun, InventoryValuation |
+| FX/Close | FxRate, CurrencyTranslation, CurrencyTranslationResult, FiscalPeriod, AccrualEntry |
 | Anomalies | AnomalyType, LabeledAnomaly, QualityIssue |
 | Controls | InternalControl, ControlMapping, SoD |
 | COSO Framework | CosoComponent, CosoPrinciple, ControlScope, CosoMaturityLevel |
 | Vendor Network | VendorNetwork, VendorRelationship, VendorCluster, VendorLifecycleStage, VendorQualityScore, VendorDependency, SupplyChainTier |
 | Customer Segment | SegmentedCustomer, CustomerValueSegment, CustomerLifecycleStage, CustomerNetworkPosition, CustomerEngagement, SegmentedCustomerPool |
-| Tax | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition |
+| Tax | TaxJurisdiction, TaxCode, TaxLine, TaxReturn, TaxProvision, WithholdingTaxRecord, UncertainTaxPosition, TemporaryDifference, DeferredTaxRollforward, TaxRateReconciliation |
 | Treasury | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
 | ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
 | Project Accounting | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
+| Audit (ISA 600) | ComponentAuditor, GroupAuditPlan, ComponentInstruction, ComponentAuditorReport, Misstatement |
+| Audit Documentation | EngagementLetter, SubsequentEvent, ServiceOrganization, SocReport, GoingConcernAssessment, AccountingEstimate |
+| Financial Reporting | ConsolidationSchedule, OperatingSegment, SegmentReconciliation, FinancialStatementNote |
+| Business Combinations | BusinessCombination, PurchasePriceAllocation, FairValueAdjustment, ContingentConsideration |
+| Accounting Standards | EclModel, ProvisionMatrix, EclProvisionMovement, Provision, ProvisionMovement, ContingentLiability |
+| HR/Pensions | DefinedBenefitPlan, PensionObligation, PlanAssets, PensionDisclosure, StockGrant, StockCompExpense |
 | Relationships | EntityGraph, GraphEntityType, GraphEntityId, RelationshipEdge, RelationshipType, RelationshipStrengthCalculator, CrossProcessLink |
 | Graph Properties | ToNodeProperties, GraphPropertyValue, EdgeConstraint, Cardinality |
 
