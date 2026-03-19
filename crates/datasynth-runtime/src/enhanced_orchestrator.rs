@@ -1842,7 +1842,7 @@ impl EnhancedOrchestrator {
         }
 
         // Phase 5b: Intercompany Transactions + Matching + Eliminations
-        let intercompany = self.phase_intercompany(&mut stats)?;
+        let intercompany = self.phase_intercompany(&entries, &mut stats)?;
 
         // Phase 5c: Append IC journal entries to main entries
         if !intercompany.seller_journal_entries.is_empty()
@@ -2012,7 +2012,7 @@ impl EnhancedOrchestrator {
 
         // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
         let accounting_standards =
-            self.phase_accounting_standards(&subledger.ar_aging_reports, &mut stats)?;
+            self.phase_accounting_standards(&subledger.ar_aging_reports, &entries, &mut stats)?;
 
         // Phase 18a: Merge ECL journal entries into main GL
         if !accounting_standards.ecl_journal_entries.is_empty() {
@@ -3476,6 +3476,7 @@ impl EnhancedOrchestrator {
     /// Phase 14b: Generate intercompany transactions, matching, and eliminations.
     fn phase_intercompany(
         &mut self,
+        journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<IntercompanySnapshot> {
         // Skip if intercompany is disabled in config
@@ -3671,8 +3672,6 @@ impl EnhancedOrchestrator {
             use datasynth_core::models::intercompany::{GroupConsolidationMethod, NciMeasurement};
             use rust_decimal::Decimal;
 
-            // Multipliers expressed as Decimal fractions without the dec! macro.
-            let three = Decimal::from(3u64);
             let eight_pct = Decimal::new(8, 2); // 0.08
 
             group_structure
@@ -3683,21 +3682,14 @@ impl EnhancedOrchestrator {
                         && sub.consolidation_method == GroupConsolidationMethod::FullConsolidation
                 })
                 .map(|sub| {
-                    // Approximate net assets from matched pair volumes for this subsidiary.
-                    // Sum all IC amounts where the subsidiary participates as a proxy for
-                    // relative scale; use a simple multiplier to simulate net assets.
-                    let subsidiary_volume: Decimal = matched_pairs
-                        .iter()
-                        .filter(|p| {
-                            p.seller_company == sub.entity_code
-                                || p.buyer_company == sub.entity_code
-                        })
-                        .map(|p| p.amount)
-                        .sum::<Decimal>();
+                    // Compute net assets from actual journal entries for this subsidiary.
+                    // Fall back to 1_000_000 when no JE data is available yet (e.g. the
+                    // IC phase runs before the main JE batch has been populated).
+                    let net_assets_from_jes =
+                        Self::compute_entity_net_assets(journal_entries, &sub.entity_code);
 
-                    // Estimate net assets as ~3x IC transaction volume (heuristic)
-                    let net_assets = if subsidiary_volume > Decimal::ZERO {
-                        (subsidiary_volume * three).round_dp(2)
+                    let net_assets = if net_assets_from_jes > Decimal::ZERO {
+                        net_assets_from_jes.round_dp(2)
                     } else {
                         // Fallback: use a plausible base amount
                         Decimal::from(1_000_000u64)
@@ -4995,6 +4987,7 @@ impl EnhancedOrchestrator {
     fn phase_accounting_standards(
         &mut self,
         ar_aging_reports: &[datasynth_core::models::subledger::ar::ARAgingReport],
+        journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<AccountingStandardsSnapshot> {
         if !self.phase_config.generate_accounting_standards
@@ -5232,8 +5225,12 @@ impl EnhancedOrchestrator {
                 _ => "US_GAAP",
             };
 
-            // Use a revenue proxy derived from the trial balance or a sensible default.
-            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
+            // Compute actual revenue from the journal entries generated so far.
+            // The `journal_entries` slice passed to this phase contains all GL entries
+            // up to and including Period Close. Fall back to a minimum of 100_000 to
+            // avoid degenerate zero-based provision amounts on first-period datasets.
+            let revenue_proxy = Self::compute_company_revenue(journal_entries, company_code)
+                .max(rust_decimal::Decimal::from(100_000_u32));
 
             let period_label =
                 format!("{}-{:02}", end_date.year(), end_date.month());
@@ -5299,10 +5296,14 @@ impl EnhancedOrchestrator {
                 ));
             }
 
-            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
-
             let mut translation_results = Vec::new();
             for company in &self.config.companies {
+                // Compute per-company revenue from actual JEs; fall back to 100_000 minimum
+                // to ensure the translation produces non-trivial CTA amounts.
+                let company_revenue =
+                    Self::compute_company_revenue(journal_entries, &company.code)
+                        .max(rust_decimal::Decimal::from(100_000_u32));
+
                 let func_ccy = company
                     .functional_currency
                     .clone()
@@ -5314,7 +5315,7 @@ impl EnhancedOrchestrator {
                     &presentation_currency,
                     &ias21_period_label,
                     end_date,
-                    revenue_proxy,
+                    company_revenue,
                     &rate_table,
                 );
                 translation_results.push(result);
@@ -10550,6 +10551,59 @@ impl EnhancedOrchestrator {
         }
 
         builder.build()
+    }
+
+    // -----------------------------------------------------------------------
+    // Trial-balance helpers used to replace hardcoded proxy values
+    // -----------------------------------------------------------------------
+
+    /// Compute total revenue for a company from its journal entries.
+    ///
+    /// Revenue accounts start with "4" and are credit-normal. Returns the sum of
+    /// net credits on all revenue-account lines filtered to `company_code`.
+    fn compute_company_revenue(
+        entries: &[JournalEntry],
+        company_code: &str,
+    ) -> rust_decimal::Decimal {
+        use rust_decimal::Decimal;
+        let mut revenue = Decimal::ZERO;
+        for je in entries {
+            if je.header.company_code != company_code {
+                continue;
+            }
+            for line in &je.lines {
+                if line.gl_account.starts_with('4') {
+                    // Revenue is credit-normal
+                    revenue += line.credit_amount - line.debit_amount;
+                }
+            }
+        }
+        revenue.max(Decimal::ZERO)
+    }
+
+    /// Compute net assets (assets minus liabilities) for an entity from journal entries.
+    ///
+    /// Asset accounts start with "1"; liability accounts start with "2".
+    fn compute_entity_net_assets(
+        entries: &[JournalEntry],
+        entity_code: &str,
+    ) -> rust_decimal::Decimal {
+        use rust_decimal::Decimal;
+        let mut asset_net = Decimal::ZERO;
+        let mut liability_net = Decimal::ZERO;
+        for je in entries {
+            if je.header.company_code != entity_code {
+                continue;
+            }
+            for line in &je.lines {
+                if line.gl_account.starts_with('1') {
+                    asset_net += line.debit_amount - line.credit_amount;
+                } else if line.gl_account.starts_with('2') {
+                    liability_net += line.credit_amount - line.debit_amount;
+                }
+            }
+        }
+        asset_net - liability_net
     }
 }
 

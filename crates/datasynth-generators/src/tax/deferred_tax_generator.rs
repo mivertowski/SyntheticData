@@ -74,7 +74,8 @@ impl DeferredTaxGenerator {
     ///
     /// * `companies` – slice of `(company_code, country_code)` tuples.
     /// * `posting_date` – balance sheet / period-end date for JE headers.
-    /// * `journal_entries` – existing JEs used to estimate pre-tax income.
+    /// * `journal_entries` – existing JEs used to estimate pre-tax income,
+    ///   total assets and total revenue.
     pub fn generate(
         &mut self,
         companies: &[(&str, &str)],
@@ -86,10 +87,18 @@ impl DeferredTaxGenerator {
         for &(company_code, country_code) in companies {
             let statutory_rate = Self::statutory_rate(country_code);
             let pre_tax_income = self.estimate_pre_tax_income(company_code, journal_entries);
+
+            // Compute total assets and total revenue directly from journal entries.
+            // Fall back to income-based heuristics only when no JE data is available.
+            let total_assets =
+                Self::compute_total_assets(company_code, journal_entries).max(dec!(1_000_000));
+            let total_revenue =
+                Self::compute_total_revenue(company_code, journal_entries).max(dec!(500_000));
+
             let period_label = format!("FY{}", posting_date.year());
 
             // 1. Temporary differences
-            let diffs = self.generate_temp_diffs(company_code, pre_tax_income);
+            let diffs = self.generate_temp_diffs(company_code, pre_tax_income, total_assets, total_revenue);
             let (dta, dtl) = compute_dta_dtl(&diffs, statutory_rate);
 
             // 2. ETR reconciliation
@@ -122,11 +131,10 @@ impl DeferredTaxGenerator {
     fn generate_temp_diffs(
         &mut self,
         entity_code: &str,
-        pre_tax_income: Decimal,
+        _pre_tax_income: Decimal,
+        total_assets: Decimal,
+        revenue_proxy: Decimal,
     ) -> Vec<TemporaryDifference> {
-        // Use total assets proxy: ~5x pre-tax income (rough heuristic)
-        let total_assets = (pre_tax_income.abs() * dec!(5)).max(dec!(1_000_000));
-        let revenue_proxy = (pre_tax_income.abs() * dec!(3)).max(dec!(500_000));
 
         let templates: Vec<(&str, &str, DeferredTaxType, Option<&str>, Decimal, Decimal)> = vec![
             // (description, account, type, standard, book_basis, tax_basis)
@@ -441,6 +449,50 @@ impl DeferredTaxGenerator {
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    /// Compute total assets for a company from journal entries.
+    ///
+    /// Asset accounts start with "1". Net assets = Σ(debit − credit) on asset lines.
+    fn compute_total_assets(company_code: &str, journal_entries: &[JournalEntry]) -> Decimal {
+        use datasynth_core::accounts::AccountCategory;
+        let mut net = Decimal::ZERO;
+        for je in journal_entries {
+            if je.header.company_code != company_code {
+                continue;
+            }
+            for line in &je.lines {
+                if matches!(
+                    AccountCategory::from_account(&line.gl_account),
+                    AccountCategory::Asset
+                ) {
+                    net += line.debit_amount - line.credit_amount;
+                }
+            }
+        }
+        net.abs()
+    }
+
+    /// Compute total revenue for a company from journal entries.
+    ///
+    /// Revenue accounts start with "4". Revenue is credit-normal.
+    fn compute_total_revenue(company_code: &str, journal_entries: &[JournalEntry]) -> Decimal {
+        use datasynth_core::accounts::AccountCategory;
+        let mut revenue = Decimal::ZERO;
+        for je in journal_entries {
+            if je.header.company_code != company_code {
+                continue;
+            }
+            for line in &je.lines {
+                if matches!(
+                    AccountCategory::from_account(&line.gl_account),
+                    AccountCategory::Revenue
+                ) {
+                    revenue += line.credit_amount - line.debit_amount;
+                }
+            }
+        }
+        revenue.max(Decimal::ZERO)
+    }
 
     /// Look up the statutory corporate income tax rate for a country.
     fn statutory_rate(country_code: &str) -> Decimal {

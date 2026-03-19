@@ -110,11 +110,24 @@ impl ComponentAuditGenerator {
         }
 
         // ----------------------------------------------------------------
-        // 3. Determine entity weights (proxy: index + 1 to avoid zero)
+        // 3. Determine entity weights from config volume_weight field.
         // ----------------------------------------------------------------
-        // Weight for company[i] = (n - i) so the first companies are "larger"
+        // Use each company's volume_weight field. If all weights are equal
+        // (e.g. all 1.0 from defaults), fall back to count-based equal weighting
+        // so that later entities are not artificially penalised.
         let n = companies.len();
-        let weights: Vec<f64> = (0..n).map(|i| (n - i) as f64).collect();
+        let raw_weights: Vec<f64> = companies.iter().map(|c| c.volume_weight as f64).collect();
+        let weights: Vec<f64> = {
+            let all_equal = raw_weights
+                .iter()
+                .all(|&w| (w - raw_weights[0]).abs() < f64::EPSILON);
+            if all_equal {
+                // Equal weighting: every entity has weight 1.0
+                vec![1.0f64; n]
+            } else {
+                raw_weights
+            }
+        };
         let total_weight: f64 = weights.iter().sum();
 
         // ----------------------------------------------------------------
@@ -444,6 +457,24 @@ mod tests {
         }
     }
 
+    fn make_company_weighted(
+        code: &str,
+        name: &str,
+        country: &str,
+        volume_weight: f64,
+    ) -> CompanyConfig {
+        CompanyConfig {
+            code: code.to_string(),
+            name: name.to_string(),
+            currency: "USD".to_string(),
+            functional_currency: None,
+            country: country.to_string(),
+            fiscal_year_variant: "K4".to_string(),
+            annual_transaction_volume: TransactionVolume::TenK,
+            volume_weight,
+        }
+    }
+
     #[test]
     fn test_single_entity_produces_one_auditor_instruction_report() {
         let companies = vec![make_company("C001", "Alpha Inc", "US")];
@@ -494,10 +525,7 @@ mod tests {
 
     #[test]
     fn test_scope_thresholds_with_large_group() {
-        // 7 equal-weight companies → each has 1/7 ≈ 14.3% share → SpecificScope or AnalyticalOnly
-        // To get FullScope, we need ≥ 15% → need fewer or heavier first entity.
-        // With n=2 companies: first has weight 2/3 ≈ 66.7% → FullScope
-        //                     second has weight 1/3 ≈ 33.3% → FullScope
+        // 2 equal-weight companies: each has 50% share → FullScope + significant
         let companies = vec![
             make_company("C001", "BigCo", "US"),
             make_company("C002", "SmallCo", "US"),
@@ -508,9 +536,7 @@ mod tests {
 
         let snapshot = gen.generate(&companies, group_mat, "ENG-003", period_end);
 
-        // With 2 companies: weights = [2, 1], total = 3
-        // C001 share = 2/3 ≈ 66.7% → FullScope + significant
-        // C002 share = 1/3 ≈ 33.3% → FullScope + significant
+        // With 2 equal-weight companies: each has 50% → FullScope + significant
         let plan = snapshot.group_audit_plan.as_ref().unwrap();
         assert!(plan.significant_components.contains(&"C001".to_string()));
         assert!(plan.significant_components.contains(&"C002".to_string()));
@@ -525,23 +551,25 @@ mod tests {
 
     #[test]
     fn test_scope_analytical_only_for_small_entity() {
-        // 10 equal-ish companies: last entity has smallest weight (1/55 ≈ 1.8%) → AnalyticalOnly
-        let companies: Vec<CompanyConfig> = (1..=10)
-            .map(|i| make_company(&format!("C{i:03}"), &format!("Company {i}"), "US"))
-            .collect();
+        // One large entity (volume_weight=10.0) and one tiny entity (volume_weight=0.5).
+        // Tiny entity share = 0.5 / 10.5 ≈ 4.8% → AnalyticalOnly (< 5%).
+        let companies = vec![
+            make_company_weighted("C001", "BigCo", "US", 10.0),
+            make_company_weighted("C002", "TinyCo", "US", 0.5),
+        ];
         let mut gen = ComponentAuditGenerator::new(42);
         let period_end = NaiveDate::from_ymd_opt(2025, 12, 31).unwrap();
         let group_mat = Decimal::new(10_000_000, 0);
 
         let snapshot = gen.generate(&companies, group_mat, "ENG-004", period_end);
 
-        // Last company (C010) has weight 1 out of total 55 → share ≈ 1.8% → AnalyticalOnly
-        let last_inst = snapshot
+        // C002 has 0.5/10.5 ≈ 4.8% share → AnalyticalOnly
+        let tiny_inst = snapshot
             .component_instructions
             .iter()
-            .find(|i| i.entity_code == "C010")
+            .find(|i| i.entity_code == "C002")
             .unwrap();
-        assert_eq!(last_inst.scope, ComponentScope::AnalyticalOnly);
+        assert_eq!(tiny_inst.scope, ComponentScope::AnalyticalOnly);
     }
 
     #[test]

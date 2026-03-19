@@ -29,6 +29,24 @@ fn make_company(code: &str, name: &str, country: &str) -> CompanyConfig {
     }
 }
 
+fn make_company_weighted(
+    code: &str,
+    name: &str,
+    country: &str,
+    volume_weight: f64,
+) -> CompanyConfig {
+    CompanyConfig {
+        code: code.to_string(),
+        name: name.to_string(),
+        currency: "USD".to_string(),
+        functional_currency: None,
+        country: country.to_string(),
+        fiscal_year_variant: "K4".to_string(),
+        annual_transaction_volume: TransactionVolume::TenK,
+        volume_weight,
+    }
+}
+
 fn period_end() -> NaiveDate {
     NaiveDate::from_ymd_opt(2025, 12, 31).unwrap()
 }
@@ -93,11 +111,11 @@ fn test_two_jurisdictions_produce_two_auditors() {
 
 #[test]
 fn test_large_entity_gets_full_scope() {
-    // 2 companies: weights [2, 1], total 3
-    // C001 share = 2/3 ≈ 66.7% → FullScope
+    // 2 companies with explicit volume weights: C001=3.0, C002=1.0
+    // C001 share = 3.0/4.0 = 75% → FullScope
     let companies = vec![
-        make_company("C001", "BigCo", "US"),
-        make_company("C002", "TinyCo", "US"),
+        make_company_weighted("C001", "BigCo", "US", 3.0),
+        make_company_weighted("C002", "TinyCo", "US", 1.0),
     ];
     let mut gen = ComponentAuditGenerator::new(42);
     let group_mat = Decimal::new(10_000_000, 0);
@@ -113,16 +131,22 @@ fn test_large_entity_gets_full_scope() {
     assert_eq!(
         c001_inst.scope,
         ComponentScope::FullScope,
-        "C001 at ~66.7% should be FullScope"
+        "C001 at 75% should be FullScope"
     );
 }
 
 #[test]
 fn test_medium_entity_gets_specific_scope() {
-    // 5 companies: weights [5,4,3,2,1], total 15
-    // C004 weight=2, share=2/15≈13.3% → between 5% and 15% → SpecificScope
-    let companies: Vec<CompanyConfig> = (1..=5)
-        .map(|i| make_company(&format!("C{i:03}"), &format!("Company {i}"), "US"))
+    // Use explicit volume_weight values so C004 lands in the 5–15% band.
+    // Total weight = 3.0+2.0+1.5+0.8+0.2 = 7.5
+    // C004 (0.8): share = 0.8/7.5 ≈ 10.7% → SpecificScope (5–15%)
+    let weights = [3.0f64, 2.0, 1.5, 0.8, 0.2];
+    let companies: Vec<CompanyConfig> = weights
+        .iter()
+        .enumerate()
+        .map(|(i, &w)| {
+            make_company_weighted(&format!("C{:03}", i + 1), &format!("Company {}", i + 1), "US", w)
+        })
         .collect();
     let mut gen = ComponentAuditGenerator::new(42);
     let group_mat = Decimal::new(10_000_000, 0);
@@ -135,36 +159,37 @@ fn test_medium_entity_gets_specific_scope() {
         .find(|i| i.entity_code == "C004")
         .expect("C004 instruction missing");
 
-    // C004 share ≈ 2/15 ≈ 13.3% → SpecificScope
+    // C004 share ≈ 10.7% → SpecificScope (≥5% but <15%)
     assert!(
         matches!(c004_inst.scope, ComponentScope::SpecificScope { .. }),
-        "C004 at ~13.3% should be SpecificScope, got {:?}",
+        "C004 at ~10.7% should be SpecificScope, got {:?}",
         c004_inst.scope
     );
 }
 
 #[test]
 fn test_small_entity_gets_analytical_only() {
-    // 10 companies: weights [10,9,...,1], total 55
-    // C010 weight=1, share=1/55≈1.8% → AnalyticalOnly
-    let companies: Vec<CompanyConfig> = (1..=10)
-        .map(|i| make_company(&format!("C{i:03}"), &format!("Company {i}"), "US"))
-        .collect();
+    // One dominant entity (weight=10.0) and a tiny entity (weight=0.4).
+    // Tiny share = 0.4/10.4 ≈ 3.8% → AnalyticalOnly (< 5%)
+    let companies = vec![
+        make_company_weighted("C001", "DominantCo", "US", 10.0),
+        make_company_weighted("C002", "TinyCo", "US", 0.4),
+    ];
     let mut gen = ComponentAuditGenerator::new(42);
     let group_mat = Decimal::new(10_000_000, 0);
 
     let snapshot = gen.generate(&companies, group_mat, "ENG-005", period_end());
 
-    let c010_inst = snapshot
+    let c002_inst = snapshot
         .component_instructions
         .iter()
-        .find(|i| i.entity_code == "C010")
-        .expect("C010 instruction missing");
+        .find(|i| i.entity_code == "C002")
+        .expect("C002 instruction missing");
 
     assert_eq!(
-        c010_inst.scope,
+        c002_inst.scope,
         ComponentScope::AnalyticalOnly,
-        "C010 at ~1.8% should be AnalyticalOnly"
+        "C002 at ~3.8% should be AnalyticalOnly"
     );
 }
 
