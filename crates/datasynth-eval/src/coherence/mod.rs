@@ -3,6 +3,9 @@
 //! Validates that generated data maintains accounting coherence including
 //! balance sheet equations, subledger reconciliation, and document chain integrity.
 
+pub mod je_risk_scoring;
+pub mod ratio_analysis;
+
 mod audit;
 mod balance;
 mod bank_reconciliation;
@@ -110,6 +113,12 @@ pub use tax::{
 pub use treasury::{
     CashPositionData, CovenantData, HedgeEffectivenessData, NettingData, TreasuryEvaluation,
     TreasuryEvaluator, TreasuryThresholds,
+};
+pub use je_risk_scoring::{
+    JeRiskScoringResult, RiskAttributeStats, RiskDistribution,
+};
+pub use ratio_analysis::{
+    FinancialRatios, RatioAnalysisResult, RatioCheck,
 };
 
 use serde::{Deserialize, Serialize};

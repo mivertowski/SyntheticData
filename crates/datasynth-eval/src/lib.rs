@@ -96,6 +96,10 @@ pub use coherence::{
     TaxThresholds, TimeEntryData, TreasuryEvaluation, TreasuryEvaluator, TreasuryThresholds,
     UnmatchedICItem, VariableConsideration, ViolationSeverity, WaterUsageData, WithholdingData,
     WorkpaperData,
+    // Task 4.1: Financial Ratio Evaluator
+    FinancialRatios, RatioAnalysisResult, RatioCheck,
+    // Task 4.2: JE Risk Scoring Evaluator
+    JeRiskScoringResult, RiskAttributeStats, RiskDistribution,
 };
 
 pub use quality::{
