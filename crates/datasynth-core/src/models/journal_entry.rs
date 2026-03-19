@@ -327,6 +327,10 @@ pub struct JournalEntryHeader {
     #[serde(default)]
     pub sod_conflict_type: Option<super::sod::SodConflictType>,
 
+    /// Whether this is a consolidation elimination entry
+    #[serde(default)]
+    pub is_elimination: bool,
+
     // --- Approval Workflow ---
     /// Approval workflow for high-value transactions
     #[serde(default)]
@@ -391,6 +395,8 @@ impl JournalEntryHeader {
             control_status: super::internal_control::ControlStatus::default(),
             sod_violation: false,
             sod_conflict_type: None,
+            // Consolidation elimination flag
+            is_elimination: false,
             // Approval workflow
             approval_workflow: None,
             // Source document + approval tracking
@@ -444,6 +450,8 @@ impl JournalEntryHeader {
             control_status: super::internal_control::ControlStatus::default(),
             sod_violation: false,
             sod_conflict_type: None,
+            // Consolidation elimination flag
+            is_elimination: false,
             // Approval workflow
             approval_workflow: None,
             // Source document + approval tracking

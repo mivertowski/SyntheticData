@@ -21,7 +21,7 @@ use datasynth_fingerprint::{
     models::PrivacyLevel,
     privacy::PrivacyConfig,
 };
-use datasynth_output::write_fec_csv;
+use datasynth_output::{write_fec_csv, SapExportConfig, SapExporter};
 use datasynth_runtime::{
     export_labels_all_formats, EnhancedOrchestrator, LabelExportConfig, LabelExportSummary,
     OutputFileInfo, PhaseConfig, RunManifest,
@@ -59,6 +59,14 @@ enum Commands {
         /// Use demo preset (small dataset for testing)
         #[arg(long)]
         demo: bool,
+
+        /// Apply a named overlay preset on top of the loaded/default config.
+        ///
+        /// Supported values:
+        ///   audit-group  → enable all audit simulation features (ISA/PCAOB/SOX,
+        ///                   COSO controls, anomaly injection, network features)
+        #[arg(long)]
+        preset: Option<String>,
 
         /// Load a scenario pack (e.g., "manufacturing/supplier_fraud")
         #[arg(long)]
@@ -135,6 +143,14 @@ enum Commands {
         /// Stream output to a JSONL file during generation
         #[arg(long)]
         stream_file: Option<std::path::PathBuf>,
+
+        /// Additional export format(s) to write (repeatable): sap, fec, gobd
+        ///
+        /// sap   → SAP S/4HANA BKPF/BSEG/ACDOCA tables (CSV)
+        /// fec   → FEC Fichier des Écritures Comptables (French GAAP, 18 columns)
+        /// gobd  → GoBD journal + accounts + index.xml (German GAAP)
+        #[arg(long = "export-format", action = clap::ArgAction::Append)]
+        export_format: Vec<String>,
     },
 
     /// Validate a configuration file
@@ -340,6 +356,7 @@ fn main() -> Result<()> {
             config,
             output,
             demo,
+            preset,
             scenario_pack,
             fingerprint,
             scale,
@@ -359,6 +376,7 @@ fn main() -> Result<()> {
             fraud_scenario,
             fraud_rate,
             stream_file,
+            export_format,
         } => {
             // ========================================
             // CPU SAFEGUARD: Limit thread pool size
@@ -500,6 +518,22 @@ fn main() -> Result<()> {
                     // Apply fiscal_year_months if provided via CLI
                     if let Some(fy_months) = fiscal_year_months {
                         cfg.global.fiscal_year_months = Some(fy_months);
+                    }
+
+                    // Apply named overlay preset
+                    if let Some(ref preset_name) = preset {
+                        match preset_name.as_str() {
+                            "audit-group" => {
+                                cfg = presets::audit_group_overlay(cfg);
+                                tracing::info!("Applied 'audit-group' overlay preset");
+                            }
+                            other => {
+                                tracing::warn!(
+                                    "Unknown preset '{}'; supported: audit-group",
+                                    other
+                                );
+                            }
+                        }
                     }
 
                     // Apply fraud scenario packs
@@ -864,6 +898,131 @@ fn main() -> Result<()> {
             }
 
             // ========================================
+            // EXPLICIT --export-format FLAG HANDLING
+            // ========================================
+            // Process repeatable --export-format flags: sap, fec, gobd
+            for fmt in &export_format {
+                match fmt.to_ascii_lowercase().as_str() {
+                    "sap" => {
+                        // SAP S/4HANA BKPF / BSEG / ACDOCA export
+                        let sap_dir = output.join("sap_export");
+                        if let Err(e) = std::fs::create_dir_all(&sap_dir) {
+                            tracing::warn!("Could not create sap_export directory: {}", e);
+                        } else if result.journal_entries.is_empty() {
+                            tracing::warn!("SAP export skipped: no journal entries");
+                        } else {
+                            let sap_config = SapExportConfig::default();
+                            let mut sap_exporter = SapExporter::new(sap_config);
+                            match sap_exporter.export_to_files(&result.journal_entries, &sap_dir) {
+                                Ok(files) => {
+                                    tracing::info!(
+                                        "SAP export: {} tables written to {}",
+                                        files.len(),
+                                        sap_dir.display()
+                                    );
+                                    for (table, path) in &files {
+                                        tracing::info!(
+                                            "  SAP {}: {}",
+                                            format!("{:?}", table),
+                                            path
+                                        );
+                                    }
+                                }
+                                Err(e) => tracing::warn!("SAP export failed: {}", e),
+                            }
+                        }
+                    }
+                    "fec" => {
+                        // FEC — only meaningful for French GAAP, but honour flag regardless
+                        if result.journal_entries.is_empty() {
+                            tracing::warn!("FEC export skipped: no journal entries");
+                        } else {
+                            let fec_path = output.join("fec_export.csv");
+                            match write_fec_csv(
+                                &fec_path,
+                                &result.journal_entries,
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "FEC export written to: {} ({} entries)",
+                                    fec_path.display(),
+                                    result.journal_entries.len()
+                                ),
+                                Err(e) => tracing::warn!("FEC export failed: {}", e),
+                            }
+                        }
+                    }
+                    "gobd" => {
+                        // GoBD — only meaningful for German GAAP, but honour flag regardless
+                        let gobd_dir = output.join("gobd_explicit");
+                        if let Err(e) = std::fs::create_dir_all(&gobd_dir) {
+                            tracing::warn!("Could not create gobd_explicit directory: {}", e);
+                        } else if result.journal_entries.is_empty() {
+                            tracing::warn!("GoBD export skipped: no journal entries");
+                        } else {
+                            // Journal CSV
+                            match datasynth_output::write_gobd_journal_csv(
+                                &gobd_dir.join("gobd_journal.csv"),
+                                &result.journal_entries,
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "GoBD journal written: {} entries",
+                                    result.journal_entries.len()
+                                ),
+                                Err(e) => tracing::warn!("GoBD journal export failed: {}", e),
+                            }
+                            // Accounts CSV
+                            match datasynth_output::write_gobd_accounts_csv(
+                                &gobd_dir.join("gobd_accounts.csv"),
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "GoBD accounts written: {} accounts",
+                                    result.chart_of_accounts.accounts.len()
+                                ),
+                                Err(e) => tracing::warn!("GoBD accounts export failed: {}", e),
+                            }
+                            // Index XML
+                            let company_code_exp = config_for_manifest
+                                .companies
+                                .first()
+                                .map(|c| c.code.as_str())
+                                .unwrap_or("UNKNOWN");
+                            let fiscal_year_exp: i32 = config_for_manifest
+                                .global
+                                .start_date
+                                .split('-')
+                                .next()
+                                .and_then(|y| y.parse().ok())
+                                .unwrap_or(2024);
+                            let tables_exp = vec![
+                                ("gobd_journal.csv", "Buchungsjournal"),
+                                ("gobd_accounts.csv", "Kontenplan"),
+                            ];
+                            match datasynth_output::write_gobd_index_xml(
+                                &gobd_dir.join("index.xml"),
+                                company_code_exp,
+                                fiscal_year_exp,
+                                &tables_exp,
+                            ) {
+                                Ok(()) => tracing::info!("GoBD explicit index.xml written"),
+                                Err(e) => {
+                                    tracing::warn!("GoBD explicit index.xml failed: {}", e)
+                                }
+                            }
+                        }
+                    }
+                    unknown => {
+                        tracing::warn!(
+                            "Unknown --export-format value '{}'; valid options: sap, fec, gobd",
+                            unknown
+                        );
+                    }
+                }
+            }
+
+            // ========================================
             // WRITE ANOMALY LABELS (Phase 1.1)
             // ========================================
             if !result.anomaly_labels.labels.is_empty() {
@@ -1064,6 +1223,22 @@ fn main() -> Result<()> {
                 "subledger/inventory_movements.json",
                 result.subledger.inventory_movements.len(),
             );
+            register(
+                "subledger/ar_aging.json",
+                result.subledger.ar_aging_reports.len(),
+            );
+            register(
+                "subledger/ap_aging.json",
+                result.subledger.ap_aging_reports.len(),
+            );
+            register(
+                "subledger/depreciation_runs.json",
+                result.subledger.depreciation_runs.len(),
+            );
+            register(
+                "subledger/inventory_valuation.json",
+                result.subledger.inventory_valuations.len(),
+            );
 
             // Audit
             register(
@@ -1231,6 +1406,17 @@ fn main() -> Result<()> {
                 "accounting_standards/impairment_tests.json",
                 result.accounting_standards.impairment_tests.len(),
             );
+            register(
+                "accounting_standards/business_combinations.json",
+                result.accounting_standards.business_combinations.len(),
+            );
+            register(
+                "accounting_standards/business_combination_journal_entries.json",
+                result
+                    .accounting_standards
+                    .business_combination_journal_entries
+                    .len(),
+            );
 
             // Treasury
             register(
@@ -1302,6 +1488,22 @@ fn main() -> Result<()> {
             register(
                 "tax/tax_anomaly_labels.json",
                 result.tax.tax_anomaly_labels.len(),
+            );
+            register(
+                "tax/temporary_differences.json",
+                result.tax.deferred_tax.temporary_differences.len(),
+            );
+            register(
+                "tax/etr_reconciliation.json",
+                result.tax.deferred_tax.etr_reconciliations.len(),
+            );
+            register(
+                "tax/deferred_tax_rollforward.json",
+                result.tax.deferred_tax.rollforwards.len(),
+            );
+            register(
+                "tax/deferred_tax_journal_entries.json",
+                result.tax.deferred_tax.journal_entries.len(),
             );
 
             // ESG
@@ -2127,6 +2329,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
             seed: Some(42),
             parallel: false,
             group_currency: "USD".to_string(),
+            presentation_currency: None,
             worker_threads: 2,
             memory_limit_mb: 512,
             fiscal_year_months: None,
@@ -2135,6 +2338,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
             code: "DEMO".to_string(),
             name: "Demo Company".to_string(),
             currency: "USD".to_string(),
+            functional_currency: None,
             country: "US".to_string(),
             annual_transaction_volume: TransactionVolume::TenK, // Small volume
             volume_weight: 1.0,

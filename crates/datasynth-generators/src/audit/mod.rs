@@ -39,17 +39,23 @@
 //! };
 //! ```
 
+pub mod accounting_estimate_generator;
 pub mod analytical_procedure_generator;
+pub mod component_audit_generator;
 pub mod confirmation_generator;
 mod engagement_generator;
+pub mod engagement_letter_generator;
 mod evidence_generator;
 mod finding_generator;
+pub mod going_concern_generator;
 pub mod internal_audit_generator;
 mod judgment_generator;
 pub mod procedure_step_generator;
 pub mod related_party_generator;
 mod risk_generator;
 pub mod sample_generator;
+pub mod service_org_generator;
+pub mod subsequent_event_generator;
 mod workpaper_generator;
 
 #[cfg(test)]

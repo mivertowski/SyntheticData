@@ -31,6 +31,7 @@ mod eval {
                 code: "SUB1".to_string(),
                 name: "Subsidiary One".to_string(),
                 currency: "EUR".to_string(),
+                functional_currency: None,
                 country: "DE".to_string(),
                 annual_transaction_volume: TransactionVolume::Custom(500),
                 volume_weight: 0.4,

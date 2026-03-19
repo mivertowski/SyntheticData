@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use rust_decimal::Decimal;
 
-use datasynth_core::models::documents::{CustomerInvoice, VendorInvoice};
+use datasynth_core::models::documents::{CustomerInvoice, Payment, PaymentType, VendorInvoice};
 use datasynth_core::models::subledger::ap::{APInvoice, APInvoiceLine, MatchStatus};
 use datasynth_core::models::subledger::ar::{ARInvoice, ARInvoiceLine};
 use datasynth_core::models::subledger::PaymentTerms;
@@ -61,10 +61,13 @@ impl DocumentFlowLinker {
         // Generate AP invoice number based on vendor invoice
         let invoice_number = format!("APINV{:08}", self.ap_counter);
 
-        // Create the AP invoice
+        // Create the AP invoice.
+        // Use the document-flow document ID as vendor_invoice_number so that
+        // PaymentAllocation.invoice_id (which references the same document ID)
+        // can be matched during settlement.
         let mut ap_invoice = APInvoice::new(
             invoice_number,
-            vendor_invoice.vendor_invoice_number.clone(),
+            vendor_invoice.header.document_id.clone(),
             vendor_invoice.header.company_code.clone(),
             vendor_invoice.vendor_id.clone(),
             self.vendor_names
@@ -138,8 +141,10 @@ impl DocumentFlowLinker {
     ) -> ARInvoice {
         self.ar_counter += 1;
 
-        // Generate AR invoice number based on customer invoice
-        let invoice_number = format!("ARINV{:08}", self.ar_counter);
+        // Use the document-flow document ID as the AR invoice number so that
+        // PaymentAllocation.invoice_id (which references the same document ID)
+        // can be matched during settlement.
+        let invoice_number = customer_invoice.header.document_id.clone();
 
         // Create the AR invoice
         let mut ar_invoice = ARInvoice::new(
@@ -198,6 +203,74 @@ impl DocumentFlowLinker {
     }
 }
 
+/// Reduces `amount_remaining` on AP invoices by the amounts applied in each payment.
+///
+/// For each `Payment` whose `payment_type` is `ApPayment`, iterates over its
+/// `allocations` and matches them to AP invoices by `allocation.invoice_id` ==
+/// `ap_invoice.vendor_invoice_number`. `amount_remaining` is clamped to zero so
+/// over-payments do not produce negative balances.
+pub fn apply_ap_settlements(ap_invoices: &mut [APInvoice], payments: &[Payment]) {
+    // Build a lookup: vendor_invoice_number → list of indices in ap_invoices.
+    // Uses owned String keys so the map does not hold borrows into the slice,
+    // allowing mutable access to elements later.
+    let mut index_map: HashMap<String, Vec<usize>> = HashMap::new();
+    for (idx, inv) in ap_invoices.iter().enumerate() {
+        index_map
+            .entry(inv.vendor_invoice_number.clone())
+            .or_default()
+            .push(idx);
+    }
+
+    for payment in payments {
+        if payment.payment_type != PaymentType::ApPayment {
+            continue;
+        }
+        for allocation in &payment.allocations {
+            if let Some(indices) = index_map.get(&allocation.invoice_id) {
+                for &idx in indices {
+                    let inv = &mut ap_invoices[idx];
+                    inv.amount_remaining =
+                        (inv.amount_remaining - allocation.amount).max(Decimal::ZERO);
+                }
+            }
+        }
+    }
+}
+
+/// Reduces `amount_remaining` on AR invoices by the amounts applied in each receipt.
+///
+/// For each `Payment` whose `payment_type` is `ArReceipt`, iterates over its
+/// `allocations` and matches them to AR invoices by `allocation.invoice_id` ==
+/// `ar_invoice.invoice_number`. `amount_remaining` is clamped to zero so
+/// over-payments do not produce negative balances.
+pub fn apply_ar_settlements(ar_invoices: &mut [ARInvoice], payments: &[Payment]) {
+    // Build a lookup: invoice_number → list of indices in ar_invoices.
+    // Uses owned String keys so the map does not hold borrows into the slice,
+    // allowing mutable access to elements later.
+    let mut index_map: HashMap<String, Vec<usize>> = HashMap::new();
+    for (idx, inv) in ar_invoices.iter().enumerate() {
+        index_map
+            .entry(inv.invoice_number.clone())
+            .or_default()
+            .push(idx);
+    }
+
+    for payment in payments {
+        if payment.payment_type != PaymentType::ArReceipt {
+            continue;
+        }
+        for allocation in &payment.allocations {
+            if let Some(indices) = index_map.get(&allocation.invoice_id) {
+                for &idx in indices {
+                    let inv = &mut ar_invoices[idx];
+                    inv.amount_remaining =
+                        (inv.amount_remaining - allocation.amount).max(Decimal::ZERO);
+                }
+            }
+        }
+    }
+}
+
 /// Parse payment terms string into PaymentTerms struct.
 fn parse_payment_terms(terms_str: &str) -> PaymentTerms {
     // Try to parse common payment terms formats
@@ -253,7 +326,9 @@ mod tests {
         let ap_invoice = linker.create_ap_invoice_from_vendor_invoice(&vendor_invoice);
 
         assert_eq!(ap_invoice.vendor_id, "VEND001");
-        assert_eq!(ap_invoice.vendor_invoice_number, "V-INV-001");
+        // vendor_invoice_number now stores the document-flow document ID so that
+        // PaymentAllocation.invoice_id can be matched during settlement.
+        assert_eq!(ap_invoice.vendor_invoice_number, "VI-001");
         assert_eq!(ap_invoice.lines.len(), 1);
         assert!(ap_invoice.gross_amount.document_amount > Decimal::ZERO);
     }

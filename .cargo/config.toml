@@ -1,0 +1,12 @@
+# Workspace-wide cargo configuration.
+#
+# Test binaries in this workspace are 400+ MB each in debug mode.
+# Running all crates in parallel with high test-thread counts
+# can easily exhaust system memory (30 GB+).
+#
+# Use scripts/test-safe.sh for sequential per-crate testing,
+# or set RUST_TEST_THREADS=2 when using cargo test directly.
+
+[env]
+# Default to 2 test threads to prevent OOM when running cargo test
+RUST_TEST_THREADS = { value = "2", force = false }

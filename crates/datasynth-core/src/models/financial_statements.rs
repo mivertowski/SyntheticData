@@ -3,6 +3,7 @@
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Type of financial statement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -87,6 +88,127 @@ pub struct CashFlowItem {
     pub sort_order: u32,
     /// Is this a subtotal line
     pub is_total: bool,
+}
+
+/// A single line in a consolidation schedule, showing per-entity amounts plus
+/// pre-elimination total, elimination adjustments, and post-elimination total.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsolidationLineItem {
+    /// Account category (e.g. "Revenue", "Cash", "Payables")
+    pub account_category: String,
+    /// Per-entity amounts: entity_code → net balance
+    #[serde(default)]
+    pub entity_amounts: HashMap<String, Decimal>,
+    /// Sum of all entity amounts before eliminations
+    #[serde(with = "rust_decimal::serde::str")]
+    pub pre_elimination_total: Decimal,
+    /// Net elimination adjustment (positive = increases total, negative = decreases)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub elimination_adjustments: Decimal,
+    /// post_elimination_total = pre_elimination_total + elimination_adjustments
+    #[serde(with = "rust_decimal::serde::str")]
+    pub post_elimination_total: Decimal,
+}
+
+/// A consolidation schedule showing how individual entity amounts roll up into
+/// the consolidated group total with elimination entries applied.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConsolidationSchedule {
+    /// Fiscal period label, e.g. "2024-Q1" or "2024-03"
+    pub period: String,
+    /// One line per account category
+    pub line_items: Vec<ConsolidationLineItem>,
+}
+
+// ============================================================================
+// IFRS 8 / ASC 280 — Operating Segment Reporting
+// ============================================================================
+
+/// Basis for how the entity defines its operating segments.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SegmentType {
+    /// Segments defined by geographic region (country / continent)
+    Geographic,
+    /// Segments defined by product or service line
+    ProductLine,
+    /// Segments that correspond to separate legal entities
+    LegalEntity,
+}
+
+/// A single IFRS 8 / ASC 280 reportable operating segment.
+///
+/// All monetary fields are expressed in the entity's reporting currency.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OperatingSegment {
+    /// Unique identifier for this segment record (deterministic UUID)
+    pub segment_id: String,
+    /// Human-readable segment name (e.g. "North America", "Software Products")
+    pub name: String,
+    /// Basis on which the segment is identified
+    pub segment_type: SegmentType,
+    /// Revenue from transactions with external customers
+    #[serde(with = "rust_decimal::serde::str")]
+    pub revenue_external: Decimal,
+    /// Revenue from transactions with other operating segments (eliminated on consolidation)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub revenue_intersegment: Decimal,
+    /// Segment operating profit (before corporate overhead and group tax)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub operating_profit: Decimal,
+    /// Total assets allocated to this segment
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_assets: Decimal,
+    /// Total liabilities allocated to this segment
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_liabilities: Decimal,
+    /// Capital expenditure (additions to PP&E and intangibles) in the period
+    #[serde(with = "rust_decimal::serde::str")]
+    pub capital_expenditure: Decimal,
+    /// Depreciation and amortisation charged in the period
+    #[serde(with = "rust_decimal::serde::str")]
+    pub depreciation_amortization: Decimal,
+    /// Fiscal period label for which these figures are reported (e.g. "2024-03")
+    pub period: String,
+    /// Company / group these segments belong to
+    pub company_code: String,
+}
+
+/// Reconciliation of segment totals to the consolidated financial statements
+/// as required by IFRS 8 para. 28 and ASC 280-10-50-30.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SegmentReconciliation {
+    /// Fiscal period label (e.g. "2024-03")
+    pub period: String,
+    /// Company / group code
+    pub company_code: String,
+    /// Sum of all reportable segment revenues (external + intersegment)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub segment_revenue_total: Decimal,
+    /// Elimination of intersegment revenues (typically negative)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub intersegment_eliminations: Decimal,
+    /// Consolidated external revenue = segment_revenue_total + intersegment_eliminations
+    #[serde(with = "rust_decimal::serde::str")]
+    pub consolidated_revenue: Decimal,
+    /// Sum of all reportable segment operating profits
+    #[serde(with = "rust_decimal::serde::str")]
+    pub segment_profit_total: Decimal,
+    /// Unallocated corporate overhead (negative amount)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub corporate_overhead: Decimal,
+    /// Consolidated operating profit = segment_profit_total + corporate_overhead
+    #[serde(with = "rust_decimal::serde::str")]
+    pub consolidated_profit: Decimal,
+    /// Sum of all reportable segment assets
+    #[serde(with = "rust_decimal::serde::str")]
+    pub segment_assets_total: Decimal,
+    /// Unallocated corporate / group assets (e.g. deferred tax, goodwill)
+    #[serde(with = "rust_decimal::serde::str")]
+    pub unallocated_assets: Decimal,
+    /// Consolidated total assets = segment_assets_total + unallocated_assets
+    #[serde(with = "rust_decimal::serde::str")]
+    pub consolidated_assets: Decimal,
 }
 
 /// A complete financial statement.

@@ -4,6 +4,21 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/Sy
 
 ## Recent Releases
 
+### [1.3.0] - 2026-03-19
+
+**Enterprise Group Audit Simulation**
+
+- **32 new features** across 5 implementation tiers for complete ISA / IFRS / US GAAP group audit simulation
+- **ISA 600 Component Auditor**: Group audit planning with materiality allocation and scope assignment
+- **Consolidated Financial Statements**: Standalone + consolidated FS with elimination schedules
+- **10 accounting standards**: Deferred tax (IAS 12), business combinations (IFRS 3), segment reporting (IFRS 8), ECL (IFRS 9), pensions (IAS 19), provisions (IAS 37), stock comp (ASC 718), functional currency (IAS 21)
+- **Audit documentation**: Engagement letters (ISA 210), subsequent events (ISA 560), service org controls (ISA 402), accounting estimates (ISA 540), going concern, notes to FS
+- **4 new evaluators**: Financial ratio analysis (ISA 520), JE risk scoring, materiality sampling, trend plausibility
+- **Audit preset**: `--preset audit-group` CLI flag enabling all audit features
+- **Format exporters**: `--export-format sap|fec|gobd` for SAP BKPF/BSEG/ACDOCA, French FEC, German GoBD
+- **Bug fixes**: Subledger settlement, IC eliminations → GL, close engine, opening balances, audit output completeness
+- **40+ new output files** across audit, financial reporting, tax, accounting standards, HR, subledger, and intercompany
+
 ### [1.2.0] - 2026-03-15
 
 **Unified Graph Export Pipeline & Audit Procedures**

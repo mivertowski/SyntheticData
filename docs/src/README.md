@@ -6,7 +6,7 @@
 
 <div class="badges">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mivertowski/SyntheticData)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/mivertowski/SyntheticData)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/mivertowski/SyntheticData/blob/main/LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 

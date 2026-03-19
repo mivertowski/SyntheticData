@@ -7,6 +7,7 @@
 use std::io::Write;
 use std::path::Path;
 
+use datasynth_core::documents::PaymentType;
 use datasynth_runtime::enhanced_orchestrator::EnhancedGenerationResult;
 use tracing::{info, warn};
 
@@ -234,6 +235,17 @@ pub fn write_all_output(
             &df_dir.join("payments.json"),
             "Payments",
         );
+        let customer_receipts: Vec<_> = result
+            .document_flows
+            .payments
+            .iter()
+            .filter(|p| p.payment_type == PaymentType::ArReceipt)
+            .collect();
+        write_json_safe(
+            &customer_receipts,
+            &df_dir.join("customer_receipts.json"),
+            "Customer receipts",
+        );
         write_json_safe(
             &result.document_flows.sales_orders,
             &df_dir.join("sales_orders.json"),
@@ -303,6 +315,26 @@ pub fn write_all_output(
             &sl_dir.join("inventory_movements.json"),
             "Inventory movements",
         );
+        write_json_safe(
+            &result.subledger.ar_aging_reports,
+            &sl_dir.join("ar_aging.json"),
+            "AR aging reports",
+        );
+        write_json_safe(
+            &result.subledger.ap_aging_reports,
+            &sl_dir.join("ap_aging.json"),
+            "AP aging reports",
+        );
+        write_json_safe(
+            &result.subledger.depreciation_runs,
+            &sl_dir.join("depreciation_runs.json"),
+            "Depreciation runs",
+        );
+        write_json_safe(
+            &result.subledger.inventory_valuations,
+            &sl_dir.join("inventory_valuation.json"),
+            "Inventory valuations",
+        );
     }
 
     // ========================================================================
@@ -342,6 +374,118 @@ pub fn write_all_output(
             &result.audit.judgments,
             &audit_dir.join("audit_judgments.json"),
             "Audit judgments",
+        );
+        write_json_safe(
+            &result.audit.confirmations,
+            &audit_dir.join("audit_confirmations.json"),
+            "Audit confirmations",
+        );
+        write_json_safe(
+            &result.audit.confirmation_responses,
+            &audit_dir.join("audit_confirmation_responses.json"),
+            "Audit confirmation responses",
+        );
+        write_json_safe(
+            &result.audit.procedure_steps,
+            &audit_dir.join("audit_procedure_steps.json"),
+            "Audit procedure steps",
+        );
+        write_json_safe(
+            &result.audit.samples,
+            &audit_dir.join("audit_samples.json"),
+            "Audit samples",
+        );
+        write_json_safe(
+            &result.audit.analytical_results,
+            &audit_dir.join("audit_analytical_results.json"),
+            "Audit analytical results",
+        );
+        write_json_safe(
+            &result.audit.ia_functions,
+            &audit_dir.join("audit_ia_functions.json"),
+            "Audit IA functions",
+        );
+        write_json_safe(
+            &result.audit.ia_reports,
+            &audit_dir.join("audit_ia_reports.json"),
+            "Audit IA reports",
+        );
+        write_json_safe(
+            &result.audit.related_parties,
+            &audit_dir.join("audit_related_parties.json"),
+            "Audit related parties",
+        );
+        write_json_safe(
+            &result.audit.related_party_transactions,
+            &audit_dir.join("audit_related_party_transactions.json"),
+            "Audit related party transactions",
+        );
+        // ISA 600: Group audit artefacts
+        if !result.audit.component_auditors.is_empty() {
+            write_json_safe(
+                &result.audit.component_auditors,
+                &audit_dir.join("component_auditors.json"),
+                "Component auditors (ISA 600)",
+            );
+            if let Some(plan) = &result.audit.group_audit_plan {
+                write_json_single_safe(
+                    plan,
+                    &audit_dir.join("group_audit_plan.json"),
+                    "Group audit plan (ISA 600)",
+                );
+            }
+            write_json_safe(
+                &result.audit.component_instructions,
+                &audit_dir.join("component_instructions.json"),
+                "Component instructions (ISA 600)",
+            );
+            write_json_safe(
+                &result.audit.component_reports,
+                &audit_dir.join("component_reports.json"),
+                "Component auditor reports (ISA 600)",
+            );
+        }
+        // ISA 210: Engagement letters
+        write_json_safe(
+            &result.audit.engagement_letters,
+            &audit_dir.join("engagement_letters.json"),
+            "Engagement letters (ISA 210)",
+        );
+        // ISA 560 / IAS 10: Subsequent events
+        write_json_safe(
+            &result.audit.subsequent_events,
+            &audit_dir.join("subsequent_events.json"),
+            "Subsequent events (ISA 560 / IAS 10)",
+        );
+        // ISA 402: Service organization controls
+        write_json_safe(
+            &result.audit.service_organizations,
+            &audit_dir.join("service_organizations.json"),
+            "Service organizations (ISA 402)",
+        );
+        write_json_safe(
+            &result.audit.soc_reports,
+            &audit_dir.join("soc_reports.json"),
+            "SOC reports (ISA 402)",
+        );
+        write_json_safe(
+            &result.audit.user_entity_controls,
+            &audit_dir.join("user_entity_controls.json"),
+            "User entity controls (ISA 402)",
+        );
+
+        // ISA 570: Going concern assessments
+        write_json_safe(
+            &result.audit.going_concern_assessments,
+            &audit_dir.join("going_concern_assessments.json"),
+            "Going concern assessments (ISA 570)",
+        );
+
+        // ISA 540: Accounting estimates
+        write_json_safe(
+            &result.audit.accounting_estimates,
+            &audit_dir.join("accounting_estimates.json"),
+            "Accounting estimates (ISA 540)",
         );
     }
 
@@ -454,9 +598,16 @@ pub fn write_all_output(
     // Intercompany
     // ========================================================================
     let ic_dir = output_dir.join("intercompany");
-    if !result.intercompany.matched_pairs.is_empty() {
+    if result.intercompany.group_structure.is_some()
+        || !result.intercompany.matched_pairs.is_empty()
+    {
         std::fs::create_dir_all(&ic_dir)?;
         info!("Writing intercompany data...");
+
+        // Always write group structure when present (independent of IC transactions).
+        if let Some(gs) = &result.intercompany.group_structure {
+            write_json_single_safe(gs, &ic_dir.join("group_structure.json"), "Group structure");
+        }
 
         write_json_safe(
             &result.intercompany.matched_pairs,
@@ -478,6 +629,15 @@ pub fn write_all_output(
             &ic_dir.join("ic_elimination_entries.json"),
             "IC elimination entries",
         );
+
+        // NCI measurements from group structure ownership percentages
+        if !result.intercompany.nci_measurements.is_empty() {
+            write_json_safe(
+                &result.intercompany.nci_measurements,
+                &ic_dir.join("nci_measurements.json"),
+                "NCI measurements",
+            );
+        }
     }
 
     // ========================================================================
@@ -486,19 +646,91 @@ pub fn write_all_output(
     let fin_dir = output_dir.join("financial_reporting");
     if !result.financial_reporting.financial_statements.is_empty()
         || !result.financial_reporting.bank_reconciliations.is_empty()
+        || !result
+            .financial_reporting
+            .consolidated_statements
+            .is_empty()
     {
         std::fs::create_dir_all(&fin_dir)?;
         info!("Writing financial reporting data...");
 
+        // Legacy flat file (all standalone statements combined)
         write_json_safe(
             &result.financial_reporting.financial_statements,
             &fin_dir.join("financial_statements.json"),
             "Financial statements",
         );
+
+        // Per-entity standalone statements
+        if !result.financial_reporting.standalone_statements.is_empty() {
+            let standalone_dir = fin_dir.join("standalone");
+            std::fs::create_dir_all(&standalone_dir)?;
+            for (entity_code, stmts) in &result.financial_reporting.standalone_statements {
+                let file_name = format!("{}_financial_statements.json", entity_code);
+                write_json_safe(
+                    stmts,
+                    &standalone_dir.join(&file_name),
+                    &format!("Standalone statements for {}", entity_code),
+                );
+            }
+        }
+
+        // Consolidated statements + schedule
+        if !result
+            .financial_reporting
+            .consolidated_statements
+            .is_empty()
+            || !result
+                .financial_reporting
+                .consolidation_schedules
+                .is_empty()
+        {
+            let consolidated_dir = fin_dir.join("consolidated");
+            std::fs::create_dir_all(&consolidated_dir)?;
+            write_json_safe(
+                &result.financial_reporting.consolidated_statements,
+                &consolidated_dir.join("consolidated_financial_statements.json"),
+                "Consolidated financial statements",
+            );
+            write_json_safe(
+                &result.financial_reporting.consolidation_schedules,
+                &consolidated_dir.join("consolidation_schedule.json"),
+                "Consolidation schedule",
+            );
+        }
+
         write_json_safe(
             &result.financial_reporting.bank_reconciliations,
             &fin_dir.join("bank_reconciliations.json"),
             "Bank reconciliations",
+        );
+
+        // IFRS 8 / ASC 280 Segment Reporting
+        if !result.financial_reporting.segment_reports.is_empty()
+            || !result
+                .financial_reporting
+                .segment_reconciliations
+                .is_empty()
+        {
+            let seg_dir = fin_dir.join("segment_reporting");
+            std::fs::create_dir_all(&seg_dir)?;
+            write_json_safe(
+                &result.financial_reporting.segment_reports,
+                &seg_dir.join("segment_reports.json"),
+                "Segment reports",
+            );
+            write_json_safe(
+                &result.financial_reporting.segment_reconciliations,
+                &seg_dir.join("segment_reconciliations.json"),
+                "Segment reconciliations",
+            );
+        }
+
+        // IAS 1 / ASC 235: Notes to financial statements
+        write_json_safe(
+            &result.financial_reporting.notes_to_financial_statements,
+            &fin_dir.join("notes_to_financial_statements.json"),
+            "Notes to financial statements",
         );
     }
 
@@ -540,13 +772,15 @@ pub fn write_all_output(
     }
 
     // ========================================================================
-    // HR (Payroll, Time Entries, Expense Reports, Benefit Enrollments)
+    // HR (Payroll, Time Entries, Expense Reports, Benefit Enrollments, Pensions)
     // ========================================================================
     let hr_dir = output_dir.join("hr");
     if !result.hr.payroll_runs.is_empty()
         || !result.hr.time_entries.is_empty()
         || !result.hr.expense_reports.is_empty()
         || !result.hr.benefit_enrollments.is_empty()
+        || !result.hr.pension_plans.is_empty()
+        || !result.hr.stock_grants.is_empty()
     {
         std::fs::create_dir_all(&hr_dir)?;
         info!("Writing HR data...");
@@ -575,6 +809,36 @@ pub fn write_all_output(
             &result.hr.benefit_enrollments,
             &hr_dir.join("benefit_enrollments.json"),
             "Benefit enrollments",
+        );
+        write_json_safe(
+            &result.hr.pension_plans,
+            &hr_dir.join("pension_plans.json"),
+            "Pension plans",
+        );
+        write_json_safe(
+            &result.hr.pension_obligations,
+            &hr_dir.join("pension_obligations.json"),
+            "Pension obligations",
+        );
+        write_json_safe(
+            &result.hr.pension_plan_assets,
+            &hr_dir.join("plan_assets.json"),
+            "Plan assets",
+        );
+        write_json_safe(
+            &result.hr.pension_disclosures,
+            &hr_dir.join("pension_disclosures.json"),
+            "Pension disclosures",
+        );
+        write_json_safe(
+            &result.hr.stock_grants,
+            &hr_dir.join("stock_grants.json"),
+            "Stock grants",
+        );
+        write_json_safe(
+            &result.hr.stock_comp_expenses,
+            &hr_dir.join("stock_comp_expense.json"),
+            "Stock comp expense",
         );
     }
 
@@ -692,6 +956,29 @@ pub fn write_all_output(
                 &result.tax.tax_anomaly_labels,
                 &tax_dir.join("tax_anomaly_labels.json"),
                 "Tax anomaly labels",
+            );
+        }
+        // Deferred tax engine output (IAS 12 / ASC 740)
+        if !result.tax.deferred_tax.temporary_differences.is_empty() {
+            write_json_safe(
+                &result.tax.deferred_tax.temporary_differences,
+                &tax_dir.join("temporary_differences.json"),
+                "Temporary differences",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.etr_reconciliations,
+                &tax_dir.join("etr_reconciliation.json"),
+                "ETR reconciliation",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.rollforwards,
+                &tax_dir.join("deferred_tax_rollforward.json"),
+                "Deferred tax rollforward",
+            );
+            write_json_safe(
+                &result.tax.deferred_tax.journal_entries,
+                &tax_dir.join("deferred_tax_journal_entries.json"),
+                "Deferred tax journal entries",
             );
         }
     }
@@ -921,6 +1208,13 @@ pub fn write_all_output(
     // ========================================================================
     if !result.accounting_standards.contracts.is_empty()
         || !result.accounting_standards.impairment_tests.is_empty()
+        || !result.accounting_standards.business_combinations.is_empty()
+        || !result.accounting_standards.ecl_models.is_empty()
+        || !result.accounting_standards.provisions.is_empty()
+        || !result
+            .accounting_standards
+            .currency_translation_results
+            .is_empty()
     {
         let acct_dir = output_dir.join("accounting_standards");
         std::fs::create_dir_all(&acct_dir)?;
@@ -936,6 +1230,68 @@ pub fn write_all_output(
             &acct_dir.join("impairment_tests.json"),
             "Impairment tests",
         );
+        write_json_safe(
+            &result.accounting_standards.business_combinations,
+            &acct_dir.join("business_combinations.json"),
+            "Business combinations",
+        );
+        write_json_safe(
+            &result
+                .accounting_standards
+                .business_combination_journal_entries,
+            &acct_dir.join("business_combination_journal_entries.json"),
+            "Business combination journal entries",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_models,
+            &acct_dir.join("ecl_models.json"),
+            "ECL models",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_provision_movements,
+            &acct_dir.join("ecl_provision_movements.json"),
+            "ECL provision movements",
+        );
+        write_json_safe(
+            &result.accounting_standards.ecl_journal_entries,
+            &acct_dir.join("ecl_journal_entries.json"),
+            "ECL journal entries",
+        );
+        write_json_safe(
+            &result.accounting_standards.provisions,
+            &acct_dir.join("provisions.json"),
+            "Provisions (IAS 37 / ASC 450)",
+        );
+        write_json_safe(
+            &result.accounting_standards.provision_movements,
+            &acct_dir.join("provision_movements.json"),
+            "Provision movements",
+        );
+        write_json_safe(
+            &result.accounting_standards.contingent_liabilities,
+            &acct_dir.join("contingent_liabilities.json"),
+            "Contingent liabilities",
+        );
+        write_json_safe(
+            &result.accounting_standards.provision_journal_entries,
+            &acct_dir.join("provision_journal_entries.json"),
+            "Provision journal entries",
+        );
+
+        // IAS 21 — write under accounting_standards/fx/
+        if !result
+            .accounting_standards
+            .currency_translation_results
+            .is_empty()
+        {
+            let fx_dir = acct_dir.join("fx");
+            std::fs::create_dir_all(&fx_dir)?;
+            write_json_safe(
+                &result.accounting_standards.currency_translation_results,
+                &fx_dir.join("currency_translation_results.json"),
+                "IAS 21 currency translation results",
+            );
+        }
     }
 
     // ========================================================================
@@ -1310,6 +1666,26 @@ pub fn write_all_output(
 /// Write JSON with error handling - logs a warning on failure but does not abort.
 fn write_json_safe<T: serde::Serialize>(data: &[T], path: &Path, label: &str) {
     if let Err(e) = write_json(data, path, label) {
+        warn!("Failed to write {}: {}", label, e);
+    }
+}
+
+/// Write a single serializable value as a JSON file.
+fn write_json_single<T: serde::Serialize>(
+    data: &T,
+    path: &Path,
+    label: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let file = std::fs::File::create(path)?;
+    let writer = std::io::BufWriter::with_capacity(256 * 1024, file);
+    serde_json::to_writer_pretty(writer, data)?;
+    info!("  {} written -> {}", label, path.display());
+    Ok(())
+}
+
+/// Write a single serializable value as a JSON file, logging a warning on failure.
+fn write_json_single_safe<T: serde::Serialize>(data: &T, path: &Path, label: &str) {
+    if let Err(e) = write_json_single(data, path, label) {
         warn!("Failed to write {}: {}", label, e);
     }
 }

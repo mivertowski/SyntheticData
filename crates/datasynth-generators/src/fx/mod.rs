@@ -7,8 +7,10 @@
 
 mod cta_generator;
 mod currency_translator;
+mod functional_currency_translator;
 mod fx_rate_service;
 
 pub use cta_generator::*;
 pub use currency_translator::*;
+pub use functional_currency_translator::*;
 pub use fx_rate_service::*;

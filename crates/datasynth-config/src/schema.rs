@@ -1183,6 +1183,10 @@ pub struct GlobalConfig {
     /// Base currency for group reporting
     #[serde(default = "default_currency")]
     pub group_currency: String,
+    /// Presentation currency for consolidated financial statements (ISO 4217).
+    /// If not set, defaults to `group_currency`.
+    #[serde(default)]
+    pub presentation_currency: Option<String>,
     /// Enable parallel generation
     #[serde(default = "default_true")]
     pub parallel: bool,
@@ -1245,6 +1249,10 @@ pub struct CompanyConfig {
     pub name: String,
     /// Local currency (ISO 4217)
     pub currency: String,
+    /// Functional currency for IAS 21 translation (ISO 4217).
+    /// If not set, defaults to the `currency` field (i.e. local == functional).
+    #[serde(default)]
+    pub functional_currency: Option<String>,
     /// Country code (ISO 3166-1 alpha-2)
     pub country: String,
     /// Fiscal year variant
@@ -4734,6 +4742,14 @@ pub struct AccountingStandardsConfig {
     #[serde(default)]
     pub impairment: ImpairmentConfig,
 
+    /// Business combination configuration (IFRS 3 / ASC 805)
+    #[serde(default)]
+    pub business_combinations: BusinessCombinationsConfig,
+
+    /// Expected Credit Loss configuration (IFRS 9 / ASC 326)
+    #[serde(default)]
+    pub expected_credit_loss: EclConfig,
+
     /// Generate framework differences for dual reporting
     #[serde(default)]
     pub generate_differences: bool,
@@ -4967,6 +4983,104 @@ impl Default for ImpairmentConfig {
             impairment_rate: default_impairment_rate(),
             generate_projections: true,
             include_goodwill: false,
+        }
+    }
+}
+
+// =============================================================================
+// Business Combinations Configuration (IFRS 3 / ASC 805)
+// =============================================================================
+
+/// Configuration for generating business combination (acquisition) data.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BusinessCombinationsConfig {
+    /// Enable business combination generation
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Number of acquisitions to generate per company (1-5)
+    #[serde(default = "default_bc_acquisition_count")]
+    pub acquisition_count: usize,
+}
+
+fn default_bc_acquisition_count() -> usize {
+    2
+}
+
+impl Default for BusinessCombinationsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            acquisition_count: default_bc_acquisition_count(),
+        }
+    }
+}
+
+// =============================================================================
+// ECL Configuration (IFRS 9 / ASC 326)
+// =============================================================================
+
+/// Configuration for Expected Credit Loss generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EclConfig {
+    /// Enable ECL generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Weight for base economic scenario (0–1).
+    #[serde(default = "default_ecl_base_weight")]
+    pub base_scenario_weight: f64,
+
+    /// Multiplier for base scenario (typically 1.0).
+    #[serde(default = "default_ecl_base_multiplier")]
+    pub base_scenario_multiplier: f64,
+
+    /// Weight for optimistic economic scenario (0–1).
+    #[serde(default = "default_ecl_optimistic_weight")]
+    pub optimistic_scenario_weight: f64,
+
+    /// Multiplier for optimistic scenario (< 1.0 means lower losses).
+    #[serde(default = "default_ecl_optimistic_multiplier")]
+    pub optimistic_scenario_multiplier: f64,
+
+    /// Weight for pessimistic economic scenario (0–1).
+    #[serde(default = "default_ecl_pessimistic_weight")]
+    pub pessimistic_scenario_weight: f64,
+
+    /// Multiplier for pessimistic scenario (> 1.0 means higher losses).
+    #[serde(default = "default_ecl_pessimistic_multiplier")]
+    pub pessimistic_scenario_multiplier: f64,
+}
+
+fn default_ecl_base_weight() -> f64 {
+    0.50
+}
+fn default_ecl_base_multiplier() -> f64 {
+    1.0
+}
+fn default_ecl_optimistic_weight() -> f64 {
+    0.30
+}
+fn default_ecl_optimistic_multiplier() -> f64 {
+    0.8
+}
+fn default_ecl_pessimistic_weight() -> f64 {
+    0.20
+}
+fn default_ecl_pessimistic_multiplier() -> f64 {
+    1.4
+}
+
+impl Default for EclConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            base_scenario_weight: default_ecl_base_weight(),
+            base_scenario_multiplier: default_ecl_base_multiplier(),
+            optimistic_scenario_weight: default_ecl_optimistic_weight(),
+            optimistic_scenario_multiplier: default_ecl_optimistic_multiplier(),
+            pessimistic_scenario_weight: default_ecl_pessimistic_weight(),
+            pessimistic_scenario_multiplier: default_ecl_pessimistic_multiplier(),
         }
     }
 }

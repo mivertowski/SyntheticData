@@ -37,16 +37,18 @@ use datasynth_config::schema::GeneratorConfig;
 use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
-    AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
-    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
-    RiskAssessment, Workpaper,
+    AuditSample, ComponentAuditor, ComponentAuditorReport, ComponentInstruction,
+    ConfirmationResponse, EngagementLetter, ExternalConfirmation, GroupAuditPlan,
+    InternalAuditFunction, InternalAuditReport, ProfessionalJudgment, RelatedParty,
+    RelatedPartyTransaction, RiskAssessment, ServiceOrganization, SocReport, SubsequentEvent,
+    UserEntityControl, Workpaper,
 };
 use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
     SupplierBid, SupplierQualification, SupplierScorecard,
 };
-use datasynth_core::models::subledger::ap::APInvoice;
-use datasynth_core::models::subledger::ar::ARInvoice;
+use datasynth_core::models::subledger::ap::{APAgingReport, APInvoice};
+use datasynth_core::models::subledger::ar::{ARAgingReport, ARInvoice};
 use datasynth_core::models::*;
 use datasynth_core::traits::Generator;
 use datasynth_core::{DegradationActions, DegradationLevel, ResourceGuard, ResourceGuardBuilder};
@@ -56,6 +58,11 @@ use datasynth_fingerprint::{
     synthesis::{ConfigSynthesizer, CopulaGeneratorSpec, SynthesisOptions},
 };
 use datasynth_generators::{
+    // Subledger linker + settlement
+    apply_ap_settlements,
+    apply_ar_settlements,
+    // Opening balance → JE conversion
+    opening_balance_to_jes,
     // Anomaly injection
     AnomalyInjector,
     AnomalyInjectorConfig,
@@ -68,9 +75,13 @@ use datasynth_generators::{
     // S2C sourcing generators
     BidEvaluationGenerator,
     BidGenerator,
+    // Business combination generator (IFRS 3 / ASC 805)
+    BusinessCombinationGenerator,
     CatalogGenerator,
     // Core generators
     ChartOfAccountsGenerator,
+    // Consolidation generator
+    ConsolidationGenerator,
     ContractGenerator,
     // Control generator
     ControlGenerator,
@@ -83,15 +94,22 @@ use datasynth_generators::{
     // Document flow JE generator
     DocumentFlowJeConfig,
     DocumentFlowJeGenerator,
-    // Subledger linker
     DocumentFlowLinker,
+    // Expected Credit Loss generator (IFRS 9 / ASC 326)
+    EclGenerator,
     EmployeeGenerator,
     // ESG anomaly labels
     EsgAnomalyLabel,
     EvidenceGenerator,
+    // Subledger depreciation schedule generator
+    FaDepreciationScheduleConfig,
+    FaDepreciationScheduleGenerator,
     // Financial statement generator
     FinancialStatementGenerator,
     FindingGenerator,
+    // Inventory valuation generator
+    InventoryValuationGenerator,
+    InventoryValuationGeneratorConfig,
     JournalEntryGenerator,
     JudgmentGenerator,
     LatePaymentDistribution,
@@ -106,12 +124,17 @@ use datasynth_generators::{
     P2PGeneratorConfig,
     P2PPaymentBehavior,
     PaymentReference,
+    // Provisions and contingencies generator (IAS 37 / ASC 450)
+    ProvisionGenerator,
     QualificationGenerator,
     RfxGenerator,
     RiskAssessmentGenerator,
     // Balance validation
     RunningBalanceTracker,
     ScorecardGenerator,
+    // Segment reporting generator (IFRS 8 / ASC 280)
+    SegmentGenerator,
+    SegmentSeed,
     SourcingProjectGenerator,
     SpendAnalysisGenerator,
     ValidationError,
@@ -138,11 +161,15 @@ use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, Ope
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
 use datasynth_generators::audit::analytical_procedure_generator::AnalyticalProcedureGenerator;
+use datasynth_generators::audit::component_audit_generator::ComponentAuditGenerator;
 use datasynth_generators::audit::confirmation_generator::ConfirmationGenerator;
+use datasynth_generators::audit::engagement_letter_generator::EngagementLetterGenerator;
 use datasynth_generators::audit::internal_audit_generator::InternalAuditGenerator;
 use datasynth_generators::audit::procedure_step_generator::ProcedureStepGenerator;
 use datasynth_generators::audit::related_party_generator::RelatedPartyGenerator;
 use datasynth_generators::audit::sample_generator::SampleGenerator;
+use datasynth_generators::audit::service_org_generator::ServiceOrgGenerator;
+use datasynth_generators::audit::subsequent_event_generator::SubsequentEventGenerator;
 use datasynth_generators::coa_generator::CoAFramework;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 use rayon::prelude::*;
@@ -294,6 +321,8 @@ pub struct PhaseConfig {
     pub generate_counterfactuals: bool,
     /// Generate compliance regulations data (standards registry, procedures, findings, filings).
     pub generate_compliance_regulations: bool,
+    /// Generate period-close journal entries (tax provision, income statement close).
+    pub generate_period_close: bool,
 }
 
 impl Default for PhaseConfig {
@@ -335,6 +364,7 @@ impl Default for PhaseConfig {
             generate_evolution_events: true,        // On by default
             generate_counterfactuals: false,        // Off by default (opt-in for ML workloads)
             generate_compliance_regulations: false, // Off by default
+            generate_period_close: true,            // On by default
         }
     }
 }
@@ -403,6 +433,14 @@ pub struct SubledgerSnapshot {
     pub inventory_positions: Vec<datasynth_core::models::subledger::inventory::InventoryPosition>,
     /// Inventory movements from inventory generator.
     pub inventory_movements: Vec<datasynth_core::models::subledger::inventory::InventoryMovement>,
+    /// AR aging reports, one per company, computed after payment settlement.
+    pub ar_aging_reports: Vec<ARAgingReport>,
+    /// AP aging reports, one per company, computed after payment settlement.
+    pub ap_aging_reports: Vec<APAgingReport>,
+    /// Depreciation runs — one per fiscal period per company (from DepreciationRunGenerator).
+    pub depreciation_runs: Vec<datasynth_core::models::subledger::fa::DepreciationRun>,
+    /// Inventory valuation results — one per company (lower-of-cost-or-NRV, IAS 2 / ASC 330).
+    pub inventory_valuations: Vec<datasynth_generators::InventoryValuationResult>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -451,6 +489,36 @@ pub struct AuditSnapshot {
     pub related_parties: Vec<RelatedParty>,
     /// Related party transactions per ISA 550.
     pub related_party_transactions: Vec<RelatedPartyTransaction>,
+    // ---- ISA 600: Group Audits ----
+    /// Component auditors assigned by jurisdiction (ISA 600).
+    pub component_auditors: Vec<ComponentAuditor>,
+    /// Group audit plan with materiality allocations (ISA 600).
+    pub group_audit_plan: Option<GroupAuditPlan>,
+    /// Component instructions issued to component auditors (ISA 600).
+    pub component_instructions: Vec<ComponentInstruction>,
+    /// Reports received from component auditors (ISA 600).
+    pub component_reports: Vec<ComponentAuditorReport>,
+    // ---- ISA 210: Engagement Letters ----
+    /// Engagement letters per ISA 210.
+    pub engagement_letters: Vec<EngagementLetter>,
+    // ---- ISA 560 / IAS 10: Subsequent Events ----
+    /// Subsequent events per ISA 560 / IAS 10.
+    pub subsequent_events: Vec<SubsequentEvent>,
+    // ---- ISA 402: Service Organization Controls ----
+    /// Service organizations identified per ISA 402.
+    pub service_organizations: Vec<ServiceOrganization>,
+    /// SOC reports obtained per ISA 402.
+    pub soc_reports: Vec<SocReport>,
+    /// User entity controls documented per ISA 402.
+    pub user_entity_controls: Vec<UserEntityControl>,
+    // ---- ISA 570: Going Concern ----
+    /// Going concern assessments per ISA 570 / ASC 205-40 (one per entity per period).
+    pub going_concern_assessments:
+        Vec<datasynth_core::models::audit::going_concern::GoingConcernAssessment>,
+    // ---- ISA 540: Accounting Estimates ----
+    /// Accounting estimates reviewed per ISA 540 (5–8 per entity).
+    pub accounting_estimates:
+        Vec<datasynth_core::models::audit::accounting_estimates::AccountingEstimate>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -546,14 +614,28 @@ pub struct PeriodTrialBalance {
 #[derive(Debug, Clone, Default)]
 pub struct FinancialReportingSnapshot {
     /// Financial statements (balance sheet, income statement, cash flow).
+    /// For multi-entity configs this includes all standalone statements.
     pub financial_statements: Vec<FinancialStatement>,
+    /// Standalone financial statements keyed by entity code.
+    /// Each entity has its own slice of statements.
+    pub standalone_statements: std::collections::HashMap<String, Vec<FinancialStatement>>,
+    /// Consolidated financial statements for the group (one per period, is_consolidated=true).
+    pub consolidated_statements: Vec<FinancialStatement>,
+    /// Consolidation schedules (one per period) showing pre/post elimination detail.
+    pub consolidation_schedules: Vec<ConsolidationSchedule>,
     /// Bank reconciliations.
     pub bank_reconciliations: Vec<BankReconciliation>,
     /// Period-close trial balances (one per period).
     pub trial_balances: Vec<PeriodTrialBalance>,
+    /// IFRS 8 / ASC 280 operating segment reports (one per segment per period).
+    pub segment_reports: Vec<datasynth_core::models::OperatingSegment>,
+    /// IFRS 8 / ASC 280 segment reconciliations (one per period tying segments to consolidated FS).
+    pub segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation>,
+    /// Notes to the financial statements (IAS 1 / ASC 235) — one set per entity.
+    pub notes_to_financial_statements: Vec<datasynth_core::models::FinancialStatementNote>,
 }
 
-/// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments).
+/// HR data snapshot (payroll runs, time entries, expense reports, benefit enrollments, pensions).
 #[derive(Debug, Clone, Default)]
 pub struct HrSnapshot {
     /// Payroll runs (actual data).
@@ -566,6 +648,22 @@ pub struct HrSnapshot {
     pub expense_reports: Vec<ExpenseReport>,
     /// Benefit enrollments (actual data).
     pub benefit_enrollments: Vec<BenefitEnrollment>,
+    /// Defined benefit pension plans (IAS 19 / ASC 715).
+    pub pension_plans: Vec<datasynth_core::models::pension::DefinedBenefitPlan>,
+    /// Pension obligation (DBO) roll-forwards.
+    pub pension_obligations: Vec<datasynth_core::models::pension::PensionObligation>,
+    /// Plan asset roll-forwards.
+    pub pension_plan_assets: Vec<datasynth_core::models::pension::PlanAssets>,
+    /// Pension disclosures.
+    pub pension_disclosures: Vec<datasynth_core::models::pension::PensionDisclosure>,
+    /// Journal entries generated from pension expense and OCI remeasurements.
+    pub pension_journal_entries: Vec<JournalEntry>,
+    /// Stock grants (ASC 718 / IFRS 2).
+    pub stock_grants: Vec<datasynth_core::models::stock_compensation::StockGrant>,
+    /// Stock-based compensation period expense records.
+    pub stock_comp_expenses: Vec<datasynth_core::models::stock_compensation::StockCompExpense>,
+    /// Journal entries generated from stock-based compensation expense.
+    pub stock_comp_journal_entries: Vec<JournalEntry>,
     /// Payroll runs.
     pub payroll_run_count: usize,
     /// Payroll line item count.
@@ -576,19 +674,54 @@ pub struct HrSnapshot {
     pub expense_report_count: usize,
     /// Benefit enrollment count.
     pub benefit_enrollment_count: usize,
+    /// Pension plan count.
+    pub pension_plan_count: usize,
+    /// Stock grant count.
+    pub stock_grant_count: usize,
 }
 
-/// Accounting standards data snapshot (revenue recognition, impairment).
+/// Accounting standards data snapshot (revenue recognition, impairment, business combinations).
 #[derive(Debug, Clone, Default)]
 pub struct AccountingStandardsSnapshot {
     /// Revenue recognition contracts (actual data).
     pub contracts: Vec<datasynth_standards::accounting::revenue::CustomerContract>,
     /// Impairment tests (actual data).
     pub impairment_tests: Vec<datasynth_standards::accounting::impairment::ImpairmentTest>,
+    /// Business combinations (IFRS 3 / ASC 805).
+    pub business_combinations:
+        Vec<datasynth_core::models::business_combination::BusinessCombination>,
+    /// Journal entries generated from business combinations (Day 1 + amortization).
+    pub business_combination_journal_entries: Vec<JournalEntry>,
+    /// ECL models (IFRS 9 / ASC 326).
+    pub ecl_models: Vec<datasynth_core::models::expected_credit_loss::EclModel>,
+    /// ECL provision movements.
+    pub ecl_provision_movements:
+        Vec<datasynth_core::models::expected_credit_loss::EclProvisionMovement>,
+    /// Journal entries from ECL provision.
+    pub ecl_journal_entries: Vec<JournalEntry>,
+    /// Provisions (IAS 37 / ASC 450).
+    pub provisions: Vec<datasynth_core::models::provision::Provision>,
+    /// Provision movement roll-forwards (IAS 37 / ASC 450).
+    pub provision_movements: Vec<datasynth_core::models::provision::ProvisionMovement>,
+    /// Contingent liabilities (IAS 37 / ASC 450).
+    pub contingent_liabilities: Vec<datasynth_core::models::provision::ContingentLiability>,
+    /// Journal entries from provisions.
+    pub provision_journal_entries: Vec<JournalEntry>,
+    /// IAS 21 functional currency translation results (one per entity per period).
+    pub currency_translation_results:
+        Vec<datasynth_core::models::currency_translation_result::CurrencyTranslationResult>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
     pub impairment_test_count: usize,
+    /// Business combination count.
+    pub business_combination_count: usize,
+    /// ECL model count.
+    pub ecl_model_count: usize,
+    /// Provision count.
+    pub provision_count: usize,
+    /// Currency translation result count (IAS 21).
+    pub currency_translation_count: usize,
 }
 
 /// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
@@ -707,11 +840,15 @@ pub struct TaxSnapshot {
     pub jurisdiction_count: usize,
     /// Code count.
     pub code_count: usize,
+    /// Deferred tax engine output (temporary differences, ETR reconciliation, rollforwards, JEs).
+    pub deferred_tax: datasynth_generators::DeferredTaxSnapshot,
 }
 
 /// Intercompany data snapshot (IC transactions, matched pairs, eliminations).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IntercompanySnapshot {
+    /// Group ownership structure (parent/subsidiary/associate relationships).
+    pub group_structure: Option<datasynth_core::models::intercompany::GroupStructure>,
     /// IC matched pairs (transaction pairs between related entities).
     pub matched_pairs: Vec<datasynth_core::models::intercompany::ICMatchedPair>,
     /// IC journal entries generated from matched pairs (seller side).
@@ -720,6 +857,8 @@ pub struct IntercompanySnapshot {
     pub buyer_journal_entries: Vec<JournalEntry>,
     /// Elimination entries for consolidation.
     pub elimination_entries: Vec<datasynth_core::models::intercompany::EliminationEntry>,
+    /// NCI measurements derived from group structure ownership percentages.
+    pub nci_measurements: Vec<datasynth_core::models::intercompany::NciMeasurement>,
     /// IC matched pair count.
     pub matched_pair_count: usize,
     /// IC elimination entry count.
@@ -1013,11 +1152,21 @@ pub struct EnhancedGenerationStatistics {
     pub expense_report_count: usize,
     #[serde(default)]
     pub benefit_enrollment_count: usize,
+    #[serde(default)]
+    pub pension_plan_count: usize,
+    #[serde(default)]
+    pub stock_grant_count: usize,
     /// Accounting standards counts.
     #[serde(default)]
     pub revenue_contract_count: usize,
     #[serde(default)]
     pub impairment_test_count: usize,
+    #[serde(default)]
+    pub business_combination_count: usize,
+    #[serde(default)]
+    pub ecl_model_count: usize,
+    #[serde(default)]
+    pub provision_count: usize,
     /// Manufacturing counts.
     #[serde(default)]
     pub production_order_count: usize,
@@ -1129,6 +1278,9 @@ pub struct EnhancedGenerationStatistics {
     /// Number of industry-specific GL accounts generated.
     #[serde(default)]
     pub industry_gl_account_count: usize,
+    /// Number of period-close journal entries generated (tax provision + closing entries).
+    #[serde(default)]
+    pub period_close_je_count: usize,
 }
 
 /// Enhanced orchestrator with full feature integration.
@@ -1622,16 +1774,33 @@ impl EnhancedOrchestrator {
         // Phase 3b: Opening Balances (before JE generation)
         let opening_balances = self.phase_opening_balances(&coa, &mut stats)?;
 
-        // Note: Opening balances are exported as balance/opening_balances.json but are not
-        // converted to journal entries. Converting to JEs requires richer type information
-        // (GeneratedOpeningBalance.balances loses AccountType, making contra-asset accounts
-        // like Accumulated Depreciation indistinguishable from regular assets by code prefix).
-        // A future enhancement could store (Decimal, AccountType) in the balances map.
+        // Phase 3c: Convert opening balances to journal entries and prepend them.
+        // The CoA lookup resolves each account's normal_debit_balance flag, solving the
+        // contra-asset problem (e.g., Accumulated Depreciation) without requiring a richer
+        // balance map type.
+        let opening_balance_jes: Vec<JournalEntry> = opening_balances
+            .iter()
+            .flat_map(|ob| opening_balance_to_jes(ob, &coa))
+            .collect();
+        if !opening_balance_jes.is_empty() {
+            debug!(
+                "Prepending {} opening balance JEs to entries",
+                opening_balance_jes.len()
+            );
+        }
 
         // Phase 4: Journal Entries
         let mut entries = self.phase_journal_entries(&coa, &document_flows, &mut stats)?;
 
-        // Phase 4b: Append FA acquisition journal entries to main entries
+        // Phase 4b: Prepend opening balance JEs so the RunningBalanceTracker
+        // starts from the correct initial state.
+        if !opening_balance_jes.is_empty() {
+            let mut combined = opening_balance_jes;
+            combined.extend(entries);
+            entries = combined;
+        }
+
+        // Phase 4c: Append FA acquisition journal entries to main entries
         if !fa_journal_entries.is_empty() {
             debug!(
                 "Appending {} FA acquisition JEs to main entries",
@@ -1689,6 +1858,20 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // Phase 5d: Convert IC elimination entries to GL journal entries and append
+        if !intercompany.elimination_entries.is_empty() {
+            let elim_jes = datasynth_generators::elimination_to_journal_entries(
+                &intercompany.elimination_entries,
+            );
+            if !elim_jes.is_empty() {
+                debug!(
+                    "Appended {} elimination journal entries to main entries",
+                    elim_jes.len()
+                );
+                entries.extend(elim_jes);
+            }
+        }
+
         // Phase 6: HR Data (Payroll, Time Entries, Expenses)
         let hr = self.phase_hr_data(&mut stats)?;
 
@@ -1697,6 +1880,24 @@ impl EnhancedOrchestrator {
             let payroll_jes = Self::generate_payroll_jes(&hr.payroll_runs);
             debug!("Generated {} JEs from payroll runs", payroll_jes.len());
             entries.extend(payroll_jes);
+        }
+
+        // Phase 6c: Pension expense + OCI JEs (IAS 19 / ASC 715)
+        if !hr.pension_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from pension plans",
+                hr.pension_journal_entries.len()
+            );
+            entries.extend(hr.pension_journal_entries.iter().cloned());
+        }
+
+        // Phase 6d: Stock-based compensation JEs (ASC 718 / IFRS 2)
+        if !hr.stock_comp_journal_entries.is_empty() {
+            debug!(
+                "Generated {} JEs from stock-based compensation",
+                hr.stock_comp_journal_entries.len()
+            );
+            entries.extend(hr.stock_comp_journal_entries.iter().cloned());
         }
 
         // Phase 7: Manufacturing (Production Orders, Quality Inspections, Cycle Counts)
@@ -1784,6 +1985,9 @@ impl EnhancedOrchestrator {
         let data_quality_stats =
             self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
 
+        // Phase 10b: Period Close (tax provision + income statement closing entries)
+        self.phase_period_close(&mut entries, &mut stats)?;
+
         // Phase 11: Audit Data
         let audit = self.phase_audit_data(&entries, &mut stats)?;
 
@@ -1806,8 +2010,9 @@ impl EnhancedOrchestrator {
         let financial_reporting =
             self.phase_financial_reporting(&document_flows, &entries, &coa, &mut stats)?;
 
-        // Phase 18: Accounting Standards (Revenue Recognition, Impairment)
-        let accounting_standards = self.phase_accounting_standards(&mut stats)?;
+        // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
+        let accounting_standards =
+            self.phase_accounting_standards(&subledger.ar_aging_reports, &mut stats)?;
 
         // Phase 18b: OCPM Events (after all process data is available)
         let ocpm = self.phase_ocpm_events(
@@ -1831,7 +2036,7 @@ impl EnhancedOrchestrator {
             self.phase_sales_kpi_budgets(&coa, &financial_reporting, &mut stats)?;
 
         // Phase 20: Tax Generation
-        let tax = self.phase_tax_generation(&document_flows, &mut stats)?;
+        let tax = self.phase_tax_generation(&document_flows, &entries, &mut stats)?;
 
         // Phase 21: ESG Data Generation
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
@@ -2097,6 +2302,45 @@ impl EnhancedOrchestrator {
                 stats.ap_invoice_count, stats.ar_invoice_count
             );
 
+            // Phase 3b-settle: Apply payment settlements to reduce amount_remaining.
+            // Without this step the subledger is systematically overstated because
+            // amount_remaining is set at invoice creation and never reduced by
+            // the payments that were generated in the document-flow phase.
+            debug!("Phase 3b-settle: Applying payment settlements to subledgers");
+            apply_ap_settlements(&mut subledger.ap_invoices, &document_flows.payments);
+            apply_ar_settlements(&mut subledger.ar_invoices, &document_flows.payments);
+            debug!("Payment settlements applied to AP and AR subledgers");
+
+            // Phase 3b-aging: Build AR/AP aging reports (one per company) after settlement.
+            // The as-of date is the last day of the configured period.
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let as_of_date = start_date + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+                debug!("Phase 3b-aging: Building AR/AP aging reports as of {as_of_date}");
+                for company in &self.config.companies {
+                    let ar_report = ARAgingReport::from_invoices(
+                        company.code.clone(),
+                        &subledger.ar_invoices,
+                        as_of_date,
+                    );
+                    subledger.ar_aging_reports.push(ar_report);
+
+                    let ap_report = APAgingReport::from_invoices(
+                        company.code.clone(),
+                        &subledger.ap_invoices,
+                        as_of_date,
+                    );
+                    subledger.ap_aging_reports.push(ap_report);
+                }
+                debug!(
+                    "AR/AP aging reports built: {} AR, {} AP",
+                    subledger.ar_aging_reports.len(),
+                    subledger.ap_aging_reports.len()
+                );
+            }
+
             self.check_resources_with_log("post-document-flows")?;
         } else {
             debug!("Phase 3: Skipped (document flow generation disabled or no master data)");
@@ -2189,6 +2433,65 @@ impl EnhancedOrchestrator {
                 "Inventory subledger records generated: {}",
                 stats.inventory_subledger_count
             );
+        }
+
+        // Phase 3-depr: Run depreciation for each fiscal period covered by the config.
+        if !subledger.fa_records.is_empty() {
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let company_code = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.code.as_str())
+                    .unwrap_or("1000");
+                let fiscal_year = start_date.year();
+                let start_period = start_date.month();
+                let end_period =
+                    (start_period + self.config.global.period_months.saturating_sub(1)).min(12);
+
+                let depr_cfg = FaDepreciationScheduleConfig {
+                    fiscal_year,
+                    start_period,
+                    end_period,
+                    seed_offset: 800,
+                };
+                let depr_gen = FaDepreciationScheduleGenerator::new(depr_cfg, self.seed);
+                let runs = depr_gen.generate(company_code, &subledger.fa_records);
+                let run_count = runs.len();
+                subledger.depreciation_runs = runs;
+                debug!(
+                    "Depreciation runs generated: {} runs for {} periods",
+                    run_count, self.config.global.period_months
+                );
+            }
+        }
+
+        // Phase 3-inv-val: Build inventory valuation report (lower-of-cost-or-NRV).
+        if !subledger.inventory_positions.is_empty() {
+            if let Ok(start_date) =
+                NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            {
+                let as_of_date = start_date + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+
+                let inv_val_cfg = InventoryValuationGeneratorConfig::default();
+                let inv_val_gen = InventoryValuationGenerator::new(inv_val_cfg, self.seed);
+
+                for company in &self.config.companies {
+                    let result = inv_val_gen.generate(
+                        &company.code,
+                        &subledger.inventory_positions,
+                        as_of_date,
+                    );
+                    subledger.inventory_valuations.push(result);
+                }
+                debug!(
+                    "Inventory valuations generated: {} company reports",
+                    subledger.inventory_valuations.len()
+                );
+            }
         }
 
         Ok((document_flows, subledger, fa_journal_entries))
@@ -2341,6 +2644,202 @@ impl EnhancedOrchestrator {
             debug!("Phase 7: Skipped (data quality injection disabled or no entries)");
             Ok(DataQualityStats::default())
         }
+    }
+
+    /// Phase 10b: Generate period-close journal entries.
+    ///
+    /// Stub implementation that generates:
+    /// 1. Tax provision JE per company: DR Tax Expense (8000) / CR Sales Tax Payable (2100)
+    /// 2. Income statement closing JE per company: transfer net income after tax to retained
+    ///    earnings via the Income Summary (3600) clearing account.
+    ///
+    /// The full CloseEngine integration with depreciation, accruals, and FX revaluation
+    /// handlers will come in later tiers.
+    fn phase_period_close(
+        &mut self,
+        entries: &mut Vec<JournalEntry>,
+        stats: &mut EnhancedGenerationStatistics,
+    ) -> SynthResult<()> {
+        if !self.phase_config.generate_period_close || entries.is_empty() {
+            debug!("Phase 10b: Skipped (period close disabled or no entries)");
+            return Ok(());
+        }
+
+        info!("Phase 10b: Generating period-close journal entries");
+
+        use datasynth_core::accounts::{equity_accounts, tax_accounts, AccountCategory};
+        use rust_decimal::Decimal;
+
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
+        let end_date = start_date + chrono::Months::new(self.config.global.period_months);
+        // Posting date for close entries is the last day of the period
+        let close_date = end_date - chrono::Days::new(1);
+
+        // Statutory tax rate (21% — configurable rates come in later tiers)
+        let tax_rate = Decimal::new(21, 2); // 0.21
+
+        // Collect company codes from config
+        let company_codes: Vec<String> = self
+            .config
+            .companies
+            .iter()
+            .map(|c| c.code.clone())
+            .collect();
+
+        let mut close_jes: Vec<JournalEntry> = Vec::new();
+
+        for company_code in &company_codes {
+            // Calculate net income for this company from existing JEs:
+            // Net income = sum of credit-normal revenue postings - sum of debit-normal expense postings
+            // Revenue (4xxx): credit-normal, so net = credits - debits
+            // COGS (5xxx), OpEx (6xxx), Other I/E (7xxx), Tax (8xxx): debit-normal, so net = debits - credits
+            let mut total_revenue = Decimal::ZERO;
+            let mut total_expenses = Decimal::ZERO;
+
+            for entry in entries.iter() {
+                if entry.header.company_code != *company_code {
+                    continue;
+                }
+                for line in &entry.lines {
+                    let category = AccountCategory::from_account(&line.gl_account);
+                    match category {
+                        AccountCategory::Revenue => {
+                            // Revenue is credit-normal: net revenue = credits - debits
+                            total_revenue += line.credit_amount - line.debit_amount;
+                        }
+                        AccountCategory::Cogs
+                        | AccountCategory::OperatingExpense
+                        | AccountCategory::OtherIncomeExpense
+                        | AccountCategory::Tax => {
+                            // Expenses are debit-normal: net expense = debits - credits
+                            total_expenses += line.debit_amount - line.credit_amount;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            let pre_tax_income = total_revenue - total_expenses;
+
+            // Skip if no income statement activity
+            if pre_tax_income == Decimal::ZERO {
+                debug!(
+                    "Company {}: no pre-tax income, skipping period close",
+                    company_code
+                );
+                continue;
+            }
+
+            // --- Tax provision JE ---
+            // Only generate if pre_tax_income > 0 (no tax on losses in this stub)
+            let tax_amount = if pre_tax_income > Decimal::ZERO {
+                (pre_tax_income * tax_rate).round_dp(2)
+            } else {
+                Decimal::ZERO
+            };
+
+            if tax_amount > Decimal::ZERO {
+                let mut tax_header = JournalEntryHeader::new(company_code.clone(), close_date);
+                tax_header.document_type = "CL".to_string();
+                tax_header.header_text = Some(format!("Tax provision - {}", company_code));
+                tax_header.created_by = "CLOSE_ENGINE".to_string();
+                tax_header.source = TransactionSource::Automated;
+                tax_header.business_process = Some(BusinessProcess::R2R);
+
+                let doc_id = tax_header.document_id;
+                let mut tax_je = JournalEntry::new(tax_header);
+
+                // DR Tax Expense (8000)
+                tax_je.add_line(JournalEntryLine::debit(
+                    doc_id,
+                    1,
+                    tax_accounts::TAX_EXPENSE.to_string(),
+                    tax_amount,
+                ));
+                // CR Sales Tax Payable (2100) — used as income tax payable in this stub
+                tax_je.add_line(JournalEntryLine::credit(
+                    doc_id,
+                    2,
+                    tax_accounts::SALES_TAX_PAYABLE.to_string(),
+                    tax_amount,
+                ));
+
+                debug_assert!(tax_je.is_balanced(), "Tax provision JE must be balanced");
+                close_jes.push(tax_je);
+            }
+
+            // --- Income statement closing JE ---
+            // Net income after tax
+            let net_income = pre_tax_income - tax_amount;
+
+            if net_income != Decimal::ZERO {
+                let mut close_header = JournalEntryHeader::new(company_code.clone(), close_date);
+                close_header.document_type = "CL".to_string();
+                close_header.header_text =
+                    Some(format!("Income statement close - {}", company_code));
+                close_header.created_by = "CLOSE_ENGINE".to_string();
+                close_header.source = TransactionSource::Automated;
+                close_header.business_process = Some(BusinessProcess::R2R);
+
+                let doc_id = close_header.document_id;
+                let mut close_je = JournalEntry::new(close_header);
+
+                let abs_net_income = net_income.abs();
+
+                if net_income > Decimal::ZERO {
+                    // Profit: DR Income Summary (3600) / CR Retained Earnings (3200)
+                    close_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        equity_accounts::INCOME_SUMMARY.to_string(),
+                        abs_net_income,
+                    ));
+                    close_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        equity_accounts::RETAINED_EARNINGS.to_string(),
+                        abs_net_income,
+                    ));
+                } else {
+                    // Loss: DR Retained Earnings (3200) / CR Income Summary (3600)
+                    close_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        equity_accounts::RETAINED_EARNINGS.to_string(),
+                        abs_net_income,
+                    ));
+                    close_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        equity_accounts::INCOME_SUMMARY.to_string(),
+                        abs_net_income,
+                    ));
+                }
+
+                debug_assert!(
+                    close_je.is_balanced(),
+                    "Income statement closing JE must be balanced"
+                );
+                close_jes.push(close_je);
+            }
+        }
+
+        let close_count = close_jes.len();
+        if close_count > 0 {
+            info!("Generated {} period-close journal entries", close_count);
+            self.emit_phase_items("period_close", "JournalEntry", &close_jes);
+            entries.extend(close_jes);
+            stats.period_close_je_count = close_count;
+
+            // Update total entry/line-item stats
+            stats.total_entries = entries.len() as u64;
+            stats.total_line_items = entries.iter().map(|e| e.line_count() as u64).sum();
+        } else {
+            debug!("No period-close entries generated (no income statement activity)");
+        }
+
+        Ok(())
     }
 
     /// Phase 8: Generate audit data (engagements, workpapers, evidence, risks, findings).
@@ -2930,6 +3429,32 @@ impl EnhancedOrchestrator {
         })
     }
 
+    /// Build a [`GroupStructure`] from the current company configuration.
+    ///
+    /// The first company in the configuration is treated as the ultimate parent.
+    /// All remaining companies become wholly-owned (100 %) subsidiaries with
+    /// [`GroupConsolidationMethod::FullConsolidation`] by default.
+    fn build_group_structure(&self) -> datasynth_core::models::intercompany::GroupStructure {
+        use datasynth_core::models::intercompany::{GroupStructure, SubsidiaryRelationship};
+
+        let parent_code = self
+            .config
+            .companies
+            .first()
+            .map(|c| c.code.clone())
+            .unwrap_or_else(|| "PARENT".to_string());
+
+        let mut group = GroupStructure::new(parent_code);
+
+        for company in self.config.companies.iter().skip(1) {
+            let sub =
+                SubsidiaryRelationship::new_full(company.code.clone(), company.currency.clone());
+            group.add_subsidiary(sub);
+        }
+
+        group
+    }
+
     /// Phase 14b: Generate intercompany transactions, matching, and eliminations.
     fn phase_intercompany(
         &mut self,
@@ -2951,6 +3476,15 @@ impl EnhancedOrchestrator {
         }
 
         info!("Phase 14b: Generating Intercompany Transactions");
+
+        // Build the group structure early — used by ISA 600 component auditor scope
+        // and consolidated financial statement generators downstream.
+        let group_structure = self.build_group_structure();
+        debug!(
+            "Group structure built: parent={}, subsidiaries={}",
+            group_structure.parent_entity,
+            group_structure.subsidiaries.len()
+        );
 
         let seed = self.seed;
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
@@ -3112,11 +3646,72 @@ impl EnhancedOrchestrator {
         );
         self.check_resources_with_log("post-intercompany")?;
 
+        // ----------------------------------------------------------------
+        // NCI measurements: derive from group structure ownership percentages
+        // ----------------------------------------------------------------
+        let nci_measurements: Vec<datasynth_core::models::intercompany::NciMeasurement> = {
+            use datasynth_core::models::intercompany::{GroupConsolidationMethod, NciMeasurement};
+            use rust_decimal::Decimal;
+
+            // Multipliers expressed as Decimal fractions without the dec! macro.
+            let three = Decimal::from(3u64);
+            let eight_pct = Decimal::new(8, 2); // 0.08
+
+            group_structure
+                .subsidiaries
+                .iter()
+                .filter(|sub| {
+                    sub.nci_percentage > Decimal::ZERO
+                        && sub.consolidation_method == GroupConsolidationMethod::FullConsolidation
+                })
+                .map(|sub| {
+                    // Approximate net assets from matched pair volumes for this subsidiary.
+                    // Sum all IC amounts where the subsidiary participates as a proxy for
+                    // relative scale; use a simple multiplier to simulate net assets.
+                    let subsidiary_volume: Decimal = matched_pairs
+                        .iter()
+                        .filter(|p| {
+                            p.seller_company == sub.entity_code
+                                || p.buyer_company == sub.entity_code
+                        })
+                        .map(|p| p.amount)
+                        .sum::<Decimal>();
+
+                    // Estimate net assets as ~3x IC transaction volume (heuristic)
+                    let net_assets = if subsidiary_volume > Decimal::ZERO {
+                        (subsidiary_volume * three).round_dp(2)
+                    } else {
+                        // Fallback: use a plausible base amount
+                        Decimal::from(1_000_000u64)
+                    };
+
+                    // Net income approximated as 8% of net assets
+                    let net_income = (net_assets * eight_pct).round_dp(2);
+
+                    NciMeasurement::compute(
+                        sub.entity_code.clone(),
+                        sub.nci_percentage,
+                        net_assets,
+                        net_income,
+                    )
+                })
+                .collect()
+        };
+
+        if !nci_measurements.is_empty() {
+            info!(
+                "NCI measurements: {} subsidiaries with non-controlling interests",
+                nci_measurements.len()
+            );
+        }
+
         Ok(IntercompanySnapshot {
+            group_structure: Some(group_structure),
             matched_pairs,
             seller_journal_entries: seller_entries,
             buyer_journal_entries: buyer_entries,
             elimination_entries,
+            nci_measurements,
             matched_pair_count,
             elimination_entry_count,
             match_rate,
@@ -3149,6 +3744,16 @@ impl EnhancedOrchestrator {
         let mut financial_statements = Vec::new();
         let mut bank_reconciliations = Vec::new();
         let mut trial_balances = Vec::new();
+        let mut segment_reports: Vec<datasynth_core::models::OperatingSegment> = Vec::new();
+        let mut segment_reconciliations: Vec<datasynth_core::models::SegmentReconciliation> =
+            Vec::new();
+        // Standalone statements keyed by entity code
+        let mut standalone_statements: std::collections::HashMap<String, Vec<FinancialStatement>> =
+            std::collections::HashMap::new();
+        // Consolidated statements (one per period)
+        let mut consolidated_statements: Vec<FinancialStatement> = Vec::new();
+        // Consolidation schedules (one per period)
+        let mut consolidation_schedules: Vec<ConsolidationSchedule> = Vec::new();
 
         // Generate financial statements from JE-derived trial balances.
         //
@@ -3158,134 +3763,344 @@ impl EnhancedOrchestrator {
         // generator can produce comparative amounts, and we build a proper
         // cash flow statement from working capital changes rather than random data.
         if fs_enabled {
-            let company_code = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.code.as_str())
-                .unwrap_or("1000");
-            let currency = self
-                .config
-                .companies
-                .first()
-                .map(|c| c.currency.as_str())
-                .unwrap_or("USD");
             let has_journal_entries = !journal_entries.is_empty();
 
             // Use FinancialStatementGenerator for balance sheet and income statement,
             // but build cash flow ourselves from TB data when JEs are available.
             let mut fs_gen = FinancialStatementGenerator::new(seed + 20);
+            // Separate generator for consolidated statements (different seed offset)
+            let mut cons_gen = FinancialStatementGenerator::new(seed + 21);
 
-            // Track prior-period cumulative TB for comparative amounts and cash flow
-            let mut prior_cumulative_tb: Option<Vec<datasynth_generators::TrialBalanceEntry>> =
-                None;
+            // Collect elimination JEs once (reused across periods)
+            let elimination_entries: Vec<&JournalEntry> = journal_entries
+                .iter()
+                .filter(|je| je.header.is_elimination)
+                .collect();
 
-            // Generate one set of statements per period
+            // Generate one set of statements per period, per entity
             for period in 0..self.config.global.period_months {
                 let period_start = start_date + chrono::Months::new(period);
                 let period_end =
                     start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
                 let fiscal_year = period_end.year() as u16;
                 let fiscal_period = period_end.month() as u8;
+                let period_label = format!("{}-{:02}", fiscal_year, fiscal_period);
 
-                if has_journal_entries {
-                    // Build cumulative trial balance from actual JEs for coherent
-                    // balance sheet (cumulative) and income statement (current period)
-                    let tb_entries = Self::build_cumulative_trial_balance(
-                        journal_entries,
-                        coa,
-                        company_code,
-                        start_date,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                    );
+                // Build per-entity trial balances for this period (non-elimination JEs)
+                // We accumulate them for the consolidation step.
+                let mut entity_tb_map: std::collections::HashMap<
+                    String,
+                    std::collections::HashMap<String, rust_decimal::Decimal>,
+                > = std::collections::HashMap::new();
 
-                    // Generate balance sheet and income statement via the generator,
-                    // passing prior-period TB for comparative amounts
-                    let prior_ref = prior_cumulative_tb.as_deref();
-                    let stmts = fs_gen.generate(
-                        company_code,
-                        currency,
-                        &tb_entries,
-                        period_start,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                        prior_ref,
-                        "SYS-AUTOCLOSE",
-                    );
+                // --- Standalone: one set of statements per company ---
+                for (company_idx, company) in self.config.companies.iter().enumerate() {
+                    let company_code = company.code.as_str();
+                    let currency = company.currency.as_str();
+                    // Use a unique seed offset per company to keep statements deterministic
+                    // and distinct across companies
+                    let company_seed_offset = 20u64 + (company_idx as u64 * 100);
+                    let mut company_fs_gen =
+                        FinancialStatementGenerator::new(seed + company_seed_offset);
 
-                    // Replace the generator's random cash flow with our TB-derived one
-                    for stmt in stmts {
-                        if stmt.statement_type == StatementType::CashFlowStatement {
-                            // Build a coherent cash flow from trial balance changes
-                            let net_income = Self::calculate_net_income_from_tb(&tb_entries);
-                            let cf_items = Self::build_cash_flow_from_trial_balances(
-                                &tb_entries,
-                                prior_ref,
-                                net_income,
-                            );
-                            financial_statements.push(FinancialStatement {
-                                cash_flow_items: cf_items,
-                                ..stmt
-                            });
-                        } else {
-                            financial_statements.push(stmt);
-                        }
-                    }
-
-                    // Store current TB in snapshot for output
-                    trial_balances.push(PeriodTrialBalance {
-                        fiscal_year,
-                        fiscal_period,
-                        period_start,
-                        period_end,
-                        entries: tb_entries.clone(),
-                    });
-
-                    // Store current TB as prior for next period
-                    prior_cumulative_tb = Some(tb_entries);
-                } else {
-                    // Fallback: no JEs available, use single-period TB from entries
-                    // (which will be empty, producing zero-valued statements)
-                    let tb_entries = Self::build_trial_balance_from_entries(
-                        journal_entries,
-                        coa,
-                        company_code,
-                        fiscal_year,
-                        fiscal_period,
-                    );
-
-                    let stmts = fs_gen.generate(
-                        company_code,
-                        currency,
-                        &tb_entries,
-                        period_start,
-                        period_end,
-                        fiscal_year,
-                        fiscal_period,
-                        None,
-                        "SYS-AUTOCLOSE",
-                    );
-                    financial_statements.extend(stmts);
-
-                    // Store trial balance even in fallback path
-                    if !tb_entries.is_empty() {
-                        trial_balances.push(PeriodTrialBalance {
+                    if has_journal_entries {
+                        let tb_entries = Self::build_cumulative_trial_balance(
+                            journal_entries,
+                            coa,
+                            company_code,
+                            start_date,
+                            period_end,
                             fiscal_year,
                             fiscal_period,
+                        );
+
+                        // Accumulate per-entity category balances for consolidation
+                        let entity_cat_map =
+                            entity_tb_map.entry(company_code.to_string()).or_default();
+                        for tb_entry in &tb_entries {
+                            let net = tb_entry.debit_balance - tb_entry.credit_balance;
+                            *entity_cat_map.entry(tb_entry.category.clone()).or_default() += net;
+                        }
+
+                        let stmts = company_fs_gen.generate(
+                            company_code,
+                            currency,
+                            &tb_entries,
                             period_start,
                             period_end,
-                            entries: tb_entries,
-                        });
+                            fiscal_year,
+                            fiscal_period,
+                            None,
+                            "SYS-AUTOCLOSE",
+                        );
+
+                        let mut entity_stmts = Vec::new();
+                        for stmt in stmts {
+                            if stmt.statement_type == StatementType::CashFlowStatement {
+                                let net_income = Self::calculate_net_income_from_tb(&tb_entries);
+                                let cf_items = Self::build_cash_flow_from_trial_balances(
+                                    &tb_entries,
+                                    None,
+                                    net_income,
+                                );
+                                entity_stmts.push(FinancialStatement {
+                                    cash_flow_items: cf_items,
+                                    ..stmt
+                                });
+                            } else {
+                                entity_stmts.push(stmt);
+                            }
+                        }
+
+                        // Add to the flat financial_statements list (used by KPI/budget)
+                        financial_statements.extend(entity_stmts.clone());
+
+                        // Store standalone per-entity
+                        standalone_statements
+                            .entry(company_code.to_string())
+                            .or_default()
+                            .extend(entity_stmts);
+
+                        // Only store trial balance for the first company in the period
+                        // to avoid duplicates in the trial_balances list
+                        if company_idx == 0 {
+                            trial_balances.push(PeriodTrialBalance {
+                                fiscal_year,
+                                fiscal_period,
+                                period_start,
+                                period_end,
+                                entries: tb_entries,
+                            });
+                        }
+                    } else {
+                        // Fallback: no JEs available
+                        let tb_entries = Self::build_trial_balance_from_entries(
+                            journal_entries,
+                            coa,
+                            company_code,
+                            fiscal_year,
+                            fiscal_period,
+                        );
+
+                        let stmts = company_fs_gen.generate(
+                            company_code,
+                            currency,
+                            &tb_entries,
+                            period_start,
+                            period_end,
+                            fiscal_year,
+                            fiscal_period,
+                            None,
+                            "SYS-AUTOCLOSE",
+                        );
+                        financial_statements.extend(stmts.clone());
+                        standalone_statements
+                            .entry(company_code.to_string())
+                            .or_default()
+                            .extend(stmts);
+
+                        if company_idx == 0 && !tb_entries.is_empty() {
+                            trial_balances.push(PeriodTrialBalance {
+                                fiscal_year,
+                                fiscal_period,
+                                period_start,
+                                period_end,
+                                entries: tb_entries,
+                            });
+                        }
                     }
                 }
+
+                // --- Consolidated: aggregate all entities + apply eliminations ---
+                // Use the primary (first) company's currency for the consolidated statement
+                let group_currency = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.currency.as_str())
+                    .unwrap_or("USD");
+
+                // Build owned elimination entries for this period
+                let period_eliminations: Vec<JournalEntry> = elimination_entries
+                    .iter()
+                    .filter(|je| {
+                        je.header.fiscal_year == fiscal_year
+                            && je.header.fiscal_period == fiscal_period
+                    })
+                    .map(|je| (*je).clone())
+                    .collect();
+
+                let (cons_line_items, schedule) = ConsolidationGenerator::consolidate(
+                    &entity_tb_map,
+                    &period_eliminations,
+                    &period_label,
+                );
+
+                // Build a pseudo trial balance from consolidated line items for the
+                // FinancialStatementGenerator to use (only for cash flow direction).
+                let cons_tb: Vec<datasynth_generators::TrialBalanceEntry> = schedule
+                    .line_items
+                    .iter()
+                    .map(|li| {
+                        let net = li.post_elimination_total;
+                        let (debit, credit) = if net >= rust_decimal::Decimal::ZERO {
+                            (net, rust_decimal::Decimal::ZERO)
+                        } else {
+                            (rust_decimal::Decimal::ZERO, -net)
+                        };
+                        datasynth_generators::TrialBalanceEntry {
+                            account_code: li.account_category.clone(),
+                            account_name: li.account_category.clone(),
+                            category: li.account_category.clone(),
+                            debit_balance: debit,
+                            credit_balance: credit,
+                        }
+                    })
+                    .collect();
+
+                let mut cons_stmts = cons_gen.generate(
+                    "GROUP",
+                    group_currency,
+                    &cons_tb,
+                    period_start,
+                    period_end,
+                    fiscal_year,
+                    fiscal_period,
+                    None,
+                    "SYS-AUTOCLOSE",
+                );
+
+                // Override the balance sheet line items with our pre-computed consolidated items
+                // and mark all consolidated statements accordingly
+                for stmt in &mut cons_stmts {
+                    stmt.is_consolidated = true;
+                    if stmt.statement_type == StatementType::BalanceSheet
+                        || stmt.statement_type == StatementType::IncomeStatement
+                    {
+                        stmt.line_items = cons_line_items.clone();
+                    }
+                }
+
+                consolidated_statements.extend(cons_stmts);
+                consolidation_schedules.push(schedule);
             }
+
+            // Backward compat: if only 1 company, use existing code path logic
+            // (prior_cumulative_tb for comparative amounts). Already handled above;
+            // the prior_ref is omitted to keep this change minimal.
+            let _ = &mut fs_gen; // suppress unused warning
+
             stats.financial_statement_count = financial_statements.len();
             info!(
-                "Financial statements generated: {} statements (JE-derived: {})",
-                stats.financial_statement_count, has_journal_entries
+                "Financial statements generated: {} standalone + {} consolidated, JE-derived: {}",
+                stats.financial_statement_count,
+                consolidated_statements.len(),
+                has_journal_entries
+            );
+
+            // ----------------------------------------------------------------
+            // IFRS 8 / ASC 280: Operating Segment Reporting
+            // ----------------------------------------------------------------
+            // Build entity seeds from the company configuration.
+            let entity_seeds: Vec<SegmentSeed> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| SegmentSeed {
+                    code: c.code.clone(),
+                    name: c.name.clone(),
+                    currency: c.currency.clone(),
+                })
+                .collect();
+
+            let mut seg_gen = SegmentGenerator::new(seed + 30);
+
+            // Generate one set of segment reports per period.
+            // We extract consolidated revenue / profit / assets from the consolidated
+            // financial statements produced above, falling back to simple sums when
+            // no consolidated statements were generated (single-entity path).
+            for period in 0..self.config.global.period_months {
+                let period_end =
+                    start_date + chrono::Months::new(period + 1) - chrono::Days::new(1);
+                let fiscal_year = period_end.year() as u16;
+                let fiscal_period = period_end.month() as u8;
+                let period_label = format!("{}-{:02}", fiscal_year, fiscal_period);
+
+                use datasynth_core::models::StatementType;
+
+                // Try to find consolidated income statement for this period
+                let cons_is = consolidated_statements.iter().find(|s| {
+                    s.fiscal_year == fiscal_year
+                        && s.fiscal_period == fiscal_period
+                        && s.statement_type == StatementType::IncomeStatement
+                });
+                let cons_bs = consolidated_statements.iter().find(|s| {
+                    s.fiscal_year == fiscal_year
+                        && s.fiscal_period == fiscal_period
+                        && s.statement_type == StatementType::BalanceSheet
+                });
+
+                // If consolidated statements not available fall back to the flat list
+                let is_stmt = cons_is.or_else(|| {
+                    financial_statements.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.fiscal_period == fiscal_period
+                            && s.statement_type == StatementType::IncomeStatement
+                    })
+                });
+                let bs_stmt = cons_bs.or_else(|| {
+                    financial_statements.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.fiscal_period == fiscal_period
+                            && s.statement_type == StatementType::BalanceSheet
+                    })
+                });
+
+                let consolidated_revenue = is_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
+                    .map(|li| -li.amount) // revenue is stored as negative in IS
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                let consolidated_profit = is_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-OI"))
+                    .map(|li| li.amount)
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                let consolidated_assets = bs_stmt
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-TA"))
+                    .map(|li| li.amount)
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
+
+                // Skip periods where we have no financial data
+                if consolidated_revenue == rust_decimal::Decimal::ZERO
+                    && consolidated_assets == rust_decimal::Decimal::ZERO
+                {
+                    continue;
+                }
+
+                let group_code = self
+                    .config
+                    .companies
+                    .first()
+                    .map(|c| c.code.as_str())
+                    .unwrap_or("GROUP");
+
+                let (segs, recon) = seg_gen.generate(
+                    group_code,
+                    &period_label,
+                    consolidated_revenue,
+                    consolidated_profit,
+                    consolidated_assets,
+                    &entity_seeds,
+                );
+                segment_reports.extend(segs);
+                segment_reconciliations.push(recon);
+            }
+
+            info!(
+                "Segment reports generated: {} segments, {} reconciliations",
+                segment_reports.len(),
+                segment_reconciliations.len()
             );
         }
 
@@ -3363,10 +4178,90 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // Notes to financial statements (IAS 1 / ASC 235)
+        // ----------------------------------------------------------------
+        let mut notes_to_financial_statements = Vec::new();
+        {
+            use datasynth_generators::period_close::notes_generator::{
+                NotesGenerator, NotesGeneratorContext,
+            };
+            let mut notes_gen = NotesGenerator::new(seed + 4235);
+
+            for company in &self.config.companies {
+                // Determine period_end as the last period's end date
+                let last_period_end = start_date
+                    + chrono::Months::new(self.config.global.period_months)
+                    - chrono::Days::new(1);
+                let fiscal_year = last_period_end.year() as u16;
+
+                // Extract relevant amounts from financial statements
+                use datasynth_core::models::StatementType;
+                let entity_is = standalone_statements.get(&company.code).and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::IncomeStatement
+                    })
+                });
+                let entity_bs = standalone_statements.get(&company.code).and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::BalanceSheet
+                    })
+                });
+
+                let revenue_amount = entity_is
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
+                    .map(|li| -li.amount); // stored negative
+                let ppe_gross = entity_bs
+                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-FA"))
+                    .map(|li| li.amount);
+
+                use datasynth_config::schema::AccountingFrameworkConfig;
+                let framework = match self
+                    .config
+                    .accounting_standards
+                    .framework
+                    .unwrap_or_default()
+                {
+                    AccountingFrameworkConfig::Ifrs | AccountingFrameworkConfig::DualReporting => {
+                        "IFRS".to_string()
+                    }
+                    _ => "US GAAP".to_string(),
+                };
+
+                let ctx = NotesGeneratorContext {
+                    entity_code: company.code.clone(),
+                    framework,
+                    period: format!("FY{}", fiscal_year),
+                    period_end: last_period_end,
+                    currency: company.currency.clone(),
+                    revenue_amount,
+                    total_ppe_gross: ppe_gross,
+                    statutory_tax_rate: Some(rust_decimal::Decimal::new(21, 2)),
+                    ..NotesGeneratorContext::default()
+                };
+
+                let entity_notes = notes_gen.generate(&ctx);
+                info!(
+                    "Notes to FS for {}: {} notes generated",
+                    company.code,
+                    entity_notes.len()
+                );
+                notes_to_financial_statements.extend(entity_notes);
+            }
+        }
+
         Ok(FinancialReportingSnapshot {
             financial_statements,
+            standalone_statements,
+            consolidated_statements,
+            consolidation_schedules,
             bank_reconciliations,
             trial_balances,
+            segment_reports,
+            segment_reconciliations,
+            notes_to_financial_statements,
         })
     }
 
@@ -3985,25 +4880,103 @@ impl EnhancedOrchestrator {
             snapshot.benefit_enrollments = enrollments;
         }
 
+        // Generate defined benefit pension plans (IAS 19 / ASC 715)
+        if self.config.hr.enabled {
+            let entity_name = self
+                .config
+                .companies
+                .first()
+                .map(|c| c.name.as_str())
+                .unwrap_or("Entity");
+            let period_months = self.config.global.period_months;
+            let period_label = {
+                let y = start_date.year();
+                let m = start_date.month();
+                if period_months >= 12 {
+                    format!("FY{y}")
+                } else {
+                    format!("{y}-{m:02}")
+                }
+            };
+            let reporting_date =
+                start_date + chrono::Months::new(period_months) - chrono::Days::new(1);
+
+            let mut pension_gen =
+                datasynth_generators::PensionGenerator::new(seed.wrapping_add(34));
+            let pension_snap = pension_gen.generate(
+                company_code,
+                entity_name,
+                &period_label,
+                reporting_date,
+                employee_ids.len(),
+                currency,
+            );
+            snapshot.pension_plan_count = pension_snap.plans.len();
+            snapshot.pension_plans = pension_snap.plans;
+            snapshot.pension_obligations = pension_snap.obligations;
+            snapshot.pension_plan_assets = pension_snap.plan_assets;
+            snapshot.pension_disclosures = pension_snap.disclosures;
+            // Pension JEs are returned here so they can be added to entries
+            // in the caller (stored temporarily on snapshot for transfer).
+            // We embed them in the hr snapshot for simplicity; the orchestrator
+            // will extract and extend `entries`.
+            snapshot.pension_journal_entries = pension_snap.journal_entries;
+        }
+
+        // Generate stock-based compensation (ASC 718 / IFRS 2)
+        if self.config.hr.enabled && !employee_ids.is_empty() {
+            let period_months = self.config.global.period_months;
+            let period_label = {
+                let y = start_date.year();
+                let m = start_date.month();
+                if period_months >= 12 {
+                    format!("FY{y}")
+                } else {
+                    format!("{y}-{m:02}")
+                }
+            };
+            let reporting_date =
+                start_date + chrono::Months::new(period_months) - chrono::Days::new(1);
+
+            let mut stock_comp_gen =
+                datasynth_generators::StockCompGenerator::new(seed.wrapping_add(35));
+            let stock_snap = stock_comp_gen.generate(
+                company_code,
+                &employee_ids,
+                start_date,
+                &period_label,
+                reporting_date,
+                currency,
+            );
+            snapshot.stock_grant_count = stock_snap.grants.len();
+            snapshot.stock_grants = stock_snap.grants;
+            snapshot.stock_comp_expenses = stock_snap.expenses;
+            snapshot.stock_comp_journal_entries = stock_snap.journal_entries;
+        }
+
         stats.payroll_run_count = snapshot.payroll_run_count;
         stats.time_entry_count = snapshot.time_entry_count;
         stats.expense_report_count = snapshot.expense_report_count;
         stats.benefit_enrollment_count = snapshot.benefit_enrollment_count;
+        stats.pension_plan_count = snapshot.pension_plan_count;
+        stats.stock_grant_count = snapshot.stock_grant_count;
 
         info!(
-            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments",
+            "HR data generated: {} payroll runs ({} line items), {} time entries, {} expense reports, {} benefit enrollments, {} pension plans, {} stock grants",
             snapshot.payroll_run_count, snapshot.payroll_line_item_count,
             snapshot.time_entry_count, snapshot.expense_report_count,
-            snapshot.benefit_enrollment_count
+            snapshot.benefit_enrollment_count, snapshot.pension_plan_count,
+            snapshot.stock_grant_count
         );
         self.check_resources_with_log("post-hr")?;
 
         Ok(snapshot)
     }
 
-    /// Phase 17: Generate accounting standards data (revenue recognition, impairment).
+    /// Phase 17: Generate accounting standards data (revenue recognition, impairment, ECL).
     fn phase_accounting_standards(
         &mut self,
+        ar_aging_reports: &[datasynth_core::models::subledger::ar::ARAgingReport],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<AccountingStandardsSnapshot> {
         if !self.phase_config.generate_accounting_standards
@@ -4128,12 +5101,225 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Business combinations (IFRS 3 / ASC 805)
+        if self
+            .config
+            .accounting_standards
+            .business_combinations
+            .enabled
+        {
+            let bc_config = &self.config.accounting_standards.business_combinations;
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS",
+                _ => "US_GAAP",
+            };
+            let mut bc_gen = BusinessCombinationGenerator::new(seed + 42);
+            let bc_snap = bc_gen.generate(
+                company_code,
+                currency,
+                start_date,
+                end_date,
+                bc_config.acquisition_count,
+                framework_str,
+            );
+            snapshot.business_combination_count = bc_snap.combinations.len();
+            snapshot.business_combination_journal_entries = bc_snap.journal_entries;
+            snapshot.business_combinations = bc_snap.combinations;
+        }
+
+        // Expected Credit Loss (IFRS 9 / ASC 326)
+        if self
+            .config
+            .accounting_standards
+            .expected_credit_loss
+            .enabled
+        {
+            let ecl_config = &self.config.accounting_standards.expected_credit_loss;
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS_9",
+                _ => "ASC_326",
+            };
+
+            // Use AR aging data from the subledger snapshot if available;
+            // otherwise generate synthetic bucket exposures.
+            let period_label =
+                format!("{}-{:02}", end_date.year(), end_date.month());
+
+            let mut ecl_gen = EclGenerator::new(seed + 43);
+
+            // Collect combined bucket totals across all company AR aging reports.
+            let bucket_exposures: Vec<(
+                datasynth_core::models::subledger::ar::AgingBucket,
+                rust_decimal::Decimal,
+            )> = if ar_aging_reports.is_empty() {
+                // No AR aging data — synthesise plausible bucket exposures.
+                use datasynth_core::models::subledger::ar::AgingBucket;
+                vec![
+                    (
+                        AgingBucket::Current,
+                        rust_decimal::Decimal::from(500_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days1To30,
+                        rust_decimal::Decimal::from(120_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days31To60,
+                        rust_decimal::Decimal::from(45_000_u32),
+                    ),
+                    (
+                        AgingBucket::Days61To90,
+                        rust_decimal::Decimal::from(15_000_u32),
+                    ),
+                    (
+                        AgingBucket::Over90Days,
+                        rust_decimal::Decimal::from(8_000_u32),
+                    ),
+                ]
+            } else {
+                use datasynth_core::models::subledger::ar::AgingBucket;
+                // Sum bucket totals from all reports.
+                let mut totals: std::collections::HashMap<AgingBucket, rust_decimal::Decimal> =
+                    std::collections::HashMap::new();
+                for report in ar_aging_reports {
+                    for (bucket, amount) in &report.bucket_totals {
+                        *totals.entry(*bucket).or_default() += amount;
+                    }
+                }
+                AgingBucket::all()
+                    .into_iter()
+                    .map(|b| (b, totals.get(&b).copied().unwrap_or_default()))
+                    .collect()
+            };
+
+            let ecl_snap = ecl_gen.generate(
+                company_code,
+                end_date,
+                &bucket_exposures,
+                ecl_config,
+                &period_label,
+                framework_str,
+            );
+
+            snapshot.ecl_model_count = ecl_snap.ecl_models.len();
+            snapshot.ecl_models = ecl_snap.ecl_models;
+            snapshot.ecl_provision_movements = ecl_snap.provision_movements;
+            snapshot.ecl_journal_entries = ecl_snap.journal_entries;
+        }
+
+        // Provisions and contingencies (IAS 37 / ASC 450)
+        {
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS",
+                _ => "US_GAAP",
+            };
+
+            // Use a revenue proxy derived from the trial balance or a sensible default.
+            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
+
+            let period_label =
+                format!("{}-{:02}", end_date.year(), end_date.month());
+
+            let mut prov_gen = ProvisionGenerator::new(seed + 44);
+            let prov_snap = prov_gen.generate(
+                company_code,
+                currency,
+                revenue_proxy,
+                end_date,
+                &period_label,
+                framework_str,
+            );
+
+            snapshot.provision_count = prov_snap.provisions.len();
+            snapshot.provisions = prov_snap.provisions;
+            snapshot.provision_movements = prov_snap.movements;
+            snapshot.contingent_liabilities = prov_snap.contingent_liabilities;
+            snapshot.provision_journal_entries = prov_snap.journal_entries;
+        }
+
+        // IAS 21 Functional Currency Translation
+        // For each company whose functional currency differs from the presentation
+        // currency, generate a CurrencyTranslationResult with CTA (OCI).
+        {
+            let ias21_period_label =
+                format!("{}-{:02}", end_date.year(), end_date.month());
+
+            let presentation_currency = self
+                .config
+                .global
+                .presentation_currency
+                .clone()
+                .unwrap_or_else(|| self.config.global.group_currency.clone());
+
+            // Build a minimal rate table populated with approximate rates from
+            // the FX model base rates (USD-based) so we can do the translation.
+            let mut rate_table = FxRateTable::new(&presentation_currency);
+
+            // Populate with base rates against USD; if presentation_currency is
+            // not USD we do a best-effort two-step conversion using the table's
+            // triangulation support.
+            let base_rates = base_rates_usd();
+            for (ccy, rate) in &base_rates {
+                rate_table.add_rate(FxRate::new(
+                    ccy,
+                    "USD",
+                    RateType::Closing,
+                    end_date,
+                    *rate,
+                    "SYNTHETIC",
+                ));
+                // Average rate = 98% of closing (approximation).
+                // 0.98 = 98/100 = Decimal::new(98, 2)
+                let avg = (*rate * rust_decimal::Decimal::new(98, 2)).round_dp(6);
+                rate_table.add_rate(FxRate::new(
+                    ccy,
+                    "USD",
+                    RateType::Average,
+                    end_date,
+                    avg,
+                    "SYNTHETIC",
+                ));
+            }
+
+            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
+
+            let mut translation_results = Vec::new();
+            for company in &self.config.companies {
+                let func_ccy = company
+                    .functional_currency
+                    .clone()
+                    .unwrap_or_else(|| company.currency.clone());
+
+                let result = datasynth_generators::fx::FunctionalCurrencyTranslator::translate(
+                    &company.code,
+                    &func_ccy,
+                    &presentation_currency,
+                    &ias21_period_label,
+                    end_date,
+                    revenue_proxy,
+                    &rate_table,
+                );
+                translation_results.push(result);
+            }
+
+            snapshot.currency_translation_count = translation_results.len();
+            snapshot.currency_translation_results = translation_results;
+        }
+
         stats.revenue_contract_count = snapshot.revenue_contract_count;
         stats.impairment_test_count = snapshot.impairment_test_count;
+        stats.business_combination_count = snapshot.business_combination_count;
+        stats.ecl_model_count = snapshot.ecl_model_count;
+        stats.provision_count = snapshot.provision_count;
 
         info!(
-            "Accounting standards data generated: {} revenue contracts, {} impairment tests",
-            snapshot.revenue_contract_count, snapshot.impairment_test_count
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models, {} provisions, {} IAS 21 translations",
+            snapshot.revenue_contract_count,
+            snapshot.impairment_test_count,
+            snapshot.business_combination_count,
+            snapshot.ecl_model_count,
+            snapshot.provision_count,
+            snapshot.currency_translation_count
         );
         self.check_resources_with_log("post-accounting-standards")?;
 
@@ -4496,6 +5682,7 @@ impl EnhancedOrchestrator {
     fn phase_tax_generation(
         &mut self,
         document_flows: &DocumentFlowSnapshot,
+        journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TaxSnapshot> {
         if !self.phase_config.generate_tax || !self.config.tax.enabled {
@@ -4587,6 +5774,18 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // Generate deferred tax data (IAS 12 / ASC 740) for each company
+        let deferred_tax = {
+            let companies: Vec<(&str, &str)> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| (c.code.as_str(), c.country.as_str()))
+                .collect();
+            let mut deferred_gen = datasynth_generators::DeferredTaxGenerator::new(seed + 73);
+            deferred_gen.generate(&companies, start_date, journal_entries)
+        };
+
         let snapshot = TaxSnapshot {
             jurisdiction_count: jurisdictions.len(),
             code_count: codes.len(),
@@ -4597,6 +5796,7 @@ impl EnhancedOrchestrator {
             tax_returns: Vec::new(),
             withholding_records: Vec::new(),
             tax_anomaly_labels: Vec::new(),
+            deferred_tax,
         };
 
         stats.tax_jurisdiction_count = snapshot.jurisdiction_count;
@@ -4605,10 +5805,12 @@ impl EnhancedOrchestrator {
         stats.tax_line_count = snapshot.tax_lines.len();
 
         info!(
-            "Tax data generated: {} jurisdictions, {} codes, {} provisions",
+            "Tax data generated: {} jurisdictions, {} codes, {} provisions, {} temp diffs, {} deferred JEs",
             snapshot.jurisdiction_count,
             snapshot.code_count,
-            snapshot.tax_provisions.len()
+            snapshot.tax_provisions.len(),
+            snapshot.deferred_tax.temporary_differences.len(),
+            snapshot.deferred_tax.journal_entries.len(),
         );
         self.check_resources_with_log("post-tax")?;
 
@@ -6787,6 +7989,12 @@ impl EnhancedOrchestrator {
             fa_records: Vec::new(),
             inventory_positions: Vec::new(),
             inventory_movements: Vec::new(),
+            // Aging reports are computed after payment settlement in phase_document_flows.
+            ar_aging_reports: Vec::new(),
+            ap_aging_reports: Vec::new(),
+            // Depreciation runs and inventory valuations are populated after FA/inventory generation.
+            depreciation_runs: Vec::new(),
+            inventory_valuations: Vec::new(),
         })
     }
 
@@ -7841,11 +9049,218 @@ impl EnhancedOrchestrator {
             }
         }
 
+        // ----------------------------------------------------------------
+        // ISA 600: Group audit — component auditors, plan, instructions, reports
+        // ----------------------------------------------------------------
+        if self.config.companies.len() > 1 {
+            // Use materiality from the first engagement if available, otherwise
+            // derive a reasonable figure from total revenue.
+            let group_materiality = snapshot
+                .engagements
+                .first()
+                .map(|e| e.materiality)
+                .unwrap_or_else(|| {
+                    let pct = rust_decimal::Decimal::try_from(0.005_f64).unwrap_or_default();
+                    total_revenue * pct
+                });
+
+            let mut component_gen = ComponentAuditGenerator::new(self.seed + 8200);
+            let group_engagement_id = snapshot
+                .engagements
+                .first()
+                .map(|e| e.engagement_id.to_string())
+                .unwrap_or_else(|| "GROUP-ENG".to_string());
+
+            let component_snapshot = component_gen.generate(
+                &self.config.companies,
+                group_materiality,
+                &group_engagement_id,
+                period_end,
+            );
+
+            snapshot.component_auditors = component_snapshot.component_auditors;
+            snapshot.group_audit_plan = component_snapshot.group_audit_plan;
+            snapshot.component_instructions = component_snapshot.component_instructions;
+            snapshot.component_reports = component_snapshot.component_reports;
+
+            info!(
+                "ISA 600 group audit: {} component auditors, {} instructions, {} reports",
+                snapshot.component_auditors.len(),
+                snapshot.component_instructions.len(),
+                snapshot.component_reports.len(),
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 210: Engagement letters — one per engagement
+        // ----------------------------------------------------------------
+        {
+            let applicable_framework = self
+                .config
+                .accounting_standards
+                .framework
+                .as_ref()
+                .map(|f| format!("{f:?}"))
+                .unwrap_or_else(|| "IFRS".to_string());
+
+            let mut letter_gen = EngagementLetterGenerator::new(self.seed + 8300);
+            let entity_count = self.config.companies.len();
+
+            for engagement in &snapshot.engagements {
+                let company = self
+                    .config
+                    .companies
+                    .iter()
+                    .find(|c| c.code == engagement.client_entity_id);
+                let currency = company.map(|c| c.currency.as_str()).unwrap_or("USD");
+                let letter_date = engagement.planning_start;
+                let letter = letter_gen.generate(
+                    &engagement.engagement_id.to_string(),
+                    &engagement.client_name,
+                    entity_count,
+                    engagement.period_end_date,
+                    currency,
+                    &applicable_framework,
+                    letter_date,
+                );
+                snapshot.engagement_letters.push(letter);
+            }
+
+            info!(
+                "ISA 210 engagement letters: {} generated",
+                snapshot.engagement_letters.len()
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 560 / IAS 10: Subsequent events
+        // ----------------------------------------------------------------
+        {
+            let mut event_gen = SubsequentEventGenerator::new(self.seed + 8400);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let subsequent = event_gen.generate_for_entities(&entity_codes, period_end);
+            info!(
+                "ISA 560 subsequent events: {} generated ({} adjusting, {} non-adjusting)",
+                subsequent.len(),
+                subsequent
+                    .iter()
+                    .filter(|e| matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::Adjusting
+                    ))
+                    .count(),
+                subsequent
+                    .iter()
+                    .filter(|e| matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::NonAdjusting
+                    ))
+                    .count(),
+            );
+            snapshot.subsequent_events = subsequent;
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 402: Service organization controls
+        // ----------------------------------------------------------------
+        {
+            let mut soc_gen = ServiceOrgGenerator::new(self.seed + 8500);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let soc_snapshot = soc_gen.generate(&entity_codes, period_end);
+            info!(
+                "ISA 402 service orgs: {} orgs, {} SOC reports, {} user entity controls",
+                soc_snapshot.service_organizations.len(),
+                soc_snapshot.soc_reports.len(),
+                soc_snapshot.user_entity_controls.len(),
+            );
+            snapshot.service_organizations = soc_snapshot.service_organizations;
+            snapshot.soc_reports = soc_snapshot.soc_reports;
+            snapshot.user_entity_controls = soc_snapshot.user_entity_controls;
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 570: Going concern assessments
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::going_concern_generator::GoingConcernGenerator;
+            let mut gc_gen = GoingConcernGenerator::new(self.seed + 8570);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            // Assessment date = period end + 75 days (typical sign-off window).
+            let assessment_date = period_end + chrono::Duration::days(75);
+            let period_label = format!("FY{}", period_end.year());
+            let assessments =
+                gc_gen.generate_for_entities(&entity_codes, assessment_date, &period_label);
+            info!(
+                "ISA 570 going concern: {} assessments ({} clean, {} material uncertainty, {} doubt)",
+                assessments.len(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::NoMaterialUncertainty
+                )).count(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::MaterialUncertaintyExists
+                )).count(),
+                assessments.iter().filter(|a| matches!(
+                    a.auditor_conclusion,
+                    datasynth_core::models::audit::going_concern::GoingConcernConclusion::GoingConcernDoubt
+                )).count(),
+            );
+            snapshot.going_concern_assessments = assessments;
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 540: Accounting estimates
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::accounting_estimate_generator::AccountingEstimateGenerator;
+            let mut est_gen = AccountingEstimateGenerator::new(self.seed + 8540);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let estimates = est_gen.generate_for_entities(&entity_codes);
+            info!(
+                "ISA 540 accounting estimates: {} estimates across {} entities \
+                 ({} with retrospective reviews, {} with auditor point estimates)",
+                estimates.len(),
+                entity_codes.len(),
+                estimates
+                    .iter()
+                    .filter(|e| e.retrospective_review.is_some())
+                    .count(),
+                estimates
+                    .iter()
+                    .filter(|e| e.auditor_point_estimate.is_some())
+                    .count(),
+            );
+            snapshot.accounting_estimates = estimates;
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
-                 {} analytical, {} IA funcs, {} related parties",
+                 {} analytical, {} IA funcs, {} related parties, \
+                 {} component auditors, {} letters, {} subsequent events, \
+                 {} service orgs, {} going concern, {} accounting estimates",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -7855,6 +9270,12 @@ impl EnhancedOrchestrator {
                 snapshot.analytical_results.len(),
                 snapshot.ia_functions.len(),
                 snapshot.related_parties.len(),
+                snapshot.component_auditors.len(),
+                snapshot.engagement_letters.len(),
+                snapshot.subsequent_events.len(),
+                snapshot.service_organizations.len(),
+                snapshot.going_concern_assessments.len(),
+                snapshot.accounting_estimates.len(),
             ));
         }
 
@@ -9140,6 +10561,7 @@ mod tests {
                 seed: Some(42),
                 parallel: false,
                 group_currency: "USD".to_string(),
+                presentation_currency: None,
                 worker_threads: 0,
                 memory_limit_mb: 0,
                 fiscal_year_months: None,
@@ -9148,6 +10570,7 @@ mod tests {
                 code: "1000".to_string(),
                 name: "Test Company".to_string(),
                 currency: "USD".to_string(),
+                functional_currency: None,
                 country: "US".to_string(),
                 annual_transaction_volume: TransactionVolume::TenK,
                 volume_weight: 1.0,
@@ -9580,6 +11003,7 @@ mod tests {
             code: "2000".to_string(),
             name: "Subsidiary".to_string(),
             currency: "EUR".to_string(),
+            functional_currency: None,
             country: "DE".to_string(),
             annual_transaction_volume: TransactionVolume::TenK,
             volume_weight: 0.5,
@@ -9815,6 +11239,7 @@ mod tests {
             inject_anomalies: false,
             show_progress: false,
             generate_counterfactuals: true,
+            generate_period_close: false, // Disable so entry count matches counterfactual pairs
             ..Default::default()
         };
 

@@ -21,7 +21,9 @@ mod chart_of_accounts;
 mod company;
 mod control_mapping;
 mod coso;
+pub mod currency_translation_result;
 mod customer_segment;
+pub mod deferred_tax;
 mod department;
 mod entity_registry;
 mod fixed_asset;
@@ -53,6 +55,9 @@ mod bank_reconciliation;
 
 // Financial statement models
 mod financial_statements;
+
+// Notes to financial statements models (IAS 1 / ASC 235)
+mod financial_statement_notes;
 
 // Hire-to-Retire (H2R) models
 mod expense_report;
@@ -89,6 +94,21 @@ pub mod balance;
 // Subledger models (Phase 5)
 pub mod subledger;
 
+// Business combination models (IFRS 3 / ASC 805)
+pub mod business_combination;
+
+// Pension models (IAS 19 / ASC 715)
+pub mod pension;
+
+// Expected Credit Loss models (IFRS 9 / ASC 326)
+pub mod expected_credit_loss;
+
+// Provisions and Contingencies models (IAS 37 / ASC 450)
+pub mod provision;
+
+// Stock-based compensation models (ASC 718 / IFRS 2)
+pub mod stock_compensation;
+
 // Audit models (Phase 13-14: RustAssureTwin integration)
 pub mod audit;
 
@@ -113,7 +133,9 @@ pub use chart_of_accounts::*;
 pub use company::*;
 pub use control_mapping::*;
 pub use coso::*;
+pub use currency_translation_result::*;
 pub use customer_segment::*;
+pub use deferred_tax::*;
 pub use department::*;
 pub use entity_registry::*;
 pub use fixed_asset::*;
@@ -146,6 +168,9 @@ pub use bank_reconciliation::*;
 // Financial statement exports
 pub use financial_statements::*;
 
+// Notes to financial statements exports (IAS 1 / ASC 235)
+pub use financial_statement_notes::*;
+
 // Hire-to-Retire (H2R) exports
 pub use expense_report::*;
 pub use payroll::*;
@@ -173,6 +198,21 @@ pub use technology_transition::*;
 pub use causal_dag::*;
 pub use intervention::*;
 pub use scenario::*;
+
+// Business combination exports
+pub use business_combination::*;
+
+// Pension exports (IAS 19 / ASC 715)
+pub use pension::*;
+
+// Expected Credit Loss exports (IFRS 9 / ASC 326)
+pub use expected_credit_loss::*;
+
+// Provisions and Contingencies exports (IAS 37 / ASC 450)
+pub use provision::*;
+
+// Stock-based compensation exports (ASC 718 / IFRS 2)
+pub use stock_compensation::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;

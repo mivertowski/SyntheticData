@@ -124,6 +124,18 @@ pub enum GeneratorType {
     BenefitEnrollment = 0x41,
     /// Disruption event generator
     Disruption = 0x42,
+    /// Business combination generator (IFRS 3 / ASC 805)
+    BusinessCombination = 0x43,
+    /// Segment reporting generator (IFRS 8 / ASC 280)
+    SegmentReport = 0x44,
+    /// Expected Credit Loss generator (IFRS 9 / ASC 326)
+    ExpectedCreditLoss = 0x45,
+    /// Defined benefit pension generator (IAS 19 / ASC 715)
+    Pension = 0x46,
+    /// Provisions and contingencies generator (IAS 37 / ASC 450)
+    Provision = 0x47,
+    /// Stock-based compensation generator (ASC 718 / IFRS 2)
+    StockCompensation = 0x48,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

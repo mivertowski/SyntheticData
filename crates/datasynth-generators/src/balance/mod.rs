@@ -11,9 +11,11 @@
 //! - Subledger-to-GL reconciliation
 
 mod balance_tracker;
+mod opening_balance_converter;
 mod opening_balance_generator;
 mod trial_balance_generator;
 
 pub use balance_tracker::*;
+pub use opening_balance_converter::*;
 pub use opening_balance_generator::*;
 pub use trial_balance_generator::*;

@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-19
+
+### Added
+
+**Enterprise Group Audit Simulation** — 32 items across 5 tiers transforming DataSynth into a comprehensive group audit simulation platform.
+
+#### Tier 0 — Bug Fixes & Wiring
+- **Audit output completeness**: All 15 `AuditSnapshot` fields now serialized (was 6/15)
+- **Subledger settlement**: Payment application reduces `APInvoice`/`ARInvoice` `amount_remaining`
+- **IC eliminations → GL**: `EliminationEntry` records converted to `JournalEntry` with `is_elimination` flag
+- **Close engine**: Period-close phase with tax provision stub and income statement closing entries
+- **Opening balances**: Converted to balanced JEs using CoA account type lookup (contra-asset aware)
+- **Test guardrails**: `scripts/test-safe.sh` sequential per-crate runner, `.cargo/config.toml` with `RUST_TEST_THREADS=2`
+
+#### Tier 1 — Group Audit Core
+- **ISA 600 Component Auditor**: `ComponentAuditor`, `GroupAuditPlan`, `ComponentInstruction`, `ComponentAuditorReport` with materiality allocation and scope assignment (full/specific/analytical)
+- **GroupStructure ownership model**: Parent-subsidiary relationships with `ConsolidationMethod` (full/equity/fair value) and NCI derivation
+- **Consolidated financial statements**: Standalone per-entity + consolidated FS with `ConsolidationSchedule` (pre-elimination → eliminations → post-elimination)
+- **Deferred tax engine (IAS 12 / ASC 740)**: 5-8 temporary differences per entity, ETR reconciliation with permanent differences, rollforward schedule, country-aware statutory rates
+- **AR/AP aging reports**: Wired existing `ARAgingReport::from_invoices()` / `APAgingReport::from_invoices()` into orchestrator
+- **Depreciation runs + inventory valuation**: Per-asset depreciation schedules, IAS 2 lower-of-cost-or-NRV valuation
+- **Customer receipts output**: AR receipt payments separated to `document_flows/customer_receipts.json`
+
+#### Tier 2 — Standards Expansion
+- **IFRS 3 / ASC 805 — Business Combinations**: PPA with fair value step-ups, goodwill computation, Day 1 JEs, contingent consideration
+- **IFRS 8 / ASC 280 — Segment Reporting**: Operating segments (geographic + product line) with reconciliation to consolidated totals
+- **IFRS 9 / ASC 326 — Expected Credit Loss**: Simplified approach with provision matrix by aging bucket, forward-looking scenario weighting, ECL provision movements
+- **IAS 19 / ASC 715 — Pensions**: Defined benefit plans with DBO rollforward, plan assets, pension expense components, OCI remeasurements
+- **IAS 37 / ASC 450 — Provisions & Contingencies**: 3-10 provisions per entity with framework-aware recognition thresholds (IFRS >50%, US GAAP >75%)
+- **ASC 718 / IFRS 2 — Stock Compensation**: Stock grants (RSUs/Options/PSUs) with graded vesting and expense recognition
+- **IAS 21 — Functional Currency**: Per-entity functional currency, current-rate method translation, CTA as OCI
+
+#### Tier 3 — Audit Documentation & Outputs
+- **ISA 210 — Engagement Letters**: Template-driven with scope, fees, and framework
+- **ISA 560 / IAS 10 — Subsequent Events**: Adjusting (IAS 10.8) and non-adjusting (IAS 10.21) events
+- **ISA 402 — Service Organization Controls**: SOC 1 Type II reports with control objectives and exceptions
+- **Notes to Financial Statements**: 8-13 template-driven notes with typed `NoteTableValue` (Amount/Percentage/Date/Text)
+- **Going Concern Indicators**: Financial indicator derivation, 90% clean / 8% mild / 2% severe distribution
+- **ISA 540 — Accounting Estimates**: Links all estimate-producing generators with ISA 540 risk factors, assumptions, and retrospective review
+- **NCI Measurement**: Enhanced elimination generator using GroupStructure ownership percentages
+- **Format Exporters**: `--export-format sap|fec|gobd` CLI flag activating existing SAP BKPF/BSEG/ACDOCA, French FEC, and German GoBD exporters
+
+#### Tier 4 — Evaluation & Professionalization
+- **Financial Ratio Evaluator (ISA 520)**: 12 ratios (liquidity, activity, profitability, leverage) with industry-specific reasonableness bounds
+- **JE Risk Scoring**: 7 risk attributes (round number, unusual hour, weekend, non-standard user, below threshold, manual to automated, large round-trip) with anomaly separability check
+- **Materiality-Stratified Sampling**: 4 strata with above-materiality coverage, anomaly stratum/entity/temporal coverage
+- **Trend Plausibility**: Revenue stability, expense ratio consistency, BS growth, directional consistency checks
+- **Audit Preset**: `audit_group_overlay()` modifier + `--preset audit-group` CLI flag enabling all audit features
+
+### New Output Files
+- `audit/`: engagement_letters, subsequent_events, service_organizations, soc_reports, user_entity_controls, going_concern_assessments, accounting_estimates, component_auditors, group_audit_plan, component_instructions, component_reports, confirmations, confirmation_responses, procedure_steps, samples, analytical_results, ia_functions, ia_reports, related_parties, related_party_transactions
+- `financial_reporting/`: standalone/{entity}_financial_statements, consolidated/consolidated_financial_statements, consolidated/consolidation_schedule, segment_reporting, notes_to_financial_statements
+- `tax/`: temporary_differences, etr_reconciliation, deferred_tax_rollforward, deferred_tax_journal_entries
+- `accounting_standards/`: business_combinations, purchase_price_allocations, ecl_models, ecl_provision_movements, ecl_journal_entries, fx/currency_translation_results, provisions, contingent_liabilities, provision_movements
+- `hr/`: pension_plans, pension_obligations, plan_assets, pension_disclosures, stock_grants, stock_comp_expense
+- `subledger/`: ar_aging, ap_aging, depreciation_runs, inventory_valuation
+- `intercompany/`: group_structure, nci_measurements
+- `document_flows/`: customer_receipts
+
 ## [1.2.0] - 2026-03-15
 
 ### Added

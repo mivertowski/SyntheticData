@@ -717,6 +717,7 @@ async fn set_config(
             code: c.code.clone(),
             name: c.name.clone(),
             currency: c.currency.clone(),
+            functional_currency: None,
             country: c.country.clone(),
             fiscal_year_variant: "K4".to_string(),
             annual_transaction_volume: TransactionVolume::Custom(c.annual_transaction_volume),
