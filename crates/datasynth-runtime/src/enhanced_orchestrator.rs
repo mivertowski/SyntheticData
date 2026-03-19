@@ -519,6 +519,16 @@ pub struct AuditSnapshot {
     /// Accounting estimates reviewed per ISA 540 (5–8 per entity).
     pub accounting_estimates:
         Vec<datasynth_core::models::audit::accounting_estimates::AccountingEstimate>,
+    // ---- ISA 700/701/705/706: Audit Opinions ----
+    /// Formed audit opinions per ISA 700 / 705 / 706 (one per engagement).
+    pub audit_opinions: Vec<datasynth_standards::audit::opinion::AuditOpinion>,
+    /// Key Audit Matters per ISA 701 (flattened across all opinions).
+    pub key_audit_matters: Vec<datasynth_standards::audit::opinion::KeyAuditMatter>,
+    // ---- SOX 302 / 404 ----
+    /// SOX Section 302 CEO/CFO certifications (one pair per US-listed entity per year).
+    pub sox_302_certifications: Vec<datasynth_standards::regulatory::sox::Sox302Certification>,
+    /// SOX Section 404 ICFR assessments (one per entity per year).
+    pub sox_404_assessments: Vec<datasynth_standards::regulatory::sox::Sox404Assessment>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -2029,7 +2039,12 @@ impl EnhancedOrchestrator {
                 "Generated {} JEs from provisions (IAS 37 / ASC 450)",
                 accounting_standards.provision_journal_entries.len()
             );
-            entries.extend(accounting_standards.provision_journal_entries.iter().cloned());
+            entries.extend(
+                accounting_standards
+                    .provision_journal_entries
+                    .iter()
+                    .cloned(),
+            );
         }
 
         // Phase 18b: OCPM Events (after all process data is available)
@@ -5153,8 +5168,7 @@ impl EnhancedOrchestrator {
 
             // Use AR aging data from the subledger snapshot if available;
             // otherwise generate synthetic bucket exposures.
-            let period_label =
-                format!("{}-{:02}", end_date.year(), end_date.month());
+            let period_label = format!("{}-{:02}", end_date.year(), end_date.month());
 
             let mut ecl_gen = EclGenerator::new(seed + 43);
 
@@ -5232,8 +5246,7 @@ impl EnhancedOrchestrator {
             let revenue_proxy = Self::compute_company_revenue(journal_entries, company_code)
                 .max(rust_decimal::Decimal::from(100_000_u32));
 
-            let period_label =
-                format!("{}-{:02}", end_date.year(), end_date.month());
+            let period_label = format!("{}-{:02}", end_date.year(), end_date.month());
 
             let mut prov_gen = ProvisionGenerator::new(seed + 44);
             let prov_snap = prov_gen.generate(
@@ -5256,8 +5269,7 @@ impl EnhancedOrchestrator {
         // For each company whose functional currency differs from the presentation
         // currency, generate a CurrencyTranslationResult with CTA (OCI).
         {
-            let ias21_period_label =
-                format!("{}-{:02}", end_date.year(), end_date.month());
+            let ias21_period_label = format!("{}-{:02}", end_date.year(), end_date.month());
 
             let presentation_currency = self
                 .config
@@ -5300,9 +5312,8 @@ impl EnhancedOrchestrator {
             for company in &self.config.companies {
                 // Compute per-company revenue from actual JEs; fall back to 100_000 minimum
                 // to ensure the translation produces non-trivial CTA amounts.
-                let company_revenue =
-                    Self::compute_company_revenue(journal_entries, &company.code)
-                        .max(rust_decimal::Decimal::from(100_000_u32));
+                let company_revenue = Self::compute_company_revenue(journal_entries, &company.code)
+                    .max(rust_decimal::Decimal::from(100_000_u32));
 
                 let func_ccy = company
                     .functional_currency
@@ -9273,13 +9284,194 @@ impl EnhancedOrchestrator {
             snapshot.accounting_estimates = estimates;
         }
 
+        // ----------------------------------------------------------------
+        // ISA 700/701/705/706: Audit opinions (one per engagement)
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::audit_opinion_generator::{
+                AuditOpinionGenerator, AuditOpinionInput,
+            };
+
+            let mut opinion_gen = AuditOpinionGenerator::new(self.seed + 8700);
+
+            // Build inputs — one per engagement, linking findings and going concern.
+            let opinion_inputs: Vec<AuditOpinionInput> = snapshot
+                .engagements
+                .iter()
+                .map(|eng| {
+                    // Collect findings for this engagement.
+                    let eng_findings: Vec<datasynth_core::models::audit::AuditFinding> = snapshot
+                        .findings
+                        .iter()
+                        .filter(|f| f.engagement_id == eng.engagement_id)
+                        .cloned()
+                        .collect();
+
+                    // Going concern for this entity.
+                    let gc = snapshot
+                        .going_concern_assessments
+                        .iter()
+                        .find(|g| g.entity_code == eng.client_entity_id)
+                        .cloned();
+
+                    // Component reports relevant to this engagement.
+                    let comp_reports: Vec<datasynth_core::models::audit::ComponentAuditorReport> =
+                        snapshot.component_reports.clone();
+
+                    let auditor = self
+                        .master_data
+                        .employees
+                        .first()
+                        .map(|e| e.display_name.clone())
+                        .unwrap_or_else(|| "Global Audit LLP".into());
+
+                    let partner = self
+                        .master_data
+                        .employees
+                        .get(1)
+                        .map(|e| e.display_name.clone())
+                        .unwrap_or_else(|| eng.engagement_partner_id.clone());
+
+                    AuditOpinionInput {
+                        entity_code: eng.client_entity_id.clone(),
+                        entity_name: eng.client_name.clone(),
+                        engagement_id: eng.engagement_id,
+                        period_end: eng.period_end_date,
+                        findings: eng_findings,
+                        going_concern: gc,
+                        component_reports: comp_reports,
+                        // Mark as US-listed when audit standards include PCAOB.
+                        is_us_listed: {
+                            let fw = &self.config.audit_standards.isa_compliance.framework;
+                            fw.eq_ignore_ascii_case("pcaob") || fw.eq_ignore_ascii_case("dual")
+                        },
+                        auditor_name: auditor,
+                        engagement_partner: partner,
+                    }
+                })
+                .collect();
+
+            let generated_opinions = opinion_gen.generate_batch(&opinion_inputs);
+
+            for go in &generated_opinions {
+                snapshot
+                    .key_audit_matters
+                    .extend(go.key_audit_matters.clone());
+            }
+            snapshot.audit_opinions = generated_opinions
+                .into_iter()
+                .map(|go| go.opinion)
+                .collect();
+
+            info!(
+                "ISA 700 audit opinions: {} generated ({} unmodified, {} qualified, {} adverse, {} disclaimer)",
+                snapshot.audit_opinions.len(),
+                snapshot.audit_opinions.iter().filter(|o| matches!(o.opinion_type, datasynth_standards::audit::opinion::OpinionType::Unmodified)).count(),
+                snapshot.audit_opinions.iter().filter(|o| matches!(o.opinion_type, datasynth_standards::audit::opinion::OpinionType::Qualified)).count(),
+                snapshot.audit_opinions.iter().filter(|o| matches!(o.opinion_type, datasynth_standards::audit::opinion::OpinionType::Adverse)).count(),
+                snapshot.audit_opinions.iter().filter(|o| matches!(o.opinion_type, datasynth_standards::audit::opinion::OpinionType::Disclaimer)).count(),
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // SOX 302 / 404 assessments
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::sox_generator::{SoxGenerator, SoxGeneratorInput};
+
+            let mut sox_gen = SoxGenerator::new(self.seed + 8302);
+
+            for (i, company) in self.config.companies.iter().enumerate() {
+                // Collect findings for this company's engagements.
+                let company_engagement_ids: Vec<uuid::Uuid> = snapshot
+                    .engagements
+                    .iter()
+                    .filter(|e| e.client_entity_id == company.code)
+                    .map(|e| e.engagement_id)
+                    .collect();
+
+                let company_findings: Vec<datasynth_core::models::audit::AuditFinding> = snapshot
+                    .findings
+                    .iter()
+                    .filter(|f| company_engagement_ids.contains(&f.engagement_id))
+                    .cloned()
+                    .collect();
+
+                // Derive executive names from employee list.
+                let emp_count = self.master_data.employees.len();
+                let ceo_name = if emp_count > 0 {
+                    self.master_data.employees[i % emp_count]
+                        .display_name
+                        .clone()
+                } else {
+                    format!("CEO of {}", company.name)
+                };
+                let cfo_name = if emp_count > 1 {
+                    self.master_data.employees[(i + 1) % emp_count]
+                        .display_name
+                        .clone()
+                } else {
+                    format!("CFO of {}", company.name)
+                };
+
+                // Use engagement materiality if available.
+                let materiality = snapshot
+                    .engagements
+                    .iter()
+                    .find(|e| e.client_entity_id == company.code)
+                    .map(|e| e.materiality)
+                    .unwrap_or_else(|| rust_decimal::Decimal::from(100_000));
+
+                let input = SoxGeneratorInput {
+                    company_code: company.code.clone(),
+                    company_name: company.name.clone(),
+                    fiscal_year: fiscal_year,
+                    period_end,
+                    findings: company_findings,
+                    ceo_name,
+                    cfo_name,
+                    materiality_threshold: materiality,
+                    revenue_percent: rust_decimal::Decimal::from(100),
+                    assets_percent: rust_decimal::Decimal::from(100),
+                    significant_accounts: vec![
+                        "Revenue".into(),
+                        "Accounts Receivable".into(),
+                        "Inventory".into(),
+                        "Fixed Assets".into(),
+                        "Accounts Payable".into(),
+                    ],
+                };
+
+                let (certs, assessment) = sox_gen.generate(&input);
+                snapshot.sox_302_certifications.extend(certs);
+                snapshot.sox_404_assessments.push(assessment);
+            }
+
+            info!(
+                "SOX 302/404: {} certifications, {} assessments ({} effective, {} ineffective)",
+                snapshot.sox_302_certifications.len(),
+                snapshot.sox_404_assessments.len(),
+                snapshot
+                    .sox_404_assessments
+                    .iter()
+                    .filter(|a| a.icfr_effective)
+                    .count(),
+                snapshot
+                    .sox_404_assessments
+                    .iter()
+                    .filter(|a| !a.icfr_effective)
+                    .count(),
+            );
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
                  {} analytical, {} IA funcs, {} related parties, \
                  {} component auditors, {} letters, {} subsequent events, \
-                 {} service orgs, {} going concern, {} accounting estimates",
+                 {} service orgs, {} going concern, {} accounting estimates, \
+                 {} opinions, {} KAMs, {} SOX 302 certs, {} SOX 404 assessments",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -9295,6 +9487,10 @@ impl EnhancedOrchestrator {
                 snapshot.service_organizations.len(),
                 snapshot.going_concern_assessments.len(),
                 snapshot.accounting_estimates.len(),
+                snapshot.audit_opinions.len(),
+                snapshot.key_audit_matters.len(),
+                snapshot.sox_302_certifications.len(),
+                snapshot.sox_404_assessments.len(),
             ));
         }
 

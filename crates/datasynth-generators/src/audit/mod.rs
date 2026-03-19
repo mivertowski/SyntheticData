@@ -41,6 +41,7 @@
 
 pub mod accounting_estimate_generator;
 pub mod analytical_procedure_generator;
+pub mod audit_opinion_generator;
 pub mod component_audit_generator;
 pub mod confirmation_generator;
 mod engagement_generator;
@@ -55,6 +56,7 @@ pub mod related_party_generator;
 mod risk_generator;
 pub mod sample_generator;
 pub mod service_org_generator;
+pub mod sox_generator;
 pub mod subsequent_event_generator;
 mod workpaper_generator;
 

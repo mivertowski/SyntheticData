@@ -1253,6 +1253,22 @@ fn main() -> Result<()> {
             );
             register("audit/audit_findings.json", result.audit.findings.len());
             register("audit/audit_judgments.json", result.audit.judgments.len());
+            register(
+                "audit/audit_opinions.json",
+                result.audit.audit_opinions.len(),
+            );
+            register(
+                "audit/key_audit_matters.json",
+                result.audit.key_audit_matters.len(),
+            );
+            register(
+                "audit/sox_302_certifications.json",
+                result.audit.sox_302_certifications.len(),
+            );
+            register(
+                "audit/sox_404_assessments.json",
+                result.audit.sox_404_assessments.len(),
+            );
 
             // Banking
             register(

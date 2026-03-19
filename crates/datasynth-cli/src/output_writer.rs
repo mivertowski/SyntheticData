@@ -487,6 +487,34 @@ pub fn write_all_output(
             &audit_dir.join("accounting_estimates.json"),
             "Accounting estimates (ISA 540)",
         );
+
+        // ISA 700/701/705/706: Audit opinions and Key Audit Matters
+        if !result.audit.audit_opinions.is_empty() {
+            write_json_safe(
+                &result.audit.audit_opinions,
+                &audit_dir.join("audit_opinions.json"),
+                "Audit opinions (ISA 700/705/706)",
+            );
+            write_json_safe(
+                &result.audit.key_audit_matters,
+                &audit_dir.join("key_audit_matters.json"),
+                "Key Audit Matters (ISA 701)",
+            );
+        }
+
+        // SOX 302 / 404
+        if !result.audit.sox_302_certifications.is_empty() {
+            write_json_safe(
+                &result.audit.sox_302_certifications,
+                &audit_dir.join("sox_302_certifications.json"),
+                "SOX 302 certifications",
+            );
+            write_json_safe(
+                &result.audit.sox_404_assessments,
+                &audit_dir.join("sox_404_assessments.json"),
+                "SOX 404 ICFR assessments",
+            );
+        }
     }
 
     // ========================================================================
