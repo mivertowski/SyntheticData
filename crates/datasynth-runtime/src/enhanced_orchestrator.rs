@@ -123,6 +123,8 @@ use datasynth_generators::{
     P2PGeneratorConfig,
     P2PPaymentBehavior,
     PaymentReference,
+    // Provisions and contingencies generator (IAS 37 / ASC 450)
+    ProvisionGenerator,
     QualificationGenerator,
     RfxGenerator,
     RiskAssessmentGenerator,
@@ -662,6 +664,14 @@ pub struct AccountingStandardsSnapshot {
         Vec<datasynth_core::models::expected_credit_loss::EclProvisionMovement>,
     /// Journal entries from ECL provision.
     pub ecl_journal_entries: Vec<JournalEntry>,
+    /// Provisions (IAS 37 / ASC 450).
+    pub provisions: Vec<datasynth_core::models::provision::Provision>,
+    /// Provision movement roll-forwards (IAS 37 / ASC 450).
+    pub provision_movements: Vec<datasynth_core::models::provision::ProvisionMovement>,
+    /// Contingent liabilities (IAS 37 / ASC 450).
+    pub contingent_liabilities: Vec<datasynth_core::models::provision::ContingentLiability>,
+    /// Journal entries from provisions.
+    pub provision_journal_entries: Vec<JournalEntry>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
@@ -670,6 +680,8 @@ pub struct AccountingStandardsSnapshot {
     pub business_combination_count: usize,
     /// ECL model count.
     pub ecl_model_count: usize,
+    /// Provision count.
+    pub provision_count: usize,
 }
 
 /// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
@@ -1109,6 +1121,8 @@ pub struct EnhancedGenerationStatistics {
     pub business_combination_count: usize,
     #[serde(default)]
     pub ecl_model_count: usize,
+    #[serde(default)]
+    pub provision_count: usize,
     /// Manufacturing counts.
     #[serde(default)]
     pub production_order_count: usize,
@@ -4972,17 +4986,49 @@ impl EnhancedOrchestrator {
             snapshot.ecl_journal_entries = ecl_snap.journal_entries;
         }
 
+        // Provisions and contingencies (IAS 37 / ASC 450)
+        {
+            let framework_str = match framework {
+                datasynth_standards::framework::AccountingFramework::Ifrs => "IFRS",
+                _ => "US_GAAP",
+            };
+
+            // Use a revenue proxy derived from the trial balance or a sensible default.
+            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
+
+            let period_label =
+                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+
+            let mut prov_gen = ProvisionGenerator::new(seed + 44);
+            let prov_snap = prov_gen.generate(
+                company_code,
+                currency,
+                revenue_proxy,
+                end_date,
+                &period_label,
+                framework_str,
+            );
+
+            snapshot.provision_count = prov_snap.provisions.len();
+            snapshot.provisions = prov_snap.provisions;
+            snapshot.provision_movements = prov_snap.movements;
+            snapshot.contingent_liabilities = prov_snap.contingent_liabilities;
+            snapshot.provision_journal_entries = prov_snap.journal_entries;
+        }
+
         stats.revenue_contract_count = snapshot.revenue_contract_count;
         stats.impairment_test_count = snapshot.impairment_test_count;
         stats.business_combination_count = snapshot.business_combination_count;
         stats.ecl_model_count = snapshot.ecl_model_count;
+        stats.provision_count = snapshot.provision_count;
 
         info!(
-            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models",
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models, {} provisions",
             snapshot.revenue_contract_count,
             snapshot.impairment_test_count,
             snapshot.business_combination_count,
-            snapshot.ecl_model_count
+            snapshot.ecl_model_count,
+            snapshot.provision_count
         );
         self.check_resources_with_log("post-accounting-standards")?;
 

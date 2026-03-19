@@ -132,6 +132,8 @@ pub enum GeneratorType {
     ExpectedCreditLoss = 0x45,
     /// Defined benefit pension generator (IAS 19 / ASC 715)
     Pension = 0x46,
+    /// Provisions and contingencies generator (IAS 37 / ASC 450)
+    Provision = 0x47,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

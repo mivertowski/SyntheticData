@@ -99,6 +99,9 @@ pub mod pension;
 // Expected Credit Loss models (IFRS 9 / ASC 326)
 pub mod expected_credit_loss;
 
+// Provisions and Contingencies models (IAS 37 / ASC 450)
+pub mod provision;
+
 // Audit models (Phase 13-14: RustAssureTwin integration)
 pub mod audit;
 
@@ -193,6 +196,9 @@ pub use pension::*;
 
 // Expected Credit Loss exports (IFRS 9 / ASC 326)
 pub use expected_credit_loss::*;
+
+// Provisions and Contingencies exports (IAS 37 / ASC 450)
+pub use provision::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;
