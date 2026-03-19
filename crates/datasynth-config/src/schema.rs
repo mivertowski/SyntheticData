@@ -1183,6 +1183,10 @@ pub struct GlobalConfig {
     /// Base currency for group reporting
     #[serde(default = "default_currency")]
     pub group_currency: String,
+    /// Presentation currency for consolidated financial statements (ISO 4217).
+    /// If not set, defaults to `group_currency`.
+    #[serde(default)]
+    pub presentation_currency: Option<String>,
     /// Enable parallel generation
     #[serde(default = "default_true")]
     pub parallel: bool,
@@ -1245,6 +1249,10 @@ pub struct CompanyConfig {
     pub name: String,
     /// Local currency (ISO 4217)
     pub currency: String,
+    /// Functional currency for IAS 21 translation (ISO 4217).
+    /// If not set, defaults to the `currency` field (i.e. local == functional).
+    #[serde(default)]
+    pub functional_currency: Option<String>,
     /// Country code (ISO 3166-1 alpha-2)
     pub country: String,
     /// Fiscal year variant

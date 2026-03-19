@@ -2170,6 +2170,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
             seed: Some(42),
             parallel: false,
             group_currency: "USD".to_string(),
+            presentation_currency: None,
             worker_threads: 2,
             memory_limit_mb: 512,
             fiscal_year_months: None,
@@ -2178,6 +2179,7 @@ fn create_safe_demo_preset() -> GeneratorConfig {
             code: "DEMO".to_string(),
             name: "Demo Company".to_string(),
             currency: "USD".to_string(),
+            functional_currency: None,
             country: "US".to_string(),
             annual_transaction_volume: TransactionVolume::TenK, // Small volume
             volume_weight: 1.0,

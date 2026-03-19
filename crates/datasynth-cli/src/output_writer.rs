@@ -1153,6 +1153,10 @@ pub fn write_all_output(
         || !result.accounting_standards.business_combinations.is_empty()
         || !result.accounting_standards.ecl_models.is_empty()
         || !result.accounting_standards.provisions.is_empty()
+        || !result
+            .accounting_standards
+            .currency_translation_results
+            .is_empty()
     {
         let acct_dir = output_dir.join("accounting_standards");
         std::fs::create_dir_all(&acct_dir)?;
@@ -1215,6 +1219,21 @@ pub fn write_all_output(
             &acct_dir.join("provision_journal_entries.json"),
             "Provision journal entries",
         );
+
+        // IAS 21 — write under accounting_standards/fx/
+        if !result
+            .accounting_standards
+            .currency_translation_results
+            .is_empty()
+        {
+            let fx_dir = acct_dir.join("fx");
+            std::fs::create_dir_all(&fx_dir)?;
+            write_json_safe(
+                &result.accounting_standards.currency_translation_results,
+                &fx_dir.join("currency_translation_results.json"),
+                "IAS 21 currency translation results",
+            );
+        }
     }
 
     // ========================================================================

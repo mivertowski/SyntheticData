@@ -680,6 +680,9 @@ pub struct AccountingStandardsSnapshot {
     pub contingent_liabilities: Vec<datasynth_core::models::provision::ContingentLiability>,
     /// Journal entries from provisions.
     pub provision_journal_entries: Vec<JournalEntry>,
+    /// IAS 21 functional currency translation results (one per entity per period).
+    pub currency_translation_results:
+        Vec<datasynth_core::models::currency_translation_result::CurrencyTranslationResult>,
     /// Revenue recognition contract count.
     pub revenue_contract_count: usize,
     /// Impairment test count.
@@ -690,6 +693,8 @@ pub struct AccountingStandardsSnapshot {
     pub ecl_model_count: usize,
     /// Provision count.
     pub provision_count: usize,
+    /// Currency translation result count (IAS 21).
+    pub currency_translation_count: usize,
 }
 
 /// Compliance regulations framework snapshot (standards, procedures, findings, filings, graph).
@@ -5068,6 +5073,75 @@ impl EnhancedOrchestrator {
             snapshot.provision_journal_entries = prov_snap.journal_entries;
         }
 
+        // IAS 21 Functional Currency Translation
+        // For each company whose functional currency differs from the presentation
+        // currency, generate a CurrencyTranslationResult with CTA (OCI).
+        {
+            let ias21_period_label =
+                format!("{}-{}", end_date.year(), format!("{:02}", end_date.month()));
+
+            let presentation_currency = self
+                .config
+                .global
+                .presentation_currency
+                .clone()
+                .unwrap_or_else(|| self.config.global.group_currency.clone());
+
+            // Build a minimal rate table populated with approximate rates from
+            // the FX model base rates (USD-based) so we can do the translation.
+            let mut rate_table = FxRateTable::new(&presentation_currency);
+
+            // Populate with base rates against USD; if presentation_currency is
+            // not USD we do a best-effort two-step conversion using the table's
+            // triangulation support.
+            let base_rates = base_rates_usd();
+            for (ccy, rate) in &base_rates {
+                rate_table.add_rate(FxRate::new(
+                    ccy,
+                    "USD",
+                    RateType::Closing,
+                    end_date,
+                    *rate,
+                    "SYNTHETIC",
+                ));
+                // Average rate = 98% of closing (approximation).
+                // 0.98 = 98/100 = Decimal::new(98, 2)
+                let avg = (*rate * rust_decimal::Decimal::new(98, 2)).round_dp(6);
+                rate_table.add_rate(FxRate::new(
+                    ccy,
+                    "USD",
+                    RateType::Average,
+                    end_date,
+                    avg,
+                    "SYNTHETIC",
+                ));
+            }
+
+            let revenue_proxy = rust_decimal::Decimal::from(10_000_000_u64);
+
+            let mut translation_results = Vec::new();
+            for company in &self.config.companies {
+                let func_ccy = company
+                    .functional_currency
+                    .clone()
+                    .unwrap_or_else(|| company.currency.clone());
+
+                let result = datasynth_generators::fx::FunctionalCurrencyTranslator::translate(
+                    &company.code,
+                    &func_ccy,
+                    &presentation_currency,
+                    &ias21_period_label,
+                    end_date,
+                    revenue_proxy,
+                    &rate_table,
+                );
+                translation_results.push(result);
+            }
+
+            snapshot.currency_translation_count = translation_results.len();
+            snapshot.currency_translation_results = translation_results;
+        }
+
         stats.revenue_contract_count = snapshot.revenue_contract_count;
         stats.impairment_test_count = snapshot.impairment_test_count;
         stats.business_combination_count = snapshot.business_combination_count;
@@ -5075,12 +5149,13 @@ impl EnhancedOrchestrator {
         stats.provision_count = snapshot.provision_count;
 
         info!(
-            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models, {} provisions",
+            "Accounting standards data generated: {} revenue contracts, {} impairment tests, {} business combinations, {} ECL models, {} provisions, {} IAS 21 translations",
             snapshot.revenue_contract_count,
             snapshot.impairment_test_count,
             snapshot.business_combination_count,
             snapshot.ecl_model_count,
-            snapshot.provision_count
+            snapshot.provision_count,
+            snapshot.currency_translation_count
         );
         self.check_resources_with_log("post-accounting-standards")?;
 
