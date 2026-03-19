@@ -445,6 +445,34 @@ pub fn write_all_output(
                 "Component auditor reports (ISA 600)",
             );
         }
+        // ISA 210: Engagement letters
+        write_json_safe(
+            &result.audit.engagement_letters,
+            &audit_dir.join("engagement_letters.json"),
+            "Engagement letters (ISA 210)",
+        );
+        // ISA 560 / IAS 10: Subsequent events
+        write_json_safe(
+            &result.audit.subsequent_events,
+            &audit_dir.join("subsequent_events.json"),
+            "Subsequent events (ISA 560 / IAS 10)",
+        );
+        // ISA 402: Service organization controls
+        write_json_safe(
+            &result.audit.service_organizations,
+            &audit_dir.join("service_organizations.json"),
+            "Service organizations (ISA 402)",
+        );
+        write_json_safe(
+            &result.audit.soc_reports,
+            &audit_dir.join("soc_reports.json"),
+            "SOC reports (ISA 402)",
+        );
+        write_json_safe(
+            &result.audit.user_entity_controls,
+            &audit_dir.join("user_entity_controls.json"),
+            "User entity controls (ISA 402)",
+        );
     }
 
     // ========================================================================

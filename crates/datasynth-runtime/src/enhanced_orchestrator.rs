@@ -38,9 +38,10 @@ use datasynth_core::error::{SynthError, SynthResult};
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
     AuditSample, ComponentAuditor, ComponentAuditorReport, ComponentInstruction,
-    ConfirmationResponse, ExternalConfirmation, GroupAuditPlan, InternalAuditFunction,
-    InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
-    RiskAssessment, Workpaper,
+    ConfirmationResponse, EngagementLetter, ExternalConfirmation, GroupAuditPlan,
+    InternalAuditFunction, InternalAuditReport, ProfessionalJudgment, RelatedParty,
+    RelatedPartyTransaction, RiskAssessment, ServiceOrganization, SocReport, SubsequentEvent,
+    UserEntityControl, Workpaper,
 };
 use datasynth_core::models::sourcing::{
     BidEvaluation, CatalogItem, ProcurementContract, RfxEvent, SourcingProject, SpendAnalysis,
@@ -162,10 +163,13 @@ use datasynth_core::models::IndustrySector;
 use datasynth_generators::audit::analytical_procedure_generator::AnalyticalProcedureGenerator;
 use datasynth_generators::audit::component_audit_generator::ComponentAuditGenerator;
 use datasynth_generators::audit::confirmation_generator::ConfirmationGenerator;
+use datasynth_generators::audit::engagement_letter_generator::EngagementLetterGenerator;
 use datasynth_generators::audit::internal_audit_generator::InternalAuditGenerator;
 use datasynth_generators::audit::procedure_step_generator::ProcedureStepGenerator;
 use datasynth_generators::audit::related_party_generator::RelatedPartyGenerator;
 use datasynth_generators::audit::sample_generator::SampleGenerator;
+use datasynth_generators::audit::service_org_generator::ServiceOrgGenerator;
+use datasynth_generators::audit::subsequent_event_generator::SubsequentEventGenerator;
 use datasynth_generators::coa_generator::CoAFramework;
 use datasynth_generators::llm_enrichment::VendorLlmEnricher;
 use rayon::prelude::*;
@@ -494,6 +498,19 @@ pub struct AuditSnapshot {
     pub component_instructions: Vec<ComponentInstruction>,
     /// Reports received from component auditors (ISA 600).
     pub component_reports: Vec<ComponentAuditorReport>,
+    // ---- ISA 210: Engagement Letters ----
+    /// Engagement letters per ISA 210.
+    pub engagement_letters: Vec<EngagementLetter>,
+    // ---- ISA 560 / IAS 10: Subsequent Events ----
+    /// Subsequent events per ISA 560 / IAS 10.
+    pub subsequent_events: Vec<SubsequentEvent>,
+    // ---- ISA 402: Service Organization Controls ----
+    /// Service organizations identified per ISA 402.
+    pub service_organizations: Vec<ServiceOrganization>,
+    /// SOC reports obtained per ISA 402.
+    pub soc_reports: Vec<SocReport>,
+    /// User entity controls documented per ISA 402.
+    pub user_entity_controls: Vec<UserEntityControl>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -8927,12 +8944,102 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // ISA 210: Engagement letters — one per engagement
+        // ----------------------------------------------------------------
+        {
+            let applicable_framework = self
+                .config
+                .accounting_standards
+                .framework
+                .as_ref()
+                .map(|f| format!("{f:?}"))
+                .unwrap_or_else(|| "IFRS".to_string());
+
+            let mut letter_gen = EngagementLetterGenerator::new(self.seed + 8300);
+            let entity_count = self.config.companies.len();
+
+            for engagement in &snapshot.engagements {
+                let company = self
+                    .config
+                    .companies
+                    .iter()
+                    .find(|c| c.code == engagement.client_entity_id);
+                let currency = company.map(|c| c.currency.as_str()).unwrap_or("USD");
+                let letter_date = engagement.planning_start;
+                let letter = letter_gen.generate(
+                    &engagement.engagement_id.to_string(),
+                    &engagement.client_name,
+                    entity_count,
+                    engagement.period_end_date,
+                    currency,
+                    &applicable_framework,
+                    letter_date,
+                );
+                snapshot.engagement_letters.push(letter);
+            }
+
+            info!(
+                "ISA 210 engagement letters: {} generated",
+                snapshot.engagement_letters.len()
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 560 / IAS 10: Subsequent events
+        // ----------------------------------------------------------------
+        {
+            let mut event_gen = SubsequentEventGenerator::new(self.seed + 8400);
+            let entity_codes: Vec<String> =
+                self.config.companies.iter().map(|c| c.code.clone()).collect();
+            let subsequent = event_gen.generate_for_entities(&entity_codes, period_end);
+            info!(
+                "ISA 560 subsequent events: {} generated ({} adjusting, {} non-adjusting)",
+                subsequent.len(),
+                subsequent
+                    .iter()
+                    .filter(|e| matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::Adjusting
+                    ))
+                    .count(),
+                subsequent
+                    .iter()
+                    .filter(|e| matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::NonAdjusting
+                    ))
+                    .count(),
+            );
+            snapshot.subsequent_events = subsequent;
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 402: Service organization controls
+        // ----------------------------------------------------------------
+        {
+            let mut soc_gen = ServiceOrgGenerator::new(self.seed + 8500);
+            let entity_codes: Vec<String> =
+                self.config.companies.iter().map(|c| c.code.clone()).collect();
+            let soc_snapshot = soc_gen.generate(&entity_codes, period_end);
+            info!(
+                "ISA 402 service orgs: {} orgs, {} SOC reports, {} user entity controls",
+                soc_snapshot.service_organizations.len(),
+                soc_snapshot.soc_reports.len(),
+                soc_snapshot.user_entity_controls.len(),
+            );
+            snapshot.service_organizations = soc_snapshot.service_organizations;
+            snapshot.soc_reports = soc_snapshot.soc_reports;
+            snapshot.user_entity_controls = soc_snapshot.user_entity_controls;
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
                  {} analytical, {} IA funcs, {} related parties, \
-                 {} component auditors",
+                 {} component auditors, {} letters, {} subsequent events, \
+                 {} service orgs",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -8943,6 +9050,9 @@ impl EnhancedOrchestrator {
                 snapshot.ia_functions.len(),
                 snapshot.related_parties.len(),
                 snapshot.component_auditors.len(),
+                snapshot.engagement_letters.len(),
+                snapshot.subsequent_events.len(),
+                snapshot.service_organizations.len(),
             ));
         }
 
