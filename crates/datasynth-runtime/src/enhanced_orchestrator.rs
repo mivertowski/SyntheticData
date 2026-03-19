@@ -1995,8 +1995,8 @@ impl EnhancedOrchestrator {
         let data_quality_stats =
             self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
 
-        // Phase 10b: Period Close (tax provision + income statement closing entries)
-        self.phase_period_close(&mut entries, &mut stats)?;
+        // Phase 10b: Period Close (tax provision + income statement closing entries + depreciation)
+        self.phase_period_close(&mut entries, &subledger, &mut stats)?;
 
         // Phase 11: Audit Data
         let audit = self.phase_audit_data(&entries, &mut stats)?;
@@ -2681,16 +2681,17 @@ impl EnhancedOrchestrator {
 
     /// Phase 10b: Generate period-close journal entries.
     ///
-    /// Stub implementation that generates:
-    /// 1. Tax provision JE per company: DR Tax Expense (8000) / CR Sales Tax Payable (2100)
-    /// 2. Income statement closing JE per company: transfer net income after tax to retained
+    /// Generates:
+    /// 1. Depreciation JEs per asset: DR Depreciation Expense (6000) / CR Accumulated
+    ///    Depreciation (1510) based on FA subledger records and straight-line amortisation
+    ///    for the configured period.
+    /// 2. Tax provision JE per company: DR Tax Expense (8000) / CR Sales Tax Payable (2100)
+    /// 3. Income statement closing JE per company: transfer net income after tax to retained
     ///    earnings via the Income Summary (3600) clearing account.
-    ///
-    /// The full CloseEngine integration with depreciation, accruals, and FX revaluation
-    /// handlers will come in later tiers.
     fn phase_period_close(
         &mut self,
         entries: &mut Vec<JournalEntry>,
+        subledger: &SubledgerSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<()> {
         if !self.phase_config.generate_period_close || entries.is_empty() {
@@ -2700,7 +2701,7 @@ impl EnhancedOrchestrator {
 
         info!("Phase 10b: Generating period-close journal entries");
 
-        use datasynth_core::accounts::{equity_accounts, tax_accounts, AccountCategory};
+        use datasynth_core::accounts::{control_accounts, equity_accounts, expense_accounts, tax_accounts, AccountCategory};
         use rust_decimal::Decimal;
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
@@ -2721,6 +2722,75 @@ impl EnhancedOrchestrator {
             .collect();
 
         let mut close_jes: Vec<JournalEntry> = Vec::new();
+
+        // --- Depreciation JEs (per asset) ---
+        // Compute period depreciation for each active fixed asset using straight-line method.
+        // period_depreciation = (acquisition_cost - salvage_value) / useful_life_months * period_months
+        let period_months = self.config.global.period_months;
+        for asset in &subledger.fa_records {
+            // Skip assets that are inactive / fully depreciated / non-depreciable
+            use datasynth_core::models::subledger::fa::AssetStatus;
+            if asset.status != AssetStatus::Active || asset.is_fully_depreciated() {
+                continue;
+            }
+            let useful_life_months = asset.useful_life_months();
+            if useful_life_months == 0 {
+                // Land or CIP — not depreciated
+                continue;
+            }
+            let salvage_value = asset.salvage_value();
+            let depreciable_base = (asset.acquisition_cost - salvage_value).max(Decimal::ZERO);
+            if depreciable_base == Decimal::ZERO {
+                continue;
+            }
+            let period_depr = (depreciable_base
+                / Decimal::from(useful_life_months)
+                * Decimal::from(period_months))
+            .round_dp(2);
+            if period_depr <= Decimal::ZERO {
+                continue;
+            }
+
+            let mut depr_header =
+                JournalEntryHeader::new(asset.company_code.clone(), close_date);
+            depr_header.document_type = "CL".to_string();
+            depr_header.header_text = Some(format!(
+                "Depreciation - {} {}",
+                asset.asset_number, asset.description
+            ));
+            depr_header.created_by = "CLOSE_ENGINE".to_string();
+            depr_header.source = TransactionSource::Automated;
+            depr_header.business_process = Some(BusinessProcess::R2R);
+
+            let doc_id = depr_header.document_id;
+            let mut depr_je = JournalEntry::new(depr_header);
+
+            // DR Depreciation Expense (6000)
+            depr_je.add_line(JournalEntryLine::debit(
+                doc_id,
+                1,
+                expense_accounts::DEPRECIATION.to_string(),
+                period_depr,
+            ));
+            // CR Accumulated Depreciation (1510)
+            depr_je.add_line(JournalEntryLine::credit(
+                doc_id,
+                2,
+                control_accounts::ACCUMULATED_DEPRECIATION.to_string(),
+                period_depr,
+            ));
+
+            debug_assert!(depr_je.is_balanced(), "Depreciation JE must be balanced");
+            close_jes.push(depr_je);
+        }
+
+        if !subledger.fa_records.is_empty() {
+            debug!(
+                "Generated {} depreciation JEs from {} FA records",
+                close_jes.len(),
+                subledger.fa_records.len()
+            );
+        }
 
         for company_code in &company_codes {
             // Calculate net income for this company from existing JEs:

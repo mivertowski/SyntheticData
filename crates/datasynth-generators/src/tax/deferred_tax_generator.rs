@@ -98,7 +98,8 @@ impl DeferredTaxGenerator {
             let period_label = format!("FY{}", posting_date.year());
 
             // 1. Temporary differences
-            let diffs = self.generate_temp_diffs(company_code, pre_tax_income, total_assets, total_revenue);
+            let diffs =
+                self.generate_temp_diffs(company_code, pre_tax_income, total_assets, total_revenue);
             let (dta, dtl) = compute_dta_dtl(&diffs, statutory_rate);
 
             // 2. ETR reconciliation
@@ -135,7 +136,6 @@ impl DeferredTaxGenerator {
         total_assets: Decimal,
         revenue_proxy: Decimal,
     ) -> Vec<TemporaryDifference> {
-
         let templates: Vec<(&str, &str, DeferredTaxType, Option<&str>, Decimal, Decimal)> = vec![
             // (description, account, type, standard, book_basis, tax_basis)
             // Accelerated depreciation – MACRS/capital allowances

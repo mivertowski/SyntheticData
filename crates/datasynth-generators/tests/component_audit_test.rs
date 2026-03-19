@@ -145,7 +145,12 @@ fn test_medium_entity_gets_specific_scope() {
         .iter()
         .enumerate()
         .map(|(i, &w)| {
-            make_company_weighted(&format!("C{:03}", i + 1), &format!("Company {}", i + 1), "US", w)
+            make_company_weighted(
+                &format!("C{:03}", i + 1),
+                &format!("Company {}", i + 1),
+                "US",
+                w,
+            )
         })
         .collect();
     let mut gen = ComponentAuditGenerator::new(42);

@@ -14,7 +14,6 @@ use datasynth_core::models::{
 };
 use datasynth_core::utils::seeded_rng;
 use datasynth_core::uuid_factory::{DeterministicUuidFactory, GeneratorType};
-use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -23,6 +22,8 @@ use tracing::debug;
 
 /// Generates financial statements from trial balance data.
 pub struct FinancialStatementGenerator {
+    /// RNG kept for future use and API stability (currently not used for cash flow).
+    #[allow(dead_code)]
     rng: ChaCha8Rng,
     uuid_factory: DeterministicUuidFactory,
     config: FinancialReportingConfig,
@@ -119,6 +120,7 @@ impl FinancialStatementGenerator {
                 company_code,
                 currency,
                 trial_balance,
+                prior_trial_balance,
                 period_start,
                 period_end,
                 fiscal_year,
@@ -468,7 +470,8 @@ impl FinancialStatementGenerator {
         &mut self,
         company_code: &str,
         currency: &str,
-        _tb: &[TrialBalanceEntry],
+        tb: &[TrialBalanceEntry],
+        prior_tb: Option<&[TrialBalanceEntry]>,
         period_start: NaiveDate,
         period_end: NaiveDate,
         fiscal_year: u16,
@@ -476,19 +479,74 @@ impl FinancialStatementGenerator {
         net_income: Decimal,
         preparer_id: &str,
     ) -> FinancialStatement {
-        // Indirect method: start with net income, adjust for non-cash items
-        let depreciation = Decimal::from(self.rng.random_range(5000..=50000));
-        let ar_change = Decimal::from(self.rng.random_range(-20000i64..=20000));
-        let ap_change = Decimal::from(self.rng.random_range(-15000i64..=15000));
-        let inventory_change = Decimal::from(self.rng.random_range(-10000i64..=10000));
+        // Indirect method: start with net income, adjust for non-cash items.
+        // All values are derived from the trial balance (and prior TB for period changes).
 
-        let operating_cf = net_income + depreciation - ar_change + ap_change - inventory_change;
+        let current = self.aggregate_by_category(tb);
+        let prior = prior_tb.map(|ptb| self.aggregate_by_category(ptb));
 
-        let capex = Decimal::from(self.rng.random_range(-100000i64..=-5000));
+        let get_current = |key: &str| -> Decimal { *current.get(key).unwrap_or(&Decimal::ZERO) };
+        let get_prior = |key: &str| -> Decimal {
+            prior
+                .as_ref()
+                .and_then(|p| p.get(key).copied())
+                .unwrap_or(Decimal::ZERO)
+        };
+
+        // Depreciation add-back: use current-period OperatingExpenses proxy as depreciation is
+        // embedded in expenses. We look for an explicit "Depreciation" category first, then
+        // fall back to 5% of fixed assets (a common stub when no detail is available).
+        let fa_current = get_current("FixedAssets");
+        let fa_prior = get_prior("FixedAssets");
+        let depreciation = if current.contains_key("Depreciation") {
+            get_current("Depreciation")
+        } else {
+            // Approximate: FA decrease net of additions implies depreciation
+            // Use a conservative 5% of average FA balance when no explicit data
+            let avg_fa = (fa_current.abs() + fa_prior.abs()) / Decimal::from(2);
+            (avg_fa * Decimal::new(5, 2)).max(Decimal::ZERO)
+        };
+
+        // Working capital changes (increase in asset = use of cash = negative)
+        // AR: increase in AR is a use of cash (negative)
+        let ar_current = get_current("Receivables");
+        let ar_prior = get_prior("Receivables");
+        let ar_change = ar_current - ar_prior; // positive = AR increased = use of cash
+
+        // Inventory: increase in inventory is a use of cash (negative)
+        let inv_current = get_current("Inventory");
+        let inv_prior = get_prior("Inventory");
+        let inventory_change = inv_current - inv_prior; // positive = built up inventory = use of cash
+
+        // AP: increase in AP is a source of cash (positive)
+        let ap_current = get_current("Payables");
+        let ap_prior = get_prior("Payables");
+        let ap_change = ap_current - ap_prior; // positive = AP increased = source of cash
+
+        // Accruals: increase in accruals is a source of cash (positive)
+        let accrual_current = get_current("AccruedLiabilities");
+        let accrual_prior = get_prior("AccruedLiabilities");
+        let accrual_change = accrual_current - accrual_prior;
+
+        // Operating CF = Net Income + Depreciation - ΔAR - ΔInventory + ΔAP + ΔAccruals
+        let operating_cf =
+            net_income + depreciation - ar_change - inventory_change + ap_change + accrual_change;
+
+        // Investing CF: net change in fixed assets (increase = outflow = negative)
+        let fa_change = fa_current - fa_prior; // positive = more FA = capex outflow
+        let capex = -fa_change; // negate: FA increase → negative investing CF
         let investing_cf = capex;
 
-        let debt_change = Decimal::from(self.rng.random_range(-50000i64..=50000));
-        let financing_cf = debt_change;
+        // Financing CF: net change in debt + equity contributions
+        let debt_current = get_current("LongTermDebt");
+        let debt_prior = get_prior("LongTermDebt");
+        let debt_change = debt_current - debt_prior;
+
+        let equity_current = get_current("Equity");
+        let equity_prior = get_prior("Equity");
+        let equity_change = equity_current - equity_prior;
+
+        let financing_cf = debt_change + equity_change;
 
         let net_change = operating_cf + investing_cf + financing_cf;
 
@@ -539,12 +597,21 @@ impl FinancialStatementGenerator {
                 is_total: false,
             },
             CashFlowItem {
+                item_code: "CF-ACR".to_string(),
+                label: "Change in Accrued Liabilities".to_string(),
+                category: CashFlowCategory::Operating,
+                amount: accrual_change,
+                amount_prior: None,
+                sort_order: 6,
+                is_total: false,
+            },
+            CashFlowItem {
                 item_code: "CF-OP".to_string(),
                 label: "Net Cash from Operating Activities".to_string(),
                 category: CashFlowCategory::Operating,
                 amount: operating_cf,
                 amount_prior: None,
-                sort_order: 6,
+                sort_order: 7,
                 is_total: true,
             },
             CashFlowItem {
@@ -553,7 +620,7 @@ impl FinancialStatementGenerator {
                 category: CashFlowCategory::Investing,
                 amount: capex,
                 amount_prior: None,
-                sort_order: 7,
+                sort_order: 8,
                 is_total: false,
             },
             CashFlowItem {
@@ -562,7 +629,7 @@ impl FinancialStatementGenerator {
                 category: CashFlowCategory::Investing,
                 amount: investing_cf,
                 amount_prior: None,
-                sort_order: 8,
+                sort_order: 9,
                 is_total: true,
             },
             CashFlowItem {
@@ -571,7 +638,7 @@ impl FinancialStatementGenerator {
                 category: CashFlowCategory::Financing,
                 amount: debt_change,
                 amount_prior: None,
-                sort_order: 9,
+                sort_order: 10,
                 is_total: false,
             },
             CashFlowItem {
@@ -580,7 +647,7 @@ impl FinancialStatementGenerator {
                 category: CashFlowCategory::Financing,
                 amount: financing_cf,
                 amount_prior: None,
-                sort_order: 10,
+                sort_order: 11,
                 is_total: true,
             },
             CashFlowItem {
@@ -589,7 +656,7 @@ impl FinancialStatementGenerator {
                 category: CashFlowCategory::Operating,
                 amount: net_change,
                 amount_prior: None,
-                sort_order: 11,
+                sort_order: 12,
                 is_total: true,
             },
         ];
