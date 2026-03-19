@@ -178,7 +178,11 @@ pub struct AccountingEstimate {
     #[serde(with = "rust_decimal::serde::str")]
     pub management_point_estimate: Decimal,
     /// Auditor's independent point estimate (when developed as an audit procedure).
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "rust_decimal::serde::str_option")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "rust_decimal::serde::str_option"
+    )]
     pub auditor_point_estimate: Option<Decimal>,
     /// Auditor's assessment of estimation uncertainty per ISA 540.
     pub estimation_uncertainty: UncertaintyLevel,

@@ -23,8 +23,8 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use datasynth_core::models::audit::accounting_estimates::{
-    AccountingEstimate, AssumptionAssessment, EstimateAssumption, EstimateComplexity,
-    EstimateType, Isa540RiskFactors, RetrospectiveReview, SubjectivityLevel, UncertaintyLevel,
+    AccountingEstimate, AssumptionAssessment, EstimateAssumption, EstimateComplexity, EstimateType,
+    Isa540RiskFactors, RetrospectiveReview, SubjectivityLevel, UncertaintyLevel,
 };
 use datasynth_core::utils::seeded_rng;
 
@@ -90,10 +90,7 @@ impl AccountingEstimateGenerator {
     }
 
     /// Generate all accounting estimates for a list of entity codes.
-    pub fn generate_for_entities(
-        &mut self,
-        entity_codes: &[String],
-    ) -> Vec<AccountingEstimate> {
+    pub fn generate_for_entities(&mut self, entity_codes: &[String]) -> Vec<AccountingEstimate> {
         let mut all_estimates = Vec::new();
         for entity_code in entity_codes {
             let estimates = self.generate_for_entity(entity_code);
@@ -104,9 +101,9 @@ impl AccountingEstimateGenerator {
 
     /// Generate accounting estimates for a single entity.
     pub fn generate_for_entity(&mut self, entity_code: &str) -> Vec<AccountingEstimate> {
-        let count = self
-            .rng
-            .random_range(self.config.min_estimates_per_entity..=self.config.max_estimates_per_entity);
+        let count = self.rng.random_range(
+            self.config.min_estimates_per_entity..=self.config.max_estimates_per_entity,
+        );
 
         // All estimate types available
         let all_types = [
@@ -153,7 +150,10 @@ impl AccountingEstimateGenerator {
         let (uncertainty, complexity, subjectivity) = self.risk_factors_for(estimate_type);
 
         let assumptions = self.generate_assumptions(estimate_type, base_amount);
-        let retrospective_review = if self.rng.random_bool(self.config.retrospective_review_probability) {
+        let retrospective_review = if self
+            .rng
+            .random_bool(self.config.retrospective_review_probability)
+        {
             Some(self.generate_retrospective_review(base_amount))
         } else {
             None
@@ -165,9 +165,12 @@ impl AccountingEstimateGenerator {
         {
             // Small random deviation: ±2–8 % from management's estimate
             let deviation_pct = self.rng.random_range(2u32..=8u32);
-            let deviation_sign = if self.rng.random_bool(0.5) { 1i64 } else { -1i64 };
-            let multiplier = dec!(1)
-                + Decimal::new(deviation_sign * i64::from(deviation_pct), 2); // e.g. 1.04
+            let deviation_sign = if self.rng.random_bool(0.5) {
+                1i64
+            } else {
+                -1i64
+            };
+            let multiplier = dec!(1) + Decimal::new(deviation_sign * i64::from(deviation_pct), 2); // e.g. 1.04
             Some((base_amount * multiplier).round_dp(2))
         } else {
             None
@@ -280,11 +283,8 @@ impl AccountingEstimateGenerator {
         let templates = assumption_templates(estimate_type);
         let mut assumptions = Vec::with_capacity(count);
 
-        for i in 0..count.min(templates.len()) {
-            let (desc, sens_pct) = &templates[i];
-            let sensitivity = (base_amount
-                * Decimal::new(i64::from(*sens_pct), 2))
-            .round_dp(2);
+        for (desc, sens_pct) in templates.iter().take(count.min(templates.len())) {
+            let sensitivity = (base_amount * Decimal::new(i64::from(*sens_pct), 2)).round_dp(2);
 
             let reasonableness = if self.rng.random_bool(0.70) {
                 AssumptionAssessment::Reasonable
@@ -309,7 +309,11 @@ impl AccountingEstimateGenerator {
     fn generate_retrospective_review(&mut self, current_estimate: Decimal) -> RetrospectiveReview {
         // Simulate a prior-period estimate as current ± 5–20 %
         let prior_delta_pct: f64 = self.rng.random_range(5.0..20.0);
-        let prior_sign = if self.rng.random_bool(0.5) { 1.0_f64 } else { -1.0_f64 };
+        let prior_sign = if self.rng.random_bool(0.5) {
+            1.0_f64
+        } else {
+            -1.0_f64
+        };
         let prior_factor = 1.0 + prior_sign * prior_delta_pct / 100.0;
 
         let prior_estimate = {
@@ -321,7 +325,11 @@ impl AccountingEstimateGenerator {
         let var_pct: f64 = self
             .rng
             .random_range(self.config.min_variance_pct..=self.config.max_variance_pct);
-        let var_sign = if self.rng.random_bool(0.5) { 1.0_f64 } else { -1.0_f64 };
+        let var_sign = if self.rng.random_bool(0.5) {
+            1.0_f64
+        } else {
+            -1.0_f64
+        };
         let var_factor = 1.0 + var_sign * var_pct / 100.0;
 
         let actual_outcome = {
@@ -498,26 +506,40 @@ mod tests {
     fn test_high_uncertainty_types() {
         let mut gen = AccountingEstimateGenerator::new(777);
         // Force only pensions to be generated by running many entities and collecting
-        let all_estimates = gen.generate_for_entities(&["E1".to_string(), "E2".to_string(), "E3".to_string()]);
+        let all_estimates =
+            gen.generate_for_entities(&["E1".to_string(), "E2".to_string(), "E3".to_string()]);
 
         // Find a pension estimate and verify its risk factors
-        let pension = all_estimates.iter().find(|e| e.estimate_type == EstimateType::PensionObligation);
+        let pension = all_estimates
+            .iter()
+            .find(|e| e.estimate_type == EstimateType::PensionObligation);
         if let Some(p) = pension {
             assert!(
-                matches!(p.isa540_risk_factors.estimation_uncertainty, UncertaintyLevel::High),
+                matches!(
+                    p.isa540_risk_factors.estimation_uncertainty,
+                    UncertaintyLevel::High
+                ),
                 "Pension obligation should have High uncertainty"
             );
             assert!(
-                matches!(p.isa540_risk_factors.complexity, EstimateComplexity::Complex),
+                matches!(
+                    p.isa540_risk_factors.complexity,
+                    EstimateComplexity::Complex
+                ),
                 "Pension obligation should be Complex"
             );
         }
 
         // Find a depreciation estimate and verify its risk factors
-        let depr = all_estimates.iter().find(|e| e.estimate_type == EstimateType::DepreciationUsefulLife);
+        let depr = all_estimates
+            .iter()
+            .find(|e| e.estimate_type == EstimateType::DepreciationUsefulLife);
         if let Some(d) = depr {
             assert!(
-                matches!(d.isa540_risk_factors.estimation_uncertainty, UncertaintyLevel::Low),
+                matches!(
+                    d.isa540_risk_factors.estimation_uncertainty,
+                    UncertaintyLevel::Low
+                ),
                 "DepreciationUsefulLife should have Low uncertainty"
             );
         }

@@ -109,11 +109,17 @@ mod accounting_estimates_integration_tests {
             .find(|e| e.estimate_type == EstimateType::PensionObligation);
         if let Some(p) = pension {
             assert!(
-                matches!(p.isa540_risk_factors.estimation_uncertainty, UncertaintyLevel::High),
+                matches!(
+                    p.isa540_risk_factors.estimation_uncertainty,
+                    UncertaintyLevel::High
+                ),
                 "PensionObligation must be High uncertainty"
             );
             assert!(
-                matches!(p.isa540_risk_factors.complexity, EstimateComplexity::Complex),
+                matches!(
+                    p.isa540_risk_factors.complexity,
+                    EstimateComplexity::Complex
+                ),
                 "PensionObligation must be Complex"
             );
         }
@@ -123,7 +129,10 @@ mod accounting_estimates_integration_tests {
             .find(|e| e.estimate_type == EstimateType::ExpectedCreditLoss);
         if let Some(e) = ecl {
             assert!(
-                matches!(e.isa540_risk_factors.estimation_uncertainty, UncertaintyLevel::High),
+                matches!(
+                    e.isa540_risk_factors.estimation_uncertainty,
+                    UncertaintyLevel::High
+                ),
                 "ExpectedCreditLoss must be High uncertainty"
             );
         }
@@ -144,7 +153,10 @@ mod accounting_estimates_integration_tests {
             .find(|e| e.estimate_type == EstimateType::DepreciationUsefulLife);
         if let Some(d) = depr {
             assert!(
-                matches!(d.isa540_risk_factors.estimation_uncertainty, UncertaintyLevel::Low),
+                matches!(
+                    d.isa540_risk_factors.estimation_uncertainty,
+                    UncertaintyLevel::Low
+                ),
                 "DepreciationUsefulLife must be Low uncertainty"
             );
             assert!(
@@ -261,13 +273,15 @@ mod accounting_estimates_integration_tests {
     #[test]
     fn test_estimate_ids_are_unique() {
         let mut gen = make_gen(456);
-        let estimates = gen.generate_for_entities(&[
-            "UNIQ-001".to_string(),
-            "UNIQ-002".to_string(),
-        ]);
+        let estimates =
+            gen.generate_for_entities(&["UNIQ-001".to_string(), "UNIQ-002".to_string()]);
         let mut ids = std::collections::HashSet::new();
         for est in &estimates {
-            assert!(ids.insert(est.id.clone()), "Duplicate estimate ID: {}", est.id);
+            assert!(
+                ids.insert(est.id.clone()),
+                "Duplicate estimate ID: {}",
+                est.id
+            );
         }
     }
 }

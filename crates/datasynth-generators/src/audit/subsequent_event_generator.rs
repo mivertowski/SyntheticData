@@ -70,9 +70,7 @@ impl SubsequentEventGenerator {
         entity_code: &str,
         period_end_date: NaiveDate,
     ) -> Vec<SubsequentEvent> {
-        let count = self
-            .rng
-            .random_range(0..=self.config.max_events_per_period);
+        let count = self.rng.random_range(0..=self.config.max_events_per_period);
         let window_end_days = self.rng.random_range(
             self.config.discovery_window_days.0..=self.config.discovery_window_days.1,
         );
@@ -86,7 +84,9 @@ impl SubsequentEventGenerator {
             let event_date = period_end_date + Duration::days(event_offset_days);
 
             // Discovery date: event date up to window end
-            let discovery_offset = self.rng.random_range(0..=(window_end - event_date).num_days());
+            let discovery_offset = self
+                .rng
+                .random_range(0..=(window_end - event_date).num_days());
             let discovery_date = event_date + Duration::days(discovery_offset);
             let discovery_date = discovery_date.min(window_end);
 
@@ -236,7 +236,11 @@ mod tests {
     fn test_event_count_within_bounds() {
         let mut gen = SubsequentEventGenerator::new(42);
         let events = gen.generate_for_entity("C001", period_end());
-        assert!(events.len() <= 5, "count should be 0..=5, got {}", events.len());
+        assert!(
+            events.len() <= 5,
+            "count should be 0..=5, got {}",
+            events.len()
+        );
     }
 
     #[test]
@@ -248,7 +252,12 @@ mod tests {
             let mut g = SubsequentEventGenerator::new(seed);
             let events = g.generate_for_entity("C001", pe);
             for event in &events {
-                assert!(event.event_date > pe, "event_date {} should be after period_end {}", event.event_date, pe);
+                assert!(
+                    event.event_date > pe,
+                    "event_date {} should be after period_end {}",
+                    event.event_date,
+                    pe
+                );
             }
         }
     }

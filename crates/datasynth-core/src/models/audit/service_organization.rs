@@ -190,7 +190,11 @@ impl SocReport {
 
 impl ControlObjective {
     /// Create a new control objective.
-    pub fn new(description: impl Into<String>, controls_tested: u32, controls_effective: bool) -> Self {
+    pub fn new(
+        description: impl Into<String>,
+        controls_tested: u32,
+        controls_effective: bool,
+    ) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             description: description.into(),

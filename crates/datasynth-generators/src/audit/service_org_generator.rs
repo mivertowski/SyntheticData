@@ -113,11 +113,8 @@ impl ServiceOrgGenerator {
                     existing.entities_served.push(entity_code.clone());
                     existing.id.clone()
                 } else {
-                    let org = ServiceOrganization::new(
-                        org_name,
-                        service_type,
-                        vec![entity_code.clone()],
-                    );
+                    let org =
+                        ServiceOrganization::new(org_name, service_type, vec![entity_code.clone()]);
                     let id = org.id.clone();
                     snapshot.service_organizations.push(org);
                     id
@@ -143,7 +140,11 @@ impl ServiceOrgGenerator {
         snapshot
     }
 
-    fn generate_soc_report(&mut self, service_org_id: &str, period_end_date: NaiveDate) -> SocReport {
+    fn generate_soc_report(
+        &mut self,
+        service_org_id: &str,
+        period_end_date: NaiveDate,
+    ) -> SocReport {
         let objectives_count = self.rng.random_range(
             self.config.objectives_per_report.0..=self.config.objectives_per_report.1,
         );
@@ -331,8 +332,7 @@ mod tests {
         let mut gen = ServiceOrgGenerator::new(42);
         let snapshot = gen.generate(&entity_codes(1), period_end());
         assert!(
-            snapshot.service_organizations.len() >= 1
-                && snapshot.service_organizations.len() <= 3,
+            snapshot.service_organizations.len() >= 1 && snapshot.service_organizations.len() <= 3,
             "expected 1-3 service orgs, got {}",
             snapshot.service_organizations.len()
         );

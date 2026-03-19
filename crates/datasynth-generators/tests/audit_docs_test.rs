@@ -8,11 +8,11 @@ use std::collections::HashSet;
 
 use chrono::{Duration, NaiveDate};
 use datasynth_core::models::audit::engagement_letter::{EngagementLetter, EngagementScope};
-use datasynth_core::models::audit::subsequent_events::EventClassification;
 use datasynth_core::models::audit::service_organization::SocReportType;
+use datasynth_core::models::audit::subsequent_events::EventClassification;
 use datasynth_generators::audit::engagement_letter_generator::EngagementLetterGenerator;
-use datasynth_generators::audit::subsequent_event_generator::SubsequentEventGenerator;
 use datasynth_generators::audit::service_org_generator::ServiceOrgGenerator;
+use datasynth_generators::audit::subsequent_event_generator::SubsequentEventGenerator;
 
 // =============================================================================
 // Helpers
@@ -82,11 +82,7 @@ fn letter_one_per_engagement() {
         .collect();
 
     let letters = gen.generate_batch(&engagements, 5, "IFRS");
-    assert_eq!(
-        letters.len(),
-        5,
-        "should produce one letter per engagement"
-    );
+    assert_eq!(letters.len(), 5, "should produce one letter per engagement");
 }
 
 #[test]
@@ -129,8 +125,14 @@ fn letter_reporting_deadline_is_after_period_end() {
 fn letter_responsibilities_are_populated() {
     let mut gen = EngagementLetterGenerator::new(42);
     let letter = make_letter(&mut gen, 1);
-    assert!(!letter.responsibilities_auditor.is_empty(), "auditor responsibilities must not be empty");
-    assert!(!letter.responsibilities_management.is_empty(), "management responsibilities must not be empty");
+    assert!(
+        !letter.responsibilities_auditor.is_empty(),
+        "auditor responsibilities must not be empty"
+    );
+    assert!(
+        !letter.responsibilities_management.is_empty(),
+        "management responsibilities must not be empty"
+    );
 }
 
 #[test]
@@ -138,7 +140,14 @@ fn letter_ids_unique_across_batch() {
     let mut gen = EngagementLetterGenerator::new(42);
     let period = period_end();
     let engagements: Vec<(String, String, NaiveDate, String)> = (1..=10)
-        .map(|i| (format!("ENG-{i:03}"), format!("Company {i}"), period, "USD".to_string()))
+        .map(|i| {
+            (
+                format!("ENG-{i:03}"),
+                format!("Company {i}"),
+                period,
+                "USD".to_string(),
+            )
+        })
         .collect();
     let letters = gen.generate_batch(&engagements, 10, "IFRS");
     let ids: HashSet<&str> = letters.iter().map(|l| l.id.as_str()).collect();
@@ -338,7 +347,11 @@ fn service_org_ids_unique() {
         .iter()
         .map(|o| o.id.as_str())
         .collect();
-    assert_eq!(ids.len(), snapshot.service_organizations.len(), "service org IDs must be unique");
+    assert_eq!(
+        ids.len(),
+        snapshot.service_organizations.len(),
+        "service org IDs must be unique"
+    );
 }
 
 #[test]
@@ -346,7 +359,11 @@ fn soc_report_ids_unique() {
     let mut gen = ServiceOrgGenerator::new(42);
     let snapshot = gen.generate(&entity_codes(3), period_end());
     let ids: HashSet<&str> = snapshot.soc_reports.iter().map(|r| r.id.as_str()).collect();
-    assert_eq!(ids.len(), snapshot.soc_reports.len(), "SOC report IDs must be unique");
+    assert_eq!(
+        ids.len(),
+        snapshot.soc_reports.len(),
+        "SOC report IDs must be unique"
+    );
 }
 
 #[test]
@@ -358,7 +375,11 @@ fn user_entity_control_ids_unique() {
         .iter()
         .map(|c| c.id.as_str())
         .collect();
-    assert_eq!(ids.len(), snapshot.user_entity_controls.len(), "user entity control IDs must be unique");
+    assert_eq!(
+        ids.len(),
+        snapshot.user_entity_controls.len(),
+        "user entity control IDs must be unique"
+    );
 }
 
 #[test]
