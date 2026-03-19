@@ -60,6 +60,14 @@ enum Commands {
         #[arg(long)]
         demo: bool,
 
+        /// Apply a named overlay preset on top of the loaded/default config.
+        ///
+        /// Supported values:
+        ///   audit-group  → enable all audit simulation features (ISA/PCAOB/SOX,
+        ///                   COSO controls, anomaly injection, network features)
+        #[arg(long)]
+        preset: Option<String>,
+
         /// Load a scenario pack (e.g., "manufacturing/supplier_fraud")
         #[arg(long)]
         scenario_pack: Option<String>,
@@ -348,6 +356,7 @@ fn main() -> Result<()> {
             config,
             output,
             demo,
+            preset,
             scenario_pack,
             fingerprint,
             scale,
@@ -509,6 +518,22 @@ fn main() -> Result<()> {
                     // Apply fiscal_year_months if provided via CLI
                     if let Some(fy_months) = fiscal_year_months {
                         cfg.global.fiscal_year_months = Some(fy_months);
+                    }
+
+                    // Apply named overlay preset
+                    if let Some(ref preset_name) = preset {
+                        match preset_name.as_str() {
+                            "audit-group" => {
+                                cfg = presets::audit_group_overlay(cfg);
+                                tracing::info!("Applied 'audit-group' overlay preset");
+                            }
+                            other => {
+                                tracing::warn!(
+                                    "Unknown preset '{}'; supported: audit-group",
+                                    other
+                                );
+                            }
+                        }
                     }
 
                     // Apply fraud scenario packs

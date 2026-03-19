@@ -224,6 +224,83 @@ fn get_business_process_config(industry: IndustrySector) -> BusinessProcessConfi
     }
 }
 
+/// Enhance any industry preset with full audit simulation capabilities.
+///
+/// Apply this overlay on top of any `create_preset(...)` result to enable all
+/// audit-relevant v1.3.0 features:
+/// - Audit standards (ISA / PCAOB / SOX)
+/// - Internal controls with COSO 2013
+/// - Accounting standards (revenue recognition, leases, fair value, impairment)
+/// - Anomaly injection at a 2% rate (fraud + errors)
+/// - Network features (vendor network, customer segmentation, cross-process links)
+/// - Intercompany transactions
+/// - Balance and trial balance generation
+///
+/// # Example
+/// ```rust,ignore
+/// let config = audit_group_overlay(create_preset(
+///     IndustrySector::Manufacturing, 3, 12,
+///     CoAComplexity::Large, TransactionVolume::HundredK,
+/// ));
+/// ```
+pub fn audit_group_overlay(mut config: GeneratorConfig) -> GeneratorConfig {
+    // ── Audit standards (ISA + PCAOB + SOX) ──────────────────────────────────
+    config.audit_standards.enabled = true;
+    config.audit_standards.isa_compliance.enabled = true;
+    config.audit_standards.isa_compliance.framework = "dual".to_string(); // ISA + PCAOB
+    config.audit_standards.generate_audit_trail = true;
+    config.audit_standards.sox.enabled = true;
+    config.audit_standards.pcaob.enabled = true;
+
+    // ── Accounting standards (US GAAP by default) ─────────────────────────────
+    config.accounting_standards.enabled = true;
+    config.accounting_standards.revenue_recognition.enabled = true;
+    config.accounting_standards.leases.enabled = true;
+    config.accounting_standards.fair_value.enabled = true;
+    config.accounting_standards.impairment.enabled = true;
+
+    // ── Internal controls with COSO 2013 ──────────────────────────────────────
+    config.internal_controls.enabled = true;
+    config.internal_controls.coso_enabled = true;
+    config.internal_controls.include_entity_level_controls = true;
+    config.internal_controls.target_maturity_level = "managed".to_string();
+    config.internal_controls.exception_rate = 0.02;
+    config.internal_controls.sod_violation_rate = 0.01;
+
+    // ── Anomaly injection at audit-relevant rate ───────────────────────────────
+    config.anomaly_injection.enabled = true;
+    config.anomaly_injection.rates.total_rate = 0.02;
+    config.anomaly_injection.rates.fraud_rate = 0.01;
+    config.anomaly_injection.rates.error_rate = 0.005;
+    config.anomaly_injection.rates.process_rate = 0.005;
+    config.anomaly_injection.difficulty_classification.enabled = true;
+    config.anomaly_injection.context_aware.enabled = true;
+
+    // ── Network / interconnectivity features ──────────────────────────────────
+    config.vendor_network.enabled = true;
+    config.customer_segmentation.enabled = true;
+    config.cross_process_links.enabled = true;
+    config.cross_process_links.payment_bank_reconciliation = true;
+    config.cross_process_links.intercompany_bilateral = true;
+    config.relationship_strength.enabled = true;
+
+    // ── Intercompany transactions ─────────────────────────────────────────────
+    config.intercompany.enabled = true;
+    config.intercompany.generate_matched_pairs = true;
+    config.intercompany.generate_eliminations = true;
+
+    // ── Balance and trial balance generation ──────────────────────────────────
+    config.balance.generate_opening_balances = true;
+    config.balance.generate_trial_balances = true;
+    config.balance.reconcile_subledgers = true;
+
+    // ── Scenario tags for traceability ────────────────────────────────────────
+    config.scenario.tags.push("audit_group".to_string());
+    config.scenario.tags.push("audit_simulation".to_string());
+
+    config
+}
+
 /// Quick preset for demo/testing purposes.
 pub fn demo_preset() -> GeneratorConfig {
     create_preset(

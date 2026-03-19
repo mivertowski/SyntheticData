@@ -5,6 +5,8 @@
 
 pub mod je_risk_scoring;
 pub mod ratio_analysis;
+pub mod sampling_validation;
+pub mod trend_analysis;
 
 mod audit;
 mod balance;
@@ -119,6 +121,12 @@ pub use je_risk_scoring::{
 };
 pub use ratio_analysis::{
     FinancialRatios, RatioAnalysisResult, RatioCheck,
+};
+pub use sampling_validation::{
+    SamplingValidationResult, Stratum, StratumResult, validate_sampling,
+};
+pub use trend_analysis::{
+    TrendConsistencyCheck, TrendPlausibilityResult, analyze_trends,
 };
 
 use serde::{Deserialize, Serialize};
