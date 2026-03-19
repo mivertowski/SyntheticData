@@ -39,6 +39,7 @@
 //! };
 //! ```
 
+pub mod accounting_estimate_generator;
 pub mod analytical_procedure_generator;
 pub mod component_audit_generator;
 pub mod confirmation_generator;

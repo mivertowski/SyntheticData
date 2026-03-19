@@ -12,7 +12,9 @@
 //! - Analytical procedures (ISA 520)
 //! - Internal audit (ISA 610)
 //! - Related parties (ISA 550)
+//! - Accounting estimates (ISA 540)
 
+pub mod accounting_estimates;
 pub mod analytical_procedure;
 pub mod component_audit;
 pub mod confirmation;
@@ -31,6 +33,7 @@ pub mod service_organization;
 pub mod subsequent_events;
 mod workpaper;
 
+pub use accounting_estimates::*;
 pub use analytical_procedure::*;
 pub use component_audit::*;
 pub use confirmation::*;

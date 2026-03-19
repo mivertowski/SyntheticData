@@ -480,6 +480,13 @@ pub fn write_all_output(
             &audit_dir.join("going_concern_assessments.json"),
             "Going concern assessments (ISA 570)",
         );
+
+        // ISA 540: Accounting estimates
+        write_json_safe(
+            &result.audit.accounting_estimates,
+            &audit_dir.join("accounting_estimates.json"),
+            "Accounting estimates (ISA 540)",
+        );
     }
 
     // ========================================================================
@@ -622,6 +629,15 @@ pub fn write_all_output(
             &ic_dir.join("ic_elimination_entries.json"),
             "IC elimination entries",
         );
+
+        // NCI measurements from group structure ownership percentages
+        if !result.intercompany.nci_measurements.is_empty() {
+            write_json_safe(
+                &result.intercompany.nci_measurements,
+                &ic_dir.join("nci_measurements.json"),
+                "NCI measurements",
+            );
+        }
     }
 
     // ========================================================================

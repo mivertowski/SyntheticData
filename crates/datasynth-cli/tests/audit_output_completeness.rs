@@ -1,4 +1,4 @@
-/// Verify that output_writer.rs serializes all 15 AuditSnapshot fields to disk.
+/// Verify that output_writer.rs serializes all AuditSnapshot fields to disk.
 ///
 /// This test uses include_str! to read the source at compile time and checks
 /// that every expected audit JSON filename is present.
@@ -22,6 +22,8 @@ fn all_audit_snapshot_fields_are_written() {
         "audit_ia_reports.json",
         "audit_related_parties.json",
         "audit_related_party_transactions.json",
+        // ISA 540: Accounting estimates (Task 3.6)
+        "accounting_estimates.json",
     ];
 
     let mut missing = Vec::new();

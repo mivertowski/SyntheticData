@@ -163,6 +163,64 @@ impl AssociateRelationship {
     }
 }
 
+// ---------------------------------------------------------------------------
+// NCI Measurement
+// ---------------------------------------------------------------------------
+
+/// Non-controlling interest measurement for a subsidiary.
+///
+/// Captures the NCI share of net assets and current-period profit/loss,
+/// computed from the subsidiary's `nci_percentage` in [`SubsidiaryRelationship`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NciMeasurement {
+    /// Entity code of the subsidiary carrying an NCI.
+    pub entity_code: String,
+    /// NCI percentage (= 100 − parent ownership percentage).
+    #[serde(with = "rust_decimal::serde::str")]
+    pub nci_percentage: Decimal,
+    /// NCI share of the subsidiary's net assets at period-end.
+    #[serde(with = "rust_decimal::serde::str")]
+    pub nci_share_net_assets: Decimal,
+    /// NCI share of the subsidiary's net income/(loss) for the period.
+    #[serde(with = "rust_decimal::serde::str")]
+    pub nci_share_profit: Decimal,
+    /// Total NCI recognised in the consolidated balance sheet
+    /// (opening NCI + share of profit − NCI dividends).
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_nci: Decimal,
+}
+
+impl NciMeasurement {
+    /// Compute NCI measurement from subsidiary inputs.
+    ///
+    /// # Arguments
+    /// * `entity_code` — entity code of the subsidiary.
+    /// * `nci_percentage` — NCI percentage (0–100).
+    /// * `net_assets` — subsidiary net assets at period-end (before NCI split).
+    /// * `net_income` — subsidiary net income/(loss) for the period.
+    pub fn compute(
+        entity_code: String,
+        nci_percentage: Decimal,
+        net_assets: Decimal,
+        net_income: Decimal,
+    ) -> Self {
+        let hundred = Decimal::from(100);
+        let nci_pct_fraction = nci_percentage / hundred;
+        let nci_share_net_assets = net_assets * nci_pct_fraction;
+        let nci_share_profit = net_income * nci_pct_fraction;
+        // Simplified total NCI = share of net assets (already includes accumulated earnings).
+        let total_nci = nci_share_net_assets;
+
+        Self {
+            entity_code,
+            nci_percentage,
+            nci_share_net_assets,
+            nci_share_profit,
+            total_nci,
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

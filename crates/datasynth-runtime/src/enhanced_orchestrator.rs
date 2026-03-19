@@ -515,6 +515,10 @@ pub struct AuditSnapshot {
     /// Going concern assessments per ISA 570 / ASC 205-40 (one per entity per period).
     pub going_concern_assessments:
         Vec<datasynth_core::models::audit::going_concern::GoingConcernAssessment>,
+    // ---- ISA 540: Accounting Estimates ----
+    /// Accounting estimates reviewed per ISA 540 (5–8 per entity).
+    pub accounting_estimates:
+        Vec<datasynth_core::models::audit::accounting_estimates::AccountingEstimate>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -853,6 +857,8 @@ pub struct IntercompanySnapshot {
     pub buyer_journal_entries: Vec<JournalEntry>,
     /// Elimination entries for consolidation.
     pub elimination_entries: Vec<datasynth_core::models::intercompany::EliminationEntry>,
+    /// NCI measurements derived from group structure ownership percentages.
+    pub nci_measurements: Vec<datasynth_core::models::intercompany::NciMeasurement>,
     /// IC matched pair count.
     pub matched_pair_count: usize,
     /// IC elimination entry count.
@@ -3640,12 +3646,72 @@ impl EnhancedOrchestrator {
         );
         self.check_resources_with_log("post-intercompany")?;
 
+        // ----------------------------------------------------------------
+        // NCI measurements: derive from group structure ownership percentages
+        // ----------------------------------------------------------------
+        let nci_measurements: Vec<datasynth_core::models::intercompany::NciMeasurement> = {
+            use datasynth_core::models::intercompany::{GroupConsolidationMethod, NciMeasurement};
+            use rust_decimal::Decimal;
+
+            // Multipliers expressed as Decimal fractions without the dec! macro.
+            let three = Decimal::from(3u64);
+            let eight_pct = Decimal::new(8, 2); // 0.08
+
+            group_structure
+                .subsidiaries
+                .iter()
+                .filter(|sub| {
+                    sub.nci_percentage > Decimal::ZERO
+                        && sub.consolidation_method == GroupConsolidationMethod::FullConsolidation
+                })
+                .map(|sub| {
+                    // Approximate net assets from matched pair volumes for this subsidiary.
+                    // Sum all IC amounts where the subsidiary participates as a proxy for
+                    // relative scale; use a simple multiplier to simulate net assets.
+                    let subsidiary_volume: Decimal = matched_pairs
+                        .iter()
+                        .filter(|p| {
+                            p.seller_company == sub.entity_code
+                                || p.buyer_company == sub.entity_code
+                        })
+                        .map(|p| p.amount)
+                        .sum::<Decimal>();
+
+                    // Estimate net assets as ~3x IC transaction volume (heuristic)
+                    let net_assets = if subsidiary_volume > Decimal::ZERO {
+                        (subsidiary_volume * three).round_dp(2)
+                    } else {
+                        // Fallback: use a plausible base amount
+                        Decimal::from(1_000_000u64)
+                    };
+
+                    // Net income approximated as 8% of net assets
+                    let net_income = (net_assets * eight_pct).round_dp(2);
+
+                    NciMeasurement::compute(
+                        sub.entity_code.clone(),
+                        sub.nci_percentage,
+                        net_assets,
+                        net_income,
+                    )
+                })
+                .collect()
+        };
+
+        if !nci_measurements.is_empty() {
+            info!(
+                "NCI measurements: {} subsidiaries with non-controlling interests",
+                nci_measurements.len()
+            );
+        }
+
         Ok(IntercompanySnapshot {
             group_structure: Some(group_structure),
             matched_pairs,
             seller_journal_entries: seller_entries,
             buyer_journal_entries: buyer_entries,
             elimination_entries,
+            nci_measurements,
             matched_pair_count,
             elimination_entry_count,
             match_rate,
@@ -9158,13 +9224,43 @@ impl EnhancedOrchestrator {
             snapshot.going_concern_assessments = assessments;
         }
 
+        // ----------------------------------------------------------------
+        // ISA 540: Accounting estimates
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::accounting_estimate_generator::AccountingEstimateGenerator;
+            let mut est_gen = AccountingEstimateGenerator::new(self.seed + 8540);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let estimates = est_gen.generate_for_entities(&entity_codes);
+            info!(
+                "ISA 540 accounting estimates: {} estimates across {} entities \
+                 ({} with retrospective reviews, {} with auditor point estimates)",
+                estimates.len(),
+                entity_codes.len(),
+                estimates
+                    .iter()
+                    .filter(|e| e.retrospective_review.is_some())
+                    .count(),
+                estimates
+                    .iter()
+                    .filter(|e| e.auditor_point_estimate.is_some())
+                    .count(),
+            );
+            snapshot.accounting_estimates = estimates;
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
                  {} confirmations, {} procedure steps, {} samples, \
                  {} analytical, {} IA funcs, {} related parties, \
                  {} component auditors, {} letters, {} subsequent events, \
-                 {} service orgs, {} going concern",
+                 {} service orgs, {} going concern, {} accounting estimates",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -9179,6 +9275,7 @@ impl EnhancedOrchestrator {
                 snapshot.subsequent_events.len(),
                 snapshot.service_organizations.len(),
                 snapshot.going_concern_assessments.len(),
+                snapshot.accounting_estimates.len(),
             ));
         }
 

@@ -21,7 +21,7 @@ use datasynth_fingerprint::{
     models::PrivacyLevel,
     privacy::PrivacyConfig,
 };
-use datasynth_output::write_fec_csv;
+use datasynth_output::{write_fec_csv, SapExportConfig, SapExporter};
 use datasynth_runtime::{
     export_labels_all_formats, EnhancedOrchestrator, LabelExportConfig, LabelExportSummary,
     OutputFileInfo, PhaseConfig, RunManifest,
@@ -135,6 +135,14 @@ enum Commands {
         /// Stream output to a JSONL file during generation
         #[arg(long)]
         stream_file: Option<std::path::PathBuf>,
+
+        /// Additional export format(s) to write (repeatable): sap, fec, gobd
+        ///
+        /// sap   → SAP S/4HANA BKPF/BSEG/ACDOCA tables (CSV)
+        /// fec   → FEC Fichier des Écritures Comptables (French GAAP, 18 columns)
+        /// gobd  → GoBD journal + accounts + index.xml (German GAAP)
+        #[arg(long = "export-format", action = clap::ArgAction::Append)]
+        export_format: Vec<String>,
     },
 
     /// Validate a configuration file
@@ -359,6 +367,7 @@ fn main() -> Result<()> {
             fraud_scenario,
             fraud_rate,
             stream_file,
+            export_format,
         } => {
             // ========================================
             // CPU SAFEGUARD: Limit thread pool size
@@ -859,6 +868,131 @@ fn main() -> Result<()> {
                     ) {
                         Ok(()) => tracing::info!("GoBD index.xml written"),
                         Err(e) => tracing::warn!("Could not write GoBD index.xml: {}", e),
+                    }
+                }
+            }
+
+            // ========================================
+            // EXPLICIT --export-format FLAG HANDLING
+            // ========================================
+            // Process repeatable --export-format flags: sap, fec, gobd
+            for fmt in &export_format {
+                match fmt.to_ascii_lowercase().as_str() {
+                    "sap" => {
+                        // SAP S/4HANA BKPF / BSEG / ACDOCA export
+                        let sap_dir = output.join("sap_export");
+                        if let Err(e) = std::fs::create_dir_all(&sap_dir) {
+                            tracing::warn!("Could not create sap_export directory: {}", e);
+                        } else if result.journal_entries.is_empty() {
+                            tracing::warn!("SAP export skipped: no journal entries");
+                        } else {
+                            let sap_config = SapExportConfig::default();
+                            let mut sap_exporter = SapExporter::new(sap_config);
+                            match sap_exporter.export_to_files(&result.journal_entries, &sap_dir) {
+                                Ok(files) => {
+                                    tracing::info!(
+                                        "SAP export: {} tables written to {}",
+                                        files.len(),
+                                        sap_dir.display()
+                                    );
+                                    for (table, path) in &files {
+                                        tracing::info!(
+                                            "  SAP {}: {}",
+                                            format!("{:?}", table),
+                                            path
+                                        );
+                                    }
+                                }
+                                Err(e) => tracing::warn!("SAP export failed: {}", e),
+                            }
+                        }
+                    }
+                    "fec" => {
+                        // FEC — only meaningful for French GAAP, but honour flag regardless
+                        if result.journal_entries.is_empty() {
+                            tracing::warn!("FEC export skipped: no journal entries");
+                        } else {
+                            let fec_path = output.join("fec_export.csv");
+                            match write_fec_csv(
+                                &fec_path,
+                                &result.journal_entries,
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "FEC export written to: {} ({} entries)",
+                                    fec_path.display(),
+                                    result.journal_entries.len()
+                                ),
+                                Err(e) => tracing::warn!("FEC export failed: {}", e),
+                            }
+                        }
+                    }
+                    "gobd" => {
+                        // GoBD — only meaningful for German GAAP, but honour flag regardless
+                        let gobd_dir = output.join("gobd_explicit");
+                        if let Err(e) = std::fs::create_dir_all(&gobd_dir) {
+                            tracing::warn!("Could not create gobd_explicit directory: {}", e);
+                        } else if result.journal_entries.is_empty() {
+                            tracing::warn!("GoBD export skipped: no journal entries");
+                        } else {
+                            // Journal CSV
+                            match datasynth_output::write_gobd_journal_csv(
+                                &gobd_dir.join("gobd_journal.csv"),
+                                &result.journal_entries,
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "GoBD journal written: {} entries",
+                                    result.journal_entries.len()
+                                ),
+                                Err(e) => tracing::warn!("GoBD journal export failed: {}", e),
+                            }
+                            // Accounts CSV
+                            match datasynth_output::write_gobd_accounts_csv(
+                                &gobd_dir.join("gobd_accounts.csv"),
+                                &result.chart_of_accounts,
+                            ) {
+                                Ok(()) => tracing::info!(
+                                    "GoBD accounts written: {} accounts",
+                                    result.chart_of_accounts.accounts.len()
+                                ),
+                                Err(e) => tracing::warn!("GoBD accounts export failed: {}", e),
+                            }
+                            // Index XML
+                            let company_code_exp = config_for_manifest
+                                .companies
+                                .first()
+                                .map(|c| c.code.as_str())
+                                .unwrap_or("UNKNOWN");
+                            let fiscal_year_exp: i32 = config_for_manifest
+                                .global
+                                .start_date
+                                .split('-')
+                                .next()
+                                .and_then(|y| y.parse().ok())
+                                .unwrap_or(2024);
+                            let tables_exp = vec![
+                                ("gobd_journal.csv", "Buchungsjournal"),
+                                ("gobd_accounts.csv", "Kontenplan"),
+                            ];
+                            match datasynth_output::write_gobd_index_xml(
+                                &gobd_dir.join("index.xml"),
+                                company_code_exp,
+                                fiscal_year_exp,
+                                &tables_exp,
+                            ) {
+                                Ok(()) => tracing::info!("GoBD explicit index.xml written"),
+                                Err(e) => {
+                                    tracing::warn!("GoBD explicit index.xml failed: {}", e)
+                                }
+                            }
+                        }
+                    }
+                    unknown => {
+                        tracing::warn!(
+                            "Unknown --export-format value '{}'; valid options: sap, fec, gobd",
+                            unknown
+                        );
                     }
                 }
             }
