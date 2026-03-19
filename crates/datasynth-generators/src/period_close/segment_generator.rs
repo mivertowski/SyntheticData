@@ -98,7 +98,7 @@ impl SegmentGenerator {
             (SegmentType::ProductLine, self.default_product_lines())
         };
 
-        let n = segment_names.len().max(2).min(8);
+        let n = segment_names.len().clamp(2, 8);
 
         // Generate proportional splits for revenue, profit, assets
         let rev_splits = self.random_proportions(n);

@@ -113,7 +113,7 @@ impl PensionGenerator {
         let plan_id = format!("PLAN-{entity_code}-DB");
 
         // ---- 1. Participant count (50–500, capped at employee_count) ----------
-        let participant_count = (employee_count.max(50).min(500)) as u32;
+        let participant_count = (employee_count.clamp(50, 500)) as u32;
 
         // ---- 2. Actuarial assumptions -----------------------------------------
         let discount_rate = self.rand_rate(dec!(0.03), dec!(0.05));

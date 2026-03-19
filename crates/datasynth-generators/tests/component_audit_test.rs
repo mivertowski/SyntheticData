@@ -21,6 +21,7 @@ fn make_company(code: &str, name: &str, country: &str) -> CompanyConfig {
         code: code.to_string(),
         name: name.to_string(),
         currency: "USD".to_string(),
+        functional_currency: None,
         country: country.to_string(),
         fiscal_year_variant: "K4".to_string(),
         annual_transaction_volume: TransactionVolume::TenK,

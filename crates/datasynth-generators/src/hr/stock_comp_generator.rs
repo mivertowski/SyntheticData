@@ -151,9 +151,7 @@ impl StockCompGenerator {
         }
 
         // Determine executive pool: top 10% (min 1, max 50)
-        let exec_count = ((employee_ids.len() as f64 * 0.10).ceil() as usize)
-            .max(1)
-            .min(50);
+        let exec_count = ((employee_ids.len() as f64 * 0.10).ceil() as usize).clamp(1, 50);
         let grantees = &employee_ids[..exec_count];
 
         debug!(
