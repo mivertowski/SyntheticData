@@ -54,8 +54,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Trend Plausibility**: Revenue stability, expense ratio consistency, BS growth, directional consistency checks
 - **Audit Preset**: `audit_group_overlay()` modifier + `--preset audit-group` CLI flag enabling all audit features
 
+#### Quality Fixes (post-initial implementation)
+- **Audit opinion generator (ISA 700/705/706/701)**: Derives opinion from findings severity, going concern, scope limitations. Generates Key Audit Matters (ISA 701). PCAOB/ICFR opinion for US-listed entities
+- **SOX 302/404 assessments**: CEO/CFO certification (302) and ICFR effectiveness assessment (404) wired into orchestrator
+- **ECL + provision JEs merged into GL**: Allowance and provision balances now flow to trial balance and financial statements
+- **Tax rate standardized**: Consistent 21% statutory rate across all generators (was inconsistent 21%/25%)
+- **Hardcoded proxies replaced**: All $10M revenue proxies, 5x asset heuristics, and positional weights replaced with actual trial balance data
+- **Cash flow from actual data**: CF statement now derives from real BS movements (AR/AP/inventory changes, FA depreciation) instead of random ranges
+- **Depreciation in period close**: Per-asset depreciation JEs generated from fixed asset register
+- **Pension from payroll**: DBO uses actual avg salary from payroll, prorated for sub-annual periods
+- **Notes populated**: Notes to FS context wired with deferred tax, provisions, pensions, related parties
+- **Going concern from financials**: Indicators derived from actual working capital, net income, operating CF, debt ratios
+- **IC equity eliminations**: Investment/equity amounts computed from subsidiary net assets (was empty HashMaps)
+- **Revenue sign fixed**: Income statement shows positive revenue (was negative due to credit-normal convention)
+- **Ratio evaluator**: Current assets properly filtered (10xx-13xx, was total assets)
+- **Known simplifications documented**: ECL rollforward, BS retained earnings plug, Black-Scholes proxy, fiscal calendar, lease current portion, copula/lunar approximations
+
+#### Audit Methodology Enhancements
+- **Combined Risk Assessment (ISA 315)**: CRA per account area and assertion (Minimal/Low/Moderate/High), 12 account areas, 24-30 assessments per entity, automatic significant risk flagging (ISA 240/315)
+- **Materiality calculations (ISA 320)**: Benchmark selection (PretaxIncome/Revenue/Assets), PM at 65% of overall, clearly trivial at 5%, tolerable error, SAD nominal, normalized earnings with adjustment tracking
+- **Sampling methodology (ISA 530)**: Key item identification (>TE), MUS/systematic selection, sample size driven by CRA level, misstatement rates correlated with risk, sampling interval computation
+- **SCOTS classification (ISA 315)**: 8-9 standard SCOTs with significance level, processing method (Automated/Manual/Hybrid), 4-stage critical path, estimation complexity indicators
+- **Unusual item detection**: Multi-dimensional flagging (Size/Timing/Relationship/Frequency/Nature) with severity scoring, anomaly correlation, 5-10% flagging rate
+- **Analytical relationships (ISA 520)**: 8 standard ratios (DSO, DPO, margins, turnover) with historical trends, expected ranges, variance explanations, and supporting non-financial metrics
+- **Coherence chain**: CRA → sampling approach → misstatement detection → control assessment → audit opinion — end-to-end data-driven chain
+
 ### New Output Files
-- `audit/`: engagement_letters, subsequent_events, service_organizations, soc_reports, user_entity_controls, going_concern_assessments, accounting_estimates, component_auditors, group_audit_plan, component_instructions, component_reports, confirmations, confirmation_responses, procedure_steps, samples, analytical_results, ia_functions, ia_reports, related_parties, related_party_transactions
+- `audit/`: engagement_letters, subsequent_events, service_organizations, soc_reports, user_entity_controls, going_concern_assessments, accounting_estimates, component_auditors, group_audit_plan, component_instructions, component_reports, confirmations, confirmation_responses, procedure_steps, samples, analytical_results, ia_functions, ia_reports, related_parties, related_party_transactions, audit_opinions, key_audit_matters, sox_302_certifications, sox_404_assessments, materiality_calculations, combined_risk_assessments, sampling_plans, sampled_items, significant_transaction_classes, unusual_items, analytical_relationships
 - `financial_reporting/`: standalone/{entity}_financial_statements, consolidated/consolidated_financial_statements, consolidated/consolidation_schedule, segment_reporting, notes_to_financial_statements
 - `tax/`: temporary_differences, etr_reconciliation, deferred_tax_rollforward, deferred_tax_journal_entries
 - `accounting_standards/`: business_combinations, purchase_price_allocations, ecl_models, ecl_provision_movements, ecl_journal_entries, fx/currency_translation_results, provisions, contingent_liabilities, provision_movements

@@ -80,7 +80,8 @@ datasynth-test-utils   → Test utilities
 | ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
 | Project Accounting | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
 | Audit (ISA 600) | ComponentAuditor, GroupAuditPlan, ComponentInstruction, ComponentAuditorReport, Misstatement |
-| Audit Documentation | EngagementLetter, SubsequentEvent, ServiceOrganization, SocReport, GoingConcernAssessment, AccountingEstimate |
+| Audit Documentation | EngagementLetter, SubsequentEvent, ServiceOrganization, SocReport, GoingConcernAssessment, AccountingEstimate, AuditOpinion, KeyAuditMatter, Sox302Certification, Sox404Assessment |
+| Audit Methodology | CombinedRiskAssessment, MaterialityCalculation, SamplingPlan, SampledItem, SignificantClassOfTransactions, UnusualItemFlag, AnalyticalRelationship |
 | Financial Reporting | ConsolidationSchedule, OperatingSegment, SegmentReconciliation, FinancialStatementNote |
 | Business Combinations | BusinessCombination, PurchasePriceAllocation, FairValueAdjustment, ContingentConsideration |
 | Accounting Standards | EclModel, ProvisionMatrix, EclProvisionMovement, Provision, ProvisionMovement, ContingentLiability |

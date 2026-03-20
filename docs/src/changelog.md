@@ -13,11 +13,14 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/Sy
 - **Consolidated Financial Statements**: Standalone + consolidated FS with elimination schedules
 - **10 accounting standards**: Deferred tax (IAS 12), business combinations (IFRS 3), segment reporting (IFRS 8), ECL (IFRS 9), pensions (IAS 19), provisions (IAS 37), stock comp (ASC 718), functional currency (IAS 21)
 - **Audit documentation**: Engagement letters (ISA 210), subsequent events (ISA 560), service org controls (ISA 402), accounting estimates (ISA 540), going concern, notes to FS
+- **Audit opinion (ISA 700/705/706/701)**: Opinion derived from findings + going concern + scope limitations, with KAMs
+- **SOX 302/404**: Management certification and ICFR effectiveness assessment
 - **4 new evaluators**: Financial ratio analysis (ISA 520), JE risk scoring, materiality sampling, trend plausibility
 - **Audit preset**: `--preset audit-group` CLI flag enabling all audit features
 - **Format exporters**: `--export-format sap|fec|gobd` for SAP BKPF/BSEG/ACDOCA, French FEC, German GoBD
-- **Bug fixes**: Subledger settlement, IC eliminations → GL, close engine, opening balances, audit output completeness
-- **40+ new output files** across audit, financial reporting, tax, accounting standards, HR, subledger, and intercompany
+- **Audit methodology framework**: CRA risk assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification (ISA 315), unusual item detection, analytical relationships (ISA 520)
+- **14 quality fixes**: Revenue sign, cash flow from actuals, depreciation in close, pension from payroll, notes context, going concern from financials, IC equity eliminations, tax rate consistency, proxy replacement, ratio evaluator accuracy
+- **55+ new output files** across audit, financial reporting, tax, accounting standards, HR, subledger, and intercompany
 
 ### [1.2.0] - 2026-03-15
 
