@@ -4,6 +4,16 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/Sy
 
 ## Recent Releases
 
+### [1.3.1] - 2026-03-20
+
+**Quality Hardening, Production Readiness & Counterfactual Engine**
+
+- **6 critical fixes**: Panic guards, deterministic RNG, correct GL account mapping, config validation gaps
+- **15 production hardening items**: Server API unified with `PhaseConfig::from_config()`, audit generator logging, degradation gating, BS/IC coherence checks, fingerprint seed logging
+- **26 stub resolutions**: Evaluator wiring, ECL/deferred tax prior-period support, 5 graph edge FKs, segment D&A from actuals, provision unwinding, comprehensive documentation
+- **Causal DAG extended**: 10 new audit/financial nodes (materiality → risk → sampling → opinion chain), 11 new edges, 3 audit scenario packs
+- **Publish script**: Fixed crate dependency order, sparse index refresh after publish
+
 ### [1.3.0] - 2026-03-19
 
 **Enterprise Group Audit Simulation**

@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-03-20
+
+### Fixed
+
+**Critical Fixes**
+- Fixed `expect()` panic on empty invoice slice in AP payment generator
+- Fixed non-deterministic RNG in `ReferenceFormat::Random` — now uses deterministic hash instead of `rand::rng()`
+- Fixed non-deterministic RNG in banking phone format generator — uses seeded `ChaCha8Rng`
+- Fixed income tax provision posting to wrong GL account (`SALES_TAX_PAYABLE` 2100 → `INCOME_TAX_PAYABLE` 2130)
+- Added year upper-bound validation (`start_date + period_months` must not exceed year 9999)
+- Added `won_back_rate` to customer lifecycle `validate_sum_to_one` check
+
+**Production Hardening**
+- Server REST/gRPC endpoints now use `PhaseConfig::from_config()` instead of hardcoded flags
+- Replaced `Mutex::lock().unwrap()` with poison-safe variant in auth cache
+- Added `tracing::info!`/`debug!` logging to all 12 audit generators and FX rate service
+- Large optional phases (ESG, treasury, project accounting, OCPM, S2C) now gated on degradation level
+- Added IC elimination net-zero validation (warns if elimination debits ≠ credits)
+- Added financial statement BS equation coherence check (assets = liabilities + equity)
+- Fingerprint synthesis seed now logged for reproducibility
+- Added `validate_source_to_pay` config validation function
+- Regime change dates now validated as parseable `NaiveDate`
+- Subledger reconciliation logs pass/fail summary
+- Added `Vec::with_capacity()` hints for period-close allocations
+- `generate_counterfactuals` now configurable from YAML (`scenarios.generate_counterfactuals`)
+- Fingerprint `--sign` flag warning made explicit about implementation status
+
+**Stub Resolution (26 items)**
+- Wired `Evaluator::run_evaluation_with_amounts()` to `BenfordAnalyzer` (was empty placeholder)
+- ECL and deferred tax rollforward generators now accept optional prior-period closing balances
+- Fingerprint evaluate command reads all CSV files (was first only)
+- Added 5 foreign key fields for graph edge resolution: `SampledItem.sampling_plan_id`, `RelatedPartyTransaction.journal_entry_id`, `BankAccount.gl_account`, `ProcurementContract.purchase_order_ids`
+- Segment D&A now distributable from actual depreciation data (with heuristic fallback)
+- Provision unwinding-of-discount now computable from prior opening balance × discount rate
+- AutoTuner domain-gap placeholder replaced with `SetToTarget` strategy
+- Custom quality gate metrics return `None` (skip) with warning instead of silent failure
+- Documented: equity plug on BS, fiscal calendar 4-4-5 approximation, lease current/non-current split, GAAP/IFRS equity_impact for OCI, streaming orchestrator scope, Black-Scholes proxy, lunar calendar approximation
+
+### Added
+
+**Causal DAG Extension**
+- 10 new causal DAG nodes: `materiality_threshold`, `inherent_risk`, `combined_risk`, `sample_size_factor`, `opinion_severity`, `gross_margin`, `debt_ratio`, `ecl_provision_rate`, `going_concern_risk`, `tax_rate`
+- 11 new causal edges wiring the full audit chain: inherent_risk → combined_risk → sample_size → misstatement → opinion; bad_debt → ECL; interest_rate → debt_ratio → going_concern; GDP/revenue → gross_margin
+- `MaterialityThresholdChange`, `AuditStandardChange`, `TaxRateChange` intervention type mappings
+- `CreditCrunch` macro shock now drives `ecl_provision_rate`, `going_concern_risk`, `debt_ratio`
+- 3 audit scenario packs: `audit_scope_change.yaml`, `control_failure_cascade.yaml`, `going_concern_trigger.yaml`
+- `Audit` variant added to `NodeCategory` enum
+
+**Publish Script**
+- Fixed crate dependency order: `datasynth-graph` moved from Tier 3 to Tier 5 (depends on `datasynth-generators`)
+- Added sparse index refresh (`cargo update --dry-run`) after each crate publish to prevent stale index failures
+- Increased `PUBLISH_DELAY` from 45s to 60s
+
 ## [1.3.0] - 2026-03-19
 
 ### Added
