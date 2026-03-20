@@ -2,90 +2,141 @@
 \section{Introduction}
 \label{sec:introduction}
 
-The digitization of enterprise resource planning (ERP) systems has produced
-vast repositories of financial transaction data that underpin modern
-accounting, auditing, and regulatory compliance.  Machine-learning approaches
-to fraud detection~\citep{west2016intelligent,hilal2022financial},
-continuous auditing~\citep{vasarhelyi2004principles}, and anomaly
+The digitization of enterprise resource planning (ERP) systems has
+produced vast repositories of financial transaction data that underpin
+modern accounting, auditing, and regulatory
+compliance.  Machine-learning approaches to fraud
+detection~\citep{west2016intelligent,hilal2022financial}, continuous
+auditing~\citep{vasarhelyi2004principles}, and anomaly
 analytics~\citep{schreyer2017detection} have shown considerable promise,
-yet they face a persistent data-access challenge: real accounting data is
-proprietary, regulated under frameworks such as SOX~\citep{sox2002} and
-GDPR~\citep{gdpr2016}, and rarely available for open research.
+yet they face a challenge that goes deeper than mere data access.
 
-Synthetic data generation offers a path forward, but existing approaches fall
-short in several dimensions:
+\paragraph{The puzzle without a picture.}
+Consider how most teams approach the construction of enterprise knowledge
+systems for audit analytics.  They begin with the data that \emph{exists}:
+general ledger extracts, trial balances, subledger reports, document
+archives.  From these fragments, they attempt to reconstruct the
+underlying business reality---the true network of transactions,
+relationships, and control flows.  This is fundamentally an
+\emph{inverse problem}: inferring the generative process from its
+outputs.
+
+The analogy to a jigsaw puzzle is precise.  A competent puzzler works
+from the picture on the box---the ground truth---arranging pieces to
+match a known target.  But enterprise knowledge construction proceeds
+\emph{without} this picture.  Teams assemble transactional fragments
+into knowledge graphs, hoping that the emergent structure reveals
+meaningful patterns.  When the patterns appear consistent, they assume
+correctness.  But consistency is not correctness: a systematically
+biased dataset produces a systematically biased knowledge graph that
+appears internally coherent while misrepresenting the underlying reality.
+
+\paragraph{Systematic errors and the illusion of coherence.}
+This problem is not hypothetical.  Real-world client audits contain
+systematic errors that are invisible to the teams analyzing
+them~\citep{nigrini2012benfords,guo2022picture}.  A vendor master file
+with duplicates introduces phantom entities into a knowledge graph.
+An intercompany matching process with rounding errors propagates
+balance discrepancies through consolidation.  A payroll system with
+misconfigured tax tables produces systematically incorrect withholdings
+that remain undetected because the errors are consistent within the
+system's own logic.
+
+The complexity of detecting such errors is not merely large---it is
+\emph{inter-dimensional}.  Errors span accounting topology (wrong
+accounts, missing references), statistical distributions (Benford
+violations, unusual amount patterns), temporal dynamics (wrong periods,
+suspicious timing), normative rules (GAAP violations, control
+bypasses), and organizational structure (segregation-of-duties
+violations, approval chain anomalies).  No single dimension of analysis
+can capture the full error landscape, and the interactions between
+dimensions create a combinatorial explosion that overwhelms
+traditional audit procedures.
+
+\paragraph{The need for reference knowledge.}
+We argue that the solution lies in reversing the direction of knowledge
+construction.  Rather than attempting to recover ground truth from
+observed data (the inverse problem), we generate synthetic data
+\emph{forward} from a fully specified generative model, producing
+\emph{reference knowledge graphs} where the complete audit trail is
+known by construction.  These reference graphs serve three purposes:
 
 \begin{enumerate}
-  \item \textbf{Statistical fidelity.}  General-purpose tabular generators
-    (GANs, VAEs, CTGAN~\citep{xu2019modeling}) do not enforce domain-specific
-    invariants such as balanced double-entry bookkeeping, Benford's-law
-    compliance~\citep{benford1938law,nigrini2012benfords}, or accounting
-    equation coherence ($A = L + E$).
+  \item \textbf{Ground truth for algorithm validation.}  Any audit
+    analytics algorithm---whether rule-based, statistical, or ML-based---can
+    be tested against data where every anomaly, every relationship, and
+    every control violation is known a priori.
 
-  \item \textbf{Relational completeness.}  Enterprise data is inherently
-    multi-table and multi-process.  A purchase order triggers goods receipts,
-    vendor invoices, and payments; these in turn affect subledgers, trial
-    balances, and financial statements.  Generating tables in isolation
-    destroys these referential chains.
+  \item \textbf{Benchmark for knowledge system evaluation.}  Knowledge
+    graph construction pipelines can be evaluated by comparing their
+    output against the reference graph, measuring precision, recall, and
+    structural fidelity.
 
-  \item \textbf{Anomaly realism.}  Injecting fraud and error patterns post hoc
-    often produces anomalies that are trivially detectable or statistically
-    implausible, limiting the usefulness of generated data for training robust
-    detection models.
-
-  \item \textbf{Privacy guarantees.}  When real data characteristics must be
-    preserved, na\"ive summary statistics may leak sensitive information.
-    Formal privacy mechanisms are needed to bridge the gap between real-data
-    fidelity and confidentiality.
+  \item \textbf{Training data with provenance.}  ML models trained on
+    reference data inherit the three layers of knowledge embedded in
+    the generative process, producing more robust and interpretable
+    audit analytics.
 \end{enumerate}
 
 \paragraph{Contributions.}
-We present \system{}, a comprehensive open-source framework that addresses
-all four challenges simultaneously.  Our contributions are:
+We present \system{}, a comprehensive open-source framework that generates
+reference knowledge graphs for enterprise audit analytics.  Our
+contributions are:
 
 \begin{itemize}
-  \item A \textbf{layered generation architecture} (\Cref{sec:architecture})
-    comprising 15 Rust crates that separate domain models, statistical
-    distributions, business-process generators, output sinks, and evaluation
-    into composable modules.
+  \item A \textbf{formal analysis of the ground truth problem}
+    (\Cref{sec:ground_truth}) showing that recovering ground truth from
+    observed enterprise data is combinatorially infeasible, that
+    systematic errors propagate with high probability through inverse
+    reconstruction, and that forward generation from a known model is
+    the principled solution.
+
+  \item A \textbf{three-layer knowledge architecture}
+    (\Cref{sec:architecture,sec:knowledge_graph}) spanning structural
+    knowledge (78+ entity types, 39+ relationship types), statistical
+    knowledge (Benford-compliant distributions, copula-based dependencies),
+    and normative knowledge (five accounting frameworks, ISA/PCAOB/SOX
+    audit standards, COSO~2013 internal controls).
+
+  \item A \textbf{layered generation architecture}
+    (\Cref{sec:architecture}) comprising 16 Rust crates that separate
+    domain models, statistical distributions, business-process generators
+    covering 20+ enterprise processes, output sinks, and evaluation into
+    composable modules.
 
   \item A \textbf{statistically grounded sampling engine}
-    (\Cref{sec:statistical_foundations}) featuring log-normal mixture models,
-    five copula families for dependency modeling, and first- and second-digit
-    Benford compliance with provable mean-absolute-deviation bounds.
+    (\Cref{sec:statistical_foundations}) featuring log-normal mixture
+    models, five copula families for dependency modeling, and first- and
+    second-digit Benford compliance with provable MAD bounds.
 
   \item A \textbf{multi-process generation pipeline}
-    (\Cref{sec:generation_pipeline}) that produces coherent data spanning
-    Procure-to-Pay (P2P), Order-to-Cash (O2C), Record-to-Report (R2R),
-    Source-to-Contract (S2C), hire-to-retire (HR), and manufacturing processes,
-    with three-way matching, intercompany elimination, and period-close
-    procedures.
+    (\Cref{sec:generation_pipeline}) producing coherent data spanning
+    P2P, O2C, R2R, S2C, HR, manufacturing, tax, treasury, ESG, and
+    project accounting processes with three-way matching, intercompany
+    elimination, and period-close procedures.
+
+  \item A \textbf{reference knowledge graph construction module}
+    (\Cref{sec:knowledge_graph}) that produces heterogeneous graphs with
+    full provenance in PyTorch Geometric, Neo4j, and DGL formats, enabling
+    GNN-based audit analytics with known ground truth.
 
   \item A \textbf{multi-stage anomaly injection framework}
-    (\Cref{sec:anomaly_injection}) with 33 anomaly types, progressive fraud
-    schemes, temporal clustering, cascade propagation, difficulty scoring, and
-    ground-truth labels suitable for supervised and semi-supervised learning.
+    (\Cref{sec:anomaly_injection}) with 33 anomaly types, progressive
+    fraud schemes, and ground-truth labels suitable for supervised and
+    semi-supervised learning.
 
   \item A \textbf{privacy-preserving fingerprint module}
-    (\Cref{sec:privacy}) that extracts distributional profiles under
-    $\varepsilon$-differential privacy and $k$-anonymity, enabling
-    generation of synthetic data that mirrors real-world characteristics
-    without exposing individual records.
-
-  \item A \textbf{comprehensive evaluation suite}
-    (\Cref{sec:evaluation}) with 15 coherence validators, statistical
-    goodness-of-fit tests, ML-readiness metrics, and an auto-tuning engine
-    that generates configuration patches from evaluation gaps.
+    (\Cref{sec:privacy}) enabling generation of synthetic data that
+    mirrors real-world characteristics under $\varepsilon$-differential
+    privacy without exposing individual records.
 
   \item A \textbf{counterfactual simulation engine}
-    (\Cref{sec:counterfactual}) built on a causal directed acyclic graph
-    (DAG) with 8 transfer function types, enabling what-if analysis of
-    financial process dependencies under controlled interventions.
+    (\Cref{sec:counterfactual}) with causal DAG propagation for what-if
+    analysis of financial process dependencies.
 
-  \item \textbf{Multi-GAAP support} for five accounting frameworks
-    (US~GAAP, IFRS, French~GAAP, German~GAAP, and dual-reporting) with
-    7~country packs providing jurisdiction-specific tax, calendar, and
-    banking configurations.
+  \item A \textbf{comprehensive evaluation suite}
+    (\Cref{sec:evaluation}) with 15+ coherence validators, statistical
+    tests, ML-readiness metrics, and an auto-tuning engine.
 \end{itemize}
 
 \paragraph{Empirical grounding.}
@@ -94,27 +145,33 @@ ISO~21378:2019--compliant general ledger datasets comprising 364 million
 journal entries with 2.4 billion line items across all industry
 sectors~\citep{ivertowski2024hardware}.  This analysis reveals the
 distributional characteristics of production accounting data---e.g., that
-92.9\% of entries have 2--9 line items with extreme concentration at 2-line
-entries (60.7\%), and that chart-of-accounts complexity spans 76 to 2{,}536
-accounts---which directly calibrate \system{}'s generation models
-(\Cref{sec:exp_realworld}).
+92.9\% of entries have 2--9 line items with extreme concentration at
+2-line entries (60.7\%), and that chart-of-accounts complexity spans 76
+to 2{,}536 accounts---which directly calibrate \system{}'s generation
+models (\Cref{sec:exp_realworld}).
 
 \paragraph{Scope and audience.}
 \system{} targets three communities: (a)~ML researchers needing realistic
-labeled accounting datasets for fraud detection and anomaly analytics,
-(b)~auditors and regulators seeking synthetic test environments for continuous
-auditing tools, and (c)~ERP vendors requiring high-volume test data for system
-integration and stress testing.
+labeled accounting datasets with known ground truth for fraud detection
+and anomaly analytics, (b)~auditors and regulators seeking reference
+knowledge graphs for validating continuous auditing tools and knowledge
+construction pipelines, and (c)~ERP vendors requiring high-volume test
+data for system integration and stress testing.
 
 The remainder of this paper is organized as follows.
+\Cref{sec:ground_truth} formalizes the ground truth problem and
+introduces the three layers of audit knowledge.
 \Cref{sec:related_work} surveys related work.
 \Cref{sec:architecture} presents the system architecture.
 \Cref{sec:statistical_foundations} formalizes the statistical
 foundations.
 \Cref{sec:generation_pipeline} details the generation pipeline.
-\Cref{sec:anomaly_injection} describes the anomaly injection framework.
-\Cref{sec:evaluation} covers the evaluation suite.
+\Cref{sec:knowledge_graph} describes reference knowledge graph
+construction.
+\Cref{sec:anomaly_injection} covers the anomaly injection framework.
 \Cref{sec:privacy} discusses the privacy-preserving fingerprint module.
-\Cref{sec:counterfactual} introduces the counterfactual simulation engine.
+\Cref{sec:counterfactual} introduces the counterfactual simulation
+engine.
+\Cref{sec:evaluation} presents the evaluation suite.
 \Cref{sec:experiments} reports experimental results.
 \Cref{sec:conclusion} concludes.

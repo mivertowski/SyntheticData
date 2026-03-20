@@ -2,48 +2,35 @@
 \section{Evaluation Framework}
 \label{sec:evaluation}
 
-\system{} includes a built-in evaluation suite that validates the statistical,
-structural, and domain-specific quality of generated data.  This section
-describes the evaluation dimensions and the auto-tuning mechanism.
+\system{} includes a built-in evaluation suite that validates the
+statistical, structural, and domain-specific quality of generated
+data across all three knowledge layers.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Statistical Validation}
 \label{sec:eval_statistical}
 
 \paragraph{Benford's Law Tests.}
-First-digit and first-two-digit distributions are tested against theoretical
-Benford probabilities using:
-\begin{itemize}
-  \item \textbf{Mean Absolute Deviation (MAD):}
-    $\MAD = \frac{1}{K}\sum_{k=1}^{K}|\hat{p}_k - p_k|$, with conformity
-    thresholds from~\citet{nigrini2012benfords}: close ($<0.006$), acceptable
-    ($<0.012$), marginally acceptable ($<0.015$).
-  \item \textbf{Chi-squared test:}
-    $\chi^2 = n\sum_{k} (\hat{p}_k - p_k)^2 / p_k$.
-  \item \textbf{Kolmogorov-Smirnov test} for the continuous approximation.
-\end{itemize}
+First-digit and first-two-digit distributions are tested via MAD,
+chi-squared, and Kolmogorov-Smirnov statistics against theoretical
+Benford probabilities~\citep{nigrini2012benfords}.
 
 \paragraph{Distribution Fitting.}
-Amount distributions are tested for log-normal fit using the
-Anderson-Darling statistic at configurable significance levels (default
-$\alpha = 0.05$).
+Anderson-Darling tests for log-normal fit at configurable significance
+levels (default $\alpha = 0.05$).
 
 \paragraph{Correlation Verification.}
-The Pearson correlation matrix of generated fields is compared to the
-configured target matrix.  Per-pair deviations exceeding the significance
-threshold are flagged.
+Pearson correlation matrix comparison against configured targets.
 
 \paragraph{Temporal Pattern Analysis.}
-Intraday activity profiles, day-of-week seasonality, and month-end
-concentration ratios are compared against configured targets.  CUSUM and
-EWMA control charts detect unexpected drift or regime changes.
+Intraday profiles, day-of-week seasonality, month-end concentration,
+CUSUM and EWMA control charts for drift detection.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Coherence Validators}
 \label{sec:eval_coherence}
 
-\system{} implements 15 domain-specific coherence validators, each verifying
-cross-table consistency within a business domain:
+\system{} implements 15+ domain-specific coherence validators:
 
 \begin{table}[H]
 \centering
@@ -57,127 +44,66 @@ cross-table consistency within a business domain:
 Balance Sheet &
   Assets $=$ Liabilities $+$ Equity; period-over-period consistency \\
 Document Chain &
-  PO$\to$GR$\to$Invoice$\to$Payment referential integrity; timestamp
-  ordering \\
+  PO$\to$GR$\to$Invoice$\to$Payment referential integrity \\
 Subledger Reconciliation &
   AR/AP/FA/Inventory subledger totals $=$ GL control accounts \\
 Intercompany Elimination &
-  IC receivables $=$ IC payables; elimination entries net to zero \\
+  IC receivables $=$ IC payables; elimination nets to zero \\
 HR / Payroll &
-  Gross $=$ Net $+$ Deductions; tax withholding rates within bounds \\
+  Gross $=$ Net $+$ Deductions; tax withholding bounds \\
 Manufacturing &
-  BOM costing $\leq$ production order cost; scrap accounting \\
+  BOM costing $\leq$ production cost; scrap accounting \\
 Sales Quotes &
-  Quote$\to$order conversion consistency; discount limit adherence \\
+  Quote$\to$order conversion; discount adherence \\
 Sourcing &
-  Bid evaluation completeness; scorecard metric ranges \\
+  Bid evaluation completeness; scorecard ranges \\
 Bank Reconciliation &
-  Book balance $+$ outstanding items $=$ bank balance \\
+  Book balance $+$ outstanding $=$ bank balance \\
 Financial Reporting &
-  Statement interconnection (IS $\to$ BS via retained earnings;
-  BS $\to$ CF via working capital changes) \\
-Standards (IFRS/GAAP) &
-  ASC 606 obligation satisfaction; ASC 842 ROU asset amortization;
-  Fair value level 1+2+3 $=$ total \\
+  IS $\to$ BS via retained earnings; BS $\to$ CF via working capital \\
+Standards &
+  ASC 606 obligation satisfaction; ASC 842 ROU amortization \\
 Network Analysis &
-  Vendor concentration $\leq$ configured max; customer segment
-  revenue shares within tolerance \\
+  Vendor concentration; customer segment revenue shares \\
 Tax &
   Tax rate application; withholding accuracy \\
 Treasury &
-  Cash position flow consistency; covenant compliance \\
+  Cash flow consistency; covenant compliance \\
 Project Accounting &
   Budget vs.\ actual variance within thresholds \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Each validator returns a structured result with pass/fail status, violation
-count, violation details, and suggested remediation.
-
 % ─────────────────────────────────────────────────────────────────────
 \subsection{ML-Readiness Assessment}
 \label{sec:eval_ml}
 
-For datasets intended for machine learning, \system{} evaluates:
-
-\paragraph{Feature Quality.}
-Distribution matching between original fingerprint (if available) and
-synthetic data using Wasserstein distance.  Categorical cardinality
-verification.  Missing-data pattern analysis (MCAR/MAR/MNAR).
-
-\paragraph{Label Quality.}
-Anomaly label distribution across categories.  Label-feature correlation
-analysis to verify that labels are predictable from features.  Ground-truth
-completeness metrics.
-
-\paragraph{Split Metrics.}
-When temporal train/validation/test splits are applied, the evaluator checks
-that: (a)~class distributions are balanced across splits, (b)~no future
-data leaks into training, (c)~stratification preserves minority class
-representation.
-
-\paragraph{GNN Readiness.}
-For graph exports, additional metrics assess:
-\begin{itemize}
-  \item Node feature dimensionality and scaling properties.
-  \item Edge density and sparsity level.
-  \item Graph connectivity (number of connected components, average degree).
-  \item Heterogeneity: number of node types, edge types, and cross-type
-    edges.
-\end{itemize}
-
-\paragraph{Scheme Detectability.}
-For AML typology data, the evaluator computes per-typology detection scores
-assessing whether the generated patterns have sufficient salience for ML
-models while remaining realistic.
+For datasets intended for machine learning, \system{} evaluates
+feature quality (Wasserstein distance, cardinality, missing-data
+patterns), label quality (distribution, correlation analysis,
+completeness), split metrics (temporal train/val/test balance, leakage
+detection), GNN readiness (node features, edge density, connectivity,
+heterogeneity), and AML typology detectability.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Extended Evaluators}
 \label{sec:eval_extended}
 
-Four additional evaluators were introduced in v0.11.0:
-
-\paragraph{Multi-Period Coherence.}
-Validates that opening balances equal prior closing balances, that document
-IDs are sequential across periods, and that entity references remain
-consistent throughout the generation horizon.
-
-\paragraph{Fraud Pack Effectiveness.}
-Measures detection rate at configurable thresholds, performs false positive
-analysis, and computes coverage metrics per fraud scenario pack
-(\Cref{sec:anom_fraud_packs}).
-
-\paragraph{OCEL Enrichment Quality.}
-Assesses state transition coverage, correlation event linking accuracy, and
-resource utilization distribution across workload pools in OCEL~2.0 event
-logs.
-
-\paragraph{Causal Intervention Magnitude.}
-Compares KPI deltas against expected magnitudes from the causal DAG, verifies
-propagation paths, and validates that preservation constraints are maintained
-under intervention.
-
-Additionally, counterfactual evaluation is supported via the
-\texttt{DiffEngine}, which computes record-level diffs between baseline and
-counterfactual outputs (see Section~\ref{sec:counterfactual}).
+Additional evaluators: multi-period coherence (opening = prior closing,
+sequential document IDs), fraud pack effectiveness (detection rates,
+false positive analysis), OCEL enrichment quality (state transition
+coverage, resource utilization), and causal intervention magnitude
+(KPI delta validation, propagation path verification).
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{AutoTuner}
 \label{sec:eval_autotuner}
 
-The AutoTuner closes the loop between evaluation and generation.  Given
-evaluation results with identified gaps, it:
-
-\begin{enumerate}
-  \item Analyzes each gap to determine root cause (insufficient samples,
-    distribution mismatch, weak correlations, etc.).
-  \item Generates a prioritized list of \texttt{TuningOpportunity} records,
-    each specifying a configuration patch.
-  \item Ranks opportunities as Critical, Important, or Nice-to-have.
-\end{enumerate}
-
-Supported tuning actions include:
+The AutoTuner closes the loop between evaluation and generation.  It
+analyzes evaluation gaps, generates prioritized
+\texttt{TuningOpportunity} records (Critical, Important, Nice-to-have),
+and produces a YAML patch for iterative refinement.  Supported actions:
 \texttt{IncreaseTransactionVolume},
 \texttt{AdjustDistributionParameters},
 \texttt{EnhanceAnomalyInjection},
@@ -185,7 +111,3 @@ Supported tuning actions include:
 \texttt{BalanceFeatureDistributions},
 \texttt{EnhanceGraphConnectivity}, and
 \texttt{AdjustCorrelationMatrix}.
-
-The output is a YAML patch that can be merged with the original
-configuration for a subsequent generation run, enabling iterative
-refinement toward quality targets.

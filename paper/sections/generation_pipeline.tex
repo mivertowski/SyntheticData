@@ -2,67 +2,63 @@
 \section{Generation Pipeline}
 \label{sec:generation_pipeline}
 
-\system{}'s generation pipeline transforms a declarative YAML configuration
-into a complete, internally consistent enterprise dataset.  This section
-details the pipeline stages and the business-process generators that produce
-coherent multi-table output.
+\system{}'s generation pipeline transforms a declarative YAML
+configuration into a complete, internally consistent enterprise
+dataset---producing the \emph{structural knowledge layer}
+($\mathcal{K}_S$) of the reference knowledge graph.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Orchestration Workflow}
 \label{sec:gen_orchestration}
 
-The \texttt{GenerationOrchestrator} executes the following stages in order:
+The \texttt{GenerationOrchestrator} executes the following stages:
 
 \begin{enumerate}
-  \item \textbf{Configuration loading and validation.}  Parse YAML, apply
-    industry preset defaults, validate invariants (balanced weights,
-    ascending thresholds, valid date ranges).
+  \item \textbf{Configuration loading and validation.}  Parse YAML,
+    apply industry preset defaults, validate invariants.
 
-  \item \textbf{Chart of Accounts (CoA) initialization.}  Generate a GL
-    account structure at the configured complexity level (small: $\sim$100,
-    medium: $\sim$400, large: $\sim$2{,}500 accounts) with proper account
-    hierarchies, types (Asset, Liability, Equity, Revenue, Expense), and
-    control accounts (AR~$=$ 1100, AP~$=$ 2000).
+  \item \textbf{Chart of Accounts initialization.}  Generate a GL
+    account structure at the configured complexity level (small:
+    $\sim$100, medium: $\sim$400, large: $\sim$2{,}500 accounts).
 
   \item \textbf{Master data generation.}  Produce vendors, customers,
     materials, fixed assets, employees, and cost centers with
-    cross-referenced relationships (e.g., vendor bank details, customer
-    credit limits, material-vendor linkages).
+    cross-referenced relationships.
 
-  \item \textbf{Opening balance generation.}  Establish period-start balances
-    satisfying the accounting equation $A = L + E$.  The balance tracker
-    maintains running account-level balances throughout subsequent stages.
+  \item \textbf{Opening balance generation.}  Establish period-start
+    balances satisfying the accounting equation $A = L + E$.
 
   \item \textbf{Document-flow generation.}  Execute P2P, O2C, S2C, HR,
-    and manufacturing process generators that produce linked document chains
-    and corresponding journal entries.
+    manufacturing, tax, treasury, ESG, and project accounting generators.
 
   \item \textbf{Period-close processing.}  Run accruals, depreciation,
-    FX translation, intercompany elimination, and year-end closing entries.
+    FX translation, intercompany elimination, and year-end closing.
     Generate trial balances and financial statements.
 
-  \item \textbf{Anomaly injection.}  Apply configured fraud, error, process,
-    statistical, and relational anomalies with ground-truth labels.
+  \item \textbf{Standards generation.}  Produce accounting standards
+    artifacts (ASC~606 contracts, ASC~842 leases, fair value measurements,
+    impairment tests) and audit standards artifacts (ISA mappings,
+    confirmations, audit opinions, SOX assessments).
 
-  \item \textbf{Data quality variation.}  Optionally inject missing values,
-    format variations, typos, and encoding issues.
+  \item \textbf{Anomaly injection.}  Apply configured anomalies with
+    ground-truth labels across all five knowledge dimensions.
 
-  \item \textbf{Evaluation.}  Run coherence validators, statistical tests,
-    and ML-readiness checks.  The auto-tuner may propose configuration
-    patches.
+  \item \textbf{Data quality variation.}  Optionally inject missing
+    values, format variations, typos, and encoding issues.
+
+  \item \textbf{Evaluation and graph export.}  Run coherence validators,
+    construct the reference knowledge graph, and export to configured
+    formats.
 
   \item \textbf{Output.}  Stream results to configured sinks (CSV, JSON,
-    Parquet) with optional compression.
+    Parquet).
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Journal Entry Generation}
 \label{sec:gen_journal}
 
-Journal entries are the atomic unit of accounting data.  Each entry consists
-of a header (ID, date, posting date, company code, user, description) and
-one or more line items (account, amount, debit/credit indicator, cost center,
-profit center).
+Journal entries are the atomic unit of accounting data.
 
 \begin{definition}[Balanced Entry]
 A journal entry $j$ with line items $\{l_1, \ldots, l_n\}$ is
@@ -77,13 +73,13 @@ A journal entry $j$ with line items $\{l_1, \ldots, l_n\}$ is
 \system{} enforces \Cref{eq:balanced} at construction time: the
 \texttt{JournalEntry} constructor returns an error if the debit-credit
 difference exceeds a configurable tolerance (default: \$0.01).  This
-invariant is maintained across all generators---no unbalanced entry can
-enter the output pipeline.
+invariant is part of the \emph{normative knowledge layer} and is
+maintained across all generators.
 
 Line-item amounts are drawn from the configured mixture distribution
-(\Cref{eq:lognormal_mixture}).  The number of line items per entry follows
-a correlated draw from the copula model (\Cref{sec:stat_copula}), ensuring
-that higher-amount entries tend to have more line items and require higher
+(\Cref{eq:lognormal_mixture}).  The number of line items per entry
+follows a correlated draw from the copula model, ensuring that
+higher-amount entries tend to have more line items and require higher
 approval levels.
 
 % ─────────────────────────────────────────────────────────────────────
@@ -94,60 +90,125 @@ Enterprise transactions span multiple documents with strict sequencing
 and referential integrity.
 
 \paragraph{Procure-to-Pay (P2P).}
-The P2P generator produces the chain:
 \[
 \text{Purchase Order} \to \text{Goods Receipt} \to \text{Vendor Invoice}
 \to \text{Payment}
 \]
 Each stage creates the corresponding document record, updates the
 document-chain manager with forward/backward references, and posts
-journal entries to the appropriate GL accounts (inventory, GR/IR clearing,
-AP, cash).
+journal entries to the appropriate GL accounts.
 
 \paragraph{Three-Way Matching.}
-The three-way matcher validates consistency across PO, GR, and invoice:
-
-\begin{itemize}
-  \item \textbf{Quantity tolerance:} $|q_{\text{PO}} - q_{\text{GR}}| \leq
-    \epsilon_q \cdot q_{\text{PO}}$ (default $\epsilon_q = 2\%$).
-  \item \textbf{Price tolerance:} $|p_{\text{PO}} - p_{\text{inv}}| \leq
-    \epsilon_p \cdot p_{\text{PO}}$ (default $\epsilon_p = 5\%$).
-  \item \textbf{Over-delivery:} Permitted up to $\delta_{\max} = 10\%$
-    above PO quantity.
-\end{itemize}
-
-Variance types (quantity PO-GR, quantity GR-invoice, price PO-invoice,
-total amount, missing line, extra line) are tracked and available as
-evaluation targets.
+The three-way matcher validates consistency across PO, GR, and invoice
+with quantity tolerance ($\epsilon_q = 2\%$), price tolerance
+($\epsilon_p = 5\%$), and over-delivery allowance ($\delta_{\max} = 10\%$).
 
 \paragraph{Order-to-Cash (O2C).}
-The O2C generator produces:
 \[
 \text{Sales Order} \to \text{Delivery} \to \text{Customer Invoice}
 \to \text{Customer Receipt}
 \]
-with corresponding revenue recognition entries, AR postings, and cash
-receipts.  Partial deliveries and split invoicing are supported.
+with revenue recognition, AR postings, and cash receipts.  Partial
+deliveries and split invoicing are supported.
 
 \paragraph{Source-to-Contract (S2C).}
-A full sourcing lifecycle: sourcing projects, supplier qualifications,
+Full sourcing lifecycle: sourcing projects, supplier qualifications,
 RFx events, supplier bids, bid evaluations, procurement contracts,
 catalog items, and supplier scorecards.
 
 \paragraph{HR/Payroll.}
 Payroll runs with line items (base pay, overtime, deductions, taxes),
-time entries, and expense reports with configurable approval workflows.
-A benefit enrollment generator tracks employee plan selections
-(health, dental, vision, retirement) with employer and employee
-contribution amounts, enrollment windows, and coverage periods.
+time entries, expense reports, and benefit enrollment (health, dental,
+vision, retirement) with employer/employee contributions.
 
 \paragraph{Manufacturing.}
 Production orders, routing operations, quality inspections with
-characteristics, and cycle counts.  A bill-of-materials (BOM) component
-generator produces multi-level product structures with phantom assembly
-support and quantity-per calculations.  Inventory movement tracking
-covers receipt, issue, transfer, return, scrap, and adjustment movement
-types, each posting corresponding material-ledger journal entries.
+characteristics, cycle counts, multi-level BOMs with phantom assembly
+support, and inventory movement tracking (receipt, issue, transfer,
+return, scrap, adjustment).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Tax Accounting}
+\label{sec:gen_tax}
+
+\system{} generates comprehensive tax accounting data spanning multiple
+jurisdictions:
+
+\begin{itemize}
+  \item \textbf{Tax jurisdictions and codes:} Multi-level jurisdiction
+    hierarchies (federal, state, local) with associated tax codes,
+    rates, and effective dates.
+  \item \textbf{Tax lines and returns:} Per-transaction tax calculations,
+    periodic tax return preparation with aggregated liabilities.
+  \item \textbf{Tax provisions:} Current and deferred tax calculations
+    under ASC~740/IAS~12, including temporary differences, deferred tax
+    rollforward, and rate reconciliation.
+  \item \textbf{Withholding tax:} Source-based withholding records with
+    jurisdiction-specific rates and treaty provisions.
+  \item \textbf{Uncertain tax positions:} UTP assessment with probability
+    weighting and disclosure requirements.
+  \item \textbf{Transfer pricing:} Intercompany pricing methods
+    (comparable uncontrolled, resale, cost-plus, TNMM, profit split)
+    with arm's-length validation.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Treasury Management}
+\label{sec:gen_treasury}
+
+The treasury module generates:
+
+\begin{itemize}
+  \item \textbf{Cash positioning:} Daily cash positions across accounts
+    and entities with automated sweeping via cash pools.
+  \item \textbf{Cash forecasting:} Rolling forecasts with multiple
+    time horizons and confidence intervals.
+  \item \textbf{Hedging instruments:} Forward contracts, options, and
+    swaps with hedge relationship documentation and effectiveness
+    testing under ASC~815/IFRS~9.
+  \item \textbf{Debt instruments:} Term loans, revolving facilities, and
+    bonds with amortization schedules and covenant tracking.
+  \item \textbf{Debt covenants:} Financial covenant calculations with
+    compliance monitoring and breach detection.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{ESG and Sustainability}
+\label{sec:gen_esg}
+
+The ESG module generates sustainability data aligned with major
+reporting frameworks:
+
+\begin{itemize}
+  \item \textbf{Environmental:} GHG emissions (Scope~1/2/3), energy
+    consumption by source, water usage, waste records by type and
+    disposition, and climate scenario analysis.
+  \item \textbf{Social:} Workforce diversity metrics, pay equity
+    analysis, safety incidents and metrics, materiality assessments.
+  \item \textbf{Governance:} Board composition metrics, supplier ESG
+    assessments, ESG disclosure documents.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Project Accounting}
+\label{sec:gen_project}
+
+Project-based organizations require WBS-structured cost tracking:
+
+\begin{itemize}
+  \item \textbf{Projects:} Multi-level project structures with budget
+    allocation and resource planning.
+  \item \textbf{Cost lines:} Labor, material, and overhead cost
+    postings with project/WBS element attribution.
+  \item \textbf{Revenue recognition:} Percentage-of-completion and
+    milestone-based revenue for long-term contracts.
+  \item \textbf{Earned value:} BCWS, BCWP, ACWP calculations with
+    derived metrics (CPI, SPI, EAC, ETC).
+  \item \textbf{Change orders:} Scope and budget modifications with
+    approval tracking.
+  \item \textbf{Milestones:} Deliverable tracking with planned vs.\
+    actual completion dates.
+\end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Subledger and Period-Close Processing}
@@ -155,113 +216,58 @@ types, each posting corresponding material-ledger journal entries.
 
 \paragraph{Subledger generation.}
 Four subledger generators maintain detailed subsidiary records:
-\begin{itemize}
-  \item \textbf{AR subledger:} Customer invoices, receipts, aging buckets,
-    credit memos, adjustments.
-  \item \textbf{AP subledger:} Vendor invoices, payments, aging, credit
-    notes, prepayments.
-  \item \textbf{FA subledger:} Asset capitalization, depreciation schedules
-    (straight-line, declining balance), disposals, impairment.
-  \item \textbf{Inventory subledger:} Receipts, issues, valuation
-    (FIFO/LIFO/weighted average), write-downs.
-\end{itemize}
-
-Each subledger reconciles to its control account in the GL (e.g., AR
-subledger total $=$ GL account 1100).
+AR (customer invoices, receipts, aging, credit memos),
+AP (vendor invoices, payments, aging, prepayments),
+FA (capitalization, depreciation, disposals, impairment),
+and Inventory (receipts, issues, valuation methods).
+Each reconciles to its control account in the GL.
 
 \paragraph{Period-close engine.}
-The close engine executes:
-(i)~accrual entries for unbilled revenue/expenses,
-(ii)~depreciation postings from the FA subledger,
-(iii)~FX translation using period-end spot rates with CTA postings,
-(iv)~intercompany matching and elimination,
-(v)~year-end income-to-equity reclassification,
-and (vi)~financial statement generation (balance sheet, income statement,
-cash flow, changes in equity).
+Executes: (i)~accrual entries, (ii)~depreciation postings,
+(iii)~FX translation with CTA postings, (iv)~intercompany
+matching and elimination, (v)~year-end income-to-equity
+reclassification, and (vi)~financial statement generation
+(balance sheet, income statement, cash flow, changes in equity).
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Intercompany Processing}
 \label{sec:gen_intercompany}
 
-Multi-entity datasets require intercompany (IC) transaction matching and
-elimination for consolidated reporting.  The IC generator creates bilateral
-transaction pairs between related entities.  The matching engine identifies
-matched pairs within configurable tolerances.  The elimination generator
-produces consolidation entries that net IC receivables/payables, IC
+Multi-entity datasets require IC transaction matching and elimination
+for consolidated reporting.  The IC generator creates bilateral
+transaction pairs.  The matching engine identifies matched pairs within
+configurable tolerances.  The elimination generator produces
+consolidation entries that net IC receivables/payables, IC
 revenue/expense, and unrealized profit in inventory.
 
 % ─────────────────────────────────────────────────────────────────────
-\subsection{Graph Export}
-\label{sec:gen_graph}
+\subsection{Accounting and Audit Standards}
+\label{sec:gen_standards}
 
-Double-entry bookkeeping has a natural directed-graph
-representation~\citep{ijiri1965generalized}: each distinct GL account
-forms a node, credit entries produce outgoing edges, and debit entries
-produce incoming edges.  Following~\citet{ivertowski2024hardware}, we
-adopt a temporal formulation:
-\begin{equation}
-G(t_0, t_1) = A(t_0, t_1) \times E(t_0, t_1)
-\label{eq:temporal_graph}
-\end{equation}
-where $A(t_0,t_1)$ is the set of account nodes with monetary state over
-$[t_0, t_1]$, and each edge $E_i(t_0,t_1) = \sum_{n=1}^{|\Omega_{A_i}|}
-\omega_n$ aggregates all transactions $\omega_n$ affecting node $A_i$ in
-that period.  This temporal definition enables system-theoretic analyses
-such as cross-correlation and auto-correlation on account flows.
+The normative knowledge layer ($\mathcal{K}_N$) is generated through:
 
-\system{} constructs heterogeneous graphs from the generated data and
-exports them in formats suitable for graph neural network (GNN) research:
+\paragraph{Accounting standards.}
+Revenue recognition (ASC~606/IFRS~15) with customer contracts and
+performance obligations.  Leases (ASC~842/IFRS~16) with ROU assets and
+lease liabilities.  Fair value measurements (ASC~820/IFRS~13) with
+Level~1/2/3 hierarchy.  Impairment testing (ASC~360/IAS~36).  ECL models
+and provision matrices.  Business combinations with purchase price
+allocation.  Pension obligations and stock compensation.
 
-\begin{itemize}
-  \item \textbf{Transaction graph:} Nodes are accounts/entities; edges are
-    transactions with amount, date, and process-type features.
-  \item \textbf{Approval network:} Nodes are users; edges are approval
-    relationships with threshold attributes.  Segregation-of-duties
-    conflicts are detectable as structural motifs.
-  \item \textbf{Entity relationship graph:} Nodes are legal entities,
-    vendors, customers; edges represent ownership, control, and supply-chain
-    relationships.
-\end{itemize}
+\paragraph{Audit standards.}
+ISA compliance (34 standards) with procedure mapping.  PCAOB standards
+(19+) with cross-reference.  Analytical procedures (ISA~520),
+confirmations (ISA~505), audit opinions (ISA~700/705/706/701), key
+audit matters.  Group audit (ISA~600) with component auditor model.
 
-Export formats: PyTorch Geometric (\texttt{.pt} tensors), Neo4j (CSV +
-Cypher scripts), and DGL (heterograph with typed nodes/edges).
+\paragraph{Internal controls.}
+COSO~2013 framework with 5 components, 17 principles, and maturity
+levels.  12 transaction-level controls (C001--C060) and 6 entity-level
+controls (C070--C081).  Segregation of duties enforcement.
+SOX~302/404 assessments with deficiency classification and material
+weakness identification.
 
-As of v0.10, the graph module covers over 50 entity types across ten
-process families (Tax, Treasury, ESG, Project Accounting, Source-to-Contract,
-Hire-to-Retire, Manufacturing, Governance, and core P2P/O2C), connected by
-28~relationship edge types with explicit cardinality constraints (e.g.,
-one-to-many for invoice-to-line-item, many-to-many for vendor-to-material).
-A typed \texttt{ToNodeProperties} trait maps domain models to seven
-property-value types (\texttt{String}, \texttt{Decimal}, \texttt{Integer},
-\texttt{Boolean}, \texttt{Date}, \texttt{DateTime}, \texttt{List}),
-ensuring lossless round-tripping through graph serialization.  A
-hypergraph builder extends the model to multi-entity relationships---for
-example, a three-way match hyperedge linking a purchase order, goods
-receipt, and vendor invoice simultaneously.
-
-% ─────────────────────────────────────────────────────────────────────
-\subsection{Process Mining (OCEL 2.0)}
-\label{sec:gen_ocel}
-
-The OCPM module generates Object-Centric Event Logs conforming to the
-OCEL~2.0 standard~\citep{ghahfarokhi2021ocel}.  Events are linked to
-multiple typed objects (Order, Invoice, Shipment, Payment) via many-to-many
-relationships.  Process variants (standard P2P, P2P with three-way match
-variance, full O2C, O2C with returns) are generated with empirically
-calibrated frequency distributions.  The resulting logs are directly
-importable into process mining tools such as PM4Py and Celonis.
-
-Version 0.11 enriches the OCEL module with lifecycle state machines for
-\texttt{PurchaseOrder}, \texttt{SalesOrder}, and \texttt{VendorInvoice}
-objects.  Each state machine defines probabilistic transitions (e.g.,
-\emph{Created} $\to$ \emph{Approved} with $p=0.92$, \emph{Created} $\to$
-\emph{Rejected} with $p=0.08$), producing realistic variant distributions
-without manual scripting.  Multi-object correlation events---three-way
-match, payment allocation, and bank reconciliation---link objects across
-process boundaries in a single event, reflecting the cross-functional
-nature of enterprise operations.  Resource pool workload modeling assigns
-events to users via configurable strategies (round-robin, least-busy,
-skill-based), and enriched events carry \texttt{from\_state},
-\texttt{to\_state}, \texttt{resource\_workload}, and
-\texttt{correlation\_id} attributes for downstream conformance checking
-and resource-perspective analysis.
+\paragraph{Regulatory exports.}
+FEC (French \emph{Fichier des \'{E}critures Comptables}) and GoBD
+(German) audit-ready exports for jurisdiction-specific tax authority
+requirements.

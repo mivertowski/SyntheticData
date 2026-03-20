@@ -1,5 +1,5 @@
-% DataSynth: A Comprehensive Framework for Generating Realistic Synthetic
-% Enterprise Accounting Data with Provable Statistical Properties
+% DataSynth: Reference Knowledge Graphs for Enterprise Audit Analytics
+% through Synthetic Data Generation with Provable Statistical Properties
 %
 % arXiv preprint — compile with: pdflatex main && bibtex main && pdflatex main && pdflatex main
 
@@ -60,6 +60,8 @@
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{remark}[theorem]{Remark}
 
 % ── Custom commands ───────────────────────────────────────────────────
 \newcommand{\system}{\textsc{DataSynth}}
@@ -69,11 +71,12 @@
 \newcommand{\Var}{\operatorname{Var}}
 \newcommand{\KL}{\operatorname{KL}}
 \newcommand{\MAD}{\operatorname{MAD}}
+\newcommand{\Prob}{\mathbb{P}}
 
 % ═══════════════════════════════════════════════════════════════════════
 \title{%
-  \textsc{DataSynth}: A Comprehensive Framework for Generating\\
-  Realistic Synthetic Enterprise Accounting Data\\
+  \textsc{DataSynth}: Reference Knowledge Graphs for Enterprise\\
+  Audit Analytics through Synthetic Data Generation\\
   with Provable Statistical Properties%
 }
 
@@ -95,14 +98,16 @@
 
 % ── Main body ─────────────────────────────────────────────────────────
 \input{sections/introduction}
+\input{sections/ground_truth}
 \input{sections/related_work}
 \input{sections/architecture}
 \input{sections/statistical_foundations}
 \input{sections/generation_pipeline}
+\input{sections/knowledge_graph}
 \input{sections/anomaly_injection}
+\input{sections/privacy}
 \input{sections/counterfactual}
 \input{sections/evaluation}
-\input{sections/privacy}
 \input{sections/experiments}
 \input{sections/conclusion}
 

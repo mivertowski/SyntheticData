@@ -2,9 +2,11 @@
 \section{Anomaly Injection Framework}
 \label{sec:anomaly_injection}
 
-A primary use case for \system{} is generating labeled datasets for fraud
-detection and anomaly analytics.  This section describes the multi-dimensional
-anomaly injection framework.
+A primary use case for \system{} is generating labeled datasets for
+fraud detection and anomaly analytics.  Anomalies are injected with
+full provenance across all five knowledge dimensions
+(\Cref{def:dimensions}), providing ground-truth labels that are
+impossible to obtain from real enterprise data.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Anomaly Taxonomy}
@@ -36,94 +38,73 @@ Relational & 5 & CircularTransaction,
 \end{tabular}
 \end{table}
 
-Each anomaly type is parameterized by:
-\begin{itemize}
-  \item \textbf{Weight:} Relative injection probability (e.g., 2.5 for
-    JustBelowThreshold vs.\ 0.5 for FictitiousVendor).
-  \item \textbf{Amount range:} Domain-specific bounds (e.g.,
-    \$10K--\$500K for FictitiousEntry, \$100K--\$5M for
-    RevenueManipulation).
-  \item \textbf{Conditionality:} Some types require specific preconditions
-    (e.g., SelfApproval requires matching approver and preparer).
-\end{itemize}
+Each anomaly type maps to specific knowledge dimensions: fraud types
+span structural (fake entities), statistical (unusual amounts), and
+normative (control bypasses) dimensions; relational types are inherently
+topological; error types span statistical and temporal dimensions.  This
+multi-dimensional labeling enables evaluation of detection methods across
+all five dimensions (\Cref{def:dimensions}).
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Multi-Stage Fraud Schemes}
 \label{sec:anom_schemes}
 
-Simple anomalies are injected as independent point events.  However, real
-fraud often evolves through stages over extended time horizons.  \system{}
-implements three multi-stage \emph{fraud schemes}:
+Real fraud often evolves through stages over extended time horizons.
+\system{} implements three multi-stage \emph{fraud schemes}:
 
 \paragraph{1. Vendor Kickback Scheme.}
-A buyer routes payments to a shell company they control.  The scheme
-progresses through stages: (a)~establish shell vendor, (b)~route initial
-small invoices, (c)~gradually increase amounts, (d)~introduce collusion
-patterns across transactions.  Stage transitions are governed by
-probability-weighted state machines.
+A buyer routes payments to a shell company they control.  Stages:
+(a)~establish shell vendor, (b)~route initial small invoices,
+(c)~gradually increase amounts, (d)~introduce collusion patterns.
 
 \paragraph{2. Gradual Embezzlement Scheme.}
-Small, individually undetectable amounts are siphoned over time.  The scheme
-models: (a)~initial testing with minimal amounts, (b)~establishment of a
-regular extraction pattern, (c)~acceleration in amount and frequency,
-(d)~period-end concentration where oversight is reduced.
+Small, individually undetectable amounts siphoned over time.  Stages:
+(a)~initial testing with minimal amounts, (b)~establishment of regular
+extraction, (c)~acceleration in amount and frequency, (d)~period-end
+concentration.
 
 \paragraph{3. Revenue Manipulation Scheme.}
-Fictitious customers are created and revenue is prematurely recognized.
-Stages include: (a)~customer creation, (b)~fictitious order entry,
-(c)~premature revenue recognition, (d)~channel stuffing patterns with
-period-end concentration.
+Fictitious customers and premature revenue recognition.  Stages:
+(a)~customer creation, (b)~fictitious order entry, (c)~premature
+recognition, (d)~channel stuffing with period-end concentration.
 
-The \texttt{SchemeAdvancer} tracks each scheme's state, selecting
-context-aware actions at each stage and maintaining cumulative impact
-metadata.  Each transaction within a scheme receives a
-\texttt{MultiStageAnomalyLabel} that links it to the scheme instance,
-stage, and causal chain.
+The \texttt{SchemeAdvancer} tracks each scheme's state via
+probability-weighted state machines.  Each transaction within a scheme
+receives a \texttt{MultiStageAnomalyLabel} linking it to the scheme
+instance, stage, and causal chain.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Anomaly Correlation Patterns}
 \label{sec:anom_correlation}
 
-Anomalies in real data are not independently distributed.  \system{} models
-three correlation mechanisms:
+Anomalies in real data are not independently distributed.  \system{}
+models three correlation mechanisms:
 
 \paragraph{Temporal Clustering.}
-Anomalies concentrate in time windows (e.g., period-end, after management
-changes).  The \texttt{TemporalClusterGenerator} defines windows with
-configurable intensity multipliers:
-
+Anomalies concentrate in time windows with configurable intensity
+multipliers:
 \begin{equation}
 P(\text{anomaly at } t) = p_0 \cdot
   \prod_{w \in \mathcal{W}} \left(1 + (m_w - 1) \cdot
   \mathbb{1}_{t \in w}\right)
 \end{equation}
 
-where $p_0$ is the base anomaly rate and $m_w$ is the multiplier for window $w$.
-
 \paragraph{Cascade Propagation.}
-One anomaly triggers follow-on anomalies in dependent processes.  A
-\texttt{CascadeStep} defines the trigger condition, dependent anomaly type,
-propagation probability, and expected delay.  For example, a three-way
-match variance (trigger) may cascade to a payment delay (dependent) with
-probability 0.7 and a 5-day lag.
+One anomaly triggers follow-on anomalies in dependent processes via
+\texttt{CascadeStep} definitions with probability and delay parameters.
 
 \paragraph{Co-Occurrence.}
-Multiple anomaly types appear on the same transaction.  The
-\texttt{CoOccurrencePattern} defines allowed combinations and prevents
-unrealistic pairings (e.g., a FictitiousEntry cannot simultaneously be a
-DuplicateEntry).
+The \texttt{CoOccurrencePattern} defines allowed combinations and
+prevents unrealistic pairings.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Difficulty, Severity, and Confidence Scoring}
 \label{sec:anom_scoring}
 
-Each injected anomaly receives three scores that characterize its
-detectability:
+Each injected anomaly receives three scores:
 
 \paragraph{Difficulty.}
-A composite score $d \in [0, 1]$ (0 = easy to detect, 1 = hard) computed
-from five factor groups:
-
+A composite score $d \in [0, 1]$ from five factor groups:
 \begin{equation}
 d = \sum_{f \in \mathcal{F}} w_f \cdot s_f, \quad
 \mathcal{F} = \{\text{amount}, \text{blending}, \text{collusion},
@@ -131,21 +112,8 @@ d = \sum_{f \in \mathcal{F}} w_f \cdot s_f, \quad
 \label{eq:difficulty}
 \end{equation}
 
-\begin{itemize}
-  \item \textbf{Amount factors:} Larger amounts are easier to detect
-    ($s_{\text{amount}}$ decreases with magnitude).
-  \item \textbf{Blending factors:} How well the anomaly blends with normal
-    data ($s_{\text{blending}} \in [0,1]$).
-  \item \textbf{Collusion factors:} Multi-party schemes are harder to detect.
-  \item \textbf{Concealment factors:} Obfuscation techniques (round-tripping,
-    split transactions) increase difficulty.
-  \item \textbf{Temporal factors:} Night/weekend postings, period-end timing
-    reduce oversight.
-\end{itemize}
-
 \paragraph{Severity.}
-A five-component model assessing organizational impact:
-
+A five-component organizational impact model:
 \begin{equation}
 \text{severity} = 0.25 \cdot s_{\text{type}} + 0.30 \cdot s_{\text{monetary}}
   + 0.20 \cdot s_{\text{frequency}} + 0.15 \cdot s_{\text{scope}}
@@ -153,86 +121,43 @@ A five-component model assessing organizational impact:
 \label{eq:severity}
 \end{equation}
 
-where $s_{\text{type}}$ is the inherent risk per anomaly category,
-$s_{\text{monetary}}$ normalizes monetary impact against materiality,
-$s_{\text{frequency}}$ escalates for repeated patterns,
-$s_{\text{scope}}$ captures the number of affected entities, and
-$s_{\text{timing}}$ penalizes period-end and audit-period timing.
-
 \paragraph{Confidence.}
-Detection confidence $c \in [0,1]$ estimates the strength of evidence
-available to an auditor or ML model.  It combines pattern-match confidence
-(statistical correlation with known anomaly signatures), rule-violation
-confidence (policy breaches), behavioral-deviation confidence (distance from
-baseline), and contextual modifiers (co-occurring anomalies, scheme
-membership).
+Detection confidence combining pattern-match, rule-violation,
+behavioral-deviation, and contextual modifiers.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Ground-Truth Labels}
 \label{sec:anom_labels}
 
 Every anomaly produces a structured label record containing:
-
-\begin{itemize}
-  \item Anomaly type, category, and subcategory.
-  \item Affected transaction IDs and account codes.
-  \item Difficulty, severity, and confidence scores.
-  \item Scheme identifier and stage (for multi-stage schemes).
-  \item Contributing factors with individual impact and reliability scores.
-  \item Temporal context (posting timestamp, detection window).
-\end{itemize}
-
-Labels are exported as separate CSV/JSON files (\texttt{anomaly\_labels},
-\texttt{fraud\_labels}, \texttt{quality\_labels}), enabling supervised,
+anomaly type/category/subcategory, affected transaction IDs and account
+codes, difficulty/severity/confidence scores, scheme identifier and
+stage, contributing factors with impact scores, and temporal context.
+Labels are exported as separate CSV/JSON files, enabling supervised,
 semi-supervised, and unsupervised evaluation protocols.
+
+Because the labels are generated by the same forward process that
+produces the data (\Cref{thm:completeness}), they provide
+\emph{perfect} ground truth---unlike labels derived from real data,
+which are inherently incomplete and potentially biased by the same
+systematic errors they seek to identify.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Banking-Specific Anomalies: AML Typologies}
 \label{sec:anom_aml}
 
-The banking module extends the anomaly framework with five Anti-Money
-Laundering (AML) typologies:
-
-\begin{enumerate}
-  \item \textbf{Structuring (Smurfing):} Multiple deposits below the
-    reporting threshold (\$10{,}000 in the US), distributed across accounts
-    and time windows.
-  \item \textbf{Funnel Accounts:} Rapid aggregation of funds from multiple
-    sources into a single intermediary account.
-  \item \textbf{Layering:} Complex chains of wire transfers across
-    jurisdictions to obscure the origin of funds.
-  \item \textbf{Mule Networks:} Coordinated account networks receiving and
-    forwarding stolen funds.
-  \item \textbf{Round Tripping:} Funds exit and re-enter the same entity
-    disguised as legitimate commerce, with 30--60 day delays.
-\end{enumerate}
-
-Each typology generates persona-based transaction patterns with risk-tier
-profiles (Low, Medium, High, Very High) and sophistication levels (Basic,
-Intermediate, Advanced).  Ground-truth AML labels are exported alongside
-transaction data.
+The banking module extends the framework with five AML typologies:
+(1)~Structuring/smurfing, (2)~Funnel accounts, (3)~Layering across
+jurisdictions, (4)~Mule networks, and (5)~Round tripping with 30--60
+day delays.  Each generates persona-based patterns with risk-tier
+profiles and sophistication levels.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Fraud Scenario Packs}
 \label{sec:anom_fraud_packs}
 
-\system{} provides five pre-built fraud scenario packs as YAML configurations
-that can be deep-merged into any generation config:
-
-\begin{itemize}
-  \item \texttt{revenue\_fraud}: Revenue manipulation patterns including
-    channel stuffing, bill-and-hold, and premature recognition.
-  \item \texttt{payroll\_ghost}: Ghost employee schemes with fictitious
-    payroll entries.
-  \item \texttt{vendor\_kickback}: Vendor collusion with inflated invoices
-    and split payments.
-  \item \texttt{management\_override}: Override of internal controls by
-    senior personnel.
-  \item \texttt{comprehensive}: Combined pack with elements from all four
-    categories.
-\end{itemize}
-
-These packs configure anomaly rates, affected account ranges, temporal
-distribution, and multi-stage progression.  They are applied via
-\texttt{apply\_fraud\_packs()} which performs a deep-merge, and can be
-overridden with \texttt{-{}-fraud-rate} for rate adjustment.
+Five pre-built fraud scenario packs (\texttt{revenue\_fraud},
+\texttt{payroll\_ghost}, \texttt{vendor\_kickback},
+\texttt{management\_override}, \texttt{comprehensive}) provide complete
+anomaly configurations that can be deep-merged into any generation
+config via \texttt{apply\_fraud\_packs()}.
