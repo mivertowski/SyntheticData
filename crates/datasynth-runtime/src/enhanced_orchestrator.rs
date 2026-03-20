@@ -3146,8 +3146,7 @@ impl EnhancedOrchestrator {
         coa: &Arc<ChartOfAccounts>,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<GraphExportSnapshot> {
-        if self.phase_config.generate_graph_export && !entries.is_empty()
-        {
+        if self.phase_config.generate_graph_export && !entries.is_empty() {
             info!("Phase 10: Exporting Accounting Network Graphs");
             match self.export_graphs(entries, coa, stats) {
                 Ok(snapshot) => {
