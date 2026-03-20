@@ -37,7 +37,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-PUBLISH_DELAY=45  # Seconds to wait between publishes for crates.io index
+PUBLISH_DELAY=60  # Seconds to wait between publishes for crates.io sparse index propagation
 DRY_RUN=false
 SKIP_VERIFY=false
 FORCE_ALL=false   # If true, don't skip already published crates
@@ -277,7 +277,12 @@ wait_for_index() {
     while [ $waited -lt $max_wait ]; do
         if check_crate_published "$crate" "$version"; then
             print_success "$crate@$version is now available on crates.io"
-            # Extra wait for index propagation
+            # Force cargo to update its local sparse index so the next
+            # `cargo publish` verification step can find this version.
+            # The API may confirm availability before the sparse index propagates.
+            sleep 5
+            echo "  Updating cargo sparse index..."
+            cargo update --dry-run "$crate" >/dev/null 2>&1 || true
             sleep 5
             return 0
         fi
