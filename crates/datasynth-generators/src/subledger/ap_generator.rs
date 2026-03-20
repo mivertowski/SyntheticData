@@ -149,6 +149,27 @@ impl APGenerator {
         house_bank: &str,
         bank_account: &str,
     ) -> (APPayment, JournalEntry) {
+        if invoices.is_empty() {
+            let empty_payment = APPayment::new(
+                format!("APPAY{:08}", self.payment_counter + 1),
+                String::new(),
+                String::new(),
+                String::new(),
+                payment_date,
+                Decimal::ZERO,
+                String::new(),
+                APPaymentMethod::WireTransfer,
+                house_bank.to_string(),
+                bank_account.to_string(),
+            );
+            let empty_je = JournalEntry::new_simple(
+                format!("APPAY{:08}", self.payment_counter + 1),
+                String::new(),
+                payment_date,
+                "Empty AP payment (no invoices)".to_string(),
+            );
+            return (empty_payment, empty_je);
+        }
         self.payment_counter += 1;
         let payment_number = format!("APPAY{:08}", self.payment_counter);
 

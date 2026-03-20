@@ -77,6 +77,17 @@ fn validate_global_settings(config: &GeneratorConfig) -> SynthResult<()> {
             config.global.start_date
         )));
     }
+    // Validate that the end date doesn't exceed chrono's year range
+    if let Ok(start) = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d") {
+        use chrono::Datelike;
+        let end_year = start.year() + (config.global.period_months as i32 + 11) / 12;
+        if end_year > 9999 {
+            return Err(SynthError::validation(format!(
+                "End year {} exceeds maximum supported year 9999 (start_date + period_months)",
+                end_year
+            )));
+        }
+    }
     Ok(())
 }
 
@@ -1749,6 +1760,7 @@ fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
             lifecycle.mature_rate,
             lifecycle.at_risk_rate,
             lifecycle.churned_rate,
+            lifecycle.won_back_rate,
         ],
     )?;
 

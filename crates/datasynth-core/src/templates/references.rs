@@ -249,14 +249,14 @@ impl ReferenceGenerator {
                 )
             }
             ReferenceFormat::Random => {
-                // Generate random alphanumeric suffix
+                // Generate deterministic alphanumeric suffix based on sequence number
                 let suffix: String = (0..config.sequence_digits)
-                    .map(|_| {
-                        let idx = rand::rng().random_range(0..36);
+                    .map(|i| {
+                        let idx = ((seq as usize).wrapping_mul(7).wrapping_add(i).wrapping_mul(13).wrapping_add(17)) % 36;
                         if idx < 10 {
-                            (b'0' + idx) as char
+                            (b'0' + idx as u8) as char
                         } else {
-                            (b'A' + idx - 10) as char
+                            (b'A' + idx as u8 - 10) as char
                         }
                     })
                     .collect();

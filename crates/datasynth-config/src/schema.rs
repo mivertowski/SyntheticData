@@ -6914,6 +6914,10 @@ pub struct LifecycleSchemaConfig {
     /// Churned stage rate.
     #[serde(default = "default_churned_rate")]
     pub churned_rate: f64,
+
+    /// Won-back stage rate (churned customers reacquired).
+    #[serde(default)]
+    pub won_back_rate: f64,
 }
 
 fn default_new_rate() -> f64 {
@@ -6945,6 +6949,7 @@ impl Default for LifecycleSchemaConfig {
             mature_rate: 0.60,
             at_risk_rate: 0.10,
             churned_rate: 0.05,
+            won_back_rate: 0.0,
         }
     }
 }

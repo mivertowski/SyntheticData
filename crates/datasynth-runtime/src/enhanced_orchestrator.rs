@@ -2976,11 +2976,11 @@ impl EnhancedOrchestrator {
                     tax_accounts::TAX_EXPENSE.to_string(),
                     tax_amount,
                 ));
-                // CR Sales Tax Payable (2100) — used as income tax payable in this stub
+                // CR Income Tax Payable (2130)
                 tax_je.add_line(JournalEntryLine::credit(
                     doc_id,
                     2,
-                    tax_accounts::SALES_TAX_PAYABLE.to_string(),
+                    tax_accounts::INCOME_TAX_PAYABLE.to_string(),
                     tax_amount,
                 ));
 
