@@ -3797,23 +3797,28 @@ pub struct AuditGenerationConfig {
     #[serde(default)]
     pub enabled: bool,
 
-    /// Generate engagement documents and workpapers
+    /// [Not yet wired] Generate workpaper data — reserved for future fine-grained control.
+    /// Currently, workpapers are always generated when `enabled = true`.
     #[serde(default = "default_true")]
     pub generate_workpapers: bool,
 
-    /// Default engagement type distribution
+    /// [Not yet wired] Default engagement type distribution — reserved for future fine-grained control.
+    /// Currently, engagement types are determined by the audit generator's internal defaults.
     #[serde(default)]
     pub engagement_types: AuditEngagementTypesConfig,
 
-    /// Workpaper configuration
+    /// [Not yet wired] Workpaper configuration — reserved for future fine-grained control.
+    /// Currently, workpaper settings are determined by the audit generator's internal defaults.
     #[serde(default)]
     pub workpapers: WorkpaperConfig,
 
-    /// Team configuration
+    /// [Not yet wired] Team configuration — reserved for future fine-grained control.
+    /// Currently, team composition is determined by the audit generator's internal defaults.
     #[serde(default)]
     pub team: AuditTeamConfig,
 
-    /// Review workflow configuration
+    /// [Not yet wired] Review workflow configuration — reserved for future fine-grained control.
+    /// Currently, review workflow is determined by the audit generator's internal defaults.
     #[serde(default)]
     pub review: ReviewWorkflowConfig,
 }

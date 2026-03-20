@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Trend Plausibility**: Revenue stability, expense ratio consistency, BS growth, directional consistency checks
 - **Audit Preset**: `audit_group_overlay()` modifier + `--preset audit-group` CLI flag enabling all audit features
 
+#### Configuration Unification
+- **PhaseConfig::from_config()**: Single source of truth — all 19 phase flags derived from GeneratorConfig sections
+- Removed redundant AND-logic double-checks in banking and graph export phases
+- Documented unused AuditGenerationConfig sub-fields (reserved for future fine-grained control)
+- Added `audit:`, `hr:`, `treasury:`, `project_accounting:` config examples to documentation
+
 #### Quality Fixes (post-initial implementation)
 - **Audit opinion generator (ISA 700/705/706/701)**: Derives opinion from findings severity, going concern, scope limitations. Generates Key Audit Matters (ISA 701). PCAOB/ICFR opinion for US-listed entities
 - **SOX 302/404 assessments**: CEO/CFO certification (302) and ICFR effectiveness assessment (404) wired into orchestrator

@@ -224,6 +224,34 @@ audit_standards:
   sox:
     enabled: true
     materiality_threshold: 10000.0
+
+audit:
+  enabled: true                          # Enable audit engagement generation
+
+hr:
+  enabled: true
+  payroll:
+    enabled: true
+  time_attendance:
+    enabled: true
+  expenses:
+    enabled: true
+
+treasury:
+  enabled: true
+  cash_positioning:
+    enabled: true
+  cash_forecasting:
+    enabled: true
+
+project_accounting:
+  enabled: true
+  change_orders:
+    enabled: true
+  milestones:
+    enabled: true
+  earned_value:
+    enabled: true
 ```
 
 ### Distributions (datasynth-core/src/distributions/)

@@ -2228,7 +2228,7 @@ impl EnhancedOrchestrator {
 
         // Phase 10c: Additional graph builders (approval, entity, banking)
         // These run after all data is available since they need banking/IC data.
-        if self.phase_config.generate_graph_export || self.config.graph_export.enabled {
+        if self.phase_config.generate_graph_export {
             self.build_additional_graphs(&banking, &intercompany, &entries, &mut stats);
         }
 
@@ -3119,7 +3119,7 @@ impl EnhancedOrchestrator {
         &mut self,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<BankingSnapshot> {
-        if self.phase_config.generate_banking && self.config.banking.enabled {
+        if self.phase_config.generate_banking {
             info!("Phase 9: Generating Banking KYC/AML Data");
             let banking_snapshot = self.generate_banking_data()?;
             stats.banking_customer_count = banking_snapshot.customers.len();
@@ -3146,8 +3146,7 @@ impl EnhancedOrchestrator {
         coa: &Arc<ChartOfAccounts>,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<GraphExportSnapshot> {
-        if (self.phase_config.generate_graph_export || self.config.graph_export.enabled)
-            && !entries.is_empty()
+        if self.phase_config.generate_graph_export && !entries.is_empty()
         {
             info!("Phase 10: Exporting Accounting Network Graphs");
             match self.export_graphs(entries, coa, stats) {
