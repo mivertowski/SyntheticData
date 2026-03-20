@@ -318,15 +318,13 @@ impl SamplingPlanGenerator {
             * Decimal::try_from(self.config.key_item_fraction * 3.0).unwrap_or(dec!(0.15))
             / Decimal::from(n_key_items as i64);
         let key_item_min = tolerable_error * dec!(1.01); // just above TE
+        let key_item_max = (avg_key_value * dec!(2)).max(key_item_min * dec!(2)); // ensure max > min
 
         let mut items = Vec::with_capacity(n_key_items);
         for i in 0..n_key_items {
             let amount_f = self.rng.random_range(
                 key_item_min.to_string().parse::<f64>().unwrap_or(10_000.0)
-                    ..=(avg_key_value * dec!(2))
-                        .to_string()
-                        .parse::<f64>()
-                        .unwrap_or(500_000.0),
+                    ..=key_item_max.to_string().parse::<f64>().unwrap_or(500_000.0),
             );
             let amount = Decimal::try_from(amount_f)
                 .unwrap_or(key_item_min)
