@@ -28,7 +28,8 @@ use datasynth_core::models::audit::{
 };
 use datasynth_core::utils::seeded_rng;
 use datasynth_standards::audit::opinion::{
-    AuditOpinion, EmphasisOfMatter, EomMatter, IcfrOpinion, IcfrOpinionType, KeyAuditMatter,
+    AuditOpinion, EmphasisOfMatter, EomMatter, GoingConcernAssessment as OpinionGcAssessment,
+    IcfrOpinion, IcfrOpinionType, KeyAuditMatter,
     MaterialWeakness as OpinionMaterialWeakness, ModificationBasis, OpinionModification,
     OpinionType, PcaobOpinionElements, RiskLevel,
 };
@@ -148,6 +149,13 @@ impl AuditOpinionGenerator {
             );
             opinion.material_uncertainty_going_concern = has_uncertainty;
             opinion.going_concern_conclusion.material_uncertainty_exists = has_uncertainty;
+            // Propagate the assessment conclusion so opinion.going_concern_conclusion.conclusion
+            // matches the actual GC assessment rather than defaulting to NoMaterialUncertainty.
+            opinion.going_concern_conclusion.conclusion = if has_uncertainty {
+                OpinionGcAssessment::MaterialUncertaintyAdequatelyDisclosed
+            } else {
+                OpinionGcAssessment::NoMaterialUncertainty
+            };
             opinion.going_concern_conclusion.events_conditions = gc
                 .indicators
                 .iter()

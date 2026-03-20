@@ -12,7 +12,7 @@ use rust_decimal::Decimal;
 use datasynth_core::models::documents::{CustomerInvoice, Payment, PaymentType, VendorInvoice};
 use datasynth_core::models::subledger::ap::{APInvoice, APInvoiceLine, MatchStatus};
 use datasynth_core::models::subledger::ar::{ARInvoice, ARInvoiceLine};
-use datasynth_core::models::subledger::PaymentTerms;
+use datasynth_core::models::subledger::{PaymentTerms, SubledgerDocumentStatus};
 
 /// Links document flow invoices to subledger records.
 #[derive(Default)]
@@ -231,6 +231,12 @@ pub fn apply_ap_settlements(ap_invoices: &mut [APInvoice], payments: &[Payment])
                     let inv = &mut ap_invoices[idx];
                     inv.amount_remaining =
                         (inv.amount_remaining - allocation.amount).max(Decimal::ZERO);
+                    // Update status to reflect settlement state.
+                    inv.status = if inv.amount_remaining == Decimal::ZERO {
+                        SubledgerDocumentStatus::Cleared
+                    } else {
+                        SubledgerDocumentStatus::PartiallyCleared
+                    };
                 }
             }
         }
@@ -265,6 +271,12 @@ pub fn apply_ar_settlements(ar_invoices: &mut [ARInvoice], payments: &[Payment])
                     let inv = &mut ar_invoices[idx];
                     inv.amount_remaining =
                         (inv.amount_remaining - allocation.amount).max(Decimal::ZERO);
+                    // Update status to reflect settlement state.
+                    inv.status = if inv.amount_remaining == Decimal::ZERO {
+                        SubledgerDocumentStatus::Cleared
+                    } else {
+                        SubledgerDocumentStatus::PartiallyCleared
+                    };
                 }
             }
         }
