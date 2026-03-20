@@ -1625,6 +1625,7 @@ impl EnhancedOrchestrator {
 
         // Generate a seed for the synthesis
         let seed: u64 = rand::random();
+        info!("Fingerprint synthesis seed: {}", seed);
 
         // Use ConfigSynthesizer with scale option to convert fingerprint to GeneratorConfig
         let options = SynthesisOptions {
@@ -1970,6 +1971,19 @@ impl EnhancedOrchestrator {
                     "Appended {} elimination journal entries to main entries",
                     elim_jes.len()
                 );
+                // IC elimination net-zero validation
+                let elim_debit: rust_decimal::Decimal =
+                    elim_jes.iter().map(|je| je.total_debit()).sum();
+                let elim_credit: rust_decimal::Decimal =
+                    elim_jes.iter().map(|je| je.total_credit()).sum();
+                if elim_debit != elim_credit {
+                    warn!(
+                        "IC elimination entries not balanced: debits={}, credits={}, diff={}",
+                        elim_debit,
+                        elim_credit,
+                        elim_debit - elim_credit
+                    );
+                }
                 entries.extend(elim_jes);
             }
         }
@@ -2119,6 +2133,33 @@ impl EnhancedOrchestrator {
             &audit,
             &mut stats,
         )?;
+
+        // BS coherence check: assets = liabilities + equity
+        {
+            use datasynth_core::models::StatementType;
+            for stmt in &financial_reporting.consolidated_statements {
+                if stmt.statement_type == StatementType::BalanceSheet {
+                    let total_assets: rust_decimal::Decimal = stmt
+                        .line_items
+                        .iter()
+                        .filter(|li| li.section.to_uppercase().contains("ASSET"))
+                        .map(|li| li.amount)
+                        .sum();
+                    let total_le: rust_decimal::Decimal = stmt
+                        .line_items
+                        .iter()
+                        .filter(|li| !li.section.to_uppercase().contains("ASSET"))
+                        .map(|li| li.amount)
+                        .sum();
+                    if (total_assets - total_le).abs() > rust_decimal::Decimal::new(1, 0) {
+                        warn!(
+                            "BS equation imbalance: assets={}, L+E={}",
+                            total_assets, total_le
+                        );
+                    }
+                }
+            }
+        }
 
         // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
         let accounting_standards =
@@ -2659,6 +2700,14 @@ impl EnhancedOrchestrator {
         financial_reporting: &FinancialReportingSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<OcpmSnapshot> {
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
+            return Ok(OcpmSnapshot::default());
+        }
         if self.phase_config.generate_ocpm_events {
             info!("Phase 3c: Generating OCPM Events");
             let ocpm_snapshot = self.generate_ocpm_events(
@@ -3414,6 +3463,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<SourcingSnapshot> {
         if !self.phase_config.generate_sourcing && !self.config.source_to_pay.enabled {
             debug!("Phase 14: Skipped (sourcing generation disabled)");
+            return Ok(SourcingSnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(SourcingSnapshot::default());
         }
 
@@ -6296,6 +6353,14 @@ impl EnhancedOrchestrator {
             debug!("Phase 21: Skipped (ESG generation disabled)");
             return Ok(EsgSnapshot::default());
         }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
+            return Ok(EsgSnapshot::default());
+        }
         info!("Phase 21: Generating ESG Data");
 
         let seed = self.seed;
@@ -6519,6 +6584,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<TreasurySnapshot> {
         if !self.phase_config.generate_treasury {
             debug!("Phase 22: Skipped (treasury generation disabled)");
+            return Ok(TreasurySnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(TreasurySnapshot::default());
         }
         info!("Phase 22: Generating Treasury Data");
@@ -6845,6 +6918,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<ProjectAccountingSnapshot> {
         if !self.phase_config.generate_project_accounting {
             debug!("Phase 23: Skipped (project accounting disabled)");
+            return Ok(ProjectAccountingSnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(ProjectAccountingSnapshot::default());
         }
         info!("Phase 23: Generating Project Accounting Data");

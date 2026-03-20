@@ -13,6 +13,7 @@ use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::info;
 
 /// Configuration for engagement letter generation.
 #[derive(Debug, Clone)]
@@ -78,6 +79,10 @@ impl EngagementLetterGenerator {
         applicable_framework: &str,
         engagement_date: NaiveDate,
     ) -> EngagementLetter {
+        info!(
+            "Generating engagement letter for {} (engagement {})",
+            client_name, engagement_id
+        );
         let scope = if entity_count > 1 {
             EngagementScope::GroupAudit
         } else {
@@ -112,6 +117,10 @@ impl EngagementLetterGenerator {
         letter.responsibilities_management = self.management_responsibilities();
         letter.special_terms = self.special_terms(scope);
 
+        info!(
+            "Engagement letter generated for {} scope={:?}",
+            client_name, scope
+        );
         letter
     }
 

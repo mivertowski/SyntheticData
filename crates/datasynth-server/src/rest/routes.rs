@@ -768,13 +768,14 @@ async fn bulk_generate(
     let config = state.server_state.config.read().await.clone();
     let start_time = std::time::Instant::now();
 
-    let phase_config = PhaseConfig {
-        generate_master_data: req.include_master_data.unwrap_or(false),
-        generate_document_flows: false,
-        generate_journal_entries: true,
-        inject_anomalies: req.inject_anomalies.unwrap_or(false),
-        show_progress: false,
-        ..Default::default()
+    let phase_config = {
+        let mut pc = PhaseConfig::from_config(&config);
+        pc.generate_master_data = req.include_master_data.unwrap_or(false);
+        pc.generate_document_flows = false;
+        pc.generate_journal_entries = true;
+        pc.inject_anomalies = req.inject_anomalies.unwrap_or(false);
+        pc.show_progress = false;
+        pc
     };
 
     let mut orchestrator = EnhancedOrchestrator::new(config, phase_config).map_err(|e| {

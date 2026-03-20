@@ -19,6 +19,7 @@ use datasynth_core::models::audit::risk_assessment_cra::{
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use tracing::{debug, info};
 
 // ---------------------------------------------------------------------------
 // Account area definition
@@ -285,6 +286,7 @@ impl CraGenerator {
         entity_code: &str,
         control_effectiveness: Option<&std::collections::HashMap<String, RiskRating>>,
     ) -> Vec<CombinedRiskAssessment> {
+        info!("Generating CRAs for entity {}", entity_code);
         let mut results = Vec::new();
 
         for spec in ACCOUNT_AREAS {
@@ -294,6 +296,11 @@ impl CraGenerator {
 
                 // Determine significant risk flag
                 let is_significant = self.is_significant_risk(spec, assertion, ir, cr);
+
+                debug!(
+                    "CRA: {} {:?} -> IR={:?} CR={:?} significant={}",
+                    spec.name, assertion, ir, cr, is_significant
+                );
 
                 let risk_factors = risk_factors_for(spec.name, assertion);
 
@@ -311,6 +318,11 @@ impl CraGenerator {
             }
         }
 
+        info!(
+            "Generated {} CRAs for entity {}",
+            results.len(),
+            entity_code
+        );
         results
     }
 

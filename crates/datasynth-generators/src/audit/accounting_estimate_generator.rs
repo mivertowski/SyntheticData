@@ -21,6 +21,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 use datasynth_core::models::audit::accounting_estimates::{
     AccountingEstimate, AssumptionAssessment, EstimateAssumption, EstimateComplexity, EstimateType,
@@ -101,6 +102,7 @@ impl AccountingEstimateGenerator {
 
     /// Generate accounting estimates for a single entity.
     pub fn generate_for_entity(&mut self, entity_code: &str) -> Vec<AccountingEstimate> {
+        info!("Generating accounting estimates for entity {}", entity_code);
         let count = self.rng.random_range(
             self.config.min_estimates_per_entity..=self.config.max_estimates_per_entity,
         );
@@ -133,6 +135,11 @@ impl AccountingEstimateGenerator {
             estimates.push(estimate);
         }
 
+        info!(
+            "Generated {} accounting estimates for entity {}",
+            estimates.len(),
+            entity_code
+        );
         estimates
     }
 

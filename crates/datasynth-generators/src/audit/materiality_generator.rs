@@ -26,6 +26,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 // ---------------------------------------------------------------------------
 // Input
@@ -104,6 +105,10 @@ impl MaterialityGenerator {
 
     /// Generate a materiality calculation for a single entity.
     pub fn generate(&mut self, input: &MaterialityInput) -> MaterialityCalculation {
+        info!(
+            "Generating materiality calculation for entity {} period {}",
+            input.entity_code, input.period
+        );
         let (benchmark, benchmark_amount, benchmark_pct, rationale) = self.select_benchmark(input);
 
         // Apply the minimum overall materiality floor after benchmark selection
@@ -119,7 +124,7 @@ impl MaterialityGenerator {
 
         let normalized_earnings = self.maybe_generate_normalization(input);
 
-        MaterialityCalculation::new(
+        let calc = MaterialityCalculation::new(
             &input.entity_code,
             &input.period,
             benchmark,
@@ -128,7 +133,16 @@ impl MaterialityGenerator {
             self.config.pm_percentage,
             normalized_earnings,
             &rationale,
-        )
+        );
+        info!(
+            "Materiality for {} {}: overall={} PM={} benchmark={:?}",
+            input.entity_code,
+            input.period,
+            calc.overall_materiality,
+            calc.performance_materiality,
+            calc.benchmark
+        );
+        calc
     }
 
     /// Generate materiality calculations for a batch of entities.
