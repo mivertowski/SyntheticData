@@ -28,6 +28,7 @@ fn config_with_scenarios(scenarios: Vec<ScenarioSchemaConfig>) -> GeneratorConfi
         scenarios,
         causal_model: CausalModelSchemaConfig::default(),
         defaults: Default::default(),
+        generate_counterfactuals: false,
     };
     config
 }
@@ -395,6 +396,7 @@ fn test_full_scenario_pipeline_with_diff() {
             ..Default::default()
         },
         defaults: Default::default(),
+        generate_counterfactuals: false,
     };
 
     // Build engine and run generate_all.
@@ -647,6 +649,7 @@ fn test_multiple_scenarios_sequential() {
             ..Default::default()
         },
         defaults: Default::default(),
+        generate_counterfactuals: false,
     };
 
     let engine = ScenarioEngine::new(config.clone()).expect("should create engine");

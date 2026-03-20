@@ -1,0 +1,10 @@
+name: "Going Concern Trigger"
+description: "Credit crunch triggers working capital deficiency and debt covenant breach"
+interventions:
+  - type: macro_shock
+    subtype: credit_crunch
+    magnitude: 0.8
+    timing:
+      onset: gradual
+      start_month: 1
+      duration_months: 6

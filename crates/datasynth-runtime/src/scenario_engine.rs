@@ -396,6 +396,7 @@ mod tests {
             }],
             causal_model: Default::default(),
             defaults: Default::default(),
+            generate_counterfactuals: false,
         };
         config
     }
@@ -476,6 +477,7 @@ mod tests {
                 ..Default::default()
             },
             defaults: Default::default(),
+            generate_counterfactuals: false,
         };
 
         let engine = ScenarioEngine::new(config).expect("should create engine with minimal DAG");

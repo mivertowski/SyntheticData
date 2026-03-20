@@ -1,0 +1,8 @@
+name: "Control Failure Cascade"
+description: "Significant control failure in revenue cycle, cascading through audit risk assessment"
+interventions:
+  - type: control_failure
+    magnitude: 0.7
+    timing:
+      onset: sudden
+      start_month: 3
