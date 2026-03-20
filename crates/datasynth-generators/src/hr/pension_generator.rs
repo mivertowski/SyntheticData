@@ -102,9 +102,9 @@ impl PensionGenerator {
     /// - `employee_count`   : number of employees (used to calibrate participant count)
     /// - `currency`         : reporting currency code
     /// - `avg_salary`       : optional average annual salary from actual payroll data;
-    ///                        falls back to $50 000 when `None`
+    ///   falls back to $50 000 when `None`
     /// - `period_months`    : number of months in the reporting period (used to prorate
-    ///                        annual pension expense; defaults to 12 when 0)
+    ///   annual pension expense; defaults to 12 when 0)
     pub fn generate(
         &mut self,
         entity_code: &str,

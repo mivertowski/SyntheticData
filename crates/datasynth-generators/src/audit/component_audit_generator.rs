@@ -116,7 +116,7 @@ impl ComponentAuditGenerator {
         // (e.g. all 1.0 from defaults), fall back to count-based equal weighting
         // so that later entities are not artificially penalised.
         let n = companies.len();
-        let raw_weights: Vec<f64> = companies.iter().map(|c| c.volume_weight as f64).collect();
+        let raw_weights: Vec<f64> = companies.iter().map(|c| c.volume_weight).collect();
         let weights: Vec<f64> = {
             let all_equal = raw_weights
                 .iter()

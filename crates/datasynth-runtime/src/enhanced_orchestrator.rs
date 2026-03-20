@@ -3757,14 +3757,18 @@ impl EnhancedOrchestrator {
             {
                 use rust_decimal::Decimal;
                 let hundred = Decimal::from(100u32);
-                let ten_pct = Decimal::new(10, 2);   // 0.10
+                let ten_pct = Decimal::new(10, 2); // 0.10
                 let thirty_pct = Decimal::new(30, 2); // 0.30
-                let sixty_pct = Decimal::new(60, 2);  // 0.60
+                let sixty_pct = Decimal::new(60, 2); // 0.60
                 let parent_code = &group_structure.parent_entity;
                 for sub in &group_structure.subsidiaries {
                     let net_assets = {
                         let na = Self::compute_entity_net_assets(journal_entries, &sub.entity_code);
-                        if na > Decimal::ZERO { na } else { Decimal::from(1_000_000u64) }
+                        if na > Decimal::ZERO {
+                            na
+                        } else {
+                            Decimal::from(1_000_000u64)
+                        }
                     };
                     let ownership_pct = sub.ownership_percentage / hundred; // 0.0–1.0
                     let inv_key = format!("{}_{}", parent_code, sub.entity_code);
@@ -4368,14 +4372,15 @@ impl EnhancedOrchestrator {
         hr: &HrSnapshot,
         audit: &AuditSnapshot,
     ) {
+        use datasynth_config::schema::AccountingFrameworkConfig;
+        use datasynth_core::models::StatementType;
         use datasynth_generators::period_close::notes_generator::{
             NotesGenerator, NotesGeneratorContext,
         };
-        use datasynth_core::models::StatementType;
-        use datasynth_config::schema::AccountingFrameworkConfig;
 
         let seed = self.seed;
-        let start_date = match NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d") {
+        let start_date = match NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+        {
             Ok(d) => d,
             Err(_) => return,
         };
@@ -4440,8 +4445,16 @@ impl EnhancedOrchestrator {
                     }
                 }
                 (
-                    if dta > rust_decimal::Decimal::ZERO { Some(dta) } else { None },
-                    if dtl > rust_decimal::Decimal::ZERO { Some(dtl) } else { None },
+                    if dta > rust_decimal::Decimal::ZERO {
+                        Some(dta)
+                    } else {
+                        None
+                    },
+                    if dtl > rust_decimal::Decimal::ZERO {
+                        Some(dtl)
+                    } else {
+                        None
+                    },
                 )
             };
 
@@ -4503,7 +4516,11 @@ impl EnhancedOrchestrator {
                     })
                     .map(|a| a.fair_value_closing)
                     .sum();
-                if entity_pension_plan_count > 0 { Some(sum) } else { None }
+                if entity_pension_plan_count > 0 {
+                    Some(sum)
+                } else {
+                    None
+                }
             };
 
             // ---- Audit data: related parties + subsequent events ----
@@ -4556,7 +4573,9 @@ impl EnhancedOrchestrator {
                 entity_dtl,
                 provision_count,
             );
-            financial_reporting.notes_to_financial_statements.extend(entity_notes);
+            financial_reporting
+                .notes_to_financial_statements
+                .extend(entity_notes);
         }
     }
 

@@ -105,7 +105,7 @@ impl AuditOpinionGenerator {
             .collect();
 
         // Check for scope limitations in component reports.
-        let has_scope_limitation = input.component_reports.iter().any(|r| is_scope_limited(r));
+        let has_scope_limitation = input.component_reports.iter().any(is_scope_limited);
 
         // Determine opinion type.
         let opinion_type = if has_scope_limitation {

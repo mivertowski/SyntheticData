@@ -378,8 +378,11 @@ impl BalanceCoherenceValidator {
                         .balances
                         .values()
                         .filter(|b| {
-                            let code = b.account_code.trim_start_matches(|c: char| !c.is_ascii_digit());
-                            let digits: String = code.chars().filter(|c| c.is_ascii_digit()).collect();
+                            let code = b
+                                .account_code
+                                .trim_start_matches(|c: char| !c.is_ascii_digit());
+                            let digits: String =
+                                code.chars().filter(|c| c.is_ascii_digit()).collect();
                             if digits.len() >= 2 {
                                 matches!(&digits[..2], "10" | "11" | "12" | "13")
                             } else {
