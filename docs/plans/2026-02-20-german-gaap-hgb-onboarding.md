@@ -1103,7 +1103,7 @@ output/
 ## 9. References
 
 - [HGB Official English Translation (PDF)](https://www.gesetze-im-internet.de/englisch_hgb/englisch_hgb.pdf)
-- [IFRS vs German GAAP — EY Scout Comparison (2022)](https://www.ey.com/content/dam/ey-unified-site/ey-com/de-de/technical/ifrs-ver%C3%B6ffentlichungen/documents/ey-de-ifrs-vs-german-gaap-march-2022.pdf)
+- IFRS vs German GAAP — Industry comparison guides (multiple publishers, 2022)
 - [IFRS compared to German GAAP and Dutch GAAP — KPMG (2024)](https://assets.kpmg.com/content/dam/kpmg/nl/pdf/2024/services/IFRS-dutch-german-GAAP.pdf)
 - [German GAAP (HGB) vs IFRS Overview — GlobalConnect](https://globalconnectadmin.com/german-gaap-handelsgesetzbuch-hgb-vs-ifrs-understanding-germanys-accounting-framework-3/)
 - [New HGB Thresholds 2025 — Mauer WPG](https://www.mauer-wpg.com/en/insights/new-thresholds-in-the-german-commercial-code-hgb-implications-for-your-corporation)

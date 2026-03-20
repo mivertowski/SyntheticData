@@ -22,6 +22,12 @@ DataSynth is a high-performance, configurable synthetic data generator that prod
 
 All generated data respects accounting identities (debits = credits, Assets = Liabilities + Equity), follows empirical distributions (Benford's Law, log-normal mixtures), and maintains referential integrity across 100+ output tables.
 
+## What's New in v1.3.0
+
+**Enterprise Group Audit Simulation** — DataSynth now generates complete audit simulation datasets covering the ISA lifecycle from engagement to opinion, with ISA 600 group audits, 10+ accounting standards (IFRS 3/8/9, IAS 12/19/21/37, ASC 326/718/740/805), and a full audit methodology framework (CRA, materiality, sampling, SCOTS, analytical procedures).
+
+Use `--preset audit-group` to generate 113+ interconnected files ready for ML training, AI agent interaction, and auditor training.
+
 ## Quick Links
 
 | Section | Description |
@@ -30,7 +36,7 @@ All generated data respects accounting identities (debits = credits, Assets = Li
 | [User Guide](user-guide/README.md) | CLI reference, server API, desktop UI, Python SDK |
 | [Configuration](configuration/README.md) | Complete YAML schema and industry presets |
 | [Architecture](architecture/README.md) | System design, data flow, resource management |
-| [Crate Reference](crates/README.md) | Detailed documentation for all 15 crates |
+| [Crate Reference](crates/README.md) | Detailed documentation for all 16 crates |
 | [Advanced Topics](advanced/README.md) | Anomaly injection, graph export, fingerprinting, standards |
 | [Deployment](deployment/README.md) | Docker, Kubernetes, bare metal, security hardening |
 | [Use Cases](use-cases/README.md) | Fraud detection, audit, AML/KYC, compliance, ESG |
@@ -72,7 +78,8 @@ DataSynth covers the full enterprise process landscape:
 | **Subledgers** | AR, AP, Fixed Assets, Inventory with GL reconciliation |
 | **Period Close** | Monthly close engine, depreciation, accruals, year-end closing entries |
 | **Banking / KYC / AML** | Customer personas, KYC profiles, AML typologies (structuring, layering, mule, funnel) |
-| **Audit** | ISA-compliant engagements, workpapers, evidence, risk assessments, findings |
+| **Audit** | Complete ISA lifecycle: engagements, workpapers, evidence, risk assessments, findings, opinions (ISA 700), KAMs (ISA 701), SOX 302/404 |
+| **Group Audit (ISA 600)** | Component auditors, materiality allocation, scope assignment, component instructions/reports, consolidation |
 | **Sales** | Quote-to-order pipeline with win rate modeling |
 | **Bank Reconciliation** | Statement matching, outstanding checks, deposits in transit |
 
@@ -86,6 +93,15 @@ DataSynth covers the full enterprise process landscape:
 - **Audit standards**: ISA (34 standards), PCAOB (19+ standards), SOX 302/404 compliance
 - **COSO 2013**: 5 components, 17 principles, maturity levels
 - **Localized exports**: FEC (French) and GoBD (German) audit file formats
+- **Enterprise Group Audit (ISA 600)**: Component auditor assignment, group materiality allocation, scope assignment (full/specific/analytical), component instructions and reports
+- **Audit Opinion (ISA 700/705/706/701)**: Opinion derived from findings severity and going concern, Key Audit Matters, PCAOB ICFR opinion
+- **Audit Methodology**: Combined Risk Assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification, unusual item detection, analytical relationships (ISA 520)
+- **Deferred Tax (IAS 12 / ASC 740)**: Temporary differences, ETR reconciliation, rollforward schedules, valuation allowances
+- **Business Combinations (IFRS 3 / ASC 805)**: Purchase price allocation, fair value step-ups, goodwill, contingent consideration
+- **Segment Reporting (IFRS 8 / ASC 280)**: Operating segments with reconciliation to consolidated totals
+- **Expected Credit Loss (IFRS 9 / ASC 326)**: Provision matrix by aging bucket, forward-looking scenarios, ECL movements
+- **Pensions (IAS 19 / ASC 715)**: DBO rollforward, plan assets, pension expense, OCI remeasurements
+- **Consolidated Financial Statements**: Standalone + consolidated with elimination schedules and going concern assessment
 
 ### Fraud, Anomalies & Data Quality
 
@@ -157,7 +173,7 @@ cargo build --release
 
 ## Architecture
 
-DataSynth is organized as a Rust workspace with 15 modular crates:
+DataSynth is organized as a Rust workspace with 16 modular crates:
 
 ```
 datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)
@@ -173,6 +189,7 @@ datasynth-fingerprint    Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards      Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
                 │
 datasynth-graph          Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
+datasynth-graph-export   Unified graph export pipeline with 78 entity types
 datasynth-eval           Statistical evaluation, quality gates, auto-tuning
                 │
 datasynth-config         Configuration schema, validation, industry presets

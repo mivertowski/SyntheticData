@@ -42,11 +42,43 @@ cargo build --release
 # Demo mode — generates a complete dataset with defaults
 ./target/release/datasynth-data generate --demo --output ./demo-output
 
+# Full audit simulation (113+ output files)
+./target/release/datasynth-data generate --demo --preset audit-group --output ./audit-output
+
 # Or configure for your use case
 ./target/release/datasynth-data init --industry manufacturing --complexity medium -o config.yaml
 ./target/release/datasynth-data validate --config config.yaml
 ./target/release/datasynth-data generate --config config.yaml --output ./output
 ```
+
+---
+
+## Group Audit Simulation
+
+DataSynth v1.3.0 can simulate a complete enterprise group audit following ISA, IFRS, US GAAP, and local regulations. Use the `audit-group` preset to generate all audit-relevant data:
+
+```bash
+# Generate a complete audit simulation dataset
+./target/release/datasynth-data generate --demo --preset audit-group --output ./audit-output
+
+# Export in SAP, French (FEC), or German (GoBD) audit formats
+./target/release/datasynth-data generate --config config.yaml --output ./output --export-format sap --export-format fec
+```
+
+This produces 113+ interconnected files covering:
+
+| Category | Content |
+|----------|---------|
+| **Financial Statements** | Standalone + consolidated BS/IS/CF with elimination schedules |
+| **Audit Lifecycle** | Engagement → risk assessment → procedures → sampling → findings → opinion |
+| **ISA 600 Group Audit** | Component auditors, materiality allocation, scope, instructions, reports |
+| **Risk Assessment** | Combined Risk Assessment (CRA) per account area and assertion |
+| **Audit Methodology** | Materiality (ISA 320), sampling (ISA 530), analytical procedures (ISA 520) |
+| **Accounting Standards** | Deferred tax, ECL, provisions, pensions, stock comp, business combinations |
+| **SOX Compliance** | Section 302 certifications, Section 404 ICFR assessments |
+| **Graph Export** | 78+ entity types, 39+ edge types for ML training and AI agent interaction |
+
+All data is internally coherent: CRA drives sampling → sampling correlates with misstatement rates → misstatements drive findings → findings drive the audit opinion.
 
 ---
 
@@ -86,7 +118,8 @@ Every process chain generates its own master data, documents, and journal entrie
 | **Banking / KYC / AML** | Customer personas, KYC profiles, AML typologies (structuring, layering, mule, funnel) |
 | **Sales** | Quote-to-order pipeline with win rate modeling and pricing negotiation |
 | **Bank Reconciliation** | Statement matching, outstanding checks, deposits in transit |
-| **Audit** | ISA-compliant engagements, workpapers, evidence, risk assessments, findings |
+| **Audit** | Complete ISA lifecycle: engagements, workpapers, evidence, risk assessments, findings, opinions (ISA 700), KAMs (ISA 701), SOX 302/404 |
+| **Group Audit (ISA 600)** | Component auditors, materiality allocation, scope assignment, component instructions/reports, consolidation |
 
 ### Accounting, Audit & Compliance Standards
 
@@ -101,6 +134,20 @@ Every process chain generates its own master data, documents, and journal entrie
 - **Compliance regulations** — 45+ built-in standards registry, jurisdiction profiles (10 countries), regulatory filings, audit procedures, and compliance findings with full deficiency classification
 - **Cross-domain compliance graph** — Standards linked to GL account types and business processes; full traversal paths (Company → Jurisdiction → Standard → Account → JournalEntry)
 - **Localized exports** — FEC (French) and GoBD (German) audit file formats
+- **Enterprise Group Audit (ISA 600)** — Component auditor assignment, group materiality allocation, scope assignment (full/specific/analytical), component instructions and reports
+- **Audit Opinion (ISA 700/705/706/701)** — Opinion derived from findings severity and going concern, Key Audit Matters, PCAOB ICFR opinion
+- **Audit Methodology** — Combined Risk Assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification, unusual item detection, analytical relationships (ISA 520)
+- **Deferred Tax (IAS 12 / ASC 740)** — Temporary differences, ETR reconciliation, rollforward schedules, valuation allowances
+- **Business Combinations (IFRS 3 / ASC 805)** — Purchase price allocation, fair value step-ups, goodwill, contingent consideration
+- **Segment Reporting (IFRS 8 / ASC 280)** — Operating segments with reconciliation to consolidated totals
+- **Expected Credit Loss (IFRS 9 / ASC 326)** — Provision matrix by aging bucket, forward-looking scenarios, ECL movements
+- **Pensions (IAS 19 / ASC 715)** — DBO rollforward, plan assets, pension expense, OCI remeasurements
+- **Provisions (IAS 37 / ASC 450)** — Framework-aware recognition thresholds, provision movements
+- **Stock Compensation (ASC 718 / IFRS 2)** — Grants, vesting schedules, expense recognition
+- **Functional Currency (IAS 21)** — Per-entity functional currency, CTA as OCI
+- **Consolidated Financial Statements** — Standalone + consolidated with elimination schedules
+- **Going Concern (ISA 570)** — Financial indicator derivation, management mitigation plans
+- **Subsequent Events (ISA 560 / IAS 10)** — Adjusting and non-adjusting events
 
 ### Interconnectivity & Relationships
 
@@ -135,6 +182,8 @@ Every process chain generates its own master data, documents, and journal entrie
 - **Graph formats** — PyTorch Geometric (.pt), Neo4j (CSV + Cypher), DGL, RustGraph JSON
 - **Multi-layer hypergraph** — 3-layer (Governance, Process Events, Accounting Network) with OCPM events as hyperedges and compliance regulation nodes
 - **Compliance graph layer** — Standards, findings, filings, and jurisdictions as graph nodes with cross-domain edges to accounts, controls, and companies
+- **28 audit entity types in graph** — CRA, materiality, opinions, sampling plans, SCOTS, unusual items, analytical relationships, group structure, and more
+- **27 cross-entity edge types** — CRA→entity, opinion→engagement, KAM→opinion, sampling→CRA, unusual→JE, and audit lifecycle traversal paths
 - **Train/val/test splits** — Configurable data partitioning for ML pipelines
 - **Anomaly labels** — Fraud labels, quality issue labels, and drift labels in standardized format
 - **Counterfactual pairs** — (original, mutated) journal entry pairs for causal ML training
@@ -189,7 +238,7 @@ Every process chain generates its own master data, documents, and journal entrie
 
 ## Architecture
 
-DataSynth is a Rust workspace organized into 15 modular crates:
+DataSynth is a Rust workspace organized into 16 modular crates:
 
 ```
 datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)
@@ -205,6 +254,7 @@ datasynth-fingerprint    Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards      Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
                 │
 datasynth-graph          Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
+datasynth-graph-export   Unified graph export pipeline with 78 entity types
 datasynth-eval           Statistical evaluation, quality gates, auto-tuning
                 │
 datasynth-config         Configuration schema, validation, industry presets
@@ -347,7 +397,13 @@ output/
 ├── fx/                     Exchange rates, CTA adjustments
 ├── banking/                KYC profiles, bank transactions, reconciliation, AML labels
 ├── process_mining/         OCEL 2.0 JSON, XES 2.0, process variants, reference models
-├── audit/                  Engagements, workpapers, evidence, risks, findings
+├── audit/                  33 audit files: engagements, opinions, KAMs, SOX, CRA, materiality, sampling, SCOTS, unusual items, analytical relationships
+├── financial_reporting/
+│   ├── standalone/         Per-entity financial statements
+│   └── consolidated/       Group-level FS + consolidation schedule + segment reporting + notes
+├── accounting_standards/   Business combinations, ECL, provisions, currency translation
+├── hr/                     Payroll, pensions, stock grants, stock comp expense
+├── intercompany/           IC matching, eliminations, group structure, NCI measurements
 ├── graphs/                 PyTorch Geometric, Neo4j, DGL, RustGraph, hypergraph
 ├── labels/                 Anomaly, fraud, quality, and drift labels for ML
 ├── tax/                    Jurisdictions, codes, returns, provisions, withholding

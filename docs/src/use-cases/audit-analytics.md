@@ -383,6 +383,100 @@ stratified_sample = entries.groupby('amount_stratum').apply(
 )
 ```
 
+## Enterprise Group Audit Simulation (v1.3.0)
+
+DataSynth v1.3.0 introduces a complete group audit simulation capability following ISA, IFRS, US GAAP, and local regulations.
+
+### Generating a Full Audit Dataset
+
+```bash
+# Generate 113+ interconnected audit files with the audit-group preset
+./target/release/datasynth-data generate --demo --preset audit-group --output ./audit-output
+```
+
+### What is Generated
+
+| Category | Files and Content |
+|----------|------------------|
+| **ISA 600 Group Audit** | Component auditors, materiality allocation, scope assignment (full/specific/analytical), component instructions and reports |
+| **Audit Opinion (ISA 700/705/706/701)** | Opinion conclusion derived from findings severity and going concern assessment, Key Audit Matters, PCAOB ICFR opinion |
+| **Combined Risk Assessment (ISA 315)** | Per account area and assertion: inherent risk, control risk, detection risk, overall audit risk |
+| **Materiality (ISA 320)** | Performance materiality, clearly trivial threshold, component materiality allocation |
+| **Sampling (ISA 530)** | Monetary unit sampling, attribute sampling, sample items with deviation tracking |
+| **SCOTS Classification** | Significant classes of transactions with assertion-level risk ratings |
+| **Unusual Items (ISA 315)** | Journal entry flags linked to source JEs with risk indicators |
+| **Analytical Relationships (ISA 520)** | Expectation vs. actual with threshold-driven unusual fluctuation flags |
+| **Accounting Standards** | Deferred tax (IAS 12/ASC 740), ECL (IFRS 9/ASC 326), provisions (IAS 37), pensions (IAS 19), stock comp (ASC 718/IFRS 2), business combinations (IFRS 3/ASC 805), segment reporting (IFRS 8/ASC 280) |
+| **Consolidated Financial Statements** | Standalone per-entity + consolidated group with elimination schedules, CTA, NCI |
+| **SOX Compliance** | Section 302 certifications, Section 404 ICFR assessments with deficiency classification |
+
+### Internal Coherence
+
+All audit data is causally linked:
+
+1. **CRA drives sampling** — higher risk areas receive larger sample sizes
+2. **Sampling drives misstatements** — deviation rates correlate with risk levels
+3. **Misstatements drive findings** — findings reference sampled items and CRA areas
+4. **Findings drive the opinion** — aggregate misstatements determine opinion type (unmodified/qualified/adverse/disclaimer)
+5. **Going concern affects the opinion** — financial indicator scores feed into ISA 570 assessment
+
+### Graph Export for ML and AI Agents
+
+The audit simulation adds 28 entity types and 27 edge types to the graph export:
+
+```python
+import torch
+
+# Load audit graph for GNN training
+graph = torch.load('output/graphs/pytorch_geometric/audit_graph.pt')
+
+# Entity types include: CombinedRiskAssessment, MaterialityCalculation,
+# SamplingPlan, SampledItem, AuditOpinion, KeyAuditMatter, Sox404Assessment,
+# SignificantClassOfTransactions, UnusualItemFlag, AnalyticalRelationship,
+# ComponentAuditor, GroupAuditPlan, ComponentInstruction, ComponentAuditorReport
+
+# Edge types include: cra_to_account, opinion_to_engagement, kam_to_opinion,
+# sampling_to_cra, unusual_to_journal_entry, finding_to_sampled_item
+print(f"Audit nodes: {graph.num_nodes}")
+print(f"Audit edges: {graph.num_edges}")
+```
+
+### Loading Audit Output Files
+
+```python
+import pandas as pd
+
+# Core audit methodology
+cra = pd.read_csv('output/audit/combined_risk_assessments.csv')
+materiality = pd.read_csv('output/audit/materiality_calculations.csv')
+sampling = pd.read_csv('output/audit/sampling_plans.csv')
+sampled_items = pd.read_csv('output/audit/sampled_items.csv')
+
+# Findings and opinion
+findings = pd.read_csv('output/audit/audit_findings.csv')
+opinions = pd.read_csv('output/audit/audit_opinions.csv')
+kams = pd.read_csv('output/audit/key_audit_matters.csv')
+
+# ISA 600 group audit
+component_auditors = pd.read_csv('output/audit/component_auditors.csv')
+group_plans = pd.read_csv('output/audit/group_audit_plans.csv')
+instructions = pd.read_csv('output/audit/component_instructions.csv')
+
+# SOX compliance
+sox302 = pd.read_csv('output/audit/sox_302_certifications.csv')
+sox404 = pd.read_csv('output/audit/sox_404_assessments.csv')
+
+# Verify opinion is consistent with findings
+for _, opinion in opinions.iterrows():
+    eng_findings = findings[findings['engagement_id'] == opinion['engagement_id']]
+    has_material = eng_findings['is_material'].any()
+    if has_material:
+        assert opinion['opinion_type'] != 'Unmodified', \
+            f"Material findings should not yield unmodified opinion for {opinion['engagement_id']}"
+
+print("All opinions are consistent with findings severity.")
+```
+
 ## See Also
 
 - [Anomaly Injection](../advanced/anomaly-injection.md)
