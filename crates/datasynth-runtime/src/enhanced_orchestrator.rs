@@ -4427,6 +4427,7 @@ impl EnhancedOrchestrator {
                     consolidated_profit,
                     consolidated_assets,
                     &entity_seeds,
+                    None, // total_depreciation: not yet threaded from FA subledger
                 );
                 segment_reports.extend(segs);
                 segment_reconciliations.push(recon);
@@ -5755,6 +5756,7 @@ impl EnhancedOrchestrator {
                 end_date,
                 &period_label,
                 framework_str,
+                None, // prior_opening: no carry-forward data in single-period runs
             );
 
             snapshot.provision_count = prov_snap.provisions.len();

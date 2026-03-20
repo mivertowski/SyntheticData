@@ -154,6 +154,7 @@ mod tests {
             owner_id: "BUYER-01".to_string(),
             amendment_count: 0,
             previous_contract_id: None,
+            purchase_order_ids: Vec::new(),
         }
     }
 

@@ -60,6 +60,9 @@ pub struct BankAccount {
     pub declared_purpose: Option<String>,
     /// Source account for linked funding
     pub funding_source_account: Option<Uuid>,
+    /// FK → GL account number in the chart of accounts (e.g. "1010" for Cash at Bank).
+    /// `None` when the account has not yet been mapped to the general ledger.
+    pub gl_account: Option<String>,
 
     // Ground truth labels
     /// Whether this is a mule account
@@ -114,6 +117,7 @@ impl BankAccount {
             is_mule_account: false,
             is_funnel_account: false,
             case_id: None,
+            gl_account: None,
         }
     }
 

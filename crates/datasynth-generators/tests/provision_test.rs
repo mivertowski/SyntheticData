@@ -33,6 +33,7 @@ fn test_provision_count_within_range() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     // At least 3 (backfill guarantee) and at most 10 (max loop count) + 3 backfill
@@ -61,6 +62,7 @@ fn test_provision_count_different_seeds() {
             reporting_date(),
             "FY2024",
             "IFRS",
+        None,
         );
         assert!(
             snap.provisions.len() >= 3,
@@ -86,6 +88,7 @@ fn test_ifrs_provisions_for_probable_items() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     let mut gen_gaap = ProvisionGenerator::new(77);
@@ -96,6 +99,7 @@ fn test_ifrs_provisions_for_probable_items() {
         reporting_date(),
         "FY2024",
         "US_GAAP",
+        None,
     );
 
     // Framework recorded on each provision must match.
@@ -130,6 +134,7 @@ fn test_movement_balance_identity() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     for mv in &snap.movements {
@@ -155,6 +160,7 @@ fn test_movement_non_negative_closing() {
             reporting_date(),
             "FY2024",
             "US_GAAP",
+        None,
         );
         for mv in &snap.movements {
             assert!(
@@ -180,6 +186,7 @@ fn test_journal_entries_balanced() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     for je in &snap.journal_entries {
@@ -203,6 +210,7 @@ fn test_journal_entries_use_correct_accounts() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     // Each recognition JE should have a debit to 6850 (provision expense)
@@ -248,6 +256,7 @@ fn test_contingent_liabilities_count() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     assert!(
@@ -267,6 +276,7 @@ fn test_contingent_liabilities_disclosure_only() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     for cl in &snap.contingent_liabilities {
@@ -288,6 +298,7 @@ fn test_contingent_liabilities_possible_probability() {
         reporting_date(),
         "FY2024",
         "US_GAAP",
+        None,
     );
 
     for cl in &snap.contingent_liabilities {
@@ -315,6 +326,7 @@ fn test_provision_range_order() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     for p in &snap.provisions {
@@ -345,6 +357,7 @@ fn test_provision_amounts_positive() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     for p in &snap.provisions {
@@ -373,6 +386,7 @@ fn test_provision_ids_unique() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     let ids: HashSet<&str> = snap.provisions.iter().map(|p| p.id.as_str()).collect();
@@ -400,6 +414,7 @@ fn test_provision_types_present() {
             reporting_date(),
             "FY2024",
             "IFRS",
+        None,
         );
         for p in &snap.provisions {
             types_seen.insert(format!("{:?}", p.provision_type));
@@ -426,6 +441,7 @@ fn test_determinism() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     let mut gen2 = ProvisionGenerator::new(42);
@@ -436,6 +452,7 @@ fn test_determinism() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     assert_eq!(snap1.provisions.len(), snap2.provisions.len());
@@ -459,6 +476,7 @@ fn test_movement_count_matches_provision_count() {
         reporting_date(),
         "FY2024",
         "IFRS",
+        None,
     );
 
     assert_eq!(
@@ -485,6 +503,7 @@ fn test_long_term_provisions_may_have_discount_rate() {
             reporting_date(),
             "FY2024",
             "IFRS",
+        None,
         );
         for p in &snap.provisions {
             if p.discount_rate.is_some() {

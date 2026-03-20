@@ -248,6 +248,7 @@ impl SamplingPlanGenerator {
 
             sampled_items.push(SampledItem {
                 item_id: ki.item_id.clone(),
+                sampling_plan_id: plan_id.clone(),
                 amount: ki.amount,
                 selection_type: SelectionType::KeyItem,
                 tested: true,
@@ -281,6 +282,7 @@ impl SamplingPlanGenerator {
 
                 sampled_items.push(SampledItem {
                     item_id,
+                    sampling_plan_id: plan_id.clone(),
                     amount,
                     selection_type: SelectionType::Representative,
                     tested: true,

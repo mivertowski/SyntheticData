@@ -2,6 +2,35 @@
 //!
 //! This orchestrator provides streaming capabilities with backpressure,
 //! progress reporting, and control for real-time data generation.
+//!
+//! # Limitations — simplified pipeline
+//!
+//! This module implements a **simplified streaming pipeline** intended for
+//! interactive / server-side use cases where data is consumed as it is produced.
+//! It differs from the full-batch [`EnhancedOrchestrator`] in the following ways:
+//!
+//! - **Subset of generators**: Only journal entries, master data (vendors, customers,
+//!   materials, employees), document-flow documents (POs, GRs, invoices, payments,
+//!   sales orders, deliveries), and anomaly labels are streamed.  Advanced generators
+//!   (subledgers, period-close, audit, tax, ESG, banking, graph export, etc.) are
+//!   **not** invoked.
+//!
+//! - **No cross-generator state**: The streaming pipeline does not carry forward
+//!   balance tracker state, trial-balance snapshots, or depreciation runs between
+//!   periods.  Outputs are therefore not coherent across the full accounting cycle.
+//!
+//! - **No output sinks**: Records are emitted directly over the [`StreamSender`]
+//!   channel; CSV / JSON / Parquet file writing is the responsibility of the consumer.
+//!
+//! - **Backpressure model**: The orchestrator honours the [`BackpressureStrategy`]
+//!   configured on the [`StreamConfig`], but does not implement adaptive throttling
+//!   based on CPU / memory pressure (unlike the resource-guarded batch path).
+//!
+//! For full-fidelity, standards-compliant generation use
+//! [`EnhancedOrchestrator`](crate::enhanced_orchestrator::EnhancedOrchestrator) with
+//! a file-based output sink.
+//!
+//! [`EnhancedOrchestrator`]: crate::enhanced_orchestrator::EnhancedOrchestrator
 
 use std::sync::Arc;
 use std::thread;

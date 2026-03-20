@@ -285,7 +285,29 @@ pub struct ReconcilingItem {
 }
 
 impl ReconcilingItem {
-    /// Create a new reconciling item.
+    /// Create a new reconciling item with a simplified equity-impact assumption.
+    ///
+    /// # Limitation — `equity_impact` approximation
+    ///
+    /// This constructor sets `equity_impact = net_income_impact`, assuming that every
+    /// income-statement difference flows through to retained earnings.  This is correct
+    /// for the majority of US GAAP ↔ IFRS differences (e.g. revenue recognition timing,
+    /// inventory cost-flow assumptions, lease capitalisation under IFRS 16 vs. ASC 842).
+    ///
+    /// However, several GAAP/IFRS differences bypass the income statement and are
+    /// recognised directly in **Other Comprehensive Income (OCI)**, causing
+    /// `equity_impact ≠ net_income_impact`:
+    ///
+    /// | Difference area | US GAAP treatment | IFRS treatment |
+    /// |---|---|---|
+    /// | Pension remeasurements | Amortised through P&L (corridor method) | OCI only (IAS 19R) |
+    /// | Unrealised FX on monetary items | P&L | P&L or OCI depending on hedge designation |
+    /// | Available-for-sale / FVOCI equity securities | OCI | OCI (IFRS 9) |
+    /// | Revaluation surplus (PP&E / intangibles) | Not permitted | OCI (IAS 16/38) |
+    ///
+    /// Callers that generate OCI-related reconciling items **must** override
+    /// `equity_impact` after construction and set `net_income_impact` to `Decimal::ZERO`
+    /// (or to only the reclassification portion).
     pub fn new(
         description: impl Into<String>,
         difference_area: DifferenceArea,
@@ -295,13 +317,8 @@ impl ReconcilingItem {
             description: description.into(),
             difference_area,
             net_income_impact,
-            // TODO: Simplified — equity_impact is set equal to net_income_impact
-            // on the assumption that all income differences flow to retained earnings.
-            // Under certain GAAP/IFRS differences (e.g. OCI items such as unrealised
-            // FX gains, pension remeasurements, or hedge accounting) the equity impact
-            // would differ from the income impact because the adjustment bypasses the
-            // income statement entirely. Callers generating OCI-related differences
-            // should override this field after construction.
+            // Simplified: assumes all income differences flow to retained earnings.
+            // Override this field for OCI-related differences — see doc comment above.
             equity_impact: net_income_impact,
             asset_impact: Decimal::ZERO,
             liability_impact: Decimal::ZERO,

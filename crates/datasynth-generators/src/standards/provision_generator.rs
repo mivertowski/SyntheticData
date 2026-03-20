@@ -114,7 +114,10 @@ impl ProvisionGenerator {
     /// - `reporting_date`: balance-sheet date (provisions dated to this period)
     /// - `period_label`: label for the movement roll-forward (e.g. `"FY2024"`)
     /// - `framework`: `"IFRS"` or `"US_GAAP"`
-    /// - `industry`: optional industry tag for provision-type weights
+    /// - `prior_opening`: opening balance of the provision from the prior period's closing
+    ///   balance.  When `Some`, the unwinding-of-discount is computed as
+    ///   `prior_opening × discount_rate × period_fraction` (IAS 37.60 / ASC 420).
+    ///   When `None` (first period or no carry-forward data), unwinding defaults to zero.
     pub fn generate(
         &mut self,
         entity_code: &str,
@@ -123,6 +126,7 @@ impl ProvisionGenerator {
         reporting_date: NaiveDate,
         period_label: &str,
         framework: &str,
+        prior_opening: Option<Decimal>,
     ) -> ProvisionSnapshot {
         let recognition_threshold = if framework == "IFRS" {
             IFRS_THRESHOLD
@@ -190,8 +194,17 @@ impl ProvisionGenerator {
             let reversal_rate: f64 = self.rng.random_range(0.0f64..=0.05);
             let reversals =
                 round2(additions * Decimal::try_from(reversal_rate).unwrap_or(Decimal::ZERO));
-            // Unwinding = 0 for first-period (opening = 0).
-            let unwinding_of_discount = Decimal::ZERO;
+            // Unwinding of discount (IAS 37.60): discount_rate × opening balance × period_fraction.
+            // Uses `prior_opening` when provided (carry-forward scenario); defaults to zero for
+            // first-period runs where opening = 0 regardless.
+            let unwinding_of_discount = if let (Some(prior_bal), Some(rate)) =
+                (prior_opening, discount_rate)
+            {
+                // Assume each generation run covers one annual period (period_fraction = 1.0).
+                round2((prior_bal * rate).max(Decimal::ZERO))
+            } else {
+                Decimal::ZERO
+            };
             let closing = (opening + additions - utilizations - reversals + unwinding_of_discount)
                 .max(Decimal::ZERO);
 
