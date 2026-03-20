@@ -323,6 +323,12 @@ pub struct PhaseConfig {
     pub generate_compliance_regulations: bool,
     /// Generate period-close journal entries (tax provision, income statement close).
     pub generate_period_close: bool,
+    /// Generate HR data (payroll, time entries, expenses, pensions, stock comp).
+    pub generate_hr: bool,
+    /// Generate treasury data (cash management, hedging, debt, pooling).
+    pub generate_treasury: bool,
+    /// Generate project accounting data (projects, costs, revenue, EVM, milestones).
+    pub generate_project_accounting: bool,
 }
 
 impl Default for PhaseConfig {
@@ -365,6 +371,68 @@ impl Default for PhaseConfig {
             generate_counterfactuals: false,        // Off by default (opt-in for ML workloads)
             generate_compliance_regulations: false, // Off by default
             generate_period_close: true,            // On by default
+            generate_hr: false,                     // Off by default
+            generate_treasury: false,               // Off by default
+            generate_project_accounting: false,     // Off by default
+        }
+    }
+}
+
+impl PhaseConfig {
+    /// Derive phase flags from [`GeneratorConfig`].
+    ///
+    /// This is the canonical way to create a [`PhaseConfig`] from a YAML config file.
+    /// CLI flags can override individual fields after calling this method.
+    pub fn from_config(cfg: &datasynth_config::GeneratorConfig) -> Self {
+        Self {
+            // Always-on phases
+            generate_master_data: true,
+            generate_document_flows: true,
+            generate_journal_entries: true,
+            validate_balances: true,
+            generate_period_close: true,
+            generate_evolution_events: true,
+            show_progress: true,
+
+            // Feature-gated phases — derived from config sections
+            generate_audit: cfg.audit.enabled,
+            generate_banking: cfg.banking.enabled,
+            generate_graph_export: cfg.graph_export.enabled,
+            generate_sourcing: cfg.source_to_pay.enabled,
+            generate_intercompany: cfg.intercompany.enabled,
+            generate_financial_statements: cfg.financial_reporting.enabled,
+            generate_bank_reconciliation: cfg.financial_reporting.enabled,
+            generate_accounting_standards: cfg.accounting_standards.enabled,
+            generate_manufacturing: cfg.manufacturing.enabled,
+            generate_sales_kpi_budgets: cfg.sales_quotes.enabled,
+            generate_tax: cfg.tax.enabled,
+            generate_esg: cfg.esg.enabled,
+            generate_ocpm_events: cfg.ocpm.enabled,
+            generate_compliance_regulations: cfg.compliance_regulations.enabled,
+            generate_hr: cfg.hr.enabled,
+            generate_treasury: cfg.treasury.enabled,
+            generate_project_accounting: cfg.project_accounting.enabled,
+
+            // Explicit opt-in for ML workloads
+            generate_counterfactuals: false,
+
+            inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
+            inject_data_quality: cfg.data_quality.enabled,
+
+            // Count defaults (CLI can override after calling this method)
+            vendors_per_company: 50,
+            customers_per_company: 100,
+            materials_per_company: 200,
+            assets_per_company: 50,
+            employees_per_company: 100,
+            p2p_chains: 100,
+            o2c_chains: 100,
+            audit_engagements: 5,
+            workpapers_per_engagement: 20,
+            evidence_per_workpaper: 5,
+            risks_per_engagement: 15,
+            findings_per_engagement: 8,
+            judgments_per_engagement: 10,
         }
     }
 }
@@ -5070,7 +5138,7 @@ impl EnhancedOrchestrator {
         &mut self,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<HrSnapshot> {
-        if !self.config.hr.enabled {
+        if !self.phase_config.generate_hr {
             debug!("Phase 16: Skipped (HR generation disabled)");
             return Ok(HrSnapshot::default());
         }
@@ -5219,7 +5287,7 @@ impl EnhancedOrchestrator {
         }
 
         // Generate defined benefit pension plans (IAS 19 / ASC 715)
-        if self.config.hr.enabled {
+        if self.phase_config.generate_hr {
             let entity_name = self
                 .config
                 .companies
@@ -5301,7 +5369,7 @@ impl EnhancedOrchestrator {
         }
 
         // Generate stock-based compensation (ASC 718 / IFRS 2)
-        if self.config.hr.enabled && !employee_ids.is_empty() {
+        if self.phase_config.generate_hr && !employee_ids.is_empty() {
             let period_months = self.config.global.period_months;
             let period_label = {
                 let y = start_date.year();
@@ -5357,9 +5425,7 @@ impl EnhancedOrchestrator {
         journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<AccountingStandardsSnapshot> {
-        if !self.phase_config.generate_accounting_standards
-            || !self.config.accounting_standards.enabled
-        {
+        if !self.phase_config.generate_accounting_standards {
             debug!("Phase 17: Skipped (accounting standards generation disabled)");
             return Ok(AccountingStandardsSnapshot::default());
         }
@@ -5713,7 +5779,7 @@ impl EnhancedOrchestrator {
         &mut self,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<ManufacturingSnapshot> {
-        if !self.phase_config.generate_manufacturing || !self.config.manufacturing.enabled {
+        if !self.phase_config.generate_manufacturing {
             debug!("Phase 18: Skipped (manufacturing generation disabled)");
             return Ok(ManufacturingSnapshot::default());
         }
@@ -6067,7 +6133,7 @@ impl EnhancedOrchestrator {
         journal_entries: &[JournalEntry],
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TaxSnapshot> {
-        if !self.phase_config.generate_tax || !self.config.tax.enabled {
+        if !self.phase_config.generate_tax {
             debug!("Phase 20: Skipped (tax generation disabled)");
             return Ok(TaxSnapshot::default());
         }
@@ -6205,7 +6271,7 @@ impl EnhancedOrchestrator {
         document_flows: &DocumentFlowSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<EsgSnapshot> {
-        if !self.phase_config.generate_esg || !self.config.esg.enabled {
+        if !self.phase_config.generate_esg {
             debug!("Phase 21: Skipped (ESG generation disabled)");
             return Ok(EsgSnapshot::default());
         }
@@ -6430,7 +6496,7 @@ impl EnhancedOrchestrator {
         intercompany: &IntercompanySnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<TreasurySnapshot> {
-        if !self.config.treasury.enabled {
+        if !self.phase_config.generate_treasury {
             debug!("Phase 22: Skipped (treasury generation disabled)");
             return Ok(TreasurySnapshot::default());
         }
@@ -6756,7 +6822,7 @@ impl EnhancedOrchestrator {
         hr: &HrSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<ProjectAccountingSnapshot> {
-        if !self.config.project_accounting.enabled {
+        if !self.phase_config.generate_project_accounting {
             debug!("Phase 23: Skipped (project accounting disabled)");
             return Ok(ProjectAccountingSnapshot::default());
         }

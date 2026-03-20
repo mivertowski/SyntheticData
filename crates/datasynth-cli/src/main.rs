@@ -708,38 +708,32 @@ fn main() -> Result<()> {
                     *orch
                 }
                 ConfigOrOrchestrator::Config(cfg) => {
-                    let phase_config = PhaseConfig {
-                        // Wire CLI flags OR config-enabled sections
-                        // Note: banking defaults to enabled=true in its crate, so only
-                        // use the explicit CLI --banking flag to avoid unexpected generation
-                        generate_banking: banking,
-                        generate_audit: audit || cfg.audit.enabled,
-                        generate_graph_export: graph_export || cfg.graph_export.enabled,
-                        generate_manufacturing: cfg.manufacturing.enabled,
-                        generate_sourcing: cfg.source_to_pay.enabled,
-                        generate_tax: cfg.tax.enabled,
-                        generate_esg: cfg.esg.enabled,
-                        generate_intercompany: cfg.intercompany.enabled,
-                        generate_accounting_standards: cfg.accounting_standards.enabled,
-                        generate_compliance_regulations: cfg.compliance_regulations.enabled,
-                        generate_financial_statements: cfg.financial_reporting.enabled,
-                        generate_sales_kpi_budgets: cfg.sales_quotes.enabled,
-                        generate_bank_reconciliation: cfg.financial_reporting.enabled,
-                        generate_ocpm_events: cfg.ocpm.enabled,
-                        show_progress: true,
-                        // Wire up anomaly and data quality injection from config
-                        inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
-                        inject_data_quality: cfg.data_quality.enabled,
-                        // Use conservative defaults for document generation
-                        p2p_chains: 50,
-                        o2c_chains: 50,
-                        vendors_per_company: 20,
-                        customers_per_company: 30,
-                        materials_per_company: 50,
-                        assets_per_company: 20,
-                        employees_per_company: 30,
-                        ..PhaseConfig::default()
-                    };
+                    let mut phase_config = PhaseConfig::from_config(&cfg);
+
+                    // CLI flag overrides (only override if explicitly set via flag)
+                    // Note: banking defaults to enabled=true in its crate, so only
+                    // use the explicit CLI --banking flag to avoid unexpected generation
+                    if banking {
+                        phase_config.generate_banking = true;
+                    }
+                    if audit {
+                        phase_config.generate_audit = true;
+                    }
+                    if graph_export {
+                        phase_config.generate_graph_export = true;
+                    }
+
+                    phase_config.show_progress = true;
+
+                    // Use conservative defaults for document generation counts
+                    phase_config.p2p_chains = phase_config.p2p_chains.min(50);
+                    phase_config.o2c_chains = phase_config.o2c_chains.min(50);
+                    phase_config.vendors_per_company = phase_config.vendors_per_company.min(20);
+                    phase_config.customers_per_company = phase_config.customers_per_company.min(30);
+                    phase_config.materials_per_company = phase_config.materials_per_company.min(50);
+                    phase_config.assets_per_company = phase_config.assets_per_company.min(20);
+                    phase_config.employees_per_company = phase_config.employees_per_company.min(30);
+
                     EnhancedOrchestrator::new(cfg, phase_config)?
                 }
             };
