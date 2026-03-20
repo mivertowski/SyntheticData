@@ -20,6 +20,7 @@ For the full changelog, see the [CHANGELOG.md](https://github.com/mivertowski/Sy
 - **Format exporters**: `--export-format sap|fec|gobd` for SAP BKPF/BSEG/ACDOCA, French FEC, German GoBD
 - **Audit methodology framework**: CRA risk assessment (ISA 315), materiality calculations (ISA 320), sampling methodology (ISA 530), SCOTS classification (ISA 315), unusual item detection, analytical relationships (ISA 520)
 - **14 quality fixes**: Revenue sign, cash flow from actuals, depreciation in close, pension from payroll, notes context, going concern from financials, IC equity eliminations, tax rate consistency, proxy replacement, ratio evaluator accuracy
+- **Graph export**: 28 new entity types + 27 edge types onboarded (coverage: 58% → 95%)
 - **55+ new output files** across audit, financial reporting, tax, accounting standards, HR, subledger, and intercompany
 
 ### [1.2.0] - 2026-03-15

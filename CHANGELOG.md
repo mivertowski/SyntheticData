@@ -79,6 +79,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Analytical relationships (ISA 520)**: 8 standard ratios (DSO, DPO, margins, turnover) with historical trends, expected ranges, variance explanations, and supporting non-financial metrics
 - **Coherence chain**: CRA → sampling approach → misstatement detection → control assessment → audit opinion — end-to-end data-driven chain
 
+#### Graph Export Onboarding
+- **28 new entity types** onboarded to graph export pipeline (was ~58% coverage, now ~95%)
+- **L1 Governance** (13 types): CRA, materiality, audit opinion, KAMs, SOX 302/404, going concern, component auditor, group audit plan, component instruction/report, engagement letter, group structure
+- **L2 Process** (10 types): Sampling plans, sampled items, SCOTS, unusual items, analytical relationships, accounting estimates, subsequent events, service organizations, SOC reports
+- **L3 Financial** (11 types): Consolidation schedule, operating segments, ECL model, provisions, pensions, stock grants, temporary differences, business combinations, NCI measurements, FS notes, currency translation
+- **27 cross-entity edge types** (codes 160-187): CRA→entity, opinion→engagement, KAM→opinion, sampling→CRA, unusual→JE, segment→entity, provision→entity, pension→entity, etc.
+
 ### New Output Files
 - `audit/`: engagement_letters, subsequent_events, service_organizations, soc_reports, user_entity_controls, going_concern_assessments, accounting_estimates, component_auditors, group_audit_plan, component_instructions, component_reports, confirmations, confirmation_responses, procedure_steps, samples, analytical_results, ia_functions, ia_reports, related_parties, related_party_transactions, audit_opinions, key_audit_matters, sox_302_certifications, sox_404_assessments, materiality_calculations, combined_risk_assessments, sampling_plans, sampled_items, significant_transaction_classes, unusual_items, analytical_relationships
 - `financial_reporting/`: standalone/{entity}_financial_statements, consolidated/consolidated_financial_statements, consolidated/consolidation_schedule, segment_reporting, notes_to_financial_statements

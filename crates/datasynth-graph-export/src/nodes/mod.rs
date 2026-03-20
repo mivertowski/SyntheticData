@@ -25,7 +25,6 @@
 
 pub mod aml_alert;
 pub mod audit_procedures;
-pub mod v130_entities;
 pub mod collusion_ring;
 pub mod compliance;
 pub mod esg;
@@ -38,6 +37,7 @@ pub mod subledger_recon;
 pub mod tax;
 pub mod temporal_events;
 pub mod treasury;
+pub mod v130_entities;
 
 use crate::traits::NodeSynthesizer;
 

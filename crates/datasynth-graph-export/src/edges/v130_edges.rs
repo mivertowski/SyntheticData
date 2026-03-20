@@ -122,10 +122,7 @@ impl crate::traits::EdgeSynthesizer for V130EdgeSynthesizer {
         edges.extend(synthesize_nci_for_group(ctx));
         edges.extend(synthesize_gstruct_parent_eng(ctx));
 
-        debug!(
-            "V130EdgeSynthesizer produced {} total edges",
-            edges.len()
-        );
+        debug!("V130EdgeSynthesizer produced {} total edges", edges.len());
         Ok(edges)
     }
 }

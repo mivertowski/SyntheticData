@@ -77,10 +77,7 @@ impl NodeSynthesizer for V130NodeSynthesizer {
         nodes.extend(synthesize_l2_process(ctx));
         nodes.extend(synthesize_l3_financial(ctx));
 
-        debug!(
-            "V130NodeSynthesizer: produced {} nodes total",
-            nodes.len()
-        );
+        debug!("V130NodeSynthesizer: produced {} nodes total", nodes.len());
 
         Ok(nodes)
     }
@@ -199,7 +196,10 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
             id: Some(numeric_id),
             node_type: 382,
             node_type_name: "audit_opinion".into(),
-            label: format!("Opinion: {} {:?}", opinion.entity_name, opinion.opinion_type),
+            label: format!(
+                "Opinion: {} {:?}",
+                opinion.entity_name, opinion.opinion_type
+            ),
             layer: 1,
             properties: props,
         });
@@ -239,10 +239,7 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
 
         let mut props = HashMap::new();
         props.insert("companyCode".into(), serde_json::json!(cert.company_code));
-        props.insert(
-            "fiscalYear".into(),
-            serde_json::json!(cert.fiscal_year),
-        );
+        props.insert("fiscalYear".into(), serde_json::json!(cert.fiscal_year));
         props.insert(
             "certifierRole".into(),
             serde_json::to_value(&cert.certifier_role).unwrap_or_default(),
@@ -350,10 +347,7 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
 
         let mut props = HashMap::new();
         props.insert("firmName".into(), serde_json::json!(caud.firm_name));
-        props.insert(
-            "jurisdiction".into(),
-            serde_json::json!(caud.jurisdiction),
-        );
+        props.insert("jurisdiction".into(), serde_json::json!(caud.jurisdiction));
         props.insert(
             "independenceConfirmed".into(),
             serde_json::Value::Bool(caud.independence_confirmed),
@@ -384,10 +378,7 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
         let numeric_id = ctx.id_map.get_or_insert(&ext_id);
 
         let mut props = HashMap::new();
-        props.insert(
-            "engagementId".into(),
-            serde_json::json!(gap.engagement_id),
-        );
+        props.insert("engagementId".into(), serde_json::json!(gap.engagement_id));
         props.insert(
             "groupMateriality".into(),
             serde_json::Value::String(gap.group_materiality.to_string()),
@@ -433,7 +424,10 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
             id: Some(numeric_id),
             node_type: 389,
             node_type_name: "component_instruction".into(),
-            label: format!("Comp. Instruction: {} -> {}", cinst.component_auditor_id, cinst.entity_code),
+            label: format!(
+                "Comp. Instruction: {} -> {}",
+                cinst.component_auditor_id, cinst.entity_code
+            ),
             layer: 1,
             properties: props,
         });
@@ -476,10 +470,7 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
         let numeric_id = ctx.id_map.get_or_insert(&ext_id);
 
         let mut props = HashMap::new();
-        props.insert(
-            "engagementId".into(),
-            serde_json::json!(elet.engagement_id),
-        );
+        props.insert("engagementId".into(), serde_json::json!(elet.engagement_id));
         props.insert("addressee".into(), serde_json::json!(elet.addressee));
         props.insert("date".into(), serde_json::json!(elet.date.to_string()));
         props.insert(
@@ -508,10 +499,7 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
         let numeric_id = ctx.id_map.get_or_insert(&ext_id);
 
         let mut props = HashMap::new();
-        props.insert(
-            "parentEntity".into(),
-            serde_json::json!(gs.parent_entity),
-        );
+        props.insert("parentEntity".into(), serde_json::json!(gs.parent_entity));
         props.insert(
             "subsidiaryCount".into(),
             serde_json::json!(gs.subsidiaries.len()),
@@ -564,14 +552,8 @@ fn synthesize_l2_process(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode> 
             "populationSize".into(),
             serde_json::json!(plan.population_size),
         );
-        props.insert(
-            "sampleSize".into(),
-            serde_json::json!(plan.sample_size),
-        );
-        props.insert(
-            "craLevel".into(),
-            serde_json::json!(plan.cra_level),
-        );
+        props.insert("sampleSize".into(), serde_json::json!(plan.sample_size));
+        props.insert("craLevel".into(), serde_json::json!(plan.cra_level));
         props.insert("processFamily".into(), serde_json::json!("AUDIT"));
 
         nodes.push(ExportNode {
@@ -715,7 +697,10 @@ fn synthesize_l2_process(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode> 
             id: Some(numeric_id),
             node_type: 397,
             node_type_name: "analytical_relationship".into(),
-            label: format!("Analytical: {} — {}", arel.relationship_name, arel.entity_code),
+            label: format!(
+                "Analytical: {} — {}",
+                arel.relationship_name, arel.entity_code
+            ),
             layer: 2,
             properties: props,
         });
@@ -786,7 +771,10 @@ fn synthesize_l2_process(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode> 
             id: Some(numeric_id),
             node_type: 399,
             node_type_name: "subsequent_event".into(),
-            label: format!("Subsequent Event: {:?} — {}", sevt.event_type, sevt.entity_code),
+            label: format!(
+                "Subsequent Event: {:?} — {}",
+                sevt.event_type, sevt.entity_code
+            ),
             layer: 2,
             properties: props,
         });
@@ -825,10 +813,7 @@ fn synthesize_l2_process(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode> 
         let numeric_id = ctx.id_map.get_or_insert(&ext_id);
 
         let mut props = HashMap::new();
-        props.insert(
-            "serviceOrgId".into(),
-            serde_json::json!(soc.service_org_id),
-        );
+        props.insert("serviceOrgId".into(), serde_json::json!(soc.service_org_id));
         props.insert(
             "reportType".into(),
             serde_json::to_value(&soc.report_type).unwrap_or_default(),
@@ -907,10 +892,7 @@ fn synthesize_l3_financial(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode
         let mut props = HashMap::new();
         props.insert("name".into(), serde_json::json!(seg.name));
         props.insert("period".into(), serde_json::json!(seg.period));
-        props.insert(
-            "companyCode".into(),
-            serde_json::json!(seg.company_code),
-        );
+        props.insert("companyCode".into(), serde_json::json!(seg.company_code));
         props.insert(
             "segmentType".into(),
             serde_json::to_value(&seg.segment_type).unwrap_or_default(),
@@ -990,7 +972,10 @@ fn synthesize_l3_financial(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode
             id: Some(numeric_id),
             node_type: 488,
             node_type_name: "provision".into(),
-            label: format!("Provision: {:?} — {}", prov.provision_type, prov.entity_code),
+            label: format!(
+                "Provision: {:?} — {}",
+                prov.provision_type, prov.entity_code
+            ),
             layer: 3,
             properties: props,
         });
@@ -1052,7 +1037,10 @@ fn synthesize_l3_financial(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode
             id: Some(numeric_id),
             node_type: 490,
             node_type_name: "stock_grant".into(),
-            label: format!("Stock Grant: {} {:?}", grant.entity_code, grant.instrument_type),
+            label: format!(
+                "Stock Grant: {} {:?}",
+                grant.entity_code, grant.instrument_type
+            ),
             layer: 3,
             properties: props,
         });
@@ -1163,10 +1151,7 @@ fn synthesize_l3_financial(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNode
         let numeric_id = ctx.id_map.get_or_insert(&ext_id);
 
         let mut props = HashMap::new();
-        props.insert(
-            "noteNumber".into(),
-            serde_json::json!(note.note_number),
-        );
+        props.insert("noteNumber".into(), serde_json::json!(note.note_number));
         props.insert("title".into(), serde_json::json!(note.title));
         props.insert(
             "category".into(),
