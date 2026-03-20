@@ -13,6 +13,7 @@
 //! - [`entity_relationships::EntityRelationshipEdgeSynthesizer`] — Doc/JE creator, vendor/customer links.
 //! - [`process_sequence::ProcessSequenceEdgeSynthesizer`] — OCEL directly-follows edges.
 //! - [`audit_procedures::AuditProcedureEdgeSynthesizer`] — ISA 505/330/530/520/610/550 procedure edges.
+//! - [`v130_edges::V130EdgeSynthesizer`] — v1.3.0 governance/process/financial cross-entity edges.
 
 pub mod accounting;
 pub mod audit_procedures;
@@ -25,6 +26,7 @@ pub mod mfg;
 pub mod process_sequence;
 pub mod risk_control;
 pub mod s2c;
+pub mod v130_edges;
 
 use crate::traits::EdgeSynthesizer;
 
@@ -42,6 +44,7 @@ use crate::traits::EdgeSynthesizer;
 /// 9. `entity_relationships` — depends on document_chain (DOC_CREATED_BY needs doc nodes).
 /// 10. `process_sequence` — depends on audit_trail (DirectlyFollows uses OCPM event nodes).
 /// 11. `audit_procedures` — no inter-edge dependencies; depends on audit_trail nodes (workpapers, engagements, evidence).
+/// 12. `v130_edges` — v1.3.0 cross-entity edges; depends on v130_entities nodes (CRAs, materiality, opinions, etc.).
 pub fn all_synthesizers() -> Vec<Box<dyn EdgeSynthesizer>> {
     vec![
         Box::new(document_chain::DocumentChainEdgeSynthesizer),
@@ -55,6 +58,7 @@ pub fn all_synthesizers() -> Vec<Box<dyn EdgeSynthesizer>> {
         Box::new(entity_relationships::EntityRelationshipEdgeSynthesizer),
         Box::new(process_sequence::ProcessSequenceEdgeSynthesizer),
         Box::new(audit_procedures::AuditProcedureEdgeSynthesizer),
+        Box::new(v130_edges::V130EdgeSynthesizer),
     ]
 }
 
@@ -80,7 +84,7 @@ mod tests {
                 s.name()
             );
         }
-        assert_eq!(names.len(), 11, "Expected 11 edge synthesizers");
+        assert_eq!(names.len(), 12, "Expected 12 edge synthesizers");
 
         // Verify all known edge type codes are unique across synthesizers.
         // These are the codes defined as constants in each module.
@@ -104,6 +108,13 @@ mod tests {
                     138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152,
                 ],
             ),
+            (
+                "v130_edges",
+                &[
+                    160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 173, 174, 175,
+                    176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187,
+                ],
+            ),
         ];
 
         for (synth_name, codes) in all_codes {
@@ -119,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn all_synthesizers_returns_eleven() {
-        assert_eq!(all_synthesizers().len(), 11);
+    fn all_synthesizers_returns_twelve() {
+        assert_eq!(all_synthesizers().len(), 12);
     }
 }

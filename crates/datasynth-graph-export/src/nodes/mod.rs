@@ -21,9 +21,11 @@
 //! | `temporal_events`   | 470–473     | Process/org/disruption     |
 //! | `ocel_events`       | 400         | OCPM event log             |
 //! | `audit_procedures`  | 366–379     | Audit procedure entities   |
+//! | `v130_entities`     | 380–402, 485–495 | v1.3.0 governance / process / financial |
 
 pub mod aml_alert;
 pub mod audit_procedures;
+pub mod v130_entities;
 pub mod collusion_ring;
 pub mod compliance;
 pub mod esg;
@@ -71,6 +73,8 @@ pub fn all_synthesizers() -> Vec<Box<dyn NodeSynthesizer>> {
         Box::new(ocel_events::OcelEventsNodeSynthesizer),
         // Audit Procedures (ISA 505/330/530/520/610/550)
         Box::new(audit_procedures::AuditProcedureNodeSynthesizer),
+        // v1.3.0 entities (governance, process, financial)
+        Box::new(v130_entities::V130NodeSynthesizer),
     ]
 }
 
@@ -137,7 +141,7 @@ mod tests {
     #[test]
     fn all_synthesizers_count() {
         let synths = all_synthesizers();
-        assert_eq!(synths.len(), 14);
+        assert_eq!(synths.len(), 15);
     }
 
     #[test]
