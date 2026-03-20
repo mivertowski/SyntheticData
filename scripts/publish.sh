@@ -15,15 +15,15 @@
 #   ./scripts/publish.sh --status            # Check which crates are published
 #
 # The publishing order respects the dependency graph:
-#   Tier 1 (no deps):      datasynth-core
-#   Tier 2 (core only):    datasynth-banking, datasynth-ocpm, datasynth-output
-#   Tier 3 (core+banking): datasynth-config, datasynth-graph
-#   Tier 4 (config):       datasynth-generators, datasynth-fingerprint
-#   Tier 5 (config+banking): datasynth-test-utils
-#   Tier 6 (generators+graph+test-utils): datasynth-eval (dev-dep on test-utils)
-#   Tier 7 (runtime):      datasynth-runtime (depends on fingerprint)
-#   Tier 8 (apps):         datasynth-server, datasynth-cli
-#   Note: datasynth-ui is excluded (Tauri desktop app, not published to crates.io)
+#   Tier 1 (no deps):         datasynth-core
+#   Tier 2 (core only):       datasynth-banking, datasynth-ocpm, datasynth-output, datasynth-standards
+#   Tier 3 (core+banking):    datasynth-config
+#   Tier 4 (config+standards):datasynth-generators, datasynth-fingerprint
+#   Tier 5 (generators+ocpm): datasynth-graph, datasynth-test-utils
+#   Tier 6 (generators):      datasynth-eval
+#   Tier 7 (runtime):         datasynth-runtime
+#   Tier 8 (apps):            datasynth-server, datasynth-cli
+#   Excluded: datasynth-ui (Tauri app), datasynth-graph-export (local-only dep)
 #
 
 set -eo pipefail
@@ -96,7 +96,9 @@ done
 
 # Crates in dependency order (leaves first, main crate last)
 # This order ensures each crate's dependencies are published before it
-# Note: datasynth-ui is excluded as it's a Tauri desktop app, not a library
+# Note: datasynth-ui and datasynth-graph-export are excluded:
+#   - datasynth-ui: Tauri desktop app, not a library
+#   - datasynth-graph-export: has local-only path dep on rustgraph-api-types
 CRATES=(
     # Tier 1: No internal dependencies
     "datasynth-core"
@@ -109,24 +111,24 @@ CRATES=(
 
     # Tier 3: Depends on core + banking
     "datasynth-config"       # depends on: core, banking
-    "datasynth-graph"        # depends on: core, banking
 
-    # Tier 4: Depends on config
-    "datasynth-generators"   # depends on: core, config
+    # Tier 4: Depends on config + standards
+    "datasynth-generators"   # depends on: core, config, standards
     "datasynth-fingerprint"  # depends on: core, config
 
-    # Tier 5: Depends on config + banking
+    # Tier 5: Depends on generators + ocpm + banking
+    "datasynth-graph"        # depends on: core, banking, generators, ocpm
     "datasynth-test-utils"   # depends on: core, config, banking
 
-    # Tier 6: Depends on generators + graph + test-utils (dev)
-    "datasynth-eval"         # depends on: core, config, generators, graph; dev-dep: test-utils
+    # Tier 6: Depends on generators + test-utils (dev)
+    "datasynth-eval"         # depends on: core, config, generators; dev-dep: test-utils
 
     # Tier 7: Runtime (orchestration layer)
-    "datasynth-runtime"      # depends on: core, config, generators, ocpm, output, banking, fingerprint, graph
+    "datasynth-runtime"      # depends on: core, config, eval, generators, standards, ocpm, output, banking, fingerprint, graph
 
     # Tier 8: Applications
-    "datasynth-server"       # depends on: runtime
-    "datasynth-cli"          # depends on: runtime, fingerprint
+    "datasynth-server"       # depends on: core, config, generators, runtime, output
+    "datasynth-cli"          # depends on: core, config, eval, generators, output, runtime, banking, fingerprint, graph
 )
 
 # Tier 1 crates can be verified independently
