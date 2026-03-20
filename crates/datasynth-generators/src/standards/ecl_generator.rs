@@ -107,7 +107,15 @@ impl EclGenerator {
         period_label: &str,
         framework: &str,
     ) -> EclSnapshot {
-        self.generate_with_prior(entity_code, measurement_date, bucket_exposures, config, period_label, framework, None)
+        self.generate_with_prior(
+            entity_code,
+            measurement_date,
+            bucket_exposures,
+            config,
+            period_label,
+            framework,
+            None,
+        )
     }
 
     /// Generate an ECL snapshot, optionally accepting the prior period's closing provision

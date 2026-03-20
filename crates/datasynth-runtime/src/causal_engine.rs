@@ -486,10 +486,7 @@ impl<'a> CausalPropagationEngine<'a> {
                     }
                     RegulatoryChangeType::TaxRateChange => {
                         if let Some(node) = self.dag.find_node("tax_rate") {
-                            effects.insert(
-                                "tax_rate".to_string(),
-                                node.baseline_value + magnitude,
-                            );
+                            effects.insert("tax_rate".to_string(), node.baseline_value + magnitude);
                         }
                     }
                     _ => {

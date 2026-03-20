@@ -2889,8 +2889,7 @@ impl EnhancedOrchestrator {
             .collect();
 
         // Estimate capacity: one JE per active FA + 2 JEs per company (tax + close)
-        let estimated_close_jes =
-            subledger.fa_records.len() + company_codes.len() * 2;
+        let estimated_close_jes = subledger.fa_records.len() + company_codes.len() * 2;
         let mut close_jes: Vec<JournalEntry> = Vec::with_capacity(estimated_close_jes);
 
         // --- Depreciation JEs (per asset) ---

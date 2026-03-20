@@ -23,7 +23,6 @@ use chrono::NaiveDate;
 use datasynth_core::models::audit::going_concern::{
     GoingConcernAssessment, GoingConcernConclusion,
 };
-use tracing::info;
 use datasynth_core::models::audit::{
     AuditFinding, ComponentAuditorReport, FindingStatus, FindingType,
 };
@@ -35,6 +34,7 @@ use datasynth_standards::audit::opinion::{
 };
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use tracing::info;
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------

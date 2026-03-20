@@ -252,7 +252,12 @@ impl ReferenceGenerator {
                 // Generate deterministic alphanumeric suffix based on sequence number
                 let suffix: String = (0..config.sequence_digits)
                     .map(|i| {
-                        let idx = ((seq as usize).wrapping_mul(7).wrapping_add(i).wrapping_mul(13).wrapping_add(17)) % 36;
+                        let idx = ((seq as usize)
+                            .wrapping_mul(7)
+                            .wrapping_add(i)
+                            .wrapping_mul(13)
+                            .wrapping_add(17))
+                            % 36;
                         if idx < 10 {
                             (b'0' + idx as u8) as char
                         } else {

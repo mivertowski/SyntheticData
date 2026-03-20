@@ -544,25 +544,22 @@ impl GateEngine {
             }
             QualityMetric::Custom(name) => {
                 // Custom metrics require user-provided evaluation logic and cannot be
-                // auto-evaluated by the gate engine.  Rather than returning `None`
-                // (which would cause the gate to fail silently and potentially block
-                // a pipeline), we return a neutral score of 0.5 so the gate continues
-                // while the warning makes the gap visible in logs.
+                // auto-evaluated by the gate engine. We return `None` to skip this gate
+                // (treated as pass) while logging a warning to make the gap visible.
                 //
                 // Users who need deterministic gate behaviour for a custom metric must
                 // implement a custom `GateEvaluator` and register it before calling
                 // `evaluate_profile`.
                 tracing::warn!(
                     "Custom metric '{}' in gate '{}' has no registered evaluator — \
-                     returning neutral score 0.5; implement a custom GateEvaluator to enable \
-                     real evaluation",
+                     gate skipped; implement a custom GateEvaluator to enable evaluation",
                     name,
                     gate.name
                 );
                 (
-                    Some(0.5),
+                    None,
                     format!(
-                        "custom metric '{name}' not implemented — neutral score 0.5 used; \
+                        "custom metric '{name}' not implemented — gate skipped; \
                          register a custom GateEvaluator for real evaluation"
                     ),
                 )

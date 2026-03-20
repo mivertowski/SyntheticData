@@ -2256,7 +2256,11 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
                 rule_compliance: all_reports.iter().map(|r| r.rule_compliance).sum::<f64>() / n,
                 anomaly_fidelity: all_reports.iter().map(|r| r.anomaly_fidelity).sum::<f64>() / n,
                 passes: all_reports.iter().all(|r| r.passes),
-                details: all_reports.into_iter().next().map(|r| r.details).unwrap_or_default(),
+                details: all_reports
+                    .into_iter()
+                    .next()
+                    .map(|r| r.details)
+                    .unwrap_or_default(),
             };
 
             // Print report

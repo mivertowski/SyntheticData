@@ -62,7 +62,7 @@ fn test_provision_count_different_seeds() {
             reporting_date(),
             "FY2024",
             "IFRS",
-        None,
+            None,
         );
         assert!(
             snap.provisions.len() >= 3,
@@ -160,7 +160,7 @@ fn test_movement_non_negative_closing() {
             reporting_date(),
             "FY2024",
             "US_GAAP",
-        None,
+            None,
         );
         for mv in &snap.movements {
             assert!(
@@ -414,7 +414,7 @@ fn test_provision_types_present() {
             reporting_date(),
             "FY2024",
             "IFRS",
-        None,
+            None,
         );
         for p in &snap.provisions {
             types_seen.insert(format!("{:?}", p.provision_type));
@@ -503,7 +503,7 @@ fn test_long_term_provisions_may_have_discount_rate() {
             reporting_date(),
             "FY2024",
             "IFRS",
-        None,
+            None,
         );
         for p in &snap.provisions {
             if p.discount_rate.is_some() {

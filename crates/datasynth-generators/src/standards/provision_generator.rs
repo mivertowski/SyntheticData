@@ -197,14 +197,13 @@ impl ProvisionGenerator {
             // Unwinding of discount (IAS 37.60): discount_rate × opening balance × period_fraction.
             // Uses `prior_opening` when provided (carry-forward scenario); defaults to zero for
             // first-period runs where opening = 0 regardless.
-            let unwinding_of_discount = if let (Some(prior_bal), Some(rate)) =
-                (prior_opening, discount_rate)
-            {
-                // Assume each generation run covers one annual period (period_fraction = 1.0).
-                round2((prior_bal * rate).max(Decimal::ZERO))
-            } else {
-                Decimal::ZERO
-            };
+            let unwinding_of_discount =
+                if let (Some(prior_bal), Some(rate)) = (prior_opening, discount_rate) {
+                    // Assume each generation run covers one annual period (period_fraction = 1.0).
+                    round2((prior_bal * rate).max(Decimal::ZERO))
+                } else {
+                    Decimal::ZERO
+                };
             let closing = (opening + additions - utilizations - reversals + unwinding_of_discount)
                 .max(Decimal::ZERO);
 
