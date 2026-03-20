@@ -9860,7 +9860,7 @@ impl EnhancedOrchestrator {
                 let input = SoxGeneratorInput {
                     company_code: company.code.clone(),
                     company_name: company.name.clone(),
-                    fiscal_year: fiscal_year,
+                    fiscal_year,
                     period_end,
                     findings: company_findings,
                     ceo_name,
