@@ -13,7 +13,7 @@ use tempfile::TempDir;
 /// Safe resource limits for tests
 const TEST_MEMORY_LIMIT: &str = "512";
 const TEST_MAX_THREADS: &str = "1";
-const TEST_TIMEOUT_SECS: u64 = 120;
+const TEST_TIMEOUT_SECS: u64 = 300; // 5 minutes — CI coverage instrumentation is slow
 
 /// Get a Command for our binary with timeout.
 #[allow(deprecated)] // cargo_bin is still functional, just has a new alternative
