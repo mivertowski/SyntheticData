@@ -300,6 +300,23 @@ impl EmployeeGenerator {
             });
         }
 
+        // Set annual base salary based on job level (USD-equivalent ranges).
+        // A small random variance (±10 %) is applied for realism.
+        let (salary_min, salary_max): (u64, u64) = match job_level {
+            JobLevel::Staff => (40_000, 60_000),
+            JobLevel::Senior => (60_000, 90_000),
+            JobLevel::Lead => (75_000, 105_000),
+            JobLevel::Supervisor => (70_000, 100_000),
+            JobLevel::Manager => (80_000, 120_000),
+            JobLevel::Director => (100_000, 160_000),
+            JobLevel::VicePresident => (130_000, 200_000),
+            JobLevel::Executive => (150_000, 250_000),
+        };
+        let salary_range = salary_max - salary_min;
+        let salary_raw =
+            salary_min + (self.rng.random::<f64>() * salary_range as f64).round() as u64;
+        employee.base_salary = Decimal::from(salary_raw);
+
         // Set status
         employee.status = self.select_status();
         if employee.status == EmployeeStatus::Terminated {

@@ -650,6 +650,13 @@ pub struct Employee {
 
     /// Phone number
     pub phone: Option<String>,
+
+    /// Annual base salary in the company's local currency.
+    ///
+    /// Used by the payroll generator to compute monthly gross pay
+    /// (`base_salary / 12`) instead of a hardcoded default.
+    #[serde(with = "rust_decimal::serde::str")]
+    pub base_salary: rust_decimal::Decimal,
 }
 
 impl Employee {
@@ -703,6 +710,7 @@ impl Employee {
             location: None,
             is_shared_services: false,
             phone: None,
+            base_salary: Decimal::ZERO,
         }
     }
 

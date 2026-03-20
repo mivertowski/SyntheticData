@@ -197,6 +197,87 @@ impl GenerationSession {
         // Count anomalies from anomaly_labels
         let anomaly_count = result.anomaly_labels.labels.len();
 
+        // ---------------------------------------------------------------
+        // Balance carry-forward: aggregate closing GL balances from JEs
+        // so the next period starts from this period's closing position.
+        // ---------------------------------------------------------------
+        {
+            use std::collections::HashMap;
+
+            // Build net balance per GL account (debit positive, credit negative).
+            let mut gl_net: HashMap<String, f64> = HashMap::new();
+            for je in &result.journal_entries {
+                for line in &je.lines {
+                    let account = line.gl_account.clone();
+                    let delta = f64::try_from(line.debit_amount).unwrap_or(0.0)
+                        - f64::try_from(line.credit_amount).unwrap_or(0.0);
+                    *gl_net.entry(account).or_insert(0.0) += delta;
+                }
+            }
+
+            // Carry forward as opening balances for the next period.
+            // We merge into any existing carry-forward from prior periods.
+            for (account, delta) in gl_net {
+                *self
+                    .state
+                    .balance_state
+                    .gl_balances
+                    .entry(account)
+                    .or_insert(0.0) += delta;
+            }
+
+            // Derive aggregate subledger totals from the balance map.
+            // AR is represented by account 1100, AP by account 2000 (sign convention:
+            // positive = debit balance for AR, positive credit balance treated as
+            // positive AP by flipping sign).
+            self.state.balance_state.ar_total = self
+                .state
+                .balance_state
+                .gl_balances
+                .get("1100")
+                .copied()
+                .unwrap_or(0.0)
+                .max(0.0);
+            self.state.balance_state.ap_total = (-self
+                .state
+                .balance_state
+                .gl_balances
+                .get("2000")
+                .copied()
+                .unwrap_or(0.0))
+            .max(0.0);
+
+            // Retained earnings: sum of all income statement accounts (4xxx–8xxx range).
+            // Positive retained earnings arise when revenues (credit-normal) exceed expenses.
+            let retained: f64 = self
+                .state
+                .balance_state
+                .gl_balances
+                .iter()
+                .filter_map(|(acct, &bal)| {
+                    acct.parse::<u32>()
+                        .ok()
+                        .filter(|&n| (4000..=8999).contains(&n))
+                        .map(|_| -bal) // credit-normal income accounts are negative in debit-net map
+                })
+                .sum();
+            self.state.balance_state.retained_earnings += retained;
+
+            // Advance document ID counters so each period's IDs are globally unique.
+            self.state.document_id_state.next_je_number += je_count as u64;
+            self.state.document_id_state.next_po_number +=
+                result.document_flows.purchase_orders.len() as u64;
+            self.state.document_id_state.next_so_number +=
+                result.document_flows.sales_orders.len() as u64;
+            self.state.document_id_state.next_invoice_number +=
+                (result.document_flows.vendor_invoices.len()
+                    + result.document_flows.customer_invoices.len()) as u64;
+            self.state.document_id_state.next_payment_number +=
+                result.document_flows.payments.len() as u64;
+            self.state.document_id_state.next_gr_number +=
+                result.document_flows.goods_receipts.len() as u64;
+        }
+
         self.state.generation_log.push(PeriodLog {
             period_label: period.label.clone(),
             journal_entries: je_count,

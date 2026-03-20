@@ -262,6 +262,13 @@ pub fn write_all_output(
             "Customer invoices",
         );
 
+        // Document cross-references (PO→GR, GR→Invoice, Invoice→Payment, etc.)
+        write_json_safe(
+            &result.document_flows.document_references,
+            &df_dir.join("document_references.json"),
+            "Document references",
+        );
+
         // Note: P2P/O2C chain types do not implement Serialize, so we log
         // their counts instead. The individual documents above capture all data.
         if !result.document_flows.p2p_chains.is_empty() {
@@ -334,6 +341,17 @@ pub fn write_all_output(
             &result.subledger.inventory_valuations,
             &sl_dir.join("inventory_valuation.json"),
             "Inventory valuations",
+        );
+        // Dunning runs and letters (generated after AR aging)
+        write_json_safe(
+            &result.subledger.dunning_runs,
+            &sl_dir.join("dunning_runs.json"),
+            "Dunning runs",
+        );
+        write_json_safe(
+            &result.subledger.dunning_letters,
+            &sl_dir.join("dunning_letters.json"),
+            "Dunning letters",
         );
     }
 
@@ -572,6 +590,15 @@ pub fn write_all_output(
                 &result.audit.analytical_relationships,
                 &audit_dir.join("analytical_relationships.json"),
                 "Analytical relationships (ISA 520)",
+            );
+        }
+
+        // PCAOB-ISA cross-reference mappings
+        if !result.audit.isa_pcaob_mappings.is_empty() {
+            write_json_safe(
+                &result.audit.isa_pcaob_mappings,
+                &audit_dir.join("isa_pcaob_mappings.json"),
+                "PCAOB-ISA standard mappings",
             );
         }
     }
@@ -1278,7 +1305,7 @@ pub fn write_all_output(
     // ========================================================================
     // Internal Controls
     // ========================================================================
-    if !result.internal_controls.is_empty() {
+    if !result.internal_controls.is_empty() || !result.sod_violations.is_empty() {
         let ctrl_dir = output_dir.join("internal_controls");
         std::fs::create_dir_all(&ctrl_dir)?;
         info!("Writing internal controls data...");
@@ -1287,6 +1314,12 @@ pub fn write_all_output(
             &result.internal_controls,
             &ctrl_dir.join("internal_controls.json"),
             "Internal controls",
+        );
+        // SoD violations extracted from control-annotated journal entries
+        write_json_safe(
+            &result.sod_violations,
+            &ctrl_dir.join("sod_violations.json"),
+            "SoD violations",
         );
     }
 

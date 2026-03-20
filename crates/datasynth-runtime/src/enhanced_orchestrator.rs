@@ -486,6 +486,9 @@ pub struct DocumentFlowSnapshot {
     pub customer_invoices: Vec<documents::CustomerInvoice>,
     /// All payments (flattened).
     pub payments: Vec<documents::Payment>,
+    /// Cross-document references collected from all document headers
+    /// (PO→GR, GR→Invoice, Invoice→Payment, SO→Delivery, etc.)
+    pub document_references: Vec<documents::DocumentReference>,
 }
 
 /// Subledger snapshot containing generated subledger records.
@@ -509,6 +512,10 @@ pub struct SubledgerSnapshot {
     pub depreciation_runs: Vec<datasynth_core::models::subledger::fa::DepreciationRun>,
     /// Inventory valuation results — one per company (lower-of-cost-or-NRV, IAS 2 / ASC 330).
     pub inventory_valuations: Vec<datasynth_generators::InventoryValuationResult>,
+    /// Dunning runs executed after AR aging (one per company per dunning cycle).
+    pub dunning_runs: Vec<datasynth_core::models::subledger::ar::DunningRun>,
+    /// Dunning letters generated across all dunning runs.
+    pub dunning_letters: Vec<datasynth_core::models::subledger::ar::DunningLetter>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -621,6 +628,9 @@ pub struct AuditSnapshot {
     /// Analytical relationships (ratios, trends, correlations) per entity.
     pub analytical_relationships:
         Vec<datasynth_core::models::audit::analytical_relationships::AnalyticalRelationship>,
+    // ---- PCAOB-ISA Cross-Reference ----
+    /// PCAOB-to-ISA standard mappings (key differences, similarities, application notes).
+    pub isa_pcaob_mappings: Vec<datasynth_standards::audit::pcaob::PcaobIsaMapping>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -1111,6 +1121,10 @@ pub struct EnhancedGenerationResult {
     pub gate_result: Option<datasynth_eval::gates::GateResult>,
     /// Internal controls (if controls generation enabled).
     pub internal_controls: Vec<InternalControl>,
+    /// SoD (Segregation of Duties) violations identified during control application.
+    ///
+    /// Each record corresponds to a journal entry where `sod_violation == true`.
+    pub sod_violations: Vec<datasynth_core::models::SodViolation>,
     /// Opening balances (if opening balance generation enabled).
     pub opening_balances: Vec<GeneratedOpeningBalance>,
     /// GL-to-subledger reconciliation results (if reconciliation enabled).
@@ -2065,6 +2079,46 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // Phase 7c: Extract SoD violations from annotated journal entries.
+        // The ControlGenerator marks entries with sod_violation=true and a conflict_type.
+        // Here we materialise those flags into standalone SodViolation records.
+        let sod_violations: Vec<datasynth_core::models::SodViolation> = entries
+            .iter()
+            .filter(|e| e.header.sod_violation)
+            .filter_map(|e| {
+                e.header.sod_conflict_type.map(|ct| {
+                    use datasynth_core::models::{RiskLevel, SodViolation};
+                    let severity = match ct {
+                        datasynth_core::models::SodConflictType::PaymentReleaser
+                        | datasynth_core::models::SodConflictType::RequesterApprover => {
+                            RiskLevel::Critical
+                        }
+                        datasynth_core::models::SodConflictType::PreparerApprover
+                        | datasynth_core::models::SodConflictType::MasterDataMaintainer
+                        | datasynth_core::models::SodConflictType::JournalEntryPoster
+                        | datasynth_core::models::SodConflictType::SystemAccessConflict => {
+                            RiskLevel::High
+                        }
+                        datasynth_core::models::SodConflictType::ReconcilerPoster => {
+                            RiskLevel::Medium
+                        }
+                    };
+                    let action = format!(
+                        "SoD conflict {:?} on entry {} ({})",
+                        ct, e.header.document_id, e.header.company_code
+                    );
+                    SodViolation::new(ct, e.header.created_by.clone(), action, severity)
+                })
+            })
+            .collect();
+        if !sod_violations.is_empty() {
+            info!(
+                "Phase 7c: Extracted {} SoD violations from {} entries",
+                sod_violations.len(),
+                entries.len()
+            );
+        }
+
         // Emit journal entries to stream sink (after all JE-generating phases)
         self.emit_phase_items("journal_entries", "JournalEntry", &entries);
 
@@ -2403,6 +2457,7 @@ impl EnhancedOrchestrator {
             lineage: Some(lineage),
             gate_result,
             internal_controls,
+            sod_violations,
             opening_balances,
             subledger_reconciliation,
             counterfactual_pairs,
@@ -2465,6 +2520,9 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<(DocumentFlowSnapshot, SubledgerSnapshot, Vec<JournalEntry>)> {
         let mut document_flows = DocumentFlowSnapshot::default();
         let mut subledger = SubledgerSnapshot::default();
+        // Dunning JEs (interest + charges) accumulated here and merged into the
+        // main FA-JE list below so they appear in the GL.
+        let mut dunning_journal_entries: Vec<JournalEntry> = Vec::new();
 
         if self.phase_config.generate_document_flows && !self.master_data.vendors.is_empty() {
             info!("Phase 3: Generating Document Flows");
@@ -2529,6 +2587,58 @@ impl EnhancedOrchestrator {
                     subledger.ar_aging_reports.len(),
                     subledger.ap_aging_reports.len()
                 );
+
+                // Phase 3b-dunning: Run dunning process on overdue AR invoices.
+                debug!("Phase 3b-dunning: Executing dunning runs for overdue AR invoices");
+                {
+                    use datasynth_generators::DunningGenerator;
+                    let mut dunning_gen = DunningGenerator::new(self.seed + 2000);
+                    for company in &self.config.companies {
+                        let currency = company.currency.as_str();
+                        // Collect mutable references to AR invoices for this company
+                        // (dunning generator updates dunning_info on invoices in-place).
+                        let mut company_invoices: Vec<
+                            datasynth_core::models::subledger::ar::ARInvoice,
+                        > = subledger
+                            .ar_invoices
+                            .iter()
+                            .filter(|inv| inv.company_code == company.code)
+                            .cloned()
+                            .collect();
+
+                        if company_invoices.is_empty() {
+                            continue;
+                        }
+
+                        let result = dunning_gen.execute_dunning_run(
+                            &company.code,
+                            as_of_date,
+                            &mut company_invoices,
+                            currency,
+                        );
+
+                        // Write back updated dunning info to the main AR invoice list
+                        for updated in &company_invoices {
+                            if let Some(orig) = subledger
+                                .ar_invoices
+                                .iter_mut()
+                                .find(|i| i.invoice_number == updated.invoice_number)
+                            {
+                                orig.dunning_info = updated.dunning_info.clone();
+                            }
+                        }
+
+                        subledger.dunning_runs.push(result.dunning_run);
+                        subledger.dunning_letters.extend(result.letters);
+                        // Dunning JEs (interest + charges) collected into local buffer.
+                        dunning_journal_entries.extend(result.journal_entries);
+                    }
+                    debug!(
+                        "Dunning runs complete: {} runs, {} letters",
+                        subledger.dunning_runs.len(),
+                        subledger.dunning_letters.len()
+                    );
+                }
             }
 
             self.check_resources_with_log("post-document-flows")?;
@@ -2537,7 +2647,7 @@ impl EnhancedOrchestrator {
         }
 
         // Generate FA subledger records (and acquisition JEs) from master data fixed assets
-        let mut fa_journal_entries = Vec::new();
+        let mut fa_journal_entries: Vec<JournalEntry> = dunning_journal_entries;
         if !self.master_data.assets.is_empty() {
             debug!("Generating FA subledger records");
             let company_code = self
@@ -5290,9 +5400,16 @@ impl EnhancedOrchestrator {
                 .employees
                 .iter()
                 .map(|e| {
+                    // Use the employee's actual annual base salary.
+                    // Fall back to $60,000 / yr if somehow zero.
+                    let annual = if e.base_salary > rust_decimal::Decimal::ZERO {
+                        e.base_salary
+                    } else {
+                        rust_decimal::Decimal::from(60_000)
+                    };
                     (
                         e.employee_id.clone(),
-                        rust_decimal::Decimal::from(5000), // Default monthly salary
+                        annual, // annual salary — PayrollGenerator divides by 12 for monthly base
                         e.cost_center.clone(),
                         e.department_id.clone(),
                     )
@@ -8202,6 +8319,39 @@ impl EnhancedOrchestrator {
             pb.finish_with_message("O2C document flows complete");
         }
 
+        // Collect all document cross-references from document headers.
+        // Each document embeds references to its predecessor(s) via add_reference(); here we
+        // denormalise them into a flat list for the document_references.json output file.
+        {
+            let mut refs = Vec::new();
+            for doc in &flows.purchase_orders {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.goods_receipts {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.vendor_invoices {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.sales_orders {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.deliveries {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.customer_invoices {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.payments {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            debug!(
+                "Collected {} document cross-references from document headers",
+                refs.len()
+            );
+            flows.document_references = refs;
+        }
+
         Ok(())
     }
 
@@ -8553,6 +8703,9 @@ impl EnhancedOrchestrator {
             // Depreciation runs and inventory valuations are populated after FA/inventory generation.
             depreciation_runs: Vec::new(),
             inventory_valuations: Vec::new(),
+            // Dunning runs and letters are populated in phase_document_flows after AR aging.
+            dunning_runs: Vec::new(),
+            dunning_letters: Vec::new(),
         })
     }
 
@@ -10437,6 +10590,21 @@ impl EnhancedOrchestrator {
                 snapshot.unusual_items.len(),
                 snapshot.analytical_relationships.len(),
             ));
+        }
+
+        // ----------------------------------------------------------------
+        // PCAOB-ISA cross-reference mappings
+        // ----------------------------------------------------------------
+        // Always include the standard PCAOB-ISA mappings when audit generation is
+        // enabled. These are static reference data (no randomness required) so we
+        // call standard_mappings() directly.
+        {
+            use datasynth_standards::audit::pcaob::PcaobIsaMapping;
+            snapshot.isa_pcaob_mappings = PcaobIsaMapping::standard_mappings();
+            debug!(
+                "PCAOB-ISA mappings generated: {} mappings",
+                snapshot.isa_pcaob_mappings.len()
+            );
         }
 
         Ok(snapshot)
