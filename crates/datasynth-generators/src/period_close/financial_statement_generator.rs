@@ -247,6 +247,12 @@ impl FinancialStatementGenerator {
         let lt_debt = *aggregated.get("LongTermDebt").unwrap_or(&Decimal::ZERO);
         let total_liabilities = current_liabilities + lt_debt;
 
+        // Retained earnings is used as a plug to force A = L + E (i.e. the balance sheet always
+        // balances by construction).  This is an intentional simplification: proper equity
+        // modelling with share capital, additional paid-in capital, treasury shares, AOCI, and
+        // NCI would require either multi-period state or a dedicated equity roll-forward step.
+        // TODO (Fix 11): Replace the plug with actual equity components when the equity
+        // roll-forward is implemented.
         let retained_earnings = total_assets - total_liabilities;
         let total_equity = retained_earnings;
         let total_le = total_liabilities + total_equity;
@@ -379,7 +385,10 @@ impl FinancialStatementGenerator {
                 .and_then(|pa| pa.get(key).copied())
         };
 
-        let revenue = *aggregated.get("Revenue").unwrap_or(&Decimal::ZERO);
+        // Revenue accounts are credit-normal: aggregate_by_category returns debit - credit,
+        // which is negative for revenue. Negate so revenue appears as a positive amount on
+        // the income statement (a presentation convention, not an accounting sign change).
+        let revenue = -(*aggregated.get("Revenue").unwrap_or(&Decimal::ZERO));
         let cogs = *aggregated.get("CostOfSales").unwrap_or(&Decimal::ZERO);
         let gross_profit = revenue - cogs;
         let operating_expenses = *aggregated
@@ -680,7 +689,8 @@ impl FinancialStatementGenerator {
 
     fn calculate_net_income(&self, tb: &[TrialBalanceEntry]) -> Decimal {
         let aggregated = self.aggregate_by_category(tb);
-        let revenue = *aggregated.get("Revenue").unwrap_or(&Decimal::ZERO);
+        // Revenue is credit-normal; negate so it is positive before arithmetic.
+        let revenue = -(*aggregated.get("Revenue").unwrap_or(&Decimal::ZERO));
         let cogs = *aggregated.get("CostOfSales").unwrap_or(&Decimal::ZERO);
         let opex = *aggregated
             .get("OperatingExpenses")
@@ -906,13 +916,14 @@ mod tests {
         assert!(codes.contains(&"IS-TAX"));
         assert!(codes.contains(&"IS-NI"));
 
-        // Revenue should be negative (credit balance in TB becomes negative net)
+        // Revenue is credit-normal in the TB but is presented as a positive amount on the IS.
+        // The generator negates the TB net (debit - credit) so that revenue displays positively.
         let revenue = is
             .line_items
             .iter()
             .find(|li| li.line_code == "IS-REV")
             .unwrap();
-        // Revenue category has credit > debit, so net = debit - credit = -1,000,000
-        assert_eq!(revenue.amount, Decimal::from(-1_000_000));
+        // TB net = debit(0) - credit(1_000_000) = -1_000_000; after negation = +1_000_000.
+        assert_eq!(revenue.amount, Decimal::from(1_000_000));
     }
 }

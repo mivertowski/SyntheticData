@@ -218,7 +218,11 @@ impl EclGenerator {
 
         let estimated_write_offs = (over90_provision * dec!(0.20)).round_dp(2);
         let recoveries = Decimal::ZERO;
-        let opening = Decimal::ZERO; // first period
+        // TODO: multi-period continuity — opening balance always starts at zero because the
+        // current single-period generation model has no prior-period state.  Proper ECL
+        // rollforward continuity requires a persistent state store shared across generation
+        // runs, which is a larger architectural change (see Fix 12 documentation).
+        let opening = Decimal::ZERO; // first period only
         let new_originations = total_provision;
         let stage_transfers = Decimal::ZERO;
         let closing = (opening + new_originations + stage_transfers - estimated_write_offs

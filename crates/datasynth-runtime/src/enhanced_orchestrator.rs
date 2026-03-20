@@ -2017,7 +2017,9 @@ impl EnhancedOrchestrator {
         self.phase_causal_overlay(&mut stats);
 
         // Phase 17: Bank Reconciliation + Financial Statements
-        let financial_reporting = self.phase_financial_reporting(
+        // Notes generation is deferred to after Phase 18 + 20 so that deferred-tax and
+        // provision data (from accounting_standards / tax snapshots) can be wired in.
+        let mut financial_reporting = self.phase_financial_reporting(
             &document_flows,
             &entries,
             &coa,
@@ -2076,6 +2078,16 @@ impl EnhancedOrchestrator {
 
         // Phase 20: Tax Generation
         let tax = self.phase_tax_generation(&document_flows, &entries, &mut stats)?;
+
+        // Phase 20a: Notes to Financial Statements (IAS 1 / ASC 235)
+        // Runs here so deferred-tax (Phase 20) and provision data (Phase 18) are available.
+        self.generate_notes_to_financial_statements(
+            &mut financial_reporting,
+            &accounting_standards,
+            &tax,
+            &hr,
+            &audit,
+        );
 
         // Phase 21: ESG Data Generation
         let esg_snap = self.phase_esg_generation(&document_flows, &mut stats)?;
@@ -3725,13 +3737,56 @@ impl EnhancedOrchestrator {
                     .cloned()
                     .collect();
 
+            // Build investment and equity maps from the group structure so that the
+            // elimination generator can produce equity-investment elimination entries
+            // (parent's investment in subsidiary vs. subsidiary's equity capital).
+            //
+            // investment_amounts key = "{parent}_{subsidiary}", value = net_assets × ownership_pct
+            // equity_amounts key = subsidiary_code, value = map of equity_account → amount
+            //   (split 10% share capital / 30% APIC / 60% retained earnings by convention)
+            //
+            // Net assets are derived from the journal entries using account-range heuristics:
+            // assets (1xx) minus liabilities (2xx).  A fallback of 1_000_000 is used when
+            // no JE data is available (IC phase runs early in the generation pipeline).
+            let mut investment_amounts: std::collections::HashMap<String, rust_decimal::Decimal> =
+                std::collections::HashMap::new();
+            let mut equity_amounts: std::collections::HashMap<
+                String,
+                std::collections::HashMap<String, rust_decimal::Decimal>,
+            > = std::collections::HashMap::new();
+            {
+                use rust_decimal::Decimal;
+                let hundred = Decimal::from(100u32);
+                let ten_pct = Decimal::new(10, 2);   // 0.10
+                let thirty_pct = Decimal::new(30, 2); // 0.30
+                let sixty_pct = Decimal::new(60, 2);  // 0.60
+                let parent_code = &group_structure.parent_entity;
+                for sub in &group_structure.subsidiaries {
+                    let net_assets = {
+                        let na = Self::compute_entity_net_assets(journal_entries, &sub.entity_code);
+                        if na > Decimal::ZERO { na } else { Decimal::from(1_000_000u64) }
+                    };
+                    let ownership_pct = sub.ownership_percentage / hundred; // 0.0–1.0
+                    let inv_key = format!("{}_{}", parent_code, sub.entity_code);
+                    investment_amounts.insert(inv_key, (net_assets * ownership_pct).round_dp(2));
+
+                    // Split subsidiary equity into conventional components:
+                    // 10 % share capital / 30 % APIC / 60 % retained earnings
+                    let mut eq_map = std::collections::HashMap::new();
+                    eq_map.insert("3100".to_string(), (net_assets * ten_pct).round_dp(2));
+                    eq_map.insert("3200".to_string(), (net_assets * thirty_pct).round_dp(2));
+                    eq_map.insert("3300".to_string(), (net_assets * sixty_pct).round_dp(2));
+                    equity_amounts.insert(sub.entity_code.clone(), eq_map);
+                }
+            }
+
             let journal = elim_generator.generate_eliminations(
                 &fiscal_period,
                 end_date,
                 &all_balances,
                 &matched_pairs,
-                &std::collections::HashMap::new(), // investment amounts (simplified)
-                &std::collections::HashMap::new(), // equity amounts (simplified)
+                &investment_amounts,
+                &equity_amounts,
             );
 
             elimination_entries = journal.entries.clone();
@@ -3825,8 +3880,8 @@ impl EnhancedOrchestrator {
         document_flows: &DocumentFlowSnapshot,
         journal_entries: &[JournalEntry],
         coa: &Arc<ChartOfAccounts>,
-        hr: &HrSnapshot,
-        audit: &AuditSnapshot,
+        _hr: &HrSnapshot,
+        _audit: &AuditSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<FinancialReportingSnapshot> {
         let fs_enabled = self.phase_config.generate_financial_statements
@@ -4281,153 +4336,10 @@ impl EnhancedOrchestrator {
             );
         }
 
-        // ----------------------------------------------------------------
-        // Notes to financial statements (IAS 1 / ASC 235)
-        // ----------------------------------------------------------------
-        let mut notes_to_financial_statements = Vec::new();
-        {
-            use datasynth_generators::period_close::notes_generator::{
-                NotesGenerator, NotesGeneratorContext,
-            };
-            let mut notes_gen = NotesGenerator::new(seed + 4235);
-
-            for company in &self.config.companies {
-                // Determine period_end as the last period's end date
-                let last_period_end = start_date
-                    + chrono::Months::new(self.config.global.period_months)
-                    - chrono::Days::new(1);
-                let fiscal_year = last_period_end.year() as u16;
-
-                // Extract relevant amounts from financial statements
-                use datasynth_core::models::StatementType;
-                let entity_is = standalone_statements.get(&company.code).and_then(|stmts| {
-                    stmts.iter().find(|s| {
-                        s.fiscal_year == fiscal_year
-                            && s.statement_type == StatementType::IncomeStatement
-                    })
-                });
-                let entity_bs = standalone_statements.get(&company.code).and_then(|stmts| {
-                    stmts.iter().find(|s| {
-                        s.fiscal_year == fiscal_year
-                            && s.statement_type == StatementType::BalanceSheet
-                    })
-                });
-
-                let revenue_amount = entity_is
-                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
-                    .map(|li| -li.amount); // stored negative
-                let ppe_gross = entity_bs
-                    .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-FA"))
-                    .map(|li| li.amount);
-
-                use datasynth_config::schema::AccountingFrameworkConfig;
-                let framework = match self
-                    .config
-                    .accounting_standards
-                    .framework
-                    .unwrap_or_default()
-                {
-                    AccountingFrameworkConfig::Ifrs | AccountingFrameworkConfig::DualReporting => {
-                        "IFRS".to_string()
-                    }
-                    _ => "US GAAP".to_string(),
-                };
-
-                // Pension data from HR snapshot (same entity)
-                let entity_pension_plan_count = hr
-                    .pension_plans
-                    .iter()
-                    .filter(|p| p.entity_code == company.code)
-                    .count();
-                let entity_total_dbo: Option<rust_decimal::Decimal> = {
-                    let sum: rust_decimal::Decimal = hr
-                        .pension_disclosures
-                        .iter()
-                        .filter(|d| {
-                            hr.pension_plans
-                                .iter()
-                                .any(|p| p.id == d.plan_id && p.entity_code == company.code)
-                        })
-                        .map(|d| d.net_pension_liability)
-                        .sum();
-                    // Also add plan assets to recover DBO (net_liability = DBO - plan_assets)
-                    let plan_assets_sum: rust_decimal::Decimal = hr
-                        .pension_plan_assets
-                        .iter()
-                        .filter(|a| {
-                            hr.pension_plans
-                                .iter()
-                                .any(|p| p.id == a.plan_id && p.entity_code == company.code)
-                        })
-                        .map(|a| a.fair_value_closing)
-                        .sum();
-                    if entity_pension_plan_count > 0 {
-                        Some(sum + plan_assets_sum)
-                    } else {
-                        None
-                    }
-                };
-                let entity_total_plan_assets: Option<rust_decimal::Decimal> = {
-                    let sum: rust_decimal::Decimal = hr
-                        .pension_plan_assets
-                        .iter()
-                        .filter(|a| {
-                            hr.pension_plans
-                                .iter()
-                                .any(|p| p.id == a.plan_id && p.entity_code == company.code)
-                        })
-                        .map(|a| a.fair_value_closing)
-                        .sum();
-                    if entity_pension_plan_count > 0 {
-                        Some(sum)
-                    } else {
-                        None
-                    }
-                };
-
-                // Audit data: related party transactions and subsequent events
-                // (audit snapshot covers all entities so filter is not possible here;
-                //  use total counts for the single-entity common case)
-                let rp_count = audit.related_party_transactions.len();
-                let se_count = audit.subsequent_events.len();
-                let adjusting_count = audit
-                    .subsequent_events
-                    .iter()
-                    .filter(|e| matches!(
-                        e.classification,
-                        datasynth_core::models::audit::subsequent_events::EventClassification::Adjusting
-                    ))
-                    .count();
-
-                let ctx = NotesGeneratorContext {
-                    entity_code: company.code.clone(),
-                    framework,
-                    period: format!("FY{}", fiscal_year),
-                    period_end: last_period_end,
-                    currency: company.currency.clone(),
-                    revenue_amount,
-                    total_ppe_gross: ppe_gross,
-                    statutory_tax_rate: Some(rust_decimal::Decimal::new(21, 2)),
-                    // Pension data from HR snapshot
-                    pension_plan_count: entity_pension_plan_count,
-                    total_dbo: entity_total_dbo,
-                    total_plan_assets: entity_total_plan_assets,
-                    // Audit data
-                    related_party_transaction_count: rp_count,
-                    subsequent_event_count: se_count,
-                    adjusting_event_count: adjusting_count,
-                    ..NotesGeneratorContext::default()
-                };
-
-                let entity_notes = notes_gen.generate(&ctx);
-                info!(
-                    "Notes to FS for {}: {} notes generated",
-                    company.code,
-                    entity_notes.len()
-                );
-                notes_to_financial_statements.extend(entity_notes);
-            }
-        }
+        // Notes to financial statements are generated in a separate post-processing step
+        // (generate_notes_to_financial_statements) called after accounting_standards and tax
+        // phases have completed, so that deferred tax and provision data can be wired in.
+        let notes_to_financial_statements = Vec::new();
 
         Ok(FinancialReportingSnapshot {
             financial_statements,
@@ -4440,6 +4352,212 @@ impl EnhancedOrchestrator {
             segment_reconciliations,
             notes_to_financial_statements,
         })
+    }
+
+    /// Populate notes to financial statements using fully-resolved snapshots.
+    ///
+    /// This runs *after* `phase_accounting_standards` and `phase_tax_generation` so that
+    /// deferred-tax balances (IAS 12 / ASC 740) and provision totals (IAS 37 / ASC 450)
+    /// can be wired into the notes context.  The method mutates
+    /// `financial_reporting.notes_to_financial_statements` in-place.
+    fn generate_notes_to_financial_statements(
+        &self,
+        financial_reporting: &mut FinancialReportingSnapshot,
+        accounting_standards: &AccountingStandardsSnapshot,
+        tax: &TaxSnapshot,
+        hr: &HrSnapshot,
+        audit: &AuditSnapshot,
+    ) {
+        use datasynth_generators::period_close::notes_generator::{
+            NotesGenerator, NotesGeneratorContext,
+        };
+        use datasynth_core::models::StatementType;
+        use datasynth_config::schema::AccountingFrameworkConfig;
+
+        let seed = self.seed;
+        let start_date = match NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d") {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+
+        let mut notes_gen = NotesGenerator::new(seed + 4235);
+
+        for company in &self.config.companies {
+            let last_period_end = start_date
+                + chrono::Months::new(self.config.global.period_months)
+                - chrono::Days::new(1);
+            let fiscal_year = last_period_end.year() as u16;
+
+            // Extract relevant amounts from the already-generated financial statements
+            let entity_is = financial_reporting
+                .standalone_statements
+                .get(&company.code)
+                .and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::IncomeStatement
+                    })
+                });
+            let entity_bs = financial_reporting
+                .standalone_statements
+                .get(&company.code)
+                .and_then(|stmts| {
+                    stmts.iter().find(|s| {
+                        s.fiscal_year == fiscal_year
+                            && s.statement_type == StatementType::BalanceSheet
+                    })
+                });
+
+            // IS-REV is stored as positive (Fix 12 — credit-normal accounts negated at IS build time)
+            let revenue_amount = entity_is
+                .and_then(|s| s.line_items.iter().find(|li| li.line_code == "IS-REV"))
+                .map(|li| li.amount);
+            let ppe_gross = entity_bs
+                .and_then(|s| s.line_items.iter().find(|li| li.line_code == "BS-FA"))
+                .map(|li| li.amount);
+
+            let framework = match self
+                .config
+                .accounting_standards
+                .framework
+                .unwrap_or_default()
+            {
+                AccountingFrameworkConfig::Ifrs | AccountingFrameworkConfig::DualReporting => {
+                    "IFRS".to_string()
+                }
+                _ => "US GAAP".to_string(),
+            };
+
+            // ---- Deferred tax (IAS 12 / ASC 740) ----
+            // Sum closing DTA and DTL from rollforward entries for this entity.
+            let (entity_dta, entity_dtl) = {
+                let mut dta = rust_decimal::Decimal::ZERO;
+                let mut dtl = rust_decimal::Decimal::ZERO;
+                for rf in &tax.deferred_tax.rollforwards {
+                    if rf.entity_code == company.code {
+                        dta += rf.closing_dta;
+                        dtl += rf.closing_dtl;
+                    }
+                }
+                (
+                    if dta > rust_decimal::Decimal::ZERO { Some(dta) } else { None },
+                    if dtl > rust_decimal::Decimal::ZERO { Some(dtl) } else { None },
+                )
+            };
+
+            // ---- Provisions (IAS 37 / ASC 450) ----
+            // Filter provisions to this entity; sum best_estimate amounts.
+            let entity_provisions: Vec<_> = accounting_standards
+                .provisions
+                .iter()
+                .filter(|p| p.entity_code == company.code)
+                .collect();
+            let provision_count = entity_provisions.len();
+            let total_provisions = if provision_count > 0 {
+                Some(entity_provisions.iter().map(|p| p.best_estimate).sum())
+            } else {
+                None
+            };
+
+            // ---- Pension data from HR snapshot ----
+            let entity_pension_plan_count = hr
+                .pension_plans
+                .iter()
+                .filter(|p| p.entity_code == company.code)
+                .count();
+            let entity_total_dbo: Option<rust_decimal::Decimal> = {
+                let sum: rust_decimal::Decimal = hr
+                    .pension_disclosures
+                    .iter()
+                    .filter(|d| {
+                        hr.pension_plans
+                            .iter()
+                            .any(|p| p.id == d.plan_id && p.entity_code == company.code)
+                    })
+                    .map(|d| d.net_pension_liability)
+                    .sum();
+                let plan_assets_sum: rust_decimal::Decimal = hr
+                    .pension_plan_assets
+                    .iter()
+                    .filter(|a| {
+                        hr.pension_plans
+                            .iter()
+                            .any(|p| p.id == a.plan_id && p.entity_code == company.code)
+                    })
+                    .map(|a| a.fair_value_closing)
+                    .sum();
+                if entity_pension_plan_count > 0 {
+                    Some(sum + plan_assets_sum)
+                } else {
+                    None
+                }
+            };
+            let entity_total_plan_assets: Option<rust_decimal::Decimal> = {
+                let sum: rust_decimal::Decimal = hr
+                    .pension_plan_assets
+                    .iter()
+                    .filter(|a| {
+                        hr.pension_plans
+                            .iter()
+                            .any(|p| p.id == a.plan_id && p.entity_code == company.code)
+                    })
+                    .map(|a| a.fair_value_closing)
+                    .sum();
+                if entity_pension_plan_count > 0 { Some(sum) } else { None }
+            };
+
+            // ---- Audit data: related parties + subsequent events ----
+            // Audit snapshot covers all entities; use total counts (common case = single entity).
+            let rp_count = audit.related_party_transactions.len();
+            let se_count = audit.subsequent_events.len();
+            let adjusting_count = audit
+                .subsequent_events
+                .iter()
+                .filter(|e| {
+                    matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::Adjusting
+                    )
+                })
+                .count();
+
+            let ctx = NotesGeneratorContext {
+                entity_code: company.code.clone(),
+                framework,
+                period: format!("FY{}", fiscal_year),
+                period_end: last_period_end,
+                currency: company.currency.clone(),
+                revenue_amount,
+                total_ppe_gross: ppe_gross,
+                statutory_tax_rate: Some(rust_decimal::Decimal::new(21, 2)),
+                // Deferred tax from tax snapshot (IAS 12 / ASC 740)
+                deferred_tax_asset: entity_dta,
+                deferred_tax_liability: entity_dtl,
+                // Provisions from accounting_standards snapshot (IAS 37 / ASC 450)
+                provision_count,
+                total_provisions,
+                // Pension data from HR snapshot
+                pension_plan_count: entity_pension_plan_count,
+                total_dbo: entity_total_dbo,
+                total_plan_assets: entity_total_plan_assets,
+                // Audit data
+                related_party_transaction_count: rp_count,
+                subsequent_event_count: se_count,
+                adjusting_event_count: adjusting_count,
+                ..NotesGeneratorContext::default()
+            };
+
+            let entity_notes = notes_gen.generate(&ctx);
+            info!(
+                "Notes to FS for {}: {} notes generated (DTA={:?}, DTL={:?}, provisions={})",
+                company.code,
+                entity_notes.len(),
+                entity_dta,
+                entity_dtl,
+                provision_count,
+            );
+            financial_reporting.notes_to_financial_statements.extend(entity_notes);
+        }
     }
 
     /// Build trial balance entries by aggregating actual journal entry debits and credits per account.
