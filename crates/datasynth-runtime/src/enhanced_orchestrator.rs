@@ -4230,14 +4230,31 @@ impl EnhancedOrchestrator {
                     "SYS-AUTOCLOSE",
                 );
 
-                // Override the balance sheet line items with our pre-computed consolidated items
-                // and mark all consolidated statements accordingly
+                // Split consolidated line items by statement type.
+                // The consolidation generator returns BS items first, then IS items,
+                // identified by their CONS- prefix and category.
+                let bs_categories: &[&str] = &[
+                    "CASH",
+                    "RECEIVABLES",
+                    "INVENTORY",
+                    "FIXEDASSETS",
+                    "PAYABLES",
+                    "ACCRUEDLIABILITIES",
+                    "LONGTERMDEBT",
+                    "EQUITY",
+                ];
+                let (bs_items, is_items): (Vec<_>, Vec<_>) =
+                    cons_line_items.into_iter().partition(|li| {
+                        let upper = li.label.to_uppercase();
+                        bs_categories.iter().any(|c| upper == *c)
+                    });
+
                 for stmt in &mut cons_stmts {
                     stmt.is_consolidated = true;
-                    if stmt.statement_type == StatementType::BalanceSheet
-                        || stmt.statement_type == StatementType::IncomeStatement
-                    {
-                        stmt.line_items = cons_line_items.clone();
+                    match stmt.statement_type {
+                        StatementType::BalanceSheet => stmt.line_items = bs_items.clone(),
+                        StatementType::IncomeStatement => stmt.line_items = is_items.clone(),
+                        _ => {} // CF and equity change statements keep generator output
                     }
                 }
 
