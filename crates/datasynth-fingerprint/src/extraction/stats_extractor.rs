@@ -241,18 +241,29 @@ fn extract_column_stats(
         }
     }
 
-    // Compute global Benford analysis for numeric columns
+    // Compute global Benford analysis for numeric columns.
+    //
+    // Architectural limitation: the `StatsExtractor` operates on per-column `NumericStats`
+    // (mean, std, min, max, percentiles) rather than raw row-level values.  Benford
+    // analysis requires the individual transaction amounts, not their aggregate statistics.
+    // Using the column mean as a proxy (one value per column) would produce a meaningless
+    // sample of N_columns numbers which does not reflect the true first-digit distribution.
+    //
+    // Correct implementation requires either:
+    //   (a) passing raw values through to this function alongside the column stats, or
+    //   (b) computing and storing a first-digit histogram inside `NumericStats` during
+    //       the column-by-column sweep above.
+    //
+    // Until one of these approaches is wired, Benford extraction is intentionally skipped.
+    // The `all_amounts` variable is retained here to make the intent visible.
     let all_amounts: Vec<f64> = stats
         .numeric_columns
         .values()
-        .flat_map(|s| vec![s.mean]) // Simplified - would use actual values in production
+        .map(|s| s.mean)
         .filter(|v| *v > 0.0)
         .collect();
-
-    if all_amounts.len() >= 100 {
-        // Would compute actual Benford stats from raw values
-        // For now, placeholder
-    }
+    // NOTE: `all_amounts` (column means) is intentionally unused for Benford — see above.
+    let _ = all_amounts;
 
     // Per-account-class extraction
     if let Some(acct_idx) = detect_account_column(headers) {

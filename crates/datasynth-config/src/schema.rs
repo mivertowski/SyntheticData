@@ -12457,6 +12457,10 @@ pub struct ScenariosConfig {
     /// Default settings applied to all scenarios.
     #[serde(default)]
     pub defaults: ScenarioDefaultsConfig,
+    /// Generate counterfactual (original, mutated) JE pairs for ML training.
+    /// When true, the orchestrator produces paired clean/anomalous journal entries.
+    #[serde(default)]
+    pub generate_counterfactuals: bool,
 }
 
 /// A single scenario definition in the config.

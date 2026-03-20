@@ -107,6 +107,27 @@ impl EclGenerator {
         period_label: &str,
         framework: &str,
     ) -> EclSnapshot {
+        self.generate_with_prior(entity_code, measurement_date, bucket_exposures, config, period_label, framework, None)
+    }
+
+    /// Generate an ECL snapshot, optionally accepting the prior period's closing provision
+    /// balance to use as the opening balance for the rollforward.
+    ///
+    /// Pass `prior_closing = Some(amount)` when generating a subsequent period in a
+    /// multi-period series.  For the first period, use `None` (equivalent to zero opening).
+    ///
+    /// Note: full multi-period continuity also requires carrying forward `EclModel` state
+    /// (stage transfers, write-off history) which is a larger architectural change.
+    pub fn generate_with_prior(
+        &mut self,
+        entity_code: &str,
+        measurement_date: NaiveDate,
+        bucket_exposures: &[(AgingBucket, Decimal)],
+        config: &EclConfig,
+        period_label: &str,
+        framework: &str,
+        prior_closing: Option<Decimal>,
+    ) -> EclSnapshot {
         // ---- Step 1: compute scenario-weighted forward-looking multiplier ------
         let base_w = Decimal::try_from(config.base_scenario_weight).unwrap_or(dec!(0.50));
         let base_m = Decimal::try_from(config.base_scenario_multiplier).unwrap_or(dec!(1.0));
@@ -218,11 +239,10 @@ impl EclGenerator {
 
         let estimated_write_offs = (over90_provision * dec!(0.20)).round_dp(2);
         let recoveries = Decimal::ZERO;
-        // TODO: multi-period continuity — opening balance always starts at zero because the
-        // current single-period generation model has no prior-period state.  Proper ECL
-        // rollforward continuity requires a persistent state store shared across generation
-        // runs, which is a larger architectural change (see Fix 12 documentation).
-        let opening = Decimal::ZERO; // first period only
+        // Opening balance: use the prior period's closing provision when provided,
+        // otherwise default to zero (first period).  Full multi-period continuity
+        // (stage transfers, write-off history) requires broader architectural changes.
+        let opening = prior_closing.unwrap_or(Decimal::ZERO);
         let new_originations = total_provision;
         let stage_transfers = Decimal::ZERO;
         let closing = (opening + new_originations + stage_transfers - estimated_write_offs

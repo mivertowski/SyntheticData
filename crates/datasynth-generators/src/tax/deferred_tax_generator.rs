@@ -378,9 +378,25 @@ impl DeferredTaxGenerator {
         closing_dta: Decimal,
         closing_dtl: Decimal,
     ) -> DeferredTaxRollforward {
-        // For a first-period run opening balances are zero; movement = closing.
-        let opening_dta = Decimal::ZERO;
-        let opening_dtl = Decimal::ZERO;
+        self.build_rollforward_with_prior(entity_code, period, closing_dta, closing_dtl, None, None)
+    }
+
+    /// Build a deferred-tax rollforward, optionally accepting prior-period closing balances.
+    ///
+    /// Pass `prior_closing_dta` / `prior_closing_dtl` for subsequent periods in a
+    /// multi-period series.  Both default to zero (first period) when `None`.
+    fn build_rollforward_with_prior(
+        &mut self,
+        entity_code: &str,
+        period: &str,
+        closing_dta: Decimal,
+        closing_dtl: Decimal,
+        prior_closing_dta: Option<Decimal>,
+        prior_closing_dtl: Option<Decimal>,
+    ) -> DeferredTaxRollforward {
+        // Opening balances: use prior period values when provided, else zero (first period).
+        let opening_dta = prior_closing_dta.unwrap_or(Decimal::ZERO);
+        let opening_dtl = prior_closing_dtl.unwrap_or(Decimal::ZERO);
         let current_year_movement = (closing_dta - opening_dta) - (closing_dtl - opening_dtl);
 
         DeferredTaxRollforward {

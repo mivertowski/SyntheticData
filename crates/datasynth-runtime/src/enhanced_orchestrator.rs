@@ -413,8 +413,8 @@ impl PhaseConfig {
             generate_treasury: cfg.treasury.enabled,
             generate_project_accounting: cfg.project_accounting.enabled,
 
-            // Explicit opt-in for ML workloads
-            generate_counterfactuals: false,
+            // Opt-in for ML workloads — driven by scenarios.generate_counterfactuals config field
+            generate_counterfactuals: cfg.scenarios.generate_counterfactuals,
 
             inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
             inject_data_quality: cfg.data_quality.enabled,
@@ -2888,7 +2888,10 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.clone())
             .collect();
 
-        let mut close_jes: Vec<JournalEntry> = Vec::new();
+        // Estimate capacity: one JE per active FA + 2 JEs per company (tax + close)
+        let estimated_close_jes =
+            subledger.fa_records.len() + company_codes.len() * 2;
+        let mut close_jes: Vec<JournalEntry> = Vec::with_capacity(estimated_close_jes);
 
         // --- Depreciation JEs (per asset) ---
         // Compute period depreciation for each active fixed asset using straight-line method.
@@ -7911,9 +7914,13 @@ impl EnhancedOrchestrator {
         }
 
         stats.subledger_reconciliation_count = results.len();
+        let passed = results.iter().filter(|r| r.is_balanced()).count();
+        let failed = results.len() - passed;
         info!(
-            "Subledger reconciliation complete: {} reconciliations",
-            results.len()
+            "Subledger reconciliation: {} checks, {} passed, {} failed",
+            results.len(),
+            passed,
+            failed
         );
         self.check_resources_with_log("post-subledger-reconciliation")?;
 

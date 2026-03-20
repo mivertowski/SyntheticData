@@ -33,6 +33,21 @@ use datasynth_core::models::{JournalEntry, JournalEntryLine};
 /// cost after each receipt. Currently the initial cost is held constant for the
 /// life of the position, which over-states (or under-states) the COGS/inventory
 /// value when receipt prices fluctuate.
+///
+/// The fix requires `generate_goods_receipt` to accept a mutable `&mut InventoryPosition`
+/// instead of `&InventoryPosition` so it can write back the updated `unit_cost`:
+///
+/// ```text
+/// let old_qty = position.quantity_on_hand;
+/// let old_cost = position.valuation.unit_cost;
+/// let new_avg_cost = if old_qty + receipt_qty > Decimal::ZERO {
+///     (old_qty * old_cost + receipt_qty * receipt_unit_cost) / (old_qty + receipt_qty)
+/// } else {
+///     receipt_unit_cost
+/// };
+/// position.valuation.unit_cost = new_avg_cost.round_dp(4);
+/// position.quantity_on_hand += receipt_qty;
+/// ```
 #[derive(Debug, Clone)]
 pub struct InventoryGeneratorConfig {
     /// Default valuation method.
