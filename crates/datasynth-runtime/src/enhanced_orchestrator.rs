@@ -2017,8 +2017,14 @@ impl EnhancedOrchestrator {
         self.phase_causal_overlay(&mut stats);
 
         // Phase 17: Bank Reconciliation + Financial Statements
-        let financial_reporting =
-            self.phase_financial_reporting(&document_flows, &entries, &coa, &mut stats)?;
+        let financial_reporting = self.phase_financial_reporting(
+            &document_flows,
+            &entries,
+            &coa,
+            &hr,
+            &audit,
+            &mut stats,
+        )?;
 
         // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
         let accounting_standards =
@@ -2701,7 +2707,9 @@ impl EnhancedOrchestrator {
 
         info!("Phase 10b: Generating period-close journal entries");
 
-        use datasynth_core::accounts::{control_accounts, equity_accounts, expense_accounts, tax_accounts, AccountCategory};
+        use datasynth_core::accounts::{
+            control_accounts, equity_accounts, expense_accounts, tax_accounts, AccountCategory,
+        };
         use rust_decimal::Decimal;
 
         let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
@@ -2743,16 +2751,14 @@ impl EnhancedOrchestrator {
             if depreciable_base == Decimal::ZERO {
                 continue;
             }
-            let period_depr = (depreciable_base
-                / Decimal::from(useful_life_months)
+            let period_depr = (depreciable_base / Decimal::from(useful_life_months)
                 * Decimal::from(period_months))
             .round_dp(2);
             if period_depr <= Decimal::ZERO {
                 continue;
             }
 
-            let mut depr_header =
-                JournalEntryHeader::new(asset.company_code.clone(), close_date);
+            let mut depr_header = JournalEntryHeader::new(asset.company_code.clone(), close_date);
             depr_header.document_type = "CL".to_string();
             depr_header.header_text = Some(format!(
                 "Depreciation - {} {}",
@@ -3819,6 +3825,8 @@ impl EnhancedOrchestrator {
         document_flows: &DocumentFlowSnapshot,
         journal_entries: &[JournalEntry],
         coa: &Arc<ChartOfAccounts>,
+        hr: &HrSnapshot,
+        audit: &AuditSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<FinancialReportingSnapshot> {
         let fs_enabled = self.phase_config.generate_financial_statements
@@ -4325,6 +4333,72 @@ impl EnhancedOrchestrator {
                     _ => "US GAAP".to_string(),
                 };
 
+                // Pension data from HR snapshot (same entity)
+                let entity_pension_plan_count = hr
+                    .pension_plans
+                    .iter()
+                    .filter(|p| p.entity_code == company.code)
+                    .count();
+                let entity_total_dbo: Option<rust_decimal::Decimal> = {
+                    let sum: rust_decimal::Decimal = hr
+                        .pension_disclosures
+                        .iter()
+                        .filter(|d| {
+                            hr.pension_plans
+                                .iter()
+                                .any(|p| p.id == d.plan_id && p.entity_code == company.code)
+                        })
+                        .map(|d| d.net_pension_liability)
+                        .sum();
+                    // Also add plan assets to recover DBO (net_liability = DBO - plan_assets)
+                    let plan_assets_sum: rust_decimal::Decimal = hr
+                        .pension_plan_assets
+                        .iter()
+                        .filter(|a| {
+                            hr.pension_plans
+                                .iter()
+                                .any(|p| p.id == a.plan_id && p.entity_code == company.code)
+                        })
+                        .map(|a| a.fair_value_closing)
+                        .sum();
+                    if entity_pension_plan_count > 0 {
+                        Some(sum + plan_assets_sum)
+                    } else {
+                        None
+                    }
+                };
+                let entity_total_plan_assets: Option<rust_decimal::Decimal> = {
+                    let sum: rust_decimal::Decimal = hr
+                        .pension_plan_assets
+                        .iter()
+                        .filter(|a| {
+                            hr.pension_plans
+                                .iter()
+                                .any(|p| p.id == a.plan_id && p.entity_code == company.code)
+                        })
+                        .map(|a| a.fair_value_closing)
+                        .sum();
+                    if entity_pension_plan_count > 0 {
+                        Some(sum)
+                    } else {
+                        None
+                    }
+                };
+
+                // Audit data: related party transactions and subsequent events
+                // (audit snapshot covers all entities so filter is not possible here;
+                //  use total counts for the single-entity common case)
+                let rp_count = audit.related_party_transactions.len();
+                let se_count = audit.subsequent_events.len();
+                let adjusting_count = audit
+                    .subsequent_events
+                    .iter()
+                    .filter(|e| matches!(
+                        e.classification,
+                        datasynth_core::models::audit::subsequent_events::EventClassification::Adjusting
+                    ))
+                    .count();
+
                 let ctx = NotesGeneratorContext {
                     entity_code: company.code.clone(),
                     framework,
@@ -4334,6 +4408,14 @@ impl EnhancedOrchestrator {
                     revenue_amount,
                     total_ppe_gross: ppe_gross,
                     statutory_tax_rate: Some(rust_decimal::Decimal::new(21, 2)),
+                    // Pension data from HR snapshot
+                    pension_plan_count: entity_pension_plan_count,
+                    total_dbo: entity_total_dbo,
+                    total_plan_assets: entity_total_plan_assets,
+                    // Audit data
+                    related_party_transaction_count: rp_count,
+                    subsequent_event_count: se_count,
+                    adjusting_event_count: adjusting_count,
                     ..NotesGeneratorContext::default()
                 };
 
@@ -4996,6 +5078,43 @@ impl EnhancedOrchestrator {
             let reporting_date =
                 start_date + chrono::Months::new(period_months) - chrono::Days::new(1);
 
+            // Compute average annual salary from actual payroll data when available.
+            // PayrollRun.total_gross covers all employees for one pay period; we sum
+            // across all runs and divide by employee_count to get per-employee total,
+            // then annualise for sub-annual periods.
+            let avg_salary: Option<rust_decimal::Decimal> = {
+                let employee_count = employee_ids.len();
+                if self.config.hr.payroll.enabled
+                    && employee_count > 0
+                    && !snapshot.payroll_runs.is_empty()
+                {
+                    // Sum total gross pay across all payroll runs for this company
+                    let total_gross: rust_decimal::Decimal = snapshot
+                        .payroll_runs
+                        .iter()
+                        .filter(|r| r.company_code == company_code)
+                        .map(|r| r.total_gross)
+                        .sum();
+                    if total_gross > rust_decimal::Decimal::ZERO {
+                        // Annualise: total_gross covers `period_months` months of pay
+                        let annual_total = if period_months > 0 && period_months < 12 {
+                            total_gross * rust_decimal::Decimal::from(12u32)
+                                / rust_decimal::Decimal::from(period_months)
+                        } else {
+                            total_gross
+                        };
+                        Some(
+                            (annual_total / rust_decimal::Decimal::from(employee_count))
+                                .round_dp(2),
+                        )
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
             let mut pension_gen =
                 datasynth_generators::PensionGenerator::new(seed.wrapping_add(34));
             let pension_snap = pension_gen.generate(
@@ -5005,6 +5124,8 @@ impl EnhancedOrchestrator {
                 reporting_date,
                 employee_ids.len(),
                 currency,
+                avg_salary,
+                period_months,
             );
             snapshot.pension_plan_count = pension_snap.plans.len();
             snapshot.pension_plans = pension_snap.plans;
@@ -9292,7 +9413,9 @@ impl EnhancedOrchestrator {
         // ISA 570: Going concern assessments
         // ----------------------------------------------------------------
         {
-            use datasynth_generators::audit::going_concern_generator::GoingConcernGenerator;
+            use datasynth_generators::audit::going_concern_generator::{
+                GoingConcernGenerator, GoingConcernInput,
+            };
             let mut gc_gen = GoingConcernGenerator::new(self.seed + 8570);
             let entity_codes: Vec<String> = self
                 .config
@@ -9303,8 +9426,89 @@ impl EnhancedOrchestrator {
             // Assessment date = period end + 75 days (typical sign-off window).
             let assessment_date = period_end + chrono::Duration::days(75);
             let period_label = format!("FY{}", period_end.year());
-            let assessments =
-                gc_gen.generate_for_entities(&entity_codes, assessment_date, &period_label);
+
+            // Build financial inputs from actual journal entries.
+            //
+            // We derive approximate P&L, working capital, and operating cash flow
+            // by aggregating GL account balances from the journal entry population.
+            // Account ranges used (standard chart):
+            //   Revenue:         4xxx (credit-normal → negate for positive revenue)
+            //   Expenses:        6xxx (debit-normal)
+            //   Current assets:  1xxx (AR=1100, cash=1000, inventory=1300)
+            //   Current liabs:   2xxx up to 2499 (AP=2000, accruals=2100)
+            //   Operating CF:    net income adjusted for D&A (rough proxy)
+            let gc_inputs: Vec<GoingConcernInput> = self
+                .config
+                .companies
+                .iter()
+                .map(|company| {
+                    let code = &company.code;
+                    let mut revenue = rust_decimal::Decimal::ZERO;
+                    let mut expenses = rust_decimal::Decimal::ZERO;
+                    let mut current_assets = rust_decimal::Decimal::ZERO;
+                    let mut current_liabs = rust_decimal::Decimal::ZERO;
+                    let mut total_debt = rust_decimal::Decimal::ZERO;
+
+                    for je in entries.iter().filter(|je| &je.header.company_code == code) {
+                        for line in &je.lines {
+                            let acct = line.gl_account.as_str();
+                            let net = line.debit_amount - line.credit_amount;
+                            if acct.starts_with('4') {
+                                // Revenue accounts: credit-normal, so negative net = revenue earned
+                                revenue -= net;
+                            } else if acct.starts_with('6') {
+                                // Expense accounts: debit-normal
+                                expenses += net;
+                            }
+                            // Balance sheet accounts for working capital
+                            if acct.starts_with('1') {
+                                // Current asset accounts (1000–1499)
+                                if let Ok(n) = acct.parse::<u32>() {
+                                    if (1000..=1499).contains(&n) {
+                                        current_assets += net;
+                                    }
+                                }
+                            } else if acct.starts_with('2') {
+                                if let Ok(n) = acct.parse::<u32>() {
+                                    if (2000..=2499).contains(&n) {
+                                        // Current liabilities
+                                        current_liabs -= net; // credit-normal
+                                    } else if (2500..=2999).contains(&n) {
+                                        // Long-term debt
+                                        total_debt -= net;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    let net_income = revenue - expenses;
+                    let working_capital = current_assets - current_liabs;
+                    // Rough operating CF proxy: net income (full accrual CF calculation
+                    // is done separately in the cash flow statement generator)
+                    let operating_cash_flow = net_income;
+
+                    GoingConcernInput {
+                        entity_code: code.clone(),
+                        net_income,
+                        working_capital,
+                        operating_cash_flow,
+                        total_debt: total_debt.max(rust_decimal::Decimal::ZERO),
+                        assessment_date,
+                    }
+                })
+                .collect();
+
+            let assessments = if gc_inputs.is_empty() {
+                gc_gen.generate_for_entities(&entity_codes, assessment_date, &period_label)
+            } else {
+                gc_gen.generate_for_entities_with_inputs(
+                    &entity_codes,
+                    &gc_inputs,
+                    assessment_date,
+                    &period_label,
+                )
+            };
             info!(
                 "ISA 570 going concern: {} assessments ({} clean, {} material uncertainty, {} doubt)",
                 assessments.len(),

@@ -18,6 +18,7 @@ use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -40,6 +41,30 @@ impl Default for GoingConcernGeneratorConfig {
             mild_probability: 0.08,
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Financial input for data-driven assessments
+// ---------------------------------------------------------------------------
+
+/// Financial metrics derived from actual generated data, used to derive
+/// going concern indicators from real financials rather than random draws.
+///
+/// All amounts are in the entity's reporting currency.
+#[derive(Debug, Clone)]
+pub struct GoingConcernInput {
+    /// Entity code being assessed.
+    pub entity_code: String,
+    /// Net income / (loss) for the period (negative = loss).
+    pub net_income: Decimal,
+    /// Working capital = current assets − current liabilities (negative = deficiency).
+    pub working_capital: Decimal,
+    /// Net cash from operating activities (negative = outflow).
+    pub operating_cash_flow: Decimal,
+    /// Total financial debt outstanding.
+    pub total_debt: Decimal,
+    /// Date the assessment is finalised.
+    pub assessment_date: NaiveDate,
 }
 
 // ---------------------------------------------------------------------------
@@ -126,9 +151,169 @@ impl GoingConcernGenerator {
             .collect()
     }
 
+    /// Generate a going concern assessment driven by actual financial data.
+    ///
+    /// Financial indicators (recurring losses, negative working capital, negative
+    /// operating cash flow) are determined from the supplied [`GoingConcernInput`].
+    /// Non-financial indicators (litigation, regulatory action, etc.) retain the
+    /// random element since they cannot be inferred from journal entries alone.
+    ///
+    /// # Indicator mapping
+    /// - `net_income < 0`          → [`GoingConcernIndicatorType::RecurringOperatingLosses`]
+    /// - `working_capital < 0`     → [`GoingConcernIndicatorType::WorkingCapitalDeficiency`]
+    /// - `operating_cash_flow < 0` → [`GoingConcernIndicatorType::NegativeOperatingCashFlow`]
+    ///
+    /// # Conclusion
+    /// 0 indicators → `NoMaterialUncertainty`, 1–2 → `MaterialUncertaintyExists`,
+    /// 3+ → `GoingConcernDoubt` (same rule as [`generate_for_entity`]).
+    pub fn generate_for_entity_with_input(
+        &mut self,
+        input: &GoingConcernInput,
+        period: &str,
+    ) -> GoingConcernAssessment {
+        let entity_code = input.entity_code.as_str();
+        let mut indicators: Vec<GoingConcernIndicator> = Vec::new();
+
+        // ---- Financial indicators derived from actual data --------------------
+
+        if input.net_income < Decimal::ZERO {
+            let loss = input.net_income.abs();
+            let threshold = loss * dec!(1.50);
+            indicators.push(GoingConcernIndicator {
+                indicator_type: GoingConcernIndicatorType::RecurringOperatingLosses,
+                severity: if loss > Decimal::from(1_000_000i64) {
+                    GoingConcernSeverity::High
+                } else if loss > Decimal::from(100_000i64) {
+                    GoingConcernSeverity::Medium
+                } else {
+                    GoingConcernSeverity::Low
+                },
+                description: self.describe_indicator(
+                    GoingConcernIndicatorType::RecurringOperatingLosses,
+                    entity_code,
+                ),
+                quantitative_measure: Some(loss),
+                threshold: Some(threshold),
+            });
+        }
+
+        if input.working_capital < Decimal::ZERO {
+            let deficit = input.working_capital.abs();
+            indicators.push(GoingConcernIndicator {
+                indicator_type: GoingConcernIndicatorType::WorkingCapitalDeficiency,
+                severity: if deficit > Decimal::from(5_000_000i64) {
+                    GoingConcernSeverity::High
+                } else if deficit > Decimal::from(500_000i64) {
+                    GoingConcernSeverity::Medium
+                } else {
+                    GoingConcernSeverity::Low
+                },
+                description: self.describe_indicator(
+                    GoingConcernIndicatorType::WorkingCapitalDeficiency,
+                    entity_code,
+                ),
+                quantitative_measure: Some(deficit),
+                threshold: Some(Decimal::ZERO),
+            });
+        }
+
+        if input.operating_cash_flow < Decimal::ZERO {
+            let outflow = input.operating_cash_flow.abs();
+            indicators.push(GoingConcernIndicator {
+                indicator_type: GoingConcernIndicatorType::NegativeOperatingCashFlow,
+                severity: if outflow > Decimal::from(2_000_000i64) {
+                    GoingConcernSeverity::High
+                } else if outflow > Decimal::from(200_000i64) {
+                    GoingConcernSeverity::Medium
+                } else {
+                    GoingConcernSeverity::Low
+                },
+                description: self.describe_indicator(
+                    GoingConcernIndicatorType::NegativeOperatingCashFlow,
+                    entity_code,
+                ),
+                quantitative_measure: Some(outflow),
+                threshold: Some(Decimal::ZERO),
+            });
+        }
+
+        // ---- Random non-financial indicators (litigation, regulatory, etc.) --
+        // Only add if the financial indicators haven't already pushed us into
+        // going-concern doubt territory, to keep the realistic distribution.
+        if indicators.len() < 3 {
+            let roll: f64 = self.rng.random();
+            // ~5% chance of a random non-financial indicator when finances are OK
+            if roll < 0.05 {
+                let extra = self.random_non_financial_indicator(entity_code);
+                indicators.push(extra);
+            }
+        }
+
+        let management_plans = if indicators.is_empty() {
+            Vec::new()
+        } else {
+            self.management_plans(indicators.len())
+        };
+
+        GoingConcernAssessment {
+            entity_code: entity_code.to_string(),
+            assessment_date: input.assessment_date,
+            assessment_period: period.to_string(),
+            indicators,
+            management_plans,
+            auditor_conclusion: Default::default(),
+            material_uncertainty_exists: false,
+        }
+        .conclude_from_indicators()
+    }
+
+    /// Generate assessments for multiple entities using financial data inputs.
+    ///
+    /// Entities without a corresponding input fall back to random behaviour.
+    pub fn generate_for_entities_with_inputs(
+        &mut self,
+        entity_codes: &[String],
+        inputs: &[GoingConcernInput],
+        assessment_date: NaiveDate,
+        period: &str,
+    ) -> Vec<GoingConcernAssessment> {
+        entity_codes
+            .iter()
+            .map(|code| {
+                if let Some(input) = inputs.iter().find(|i| &i.entity_code == code) {
+                    self.generate_for_entity_with_input(input, period)
+                } else {
+                    self.generate_for_entity(code, assessment_date, period)
+                }
+            })
+            .collect()
+    }
+
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+
+    /// Generate a random non-financial indicator (litigation, regulatory, etc.).
+    fn random_non_financial_indicator(&mut self, entity_code: &str) -> GoingConcernIndicator {
+        // Only pick from non-financial types
+        let indicator_type = match self.rng.random_range(0u8..5) {
+            0 => GoingConcernIndicatorType::DebtCovenantBreach,
+            1 => GoingConcernIndicatorType::LossOfKeyCustomer,
+            2 => GoingConcernIndicatorType::RegulatoryAction,
+            3 => GoingConcernIndicatorType::LitigationExposure,
+            _ => GoingConcernIndicatorType::InabilityToObtainFinancing,
+        };
+        let severity = self.random_severity();
+        let description = self.describe_indicator(indicator_type, entity_code);
+        let (measure, threshold) = self.quantitative_measures(indicator_type);
+        GoingConcernIndicator {
+            indicator_type,
+            severity,
+            description,
+            quantitative_measure: Some(measure),
+            threshold: Some(threshold),
+        }
+    }
 
     fn random_indicator(&mut self, entity_code: &str) -> GoingConcernIndicator {
         let indicator_type = self.random_indicator_type();

@@ -7,7 +7,7 @@
 //! # Generation logic
 //!
 //! 1. **Plan** — one plan per entity; participant count scales with the number
-//!    of employees (clamped to 50–500).
+//!    of employees (clamped to 1–500).
 //! 2. **Actuarial assumptions** — randomised per plan within standard ranges:
 //!    - Discount rate: 3%–5%
 //!    - Salary growth: 2%–4%
@@ -101,6 +101,10 @@ impl PensionGenerator {
     /// - `reporting_date`   : balance-sheet date
     /// - `employee_count`   : number of employees (used to calibrate participant count)
     /// - `currency`         : reporting currency code
+    /// - `avg_salary`       : optional average annual salary from actual payroll data;
+    ///                        falls back to $50 000 when `None`
+    /// - `period_months`    : number of months in the reporting period (used to prorate
+    ///                        annual pension expense; defaults to 12 when 0)
     pub fn generate(
         &mut self,
         entity_code: &str,
@@ -109,11 +113,13 @@ impl PensionGenerator {
         reporting_date: NaiveDate,
         employee_count: usize,
         currency: &str,
+        avg_salary: Option<Decimal>,
+        period_months: u32,
     ) -> PensionSnapshot {
         let plan_id = format!("PLAN-{entity_code}-DB");
 
-        // ---- 1. Participant count (50–500, capped at employee_count) ----------
-        let participant_count = (employee_count.clamp(50, 500)) as u32;
+        // ---- 1. Participant count (1–500, realistic for any company size) ------
+        let participant_count = (employee_count.clamp(1, 500)) as u32;
 
         // ---- 2. Actuarial assumptions -----------------------------------------
         let discount_rate = self.rand_rate(dec!(0.03), dec!(0.05));
@@ -140,8 +146,9 @@ impl PensionGenerator {
 
         // ---- 3. DBO roll-forward -----------------------------------------------
         // Opening DBO: participant_count × avg_annual_salary × avg_service_years
-        // avg_annual_salary ~ 50 000, avg_service_years ~ 15
-        let avg_annual_salary = dec!(50000);
+        // avg_annual_salary: use actual payroll data when available, else $50 000
+        // avg_service_years ~ 15
+        let avg_annual_salary = avg_salary.unwrap_or(dec!(50000));
         let avg_service_years = dec!(15);
         let dbo_opening = Decimal::from(participant_count) * avg_annual_salary * avg_service_years;
 
@@ -212,7 +219,20 @@ impl PensionGenerator {
 
         // ---- 5. Pension disclosure --------------------------------------------
         let net_pension_liability = (dbo_closing - fair_value_closing).round_dp(2);
-        let pension_expense = (service_cost + interest_cost - expected_return).round_dp(2);
+        // Prorate annual pension expense for sub-annual periods.
+        // period_months == 0 is treated as a full year (12 months).
+        let effective_months = if period_months == 0 {
+            12
+        } else {
+            period_months.min(12)
+        };
+        let annual_pension_expense = (service_cost + interest_cost - expected_return).round_dp(2);
+        let pension_expense = if effective_months < 12 {
+            (annual_pension_expense * Decimal::from(effective_months) / Decimal::from(12u32))
+                .round_dp(2)
+        } else {
+            annual_pension_expense
+        };
         // OCI = obligation actuarial G/L + asset actuarial G/L (with sign flip for assets)
         let oci_remeasurements = (actuarial_gains_losses - actuarial_gain_loss_assets).round_dp(2);
         let funding_ratio = if dbo_closing.is_zero() {
@@ -255,6 +275,7 @@ impl PensionGenerator {
 
         debug!(
             "Pension generated: entity={entity_code}, participants={participant_count}, \
+             avg_salary={avg_annual_salary}, period_months={effective_months}/12, \
              DBO closing={dbo_closing}, assets closing={fair_value_closing}, \
              net_liability={net_pension_liability}, expense={pension_expense}"
         );
