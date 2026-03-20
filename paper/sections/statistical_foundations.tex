@@ -3,70 +3,62 @@
 \label{sec:statistical_foundations}
 
 This section formalizes the statistical machinery underlying \system{}'s
-data generation.  We cover Benford-compliant amount sampling, copula-based
-dependency modeling, mixture distributions, and temporal dynamics.
+data generation---the \emph{statistical knowledge layer}
+($\mathcal{K}_\Sigma$) of the reference knowledge graph.  We cover
+Benford-compliant amount sampling, copula-based dependency modeling,
+mixture distributions, and temporal dynamics.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Benford's Law Compliance}
 \label{sec:stat_benford}
 
 Benford's law~\citep{benford1938law,nigrini2012benfords} states that the
-leading digit $d \in \{1, \ldots, 9\}$ of naturally occurring numerical data
-follows the distribution:
+leading digit $d \in \{1, \ldots, 9\}$ of naturally occurring numerical
+data follows the distribution:
 
 \begin{equation}
 P(D_1 = d) = \log_{10}\!\left(1 + \frac{1}{d}\right).
 \label{eq:benford_first}
 \end{equation}
 
-The generalization to the first two digits $d_1 d_2 \in \{10, \ldots, 99\}$
-is:
+The generalization to the first two digits
+$d_1 d_2 \in \{10, \ldots, 99\}$ is:
 
 \begin{equation}
 P(D_{12} = d_1 d_2) = \log_{10}\!\left(1 + \frac{1}{d_1 \cdot 10 + d_2}\right).
 \label{eq:benford_two}
 \end{equation}
 
-\system{} implements three Benford-aware samplers:
+Benford compliance is a critical property of the statistical knowledge
+layer: real enterprise data consistently follows this law, and
+violations are a well-established indicator of
+manipulation~\citep{nigrini2012benfords}.  \system{} implements three
+Benford-aware samplers:
 
 \paragraph{BenfordSampler.}
-Uses CDF-based inverse-transform sampling over the first-digit probabilities.
-Given a pre-computed CDF vector
-$F = [0.30103, 0.47712, 0.60206, \ldots, 1.0]$,
-a uniform draw $u \sim \mathcal{U}(0,1)$ is mapped to digit $d$ via binary
-search: $d = \min\{k : F[k] \geq u\}$.  The magnitude (order of magnitude)
-is sampled adaptively from a configured range, and trailing digits are drawn
-uniformly.
+Uses CDF-based inverse-transform sampling over the first-digit
+probabilities.  Given a pre-computed CDF vector
+$F = [0.30103, 0.47712, 0.60206, \ldots, 1.0]$, a uniform draw
+$u \sim \mathcal{U}(0,1)$ is mapped to digit $d$ via binary search.
 
 \paragraph{EnhancedBenfordSampler.}
 Extends first-digit sampling to the first-two-digit distribution
-(\Cref{eq:benford_two}), providing finer-grained statistical fidelity.  This
-is critical for passing second-digit tests commonly used in forensic
-accounting~\citep{nigrini2012benfords}.
+(\Cref{eq:benford_two}), critical for passing second-digit tests used
+in forensic accounting.
 
 \paragraph{BenfordDeviationSampler.}
-Generates amounts that \emph{intentionally violate} Benford's law for anomaly
-injection.  Five deviation modes are supported:
-
-\begin{itemize}
-  \item \textbf{RoundNumberBias}: Over-represents amounts ending in multiples
-    of powers of ten (e.g., \$1{,}000, \$5{,}000).
-  \item \textbf{ThresholdClustering}: Concentrates amounts just below
-    approval thresholds (e.g., \$4{,}999 for a \$5{,}000 limit).
-  \item \textbf{UniformFirstDigit}: Replaces Benford with $\mathcal{U}\{1,9\}$.
-  \item \textbf{DigitBias}: Over-weights specific digits (anti-Benford
-    probabilities emphasize 5, 7, 9).
-  \item \textbf{TrailingZeros}: Forces amounts to have zero trailing digits.
-\end{itemize}
+Generates amounts that \emph{intentionally violate} Benford's law for
+anomaly injection.  Five deviation modes: RoundNumberBias,
+ThresholdClustering, UniformFirstDigit, DigitBias, and TrailingZeros.
 
 \begin{proposition}[MAD bound]
 \label{prop:mad}
-Let $\hat{p}_d$ denote the empirical first-digit frequency from $n$ samples
-of the BenfordSampler.  The mean absolute deviation
-$\MAD = \frac{1}{9}\sum_{d=1}^{9}|\hat{p}_d - p_d|$
-satisfies $\E[\MAD] \leq \frac{1}{9}\sqrt{\frac{\pi}{2n}}$ for large $n$,
-ensuring convergence to ``close conformity'' (MAD~$< 0.006$) as classified
-by~\citet{nigrini2012benfords} for $n \gtrsim 7{,}000$.
+Let $\hat{p}_d$ denote the empirical first-digit frequency from $n$
+samples of the BenfordSampler.  The mean absolute deviation
+$\MAD = \frac{1}{9}\sum_{d=1}^{9}|\hat{p}_d - p_d|$ satisfies
+$\E[\MAD] \leq \frac{1}{9}\sqrt{\frac{\pi}{2n}}$ for large $n$,
+ensuring convergence to ``close conformity''
+(MAD~$< 0.006$)~\citep{nigrini2012benfords} for $n \gtrsim 7{,}000$.
 \end{proposition}
 
 % ─────────────────────────────────────────────────────────────────────
@@ -76,7 +68,8 @@ by~\citet{nigrini2012benfords} for $n \gtrsim 7{,}000$.
 Real accounting data exhibits complex dependencies: transaction amounts
 correlate with line-item counts, approval levels depend on amounts, and
 payment timing relates to invoice size.  \system{} separates marginal
-distributions from dependency structure using copulas~\citep{nelsen2006introduction}.
+distributions from dependency structure using
+copulas~\citep{nelsen2006introduction}.
 
 \begin{definition}[Copula]
 A $d$-dimensional copula $C : [0,1]^d \to [0,1]$ is a joint CDF with
@@ -85,38 +78,7 @@ marginals $F_1, \ldots, F_d$ can be written as
 $H(x_1, \ldots, x_d) = C(F_1(x_1), \ldots, F_d(x_d))$.
 \end{definition}
 
-\system{} implements five copula families, each capturing different tail
-dependency patterns relevant to financial data:
-
-\paragraph{1. Gaussian Copula.}
-Parameterized by correlation matrix $\bm{\Sigma}$.  No tail dependence;
-symmetric.  Generated via Cholesky decomposition $\bm{L}\bm{L}^\top = \bm{\Sigma}$
-applied to independent standard normals: $\bm{z} = \bm{L}\bm{w}$,
-$\bm{w} \sim \mathcal{N}(\bm{0}, \bm{I})$.  Kendall's tau:
-$\tau = \frac{2}{\pi}\arcsin(\rho)$.
-
-\paragraph{2. Clayton Copula.}
-$C_\theta(u,v) = (u^{-\theta} + v^{-\theta} - 1)^{-1/\theta}$, $\theta > 0$.
-Exhibits \emph{lower tail dependence}, suitable for modeling joint
-distress scenarios (e.g., correlated payment defaults).  Kendall's tau:
-$\tau = \theta / (\theta + 2)$.  Sampling uses the conditional method.
-
-\paragraph{3. Gumbel Copula.}
-$C_\theta(u,v) = \exp\!\big({-}[(-\ln u)^\theta + (-\ln v)^\theta]^{1/\theta}\big)$,
-$\theta \geq 1$.
-Exhibits \emph{upper tail dependence}, appropriate for correlated high-value
-transactions.  Uses the Marshall-Olkin algorithm with a positive stable
-distribution.  $\tau = 1 - 1/\theta$.
-
-\paragraph{4. Frank Copula.}
-$C_\theta(u,v) = -\frac{1}{\theta}\ln\!\left(1 + \frac{(e^{-\theta u}-1)(e^{-\theta v}-1)}{e^{-\theta}-1}\right)$.
-No tail dependence; symmetric.  Sampling via conditional distribution inversion.
-Kendall's tau involves the Debye function $D_1$.
-
-\paragraph{5. Student-$t$ Copula.}
-Parameterized by correlation $\rho$ and degrees of freedom $\nu$.  Exhibits
-\emph{symmetric tail dependence}, capturing joint extreme events.  Generated
-via $\bm{z} = \bm{L}\bm{w}/\sqrt{S/\nu}$ where $S \sim \chi^2_\nu$.
+\system{} implements five copula families:
 
 \begin{table}[t]
 \centering
@@ -137,12 +99,17 @@ Student-$t$ & Yes  & Yes  & Joint tail events \\
 \end{tabular}
 \end{table}
 
+Sampling algorithms: Gaussian via Cholesky decomposition, Clayton via
+conditional method, Gumbel via Marshall-Olkin with positive stable
+distribution, Frank via conditional inversion, Student-$t$ via
+chi-squared mixing (see \Cref{app:copula_algorithms}).
+
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Mixture Distributions for Transaction Amounts}
 \label{sec:stat_mixture}
 
-Enterprise transaction amounts naturally cluster into distinct regimes
-(routine, significant, major).  \system{} models this via $K$-component
+Enterprise transaction amounts cluster into distinct regimes (routine,
+significant, major).  \system{} models this via $K$-component
 log-normal mixtures:
 
 \begin{equation}
@@ -168,27 +135,27 @@ Major       & 0.10 & 11.0 & 0.8 & \$89{,}352 \\
 \end{tabular}
 \end{center}
 
-Component selection uses pre-computed cumulative weights with $O(\log K)$
-binary search.  Gaussian mixtures are also supported for fields with
-real-valued (possibly negative) domains such as foreign-exchange translation
-adjustments.
+Additional distribution families include Gaussian mixtures (for
+real-valued domains such as FX adjustments), Pareto (heavy tails),
+Weibull (time-to-event), Beta (proportions), and zero-inflated models.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Temporal Dynamics}
 \label{sec:stat_temporal}
 
-Financial data exhibits rich temporal structure that must be faithfully
-reproduced.
+Financial data exhibits rich temporal structure that forms part of the
+statistical knowledge layer.
 
 \paragraph{Business-day calendars.}
-\system{} implements holiday calendars for 11 regions (US, DE, GB, CN, JP,
-IN, BR, MX, AU, SG, KR) with configurable half-day policies, month-end
-conventions (modified following, preceding, end-of-month), and T+$N$
-settlement rules.
+\system{} implements holiday calendars for 15 regions (US, DE, GB, FR,
+IT, ES, CA, CN, JP, IN, BR, MX, AU, SG, KR) with configurable half-day
+policies, month-end conventions (modified following, preceding,
+end-of-month), and T+$N$ settlement rules for equities (T+2), government
+bonds (T+1), and FX spot (T+2).
 
 \paragraph{Period-end dynamics.}
-Transaction volumes spike near period ends.  We model this with configurable
-decay curves:
+Transaction volumes spike near period ends.  We model this with
+configurable decay curves:
 
 \begin{equation}
 \lambda(t) = \lambda_0 \cdot
@@ -199,20 +166,21 @@ decay curves:
 \label{eq:period_end}
 \end{equation}
 
-where $T$ is the period-end date, $m_{\text{peak}}$ is the peak multiplier
-(typically 3.5$\times$ for month-end, 6.0$\times$ for year-end), and
-$\alpha, \beta$ are decay parameters.
+where $T$ is the period-end date, $m_{\text{peak}}$ is the peak
+multiplier (typically 3.5$\times$ for month-end, 6.0$\times$ for
+year-end), and $\alpha, \beta$ are decay parameters.
 
 \paragraph{Processing lags.}
-Real posting dates lag event dates.  \system{} models this with log-normal
-lag distributions per event type (e.g., goods receipt lag:
-$\mu=1.5$~days, $\sigma=0.5$~days) and a cross-day posting model where the
-probability of next-day posting increases with hour of origination.
+Real posting dates lag event dates.  \system{} models this with
+log-normal lag distributions per event type and a cross-day posting
+model where the probability of next-day posting increases with hour
+of origination.
 
 \paragraph{Intraday patterns.}
-Within each business day, transaction intensity follows configurable segments:
-morning spike ($1.8\times$ at 08:30--10:00), lunch dip ($0.4\times$ at
-12:00--13:30), and end-of-day rush ($1.5\times$ at 16:00--17:30).
+Within each business day, transaction intensity follows configurable
+segments: morning spike ($1.8\times$ at 08:30--10:00), lunch dip
+($0.4\times$ at 12:00--13:30), and end-of-day rush ($1.5\times$ at
+16:00--17:30).
 
 \paragraph{Economic cycles and drift.}
 Long-horizon datasets incorporate regime changes via:
@@ -225,72 +193,15 @@ Long-horizon datasets incorporate regime changes via:
 \end{equation}
 
 where $P$ is the cycle period (default 48~months), $A$ is the amplitude
-(0.15), and $d_r$ is the recession depth (0.25).  Regime switches are
-modeled as Markov transitions with configurable probabilities.
+(0.15), and $d_r$ is the recession depth (0.25).
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Causal Transfer Functions}
 \label{sec:stat_transfer_functions}
 
 The counterfactual simulation engine (\Cref{sec:counterfactual}) models
-inter-process dependencies via a causal DAG whose edges carry typed
-transfer functions.  This subsection catalogs the eight function types
-in the family $\mathcal{T}$, together with their mathematical forms and
-the financial modeling contexts in which each is most appropriate.
-
-\begin{enumerate}
-  \item \textbf{Linear} ($f(x) = \alpha x + \beta$).  Models
-    proportional relationships where the effect scales linearly with the
-    cause---for example, a percentage change in transaction volume
-    producing a proportional change in staffing requirements.
-
-  \item \textbf{Exponential} ($f(x) = \alpha \exp(\beta x)$).
-    Captures compounding or accelerating effects, such as the
-    exponential growth of fraud losses when control effectiveness
-    degrades.
-
-  \item \textbf{Logistic}
-    ($f(x) = L / (1 + \exp(-k(x - x_0)))$).  Encodes
-    saturating positive effects with a carrying capacity $L$.  Used
-    where an upstream improvement yields diminishing returns beyond a
-    threshold---e.g., increasing IT investment eventually saturates
-    automation rate.
-
-  \item \textbf{Inverse Logistic}
-    ($f(x) = L \cdot (1 - 1/(1 + \exp(-k(x - x_0))))$).  The
-    complement of the logistic, modeling diminishing effectiveness as a
-    variable increases.  Appropriate for the relationship between
-    regulatory burden and operating margin, where additional compliance
-    costs exhibit decreasing marginal impact.
-
-  \item \textbf{Step} ($f(x) = \alpha \cdot \mathbf{1}[x > t]$).
-    A discontinuous regime switch that activates at threshold $t$.
-    Models abrupt transitions such as a control bypass triggered when
-    staffing drops below a critical level.
-
-  \item \textbf{Threshold}
-    ($f(x) = \alpha \cdot \max(0, x - t)$).  A soft-activation
-    function that remains zero below threshold $t$ and grows linearly
-    above it.  Suitable for modeling effects that emerge only after a
-    minimum trigger level, such as audit scope expansion once
-    misstatement risk exceeds a materiality threshold.
-
-  \item \textbf{Decay} ($f(x; t) = \alpha \exp(-\lambda t)$).
-    Exponential decay over time, independent of the input magnitude.
-    Used to model transient shocks that dissipate---e.g., a one-time
-    macroeconomic event whose effect on transaction volume fades over
-    subsequent periods.
-
-  \item \textbf{Piecewise} ($f(x) = f_i(x)$ for $x \in [b_{i-1}, b_i)$).
-    A partition of the input domain into segments, each with its own
-    linear interpolant.  Provides maximum flexibility for encoding
-    empirically observed, non-parametric relationships---for instance,
-    mapping GDP growth to revenue growth using historical data points
-    without assuming a functional form.
-\end{enumerate}
-
-\noindent All transfer functions are composed with an edge weight
-$w_e \in [0,1]$ that scales the output, and the propagated result is
-clamped to the target node's domain bounds to ensure physical
-plausibility.  The full causal propagation algorithm and the DAG
-structure are detailed in \Cref{sec:counterfactual}.
+inter-process dependencies via a causal DAG whose edges carry eight
+typed transfer functions: Linear, Exponential, Logistic, Inverse
+Logistic, Step, Threshold, Decay, and Piecewise.  All transfer functions
+compose with an edge weight $w_e \in [0,1]$ and are clamped to target
+node domain bounds.  Full details are in \Cref{sec:counterfactual}.

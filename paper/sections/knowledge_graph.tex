@@ -1,0 +1,234 @@
+% sections/knowledge_graph.tex — Reference Knowledge Graph Construction
+\section{Reference Knowledge Graph Construction}
+\label{sec:knowledge_graph}
+
+This section describes how \system{} constructs reference knowledge
+graphs from the generated enterprise data, encoding all three knowledge
+layers (\Cref{def:three_layers}) into graph structures suitable for
+GNN-based audit analytics.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Graph-Theoretic Foundation}
+\label{sec:kg_foundation}
+
+Double-entry bookkeeping has a natural directed-graph
+representation~\citep{ijiri1965generalized}: each distinct GL account
+forms a node, credit entries produce outgoing edges, and debit entries
+produce incoming edges.  Following~\citet{ivertowski2024hardware}, we
+adopt a temporal formulation:
+\begin{equation}
+G(t_0, t_1) = A(t_0, t_1) \times E(t_0, t_1)
+\label{eq:temporal_graph}
+\end{equation}
+where $A(t_0,t_1)$ is the set of account nodes with monetary state over
+$[t_0, t_1]$, and each edge $E_i(t_0,t_1) = \sum_{n=1}^{|\Omega_{A_i}|}
+\omega_n$ aggregates all transactions $\omega_n$ affecting node $A_i$
+in that period.  This temporal definition enables system-theoretic
+analyses such as cross-correlation and auto-correlation on account flows.
+
+Unlike accounting networks constructed from real data via inverse
+recovery (\Cref{sec:gt_inverse}), \system{}'s graphs are generated
+\emph{forward}: every edge has known provenance, eliminating the
+combinatorial matching ambiguity of \Cref{thm:combinatorial}.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Entity Type Coverage}
+\label{sec:kg_entities}
+
+The reference knowledge graph encompasses 78+ entity types across
+the full enterprise data stack, organized by domain:
+
+\begin{table}[t]
+\centering
+\caption{Entity type coverage in the reference knowledge graph,
+  organized by enterprise domain.}
+\label{tab:entity_types}
+\small
+\begin{tabular}{lcp{8cm}}
+\toprule
+\textbf{Domain} & \textbf{Types} & \textbf{Representative Entities} \\
+\midrule
+Accounting & 6 & JournalEntry, ChartOfAccounts, ACDOCA,
+  AccountBalance, TrialBalance, FiscalPeriod \\
+Master Data & 6 & Vendor, Customer, Material, FixedAsset,
+  Employee, EntityRegistry \\
+Document Flow & 10 & PurchaseOrder, GoodsReceipt, VendorInvoice,
+  Payment, SalesOrder, Delivery, CustomerInvoice,
+  CustomerReceipt \\
+Sourcing (S2C) & 9 & SourcingProject, RfxEvent, SupplierBid,
+  ProcurementContract, CatalogItem, SupplierScorecard \\
+Financial Reporting & 6 & FinancialStatement, ManagementKpi,
+  Budget, ConsolidationSchedule, OperatingSegment \\
+HR/Payroll & 6 & PayrollRun, TimeEntry, ExpenseReport,
+  BenefitEnrollment, DefinedBenefitPlan, StockGrant \\
+Manufacturing & 6 & ProductionOrder, RoutingOperation,
+  QualityInspection, CycleCount, BomComponent \\
+Tax & 8 & TaxJurisdiction, TaxCode, TaxReturn,
+  TaxProvision, DeferredTaxRollforward, UncertainTaxPosition \\
+Treasury & 6 & CashPosition, CashForecast, CashPool,
+  HedgingInstrument, DebtInstrument, DebtCovenant \\
+ESG & 8 & EmissionRecord, EnergyConsumption, WaterUsage,
+  WasteRecord, WorkforceDiversityMetric, SafetyIncident \\
+Project & 5 & Project, ProjectCostLine, EarnedValueMetric,
+  ChangeOrder, ProjectMilestone \\
+Audit & 8 & EngagementLetter, AuditOpinion, KeyAuditMatter,
+  ComponentAuditor, GroupAuditPlan, SamplingPlan \\
+Controls & 4 & InternalControl, ControlMapping, SoD,
+  CosoComponent \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Relationship Edge Types}
+\label{sec:kg_edges}
+
+Entities are connected by 39+ typed relationship edges with explicit
+cardinality constraints:
+
+\begin{itemize}
+  \item \textbf{Transactional edges:} Debit/credit flows between
+    accounts (one-to-many), document chain references
+    (PO$\to$GR$\to$Invoice$\to$Payment), payment allocations.
+  \item \textbf{Hierarchical edges:} Chart of accounts parent/child,
+    cost center hierarchy, organizational reporting lines, corporate
+    group structure.
+  \item \textbf{Master data edges:} Vendor-to-material linkages,
+    customer-to-segment assignments, employee-to-department.
+  \item \textbf{Control edges:} Approval relationships with threshold
+    attributes, segregation-of-duties constraint edges, COSO
+    principle-to-control mappings.
+  \item \textbf{Standards edges:} GAAP rule applicability, ISA
+    requirement mappings, SOX assessment linkages.
+  \item \textbf{Cross-process edges:} Inventory P2P-O2C links
+    (GoodsReceipt $\to$ Delivery), payment-bank reconciliation,
+    intercompany bilateral matching.
+\end{itemize}
+
+Each edge carries a type discriminator, cardinality constraint
+(one-to-one, one-to-many, many-to-many), and domain-specific attributes
+(amounts, dates, status flags).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Three-Layer Graph Encoding}
+\label{sec:kg_encoding}
+
+The reference knowledge graph explicitly encodes all three knowledge
+layers as graph properties:
+
+\paragraph{Layer 1 (Structural).}
+Node existence, edge connectivity, document chain integrity, master
+data relationships.  The graph builder constructs three complementary
+subgraphs:
+
+\begin{itemize}
+  \item \textbf{Transaction graph:} Nodes are accounts/entities; edges
+    are transactions with amount, date, and process-type features.
+  \item \textbf{Approval network:} Nodes are users; edges are approval
+    relationships with threshold attributes.  SoD conflicts are
+    detectable as structural motifs.
+  \item \textbf{Entity relationship graph:} Nodes are legal entities,
+    vendors, customers; edges represent ownership, control, and
+    supply-chain relationships.
+\end{itemize}
+
+\paragraph{Layer 2 (Statistical).}
+Node and edge properties carry distributional metadata: the
+\texttt{ToNodeProperties} trait maps domain models to seven
+property-value types (\texttt{String}, \texttt{Decimal},
+\texttt{Integer}, \texttt{Boolean}, \texttt{Date}, \texttt{DateTime},
+\texttt{List}), ensuring lossless round-tripping through graph
+serialization.  Amount distributions, temporal patterns, and
+correlation structures are recoverable from the graph properties.
+
+\paragraph{Layer 3 (Normative).}
+Control nodes encode COSO component/principle mappings, maturity
+levels, and scope assignments.  Standards nodes encode GAAP/IFRS rule
+applicability and audit procedure requirements.  Anomaly labels are
+attached as edge/node attributes with full provenance (type, category,
+difficulty, severity, scheme membership).
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Hypergraph Extensions}
+\label{sec:kg_hypergraph}
+
+Some enterprise relationships are inherently multi-entity.  A hypergraph
+builder extends the model to capture these:
+
+\begin{itemize}
+  \item \textbf{Three-way match hyperedge:} Links a purchase order,
+    goods receipt, and vendor invoice simultaneously.
+  \item \textbf{Intercompany elimination:} Links the matched pair of IC
+    transactions with their consolidation entry.
+  \item \textbf{Period-close:} Links accrual entries, depreciation
+    postings, and the resulting financial statement line items.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Export Formats}
+\label{sec:kg_export}
+
+The reference knowledge graph is exported in three formats optimized for
+different downstream use cases:
+
+\begin{itemize}
+  \item \textbf{PyTorch Geometric (\texttt{.pt}):} Heterogeneous graph
+    tensors with typed nodes and edges, directly loadable for GNN
+    training.  Node features are scaled and normalized; edge indices
+    use COO format.
+  \item \textbf{Neo4j (CSV + Cypher):} Node and relationship CSV files
+    with Cypher import scripts for graph database analysis, Cypher
+    queries, and visualization.
+  \item \textbf{DGL (heterograph):} Typed heterogeneous graph with
+    node/edge feature dictionaries for Deep Graph Library research.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Process Mining (OCEL 2.0)}
+\label{sec:kg_ocel}
+
+The OCPM module generates Object-Centric Event Logs conforming to the
+OCEL~2.0 standard~\citep{ghahfarokhi2021ocel}.  Events are linked to
+multiple typed objects via many-to-many relationships.  Lifecycle state
+machines for \texttt{PurchaseOrder}, \texttt{SalesOrder}, and
+\texttt{VendorInvoice} objects define probabilistic transitions,
+producing realistic variant distributions.
+
+Multi-object correlation events---three-way match, payment allocation,
+and bank reconciliation---link objects across process boundaries.
+Resource pool workload modeling assigns events to users via configurable
+strategies (round-robin, least-busy, skill-based).  Enriched events
+carry \texttt{from\_state}, \texttt{to\_state},
+\texttt{resource\_workload}, and \texttt{correlation\_id} attributes
+for conformance checking and resource-perspective analysis.
+
+The OCEL~2.0 logs are fully traceable to the reference knowledge
+graph---every event corresponds to a known structural, statistical,
+and normative context, enabling process mining research with ground
+truth.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Ground Truth Properties of the Reference Graph}
+\label{sec:kg_ground_truth}
+
+By construction, the reference knowledge graph satisfies the
+completeness property of \Cref{thm:completeness}.  Concretely, for any
+query over the graph:
+
+\begin{enumerate}
+  \item \textbf{Node classification:} Every entity's type, attributes,
+    and anomaly status are known.  This provides ground-truth labels for
+    node classification tasks in GNN research.
+  \item \textbf{Edge prediction:} Every relationship is generated with
+    known provenance.  Missing edges in a subgraph can be identified
+    against the full graph, enabling link prediction benchmarks.
+  \item \textbf{Anomaly detection:} Every injected anomaly is labeled
+    with type, difficulty, severity, and causal chain.  Detection
+    algorithms can be evaluated against this ground truth across all
+    five knowledge dimensions (\Cref{def:dimensions}).
+  \item \textbf{Community structure:} Vendor clusters, customer
+    segments, intercompany groups, and departmental boundaries are known,
+    enabling evaluation of community detection algorithms.
+  \item \textbf{Temporal evolution:} The graph can be sliced by period,
+    enabling temporal GNN research on time-evolving audit knowledge.
+\end{enumerate}

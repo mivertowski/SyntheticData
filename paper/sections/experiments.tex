@@ -2,8 +2,9 @@
 \section{Experiments}
 \label{sec:experiments}
 
-We evaluate \system{} along four dimensions: statistical fidelity,
-structural coherence, downstream ML utility, and system performance.
+We evaluate \system{} along five dimensions: grounding in real-world
+data, statistical fidelity, structural coherence, downstream ML utility,
+and system performance.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Experimental Setup}
@@ -26,78 +27,30 @@ Financial Svcs. & Large  & $\sim$2{,}500 & 10 & 36 months \\
 \end{tabular}
 \end{center}
 
-Each configuration is run with anomaly injection enabled at rates of
-2\%, 5\%, and 10\%.  All experiments use seed $= 42$ for reproducibility.
+Each configuration is run with anomaly injection at 2\%, 5\%, and 10\%.
+All experiments use seed $= 42$ for reproducibility.
 
 \paragraph{Hardware.}
-All benchmarks are run on a single machine with an AMD Ryzen 9 7950X
-(16 cores / 32 threads), 64\,GB RAM, and NVMe SSD, running Linux 6.x.
+AMD Ryzen 9 7950X (16 cores / 32 threads), 64\,GB RAM, NVMe SSD,
+Linux 6.x.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Grounding in Real-World Accounting Data}
 \label{sec:exp_realworld}
 
-To validate that \system{} produces data consistent with real-world
-enterprise accounting, we compare generated characteristics against
-empirical distributions observed in production general ledger data.
-\citet{ivertowski2024hardware} analyzed 155 real-world
+To validate that \system{} produces reference knowledge graphs
+consistent with real enterprise accounting,
+we compare against distributions observed in 155 real-world
 ISO~21378:2019--compliant~\citep{iso21378} datasets covering all
-industry sectors, each containing an entire fiscal year of general ledger
-data.  The corpus totals approximately 364 million journal entries with
-2.4 billion line items.  \Cref{tab:realworld_datasets} summarizes the
-dataset classification.
-
-\begin{table}[t]
-\centering
-\caption{Classification of 155 real-world general ledger datasets
-  by size~\citep{ivertowski2024hardware}.}
-\label{tab:realworld_datasets}
-\small
-\begin{tabular}{lccc}
-\toprule
-& \textbf{Small} & \textbf{Medium} & \textbf{Large} \\
-& ($<$1M lines p.a.) & (1--10M lines p.a.) & ($>$10M lines p.a.) \\
-\midrule
-Number of datasets & 74 & 47 & 34 \\
-\bottomrule
-\end{tabular}
-\end{table}
+industry sectors, totaling approximately 364 million journal entries
+with 2.4 billion line items~\citep{ivertowski2024hardware}.
 
 \paragraph{Journal entry line item distribution.}
-\Cref{tab:realworld_lineitems} shows the distribution of line items per
-journal entry across the full corpus.  The distribution is extremely
-heavy-tailed: 92.9\% of entries have 2--9 line items, while the maximum
-observed is 47{,}059.  This motivates \system{}'s log-normal mixture
-model for line-item count generation (\Cref{sec:stat_mixture}).
-
-\begin{table}[t]
-\centering
-\caption{Distribution of journal entry line items across 155 real-world
-  datasets~\citep{ivertowski2024hardware}.  The data exhibits extreme
-  concentration in the 2--9 range.}
-\label{tab:realworld_lineitems}
-\small
-\begin{tabular}{crrrr}
-\toprule
-\textbf{Bin} & \textbf{Total JEs} & \textbf{Coverage (\%)}
-  & \textbf{Cum.\ Cov.\ (\%)} & \textbf{Line Items} \\
-\midrule
-1 & 338M & 92.90 & 92.90 & 2 to 9 \\
-2 & 23M  & 6.33  & 99.22 & 10 to 99 \\
-3 & 2.80M & 0.76 & 99.98 & 100 to 999 \\
-4 & 63k  & 0.02  & 100.00 & 1{,}000 to 9{,}999 \\
-5 & 196  & 0.00  & 100.00 & $\geq$ 10{,}000 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\Cref{fig:je_line_items} provides a detailed breakdown within Bin~1.
+The distribution is extremely heavy-tailed: 92.9\% of entries have
+2--9 line items, while the maximum observed is 47{,}059.
+\Cref{fig:je_line_items} shows the detailed breakdown within this range.
 The prominence of 2-line entries (60.7\%) and 4-line entries (16.6\%)
-reflects the balanced nature of double-entry bookkeeping, where
-equal numbers of debit and credit lines are the
-norm~\citep{fellingham2018double}.  Overall, 88\% of journal entries have
-an even number of line items, consistent with GAAP's requirement that
-total debits equal total credits.
+reflects the balanced nature of double-entry bookkeeping.
 
 \begin{figure}[t]
 \centering
@@ -124,37 +77,22 @@ total debits equal total credits.
 };
 \end{axis}
 \end{tikzpicture}
-\caption{Detailed distribution of journal entry line items in the 2--9
-  range (Bin~1, covering 92.9\% of all entries) from 155 real-world
-  general ledger datasets~\citep{ivertowski2024hardware}.  The dominance
-  of 2-line and 4-line entries reflects balanced double-entry bookkeeping.}
+\caption{Distribution of journal entry line items (2--9 range, 92.9\%
+  of all entries) from 155 real-world datasets~\citep{ivertowski2024hardware}.
+  The dominance of 2-line and 4-line entries reflects balanced
+  double-entry bookkeeping---a structural property that \system{}'s
+  reference knowledge graphs reproduce.}
 \label{fig:je_line_items}
 \end{figure}
 
-\paragraph{Chart of accounts complexity.}
-The 155 datasets exhibit a wide range of chart-of-accounts complexity:
-on average 557 financial accounts per entity (median: 367, min: 76,
-max: 2{,}536).  \system{}'s three complexity tiers (small $\sim$100,
-medium $\sim$400, large $\sim$2{,}500) were calibrated to span this
-observed range, covering the 10th, 50th, and 99th percentiles of real-world
-CoA sizes.
-
 \paragraph{Graph construction complexity.}
-The combinatorial complexity of constructing accounting networks
-from journal entries is driven by the credit--debit matching problem.
-For a journal entry with $n$ credit and $m$ debit line items, the number
-of possible edge constructions is given by the Stirling number of the
-second kind~\citep{ivertowski2024hardware}:
-\begin{equation}
-a = n!\;\frac{1}{m!}\sum_{j=0}^{m}(-1)^{m-j}\binom{m}{j}j^n
-\label{eq:partition_complexity}
-\end{equation}
-In production data, \citet{ivertowski2024hardware} find that only 60.7\%
-of entries admit trivial 1-to-1 mapping (2-line entries), while 39.3\%
-require more sophisticated matching strategies.  \system{}'s graph export
-module (\Cref{sec:gen_graph}) generates transaction networks that
-preserve these structural characteristics, producing graphs with
-realistic degree distributions, edge density, and community structure.
+The combinatorial complexity of accounting network construction is
+driven by the credit--debit matching problem
+(\Cref{thm:combinatorial}).  In production data, only 60.7\% of
+entries admit trivial 1-to-1 mapping, while 39.3\% require more
+sophisticated strategies (\Cref{fig:solving_methods}).  \system{}'s
+forward generation eliminates this ambiguity entirely---every edge
+in the reference knowledge graph has known provenance.
 
 \begin{figure}[t]
 \centering
@@ -184,27 +122,28 @@ realistic degree distributions, edge density, and community structure.
 };
 \end{axis}
 \end{tikzpicture}
-\caption{Distribution of journal entry resolution methods required for
-  accounting network construction, derived from 155 real-world
-  datasets~\citep{ivertowski2024hardware}.  Methods A--E correspond to
-  increasing combinatorial complexity.  \system{} generates entries
-  with matching distributions across these categories.}
+\caption{Distribution of journal entry resolution methods for
+  accounting network construction~\citep{ivertowski2024hardware}.
+  The 39.3\% requiring non-trivial matching motivates \system{}'s
+  forward-generation approach, which eliminates matching ambiguity
+  entirely (\Cref{thm:combinatorial}).}
 \label{fig:solving_methods}
 \end{figure}
+
+\paragraph{Chart of accounts complexity.}
+The 155 datasets exhibit average 557 financial accounts per entity
+(median: 367, min: 76, max: 2{,}536).  \system{}'s three complexity
+tiers span this range, covering the 10th, 50th, and 99th percentiles.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Statistical Fidelity}
 \label{sec:exp_statistical}
 
 \paragraph{Benford's Law Compliance.}
-\Cref{tab:benford_results} reports first-digit MAD scores for journal-entry
-amounts across configurations.  All scores fall within the ``close
-conformity'' band ($\text{MAD} < 0.006$)~\citep{nigrini2012benfords}.
 
 \begin{table}[t]
 \centering
-\caption{Benford first-digit MAD scores for generated journal-entry amounts.
-  Threshold for close conformity: MAD~$< 0.006$.}
+\caption{Benford first-digit MAD scores.  Close conformity: MAD~$< 0.006$.}
 \label{tab:benford_results}
 \small
 \begin{tabular}{lccc}
@@ -219,28 +158,18 @@ Financial (Large)    & 2{,}100{,}000 & 0.0011 & 0.98 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Distribution Fitting.}
-Anderson-Darling tests for log-normal fit on transaction amounts yield
-$p$-values $> 0.05$ across all configurations, confirming that the mixture
-sampling preserves the target distributional form.  Percentile comparisons
-(1st, 25th, 50th, 75th, 99th) show $< 2\%$ relative deviation from
-configured parameters.
-
-\paragraph{Correlation Preservation.}
-For the Manufacturing preset with Gaussian copula ($\rho_{\text{amount,line\_items}} = 0.65$),
-the empirical Pearson correlation is $\hat{\rho} = 0.648 \pm 0.003$ across
-10 seeded runs, well within the tolerance threshold.
+All scores fall within close conformity.  Anderson-Darling tests for
+log-normal fit yield $p > 0.05$ across all configurations.  Correlation
+preservation: $\hat{\rho} = 0.648 \pm 0.003$ vs.\ target $\rho = 0.65$
+across 10 seeded runs.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Structural Coherence}
 \label{sec:exp_coherence}
 
-\Cref{tab:coherence_results} summarizes the coherence validator results
-for the Manufacturing (Medium) configuration.
-
 \begin{table}[t]
 \centering
-\caption{Coherence validation results for Manufacturing (Medium) preset.}
+\caption{Coherence validation for Manufacturing (Medium) preset.}
 \label{tab:coherence_results}
 \small
 \begin{tabular}{lcc}
@@ -259,38 +188,22 @@ Trial balance (debits $=$ credits)    & 100.0\% & 0 \\
 \end{tabular}
 \end{table}
 
-The 52 three-way match violations are \emph{intentional}---they correspond
-to injected price and quantity variances that mirror real-world procurement
-discrepancies.  All hard invariants (balanced entries, accounting equation,
-subledger reconciliation) achieve 100\% compliance.
+The 52 three-way match violations are \emph{intentional}---they
+correspond to injected price and quantity variances.  All hard
+invariants achieve 100\% compliance, confirming the normative
+knowledge layer is correctly encoded.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Downstream ML Utility}
 \label{sec:exp_ml}
 
-We evaluate whether \system{}-generated data supports effective fraud
-detection model training.
-
-\paragraph{Setup.}
-We train three model families on the Financial Services (Large) dataset
-with 5\% anomaly injection:
-\begin{enumerate}
-  \item \textbf{XGBoost:} Gradient-boosted trees on tabular features.
-  \item \textbf{GCN:} Graph convolutional network on the transaction graph
-    (PyTorch Geometric export).
-  \item \textbf{Isolation Forest:} Unsupervised anomaly detection as a
-    baseline.
-\end{enumerate}
-
-We use a temporal 70/15/15 train/validation/test split.  Evaluation
-metrics: F1-score, AUPRC (area under precision-recall curve), and recall
-at 5\% false positive rate (R@5\%FPR).
-
-\paragraph{Results.}
+We evaluate whether reference knowledge graphs support effective fraud
+detection model training on the Financial Services (Large) dataset
+with 5\% anomaly injection.
 
 \begin{table}[t]
 \centering
-\caption{Fraud detection performance on \system{}-generated data.}
+\caption{Fraud detection on \system{}-generated reference knowledge graphs.}
 \label{tab:ml_results}
 \small
 \begin{tabular}{lccc}
@@ -304,23 +217,16 @@ GCN                & 0.84 & 0.82 & 0.78 \\
 \end{tabular}
 \end{table}
 
-The GCN model achieves the highest performance, benefiting from the
-relational structure preserved in \system{}'s graph exports.  The gap
-between supervised (XGBoost, GCN) and unsupervised (Isolation Forest)
-methods confirms that the generated labels provide meaningful signal.
-
-\paragraph{Difficulty Stratification.}
-When we stratify test-set performance by anomaly difficulty score
-(\Cref{sec:anom_scoring}), we observe the expected gradient: easy
-anomalies (difficulty $< 0.3$) are detected at $>$95\% recall, while
-hard anomalies (difficulty $> 0.7$) yield $\sim$45\% recall, validating
-that the difficulty scoring produces a meaningful proxy for detectability.
+The GCN model benefits from the relational structure preserved in
+\system{}'s graph exports.  The gap between supervised and unsupervised
+methods confirms that ground-truth labels provide meaningful signal.
+When stratified by difficulty score, easy anomalies (difficulty $< 0.3$)
+are detected at $>$95\% recall; hard anomalies (difficulty $> 0.7$)
+yield $\sim$45\% recall, validating the difficulty scoring.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{System Performance}
 \label{sec:exp_performance}
-
-\paragraph{Throughput.}
 
 \begin{table}[t]
 \centering
@@ -340,69 +246,20 @@ Subledger records         & 95{,}000 \\
 \end{tabular}
 \end{table}
 
-\noindent
-The journal entry and line item throughput improvements stem from cached
-temporal CDFs, \texttt{SmallVec} line items, parallel generation with
-deterministic seed splitting, and \texttt{itoa}/\texttt{ryu} fast formatting.
-
-\paragraph{Distribution Sampling.}
-Micro-benchmarks for individual samplers:
-
-\begin{center}
-\small
-\begin{tabular}{lr}
-\toprule
-\textbf{Sampler} & \textbf{Latency} \\
-\midrule
-BenfordSampler          & $<1\,\mu$s / sample \\
-Copula (Gaussian, 3-D)  & 2--5\,$\mu$s / sample \\
-LogNormalMixture (3-comp.) & $<500$\,ns / sample \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paragraph{Output Sink Performance.}
-
-\begin{center}
-\small
-\begin{tabular}{lr}
-\toprule
-\textbf{Format} & \textbf{Throughput (records/sec)} \\
-\midrule
-CSV (streaming)   & 210{,}000 \\
-JSON (streaming)  & 105{,}000 \\
-Parquet (columnar) & 520{,}000 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paragraph{Scaling.}
-Throughput scales near-linearly with core count up to 8 cores (due to the
-per-generator seed isolation described in \Cref{sec:arch_determinism}),
-after which contention on shared data structures (balance tracker,
-document-chain manager) introduces sublinear scaling.  At 16 cores, the
+Throughput scales near-linearly up to 8 cores.  At 16 cores, the
 Manufacturing (Medium) configuration generates a full 24-month dataset
 (385K journal entries, 1.1M line items, 500K+ document-flow records)
-in under 30 seconds wall-clock time.
-
-\paragraph{Memory Efficiency.}
-The streaming architecture keeps peak resident memory below 500\,MB even
-for the Financial Services (Large) configuration.  The graceful degradation
-system (\Cref{sec:arch_resources}) was not triggered during any benchmark
-run on the 64\,GB test machine.
+in under 30 seconds.  Peak resident memory stays below 500\,MB even
+for the Financial Services (Large) configuration.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Privacy-Utility Evaluation}
 \label{sec:exp_privacy}
 
-We evaluate the fingerprint module by extracting a fingerprint from the
-Manufacturing (Medium) dataset at each privacy level, synthesizing a new
-dataset from each fingerprint, and comparing statistical properties.
-
 \begin{table}[t]
 \centering
 \caption{Fingerprint privacy-utility tradeoff.  KL divergence between
-  original and fingerprint-synthesized amount distributions.}
+  original and fingerprint-synthesized distributions.}
 \label{tab:privacy_utility}
 \small
 \begin{tabular}{lccc}
@@ -418,7 +275,7 @@ Maximum  & 0.1 & 0.071 & 0.0098 \\
 \end{tabular}
 \end{table}
 
-Even at the ``High'' privacy level ($\varepsilon = 0.5$), the
-KL divergence remains below 0.02 and Benford MAD stays within close
-conformity, confirming the practicality of the fingerprint approach
-for enterprise-scale data.
+Even at High privacy ($\varepsilon = 0.5$), KL divergence remains
+below 0.02 and Benford MAD stays within close conformity, confirming
+that fingerprint-calibrated reference knowledge graphs preserve the
+statistical properties of real enterprise data.

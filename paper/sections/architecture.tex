@@ -2,11 +2,14 @@
 \section{System Architecture}
 \label{sec:architecture}
 
-\system{} is implemented as a Rust workspace comprising 15 crates organized
-into five architectural layers (\Cref{fig:architecture}).  The layered design
-enforces separation of concerns: domain models and statistical primitives live
-in the foundation layer, generators in the process layer, and evaluation,
-privacy, and export capabilities in the analytics layer.
+\system{} is implemented as a Rust workspace comprising 16 crates
+organized into five architectural layers (\Cref{fig:architecture}).  The
+layered design enforces separation of concerns and maps directly onto
+the three-layer knowledge model (\Cref{def:three_layers}): domain models
+and statistical primitives in the foundation layer encode Layer~2
+(statistical) knowledge, generators in the process layer produce Layer~1
+(structural) knowledge, and standards and evaluation modules encode
+Layer~3 (normative) knowledge.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Layered Crate Organization}
@@ -21,7 +24,8 @@ Layer 5  UI / Interfaces
          datasynth-cli | datasynth-server | datasynth-ui
 
 Layer 4  Analytics & Export
-         datasynth-eval | datasynth-graph | datasynth-fingerprint
+         datasynth-eval | datasynth-graph | datasynth-graph-export
+         datasynth-fingerprint
 
 Layer 3  Domain Generators
          datasynth-generators | datasynth-banking | datasynth-ocpm
@@ -35,79 +39,134 @@ Layer 1  Foundation
          datasynth-test-utils
 \end{verbatim}
 }}
-\caption{Layered crate architecture of \system{}.  Dependency arrows
-  point downward; each layer depends only on layers below it.}
+\caption{Layered crate architecture of \system{} (16 crates).
+  Dependency arrows point downward; each layer depends only on layers
+  below it.}
 \label{fig:architecture}
 \end{figure}
 
 \paragraph{Layer 1: Foundation.}
-\texttt{datasynth-core} defines over 120 domain model types (journal entries,
-master data, document flows, subledgers, financial statements, controls,
-relationships), statistical distribution samplers (Benford, copula, mixture,
-Pareto, Weibull, Beta, zero-inflated), and resource-management primitives
-(memory guard, CPU monitor, disk guard, degradation controller).  All models
-use \texttt{rust\_decimal::Decimal} for exact arithmetic, eliminating
-IEEE~754 rounding errors in financial calculations.
+\texttt{datasynth-core} defines over 200 domain model types spanning
+accounting (journal entries, ACDOCA), master data (vendors, customers,
+materials, fixed assets, employees), document flows (P2P, O2C),
+sourcing (S2C), financial reporting, HR/payroll, manufacturing, sales,
+bank reconciliation, intercompany, subledgers, FX/close,
+tax accounting, treasury management, ESG/sustainability, project
+accounting, audit (ISA~600 group audit), audit documentation and
+methodology, business combinations, pensions, and relationship/graph
+types.  Statistical distribution samplers include Benford, copula
+(5 families), mixture, Pareto, Weibull, Beta, zero-inflated,
+conditional, drift, and temporal models.  Resource-management primitives
+(memory guard, CPU monitor, disk guard, degradation controller) ensure
+stable operation under load.  All financial values use
+\texttt{rust\_decimal::Decimal} for exact arithmetic, eliminating
+IEEE~754 rounding errors.
 
 \paragraph{Layer 2: Orchestration.}
-\texttt{datasynth-runtime} houses the \texttt{GenerationOrchestrator} that
-coordinates the full generation workflow: configuration loading, company
-initialization, generator sequencing, anomaly injection, evaluation, and
-output.  \texttt{datasynth-config} provides schema validation, industry
-presets, and complexity-level mappings.  \texttt{datasynth-output} implements
-streaming sinks for CSV, JSON, Parquet, and Apache Arrow formats.
+\texttt{datasynth-runtime} houses the \texttt{GenerationOrchestrator}
+that coordinates the full generation workflow.
+\texttt{datasynth-config} provides schema validation, industry presets
+(manufacturing, retail, financial services, healthcare, technology), and
+complexity-level mappings.
+\texttt{datasynth-output} implements streaming sinks for CSV, JSON,
+Parquet, and Apache Arrow formats.
 
 \paragraph{Layer 3: Domain Generators.}
-\texttt{datasynth-generators} contains 50+ specialized generators organized
-by business process: P2P document flows, O2C chains, S2C sourcing,
-HR/payroll, manufacturing, period-close, intercompany, and anomaly injection.
-\texttt{datasynth-banking} adds KYC/AML-specific generation with five money
-laundering typologies.  \texttt{datasynth-ocpm} produces OCEL~2.0 compliant
-event logs.  \texttt{datasynth-standards} implements five accounting frameworks
+\texttt{datasynth-generators} contains 50+ specialized generators
+organized by business process: P2P document flows, O2C chains, S2C
+sourcing, HR/payroll (including benefits enrollment), manufacturing
+(BOM, quality, cycle counts, inventory movements), tax accounting
+(multi-jurisdiction, VAT/GST, deferred tax, transfer pricing),
+treasury (cash positioning, forecasting, hedging, debt covenants),
+ESG/sustainability (GHG emissions, energy, water, waste, diversity,
+safety, governance), project accounting (WBS, earned value, change
+orders, milestones), period-close, intercompany, and anomaly injection.
+\texttt{datasynth-banking} adds KYC/AML-specific generation with five
+money laundering typologies.
+\texttt{datasynth-ocpm} produces OCEL~2.0 compliant event logs.
+\texttt{datasynth-standards} implements five accounting frameworks
 (US~GAAP, IFRS, French GAAP/PCG, German GAAP/HGB, and dual-reporting)
 together with ISA, SOX, and PCAOB audit standard models.
 
 \paragraph{Layer 4: Analytics.}
-\texttt{datasynth-eval} provides the evaluation framework (15 coherence
-validators, statistical tests, ML-readiness metrics, auto-tuner).
-\texttt{datasynth-graph} exports heterogeneous transaction graphs in
-PyTorch Geometric, Neo4j, and DGL formats.
-\texttt{datasynth-fingerprint} implements privacy-preserving extraction and
-synthesis.
+\texttt{datasynth-eval} provides the evaluation framework (15+
+coherence validators, statistical tests, ML-readiness metrics,
+auto-tuner).
+\texttt{datasynth-graph} and \texttt{datasynth-graph-export} construct
+and export heterogeneous reference knowledge graphs in PyTorch Geometric,
+Neo4j, and DGL formats with 78+ entity types and 39+ relationship edge
+types.
+\texttt{datasynth-fingerprint} implements privacy-preserving extraction
+and synthesis.
 
 \paragraph{Layer 5: Interfaces.}
 A CLI binary (\texttt{datasynth-data}) supports \texttt{generate},
 \texttt{validate}, \texttt{init}, \texttt{info}, and \texttt{fingerprint}
-subcommands.  A REST/gRPC/WebSocket server enables streaming generation with
-API-key authentication and rate limiting.  A Tauri + SvelteKit desktop UI
-provides visual configuration and monitoring.
+subcommands.  A REST/gRPC/WebSocket server enables streaming generation
+with API-key authentication and rate limiting.  A Tauri + SvelteKit
+desktop UI provides visual configuration and monitoring.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Knowledge Layer Mapping}
+\label{sec:arch_knowledge_mapping}
+
+The three knowledge layers (\Cref{def:three_layers}) map to the
+architecture as follows:
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Knowledge Layer} & \textbf{Crates} & \textbf{Artifacts} \\
+\midrule
+Structural ($\mathcal{K}_S$) &
+  generators, graph, ocpm &
+  Entity types, edges, document chains \\
+Statistical ($\mathcal{K}_\Sigma$) &
+  core (distributions), eval &
+  Amount distributions, correlations, temporal \\
+Normative ($\mathcal{K}_N$) &
+  standards, generators (controls) &
+  GAAP/IFRS rules, ISA/SOX, COSO \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every generated record carries provenance tracing it to one or more
+knowledge layers, enabling downstream consumers to understand not just
+\emph{what} was generated but \emph{why}---a property that is impossible
+to achieve with inverse-recovery approaches.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Deterministic Reproducibility}
 \label{sec:arch_determinism}
 
 All randomness flows from a single \texttt{u64} seed through the ChaCha8
-cryptographic PRNG~\citep{bernstein2008chacha}.  Each generator receives a
-derived seed computed as $\texttt{base\_seed} + \texttt{offset}(g)$ where
-$\texttt{offset}(g)$ is a fixed constant per generator type $g$.  This
-guarantees:
+cryptographic PRNG~\citep{bernstein2008chacha}.  Each generator receives
+a derived seed computed as $\texttt{base\_seed} + \texttt{offset}(g)$
+where $\texttt{offset}(g)$ is a fixed constant per generator type $g$.
+This guarantees:
 
 \begin{enumerate}
   \item \textbf{Bitwise reproducibility:} identical seed $\Rightarrow$
     identical output across runs and platforms.
-  \item \textbf{Generator independence:} modifying one generator's parameters
-    does not perturb another's output stream.
-  \item \textbf{Parallel safety:} each thread maintains a local RNG instance;
-    no global state is shared.
+  \item \textbf{Generator independence:} modifying one generator's
+    parameters does not perturb another's output stream.
+  \item \textbf{Parallel safety:} each thread maintains a local RNG
+    instance; no global state is shared.
 \end{enumerate}
+
+Deterministic reproducibility is essential for reference knowledge
+graphs: the same seed always produces the same ground truth, enabling
+controlled experiments and reproducible benchmarks.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Collision-Free UUID Generation}
 \label{sec:arch_uuid}
 
-Synthetic records require globally unique identifiers that are deterministic
-yet collision-free across generator types.  \system{} employs an FNV-1a
-hash-based UUID factory with a 16-byte structure:
+Synthetic records require globally unique identifiers that are
+deterministic yet collision-free across generator types.  \system{}
+employs an FNV-1a hash-based UUID factory with a 16-byte structure:
 
 \begin{equation}
 \underbrace{\texttt{seed}[0{:}5]}_{\text{6 bytes}}
@@ -120,26 +179,27 @@ hash-based UUID factory with a 16-byte structure:
 \label{eq:uuid_structure}
 \end{equation}
 
-The \texttt{gen\_type} discriminator byte (39 values, $\texttt{0x01}$--$\texttt{0x3E}$)
-partitions the UUID space by generator, ensuring that journal-entry IDs can
-never collide with vendor IDs or document-flow IDs regardless of counter
-values.  The counter uses \texttt{AtomicU64} with relaxed ordering for
-thread-safe monotonic increment.
+The \texttt{gen\_type} discriminator byte (39 values,
+$\texttt{0x01}$--$\texttt{0x3E}$) partitions the UUID space by
+generator, ensuring that journal-entry IDs can never collide with vendor
+IDs or document-flow IDs regardless of counter values.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Resource Management and Graceful Degradation}
 \label{sec:arch_resources}
 
-Large-scale generation runs may stress system resources.  \system{} implements
-a unified resource guard that monitors memory (via \texttt{/proc/self/statm}
-on Linux), disk space (via \texttt{statvfs}), and CPU utilization with
-configurable thresholds.  When thresholds are breached, the system
-transitions through four degradation levels:
+Large-scale generation runs may stress system resources.  \system{}
+implements a unified resource guard monitoring memory (via
+\texttt{/proc/self/statm} on Linux, \texttt{ps} on macOS), disk space
+(via \texttt{statvfs}), and CPU utilization with configurable thresholds.
+When thresholds are breached, the system transitions through four
+degradation levels:
 
 \begin{center}
 \begin{tabular}{llll}
 \toprule
-\textbf{Level} & \textbf{Memory} & \textbf{Batch Size} & \textbf{Features Disabled} \\
+\textbf{Level} & \textbf{Memory} & \textbf{Batch Size}
+  & \textbf{Features Disabled} \\
 \midrule
 Normal     & $<70\%$  & $100\%$ & None \\
 Reduced    & $70{-}85\%$ & $50\%$  & Data quality injection \\
@@ -149,89 +209,58 @@ Emergency  & $>95\%$  & Flush   & Optional fields \\
 \end{tabular}
 \end{center}
 
-A 5\% hysteresis band prevents oscillation between levels.  The system
-logs all transitions and resumes full generation automatically when resources
-recover.
+A 5\% hysteresis band prevents oscillation between levels.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Configuration System}
 \label{sec:arch_config}
 
-\system{} uses a hierarchical YAML configuration with 30+ sections covering
-global settings, companies, chart of accounts, transactions, document flows,
-distributions, temporal patterns, anomaly injection, internal controls,
-intercompany, banking, standards, and more.  Industry presets
-(manufacturing, retail, financial services, healthcare, technology) provide
-complete default configurations.  Three complexity levels (small $\sim$100
-accounts, medium $\sim$400, large $\sim$2500) control chart-of-accounts
-granularity and transaction volume.
+\system{} uses a hierarchical YAML configuration with 30+ sections
+covering global settings, companies, chart of accounts, transactions,
+document flows, distributions, temporal patterns, anomaly injection,
+internal controls, intercompany, banking, accounting and audit
+standards, vendor networks, customer segmentation, relationship
+strength, cross-process links, tax, treasury, ESG, project accounting,
+HR, manufacturing, sales, and more.
 
-Configuration validation enforces invariants such as ascending approval
-thresholds, distribution weights summing to 1.0 ($\pm 0.01$),
-period lengths in $[1, 120]$ months, and rates in $[0, 1]$.
+Five industry presets (manufacturing, retail, financial services,
+healthcare, technology) provide complete default configurations.
+Three complexity levels (small $\sim$100 accounts, medium $\sim$400,
+large $\sim$2{,}500) control chart-of-accounts granularity and
+transaction volume.
 
 \paragraph{Multi-GAAP Framework.}
 \system{} supports framework-aware generation across five accounting
-standards: US~GAAP, IFRS, French GAAP (Plan Comptable G\'{e}n\'{e}ral),
-German GAAP (HGB), and dual-reporting mode.  Each framework determines GL
-account numbering conventions (e.g., SKR04 for German, PCG classes for
-French), account classification rules, and depreciation methods.  Seven
-country packs (FR, JP, CN, IN, IT, ES, CA) bundle currency, tax regime,
-fiscal-year convention, and banking configurations into reusable presets.
-German jurisdictions additionally support GoBD-compliant audit export,
-and French jurisdictions produce FEC (\emph{Fichier des \'{E}critures
-Comptables}) extracts, satisfying the structured data access requirements
-of their respective tax authorities.
+standards: US~GAAP, IFRS, French GAAP (Plan Comptable
+G\'{e}n\'{e}ral), German GAAP (HGB), and dual-reporting mode.  Each
+framework determines GL account numbering conventions, classification
+rules, and depreciation methods.  Seven country packs (FR, JP, CN, IN,
+IT, ES, CA) bundle currency, tax regime, fiscal-year convention, and
+banking configurations.  German jurisdictions support GoBD-compliant
+audit export, and French jurisdictions produce FEC extracts.
 
 % ─────────────────────────────────────────────────────────────────────
-\subsection{Streaming Pipeline}
+\subsection{Streaming Pipeline and Session Management}
 \label{sec:arch_streaming}
 
 \system{} supports phase-aware streaming output via the
-\texttt{PhaseSink} trait, which defines a uniform interface for emitting
-generated records as they are produced rather than buffering entire
-datasets in memory.  Three sink implementations are provided: a file sink
-that writes JSONL (newline-delimited JSON), an HTTP sink that pushes
-records to a configurable endpoint, and a no-op sink for benchmarking.
-Each sink tracks items emitted, bytes sent, and generation phases
-completed, enabling real-time consumption of synthetic data by downstream
-systems and progress monitoring by the orchestrator.
+\texttt{PhaseSink} trait.  Three sink implementations are provided:
+file (JSONL), HTTP, and no-op (benchmarking).
 
-% ─────────────────────────────────────────────────────────────────────
-\subsection{Multi-Period Session Management}
-\label{sec:arch_sessions}
-
-Enterprise datasets often span multiple fiscal years, with each period
-building on the prior period's closing balances and entity state.
-\system{} addresses this with \texttt{GenerationSession}, a stateful
-session manager that persists its state to \texttt{.dss} checkpoint files
-between runs.  A \texttt{GenerationPeriod} splitter divides the configured
-total timespan into fiscal-year-aligned periods.
+Multi-period generation is managed by \texttt{GenerationSession}, which
+persists state to \texttt{.dss} checkpoint files between runs.
 \texttt{SessionState} tracks RNG seeds, account balance snapshots,
 document-ID counters, and entity counts across periods, enabling
-incremental generation via \texttt{-{}-append -{}-months~N}.
-Deterministic seed advancement ($s_{t+1} = f(s_t, t)$) ensures that
-multi-period runs produce bitwise-identical output regardless of whether
-they execute in a single invocation or across multiple incremental
-sessions.
+incremental generation and long-horizon simulations.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Performance}
 \label{sec:arch_performance}
 
-Versions 0.9--0.11 introduced several throughput optimizations.
-Line-item collections use \texttt{SmallVec<[T; 4]>} to avoid heap
-allocation for typical entry sizes.  Temporal CDF tables are precomputed
-and cached, and company selection uses binary search over cumulative
-weights.  Integer and floating-point formatting use the \texttt{itoa} and
-\texttt{ryu} crates, respectively, bypassing \texttt{std::fmt}.
-Output compression uses \texttt{zstd} at configurable levels (1--9).
-
-For multi-core generation, the \texttt{ParallelGenerator} trait splits the
-seed space deterministically across threads, so that the union of
-per-thread outputs is identical to a single-threaded run with the same
-seed.  Master data and journal-entry generation are fully parallelized
-under this scheme, achieving near-linear scaling up to 8~cores.
-Collectively these changes yield approximately $2\times$
-single-threaded throughput, exceeding $2 \times 10^5$ journal entries
-per second on a modern x86-64 core.
+Key optimizations include \texttt{SmallVec<[T; 4]>} for line-item
+collections, precomputed temporal CDF tables, binary search over
+cumulative weights, \texttt{itoa}/\texttt{ryu} fast formatting, and
+\texttt{zstd} output compression.  The \texttt{ParallelGenerator}
+trait splits the seed space deterministically across threads,
+achieving near-linear scaling up to 8 cores and exceeding
+$2 \times 10^5$ journal entries per second on a modern x86-64 core.

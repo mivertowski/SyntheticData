@@ -2,8 +2,8 @@
 \section{Anomaly Type Catalog}
 \label{app:anomaly_catalog}
 
-\Cref{tab:full_anomaly_catalog} provides the complete catalog of 33 anomaly
-types with default parameters.
+\Cref{tab:full_anomaly_catalog} provides the complete catalog of 33
+anomaly types with default parameters.
 
 \begin{table}[H]
 \centering
@@ -56,8 +56,8 @@ types with default parameters.
 \section{Output File Inventory}
 \label{app:output_files}
 
-\Cref{tab:output_inventory} lists the primary output files produced by a
-full \system{} generation run.
+\Cref{tab:output_inventory} lists the primary output files produced by
+a full \system{} generation run.
 
 \begin{table}[H]
 \centering
@@ -81,17 +81,46 @@ Document Flow &
 Sourcing &
   \texttt{sourcing\_projects}, \texttt{supplier\_qualifications},
   \texttt{rfx\_events}, \texttt{supplier\_bids},
-  \texttt{bid\_evaluations}, \texttt{procurement\_contracts} \\
+  \texttt{bid\_evaluations}, \texttt{procurement\_contracts},
+  \texttt{catalog\_items}, \texttt{supplier\_scorecards} \\
+HR / Payroll &
+  \texttt{payroll\_runs}, \texttt{payslips}, \texttt{time\_entries},
+  \texttt{expense\_reports}, \texttt{benefit\_enrollments} \\
+Manufacturing &
+  \texttt{production\_orders}, \texttt{routing\_operations},
+  \texttt{quality\_inspections}, \texttt{cycle\_counts},
+  \texttt{bom\_components}, \texttt{inventory\_movements} \\
 Financial &
   \texttt{balance\_sheet}, \texttt{income\_statement},
-  \texttt{cash\_flow\_statement}, \texttt{financial\_kpis},
-  \texttt{budget\_variance} \\
+  \texttt{cash\_flow\_statement}, \texttt{changes\_in\_equity},
+  \texttt{financial\_kpis}, \texttt{budget\_variance} \\
+Tax &
+  \texttt{tax\_jurisdictions}, \texttt{tax\_codes},
+  \texttt{tax\_returns}, \texttt{tax\_provisions},
+  \texttt{deferred\_tax\_rollforward}, \texttt{withholding\_tax} \\
+Treasury &
+  \texttt{cash\_positions}, \texttt{cash\_forecasts},
+  \texttt{cash\_pools}, \texttt{hedging\_instruments},
+  \texttt{debt\_instruments}, \texttt{debt\_covenants} \\
+ESG &
+  \texttt{emission\_records}, \texttt{energy\_consumption},
+  \texttt{water\_usage}, \texttt{waste\_records},
+  \texttt{diversity\_metrics}, \texttt{safety\_incidents} \\
+Project &
+  \texttt{projects}, \texttt{project\_cost\_lines},
+  \texttt{earned\_value\_metrics}, \texttt{change\_orders},
+  \texttt{project\_milestones} \\
+Sales &
+  \texttt{sales\_quotes}, \texttt{sales\_quote\_items} \\
 Subledgers &
   \texttt{ar\_*}, \texttt{ap\_*}, \texttt{fa\_*},
   \texttt{inventory\_*} \\
 Period Close &
   \texttt{trial\_balances/}, \texttt{accruals},
   \texttt{depreciation}, \texttt{closing\_entries} \\
+Consolidation &
+  \texttt{eliminations}, \texttt{currency\_translation},
+  \texttt{consolidated\_trial\_balance} \\
 Labels &
   \texttt{anomaly\_labels}, \texttt{fraud\_labels},
   \texttt{quality\_issues}, \texttt{quality\_labels} \\
@@ -102,17 +131,22 @@ Process Mining &
   \texttt{event\_log.json} (OCEL 2.0), \texttt{objects.json},
   \texttt{process\_variants} \\
 Banking &
-  \texttt{banking\_customers}, \texttt{bank\_transactions}
-  (incl.\ \texttt{transaction\_type} field),
-  \texttt{kyc\_profiles}, \texttt{aml\_typology\_labels} \\
+  \texttt{banking\_customers}, \texttt{bank\_transactions},
+  \texttt{kyc\_profiles}, \texttt{aml\_typology\_labels},
+  \texttt{bank\_reconciliations} \\
 Audit &
   \texttt{audit\_engagements}, \texttt{audit\_workpapers},
   \texttt{audit\_evidence}, \texttt{audit\_risks},
-  \texttt{audit\_findings} \\
+  \texttt{audit\_findings}, \texttt{audit\_opinions},
+  \texttt{sox\_assessments} \\
 Standards &
   \texttt{customer\_contracts}, \texttt{performance\_obligations},
-  \texttt{leases}, \texttt{fair\_value\_measurements},
-  \texttt{sox\_assessments} \\
+  \texttt{leases}, \texttt{rou\_assets}, \texttt{lease\_liabilities},
+  \texttt{fair\_value\_measurements}, \texttt{impairment\_tests},
+  \texttt{isa\_mappings}, \texttt{confirmations} \\
+Graph &
+  \texttt{transaction\_graph.*}, \texttt{approval\_network.*},
+  \texttt{entity\_graph.*} (PyG/Neo4j/DGL) \\
 Counterfactual &
   \texttt{scenario\_manifest}, \texttt{baseline/},
   \texttt{counterfactual/}, \texttt{scenario\_diff} \\
@@ -172,8 +206,8 @@ $v \gets F_{t,\nu}(t_2)$\;
 \section{COSO Framework Integration}
 \label{app:coso}
 
-\system{} implements the COSO 2013 Internal Control---Integrated Framework
-with five components and 17 principles:
+\system{} implements the COSO 2013 Internal Control---Integrated
+Framework with five components and 17 principles:
 
 \begin{center}
 \small
@@ -190,19 +224,17 @@ with five components and 17 principles:
 \end{tabular}
 \end{center}
 
-Generated internal controls include 12 transaction-level controls (C001--C060)
-and 6 entity-level controls (C070--C081), each mapped to COSO components,
-principles, and control scopes (Entity Level, Transaction Level, IT General
-Control, IT Application Control).  Maturity levels (Non-Existent, Ad~Hoc,
-Repeatable, Defined, Managed, Optimized) are assigned per control with
-configurable target maturity.
+Generated internal controls include 12 transaction-level controls
+(C001--C060) and 6 entity-level controls (C070--C081), each mapped to
+COSO components, principles, and control scopes.  Maturity levels
+(Non-Existent, Ad~Hoc, Repeatable, Defined, Managed, Optimized) are
+assigned per control.
 
 % ─────────────────────────────────────────────────────────────────────
 \section{Configuration Schema Reference}
 \label{app:config}
 
 The complete YAML configuration schema comprises 30+ sections.
-\Cref{tab:config_sections} lists the top-level sections.
 
 \begin{table}[H]
 \centering
@@ -224,12 +256,55 @@ The complete YAML configuration schema comprises 30+ sections.
 \texttt{internal\_controls}    & COSO maturity, SoD rules \\
 \texttt{intercompany}          & IC matching, elimination rules \\
 \texttt{banking}               & KYC/AML, customer profiles, typologies \\
-\texttt{accounting\_standards} & IFRS / US GAAP framework selection \\
+\texttt{accounting\_standards} & IFRS / US GAAP / French / German GAAP \\
 \texttt{audit\_standards}      & ISA / PCAOB compliance level \\
+\texttt{audit}                 & Engagement, workpapers, evidence \\
 \texttt{vendor\_network}       & Supply chain tiers, concentration limits \\
 \texttt{customer\_segmentation}& Value segments, lifecycle stages \\
+\texttt{hr}                    & Payroll, time \& attendance, expenses \\
+\texttt{manufacturing}         & Production, quality, inventory \\
+\texttt{tax}                   & Jurisdictions, provisions, transfer pricing \\
+\texttt{treasury}              & Cash, hedging, debt, covenants \\
+\texttt{esg}                   & Environmental, social, governance \\
+\texttt{project\_accounting}   & WBS, earned value, milestones \\
+\texttt{financial\_reporting}  & Statements, KPIs, budgets, segments \\
+\texttt{sales\_quotes}         & Quote-to-order pipeline \\
 \texttt{graph\_export}         & PyG / Neo4j / DGL output options \\
 \texttt{output}                & Format, compression, sink \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Knowledge Dimension Coverage per Entity Type}
+\label{app:knowledge_dimensions}
+
+\Cref{tab:dimension_coverage} maps representative entity types to the
+knowledge dimensions they primarily encode
+(\Cref{def:dimensions}).
+
+\begin{table}[H]
+\centering
+\caption{Knowledge dimension coverage for representative entity types.
+  T~=~Topological, S~=~Statistical, $\tau$~=~Temporal,
+  N~=~Normative, O~=~Organizational.}
+\label{tab:dimension_coverage}
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Entity Type} & \textbf{T} & \textbf{S} & $\bm{\tau}$
+  & \textbf{N} & \textbf{O} \\
+\midrule
+JournalEntry           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+PurchaseOrder          & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+Vendor                 & \checkmark & -- & -- & \checkmark & \checkmark \\
+InternalControl        & \checkmark & -- & -- & \checkmark & \checkmark \\
+TaxProvision           & -- & \checkmark & \checkmark & \checkmark & -- \\
+EmissionRecord         & -- & \checkmark & \checkmark & \checkmark & -- \\
+HedgingInstrument      & \checkmark & \checkmark & \checkmark & \checkmark & -- \\
+AuditOpinion           & \checkmark & -- & \checkmark & \checkmark & \checkmark \\
+ProjectCostLine        & \checkmark & \checkmark & \checkmark & -- & \checkmark \\
+AnomalyLabel           & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
 \bottomrule
 \end{tabular}
 \end{table}

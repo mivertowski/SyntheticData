@@ -1,0 +1,341 @@
+% sections/ground_truth.tex — The Ground Truth Problem
+\section{The Ground Truth Problem in Enterprise Knowledge Systems}
+\label{sec:ground_truth}
+
+This section formalizes the fundamental challenge that motivates
+\system{}: the impossibility of reliably recovering ground truth from
+observed enterprise data, and how this motivates the forward-generation
+approach.
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{The Inverse Problem of Knowledge Recovery}
+\label{sec:gt_inverse}
+
+Enterprise knowledge systems for audit analytics are typically built by
+a process we term \emph{inverse knowledge recovery}: given observed data
+$D$ (journal entries, document flows, master records), reconstruct the
+true generative process $\mathcal{G}$ that produced it.  We formalize
+this problem and show it is fundamentally ill-posed.
+
+\begin{definition}[Enterprise Data Observation]
+\label{def:observation}
+An \emph{enterprise data observation} is a tuple $D = (J, M, R, T)$
+where:
+\begin{itemize}
+  \item $J = \{j_1, \ldots, j_N\}$ is a set of journal entries, each
+    with line items $j_k = \{l_{k,1}, \ldots, l_{k,n_k}\}$ where each
+    line item specifies an account, amount, and debit/credit indicator;
+  \item $M$ is a set of master data records (vendors, customers,
+    materials, employees);
+  \item $R$ is a set of document references linking records across tables;
+  \item $T$ is a set of timestamps and period assignments.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Accounting Network]
+\label{def:accounting_network}
+Given a journal entry $j$ with $n$ credit line items and $m$ debit line
+items, an \emph{accounting network} maps each credit-to-debit flow as a
+directed edge in a graph $G = (V, E)$ where nodes $V$ are GL accounts
+and edges $E$ carry monetary amounts.  The edge construction requires
+a \emph{matching} of credit amounts to debit amounts such that flows are
+conserved.
+\end{definition}
+
+The central difficulty is that the mapping from journal entries to
+accounting network edges is not unique.  For a single journal entry
+with $n$ credit and $m$ debit line items, the number of valid
+matchings is given by the surjective function count.
+
+\begin{theorem}[Combinatorial Infeasibility of Ground Truth Recovery]
+\label{thm:combinatorial}
+Let $j$ be a journal entry with $n$ credit line items and $m$ debit
+line items.  The number of distinct accounting network edge
+configurations consistent with $j$ is bounded below by:
+\begin{equation}
+\mathcal{A}(n, m) = n! \cdot \frac{1}{m!} \sum_{k=0}^{m} (-1)^{m-k}
+  \binom{m}{k} k^n
+\label{eq:stirling_matching}
+\end{equation}
+which corresponds to the number of surjections from the credit set to
+the debit set~\citep{ivertowski2024hardware}.  For an enterprise with
+$N$ journal entries, the total configuration space is:
+\begin{equation}
+|\mathcal{S}| = \prod_{j=1}^{N} \mathcal{A}(n_j, m_j)
+\label{eq:total_configs}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The edge construction problem for a single entry requires assigning
+each of $n$ credit line items to at least one of $m$ debit line items
+such that total flows balance.  This is a surjection from the set of
+credits to the set of debits.  The number of surjections from an
+$n$-element set to an $m$-element set is given by the inclusion-exclusion
+formula $m! \cdot S(n, m)$ where $S(n,m)$ is the Stirling number of the
+second kind~\citep{ivertowski2024hardware}.  Expanding:
+\[
+S(n, m) = \frac{1}{m!} \sum_{k=0}^{m} (-1)^{m-k} \binom{m}{k} k^n
+\]
+The total count of surjections is $n! \cdot S(n,m) / S(n,m) \cdot m! \cdot S(n,m) = n! / m! \cdot \sum \ldots$ which simplifies to \Cref{eq:stirling_matching}.
+Since journal entries are independent, the total configuration space is
+the product over all entries.
+
+For concrete scale: in the 155 real-world datasets analyzed
+by~\citet{ivertowski2024hardware}, only 60.7\% of entries have $n = m = 1$
+(trivial 1:1 matching).  The remaining 39.3\% require non-trivial matching.
+For a modest entry with $n = 4$ credits and $m = 3$ debits,
+$\mathcal{A}(4,3) = 36$.  An enterprise with $10^5$ such non-trivial
+entries has $|\mathcal{S}| > 36^{10^5} \approx 10^{155{,}630}$
+possible configurations---a number that dwarfs the number of atoms in
+the observable universe ($\sim 10^{80}$).
+\end{proof}
+
+\begin{corollary}
+\label{cor:verification}
+For any enterprise dataset with a non-trivial fraction of multi-line
+journal entries, exhaustive verification of the ground-truth accounting
+network is computationally infeasible.  No algorithm can enumerate all
+consistent configurations in polynomial time.
+\end{corollary}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Systematic Error Propagation}
+\label{sec:gt_errors}
+
+The combinatorial infeasibility of \Cref{thm:combinatorial} means that
+knowledge recovery must rely on heuristics and assumptions.  We now show
+that when the source data contains systematic errors, these propagate
+through any reconstruction pipeline with high probability.
+
+\begin{definition}[Systematic Error]
+\label{def:systematic_error}
+A \emph{systematic error} in enterprise data is a consistent
+deviation from the true state that affects multiple records in the same
+direction or pattern.  Unlike random errors, systematic errors do not
+cancel under aggregation and may be invisible to internal consistency
+checks.
+\end{definition}
+
+\begin{observation}[Internal Consistency Does Not Imply Correctness]
+\label{obs:consistency}
+A dataset $D$ may satisfy all standard accounting invariants---balanced
+entries (\Cref{eq:balanced}), the accounting equation ($A = L + E$),
+subledger reconciliation, document chain integrity---while containing
+systematic errors in amounts, entity classifications, period
+assignments, or relationship structures.  Internal consistency is
+necessary but not sufficient for correctness.
+\end{observation}
+
+\begin{proposition}[Error Persistence in Multi-Stage Processes]
+\label{prop:error_persistence}
+Consider an enterprise process with $k$ sequential stages
+(e.g., PO $\to$ GR $\to$ Invoice $\to$ Payment $\to$ GL Posting
+$\to$ Financial Statement, giving $k = 6$).  Let each stage have
+an independent probability $\varepsilon$ of detecting and correcting a
+systematic error introduced at an earlier stage.  The probability that
+the error reaches the final stage undetected is:
+\begin{equation}
+\Prob[\text{undetected}] = (1 - \varepsilon)^{k-1}
+\label{eq:error_persistence}
+\end{equation}
+For typical detection rates $\varepsilon \in [0.01, 0.05]$ and $k = 6$:
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$\varepsilon$ & $k$ & $\Prob[\text{undetected}]$ \\
+\midrule
+0.01 & 6 & 95.1\% \\
+0.02 & 6 & 90.4\% \\
+0.05 & 6 & 77.4\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+Even with a 5\% per-stage detection rate, over three-quarters of
+systematic errors survive the full processing chain.
+\end{proposition}
+
+\begin{proof}
+Each stage provides an independent opportunity to detect the error.
+The error survives stage $i$ with probability $(1 - \varepsilon)$.
+Since stages are independent, the probability of surviving all $k-1$
+stages after introduction is $(1 - \varepsilon)^{k-1}$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Inter-Dimensional Complexity}
+\label{sec:gt_interdimensional}
+
+The difficulty of the ground truth problem is compounded by the
+\emph{inter-dimensional} nature of enterprise data errors.  We identify
+five dimensions along which errors manifest, and show that their
+interactions create a complexity class that exceeds any single-dimension
+analysis.
+
+\begin{definition}[Knowledge Dimensions]
+\label{def:dimensions}
+Enterprise audit knowledge spans five orthogonal dimensions:
+\begin{enumerate}
+  \item \textbf{Topological} ($\mathcal{D}_T$): Account classifications,
+    entity relationships, document reference chains, graph connectivity.
+  \item \textbf{Statistical} ($\mathcal{D}_S$): Amount distributions,
+    Benford's-law compliance, correlation structures, outlier patterns.
+  \item \textbf{Temporal} ($\mathcal{D}_\tau$): Posting dates, period
+    assignments, processing lags, seasonal patterns, regime changes.
+  \item \textbf{Normative} ($\mathcal{D}_N$): Accounting standards
+    compliance, audit requirements, internal control effectiveness,
+    regulatory adherence.
+  \item \textbf{Organizational} ($\mathcal{D}_O$): Approval hierarchies,
+    segregation of duties, departmental structure, intercompany
+    relationships.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Cross-Dimensional Error Amplification]
+\label{thm:amplification}
+Let $e$ be a systematic error in dimension $\mathcal{D}_i$ that affects
+$n_i$ records.  If the error induces secondary effects in $d$ additional
+dimensions, each affecting a multiplicative factor $\alpha_j \geq 1$
+records, then the total error footprint is:
+\begin{equation}
+|e^*| = n_i \cdot \prod_{j=1}^{d} \alpha_j
+\label{eq:amplification}
+\end{equation}
+For typical enterprise processes where $d \geq 2$ and $\alpha_j \geq 2$,
+a single-source error affecting 100 records can propagate to $\geq 400$
+affected data points across dimensions.
+\end{theorem}
+
+\begin{proof}
+Consider a vendor master data error (topological dimension) that
+assigns incorrect GL account codes to a vendor.  This produces:
+(a)~statistical anomalies in the affected accounts' distributions
+($\alpha_S \geq 1$), (b)~temporal artifacts from misclassified period
+assignments ($\alpha_\tau \geq 1$), and (c)~normative violations in
+subledger reconciliation ($\alpha_N \geq 1$).  Each propagation
+multiplies the affected record count.  The product follows from the
+independence of propagation paths across dimensions.
+\end{proof}
+
+\begin{remark}
+The inter-dimensional nature of errors explains why single-dimension
+audit analytics---Benford tests alone, or control testing alone, or
+process mining alone---systematically underperform.  Effective audit
+analytics must operate across all five dimensions simultaneously,
+which requires training data that embeds knowledge across all five
+dimensions.  This is precisely what \system{}'s reference knowledge
+graphs provide.
+\end{remark}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Three Layers of Audit Knowledge}
+\label{sec:gt_layers}
+
+Having established that inverse recovery is infeasible and error-prone,
+we now define the \emph{forward generation} approach through three
+layers of audit knowledge.  \system{} generates data that explicitly
+encodes all three layers, producing reference knowledge graphs with
+full provenance.
+
+\begin{definition}[Three-Layer Knowledge Model]
+\label{def:three_layers}
+A \emph{reference knowledge graph} $\mathcal{K}$ comprises three layers:
+
+\paragraph{Layer 1: Structural Knowledge ($\mathcal{K}_S$).}
+The accounting graph topology---accounts as nodes, transaction flows as
+directed edges, master data entities with typed relationships, document
+chains with referential integrity.  This layer answers \emph{what
+entities exist and how they connect}.
+
+\paragraph{Layer 2: Statistical Knowledge ($\mathcal{K}_\Sigma$).}
+The distributional properties of all quantities---amount distributions
+conforming to Benford's law, temporal patterns (period-end spikes,
+intraday profiles, processing lags), cross-field correlations via copula
+models, economic cycle dynamics.  This layer answers \emph{what
+quantitative patterns characterize normal operation}.
+
+\paragraph{Layer 3: Normative Knowledge ($\mathcal{K}_N$).}
+The rules, standards, and controls that govern the enterprise---accounting
+framework (US~GAAP, IFRS, etc.), audit standards (ISA, PCAOB), internal
+controls (COSO~2013 with 17 principles), regulatory requirements (SOX~302/404),
+and organizational policies (approval thresholds, SoD rules).  This layer
+answers \emph{what constraints define correct behavior}.
+\end{definition}
+
+\begin{theorem}[Reference Knowledge Graph Completeness]
+\label{thm:completeness}
+Let $\mathcal{G}$ be a fully specified generative model that explicitly
+encodes structural rules $\mathcal{R}_S$, statistical parameters
+$\Theta_\Sigma$, and normative constraints $\mathcal{C}_N$.  A dataset
+$D = \mathcal{G}(\text{seed})$ generated by $\mathcal{G}$ constitutes a
+reference knowledge graph that is \emph{complete} with respect to all
+three layers:
+\begin{equation}
+\mathcal{K}(D) = \mathcal{K}_S(\mathcal{R}_S)
+  \cup \mathcal{K}_\Sigma(\Theta_\Sigma)
+  \cup \mathcal{K}_N(\mathcal{C}_N)
+\label{eq:completeness}
+\end{equation}
+Furthermore, for any predicate $\phi$ over $D$ that is decidable given
+$\mathcal{G}$, the ground truth value $\phi(D)$ is computable in time
+polynomial in $|D|$.
+\end{theorem}
+
+\begin{proof}
+By construction, every record in $D$ is produced by a deterministic
+function of the seed and the generative model $\mathcal{G}$.  The
+structural rules $\mathcal{R}_S$ determine which entities exist and
+how they relate (Layer~1 completeness).  The statistical parameters
+$\Theta_\Sigma$ determine all distributional properties (Layer~2
+completeness).  The normative constraints $\mathcal{C}_N$ are explicitly
+encoded in the generation process, so every violation or conformance is
+known (Layer~3 completeness).
+
+For decidability: since $D$ is finite and $\mathcal{G}$ is known, any
+predicate $\phi$ can be evaluated by tracing the generative provenance
+of the relevant records, which requires at most one pass through $D$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────
+\subsection{Forward Generation vs.\ Inverse Recovery}
+\label{sec:gt_forward}
+
+We summarize the contrast between the two paradigms:
+
+\begin{center}
+\small
+\begin{tabular}{p{3.5cm}p{5cm}p{5cm}}
+\toprule
+\textbf{Property} & \textbf{Inverse Recovery} & \textbf{Forward Generation} \\
+\midrule
+Ground truth &
+  Unknown; inferred from data &
+  Known by construction \\
+Systematic errors &
+  Inherited and amplified &
+  Absent (or injected with labels) \\
+Completeness &
+  Partial; limited by observability &
+  Complete across all three layers \\
+Complexity &
+  Exponential (\Cref{thm:combinatorial}) &
+  Linear in output size \\
+Verifiability &
+  Cannot verify against unknown truth &
+  Every fact is traceable to the model \\
+Anomaly labels &
+  Requires manual annotation &
+  Generated with full provenance \\
+Reproducibility &
+  Depends on data access &
+  Deterministic from seed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The forward generation paradigm does not replace the need to
+analyze real enterprise data---it provides the \emph{reference frame}
+against which analysis tools, knowledge construction pipelines, and
+audit procedures can be developed, tested, and calibrated before
+deployment on real data.  \system{} implements this paradigm as a
+practical tool, as detailed in the following sections.

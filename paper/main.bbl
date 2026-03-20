@@ -1,4 +1,4 @@
-\begin{thebibliography}{35}
+\begin{thebibliography}{32}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -47,12 +47,6 @@ Cynthia Dwork, Frank McSherry, Kobbi Nissim, and Adam Smith.
 \newblock Calibrating noise to sensitivity in private data analysis.
 \newblock In \emph{Theory of Cryptography Conference (TCC)}, pages 265--284.
   Springer, 2006.
-
-\bibitem[{European Parliament and Council of the European
-  Union}(2016)]{gdpr2016}
-{European Parliament and Council of the European Union}.
-\newblock General data protection regulation ({GDPR}).
-\newblock Regulation (EU) 2016/679, 2016.
 
 \bibitem[Fellingham(2018)]{fellingham2018double}
 John Fellingham.
@@ -119,13 +113,6 @@ James Jordon, Jinsung Yoon, and Mihaela van~der Schaar.
   guarantees.
 \newblock In \emph{International Conference on Learning Representations
   (ICLR)}, 2019.
-
-\bibitem[Kahn(1962)]{kahn1962topological}
-Arthur~B. Kahn.
-\newblock Topological sorting of large networks.
-\newblock \emph{Communications of the ACM}, 5\penalty0 (11):\penalty0 558--562,
-  1962.
-\newblock \doi{10.1145/368996.369025}.
 
 \bibitem[Kotelnikov et~al.(2023)Kotelnikov, Baranchuk, Rubachev, and
   Babenko]{kotelnikov2023tabddpm}
@@ -196,11 +183,6 @@ Aivin~V. Solatorio and Olivier Dupriez.
 \newblock {REaLTabFormer}: Generating realistic relational and tabular data
   using transformers.
 \newblock \emph{arXiv preprint arXiv:2302.02041}, 2023.
-
-\bibitem[{United States Congress}(2002)]{sox2002}
-{United States Congress}.
-\newblock Sarbanes-oxley act of 2002.
-\newblock Public Law 107-204, 2002.
 
 \bibitem[Vasarhelyi et~al.(2004)Vasarhelyi, Alles, and
   Kogan]{vasarhelyi2004principles}

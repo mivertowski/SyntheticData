@@ -2,31 +2,29 @@
 \section{Privacy-Preserving Fingerprint Module}
 \label{sec:privacy}
 
-A key challenge in synthetic data generation is preserving the statistical
-characteristics of real production data without exposing individual records.
-\system{}'s fingerprint module addresses this by extracting
-\emph{distributional summaries} under formal privacy guarantees, producing
-a compact archive from which a fully configured generator can be instantiated.
+While \system{} can generate reference knowledge graphs from scratch
+using configured distributions, a key scenario involves calibrating
+the generative model to match real enterprise data.  The fingerprint
+module enables this by extracting \emph{distributional summaries} under
+formal privacy guarantees, bridging the gap between the forward
+generation paradigm (\Cref{sec:gt_forward}) and the statistical
+characteristics of production data.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Privacy Mechanisms}
 \label{sec:priv_mechanisms}
 
-The module combines two complementary privacy techniques:
+The module combines two complementary techniques:
 
 \paragraph{Differential Privacy ($\varepsilon$-DP).}
 Each extracted statistic is protected by calibrated Laplace noise:
-
 \begin{equation}
 \tilde{s} = s + \text{Lap}\!\left(\frac{\Delta s}{\varepsilon}\right)
 \label{eq:dp_laplace}
 \end{equation}
-
-where $s$ is the true statistic, $\Delta s$ is its sensitivity (maximum
-change from adding or removing one record), and $\varepsilon$ is the privacy
-budget.  The module tracks cumulative $\varepsilon$ expenditure across all
-queries via a privacy accountant, ensuring that the total privacy loss remains
-within the configured budget.
+where $s$ is the true statistic, $\Delta s$ is its sensitivity, and
+$\varepsilon$ is the privacy budget.  A privacy accountant tracks
+cumulative $\varepsilon$ expenditure.
 
 Four privacy levels provide pre-configured $\varepsilon$ values:
 
@@ -45,93 +43,28 @@ Maximum  & 0.1 & 20 & Maximum & Low \\
 \end{center}
 
 \paragraph{$k$-Anonymity.}
-Categorical distributions with fewer than $k$ occurrences in any group
-are suppressed (generalized to a parent category or marked as ``Other'').
-This prevents re-identification of rare attribute combinations.
+Categorical distributions with fewer than $k$ occurrences are suppressed.
 
 % ─────────────────────────────────────────────────────────────────────
-\subsection{Fingerprint Extraction}
+\subsection{Fingerprint Extraction and Synthesis}
 \label{sec:priv_extraction}
 
-The \texttt{FingerprintExtractor} processes input data (CSV, Parquet) in a
-streaming fashion to minimize memory usage.  Seven extraction components run
-sequentially:
-
-\begin{enumerate}
-  \item \textbf{Schema extraction:} Table names, column types, nullable
-    flags, foreign-key relationships.
-  \item \textbf{Statistics extraction:} Per-column distribution parameters
-    (mean, variance, percentiles 1/5/25/50/75/95/99), Benford digit
-    frequencies, cardinality estimates.
-  \item \textbf{Correlation extraction:} Pairwise correlation matrices,
-    copula family selection (via AIC/BIC), fitted copula parameters.
-  \item \textbf{Integrity extraction:} Foreign-key cardinality distributions,
-    referential integrity rates, orphan record counts.
-  \item \textbf{Rule extraction:} Balance constraints (debit $=$ credit),
-    approval thresholds, business rules.
-  \item \textbf{Anomaly extraction:} Anomaly rates by category, type
-    distribution, temporal concentration.
-  \item \textbf{Privacy audit:} Records all privacy decisions, noise
-    additions, suppression counts, and total $\varepsilon$ spent.
-\end{enumerate}
-
-Each numeric statistic is noised via \Cref{eq:dp_laplace} before being
-written to the fingerprint.
-
-% ─────────────────────────────────────────────────────────────────────
-\subsection{Fingerprint File Format (.dsf)}
-\label{sec:priv_format}
+The \texttt{FingerprintExtractor} processes input data in a streaming
+fashion through seven components: schema extraction, statistics
+extraction, correlation extraction, integrity extraction, rule
+extraction, anomaly extraction, and privacy audit.  Each numeric
+statistic is noised via \Cref{eq:dp_laplace}.
 
 The fingerprint is stored as a ZIP archive (\texttt{.dsf}) containing
-eight YAML/JSON components:
-
-\begin{center}
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{File} & \textbf{Contents} \\
-\midrule
-\texttt{manifest.json}      & Version, checksums, privacy config, signature \\
-\texttt{schema.yaml}        & Tables, columns, types, FK relationships \\
-\texttt{statistics.yaml}    & Distributions, percentiles, Benford frequencies \\
-\texttt{correlations.yaml}  & Correlation matrices, copula parameters \\
-\texttt{integrity.yaml}     & FK cardinality, constraints \\
-\texttt{rules.yaml}         & Balance constraints, thresholds \\
-\texttt{anomalies.yaml}     & Anomaly rates, type distribution \\
-\texttt{privacy\_audit.json} & Privacy decisions, $\varepsilon$ spent \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-The \texttt{manifest.json} includes SHA-256 checksums for each component,
-enabling tamper detection.  The \texttt{privacy\_audit.json} provides a
-complete audit trail of all privacy-related decisions made during extraction.
-
-% ─────────────────────────────────────────────────────────────────────
-\subsection{Configuration Synthesis}
-\label{sec:priv_synthesis}
+manifest, schema, statistics, correlations, integrity, rules, anomalies,
+and privacy audit components.
 
 The \texttt{ConfigSynthesizer} reads a \texttt{.dsf} fingerprint and
-generates a complete \system{} YAML configuration.  Key synthesis steps:
-
-\begin{enumerate}
-  \item \textbf{Scale estimation:} Target row counts are derived from the
-    original counts multiplied by a configurable factor (default $2.0\times$).
-  \item \textbf{Distribution mapping:} Noised statistics are mapped to the
-    nearest supported distribution family (log-normal mixture, Gaussian
-    mixture, Pareto, etc.) via method-of-moments or maximum likelihood.
-  \item \textbf{Copula reconstruction:} Correlation matrices and copula
-    parameters are used to configure the dependency model.
-  \item \textbf{Anomaly calibration:} Observed anomaly rates are mapped to
-    injection parameters.
-  \item \textbf{Seed assignment:} A new deterministic seed is generated,
-    ensuring the synthesized data is independent of the original.
-\end{enumerate}
-
-This two-phase architecture (extract $\to$ synthesize) cleanly separates the
-\emph{privacy boundary} (extraction, where DP is applied) from the
-\emph{generation process} (synthesis, which is purely algorithmic), enabling
-independent auditing and regulatory review.
+generates a complete \system{} YAML configuration through scale
+estimation, distribution mapping, copula reconstruction, anomaly
+calibration, and seed assignment.  This two-phase architecture
+(extract $\to$ synthesize) cleanly separates the \emph{privacy boundary}
+from the \emph{generation process}.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Privacy-Utility Tradeoff}
@@ -139,39 +72,34 @@ independent auditing and regulatory review.
 
 \begin{proposition}[Utility bound]
 \label{prop:utility}
-Let $\tilde{\mu}$ be the noised mean of a column with $n$ records and
-true mean $\mu$.  The sensitivity is $\Delta\mu = R/n$ where $R$ is the
-column range.  Then:
-\[
-\E[|\tilde{\mu} - \mu|] = \frac{R}{n\varepsilon}
-\]
-For $n = 10{,}000$ records, $R = 10^6$ (typical transaction amount range),
-and $\varepsilon = 1.0$: $\E[|\tilde{\mu} - \mu|] = 100$, which is $<0.01\%$
-of the range---negligible for distribution fitting purposes.
+For $n$ records with true mean $\mu$ and column range $R$:
+$\E[|\tilde{\mu} - \mu|] = R/(n\varepsilon)$.
+For $n = 10{,}000$, $R = 10^6$, $\varepsilon = 1.0$:
+$\E[|\tilde{\mu} - \mu|] = 100$, which is $<0.01\%$ of the
+range---negligible for distribution fitting.
 \end{proposition}
 
-This result demonstrates that for enterprise-scale datasets (typically
-$n > 10{,}000$ records), even standard privacy levels ($\varepsilon = 1.0$)
-introduce negligible utility loss for aggregate statistics, making the
-fingerprint approach practical for real-world deployments.
+This demonstrates that for enterprise-scale datasets ($n > 10{,}000$),
+even standard privacy levels introduce negligible utility loss,
+making the fingerprint approach practical for calibrating reference
+knowledge graphs against real-world statistical properties while
+maintaining formal privacy guarantees.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Workflow}
 \label{sec:priv_workflow}
 
-The end-to-end privacy-preserving workflow is:
-
 \begin{enumerate}
   \item \textbf{Extract:}
-    \texttt{datasynth-data fingerprint extract --input data.csv --output fp.dsf --privacy-level standard}
+    \texttt{datasynth-data fingerprint extract -{}-input data.csv -{}-output fp.dsf -{}-privacy-level standard}
   \item \textbf{Validate:}
-    \texttt{datasynth-data fingerprint validate fp.dsf} (verify integrity,
-    inspect privacy audit)
+    \texttt{datasynth-data fingerprint validate fp.dsf}
   \item \textbf{Generate:}
-    \texttt{datasynth-data generate --fingerprint fp.dsf --output ./synthetic/}
+    \texttt{datasynth-data generate -{}-fingerprint fp.dsf -{}-output ./synthetic/}
   \item \textbf{Evaluate:}
-    \texttt{datasynth-data fingerprint evaluate --fingerprint fp.dsf --synthetic ./synthetic/}
+    \texttt{datasynth-data fingerprint evaluate -{}-fingerprint fp.dsf -{}-synthetic ./synthetic/}
 \end{enumerate}
 
-The fingerprint file can be safely shared across organizational boundaries,
-as it contains only noised aggregate statistics---never individual records.
+The fingerprint file can be safely shared across organizational
+boundaries, enabling generation of calibrated reference knowledge
+graphs without exposing individual records.
