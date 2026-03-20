@@ -97,9 +97,18 @@ impl DeferredTaxGenerator {
 
             let period_label = format!("FY{}", posting_date.year());
 
+            // Determine framework from country: US entities use US GAAP (ASC);
+            // all others default to IFRS (IAS/IFRS standards).
+            let is_ifrs = !matches!(country_code.to_uppercase().as_str(), "US");
+
             // 1. Temporary differences
-            let diffs =
-                self.generate_temp_diffs(company_code, pre_tax_income, total_assets, total_revenue);
+            let diffs = self.generate_temp_diffs_with_framework(
+                company_code,
+                pre_tax_income,
+                total_assets,
+                total_revenue,
+                is_ifrs,
+            );
             let (dta, dtl) = compute_dta_dtl(&diffs, statutory_rate);
 
             // 2. ETR reconciliation
@@ -129,13 +138,28 @@ impl DeferredTaxGenerator {
     // Temporary differences
     // -----------------------------------------------------------------------
 
-    fn generate_temp_diffs(
+    /// Generate temporary differences using framework-appropriate standard references.
+    ///
+    /// `is_ifrs` – when `true`, references use IAS/IFRS standards; when `false`,
+    /// references use US GAAP ASC standards.
+    fn generate_temp_diffs_with_framework(
         &mut self,
         entity_code: &str,
         _pre_tax_income: Decimal,
         total_assets: Decimal,
         revenue_proxy: Decimal,
+        is_ifrs: bool,
     ) -> Vec<TemporaryDifference> {
+        // Select standard references based on framework.
+        let std_depreciation = if is_ifrs { "IAS 16" } else { "ASC 360" };
+        let std_accruals = if is_ifrs { "IAS 37" } else { "ASC 450" };
+        let std_receivables = if is_ifrs { "IFRS 9" } else { "ASC 310" };
+        let std_inventory = if is_ifrs { "IAS 2" } else { "ASC 330" };
+        let std_leases = if is_ifrs { "IFRS 16" } else { "ASC 842" };
+        let std_warranty = if is_ifrs { "IAS 37" } else { "ASC 460" };
+        let std_sbc = if is_ifrs { "IFRS 2" } else { "ASC 718" };
+        let std_rd = if is_ifrs { "IAS 38" } else { "ASC 730" };
+
         let templates: Vec<(&str, &str, DeferredTaxType, Option<&str>, Decimal, Decimal)> = vec![
             // (description, account, type, standard, book_basis, tax_basis)
             // Accelerated depreciation – MACRS/capital allowances
@@ -143,7 +167,7 @@ impl DeferredTaxGenerator {
                 "Accelerated depreciation (MACRS / capital allowances)",
                 datasynth_core::accounts::control_accounts::FIXED_ASSETS,
                 DeferredTaxType::Liability,
-                Some("IAS 16 / ASC 360"),
+                Some(std_depreciation),
                 // book NBV: 8-12% of total assets
                 total_assets * self.rand_decimal(dec!(0.08), dec!(0.12)),
                 // tax NBV: lower because accelerated → 1.4-1.6x book depreciation taken
@@ -154,7 +178,7 @@ impl DeferredTaxGenerator {
                 "Accrued expenses (deductible when paid)",
                 datasynth_core::accounts::liability_accounts::ACCRUED_EXPENSES,
                 DeferredTaxType::Asset,
-                Some("IAS 37 / ASC 450"),
+                Some(std_accruals),
                 revenue_proxy * self.rand_decimal(dec!(0.01), dec!(0.03)),
                 Decimal::ZERO,
             ),
@@ -163,7 +187,7 @@ impl DeferredTaxGenerator {
                 "Allowance for doubtful accounts",
                 datasynth_core::accounts::control_accounts::AR_CONTROL,
                 DeferredTaxType::Asset,
-                Some("IFRS 9 / ASC 310"),
+                Some(std_receivables),
                 revenue_proxy * self.rand_decimal(dec!(0.005), dec!(0.015)),
                 Decimal::ZERO,
             ),
@@ -172,7 +196,7 @@ impl DeferredTaxGenerator {
                 "Inventory write-down (LCM / NRV)",
                 datasynth_core::accounts::control_accounts::INVENTORY,
                 DeferredTaxType::Asset,
-                Some("IAS 2 / ASC 330"),
+                Some(std_inventory),
                 total_assets * self.rand_decimal(dec!(0.005), dec!(0.015)),
                 Decimal::ZERO,
             ),
@@ -181,7 +205,7 @@ impl DeferredTaxGenerator {
                 "Right-of-use asset – operating lease (tax: rental deduction)",
                 expense_accounts::RENT,
                 DeferredTaxType::Liability,
-                Some("IFRS 16 / ASC 842"),
+                Some(std_leases),
                 total_assets * self.rand_decimal(dec!(0.02), dec!(0.06)),
                 Decimal::ZERO,
             ),
@@ -190,7 +214,7 @@ impl DeferredTaxGenerator {
                 "Warranty provision (deductible when paid)",
                 datasynth_core::accounts::liability_accounts::ACCRUED_EXPENSES,
                 DeferredTaxType::Asset,
-                Some("IAS 37 / ASC 460"),
+                Some(std_warranty),
                 revenue_proxy * self.rand_decimal(dec!(0.003), dec!(0.010)),
                 Decimal::ZERO,
             ),
@@ -199,7 +223,7 @@ impl DeferredTaxGenerator {
                 "Share-based compensation (book > tax until exercise)",
                 datasynth_core::accounts::expense_accounts::BENEFITS,
                 DeferredTaxType::Asset,
-                Some("IFRS 2 / ASC 718"),
+                Some(std_sbc),
                 revenue_proxy * self.rand_decimal(dec!(0.005), dec!(0.012)),
                 Decimal::ZERO,
             ),
@@ -208,7 +232,7 @@ impl DeferredTaxGenerator {
                 "Capitalised development costs (expensed for tax)",
                 datasynth_core::accounts::control_accounts::FIXED_ASSETS,
                 DeferredTaxType::Liability,
-                Some("IAS 38 / ASC 730"),
+                Some(std_rd),
                 total_assets * self.rand_decimal(dec!(0.01), dec!(0.04)),
                 Decimal::ZERO,
             ),

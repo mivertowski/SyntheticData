@@ -319,7 +319,7 @@ fn materiality_tolerable_error_equals_pm() {
 }
 
 #[test]
-fn materiality_sad_nominal_is_zero() {
+fn materiality_sad_nominal_is_five_percent_of_om() {
     let calc = MaterialityCalculation::new(
         "C001",
         "FY2024",
@@ -330,7 +330,10 @@ fn materiality_sad_nominal_is_zero() {
         None,
         "Test",
     );
-    assert_eq!(calc.sad_nominal, Decimal::ZERO);
+    // SAD = 5% of overall materiality (ISA 450 common practice)
+    let om = dec!(8_000_000) * dec!(0.005);
+    let expected_sad = om * dec!(0.05);
+    assert_eq!(calc.sad_nominal, expected_sad);
 }
 
 #[test]
@@ -529,8 +532,10 @@ fn generator_tolerable_error_equals_pm() {
 }
 
 #[test]
-fn generator_sad_is_zero() {
+fn generator_sad_is_five_percent_of_om() {
     let mut gen = MaterialityGenerator::new(42);
     let calc = gen.generate(&make_profitable_input());
-    assert_eq!(calc.sad_nominal, Decimal::ZERO);
+    // SAD nominal = 5% of overall materiality
+    let expected_sad = calc.overall_materiality * dec!(0.05);
+    assert_eq!(calc.sad_nominal, expected_sad);
 }

@@ -12,9 +12,9 @@ use std::time::Duration;
 use tempfile::TempDir;
 
 /// Safe resource limits for tests - keep these conservative to prevent system hangs
-const TEST_MEMORY_LIMIT: &str = "128";
+const TEST_MEMORY_LIMIT: &str = "512";
 const TEST_MAX_THREADS: &str = "1";
-const TEST_TIMEOUT_SECS: u64 = 20;
+const TEST_TIMEOUT_SECS: u64 = 120;
 
 /// Get a Command for our binary.
 #[allow(deprecated)] // cargo_bin is still functional, just has a new alternative

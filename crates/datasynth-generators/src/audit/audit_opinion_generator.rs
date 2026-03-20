@@ -29,9 +29,8 @@ use datasynth_core::models::audit::{
 use datasynth_core::utils::seeded_rng;
 use datasynth_standards::audit::opinion::{
     AuditOpinion, EmphasisOfMatter, EomMatter, GoingConcernAssessment as OpinionGcAssessment,
-    IcfrOpinion, IcfrOpinionType, KeyAuditMatter,
-    MaterialWeakness as OpinionMaterialWeakness, ModificationBasis, OpinionModification,
-    OpinionType, PcaobOpinionElements, RiskLevel,
+    IcfrOpinion, IcfrOpinionType, KeyAuditMatter, MaterialWeakness as OpinionMaterialWeakness,
+    ModificationBasis, OpinionModification, OpinionType, PcaobOpinionElements, RiskLevel,
 };
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;

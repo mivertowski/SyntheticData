@@ -401,10 +401,12 @@ mod tests {
     }
 
     #[test]
-    fn sad_nominal_is_zero() {
+    fn sad_nominal_is_five_percent_of_overall() {
         let mut gen = MaterialityGenerator::new(42);
         let calc = gen.generate(&sample_input());
-        assert_eq!(calc.sad_nominal, Decimal::ZERO);
+        // SAD nominal = 5% of overall materiality (ISA 450 guidance).
+        let expected = calc.overall_materiality * dec!(0.05);
+        assert_eq!(calc.sad_nominal, expected);
     }
 
     #[test]

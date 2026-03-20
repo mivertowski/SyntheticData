@@ -32,6 +32,27 @@ impl ConsolidationGenerator {
         elimination_entries: &[JournalEntry],
         period_label: &str,
     ) -> (Vec<FinancialStatementLineItem>, ConsolidationSchedule) {
+        // BS categories: debit-normal assets are positive as (debit - credit).
+        // Liability/Equity categories are credit-normal: negate so they appear positive.
+        const BS_CATEGORIES: &[&str] = &[
+            "Cash",
+            "Receivables",
+            "Inventory",
+            "FixedAssets",
+            "Payables",
+            "AccruedLiabilities",
+            "LongTermDebt",
+            "Equity",
+        ];
+        // IS categories: Revenue is credit-normal (negate); Expenses are debit-normal (positive).
+        const IS_CATEGORIES: &[&str] = &[
+            "Revenue",
+            "CostOfSales",
+            "OperatingExpenses",
+            "OtherIncome",
+            "OtherExpenses",
+        ];
+
         // Step 1: Collect all account categories across all entities
         let mut all_categories: std::collections::BTreeSet<String> =
             std::collections::BTreeSet::new();
@@ -56,12 +77,17 @@ impl ConsolidationGenerator {
             }
         }
 
-        // Step 3: Build schedule line items
+        // Step 3: Build schedule line items (all categories, for the full schedule).
         let mut schedule_lines: Vec<ConsolidationLineItem> = Vec::new();
-        let mut consolidated_items: Vec<FinancialStatementLineItem> = Vec::new();
+        // BS and IS consolidated items are kept separate so each statement only
+        // contains the categories appropriate to it.
+        let mut bs_items: Vec<FinancialStatementLineItem> = Vec::new();
+        let mut is_items: Vec<FinancialStatementLineItem> = Vec::new();
+        let mut bs_sort: u32 = 0;
+        let mut is_sort: u32 = 0;
 
-        for (sort_idx, category) in all_categories.iter().enumerate() {
-            // Per-entity amounts for this category
+        for category in all_categories.iter() {
+            // Per-entity amounts for this category (raw debit - credit net)
             let mut entity_amounts: HashMap<String, Decimal> = HashMap::new();
             let mut pre_total = Decimal::ZERO;
 
@@ -85,19 +111,55 @@ impl ConsolidationGenerator {
                 post_elimination_total: post_total,
             });
 
-            // Build a FinancialStatementLineItem for the consolidated statement
-            consolidated_items.push(FinancialStatementLineItem {
-                line_code: format!("CONS-{}", category.to_uppercase()),
-                label: category.clone(),
-                section: section_for_category(category),
-                sort_order: (sort_idx + 1) as u32,
-                amount: post_total,
-                amount_prior: None,
-                indent_level: 0,
-                is_total: false,
-                gl_accounts: Vec::new(),
-            });
+            // Apply sign convention for presentation:
+            // - Assets (debit-normal): post_total is already positive when debits > credits.
+            // - Liabilities/Equity (credit-normal): negate so they appear as positive figures.
+            // - Revenue (credit-normal): negate so revenue appears positive on the IS.
+            // - Expenses (debit-normal): post_total is already positive.
+            let presented_amount = match category.as_str() {
+                "Payables" | "AccruedLiabilities" | "LongTermDebt" | "Equity" | "Revenue" => {
+                    -post_total
+                }
+                _ => post_total,
+            };
+
+            let section = section_for_category(category);
+            let line_code = format!("CONS-{}", category.to_uppercase());
+
+            if BS_CATEGORIES.contains(&category.as_str()) {
+                bs_sort += 1;
+                bs_items.push(FinancialStatementLineItem {
+                    line_code,
+                    label: category.clone(),
+                    section,
+                    sort_order: bs_sort,
+                    amount: presented_amount,
+                    amount_prior: None,
+                    indent_level: 0,
+                    is_total: false,
+                    gl_accounts: Vec::new(),
+                });
+            } else if IS_CATEGORIES.contains(&category.as_str()) {
+                is_sort += 1;
+                is_items.push(FinancialStatementLineItem {
+                    line_code,
+                    label: category.clone(),
+                    section,
+                    sort_order: is_sort,
+                    amount: presented_amount,
+                    amount_prior: None,
+                    indent_level: 0,
+                    is_total: false,
+                    gl_accounts: Vec::new(),
+                });
+            }
+            // Categories that don't fit either statement are omitted from the
+            // consolidated FS items but still appear in the schedule.
         }
+
+        // Return BS items first, then IS items, so callers can split on StatementType.
+        let mut consolidated_items = bs_items;
+        consolidated_items.extend(is_items);
 
         let schedule = ConsolidationSchedule {
             period: period_label.to_string(),
@@ -248,8 +310,9 @@ mod tests {
             );
         }
 
-        // Consolidated line items should match schedule count
-        assert_eq!(items.len(), schedule.line_items.len());
+        // Consolidated line items only include BS/IS categories, so their count
+        // may be less than the full schedule (which records every category).
+        assert!(items.len() <= schedule.line_items.len());
     }
 
     #[test]

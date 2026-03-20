@@ -344,6 +344,17 @@ impl SamplingPlanGenerator {
             });
         }
 
+        // Guard: key items must not exceed the population value (they are a subset of it).
+        // If they do, scale all amounts down proportionally so their total is 80% of the
+        // population value, leaving room for representative items.
+        let key_total: Decimal = items.iter().map(|k| k.amount).sum();
+        if key_total > pop_value {
+            let scale = (pop_value * dec!(0.8)) / key_total;
+            for item in &mut items {
+                item.amount = (item.amount * scale).round_dp(2);
+            }
+        }
+
         items
     }
 

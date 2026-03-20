@@ -374,7 +374,7 @@ impl CraGenerator {
         }
     }
 
-    /// Apply the significant risk rules per ISA 315.28 and ISA 240.
+    /// Apply the significant risk rules per ISA 315.28, ISA 240, and ISA 501.
     fn is_significant_risk(
         &self,
         spec: &AccountAreaSpec,
@@ -384,6 +384,14 @@ impl CraGenerator {
     ) -> bool {
         // Per ISA 240.26 — revenue occurrence is always presumed fraud risk
         if spec.always_significant_occurrence && assertion == AuditAssertion::Occurrence {
+            return true;
+        }
+        // Per ISA 501 — inventory existence requires physical observation (always significant
+        // when inherent risk is High, as quantities cannot be confirmed by other means).
+        if spec.name == "Inventory"
+            && assertion == AuditAssertion::Existence
+            && ir == RiskRating::High
+        {
             return true;
         }
         // High IR on high-judgment areas (Provisions, Estimates) is significant

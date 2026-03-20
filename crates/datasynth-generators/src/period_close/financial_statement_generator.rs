@@ -546,16 +546,16 @@ impl FinancialStatementGenerator {
         let capex = -fa_change; // negate: FA increase → negative investing CF
         let investing_cf = capex;
 
-        // Financing CF: net change in debt + equity contributions
+        // Financing CF: net change in long-term debt only.
+        // Equity changes are NOT included in financing CF because retained earnings
+        // changes are the result of net income (already in operating), and equity
+        // issuances/buybacks would require separate tracking (not available here).
+        // Retained earnings appear in "Changes in Equity", not the CF statement.
         let debt_current = get_current("LongTermDebt");
         let debt_prior = get_prior("LongTermDebt");
         let debt_change = debt_current - debt_prior;
 
-        let equity_current = get_current("Equity");
-        let equity_prior = get_prior("Equity");
-        let equity_change = equity_current - equity_prior;
-
-        let financing_cf = debt_change + equity_change;
+        let financing_cf = debt_change;
 
         let net_change = operating_cf + investing_cf + financing_cf;
 

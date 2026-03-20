@@ -140,8 +140,9 @@ pub struct MaterialityCalculation {
     /// Tolerable error — equals performance materiality for sampling purposes.
     #[serde(with = "rust_decimal::serde::str")]
     pub tolerable_error: Decimal,
-    /// Summary of Audit Differences (SAD) threshold — accumulate all differences
-    /// (set to zero so every difference is tracked).
+    /// Summary of Audit Differences (SAD) nominal threshold — misstatements
+    /// below this amount need not be individually tracked in the SAD schedule.
+    /// Set to 5% of overall materiality per common practice (ISA 450).
     #[serde(with = "rust_decimal::serde::str")]
     pub sad_nominal: Decimal,
     /// Optional normalized earnings schedule (generated when reported earnings
@@ -179,7 +180,10 @@ impl MaterialityCalculation {
         let performance_materiality = overall_materiality * pm_percentage;
         let clearly_trivial = overall_materiality * Decimal::new(5, 2); // 5%
         let tolerable_error = performance_materiality;
-        let sad_nominal = Decimal::ZERO;
+        // SAD nominal = 5% of overall materiality (common professional practice).
+        // Misstatements below this threshold need not be individually accumulated
+        // in the Summary of Audit Differences schedule.
+        let sad_nominal = overall_materiality * Decimal::new(5, 2); // 5% of OM
 
         Self {
             entity_code: entity_code.to_string(),
@@ -224,7 +228,8 @@ mod tests {
         assert_eq!(calc.performance_materiality, dec!(32_500));
         assert_eq!(calc.clearly_trivial, dec!(2_500));
         assert_eq!(calc.tolerable_error, dec!(32_500));
-        assert_eq!(calc.sad_nominal, dec!(0));
+        // SAD nominal = 5% of overall materiality = 2,500
+        assert_eq!(calc.sad_nominal, dec!(2_500));
     }
 
     #[test]

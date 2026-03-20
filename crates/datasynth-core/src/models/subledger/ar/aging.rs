@@ -93,7 +93,12 @@ impl ARAgingReport {
         invoices: &[ARInvoice],
         as_of_date: NaiveDate,
     ) -> Self {
-        // Group invoices by customer
+        // Group invoices by customer.
+        // Only include invoices that:
+        //   1. Belong to the requested company.
+        //   2. Are open or partially cleared (i.e. still have an outstanding balance).
+        //   3. Are dated on or before the as_of_date (future-dated invoices are excluded
+        //      from an aging report because they have not yet been recognised as receivables).
         let mut customer_invoices: HashMap<String, Vec<&ARInvoice>> = HashMap::new();
         for invoice in invoices.iter().filter(|i| {
             i.company_code == company_code
@@ -101,6 +106,7 @@ impl ARAgingReport {
                     i.status,
                     SubledgerDocumentStatus::Open | SubledgerDocumentStatus::PartiallyCleared
                 )
+                && i.invoice_date <= as_of_date
         }) {
             customer_invoices
                 .entry(invoice.customer_id.clone())

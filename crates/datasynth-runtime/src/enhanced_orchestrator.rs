@@ -2462,6 +2462,12 @@ impl EnhancedOrchestrator {
                 let as_of_date = start_date + chrono::Months::new(self.config.global.period_months)
                     - chrono::Days::new(1);
                 debug!("Phase 3b-aging: Building AR/AP aging reports as of {as_of_date}");
+                // Note: AR aging total_ar_balance reflects subledger ARInvoice records only
+                // (created from O2C document flows). The Balance Sheet "Receivables" figure is
+                // derived from JE-level aggregation and will typically differ. This is a known
+                // data model gap: subledger AR (document-flow-driven) and GL AR (JE-driven) are
+                // generated independently. A future reconciliation phase should align them by
+                // using subledger totals as the authoritative source for BS Receivables.
                 for company in &self.config.companies {
                     let ar_report = ARAgingReport::from_invoices(
                         company.code.clone(),
