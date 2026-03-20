@@ -430,10 +430,51 @@ impl Evaluator {
 
     /// Run a comprehensive evaluation and return results.
     ///
-    /// This is a placeholder - actual implementation would take
-    /// generation results as input.
+    /// # Architectural note
+    ///
+    /// This zero-argument variant returns a default (passing) evaluation because the
+    /// `Evaluator` struct holds only configuration — it has no access to the generated
+    /// journal entry or balance data that the sub-module evaluators require.
+    ///
+    /// To evaluate actual generation output, use [`run_evaluation_with_amounts`] which
+    /// accepts raw JE amounts and runs the Benford analysis.  Full wiring of all
+    /// sub-modules (BalanceSheetEvaluator, DocumentChainEvaluator, etc.) requires
+    /// passing the complete `EnhancedGenerationResult` from the runtime crate, which
+    /// would create a circular dependency.  The recommended integration point is the
+    /// orchestrator layer (datasynth-runtime) which already calls the gate engine with
+    /// a populated `ComprehensiveEvaluation`.
     pub fn run_evaluation(&self) -> ComprehensiveEvaluation {
         let mut evaluation = ComprehensiveEvaluation::new();
+        evaluation.check_all_thresholds(&self.config.thresholds);
+        evaluation
+    }
+
+    /// Run a Benford-augmented evaluation given raw JE amounts.
+    ///
+    /// This method calls the [`BenfordAnalyzer`] sub-module and populates the
+    /// `statistical.benford` field of the returned [`ComprehensiveEvaluation`].
+    /// All other sub-module fields remain at their default (passing) values.
+    pub fn run_evaluation_with_amounts(
+        &self,
+        je_amounts: &[rust_decimal::Decimal],
+    ) -> ComprehensiveEvaluation {
+        let mut evaluation = ComprehensiveEvaluation::new();
+
+        if !je_amounts.is_empty() {
+            let analyzer = BenfordAnalyzer::new(self.config.thresholds.benford_p_value_min);
+            match analyzer.analyze(je_amounts) {
+                Ok(benford) => {
+                    evaluation.statistical.benford = Some(benford);
+                }
+                Err(e) => {
+                    evaluation
+                        .failures
+                        .push(format!("Benford analysis failed: {e}"));
+                    evaluation.passes = false;
+                }
+            }
+        }
+
         evaluation.check_all_thresholds(&self.config.thresholds);
         evaluation
     }

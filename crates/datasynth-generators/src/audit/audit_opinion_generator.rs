@@ -34,6 +34,7 @@ use datasynth_standards::audit::opinion::{
 };
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use tracing::info;
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
@@ -93,6 +94,10 @@ impl AuditOpinionGenerator {
 
     /// Generate an audit opinion from the supplied input.
     pub fn generate(&mut self, input: &AuditOpinionInput) -> GeneratedAuditOpinion {
+        info!(
+            "Generating audit opinion for entity {} (engagement {})",
+            input.entity_name, input.engagement_id
+        );
         // Opinion date = period end + 60–90 days (typical sign-off window).
         let opinion_days: i64 = self.rng.random_range(60i64..=90);
         let opinion_date = input.period_end + chrono::Duration::days(opinion_days);
@@ -225,6 +230,12 @@ impl AuditOpinionGenerator {
             opinion.pcaob_compliance = Some(pcaob);
         }
 
+        info!(
+            "Audit opinion for {}: {:?} with {} KAMs",
+            input.entity_name,
+            opinion.opinion_type,
+            kams.len()
+        );
         GeneratedAuditOpinion {
             key_audit_matters: kams,
             opinion,

@@ -21,6 +21,7 @@ use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::info;
 
 /// Generates ISA 600 group audit artefacts.
 pub struct ComponentAuditGenerator {
@@ -52,6 +53,11 @@ impl ComponentAuditGenerator {
         if companies.is_empty() {
             return ComponentAuditSnapshot::default();
         }
+        info!(
+            "Generating component audit snapshot for engagement {} ({} companies)",
+            engagement_id,
+            companies.len()
+        );
 
         // ----------------------------------------------------------------
         // 1. Group companies by country → one auditor per jurisdiction
@@ -321,12 +327,19 @@ impl ComponentAuditGenerator {
             });
         }
 
-        ComponentAuditSnapshot {
+        let snapshot = ComponentAuditSnapshot {
             component_auditors,
             group_audit_plan: Some(group_audit_plan),
             component_instructions: instructions,
             component_reports: reports,
-        }
+        };
+        info!(
+            "Component audit snapshot generated: {} auditors, {} instructions, {} reports",
+            snapshot.component_auditors.len(),
+            snapshot.component_instructions.len(),
+            snapshot.component_reports.len()
+        );
+        snapshot
     }
 
     // ----------------------------------------------------------------

@@ -12,6 +12,7 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::HashMap;
+use tracing::{debug, info};
 
 use datasynth_core::models::{base_rates_usd, FxRate, FxRateTable, RateType};
 
@@ -102,6 +103,12 @@ impl FxRateService {
         start_date: NaiveDate,
         end_date: NaiveDate,
     ) -> FxRateTable {
+        info!(
+            "Generating FX rates for {} currencies ({} to {})",
+            self.config.currencies.len(),
+            start_date,
+            end_date
+        );
         let mut table = FxRateTable::new(&self.config.base_currency);
         let mut current_date = start_date;
 
@@ -247,6 +254,14 @@ impl FxRateService {
         // Convert log rate back to actual rate
         let new_rate = new_log.exp();
         let rate_decimal = Decimal::try_from(new_rate).unwrap_or(dec!(1)).round_dp(6);
+
+        // Log at period boundaries (first day of each month) to avoid excessive output
+        if date.day() == 1 {
+            debug!(
+                "Rate {}/{} for {}: {}",
+                currency, self.config.base_currency, date, rate_decimal
+            );
+        }
 
         FxRate::new(
             currency,

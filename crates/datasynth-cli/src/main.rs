@@ -1954,8 +1954,14 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
             // Write fingerprint
             let writer = FingerprintWriter::new();
             if sign {
+                // NOTE: DsfSigner / signing infrastructure is not yet implemented.
+                // The --sign flag is accepted for forward-compatibility but no signature
+                // is embedded in the output .dsf file.  A future release will add
+                // Ed25519-based signing via a `DsfSigner` type in datasynth-fingerprint.
                 tracing::warn!(
-                    "Fingerprint signing is not yet implemented; writing unsigned fingerprint"
+                    "--sign was specified but fingerprint signing infrastructure (DsfSigner) \
+                     is not yet implemented; writing unsigned fingerprint. \
+                     Remove --sign or track issue #TODO for signing support."
                 );
             }
             writer.write_to_file(&fingerprint, &output)?;
@@ -2197,19 +2203,65 @@ fn handle_fingerprint_command(command: FingerprintCommands) -> Result<()> {
                 );
             }
 
-            // Load synthetic data from first CSV (simplified)
-            let first_csv = &csv_files[0];
-            tracing::info!("  Using: {}", first_csv.display());
-
-            let data_source = DataSource::Csv(CsvDataSource::new(first_csv.clone()));
-
-            // Extract fingerprint from synthetic data for comparison
+            // Extract fingerprints from all synthetic CSV files and average scores.
+            tracing::info!("  Found {} CSV file(s) to evaluate", csv_files.len());
             let extractor = FingerprintExtractor::new();
-            let synthetic_fp = extractor.extract(&data_source)?;
-
-            // Evaluate fidelity
             let evaluator = FidelityEvaluator::with_threshold(threshold);
-            let report = evaluator.evaluate_fingerprints(&fp, &synthetic_fp)?;
+
+            let mut all_reports = Vec::with_capacity(csv_files.len());
+            for csv_path in &csv_files {
+                tracing::info!("  Evaluating: {}", csv_path.display());
+                let data_source = DataSource::Csv(CsvDataSource::new(csv_path.clone()));
+                match extractor.extract(&data_source) {
+                    Ok(synthetic_fp) => match evaluator.evaluate_fingerprints(&fp, &synthetic_fp) {
+                        Ok(r) => all_reports.push(r),
+                        Err(e) => {
+                            tracing::warn!(
+                                "  Skipping {} — evaluation error: {}",
+                                csv_path.display(),
+                                e
+                            );
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!(
+                            "  Skipping {} — extraction error: {}",
+                            csv_path.display(),
+                            e
+                        );
+                    }
+                }
+            }
+
+            if all_reports.is_empty() {
+                anyhow::bail!("No CSV files could be evaluated successfully");
+            }
+
+            // Aggregate: average all fidelity component scores across tables.
+            let n = all_reports.len() as f64;
+            use datasynth_fingerprint::evaluation::FidelityReport;
+            let report = FidelityReport {
+                overall_score: all_reports.iter().map(|r| r.overall_score).sum::<f64>() / n,
+                statistical_fidelity: all_reports
+                    .iter()
+                    .map(|r| r.statistical_fidelity)
+                    .sum::<f64>()
+                    / n,
+                correlation_fidelity: all_reports
+                    .iter()
+                    .map(|r| r.correlation_fidelity)
+                    .sum::<f64>()
+                    / n,
+                schema_fidelity: all_reports.iter().map(|r| r.schema_fidelity).sum::<f64>() / n,
+                rule_compliance: all_reports.iter().map(|r| r.rule_compliance).sum::<f64>() / n,
+                anomaly_fidelity: all_reports.iter().map(|r| r.anomaly_fidelity).sum::<f64>() / n,
+                passes: all_reports.iter().all(|r| r.passes),
+                details: all_reports
+                    .into_iter()
+                    .next()
+                    .map(|r| r.details)
+                    .unwrap_or_default(),
+            };
 
             // Print report
             println!();

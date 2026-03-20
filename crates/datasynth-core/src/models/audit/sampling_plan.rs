@@ -115,6 +115,8 @@ pub enum SelectionType {
 pub struct SampledItem {
     /// Reference ID — links to JE document_id, subledger record, etc.
     pub item_id: String,
+    /// FK → `SamplingPlan.id` — the plan this item belongs to.
+    pub sampling_plan_id: String,
     /// Monetary amount of the item.
     #[serde(with = "rust_decimal::serde::str")]
     pub amount: Decimal,

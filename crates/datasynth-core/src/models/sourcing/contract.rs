@@ -165,6 +165,10 @@ pub struct ProcurementContract {
     pub amendment_count: u32,
     /// Previous contract ID (if renewal)
     pub previous_contract_id: Option<String>,
+    /// FKs → `PurchaseOrder.header.document_id` — purchase orders issued under this contract.
+    /// Populated as POs are raised; empty until the contract enters the execution phase.
+    #[serde(default)]
+    pub purchase_order_ids: Vec<String>,
 }
 
 impl ToNodeProperties for ProcurementContract {

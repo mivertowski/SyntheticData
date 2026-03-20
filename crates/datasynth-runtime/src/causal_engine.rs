@@ -244,6 +244,32 @@ impl<'a> CausalPropagationEngine<'a> {
                             );
                         }
                     }
+                    MacroShockType::CreditCrunch => {
+                        if let Some(node) = self.dag.find_node("gdp_growth") {
+                            effects.insert(
+                                "gdp_growth".to_string(),
+                                node.baseline_value * (1.0 - 0.1 * severity),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("ecl_provision_rate") {
+                            effects.insert(
+                                "ecl_provision_rate".to_string(),
+                                node.baseline_value + severity * 0.5,
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("going_concern_risk") {
+                            effects.insert(
+                                "going_concern_risk".to_string(),
+                                node.baseline_value + severity * 0.3,
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("debt_ratio") {
+                            effects.insert(
+                                "debt_ratio".to_string(),
+                                node.baseline_value + severity * 0.4,
+                            );
+                        }
+                    }
                     _ => {
                         // Other shock types: apply generic severity to gdp_growth
                         if let Some(node) = self.dag.find_node("gdp_growth") {
@@ -422,29 +448,68 @@ impl<'a> CausalPropagationEngine<'a> {
                 }
             }
             InterventionType::RegulatoryChange(rc) => {
+                use datasynth_core::RegulatoryChangeType;
                 let severity = rc
                     .parameters
                     .get("severity")
                     .and_then(serde_json::Value::as_f64)
                     .unwrap_or(0.5);
-                // Regulatory changes tighten compliance and controls
-                if let Some(node) = self.dag.find_node("sod_compliance") {
-                    effects.insert(
-                        "sod_compliance".to_string(),
-                        (node.baseline_value + severity * 0.2 * onset_factor).min(1.0),
-                    );
-                }
-                if let Some(node) = self.dag.find_node("control_effectiveness") {
-                    effects.insert(
-                        "control_effectiveness".to_string(),
-                        (node.baseline_value + severity * 0.15 * onset_factor).min(1.0),
-                    );
-                }
-                if let Some(node) = self.dag.find_node("misstatement_risk") {
-                    effects.insert(
-                        "misstatement_risk".to_string(),
-                        node.baseline_value * (1.0 - severity * 0.1 * onset_factor),
-                    );
+                let magnitude = severity * onset_factor;
+                match rc.subtype {
+                    RegulatoryChangeType::MaterialityThresholdChange => {
+                        if let Some(node) = self.dag.find_node("materiality_threshold") {
+                            effects.insert(
+                                "materiality_threshold".to_string(),
+                                node.baseline_value + magnitude,
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("sample_size_factor") {
+                            effects.insert(
+                                "sample_size_factor".to_string(),
+                                node.baseline_value + magnitude * 0.5,
+                            );
+                        }
+                    }
+                    RegulatoryChangeType::AuditStandardChange => {
+                        if let Some(node) = self.dag.find_node("inherent_risk") {
+                            effects.insert(
+                                "inherent_risk".to_string(),
+                                node.baseline_value + magnitude * 0.3,
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("sample_size_factor") {
+                            effects.insert(
+                                "sample_size_factor".to_string(),
+                                node.baseline_value + magnitude * 0.4,
+                            );
+                        }
+                    }
+                    RegulatoryChangeType::TaxRateChange => {
+                        if let Some(node) = self.dag.find_node("tax_rate") {
+                            effects.insert("tax_rate".to_string(), node.baseline_value + magnitude);
+                        }
+                    }
+                    _ => {
+                        // General regulatory changes tighten compliance and controls
+                        if let Some(node) = self.dag.find_node("sod_compliance") {
+                            effects.insert(
+                                "sod_compliance".to_string(),
+                                (node.baseline_value + severity * 0.2 * onset_factor).min(1.0),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("control_effectiveness") {
+                            effects.insert(
+                                "control_effectiveness".to_string(),
+                                (node.baseline_value + severity * 0.15 * onset_factor).min(1.0),
+                            );
+                        }
+                        if let Some(node) = self.dag.find_node("misstatement_risk") {
+                            effects.insert(
+                                "misstatement_risk".to_string(),
+                                node.baseline_value * (1.0 - severity * 0.1 * onset_factor),
+                            );
+                        }
+                    }
                 }
             }
             InterventionType::Composite(comp) => {

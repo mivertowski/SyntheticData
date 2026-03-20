@@ -299,7 +299,7 @@ distributions:
       - { name: amount, distribution_type: lognormal }
       - { name: line_items, distribution_type: normal, min_value: 1, max_value: 20 }
       - { name: approval_level, distribution_type: normal, min_value: 1, max_value: 5 }
-    matrix:
+    matrix:                         # Full symmetric n×n matrix (not upper-triangular)
       - [1.00, 0.65, 0.72]
       - [0.65, 1.00, 0.55]
       - [0.72, 0.55, 1.00]

@@ -269,7 +269,7 @@ impl AuthConfig {
 
         // Check cache first
         {
-            let cache = self.cache.lock().unwrap();
+            let cache = self.cache.lock().unwrap_or_else(|e| e.into_inner());
             let now = Instant::now();
             for entry in cache.iter() {
                 if entry.key_hash == key_hash && entry.expires_at > now {
@@ -295,7 +295,7 @@ impl AuthConfig {
 
         // Cache on success
         if any_match {
-            let mut cache = self.cache.lock().unwrap();
+            let mut cache = self.cache.lock().unwrap_or_else(|e| e.into_inner());
             // Evict expired entries
             let now = Instant::now();
             cache.retain(|e| e.expires_at > now);

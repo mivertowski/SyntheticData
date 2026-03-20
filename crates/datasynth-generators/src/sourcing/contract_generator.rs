@@ -144,6 +144,7 @@ impl ContractGenerator {
                 0
             },
             previous_contract_id: None,
+            purchase_order_ids: Vec::new(),
         }
     }
 

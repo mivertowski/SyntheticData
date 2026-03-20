@@ -159,7 +159,8 @@ struct MetricConfigMapping {
 enum ComputeStrategy {
     /// Enable a boolean flag.
     EnableBoolean,
-    /// Set to a specific value.
+    /// Set to a specific numeric value (used when the target is a known constant).
+    #[allow(dead_code)]
     SetFixed(f64),
     /// Increase by the gap amount.
     IncreaseByGap,
@@ -413,13 +414,19 @@ impl AutoTuner {
             ],
         );
 
-        // Domain gap
+        // Domain gap: `industry_profile` is a string enum (e.g. "retail", "manufacturing"),
+        // not a continuous numeric value, so no single numeric patch can close the gap.
+        // `SetToTarget` is used here as a signal to the patch generator that the tuning
+        // direction is "raise toward target"; the human operator must then select the
+        // appropriate industry profile string that best matches the target domain.
+        // The `influence` weight (0.7) communicates medium-high confidence that changing
+        // the profile will reduce the observed domain-gap score.
         self.metric_mappings.insert(
             "domain_gap".to_string(),
             vec![MetricConfigMapping {
                 config_path: "distributions.industry_profile".to_string(),
                 influence: 0.7,
-                compute_value: ComputeStrategy::SetFixed(1.0), // placeholder - needs manual review
+                compute_value: ComputeStrategy::SetToTarget,
             }],
         );
     }

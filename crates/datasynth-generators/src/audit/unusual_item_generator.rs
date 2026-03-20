@@ -27,6 +27,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -104,6 +105,11 @@ impl UnusualItemGenerator {
         entries: &[JournalEntry],
         period_end_date: chrono::NaiveDate,
     ) -> Vec<UnusualItemFlag> {
+        info!(
+            "Generating unusual item flags for entity {} ({} entries)",
+            entity_code,
+            entries.len()
+        );
         // Filter to this entity's entries
         let entity_entries: Vec<&JournalEntry> = entries
             .iter()
@@ -186,6 +192,11 @@ impl UnusualItemGenerator {
             });
         }
 
+        info!(
+            "Generated {} unusual item flags for entity {}",
+            flags.len(),
+            entity_code
+        );
         flags
     }
 

@@ -19,6 +19,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -107,6 +108,10 @@ impl GoingConcernGenerator {
         assessment_date: NaiveDate,
         period: &str,
     ) -> GoingConcernAssessment {
+        info!(
+            "Generating going concern assessment for entity {} period {}",
+            entity_code, period
+        );
         let roll: f64 = self.rng.random();
         let indicator_count = if roll < self.config.clean_probability {
             0
@@ -126,7 +131,7 @@ impl GoingConcernGenerator {
             self.management_plans(indicators.len())
         };
 
-        GoingConcernAssessment {
+        let assessment = GoingConcernAssessment {
             entity_code: entity_code.to_string(),
             assessment_date,
             assessment_period: period.to_string(),
@@ -135,7 +140,14 @@ impl GoingConcernGenerator {
             auditor_conclusion: Default::default(), // will be overwritten below
             material_uncertainty_exists: false,
         }
-        .conclude_from_indicators()
+        .conclude_from_indicators();
+        info!(
+            "Going concern for {}: {} indicators, conclusion={:?}",
+            entity_code,
+            assessment.indicators.len(),
+            assessment.auditor_conclusion
+        );
+        assessment
     }
 
     /// Generate assessments for multiple entities in a single batch.

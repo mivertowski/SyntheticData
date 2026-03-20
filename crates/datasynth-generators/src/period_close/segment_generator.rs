@@ -65,6 +65,10 @@ impl SegmentGenerator {
     /// * `consolidated_profit` – consolidated operating profit
     /// * `consolidated_assets` – consolidated total assets
     /// * `entity_seeds` – one entry per legal entity / product line to derive segments from
+    /// * `total_depreciation` – consolidated D&A from the depreciation run (e.g.
+    ///   `DepreciationRun.total_depreciation`).  When `Some`, distributed to segments
+    ///   proportionally to their share of total assets.  When `None`, D&A is approximated
+    ///   as 50–80 % of each segment's CapEx (a reasonable synthetic-data heuristic).
     ///
     /// # Returns
     /// `(segments, reconciliation)` where the reconciliation ties segment totals
@@ -77,6 +81,7 @@ impl SegmentGenerator {
         consolidated_profit: Decimal,
         consolidated_assets: Decimal,
         entity_seeds: &[SegmentSeed],
+        total_depreciation: Option<Decimal>,
     ) -> (Vec<OperatingSegment>, SegmentReconciliation) {
         debug!(
             company_code,
@@ -177,14 +182,22 @@ impl SegmentGenerator {
                 Decimal::from(self.rng.random_range(30u32..=80)) / Decimal::from(1_000u32);
             let capex = (seg_assets * capex_rate).max(Decimal::ZERO);
 
-            // D&A: ~50-80 % of CapEx (known simplification).
-            // TODO: A production implementation would derive D&A from the fixed-asset
-            // subledger depreciation run (DepreciationRun) rather than proxying it as a
-            // fraction of CapEx. The 50–80 % range is a reasonable heuristic for
-            // synthetic audit-simulation data where segment-level depreciation schedules
-            // are not individually tracked.
-            let da_ratio = Decimal::from(self.rng.random_range(50u32..=80)) / Decimal::from(100u32);
-            let da = capex * da_ratio;
+            // D&A: when `total_depreciation` is provided (from the FA subledger depreciation
+            // run), distribute it proportionally to each segment's share of total assets.
+            // Fall back to the 50–80 % of CapEx heuristic when no actual depreciation data
+            // is available (e.g. when the FA subledger is not generated).
+            let da = if let Some(total_depr) = total_depreciation {
+                let asset_share = if consolidated_assets != Decimal::ZERO {
+                    seg_assets / consolidated_assets
+                } else {
+                    asset_splits[i]
+                };
+                (total_depr * asset_share).max(Decimal::ZERO)
+            } else {
+                let da_ratio =
+                    Decimal::from(self.rng.random_range(50u32..=80)) / Decimal::from(100u32);
+                capex * da_ratio
+            };
 
             segments.push(OperatingSegment {
                 segment_id: self.uuid_factory.next().to_string(),
@@ -307,7 +320,7 @@ mod tests {
         let profit = Decimal::from(150_000);
         let assets = Decimal::from(5_000_000);
 
-        let (segments, recon) = gen.generate("GROUP", "2024-03", rev, profit, assets, &seeds);
+        let (segments, recon) = gen.generate("GROUP", "2024-03", rev, profit, assets, &seeds, None);
 
         assert!(!segments.is_empty());
 
@@ -338,6 +351,7 @@ mod tests {
             Decimal::from(300_000),
             Decimal::from(8_000_000),
             &seeds,
+            None,
         );
 
         // consolidated_profit = segment_profit_total + corporate_overhead
@@ -360,6 +374,7 @@ mod tests {
             Decimal::from(50_000),
             Decimal::from(3_000_000),
             &seeds,
+            None,
         );
 
         // consolidated_assets = segment_assets_total + unallocated_assets
@@ -379,7 +394,7 @@ mod tests {
         let profit = Decimal::from(600_000);
         let assets = Decimal::from(10_000_000);
 
-        let (segments, _) = gen.generate("GRP", "2024-12", rev, profit, assets, &seeds);
+        let (segments, _) = gen.generate("GRP", "2024-12", rev, profit, assets, &seeds, None);
 
         for seg in &segments {
             assert!(
@@ -403,6 +418,7 @@ mod tests {
             Decimal::from(100_000),
             Decimal::from(4_000_000),
             &seeds,
+            None,
         );
 
         // With a single seed, product-line segments should be generated (≥ 2)
@@ -425,6 +441,7 @@ mod tests {
             Decimal::from(900_000),
             Decimal::from(30_000_000),
             &seeds,
+            None,
         );
 
         assert_eq!(segments.len(), 3);
@@ -441,9 +458,9 @@ mod tests {
         let assets = Decimal::from(5_000_000);
 
         let (segs1, recon1) =
-            SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds);
+            SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds, None);
         let (segs2, recon2) =
-            SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds);
+            SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds, None);
 
         assert_eq!(segs1.len(), segs2.len());
         for (a, b) in segs1.iter().zip(segs2.iter()) {

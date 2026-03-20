@@ -411,13 +411,14 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
         let start_time = Instant::now();
 
         // Create orchestrator with appropriate phase config
-        let phase_config = PhaseConfig {
-            generate_master_data: req.include_master_data,
-            generate_document_flows: false,
-            generate_journal_entries: true,
-            inject_anomalies: req.inject_anomalies,
-            show_progress: false,
-            ..Default::default()
+        let phase_config = {
+            let mut pc = PhaseConfig::from_config(&config);
+            pc.generate_master_data = req.include_master_data;
+            pc.generate_document_flows = false;
+            pc.generate_journal_entries = true;
+            pc.inject_anomalies = req.inject_anomalies;
+            pc.show_progress = false;
+            pc
         };
 
         let mut orchestrator = EnhancedOrchestrator::new(config, phase_config)
@@ -573,13 +574,14 @@ impl synthetic_data_service_server::SyntheticDataService for SynthService {
         let inject_anomalies = req.inject_anomalies;
 
         tokio::spawn(async move {
-            let phase_config = PhaseConfig {
-                generate_master_data: false,
-                generate_document_flows: false,
-                generate_journal_entries: true,
-                inject_anomalies,
-                show_progress: false,
-                ..Default::default()
+            let phase_config = {
+                let mut pc = PhaseConfig::from_config(&config);
+                pc.generate_master_data = false;
+                pc.generate_document_flows = false;
+                pc.generate_journal_entries = true;
+                pc.inject_anomalies = inject_anomalies;
+                pc.show_progress = false;
+                pc
             };
 
             let mut sequence = 0u64;

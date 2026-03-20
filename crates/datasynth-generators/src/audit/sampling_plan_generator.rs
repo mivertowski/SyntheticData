@@ -35,6 +35,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -153,6 +154,7 @@ impl SamplingPlanGenerator {
         cras: &[CombinedRiskAssessment],
         tolerable_error: Option<Decimal>,
     ) -> (Vec<SamplingPlan>, Vec<SampledItem>) {
+        info!("Generating sampling plans for {} CRAs", cras.len());
         let mut plans: Vec<SamplingPlan> = Vec::new();
         let mut all_items: Vec<SampledItem> = Vec::new();
 
@@ -170,6 +172,11 @@ impl SamplingPlanGenerator {
             plans.push(plan);
         }
 
+        info!(
+            "Generated {} sampling plans with {} sampled items",
+            plans.len(),
+            all_items.len()
+        );
         (plans, all_items)
     }
 
@@ -241,6 +248,7 @@ impl SamplingPlanGenerator {
 
             sampled_items.push(SampledItem {
                 item_id: ki.item_id.clone(),
+                sampling_plan_id: plan_id.clone(),
                 amount: ki.amount,
                 selection_type: SelectionType::KeyItem,
                 tested: true,
@@ -274,6 +282,7 @@ impl SamplingPlanGenerator {
 
                 sampled_items.push(SampledItem {
                     item_id,
+                    sampling_plan_id: plan_id.clone(),
                     amount,
                     selection_type: SelectionType::Representative,
                     tested: true,

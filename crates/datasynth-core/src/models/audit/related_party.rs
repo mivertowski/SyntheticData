@@ -187,6 +187,10 @@ pub struct RelatedPartyTransaction {
     pub related_party_id: Uuid,
 
     // === Transaction Details ===
+    /// FK → `JournalEntry.document_id` — the journal entry that records this transaction.
+    /// `None` when the transaction has not yet been posted to the general ledger.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub journal_entry_id: Option<String>,
     /// Type of related party transaction
     pub transaction_type: RptTransactionType,
     /// Description of the transaction
@@ -245,6 +249,7 @@ impl RelatedPartyTransaction {
             transaction_ref,
             engagement_id,
             related_party_id,
+            journal_entry_id: None,
             transaction_type,
             description: description.into(),
             amount,

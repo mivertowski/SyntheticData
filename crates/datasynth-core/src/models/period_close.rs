@@ -189,12 +189,22 @@ impl FiscalCalendar {
                 }
             }
             FiscalCalendarType::FourFourFive(_) | FiscalCalendarType::ThirteenPeriod(_) => {
-                // TODO: Simplified — returns calendar year as proxy for fiscal year.
-                // A correct implementation must resolve the anchor date (e.g. last
-                // Saturday of January) for the 4-4-5 case, or the 13-period
-                // year-start date, to determine whether a given calendar date falls
-                // in the prior or current fiscal year (week-based years can start in
-                // late December of the prior calendar year).
+                // APPROXIMATION: Returns the calendar year as a proxy for the fiscal year.
+                //
+                // Both the 4-4-5 and 13-period calendars are week-based: the fiscal year
+                // starts on a specific day of the week (e.g. the last Saturday of January)
+                // anchored by `FourFourFiveConfig::anchor` or a similar configuration.
+                // This means the fiscal year can begin in late December of the *prior*
+                // calendar year, causing dates in the week of Dec 25 – Jan 3 to belong
+                // to a different fiscal year than the calendar year suggests.
+                //
+                // A correct implementation would:
+                //   1. Resolve the anchor date for the current year (e.g. last Saturday ≤ Jan 31).
+                //   2. Compare the input date against that anchor.
+                //   3. Return `date.year() - 1` when the date falls before the anchor.
+                //
+                // Until that logic is implemented, synthetic data generated near
+                // fiscal-year boundaries may have off-by-one period labels.
                 date.year()
             }
         }
@@ -223,10 +233,23 @@ impl FiscalCalendar {
                 ((day_of_year - 1) / 28 + 1).min(13) as u8
             }
             FiscalCalendarType::FourFourFive(config) => {
-                // TODO: Simplified 4-4-5 period calculation — ignores the configured
-                // anchor (FirstSundayOf / LastSaturdayOf) and treats the calendar year
-                // as starting on January 1. Dates near the fiscal-year boundary may
-                // therefore be assigned to the wrong period.
+                // APPROXIMATION: Simplified 4-4-5 period calculation.
+                //
+                // This implementation ignores the configured anchor
+                // (`FirstSundayOf` / `LastSaturdayOf`) and assumes the fiscal year starts
+                // on January 1 of the calendar year.  It then maps the date's week-of-year
+                // to a period number using the configured 4-4-5 / 4-5-4 / 5-4-4 pattern.
+                //
+                // Known limitations:
+                //   • Dates near the fiscal-year boundary (late December / early January)
+                //     may be assigned to the wrong period when the true anchor differs from
+                //     January 1.
+                //   • 53-week years (where the 52nd week falls before year-end) are not
+                //     handled; `LeapWeekPlacement` is ignored.
+                //
+                // A precise implementation would resolve the anchor date, build a week-number
+                // → period mapping for the full 52 (or 53) weeks, and look up the input
+                // date's ISO-week number in that mapping.
                 let weeks = config.pattern.weeks_per_period();
                 let week_of_year = (date.ordinal() as u8 - 1) / 7 + 1;
                 let mut cumulative = 0u8;

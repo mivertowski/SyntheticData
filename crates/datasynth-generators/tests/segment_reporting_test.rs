@@ -27,7 +27,7 @@ fn segment_external_rev_sums_to_consolidated() {
     let profit = Decimal::from(1_500_000);
     let assets = Decimal::from(40_000_000);
 
-    let (segments, recon) = gen.generate("GROUP", "2024-03", rev, profit, assets, &seeds);
+    let (segments, recon) = gen.generate("GROUP", "2024-03", rev, profit, assets, &seeds, None);
 
     // Sum of external revenues must equal the consolidated revenue passed in
     let sum_ext: Decimal = segments.iter().map(|s| s.revenue_external).sum();
@@ -60,7 +60,7 @@ fn segment_profit_reconciliation_identity() {
     let profit = Decimal::from(750_000);
     let assets = Decimal::from(15_000_000);
 
-    let (_, recon) = gen.generate("CORP", "2024-06", rev, profit, assets, &seeds);
+    let (_, recon) = gen.generate("CORP", "2024-06", rev, profit, assets, &seeds, None);
 
     // consolidated_profit = segment_profit_total + corporate_overhead
     assert_eq!(
@@ -92,7 +92,7 @@ fn segment_asset_reconciliation_identity() {
     let profit = Decimal::from(1_200_000);
     let assets = Decimal::from(25_000_000);
 
-    let (_, recon) = gen.generate("C001", "2024-12", rev, profit, assets, &seeds);
+    let (_, recon) = gen.generate("C001", "2024-12", rev, profit, assets, &seeds, None);
 
     // consolidated_assets = segment_assets_total + unallocated_assets
     assert_eq!(
@@ -124,7 +124,7 @@ fn each_segment_has_nonnegative_external_revenue() {
     let profit = Decimal::from(3_000_000);
     let assets = Decimal::from(60_000_000);
 
-    let (segments, _) = gen.generate("GRP", "2024-09", rev, profit, assets, &seeds);
+    let (segments, _) = gen.generate("GRP", "2024-09", rev, profit, assets, &seeds, None);
 
     assert!(
         !segments.is_empty(),
@@ -155,7 +155,7 @@ fn single_entity_generates_product_line_segments() {
     let profit = Decimal::from(250_000);
     let assets = Decimal::from(8_000_000);
 
-    let (segments, _) = gen.generate("C001", "2024-03", rev, profit, assets, &seeds);
+    let (segments, _) = gen.generate("C001", "2024-03", rev, profit, assets, &seeds, None);
 
     // Single seed → product-line segments (≥ 2)
     assert!(
@@ -187,7 +187,7 @@ fn multi_entity_generates_geographic_segments() {
     let profit = Decimal::from(2_250_000);
     let assets = Decimal::from(50_000_000);
 
-    let (segments, _) = gen.generate("GROUP", "2024-06", rev, profit, assets, &seeds);
+    let (segments, _) = gen.generate("GROUP", "2024-06", rev, profit, assets, &seeds, None);
 
     assert_eq!(
         segments.len(),
@@ -216,9 +216,9 @@ fn segment_generation_is_deterministic() {
     let assets = Decimal::from(20_000_000);
 
     let (segs1, recon1) =
-        SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds);
+        SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds, None);
     let (segs2, recon2) =
-        SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds);
+        SegmentGenerator::new(42).generate("G", "2024-01", rev, profit, assets, &seeds, None);
 
     assert_eq!(segs1.len(), segs2.len(), "Segment count should be the same");
 
@@ -263,6 +263,7 @@ fn segment_ids_are_unique() {
         Decimal::from(300_000),
         Decimal::from(10_000_000),
         &seeds,
+        None,
     );
 
     let mut ids: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -292,6 +293,7 @@ fn period_label_propagated_correctly() {
         Decimal::from(100_000),
         Decimal::from(5_000_000),
         &seeds,
+        None,
     );
 
     for seg in &segments {

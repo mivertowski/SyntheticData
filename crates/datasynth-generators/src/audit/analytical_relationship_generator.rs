@@ -28,6 +28,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tracing::info;
 
 // ---------------------------------------------------------------------------
 // Account ranges (using account prefix conventions from datasynth_core::accounts)
@@ -119,6 +120,10 @@ impl AnalyticalRelationshipGenerator {
         current_period_label: &str,
         prior_period_label: &str,
     ) -> Vec<AnalyticalRelationship> {
+        info!(
+            "Generating analytical relationships for entity {} period {}",
+            entity_code, current_period_label
+        );
         // Filter entries to this entity
         let entity_entries: Vec<&JournalEntry> = entries
             .iter()
@@ -375,6 +380,11 @@ impl AnalyticalRelationshipGenerator {
             vec![],
         ));
 
+        info!(
+            "Generated {} analytical relationships for entity {}",
+            relationships.len(),
+            entity_code
+        );
         relationships
     }
 

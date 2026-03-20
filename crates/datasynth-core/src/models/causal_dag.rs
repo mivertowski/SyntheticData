@@ -45,6 +45,7 @@ pub enum NodeCategory {
     Behavioral,
     Regulatory,
     Outcome,
+    Audit,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

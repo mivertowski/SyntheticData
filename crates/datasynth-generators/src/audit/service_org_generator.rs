@@ -12,6 +12,7 @@ use datasynth_core::models::audit::service_organization::{
 use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use tracing::info;
 
 /// Configuration for service organization generation.
 #[derive(Debug, Clone)]
@@ -84,6 +85,10 @@ impl ServiceOrgGenerator {
             return ServiceOrgSnapshot::default();
         }
 
+        info!(
+            "Generating service org data for {} entities",
+            entity_codes.len()
+        );
         let mut snapshot = ServiceOrgSnapshot::default();
 
         // Pool of service type templates to draw from
@@ -137,6 +142,11 @@ impl ServiceOrgGenerator {
             }
         }
 
+        info!(
+            "Generated {} service orgs and {} SOC reports",
+            snapshot.service_organizations.len(),
+            snapshot.soc_reports.len()
+        );
         snapshot
     }
 

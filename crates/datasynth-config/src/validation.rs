@@ -54,6 +54,7 @@ pub fn validate_config(config: &GeneratorConfig) -> SynthResult<()> {
     validate_scenarios(config)?;
     validate_session(config)?;
     validate_compliance_regulations(config)?;
+    validate_source_to_pay(config)?;
     Ok(())
 }
 
@@ -76,6 +77,17 @@ fn validate_global_settings(config: &GeneratorConfig) -> SynthResult<()> {
             "start_date '{}' is not a valid date in YYYY-MM-DD format",
             config.global.start_date
         )));
+    }
+    // Validate that the end date doesn't exceed chrono's year range
+    if let Ok(start) = chrono::NaiveDate::parse_from_str(&config.global.start_date, "%Y-%m-%d") {
+        use chrono::Datelike;
+        let end_year = start.year() + (config.global.period_months as i32 + 11) / 12;
+        if end_year > 9999 {
+            return Err(SynthError::validation(format!(
+                "End year {} exceeds maximum supported year 9999 (start_date + period_months)",
+                end_year
+            )));
+        }
     }
     Ok(())
 }
@@ -933,10 +945,16 @@ fn validate_regime_changes(config: &crate::schema::RegimeChangeSchemaConfig) -> 
 
     // Validate regime change events
     for (i, change) in config.changes.iter().enumerate() {
-        // Validate date format (basic check)
+        // Validate date format (YYYY-MM-DD)
         if change.date.is_empty() {
             return Err(SynthError::validation(format!(
                 "distributions.regime_changes.changes[{i}].date cannot be empty"
+            )));
+        }
+        if chrono::NaiveDate::parse_from_str(&change.date, "%Y-%m-%d").is_err() {
+            return Err(SynthError::validation(format!(
+                "distributions.regime_changes.changes[{i}].date '{}' is not a valid date in YYYY-MM-DD format",
+                change.date
             )));
         }
 
@@ -1749,6 +1767,7 @@ fn validate_customer_segmentation(config: &GeneratorConfig) -> SynthResult<()> {
             lifecycle.mature_rate,
             lifecycle.at_risk_rate,
             lifecycle.churned_rate,
+            lifecycle.won_back_rate,
         ],
     )?;
 
@@ -2295,6 +2314,57 @@ fn validate_compliance_regulations(config: &GeneratorConfig) -> SynthResult<()> 
             )));
         }
     }
+
+    Ok(())
+}
+
+/// Validate source-to-pay (S2C/S2P) configuration.
+fn validate_source_to_pay(config: &GeneratorConfig) -> SynthResult<()> {
+    let s2p = &config.source_to_pay;
+
+    if !s2p.enabled {
+        return Ok(());
+    }
+
+    // Validate spend analysis rates
+    validate_rate(
+        "source_to_pay.spend_analysis.contract_coverage_target",
+        s2p.spend_analysis.contract_coverage_target,
+    )?;
+
+    if s2p.spend_analysis.hhi_threshold < 0.0 {
+        return Err(SynthError::validation(
+            "source_to_pay.spend_analysis.hhi_threshold must be non-negative",
+        ));
+    }
+
+    // Validate sourcing config
+    if s2p.sourcing.projects_per_year == 0 {
+        return Err(SynthError::validation(
+            "source_to_pay.sourcing.projects_per_year must be > 0",
+        ));
+    }
+
+    if s2p.sourcing.project_duration_months == 0 {
+        return Err(SynthError::validation(
+            "source_to_pay.sourcing.project_duration_months must be > 0",
+        ));
+    }
+
+    // Validate qualification rates
+    let q = &s2p.qualification;
+    validate_rate("source_to_pay.qualification.pass_rate", q.pass_rate)?;
+
+    // Validate qualification scoring weights sum to ~1.0
+    validate_sum_to_one(
+        "source_to_pay.qualification scoring weights",
+        &[
+            q.financial_weight,
+            q.quality_weight,
+            q.delivery_weight,
+            q.compliance_weight,
+        ],
+    )?;
 
     Ok(())
 }

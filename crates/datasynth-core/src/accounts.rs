@@ -159,6 +159,9 @@ pub mod tax_accounts {
     /// Withholding tax payable account
     pub const WITHHOLDING_TAX_PAYABLE: &str = "2120";
 
+    /// Income tax payable account
+    pub const INCOME_TAX_PAYABLE: &str = "2130";
+
     /// Input VAT (VAT receivable) account
     pub const INPUT_VAT: &str = "1160";
 

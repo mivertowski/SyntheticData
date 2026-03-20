@@ -1,0 +1,9 @@
+name: "Audit Scope Change"
+description: "Reduces materiality by 30%, cascading to larger samples and potentially more findings"
+interventions:
+  - type: regulatory_change
+    subtype: materiality_threshold_change
+    magnitude: -0.3
+    timing:
+      onset: sudden
+      start_month: 1

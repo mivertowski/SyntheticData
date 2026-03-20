@@ -368,27 +368,43 @@ impl AuditTrailEdgeSynthesizer {
 
     /// ASSESSMENT_ON_SCOPE (code 132): risk_assessment -> scope.
     ///
-    /// Scope nodes may not exist in the id_map if audit scope generation
-    /// is not enabled. In that case, this produces zero edges.
+    /// # Architectural gap
+    ///
+    /// This edge type requires a `Scope` node type that does not yet exist in the
+    /// DataSynth model layer.  The `CombinedRiskAssessment` struct does not carry a
+    /// `scope_id` foreign key, and no scope nodes are registered in the `id_map`.
+    ///
+    /// Until a dedicated `AuditScope` model is introduced (and its node synthesizer
+    /// registers scope IDs in the id_map), this method intentionally returns an empty
+    /// Vec so that the rest of the graph export proceeds normally.
+    ///
+    /// **TODO**: Add `AuditScope` model → node synthesizer → populate `CombinedRiskAssessment.scope_id`
+    /// → enable this edge type.
     fn synthesize_assessment_on_scope(
         &self,
         _ctx: &mut EdgeSynthesisContext<'_>,
     ) -> Vec<ExportEdge> {
-        // Risk assessments don't have a direct scope_id FK in the current model.
-        // This edge type requires scope node synthesis (Task 12) to populate.
-        debug!("ASSESSMENT_ON_SCOPE: 0 edges (scope nodes not yet synthesized)");
+        debug!("ASSESSMENT_ON_SCOPE (132): 0 edges — awaits AuditScope model (architectural gap)");
         Vec::new()
     }
 
     /// ENGAGEMENT_HAS_SCOPE (code 134): engagement -> scope.
     ///
-    /// Similar to above, depends on scope nodes being present.
+    /// # Architectural gap
+    ///
+    /// Same dependency as `ASSESSMENT_ON_SCOPE` (code 132): the `AuditEngagement` struct
+    /// does not carry scope IDs, and no `Scope` nodes exist in the id_map.
+    ///
+    /// Engagements define their scope narratively (e.g. `scope_description`, `materiality`
+    /// thresholds) but not as structured FK references to discrete scope nodes.
+    ///
+    /// **TODO**: Introduce `AuditScope` model, add `EngagementAuditScope` join, and
+    /// register scope node IDs so this edge can be emitted.
     fn synthesize_engagement_has_scope(
         &self,
         _ctx: &mut EdgeSynthesisContext<'_>,
     ) -> Vec<ExportEdge> {
-        // Scope nodes are synthesized in Task 12; this is a placeholder.
-        debug!("ENGAGEMENT_HAS_SCOPE: 0 edges (scope nodes not yet synthesized)");
+        debug!("ENGAGEMENT_HAS_SCOPE (134): 0 edges — awaits AuditScope model (architectural gap)");
         Vec::new()
     }
 }

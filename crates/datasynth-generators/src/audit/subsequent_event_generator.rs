@@ -12,6 +12,7 @@ use datasynth_core::utils::seeded_rng;
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rust_decimal::Decimal;
+use tracing::info;
 
 /// Configuration for subsequent event generation.
 #[derive(Debug, Clone)]
@@ -70,6 +71,10 @@ impl SubsequentEventGenerator {
         entity_code: &str,
         period_end_date: NaiveDate,
     ) -> Vec<SubsequentEvent> {
+        info!(
+            "Generating subsequent events for entity {} period-end {}",
+            entity_code, period_end_date
+        );
         let count = self.rng.random_range(0..=self.config.max_events_per_period);
         let window_end_days = self.rng.random_range(
             self.config.discovery_window_days.0..=self.config.discovery_window_days.1,
@@ -123,6 +128,11 @@ impl SubsequentEventGenerator {
             events.push(event);
         }
 
+        info!(
+            "Generated {} subsequent events for entity {}",
+            events.len(),
+            entity_code
+        );
         events
     }
 

@@ -543,13 +543,25 @@ impl GateEngine {
                 (score, "domain gap evaluation not available".to_string())
             }
             QualityMetric::Custom(name) => {
-                tracing::error!(
-                    "Custom metric '{}' gate '{}' cannot be evaluated — custom metrics not implemented",
-                    name, gate.name
+                // Custom metrics require user-provided evaluation logic and cannot be
+                // auto-evaluated by the gate engine. We return `None` to skip this gate
+                // (treated as pass) while logging a warning to make the gap visible.
+                //
+                // Users who need deterministic gate behaviour for a custom metric must
+                // implement a custom `GateEvaluator` and register it before calling
+                // `evaluate_profile`.
+                tracing::warn!(
+                    "Custom metric '{}' in gate '{}' has no registered evaluator — \
+                     gate skipped; implement a custom GateEvaluator to enable evaluation",
+                    name,
+                    gate.name
                 );
                 (
                     None,
-                    format!("custom metric '{name}' not implemented — gate cannot be evaluated"),
+                    format!(
+                        "custom metric '{name}' not implemented — gate skipped; \
+                         register a custom GateEvaluator for real evaluation"
+                    ),
                 )
             }
         }

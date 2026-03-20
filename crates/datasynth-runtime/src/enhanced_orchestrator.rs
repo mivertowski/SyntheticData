@@ -413,8 +413,8 @@ impl PhaseConfig {
             generate_treasury: cfg.treasury.enabled,
             generate_project_accounting: cfg.project_accounting.enabled,
 
-            // Explicit opt-in for ML workloads
-            generate_counterfactuals: false,
+            // Opt-in for ML workloads — driven by scenarios.generate_counterfactuals config field
+            generate_counterfactuals: cfg.scenarios.generate_counterfactuals,
 
             inject_anomalies: cfg.fraud.enabled || cfg.anomaly_injection.enabled,
             inject_data_quality: cfg.data_quality.enabled,
@@ -1625,6 +1625,7 @@ impl EnhancedOrchestrator {
 
         // Generate a seed for the synthesis
         let seed: u64 = rand::random();
+        info!("Fingerprint synthesis seed: {}", seed);
 
         // Use ConfigSynthesizer with scale option to convert fingerprint to GeneratorConfig
         let options = SynthesisOptions {
@@ -1970,6 +1971,19 @@ impl EnhancedOrchestrator {
                     "Appended {} elimination journal entries to main entries",
                     elim_jes.len()
                 );
+                // IC elimination net-zero validation
+                let elim_debit: rust_decimal::Decimal =
+                    elim_jes.iter().map(|je| je.total_debit()).sum();
+                let elim_credit: rust_decimal::Decimal =
+                    elim_jes.iter().map(|je| je.total_credit()).sum();
+                if elim_debit != elim_credit {
+                    warn!(
+                        "IC elimination entries not balanced: debits={}, credits={}, diff={}",
+                        elim_debit,
+                        elim_credit,
+                        elim_debit - elim_credit
+                    );
+                }
                 entries.extend(elim_jes);
             }
         }
@@ -2119,6 +2133,33 @@ impl EnhancedOrchestrator {
             &audit,
             &mut stats,
         )?;
+
+        // BS coherence check: assets = liabilities + equity
+        {
+            use datasynth_core::models::StatementType;
+            for stmt in &financial_reporting.consolidated_statements {
+                if stmt.statement_type == StatementType::BalanceSheet {
+                    let total_assets: rust_decimal::Decimal = stmt
+                        .line_items
+                        .iter()
+                        .filter(|li| li.section.to_uppercase().contains("ASSET"))
+                        .map(|li| li.amount)
+                        .sum();
+                    let total_le: rust_decimal::Decimal = stmt
+                        .line_items
+                        .iter()
+                        .filter(|li| !li.section.to_uppercase().contains("ASSET"))
+                        .map(|li| li.amount)
+                        .sum();
+                    if (total_assets - total_le).abs() > rust_decimal::Decimal::new(1, 0) {
+                        warn!(
+                            "BS equation imbalance: assets={}, L+E={}",
+                            total_assets, total_le
+                        );
+                    }
+                }
+            }
+        }
 
         // Phase 18: Accounting Standards (Revenue Recognition, Impairment, ECL)
         let accounting_standards =
@@ -2659,6 +2700,14 @@ impl EnhancedOrchestrator {
         financial_reporting: &FinancialReportingSnapshot,
         stats: &mut EnhancedGenerationStatistics,
     ) -> SynthResult<OcpmSnapshot> {
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
+            return Ok(OcpmSnapshot::default());
+        }
         if self.phase_config.generate_ocpm_events {
             info!("Phase 3c: Generating OCPM Events");
             let ocpm_snapshot = self.generate_ocpm_events(
@@ -2839,7 +2888,9 @@ impl EnhancedOrchestrator {
             .map(|c| c.code.clone())
             .collect();
 
-        let mut close_jes: Vec<JournalEntry> = Vec::new();
+        // Estimate capacity: one JE per active FA + 2 JEs per company (tax + close)
+        let estimated_close_jes = subledger.fa_records.len() + company_codes.len() * 2;
+        let mut close_jes: Vec<JournalEntry> = Vec::with_capacity(estimated_close_jes);
 
         // --- Depreciation JEs (per asset) ---
         // Compute period depreciation for each active fixed asset using straight-line method.
@@ -2976,11 +3027,11 @@ impl EnhancedOrchestrator {
                     tax_accounts::TAX_EXPENSE.to_string(),
                     tax_amount,
                 ));
-                // CR Sales Tax Payable (2100) — used as income tax payable in this stub
+                // CR Income Tax Payable (2130)
                 tax_je.add_line(JournalEntryLine::credit(
                     doc_id,
                     2,
-                    tax_accounts::SALES_TAX_PAYABLE.to_string(),
+                    tax_accounts::INCOME_TAX_PAYABLE.to_string(),
                     tax_amount,
                 ));
 
@@ -3414,6 +3465,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<SourcingSnapshot> {
         if !self.phase_config.generate_sourcing && !self.config.source_to_pay.enabled {
             debug!("Phase 14: Skipped (sourcing generation disabled)");
+            return Ok(SourcingSnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(SourcingSnapshot::default());
         }
 
@@ -4367,6 +4426,7 @@ impl EnhancedOrchestrator {
                     consolidated_profit,
                     consolidated_assets,
                     &entity_seeds,
+                    None, // total_depreciation: not yet threaded from FA subledger
                 );
                 segment_reports.extend(segs);
                 segment_reconciliations.push(recon);
@@ -5695,6 +5755,7 @@ impl EnhancedOrchestrator {
                 end_date,
                 &period_label,
                 framework_str,
+                None, // prior_opening: no carry-forward data in single-period runs
             );
 
             snapshot.provision_count = prov_snap.provisions.len();
@@ -6296,6 +6357,14 @@ impl EnhancedOrchestrator {
             debug!("Phase 21: Skipped (ESG generation disabled)");
             return Ok(EsgSnapshot::default());
         }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
+            return Ok(EsgSnapshot::default());
+        }
         info!("Phase 21: Generating ESG Data");
 
         let seed = self.seed;
@@ -6519,6 +6588,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<TreasurySnapshot> {
         if !self.phase_config.generate_treasury {
             debug!("Phase 22: Skipped (treasury generation disabled)");
+            return Ok(TreasurySnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(TreasurySnapshot::default());
         }
         info!("Phase 22: Generating Treasury Data");
@@ -6845,6 +6922,14 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<ProjectAccountingSnapshot> {
         if !self.phase_config.generate_project_accounting {
             debug!("Phase 23: Skipped (project accounting disabled)");
+            return Ok(ProjectAccountingSnapshot::default());
+        }
+        let degradation = self.check_resources()?;
+        if degradation >= DegradationLevel::Reduced {
+            debug!(
+                "Phase skipped due to resource pressure (degradation: {:?})",
+                degradation
+            );
             return Ok(ProjectAccountingSnapshot::default());
         }
         info!("Phase 23: Generating Project Accounting Data");
@@ -7830,9 +7915,13 @@ impl EnhancedOrchestrator {
         }
 
         stats.subledger_reconciliation_count = results.len();
+        let passed = results.iter().filter(|r| r.is_balanced()).count();
+        let failed = results.len() - passed;
         info!(
-            "Subledger reconciliation complete: {} reconciliations",
-            results.len()
+            "Subledger reconciliation: {} checks, {} passed, {} failed",
+            results.len(),
+            passed,
+            failed
         );
         self.check_resources_with_log("post-subledger-reconciliation")?;
 

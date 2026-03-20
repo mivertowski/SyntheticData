@@ -814,7 +814,7 @@ impl CustomerGenerator {
     ///
     /// Falls back to [`Self::generate_phone`] when no format templates are
     /// configured in the pack.
-    pub fn generate_phone_from_pack(&self, pack: &CountryPack) -> String {
+    pub fn generate_phone_from_pack(&mut self, pack: &CountryPack) -> String {
         // Collect all non-empty format strings from the pack.
         let mut formats: Vec<&str> = Vec::new();
         if !pack.phone.formats.landline.is_empty() {
@@ -832,9 +832,8 @@ impl CustomerGenerator {
             return self.generate_phone(&pack.country_code);
         }
 
-        // Pick a random format template.
-        let mut thread_rng = rand::rng();
-        let template = *formats.choose(&mut thread_rng).expect("non-empty vec");
+        // Pick a deterministic format template using seeded RNG.
+        let template = *formats.choose(&mut self.rng).expect("non-empty vec");
 
         // Replace every `{x…}` placeholder with random digits.
         let mut result = String::with_capacity(template.len());
@@ -851,9 +850,9 @@ impl CustomerGenerator {
                         digit_count += 1;
                     }
                 }
-                // Emit that many random digits.
+                // Emit that many deterministic digits using seeded RNG.
                 for _ in 0..digit_count {
-                    let d = rand::random::<u8>() % 10;
+                    let d = self.rng.random_range(0u8..10);
                     result.push((b'0' + d) as char);
                 }
             } else {

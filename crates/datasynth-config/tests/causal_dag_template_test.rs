@@ -5,7 +5,7 @@ fn test_default_causal_dag_parses() {
     let yaml = include_str!("../src/templates/causal_dag_default.yaml");
     let mut dag: CausalDAG = serde_yaml::from_str(yaml).unwrap();
     dag.validate().unwrap();
-    assert_eq!(dag.nodes.len(), 17);
+    assert_eq!(dag.nodes.len(), 27);
 }
 
 #[test]
@@ -13,7 +13,7 @@ fn test_default_causal_dag_edges() {
     let yaml = include_str!("../src/templates/causal_dag_default.yaml");
     let mut dag: CausalDAG = serde_yaml::from_str(yaml).unwrap();
     dag.validate().unwrap();
-    assert_eq!(dag.edges.len(), 16);
+    assert_eq!(dag.edges.len(), 27);
 }
 
 #[test]
@@ -22,7 +22,7 @@ fn test_default_causal_dag_topological_order() {
     let mut dag: CausalDAG = serde_yaml::from_str(yaml).unwrap();
     dag.validate().unwrap();
     // All nodes should be in topological order
-    assert_eq!(dag.topological_order.len(), 17);
+    assert_eq!(dag.topological_order.len(), 27);
     // Macro nodes should come before outcome nodes
     let gdp_pos = dag
         .topological_order
