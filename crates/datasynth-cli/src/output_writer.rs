@@ -515,6 +515,24 @@ pub fn write_all_output(
                 "SOX 404 ICFR assessments",
             );
         }
+
+        // ISA 320: Materiality calculations
+        if !result.audit.materiality_calculations.is_empty() {
+            write_json_safe(
+                &result.audit.materiality_calculations,
+                &audit_dir.join("materiality_calculations.json"),
+                "Materiality calculations (ISA 320)",
+            );
+        }
+
+        // ISA 315: Combined Risk Assessments
+        if !result.audit.combined_risk_assessments.is_empty() {
+            write_json_safe(
+                &result.audit.combined_risk_assessments,
+                &audit_dir.join("combined_risk_assessments.json"),
+                "Combined Risk Assessments (ISA 315)",
+            );
+        }
     }
 
     // ========================================================================

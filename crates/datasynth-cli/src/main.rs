@@ -1269,6 +1269,14 @@ fn main() -> Result<()> {
                 "audit/sox_404_assessments.json",
                 result.audit.sox_404_assessments.len(),
             );
+            register(
+                "audit/materiality_calculations.json",
+                result.audit.materiality_calculations.len(),
+            );
+            register(
+                "audit/combined_risk_assessments.json",
+                result.audit.combined_risk_assessments.len(),
+            );
 
             // Banking
             register(

@@ -529,6 +529,14 @@ pub struct AuditSnapshot {
     pub sox_302_certifications: Vec<datasynth_standards::regulatory::sox::Sox302Certification>,
     /// SOX Section 404 ICFR assessments (one per entity per year).
     pub sox_404_assessments: Vec<datasynth_standards::regulatory::sox::Sox404Assessment>,
+    // ---- ISA 320: Materiality ----
+    /// Materiality calculations per entity per period (ISA 320).
+    pub materiality_calculations:
+        Vec<datasynth_core::models::audit::materiality_calculation::MaterialityCalculation>,
+    // ---- ISA 315: Combined Risk Assessments ----
+    /// Combined Risk Assessments per account area / assertion (ISA 315).
+    pub combined_risk_assessments:
+        Vec<datasynth_core::models::audit::risk_assessment_cra::CombinedRiskAssessment>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -9875,6 +9883,169 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // ISA 320: Materiality calculations (one per entity)
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::materiality_generator::{
+                MaterialityGenerator, MaterialityInput,
+            };
+
+            let mut mat_gen = MaterialityGenerator::new(self.seed + 8320);
+
+            // Compute per-company financials from JEs.
+            // Asset accounts start with '1', revenue with '4',
+            // expense accounts with '5' or '6'.
+            let mut materiality_inputs: Vec<MaterialityInput> = Vec::new();
+
+            for company in &self.config.companies {
+                let company_code = company.code.clone();
+
+                // Revenue: credit-side entries on 4xxx accounts
+                let company_revenue: rust_decimal::Decimal = entries
+                    .iter()
+                    .filter(|e| e.company_code() == company_code)
+                    .flat_map(|e| e.lines.iter())
+                    .filter(|l| l.account_code.starts_with('4'))
+                    .map(|l| l.credit_amount)
+                    .sum();
+
+                // Total assets: debit balances on 1xxx accounts
+                let total_assets: rust_decimal::Decimal = entries
+                    .iter()
+                    .filter(|e| e.company_code() == company_code)
+                    .flat_map(|e| e.lines.iter())
+                    .filter(|l| l.account_code.starts_with('1'))
+                    .map(|l| l.debit_amount)
+                    .sum();
+
+                // Expenses: debit-side entries on 5xxx/6xxx accounts
+                let total_expenses: rust_decimal::Decimal = entries
+                    .iter()
+                    .filter(|e| e.company_code() == company_code)
+                    .flat_map(|e| e.lines.iter())
+                    .filter(|l| {
+                        l.account_code.starts_with('5') || l.account_code.starts_with('6')
+                    })
+                    .map(|l| l.debit_amount)
+                    .sum();
+
+                // Equity: credit balances on 3xxx accounts
+                let equity: rust_decimal::Decimal = entries
+                    .iter()
+                    .filter(|e| e.company_code() == company_code)
+                    .flat_map(|e| e.lines.iter())
+                    .filter(|l| l.account_code.starts_with('3'))
+                    .map(|l| l.credit_amount)
+                    .sum();
+
+                let pretax_income = company_revenue - total_expenses;
+
+                // If no company-specific data, fall back to proportional share
+                let (rev, assets, pti, eq) = if company_revenue == rust_decimal::Decimal::ZERO {
+                    let w = rust_decimal::Decimal::try_from(company.volume_weight)
+                        .unwrap_or(rust_decimal::Decimal::ONE);
+                    (
+                        total_revenue * w,
+                        total_revenue * w * rust_decimal::Decimal::from(3),
+                        total_revenue * w * rust_decimal::Decimal::new(1, 1),
+                        total_revenue * w * rust_decimal::Decimal::from(2),
+                    )
+                } else {
+                    (company_revenue, total_assets, pretax_income, equity)
+                };
+
+                let gross_profit = rev * rust_decimal::Decimal::new(35, 2); // 35% assumed
+
+                materiality_inputs.push(MaterialityInput {
+                    entity_code: company_code,
+                    period: format!("FY{}", fiscal_year),
+                    revenue: rev,
+                    pretax_income: pti,
+                    total_assets: assets,
+                    equity: eq,
+                    gross_profit,
+                });
+            }
+
+            snapshot.materiality_calculations = mat_gen.generate_batch(&materiality_inputs);
+
+            info!(
+                "Materiality: {} calculations generated ({} pre-tax income, {} revenue, \
+                 {} total assets, {} equity benchmarks)",
+                snapshot.materiality_calculations.len(),
+                snapshot
+                    .materiality_calculations
+                    .iter()
+                    .filter(|m| matches!(
+                        m.benchmark,
+                        datasynth_core::models::audit::materiality_calculation::MaterialityBenchmark::PretaxIncome
+                    ))
+                    .count(),
+                snapshot
+                    .materiality_calculations
+                    .iter()
+                    .filter(|m| matches!(
+                        m.benchmark,
+                        datasynth_core::models::audit::materiality_calculation::MaterialityBenchmark::Revenue
+                    ))
+                    .count(),
+                snapshot
+                    .materiality_calculations
+                    .iter()
+                    .filter(|m| matches!(
+                        m.benchmark,
+                        datasynth_core::models::audit::materiality_calculation::MaterialityBenchmark::TotalAssets
+                    ))
+                    .count(),
+                snapshot
+                    .materiality_calculations
+                    .iter()
+                    .filter(|m| matches!(
+                        m.benchmark,
+                        datasynth_core::models::audit::materiality_calculation::MaterialityBenchmark::Equity
+                    ))
+                    .count(),
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 315: Combined Risk Assessments (per entity, per account area)
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::cra_generator::CraGenerator;
+
+            let mut cra_gen = CraGenerator::new(self.seed + 8315);
+
+            for company in &self.config.companies {
+                let cras = cra_gen.generate_for_entity(&company.code, None);
+                snapshot.combined_risk_assessments.extend(cras);
+            }
+
+            let significant_count = snapshot
+                .combined_risk_assessments
+                .iter()
+                .filter(|c| c.significant_risk)
+                .count();
+            let high_cra_count = snapshot
+                .combined_risk_assessments
+                .iter()
+                .filter(|c| {
+                    matches!(
+                        c.combined_risk,
+                        datasynth_core::models::audit::risk_assessment_cra::CraLevel::High
+                    )
+                })
+                .count();
+
+            info!(
+                "CRA: {} combined risk assessments ({} significant, {} high CRA)",
+                snapshot.combined_risk_assessments.len(),
+                significant_count,
+                high_cra_count,
+            );
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
@@ -9882,7 +10053,8 @@ impl EnhancedOrchestrator {
                  {} analytical, {} IA funcs, {} related parties, \
                  {} component auditors, {} letters, {} subsequent events, \
                  {} service orgs, {} going concern, {} accounting estimates, \
-                 {} opinions, {} KAMs, {} SOX 302 certs, {} SOX 404 assessments",
+                 {} opinions, {} KAMs, {} SOX 302 certs, {} SOX 404 assessments, \
+                 {} materiality calcs, {} CRAs",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -9902,6 +10074,8 @@ impl EnhancedOrchestrator {
                 snapshot.key_audit_matters.len(),
                 snapshot.sox_302_certifications.len(),
                 snapshot.sox_404_assessments.len(),
+                snapshot.materiality_calculations.len(),
+                snapshot.combined_risk_assessments.len(),
             ));
         }
 
