@@ -57,6 +57,8 @@ pub mod procedure_step_generator;
 pub mod related_party_generator;
 mod risk_generator;
 pub mod sample_generator;
+pub mod sampling_plan_generator;
+pub mod scots_generator;
 pub mod service_org_generator;
 pub mod sox_generator;
 pub mod subsequent_event_generator;

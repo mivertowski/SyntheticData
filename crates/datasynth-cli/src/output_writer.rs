@@ -533,6 +533,29 @@ pub fn write_all_output(
                 "Combined Risk Assessments (ISA 315)",
             );
         }
+
+        // ISA 530: Sampling Plans and Sampled Items
+        if !result.audit.sampling_plans.is_empty() {
+            write_json_safe(
+                &result.audit.sampling_plans,
+                &audit_dir.join("sampling_plans.json"),
+                "Sampling plans (ISA 530)",
+            );
+            write_json_safe(
+                &result.audit.sampled_items,
+                &audit_dir.join("sampled_items.json"),
+                "Sampled items (ISA 530)",
+            );
+        }
+
+        // ISA 315: Significant Classes of Transactions (SCOTS)
+        if !result.audit.significant_transaction_classes.is_empty() {
+            write_json_safe(
+                &result.audit.significant_transaction_classes,
+                &audit_dir.join("significant_transaction_classes.json"),
+                "Significant Classes of Transactions / SCOTS (ISA 315)",
+            );
+        }
     }
 
     // ========================================================================

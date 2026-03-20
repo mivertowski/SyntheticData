@@ -537,6 +537,15 @@ pub struct AuditSnapshot {
     /// Combined Risk Assessments per account area / assertion (ISA 315).
     pub combined_risk_assessments:
         Vec<datasynth_core::models::audit::risk_assessment_cra::CombinedRiskAssessment>,
+    // ---- ISA 530: Sampling Plans ----
+    /// Sampling plans per CRA at Moderate or higher (ISA 530).
+    pub sampling_plans: Vec<datasynth_core::models::audit::sampling_plan::SamplingPlan>,
+    /// Individual sampled items (key items + representative items) per ISA 530.
+    pub sampled_items: Vec<datasynth_core::models::audit::sampling_plan::SampledItem>,
+    // ---- ISA 315: Significant Classes of Transactions (SCOTS) ----
+    /// Significant classes of transactions per ISA 315 (one set per entity).
+    pub significant_transaction_classes:
+        Vec<datasynth_core::models::audit::scots::SignificantClassOfTransactions>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -10046,6 +10055,93 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // ISA 530: Sampling Plans (per CRA at Moderate or High level)
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::sampling_plan_generator::SamplingPlanGenerator;
+
+            let mut sp_gen = SamplingPlanGenerator::new(self.seed + 8530);
+
+            // Group CRAs by entity and use per-entity tolerable error from materiality
+            for company in &self.config.companies {
+                let entity_code = company.code.clone();
+
+                // Find tolerable error for this entity (= performance materiality)
+                let tolerable_error = snapshot
+                    .materiality_calculations
+                    .iter()
+                    .find(|m| m.entity_code == entity_code)
+                    .map(|m| m.tolerable_error);
+
+                // Collect CRAs for this entity
+                let entity_cras: Vec<_> = snapshot
+                    .combined_risk_assessments
+                    .iter()
+                    .filter(|c| c.entity_code == entity_code)
+                    .cloned()
+                    .collect();
+
+                if !entity_cras.is_empty() {
+                    let (plans, items) = sp_gen.generate_for_cras(&entity_cras, tolerable_error);
+                    snapshot.sampling_plans.extend(plans);
+                    snapshot.sampled_items.extend(items);
+                }
+            }
+
+            let misstatement_count = snapshot
+                .sampled_items
+                .iter()
+                .filter(|i| i.misstatement_found)
+                .count();
+
+            info!(
+                "ISA 530: {} sampling plans, {} sampled items ({} misstatements found)",
+                snapshot.sampling_plans.len(),
+                snapshot.sampled_items.len(),
+                misstatement_count,
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 315: Significant Classes of Transactions (SCOTS)
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::scots_generator::{
+                ScotsGenerator, ScotsGeneratorConfig,
+            };
+
+            let ic_enabled = self.config.intercompany.enabled;
+
+            let config = ScotsGeneratorConfig {
+                intercompany_enabled: ic_enabled,
+                ..ScotsGeneratorConfig::default()
+            };
+            let mut scots_gen = ScotsGenerator::with_config(self.seed + 83_150, config);
+
+            for company in &self.config.companies {
+                let entity_scots = scots_gen.generate_for_entity(&company.code, entries);
+                snapshot.significant_transaction_classes.extend(entity_scots);
+            }
+
+            let estimation_count = snapshot
+                .significant_transaction_classes
+                .iter()
+                .filter(|s| {
+                    matches!(
+                        s.transaction_type,
+                        datasynth_core::models::audit::scots::ScotTransactionType::Estimation
+                    )
+                })
+                .count();
+
+            info!(
+                "ISA 315 SCOTS: {} significant transaction classes ({} estimation SCOTs)",
+                snapshot.significant_transaction_classes.len(),
+                estimation_count,
+            );
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
@@ -10054,7 +10150,7 @@ impl EnhancedOrchestrator {
                  {} component auditors, {} letters, {} subsequent events, \
                  {} service orgs, {} going concern, {} accounting estimates, \
                  {} opinions, {} KAMs, {} SOX 302 certs, {} SOX 404 assessments, \
-                 {} materiality calcs, {} CRAs",
+                 {} materiality calcs, {} CRAs, {} sampling plans, {} SCOTS",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -10076,6 +10172,8 @@ impl EnhancedOrchestrator {
                 snapshot.sox_404_assessments.len(),
                 snapshot.materiality_calculations.len(),
                 snapshot.combined_risk_assessments.len(),
+                snapshot.sampling_plans.len(),
+                snapshot.significant_transaction_classes.len(),
             ));
         }
 
