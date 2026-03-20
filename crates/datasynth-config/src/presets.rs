@@ -244,6 +244,9 @@ fn get_business_process_config(industry: IndustrySector) -> BusinessProcessConfi
 /// ));
 /// ```
 pub fn audit_group_overlay(mut config: GeneratorConfig) -> GeneratorConfig {
+    // ── Audit engagement generation (drives PhaseConfig.generate_audit) ───────
+    config.audit.enabled = true;
+
     // ── Audit standards (ISA + PCAOB + SOX) ──────────────────────────────────
     config.audit_standards.enabled = true;
     config.audit_standards.isa_compliance.enabled = true;
@@ -293,6 +296,15 @@ pub fn audit_group_overlay(mut config: GeneratorConfig) -> GeneratorConfig {
     config.balance.generate_opening_balances = true;
     config.balance.generate_trial_balances = true;
     config.balance.reconcile_subledgers = true;
+
+    // ── Tax generation ──────────────────────────────────────────────────────
+    config.tax.enabled = true;
+
+    // ── Financial reporting ────────────────────────────────────────────────
+    config.financial_reporting.enabled = true;
+
+    // ── HR generation (payroll, time entries, expenses) ────────────────────
+    config.hr.enabled = true;
 
     // ── Scenario tags for traceability ────────────────────────────────────────
     config.scenario.tags.push("audit_group".to_string());
