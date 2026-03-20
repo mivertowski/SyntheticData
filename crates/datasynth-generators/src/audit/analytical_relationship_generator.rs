@@ -126,7 +126,11 @@ impl AnalyticalRelationshipGenerator {
             .collect();
 
         // ---- Extract raw financial amounts from JEs -------------------------
-        let revenue = sum_account_prefix(&entity_entries, REVENUE_PREFIX, true /* credit normal */);
+        let revenue = sum_account_prefix(
+            &entity_entries,
+            REVENUE_PREFIX,
+            true, /* credit normal */
+        );
         let cogs = sum_account_prefix(&entity_entries, COGS_PREFIX, false /* debit normal */);
         let opex = sum_account_prefix(&entity_entries, OPEX_PREFIX, false);
         let ar = sum_account_exact(&entity_entries, AR_ACCOUNT, false); // debit balance
@@ -173,7 +177,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(50u64..=500)),
                 source: "CRM system".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         let sm_dpo: Vec<SupportingMetric> = if include_metrics {
             vec![SupportingMetric {
@@ -181,7 +187,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(20u64..=200)),
                 source: "Procurement system".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         let sm_inv: Vec<SupportingMetric> = if include_metrics {
             vec![SupportingMetric {
@@ -189,7 +197,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(50u64..=2000)),
                 source: "Warehouse management system".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         let sm_payroll: Vec<SupportingMetric> = if include_metrics {
             vec![SupportingMetric {
@@ -197,7 +207,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(25u64..=2000)),
                 source: "HR system".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         let sm_dep: Vec<SupportingMetric> = if include_metrics {
             vec![SupportingMetric {
@@ -205,7 +217,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(5u64..=20)),
                 source: "Fixed asset register".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         let sm_rev_growth: Vec<SupportingMetric> = if include_metrics {
             vec![SupportingMetric {
@@ -213,7 +227,9 @@ impl AnalyticalRelationshipGenerator {
                 value: Decimal::from(rng.random_range(1000u64..=100_000)),
                 source: "Sales / order management system".to_string(),
             }]
-        } else { vec![] };
+        } else {
+            vec![]
+        };
 
         // ---- 1. DSO ---------------------------------------------------------
         let dso = compute_dso(ar, revenue);
@@ -468,11 +484,7 @@ impl AnalyticalRelationshipGenerator {
 
 /// Sum all credit-normal (or debit-normal) flows for accounts starting with
 /// a given character prefix (first digit of account code).
-fn sum_account_prefix(
-    entries: &[&JournalEntry],
-    prefix: char,
-    credit_normal: bool,
-) -> Decimal {
+fn sum_account_prefix(entries: &[&JournalEntry], prefix: char, credit_normal: bool) -> Decimal {
     let mut total = Decimal::ZERO;
     for je in entries {
         for line in &je.lines {
@@ -489,11 +501,7 @@ fn sum_account_prefix(
 }
 
 /// Sum the flows for a single exact GL account.
-fn sum_account_exact(
-    entries: &[&JournalEntry],
-    account: &str,
-    credit_normal: bool,
-) -> Decimal {
+fn sum_account_exact(entries: &[&JournalEntry], account: &str, credit_normal: bool) -> Decimal {
     let mut total = Decimal::ZERO;
     for je in entries {
         for line in &je.lines {
@@ -620,7 +628,10 @@ mod tests {
             JournalEntryLine::debit(doc_id, 1, gl_account_debit.to_string(), amount),
             JournalEntryLine::credit(doc_id, 2, gl_account_credit.to_string(), amount),
         ];
-        JournalEntry { header, lines: lines.into() }
+        JournalEntry {
+            header,
+            lines: lines.into(),
+        }
     }
 
     fn build_test_entries() -> Vec<JournalEntry> {

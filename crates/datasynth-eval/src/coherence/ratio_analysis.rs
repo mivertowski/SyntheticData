@@ -218,16 +218,13 @@ fn build_totals(entries: &[JournalEntry], entity_code: &str) -> GlTotals {
                     // Current assets: 10xx (cash/bank), 11xx (AR), 12xx (inventory),
                     // 13xx (prepaid/other current). Accounts 14xx–19xx are non-current
                     // (PP&E, intangibles, long-term investments) and are excluded.
-                    match prefix2 {
-                        10..=13 => {
-                            t.current_assets += net;
-                            if prefix2 == 11 {
-                                t.ar += net;
-                            } else if prefix2 == 12 {
-                                t.inventory += net;
-                            }
+                    if (10..=13).contains(&prefix2) {
+                        t.current_assets += net;
+                        if prefix2 == 11 {
+                            t.ar += net;
+                        } else if prefix2 == 12 {
+                            t.inventory += net;
                         }
-                        _ => {}
                     }
                 }
                 2 => {

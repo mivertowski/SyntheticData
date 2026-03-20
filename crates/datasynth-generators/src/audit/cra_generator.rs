@@ -153,30 +153,43 @@ fn risk_factors_for(area: &str, assertion: AuditAssertion) -> Vec<String> {
 
     match area {
         "Revenue" => {
-            factors.push("Revenue recognition involves judgment in identifying performance obligations".into());
+            factors.push(
+                "Revenue recognition involves judgment in identifying performance obligations"
+                    .into(),
+            );
             if assertion == AuditAssertion::Occurrence {
-                factors.push("Presumed fraud risk per ISA 240 — incentive to overstate revenue".into());
+                factors.push(
+                    "Presumed fraud risk per ISA 240 — incentive to overstate revenue".into(),
+                );
             }
             if assertion == AuditAssertion::Cutoff {
-                factors.push("Cut-off risk heightened near period-end due to shipping arrangements".into());
+                factors.push(
+                    "Cut-off risk heightened near period-end due to shipping arrangements".into(),
+                );
             }
         }
         "Trade Receivables" => {
-            factors.push("Collectability assessment involves significant management judgment".into());
+            factors
+                .push("Collectability assessment involves significant management judgment".into());
             if assertion == AuditAssertion::ValuationAndAllocation {
-                factors.push("ECL provisioning methodology may be complex under IFRS 9 / ASC 310".into());
+                factors.push(
+                    "ECL provisioning methodology may be complex under IFRS 9 / ASC 310".into(),
+                );
             }
         }
         "Inventory" => {
             factors.push("Physical quantities require verification through observation".into());
             if assertion == AuditAssertion::ValuationAndAllocation {
-                factors.push("NRV impairment requires management's forward-looking estimates".into());
+                factors
+                    .push("NRV impairment requires management's forward-looking estimates".into());
             }
         }
         "Fixed Assets" => {
-            factors.push("Capitalisation vs. expensing judgments affect reported asset values".into());
+            factors
+                .push("Capitalisation vs. expensing judgments affect reported asset values".into());
             if assertion == AuditAssertion::ValuationAndAllocation {
-                factors.push("Depreciation method and useful life estimates involve judgment".into());
+                factors
+                    .push("Depreciation method and useful life estimates involve judgment".into());
             }
         }
         "Provisions" => {
@@ -185,14 +198,22 @@ fn risk_factors_for(area: &str, assertion: AuditAssertion) -> Vec<String> {
         }
         "Related Parties" => {
             factors.push("Related party transactions may not be conducted at arm's length".into());
-            factors.push("Completeness depends on management disclosing all related party relationships".into());
+            factors.push(
+                "Completeness depends on management disclosing all related party relationships"
+                    .into(),
+            );
         }
         "Accruals" => {
-            factors.push("Accrual completeness relies on management's identification of liabilities".into());
+            factors.push(
+                "Accrual completeness relies on management's identification of liabilities".into(),
+            );
         }
         "Tax" => {
-            factors.push("Tax provisions involve complex legislation and management judgment".into());
-            factors.push("Deferred tax calculation depends on timing difference identification".into());
+            factors
+                .push("Tax provisions involve complex legislation and management judgment".into());
+            factors.push(
+                "Deferred tax calculation depends on timing difference identification".into(),
+            );
         }
         _ => {
             factors.push(format!("{area} — standard inherent risk factors apply"));
@@ -344,7 +365,9 @@ impl CraGenerator {
         let roll: f64 = self.rng.random();
         if roll < self.config.effective_controls_probability {
             RiskRating::Low
-        } else if roll < self.config.effective_controls_probability + self.config.partial_controls_probability {
+        } else if roll
+            < self.config.effective_controls_probability + self.config.partial_controls_probability
+        {
             RiskRating::Medium
         } else {
             RiskRating::High
@@ -416,9 +439,9 @@ mod tests {
     fn related_party_occurrence_is_significant() {
         let mut gen = CraGenerator::new(42);
         let cras = gen.generate_for_entity("C001", None);
-        let rp = cras
-            .iter()
-            .find(|c| c.account_area == "Related Parties" && c.assertion == AuditAssertion::Occurrence);
+        let rp = cras.iter().find(|c| {
+            c.account_area == "Related Parties" && c.assertion == AuditAssertion::Occurrence
+        });
         assert!(rp.is_some());
         assert!(rp.unwrap().significant_risk);
     }
@@ -439,7 +462,11 @@ mod tests {
         let cras = gen.generate_for_entity("C001", Some(&overrides));
         let cash_cras: Vec<_> = cras.iter().filter(|c| c.account_area == "Cash").collect();
         for c in &cash_cras {
-            assert_eq!(c.control_risk, RiskRating::Low, "Control override should apply");
+            assert_eq!(
+                c.control_risk,
+                RiskRating::Low,
+                "Control override should apply"
+            );
         }
     }
 }

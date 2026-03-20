@@ -161,11 +161,7 @@ impl UnusualItemGenerator {
             ) || je.header.is_anomaly;
 
             flag_counter += 1;
-            let id = format!(
-                "UIF-{}-{:05}",
-                entity_code,
-                flag_counter
-            );
+            let id = format!("UIF-{}-{:05}", entity_code, flag_counter);
 
             let gl_accounts: Vec<String> = je
                 .lines
@@ -248,8 +244,8 @@ impl UnusualItemGenerator {
         // ---- Timing -------------------------------------------------------
         let posting_date = je.header.posting_date;
         let days_before_end = (period_end_date - posting_date).num_days();
-        let is_period_end = days_before_end >= 0
-            && days_before_end < self.config.period_end_days as i64;
+        let is_period_end =
+            days_before_end >= 0 && days_before_end < self.config.period_end_days as i64;
         let is_weekend = matches!(
             posting_date.weekday(),
             chrono::Weekday::Sat | chrono::Weekday::Sun
@@ -262,11 +258,7 @@ impl UnusualItemGenerator {
         // Check if the GL account combination in this entry is rare
         if je.lines.len() >= 2 {
             let accounts: Vec<&str> = {
-                let mut v: Vec<&str> = je
-                    .lines
-                    .iter()
-                    .map(|l| l.gl_account.as_str())
-                    .collect();
+                let mut v: Vec<&str> = je.lines.iter().map(|l| l.gl_account.as_str()).collect();
                 v.sort_unstable();
                 v.dedup();
                 v
@@ -366,13 +358,14 @@ fn compute_account_stats(entries: &[&JournalEntry]) -> HashMap<String, AccountSt
             } else {
                 line.credit_amount
             };
-            let mean = means.get(&line.gl_account).copied().unwrap_or(Decimal::ZERO);
+            let mean = means
+                .get(&line.gl_account)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
             let diff = amount - mean;
             // diff² using Decimal multiplication
             let diff_sq = diff * diff;
-            let entry = variance_sums
-                .entry(line.gl_account.clone())
-                .or_default();
+            let entry = variance_sums.entry(line.gl_account.clone()).or_default();
             entry.0 += diff_sq;
             entry.1 += 1;
         }
@@ -387,9 +380,7 @@ fn compute_account_stats(entries: &[&JournalEntry]) -> HashMap<String, AccountSt
                 .map(|(sum_sq, n)| {
                     let variance = sum_sq / Decimal::from(*n - 1);
                     // Integer square root approximation via f64
-                    let variance_f64: f64 = variance
-                        .try_into()
-                        .unwrap_or(0.0);
+                    let variance_f64: f64 = variance.try_into().unwrap_or(0.0);
                     Decimal::try_from(variance_f64.sqrt()).unwrap_or(Decimal::ONE)
                 })
                 .unwrap_or(Decimal::ONE);
@@ -402,11 +393,7 @@ fn compute_account_stats(entries: &[&JournalEntry]) -> HashMap<String, AccountSt
 fn compute_pair_frequencies(entries: &[&JournalEntry]) -> HashMap<String, usize> {
     let mut freq: HashMap<String, usize> = HashMap::new();
     for je in entries {
-        let mut accounts: Vec<&str> = je
-            .lines
-            .iter()
-            .map(|l| l.gl_account.as_str())
-            .collect();
+        let mut accounts: Vec<&str> = je.lines.iter().map(|l| l.gl_account.as_str()).collect();
         accounts.sort_unstable();
         accounts.dedup();
         if accounts.len() >= 2 {
@@ -433,9 +420,7 @@ fn compute_automated_accounts(entries: &[&JournalEntry]) -> HashSet<String> {
     }
     account_counts
         .into_iter()
-        .filter(|(_, (total, manual))| {
-            *total >= 10 && (*manual as f64 / *total as f64) < 0.05
-        })
+        .filter(|(_, (total, manual))| *total >= 10 && (*manual as f64 / *total as f64) < 0.05)
         .map(|(acct, _)| acct)
         .collect()
 }
@@ -459,11 +444,7 @@ fn compute_poster_account_history(
 // Description helpers
 // ---------------------------------------------------------------------------
 
-fn build_description(
-    entity_code: &str,
-    je: &JournalEntry,
-    dims: &[UnusualDimension],
-) -> String {
+fn build_description(entity_code: &str, je: &JournalEntry, dims: &[UnusualDimension]) -> String {
     let dim_names: Vec<String> = dims.iter().map(|d| d.to_string()).collect();
     format!(
         "Journal entry {} for entity {} flagged as unusual on {} dimension(s): {}. \
@@ -538,7 +519,10 @@ fn build_expected_actual(
         ),
         UnusualDimension::Nature => (
             "automated source for this GL account (non-manual)".to_string(),
-            format!("manual entry ({}) to typically automated account", je.header.source),
+            format!(
+                "manual entry ({}) to typically automated account",
+                je.header.source
+            ),
         ),
     }
 }
@@ -586,7 +570,10 @@ mod tests {
                 ));
             }
         }
-        JournalEntry { header, lines: lines.into() }
+        JournalEntry {
+            header,
+            lines: lines.into(),
+        }
     }
 
     fn period_end() -> chrono::NaiveDate {
@@ -622,12 +609,24 @@ mod tests {
     #[test]
     fn test_severity_derived_from_dimensions() {
         // Minor = 1 dim
-        assert_eq!(UnusualSeverity::from_dimension_count(1), UnusualSeverity::Minor);
+        assert_eq!(
+            UnusualSeverity::from_dimension_count(1),
+            UnusualSeverity::Minor
+        );
         // Moderate = 2 dims
-        assert_eq!(UnusualSeverity::from_dimension_count(2), UnusualSeverity::Moderate);
+        assert_eq!(
+            UnusualSeverity::from_dimension_count(2),
+            UnusualSeverity::Moderate
+        );
         // Significant = 3+ dims
-        assert_eq!(UnusualSeverity::from_dimension_count(3), UnusualSeverity::Significant);
-        assert_eq!(UnusualSeverity::from_dimension_count(5), UnusualSeverity::Significant);
+        assert_eq!(
+            UnusualSeverity::from_dimension_count(3),
+            UnusualSeverity::Significant
+        );
+        assert_eq!(
+            UnusualSeverity::from_dimension_count(5),
+            UnusualSeverity::Significant
+        );
     }
 
     #[test]
@@ -695,7 +694,10 @@ mod tests {
         let has_timing = flags
             .iter()
             .any(|f| f.dimensions.contains(&UnusualDimension::Timing));
-        assert!(has_timing, "Saturday posting should trigger Timing dimension");
+        assert!(
+            has_timing,
+            "Saturday posting should trigger Timing dimension"
+        );
     }
 
     #[test]

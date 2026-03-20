@@ -13,8 +13,12 @@
 use datasynth_core::models::audit::risk_assessment_cra::{
     AuditAssertion, CombinedRiskAssessment, CraLevel, RiskRating,
 };
-use datasynth_core::models::audit::sampling_plan::{KeyItemReason, SamplingMethodology, SelectionType};
-use datasynth_core::models::audit::scots::{EstimationComplexity, ScotSignificance, ScotTransactionType};
+use datasynth_core::models::audit::sampling_plan::{
+    KeyItemReason, SamplingMethodology, SelectionType,
+};
+use datasynth_core::models::audit::scots::{
+    EstimationComplexity, ScotSignificance, ScotTransactionType,
+};
 use datasynth_generators::audit::sampling_plan_generator::SamplingPlanGenerator;
 use datasynth_generators::audit::scots_generator::{ScotsGenerator, ScotsGeneratorConfig};
 use rust_decimal::Decimal;
@@ -39,7 +43,13 @@ fn make_high_cra(area: &str, assertion: AuditAssertion) -> CombinedRiskAssessmen
 }
 
 fn make_moderate_cra(area: &str, assertion: AuditAssertion) -> CombinedRiskAssessment {
-    make_cra(area, assertion, RiskRating::Medium, RiskRating::Medium, false)
+    make_cra(
+        area,
+        assertion,
+        RiskRating::Medium,
+        RiskRating::Medium,
+        false,
+    )
 }
 
 fn make_low_cra(area: &str, assertion: AuditAssertion) -> CombinedRiskAssessment {
@@ -60,14 +70,26 @@ fn sampling_plan_minimal_cra_skipped() {
     let mut gen = SamplingPlanGenerator::new(42);
     let (plans, items) = gen.generate_for_cras(&[minimal_cra], Some(TEST_TE));
 
-    assert!(plans.is_empty(), "Minimal CRA should produce no sampling plan");
-    assert!(items.is_empty(), "Minimal CRA should produce no sampled items");
+    assert!(
+        plans.is_empty(),
+        "Minimal CRA should produce no sampling plan"
+    );
+    assert!(
+        items.is_empty(),
+        "Minimal CRA should produce no sampled items"
+    );
 }
 
 #[test]
 fn sampling_plan_low_cra_skipped() {
     // Low + Medium = Low CRA
-    let low_cra = make_cra("Cost of Sales", AuditAssertion::Occurrence, RiskRating::Low, RiskRating::Medium, false);
+    let low_cra = make_cra(
+        "Cost of Sales",
+        AuditAssertion::Occurrence,
+        RiskRating::Low,
+        RiskRating::Medium,
+        false,
+    );
     assert_eq!(low_cra.combined_risk, CraLevel::Low);
 
     let mut gen = SamplingPlanGenerator::new(42);
@@ -83,7 +105,11 @@ fn sampling_plan_moderate_cra_produces_plan() {
     let mut gen = SamplingPlanGenerator::new(42);
     let (plans, items) = gen.generate_for_cras(&[cra], Some(TEST_TE));
 
-    assert_eq!(plans.len(), 1, "Moderate CRA should produce exactly one plan");
+    assert_eq!(
+        plans.len(),
+        1,
+        "Moderate CRA should produce exactly one plan"
+    );
     let plan = &plans[0];
     assert!(
         plan.sample_size >= 20 && plan.sample_size <= 30,
@@ -144,8 +170,17 @@ fn sampling_plan_first_key_item_always_above_te() {
         let (plans, _) = gen.generate_for_cras(&[cra.clone()], Some(TEST_TE));
         assert!(!plans.is_empty());
         let ki0 = &plans[0].key_items[0];
-        assert_eq!(ki0.reason, KeyItemReason::AboveTolerableError, "First key item must be AboveTolerableError");
-        assert!(ki0.amount >= TEST_TE, "First key item amount {} >= TE {}", ki0.amount, TEST_TE);
+        assert_eq!(
+            ki0.reason,
+            KeyItemReason::AboveTolerableError,
+            "First key item must be AboveTolerableError"
+        );
+        assert!(
+            ki0.amount >= TEST_TE,
+            "First key item amount {} >= TE {}",
+            ki0.amount,
+            TEST_TE
+        );
     }
 }
 
@@ -185,7 +220,12 @@ fn sampling_plan_key_items_value_sums_correctly() {
     let plan = &plans[0];
     let computed_key_value: Decimal = plan.key_items.iter().map(|k| k.amount).sum();
     let diff = (computed_key_value - plan.key_items_value).abs();
-    assert!(diff < dec!(0.01), "key_items_value mismatch: computed={} stored={}", computed_key_value, plan.key_items_value);
+    assert!(
+        diff < dec!(0.01),
+        "key_items_value mismatch: computed={} stored={}",
+        computed_key_value,
+        plan.key_items_value
+    );
 }
 
 #[test]
@@ -243,7 +283,10 @@ fn sampled_items_are_all_tested() {
     let (_, items) = gen.generate_for_cras(&cras, Some(TEST_TE));
 
     assert!(!items.is_empty());
-    assert!(items.iter().all(|i| i.tested), "All sampled items should be marked as tested");
+    assert!(
+        items.iter().all(|i| i.tested),
+        "All sampled items should be marked as tested"
+    );
 }
 
 #[test]
@@ -253,8 +296,14 @@ fn sampled_items_include_key_and_representative() {
     let mut gen = SamplingPlanGenerator::new(42);
     let (_, items) = gen.generate_for_cras(&[cra], Some(TEST_TE));
 
-    let key_count = items.iter().filter(|i| i.selection_type == SelectionType::KeyItem).count();
-    let rep_count = items.iter().filter(|i| i.selection_type == SelectionType::Representative).count();
+    let key_count = items
+        .iter()
+        .filter(|i| i.selection_type == SelectionType::KeyItem)
+        .count();
+    let rep_count = items
+        .iter()
+        .filter(|i| i.selection_type == SelectionType::Representative)
+        .count();
 
     assert!(key_count > 0, "Should have key items");
     assert!(rep_count > 0, "Should have representative items");
@@ -282,9 +331,15 @@ fn sampling_plan_ids_are_unique_across_entities() {
         make_moderate_cra("Revenue", AuditAssertion::Occurrence),
         make_high_cra("Inventory", AuditAssertion::Existence),
     ];
-    let cras_c002 = vec![
-        CombinedRiskAssessment::new("C002", "Revenue", AuditAssertion::Occurrence, RiskRating::Medium, RiskRating::Medium, false, vec![]),
-    ];
+    let cras_c002 = vec![CombinedRiskAssessment::new(
+        "C002",
+        "Revenue",
+        AuditAssertion::Occurrence,
+        RiskRating::Medium,
+        RiskRating::Medium,
+        false,
+        vec![],
+    )];
 
     let mut gen = SamplingPlanGenerator::new(42);
     let te = Some(TEST_TE);
@@ -293,7 +348,11 @@ fn sampling_plan_ids_are_unique_across_entities() {
     plans.extend(plans2);
 
     let ids: std::collections::HashSet<&str> = plans.iter().map(|p| p.id.as_str()).collect();
-    assert_eq!(ids.len(), plans.len(), "Plan IDs should be unique across entities");
+    assert_eq!(
+        ids.len(),
+        plans.len(),
+        "Plan IDs should be unique across entities"
+    );
 }
 
 // ============================================================================
@@ -334,7 +393,10 @@ fn scots_estimation_types_have_complexity() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    for s in scots.iter().filter(|s| s.transaction_type == ScotTransactionType::Estimation) {
+    for s in scots
+        .iter()
+        .filter(|s| s.transaction_type == ScotTransactionType::Estimation)
+    {
         assert!(
             s.estimation_complexity.is_some(),
             "Estimation SCOT '{}' must have estimation_complexity set",
@@ -348,7 +410,10 @@ fn scots_non_estimation_types_have_no_complexity() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    for s in scots.iter().filter(|s| s.transaction_type != ScotTransactionType::Estimation) {
+    for s in scots
+        .iter()
+        .filter(|s| s.transaction_type != ScotTransactionType::Estimation)
+    {
         assert!(
             s.estimation_complexity.is_none(),
             "Non-estimation SCOT '{}' must not have estimation_complexity",
@@ -430,12 +495,17 @@ fn scots_tax_provision_is_complex_estimation() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    let tax = scots.iter().find(|s| s.scot_name == "Tax Provision")
+    let tax = scots
+        .iter()
+        .find(|s| s.scot_name == "Tax Provision")
         .expect("Tax Provision SCOT should exist");
 
     assert_eq!(tax.significance_level, ScotSignificance::High);
     assert_eq!(tax.transaction_type, ScotTransactionType::Estimation);
-    assert_eq!(tax.estimation_complexity, Some(EstimationComplexity::Complex));
+    assert_eq!(
+        tax.estimation_complexity,
+        Some(EstimationComplexity::Complex)
+    );
     assert_eq!(tax.business_process, "R2R");
 }
 
@@ -444,11 +514,16 @@ fn scots_depreciation_is_simple_estimation() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    let dep = scots.iter().find(|s| s.scot_name == "Depreciation")
+    let dep = scots
+        .iter()
+        .find(|s| s.scot_name == "Depreciation")
         .expect("Depreciation SCOT should exist");
 
     assert_eq!(dep.transaction_type, ScotTransactionType::Estimation);
-    assert_eq!(dep.estimation_complexity, Some(EstimationComplexity::Simple));
+    assert_eq!(
+        dep.estimation_complexity,
+        Some(EstimationComplexity::Simple)
+    );
 }
 
 #[test]
@@ -456,11 +531,16 @@ fn scots_ecl_is_moderate_estimation() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    let ecl = scots.iter().find(|s| s.scot_name == "ECL / Bad Debt Provision")
+    let ecl = scots
+        .iter()
+        .find(|s| s.scot_name == "ECL / Bad Debt Provision")
         .expect("ECL SCOT should exist");
 
     assert_eq!(ecl.transaction_type, ScotTransactionType::Estimation);
-    assert_eq!(ecl.estimation_complexity, Some(EstimationComplexity::Moderate));
+    assert_eq!(
+        ecl.estimation_complexity,
+        Some(EstimationComplexity::Moderate)
+    );
     assert_eq!(ecl.significance_level, ScotSignificance::High);
 }
 
@@ -469,7 +549,9 @@ fn scots_revenue_is_o2c_high_routine() {
     let mut gen = ScotsGenerator::new(42);
     let scots = gen.generate_for_entity("C001", &[]);
 
-    let rev = scots.iter().find(|s| s.scot_name == "Revenue — Product Sales")
+    let rev = scots
+        .iter()
+        .find(|s| s.scot_name == "Revenue — Product Sales")
         .expect("Revenue SCOT should exist");
 
     assert_eq!(rev.business_process, "O2C");
@@ -483,13 +565,23 @@ fn scots_multiple_entities_get_separate_sets() {
     let scots_c001 = gen.generate_for_entity("C001", &[]);
     let scots_c002 = gen.generate_for_entity("C002", &[]);
 
-    assert_eq!(scots_c001.len(), scots_c002.len(), "Both entities should get same number of SCOTs");
+    assert_eq!(
+        scots_c001.len(),
+        scots_c002.len(),
+        "Both entities should get same number of SCOTs"
+    );
 
     // IDs should differ between entities
-    let ids_c001: std::collections::HashSet<&str> = scots_c001.iter().map(|s| s.id.as_str()).collect();
-    let ids_c002: std::collections::HashSet<&str> = scots_c002.iter().map(|s| s.id.as_str()).collect();
+    let ids_c001: std::collections::HashSet<&str> =
+        scots_c001.iter().map(|s| s.id.as_str()).collect();
+    let ids_c002: std::collections::HashSet<&str> =
+        scots_c002.iter().map(|s| s.id.as_str()).collect();
     let overlap: Vec<_> = ids_c001.intersection(&ids_c002).collect();
-    assert!(overlap.is_empty(), "SCOT IDs should be unique across entities: {:?}", overlap);
+    assert!(
+        overlap.is_empty(),
+        "SCOT IDs should be unique across entities: {:?}",
+        overlap
+    );
 }
 
 #[test]

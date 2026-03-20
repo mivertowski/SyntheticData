@@ -306,7 +306,9 @@ impl ScotsGenerator {
         let id = format!(
             "SCOT-{}-{}",
             entity_code,
-            spec.scot_name.replace([' ', '—', '-', '/'], "_").to_uppercase(),
+            spec.scot_name
+                .replace([' ', '—', '-', '/'], "_")
+                .to_uppercase(),
         );
 
         let critical_path = spec
@@ -386,7 +388,9 @@ impl ScotsGenerator {
             (volume.max(1), value.max(dec!(1)))
         } else {
             // Synthetic fallback
-            let volume = self.rng.random_range(self.config.min_volume..=self.config.max_volume);
+            let volume = self
+                .rng
+                .random_range(self.config.min_volume..=self.config.max_volume);
             let avg_txn = Decimal::from(self.rng.random_range(1_000_i64..=50_000_i64));
             let value = (Decimal::from(volume as i64) * avg_txn).round_dp(0);
             (volume, value.max(dec!(1)))
@@ -408,7 +412,12 @@ mod tests {
         let mut gen = ScotsGenerator::new(42);
         let scots = gen.generate_for_entity("C001", &[]);
         // All non-IC SCOTs should be present (8 without IC)
-        assert_eq!(scots.len(), 8, "Expected 8 non-IC SCOTs, got {}", scots.len());
+        assert_eq!(
+            scots.len(),
+            8,
+            "Expected 8 non-IC SCOTs, got {}",
+            scots.len()
+        );
     }
 
     #[test]
@@ -422,7 +431,10 @@ mod tests {
         assert_eq!(scots.len(), 9, "Expected 9 SCOTs including IC");
 
         let ic_scot = scots.iter().find(|s| s.business_process == "IC");
-        assert!(ic_scot.is_some(), "IC SCOT should be present when IC is enabled");
+        assert!(
+            ic_scot.is_some(),
+            "IC SCOT should be present when IC is enabled"
+        );
     }
 
     #[test]
@@ -505,7 +517,10 @@ mod tests {
         let mut gen = ScotsGenerator::new(42);
         let scots = gen.generate_for_entity("C001", &[]);
 
-        let tax = scots.iter().find(|s| s.scot_name == "Tax Provision").unwrap();
+        let tax = scots
+            .iter()
+            .find(|s| s.scot_name == "Tax Provision")
+            .unwrap();
         assert_eq!(tax.significance_level, ScotSignificance::High);
         assert_eq!(tax.transaction_type, ScotTransactionType::Estimation);
         assert_eq!(

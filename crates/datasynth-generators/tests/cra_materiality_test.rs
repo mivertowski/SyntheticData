@@ -1,12 +1,12 @@
 //! Integration tests for the ISA 315 CRA and ISA 320 materiality generators.
 
-use datasynth_core::models::audit::risk_assessment_cra::{
-    AuditAssertion, CraLevel, CraPlannedResponse, ProcedureNature, ProcedureTiming, RiskRating,
-    SamplingExtent,
-};
 use datasynth_core::models::audit::materiality_calculation::{
     AdjustmentType, MaterialityBenchmark, MaterialityCalculation, NormalizationAdjustment,
     NormalizedEarnings,
+};
+use datasynth_core::models::audit::risk_assessment_cra::{
+    AuditAssertion, CraLevel, CraPlannedResponse, ProcedureNature, ProcedureTiming, RiskRating,
+    SamplingExtent,
 };
 use datasynth_generators::audit::cra_generator::CraGenerator;
 use datasynth_generators::audit::materiality_generator::{MaterialityGenerator, MaterialityInput};
@@ -276,8 +276,14 @@ fn materiality_pm_between_50_and_75_percent() {
         "Test",
     );
     let ratio = calc.performance_materiality / calc.overall_materiality;
-    assert!(ratio >= dec!(0.50), "PM must be >= 50% of overall, got {ratio}");
-    assert!(ratio <= dec!(0.75), "PM must be <= 75% of overall, got {ratio}");
+    assert!(
+        ratio >= dec!(0.50),
+        "PM must be >= 50% of overall, got {ratio}"
+    );
+    assert!(
+        ratio <= dec!(0.75),
+        "PM must be <= 75% of overall, got {ratio}"
+    );
     assert_eq!(calc.performance_materiality, overall * pm_pct);
 }
 
@@ -463,8 +469,7 @@ fn generator_clearly_trivial_is_five_percent_of_overall() {
         let calc = gen.generate(input);
         let expected_ct = calc.overall_materiality * dec!(0.05);
         assert_eq!(
-            calc.clearly_trivial,
-            expected_ct,
+            calc.clearly_trivial, expected_ct,
             "Clearly trivial should be 5% of overall for entity {}",
             input.entity_code
         );
@@ -494,7 +499,11 @@ fn generator_minimum_floor_applied() {
 #[test]
 fn generator_batch_generates_one_per_entity() {
     let mut gen = MaterialityGenerator::new(42);
-    let inputs = vec![make_profitable_input(), make_loss_input(), make_asset_heavy_input()];
+    let inputs = vec![
+        make_profitable_input(),
+        make_loss_input(),
+        make_asset_heavy_input(),
+    ];
     let calcs = gen.generate_batch(&inputs);
     assert_eq!(calcs.len(), 3, "One calculation per input entity");
     assert_eq!(calcs[0].entity_code, "C001");

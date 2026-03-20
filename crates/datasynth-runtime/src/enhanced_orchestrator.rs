@@ -548,8 +548,7 @@ pub struct AuditSnapshot {
         Vec<datasynth_core::models::audit::scots::SignificantClassOfTransactions>,
     // ---- ISA 520: Unusual Item Markers ----
     /// Unusual item flags raised across all journal entries (5–10% flagging rate).
-    pub unusual_items:
-        Vec<datasynth_core::models::audit::unusual_items::UnusualItemFlag>,
+    pub unusual_items: Vec<datasynth_core::models::audit::unusual_items::UnusualItemFlag>,
     // ---- ISA 520: Analytical Relationships ----
     /// Analytical relationships (ratios, trends, correlations) per entity.
     pub analytical_relationships:
@@ -9941,9 +9940,7 @@ impl EnhancedOrchestrator {
                     .iter()
                     .filter(|e| e.company_code() == company_code)
                     .flat_map(|e| e.lines.iter())
-                    .filter(|l| {
-                        l.account_code.starts_with('5') || l.account_code.starts_with('6')
-                    })
+                    .filter(|l| l.account_code.starts_with('5') || l.account_code.starts_with('6'))
                     .map(|l| l.debit_amount)
                     .sum();
 
@@ -10129,7 +10126,9 @@ impl EnhancedOrchestrator {
 
             for company in &self.config.companies {
                 let entity_scots = scots_gen.generate_for_entity(&company.code, entries);
-                snapshot.significant_transaction_classes.extend(entity_scots);
+                snapshot
+                    .significant_transaction_classes
+                    .extend(entity_scots);
             }
 
             let estimation_count = snapshot
@@ -10163,11 +10162,8 @@ impl EnhancedOrchestrator {
                 .iter()
                 .map(|c| c.code.clone())
                 .collect();
-            let unusual_flags = unusual_gen.generate_for_entities(
-                &entity_codes,
-                entries,
-                period_end,
-            );
+            let unusual_flags =
+                unusual_gen.generate_for_entities(&entity_codes, entries, period_end);
             info!(
                 "ISA 520 unusual items: {} flags ({} significant, {} moderate, {} minor)",
                 unusual_flags.len(),

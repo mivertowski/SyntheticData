@@ -17,7 +17,6 @@
 pub mod accounting_estimates;
 pub mod analytical_procedure;
 pub mod analytical_relationships;
-pub mod unusual_items;
 pub mod component_audit;
 pub mod confirmation;
 mod engagement;
@@ -37,12 +36,12 @@ pub mod sampling_plan;
 pub mod scots;
 pub mod service_organization;
 pub mod subsequent_events;
+pub mod unusual_items;
 mod workpaper;
 
 pub use accounting_estimates::*;
 pub use analytical_procedure::*;
 pub use analytical_relationships::*;
-pub use unusual_items::*;
 pub use component_audit::*;
 pub use confirmation::*;
 pub use engagement::*;
@@ -62,4 +61,5 @@ pub use sampling_plan::*;
 pub use scots::*;
 pub use service_organization::*;
 pub use subsequent_events::*;
+pub use unusual_items::*;
 pub use workpaper::*;

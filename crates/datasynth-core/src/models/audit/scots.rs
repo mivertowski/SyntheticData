@@ -201,7 +201,10 @@ mod tests {
     fn scot_display_impls() {
         assert_eq!(ScotSignificance::High.to_string(), "High");
         assert_eq!(ScotTransactionType::Estimation.to_string(), "Estimation");
-        assert_eq!(ProcessingMethod::FullyAutomated.to_string(), "Fully Automated");
+        assert_eq!(
+            ProcessingMethod::FullyAutomated.to_string(),
+            "Fully Automated"
+        );
         assert_eq!(EstimationComplexity::Complex.to_string(), "Complex");
     }
 

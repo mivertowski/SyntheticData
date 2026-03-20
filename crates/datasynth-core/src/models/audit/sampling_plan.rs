@@ -227,7 +227,10 @@ mod tests {
             tolerable_error: dec!(32_500),
         };
 
-        assert_eq!(plan.population_value - plan.key_items_value, plan.remaining_population_value);
+        assert_eq!(
+            plan.population_value - plan.key_items_value,
+            plan.remaining_population_value
+        );
         assert_eq!(plan.key_items.len(), 1);
         assert_eq!(plan.key_items[0].reason, KeyItemReason::AboveTolerableError);
     }

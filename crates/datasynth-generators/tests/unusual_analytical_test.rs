@@ -38,7 +38,10 @@ fn make_entry(
         JournalEntryLine::debit(doc_id, 1, gl_debit.to_string(), amount),
         JournalEntryLine::credit(doc_id, 2, gl_credit.to_string(), amount),
     ];
-    JournalEntry { header, lines: lines.into() }
+    JournalEntry {
+        header,
+        lines: lines.into(),
+    }
 }
 
 /// Build a batch of entries: n_normal normal + n_anomaly anomaly entries.
@@ -64,8 +67,8 @@ fn build_entries(n_normal: usize, n_anomaly: usize) -> Vec<JournalEntry> {
         entries.push(make_entry(
             "C001",
             weekend,
-            "9000", // suspense account — unusual
-            "3200", // retained earnings — unusual for direct posting
+            "9000",        // suspense account — unusual
+            "3200",        // retained earnings — unusual for direct posting
             dec!(999_000), // large amount
             TransactionSource::Manual,
             true,
@@ -79,21 +82,111 @@ fn build_analytical_entries() -> Vec<JournalEntry> {
     let posting_date = NaiveDate::from_ymd_opt(2024, 6, 10).unwrap();
     vec![
         // Revenue (4000 credit)
-        make_entry("C001", posting_date, "1100", "4000", dec!(200_000), TransactionSource::Automated, false, "SYS"),
-        make_entry("C001", posting_date, "1100", "4000", dec!(150_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "1100",
+            "4000",
+            dec!(200_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
+        make_entry(
+            "C001",
+            posting_date,
+            "1100",
+            "4000",
+            dec!(150_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
         // COGS (5000 debit)
-        make_entry("C001", posting_date, "5000", "1200", dec!(120_000), TransactionSource::Automated, false, "SYS"),
-        make_entry("C001", posting_date, "5000", "1200", dec!(80_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "5000",
+            "1200",
+            dec!(120_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
+        make_entry(
+            "C001",
+            posting_date,
+            "5000",
+            "1200",
+            dec!(80_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
         // Payroll (6100 + 6200 debit)
-        make_entry("C001", posting_date, "6100", "2210", dec!(60_000), TransactionSource::Automated, false, "SYS"),
-        make_entry("C001", posting_date, "6200", "2220", dec!(15_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "6100",
+            "2210",
+            dec!(60_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
+        make_entry(
+            "C001",
+            posting_date,
+            "6200",
+            "2220",
+            dec!(15_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
         // Fixed assets (1500 debit) and depreciation (6000 debit)
-        make_entry("C001", posting_date, "1500", "2600", dec!(100_000), TransactionSource::Automated, false, "SYS"),
-        make_entry("C001", posting_date, "6000", "1510", dec!(10_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "1500",
+            "2600",
+            dec!(100_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
+        make_entry(
+            "C001",
+            posting_date,
+            "6000",
+            "1510",
+            dec!(10_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
         // AR (1100 debit) and AP (2000 credit)
-        make_entry("C001", posting_date, "1100", "2000", dec!(30_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "1100",
+            "2000",
+            dec!(30_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
         // Inventory (1200 debit)
-        make_entry("C001", posting_date, "1200", "2000", dec!(50_000), TransactionSource::Automated, false, "SYS"),
+        make_entry(
+            "C001",
+            posting_date,
+            "1200",
+            "2000",
+            dec!(50_000),
+            TransactionSource::Automated,
+            false,
+            "SYS",
+        ),
     ]
 }
 
@@ -110,11 +203,26 @@ fn unusual_items_empty_entries_returns_no_flags() {
 
 #[test]
 fn unusual_items_severity_matches_dimension_count() {
-    assert_eq!(UnusualSeverity::from_dimension_count(0), UnusualSeverity::Minor);
-    assert_eq!(UnusualSeverity::from_dimension_count(1), UnusualSeverity::Minor);
-    assert_eq!(UnusualSeverity::from_dimension_count(2), UnusualSeverity::Moderate);
-    assert_eq!(UnusualSeverity::from_dimension_count(3), UnusualSeverity::Significant);
-    assert_eq!(UnusualSeverity::from_dimension_count(5), UnusualSeverity::Significant);
+    assert_eq!(
+        UnusualSeverity::from_dimension_count(0),
+        UnusualSeverity::Minor
+    );
+    assert_eq!(
+        UnusualSeverity::from_dimension_count(1),
+        UnusualSeverity::Minor
+    );
+    assert_eq!(
+        UnusualSeverity::from_dimension_count(2),
+        UnusualSeverity::Moderate
+    );
+    assert_eq!(
+        UnusualSeverity::from_dimension_count(3),
+        UnusualSeverity::Significant
+    );
+    assert_eq!(
+        UnusualSeverity::from_dimension_count(5),
+        UnusualSeverity::Significant
+    );
 }
 
 #[test]
@@ -185,7 +293,10 @@ fn unusual_items_overall_flag_rate_5_to_80_percent() {
     let entries = build_entries(200, 10);
     let mut gen = UnusualItemGenerator::new(42);
     let flags = gen.generate_for_entity("C001", &entries, period_end());
-    let total = entries.iter().filter(|e| e.header.company_code == "C001").count();
+    let total = entries
+        .iter()
+        .filter(|e| e.header.company_code == "C001")
+        .count();
     let rate = flags.len() as f64 / total as f64;
     // We accept any non-trivial rate up to 80%; the test just confirms the
     // generator is working (not returning 0 or 100% blindly).
@@ -247,8 +358,7 @@ fn unusual_items_labeled_anomaly_field_matches_source() {
     for flag in &flags {
         let je_is_anomaly = anomaly_ids.contains(&flag.journal_entry_id);
         assert_eq!(
-            flag.is_labeled_anomaly,
-            je_is_anomaly,
+            flag.is_labeled_anomaly, je_is_anomaly,
             "Flag {} is_labeled_anomaly mismatch",
             flag.id
         );
@@ -401,7 +511,11 @@ fn analytical_unique_ids_across_entities() {
         "FY2023",
     );
     let ids: std::collections::HashSet<&str> = rels.iter().map(|r| r.id.as_str()).collect();
-    assert_eq!(ids.len(), rels.len(), "Analytical relationship IDs must be unique");
+    assert_eq!(
+        ids.len(),
+        rels.len(),
+        "Analytical relationship IDs must be unique"
+    );
 }
 
 #[test]
@@ -410,8 +524,9 @@ fn analytical_json_roundtrip() {
     let mut gen = AnalyticalRelationshipGenerator::new(42);
     let rels = gen.generate_for_entity("C001", &entries, "FY2024", "FY2023");
     let json = serde_json::to_string(&rels).unwrap();
-    let decoded: Vec<datasynth_core::models::audit::analytical_relationships::AnalyticalRelationship> =
-        serde_json::from_str(&json).unwrap();
+    let decoded: Vec<
+        datasynth_core::models::audit::analytical_relationships::AnalyticalRelationship,
+    > = serde_json::from_str(&json).unwrap();
     assert_eq!(decoded.len(), rels.len());
 }
 

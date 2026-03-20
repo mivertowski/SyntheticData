@@ -104,8 +104,7 @@ impl MaterialityGenerator {
 
     /// Generate a materiality calculation for a single entity.
     pub fn generate(&mut self, input: &MaterialityInput) -> MaterialityCalculation {
-        let (benchmark, benchmark_amount, benchmark_pct, rationale) =
-            self.select_benchmark(input);
+        let (benchmark, benchmark_amount, benchmark_pct, rationale) = self.select_benchmark(input);
 
         // Apply the minimum overall materiality floor after benchmark selection
         let raw_overall = benchmark_amount * benchmark_pct;
@@ -154,13 +153,12 @@ impl MaterialityGenerator {
         input: &MaterialityInput,
     ) -> (MaterialityBenchmark, Decimal, Decimal, String) {
         // Check if entity is asset-heavy (assets > 10× revenue)
-        let asset_heavy = input.revenue > Decimal::ZERO
-            && input.total_assets > input.revenue * dec!(10);
+        let asset_heavy =
+            input.revenue > Decimal::ZERO && input.total_assets > input.revenue * dec!(10);
 
         // Check if profitable (positive pre-tax income and > 5% of revenue)
         let healthy_profit = input.pretax_income > Decimal::ZERO
-            && (input.revenue == Decimal::ZERO
-                || input.pretax_income > input.revenue * dec!(0.05));
+            && (input.revenue == Decimal::ZERO || input.pretax_income > input.revenue * dec!(0.05));
 
         // Thin margin: profitable but < 2% of revenue (or small absolute)
         let thin_margin = input.pretax_income > Decimal::ZERO
@@ -199,7 +197,8 @@ impl MaterialityGenerator {
         } else if input.pretax_income <= Decimal::ZERO || thin_margin {
             // Loss-making or thin-margin entity — revenue benchmark
             let pct = self.random_pct(dec!(0.005), dec!(0.010));
-            let rationale = format!(
+            let rationale =
+                format!(
                 "Revenue selected as benchmark (entity has {} pre-tax income; revenue provides \
                  more stable benchmark). {:.2}% applied.",
                 if input.pretax_income <= Decimal::ZERO { "negative" } else { "thin" },
@@ -218,12 +217,7 @@ impl MaterialityGenerator {
                 "Equity selected as benchmark (equity-focused entity). {:.0}% applied.",
                 pct * dec!(100)
             );
-            (
-                MaterialityBenchmark::Equity,
-                input.equity,
-                pct,
-                rationale,
-            )
+            (MaterialityBenchmark::Equity, input.equity, pct, rationale)
         } else {
             // Fallback — revenue
             let pct = self.random_pct(dec!(0.005), dec!(0.010));
@@ -259,8 +253,8 @@ impl MaterialityGenerator {
             return None;
         }
         // Check for "unusual" earnings: earnings < 3% of revenue suggests volatility
-        let is_unusual = input.revenue > Decimal::ZERO
-            && input.pretax_income < input.revenue * dec!(0.03);
+        let is_unusual =
+            input.revenue > Decimal::ZERO && input.pretax_income < input.revenue * dec!(0.03);
         if !is_unusual {
             return None;
         }
@@ -320,8 +314,8 @@ impl MaterialityGenerator {
             ),
         ];
 
-        let idx = (index as usize + self.rng.random_range(0usize..templates.len()))
-            % templates.len();
+        let idx =
+            (index as usize + self.rng.random_range(0usize..templates.len())) % templates.len();
         let (desc, adj_type, revenue_frac) = &templates[idx];
         let base = input.revenue.max(dec!(100_000));
         let frac = Decimal::try_from(*revenue_frac).unwrap_or(dec!(0.01));
@@ -341,9 +335,7 @@ impl MaterialityGenerator {
         let hi_f = hi.to_f64().unwrap_or(0.010);
         let val = self.rng.random_range(lo_f..=hi_f);
         // Round to 4 decimal places
-        Decimal::try_from(val)
-            .unwrap_or(lo)
-            .round_dp(4)
+        Decimal::try_from(val).unwrap_or(lo).round_dp(4)
     }
 }
 

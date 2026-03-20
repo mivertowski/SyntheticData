@@ -24,7 +24,9 @@
 //! When no JE data is available, synthetic key items are generated based on
 //! a fraction of the population size.
 
-use datasynth_core::models::audit::risk_assessment_cra::{AuditAssertion, CombinedRiskAssessment, CraLevel};
+use datasynth_core::models::audit::risk_assessment_cra::{
+    AuditAssertion, CombinedRiskAssessment, CraLevel,
+};
 use datasynth_core::models::audit::sampling_plan::{
     KeyItem, KeyItemReason, SampledItem, SamplingMethodology, SamplingPlan, SelectionType,
 };
@@ -103,7 +105,7 @@ pub struct SamplingPlanGeneratorConfig {
 impl Default for SamplingPlanGeneratorConfig {
     fn default() -> Self {
         Self {
-            key_item_fraction: 0.05,  // 5% of items selected as key items
+            key_item_fraction: 0.05, // 5% of items selected as key items
             min_population_size: 100,
             max_population_size: 2_000,
             base_population_value: dec!(5_000_000),
@@ -160,9 +162,8 @@ impl SamplingPlanGenerator {
                 continue;
             }
 
-            let te = tolerable_error.unwrap_or_else(|| {
-                self.config.base_population_value * dec!(0.05)
-            });
+            let te =
+                tolerable_error.unwrap_or_else(|| self.config.base_population_value * dec!(0.05));
 
             let (plan, items) = self.generate_plan(cra, te);
             all_items.extend(items);
@@ -182,8 +183,9 @@ impl SamplingPlanGenerator {
         let rep_sample_size = sample_size_for_cra(&mut self.rng, cra.combined_risk);
 
         // Synthesise population size and value
-        let pop_size =
-            self.rng.random_range(self.config.min_population_size..=self.config.max_population_size);
+        let pop_size = self
+            .rng
+            .random_range(self.config.min_population_size..=self.config.max_population_size);
         let pop_value = self.synthetic_population_value(pop_size);
 
         // Generate key items
@@ -249,15 +251,17 @@ impl SamplingPlanGenerator {
 
         // Representative items
         if rep_sample_size > 0 && remaining_value > Decimal::ZERO {
-            let avg_remaining_item_value = remaining_value
-                / Decimal::from((pop_size - key_items.len()).max(1) as i64);
+            let avg_remaining_item_value =
+                remaining_value / Decimal::from((pop_size - key_items.len()).max(1) as i64);
 
             for i in 0..rep_sample_size {
                 let item_id = format!("{plan_id}-REP-{i:04}");
                 // Jitter the amount around the average remaining item value
                 let jitter_pct = Decimal::try_from(self.rng.random_range(0.5_f64..=2.0_f64))
                     .unwrap_or(Decimal::ONE);
-                let amount = (avg_remaining_item_value * jitter_pct).round_dp(2).max(dec!(1));
+                let amount = (avg_remaining_item_value * jitter_pct)
+                    .round_dp(2)
+                    .max(dec!(1));
 
                 let misstatement_found: bool = self.rng.random::<f64>() < misstatement_p;
                 let misstatement_amount = if misstatement_found {
@@ -318,10 +322,7 @@ impl SamplingPlanGenerator {
         let mut items = Vec::with_capacity(n_key_items);
         for i in 0..n_key_items {
             let amount_f = self.rng.random_range(
-                key_item_min
-                    .to_string()
-                    .parse::<f64>()
-                    .unwrap_or(10_000.0)
+                key_item_min.to_string().parse::<f64>().unwrap_or(10_000.0)
                     ..=(avg_key_value * dec!(2))
                         .to_string()
                         .parse::<f64>()
@@ -349,7 +350,11 @@ impl SamplingPlanGenerator {
     }
 
     /// Choose a key item reason based on the CRA characteristics.
-    fn pick_key_item_reason(&mut self, cra: &CombinedRiskAssessment, index: usize) -> KeyItemReason {
+    fn pick_key_item_reason(
+        &mut self,
+        cra: &CombinedRiskAssessment,
+        index: usize,
+    ) -> KeyItemReason {
         // First item is always AboveTolerableError (primary reason)
         if index == 0 {
             return KeyItemReason::AboveTolerableError;
@@ -386,46 +391,68 @@ mod tests {
     use datasynth_core::models::audit::risk_assessment_cra::RiskRating;
     use rust_decimal_macros::dec;
 
-    fn make_cra(account_area: &str, assertion: AuditAssertion, ir: RiskRating, cr: RiskRating) -> CombinedRiskAssessment {
-        CombinedRiskAssessment::new(
-            "C001",
-            account_area,
-            assertion,
-            ir,
-            cr,
-            false,
-            vec![],
-        )
+    fn make_cra(
+        account_area: &str,
+        assertion: AuditAssertion,
+        ir: RiskRating,
+        cr: RiskRating,
+    ) -> CombinedRiskAssessment {
+        CombinedRiskAssessment::new("C001", account_area, assertion, ir, cr, false, vec![])
     }
 
     #[test]
     fn moderate_cra_generates_plan() {
-        let cra = make_cra("Trade Receivables", AuditAssertion::Existence, RiskRating::Medium, RiskRating::Medium);
+        let cra = make_cra(
+            "Trade Receivables",
+            AuditAssertion::Existence,
+            RiskRating::Medium,
+            RiskRating::Medium,
+        );
         assert_eq!(cra.combined_risk, CraLevel::Moderate);
 
         let mut gen = SamplingPlanGenerator::new(42);
         let (plans, items) = gen.generate_for_cras(&[cra], Some(dec!(32_500)));
 
-        assert_eq!(plans.len(), 1, "Should generate exactly one plan for Moderate CRA");
+        assert_eq!(
+            plans.len(),
+            1,
+            "Should generate exactly one plan for Moderate CRA"
+        );
         let plan = &plans[0];
         assert!(!items.is_empty(), "Should generate sampled items");
-        assert!(plan.sample_size >= 20 && plan.sample_size <= 30, "Moderate CRA sample size 20–30");
+        assert!(
+            plan.sample_size >= 20 && plan.sample_size <= 30,
+            "Moderate CRA sample size 20–30"
+        );
     }
 
     #[test]
     fn low_cra_skipped() {
-        let cra = make_cra("Cash", AuditAssertion::Existence, RiskRating::Low, RiskRating::Low);
+        let cra = make_cra(
+            "Cash",
+            AuditAssertion::Existence,
+            RiskRating::Low,
+            RiskRating::Low,
+        );
         assert_eq!(cra.combined_risk, CraLevel::Minimal);
 
         let mut gen = SamplingPlanGenerator::new(42);
         let (plans, _items) = gen.generate_for_cras(&[cra], Some(dec!(32_500)));
 
-        assert!(plans.is_empty(), "Minimal CRA should produce no sampling plan");
+        assert!(
+            plans.is_empty(),
+            "Minimal CRA should produce no sampling plan"
+        );
     }
 
     #[test]
     fn high_cra_large_sample() {
-        let cra = make_cra("Revenue", AuditAssertion::Occurrence, RiskRating::High, RiskRating::High);
+        let cra = make_cra(
+            "Revenue",
+            AuditAssertion::Occurrence,
+            RiskRating::High,
+            RiskRating::High,
+        );
         assert_eq!(cra.combined_risk, CraLevel::High);
 
         let mut gen = SamplingPlanGenerator::new(99);
@@ -433,12 +460,20 @@ mod tests {
 
         assert_eq!(plans.len(), 1);
         let plan = &plans[0];
-        assert!(plan.sample_size >= 40, "High CRA sample size should be 40–60");
+        assert!(
+            plan.sample_size >= 40,
+            "High CRA sample size should be 40–60"
+        );
     }
 
     #[test]
     fn key_items_all_above_tolerable_error() {
-        let cra = make_cra("Provisions", AuditAssertion::ValuationAndAllocation, RiskRating::High, RiskRating::Medium);
+        let cra = make_cra(
+            "Provisions",
+            AuditAssertion::ValuationAndAllocation,
+            RiskRating::High,
+            RiskRating::Medium,
+        );
 
         let mut gen = SamplingPlanGenerator::new(7);
         let te = dec!(32_500);
@@ -458,7 +493,12 @@ mod tests {
 
     #[test]
     fn sampling_interval_formula() {
-        let cra = make_cra("Inventory", AuditAssertion::Existence, RiskRating::High, RiskRating::Medium);
+        let cra = make_cra(
+            "Inventory",
+            AuditAssertion::Existence,
+            RiskRating::High,
+            RiskRating::Medium,
+        );
 
         let mut gen = SamplingPlanGenerator::new(13);
         let te = dec!(32_500);
@@ -482,7 +522,12 @@ mod tests {
 
     #[test]
     fn balance_assertion_uses_mus() {
-        let cra = make_cra("Trade Receivables", AuditAssertion::Existence, RiskRating::Medium, RiskRating::Medium);
+        let cra = make_cra(
+            "Trade Receivables",
+            AuditAssertion::Existence,
+            RiskRating::Medium,
+            RiskRating::Medium,
+        );
         let methodology = methodology_for_assertion(cra.assertion, CraLevel::Moderate);
         assert_eq!(methodology, SamplingMethodology::MonetaryUnitSampling);
     }
@@ -496,8 +541,18 @@ mod tests {
     #[test]
     fn all_sampled_items_have_plan_id() {
         let cras = vec![
-            make_cra("Revenue", AuditAssertion::Occurrence, RiskRating::High, RiskRating::Medium),
-            make_cra("Inventory", AuditAssertion::Existence, RiskRating::High, RiskRating::Low),
+            make_cra(
+                "Revenue",
+                AuditAssertion::Occurrence,
+                RiskRating::High,
+                RiskRating::Medium,
+            ),
+            make_cra(
+                "Inventory",
+                AuditAssertion::Existence,
+                RiskRating::High,
+                RiskRating::Low,
+            ),
         ];
 
         let mut gen = SamplingPlanGenerator::new(55);
@@ -507,6 +562,9 @@ mod tests {
         assert!(!plans.is_empty());
         assert!(!items.is_empty());
         // Verify at least some items have tested=true
-        assert!(items.iter().all(|i| i.tested), "All items should be marked tested");
+        assert!(
+            items.iter().all(|i| i.tested),
+            "All items should be marked tested"
+        );
     }
 }
