@@ -189,7 +189,12 @@ impl FiscalCalendar {
                 }
             }
             FiscalCalendarType::FourFourFive(_) | FiscalCalendarType::ThirteenPeriod(_) => {
-                // Simplified - would need more complex calculation
+                // TODO: Simplified — returns calendar year as proxy for fiscal year.
+                // A correct implementation must resolve the anchor date (e.g. last
+                // Saturday of January) for the 4-4-5 case, or the 13-period
+                // year-start date, to determine whether a given calendar date falls
+                // in the prior or current fiscal year (week-based years can start in
+                // late December of the prior calendar year).
                 date.year()
             }
         }
@@ -211,12 +216,17 @@ impl FiscalCalendar {
                 }
             }
             FiscalCalendarType::ThirteenPeriod(_) => {
-                // Simplified: 28 days per period
+                // TODO: Simplified — assumes 28 calendar days per period (13 × 28 = 364).
+                // A precise implementation would use the actual week-based boundaries
+                // derived from the configured year-start anchor.
                 let day_of_year = date.ordinal();
                 ((day_of_year - 1) / 28 + 1).min(13) as u8
             }
             FiscalCalendarType::FourFourFive(config) => {
-                // Simplified 4-4-5 period calculation
+                // TODO: Simplified 4-4-5 period calculation — ignores the configured
+                // anchor (FirstSundayOf / LastSaturdayOf) and treats the calendar year
+                // as starting on January 1. Dates near the fiscal-year boundary may
+                // therefore be assigned to the wrong period.
                 let weeks = config.pattern.weeks_per_period();
                 let week_of_year = (date.ordinal() as u8 - 1) / 7 + 1;
                 let mut cumulative = 0u8;

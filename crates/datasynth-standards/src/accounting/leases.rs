@@ -408,12 +408,16 @@ impl Lease {
         let payments_per_year = self.payments_per_year();
         let annual_payments = self.fixed_payment * Decimal::from(payments_per_year);
 
-        // Simplified: current portion = payments due within 12 months
-        // (less interest portion, but we'll use a simplified approach)
+        // TODO: Simplified — current portion is estimated as the first year's
+        // principal component (total annual payment less the interest accruing on
+        // the opening balance). A precise ASC 842 / IFRS 16 implementation would
+        // instead walk the full amortization schedule and sum all principal
+        // instalments falling within 12 months of the reporting date, which
+        // correctly handles non-uniform payment frequencies and partial periods.
         let periodic_rate = self.periodic_discount_rate();
         let total_liability = self.lease_liability.initial_measurement;
 
-        // First year's principal payments (simplified)
+        // First year's principal payments (approximation — see TODO above)
         let first_year_interest =
             total_liability * periodic_rate * Decimal::from(payments_per_year);
         let first_year_principal = (annual_payments - first_year_interest).max(Decimal::ZERO);

@@ -16,6 +16,23 @@ use datasynth_core::models::subledger::inventory::{
 use datasynth_core::models::{JournalEntry, JournalEntryLine};
 
 /// Configuration for inventory generation.
+///
+/// ## Moving-average valuation note
+///
+/// When `default_valuation_method` is [`ValuationMethod::MovingAverage`], the
+/// generator does **not** update the weighted-average unit cost after each goods
+/// receipt. The moving-average formula is:
+///
+/// ```text
+/// new_avg_cost = (existing_qty × existing_cost + receipt_qty × receipt_cost)
+///                / (existing_qty + receipt_qty)
+/// ```
+///
+/// TODO: Implement this recalculation in `generate_goods_receipt` so that
+/// `InventoryPosition::valuation.unit_cost` reflects the true moving-average
+/// cost after each receipt. Currently the initial cost is held constant for the
+/// life of the position, which over-states (or under-states) the COGS/inventory
+/// value when receipt prices fluctuate.
 #[derive(Debug, Clone)]
 pub struct InventoryGeneratorConfig {
     /// Default valuation method.

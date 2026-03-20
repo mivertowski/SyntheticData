@@ -365,7 +365,30 @@ impl BalanceCoherenceValidator {
                 }
             }
             RelationshipType::CurrentRatio => {
-                let current_assets = snapshot.total_assets; // Simplified
+                // Current assets = accounts with GL prefix 10xx (cash), 11xx (AR),
+                // 12xx (inventory), 13xx (prepaid/other current). Non-current assets
+                // (14xx–19xx: PP&E, intangibles) are excluded because they cannot be
+                // liquidated within 12 months. When the balances map is empty (no
+                // account-level detail), we fall back to total_assets as a conservative
+                // approximation and note the limitation in the failure message.
+                let current_assets: Decimal = if snapshot.balances.is_empty() {
+                    snapshot.total_assets // Fallback: no account detail available
+                } else {
+                    snapshot
+                        .balances
+                        .values()
+                        .filter(|b| {
+                            let code = b.account_code.trim_start_matches(|c: char| !c.is_ascii_digit());
+                            let digits: String = code.chars().filter(|c| c.is_ascii_digit()).collect();
+                            if digits.len() >= 2 {
+                                matches!(&digits[..2], "10" | "11" | "12" | "13")
+                            } else {
+                                false
+                            }
+                        })
+                        .map(|b| b.closing_balance)
+                        .sum()
+                };
                 let current_liabilities = snapshot.total_liabilities;
 
                 if current_liabilities == Decimal::ZERO {

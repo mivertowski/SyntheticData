@@ -177,7 +177,12 @@ impl SegmentGenerator {
                 Decimal::from(self.rng.random_range(30u32..=80)) / Decimal::from(1_000u32);
             let capex = (seg_assets * capex_rate).max(Decimal::ZERO);
 
-            // D&A: ~50-80 % of CapEx (simplified)
+            // D&A: ~50-80 % of CapEx (known simplification).
+            // TODO: A production implementation would derive D&A from the fixed-asset
+            // subledger depreciation run (DepreciationRun) rather than proxying it as a
+            // fraction of CapEx. The 50–80 % range is a reasonable heuristic for
+            // synthetic audit-simulation data where segment-level depreciation schedules
+            // are not individually tracked.
             let da_ratio = Decimal::from(self.rng.random_range(50u32..=80)) / Decimal::from(100u32);
             let da = capex * da_ratio;
 

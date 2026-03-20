@@ -1625,7 +1625,7 @@ fn main() -> Result<()> {
             if quality_gate != "none" {
                 if let Some(profile) = datasynth_eval::gates::get_profile(&quality_gate) {
                     tracing::warn!(
-                        "Quality gate evaluation uses placeholder data — full integration pending"
+                        "Quality gate evaluation not yet integrated with generation output — requires ComprehensiveEvaluation population"
                     );
                     let evaluation = datasynth_eval::ComprehensiveEvaluation::new();
                     let gate_result =

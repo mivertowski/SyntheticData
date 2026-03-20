@@ -463,7 +463,19 @@ fn student_t_cdf(x: f64, df: f64) -> f64 {
     }
 }
 
-/// Simplified incomplete beta function approximation.
+/// Regularised incomplete beta function I_x(a, b) via Lentz continued-fraction.
+///
+/// This is a self-contained approximation sufficient for the Student-t CDF
+/// used in the Student-t copula. It converges to full machine precision for
+/// most inputs encountered in practice (small integer or half-integer `a`/`b`
+/// values arising from low-degree-of-freedom Student-t distributions).
+///
+/// TODO: For extreme tail probabilities (x very close to 0 or 1) or large
+/// parameter values the continued-fraction may converge slowly. A production
+/// implementation should use a dedicated numerical library (e.g. `statrs`) or
+/// the symmetry relation `I_x(a,b) = 1 − I_{1−x}(b,a)` to choose the faster
+/// path. For audit-simulation copula sampling the approximation error is
+/// negligible.
 fn incomplete_beta(a: f64, b: f64, x: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;

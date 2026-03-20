@@ -1520,10 +1520,17 @@ impl HolidayCalendar {
         }
     }
 
-    /// Approximate Chinese New Year date (simplified calculation).
+    /// Approximate Chinese New Year date.
+    ///
+    /// TODO: This is a simplified approximation that propagates the 2000 anchor
+    /// date using an average lunar month length (29.5306 days). The true date
+    /// requires a full lunisolar calendar computation (Metonic cycle, leap-month
+    /// intercalation). The approximation can be off by a day or two and should
+    /// not be used for applications requiring exact public-holiday compliance.
+    /// Use a dedicated calendar library (e.g. `chinese-lunisolar-calendar`) for
+    /// precision. For activity-pattern simulation the error is acceptable.
     fn approximate_chinese_new_year(year: i32) -> NaiveDate {
         // Chinese New Year falls between Jan 21 and Feb 20
-        // This is a simplified approximation
         let base_year = 2000;
         let cny_2000 = NaiveDate::from_ymd_opt(2000, 2, 5).expect("valid date components");
 

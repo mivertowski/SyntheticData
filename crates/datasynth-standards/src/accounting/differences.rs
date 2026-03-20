@@ -295,7 +295,14 @@ impl ReconcilingItem {
             description: description.into(),
             difference_area,
             net_income_impact,
-            equity_impact: net_income_impact, // Simplified: income flows to equity
+            // TODO: Simplified — equity_impact is set equal to net_income_impact
+            // on the assumption that all income differences flow to retained earnings.
+            // Under certain GAAP/IFRS differences (e.g. OCI items such as unrealised
+            // FX gains, pension remeasurements, or hedge accounting) the equity impact
+            // would differ from the income impact because the adjustment bypasses the
+            // income statement entirely. Callers generating OCI-related differences
+            // should override this field after construction.
+            equity_impact: net_income_impact,
             asset_impact: Decimal::ZERO,
             liability_impact: Decimal::ZERO,
             explanation: String::new(),

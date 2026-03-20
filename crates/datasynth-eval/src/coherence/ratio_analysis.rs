@@ -147,6 +147,13 @@ pub struct RatioCheck {
 struct GlTotals {
     /// 1xxx  – all assets (net of credits).
     assets: Decimal,
+    /// 10xx–13xx – current assets (cash, AR, inventory, prepaid).
+    ///
+    /// Current assets are accounts starting with 10 (cash/bank), 11 (AR),
+    /// 12 (inventory), or 13 (prepaid/other current). Non-current assets
+    /// (14xx–19xx: fixed assets, intangibles, LT investments) are excluded
+    /// so that `current_ratio` and `quick_ratio` are correctly computed.
+    current_assets: Decimal,
     /// 11xx  – accounts receivable.
     ar: Decimal,
     /// 12xx  – inventory.
@@ -161,8 +168,14 @@ struct GlTotals {
     revenue: Decimal,
     /// 5xxx  – cost of goods sold (debit-normal).
     cogs: Decimal,
-    /// 6xxx–8xxx – operating expenses (debit-normal).
+    /// 6xxx–7xxx – operating expenses (debit-normal).
     opex: Decimal,
+    /// 8xxx  – income tax expense (debit-normal).
+    ///
+    /// Tax expense is separated from general opex so that `net_income`
+    /// correctly reflects after-tax profit (operating_income − tax_expense)
+    /// rather than conflating tax with operating costs.
+    tax_expense: Decimal,
 }
 
 /// Return the two leading digits of an account number, ignoring non-numeric chars.
@@ -202,9 +215,18 @@ fn build_totals(entries: &[JournalEntry], entity_code: &str) -> GlTotals {
                 1 => {
                     // Asset accounts (debit-normal → net positive = asset)
                     t.assets += net;
+                    // Current assets: 10xx (cash/bank), 11xx (AR), 12xx (inventory),
+                    // 13xx (prepaid/other current). Accounts 14xx–19xx are non-current
+                    // (PP&E, intangibles, long-term investments) and are excluded.
                     match prefix2 {
-                        11 => t.ar += net,
-                        12 => t.inventory += net,
+                        10..=13 => {
+                            t.current_assets += net;
+                            if prefix2 == 11 {
+                                t.ar += net;
+                            } else if prefix2 == 12 {
+                                t.inventory += net;
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -227,9 +249,14 @@ fn build_totals(entries: &[JournalEntry], entity_code: &str) -> GlTotals {
                     // COGS (debit-normal)
                     t.cogs += net;
                 }
-                6..=8 => {
-                    // Operating expenses (debit-normal)
+                6..=7 => {
+                    // Operating expenses (debit-normal); excludes 8xxx (tax)
                     t.opex += net;
+                }
+                8 => {
+                    // Income tax expense (debit-normal); kept separate from opex
+                    // so that net_income = operating_income − tax_expense
+                    t.tax_expense += net;
                 }
                 _ => {}
             }
@@ -250,15 +277,17 @@ pub fn compute_ratios(entries: &[JournalEntry], entity_code: &str) -> FinancialR
 
     let d365 = Decimal::from(365u32);
 
-    // Liquidity
-    let current_ratio = if t.liabilities > Decimal::ZERO {
-        Some(t.assets / t.liabilities)
+    // Liquidity — use current_assets (10xx–13xx) not total_assets (1xxx).
+    // Non-current assets such as PP&E (14xx–19xx) are long-lived and cannot
+    // be converted to cash within 12 months, so they must be excluded here.
+    let current_ratio = if t.liabilities > Decimal::ZERO && t.current_assets > Decimal::ZERO {
+        Some(t.current_assets / t.liabilities)
     } else {
         None
     };
 
-    let current_assets_ex_inv = t.assets - t.inventory;
-    let quick_ratio = if t.liabilities > Decimal::ZERO && t.assets > Decimal::ZERO {
+    let current_assets_ex_inv = t.current_assets - t.inventory;
+    let quick_ratio = if t.liabilities > Decimal::ZERO && t.current_assets > Decimal::ZERO {
         Some(current_assets_ex_inv / t.liabilities)
     } else {
         None
@@ -298,7 +327,12 @@ pub fn compute_ratios(entries: &[JournalEntry], entity_code: &str) -> FinancialR
         None
     };
 
-    let net_income = operating_income; // simplified (no tax/interest lines here)
+    // Net income = operating income minus tax expense (8xxx accounts).
+    // Interest expense (if coded to 7xxx) is already captured in opex above.
+    // This provides a closer approximation to GAAP net income than using
+    // operating income alone. Full interest/other-income treatment would
+    // require dedicated account ranges not universally standardised here.
+    let net_income = operating_income - t.tax_expense;
     let net_margin = if t.revenue > Decimal::ZERO {
         Some(net_income / t.revenue)
     } else {

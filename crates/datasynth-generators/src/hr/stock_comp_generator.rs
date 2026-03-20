@@ -13,9 +13,21 @@
 //! 3. **Fair value**
 //!    - RSUs: `share_price` (default $50).
 //!    - Options: `share_price × factor` where factor ∈ [0.30, 0.50]
-//!      (simplified Black-Scholes proxy).
+//!      (simplified Black-Scholes proxy — see note below).
 //!    - PSUs: `share_price × factor` where factor ∈ [0.80, 1.20]
 //!      (reflecting performance probability weighting).
+//!
+//! ## Option fair-value simplification
+//!
+//! A full Black-Scholes valuation requires five inputs: spot price, exercise
+//! price, risk-free rate, expected volatility, and time-to-expiry. Implementing
+//! the closed-form solution (and the normal CDF it requires) would add
+//! significant complexity without materially improving the utility of the
+//! generated data for audit-simulation purposes. Instead, option fair value is
+//! approximated as a uniform random fraction of the share price in [0.30, 0.50],
+//! which is consistent with at-the-money option premiums under typical
+//! volatility assumptions (σ ≈ 30–50%). If realistic option-pricing outputs
+//! are required, callers should post-process the grants with a proper pricer.
 //! 4. **Vesting** — Graded over 4 years, 25% per year; one `VestingEntry`
 //!    per annual anniversary of the grant date.
 //! 5. **Forfeiture rate** — Sampled uniformly in [0.05, 0.15] per grant.
@@ -242,7 +254,8 @@ impl StockCompGenerator {
         let (fair_value_at_grant, exercise_price) = match instrument_type {
             InstrumentType::RSUs => (self.config.share_price, None),
             InstrumentType::Options => {
-                // Simplified Black-Scholes proxy: 30%–50% of share price
+                // Black-Scholes proxy: 30%–50% of share price.
+                // Intentional simplification — see module-level doc for rationale.
                 let factor = self.rand_rate(dec!(0.30), dec!(0.50));
                 let fv = (self.config.share_price * factor).round_dp(2);
                 // Exercise price = at-the-money (equal to share price)
