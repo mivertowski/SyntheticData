@@ -41,6 +41,8 @@
 
 pub mod accounting_estimate_generator;
 pub mod analytical_procedure_generator;
+pub mod analytical_relationship_generator;
+pub mod unusual_item_generator;
 pub mod audit_opinion_generator;
 pub mod component_audit_generator;
 pub mod confirmation_generator;

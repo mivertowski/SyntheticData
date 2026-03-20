@@ -546,6 +546,14 @@ pub struct AuditSnapshot {
     /// Significant classes of transactions per ISA 315 (one set per entity).
     pub significant_transaction_classes:
         Vec<datasynth_core::models::audit::scots::SignificantClassOfTransactions>,
+    // ---- ISA 520: Unusual Item Markers ----
+    /// Unusual item flags raised across all journal entries (5–10% flagging rate).
+    pub unusual_items:
+        Vec<datasynth_core::models::audit::unusual_items::UnusualItemFlag>,
+    // ---- ISA 520: Analytical Relationships ----
+    /// Analytical relationships (ratios, trends, correlations) per entity.
+    pub analytical_relationships:
+        Vec<datasynth_core::models::audit::analytical_relationships::AnalyticalRelationship>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -10142,6 +10150,85 @@ impl EnhancedOrchestrator {
             );
         }
 
+        // ----------------------------------------------------------------
+        // ISA 520: Unusual Item Markers
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::unusual_item_generator::UnusualItemGenerator;
+
+            let mut unusual_gen = UnusualItemGenerator::new(self.seed + 83_200);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let unusual_flags = unusual_gen.generate_for_entities(
+                &entity_codes,
+                entries,
+                period_end,
+            );
+            info!(
+                "ISA 520 unusual items: {} flags ({} significant, {} moderate, {} minor)",
+                unusual_flags.len(),
+                unusual_flags
+                    .iter()
+                    .filter(|f| matches!(
+                        f.severity,
+                        datasynth_core::models::audit::unusual_items::UnusualSeverity::Significant
+                    ))
+                    .count(),
+                unusual_flags
+                    .iter()
+                    .filter(|f| matches!(
+                        f.severity,
+                        datasynth_core::models::audit::unusual_items::UnusualSeverity::Moderate
+                    ))
+                    .count(),
+                unusual_flags
+                    .iter()
+                    .filter(|f| matches!(
+                        f.severity,
+                        datasynth_core::models::audit::unusual_items::UnusualSeverity::Minor
+                    ))
+                    .count(),
+            );
+            snapshot.unusual_items = unusual_flags;
+        }
+
+        // ----------------------------------------------------------------
+        // ISA 520: Analytical Relationships
+        // ----------------------------------------------------------------
+        {
+            use datasynth_generators::audit::analytical_relationship_generator::AnalyticalRelationshipGenerator;
+
+            let mut ar_gen = AnalyticalRelationshipGenerator::new(self.seed + 83_201);
+            let entity_codes: Vec<String> = self
+                .config
+                .companies
+                .iter()
+                .map(|c| c.code.clone())
+                .collect();
+            let current_period_label = format!("FY{fiscal_year}");
+            let prior_period_label = format!("FY{}", fiscal_year - 1);
+            let analytical_rels = ar_gen.generate_for_entities(
+                &entity_codes,
+                entries,
+                &current_period_label,
+                &prior_period_label,
+            );
+            let out_of_range = analytical_rels
+                .iter()
+                .filter(|r| !r.within_expected_range)
+                .count();
+            info!(
+                "ISA 520 analytical relationships: {} relationships ({} out of expected range)",
+                analytical_rels.len(),
+                out_of_range,
+            );
+            snapshot.analytical_relationships = analytical_rels;
+        }
+
         if let Some(pb) = pb {
             pb.finish_with_message(format!(
                 "Audit data: {} engagements, {} workpapers, {} evidence, \
@@ -10150,7 +10237,8 @@ impl EnhancedOrchestrator {
                  {} component auditors, {} letters, {} subsequent events, \
                  {} service orgs, {} going concern, {} accounting estimates, \
                  {} opinions, {} KAMs, {} SOX 302 certs, {} SOX 404 assessments, \
-                 {} materiality calcs, {} CRAs, {} sampling plans, {} SCOTS",
+                 {} materiality calcs, {} CRAs, {} sampling plans, {} SCOTS, \
+                 {} unusual items, {} analytical relationships",
                 snapshot.engagements.len(),
                 snapshot.workpapers.len(),
                 snapshot.evidence.len(),
@@ -10174,6 +10262,8 @@ impl EnhancedOrchestrator {
                 snapshot.combined_risk_assessments.len(),
                 snapshot.sampling_plans.len(),
                 snapshot.significant_transaction_classes.len(),
+                snapshot.unusual_items.len(),
+                snapshot.analytical_relationships.len(),
             ));
         }
 

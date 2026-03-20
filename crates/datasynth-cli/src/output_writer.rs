@@ -556,6 +556,24 @@ pub fn write_all_output(
                 "Significant Classes of Transactions / SCOTS (ISA 315)",
             );
         }
+
+        // ISA 520: Unusual Item Markers
+        if !result.audit.unusual_items.is_empty() {
+            write_json_safe(
+                &result.audit.unusual_items,
+                &audit_dir.join("unusual_items.json"),
+                "Unusual item flags (ISA 520)",
+            );
+        }
+
+        // ISA 520: Analytical Relationships
+        if !result.audit.analytical_relationships.is_empty() {
+            write_json_safe(
+                &result.audit.analytical_relationships,
+                &audit_dir.join("analytical_relationships.json"),
+                "Analytical relationships (ISA 520)",
+            );
+        }
     }
 
     // ========================================================================
