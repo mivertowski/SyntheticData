@@ -282,10 +282,7 @@ impl PropertySerializer for VendorPropertySerializer {
         );
         props.insert("isOneTime".into(), Value::Bool(vendor.is_one_time));
         props.insert("isActive".into(), Value::Bool(vendor.is_active));
-        props.insert(
-            "isIntercompany".into(),
-            Value::Bool(vendor.is_intercompany),
-        );
+        props.insert("isIntercompany".into(), Value::Bool(vendor.is_intercompany));
         props.insert("currency".into(), Value::String(vendor.currency.clone()));
         props.insert(
             "withholdingTaxApplicable".into(),

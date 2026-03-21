@@ -1089,6 +1089,78 @@ impl EmployeePool {
     }
 }
 
+/// Type of employee lifecycle event recorded in the change history.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EmployeeEventType {
+    /// Employee was hired (always the first event).
+    #[default]
+    Hired,
+    /// Employee received a promotion to a higher job level.
+    Promoted,
+    /// Employee received a salary adjustment (increase or decrease).
+    SalaryAdjustment,
+    /// Employee was transferred to a different department or cost center.
+    Transfer,
+    /// Employee's employment was terminated.
+    Terminated,
+}
+
+impl std::fmt::Display for EmployeeEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Hired => write!(f, "hired"),
+            Self::Promoted => write!(f, "promoted"),
+            Self::SalaryAdjustment => write!(f, "salary_adjustment"),
+            Self::Transfer => write!(f, "transfer"),
+            Self::Terminated => write!(f, "terminated"),
+        }
+    }
+}
+
+/// A single entry in an employee's change history.
+///
+/// Captures point-in-time changes to an employee record (hire, promotion,
+/// salary adjustment, transfer, or termination).  The `old_value` /
+/// `new_value` fields carry a string representation of the changed attribute
+/// (e.g., job level code, salary amount, department name) to keep the schema
+/// generic and easy to consume from downstream analytics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EmployeeChangeEvent {
+    /// Employee this event belongs to.
+    pub employee_id: String,
+
+    /// Calendar date on which the event was recorded in the HR system.
+    pub event_date: chrono::NaiveDate,
+
+    /// Type of HR event.
+    pub event_type: EmployeeEventType,
+
+    /// Previous value of the changed attribute (`None` for the Hired event).
+    pub old_value: Option<String>,
+
+    /// New value of the changed attribute.
+    pub new_value: Option<String>,
+
+    /// Date from which the change is effective (may differ from `event_date`
+    /// for retroactive or future-dated transactions).
+    pub effective_date: chrono::NaiveDate,
+}
+
+impl EmployeeChangeEvent {
+    /// Create a Hired event for a new employee.
+    pub fn hired(employee_id: impl Into<String>, hire_date: chrono::NaiveDate) -> Self {
+        Self {
+            employee_id: employee_id.into(),
+            event_date: hire_date,
+            event_type: EmployeeEventType::Hired,
+            old_value: None,
+            new_value: Some("active".to_string()),
+            effective_date: hire_date,
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {

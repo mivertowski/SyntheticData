@@ -572,10 +572,7 @@ pub fn degree_centrality(adjacency: &[Vec<usize>]) -> Vec<f64> {
     }
 
     let normalizer = if n > 1 { (n - 1) as f64 } else { 1.0 };
-    degree
-        .iter()
-        .map(|&d| (d as f64) / normalizer)
-        .collect()
+    degree.iter().map(|&d| (d as f64) / normalizer).collect()
 }
 
 #[cfg(test)]
@@ -687,7 +684,10 @@ mod tests {
         assert!((dc[0] - 1.0).abs() < 1e-9, "Hub should have centrality 1.0");
         // Leaf nodes: in-degree 1, centrality = 1/3
         for &c in &dc[1..] {
-            assert!((c - 1.0 / 3.0).abs() < 1e-9, "Leaf centrality should be ~0.333");
+            assert!(
+                (c - 1.0 / 3.0).abs() < 1e-9,
+                "Leaf centrality should be ~0.333"
+            );
         }
     }
 

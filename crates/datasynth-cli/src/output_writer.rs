@@ -174,6 +174,7 @@ pub fn write_all_output(
         || !result.master_data.materials.is_empty()
         || !result.master_data.assets.is_empty()
         || !result.master_data.employees.is_empty()
+        || !result.master_data.cost_centers.is_empty()
     {
         std::fs::create_dir_all(&md_dir)?;
         info!("Writing master data...");
@@ -202,6 +203,11 @@ pub fn write_all_output(
             &result.master_data.employees,
             &md_dir.join("employees.json"),
             "Employees",
+        );
+        write_json_safe(
+            &result.master_data.cost_centers,
+            &md_dir.join("cost_centers.json"),
+            "Cost centers",
         );
     }
 
@@ -904,6 +910,7 @@ pub fn write_all_output(
         || !result.hr.benefit_enrollments.is_empty()
         || !result.hr.pension_plans.is_empty()
         || !result.hr.stock_grants.is_empty()
+        || !result.master_data.employee_change_history.is_empty()
     {
         std::fs::create_dir_all(&hr_dir)?;
         info!("Writing HR data...");
@@ -962,6 +969,11 @@ pub fn write_all_output(
             &result.hr.stock_comp_expenses,
             &hr_dir.join("stock_comp_expense.json"),
             "Stock comp expense",
+        );
+        write_json_safe(
+            &result.master_data.employee_change_history,
+            &hr_dir.join("employee_change_history.json"),
+            "Employee change history",
         );
     }
 

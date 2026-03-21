@@ -450,6 +450,10 @@ pub struct MasterDataSnapshot {
     pub assets: Vec<FixedAsset>,
     /// Generated employees.
     pub employees: Vec<Employee>,
+    /// Generated cost center hierarchy (two-level: departments + sub-departments).
+    pub cost_centers: Vec<datasynth_core::models::CostCenter>,
+    /// Employee lifecycle change history (hired, promoted, salary adjustments, transfers, terminated).
+    pub employee_change_history: Vec<datasynth_core::models::EmployeeChangeEvent>,
 }
 
 /// Info about a completed hypergraph export.
@@ -3158,15 +3162,11 @@ impl EnhancedOrchestrator {
                 continue;
             }
 
-            // --- Tax provision JE ---
-            // Only generate if pre_tax_income > 0 (no tax on losses in this stub)
-            let tax_amount = if pre_tax_income > Decimal::ZERO {
-                (pre_tax_income * tax_rate).round_dp(2)
-            } else {
-                Decimal::ZERO
-            };
+            // --- Tax provision / DTA JE ---
+            if pre_tax_income > Decimal::ZERO {
+                // Profitable year: DR Tax Expense (8000) / CR Income Tax Payable (2130)
+                let tax_amount = (pre_tax_income * tax_rate).round_dp(2);
 
-            if tax_amount > Decimal::ZERO {
                 let mut tax_header = JournalEntryHeader::new(company_code.clone(), close_date);
                 tax_header.document_type = "CL".to_string();
                 tax_header.header_text = Some(format!("Tax provision - {}", company_code));
@@ -3194,11 +3194,57 @@ impl EnhancedOrchestrator {
 
                 debug_assert!(tax_je.is_balanced(), "Tax provision JE must be balanced");
                 close_jes.push(tax_je);
+            } else {
+                // Loss year: recognise a Deferred Tax Asset (DTA) = |loss| × statutory_rate
+                // DR Deferred Tax Asset (1600) / CR Tax Benefit (8000 credit = income tax benefit)
+                let dta_amount = (pre_tax_income.abs() * tax_rate).round_dp(2);
+                if dta_amount > Decimal::ZERO {
+                    let mut dta_header = JournalEntryHeader::new(company_code.clone(), close_date);
+                    dta_header.document_type = "CL".to_string();
+                    dta_header.header_text =
+                        Some(format!("Deferred tax asset (DTA) - {}", company_code));
+                    dta_header.created_by = "CLOSE_ENGINE".to_string();
+                    dta_header.source = TransactionSource::Automated;
+                    dta_header.business_process = Some(BusinessProcess::R2R);
+
+                    let doc_id = dta_header.document_id;
+                    let mut dta_je = JournalEntry::new(dta_header);
+
+                    // DR Deferred Tax Asset (1600)
+                    dta_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        tax_accounts::DEFERRED_TAX_ASSET.to_string(),
+                        dta_amount,
+                    ));
+                    // CR Income Tax Benefit (8000) — credit reduces the tax expense line,
+                    // reflecting the benefit of the future deductible temporary difference.
+                    dta_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        tax_accounts::TAX_EXPENSE.to_string(),
+                        dta_amount,
+                    ));
+
+                    debug_assert!(dta_je.is_balanced(), "DTA JE must be balanced");
+                    close_jes.push(dta_je);
+                    debug!(
+                        "Company {}: loss year — recognised DTA of {}",
+                        company_code, dta_amount
+                    );
+                }
             }
 
             // --- Income statement closing JE ---
-            // Net income after tax
-            let net_income = pre_tax_income - tax_amount;
+            // Net income after tax (profit years) or net loss before DTA benefit (loss years).
+            // For a loss year the DTA JE above already recognises the deferred benefit; here we
+            // close the pre-tax loss into Retained Earnings as-is.
+            let tax_provision = if pre_tax_income > Decimal::ZERO {
+                (pre_tax_income * tax_rate).round_dp(2)
+            } else {
+                Decimal::ZERO
+            };
+            let net_income = pre_tax_income - tax_provision;
 
             if net_income != Decimal::ZERO {
                 let mut close_header = JournalEntryHeader::new(company_code.clone(), close_date);
@@ -8194,23 +8240,44 @@ impl EnhancedOrchestrator {
                 let employee_pool =
                     employee_gen.generate_company_pool(&company.code, (start_date, end_date));
 
+                // Generate employee change history (2-5 events per employee)
+                let employee_change_history =
+                    employee_gen.generate_all_change_history(&employee_pool, end_date);
+
+                // Generate cost center hierarchy (level-1 departments + level-2 sub-departments)
+                let employee_ids: Vec<String> = employee_pool
+                    .employees
+                    .iter()
+                    .map(|e| e.employee_id.clone())
+                    .collect();
+                let mut cc_gen = datasynth_generators::CostCenterGenerator::new(company_seed + 500);
+                let cost_centers = cc_gen.generate_for_company(&company.code, &employee_ids);
+
                 (
                     vendor_pool.vendors,
                     customer_pool.customers,
                     material_pool.materials,
                     asset_pool.assets,
                     employee_pool.employees,
+                    employee_change_history,
+                    cost_centers,
                 )
             })
             .collect();
 
         // Aggregate results from all companies
-        for (vendors, customers, materials, assets, employees) in per_company_results {
+        for (vendors, customers, materials, assets, employees, change_history, cost_centers) in
+            per_company_results
+        {
             self.master_data.vendors.extend(vendors);
             self.master_data.customers.extend(customers);
             self.master_data.materials.extend(materials);
             self.master_data.assets.extend(assets);
             self.master_data.employees.extend(employees);
+            self.master_data.cost_centers.extend(cost_centers);
+            self.master_data
+                .employee_change_history
+                .extend(change_history);
         }
 
         if let Some(pb) = &pb {
