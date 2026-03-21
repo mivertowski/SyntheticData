@@ -360,6 +360,10 @@ pub struct GraphExportConfig {
     /// Multi-layer hypergraph export settings for RustGraph integration.
     #[serde(default)]
     pub hypergraph: HypergraphExportSettings,
+
+    /// DGL-specific export settings.
+    #[serde(default)]
+    pub dgl: DglExportConfig,
 }
 
 fn default_graph_types() -> Vec<GraphTypeConfig> {
@@ -393,6 +397,27 @@ impl Default for GraphExportConfig {
             split_seed: None,
             output_subdirectory: "graphs".to_string(),
             hypergraph: HypergraphExportSettings::default(),
+            dgl: DglExportConfig::default(),
+        }
+    }
+}
+
+/// DGL-specific export settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DglExportConfig {
+    /// Export as a heterogeneous graph (distinct node/edge types).
+    ///
+    /// When `true` the DGL exporter produces a `HeteroData` object with typed
+    /// node and edge stores rather than a single homogeneous graph.
+    /// Set to `true` in `graph_export.dgl.heterogeneous: true` in YAML.
+    #[serde(default)]
+    pub heterogeneous: bool,
+}
+
+impl Default for DglExportConfig {
+    fn default() -> Self {
+        Self {
+            heterogeneous: false,
         }
     }
 }

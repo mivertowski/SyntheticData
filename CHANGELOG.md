@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AuditScope model** — new `AuditScope` struct linking engagements to CRA via `scope_id`. Unblocks graph edges 132 (assessment→scope) and 134 (engagement→scope).
 - **Equity split** — Balance sheet equity section now shows 3 components (Share Capital 10%, APIC 30%, Retained Earnings 60%) instead of a single plug line.
 
+### Fixed
+
+- **AuditScope node synthesizer** — `V130NodeSynthesizer` now registers `AuditScope` nodes (type code 403, external ID = `AuditScope.id`) in the graph id_map; edges 132 (`ASSESSMENT_ON_SCOPE`: CRA→scope) and 134 (`ENGAGEMENT_HAS_SCOPE`: engagement→scope) now emit instead of returning zero edges
+- **Quality labels output** — `labels/quality_labels.json` now written alongside `quality_issues.json`; each `QualityIssue` is mapped to a `QualityIssueLabel` with the corresponding `LabeledIssueType` and severity level
+- **Heterogeneous DGL export** — `DGLExportConfig.heterogeneous` is now read from `graph_export.dgl.heterogeneous` in the YAML config (previously hardcoded to `false`); new `DglExportConfig` struct added to `GraphExportConfig`
+
 ### Changed
 - `Employee.annual_salary_usd` is now always populated (was previously `Option<Decimal>` and often absent)
 - `InventoryPosition.unit_cost` reflects moving-average cost after each `GoodsReceipt` movement (was static)

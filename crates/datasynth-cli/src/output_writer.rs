@@ -1329,7 +1329,7 @@ pub fn write_all_output(
     }
 
     // ========================================================================
-    // Data Quality Issue Records
+    // Data Quality Issue Records + Quality Labels
     // ========================================================================
     if !result.quality_issues.is_empty() {
         let labels_dir = output_dir.join("labels");
@@ -1340,6 +1340,52 @@ pub fn write_all_output(
             &labels_dir.join("quality_issues.json"),
             "Data quality issues",
         );
+
+        // Derive quality_labels.json from quality_issues: maps each QualityIssue
+        // to a QualityIssueLabel with the corresponding LabeledIssueType and severity.
+        use datasynth_generators::{
+            LabeledIssueType, QualityIssueLabel, QualityIssueType, QualityLabels,
+        };
+        let mut quality_labels = QualityLabels::with_capacity(result.quality_issues.len());
+        for issue in &result.quality_issues {
+            let labeled_type = match issue.issue_type {
+                QualityIssueType::MissingValue => LabeledIssueType::MissingValue,
+                QualityIssueType::Typo => LabeledIssueType::Typo,
+                QualityIssueType::DateFormatVariation
+                | QualityIssueType::AmountFormatVariation
+                | QualityIssueType::IdentifierFormatVariation
+                | QualityIssueType::TextFormatVariation => LabeledIssueType::FormatVariation,
+                QualityIssueType::ExactDuplicate
+                | QualityIssueType::NearDuplicate
+                | QualityIssueType::FuzzyDuplicate => LabeledIssueType::Duplicate,
+                QualityIssueType::EncodingIssue => LabeledIssueType::EncodingIssue,
+            };
+            let mut label = QualityIssueLabel::new(
+                labeled_type,
+                issue.record_id.clone(),
+                issue.field.clone().unwrap_or_else(|| "_record".to_string()),
+                "data_quality_injector",
+            );
+            if let Some(ref orig) = issue.original_value {
+                label = label.with_original(orig.clone());
+            }
+            if let Some(ref modified) = issue.modified_value {
+                label = label.with_modified(modified.clone());
+            }
+            quality_labels.add(label);
+        }
+        if let Ok(json) = serde_json::to_string_pretty(&quality_labels) {
+            if let Err(e) =
+                std::fs::write(labels_dir.join("quality_labels.json"), json.as_bytes())
+            {
+                warn!("Failed to write quality labels: {}", e);
+            } else {
+                info!(
+                    "  Quality labels written: {} labels -> labels/quality_labels.json",
+                    quality_labels.len()
+                );
+            }
+        }
     }
 
     // ========================================================================

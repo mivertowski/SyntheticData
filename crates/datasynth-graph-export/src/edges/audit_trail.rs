@@ -15,8 +15,8 @@
 //! | 101  | WP_REVIEWED_BY          | workpaper -> employee             |
 //! | 103  | ENGAGEMENT_PARTNER      | engagement -> employee            |
 //! | 104  | FINDING_RESPONSIBLE     | finding -> employee               |
-//! | 132  | ASSESSMENT_ON_SCOPE     | risk_assessment -> scope          |
-//! | 134  | ENGAGEMENT_HAS_SCOPE    | engagement -> scope               |
+//! | 132  | ASSESSMENT_ON_SCOPE     | combined_risk_assessment -> audit_scope |
+//! | 134  | ENGAGEMENT_HAS_SCOPE    | engagement -> audit_scope               |
 
 use std::collections::HashMap;
 
@@ -35,11 +35,7 @@ const WP_PREPARED_BY: u32 = 100;
 const WP_REVIEWED_BY: u32 = 101;
 const ENGAGEMENT_PARTNER: u32 = 103;
 const FINDING_RESPONSIBLE: u32 = 104;
-// These codes are reserved for scope-linked edges; synthesizers are stubs until
-// scope nodes are available (Task 12).
-#[allow(dead_code)]
 const ASSESSMENT_ON_SCOPE: u32 = 132;
-#[allow(dead_code)]
 const ENGAGEMENT_HAS_SCOPE: u32 = 134;
 
 /// Synthesizes audit trail edges linking audit artifacts, people, and scopes.
@@ -64,7 +60,7 @@ impl crate::traits::EdgeSynthesizer for AuditTrailEdgeSynthesizer {
         edges.extend(self.synthesize_wp_reviewed_by(ctx));
         edges.extend(self.synthesize_engagement_partner(ctx));
         edges.extend(self.synthesize_finding_responsible(ctx));
-        // 132 and 134 require scope nodes which may not be present
+        // 132 and 134: scope nodes registered by V130NodeSynthesizer (AuditScope, code 403)
         edges.extend(self.synthesize_assessment_on_scope(ctx));
         edges.extend(self.synthesize_engagement_has_scope(ctx));
 
@@ -368,43 +364,74 @@ impl AuditTrailEdgeSynthesizer {
 
     /// ASSESSMENT_ON_SCOPE (code 132): risk_assessment -> scope.
     ///
-    /// # Architectural gap
-    ///
-    /// This edge type requires a `Scope` node type that does not yet exist in the
-    /// DataSynth model layer.  The `CombinedRiskAssessment` struct does not carry a
-    /// `scope_id` foreign key, and no scope nodes are registered in the `id_map`.
-    ///
-    /// Until a dedicated `AuditScope` model is introduced (and its node synthesizer
-    /// registers scope IDs in the id_map), this method intentionally returns an empty
-    /// Vec so that the rest of the graph export proceeds normally.
-    ///
-    /// **TODO**: Add `AuditScope` model → node synthesizer → populate `CombinedRiskAssessment.scope_id`
-    /// → enable this edge type.
+    /// Links each `CombinedRiskAssessment` that carries a `scope_id` FK to the
+    /// corresponding `AuditScope` node (registered as `SCOPE-{id}` in the id_map
+    /// by the `V130NodeSynthesizer`).
     fn synthesize_assessment_on_scope(
         &self,
-        _ctx: &mut EdgeSynthesisContext<'_>,
+        ctx: &mut EdgeSynthesisContext<'_>,
     ) -> Vec<ExportEdge> {
-        debug!("ASSESSMENT_ON_SCOPE (132): 0 edges — awaits AuditScope model (architectural gap)");
-        Vec::new()
+        let cras = &ctx.ds_result.audit.combined_risk_assessments;
+        let mut edges = Vec::new();
+
+        for cra in cras {
+            let Some(ref scope_id) = cra.scope_id else {
+                continue;
+            };
+            let Some(cra_node_id) = ctx.id_map.get(&format!("CRA-{}", cra.id)) else {
+                continue;
+            };
+            // scope_id already carries the "SCOPE-" prefix (e.g. "SCOPE-{uuid}-{entity}")
+            let Some(scope_node_id) = ctx.id_map.get(scope_id.as_str()) else {
+                continue;
+            };
+
+            edges.push(ExportEdge {
+                source: cra_node_id,
+                target: scope_node_id,
+                edge_type: ASSESSMENT_ON_SCOPE,
+                weight: 1.0,
+                properties: HashMap::new(),
+            });
+        }
+
+        debug!("ASSESSMENT_ON_SCOPE: {} edges", edges.len());
+        edges
     }
 
     /// ENGAGEMENT_HAS_SCOPE (code 134): engagement -> scope.
     ///
-    /// # Architectural gap
-    ///
-    /// Same dependency as `ASSESSMENT_ON_SCOPE` (code 132): the `AuditEngagement` struct
-    /// does not carry scope IDs, and no `Scope` nodes exist in the id_map.
-    ///
-    /// Engagements define their scope narratively (e.g. `scope_description`, `materiality`
-    /// thresholds) but not as structured FK references to discrete scope nodes.
-    ///
-    /// **TODO**: Introduce `AuditScope` model, add `EngagementAuditScope` join, and
-    /// register scope node IDs so this edge can be emitted.
+    /// Links each `AuditEngagement` to its `AuditScope` node via the `scope_id`
+    /// FK on the engagement (populated during generation by the orchestrator).
     fn synthesize_engagement_has_scope(
         &self,
-        _ctx: &mut EdgeSynthesisContext<'_>,
+        ctx: &mut EdgeSynthesisContext<'_>,
     ) -> Vec<ExportEdge> {
-        debug!("ENGAGEMENT_HAS_SCOPE (134): 0 edges — awaits AuditScope model (architectural gap)");
-        Vec::new()
+        let engagements = &ctx.ds_result.audit.engagements;
+        let mut edges = Vec::new();
+
+        for eng in engagements {
+            let Some(ref scope_id) = eng.scope_id else {
+                continue;
+            };
+            let Some(eng_node_id) = ctx.id_map.get(&eng.engagement_ref) else {
+                continue;
+            };
+            // scope_id already carries the "SCOPE-" prefix (e.g. "SCOPE-{uuid}-{entity}")
+            let Some(scope_node_id) = ctx.id_map.get(scope_id.as_str()) else {
+                continue;
+            };
+
+            edges.push(ExportEdge {
+                source: eng_node_id,
+                target: scope_node_id,
+                edge_type: ENGAGEMENT_HAS_SCOPE,
+                weight: 1.0,
+                properties: HashMap::new(),
+            });
+        }
+
+        debug!("ENGAGEMENT_HAS_SCOPE: {} edges", edges.len());
+        edges
     }
 }

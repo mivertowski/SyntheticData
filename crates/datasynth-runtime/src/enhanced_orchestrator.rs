@@ -11209,7 +11209,7 @@ impl EnhancedOrchestrator {
                                 val_ratio: self.config.graph_export.validation_ratio,
                                 seed: self.config.graph_export.split_seed.unwrap_or(self.seed),
                             },
-                            heterogeneous: false,
+                            heterogeneous: self.config.graph_export.dgl.heterogeneous,
                             include_pickle_script: true, // DGL ecosystem standard helper
                         };
 

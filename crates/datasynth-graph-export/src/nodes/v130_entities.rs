@@ -20,6 +20,7 @@
 //! | 390  | ComponentAuditorReport     | `CRPT-{id}`                |
 //! | 391  | EngagementLetter           | `ELET-{id}`                |
 //! | 392  | GroupStructure             | `GSTRUCT-{parent_entity}`  |
+//! | 403  | AuditScope                 | `SCOPE-{id}`               |
 //!
 //! ## Layer 2 — Process / Audit Procedure
 //!
@@ -519,6 +520,42 @@ fn synthesize_l1_governance(ctx: &mut NodeSynthesisContext<'_>) -> Vec<ExportNod
             node_type: 392,
             node_type_name: "group_structure".into(),
             label: format!("Group Structure: {}", gs.parent_entity),
+            layer: 1,
+            properties: props,
+        });
+    }
+
+    // AuditScope (403) — one per engagement, links engagement → CRA via scope_id.
+    // Registering scope IDs in the id_map unblocks edges 132 (ASSESSMENT_ON_SCOPE)
+    // and 134 (ENGAGEMENT_HAS_SCOPE) in the audit_trail edge synthesizer.
+    // Note: AuditScope.id already carries the "SCOPE-" prefix (e.g. "SCOPE-{uuid}-{entity}").
+    for scope in &ctx.ds_result.audit.audit_scopes {
+        // Use scope.id directly as the external ID (it already has the "SCOPE-" prefix).
+        let ext_id = scope.id.clone();
+        let numeric_id = ctx.id_map.get_or_insert(&ext_id);
+
+        let mut props = HashMap::new();
+        props.insert("scopeId".into(), serde_json::json!(scope.id));
+        props.insert(
+            "engagementId".into(),
+            serde_json::json!(scope.engagement_id),
+        );
+        props.insert("entityCode".into(), serde_json::json!(scope.entity_code));
+        props.insert(
+            "scopeAreas".into(),
+            serde_json::json!(scope.scope_areas.len()),
+        );
+        props.insert(
+            "materiality".into(),
+            serde_json::Value::String(scope.materiality.to_string()),
+        );
+        props.insert("processFamily".into(), serde_json::json!("AUDIT"));
+
+        nodes.push(ExportNode {
+            id: Some(numeric_id),
+            node_type: 403,
+            node_type_name: "audit_scope".into(),
+            label: format!("Scope: {} ({})", scope.id, scope.entity_code),
             layer: 1,
             properties: props,
         });
