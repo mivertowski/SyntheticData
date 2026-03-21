@@ -631,6 +631,9 @@ pub struct AuditSnapshot {
     // ---- PCAOB-ISA Cross-Reference ----
     /// PCAOB-to-ISA standard mappings (key differences, similarities, application notes).
     pub isa_pcaob_mappings: Vec<datasynth_standards::audit::pcaob::PcaobIsaMapping>,
+    // ---- ISA Standard Reference ----
+    /// Flat ISA standard reference entries (number, title, series) for `audit/isa_mappings.json`.
+    pub isa_mappings: Vec<datasynth_standards::audit::isa_reference::IsaStandardEntry>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -10654,6 +10657,21 @@ impl EnhancedOrchestrator {
             debug!(
                 "PCAOB-ISA mappings generated: {} mappings",
                 snapshot.isa_pcaob_mappings.len()
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA standard reference entries
+        // ----------------------------------------------------------------
+        // Emit flat ISA standard reference data (number, title, series) so
+        // consumers get a machine-readable listing of all 34 ISA standards in
+        // audit/isa_mappings.json alongside the PCAOB cross-reference file.
+        {
+            use datasynth_standards::audit::isa_reference::IsaStandard;
+            snapshot.isa_mappings = IsaStandard::standard_entries();
+            debug!(
+                "ISA standard entries generated: {} standards",
+                snapshot.isa_mappings.len()
             );
         }
 

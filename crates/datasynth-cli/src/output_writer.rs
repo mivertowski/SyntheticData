@@ -601,6 +601,15 @@ pub fn write_all_output(
                 "PCAOB-ISA standard mappings",
             );
         }
+
+        // ISA standard reference (number, title, series for all 34 ISA standards)
+        if !result.audit.isa_mappings.is_empty() {
+            write_json_safe(
+                &result.audit.isa_mappings,
+                &audit_dir.join("isa_mappings.json"),
+                "ISA standard reference mappings",
+            );
+        }
     }
 
     // ========================================================================

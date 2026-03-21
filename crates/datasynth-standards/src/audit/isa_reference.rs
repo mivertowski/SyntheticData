@@ -506,6 +506,43 @@ pub struct SeriesCoverage {
     pub coverage_percent: f64,
 }
 
+/// A flat, serializable entry for a single ISA standard (used for `isa_mappings.json` output).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IsaStandardEntry {
+    /// Standard number (e.g., "315").
+    pub number: String,
+    /// Full title (e.g., "Identifying and Assessing Risks of Material Misstatement").
+    pub title: String,
+    /// ISA series label (e.g., "Risk Assessment and Response").
+    pub series: String,
+    /// Canonical display name (e.g., "ISA 315").
+    pub display_name: String,
+}
+
+impl IsaStandardEntry {
+    /// Build from an [`IsaStandard`] enum variant.
+    pub fn from_standard(standard: IsaStandard) -> Self {
+        Self {
+            number: standard.number().to_string(),
+            title: standard.title().to_string(),
+            series: standard.series().to_string(),
+            display_name: standard.to_string(),
+        }
+    }
+}
+
+impl IsaStandard {
+    /// Return all ISA standards as flat, serializable [`IsaStandardEntry`] records.
+    ///
+    /// Suitable for direct JSON output (e.g., `audit/isa_mappings.json`).
+    pub fn standard_entries() -> Vec<IsaStandardEntry> {
+        Self::all()
+            .into_iter()
+            .map(IsaStandardEntry::from_standard)
+            .collect()
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
