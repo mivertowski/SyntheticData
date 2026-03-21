@@ -384,34 +384,143 @@ DataSynth generates 100+ interconnected output tables organized by domain:
 
 ```
 output/
-├── master_data/            Vendors, customers, materials, fixed assets, employees
-├── transactions/           Journal entries, ACDOCA, purchase orders, invoices, payments
-├── sourcing/               S2C pipeline (projects, RFx, bids, contracts, scorecards)
-├── subledgers/             AR, AP, Fixed Assets, Inventory detail records
-├── hr/                     Payroll runs, payslips, time entries, expense reports
-├── manufacturing/          Production orders, routing, quality inspections, cycle counts
-├── period_close/           Trial balances, accruals, depreciation, closing entries
-├── financial_reporting/    Balance sheet, income statement, cash flow, KPIs, budgets
-├── sales/                  Sales quotes and line items
-├── consolidation/          IC eliminations, currency translation
-├── fx/                     Exchange rates, CTA adjustments
-├── banking/                KYC profiles, bank transactions, reconciliation, AML labels
-├── process_mining/         OCEL 2.0 JSON, XES 2.0, process variants, reference models
-├── audit/                  33 audit files: engagements, opinions, KAMs, SOX, CRA, materiality, sampling, SCOTS, unusual items, analytical relationships
+├── journal_entries.csv             Flat CSV: one row per JE line item
+├── journal_entries.json            Nested JSON: full JE structure
+├── acdoca.csv                      SAP ACDOCA-style universal journal
+│
+├── master_data/
+│   ├── vendors.json
+│   ├── customers.json
+│   ├── materials.json
+│   ├── fixed_assets.json
+│   ├── employees.json              Includes salary, hire date, department
+│   └── cost_centers.json           Cost center hierarchy
+│
+├── document_flows/
+│   ├── purchase_orders.json
+│   ├── goods_receipts.json
+│   ├── vendor_invoices.json
+│   ├── payments.json
+│   ├── customer_receipts.json
+│   ├── sales_orders.json
+│   ├── deliveries.json
+│   ├── customer_invoices.json
+│   └── document_references.json    Cross-doc links (PO→GR→Invoice→Payment)
+│
+├── sourcing/                       S2C pipeline
+│   └── spend_analyses, sourcing_projects, rfx_events, supplier_bids,
+│       bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards
+│
+├── subledger/
+│   ├── ap_invoices.json, ar_invoices.json
+│   ├── fa_records.json, inventory_positions.json, inventory_movements.json
+│   ├── ar_aging.json, ap_aging.json
+│   ├── depreciation_runs.json, inventory_valuation.json
+│   └── dunning_runs.json, dunning_letters.json
+│
+├── hr/
+│   ├── payroll_runs.json, payroll_line_items.json
+│   ├── time_entries.json, expense_reports.json, benefit_enrollments.json
+│   ├── pension_plans.json, pension_obligations.json, plan_assets.json, pension_disclosures.json
+│   ├── stock_grants.json, stock_comp_expense.json
+│   └── employee_change_history.json
+│
+├── manufacturing/
+│   └── production_orders.json, quality_inspections.json, cycle_counts.json,
+│       bom_components.json, inventory_movements.json
+│
 ├── financial_reporting/
-│   ├── standalone/         Per-entity financial statements
-│   └── consolidated/       Group-level FS + consolidation schedule + segment reporting + notes
-├── accounting_standards/   Business combinations, ECL, provisions, currency translation
-├── hr/                     Payroll, pensions, stock grants, stock comp expense
-├── intercompany/           IC matching, eliminations, group structure, NCI measurements
-├── graphs/                 PyTorch Geometric, Neo4j, DGL, RustGraph, hypergraph
-├── labels/                 Anomaly, fraud, quality, and drift labels for ML
-├── tax/                    Jurisdictions, codes, returns, provisions, withholding
-├── treasury/               Cash positions, forecasts, hedging, debt, netting
-├── project_accounting/     Projects, WBS, costs, revenue, earned value, change orders
-├── esg/                    Emissions, energy, diversity, safety, disclosures
-├── controls/               Internal controls, COSO mappings, SoD rules
-└── standards/              Accounting contracts/leases/impairment, audit ISA/SOX
+│   ├── financial_statements.json   All standalone statements combined
+│   ├── bank_reconciliations.json
+│   ├── notes_to_financial_statements.json
+│   ├── standalone/                 Per-entity: {entity_code}_financial_statements.json
+│   ├── consolidated/
+│   │   ├── consolidated_financial_statements.json
+│   │   └── consolidation_schedule.json
+│   └── segment_reporting/
+│       ├── segment_reports.json
+│       └── segment_reconciliations.json
+│
+├── period_close/
+│   └── trial_balances.json
+│
+├── balance/
+│   ├── opening_balances.json
+│   └── subledger_reconciliation.json
+│
+├── intercompany/
+│   ├── group_structure.json
+│   ├── ic_matched_pairs.json
+│   ├── ic_seller_journal_entries.json
+│   ├── ic_buyer_journal_entries.json
+│   ├── ic_elimination_entries.json
+│   └── nci_measurements.json
+│
+├── accounting_standards/
+│   ├── customer_contracts.json, impairment_tests.json
+│   ├── business_combinations.json, business_combination_journal_entries.json
+│   ├── ecl_models.json, ecl_provision_movements.json, ecl_journal_entries.json
+│   ├── provisions.json, provision_movements.json, contingent_liabilities.json
+│   └── fx/currency_translation_results.json
+│
+├── tax/
+│   ├── tax_jurisdictions.json, tax_codes.json, tax_provisions.json
+│   ├── tax_lines.json, tax_returns.json, withholding_records.json
+│   └── temporary_differences.json, etr_reconciliation.json,
+│       deferred_tax_rollforward.json, deferred_tax_journal_entries.json
+│
+├── treasury/
+│   └── cash_positions.json, cash_forecasts.json, cash_pools.json,
+│       debt_instruments.json, hedging_instruments.json, hedge_relationships.json,
+│       bank_guarantees.json, netting_runs.json
+│
+├── project_accounting/
+│   └── projects.json, cost_lines.json, revenue_records.json,
+│       earned_value_metrics.json, change_orders.json, milestones.json
+│
+├── esg/
+│   └── emission_records.json, energy_consumption.json, water_usage.json, ...
+│
+├── internal_controls/              CSV files for BI/analytics
+│   ├── internal_controls.csv
+│   ├── control_account_mappings.csv, control_process_mappings.csv
+│   ├── control_threshold_mappings.csv, control_doctype_mappings.csv
+│   ├── sod_conflict_pairs.csv, sod_rules.csv
+│   ├── coso_control_mapping.csv
+│   └── internal_controls.json, sod_violations.json
+│
+├── audit/                          33+ audit files
+│   ├── audit_engagements.json, audit_workpapers.json, audit_evidence.json
+│   ├── audit_risk_assessments.json, audit_findings.json, audit_judgments.json
+│   ├── audit_confirmations.json, audit_procedure_steps.json, audit_samples.json
+│   ├── engagement_letters.json (ISA 210)
+│   ├── combined_risk_assessments.json (ISA 315)
+│   ├── significant_transaction_classes.json (ISA 315 SCOTS)
+│   ├── materiality_calculations.json (ISA 320)
+│   ├── service_organizations.json, soc_reports.json, user_entity_controls.json (ISA 402)
+│   ├── unusual_items.json, analytical_relationships.json (ISA 520)
+│   ├── sampling_plans.json, sampled_items.json (ISA 530)
+│   ├── accounting_estimates.json (ISA 540)
+│   ├── subsequent_events.json (ISA 560)
+│   ├── going_concern_assessments.json (ISA 570)
+│   ├── component_auditors.json, group_audit_plan.json,
+│   │   component_instructions.json, component_reports.json (ISA 600)
+│   ├── audit_opinions.json, key_audit_matters.json (ISA 700/701)
+│   ├── sox_302_certifications.json, sox_404_assessments.json
+│   └── isa_mappings.json, isa_pcaob_mappings.json
+│
+├── banking/
+│   └── banking_customers.json, banking_accounts.json, banking_transactions.json,
+│       aml_transaction_labels.json, aml_customer_labels.json, aml_narratives.json
+│
+├── sales_kpi_budgets/
+│   └── sales_quotes.json, management_kpis.json, budgets.json
+│
+├── process_mining/                 OCEL 2.0 JSON, XES 2.0, process variants
+├── graphs/                         PyTorch Geometric, Neo4j CSV+Cypher, DGL, RustGraph
+├── labels/                         anomaly_labels, fraud_labels, quality_labels
+├── standards/                      Compliance standards, cross-references, filings
+└── events/                         process_evolution_events, organizational_events
 ```
 
 ---
