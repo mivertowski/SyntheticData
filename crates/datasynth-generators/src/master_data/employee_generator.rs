@@ -603,6 +603,11 @@ impl EmployeeGenerator {
             .min(period_end);
         let tenure_days = (tenure_end - hire_date).num_days().max(1);
 
+        // Skip change history for very short tenures (< 60 days)
+        if tenure_days < 60 {
+            return events;
+        }
+
         // 2. Generate 1-4 additional events
         let additional_count = self.rng.random_range(1u32..=4);
         // Build sorted random offsets within tenure (days from hire)
