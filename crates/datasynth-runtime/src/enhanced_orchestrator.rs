@@ -1866,7 +1866,7 @@ impl EnhancedOrchestrator {
         self.emit_phase_items("master_data", "Material", &self.master_data.materials);
 
         // Phase 3: Document Flows + Subledger Linking
-        let (mut document_flows, subledger, fa_journal_entries) =
+        let (mut document_flows, mut subledger, fa_journal_entries) =
             self.phase_document_flows(&mut stats)?;
 
         // Emit document flows to stream sink
@@ -2038,6 +2038,50 @@ impl EnhancedOrchestrator {
             let mfg_jes = Self::generate_manufacturing_jes(&manufacturing_snap.production_orders);
             debug!("Generated {} JEs from production orders", mfg_jes.len());
             entries.extend(mfg_jes);
+        }
+
+        // Phase 7a-inv: Apply manufacturing inventory movements to subledger positions (B.3).
+        //
+        // Manufacturing movements (GoodsReceipt / GoodsIssue) are generated independently of
+        // subledger inventory positions.  Here we reconcile them so that position balances
+        // reflect the actual stock movements within the generation period.
+        if !manufacturing_snap.inventory_movements.is_empty()
+            && !subledger.inventory_positions.is_empty()
+        {
+            use datasynth_core::models::MovementType as MfgMovementType;
+            let mut receipt_count = 0usize;
+            let mut issue_count = 0usize;
+            for movement in &manufacturing_snap.inventory_movements {
+                // Find a matching position by material code and company
+                if let Some(pos) = subledger.inventory_positions.iter_mut().find(|p| {
+                    p.material_id == movement.material_code
+                        && p.company_code == movement.entity_code
+                }) {
+                    match movement.movement_type {
+                        MfgMovementType::GoodsReceipt => {
+                            // Increase stock and update weighted-average cost
+                            pos.add_quantity(
+                                movement.quantity,
+                                movement.value,
+                                movement.movement_date,
+                            );
+                            receipt_count += 1;
+                        }
+                        MfgMovementType::GoodsIssue | MfgMovementType::Scrap => {
+                            // Decrease stock (best-effort; silently skip if insufficient)
+                            let _ = pos.remove_quantity(movement.quantity, movement.movement_date);
+                            issue_count += 1;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            debug!(
+                "Phase 7a-inv: Applied {} inventory movements to subledger positions ({} receipts, {} issues/scraps)",
+                manufacturing_snap.inventory_movements.len(),
+                receipt_count,
+                issue_count,
+            );
         }
 
         // Update final entry/line-item stats after all JE-generating phases
@@ -6079,21 +6123,27 @@ impl EnhancedOrchestrator {
         snapshot.bom_component_count = bom_components.len();
         snapshot.bom_components = bom_components;
 
-        // Generate inventory movements
+        // Generate inventory movements — link GoodsIssue movements to real production order IDs
         let currency = self
             .config
             .companies
             .first()
             .map(|c| c.currency.as_str())
             .unwrap_or("USD");
+        let production_order_ids: Vec<String> = snapshot
+            .production_orders
+            .iter()
+            .map(|po| po.order_id.clone())
+            .collect();
         let mut inv_mov_gen = datasynth_generators::InventoryMovementGenerator::new(seed + 54);
-        let inventory_movements = inv_mov_gen.generate(
+        let inventory_movements = inv_mov_gen.generate_with_production_orders(
             company_code,
             &material_data,
             start_date,
             end_date,
             2,
             currency,
+            &production_order_ids,
         );
         snapshot.inventory_movement_count = inventory_movements.len();
         snapshot.inventory_movements = inventory_movements;

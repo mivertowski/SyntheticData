@@ -1321,6 +1321,24 @@ pub fn write_all_output(
             &ctrl_dir.join("sod_violations.json"),
             "SoD violations",
         );
+
+        // SoD conflict pairs, SoD rules, control mappings, and COSO control mapping
+        // are static reference data — export via ControlExporter regardless of whether
+        // individual violations were generated so the master catalog is always present.
+        let exporter = datasynth_output::ControlExporter::new(&ctrl_dir);
+        match exporter.export_standard() {
+            Ok(summary) => {
+                info!(
+                    "  Control master data written: {} controls, {} SoD conflicts, {} SoD rules, {} COSO mappings, {} account mappings",
+                    summary.controls_count,
+                    summary.sod_conflicts_count,
+                    summary.sod_rules_count,
+                    summary.coso_mappings_count,
+                    summary.account_mappings_count,
+                );
+            }
+            Err(e) => warn!("Failed to write control master data: {}", e),
+        }
     }
 
     // ========================================================================
