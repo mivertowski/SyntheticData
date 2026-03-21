@@ -443,6 +443,141 @@ pub fn compute_edge_direction_features(
     features
 }
 
+/// Compute velocity features for a node — number of edges (and summed weights)
+/// incident to `node_id` within each of the rolling windows specified by
+/// `window_days`.
+///
+/// # Parameters
+/// - `node_id`: the graph node whose activity is being measured.
+/// - `edges`: a slice of `(source, target, timestamp_days_since_epoch)` tuples.
+///   The timestamp is a Unix-epoch day count (`days = unix_seconds / 86400`).
+/// - `window_days`: rolling-window lengths in days, e.g. `[7, 30, 90]`.
+/// - `reference_day`: the reference day (e.g. today as `chrono::Utc::now().num_days_from_ce()`).
+///
+/// # Returns
+/// A `Vec<f64>` with `2 * window_days.len()` features:
+/// - For each window: `[edge_count, weight_sum, ...]`
+///
+/// # Example
+/// ```
+/// use datasynth_graph::ml::compute_velocity_features;
+/// let edges = vec![(1usize, 2usize, 1000.0f64), (1, 3, 998.0)];
+/// let features = compute_velocity_features(1, &edges, &[7, 30], 1005.0);
+/// assert_eq!(features.len(), 4); // 2 windows × 2 metrics each
+/// ```
+pub fn compute_velocity_features(
+    node_id: usize,
+    edges: &[(usize, usize, f64)], // (source, target, timestamp_as_day)
+    window_days: &[u32],
+    reference_day: f64,
+) -> Vec<f64> {
+    let mut features = Vec::with_capacity(window_days.len() * 2);
+
+    for &window in window_days {
+        let cutoff = reference_day - f64::from(window);
+        let mut count = 0u64;
+        let mut weight_sum = 0.0_f64;
+
+        for &(src, tgt, ts) in edges {
+            if (src == node_id || tgt == node_id) && ts >= cutoff {
+                count += 1;
+                weight_sum += 1.0; // each edge counts as weight 1.0
+            }
+        }
+
+        features.push(count as f64);
+        features.push(weight_sum);
+    }
+
+    features
+}
+
+/// Simple iterative PageRank computation.
+///
+/// # Parameters
+/// - `adjacency`: outgoing adjacency list — `adjacency[i]` contains the indices of
+///   nodes that node `i` links to.
+/// - `damping`: damping factor (typically 0.85).
+/// - `iterations`: number of power-iteration steps.
+///
+/// # Returns
+/// A `Vec<f64>` of length `adjacency.len()` with the PageRank score for each node.
+/// Scores are normalised so that they sum to 1.0.
+pub fn pagerank(adjacency: &[Vec<usize>], damping: f64, iterations: usize) -> Vec<f64> {
+    let n = adjacency.len();
+    if n == 0 {
+        return Vec::new();
+    }
+
+    let init = 1.0 / n as f64;
+    let mut rank = vec![init; n];
+
+    for _ in 0..iterations {
+        let mut new_rank = vec![(1.0 - damping) / n as f64; n];
+
+        for (src, targets) in adjacency.iter().enumerate() {
+            if targets.is_empty() {
+                // Dangling node: distribute rank evenly across all nodes
+                let share = damping * rank[src] / n as f64;
+                for r in new_rank.iter_mut() {
+                    *r += share;
+                }
+            } else {
+                let share = damping * rank[src] / targets.len() as f64;
+                for &tgt in targets {
+                    if tgt < n {
+                        new_rank[tgt] += share;
+                    }
+                }
+            }
+        }
+
+        rank = new_rank;
+    }
+
+    // Normalise so scores sum to 1.0
+    let total: f64 = rank.iter().sum();
+    if total > 0.0 {
+        rank.iter_mut().for_each(|r| *r /= total);
+    }
+
+    rank
+}
+
+/// Degree centrality (normalised).
+///
+/// Returns `degree(v) / (n - 1)` for each node, where degree is the
+/// total (in + out) degree derived from the adjacency list.
+/// The result is in `[0, 1]` for graphs with `n >= 2`.
+///
+/// # Parameters
+/// - `adjacency`: outgoing adjacency list — `adjacency[i]` contains the indices of
+///   nodes that node `i` links to.
+pub fn degree_centrality(adjacency: &[Vec<usize>]) -> Vec<f64> {
+    let n = adjacency.len();
+    if n == 0 {
+        return Vec::new();
+    }
+
+    // Compute out-degree from adjacency and in-degree from reverse scan.
+    let mut degree = vec![0usize; n];
+
+    for (src, targets) in adjacency.iter().enumerate() {
+        degree[src] += targets.len(); // out-degree contribution
+        for &tgt in targets {
+            if tgt < n {
+                degree[tgt] += 1; // in-degree contribution
+            }
+        }
+    }
+
+    let normalizer = if n > 1 { (n - 1) as f64 } else { 1.0 };
+    degree
+        .iter()
+        .map(|&d| (d as f64) / normalizer)
+        .collect()
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -498,5 +633,67 @@ mod tests {
         let encoding = positional_encoding(0, 8);
         assert_eq!(encoding.len(), 8);
         assert_eq!(encoding[0], 0.0); // sin(0) = 0
+    }
+
+    #[test]
+    fn test_velocity_features_length() {
+        // node 1 has edges at days 995, 998, 1000 (within window 7 of day 1002)
+        let edges = vec![(1, 2, 995.0), (1, 3, 998.0), (1, 4, 1000.0)];
+        let features = compute_velocity_features(1, &edges, &[7, 30, 90], 1002.0);
+        assert_eq!(features.len(), 6, "2 metrics per window × 3 windows");
+    }
+
+    #[test]
+    fn test_velocity_features_windowing() {
+        // Day 1000 reference; edges at days 994 (within 7), 960 (within 30+), 900 (within 90+)
+        let edges = vec![(1, 2, 994.0), (1, 3, 960.0), (1, 4, 900.0)];
+        let features = compute_velocity_features(1, &edges, &[7, 30, 90], 1000.0);
+        // window 7: only edge at 994 qualifies (1000 - 7 = 993; 994 >= 993 ✓)
+        assert_eq!(features[0], 1.0, "7-day count");
+        // window 30: 994 and 960 qualify (1000 - 30 = 970; 994 ≥ 970 ✓, 960 < 970 ✗)
+        assert_eq!(features[2], 1.0, "30-day count");
+        // window 90: 994 and 960 qualify (1000 - 90 = 910; 900 < 910 ✗)
+        assert_eq!(features[4], 2.0, "90-day count");
+    }
+
+    #[test]
+    fn test_pagerank_basic() {
+        // Simple 3-node graph: 0→1, 1→2, 2→0 (cycle)
+        let adjacency = vec![vec![1], vec![2], vec![0]];
+        let pr = pagerank(&adjacency, 0.85, 50);
+        assert_eq!(pr.len(), 3);
+        // In a balanced cycle, all nodes should have equal rank (~0.333)
+        for &r in &pr {
+            assert!((r - 1.0 / 3.0).abs() < 0.01, "Expected ~0.333 but got {r}");
+        }
+        // Scores must sum to 1.0
+        let total: f64 = pr.iter().sum();
+        assert!((total - 1.0).abs() < 1e-9, "PageRank must sum to 1.0");
+    }
+
+    #[test]
+    fn test_pagerank_empty() {
+        let pr = pagerank(&[], 0.85, 10);
+        assert!(pr.is_empty());
+    }
+
+    #[test]
+    fn test_degree_centrality_basic() {
+        // Star graph: node 0 connects to nodes 1, 2, 3
+        let adjacency = vec![vec![1, 2, 3], vec![], vec![], vec![]];
+        let dc = degree_centrality(&adjacency);
+        assert_eq!(dc.len(), 4);
+        // Node 0: out-degree 3, max possible = n-1 = 3, so centrality = 3/3 = 1.0
+        assert!((dc[0] - 1.0).abs() < 1e-9, "Hub should have centrality 1.0");
+        // Leaf nodes: in-degree 1, centrality = 1/3
+        for &c in &dc[1..] {
+            assert!((c - 1.0 / 3.0).abs() < 1e-9, "Leaf centrality should be ~0.333");
+        }
+    }
+
+    #[test]
+    fn test_degree_centrality_empty() {
+        let dc = degree_centrality(&[]);
+        assert!(dc.is_empty());
     }
 }

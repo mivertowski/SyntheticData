@@ -581,7 +581,8 @@ fn standard_pipeline_has_all_stages() {
     let pipeline = GraphExportPipeline::standard(ExportConfig::default());
 
     // 30 property serializers (Task 9) + 9 audit procedure serializers (Task 14) = 39
-    assert_eq!(pipeline.property_serializers().len(), 39);
+    // v1.4.0: +2 (vendor, customer) = 41
+    assert_eq!(pipeline.property_serializers().len(), 41);
 }
 
 #[test]

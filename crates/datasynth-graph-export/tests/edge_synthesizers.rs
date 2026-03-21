@@ -79,6 +79,7 @@ fn empty_result() -> EnhancedGenerationResult {
         cross_process_links: Vec::new(),
         industry_output: None,
         compliance_regulations: ComplianceRegulationsSnapshot::default(),
+        sod_violations: Vec::new(),
     }
 }
 
@@ -790,7 +791,7 @@ fn risk_control_all_edges_reference_valid_ids() {
 #[test]
 fn all_edge_synthesizers_returns_all() {
     let synthesizers = datasynth_graph_export::edges::all_synthesizers();
-    assert_eq!(synthesizers.len(), 12);
+    assert_eq!(synthesizers.len(), 13);
     assert_eq!(synthesizers[0].name(), "document_chain");
     assert_eq!(synthesizers[1].name(), "risk_control");
     assert_eq!(synthesizers[2].name(), "audit_trail");
@@ -803,6 +804,7 @@ fn all_edge_synthesizers_returns_all() {
     assert_eq!(synthesizers[9].name(), "process_sequence");
     assert_eq!(synthesizers[10].name(), "audit_procedures");
     assert_eq!(synthesizers[11].name(), "v130_edges");
+    assert_eq!(synthesizers[12].name(), "v140_edges");
 }
 
 #[test]
@@ -811,7 +813,7 @@ fn standard_pipeline_includes_edge_synthesizers() {
 
     let pipeline = GraphExportPipeline::standard(ExportConfig::default());
     let debug_str = format!("{:?}", pipeline);
-    assert!(debug_str.contains("edge_synthesizers: 12"));
+    assert!(debug_str.contains("edge_synthesizers: 13"));
 }
 
 #[test]
