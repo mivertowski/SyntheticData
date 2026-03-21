@@ -4,13 +4,13 @@
 
 We have presented \system{}, a framework that addresses a fundamental
 challenge in enterprise audit analytics: the absence of ground truth.
-We showed that building knowledge systems by scraping existing enterprise
-data---the dominant approach---is analogous to solving a jigsaw puzzle
-without the picture: teams assemble transactional fragments into
-knowledge structures without a reference against which to verify the
-result.  When the source data contains systematic errors, the
-constructed knowledge inherits and amplifies them, treating symptoms
-while root causes remain undiagnosed.
+We showed that constructing knowledge systems primarily from operational enterprise
+data---while valuable and widely practiced---faces inherent
+limitations when the source data itself may contain systematic errors,
+leaving teams without a comprehensive reference against which to
+verify the resulting knowledge structures.  When the source data contains systematic errors, the
+constructed knowledge may inherit those errors, potentially masking the
+root causes that audit procedures seek to identify.
 
 Our formal analysis demonstrated three results:
 \textbf{(i)}~recovering the true accounting network from observed
@@ -27,19 +27,18 @@ errors in one dimension amplify across others
 \system{} addresses this through \emph{forward generation} from a
 fully specified model, producing \emph{reference knowledge graphs}
 where the complete audit trail is known by construction across three
-layers of knowledge: structural (78+ entity types, 39+ relationship
-types), statistical (Benford-compliant distributions, copula-based
-dependencies), and normative (five accounting frameworks, ISA/PCAOB/SOX
-audit standards, COSO~2013 internal controls).
+layers of knowledge: structural (entity types and relationship types
+covering major enterprise processes), statistical (Benford-compliant
+distributions, copula-based dependencies), and normative (multiple
+accounting frameworks, ISA/PCAOB/SOX audit standards, COSO~2013
+internal controls).
 
 Experimental evaluation confirms that generated datasets satisfy all
 hard accounting invariants at 100\% compliance, achieve Benford MAD
 scores below 0.006, and support downstream fraud detection models
-achieving F1 scores of 0.84 with GNNs.  The system generates over
-$2 \times 10^5$ journal entries per second, covers 20+ enterprise
-processes (including tax, treasury, ESG, and project accounting), and
-provides full provenance for every record in the reference knowledge
-graph.
+achieving F1 scores of 0.84 with GNNs.  The system provides full provenance for every record in the reference
+knowledge graph, with generation throughput and domain coverage detailed
+in \Cref{sec:experiments}.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Limitations}

@@ -17,7 +17,7 @@ forms a node, credit entries produce outgoing edges, and debit entries
 produce incoming edges.  Following~\citet{ivertowski2024hardware}, we
 adopt a temporal formulation:
 \begin{equation}
-G(t_0, t_1) = A(t_0, t_1) \times E(t_0, t_1)
+G(t_0, t_1) = \bigl(A(t_0, t_1),\; E(t_0, t_1)\bigr)
 \label{eq:temporal_graph}
 \end{equation}
 where $A(t_0,t_1)$ is the set of account nodes with monetary state over
@@ -26,9 +26,8 @@ $[t_0, t_1]$, and each edge $E_i(t_0,t_1) = \sum_{n=1}^{|\Omega_{A_i}|}
 in that period.  This temporal definition enables system-theoretic
 analyses such as cross-correlation and auto-correlation on account flows.
 
-Unlike accounting networks constructed from real data via inverse
-recovery (\Cref{sec:gt_inverse}), \system{}'s graphs are generated
-\emph{forward}: every edge has known provenance, eliminating the
+Complementing accounting networks constructed from real data,
+\system{}'s graphs are generated \emph{forward}: every edge has known provenance, eliminating the
 combinatorial matching ambiguity of \Cref{thm:combinatorial}.
 
 % ─────────────────────────────────────────────────────────────────────

@@ -27,13 +27,15 @@ transaction patterns as multi-layer graphs.
 \citet{liang2021pattern} develop pattern recognition and anomaly detection
 methods directly on bookkeeping graph representations.
 
-However, all these approaches \emph{assume} the input data is a faithful
-representation of the underlying business reality.  As we proved in
-\Cref{sec:gt_errors}, this assumption is violated when systematic errors
-are present---precisely the situation where audit analytics is most
-needed.  \system{} addresses this gap by providing reference knowledge
-graphs where the ground truth is known, enabling rigorous evaluation of
-these knowledge construction approaches.
+These approaches generally rely on available operational data as
+their starting point and do not separately establish that the input
+faithfully represents the underlying business reality.  As discussed
+in \Cref{sec:gt_errors}, when systematic errors are present---precisely
+the situation where audit analytics is most critical---this reliance
+can limit the reliability of the resulting knowledge structures.
+\system{} complements these approaches by providing reference knowledge
+graphs with known ground truth, enabling rigorous evaluation of
+knowledge construction methods.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{General-Purpose Tabular Data Generation}
@@ -51,30 +53,31 @@ TabDDPM~\citep{kotelnikov2023tabddpm} adapts diffusion models to
 tabular settings.
 
 While these methods excel at preserving marginal distributions and
-pairwise correlations, they treat tables as independent collections of
-rows and do not enforce cross-table referential integrity, temporal
-ordering constraints, or domain-specific algebraic invariants (e.g.,
-balanced entries).  Critically, they cannot generate the \emph{normative
-layer} of knowledge---the accounting standards, controls, and regulatory
-compliance that are essential for audit analytics.
+pairwise correlations, the enterprise accounting domain imposes additional requirements
+beyond what general-purpose tabular generators address: cross-table
+referential integrity, temporal ordering constraints, and
+domain-specific algebraic invariants (e.g., balanced entries).
+Furthermore, audit analytics requires a normative knowledge
+layer---accounting standards, controls, and regulatory compliance---that
+is beyond the scope of general-purpose generators.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Accounting-Domain Data Synthesis}
 \label{sec:rw_accounting}
 
 Domain-specific synthetic data for accounting has received comparatively
-little attention.  The GL.ai dataset~\citep{schreyer2022federated}
-provides federated synthetic journal entries but lacks document-flow
-linkage and subledger coherence.  The SAFD (Simulated Accounting Fraud
-Dataset)~\citep{sharma2023synthetic} generates entries with injected
-anomalies, yet uses uniform random amounts that violate Benford's law.
-BankSim~\citep{lopez2018banksim} focuses narrowly on payment
+little attention.  \citet{schreyer2022federated} propose a federated
+learning framework for training anomaly detection models on journal
+entry data across audit engagements, addressing data-sharing constraints
+but not the generation of synthetic reference data.
+BankSim~\citep{lopez2014banksim} focuses narrowly on payment
 transactions for fraud research.
 
-None of these systems produce a complete \emph{knowledge graph} with
-provenance across all three layers.  They generate isolated data
-artifacts rather than interconnected reference knowledge, limiting
-their utility for evaluating knowledge construction pipelines.
+These systems were designed to address specific aspects of the
+synthetic data challenge and serve their intended purposes
+effectively.  However, they do not produce a comprehensive reference
+knowledge graph with provenance across all three layers, which is what
+evaluating end-to-end knowledge construction pipelines requires.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Accounting Network Construction}
@@ -85,7 +88,7 @@ back to~\citet{ijiri1965generalized}, who established that journal entries
 have a natural graph interpretation: accounts are nodes, and debit/credit
 flows form directed edges.  \citet{fellingham2018double} provides a modern
 algebraic treatment of double-entry systems.
-\citet{arya2010inferring} study the problem of inferring individual
+\citet{arya2000inferring} study the problem of inferring individual
 transactions from aggregated financial statements, highlighting the
 combinatorial complexity of reconstructing edge-level flows from
 node-level balances---a result closely related to our
@@ -113,7 +116,7 @@ or manual scenario creation.  The IEEE-CIS fraud dataset~\citep{ieee_cis2019}
 provides real transaction labels but lacks accounting context.
 \citet{pourhabibi2020fraud} survey fraud detection methods and note the
 scarcity of labeled multi-dimensional accounting fraud data.
-\citet{dbouk2023anomaly} inject statistical anomalies into time series
+\citet{dbouk2022anomaly} inject statistical anomalies into time series
 but do not model multi-stage fraud schemes that evolve over time.
 
 \system{} introduces a \emph{scheme-based} injection model where fraud
@@ -181,9 +184,8 @@ knowledge layers with full provenance.
 CTGAN / TVAE          & -- & -- & -- & -- & -- & -- & -- & -- & -- \\
 SDV / CopulaGAN       & -- & -- & -- & -- & \checkmark$^*$ & -- & -- & -- & -- \\
 REaLTabFormer         & -- & -- & -- & -- & \checkmark & -- & -- & -- & -- \\
-GL.ai                 & -- & -- & \checkmark & -- & -- & -- & -- & \checkmark & -- \\
 BankSim               & -- & -- & -- & -- & -- & -- & -- & \checkmark & -- \\
-SAFD                  & -- & -- & \checkmark & -- & -- & -- & -- & \checkmark & -- \\
+Schreyer et al.       & -- & -- & -- & -- & -- & -- & -- & -- & -- \\
 Guo et al.            & -- & \checkmark$^*$ & -- & -- & -- & -- & -- & -- & \checkmark$^*$ \\
 \midrule
 \textbf{\system{}}    & \checkmark & \checkmark & \checkmark & \checkmark

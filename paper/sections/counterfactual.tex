@@ -16,7 +16,7 @@ knowledge graphs suitable for causal inference research.
 
 \begin{definition}[Financial Causal DAG]
 \label{def:causal_dag}
-A \emph{financial causal DAG} is a tuple $G = (V, E, \tau, w)$ where:
+A \emph{financial causal DAG} is a tuple $\mathcal{C} = (V, E, \tau, w)$ where:
 \begin{itemize}
   \item $V = \{v_1, \ldots, v_n\}$ is a set of process nodes with
     baseline values, bound intervals, and categories
@@ -47,7 +47,7 @@ computes equilibrium via forward propagation in topological order
 \label{alg:propagation}
 \SetKwInOut{Input}{Input}
 \SetKwInOut{Output}{Output}
-\Input{Causal DAG $G = (V, E, \tau, w)$; interventions
+\Input{Causal DAG $\mathcal{C} = (V, E, \tau, w)$; interventions
   $\mathcal{I} = \{(v_j, \hat{x}_j)\}$; current month $t$}
 \Output{Node values $\{x_i\}_{i=1}^{|V|}$}
 \BlankLine

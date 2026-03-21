@@ -55,10 +55,17 @@ ThresholdClustering, UniformFirstDigit, DigitBias, and TrailingZeros.
 \label{prop:mad}
 Let $\hat{p}_d$ denote the empirical first-digit frequency from $n$
 samples of the BenfordSampler.  The mean absolute deviation
-$\MAD = \frac{1}{9}\sum_{d=1}^{9}|\hat{p}_d - p_d|$ satisfies
-$\E[\MAD] \leq \frac{1}{9}\sqrt{\frac{\pi}{2n}}$ for large $n$,
-ensuring convergence to ``close conformity''
-(MAD~$< 0.006$)~\citep{nigrini2012benfords} for $n \gtrsim 7{,}000$.
+$\MAD = \frac{1}{9}\sum_{d=1}^{9}|\hat{p}_d - p_d|$ satisfies, for
+large $n$,
+\[
+\E[\MAD] = \frac{1}{9}\sqrt{\frac{2}{\pi n}}
+  \sum_{d=1}^{9}\sqrt{p_d(1-p_d)}
+  \;\approx\; \frac{0.235}{\sqrt{n}}
+\]
+where the numerical constant follows from evaluating the sum over
+Benford probabilities.  This ensures convergence to ``close
+conformity'' (MAD~$< 0.006$)~\citep{nigrini2012benfords} for
+$n \gtrsim 1{,}600$.
 \end{proposition}
 
 % ─────────────────────────────────────────────────────────────────────
@@ -128,9 +135,9 @@ observed in ERP data:
 \textbf{Component} & $w_k$ & $\mu_k$ & $\sigma_k$
   & \textbf{Mean} ($e^{\mu+\sigma^2/2}$) \\
 \midrule
-Routine     & 0.60 & 6.0 & 1.5 & \$1{,}224 \\
+Routine     & 0.60 & 6.0 & 1.5 & \$1{,}245 \\
 Significant & 0.30 & 8.5 & 1.0 & \$8{,}103 \\
-Major       & 0.10 & 11.0 & 0.8 & \$89{,}352 \\
+Major       & 0.10 & 11.0 & 0.8 & \$82{,}269 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -169,6 +176,10 @@ configurable decay curves:
 where $T$ is the period-end date, $m_{\text{peak}}$ is the peak
 multiplier (typically 3.5$\times$ for month-end, 6.0$\times$ for
 year-end), and $\alpha, \beta$ are decay parameters.
+In the extended-crunch model the intensity diverges as $t \to T$;
+in practice, \system{} clamps $\lambda(t)$ at $\lambda_0 \cdot
+m_{\text{peak}}$ and truncates the active window to
+$[T + \text{start\_day},\; T]$.
 
 \paragraph{Processing lags.}
 Real posting dates lag event dates.  \system{} models this with

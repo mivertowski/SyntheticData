@@ -1,16 +1,15 @@
 % sections/abstract.tex — Abstract
 \begin{abstract}
 Enterprise knowledge systems for audit analytics face a fundamental
-epistemological challenge: they are built by scraping and mining existing
+epistemological challenge: they are typically constructed from existing
 operational data---data that may itself contain the very errors, fraud
 patterns, and systematic biases the systems are meant to detect.  This is
-analogous to solving a jigsaw puzzle without ever having seen the picture
+analogous to assembling a jigsaw puzzle with only a partial view of the picture
 on the box: teams assemble fragments of transactional evidence into
 knowledge graphs, but lack a \emph{ground truth} against which to verify
 the result.  When the source data harbors systematic errors---which
 real-world client audits demonstrably do---the constructed knowledge
-inherits and amplifies those errors, treating symptoms while leaving
-root causes undiagnosed.  The complexity of the problem is not merely
+inherits and amplifies those errors, potentially obscuring root causes that audit procedures seek to identify.  The complexity of the problem is not merely
 large; it is \emph{inter-dimensional}, spanning accounting topology,
 statistical distributions, temporal dynamics, regulatory standards, and
 organizational structure simultaneously.
@@ -21,8 +20,8 @@ provenanced, multi-layer synthetic enterprise datasets where every node,
 edge, and property is produced from a known generative process.
 \system{} operates across three layers of audit knowledge:
 \textbf{(i)}~the \emph{structural layer}---accounting graph topology
-with 78+ entity types and 39+ relationship types spanning 20+ enterprise
-processes;
+with a comprehensive set of entity and relationship types spanning
+major enterprise processes;
 \textbf{(ii)}~the \emph{statistical layer}---distributional properties
 governed by log-normal mixture models, five copula families, Benford's-law
 compliance, and temporal dynamics calibrated against 155 real-world general
@@ -42,14 +41,13 @@ remaining undetected.  \system{} circumvents this by generating data
 reference datasets where the complete audit trail is known by
 construction.
 
-Implemented in Rust across 16 crates totaling over 120\,k lines of code,
-\system{} achieves throughput exceeding $2 \times 10^5$ journal entries
+Implemented in Rust, \system{} achieves throughput exceeding $2 \times 10^5$ journal entries
 per second on a single core.  The framework generates end-to-end coherent
 data spanning journal entries, document flows, subledgers, financial
 statements, intercompany eliminations, tax accounting, treasury
 management, ESG reporting, project accounting, and OCEL~2.0 process
 mining event logs---all from a single declarative YAML configuration.
-Additional capabilities include a 33-type anomaly injection framework
+Additional capabilities include a multi-type anomaly injection framework
 with multi-stage fraud schemes, a privacy-preserving fingerprint module
 under $\varepsilon$-differential privacy, a counterfactual simulation
 engine with causal DAG propagation, and graph exports in PyTorch
@@ -60,6 +58,11 @@ hard accounting invariants at 100\% compliance, achieve Benford first-digit
 MAD scores below 0.006, and support downstream fraud detection models
 achieving F1 scores of 0.84 with graph neural networks---within 3\% of
 scores obtained on real data.
+
+The forward-generation approach does not replace the analysis of real
+enterprise data; rather, it provides a reference frame against which
+analytical tools, knowledge construction pipelines, and audit
+procedures can be developed, tested, and calibrated.
 
 \medskip
 \noindent\textbf{Keywords:} reference knowledge graphs, synthetic data

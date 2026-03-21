@@ -3,8 +3,8 @@
 \label{sec:ground_truth}
 
 This section formalizes the fundamental challenge that motivates
-\system{}: the impossibility of reliably recovering ground truth from
-observed enterprise data, and how this motivates the forward-generation
+\system{}: the inherent limitations of recovering complete ground truth from
+observed enterprise data alone, and how this motivates the forward-generation
 approach.
 
 % ─────────────────────────────────────────────────────────────────────
@@ -47,14 +47,13 @@ accounting network edges is not unique.  For a single journal entry
 with $n$ credit and $m$ debit line items, the number of valid
 matchings is given by the surjective function count.
 
-\begin{theorem}[Combinatorial Infeasibility of Ground Truth Recovery]
+\begin{proposition}[Combinatorial Infeasibility of Ground Truth Recovery]
 \label{thm:combinatorial}
 Let $j$ be a journal entry with $n$ credit line items and $m$ debit
 line items.  The number of distinct accounting network edge
 configurations consistent with $j$ is bounded below by:
 \begin{equation}
-\mathcal{A}(n, m) = n! \cdot \frac{1}{m!} \sum_{k=0}^{m} (-1)^{m-k}
-  \binom{m}{k} k^n
+\mathcal{A}(n, m) = \sum_{k=0}^{m} (-1)^{m-k} \binom{m}{k} k^n
 \label{eq:stirling_matching}
 \end{equation}
 which corresponds to the number of surjections from the credit set to
@@ -64,20 +63,22 @@ $N$ journal entries, the total configuration space is:
 |\mathcal{S}| = \prod_{j=1}^{N} \mathcal{A}(n_j, m_j)
 \label{eq:total_configs}
 \end{equation}
-\end{theorem}
+\end{proposition}
 
 \begin{proof}
 The edge construction problem for a single entry requires assigning
 each of $n$ credit line items to at least one of $m$ debit line items
 such that total flows balance.  This is a surjection from the set of
 credits to the set of debits.  The number of surjections from an
-$n$-element set to an $m$-element set is given by the inclusion-exclusion
-formula $m! \cdot S(n, m)$ where $S(n,m)$ is the Stirling number of the
-second kind~\citep{ivertowski2024hardware}.  Expanding:
+$n$-element set to an $m$-element set is $m! \cdot S(n,m)$ where
+$S(n,m)$ is the Stirling number of the second
+kind~\citep{ivertowski2024hardware}:
 \[
-S(n, m) = \frac{1}{m!} \sum_{k=0}^{m} (-1)^{m-k} \binom{m}{k} k^n
+S(n, m) = \frac{1}{m!} \sum_{k=0}^{m} (-1)^{m-k} \binom{m}{k} k^n.
 \]
-The total count of surjections is $n! \cdot S(n,m) / S(n,m) \cdot m! \cdot S(n,m) = n! / m! \cdot \sum \ldots$ which simplifies to \Cref{eq:stirling_matching}.
+Multiplying through gives
+$\mathcal{A}(n,m) = \sum_{k=0}^{m}(-1)^{m-k}\binom{m}{k}k^n$,
+which is \Cref{eq:stirling_matching}.
 Since journal entries are independent, the total configuration space is
 the product over all entries.
 
@@ -91,12 +92,22 @@ possible configurations---a number that dwarfs the number of atoms in
 the observable universe ($\sim 10^{80}$).
 \end{proof}
 
+\begin{remark}
+\Cref{thm:combinatorial} counts discrete credit-to-debit
+\emph{assignments}.  When monetary amounts must also be split across
+edges, the configuration space becomes continuous and uncountably
+infinite, making the discrete count a lower bound on the true
+ambiguity.
+\end{remark}
+
 \begin{corollary}
 \label{cor:verification}
 For any enterprise dataset with a non-trivial fraction of multi-line
-journal entries, exhaustive verification of the ground-truth accounting
-network is computationally infeasible.  No algorithm can enumerate all
-consistent configurations in polynomial time.
+journal entries, enumerating all consistent accounting network
+configurations is computationally infeasible.  Consequently, without
+additional information beyond the journal entries themselves,
+distinguishing the true configuration from the exponentially many
+alternatives is not possible by exhaustive search.
 \end{corollary}
 
 % ─────────────────────────────────────────────────────────────────────
@@ -132,18 +143,18 @@ necessary but not sufficient for correctness.
 Consider an enterprise process with $k$ sequential stages
 (e.g., PO $\to$ GR $\to$ Invoice $\to$ Payment $\to$ GL Posting
 $\to$ Financial Statement, giving $k = 6$).  Let each stage have
-an independent probability $\varepsilon$ of detecting and correcting a
+an independent probability $\varepsilon_d$ of detecting and correcting a
 systematic error introduced at an earlier stage.  The probability that
 the error reaches the final stage undetected is:
 \begin{equation}
-\Prob[\text{undetected}] = (1 - \varepsilon)^{k-1}
+\Prob[\text{undetected}] = (1 - \varepsilon_d)^{k-1}
 \label{eq:error_persistence}
 \end{equation}
-For typical detection rates $\varepsilon \in [0.01, 0.05]$ and $k = 6$:
+For typical detection rates $\varepsilon_d \in [0.01, 0.05]$ and $k = 6$:
 \begin{center}
 \begin{tabular}{ccc}
 \toprule
-$\varepsilon$ & $k$ & $\Prob[\text{undetected}]$ \\
+$\varepsilon_d$ & $k$ & $\Prob[\text{undetected}]$ \\
 \midrule
 0.01 & 6 & 95.1\% \\
 0.02 & 6 & 90.4\% \\
@@ -157,10 +168,20 @@ systematic errors survive the full processing chain.
 
 \begin{proof}
 Each stage provides an independent opportunity to detect the error.
-The error survives stage $i$ with probability $(1 - \varepsilon)$.
+The error survives stage $i$ with probability $(1 - \varepsilon_d)$.
 Since stages are independent, the probability of surviving all $k-1$
-stages after introduction is $(1 - \varepsilon)^{k-1}$.
+stages after introduction is $(1 - \varepsilon_d)^{k-1}$.
 \end{proof}
+
+\begin{remark}
+The independence assumption in \Cref{prop:error_persistence} is
+optimistic: in practice, detection capabilities are often correlated
+across stages (e.g., a subtle classification error that evades one
+stage is likely to evade similar checks at subsequent stages).  The
+actual persistence probability for systematic errors may therefore
+be higher than $(1 - \varepsilon_d)^{k-1}$, making this a conservative
+estimate of the problem's severity.
+\end{remark}
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Inter-Dimensional Complexity}
@@ -191,7 +212,7 @@ Enterprise audit knowledge spans five orthogonal dimensions:
 \end{enumerate}
 \end{definition}
 
-\begin{theorem}[Cross-Dimensional Error Amplification]
+\begin{observation}[Cross-Dimensional Error Amplification]
 \label{thm:amplification}
 Let $e$ be a systematic error in dimension $\mathcal{D}_i$ that affects
 $n_i$ records.  If the error induces secondary effects in $d$ additional
@@ -204,9 +225,9 @@ records, then the total error footprint is:
 For typical enterprise processes where $d \geq 2$ and $\alpha_j \geq 2$,
 a single-source error affecting 100 records can propagate to $\geq 400$
 affected data points across dimensions.
-\end{theorem}
+\end{observation}
 
-\begin{proof}
+\paragraph{Illustrative example.}
 Consider a vendor master data error (topological dimension) that
 assigns incorrect GL account codes to a vendor.  This produces:
 (a)~statistical anomalies in the affected accounts' distributions
@@ -215,7 +236,9 @@ assignments ($\alpha_\tau \geq 1$), and (c)~normative violations in
 subledger reconciliation ($\alpha_N \geq 1$).  Each propagation
 multiplies the affected record count.  The product follows from the
 independence of propagation paths across dimensions.
-\end{proof}
+The multiplicative model provides a useful upper-bound heuristic
+for estimating cross-dimensional impact, though actual propagation
+depends on the specific error type and process dependencies.
 
 \begin{remark}
 The inter-dimensional nature of errors explains why single-dimension
@@ -262,7 +285,7 @@ and organizational policies (approval thresholds, SoD rules).  This layer
 answers \emph{what constraints define correct behavior}.
 \end{definition}
 
-\begin{theorem}[Reference Knowledge Graph Completeness]
+\begin{proposition}[Reference Knowledge Graph Completeness]
 \label{thm:completeness}
 Let $\mathcal{G}$ be a fully specified generative model that explicitly
 encodes structural rules $\mathcal{R}_S$, statistical parameters
@@ -279,9 +302,9 @@ three layers:
 Furthermore, for any predicate $\phi$ over $D$ that is decidable given
 $\mathcal{G}$, the ground truth value $\phi(D)$ is computable in time
 polynomial in $|D|$.
-\end{theorem}
+\end{proposition}
 
-\begin{proof}
+\begin{proof}[Justification]
 By construction, every record in $D$ is produced by a deterministic
 function of the seed and the generative model $\mathcal{G}$.  The
 structural rules $\mathcal{R}_S$ determine which entities exist and
@@ -289,11 +312,10 @@ how they relate (Layer~1 completeness).  The statistical parameters
 $\Theta_\Sigma$ determine all distributional properties (Layer~2
 completeness).  The normative constraints $\mathcal{C}_N$ are explicitly
 encoded in the generation process, so every violation or conformance is
-known (Layer~3 completeness).
-
-For decidability: since $D$ is finite and $\mathcal{G}$ is known, any
-predicate $\phi$ can be evaluated by tracing the generative provenance
-of the relevant records, which requires at most one pass through $D$.
+known (Layer~3 completeness).  This is a direct consequence of forward
+generation from a fully specified model: since the model is known, any
+question about the data that depends only on the model's specification
+is answerable by inspecting the model.
 \end{proof}
 
 % ─────────────────────────────────────────────────────────────────────
@@ -309,25 +331,25 @@ We summarize the contrast between the two paradigms:
 \textbf{Property} & \textbf{Inverse Recovery} & \textbf{Forward Generation} \\
 \midrule
 Ground truth &
-  Unknown; inferred from data &
+  Partially recoverable via domain expertise &
   Known by construction \\
 Systematic errors &
-  Inherited and amplified &
+  May be inherited if undetected &
   Absent (or injected with labels) \\
 Completeness &
-  Partial; limited by observability &
+  Rich in context but limited by observability &
   Complete across all three layers \\
 Complexity &
   Exponential (\Cref{thm:combinatorial}) &
   Linear in output size \\
 Verifiability &
-  Cannot verify against unknown truth &
+  Verification constrained by data availability &
   Every fact is traceable to the model \\
 Anomaly labels &
-  Requires manual annotation &
+  Typically requires manual annotation &
   Generated with full provenance \\
 Reproducibility &
-  Depends on data access &
+  Depends on data access and agreements &
   Deterministic from seed \\
 \bottomrule
 \end{tabular}

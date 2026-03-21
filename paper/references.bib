@@ -1,3 +1,4 @@
+% NOTE: After editing, recompile with: pdflatex main && bibtex main && pdflatex main && pdflatex main
 % references.bib — Bibliography for DataSynth paper
 
 % ── Benford's Law ────────────────────────────────────────────────────
@@ -48,13 +49,16 @@
   year={2023}
 }
 
-@article{kotelnikov2023tabddpm,
+@inproceedings{kotelnikov2023tabddpm,
   title={{TabDDPM}: Modelling Tabular Data with Diffusion Models},
   author={Kotelnikov, Akim and Baranchuk, Dmitry and Rubachev, Ivan
     and Babenko, Artem},
-  journal={Proceedings of the 40th International Conference on Machine
+  booktitle={Proceedings of the 40th International Conference on Machine
     Learning (ICML)},
-  year={2023}
+  volume={202},
+  pages={17564--17579},
+  year={2023},
+  series={PMLR}
 }
 
 % ── Fraud Detection ──────────────────────────────────────────────────
@@ -101,40 +105,35 @@
   publisher={Elsevier}
 }
 
-@article{dbouk2023anomaly,
+@article{dbouk2022anomaly,
   title={Anomaly detection in financial time series by principal
     component analysis and neural network classifiers},
   author={Dbouk, Wassim and Jamali, Ibrahim},
-  journal={AIMS Mathematics},
-  volume={8},
-  number={6},
-  pages={13016--13040},
-  year={2023}
+  journal={Algorithms},
+  volume={15},
+  number={10},
+  pages={385},
+  year={2022},
+  publisher={MDPI}
 }
 
 % ── Accounting-Domain Datasets ───────────────────────────────────────
 
-@article{schreyer2022federated,
+@inproceedings{schreyer2022federated,
   title={Federated and Privacy-Preserving Learning of Accounting Data
     in Financial Statement Audits},
-  author={Schreyer, Marco and Sattarov, Timur and Reimer, Bernd
-    and Borth, Damian},
-  journal={arXiv preprint arXiv:2208.12708},
+  author={Schreyer, Marco and Sattarov, Timur and Borth, Damian},
+  booktitle={Proceedings of the Third ACM International Conference on
+    AI in Finance (ICAIF)},
+  pages={105--113},
   year={2022}
 }
 
-@article{sharma2023synthetic,
-  title={Synthetic Accounting Fraud Datasets: A Survey and Benchmark},
-  author={Sharma, Rohit and Kumar, Ajay},
-  journal={Journal of Forensic Accounting Research},
-  year={2023}
-}
-
-@inproceedings{lopez2018banksim,
+@inproceedings{lopez2014banksim,
   title={{BankSim}: A bank payments simulator for fraud detection research},
-  author={Lopez-Rojas, Edgar Alonso and Elmir, Ahmad and Axelsson, Stefan},
+  author={Lopez-Rojas, Edgar Alonso and Axelsson, Stefan},
   booktitle={26th European Modeling and Simulation Symposium (EMSS)},
-  year={2018}
+  year={2014}
 }
 
 @misc{ieee_cis2019,
@@ -213,11 +212,11 @@
 
 % ── Process Mining ───────────────────────────────────────────────────
 
-@article{ghahfarokhi2021ocel,
+@inproceedings{ghahfarokhi2021ocel,
   title={{OCEL}: A Standard for Object-Centric Event Logs},
   author={Ghahfarokhi, Anahita Farhang and Park, Gyunam
     and Berti, Alessandro and van der Aalst, Wil M.P.},
-  journal={European Conference on Advances in Databases and Information
+  booktitle={European Conference on Advances in Databases and Information
     Systems (ADBIS)},
   pages={169--175},
   year={2021},
@@ -228,7 +227,7 @@
   title={{PM4Py}: A Process Mining Library for {Python}},
   author={Berti, Alessandro and van Zelst, Sebastiaan J.
     and van der Aalst, Wil M.P.},
-  booktitle={BPM Demonstration Track},
+  booktitle={ICPM 2019 Demonstration Track},
   year={2019}
 }
 
@@ -265,7 +264,7 @@
 
 @phdthesis{boersma2024complex,
   title={Complex Networks in Audit: A Data-Driven Modelling Approach},
-  author={Boersma, Matthijs},
+  author={Boersma, Marcel},
   school={Universiteit van Amsterdam},
   year={2024}
 }
@@ -301,14 +300,14 @@
   doi={10.1515/AEL-2018-0001}
 }
 
-@article{arya2010inferring,
+@article{arya2000inferring,
   title={Inferring Transactions from Financial Statements},
   author={Arya, Anil and Fellingham, John C. and Glover, Jonathan C.
     and Schroeder, Douglas A. and Strang, Gilbert},
   journal={Contemporary Accounting Research},
   volume={17},
   pages={366--385},
-  year={2010},
+  year={2000},
   doi={10.1506/L0LW-NX5L-4WUR-9JKL}
 }
 
@@ -340,7 +339,7 @@
 
 % ── Causality ───────────────────────────────────────────────────────
 
-@article{pearl2009causality,
+@book{pearl2009causality,
   author = {Pearl, Judea},
   title = {Causality: Models, Reasoning, and Inference},
   publisher = {Cambridge University Press},
@@ -399,7 +398,7 @@
   publisher={ACM}
 }
 
-@inproceedings{ji2022survey,
+@article{ji2022survey,
   title={A Survey on Knowledge Graphs: Representation, Acquisition,
     and Applications},
   author={Ji, Shaoxiong and Pan, Shirui and Cambria, Erik

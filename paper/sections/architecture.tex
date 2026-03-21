@@ -46,7 +46,7 @@ Layer 1  Foundation
 \end{figure}
 
 \paragraph{Layer 1: Foundation.}
-\texttt{datasynth-core} defines over 200 domain model types spanning
+\texttt{datasynth-core} defines domain model types spanning
 accounting (journal entries, ACDOCA), master data (vendors, customers,
 materials, fixed assets, employees), document flows (P2P, O2C),
 sourcing (S2C), financial reporting, HR/payroll, manufacturing, sales,
@@ -72,7 +72,7 @@ complexity-level mappings.
 Parquet, and Apache Arrow formats.
 
 \paragraph{Layer 3: Domain Generators.}
-\texttt{datasynth-generators} contains 50+ specialized generators
+\texttt{datasynth-generators} contains specialized generators
 organized by business process: P2P document flows, O2C chains, S2C
 sourcing, HR/payroll (including benefits enrollment), manufacturing
 (BOM, quality, cycle counts, inventory movements), tax accounting
@@ -134,8 +134,8 @@ Normative ($\mathcal{K}_N$) &
 
 Every generated record carries provenance tracing it to one or more
 knowledge layers, enabling downstream consumers to understand not just
-\emph{what} was generated but \emph{why}---a property that is impossible
-to achieve with inverse-recovery approaches.
+\emph{what} was generated but \emph{why}---a property that is difficult to achieve comprehensively when
+constructing knowledge from observed data alone.
 
 % ─────────────────────────────────────────────────────────────────────
 \subsection{Deterministic Reproducibility}
