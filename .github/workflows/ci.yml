@@ -116,7 +116,7 @@ jobs:
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
       - name: Generate coverage
-        run: cargo llvm-cov --workspace --exclude datasynth-ui --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --exclude datasynth-ui --exclude datasynth-server --lcov --output-path lcov.info
         timeout-minutes: 30
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
