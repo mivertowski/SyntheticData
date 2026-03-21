@@ -139,11 +139,16 @@ impl AccrualGenerator {
             format!("Accrued Expense: {description}"),
         );
 
+        let doc_id = je.header.document_id;
+
         // Debit Expense
         je.add_line(JournalEntryLine {
+            document_id: doc_id,
             line_number: 1,
             gl_account: expense_account.to_string(),
+            account_code: expense_account.to_string(),
             debit_amount: amount,
+            local_amount: amount,
             cost_center: cost_center.map(std::string::ToString::to_string),
             reference: Some(doc_number.clone()),
             text: Some(description.to_string()),
@@ -152,9 +157,12 @@ impl AccrualGenerator {
 
         // Credit Accrued Liability
         je.add_line(JournalEntryLine {
+            document_id: doc_id,
             line_number: 2,
             gl_account: liability_account.to_string(),
+            account_code: liability_account.to_string(),
             credit_amount: amount,
+            local_amount: -amount,
             reference: Some(doc_number.clone()),
             ..Default::default()
         });
@@ -425,13 +433,18 @@ impl AccrualGenerator {
             format!("Reversal of {}", original.description().unwrap_or("entry")),
         );
 
+        let rev_doc_id = reversal.header.document_id;
+
         // Reverse each line (swap debits and credits)
         for (idx, line) in original.lines.iter().enumerate() {
             reversal.add_line(JournalEntryLine {
+                document_id: rev_doc_id,
                 line_number: (idx + 1) as u32,
                 gl_account: line.gl_account.clone(),
+                account_code: line.account_code.clone(),
                 debit_amount: line.credit_amount,
                 credit_amount: line.debit_amount,
+                local_amount: -line.local_amount,
                 cost_center: line.cost_center.clone(),
                 profit_center: line.profit_center.clone(),
                 reference: Some(format!("REV-{}", original.document_number())),
