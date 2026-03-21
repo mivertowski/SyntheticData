@@ -148,9 +148,9 @@ fn test_tax_provision_accounts() {
             tax_accounts::TAX_EXPENSE
         );
         assert!(
-            accounts.contains(&tax_accounts::SALES_TAX_PAYABLE),
-            "Tax provision JE should credit Tax Payable ({})",
-            tax_accounts::SALES_TAX_PAYABLE
+            accounts.contains(&tax_accounts::INCOME_TAX_PAYABLE),
+            "Tax provision JE should credit Income Tax Payable ({})",
+            tax_accounts::INCOME_TAX_PAYABLE
         );
     }
 }
