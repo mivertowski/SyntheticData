@@ -439,7 +439,8 @@ mod tests {
     fn standard_returns_pipeline() {
         let pipeline = GraphExportPipeline::standard(ExportConfig::default());
         // Task 9: 30 property serializers + Task 14: 9 audit procedure serializers = 39.
-        assert_eq!(pipeline.property_serializers.len(), 39);
+        // v1.4.0: +2 (vendor, customer) = 41.
+        assert_eq!(pipeline.property_serializers.len(), 41);
         // Task 12: 13 node synthesizers + Task 14: 1 audit procedures synthesizer + v1.3.0 = 15.
         assert_eq!(pipeline.node_synthesizers.len(), 15);
         // Task 13: 4 post-processors + 1 OCEL exporter = 5 total.

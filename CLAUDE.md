@@ -500,25 +500,61 @@ cross_process_links:
 
 ## Export Files
 
-| Category | Files |
-|----------|-------|
-| Transactions | journal_entries.csv/.json, acdoca.csv |
-| Master Data | vendors, customers, materials, fixed_assets, employees, cost_centers |
-| Document Flow | purchase_orders, goods_receipts, vendor_invoices, payments, sales_orders, deliveries, customer_invoices, customer_receipts, document_references |
-| Sourcing (S2C) | sourcing_projects, supplier_qualifications, rfx_events, supplier_bids, bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards |
-| HR/Payroll | payroll_runs, payslips, time_entries, expense_reports, expense_line_items |
-| Manufacturing | production_orders, routing_operations, quality_inspection_lots, cycle_count_records |
-| Financial Reporting | balance_sheet, income_statement, cash_flow_statement, changes_in_equity, financial_kpis, budget_variance |
-| Sales | sales_quotes, sales_quote_items |
-| Subledgers | ar_*, ap_*, fa_*, inventory_* |
-| Period Close | trial_balances/, accruals, depreciation, closing_entries |
-| Consolidation | eliminations, currency_translation, consolidated_trial_balance |
-| Labels | anomaly_labels, fraud_labels, quality_issues, quality_labels |
-| Controls | internal_controls, control_*_mappings, sod_*, coso_control_mapping |
-| Banking | banking_customers, bank_accounts, bank_transactions, kyc_profiles, aml_typology_labels, bank_statement_lines, bank_reconciliations, reconciling_items |
-| Process Mining | event_log.json (OCEL 2.0), objects.json, events.json, process_variants |
-| Audit | audit_engagements, audit_workpapers, audit_evidence, audit_risks, audit_findings, audit_judgments |
-| Standards | customer_contracts, performance_obligations, leases, rou_assets, lease_liabilities, fair_value_measurements, impairment_tests, isa_mappings, confirmations, audit_opinions, sox_assessments |
+Output files are organized by domain directory. All files are JSON unless otherwise noted.
+
+| Category | Directory | Files |
+|----------|-----------|-------|
+| Transactions | (root) | journal_entries.csv, journal_entries.json, acdoca.csv |
+| Master Data | master_data/ | vendors, customers, materials, fixed_assets, employees, cost_centers |
+| Employee History | hr/ | employee_change_history |
+| Document Flow | document_flows/ | purchase_orders, goods_receipts, vendor_invoices, payments, customer_receipts, sales_orders, deliveries, customer_invoices, document_references |
+| Sourcing (S2C) | sourcing/ | spend_analyses, sourcing_projects, supplier_qualifications, rfx_events, supplier_bids, bid_evaluations, procurement_contracts, catalog_items, supplier_scorecards |
+| HR/Payroll | hr/ | payroll_runs, payroll_line_items, time_entries, expense_reports, benefit_enrollments |
+| HR/Pensions | hr/ | pension_plans, pension_obligations, plan_assets, pension_disclosures |
+| HR/Stock Comp | hr/ | stock_grants, stock_comp_expense |
+| Manufacturing | manufacturing/ | production_orders, quality_inspections, cycle_counts, bom_components, inventory_movements |
+| Subledger | subledger/ | ap_invoices, ar_invoices, fa_records, inventory_positions, inventory_movements, ar_aging, ap_aging, depreciation_runs, inventory_valuation, dunning_runs, dunning_letters |
+| Balance | balance/ | opening_balances, subledger_reconciliation |
+| Financial Reporting | financial_reporting/ | financial_statements, bank_reconciliations, notes_to_financial_statements |
+| Financial Reporting — Standalone | financial_reporting/standalone/ | {entity_code}_financial_statements (one per entity) |
+| Financial Reporting — Consolidated | financial_reporting/consolidated/ | consolidated_financial_statements, consolidation_schedule |
+| Financial Reporting — Segments | financial_reporting/segment_reporting/ | segment_reports, segment_reconciliations |
+| Period Close | period_close/ | trial_balances |
+| Sales / KPIs / Budgets | sales_kpi_budgets/ | sales_quotes, management_kpis, budgets |
+| Intercompany | intercompany/ | group_structure, ic_matched_pairs, ic_seller_journal_entries, ic_buyer_journal_entries, ic_elimination_entries, nci_measurements |
+| FX | fx/ | fx_rates, cta_entries |
+| Tax | tax/ | tax_jurisdictions, tax_codes, tax_provisions, tax_lines, tax_returns, withholding_records, temporary_differences, etr_reconciliation, deferred_tax_rollforward, deferred_tax_journal_entries |
+| Treasury | treasury/ | cash_positions, cash_forecasts, cash_pools, cash_pool_sweeps, debt_instruments, hedging_instruments, hedge_relationships, bank_guarantees, netting_runs |
+| Project Accounting | project_accounting/ | projects, cost_lines, revenue_records, earned_value_metrics, change_orders, milestones |
+| ESG | esg/ | emission_records, energy_consumption, water_usage, and others |
+| Accounting Standards | accounting_standards/ | customer_contracts, impairment_tests, business_combinations, business_combination_journal_entries, ecl_models, ecl_provision_movements, ecl_journal_entries, provisions, provision_movements, contingent_liabilities, provision_journal_entries |
+| Accounting Standards — FX | accounting_standards/fx/ | currency_translation_results |
+| Controls (CSV) | internal_controls/ | internal_controls.csv, control_account_mappings.csv, control_process_mappings.csv, control_threshold_mappings.csv, control_doctype_mappings.csv, sod_conflict_pairs.csv, sod_rules.csv, coso_control_mapping.csv |
+| Controls (JSON) | internal_controls/ | internal_controls.json, sod_violations.json |
+| Banking | banking/ | banking_customers, banking_accounts, banking_transactions, aml_transaction_labels, aml_customer_labels, aml_account_labels, aml_relationship_labels, aml_narratives |
+| Banking Reconciliation | financial_reporting/ | bank_reconciliations (embedded in financial_reporting/) |
+| Process Mining | process_mining/ | event_log.json (OCEL 2.0), process_variants, and others |
+| Audit — Core | audit/ | audit_engagements, audit_workpapers, audit_evidence, audit_risk_assessments, audit_findings, audit_judgments |
+| Audit — Confirmations | audit/ | audit_confirmations, audit_confirmation_responses |
+| Audit — Procedures | audit/ | audit_procedure_steps, audit_samples, audit_analytical_results |
+| Audit — Internal Audit | audit/ | audit_ia_functions, audit_ia_reports, audit_related_parties, audit_related_party_transactions |
+| Audit — ISA 210 | audit/ | engagement_letters |
+| Audit — ISA 315 | audit/ | combined_risk_assessments, significant_transaction_classes |
+| Audit — ISA 320 | audit/ | materiality_calculations |
+| Audit — ISA 402 | audit/ | service_organizations, soc_reports, user_entity_controls |
+| Audit — ISA 520 | audit/ | unusual_items, analytical_relationships |
+| Audit — ISA 530 | audit/ | sampling_plans, sampled_items |
+| Audit — ISA 540 | audit/ | accounting_estimates |
+| Audit — ISA 560 | audit/ | subsequent_events |
+| Audit — ISA 570 | audit/ | going_concern_assessments |
+| Audit — ISA 600 | audit/ | component_auditors, group_audit_plan, component_instructions, component_reports |
+| Audit — ISA 700/701 | audit/ | audit_opinions, key_audit_matters |
+| Audit — SOX | audit/ | sox_302_certifications, sox_404_assessments |
+| Audit — Standards Reference | audit/ | isa_mappings, isa_pcaob_mappings |
+| Labels | labels/ | anomaly_labels, fraud_labels, quality_issues, quality_labels |
+| Graphs | graphs/ | PyTorch Geometric (.pt), Neo4j CSV+Cypher, DGL, RustGraph JSON, hypergraph |
+| Events | events/ | process_evolution_events, organizational_events, disruption_events |
+| Compliance | standards/ | standards, cross_references, jurisdiction_profiles, audit_procedures, compliance_findings, regulatory_filings |
 
 ## Performance
 

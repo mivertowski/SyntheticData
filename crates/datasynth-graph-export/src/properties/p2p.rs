@@ -239,6 +239,72 @@ impl PropertySerializer for PaymentPropertySerializer {
     }
 }
 
+// ──────────────────────────── Vendor ─────────────────────────────────
+
+/// Property serializer for vendors (entity type code 350).
+///
+/// Serializes risk-relevant fields from the `Vendor` master data model.
+pub struct VendorPropertySerializer;
+
+impl PropertySerializer for VendorPropertySerializer {
+    fn entity_type(&self) -> &'static str {
+        "vendor"
+    }
+
+    fn serialize(
+        &self,
+        node_external_id: &str,
+        ctx: &SerializationContext<'_>,
+    ) -> Option<HashMap<String, Value>> {
+        let vendor = ctx
+            .ds_result
+            .master_data
+            .vendors
+            .iter()
+            .find(|v| v.vendor_id == node_external_id)?;
+
+        let mut props = HashMap::with_capacity(14);
+
+        props.insert("vendorId".into(), Value::String(vendor.vendor_id.clone()));
+        props.insert("name".into(), Value::String(vendor.name.clone()));
+        props.insert(
+            "vendorCategory".into(),
+            Value::String(format!("{:?}", vendor.vendor_type)),
+        );
+        props.insert("country".into(), Value::String(vendor.country.clone()));
+        props.insert(
+            "paymentTerms".into(),
+            Value::String(format!("{:?}", vendor.payment_terms)),
+        );
+        props.insert(
+            "paymentTermsDays".into(),
+            Value::Number(vendor.payment_terms_days.into()),
+        );
+        props.insert("isOneTime".into(), Value::Bool(vendor.is_one_time));
+        props.insert("isActive".into(), Value::Bool(vendor.is_active));
+        props.insert("isIntercompany".into(), Value::Bool(vendor.is_intercompany));
+        props.insert("currency".into(), Value::String(vendor.currency.clone()));
+        props.insert(
+            "withholdingTaxApplicable".into(),
+            Value::Bool(vendor.withholding_tax_applicable),
+        );
+        if let Some(ref tax_id) = vendor.tax_id {
+            props.insert("taxId".into(), Value::String(tax_id.clone()));
+        }
+        if let Some(ref purchasing_org) = vendor.purchasing_org {
+            props.insert(
+                "purchasingOrg".into(),
+                Value::String(purchasing_org.clone()),
+            );
+        }
+        if let Some(ref ic_code) = vendor.intercompany_code {
+            props.insert("intercompanyCode".into(), Value::String(ic_code.clone()));
+        }
+
+        Some(props)
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -259,5 +325,6 @@ mod tests {
             "vendor_invoice"
         );
         assert_eq!(PaymentPropertySerializer.entity_type(), "payment");
+        assert_eq!(VendorPropertySerializer.entity_type(), "vendor");
     }
 }

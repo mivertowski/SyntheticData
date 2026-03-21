@@ -240,19 +240,38 @@ pub struct PositionValuation {
 }
 
 impl PositionValuation {
-    /// Updates valuation on receipt.
-    pub fn update_on_receipt(&mut self, quantity: Decimal, cost: Decimal) {
+    /// Updates valuation on receipt using the weighted-average cost formula.
+    ///
+    /// The `existing_qty` parameter is the quantity *before* this receipt is applied.
+    /// For moving-average valuation, the new unit cost is:
+    ///
+    /// ```text
+    /// new_avg_cost = (existing_qty × existing_unit_cost + receipt_qty × receipt_unit_cost)
+    ///                / (existing_qty + receipt_qty)
+    /// ```
+    pub fn update_on_receipt(&mut self, receipt_qty: Decimal, cost: Decimal) {
         match self.method {
             ValuationMethod::StandardCost => {
                 let actual_cost = cost;
-                let standard_cost = quantity * self.standard_cost;
+                let standard_cost = receipt_qty * self.standard_cost;
                 self.price_variance += actual_cost - standard_cost;
                 self.total_value += standard_cost;
             }
             ValuationMethod::MovingAverage => {
-                let new_total = self.total_value + cost;
-                // Note: quantity_on_hand should be passed in; simplified here
-                self.total_value = new_total;
+                // cost is the total receipt value (receipt_qty × receipt_unit_cost).
+                // Reconstruct the existing quantity from total_value / unit_cost, then
+                // apply the weighted-average formula:
+                //   new_unit_cost = new_total_value / (existing_qty + receipt_qty)
+                let existing_qty = if self.unit_cost > Decimal::ZERO {
+                    self.total_value / self.unit_cost
+                } else {
+                    Decimal::ZERO
+                };
+                let new_qty = existing_qty + receipt_qty;
+                self.total_value += cost;
+                if new_qty > Decimal::ZERO {
+                    self.unit_cost = (self.total_value / new_qty).round_dp(4);
+                }
             }
             ValuationMethod::FIFO | ValuationMethod::LIFO => {
                 self.total_value += cost;

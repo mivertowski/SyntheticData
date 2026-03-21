@@ -174,6 +174,7 @@ pub fn write_all_output(
         || !result.master_data.materials.is_empty()
         || !result.master_data.assets.is_empty()
         || !result.master_data.employees.is_empty()
+        || !result.master_data.cost_centers.is_empty()
     {
         std::fs::create_dir_all(&md_dir)?;
         info!("Writing master data...");
@@ -202,6 +203,11 @@ pub fn write_all_output(
             &result.master_data.employees,
             &md_dir.join("employees.json"),
             "Employees",
+        );
+        write_json_safe(
+            &result.master_data.cost_centers,
+            &md_dir.join("cost_centers.json"),
+            "Cost centers",
         );
     }
 
@@ -260,6 +266,13 @@ pub fn write_all_output(
             &result.document_flows.customer_invoices,
             &df_dir.join("customer_invoices.json"),
             "Customer invoices",
+        );
+
+        // Document cross-references (PO→GR, GR→Invoice, Invoice→Payment, etc.)
+        write_json_safe(
+            &result.document_flows.document_references,
+            &df_dir.join("document_references.json"),
+            "Document references",
         );
 
         // Note: P2P/O2C chain types do not implement Serialize, so we log
@@ -334,6 +347,17 @@ pub fn write_all_output(
             &result.subledger.inventory_valuations,
             &sl_dir.join("inventory_valuation.json"),
             "Inventory valuations",
+        );
+        // Dunning runs and letters (generated after AR aging)
+        write_json_safe(
+            &result.subledger.dunning_runs,
+            &sl_dir.join("dunning_runs.json"),
+            "Dunning runs",
+        );
+        write_json_safe(
+            &result.subledger.dunning_letters,
+            &sl_dir.join("dunning_letters.json"),
+            "Dunning letters",
         );
     }
 
@@ -572,6 +596,24 @@ pub fn write_all_output(
                 &result.audit.analytical_relationships,
                 &audit_dir.join("analytical_relationships.json"),
                 "Analytical relationships (ISA 520)",
+            );
+        }
+
+        // PCAOB-ISA cross-reference mappings
+        if !result.audit.isa_pcaob_mappings.is_empty() {
+            write_json_safe(
+                &result.audit.isa_pcaob_mappings,
+                &audit_dir.join("isa_pcaob_mappings.json"),
+                "PCAOB-ISA standard mappings",
+            );
+        }
+
+        // ISA standard reference (number, title, series for all 34 ISA standards)
+        if !result.audit.isa_mappings.is_empty() {
+            write_json_safe(
+                &result.audit.isa_mappings,
+                &audit_dir.join("isa_mappings.json"),
+                "ISA standard reference mappings",
             );
         }
     }
@@ -868,6 +910,7 @@ pub fn write_all_output(
         || !result.hr.benefit_enrollments.is_empty()
         || !result.hr.pension_plans.is_empty()
         || !result.hr.stock_grants.is_empty()
+        || !result.master_data.employee_change_history.is_empty()
     {
         std::fs::create_dir_all(&hr_dir)?;
         info!("Writing HR data...");
@@ -926,6 +969,11 @@ pub fn write_all_output(
             &result.hr.stock_comp_expenses,
             &hr_dir.join("stock_comp_expense.json"),
             "Stock comp expense",
+        );
+        write_json_safe(
+            &result.master_data.employee_change_history,
+            &hr_dir.join("employee_change_history.json"),
+            "Employee change history",
         );
     }
 
@@ -1278,7 +1326,7 @@ pub fn write_all_output(
     // ========================================================================
     // Internal Controls
     // ========================================================================
-    if !result.internal_controls.is_empty() {
+    if !result.internal_controls.is_empty() || !result.sod_violations.is_empty() {
         let ctrl_dir = output_dir.join("internal_controls");
         std::fs::create_dir_all(&ctrl_dir)?;
         info!("Writing internal controls data...");
@@ -1288,6 +1336,30 @@ pub fn write_all_output(
             &ctrl_dir.join("internal_controls.json"),
             "Internal controls",
         );
+        // SoD violations extracted from control-annotated journal entries
+        write_json_safe(
+            &result.sod_violations,
+            &ctrl_dir.join("sod_violations.json"),
+            "SoD violations",
+        );
+
+        // SoD conflict pairs, SoD rules, control mappings, and COSO control mapping
+        // are static reference data — export via ControlExporter regardless of whether
+        // individual violations were generated so the master catalog is always present.
+        let exporter = datasynth_output::ControlExporter::new(&ctrl_dir);
+        match exporter.export_standard() {
+            Ok(summary) => {
+                info!(
+                    "  Control master data written: {} controls, {} SoD conflicts, {} SoD rules, {} COSO mappings, {} account mappings",
+                    summary.controls_count,
+                    summary.sod_conflicts_count,
+                    summary.sod_rules_count,
+                    summary.coso_mappings_count,
+                    summary.account_mappings_count,
+                );
+            }
+            Err(e) => warn!("Failed to write control master data: {}", e),
+        }
     }
 
     // ========================================================================

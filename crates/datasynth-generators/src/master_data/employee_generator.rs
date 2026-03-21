@@ -2,7 +2,8 @@
 
 use chrono::NaiveDate;
 use datasynth_core::models::{
-    Employee, EmployeePool, EmployeeStatus, JobLevel, SystemRole, TransactionCodeAuth,
+    Employee, EmployeeChangeEvent, EmployeeEventType, EmployeePool, EmployeeStatus, JobLevel,
+    SystemRole, TransactionCodeAuth,
 };
 use datasynth_core::templates::{MultiCultureNameGenerator, NameCulture};
 use datasynth_core::utils::seeded_rng;
@@ -300,6 +301,23 @@ impl EmployeeGenerator {
             });
         }
 
+        // Set annual base salary based on job level (USD-equivalent ranges).
+        // A small random variance (±10 %) is applied for realism.
+        let (salary_min, salary_max): (u64, u64) = match job_level {
+            JobLevel::Staff => (40_000, 60_000),
+            JobLevel::Senior => (60_000, 90_000),
+            JobLevel::Lead => (75_000, 105_000),
+            JobLevel::Supervisor => (70_000, 100_000),
+            JobLevel::Manager => (80_000, 120_000),
+            JobLevel::Director => (100_000, 160_000),
+            JobLevel::VicePresident => (130_000, 200_000),
+            JobLevel::Executive => (150_000, 250_000),
+        };
+        let salary_range = salary_max - salary_min;
+        let salary_raw =
+            salary_min + (self.rng.random::<f64>() * salary_range as f64).round() as u64;
+        employee.base_salary = Decimal::from(salary_raw);
+
         // Set status
         employee.status = self.select_status();
         if employee.status == EmployeeStatus::Terminated {
@@ -552,6 +570,127 @@ impl EmployeeGenerator {
         } else {
             EmployeeStatus::Active
         }
+    }
+
+    /// Generate 2-5 change history events for a single employee.
+    ///
+    /// Always starts with a `Hired` event on `hire_date`.  Up to 4 subsequent
+    /// events (promotions, salary adjustments, or transfers) are spread
+    /// uniformly over the employee's tenure, ending with a `Terminated` event
+    /// for terminated employees.
+    pub fn generate_change_history(
+        &mut self,
+        employee: &Employee,
+        period_end: NaiveDate,
+    ) -> Vec<EmployeeChangeEvent> {
+        let hire_date = match employee.hire_date {
+            Some(d) => d,
+            None => return Vec::new(),
+        };
+
+        let mut events: Vec<EmployeeChangeEvent> = Vec::with_capacity(5);
+
+        // 1. Always: Hired event
+        events.push(EmployeeChangeEvent::hired(
+            employee.employee_id.clone(),
+            hire_date,
+        ));
+
+        // Tenure in days (capped at period_end or termination date)
+        let tenure_end = employee
+            .termination_date
+            .unwrap_or(period_end)
+            .min(period_end);
+        let tenure_days = (tenure_end - hire_date).num_days().max(1);
+
+        // Skip change history for very short tenures (< 60 days)
+        if tenure_days < 60 {
+            return events;
+        }
+
+        // 2. Generate 1-4 additional events
+        let additional_count = self.rng.random_range(1u32..=4);
+        // Build sorted random offsets within tenure (days from hire)
+        let mut offsets: Vec<i64> = (0..additional_count)
+            .map(|_| self.rng.random_range(30i64..tenure_days))
+            .collect();
+        offsets.sort_unstable();
+
+        let event_types = [
+            EmployeeEventType::Promoted,
+            EmployeeEventType::SalaryAdjustment,
+            EmployeeEventType::Transfer,
+        ];
+
+        for offset in offsets {
+            let event_date = hire_date + chrono::Duration::days(offset);
+
+            // Pick a random non-termination event type
+            let idx = self.rng.random_range(0..event_types.len());
+            let event_type = event_types[idx];
+
+            let (old_val, new_val) = match event_type {
+                EmployeeEventType::Promoted => {
+                    let old = format!("{:?}", employee.job_level);
+                    let new = format!("{:?}_promoted", employee.job_level);
+                    (Some(old), Some(new))
+                }
+                EmployeeEventType::SalaryAdjustment => {
+                    let pct = self.rng.random_range(2u32..=15);
+                    let old = employee.base_salary.to_string();
+                    let new_salary =
+                        employee.base_salary * rust_decimal::Decimal::new(100 + pct as i64, 2);
+                    (Some(old), Some(new_salary.round_dp(2).to_string()))
+                }
+                EmployeeEventType::Transfer => {
+                    let old = employee
+                        .department_id
+                        .clone()
+                        .unwrap_or_else(|| "unknown".to_string());
+                    let new = format!("{}_new", old);
+                    (Some(old), Some(new))
+                }
+                _ => (None, None),
+            };
+
+            events.push(EmployeeChangeEvent {
+                employee_id: employee.employee_id.clone(),
+                event_date,
+                event_type,
+                old_value: old_val,
+                new_value: new_val,
+                effective_date: event_date,
+            });
+        }
+
+        // 3. If terminated: add Terminated event
+        if employee.status == EmployeeStatus::Terminated {
+            if let Some(term_date) = employee.termination_date {
+                let term_capped = term_date.min(period_end);
+                events.push(EmployeeChangeEvent {
+                    employee_id: employee.employee_id.clone(),
+                    event_date: term_capped,
+                    event_type: EmployeeEventType::Terminated,
+                    old_value: Some("active".to_string()),
+                    new_value: Some("terminated".to_string()),
+                    effective_date: term_capped,
+                });
+            }
+        }
+
+        events
+    }
+
+    /// Generate change history for all employees in a pool.
+    pub fn generate_all_change_history(
+        &mut self,
+        pool: &EmployeePool,
+        period_end: NaiveDate,
+    ) -> Vec<EmployeeChangeEvent> {
+        pool.employees
+            .iter()
+            .flat_map(|e| self.generate_change_history(e, period_end))
+            .collect()
     }
 
     /// Reset the generator.

@@ -181,6 +181,87 @@ impl PropertySerializer for CustomerInvoicePropertySerializer {
     }
 }
 
+// ──────────────────────────── Customer ──────────────────────────────
+
+/// Property serializer for customers (entity type code 351).
+///
+/// Serializes risk-relevant fields from the `Customer` master data model.
+pub struct CustomerPropertySerializer;
+
+impl PropertySerializer for CustomerPropertySerializer {
+    fn entity_type(&self) -> &'static str {
+        "customer"
+    }
+
+    fn serialize(
+        &self,
+        node_external_id: &str,
+        ctx: &SerializationContext<'_>,
+    ) -> Option<HashMap<String, Value>> {
+        let customer = ctx
+            .ds_result
+            .master_data
+            .customers
+            .iter()
+            .find(|c| c.customer_id == node_external_id)?;
+
+        let mut props = HashMap::with_capacity(16);
+
+        props.insert(
+            "customerId".into(),
+            Value::String(customer.customer_id.clone()),
+        );
+        props.insert("name".into(), Value::String(customer.name.clone()));
+        props.insert(
+            "customerSegment".into(),
+            Value::String(format!("{:?}", customer.customer_type)),
+        );
+        props.insert("country".into(), Value::String(customer.country.clone()));
+        props.insert(
+            "creditRating".into(),
+            Value::String(format!("{:?}", customer.credit_rating)),
+        );
+
+        let credit_limit_f64: f64 = customer.credit_limit.try_into().unwrap_or(0.0);
+        props.insert("creditLimit".into(), serde_json::json!(credit_limit_f64));
+
+        let credit_exposure_f64: f64 = customer.credit_exposure.try_into().unwrap_or(0.0);
+        props.insert(
+            "creditExposure".into(),
+            serde_json::json!(credit_exposure_f64),
+        );
+
+        props.insert(
+            "paymentTerms".into(),
+            Value::String(format!("{:?}", customer.payment_terms)),
+        );
+        props.insert(
+            "paymentTermsDays".into(),
+            Value::Number(customer.payment_terms_days.into()),
+        );
+        props.insert(
+            "paymentBehavior".into(),
+            Value::String(format!("{:?}", customer.payment_behavior)),
+        );
+        props.insert("isActive".into(), Value::Bool(customer.is_active));
+        props.insert(
+            "isIntercompany".into(),
+            Value::Bool(customer.is_intercompany),
+        );
+        props.insert("currency".into(), Value::String(customer.currency.clone()));
+        props.insert("creditBlocked".into(), Value::Bool(customer.credit_blocked));
+        props.insert(
+            "dunningLevel".into(),
+            Value::Number(customer.dunning_level.into()),
+        );
+        if let Some(ref tax_id) = customer.tax_id {
+            props.insert("taxId".into(), Value::String(tax_id.clone()));
+        }
+
+        Some(props)
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -194,5 +275,6 @@ mod tests {
             CustomerInvoicePropertySerializer.entity_type(),
             "customer_invoice"
         );
+        assert_eq!(CustomerPropertySerializer.entity_type(), "customer");
     }
 }

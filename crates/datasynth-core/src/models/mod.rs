@@ -17,10 +17,13 @@ mod anomaly;
 
 // Graph property mapping trait (DS-001)
 mod approval;
+
+// Cost center hierarchy model (D.2)
 mod chart_of_accounts;
 mod company;
 mod control_mapping;
 mod coso;
+mod cost_center;
 pub mod currency_translation_result;
 mod customer_segment;
 pub mod deferred_tax;
@@ -133,6 +136,7 @@ pub use chart_of_accounts::*;
 pub use company::*;
 pub use control_mapping::*;
 pub use coso::*;
+pub use cost_center::*;
 pub use currency_translation_result::*;
 pub use customer_segment::*;
 pub use deferred_tax::*;

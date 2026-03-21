@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-21
+
+### Added
+
+**Realism & Coherence — v1.4.0**
+
+#### Master Data
+- **Cost center hierarchy generator** — `CostCenterGenerator` produces parent/child cost center trees with department mappings and GL account assignments; output written to `master_data/cost_centers.json`
+- **Employee change history** — `EmployeeGenerator` now emits `EmployeeChangeRecord` events (title changes, salary adjustments, department transfers) written to `hr/employee_change_history.json`
+- **Employee salary field** — `Employee` model carries `annual_salary_usd` drawn from a log-normal distribution calibrated by seniority band; used as the DBO basis for pension calculations
+
+#### Financial Coherence
+- **Multi-period balance carry-forward** — Trial balance closing balances from period N are propagated as opening balances for period N+1; `BalanceTracker` accumulates running account balances across all generated JEs
+- **Dunning generator wiring** — `DunningGenerator` is now called after AR aging; dunning runs and letters are written to `subledger/dunning_runs.json` and `subledger/dunning_letters.json`
+- **AR/AP reconciliation validation** — Subledger reconciliation validates AR invoice totals against GL control account (1100) and AP invoice totals against GL control account (2000); pass/fail logged and written to `balance/subledger_reconciliation.json`
+- **Contract→PO linkage** — `ProcurementContract` records carry `purchase_order_ids` referencing the POs generated under that contract; enables source-to-pay chain traversal
+- **Document references output** — `DocumentReference` cross-link records (PO→GR, GR→Invoice, Invoice→Payment, SO→Delivery, Delivery→Invoice) written to `document_flows/document_references.json`
+
+#### Manufacturing
+- **Moving-average inventory cost** — `InventoryMovementGenerator` applies each goods receipt to update the moving-average unit cost on the inventory position; subsequent goods issues use the updated AVCO
+- **Production order ↔ inventory movement cross-refs** — `ProductionOrder` records carry `inventory_movement_ids`; `InventoryMovement` records carry `production_order_id` for bidirectional traceability
+
+#### Audit & Standards
+- **ISA mappings output** — ISA standard reference records (number, title, series) for all 34 ISA standards written to `audit/isa_mappings.json`
+- **SoD/COSO control mappings** — `ControlExporter::export_standard()` always runs when controls are generated, producing `sod_conflict_pairs.csv`, `sod_rules.csv`, and `coso_control_mapping.csv` alongside the control master data
+
+#### Graph Export
+- **Employee/vendor/customer node properties enriched** — `EmployeeGenerator`, `VendorGenerator`, and `CustomerGenerator` now implement `ToNodeProperties`; department, salary band, vendor tier, and customer segment are exposed as typed graph properties
+- **JE→Employee edges** — Journal entries carry `created_by_employee_id`; the graph builder emits `JournalEntry→Employee` edges (type `CreatedBy`) for approval and segregation-of-duties analytics
+- **Control→JE edges** — `InternalControl` records linked to matching journal entries via `TestedBy` edges in the transaction graph
+- **Velocity features** — Graph node feature vectors include transaction velocity (entries per day over rolling 30d window) and amount velocity for anomaly detection models
+- **PageRank and degree centrality** — Graph builder computes approximate PageRank and in/out-degree centrality for all entity nodes and attaches them as node features
+
+### Changed
+- `Employee.annual_salary_usd` is now always populated (was previously `Option<Decimal>` and often absent)
+- `InventoryPosition.unit_cost` reflects moving-average cost after each `GoodsReceipt` movement (was static)
+- `ProcurementContract.purchase_order_ids` populated by `ContractGenerator` (was always empty `Vec`)
+
 ## [1.3.1] - 2026-03-20
 
 ### Fixed

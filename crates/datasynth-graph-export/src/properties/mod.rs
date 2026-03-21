@@ -11,6 +11,8 @@
 //! - [`JournalEntryPropertySerializer`](journal_entry::JournalEntryPropertySerializer) — `JournalEntry` (code 300)
 //! - [`AccountPropertySerializer`](account::AccountPropertySerializer) — `GLAccount` (code 301)
 //! - [`EmployeePropertySerializer`](employee::EmployeePropertySerializer) — `Employee` (code 360)
+//! - [`VendorPropertySerializer`](p2p::VendorPropertySerializer) — `Vendor` master data (code 350)
+//! - [`CustomerPropertySerializer`](o2c::CustomerPropertySerializer) — `Customer` master data (code 351)
 //! - P2P: [`PurchaseOrderPropertySerializer`], [`GoodsReceiptPropertySerializer`], [`VendorInvoicePropertySerializer`], [`PaymentPropertySerializer`]
 //! - O2C: [`SalesOrderPropertySerializer`], [`DeliveryPropertySerializer`], [`CustomerInvoicePropertySerializer`]
 //! - Banking: [`BankingCustomerPropertySerializer`], [`BankAccountPropertySerializer`], [`BankTransactionPropertySerializer`]
@@ -49,6 +51,8 @@ pub fn all_serializers() -> Vec<Box<dyn PropertySerializer>> {
         Box::new(account::AccountPropertySerializer),
         // Master Data
         Box::new(employee::EmployeePropertySerializer),
+        Box::new(p2p::VendorPropertySerializer),
+        Box::new(o2c::CustomerPropertySerializer),
         // P2P documents
         Box::new(p2p::PurchaseOrderPropertySerializer),
         Box::new(p2p::GoodsReceiptPropertySerializer),
@@ -117,10 +121,10 @@ mod tests {
     #[test]
     fn all_serializers_count() {
         let serializers = all_serializers();
-        // 2 (control, risk) + 2 (je, account) + 1 (employee)
+        // 2 (control, risk) + 2 (je, account) + 3 (employee, vendor, customer)
         // + 4 (p2p) + 3 (o2c) + 3 (banking) + 5 (audit) + 9 (audit procedures)
         // + 4 (s2c) + 3 (h2r) + 3 (mfg)
-        // = 39 total
-        assert_eq!(serializers.len(), 39);
+        // = 41 total
+        assert_eq!(serializers.len(), 41);
     }
 }

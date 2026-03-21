@@ -55,12 +55,49 @@ impl InventoryMovementGenerator {
         movements_per_material: u32,
         currency: &str,
     ) -> Vec<InventoryMovement> {
+        self.generate_with_production_orders(
+            company_code,
+            material_ids,
+            period_start,
+            period_end,
+            movements_per_material,
+            currency,
+            &[],
+        )
+    }
+
+    /// Generate inventory movements, linking `GoodsIssue` movements to real production order IDs.
+    ///
+    /// When `production_order_ids` is non-empty, `GoodsIssue` movements use actual IDs
+    /// (cycling through the list) instead of fabricated `PRD-{random}` strings.
+    ///
+    /// # Arguments
+    ///
+    /// * `company_code` - Company / entity code.
+    /// * `material_ids` - Available materials as `(material_id, description)` tuples.
+    /// * `period_start` - Start of the generation period.
+    /// * `period_end` - End of the generation period.
+    /// * `movements_per_material` - Average number of movements per material.
+    /// * `currency` - Currency code for value calculations.
+    /// * `production_order_ids` - Real production order IDs to use for GoodsIssue reference docs.
+    #[allow(clippy::too_many_arguments)]
+    pub fn generate_with_production_orders(
+        &mut self,
+        company_code: &str,
+        material_ids: &[(String, String)],
+        period_start: NaiveDate,
+        period_end: NaiveDate,
+        movements_per_material: u32,
+        currency: &str,
+        production_order_ids: &[String],
+    ) -> Vec<InventoryMovement> {
         debug!(
             company_code,
             material_count = material_ids.len(),
             %period_start,
             %period_end,
             movements_per_material,
+            production_order_count = production_order_ids.len(),
             "Generating inventory movements"
         );
 
@@ -71,6 +108,7 @@ impl InventoryMovementGenerator {
             period_start.format("%Y"),
             period_start.format("%m")
         );
+        let mut prd_idx: usize = 0;
 
         for (material_id, material_desc) in material_ids {
             let count = self.rng.random_range(1..=movements_per_material.max(1) * 2);
@@ -96,7 +134,15 @@ impl InventoryMovementGenerator {
                         format!("PO-{:08}", self.rng.random_range(10000..99999))
                     }
                     MovementType::GoodsIssue => {
-                        format!("PRD-{:08}", self.rng.random_range(10000..99999))
+                        if !production_order_ids.is_empty() {
+                            // Use a real production order ID (cycle through the list)
+                            let id =
+                                production_order_ids[prd_idx % production_order_ids.len()].clone();
+                            prd_idx += 1;
+                            id
+                        } else {
+                            format!("PRD-{:08}", self.rng.random_range(10000..99999))
+                        }
                     }
                     MovementType::Transfer => {
                         format!("TR-{:08}", self.rng.random_range(10000..99999))

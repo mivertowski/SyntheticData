@@ -450,6 +450,10 @@ pub struct MasterDataSnapshot {
     pub assets: Vec<FixedAsset>,
     /// Generated employees.
     pub employees: Vec<Employee>,
+    /// Generated cost center hierarchy (two-level: departments + sub-departments).
+    pub cost_centers: Vec<datasynth_core::models::CostCenter>,
+    /// Employee lifecycle change history (hired, promoted, salary adjustments, transfers, terminated).
+    pub employee_change_history: Vec<datasynth_core::models::EmployeeChangeEvent>,
 }
 
 /// Info about a completed hypergraph export.
@@ -486,6 +490,9 @@ pub struct DocumentFlowSnapshot {
     pub customer_invoices: Vec<documents::CustomerInvoice>,
     /// All payments (flattened).
     pub payments: Vec<documents::Payment>,
+    /// Cross-document references collected from all document headers
+    /// (PO→GR, GR→Invoice, Invoice→Payment, SO→Delivery, etc.)
+    pub document_references: Vec<documents::DocumentReference>,
 }
 
 /// Subledger snapshot containing generated subledger records.
@@ -509,6 +516,10 @@ pub struct SubledgerSnapshot {
     pub depreciation_runs: Vec<datasynth_core::models::subledger::fa::DepreciationRun>,
     /// Inventory valuation results — one per company (lower-of-cost-or-NRV, IAS 2 / ASC 330).
     pub inventory_valuations: Vec<datasynth_generators::InventoryValuationResult>,
+    /// Dunning runs executed after AR aging (one per company per dunning cycle).
+    pub dunning_runs: Vec<datasynth_core::models::subledger::ar::DunningRun>,
+    /// Dunning letters generated across all dunning runs.
+    pub dunning_letters: Vec<datasynth_core::models::subledger::ar::DunningLetter>,
 }
 
 /// OCPM snapshot containing generated OCPM event log data.
@@ -621,6 +632,12 @@ pub struct AuditSnapshot {
     /// Analytical relationships (ratios, trends, correlations) per entity.
     pub analytical_relationships:
         Vec<datasynth_core::models::audit::analytical_relationships::AnalyticalRelationship>,
+    // ---- PCAOB-ISA Cross-Reference ----
+    /// PCAOB-to-ISA standard mappings (key differences, similarities, application notes).
+    pub isa_pcaob_mappings: Vec<datasynth_standards::audit::pcaob::PcaobIsaMapping>,
+    // ---- ISA Standard Reference ----
+    /// Flat ISA standard reference entries (number, title, series) for `audit/isa_mappings.json`.
+    pub isa_mappings: Vec<datasynth_standards::audit::isa_reference::IsaStandardEntry>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -1111,6 +1128,10 @@ pub struct EnhancedGenerationResult {
     pub gate_result: Option<datasynth_eval::gates::GateResult>,
     /// Internal controls (if controls generation enabled).
     pub internal_controls: Vec<InternalControl>,
+    /// SoD (Segregation of Duties) violations identified during control application.
+    ///
+    /// Each record corresponds to a journal entry where `sod_violation == true`.
+    pub sod_violations: Vec<datasynth_core::models::SodViolation>,
     /// Opening balances (if opening balance generation enabled).
     pub opening_balances: Vec<GeneratedOpeningBalance>,
     /// GL-to-subledger reconciliation results (if reconciliation enabled).
@@ -1852,7 +1873,7 @@ impl EnhancedOrchestrator {
         self.emit_phase_items("master_data", "Material", &self.master_data.materials);
 
         // Phase 3: Document Flows + Subledger Linking
-        let (mut document_flows, subledger, fa_journal_entries) =
+        let (mut document_flows, mut subledger, fa_journal_entries) =
             self.phase_document_flows(&mut stats)?;
 
         // Emit document flows to stream sink
@@ -2026,6 +2047,50 @@ impl EnhancedOrchestrator {
             entries.extend(mfg_jes);
         }
 
+        // Phase 7a-inv: Apply manufacturing inventory movements to subledger positions (B.3).
+        //
+        // Manufacturing movements (GoodsReceipt / GoodsIssue) are generated independently of
+        // subledger inventory positions.  Here we reconcile them so that position balances
+        // reflect the actual stock movements within the generation period.
+        if !manufacturing_snap.inventory_movements.is_empty()
+            && !subledger.inventory_positions.is_empty()
+        {
+            use datasynth_core::models::MovementType as MfgMovementType;
+            let mut receipt_count = 0usize;
+            let mut issue_count = 0usize;
+            for movement in &manufacturing_snap.inventory_movements {
+                // Find a matching position by material code and company
+                if let Some(pos) = subledger.inventory_positions.iter_mut().find(|p| {
+                    p.material_id == movement.material_code
+                        && p.company_code == movement.entity_code
+                }) {
+                    match movement.movement_type {
+                        MfgMovementType::GoodsReceipt => {
+                            // Increase stock and update weighted-average cost
+                            pos.add_quantity(
+                                movement.quantity,
+                                movement.value,
+                                movement.movement_date,
+                            );
+                            receipt_count += 1;
+                        }
+                        MfgMovementType::GoodsIssue | MfgMovementType::Scrap => {
+                            // Decrease stock (best-effort; silently skip if insufficient)
+                            let _ = pos.remove_quantity(movement.quantity, movement.movement_date);
+                            issue_count += 1;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            debug!(
+                "Phase 7a-inv: Applied {} inventory movements to subledger positions ({} receipts, {} issues/scraps)",
+                manufacturing_snap.inventory_movements.len(),
+                receipt_count,
+                issue_count,
+            );
+        }
+
         // Update final entry/line-item stats after all JE-generating phases
         // (FA acquisition, IC, payroll, manufacturing JEs have all been appended)
         if !entries.is_empty() {
@@ -2062,6 +2127,46 @@ impl EnhancedOrchestrator {
                 "Applied controls to {} entries ({} with control IDs assigned)",
                 entries.len(),
                 with_controls
+            );
+        }
+
+        // Phase 7c: Extract SoD violations from annotated journal entries.
+        // The ControlGenerator marks entries with sod_violation=true and a conflict_type.
+        // Here we materialise those flags into standalone SodViolation records.
+        let sod_violations: Vec<datasynth_core::models::SodViolation> = entries
+            .iter()
+            .filter(|e| e.header.sod_violation)
+            .filter_map(|e| {
+                e.header.sod_conflict_type.map(|ct| {
+                    use datasynth_core::models::{RiskLevel, SodViolation};
+                    let severity = match ct {
+                        datasynth_core::models::SodConflictType::PaymentReleaser
+                        | datasynth_core::models::SodConflictType::RequesterApprover => {
+                            RiskLevel::Critical
+                        }
+                        datasynth_core::models::SodConflictType::PreparerApprover
+                        | datasynth_core::models::SodConflictType::MasterDataMaintainer
+                        | datasynth_core::models::SodConflictType::JournalEntryPoster
+                        | datasynth_core::models::SodConflictType::SystemAccessConflict => {
+                            RiskLevel::High
+                        }
+                        datasynth_core::models::SodConflictType::ReconcilerPoster => {
+                            RiskLevel::Medium
+                        }
+                    };
+                    let action = format!(
+                        "SoD conflict {:?} on entry {} ({})",
+                        ct, e.header.document_id, e.header.company_code
+                    );
+                    SodViolation::new(ct, e.header.created_by.clone(), action, severity)
+                })
+            })
+            .collect();
+        if !sod_violations.is_empty() {
+            info!(
+                "Phase 7c: Extracted {} SoD violations from {} entries",
+                sod_violations.len(),
+                entries.len()
             );
         }
 
@@ -2403,6 +2508,7 @@ impl EnhancedOrchestrator {
             lineage: Some(lineage),
             gate_result,
             internal_controls,
+            sod_violations,
             opening_balances,
             subledger_reconciliation,
             counterfactual_pairs,
@@ -2465,6 +2571,9 @@ impl EnhancedOrchestrator {
     ) -> SynthResult<(DocumentFlowSnapshot, SubledgerSnapshot, Vec<JournalEntry>)> {
         let mut document_flows = DocumentFlowSnapshot::default();
         let mut subledger = SubledgerSnapshot::default();
+        // Dunning JEs (interest + charges) accumulated here and merged into the
+        // main FA-JE list below so they appear in the GL.
+        let mut dunning_journal_entries: Vec<JournalEntry> = Vec::new();
 
         if self.phase_config.generate_document_flows && !self.master_data.vendors.is_empty() {
             info!("Phase 3: Generating Document Flows");
@@ -2529,6 +2638,58 @@ impl EnhancedOrchestrator {
                     subledger.ar_aging_reports.len(),
                     subledger.ap_aging_reports.len()
                 );
+
+                // Phase 3b-dunning: Run dunning process on overdue AR invoices.
+                debug!("Phase 3b-dunning: Executing dunning runs for overdue AR invoices");
+                {
+                    use datasynth_generators::DunningGenerator;
+                    let mut dunning_gen = DunningGenerator::new(self.seed + 2000);
+                    for company in &self.config.companies {
+                        let currency = company.currency.as_str();
+                        // Collect mutable references to AR invoices for this company
+                        // (dunning generator updates dunning_info on invoices in-place).
+                        let mut company_invoices: Vec<
+                            datasynth_core::models::subledger::ar::ARInvoice,
+                        > = subledger
+                            .ar_invoices
+                            .iter()
+                            .filter(|inv| inv.company_code == company.code)
+                            .cloned()
+                            .collect();
+
+                        if company_invoices.is_empty() {
+                            continue;
+                        }
+
+                        let result = dunning_gen.execute_dunning_run(
+                            &company.code,
+                            as_of_date,
+                            &mut company_invoices,
+                            currency,
+                        );
+
+                        // Write back updated dunning info to the main AR invoice list
+                        for updated in &company_invoices {
+                            if let Some(orig) = subledger
+                                .ar_invoices
+                                .iter_mut()
+                                .find(|i| i.invoice_number == updated.invoice_number)
+                            {
+                                orig.dunning_info = updated.dunning_info.clone();
+                            }
+                        }
+
+                        subledger.dunning_runs.push(result.dunning_run);
+                        subledger.dunning_letters.extend(result.letters);
+                        // Dunning JEs (interest + charges) collected into local buffer.
+                        dunning_journal_entries.extend(result.journal_entries);
+                    }
+                    debug!(
+                        "Dunning runs complete: {} runs, {} letters",
+                        subledger.dunning_runs.len(),
+                        subledger.dunning_letters.len()
+                    );
+                }
             }
 
             self.check_resources_with_log("post-document-flows")?;
@@ -2537,7 +2698,7 @@ impl EnhancedOrchestrator {
         }
 
         // Generate FA subledger records (and acquisition JEs) from master data fixed assets
-        let mut fa_journal_entries = Vec::new();
+        let mut fa_journal_entries: Vec<JournalEntry> = dunning_journal_entries;
         if !self.master_data.assets.is_empty() {
             debug!("Generating FA subledger records");
             let company_code = self
@@ -3001,15 +3162,11 @@ impl EnhancedOrchestrator {
                 continue;
             }
 
-            // --- Tax provision JE ---
-            // Only generate if pre_tax_income > 0 (no tax on losses in this stub)
-            let tax_amount = if pre_tax_income > Decimal::ZERO {
-                (pre_tax_income * tax_rate).round_dp(2)
-            } else {
-                Decimal::ZERO
-            };
+            // --- Tax provision / DTA JE ---
+            if pre_tax_income > Decimal::ZERO {
+                // Profitable year: DR Tax Expense (8000) / CR Income Tax Payable (2130)
+                let tax_amount = (pre_tax_income * tax_rate).round_dp(2);
 
-            if tax_amount > Decimal::ZERO {
                 let mut tax_header = JournalEntryHeader::new(company_code.clone(), close_date);
                 tax_header.document_type = "CL".to_string();
                 tax_header.header_text = Some(format!("Tax provision - {}", company_code));
@@ -3037,11 +3194,57 @@ impl EnhancedOrchestrator {
 
                 debug_assert!(tax_je.is_balanced(), "Tax provision JE must be balanced");
                 close_jes.push(tax_je);
+            } else {
+                // Loss year: recognise a Deferred Tax Asset (DTA) = |loss| × statutory_rate
+                // DR Deferred Tax Asset (1600) / CR Tax Benefit (8000 credit = income tax benefit)
+                let dta_amount = (pre_tax_income.abs() * tax_rate).round_dp(2);
+                if dta_amount > Decimal::ZERO {
+                    let mut dta_header = JournalEntryHeader::new(company_code.clone(), close_date);
+                    dta_header.document_type = "CL".to_string();
+                    dta_header.header_text =
+                        Some(format!("Deferred tax asset (DTA) - {}", company_code));
+                    dta_header.created_by = "CLOSE_ENGINE".to_string();
+                    dta_header.source = TransactionSource::Automated;
+                    dta_header.business_process = Some(BusinessProcess::R2R);
+
+                    let doc_id = dta_header.document_id;
+                    let mut dta_je = JournalEntry::new(dta_header);
+
+                    // DR Deferred Tax Asset (1600)
+                    dta_je.add_line(JournalEntryLine::debit(
+                        doc_id,
+                        1,
+                        tax_accounts::DEFERRED_TAX_ASSET.to_string(),
+                        dta_amount,
+                    ));
+                    // CR Income Tax Benefit (8000) — credit reduces the tax expense line,
+                    // reflecting the benefit of the future deductible temporary difference.
+                    dta_je.add_line(JournalEntryLine::credit(
+                        doc_id,
+                        2,
+                        tax_accounts::TAX_EXPENSE.to_string(),
+                        dta_amount,
+                    ));
+
+                    debug_assert!(dta_je.is_balanced(), "DTA JE must be balanced");
+                    close_jes.push(dta_je);
+                    debug!(
+                        "Company {}: loss year — recognised DTA of {}",
+                        company_code, dta_amount
+                    );
+                }
             }
 
             // --- Income statement closing JE ---
-            // Net income after tax
-            let net_income = pre_tax_income - tax_amount;
+            // Net income after tax (profit years) or net loss before DTA benefit (loss years).
+            // For a loss year the DTA JE above already recognises the deferred benefit; here we
+            // close the pre-tax loss into Retained Earnings as-is.
+            let tax_provision = if pre_tax_income > Decimal::ZERO {
+                (pre_tax_income * tax_rate).round_dp(2)
+            } else {
+                Decimal::ZERO
+            };
+            let net_income = pre_tax_income - tax_provision;
 
             if net_income != Decimal::ZERO {
                 let mut close_header = JournalEntryHeader::new(company_code.clone(), close_date);
@@ -5290,9 +5493,16 @@ impl EnhancedOrchestrator {
                 .employees
                 .iter()
                 .map(|e| {
+                    // Use the employee's actual annual base salary.
+                    // Fall back to $60,000 / yr if somehow zero.
+                    let annual = if e.base_salary > rust_decimal::Decimal::ZERO {
+                        e.base_salary
+                    } else {
+                        rust_decimal::Decimal::from(60_000)
+                    };
                     (
                         e.employee_id.clone(),
-                        rust_decimal::Decimal::from(5000), // Default monthly salary
+                        annual, // annual salary — PayrollGenerator divides by 12 for monthly base
                         e.cost_center.clone(),
                         e.department_id.clone(),
                     )
@@ -5962,21 +6172,27 @@ impl EnhancedOrchestrator {
         snapshot.bom_component_count = bom_components.len();
         snapshot.bom_components = bom_components;
 
-        // Generate inventory movements
+        // Generate inventory movements — link GoodsIssue movements to real production order IDs
         let currency = self
             .config
             .companies
             .first()
             .map(|c| c.currency.as_str())
             .unwrap_or("USD");
+        let production_order_ids: Vec<String> = snapshot
+            .production_orders
+            .iter()
+            .map(|po| po.order_id.clone())
+            .collect();
         let mut inv_mov_gen = datasynth_generators::InventoryMovementGenerator::new(seed + 54);
-        let inventory_movements = inv_mov_gen.generate(
+        let inventory_movements = inv_mov_gen.generate_with_production_orders(
             company_code,
             &material_data,
             start_date,
             end_date,
             2,
             currency,
+            &production_order_ids,
         );
         snapshot.inventory_movement_count = inventory_movements.len();
         snapshot.inventory_movements = inventory_movements;
@@ -8024,23 +8240,44 @@ impl EnhancedOrchestrator {
                 let employee_pool =
                     employee_gen.generate_company_pool(&company.code, (start_date, end_date));
 
+                // Generate employee change history (2-5 events per employee)
+                let employee_change_history =
+                    employee_gen.generate_all_change_history(&employee_pool, end_date);
+
+                // Generate cost center hierarchy (level-1 departments + level-2 sub-departments)
+                let employee_ids: Vec<String> = employee_pool
+                    .employees
+                    .iter()
+                    .map(|e| e.employee_id.clone())
+                    .collect();
+                let mut cc_gen = datasynth_generators::CostCenterGenerator::new(company_seed + 500);
+                let cost_centers = cc_gen.generate_for_company(&company.code, &employee_ids);
+
                 (
                     vendor_pool.vendors,
                     customer_pool.customers,
                     material_pool.materials,
                     asset_pool.assets,
                     employee_pool.employees,
+                    employee_change_history,
+                    cost_centers,
                 )
             })
             .collect();
 
         // Aggregate results from all companies
-        for (vendors, customers, materials, assets, employees) in per_company_results {
+        for (vendors, customers, materials, assets, employees, change_history, cost_centers) in
+            per_company_results
+        {
             self.master_data.vendors.extend(vendors);
             self.master_data.customers.extend(customers);
             self.master_data.materials.extend(materials);
             self.master_data.assets.extend(assets);
             self.master_data.employees.extend(employees);
+            self.master_data.cost_centers.extend(cost_centers);
+            self.master_data
+                .employee_change_history
+                .extend(change_history);
         }
 
         if let Some(pb) = &pb {
@@ -8200,6 +8437,39 @@ impl EnhancedOrchestrator {
 
         if let Some(pb) = pb {
             pb.finish_with_message("O2C document flows complete");
+        }
+
+        // Collect all document cross-references from document headers.
+        // Each document embeds references to its predecessor(s) via add_reference(); here we
+        // denormalise them into a flat list for the document_references.json output file.
+        {
+            let mut refs = Vec::new();
+            for doc in &flows.purchase_orders {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.goods_receipts {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.vendor_invoices {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.sales_orders {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.deliveries {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.customer_invoices {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            for doc in &flows.payments {
+                refs.extend(doc.header.document_references.iter().cloned());
+            }
+            debug!(
+                "Collected {} document cross-references from document headers",
+                refs.len()
+            );
+            flows.document_references = refs;
         }
 
         Ok(())
@@ -8553,6 +8823,9 @@ impl EnhancedOrchestrator {
             // Depreciation runs and inventory valuations are populated after FA/inventory generation.
             depreciation_runs: Vec::new(),
             inventory_valuations: Vec::new(),
+            // Dunning runs and letters are populated in phase_document_flows after AR aging.
+            dunning_runs: Vec::new(),
+            dunning_letters: Vec::new(),
         })
     }
 
@@ -10437,6 +10710,36 @@ impl EnhancedOrchestrator {
                 snapshot.unusual_items.len(),
                 snapshot.analytical_relationships.len(),
             ));
+        }
+
+        // ----------------------------------------------------------------
+        // PCAOB-ISA cross-reference mappings
+        // ----------------------------------------------------------------
+        // Always include the standard PCAOB-ISA mappings when audit generation is
+        // enabled. These are static reference data (no randomness required) so we
+        // call standard_mappings() directly.
+        {
+            use datasynth_standards::audit::pcaob::PcaobIsaMapping;
+            snapshot.isa_pcaob_mappings = PcaobIsaMapping::standard_mappings();
+            debug!(
+                "PCAOB-ISA mappings generated: {} mappings",
+                snapshot.isa_pcaob_mappings.len()
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // ISA standard reference entries
+        // ----------------------------------------------------------------
+        // Emit flat ISA standard reference data (number, title, series) so
+        // consumers get a machine-readable listing of all 34 ISA standards in
+        // audit/isa_mappings.json alongside the PCAOB cross-reference file.
+        {
+            use datasynth_standards::audit::isa_reference::IsaStandard;
+            snapshot.isa_mappings = IsaStandard::standard_entries();
+            debug!(
+                "ISA standard entries generated: {} standards",
+                snapshot.isa_mappings.len()
+            );
         }
 
         Ok(snapshot)
