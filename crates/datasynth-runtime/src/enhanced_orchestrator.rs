@@ -8433,19 +8433,26 @@ impl EnhancedOrchestrator {
                 // Wire customer segmentation config when enabled
                 if self.config.customer_segmentation.enabled {
                     let cs = &self.config.customer_segmentation;
-                    let mut seg_cfg = datasynth_generators::CustomerSegmentationConfig::default();
-                    seg_cfg.enabled = true;
-                    seg_cfg.segment_distribution = datasynth_generators::SegmentDistribution {
-                        enterprise: cs.value_segments.enterprise.customer_share,
-                        mid_market: cs.value_segments.mid_market.customer_share,
-                        smb: cs.value_segments.smb.customer_share,
-                        consumer: cs.value_segments.consumer.customer_share,
+                    let seg_cfg = datasynth_generators::CustomerSegmentationConfig {
+                        enabled: true,
+                        segment_distribution: datasynth_generators::SegmentDistribution {
+                            enterprise: cs.value_segments.enterprise.customer_share,
+                            mid_market: cs.value_segments.mid_market.customer_share,
+                            smb: cs.value_segments.smb.customer_share,
+                            consumer: cs.value_segments.consumer.customer_share,
+                        },
+                        referral_config: datasynth_generators::ReferralConfig {
+                            enabled: cs.networks.referrals.enabled,
+                            referral_rate: cs.networks.referrals.referral_rate,
+                            ..Default::default()
+                        },
+                        hierarchy_config: datasynth_generators::HierarchyConfig {
+                            enabled: cs.networks.corporate_hierarchies.enabled,
+                            hierarchy_rate: cs.networks.corporate_hierarchies.probability,
+                            ..Default::default()
+                        },
+                        ..Default::default()
                     };
-                    seg_cfg.referral_config.enabled = cs.networks.referrals.enabled;
-                    seg_cfg.referral_config.referral_rate = cs.networks.referrals.referral_rate;
-                    seg_cfg.hierarchy_config.enabled = cs.networks.corporate_hierarchies.enabled;
-                    seg_cfg.hierarchy_config.hierarchy_rate =
-                        cs.networks.corporate_hierarchies.probability;
                     customer_gen.set_segmentation_config(seg_cfg);
                 }
                 let customer_pool = customer_gen.generate_customer_pool(
@@ -11038,10 +11045,9 @@ impl EnhancedOrchestrator {
                     .iter()
                     .filter(|je| je.header.company_code == entity)
                     .min_by_key(|je| {
-                        let diff = (je.header.posting_date - rpt.transaction_date)
+                        (je.header.posting_date - rpt.transaction_date)
                             .num_days()
-                            .abs();
-                        diff
+                            .abs()
                     });
 
                 if let Some(je) = best_je {
