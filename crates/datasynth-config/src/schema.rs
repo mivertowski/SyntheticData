@@ -403,7 +403,7 @@ impl Default for GraphExportConfig {
 }
 
 /// DGL-specific export settings.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DglExportConfig {
     /// Export as a heterogeneous graph (distinct node/edge types).
     ///
@@ -414,13 +414,7 @@ pub struct DglExportConfig {
     pub heterogeneous: bool,
 }
 
-impl Default for DglExportConfig {
-    fn default() -> Self {
-        Self {
-            heterogeneous: false,
-        }
-    }
-}
+// Default derived: heterogeneous = false (bool default)
 
 /// Settings for the multi-layer hypergraph export (RustGraph integration).
 ///

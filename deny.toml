@@ -6,8 +6,6 @@ targets = []
 
 [advisories]
 ignore = [
-    # number_prefix: unmaintained but no replacement available, transitive dep
-    "RUSTSEC-2025-0119",
     # paste: unmaintained but widely used, no drop-in replacement
     "RUSTSEC-2024-0436",
 ]

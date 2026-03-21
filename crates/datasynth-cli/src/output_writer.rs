@@ -1375,8 +1375,7 @@ pub fn write_all_output(
             quality_labels.add(label);
         }
         if let Ok(json) = serde_json::to_string_pretty(&quality_labels) {
-            if let Err(e) =
-                std::fs::write(labels_dir.join("quality_labels.json"), json.as_bytes())
+            if let Err(e) = std::fs::write(labels_dir.join("quality_labels.json"), json.as_bytes())
             {
                 warn!("Failed to write quality labels: {}", e);
             } else {
