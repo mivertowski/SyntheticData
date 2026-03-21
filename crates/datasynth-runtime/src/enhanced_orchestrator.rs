@@ -156,7 +156,7 @@ use datasynth_ocpm::{
 use datasynth_config::schema::{O2CFlowConfig, P2PFlowConfig};
 use datasynth_core::causal::{CausalGraph, CausalValidator, StructuralCausalModel};
 use datasynth_core::diffusion::{DiffusionBackend, DiffusionConfig, StatisticalDiffusionBackend};
-use datasynth_core::llm::MockLlmProvider;
+use datasynth_core::llm::{HttpLlmProvider, MockLlmProvider};
 use datasynth_core::models::balance::{GeneratedOpeningBalance, IndustryType, OpeningBalanceSpec};
 use datasynth_core::models::documents::PaymentMethod;
 use datasynth_core::models::IndustrySector;
@@ -638,6 +638,9 @@ pub struct AuditSnapshot {
     // ---- ISA Standard Reference ----
     /// Flat ISA standard reference entries (number, title, series) for `audit/isa_mappings.json`.
     pub isa_mappings: Vec<datasynth_standards::audit::isa_reference::IsaStandardEntry>,
+    // ---- ISA 220 / ISA 300: Audit Scopes ----
+    /// Audit scope records (one per engagement) describing the audit boundary.
+    pub audit_scopes: Vec<datasynth_core::models::audit::AuditScope>,
 }
 
 /// Banking KYC/AML data snapshot containing all generated banking entities.
@@ -1120,6 +1123,8 @@ pub struct EnhancedGenerationResult {
     pub balance_validation: BalanceValidationResult,
     /// Data quality statistics (if injection enabled).
     pub data_quality_stats: DataQualityStats,
+    /// Data quality issue records (if injection enabled).
+    pub quality_issues: Vec<datasynth_generators::QualityIssue>,
     /// Generation statistics.
     pub statistics: EnhancedGenerationStatistics,
     /// Data lineage graph (if tracking enabled).
@@ -1940,11 +1945,24 @@ impl EnhancedOrchestrator {
         let actions = self.get_degradation_actions();
 
         // Phase 5: S2C Sourcing Data (before anomaly injection, since it's standalone)
-        let sourcing = self.phase_sourcing_data(&mut stats)?;
+        let mut sourcing = self.phase_sourcing_data(&mut stats)?;
 
-        // Phase 5a: Link S2C contracts to P2P purchase orders by matching vendor IDs
+        // Phase 5a: Link S2C contracts to P2P purchase orders by matching vendor IDs.
+        // Also populate the reverse FK: ProcurementContract.purchase_order_ids.
         if !sourcing.contracts.is_empty() {
             let mut linked_count = 0usize;
+            // Collect (vendor_id, po_id) pairs from P2P chains
+            let po_vendor_pairs: Vec<(String, String)> = document_flows
+                .p2p_chains
+                .iter()
+                .map(|chain| {
+                    (
+                        chain.purchase_order.vendor_id.clone(),
+                        chain.purchase_order.header.document_id.clone(),
+                    )
+                })
+                .collect();
+
             for chain in &mut document_flows.p2p_chains {
                 if chain.purchase_order.contract_id.is_none() {
                     if let Some(contract) = sourcing
@@ -1957,6 +1975,19 @@ impl EnhancedOrchestrator {
                     }
                 }
             }
+
+            // Populate reverse FK: purchase_order_ids on each contract
+            for contract in &mut sourcing.contracts {
+                let po_ids: Vec<String> = po_vendor_pairs
+                    .iter()
+                    .filter(|(vendor_id, _)| *vendor_id == contract.vendor_id)
+                    .map(|(_, po_id)| po_id.clone())
+                    .collect();
+                if !po_ids.is_empty() {
+                    contract.purchase_order_ids = po_ids;
+                }
+            }
+
             if linked_count > 0 {
                 debug!(
                     "Linked {} purchase orders to S2C contracts by vendor match",
@@ -2203,7 +2234,7 @@ impl EnhancedOrchestrator {
             self.phase_subledger_reconciliation(&subledger, &entries, &mut stats)?;
 
         // Phase 10: Data Quality Injection
-        let data_quality_stats =
+        let (data_quality_stats, quality_issues) =
             self.phase_data_quality_injection(&mut entries, &actions, &mut stats)?;
 
         // Phase 10b: Period Close (tax provision + income statement closing entries + depreciation)
@@ -2504,6 +2535,7 @@ impl EnhancedOrchestrator {
             anomaly_labels,
             balance_validation,
             data_quality_stats,
+            quality_issues,
             statistics: stats,
             lineage: Some(lineage),
             gate_result,
@@ -2985,23 +3017,23 @@ impl EnhancedOrchestrator {
         entries: &mut [JournalEntry],
         actions: &DegradationActions,
         stats: &mut EnhancedGenerationStatistics,
-    ) -> SynthResult<DataQualityStats> {
+    ) -> SynthResult<(DataQualityStats, Vec<datasynth_generators::QualityIssue>)> {
         if self.phase_config.inject_data_quality
             && !entries.is_empty()
             && !actions.skip_data_quality
         {
             info!("Phase 7: Injecting Data Quality Variations");
-            let dq_stats = self.inject_data_quality(entries)?;
+            let (dq_stats, quality_issues) = self.inject_data_quality(entries)?;
             stats.data_quality_issues = dq_stats.records_with_issues;
             info!("Injected {} data quality issues", stats.data_quality_issues);
             self.check_resources_with_log("post-data-quality")?;
-            Ok(dq_stats)
+            Ok((dq_stats, quality_issues))
         } else if actions.skip_data_quality {
             warn!("Phase 7: Skipped due to resource degradation");
-            Ok(DataQualityStats::default())
+            Ok((DataQualityStats::default(), Vec::new()))
         } else {
             debug!("Phase 7: Skipped (data quality injection disabled or no entries)");
-            Ok(DataQualityStats::default())
+            Ok((DataQualityStats::default(), Vec::new()))
         }
     }
 
@@ -3117,6 +3149,63 @@ impl EnhancedOrchestrator {
                 "Generated {} depreciation JEs from {} FA records",
                 close_jes.len(),
                 subledger.fa_records.len()
+            );
+        }
+
+        // --- Accrual entries (standard period-end accruals per company) ---
+        // Generate standard accrued expense entries (utilities, rent, interest) using
+        // a revenue-based estimate. These use account 6200 (Misc Expense) / 2100 (Accrued Liab).
+        {
+            use datasynth_generators::{AccrualGenerator, AccrualGeneratorConfig};
+            let mut accrual_gen = AccrualGenerator::new(AccrualGeneratorConfig::default());
+
+            // Standard accrual items: (description, expense_acct, liability_acct, % of revenue)
+            let accrual_items: &[(&str, &str, &str)] = &[
+                ("Accrued Utilities", "6200", "2100"),
+                ("Accrued Rent", "6300", "2100"),
+                ("Accrued Interest", "6100", "2150"),
+            ];
+
+            for company_code in &company_codes {
+                // Estimate company revenue from existing JEs
+                let company_revenue: Decimal = entries
+                    .iter()
+                    .filter(|e| e.header.company_code == *company_code)
+                    .flat_map(|e| e.lines.iter())
+                    .filter(|l| l.gl_account.starts_with('4'))
+                    .map(|l| l.credit_amount - l.debit_amount)
+                    .fold(Decimal::ZERO, |acc, v| acc + v);
+
+                if company_revenue <= Decimal::ZERO {
+                    continue;
+                }
+
+                // Use 0.5% of period revenue per accrual item as a proxy
+                let accrual_base = (company_revenue * Decimal::new(5, 3)).round_dp(2);
+                if accrual_base <= Decimal::ZERO {
+                    continue;
+                }
+
+                for (description, expense_acct, liability_acct) in accrual_items {
+                    let (accrual_je, reversal_je) = accrual_gen.generate_accrued_expense(
+                        company_code,
+                        description,
+                        accrual_base,
+                        expense_acct,
+                        liability_acct,
+                        close_date,
+                        None,
+                    );
+                    close_jes.push(accrual_je);
+                    if let Some(rev_je) = reversal_je {
+                        close_jes.push(rev_je);
+                    }
+                }
+            }
+
+            debug!(
+                "Generated accrual entries for {} companies",
+                company_codes.len()
             );
         }
 
@@ -3485,7 +3574,40 @@ impl EnhancedOrchestrator {
         let start = std::time::Instant::now();
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let provider = Arc::new(MockLlmProvider::new(self.seed));
+            // Select provider: use HttpLlmProvider when a non-mock provider is configured
+            // and the corresponding API key environment variable is present.
+            let provider: Arc<dyn datasynth_core::llm::LlmProvider> = {
+                let schema_provider = &self.config.llm.provider;
+                let api_key_env = match schema_provider.as_str() {
+                    "openai" => Some("OPENAI_API_KEY"),
+                    "anthropic" => Some("ANTHROPIC_API_KEY"),
+                    "custom" => Some("LLM_API_KEY"),
+                    _ => None,
+                };
+                if let Some(key_env) = api_key_env {
+                    if std::env::var(key_env).is_ok() {
+                        let llm_config = datasynth_core::llm::LlmConfig {
+                            model: self.config.llm.model.clone(),
+                            api_key_env: key_env.to_string(),
+                            ..datasynth_core::llm::LlmConfig::default()
+                        };
+                        match HttpLlmProvider::new(llm_config) {
+                            Ok(p) => Arc::new(p),
+                            Err(e) => {
+                                warn!(
+                                    "Failed to create HttpLlmProvider: {}; falling back to mock",
+                                    e
+                                );
+                                Arc::new(MockLlmProvider::new(self.seed))
+                            }
+                        }
+                    } else {
+                        Arc::new(MockLlmProvider::new(self.seed))
+                    }
+                } else {
+                    Arc::new(MockLlmProvider::new(self.seed))
+                }
+            };
             let enricher = VendorLlmEnricher::new(provider);
 
             let industry = format!("{:?}", self.config.global.industry);
@@ -4622,6 +4744,21 @@ impl EnhancedOrchestrator {
                     .map(|c| c.code.as_str())
                     .unwrap_or("GROUP");
 
+                // Compute period depreciation from JEs with document type "CL" hitting account
+                // 6000 (depreciation expense).  These are generated by phase_period_close.
+                let total_depr: rust_decimal::Decimal = journal_entries
+                    .iter()
+                    .filter(|je| je.header.document_type == "CL")
+                    .flat_map(|je| je.lines.iter())
+                    .filter(|l| l.gl_account.starts_with("6000"))
+                    .map(|l| l.debit_amount)
+                    .fold(rust_decimal::Decimal::ZERO, |a, v| a + v);
+                let depr_param = if total_depr > rust_decimal::Decimal::ZERO {
+                    Some(total_depr)
+                } else {
+                    None
+                };
+
                 let (segs, recon) = seg_gen.generate(
                     group_code,
                     &period_label,
@@ -4629,7 +4766,7 @@ impl EnhancedOrchestrator {
                     consolidated_profit,
                     consolidated_assets,
                     &entity_seeds,
-                    None, // total_depreciation: not yet threaded from FA subledger
+                    depr_param,
                 );
                 segment_reports.extend(segs);
                 segment_reconciliations.push(recon);
@@ -7269,6 +7406,58 @@ impl EnhancedOrchestrator {
                 evm_gen.generate(&pool.projects, &snapshot.cost_lines, start_date, end_date);
         }
 
+        // Wire ProjectRevenueGenerator: generate PoC revenue recognition for customer projects.
+        if self.config.project_accounting.revenue_recognition.enabled
+            && !snapshot.projects.is_empty()
+            && !snapshot.cost_lines.is_empty()
+        {
+            use datasynth_generators::project_accounting::RevenueGenerator;
+            let rev_config = self.config.project_accounting.revenue_recognition.clone();
+            let avg_contract_value =
+                rust_decimal::Decimal::from_f64_retain(rev_config.avg_contract_value)
+                    .unwrap_or(rust_decimal::Decimal::new(500_000, 0));
+
+            // Build contract value tuples: only customer-type projects get revenue recognition.
+            // Estimated total cost = 80% of contract value (standard 20% gross margin proxy).
+            let contract_values: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal)> =
+                snapshot
+                    .projects
+                    .iter()
+                    .filter(|p| {
+                        matches!(
+                            p.project_type,
+                            datasynth_core::models::ProjectType::Customer
+                        )
+                    })
+                    .map(|p| {
+                        let cv = if p.budget > rust_decimal::Decimal::ZERO {
+                            (p.budget * rust_decimal::Decimal::new(125, 2)).round_dp(2)
+                        // budget × 1.25 → contract value
+                        } else {
+                            avg_contract_value
+                        };
+                        let etc = (cv * rust_decimal::Decimal::new(80, 2)).round_dp(2); // 80% cost ratio
+                        (p.project_id.clone(), cv, etc)
+                    })
+                    .collect();
+
+            if !contract_values.is_empty() {
+                let mut rev_gen = RevenueGenerator::new(rev_config, seed + 99);
+                snapshot.revenue_records = rev_gen.generate(
+                    &snapshot.projects,
+                    &snapshot.cost_lines,
+                    &contract_values,
+                    start_date,
+                    end_date,
+                );
+                debug!(
+                    "Generated {} revenue recognition records for {} customer projects",
+                    snapshot.revenue_records.len(),
+                    contract_values.len()
+                );
+            }
+        }
+
         stats.project_count = snapshot.projects.len();
         stats.project_change_order_count = snapshot.change_orders.len();
         stats.project_cost_line_count = snapshot.cost_lines.len();
@@ -8202,6 +8391,37 @@ impl EnhancedOrchestrator {
                 vendor_gen.set_country_pack(pack.clone());
                 vendor_gen.set_coa_framework(coa_framework);
                 vendor_gen.set_counter_offset(i * vendors_per_company);
+                // Wire vendor network config when enabled
+                if self.config.vendor_network.enabled {
+                    let vn = &self.config.vendor_network;
+                    vendor_gen.set_network_config(datasynth_generators::VendorNetworkConfig {
+                        enabled: true,
+                        depth: vn.depth,
+                        tier1_count: datasynth_generators::TierCountConfig::new(
+                            vn.tier1.min,
+                            vn.tier1.max,
+                        ),
+                        tier2_per_parent: datasynth_generators::TierCountConfig::new(
+                            vn.tier2_per_parent.min,
+                            vn.tier2_per_parent.max,
+                        ),
+                        tier3_per_parent: datasynth_generators::TierCountConfig::new(
+                            vn.tier3_per_parent.min,
+                            vn.tier3_per_parent.max,
+                        ),
+                        cluster_distribution: datasynth_generators::ClusterDistribution {
+                            reliable_strategic: vn.clusters.reliable_strategic,
+                            standard_operational: vn.clusters.standard_operational,
+                            transactional: vn.clusters.transactional,
+                            problematic: vn.clusters.problematic,
+                        },
+                        concentration_limits: datasynth_generators::ConcentrationLimits {
+                            max_single_vendor: vn.dependencies.max_single_vendor_concentration,
+                            max_top5: vn.dependencies.top_5_concentration,
+                        },
+                        ..datasynth_generators::VendorNetworkConfig::default()
+                    });
+                }
                 let vendor_pool =
                     vendor_gen.generate_vendor_pool(vendors_per_company, &company.code, start_date);
 
@@ -8210,6 +8430,24 @@ impl EnhancedOrchestrator {
                 customer_gen.set_country_pack(pack.clone());
                 customer_gen.set_coa_framework(coa_framework);
                 customer_gen.set_counter_offset(i * customers_per_company);
+                // Wire customer segmentation config when enabled
+                if self.config.customer_segmentation.enabled {
+                    let cs = &self.config.customer_segmentation;
+                    let mut seg_cfg = datasynth_generators::CustomerSegmentationConfig::default();
+                    seg_cfg.enabled = true;
+                    seg_cfg.segment_distribution = datasynth_generators::SegmentDistribution {
+                        enterprise: cs.value_segments.enterprise.customer_share,
+                        mid_market: cs.value_segments.mid_market.customer_share,
+                        smb: cs.value_segments.smb.customer_share,
+                        consumer: cs.value_segments.consumer.customer_share,
+                    };
+                    seg_cfg.referral_config.enabled = cs.networks.referrals.enabled;
+                    seg_cfg.referral_config.referral_rate = cs.networks.referrals.referral_rate;
+                    seg_cfg.hierarchy_config.enabled = cs.networks.corporate_hierarchies.enabled;
+                    seg_cfg.hierarchy_config.hierarchy_rate =
+                        cs.networks.corporate_hierarchies.probability;
+                    customer_gen.set_segmentation_config(seg_cfg);
+                }
                 let customer_pool = customer_gen.generate_customer_pool(
                     customers_per_company,
                     &company.code,
@@ -9490,7 +9728,7 @@ impl EnhancedOrchestrator {
     fn inject_data_quality(
         &mut self,
         entries: &mut [JournalEntry],
-    ) -> SynthResult<DataQualityStats> {
+    ) -> SynthResult<(DataQualityStats, Vec<datasynth_generators::QualityIssue>)> {
         let pb = self.create_progress_bar(entries.len() as u64, "Injecting Data Quality Issues");
 
         // Build config from user-specified schema settings when data_quality is enabled;
@@ -9638,7 +9876,8 @@ impl EnhancedOrchestrator {
             pb.finish_with_message("Data quality injection complete");
         }
 
-        Ok(injector.stats().clone())
+        let quality_issues = injector.issues().to_vec();
+        Ok((injector.stats().clone(), quality_issues))
     }
 
     /// Generate audit data (engagements, workpapers, evidence, risks, findings, judgments).
@@ -9876,7 +10115,26 @@ impl EnhancedOrchestrator {
 
                 // Add workpapers after findings since findings need them
                 snapshot.workpapers.extend(workpapers);
-                snapshot.engagements.push(engagement);
+
+                // Generate audit scope record for this engagement (one per engagement)
+                {
+                    let scope_id = format!(
+                        "SCOPE-{}-{}",
+                        engagement.engagement_id.simple(),
+                        &engagement.client_entity_id
+                    );
+                    let scope = datasynth_core::models::audit::AuditScope::new(
+                        scope_id.clone(),
+                        engagement.engagement_id.to_string(),
+                        engagement.client_entity_id.clone(),
+                        engagement.materiality,
+                    );
+                    // Wire scope_id back to engagement
+                    let mut eng = engagement;
+                    eng.scope_id = Some(scope_id);
+                    snapshot.audit_scopes.push(scope);
+                    snapshot.engagements.push(eng);
+                }
             }
         }
 
@@ -10480,9 +10738,24 @@ impl EnhancedOrchestrator {
 
             let mut cra_gen = CraGenerator::new(self.seed + 8315);
 
+            // Build entity → scope_id map from already-generated scopes
+            let entity_scope_map: std::collections::HashMap<String, String> = snapshot
+                .audit_scopes
+                .iter()
+                .map(|s| (s.entity_code.clone(), s.id.clone()))
+                .collect();
+
             for company in &self.config.companies {
                 let cras = cra_gen.generate_for_entity(&company.code, None);
-                snapshot.combined_risk_assessments.extend(cras);
+                let scope_id = entity_scope_map.get(&company.code).cloned();
+                let cras_with_scope: Vec<_> = cras
+                    .into_iter()
+                    .map(|mut cra| {
+                        cra.scope_id = scope_id.clone();
+                        cra
+                    })
+                    .collect();
+                snapshot.combined_risk_assessments.extend(cras_with_scope);
             }
 
             let significant_count = snapshot
@@ -10739,6 +11012,52 @@ impl EnhancedOrchestrator {
             debug!(
                 "ISA standard entries generated: {} standards",
                 snapshot.isa_mappings.len()
+            );
+        }
+
+        // Populate RelatedPartyTransaction.journal_entry_id by matching on date and company.
+        // For each RPT, find the chronologically closest JE for the engagement's entity.
+        {
+            let engagement_by_id: std::collections::HashMap<String, &str> = snapshot
+                .engagements
+                .iter()
+                .map(|e| (e.engagement_id.to_string(), e.client_entity_id.as_str()))
+                .collect();
+
+            for rpt in &mut snapshot.related_party_transactions {
+                if rpt.journal_entry_id.is_some() {
+                    continue; // already set
+                }
+                let entity = engagement_by_id
+                    .get(&rpt.engagement_id.to_string())
+                    .copied()
+                    .unwrap_or("");
+
+                // Find closest JE by date in the entity's company
+                let best_je = entries
+                    .iter()
+                    .filter(|je| je.header.company_code == entity)
+                    .min_by_key(|je| {
+                        let diff = (je.header.posting_date - rpt.transaction_date)
+                            .num_days()
+                            .abs();
+                        diff
+                    });
+
+                if let Some(je) = best_je {
+                    rpt.journal_entry_id = Some(je.header.document_id.to_string());
+                }
+            }
+
+            let linked = snapshot
+                .related_party_transactions
+                .iter()
+                .filter(|t| t.journal_entry_id.is_some())
+                .count();
+            debug!(
+                "Linked {}/{} related party transactions to journal entries",
+                linked,
+                snapshot.related_party_transactions.len()
             );
         }
 

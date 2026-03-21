@@ -15,7 +15,7 @@ default = ["streaming"]
 streaming = ["dep:reqwest"]
 
 [dependencies]
-datasynth-core = { workspace = true }
+datasynth-core = { workspace = true, features = ["llm"] }
 datasynth-config = { workspace = true }
 datasynth-eval = { workspace = true }
 datasynth-generators = { workspace = true }

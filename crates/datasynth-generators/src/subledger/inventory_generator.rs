@@ -20,34 +20,17 @@ use datasynth_core::models::{JournalEntry, JournalEntryLine};
 /// ## Moving-average valuation note
 ///
 /// When `default_valuation_method` is [`ValuationMethod::MovingAverage`], the
-/// generator does **not** update the weighted-average unit cost after each goods
-/// receipt. The moving-average formula is:
+/// generator updates the weighted-average unit cost after each goods receipt via
+/// `InventoryPosition::add_quantity`. The moving-average formula is:
 ///
 /// ```text
 /// new_avg_cost = (existing_qty × existing_cost + receipt_qty × receipt_cost)
 ///                / (existing_qty + receipt_qty)
 /// ```
 ///
-/// TODO: Implement this recalculation in `generate_goods_receipt` so that
-/// `InventoryPosition::valuation.unit_cost` reflects the true moving-average
-/// cost after each receipt. Currently the initial cost is held constant for the
-/// life of the position, which over-states (or under-states) the COGS/inventory
-/// value when receipt prices fluctuate.
-///
-/// The fix requires `generate_goods_receipt` to accept a mutable `&mut InventoryPosition`
-/// instead of `&InventoryPosition` so it can write back the updated `unit_cost`:
-///
-/// ```text
-/// let old_qty = position.quantity_on_hand;
-/// let old_cost = position.valuation.unit_cost;
-/// let new_avg_cost = if old_qty + receipt_qty > Decimal::ZERO {
-///     (old_qty * old_cost + receipt_qty * receipt_unit_cost) / (old_qty + receipt_qty)
-/// } else {
-///     receipt_unit_cost
-/// };
-/// position.valuation.unit_cost = new_avg_cost.round_dp(4);
-/// position.quantity_on_hand += receipt_qty;
-/// ```
+/// `generate_goods_receipt` now accepts `&mut InventoryPosition` so it can update
+/// the position in-place, ensuring `valuation.unit_cost` reflects the true
+/// moving-average after each receipt.
 #[derive(Debug, Clone)]
 pub struct InventoryGeneratorConfig {
     /// Default valuation method.
@@ -153,7 +136,7 @@ impl InventoryGenerator {
     /// Generates a goods receipt (inventory increase).
     pub fn generate_goods_receipt(
         &mut self,
-        position: &InventoryPosition,
+        position: &mut InventoryPosition,
         receipt_date: NaiveDate,
         quantity: Decimal,
         unit_cost: Decimal,
@@ -186,6 +169,12 @@ impl InventoryGenerator {
             movement.reference_doc_number = Some(po.to_string());
         }
         movement.reason_code = Some("Goods Receipt from PO".to_string());
+
+        // Update the position's moving-average unit cost and quantity.
+        // For MovingAverage valuation this recalculates:
+        //   new_avg_cost = (old_qty × old_cost + receipt_qty × receipt_cost)
+        //                  / (old_qty + receipt_qty)
+        position.add_quantity(quantity, unit_cost, receipt_date);
 
         let je = self.generate_goods_receipt_je(&movement);
         (movement, je)
@@ -569,7 +558,7 @@ mod tests {
         let rng = ChaCha8Rng::seed_from_u64(12345);
         let mut generator = InventoryGenerator::new(InventoryGeneratorConfig::default(), rng);
 
-        let position = generator.generate_position(
+        let mut position = generator.generate_position(
             "1000",
             "PLANT01",
             "WH01",
@@ -581,7 +570,7 @@ mod tests {
         );
 
         let (movement, je) = generator.generate_goods_receipt(
-            &position,
+            &mut position,
             NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
             dec!(50),
             dec!(50),

@@ -247,14 +247,16 @@ impl FinancialStatementGenerator {
         let lt_debt = *aggregated.get("LongTermDebt").unwrap_or(&Decimal::ZERO);
         let total_liabilities = current_liabilities + lt_debt;
 
-        // Retained earnings is used as a plug to force A = L + E (i.e. the balance sheet always
-        // balances by construction).  This is an intentional simplification: proper equity
-        // modelling with share capital, additional paid-in capital, treasury shares, AOCI, and
-        // NCI would require either multi-period state or a dedicated equity roll-forward step.
-        // TODO (Fix 11): Replace the plug with actual equity components when the equity
-        // roll-forward is implemented.
-        let retained_earnings = total_assets - total_liabilities;
-        let total_equity = retained_earnings;
+        // Total equity is used as a plug to force A = L + E (balance sheet always
+        // balances by construction).  Split into three components as proxies:
+        //   Share Capital   = 10% of total equity
+        //   APIC            = 30% of total equity
+        //   Retained Earnings = 60% of total equity (residual)
+        // This is still a proxy but produces multiple equity line items instead of one.
+        let total_equity = total_assets - total_liabilities;
+        let share_capital = (total_equity * Decimal::new(10, 2)).round_dp(2);
+        let apic = (total_equity * Decimal::new(30, 2)).round_dp(2);
+        let retained_earnings = total_equity - share_capital - apic;
         let total_le = total_liabilities + total_equity;
 
         let le_items = [
@@ -302,6 +304,24 @@ impl FinancialStatementGenerator {
                 None,
                 0,
                 true,
+            ),
+            (
+                "BS-SC",
+                "Share Capital",
+                "Equity",
+                share_capital,
+                None,
+                0,
+                false,
+            ),
+            (
+                "BS-APIC",
+                "Additional Paid-In Capital",
+                "Equity",
+                apic,
+                None,
+                0,
+                false,
             ),
             (
                 "BS-RE",

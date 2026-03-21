@@ -84,6 +84,11 @@ pub struct AuditEngagement {
     // === Timestamps ===
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+
+    // === Scope ===
+    /// Audit scope identifier (FK → AuditScope.id). Populated during planning phase.
+    #[serde(default)]
+    pub scope_id: Option<String>,
 }
 
 impl AuditEngagement {
@@ -127,6 +132,7 @@ impl AuditEngagement {
             fraud_risk_level: RiskLevel::Low,
             created_at: now,
             updated_at: now,
+            scope_id: None,
         }
     }
 

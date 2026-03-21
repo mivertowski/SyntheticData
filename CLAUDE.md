@@ -79,6 +79,7 @@ datasynth-test-utils   → Test utilities
 | Treasury | CashPosition, CashForecast, CashPool, CashPoolSweep, HedgingInstrument, HedgeRelationship, DebtInstrument, DebtCovenant |
 | ESG | EmissionRecord, EnergyConsumption, WaterUsage, WasteRecord, WorkforceDiversityMetric, PayEquityMetric, SafetyIncident, SafetyMetric, GovernanceMetric, SupplierEsgAssessment, MaterialityAssessment, EsgDisclosure, ClimateScenario |
 | Project Accounting | Project, ProjectCostLine, ProjectRevenue, EarnedValueMetric, ChangeOrder, ProjectMilestone |
+| Audit (ISA 220/300) | AuditScope |
 | Audit (ISA 600) | ComponentAuditor, GroupAuditPlan, ComponentInstruction, ComponentAuditorReport, Misstatement |
 | Audit Documentation | EngagementLetter, SubsequentEvent, ServiceOrganization, SocReport, GoingConcernAssessment, AccountingEstimate, AuditOpinion, KeyAuditMatter, Sox302Certification, Sox404Assessment |
 | Audit Methodology | CombinedRiskAssessment, MaterialityCalculation, SamplingPlan, SampledItem, SignificantClassOfTransactions, UnusualItemFlag, AnalyticalRelationship |
@@ -534,7 +535,7 @@ Output files are organized by domain directory. All files are JSON unless otherw
 | Banking | banking/ | banking_customers, banking_accounts, banking_transactions, aml_transaction_labels, aml_customer_labels, aml_account_labels, aml_relationship_labels, aml_narratives |
 | Banking Reconciliation | financial_reporting/ | bank_reconciliations (embedded in financial_reporting/) |
 | Process Mining | process_mining/ | event_log.json (OCEL 2.0), process_variants, and others |
-| Audit — Core | audit/ | audit_engagements, audit_workpapers, audit_evidence, audit_risk_assessments, audit_findings, audit_judgments |
+| Audit — Core | audit/ | audit_engagements, audit_scopes, audit_workpapers, audit_evidence, audit_risk_assessments, audit_findings, audit_judgments |
 | Audit — Confirmations | audit/ | audit_confirmations, audit_confirmation_responses |
 | Audit — Procedures | audit/ | audit_procedure_steps, audit_samples, audit_analytical_results |
 | Audit — Internal Audit | audit/ | audit_ia_functions, audit_ia_reports, audit_related_parties, audit_related_party_transactions |

@@ -375,6 +375,11 @@ pub fn write_all_output(
             "Audit engagements",
         );
         write_json_safe(
+            &result.audit.audit_scopes,
+            &audit_dir.join("audit_scopes.json"),
+            "Audit scopes (ISA 220 / ISA 300)",
+        );
+        write_json_safe(
             &result.audit.workpapers,
             &audit_dir.join("audit_workpapers.json"),
             "Audit workpapers",
@@ -1321,6 +1326,20 @@ pub fn write_all_output(
             }
             Err(e) => warn!("Failed to serialize data quality stats: {}", e),
         }
+    }
+
+    // ========================================================================
+    // Data Quality Issue Records
+    // ========================================================================
+    if !result.quality_issues.is_empty() {
+        let labels_dir = output_dir.join("labels");
+        std::fs::create_dir_all(&labels_dir)?;
+        info!("Writing data quality issue records...");
+        write_json_safe(
+            &result.quality_issues,
+            &labels_dir.join("quality_issues.json"),
+            "Data quality issues",
+        );
     }
 
     // ========================================================================

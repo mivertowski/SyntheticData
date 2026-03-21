@@ -174,7 +174,7 @@ impl DataQualityStats {
 }
 
 /// A data quality issue record.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityIssue {
     /// Unique issue identifier.
     pub issue_id: String,
@@ -193,7 +193,7 @@ pub struct QualityIssue {
 }
 
 /// Type of quality issue.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum QualityIssueType {
     /// Missing value.
     MissingValue,

@@ -236,6 +236,9 @@ pub struct CombinedRiskAssessment {
     pub id: String,
     /// Entity / company code the assessment belongs to.
     pub entity_code: String,
+    /// Audit scope this assessment belongs to (FK → AuditScope.id).
+    #[serde(default)]
+    pub scope_id: Option<String>,
     /// Account area (e.g. "Revenue", "Trade Receivables", "Inventory").
     pub account_area: String,
     /// The specific assertion being assessed.
@@ -277,6 +280,7 @@ impl CombinedRiskAssessment {
         Self {
             id,
             entity_code: entity_code.to_string(),
+            scope_id: None,
             account_area: account_area.to_string(),
             assertion,
             inherent_risk,

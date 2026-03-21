@@ -17,6 +17,7 @@
 pub mod accounting_estimates;
 pub mod analytical_procedure;
 pub mod analytical_relationships;
+pub mod audit_scope;
 pub mod component_audit;
 pub mod confirmation;
 mod engagement;
@@ -42,6 +43,7 @@ mod workpaper;
 pub use accounting_estimates::*;
 pub use analytical_procedure::*;
 pub use analytical_relationships::*;
+pub use audit_scope::*;
 pub use component_audit::*;
 pub use confirmation::*;
 pub use engagement::*;

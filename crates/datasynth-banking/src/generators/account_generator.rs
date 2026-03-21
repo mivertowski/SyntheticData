@@ -137,6 +137,9 @@ impl AccountGenerator {
             account.routing_number = Some(self.generate_routing_number());
         }
 
+        // Wire GL account: all bank accounts map to the Cash GL account (1000)
+        account.gl_account = Some("1000".to_string());
+
         account
     }
 
@@ -167,6 +170,9 @@ impl AccountGenerator {
         account.current_balance = self.generate_initial_balance(customer)
             * Decimal::from_f64_retain(0.3).unwrap_or(Decimal::ZERO);
         account.available_balance = account.current_balance;
+
+        // Wire GL account: all bank accounts map to the Cash GL account (1000)
+        account.gl_account = Some("1000".to_string());
 
         account
     }
