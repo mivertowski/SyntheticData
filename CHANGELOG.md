@@ -38,10 +38,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Velocity features** — Graph node feature vectors include transaction velocity (entries per day over rolling 30d window) and amount velocity for anomaly detection models
 - **PageRank and degree centrality** — Graph builder computes approximate PageRank and in/out-degree centrality for all entity nodes and attaches them as node features
 
+#### Dead Code Activation
+- **AccrualGenerator wired** — period-end accruals (prepaid insurance, accrued wages, accrued utilities, deferred revenue) now generated per company. Were fully implemented but never called from the orchestrator.
+- **ProjectRevenueGenerator wired** — PoC/ASC 606 revenue recognition entries now generated for active projects. Were implemented but never invoked.
+- **Quality issues/labels collected** — `QualityIssue` records from data quality injection now captured and written to `labels/quality_issues.json` and `labels/quality_labels.json`. Were generated but discarded.
+- **ISA PCAOB mappings output** — 34 ISA standards and their PCAOB equivalents now written to `audit/isa_mappings.json` and `audit/isa_pcaob_mappings.json`
+
+#### Config Wiring
+- **VendorNetwork config** — `vendor_network` YAML config (tier counts, cluster ratios, concentration limits) now passed to `VendorGenerator.set_network_config()`. Was parsed and validated but never applied.
+- **CustomerSegmentation config** — `customer_segmentation` YAML config (value segments, lifecycle rates) now passed to `CustomerGenerator`. Was parsed and validated but never applied.
+- **LLM provider selection** — `HttpLlmProvider` now instantiated when `llm.provider = "openai"` and API key is available. Was always using `MockLlmProvider` regardless of config.
+- **Segment depreciation threaded** — `total_depreciation` from close engine now passed to segment generator. Was `None`.
+
+#### Audit & Standards
+- **AuditScope model** — new `AuditScope` struct linking engagements to CRA via `scope_id`. Unblocks graph edges 132 (assessment→scope) and 134 (engagement→scope).
+- **Equity split** — Balance sheet equity section now shows 3 components (Share Capital 10%, APIC 30%, Retained Earnings 60%) instead of a single plug line.
+
 ### Changed
 - `Employee.annual_salary_usd` is now always populated (was previously `Option<Decimal>` and often absent)
 - `InventoryPosition.unit_cost` reflects moving-average cost after each `GoodsReceipt` movement (was static)
 - `ProcurementContract.purchase_order_ids` populated by `ContractGenerator` (was always empty `Vec`)
+- `BankAccount.gl_account` populated from account type (was always `None`)
+- Removed `kyc_profiles` and `bank_statement_lines` from CLAUDE.md export list (embedded in parent files, not standalone outputs)
+- `FinancialStatement` balance sheet now has `BS-SC` (Share Capital), `BS-APIC` (Additional Paid-In Capital), `BS-RE` (Retained Earnings) instead of single `BS-TE` equity line
 
 ## [1.3.1] - 2026-03-20
 
