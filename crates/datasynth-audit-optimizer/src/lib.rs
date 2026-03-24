@@ -4,4 +4,5 @@ pub mod constrained;
 pub mod graph;
 pub mod monte_carlo;
 pub mod report;
+pub mod resource_optimizer;
 pub mod shortest_path;
