@@ -94,37 +94,101 @@ impl StepDispatcher {
         bag: &mut ArtifactBag,
     ) {
         let cmd = step.command.as_deref().unwrap_or("");
+
+        // Auto-bootstrap engagement for IA blueprints (which lack
+        // `evaluate_client_acceptance`) — create the engagement record
+        // the first time a substantive command runs.  Commands that
+        // already dispatch to `dispatch_engagement` are excluded so we
+        // don't double-create.
+        if bag.engagements.is_empty()
+            && !matches!(
+                cmd,
+                "" | "start_universe_update"
+                    | "submit_universe"
+                    | "approve_universe"
+                    | "activate"
+                    | "submit_for_review"
+                    | "cycle_back"
+                    | "complete_cycle"
+                    | "evaluate_client_acceptance"
+                    | "conduct_opening_meeting"
+                    | "conduct_meeting"
+                    | "define_engagement_scope"
+            )
+        {
+            self.dispatch_engagement(context, bag);
+        }
+
         match cmd {
-            "evaluate_client_acceptance" => self.dispatch_engagement(context, bag),
-            "agree_engagement_terms" => self.dispatch_engagement_letter(context, bag),
+            // ----- Engagement generation (FSA + IA) -----
+            "evaluate_client_acceptance" | "conduct_opening_meeting" | "conduct_meeting"
+            | "define_engagement_scope" => self.dispatch_engagement(context, bag),
+
+            // ----- Engagement letter / charter (IA uses charter) -----
+            "agree_engagement_terms" | "draft_ia_charter" | "finalize_mandate" => {
+                self.dispatch_engagement_letter(context, bag);
+            }
+
+            // ----- Materiality -----
             "determine_overall_materiality" => self.dispatch_materiality(context, bag),
-            "identify_risks" => self.dispatch_risk_assessment(context, bag),
-            "assess_risks" => self.dispatch_cra(context, bag),
-            "design_controls_tests" | "design_substantive_procedures"
-            | "design_analytical_procedures" => {
+
+            // ----- Risk assessment (ISA 315/330) -----
+            "identify_engagement_risks" | "assess_engagement_risks" | "assess_universe_risks"
+            | "identify_risks" => {
+                self.dispatch_risk_assessment(context, bag);
+            }
+
+            // ----- Combined risk assessment -----
+            "assess_risks" | "assess_control_design" | "evaluate_control_effectiveness" => {
+                self.dispatch_cra(context, bag);
+            }
+
+            // ----- Workpaper generation (design steps) -----
+            "design_test_procedures" | "design_work_program" | "design_controls_tests"
+            | "design_substantive_procedures" | "design_analytical_procedures" => {
                 self.dispatch_workpaper(step, procedure_id, context, bag);
             }
-            "perform_controls_tests" | "perform_tests_of_details" => {
+
+            // ----- Sampling / test execution -----
+            "perform_test_procedures" | "perform_controls_tests" | "perform_tests_of_details" => {
                 self.dispatch_sampling(context, bag);
             }
+
+            // ----- Analytical procedures -----
             "perform_analytical_procedures" => {
                 self.dispatch_analytical_procedures(context, bag);
             }
+
+            // ----- Confirmations -----
             "send_confirmations" => {
                 self.dispatch_confirmations(context, bag);
             }
+
+            // ----- Going concern -----
             "evaluate_management_assessment" | "determine_going_concern_doubt" => {
                 self.dispatch_going_concern(context, bag);
             }
+
+            // ----- Subsequent events -----
             "perform_subsequent_events_review" => {
                 self.dispatch_subsequent_events(context, bag);
             }
-            "evaluate_findings" | "evaluate_misstatements" => {
+
+            // ----- Finding development (C2CE model) -----
+            "identify_condition" | "map_criteria" | "analyze_cause" | "assess_effect"
+            | "draft_finding" | "identify_finding_condition" | "map_finding_criteria"
+            | "analyze_cause_and_effect" | "evaluate_finding_significance"
+            | "evaluate_findings" | "evaluate_misstatements" => {
                 self.dispatch_findings(context, bag);
             }
-            "form_audit_opinion" => {
+
+            // ----- Opinion / reporting -----
+            "form_audit_opinion" | "develop_engagement_conclusions" | "finalize_audit_report"
+            | "issue_report" => {
                 self.dispatch_opinion(context, bag);
             }
+
+            // ----- Everything else: generic workpaper fallback -----
             _ => {
                 self.dispatch_generic_workpaper(step, procedure_id, context, bag);
             }
@@ -401,30 +465,72 @@ impl StepDispatcher {
 // ---------------------------------------------------------------------------
 
 /// Map a step command string to the most appropriate `WorkpaperSection`.
+#[allow(clippy::if_same_then_else)]
 fn section_for_command(cmd: &str) -> WorkpaperSection {
-    if cmd.contains("planning") || cmd.contains("materiality") || cmd.contains("acceptance") {
-        WorkpaperSection::Planning
-    } else if cmd.contains("risk") || cmd.contains("assess") {
-        WorkpaperSection::RiskAssessment
-    } else if cmd.contains("control") {
-        WorkpaperSection::ControlTesting
-    } else if cmd.contains("substantive")
+    // --- Completion: findings / C2CE / monitoring / follow-up ---
+    if cmd.contains("finding")
+        || cmd.contains("condition")
+        || cmd.contains("criteria")
+        || cmd.contains("cause")
+        || cmd.contains("effect")
+        || cmd.contains("recommendation")
+        || cmd.contains("monitoring")
+        || cmd.contains("follow_up")
+        || cmd.contains("remediation")
+        || cmd.contains("verification")
+        || cmd.contains("opinion")
+        || cmd.contains("going_concern")
+        || cmd.contains("subsequent")
+        || cmd.contains("conclusion")
+    {
+        WorkpaperSection::Completion
+    // --- Reporting ---
+    } else if cmd.contains("report")
+        || cmd.contains("draft")
+        || cmd.contains("issue")
+        || cmd.contains("distribute")
+        || cmd.contains("communicate")
+    {
+        WorkpaperSection::Reporting
+    // --- Substantive testing ---
+    } else if cmd.contains("test")
+        || cmd.contains("execute")
+        || cmd.contains("perform")
+        || cmd.contains("substantive")
         || cmd.contains("detail")
         || cmd.contains("analytical")
         || cmd.contains("confirm")
         || cmd.contains("sampling")
     {
         WorkpaperSection::SubstantiveTesting
-    } else if cmd.contains("opinion")
-        || cmd.contains("going_concern")
-        || cmd.contains("subsequent")
-        || cmd.contains("conclusion")
-        || cmd.contains("finding")
+    // --- Control testing ---
+    } else if cmd.contains("control") {
+        WorkpaperSection::ControlTesting
+    // --- Risk assessment ---
+    } else if cmd.contains("risk") || cmd.contains("assess") {
+        WorkpaperSection::RiskAssessment
+    // --- Planning (IA governance, admin, scope, etc.) ---
+    } else if cmd.contains("planning")
+        || cmd.contains("materiality")
+        || cmd.contains("acceptance")
+        || cmd.contains("universe")
+        || cmd.contains("plan")
+        || cmd.contains("scope")
+        || cmd.contains("timeline")
+        || cmd.contains("allocation")
+        || cmd.contains("ethics")
+        || cmd.contains("independence")
+        || cmd.contains("objectivity")
+        || cmd.contains("competency")
+        || cmd.contains("confidentiality")
+        || cmd.contains("budget")
+        || cmd.contains("staffing")
+        || cmd.contains("technology")
+        || cmd.contains("quality")
     {
-        WorkpaperSection::Completion
-    } else if cmd.contains("report") || cmd.contains("issue") {
-        WorkpaperSection::Reporting
+        WorkpaperSection::Planning
     } else {
+        // Unrecognised command — default to Planning.
         WorkpaperSection::Planning
     }
 }
@@ -487,16 +593,30 @@ mod tests {
         let ctx = EngagementContext::test_default();
         let mut bag = ArtifactBag::default();
 
-        // Without an engagement, dispatch should skip.
-        let step = step_with_command("s1", "agree_engagement_terms");
-        dispatcher.dispatch(&step, "engagement_terms", &ctx, &mut bag);
-        assert!(bag.engagement_letters.is_empty());
-
-        // Generate an engagement first, then retry.
+        // Generate an engagement first, then dispatch the letter.
         let eng_step = step_with_command("s0", "evaluate_client_acceptance");
         dispatcher.dispatch(&eng_step, "client_acceptance", &ctx, &mut bag);
+
+        let step = step_with_command("s1", "agree_engagement_terms");
         dispatcher.dispatch(&step, "engagement_terms", &ctx, &mut bag);
         assert_eq!(bag.engagement_letters.len(), 1);
+    }
+
+    #[test]
+    fn test_dispatch_engagement_letter_auto_bootstrap() {
+        // The auto-bootstrap creates an engagement when the bag is empty
+        // and a substantive command runs. `agree_engagement_terms` is
+        // substantive, so it should auto-create an engagement and then
+        // successfully produce a letter.
+        let mut dispatcher = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        let step = step_with_command("s1", "agree_engagement_terms");
+        dispatcher.dispatch(&step, "engagement_terms", &ctx, &mut bag);
+
+        assert_eq!(bag.engagements.len(), 1, "auto-bootstrap should create an engagement");
+        assert_eq!(bag.engagement_letters.len(), 1, "letter should be generated after bootstrap");
     }
 
     #[test]
@@ -643,5 +763,198 @@ mod tests {
         dispatcher.dispatch(&step, "confirmations", &ctx, &mut bag);
 
         assert!(!bag.confirmations.is_empty());
+    }
+
+    // -------------------------------------------------------------------
+    // IA-specific dispatch tests
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn test_ia_dispatch_produces_artifacts() {
+        // Simulate an IA engagement by running commands from the IA
+        // blueprint in a representative order. The auto-bootstrap should
+        // create the engagement, and subsequent commands should produce
+        // typed artifacts (not just generic workpapers).
+        let mut dispatcher = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // IA engagement setup (no evaluate_client_acceptance).
+        let cmds = [
+            ("s01", "conduct_opening_meeting"),
+            ("s02", "define_engagement_scope"),
+            ("s03", "identify_engagement_risks"),
+            ("s04", "assess_engagement_risks"),
+            ("s05", "assess_control_design"),
+            ("s06", "evaluate_control_effectiveness"),
+            ("s07", "design_test_procedures"),
+            ("s08", "design_work_program"),
+            ("s09", "perform_test_procedures"),
+            ("s10", "draft_ia_charter"),
+            ("s11", "determine_overall_materiality"),
+            ("s12", "develop_engagement_conclusions"),
+            ("s13", "finalize_audit_report"),
+        ];
+
+        for (id, cmd) in &cmds {
+            let step = step_with_command(id, cmd);
+            dispatcher.dispatch(&step, "ia_proc", &ctx, &mut bag);
+        }
+
+        assert!(
+            bag.total_artifacts() > 0,
+            "IA dispatch must produce at least one artifact, got 0"
+        );
+
+        // Auto-bootstrap should have created an engagement.
+        assert!(
+            !bag.engagements.is_empty(),
+            "auto-bootstrap should have created an engagement"
+        );
+
+        // conduct_opening_meeting dispatches to engagement gen — may
+        // produce additional engagement records.
+        assert!(
+            !bag.engagements.is_empty(),
+            "expected at least 1 engagement, got 0"
+        );
+
+        // Risk assessments from identify/assess engagement risks.
+        assert!(
+            !bag.risk_assessments.is_empty(),
+            "expected risk assessments from IA risk commands"
+        );
+
+        // CRAs from assess_control_design / evaluate_control_effectiveness.
+        assert!(
+            !bag.combined_risk_assessments.is_empty(),
+            "expected CRAs from IA control evaluation commands"
+        );
+
+        // Workpapers from design_test_procedures / design_work_program.
+        assert!(
+            !bag.workpapers.is_empty(),
+            "expected workpapers from IA design commands"
+        );
+
+        // Materiality from determine_overall_materiality.
+        assert!(
+            !bag.materiality_calculations.is_empty(),
+            "expected materiality calculations"
+        );
+
+        // Opinion from develop_engagement_conclusions / finalize_audit_report.
+        assert!(
+            !bag.audit_opinions.is_empty(),
+            "expected audit opinions from IA reporting commands"
+        );
+    }
+
+    #[test]
+    fn test_ia_finding_commands_dispatch() {
+        // Test C2CE commands produce findings.
+        let mut dispatcher = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap engagement + workpapers so findings have context.
+        let setup_cmds = [
+            ("s0", "conduct_opening_meeting"),
+            ("s1", "design_test_procedures"),
+        ];
+        for (id, cmd) in &setup_cmds {
+            let step = step_with_command(id, cmd);
+            dispatcher.dispatch(&step, "setup", &ctx, &mut bag);
+        }
+
+        let finding_cmds = [
+            "identify_condition",
+            "map_criteria",
+            "analyze_cause",
+            "assess_effect",
+            "draft_finding",
+            "identify_finding_condition",
+            "map_finding_criteria",
+            "analyze_cause_and_effect",
+            "evaluate_finding_significance",
+            "evaluate_findings",
+            "evaluate_misstatements",
+        ];
+
+        let findings_before = bag.findings.len();
+        for (i, cmd) in finding_cmds.iter().enumerate() {
+            let step = step_with_command(&format!("f{}", i), cmd);
+            dispatcher.dispatch(&step, "c2ce", &ctx, &mut bag);
+        }
+
+        assert!(
+            bag.findings.len() > findings_before,
+            "C2CE commands should produce findings; before={}, after={}",
+            findings_before,
+            bag.findings.len()
+        );
+    }
+
+    #[test]
+    fn test_ia_auto_bootstrap_skips_fsm_commands() {
+        // FSM lifecycle commands (activate, submit_for_review, etc.)
+        // should NOT trigger auto-bootstrap of the engagement.
+        let mut dispatcher = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        let skip_cmds = [
+            "activate",
+            "submit_for_review",
+            "cycle_back",
+            "complete_cycle",
+            "start_universe_update",
+            "submit_universe",
+            "approve_universe",
+        ];
+
+        for (i, cmd) in skip_cmds.iter().enumerate() {
+            let step = step_with_command(&format!("x{}", i), cmd);
+            dispatcher.dispatch(&step, "fsm_ctrl", &ctx, &mut bag);
+        }
+
+        assert!(
+            bag.engagements.is_empty(),
+            "FSM lifecycle commands should not trigger auto-bootstrap; got {} engagements",
+            bag.engagements.len()
+        );
+    }
+
+    #[test]
+    fn test_section_for_command_ia_keywords() {
+        // IA-specific keyword mapping checks.
+        assert_eq!(
+            section_for_command("identify_finding_condition"),
+            WorkpaperSection::Completion
+        );
+        assert_eq!(
+            section_for_command("track_action_plan_status"),
+            WorkpaperSection::Planning
+        );
+        assert_eq!(
+            section_for_command("perform_test_procedures"),
+            WorkpaperSection::SubstantiveTesting
+        );
+        assert_eq!(
+            section_for_command("draft_audit_report"),
+            WorkpaperSection::Reporting
+        );
+        assert_eq!(
+            section_for_command("assess_universe_risks"),
+            WorkpaperSection::RiskAssessment
+        );
+        assert_eq!(
+            section_for_command("establish_ethics_code"),
+            WorkpaperSection::Planning
+        );
+        assert_eq!(
+            section_for_command("develop_engagement_conclusions"),
+            WorkpaperSection::Completion
+        );
     }
 }
