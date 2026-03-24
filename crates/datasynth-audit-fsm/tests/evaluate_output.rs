@@ -133,6 +133,46 @@ fn evaluate_fsm_engine_output() {
     println!();
 
     // ===================================================================
+    // 2c. Artifact Generation Summary
+    // ===================================================================
+    let fsa_bag = &fsa_result.artifacts;
+    let ia_bag = &ia_result.artifacts;
+
+    println!("--- FSA Artifact Generation ---");
+    println!("  Engagements:           {}", fsa_bag.engagements.len());
+    println!("  Engagement letters:    {}", fsa_bag.engagement_letters.len());
+    println!("  Materiality calcs:     {}", fsa_bag.materiality_calculations.len());
+    println!("  Risk assessments:      {}", fsa_bag.risk_assessments.len());
+    println!("  Combined risk assess:  {}", fsa_bag.combined_risk_assessments.len());
+    println!("  Workpapers:            {}", fsa_bag.workpapers.len());
+    println!("  Evidence:              {}", fsa_bag.evidence.len());
+    println!("  Findings:              {}", fsa_bag.findings.len());
+    println!("  Sampling plans:        {}", fsa_bag.sampling_plans.len());
+    println!("  Analytical results:    {}", fsa_bag.analytical_results.len());
+    println!("  Going concern:         {}", fsa_bag.going_concern_assessments.len());
+    println!("  Subsequent events:     {}", fsa_bag.subsequent_events.len());
+    println!("  Audit opinions:        {}", fsa_bag.audit_opinions.len());
+    println!("  Key audit matters:     {}", fsa_bag.key_audit_matters.len());
+    println!("  Confirmations:         {}", fsa_bag.confirmations.len());
+    println!("  TOTAL ARTIFACTS:       {}", fsa_bag.total_artifacts());
+    println!();
+
+    println!("--- IA Artifact Generation ---");
+    println!("  Engagements:           {}", ia_bag.engagements.len());
+    println!("  Workpapers:            {}", ia_bag.workpapers.len());
+    println!("  Risk assessments:      {}", ia_bag.risk_assessments.len());
+    println!("  Findings:              {}", ia_bag.findings.len());
+    println!("  Sampling plans:        {}", ia_bag.sampling_plans.len());
+    println!("  TOTAL ARTIFACTS:       {}", ia_bag.total_artifacts());
+    println!();
+
+    assert!(fsa_bag.total_artifacts() > 0, "FSA should produce artifacts");
+    // IA uses different step commands than FSA — most fall through to
+    // generic workpaper generation which requires an engagement in the bag.
+    // Full IA command mapping is planned for a future iteration.
+    println!("  (IA artifact mapping covers {} of 82 steps)", ia_bag.total_artifacts());
+
+    // ===================================================================
     // 3. Export FSA event trail to temp file, read back, print first 3
     // ===================================================================
     let tmp_dir = std::env::temp_dir();
