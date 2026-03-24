@@ -10,27 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **YAML-driven audit FSM engine** (`datasynth-audit-fsm` crate): loads ISA and IIA-GIAS methodology blueprints as event-sourced state machines for realistic audit trail and artifact generation
-  - Financial Statement Audit (FSA) blueprint: 7 procedures, 3 phases, 14 ISA standards
-  - Internal Audit (IA) blueprint: 34 procedures, 9 phases, 82 steps, 52 GIAS standards
+  - Financial Statement Audit (FSA) blueprint: 9 procedures, 3 phases, 14 ISA standards — generates 51 events + 1,916 artifacts per engagement
+  - Internal Audit (IA) blueprint: 34 procedures, 9 phases, 82 steps, 52 GIAS standards — generates 368 events + 1,891 artifacts per engagement
+  - **StepDispatcher**: maps 135 blueprint step commands to 14 pre-initialized audit generators, producing concrete ISA-compliant artifacts (engagements, materiality calculations, risk assessments, CRAs, workpapers, evidence, findings, sampling plans, analytical procedures, going concern assessments, subsequent events, audit opinions, key audit matters)
   - Supports 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
   - Self-loop handling with configurable max iterations for follow-up procedures
   - Continuous phase support (parallel execution for ethics, governance, quality phases)
   - Discriminator-based procedure filtering (categories, risk ratings, engagement types)
   - Generation overlay presets: default, thorough, rushed (controls revision probability, timing, anomaly injection)
-  - Flat JSON audit event trail export
+  - Flat JSON audit event trail export (`audit/fsm_event_trail.json`)
   - OCEL 2.0 projection export for process mining integration
   - Custom YAML blueprint support for user-defined methodologies
+  - Auto-bootstrap engagement for IA blueprints (creates engagement context on first substantive step)
 - **Audit FSM optimizer** (`datasynth-audit-optimizer` crate): graph analysis and simulation
-  - Blueprint to petgraph directed graph conversion
-  - Shortest path analysis (BFS per procedure)
+  - Blueprint → petgraph directed graph conversion
+  - Shortest path analysis (BFS per procedure): FSA 27 min transitions, IA 101 min transitions
   - Constraint-based path optimization with transitive precondition expansion
   - Monte Carlo simulation for outcome distribution analysis (bottleneck detection, revision hotspots, happy path identification)
+- **Orchestrator integration**: when `audit.fsm.enabled: true`, the enhanced orchestrator uses the FSM engine to drive audit generation — artifacts flow into the same export pipeline and graph builder as legacy generators
 - **Configuration**: `audit.fsm` section in config YAML for FSM-driven generation
 - **Blueprint repository**: methodology blueprints available at https://github.com/mivertowski/SyntheticDataBlueprints
 
 ### Changed
 
 - Workspace now includes 19 crates (added datasynth-audit-fsm and datasynth-audit-optimizer)
+
+### Fixed
+
+- Unused variables in `subsequent_event_generator` tests
+- Unused `make_period_end` helper in `sox_generator` tests
+- Suppressed false-positive unused-mut warning in `going_concern_generator` test
 
 ## [1.4.0] - 2026-03-21
 
