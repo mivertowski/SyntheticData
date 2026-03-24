@@ -18,6 +18,19 @@ use crate::schema::*;
 const BUILTIN_FSA: &str = include_str!("../blueprints/generic_fsa.yaml");
 
 // ---------------------------------------------------------------------------
+// Built-in overlay YAML
+// ---------------------------------------------------------------------------
+
+/// Default overlay — balanced settings matching the schema defaults.
+const BUILTIN_OVERLAY_DEFAULT: &str = include_str!("../overlays/default.yaml");
+
+/// Thorough overlay — higher evidence volumes and lower anomaly rates.
+const BUILTIN_OVERLAY_THOROUGH: &str = include_str!("../overlays/thorough.yaml");
+
+/// Rushed overlay — lower volumes, faster timing, and elevated anomaly rates.
+const BUILTIN_OVERLAY_RUSHED: &str = include_str!("../overlays/rushed.yaml");
+
+// ---------------------------------------------------------------------------
 // Source enums
 // ---------------------------------------------------------------------------
 
@@ -357,10 +370,8 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             });
 
             let procs = proc_by_phase.remove(&p.id).unwrap_or_default();
-            let procedures: Vec<BlueprintProcedure> = procs
-                .into_iter()
-                .map(convert_raw_procedure)
-                .collect();
+            let procedures: Vec<BlueprintProcedure> =
+                procs.into_iter().map(convert_raw_procedure).collect();
 
             BlueprintPhase {
                 id: p.id,
@@ -543,11 +554,10 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
             parse_blueprint(yaml)
         }
         BlueprintSource::Custom(path) => {
-            let yaml = std::fs::read_to_string(path).map_err(|_| {
-                AuditFsmError::SourceNotFound {
+            let yaml =
+                std::fs::read_to_string(path).map_err(|_| AuditFsmError::SourceNotFound {
                     source_id: path.display().to_string(),
-                }
-            })?;
+                })?;
             parse_blueprint(&yaml)
         }
         BlueprintSource::Raw(yaml) => parse_blueprint(yaml),
@@ -560,18 +570,21 @@ pub fn default_overlay() -> GenerationOverlay {
 }
 
 /// Load an overlay from the given source.
-///
-/// For now, all builtin variants return `default_overlay()`. Thorough and
-/// Rushed presets will be implemented in Task 10.
 pub fn load_overlay(source: &OverlaySource) -> Result<GenerationOverlay, AuditFsmError> {
     match source {
-        OverlaySource::Builtin(_) => Ok(default_overlay()),
+        OverlaySource::Builtin(b) => {
+            let yaml = match b {
+                BuiltinOverlay::Default => BUILTIN_OVERLAY_DEFAULT,
+                BuiltinOverlay::Thorough => BUILTIN_OVERLAY_THOROUGH,
+                BuiltinOverlay::Rushed => BUILTIN_OVERLAY_RUSHED,
+            };
+            parse_overlay(yaml)
+        }
         OverlaySource::Custom(path) => {
-            let yaml = std::fs::read_to_string(path).map_err(|_| {
-                AuditFsmError::SourceNotFound {
+            let yaml =
+                std::fs::read_to_string(path).map_err(|_| AuditFsmError::SourceNotFound {
                     source_id: path.display().to_string(),
-                }
-            })?;
+                })?;
             parse_overlay(&yaml)
         }
         OverlaySource::Raw(yaml) => parse_overlay(yaml),
@@ -803,10 +816,7 @@ pub fn topological_sort_procedures(bp: &AuditBlueprint) -> Result<Vec<String>, A
                 return Err(AuditFsmError::BlueprintValidation {
                     violations: vec![ValidationViolation {
                         location: format!("procedure.{}", proc_id),
-                        message: format!(
-                            "precondition '{}' not found in procedures",
-                            dep
-                        ),
+                        message: format!("precondition '{}' not found in procedures", dep),
                     }],
                 });
             }
@@ -1290,7 +1300,10 @@ mod tests {
         });
 
         let result = validate_blueprint(&bp);
-        assert!(result.is_err(), "expected validation error for invalid phase ref");
+        assert!(
+            result.is_err(),
+            "expected validation error for invalid phase ref"
+        );
     }
 
     #[test]
@@ -1356,6 +1369,40 @@ mod tests {
             (revision_prob - 0.15).abs() < f64::EPSILON,
             "expected revision_probability ~0.15, got {}",
             revision_prob
+        );
+    }
+
+    #[test]
+    fn test_load_builtin_default_overlay() {
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
+        assert!(
+            (overlay.transitions.defaults.revision_probability - 0.15).abs() < 0.001,
+            "expected revision_probability ~0.15, got {}",
+            overlay.transitions.defaults.revision_probability
+        );
+    }
+
+    #[test]
+    fn test_load_builtin_thorough_overlay() {
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough)).unwrap();
+        assert!(
+            (overlay.transitions.defaults.revision_probability - 0.30).abs() < 0.001,
+            "expected revision_probability ~0.30, got {}",
+            overlay.transitions.defaults.revision_probability
+        );
+    }
+
+    #[test]
+    fn test_load_builtin_rushed_overlay() {
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed)).unwrap();
+        assert!(
+            overlay.transitions.defaults.revision_probability < 0.10,
+            "expected revision_probability < 0.10, got {}",
+            overlay.transitions.defaults.revision_probability
+        );
+        assert!(
+            overlay.actor_profiles.contains_key("audit_staff"),
+            "expected 'audit_staff' in actor_profiles"
         );
     }
 }

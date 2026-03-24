@@ -1,0 +1,19 @@
+transitions:
+  defaults:
+    revision_probability: 0.30
+    timing:
+      mu_hours: 40.0
+      sigma_hours: 12.0
+artifacts:
+  workpapers_per_step:
+    min: 2
+    max: 5
+  evidence_items_per_workpaper:
+    min: 4
+    max: 8
+anomalies:
+  skipped_approval: 0.005
+  late_posting: 0.02
+  max_delay_hours: 24.0
+  missing_evidence: 0.01
+  out_of_sequence: 0.002

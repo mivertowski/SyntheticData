@@ -1,0 +1,28 @@
+transitions:
+  defaults:
+    revision_probability: 0.05
+    timing:
+      mu_hours: 8.0
+      sigma_hours: 4.0
+artifacts:
+  workpapers_per_step:
+    min: 1
+    max: 2
+  evidence_items_per_workpaper:
+    min: 1
+    max: 3
+anomalies:
+  skipped_approval: 0.08
+  late_posting: 0.15
+  max_delay_hours: 120.0
+  missing_evidence: 0.10
+  out_of_sequence: 0.05
+actor_profiles:
+  audit_staff:
+    revision_multiplier: 0.5
+    evidence_multiplier: 0.7
+    skip_guidance_steps: true
+  audit_senior:
+    revision_multiplier: 0.7
+    evidence_multiplier: 0.8
+    skip_guidance_steps: true
