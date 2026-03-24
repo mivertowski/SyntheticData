@@ -131,6 +131,11 @@ impl AuditFsmEngine {
                 None => continue,
             };
 
+            // Skip procedures that don't match the overlay's discriminator filter.
+            if self.should_skip_procedure(&proc) {
+                continue;
+            }
+
             let agg = &proc.aggregate;
             if agg.initial_state.is_empty() || agg.states.is_empty() {
                 // No FSM defined for this procedure — skip.
@@ -459,6 +464,26 @@ impl AuditFsmEngine {
         }
     }
 
+    /// Check whether a procedure should be skipped based on the overlay's
+    /// discriminator filter. Returns `true` if the procedure does NOT match
+    /// the overlay filter and should be excluded.
+    fn should_skip_procedure(&self, proc: &BlueprintProcedure) -> bool {
+        let Some(ref overlay_discs) = self.overlay.discriminators else {
+            return false; // No filter = run everything.
+        };
+        if proc.discriminators.is_empty() {
+            return false; // No discriminators on procedure = always run.
+        }
+        for (category, filter_values) in overlay_discs {
+            if let Some(proc_values) = proc.discriminators.get(category) {
+                if !proc_values.iter().any(|v| filter_values.contains(v)) {
+                    return true; // No match in this category = skip.
+                }
+            }
+        }
+        false
+    }
+
     /// Determine which phases have all exit-gate conditions satisfied.
     ///
     /// Continuous phases (those with `order < 0`) are excluded — they run in
@@ -683,5 +708,31 @@ mod tests {
                 proc_id, count
             );
         }
+    }
+
+    #[test]
+    fn test_discriminator_filtering() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let mut overlay = default_overlay();
+        let mut disc = HashMap::new();
+        disc.insert("categories".to_string(), vec!["financial".to_string()]);
+        overlay.discriminators = Some(disc);
+
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp.clone(), overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let filtered = engine.run_engagement(&ctx).unwrap();
+
+        // Run unfiltered for comparison.
+        let mut engine2 =
+            AuditFsmEngine::new(bwp, default_overlay(), ChaCha8Rng::seed_from_u64(42));
+        let full = engine2.run_engagement(&ctx).unwrap();
+
+        assert!(
+            filtered.procedure_states.len() <= full.procedure_states.len(),
+            "Filtered ({}) should have <= procedures than full ({})",
+            filtered.procedure_states.len(),
+            full.procedure_states.len()
+        );
     }
 }

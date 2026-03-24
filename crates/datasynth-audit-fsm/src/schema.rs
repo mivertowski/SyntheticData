@@ -373,6 +373,10 @@ pub struct GenerationOverlay {
     /// Per-actor behavioural profiles keyed by actor id.
     #[serde(default)]
     pub actor_profiles: HashMap<String, ActorProfile>,
+    /// Optional discriminator filter: only procedures matching at least one
+    /// value in each specified category will execute. `None` means no filter.
+    #[serde(default)]
+    pub discriminators: Option<HashMap<String, Vec<String>>>,
 }
 
 fn default_max_self_loop_iterations() -> usize {
@@ -389,6 +393,7 @@ impl Default for GenerationOverlay {
             artifacts: ArtifactConfig::default(),
             anomalies: AnomalyConfig::default(),
             actor_profiles: HashMap::new(),
+            discriminators: None,
         }
     }
 }
