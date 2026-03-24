@@ -10,6 +10,7 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, LogNormal};
 
+use crate::artifact::ArtifactBag;
 use crate::context::EngagementContext;
 use crate::error::AuditFsmError;
 use crate::event::{
@@ -38,6 +39,8 @@ pub struct EngagementResult {
     pub phases_completed: Vec<String>,
     /// Cumulative wall-clock hours of the engagement.
     pub total_duration_hours: f64,
+    /// Typed audit artifacts accumulated by step dispatchers.
+    pub artifacts: ArtifactBag,
 }
 
 // ---------------------------------------------------------------------------
@@ -51,6 +54,7 @@ struct RunAccum {
     step_completions: HashMap<String, bool>,
     evidence_states: HashMap<String, String>,
     anomalies: Vec<AuditAnomalyRecord>,
+    artifacts: ArtifactBag,
     current_ts: NaiveDateTime,
 }
 
@@ -121,6 +125,7 @@ impl AuditFsmEngine {
             step_completions: HashMap::new(),
             evidence_states: HashMap::new(),
             anomalies: Vec::new(),
+            artifacts: ArtifactBag::default(),
             current_ts: start_ts,
         };
 
@@ -242,6 +247,7 @@ impl AuditFsmEngine {
             anomalies: acc.anomalies,
             phases_completed,
             total_duration_hours,
+            artifacts: acc.artifacts,
         })
     }
 
