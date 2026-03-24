@@ -51,7 +51,7 @@
 \fancyhf{}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyhead[L]{\small\textcolor{midgray}{DataSynth --- Executive Overview}}
-\fancyhead[R]{\small\textcolor{midgray}{v0.11.0}}
+\fancyhead[R]{\small\textcolor{midgray}{v1.5.0}}
 \fancyfoot[C]{\small\textcolor{midgray}{\thepage}}
 
 % ── Custom boxes ──────────────────────────────────────────────────────────────
@@ -105,14 +105,14 @@
   {\fontsize{38}{44}\selectfont\bfseries\textcolor{white}{DataSynth}}\\[0.5em]
   {\fontsize{16}{20}\selectfont\textcolor{white!85}{Enterprise Synthetic Data Platform}}\\[0.3em]
   {\large\textcolor{white!65}{High-Performance Generation for Accounting, Audit \& ML}}\\[0.3em]
-  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.7 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Helm/Docker}}
+  {\normalsize\textcolor{white!50}{Rust core \textbullet{} Python 1.10 \textbullet{} REST/gRPC API \textbullet{} Desktop UI \textbullet{} Audit FSM Engine}}
 \end{flushleft}
 
 \vspace{5.5cm}
 
 \begin{flushleft}
   \textcolor{midgray}{\large Executive Overview}\\[0.8em]
-  {\Large\textcolor{brand}{\textbf{Version 0.11.0}}}\\[1.5em]
+  {\Large\textcolor{brand}{\textbf{Version 1.5.0}}}\\[1.5em]
   \textcolor{midgray}{%
     Deterministic, privacy-preserving synthetic data generation\\
     for enterprise finance, compliance testing, and machine learning.%
@@ -122,7 +122,7 @@
 \vfill
 \begin{flushleft}
   \textcolor{midgray}{\small
-    Built with Rust \& Python \textbullet{} 15 modular crates \textbullet{} 200\,K+ entries/sec\\[4pt]
+    Built with Rust \& Python \textbullet{} 19 modular crates \textbullet{} 200\,K+ entries/sec\\[4pt]
     Open-source (Apache-2.0) \textbullet{} Commercial license available\\[4pt]
     \textbf{GitHub:} \url{https://github.com/mivertowski/SyntheticData}
   }
@@ -159,6 +159,9 @@ real-world enterprise resource planning (ERP) systems.
         calibrated against empirical research conducted on real-world
         enterprise datasets, ensuring synthetic output mirrors the
         structural properties of production ERP data.
+  \item \textbf{Methodology-driven audit simulation} --- loads ISA and IIA-GIAS
+        audit procedures as YAML-defined finite state machines, producing
+        event-sourced audit trails with 1{,}900+ typed artifacts per engagement.
 \end{itemize}
 \end{tcolorbox}
 
@@ -186,7 +189,7 @@ real-world enterprise resource planning (ERP) systems.
 % Row 2
 \begin{tcolorbox}[statbox, width=4.8cm]
   \centering
-  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{15}}\\[3pt]
+  {\fontsize{26}{30}\selectfont\bfseries\textcolor{accent}{19}}\\[3pt]
   {\small modular Rust crates}
 \end{tcolorbox} &
 \begin{tcolorbox}[statbox, width=4.8cm]
@@ -375,6 +378,80 @@ Generates ISA-compliant audit artifacts:
         AP (30\%), Bank (20\%), Legal (10\%) with positive/negative response
         modeling, reconciliation for disagreements, and alternative procedures
         for non-responses.
+\end{itemize}
+
+\subsection{YAML-Driven Audit FSM Engine}
+
+\textit{New in v1.5.0} --- DataSynth introduces a methodology-driven approach to audit data
+generation through the \texttt{datasynth-audit-fsm} crate. Rather than
+generating audit artifacts through independent, stateless generators, the
+engine loads audit methodology blueprints---encoded as YAML-defined finite
+state machines---and walks each procedure's aggregate state machine in
+topological order, respecting precondition dependencies.
+
+\subsubsection{Two-Layer Architecture}
+
+The engine separates \emph{what happens} (methodology blueprint) from
+\emph{how it generates} (generation overlay):
+
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item \textbf{Blueprints} define procedures, phases, state transitions,
+        evidence requirements, actors, and standards references. Two built-in
+        blueprints are included; additional blueprints are available at
+        \url{https://github.com/mivertowski/SyntheticDataBlueprints}.
+  \item \textbf{Overlays} control revision probability, timing distributions,
+        artifact volumes, anomaly injection rates, and actor behavior profiles.
+        Three presets are provided: \texttt{default}, \texttt{thorough}, and
+        \texttt{rushed}.
+\end{itemize}
+
+\begin{center}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Blueprint} & \textbf{Procedures} & \textbf{Phases} & \textbf{Steps} & \textbf{Standards} & \textbf{Events} & \textbf{Artifacts} \\
+\midrule
+Financial Statement Audit (FSA) & 9 & 3 & 24 & 14 ISA & 51 & 1{,}916 \\
+Internal Audit (IA) & 34 & 9 & 82 & 52 IIA-GIAS & 368 & 1{,}891 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Key Capabilities}
+
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item \textbf{Event-sourced audit trail} --- every state transition and
+        procedure step emits a deterministic audit event with actor, timestamp,
+        command, evidence references, and standards citations.
+  \item \textbf{Concrete artifact generation} --- a step dispatcher maps 135
+        blueprint commands to 14 pre-initialized generators, producing typed
+        artifacts: materiality calculations, risk assessments, workpapers,
+        evidence, sampling plans, analytical procedures, audit opinions, and more.
+  \item \textbf{8-state C2CE lifecycle} --- the Condition--Criteria--Cause--Effect
+        finding development workflow models realistic audit finding progression.
+  \item \textbf{Self-loop handling} --- follow-up procedures with re-verification
+        cycles are bounded by configurable iteration limits.
+  \item \textbf{Continuous phases} --- governance, ethics, and quality phases
+        execute in parallel with sequential audit phases.
+  \item \textbf{Discriminator filtering} --- scope engagements by category
+        (financial, operational, compliance, IT), risk rating, or engagement type.
+  \item \textbf{OCEL 2.0 projection} --- audit events map to the Object-Centric
+        Event Log standard for integration with process mining tools.
+\end{itemize}
+
+\subsubsection{Audit Path Optimizer}
+
+The companion \texttt{datasynth-audit-optimizer} crate converts methodology
+blueprints into directed graphs for analytical queries:
+
+\begin{itemize}[leftmargin=1.2em, itemsep=3pt]
+  \item \textbf{Shortest path analysis} --- minimum transitions to completion
+        (FSA: 27, IA: 101).
+  \item \textbf{Constrained path} --- must-visit procedures with transitive
+        precondition expansion.
+  \item \textbf{Monte Carlo simulation} --- stochastic outcome distributions
+        across $N$ engagement simulations, identifying bottleneck procedures,
+        revision hotspots, and the statistically most common completion path.
 \end{itemize}
 
 \subsection{COSO 2013 Internal Control Framework}
@@ -795,7 +872,7 @@ Pareto, PointMass, and Mixture distributions.
   % Runtime
   \node[layer, minimum width=11.6cm, below=0.8cm of server] (runtime) {datasynth-runtime};
 
-  % Generator layer
+  % Generator layer (row 1)
   \node[layer, minimum width=2.1cm, below=0.8cm of runtime.south west,
         anchor=north west, xshift=-0.1cm] (gen) {generators};
   \node[layer, minimum width=2.1cm, right=0.2cm of gen] (bank) {banking};
@@ -803,8 +880,13 @@ Pareto, PointMass, and Mixture distributions.
   \node[layer, minimum width=2.1cm, right=0.2cm of ocpm] (fp) {fingerprint};
   \node[layer, minimum width=2.1cm, right=0.2cm of fp] (std) {standards};
 
+  % Generator layer (row 2) — audit crates
+  \node[layer, minimum width=3.5cm, below=0.4cm of gen.south west,
+        anchor=north west] (fsm) {audit-fsm};
+  \node[layer, minimum width=3.5cm, right=0.2cm of fsm] (opt) {audit-optimizer};
+
   % Analytics layer
-  \node[layer, minimum width=5.4cm, below=0.8cm of gen.south west,
+  \node[layer, minimum width=5.4cm, below=0.8cm of fsm.south west,
         anchor=north west] (graph) {datasynth-graph};
   \node[layer, minimum width=5.4cm, right=0.6cm of graph] (eval) {datasynth-eval};
 
@@ -830,6 +912,10 @@ Pareto, PointMass, and Mixture distributions.
   \draw[arr] (runtime.south -| ocpm) -- (ocpm.north);
   \draw[arr] (runtime.south -| fp) -- (fp.north);
   \draw[arr] (runtime.south -| std) -- (std.north);
+
+  % Runtime to audit crates
+  \draw[arr] (runtime.south -| fsm) -- (fsm.north);
+  \draw[arr] (runtime.south -| opt) -- (opt.north);
 
   % Generators to analytics
   \draw[arr] (gen.south) -- (gen.south |- graph.north);
@@ -888,7 +974,7 @@ Data Lineage &
   config$\to$generator$\to$output relationships, W3C PROV-JSON export,
   CLI \texttt{verify} command. \\
 Python Wrapper &
-  \texttt{datasynth-py} 1.7 with blueprints (sourcing, HR, manufacturing,
+  \texttt{datasynth-py} 1.10 with blueprints (sourcing, HR, manufacturing,
   financial reporting, tax, treasury, project accounting, ESG),
   pandas/polars integration, async client, and WebSocket streaming support. \\
 \bottomrule
@@ -1255,7 +1341,7 @@ cargo run -p datasynth-server -- --port 3000 --worker-threads 4
 \begin{center}
 \textcolor{midgray}{\rule{0.5\textwidth}{0.4pt}}\\[0.8em]
 {\small\textcolor{midgray}{%
-  DataSynth v0.11.0 \textbullet{}
+  DataSynth v1.5.0 \textbullet{}
   Open-source (Apache-2.0) \textbullet{}
   Commercial license available%
 }}\\[4pt]
