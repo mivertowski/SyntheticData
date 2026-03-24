@@ -19,3 +19,14 @@ anomalies:
   max_delay_hours: 24.0
   missing_evidence: 0.01
   out_of_sequence: 0.002
+resource_costs:
+  cost_multiplier: 1.5
+  role_hourly_rates:
+    engagement_partner: 500
+    audit_manager: 300
+    audit_senior: 200
+    audit_staff: 120
+    cae: 400
+    audit_director: 350
+    senior_auditor: 200
+    staff_auditor: 120

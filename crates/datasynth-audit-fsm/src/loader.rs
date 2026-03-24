@@ -190,6 +190,10 @@ mod raw {
         pub preconditions: Vec<String>,
         #[serde(default)]
         pub knowledge_refs: Vec<String>,
+        #[serde(default)]
+        pub base_hours: Option<f64>,
+        #[serde(default)]
+        pub required_roles: Vec<String>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -479,6 +483,8 @@ fn convert_raw_procedure(proc: raw::RawProcedure) -> BlueprintProcedure {
         discriminators,
         aggregate,
         steps,
+        base_hours: proc.base_hours,
+        required_roles: proc.required_roles,
     }
 }
 
@@ -1521,6 +1527,100 @@ mod tests {
             sorted.len() >= 30,
             "expected >= 30 procedures in sorted order, got {}",
             sorted.len()
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // Cost model blueprint tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_fsa_blueprint_has_base_hours() {
+        let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+        for phase in &bwp.blueprint.phases {
+            for proc in &phase.procedures {
+                assert!(
+                    proc.base_hours.is_some(),
+                    "FSA proc {} missing base_hours",
+                    proc.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_ia_blueprint_has_base_hours() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        for phase in &bwp.blueprint.phases {
+            for proc in &phase.procedures {
+                assert!(
+                    proc.base_hours.is_some(),
+                    "IA proc {} missing base_hours",
+                    proc.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_fsa_blueprint_has_required_roles() {
+        let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+        for phase in &bwp.blueprint.phases {
+            for proc in &phase.procedures {
+                assert!(
+                    !proc.required_roles.is_empty(),
+                    "FSA proc {} missing required_roles",
+                    proc.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_ia_blueprint_has_required_roles() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        for phase in &bwp.blueprint.phases {
+            for proc in &phase.procedures {
+                assert!(
+                    !proc.required_roles.is_empty(),
+                    "IA proc {} missing required_roles",
+                    proc.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_overlay_default_has_resource_costs() {
+        let overlay =
+            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
+        assert!(
+            (overlay.resource_costs.cost_multiplier - 1.0).abs() < f64::EPSILON,
+            "default overlay cost_multiplier should be 1.0"
+        );
+        assert!(
+            !overlay.resource_costs.role_hourly_rates.is_empty(),
+            "default overlay should have role_hourly_rates"
+        );
+    }
+
+    #[test]
+    fn test_overlay_thorough_cost_multiplier() {
+        let overlay =
+            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough)).unwrap();
+        assert!(
+            (overlay.resource_costs.cost_multiplier - 1.5).abs() < f64::EPSILON,
+            "thorough overlay cost_multiplier should be 1.5"
+        );
+    }
+
+    #[test]
+    fn test_overlay_rushed_cost_multiplier() {
+        let overlay =
+            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed)).unwrap();
+        assert!(
+            (overlay.resource_costs.cost_multiplier - 0.6).abs() < f64::EPSILON,
+            "rushed overlay cost_multiplier should be 0.6"
         );
     }
 }
