@@ -619,7 +619,10 @@ decision:
         assert!(step.evidence[0].required);
         assert_eq!(step.evidence[0].direction, "produces");
         assert!(step.evidence[1].template_ref.is_some());
-        assert_eq!(step.evidence[1].template_ref.as_ref().unwrap().ref_id, "ev_tpl_001");
+        assert_eq!(
+            step.evidence[1].template_ref.as_ref().unwrap().ref_id,
+            "ev_tpl_001"
+        );
         assert_eq!(step.standards.len(), 1);
         assert_eq!(step.standards[0].ref_id, "ISA-315");
         assert_eq!(step.standards[0].paragraph.as_deref(), Some("A21"));
