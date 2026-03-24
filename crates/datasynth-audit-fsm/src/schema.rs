@@ -176,41 +176,45 @@ pub struct BlueprintProcedure {
     /// Optional description.
     #[serde(default)]
     pub description: Option<String>,
-    /// How multiple instances of this procedure are aggregated.
+    /// FSM aggregate: initial state, valid states, and transitions.
     #[serde(default)]
     pub aggregate: ProcedureAggregate,
-    /// Transitions to other procedures or terminal states.
-    #[serde(default)]
-    pub transitions: Vec<ProcedureTransition>,
     /// Ordered steps within this procedure.
     #[serde(default)]
     pub steps: Vec<BlueprintStep>,
 }
 
-/// Controls how repeated invocations of a procedure are combined.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum ProcedureAggregate {
-    /// Each invocation produces an independent artifact set.
-    #[default]
-    Independent,
-    /// Invocations are merged into a single consolidated artifact.
-    Merged,
-    /// Results are accumulated across invocations.
-    Cumulative,
+/// Per-procedure FSM aggregate: defines the states and transitions of the
+/// procedure's internal state machine as declared in the YAML blueprint.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ProcedureAggregate {
+    /// The state the procedure starts in (e.g. `not_started`).
+    #[serde(default)]
+    pub initial_state: String,
+    /// All valid states for this procedure's FSM.
+    #[serde(default)]
+    pub states: Vec<String>,
+    /// Directed transitions between states.
+    #[serde(default)]
+    pub transitions: Vec<ProcedureTransition>,
 }
 
-/// A directed transition from this procedure to another state.
+/// A directed FSM transition within a procedure aggregate.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcedureTransition {
-    /// Target procedure id or terminal keyword (`complete`, `abandon`).
-    pub target: String,
-    /// Optional condition expression that must be true for the transition to fire.
+    /// Source state.
+    pub from_state: String,
+    /// Destination state.
+    pub to_state: String,
+    /// Command that triggers this transition.
     #[serde(default)]
-    pub condition: Option<String>,
-    /// Human-readable label for this transition edge.
+    pub command: Option<String>,
+    /// Event name emitted when the transition fires.
     #[serde(default)]
-    pub label: Option<String>,
+    pub emits: Option<String>,
+    /// Guard predicates that must pass before the transition can fire.
+    #[serde(default)]
+    pub guards: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +234,12 @@ pub struct BlueprintStep {
     /// Actor role responsible for performing this step.
     #[serde(default)]
     pub actor: Option<String>,
+    /// Command that this step executes.
+    #[serde(default)]
+    pub command: Option<String>,
+    /// Event name emitted when this step completes.
+    #[serde(default)]
+    pub emits: Option<String>,
     /// Whether this step is mandatory or advisory.
     #[serde(default)]
     pub binding: BindingLevel,
@@ -541,18 +551,34 @@ mod tests {
 
     #[test]
     fn test_procedure_aggregate_roundtrip() {
-        let variants = [
-            ProcedureAggregate::Independent,
-            ProcedureAggregate::Merged,
-            ProcedureAggregate::Cumulative,
-        ];
-        for variant in &variants {
-            let serialized = serde_yaml::to_string(variant).unwrap();
-            let deserialized: ProcedureAggregate = serde_yaml::from_str(&serialized).unwrap();
-            assert_eq!(*variant, deserialized);
-        }
+        let agg = ProcedureAggregate {
+            initial_state: "not_started".to_string(),
+            states: vec![
+                "not_started".to_string(),
+                "in_progress".to_string(),
+                "completed".to_string(),
+            ],
+            transitions: vec![ProcedureTransition {
+                from_state: "not_started".to_string(),
+                to_state: "in_progress".to_string(),
+                command: Some("start".to_string()),
+                emits: Some("Started".to_string()),
+                guards: vec![],
+            }],
+        };
+        let serialized = serde_yaml::to_string(&agg).unwrap();
+        let deserialized: ProcedureAggregate = serde_yaml::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.initial_state, "not_started");
+        assert_eq!(deserialized.states.len(), 3);
+        assert_eq!(deserialized.transitions.len(), 1);
+        assert_eq!(deserialized.transitions[0].from_state, "not_started");
+        assert_eq!(deserialized.transitions[0].to_state, "in_progress");
+
         // Default
-        assert_eq!(ProcedureAggregate::default(), ProcedureAggregate::Independent);
+        let default_agg = ProcedureAggregate::default();
+        assert!(default_agg.initial_state.is_empty());
+        assert!(default_agg.states.is_empty());
+        assert!(default_agg.transitions.is_empty());
     }
 
     #[test]

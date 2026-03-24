@@ -398,18 +398,22 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
 }
 
 fn convert_raw_procedure(proc: raw::RawProcedure) -> BlueprintProcedure {
-    let transitions: Vec<ProcedureTransition> = proc
+    let aggregate = proc
         .aggregate
-        .as_ref()
-        .map(|agg| {
-            agg.transitions
-                .iter()
+        .map(|agg| ProcedureAggregate {
+            initial_state: agg.initial_state,
+            states: agg.states,
+            transitions: agg
+                .transitions
+                .into_iter()
                 .map(|t| ProcedureTransition {
-                    target: t.to_state.clone(),
-                    condition: t.command.clone(),
-                    label: t.emits.clone(),
+                    from_state: t.from_state,
+                    to_state: t.to_state,
+                    command: t.command,
+                    emits: t.emits,
+                    guards: t.guards,
                 })
-                .collect()
+                .collect(),
         })
         .unwrap_or_default();
 
@@ -423,8 +427,7 @@ fn convert_raw_procedure(proc: raw::RawProcedure) -> BlueprintProcedure {
         id: proc.id,
         name: proc.title,
         description: None,
-        aggregate: ProcedureAggregate::default(),
-        transitions,
+        aggregate,
         steps,
     }
 }
@@ -495,6 +498,8 @@ fn convert_raw_step(step: raw::RawStep, _preconditions: &[String]) -> BlueprintS
         name: step.action.unwrap_or_default(),
         description: step.description,
         actor: step.actor,
+        command: step.command,
+        emits: step.emits,
         binding: convert_binding(&step.binding),
         guards,
         evidence: evidence_items,
