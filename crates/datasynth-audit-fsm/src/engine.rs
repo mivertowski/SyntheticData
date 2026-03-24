@@ -190,7 +190,7 @@ impl AuditFsmEngine {
                 }
 
                 // Select transition.
-                let mut transition = self.select_transition(&outgoing, proc_id);
+                let mut transition = self.select_transition(&outgoing, proc_id, &agg.states);
 
                 // Self-loop detection and bounding.
                 if transition.from_state == transition.to_state {
@@ -282,34 +282,35 @@ impl AuditFsmEngine {
     /// Select a transition when multiple outgoing edges exist from the current
     /// state. If there are forward and backward transitions (revision loop),
     /// use `revision_probability` to decide.
+    ///
+    /// Forward vs backward is determined by state ordering in the aggregate:
+    /// a transition targeting a higher-indexed state is forward, lower is backward.
     fn select_transition<'a>(
         &mut self,
         outgoing: &[&'a ProcedureTransition],
         _proc_id: &str,
+        states: &[String],
     ) -> &'a ProcedureTransition {
         if outgoing.len() == 1 {
             return outgoing[0];
         }
 
-        // Separate forward from backward (revision) transitions.
-        // A revision transition goes to an earlier state in the aggregate
-        // (e.g. under_review → in_progress, or under_review → active).
-        // Heuristic: the backward transition targets a state that also
-        // appears as the source of another outgoing transition from an
-        // earlier state.  Simpler: if one outgoing goes to "completed"
-        // (or the last state) and another doesn't, the non-terminal one
-        // is the revision.
         let revision_prob = self.overlay.transitions.defaults.revision_probability;
         let roll: f64 = self.rng.random();
 
-        // Find which transition is "forward" (toward terminal) vs "backward"
-        let terminal_targets = ["completed", "closed"];
+        // Determine forward vs backward by state index in the aggregate.
+        // The from_state is the same for all outgoing transitions.
+        let from_state = &outgoing[0].from_state;
+        let from_idx = states.iter().position(|s| s == from_state).unwrap_or(0);
+
+        // Forward: targets a state with higher index than current
+        // Backward (revision): targets a state with lower or equal index
         let forward = outgoing
             .iter()
-            .find(|t| terminal_targets.contains(&t.to_state.as_str()));
+            .find(|t| states.iter().position(|s| s == &t.to_state).unwrap_or(0) > from_idx);
         let backward = outgoing
             .iter()
-            .find(|t| !terminal_targets.contains(&t.to_state.as_str()));
+            .find(|t| states.iter().position(|s| s == &t.to_state).unwrap_or(0) <= from_idx);
 
         if roll < revision_prob {
             if let Some(rev) = backward {
@@ -317,7 +318,6 @@ impl AuditFsmEngine {
             }
         }
 
-        // Pick the forward transition.
         forward.unwrap_or(&outgoing[0])
     }
 
