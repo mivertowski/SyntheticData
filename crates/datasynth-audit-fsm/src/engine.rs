@@ -67,7 +67,7 @@ const MAX_ITERATIONS: usize = 20;
 /// [`EngagementContext`], the engine walks each procedure's state machine in
 /// topological (DAG) order, emitting a deterministic event trail.
 pub struct AuditFsmEngine {
-    blueprint: AuditBlueprint,
+    pub(crate) blueprint: AuditBlueprint,
     overlay: GenerationOverlay,
     rng: ChaCha8Rng,
     preconditions: HashMap<String, Vec<String>>,
@@ -438,10 +438,19 @@ impl AuditFsmEngine {
     }
 
     /// Determine which phases have all exit-gate conditions satisfied.
+    ///
+    /// Continuous phases (those with `order < 0`) are excluded — they run in
+    /// parallel with sequential phases and are never "completed".
     fn compute_completed_phases(&self, procedure_states: &HashMap<String, String>) -> Vec<String> {
         let mut completed = Vec::new();
 
         for phase in &self.blueprint.phases {
+            // Continuous phases (order < 0) are always active, not "completed".
+            let is_continuous = phase.order.map(|o| o < 0).unwrap_or(false);
+            if is_continuous {
+                continue;
+            }
+
             if let Some(ref gate) = phase.exit_gate {
                 let all_met = gate.all_of.iter().all(|cond| {
                     // Gate predicate format: "procedure.<id>.<state>"
@@ -593,5 +602,38 @@ mod tests {
             "expected >= 15 step events, got {}",
             step_events.len()
         );
+    }
+
+    #[test]
+    fn test_continuous_phases_excluded_from_completion() {
+        // Use IA blueprint which has continuous phases (order < 0).
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let overlay = default_overlay();
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let result = engine.run_engagement(&ctx).unwrap();
+
+        // Continuous phase IDs (order < 0) should NOT appear in phases_completed.
+        let continuous_ids: Vec<String> = engine
+            .blueprint
+            .phases
+            .iter()
+            .filter(|p| p.order.map(|o| o < 0).unwrap_or(false))
+            .map(|p| p.id.clone())
+            .collect();
+
+        assert!(
+            !continuous_ids.is_empty(),
+            "IA blueprint should have at least one continuous phase"
+        );
+
+        for cid in &continuous_ids {
+            assert!(
+                !result.phases_completed.contains(cid),
+                "Continuous phase '{}' should not be in phases_completed",
+                cid
+            );
+        }
     }
 }
