@@ -2485,7 +2485,17 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         intercompany: IntercompanyConfig::default(),
         balance: BalanceConfig::default(),
         ocpm: OcpmConfig::default(),
-        audit: AuditGenerationConfig::default(),
+        audit: {
+            let mut a = AuditGenerationConfig::default();
+            a.enabled = true;
+            a.fsm = Some(AuditFsmConfig {
+                enabled: true,
+                blueprint: "builtin:fsa".into(),
+                overlay: "builtin:default".into(),
+                ..Default::default()
+            });
+            a
+        },
         banking: datasynth_banking::BankingConfig::small(), // Use small banking config
         data_quality: DataQualitySchemaConfig::default(),
         scenario: datasynth_config::schema::ScenarioConfig::default(),
