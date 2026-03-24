@@ -5,4 +5,5 @@
 
 pub mod context;
 pub mod error;
+pub mod loader;
 pub mod schema;

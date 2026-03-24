@@ -1,0 +1,900 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "Generic Financial Statement Audit"
+  version: "2025.1"
+  framework: "ISA"
+  description: >
+    A generic, ISA-based financial statement audit methodology modeled as an
+    event-sourced state machine. Suitable for standard audit engagements of
+    non-complex entities. This sample contains no proprietary content.
+
+discriminators:
+  tiers:
+    - core
+    - digital
+    - complex
+    - non_complex
+  overlays:
+    - listed
+    - group_audit
+
+actors:
+  - id: engagement_partner
+    name: "Engagement Partner"
+    responsibilities:
+      - Overall engagement quality
+      - Signing the audit report
+      - Key audit matter determination
+  - id: audit_manager
+    name: "Audit Manager"
+    responsibilities:
+      - Day-to-day engagement management
+      - Reviewing workpapers
+      - Team supervision
+  - id: audit_senior
+    name: "Audit Senior"
+    responsibilities:
+      - Executing audit procedures
+      - Preparing workpapers
+      - Supervising staff
+  - id: audit_staff
+    name: "Audit Staff"
+    responsibilities:
+      - Performing detailed testing
+      - Documenting results
+
+standards_catalog:
+  - ref: "ISA 200"
+    title: "Overall Objectives of the Independent Auditor"
+    binding: requirement
+  - ref: "ISA 210"
+    title: "Agreeing the Terms of Audit Engagements"
+    binding: requirement
+  - ref: "ISA 220"
+    title: "Quality Management for an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 240"
+    title: "The Auditor's Responsibilities Relating to Fraud"
+    binding: requirement
+  - ref: "ISA 300"
+    title: "Planning an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 315"
+    title: "Identifying and Assessing the Risks of Material Misstatement"
+    binding: requirement
+  - ref: "ISA 320"
+    title: "Materiality in Planning and Performing an Audit"
+    binding: requirement
+  - ref: "ISA 330"
+    title: "The Auditor's Responses to Assessed Risks"
+    binding: requirement
+  - ref: "ISA 500"
+    title: "Audit Evidence"
+    binding: requirement
+  - ref: "ISA 520"
+    title: "Analytical Procedures"
+    binding: requirement
+  - ref: "ISA 530"
+    title: "Audit Sampling"
+    binding: requirement
+  - ref: "ISA 560"
+    title: "Subsequent Events"
+    binding: requirement
+  - ref: "ISA 570"
+    title: "Going Concern"
+    binding: requirement
+  - ref: "ISA 700"
+    title: "Forming an Opinion and Reporting on Financial Statements"
+    binding: requirement
+
+evidence_catalog:
+  - id: engagement_letter
+    name: "Engagement Letter"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: overall_audit_strategy
+    name: "Overall Audit Strategy"
+    type: document
+    lifecycle: [draft, under_review, finalized]
+  - id: materiality_workpaper
+    name: "Materiality Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: risk_assessment_summary
+    name: "Risk Assessment Summary"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: controls_test_results
+    name: "Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: substantive_test_results
+    name: "Substantive Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: analytical_procedures_memo
+    name: "Analytical Procedures Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: going_concern_assessment
+    name: "Going Concern Assessment"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: subsequent_events_memo
+    name: "Subsequent Events Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: audit_opinion
+    name: "Audit Opinion"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+
+phases:
+  - id: planning
+    name: "Planning & Risk Assessment"
+    order: 1
+    description: >
+      Establish the audit strategy, determine materiality, and identify risks
+      of material misstatement through understanding the entity.
+    gate:
+      all_of:
+        - procedure: accept_engagement
+          state: completed
+        - procedure: planning_materiality
+          state: completed
+        - procedure: risk_identification
+          state: completed
+
+  - id: execution
+    name: "Execution & Evidence Gathering"
+    order: 2
+    description: >
+      Design and perform audit procedures responsive to assessed risks,
+      including tests of controls and substantive procedures.
+    gate:
+      all_of:
+        - procedure: test_of_controls
+          state: completed
+        - procedure: substantive_testing
+          state: completed
+        - procedure: analytical_procedures
+          state: completed
+
+  - id: completion
+    name: "Completion & Reporting"
+    order: 3
+    description: >
+      Evaluate evidence obtained, form an audit opinion, and issue the
+      auditor's report on the financial statements.
+    gate:
+      all_of:
+        - procedure: going_concern
+          state: completed
+        - procedure: subsequent_events
+          state: completed
+        - procedure: form_opinion
+          state: completed
+
+procedures:
+  # ---- PLANNING PHASE ----
+
+  - id: accept_engagement
+    phase: planning
+    title: "Accept and Continue Engagement"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_acceptance
+          emits: AcceptanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_acceptance
+          emits: AcceptanceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_acceptance
+          emits: AcceptanceApproved
+          guards: [partner_approved]
+    steps:
+      - id: accept_step_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate whether to accept or continue the client relationship
+          and the specific audit engagement, considering ethical requirements
+          and the firm's quality management policies.
+        binding: requirement
+        command: evaluate_client_acceptance
+        emits: ClientAcceptanceEvaluated
+        standards:
+          - ref: "ISA 220"
+            paragraphs: ["12", "13"]
+            binding: requirement
+      - id: accept_step_2
+        order: 2
+        action: agree
+        actor: engagement_partner
+        description: >
+          Agree the terms of the audit engagement with management, including
+          the objective and scope of the audit, and obtain a signed
+          engagement letter.
+        binding: requirement
+        command: agree_engagement_terms
+        emits: EngagementTermsAgreed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: engagement_letter
+              type: document
+        standards:
+          - ref: "ISA 210"
+            paragraphs: ["9", "10"]
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  - id: planning_materiality
+    phase: planning
+    title: "Determine Materiality"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_materiality
+          emits: MaterialityStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_materiality
+          emits: MaterialitySubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_materiality
+          emits: MaterialityRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_materiality
+          emits: MaterialityApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: mat_step_1
+        order: 1
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine overall materiality for the financial statements as a
+          whole, selecting an appropriate benchmark and percentage.
+        binding: requirement
+        command: determine_overall_materiality
+        emits: OverallMaterialityDetermined
+        guards:
+          - type: field_required
+            fields: [materiality_amount, benchmark, percentage]
+        evidence:
+          inputs: []
+          outputs:
+            - ref: materiality_workpaper
+              type: workpaper
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["10"]
+            binding: requirement
+      - id: mat_step_2
+        order: 2
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine performance materiality to reduce the probability that
+          the aggregate of uncorrected and undetected misstatements exceeds
+          overall materiality.
+        binding: requirement
+        command: determine_performance_materiality
+        emits: PerformanceMaterialityDetermined
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["11"]
+            binding: requirement
+      - id: mat_step_3
+        order: 3
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the threshold for clearly trivial misstatements, below
+          which misstatements need not be accumulated.
+        binding: guidance
+        command: determine_trivial_threshold
+        emits: TrivialThresholdDetermined
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["A10"]
+            binding: guidance
+    preconditions:
+      - accept_engagement
+    knowledge_refs: []
+
+  - id: risk_identification
+    phase: planning
+    title: "Identify and Assess Risks of Material Misstatement"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_risk_assessment
+          emits: RiskAssessmentStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_risk_assessment
+          emits: RiskAssessmentSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_risk_assessment
+          emits: RiskAssessmentApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: risk_step_1
+        order: 1
+        action: understand
+        actor: audit_senior
+        description: >
+          Obtain an understanding of the entity and its environment, the
+          applicable financial reporting framework, and the entity's system
+          of internal control.
+        binding: requirement
+        command: understand_entity
+        emits: EntityUnderstood
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["19", "20", "21"]
+            binding: requirement
+      - id: risk_step_2
+        order: 2
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify risks of material misstatement at the financial statement
+          level and the assertion level for classes of transactions, account
+          balances, and disclosures.
+        binding: requirement
+        command: identify_risks
+        emits: RisksIdentified
+        evidence:
+          inputs: []
+          outputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26"]
+            binding: requirement
+      - id: risk_step_3
+        order: 3
+        action: assess
+        actor: audit_senior
+        description: >
+          Assess the identified risks by evaluating inherent risk factors
+          and determining whether they are significant risks requiring
+          special audit consideration.
+        binding: requirement
+        command: assess_risks
+        emits: RisksAssessed
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["28", "29"]
+            binding: requirement
+        decisions:
+          - condition: "Are there significant risks identified?"
+            branches:
+              - label: "Yes"
+                description: "Design specific responses to significant risks"
+                next_step: risk_step_4
+              - label: "No"
+                description: "Proceed with standard risk responses"
+      - id: risk_step_4
+        order: 4
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate the design and implementation of relevant controls,
+          including entity-level controls and information technology
+          general controls.
+        binding: requirement
+        command: evaluate_controls
+        emits: ControlsEvaluated
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26a"]
+            binding: requirement
+    preconditions:
+      - accept_engagement
+    knowledge_refs:
+      - planning_materiality
+
+  # ---- EXECUTION PHASE ----
+
+  - id: test_of_controls
+    phase: execution
+    title: "Test Operating Effectiveness of Controls"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_controls_testing
+          emits: ControlsTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_controls_testing
+          emits: ControlsTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_controls_testing
+          emits: ControlsTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: ctrl_step_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design tests of controls that provide sufficient appropriate
+          evidence about the operating effectiveness of relevant controls.
+        binding: requirement
+        command: design_controls_tests
+        emits: ControlsTestsDesigned
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["8"]
+            binding: requirement
+      - id: ctrl_step_2
+        order: 2
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform tests of controls to obtain audit evidence about the
+          operating effectiveness of controls throughout the period of
+          reliance.
+        binding: requirement
+        command: perform_controls_tests
+        emits: ControlsTestsPerformed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: ctrl_step_3
+        order: 3
+        action: evaluate
+        actor: audit_senior
+        description: >
+          Evaluate the results of controls testing, including any
+          identified deviations, and determine the impact on the nature,
+          timing, and extent of substantive procedures.
+        binding: requirement
+        command: evaluate_controls_results
+        emits: ControlsResultsEvaluated
+        decisions:
+          - condition: "Are control deviations identified?"
+            branches:
+              - label: "Yes"
+                description: "Expand substantive testing for affected assertions"
+              - label: "No"
+                description: "Proceed with planned substantive procedures"
+    preconditions:
+      - risk_identification
+    knowledge_refs: []
+
+  - id: substantive_testing
+    phase: execution
+    title: "Perform Substantive Audit Procedures"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_substantive_testing
+          emits: SubstantiveTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_substantive_testing
+          emits: SubstantiveTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_substantive_testing
+          emits: SubstantiveTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: sub_step_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design substantive procedures responsive to assessed risks at the
+          assertion level, including tests of details and substantive
+          analytical procedures.
+        binding: requirement
+        command: design_substantive_procedures
+        emits: SubstantiveProceduresDesigned
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["18"]
+            binding: requirement
+      - id: sub_step_2
+        order: 2
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform tests of details on material classes of transactions,
+          account balances, and disclosures, selecting appropriate
+          sample sizes based on assessed risk.
+        binding: requirement
+        command: perform_tests_of_details
+        emits: TestsOfDetailsPerformed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: substantive_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 500"
+            paragraphs: ["6"]
+            binding: requirement
+          - ref: "ISA 530"
+            paragraphs: ["6"]
+            binding: requirement
+    preconditions:
+      - risk_identification
+    knowledge_refs:
+      - test_of_controls
+
+  - id: analytical_procedures
+    phase: execution
+    title: "Perform Analytical Procedures"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_analytical_procedures
+          emits: AnalyticalProceduresStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_analytical_procedures
+          emits: AnalyticalProceduresSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_analytical_procedures
+          emits: AnalyticalProceduresApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: anl_step_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design substantive analytical procedures for significant
+          relationships, developing expectations based on financial
+          and non-financial data.
+        binding: requirement
+        command: design_analytical_procedures
+        emits: AnalyticalProceduresDesigned
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5"]
+            binding: requirement
+      - id: anl_step_2
+        order: 2
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform the analytical procedures and investigate significant
+          fluctuations or relationships that are inconsistent with
+          expectations or other relevant information.
+        binding: requirement
+        command: perform_analytical_procedures
+        emits: AnalyticalProceduresPerformed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: analytical_procedures_memo
+              type: memo
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5", "7"]
+            binding: requirement
+    preconditions:
+      - planning_materiality
+    knowledge_refs: []
+
+  # ---- COMPLETION PHASE ----
+
+  - id: going_concern
+    phase: completion
+    title: "Evaluate Going Concern"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_going_concern
+          emits: GoingConcernStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_going_concern
+          emits: GoingConcernSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_going_concern
+          emits: GoingConcernApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: gc_step_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate management's assessment of the entity's ability to
+          continue as a going concern, covering at least twelve months
+          from the date of the financial statements.
+        binding: requirement
+        command: evaluate_management_assessment
+        emits: ManagementAssessmentEvaluated
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["12"]
+            binding: requirement
+      - id: gc_step_2
+        order: 2
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine whether events or conditions exist that may cast
+          significant doubt on the entity's ability to continue as
+          a going concern.
+        binding: requirement
+        command: determine_going_concern_doubt
+        emits: GoingConcernDoubtDetermined
+        evidence:
+          inputs: []
+          outputs:
+            - ref: going_concern_assessment
+              type: assessment
+        decisions:
+          - condition: "Does material uncertainty exist?"
+            branches:
+              - label: "Yes"
+                description: "Evaluate adequacy of disclosures and consider report impact"
+                next_step: gc_step_3
+              - label: "No"
+                description: "Document conclusion and proceed"
+      - id: gc_step_3
+        order: 3
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          If material uncertainty exists, evaluate whether the financial
+          statements adequately disclose the conditions and events, and
+          consider the impact on the auditor's report.
+        binding: requirement
+        command: evaluate_gc_disclosures
+        emits: GoingConcernDisclosuresEvaluated
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["18", "19"]
+            binding: requirement
+    preconditions:
+      - substantive_testing
+    knowledge_refs: []
+
+  - id: subsequent_events
+    phase: completion
+    title: "Evaluate Subsequent Events"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_subsequent_events
+          emits: SubsequentEventsStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_subsequent_events
+          emits: SubsequentEventsSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_subsequent_events
+          emits: SubsequentEventsApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: se_step_1
+        order: 1
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform audit procedures to identify events occurring between
+          the date of the financial statements and the date of the
+          auditor's report that require adjustment or disclosure.
+        binding: requirement
+        command: perform_subsequent_events_review
+        emits: SubsequentEventsReviewed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: subsequent_events_memo
+              type: memo
+        standards:
+          - ref: "ISA 560"
+            paragraphs: ["6", "7"]
+            binding: requirement
+      - id: se_step_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate identified subsequent events and determine whether
+          they are adjusting or non-adjusting events, ensuring proper
+          treatment in the financial statements.
+        binding: requirement
+        command: evaluate_subsequent_events
+        emits: SubsequentEventsEvaluated
+        decisions:
+          - condition: "Are adjusting events identified?"
+            branches:
+              - label: "Yes"
+                description: "Ensure financial statements are adjusted accordingly"
+              - label: "No"
+                description: "Evaluate adequacy of non-adjusting event disclosures"
+    preconditions:
+      - substantive_testing
+    knowledge_refs: []
+
+  - id: form_opinion
+    phase: completion
+    title: "Form and Issue Audit Opinion"
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_opinion_formation
+          emits: OpinionFormationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_opinion
+          emits: OpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_opinion
+          emits: OpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_opinion
+          emits: OpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: opinion_step_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate whether sufficient appropriate audit evidence has been
+          obtained and whether uncorrected misstatements are material,
+          individually or in aggregate.
+        binding: requirement
+        command: evaluate_evidence_sufficiency
+        emits: EvidenceSufficiencyEvaluated
+        evidence:
+          inputs:
+            - ref: substantive_test_results
+              type: workpaper
+            - ref: going_concern_assessment
+              type: assessment
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: opinion_step_2
+        order: 2
+        action: determine
+        actor: engagement_partner
+        description: >
+          Form an opinion on whether the financial statements are prepared,
+          in all material respects, in accordance with the applicable
+          financial reporting framework.
+        binding: requirement
+        command: form_audit_opinion
+        emits: AuditOpinionFormed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: audit_opinion
+              type: report
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+        decisions:
+          - condition: "What type of opinion is appropriate?"
+            branches:
+              - label: "Unmodified"
+                description: "Financial statements fairly presented in all material respects"
+              - label: "Qualified"
+                description: "Misstatements are material but not pervasive"
+              - label: "Adverse"
+                description: "Misstatements are both material and pervasive"
+              - label: "Disclaimer"
+                description: "Unable to obtain sufficient appropriate evidence"
+      - id: opinion_step_3
+        order: 3
+        action: issue
+        actor: engagement_partner
+        description: >
+          Issue the auditor's report, including the opinion, basis for
+          opinion, and any other reporting requirements.
+        binding: requirement
+        command: issue_audit_report
+        emits: AuditReportIssued
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["20", "21", "22"]
+            binding: requirement
+    preconditions:
+      - going_concern
+      - subsequent_events
+    knowledge_refs:
+      - analytical_procedures
