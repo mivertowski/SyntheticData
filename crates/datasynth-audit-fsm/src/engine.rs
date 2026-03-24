@@ -10,7 +10,9 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use rand_distr::{Distribution, LogNormal};
 
+use crate::artifact::ArtifactBag;
 use crate::context::EngagementContext;
+use crate::dispatch::StepDispatcher;
 use crate::error::AuditFsmError;
 use crate::event::{
     AnomalySeverity, AuditAnomalyRecord, AuditAnomalyType, AuditEvent, AuditEventBuilder,
@@ -38,6 +40,8 @@ pub struct EngagementResult {
     pub phases_completed: Vec<String>,
     /// Cumulative wall-clock hours of the engagement.
     pub total_duration_hours: f64,
+    /// Typed audit artifacts accumulated by step dispatchers.
+    pub artifacts: ArtifactBag,
 }
 
 // ---------------------------------------------------------------------------
@@ -51,6 +55,7 @@ struct RunAccum {
     step_completions: HashMap<String, bool>,
     evidence_states: HashMap<String, String>,
     anomalies: Vec<AuditAnomalyRecord>,
+    artifacts: ArtifactBag,
     current_ts: NaiveDateTime,
 }
 
@@ -71,21 +76,33 @@ pub struct AuditFsmEngine {
     overlay: GenerationOverlay,
     rng: ChaCha8Rng,
     preconditions: HashMap<String, Vec<String>>,
+    dispatcher: StepDispatcher,
 }
 
 impl AuditFsmEngine {
     /// Create a new engine from a validated blueprint-with-preconditions bundle
     /// and an overlay.
+    ///
+    /// The `seed` for the [`StepDispatcher`] is derived from the first value
+    /// drawn from the RNG clone so that the dispatcher has a deterministic but
+    /// independent seed, leaving the engine's own RNG sequence unchanged.
     pub fn new(
         bwp: BlueprintWithPreconditions,
         overlay: GenerationOverlay,
         rng: ChaCha8Rng,
     ) -> Self {
+        // Derive a dispatcher seed without consuming the engine RNG.
+        // We use a clone to draw a u64, keeping the original stream intact.
+        let dispatcher_seed: u64 = {
+            let mut seed_rng = rng.clone();
+            seed_rng.random()
+        };
         Self {
             blueprint: bwp.blueprint,
             preconditions: bwp.preconditions,
             overlay,
             rng,
+            dispatcher: StepDispatcher::new(dispatcher_seed),
         }
     }
 
@@ -121,6 +138,7 @@ impl AuditFsmEngine {
             step_completions: HashMap::new(),
             evidence_states: HashMap::new(),
             anomalies: Vec::new(),
+            artifacts: ArtifactBag::default(),
             current_ts: start_ts,
         };
 
@@ -220,7 +238,7 @@ impl AuditFsmEngine {
                 if (current_state == "in_progress" && previous_state != "in_progress")
                     || is_self_loop
                 {
-                    self.execute_steps(&proc, &phase_id, &mut acc);
+                    self.execute_steps(&proc, &phase_id, &mut acc, context);
                 }
 
                 // Advance time between transitions.
@@ -242,6 +260,7 @@ impl AuditFsmEngine {
             anomalies: acc.anomalies,
             phases_completed,
             total_duration_hours,
+            artifacts: acc.artifacts,
         })
     }
 
@@ -311,7 +330,13 @@ impl AuditFsmEngine {
     }
 
     /// Execute all steps within a procedure (called when entering in_progress).
-    fn execute_steps(&mut self, proc: &BlueprintProcedure, phase_id: &str, acc: &mut RunAccum) {
+    fn execute_steps(
+        &mut self,
+        proc: &BlueprintProcedure,
+        phase_id: &str,
+        acc: &mut RunAccum,
+        context: &EngagementContext,
+    ) {
         for step in &proc.steps {
             // Advance a small amount of time between steps.
             acc.current_ts = self.advance_step_time(acc.current_ts);
@@ -365,6 +390,10 @@ impl AuditFsmEngine {
 
             let event = builder.build_with_rng(&mut self.rng);
             acc.event_log.push(event);
+
+            // Dispatch step to the appropriate generator to produce artifacts.
+            self.dispatcher
+                .dispatch(step, &proc.id, context, &mut acc.artifacts);
 
             acc.step_completions.insert(step.id.clone(), true);
         }
@@ -734,6 +763,30 @@ mod tests {
             "Filtered ({}) should have <= procedures than full ({})",
             filtered.procedure_states.len(),
             full.procedure_states.len()
+        );
+    }
+
+    #[test]
+    fn test_engine_produces_artifacts() {
+        let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+        let overlay = default_overlay();
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let result = engine.run_engagement(&ctx).unwrap();
+
+        // Verify artifacts were generated.
+        assert!(
+            result.artifacts.total_artifacts() > 0,
+            "Expected artifacts, got 0"
+        );
+        assert!(
+            !result.artifacts.engagements.is_empty(),
+            "Expected at least one engagement"
+        );
+        assert!(
+            !result.artifacts.materiality_calculations.is_empty(),
+            "Expected materiality calculations"
         );
     }
 }
