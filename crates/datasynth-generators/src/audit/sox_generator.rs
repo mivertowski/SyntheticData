@@ -376,10 +376,6 @@ fn is_significant_deficiency_open(f: &AuditFinding) -> bool {
 mod tests {
     use super::*;
 
-    fn make_period_end() -> NaiveDate {
-        NaiveDate::from_ymd_opt(2024, 12, 31).unwrap()
-    }
-
     fn minimal_input() -> SoxGeneratorInput {
         SoxGeneratorInput::default()
     }

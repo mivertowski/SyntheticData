@@ -532,6 +532,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(unused_mut, unused_variables)]
     fn test_conclusion_matches_indicator_count() {
         let mut gen = GoingConcernGenerator::new(42);
         for seed in 0..100u64 {

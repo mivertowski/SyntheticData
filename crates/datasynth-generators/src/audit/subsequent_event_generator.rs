@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_event_dates_after_period_end() {
-        let mut gen = SubsequentEventGenerator::new(99);
+        let _gen = SubsequentEventGenerator::new(99);
         let pe = period_end();
         // Run several times to get events
         for seed in [1u64, 2, 3, 4, 5] {
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_approximately_40_percent_adjusting() {
-        let mut gen = SubsequentEventGenerator::new(42);
+        let _gen = SubsequentEventGenerator::new(42);
         let pe = period_end();
         let mut total = 0usize;
         let mut adjusting = 0usize;
@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_adjusting_events_have_financial_impact() {
-        let mut gen = SubsequentEventGenerator::new(42);
+        let _gen = SubsequentEventGenerator::new(42);
         let pe = period_end();
         for seed in 0..50u64 {
             let mut g = SubsequentEventGenerator::new(seed);
