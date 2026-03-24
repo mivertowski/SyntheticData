@@ -238,7 +238,13 @@ impl StepDispatcher {
             | "confirm_resource_competencies"
             | "identify_auditable_entities"
             | "prioritize_audit_entities" => {
-                self.dispatch_workpaper_section(step, procedure_id, context, bag, WorkpaperSection::Planning);
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Planning,
+                );
             }
 
             // ----- Reporting -----
@@ -252,7 +258,13 @@ impl StepDispatcher {
             | "communicate_approved_plan"
             | "present_plan_to_board"
             | "communicate_plan_and_results" => {
-                self.dispatch_workpaper_section(step, procedure_id, context, bag, WorkpaperSection::Reporting);
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Reporting,
+                );
             }
 
             // ----- Follow-up (produces findings) -----
@@ -283,7 +295,13 @@ impl StepDispatcher {
             | "assess_technology_capabilities"
             | "implement_technology"
             | "manage_technological_resources" => {
-                self.dispatch_workpaper_section(step, procedure_id, context, bag, WorkpaperSection::Planning);
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Planning,
+                );
             }
 
             // ----- Performance / monitoring -----
@@ -293,7 +311,13 @@ impl StepDispatcher {
             | "measure_ia_performance"
             | "perform_ongoing_monitoring"
             | "monitor_budget_utilization" => {
-                self.dispatch_workpaper_section(step, procedure_id, context, bag, WorkpaperSection::Completion);
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Completion,
+                );
             }
 
             // ----- Everything else: generic workpaper fallback -----
@@ -1139,7 +1163,10 @@ mod tests {
             &ctx,
             &mut bag,
         );
-        assert!(!bag.judgments.is_empty(), "judgment dispatch should produce at least one judgment");
+        assert!(
+            !bag.judgments.is_empty(),
+            "judgment dispatch should produce at least one judgment"
+        );
     }
 
     #[test]
@@ -1169,7 +1196,10 @@ mod tests {
             &ctx,
             &mut bag,
         );
-        assert!(!bag.evidence.is_empty(), "evidence dispatch should produce evidence records");
+        assert!(
+            !bag.evidence.is_empty(),
+            "evidence dispatch should produce evidence records"
+        );
     }
 
     #[test]

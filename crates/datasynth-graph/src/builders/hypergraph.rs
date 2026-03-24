@@ -14,15 +14,14 @@ use chrono::Datelike;
 use serde_json::Value;
 
 use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
+use datasynth_core::models::audit::going_concern::GoingConcernAssessment;
+use datasynth_core::models::audit::materiality_calculation::MaterialityCalculation;
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
     AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
     InternalAuditReport, ProfessionalJudgment, RelatedParty, RelatedPartyTransaction,
     RiskAssessment, Workpaper,
 };
-use datasynth_core::models::audit::going_concern::GoingConcernAssessment;
-use datasynth_core::models::audit::materiality_calculation::MaterialityCalculation;
-use datasynth_standards::audit::opinion::AuditOpinion;
 use datasynth_core::models::compliance::{ComplianceFinding, ComplianceStandard, RegulatoryFiling};
 use datasynth_core::models::intercompany::{EliminationEntry, ICMatchedPair};
 use datasynth_core::models::sourcing::{
@@ -39,6 +38,7 @@ use datasynth_core::models::{
     TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeEntry, Vendor, WithholdingTaxRecord,
 };
 use datasynth_generators::disruption::DisruptionEvent;
+use datasynth_standards::audit::opinion::AuditOpinion;
 
 use crate::models::hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
@@ -2623,10 +2623,7 @@ impl HypergraphBuilder {
                         "opinion_type".into(),
                         Value::String(format!("{}", op.opinion_type)),
                     );
-                    p.insert(
-                        "entity_name".into(),
-                        Value::String(op.entity_name.clone()),
-                    );
+                    p.insert("entity_name".into(), Value::String(op.entity_name.clone()));
                     p.insert(
                         "opinion_date".into(),
                         Value::String(op.opinion_date.to_string()),
@@ -2667,9 +2664,7 @@ impl HypergraphBuilder {
 
         // GoingConcernAssessment → Layer 2 (ProcessEvents)
         for gc in going_concern {
-            let node_id = format!(
-                "audit_gc_{}_{}", gc.entity_code, gc.assessment_period
-            );
+            let node_id = format!("audit_gc_{}_{}", gc.entity_code, gc.assessment_period);
             self.try_add_node(HypergraphNode {
                 id: node_id,
                 entity_type: "going_concern_assessment".into(),
