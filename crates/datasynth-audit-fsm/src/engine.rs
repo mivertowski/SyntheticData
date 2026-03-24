@@ -705,7 +705,8 @@ mod tests {
             assert!(
                 *count <= 5,
                 "Procedure '{}' had {} self-loops, max is 5",
-                proc_id, count
+                proc_id,
+                count
             );
         }
     }

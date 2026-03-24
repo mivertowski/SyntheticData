@@ -304,9 +304,7 @@ fn convert_binding(s: &str) -> BindingLevel {
 
 /// Convert an optional serde_yaml::Value (expected to be a Mapping of string -> sequence)
 /// into a `HashMap<String, Vec<String>>`.
-fn convert_discriminators_value(
-    value: &Option<serde_yaml::Value>,
-) -> HashMap<String, Vec<String>> {
+fn convert_discriminators_value(value: &Option<serde_yaml::Value>) -> HashMap<String, Vec<String>> {
     let mut result = HashMap::new();
     if let Some(serde_yaml::Value::Mapping(map)) = value {
         for (k, v) in map {
@@ -1478,8 +1476,7 @@ mod tests {
 
     #[test]
     fn test_load_ia_blueprint_parses() {
-        let bp =
-            load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Ia)).unwrap();
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Ia)).unwrap();
         assert_eq!(bp.methodology.framework, "IIA-GIAS");
 
         let phase_count = bp.phases.len();

@@ -75,8 +75,7 @@ fn test_ia_full_engagement() {
     }
 
     // (d) JSON export round-trips correctly.
-    let json =
-        export_events_to_json(&result.event_log).expect("JSON serialisation must succeed");
+    let json = export_events_to_json(&result.event_log).expect("JSON serialisation must succeed");
     let parsed: Vec<serde_json::Value> =
         serde_json::from_str(&json).expect("JSON deserialisation must succeed");
     assert_eq!(
@@ -125,11 +124,7 @@ fn test_ia_determinism() {
         .zip(result2.event_log.iter())
         .enumerate()
     {
-        assert_eq!(
-            e1.event_id, e2.event_id,
-            "event_id mismatch at index {}",
-            i
-        );
+        assert_eq!(e1.event_id, e2.event_id, "event_id mismatch at index {}", i);
         assert_eq!(
             e1.event_type, e2.event_type,
             "event_type mismatch at index {}",
@@ -140,11 +135,7 @@ fn test_ia_determinism() {
             "timestamp mismatch at index {}",
             i
         );
-        assert_eq!(
-            e1.command, e2.command,
-            "command mismatch at index {}",
-            i
-        );
+        assert_eq!(e1.command, e2.command, "command mismatch at index {}", i);
     }
 
     // Procedure final states must also match.
@@ -240,8 +231,7 @@ fn test_ia_with_financial_discriminator() {
         .expect("filtered IA engagement must succeed");
 
     // Build an unfiltered engine for comparison.
-    let bwp_full =
-        BlueprintWithPreconditions::load_builtin_ia().expect("IA blueprint must load");
+    let bwp_full = BlueprintWithPreconditions::load_builtin_ia().expect("IA blueprint must load");
     let rng_full = ChaCha8Rng::seed_from_u64(42);
     let mut engine_full = AuditFsmEngine::new(bwp_full, default_overlay(), rng_full);
     let full = engine_full
