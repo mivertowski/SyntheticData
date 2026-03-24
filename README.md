@@ -151,16 +151,20 @@ Every process chain generates its own master data, documents, and journal entrie
 
 ### YAML-Driven Audit FSM Engine
 
-The `datasynth-audit-fsm` crate provides a methodology-agnostic state machine engine that loads audit methodology blueprints from YAML files and generates realistic, event-sourced audit trails.
+The `datasynth-audit-fsm` crate provides a methodology-agnostic state machine engine that loads audit methodology blueprints from YAML files and generates realistic, event-sourced audit trails with concrete typed artifacts.
 
-**Blueprints** define procedures, phases, transitions, and artifact requirements. Two built-in blueprints are included:
+The engine uses a two-layer architecture: **blueprints** define *what happens* (procedures, phases, state machines, evidence requirements, standards references), while **generation overlays** define *how it happens* (revision probabilities, timing distributions, artifact volumes, anomaly injection rates). This separation means the same blueprint can produce a thorough engagement or a rushed engagement by swapping a single overlay file.
 
-| Blueprint | Procedures | Phases | Standards | Use Case |
-|-----------|-----------|--------|-----------|----------|
-| Financial Statement Audit (FSA) | 7 | 3 | 14 ISA | External audit simulation |
-| Internal Audit (IA) | 34 | 9 | 52 IIA-GIAS | Internal audit simulation |
+Two built-in blueprints are included:
+
+| Blueprint | Procedures | Phases | Steps | Standards | Events | Artifacts |
+|-----------|-----------|--------|-------|-----------|--------|-----------|
+| Financial Statement Audit (FSA) | 9 | 3 | 24 | 14 ISA | 51 | 1,916 |
+| Internal Audit (IA) | 34 | 9 | 82 | 52 IIA-GIAS | 368 | 1,891 |
 
 Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
+
+The **StepDispatcher** bridges FSM step commands to 14 concrete audit generators (engagement, materiality, risk, CRA, workpaper, evidence, sampling, analytical procedures, confirmations, going concern, subsequent events, findings, and opinion). Every step produces at least one typed artifact; unknown commands fall through to a generic workpaper generator.
 
 **Key features:**
 - 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
@@ -169,6 +173,7 @@ Additional methodology blueprints are available at [SyntheticDataBlueprints](htt
 - Discriminator-based procedure filtering (categories, risk ratings, engagement types)
 - Generation overlay presets: `default`, `thorough`, `rushed`
 - Flat JSON audit event trail and OCEL 2.0 projection exports
+- Auto-bootstrap for IA blueprints (creates engagement on first substantive command)
 
 ```yaml
 # Enable FSM-driven audit generation
@@ -176,11 +181,30 @@ audit:
   enabled: true
   fsm:
     enabled: true
-    blueprint: fsa             # fsa, ia, or path to custom YAML
-    overlay: default           # default, thorough, rushed
+    blueprint: builtin:fsa     # builtin:fsa, builtin:ia, or path to custom YAML
+    overlay: builtin:default   # builtin:default, builtin:thorough, builtin:rushed
 ```
 
-The companion `datasynth-audit-optimizer` crate converts blueprints into petgraph directed graphs for shortest-path analysis, constraint-based path optimization, and Monte Carlo simulation (bottleneck detection, revision hotspots, happy path identification).
+**Programmatic usage:**
+
+```rust
+use datasynth_audit_fsm::loader::{BlueprintWithPreconditions, load_overlay, OverlaySource, BuiltinOverlay};
+use datasynth_audit_fsm::engine::AuditFsmEngine;
+use datasynth_audit_fsm::context::EngagementContext;
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
+
+let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
+let mut engine = AuditFsmEngine::new(bwp, overlay, ChaCha8Rng::seed_from_u64(42));
+let result = engine.run_engagement(&EngagementContext::test_default()).unwrap();
+
+println!("Events: {}, Artifacts: {}", result.event_log.len(), result.artifacts.total_artifacts());
+```
+
+The companion `datasynth-audit-optimizer` crate converts blueprints into petgraph directed graphs for shortest-path analysis (FSA: 27 min transitions, IA: 101), constraint-based path optimization, and Monte Carlo simulation (bottleneck detection, revision hotspots, happy path identification).
+
+For a deep dive, see the [Audit FSM Engine documentation](https://mivertowski.github.io/SyntheticData/advanced/audit-fsm-engine.html).
 
 ### Interconnectivity & Relationships
 
