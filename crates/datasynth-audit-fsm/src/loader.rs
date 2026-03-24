@@ -17,6 +17,9 @@ use crate::schema::*;
 /// The built-in generic Financial Statement Audit blueprint.
 const BUILTIN_FSA: &str = include_str!("../blueprints/generic_fsa.yaml");
 
+/// The built-in generic Internal Audit (IIA-GIAS) blueprint.
+const BUILTIN_IA: &str = include_str!("../blueprints/generic_ia.yaml");
+
 // ---------------------------------------------------------------------------
 // Built-in overlay YAML
 // ---------------------------------------------------------------------------
@@ -50,6 +53,8 @@ pub enum BlueprintSource {
 pub enum BuiltinBlueprint {
     /// Generic ISA-based Financial Statement Audit.
     Fsa,
+    /// Generic IIA-GIAS Internal Audit.
+    Ia,
 }
 
 /// Identifies the source of a generation overlay.
@@ -586,6 +591,7 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
         BlueprintSource::Builtin(builtin) => {
             let yaml = match builtin {
                 BuiltinBlueprint::Fsa => BUILTIN_FSA,
+                BuiltinBlueprint::Ia => BUILTIN_IA,
             };
             parse_blueprint(yaml)
         }
@@ -931,22 +937,22 @@ pub fn topological_sort_procedures(bp: &AuditBlueprint) -> Result<Vec<String>, A
     Ok(sorted)
 }
 
-/// Extract preconditions map from the blueprint by re-parsing the builtin YAML.
+/// Extract preconditions from raw YAML source text.
 ///
 /// Returns a map of procedure_id -> list of precondition procedure_ids.
-fn extract_preconditions_from_builtin(
+fn extract_preconditions_from_yaml(
+    yaml: &str,
     bp: &AuditBlueprint,
 ) -> Result<HashMap<String, Vec<String>>, AuditFsmError> {
-    // Try to parse the builtin YAML to get the preconditions
     let raw: raw::RawBlueprint =
-        serde_yaml::from_str(BUILTIN_FSA).map_err(|e| AuditFsmError::BlueprintParse {
+        serde_yaml::from_str(yaml).map_err(|e| AuditFsmError::BlueprintParse {
             path: "<builtin>".to_string(),
             source: e,
         })?;
 
     let mut preconditions: HashMap<String, Vec<String>> = HashMap::new();
 
-    // First, populate from the raw YAML
+    // Populate from the raw YAML
     for proc in &raw.procedures {
         preconditions.insert(proc.id.clone(), proc.preconditions.clone());
     }
@@ -960,6 +966,19 @@ fn extract_preconditions_from_builtin(
     }
 
     Ok(preconditions)
+}
+
+/// Extract preconditions map from the blueprint by re-parsing the builtin YAML.
+///
+/// Detects which builtin YAML to use based on the blueprint's methodology framework.
+fn extract_preconditions_from_builtin(
+    bp: &AuditBlueprint,
+) -> Result<HashMap<String, Vec<String>>, AuditFsmError> {
+    let yaml = match bp.methodology.framework.as_str() {
+        "IIA-GIAS" => BUILTIN_IA,
+        _ => BUILTIN_FSA,
+    };
+    extract_preconditions_from_yaml(yaml, bp)
 }
 
 // ---------------------------------------------------------------------------
@@ -983,6 +1002,16 @@ impl BlueprintWithPreconditions {
     /// Load from the builtin FSA blueprint.
     pub fn load_builtin_fsa() -> Result<Self, AuditFsmError> {
         let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Fsa))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin IA (IIA-GIAS) blueprint.
+    pub fn load_builtin_ia() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Ia))?;
         let preconditions = extract_preconditions_from_builtin(&bp)?;
         Ok(Self {
             blueprint: bp,
@@ -1440,6 +1469,48 @@ mod tests {
         assert!(
             overlay.actor_profiles.contains_key("audit_staff"),
             "expected 'audit_staff' in actor_profiles"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // IA blueprint tests
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn test_load_ia_blueprint_parses() {
+        let bp =
+            load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Ia)).unwrap();
+        assert_eq!(bp.methodology.framework, "IIA-GIAS");
+
+        let phase_count = bp.phases.len();
+        assert!(
+            phase_count >= 9,
+            "expected >= 9 phases, got {}",
+            phase_count
+        );
+
+        let proc_count: usize = bp.phases.iter().map(|p| p.procedures.len()).sum();
+        assert!(
+            proc_count >= 30,
+            "expected >= 30 procedures, got {}",
+            proc_count
+        );
+    }
+
+    #[test]
+    fn test_ia_validates_successfully() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        bwp.validate().unwrap();
+    }
+
+    #[test]
+    fn test_ia_topological_sort() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let sorted = bwp.topological_sort().unwrap();
+        assert!(
+            sorted.len() >= 30,
+            "expected >= 30 procedures in sorted order, got {}",
+            sorted.len()
         );
     }
 }
