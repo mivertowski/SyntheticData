@@ -11,7 +11,7 @@ keywords = ["audit", "optimizer", "petgraph", "monte-carlo", "synthetic-data"]
 categories.workspace = true
 
 [dependencies]
-datasynth-audit-fsm = { path = "../datasynth-audit-fsm" }
+datasynth-audit-fsm = { workspace = true }
 petgraph = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
