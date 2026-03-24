@@ -1017,6 +1017,19 @@ impl BlueprintWithPreconditions {
         })
     }
 
+    /// Load from a custom YAML file on disk.
+    pub fn load_from_file(path: PathBuf) -> Result<Self, AuditFsmError> {
+        let yaml = std::fs::read_to_string(&path).map_err(|_| AuditFsmError::SourceNotFound {
+            source_id: path.display().to_string(),
+        })?;
+        let bp = load_blueprint(&BlueprintSource::Raw(yaml.clone()))?;
+        let preconditions = extract_preconditions_from_yaml(&yaml, &bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
     /// Validate this blueprint (using the stored preconditions).
     pub fn validate(&self) -> Result<(), AuditFsmError> {
         validate_blueprint_with_preconditions(&self.blueprint, &self.preconditions)

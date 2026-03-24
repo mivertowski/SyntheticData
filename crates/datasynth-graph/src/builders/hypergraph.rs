@@ -14,6 +14,8 @@ use chrono::Datelike;
 use serde_json::Value;
 
 use datasynth_banking::models::{BankAccount, BankTransaction, BankingCustomer};
+use datasynth_core::models::audit::going_concern::GoingConcernAssessment;
+use datasynth_core::models::audit::materiality_calculation::MaterialityCalculation;
 use datasynth_core::models::audit::{
     AnalyticalProcedureResult, AuditEngagement, AuditEvidence, AuditFinding, AuditProcedureStep,
     AuditSample, ConfirmationResponse, ExternalConfirmation, InternalAuditFunction,
@@ -36,6 +38,7 @@ use datasynth_core::models::{
     TaxJurisdiction, TaxLine, TaxProvision, TaxReturn, TimeEntry, Vendor, WithholdingTaxRecord,
 };
 use datasynth_generators::disruption::DisruptionEvent;
+use datasynth_standards::audit::opinion::AuditOpinion;
 
 use crate::models::hypergraph::{
     AggregationStrategy, CrossLayerEdge, Hyperedge, HyperedgeParticipant, Hypergraph,
@@ -174,6 +177,10 @@ mod type_codes {
     pub const INTERNAL_AUDIT_REPORT: u32 = 377;
     pub const RELATED_PARTY: u32 = 378;
     pub const RELATED_PARTY_TRANSACTION: u32 = 379;
+    // Layer 2 — Audit (extended artifact types)
+    pub const MATERIALITY_CALCULATION: u32 = 380;
+    pub const AUDIT_OPINION: u32 = 381;
+    pub const GOING_CONCERN_ASSESSMENT: u32 = 382;
 
     // Edge type codes
     pub const IMPLEMENTS_CONTROL: u32 = 40;
@@ -205,6 +212,14 @@ mod type_codes {
     pub const RP_FOR_ENGAGEMENT: u32 = 150;
     pub const RPT_WITH_PARTY: u32 = 151;
     pub const RPT_JOURNAL_ENTRY: u32 = 152;
+
+    // Audit evidence-chain edge type codes
+    pub const DOCUMENTED_BY: u32 = 153;
+    pub const IDENTIFIED_FROM: u32 = 154;
+    pub const OPINION_BASED_ON: u32 = 155;
+    pub const OPINION_FOR_ENGAGEMENT: u32 = 156;
+    pub const MATERIALITY_FOR_ENGAGEMENT: u32 = 157;
+    pub const GC_FOR_ENGAGEMENT: u32 = 158;
 }
 
 /// Configuration for the hypergraph builder.
@@ -347,6 +362,12 @@ pub struct BuilderInput<'a> {
     pub risk_assessments: &'a [RiskAssessment],
     /// Professional judgments.
     pub professional_judgments: &'a [ProfessionalJudgment],
+    /// Materiality calculations (ISA 320).
+    pub materiality_calculations: &'a [MaterialityCalculation],
+    /// Audit opinions (ISA 700/705/706/701).
+    pub audit_opinions: &'a [AuditOpinion],
+    /// Going concern assessments (ISA 570).
+    pub going_concern_assessments: &'a [GoingConcernAssessment],
     /// External confirmation requests (ISA 505).
     pub external_confirmations: &'a [ExternalConfirmation],
     /// Confirmation responses (ISA 505).
@@ -595,6 +616,9 @@ impl HypergraphBuilder {
             + input.internal_audit_reports.len()
             + input.related_parties.len()
             + input.related_party_transactions.len()
+            + input.materiality_calculations.len()
+            + input.audit_opinions.len()
+            + input.going_concern_assessments.len()
             + input.purchase_orders.len()
             + input.goods_receipts.len()
             + input.vendor_invoices.len()
@@ -693,6 +717,9 @@ impl HypergraphBuilder {
             input.audit_evidence,
             input.risk_assessments,
             input.professional_judgments,
+            input.materiality_calculations,
+            input.audit_opinions,
+            input.going_concern_assessments,
         );
         self.add_audit_procedure_entities(
             input.external_confirmations,
@@ -2323,6 +2350,9 @@ impl HypergraphBuilder {
         evidence: &[AuditEvidence],
         risks: &[RiskAssessment],
         judgments: &[ProfessionalJudgment],
+        materiality: &[MaterialityCalculation],
+        opinions: &[AuditOpinion],
+        going_concern: &[GoingConcernAssessment],
     ) {
         if !self.config.include_audit {
             return;
@@ -2537,6 +2567,196 @@ impl HypergraphBuilder {
                 is_aggregate: false,
                 aggregate_count: 0,
             });
+        }
+
+        // MaterialityCalculation → Layer 2 (ProcessEvents)
+        for m in materiality {
+            let node_id = format!("audit_mat_{}_{}", m.entity_code, m.period);
+            self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "materiality_calculation".into(),
+                entity_type_code: type_codes::MATERIALITY_CALCULATION,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: format!("{}_{}", m.entity_code, m.period),
+                label: format!("MAT {} {}", m.entity_code, m.period),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_code".into(), Value::String(m.entity_code.clone()));
+                    p.insert("period".into(), Value::String(m.period.clone()));
+                    p.insert(
+                        "benchmark".into(),
+                        Value::String(format!("{:?}", m.benchmark)),
+                    );
+                    let mat: f64 = m.overall_materiality.to_string().parse().unwrap_or(0.0);
+                    p.insert("overall_materiality".into(), serde_json::json!(mat));
+                    let perf: f64 = m.performance_materiality.to_string().parse().unwrap_or(0.0);
+                    p.insert("performance_materiality".into(), serde_json::json!(perf));
+                    p
+                },
+                features: vec![m
+                    .overall_materiality
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0)
+                    .ln_1p()],
+                is_anomaly: false,
+                anomaly_type: None,
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        // AuditOpinion → Layer 2 (ProcessEvents)
+        for op in opinions {
+            let oid = op.opinion_id.to_string();
+            let node_id = format!("audit_op_{oid}");
+            let added = self.try_add_node(HypergraphNode {
+                id: node_id.clone(),
+                entity_type: "audit_opinion".into(),
+                entity_type_code: type_codes::AUDIT_OPINION,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: oid,
+                label: format!("AOPN {}", op.opinion_type),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert(
+                        "opinion_type".into(),
+                        Value::String(format!("{}", op.opinion_type)),
+                    );
+                    p.insert("entity_name".into(), Value::String(op.entity_name.clone()));
+                    p.insert(
+                        "opinion_date".into(),
+                        Value::String(op.opinion_date.to_string()),
+                    );
+                    p.insert(
+                        "material_uncertainty_gc".into(),
+                        serde_json::json!(op.material_uncertainty_going_concern),
+                    );
+                    p.insert(
+                        "kam_count".into(),
+                        serde_json::json!(op.key_audit_matters.len()),
+                    );
+                    p
+                },
+                features: vec![if op.is_unmodified() { 0.0 } else { 1.0 }],
+                is_anomaly: op.is_modified(),
+                anomaly_type: if op.is_modified() {
+                    Some("modified_opinion".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+            if added {
+                // Opinion → Engagement (OPINION_FOR_ENGAGEMENT)
+                self.edges.push(CrossLayerEdge {
+                    source_id: node_id.clone(),
+                    source_layer: HypergraphLayer::ProcessEvents,
+                    target_id: format!("audit_eng_{}", op.engagement_id),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "OPINION_FOR_ENGAGEMENT".into(),
+                    edge_type_code: type_codes::OPINION_FOR_ENGAGEMENT,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // GoingConcernAssessment → Layer 2 (ProcessEvents)
+        for gc in going_concern {
+            let node_id = format!("audit_gc_{}_{}", gc.entity_code, gc.assessment_period);
+            self.try_add_node(HypergraphNode {
+                id: node_id,
+                entity_type: "going_concern_assessment".into(),
+                entity_type_code: type_codes::GOING_CONCERN_ASSESSMENT,
+                layer: HypergraphLayer::ProcessEvents,
+                external_id: format!("{}_{}", gc.entity_code, gc.assessment_period),
+                label: format!("GC {} {}", gc.entity_code, gc.assessment_period),
+                properties: {
+                    let mut p = HashMap::new();
+                    p.insert("entity_code".into(), Value::String(gc.entity_code.clone()));
+                    p.insert(
+                        "assessment_period".into(),
+                        Value::String(gc.assessment_period.clone()),
+                    );
+                    p.insert(
+                        "conclusion".into(),
+                        Value::String(format!("{:?}", gc.auditor_conclusion)),
+                    );
+                    p.insert(
+                        "material_uncertainty".into(),
+                        serde_json::json!(gc.material_uncertainty_exists),
+                    );
+                    p.insert(
+                        "indicator_count".into(),
+                        serde_json::json!(gc.indicators.len()),
+                    );
+                    p
+                },
+                features: vec![
+                    gc.indicators.len() as f64,
+                    if gc.material_uncertainty_exists {
+                        1.0
+                    } else {
+                        0.0
+                    },
+                ],
+                is_anomaly: gc.material_uncertainty_exists,
+                anomaly_type: if gc.material_uncertainty_exists {
+                    Some("going_concern_uncertainty".into())
+                } else {
+                    None
+                },
+                is_aggregate: false,
+                aggregate_count: 0,
+            });
+        }
+
+        // === Evidence-chain edges ===
+
+        // Engagement → Workpaper (DOCUMENTED_BY)
+        for wp in workpapers {
+            self.edges.push(CrossLayerEdge {
+                source_id: format!("audit_eng_{}", wp.engagement_id),
+                source_layer: HypergraphLayer::ProcessEvents,
+                target_id: format!("audit_wp_{}", wp.workpaper_id),
+                target_layer: HypergraphLayer::ProcessEvents,
+                edge_type: "DOCUMENTED_BY".into(),
+                edge_type_code: type_codes::DOCUMENTED_BY,
+                properties: HashMap::new(),
+            });
+        }
+
+        // Finding → RiskAssessment (IDENTIFIED_FROM)
+        for f in findings {
+            if let Some(ref risk_id) = f.related_risk_id {
+                self.edges.push(CrossLayerEdge {
+                    source_id: format!("audit_find_{}", f.finding_id),
+                    source_layer: HypergraphLayer::ProcessEvents,
+                    target_id: format!("audit_risk_{risk_id}"),
+                    target_layer: HypergraphLayer::ProcessEvents,
+                    edge_type: "IDENTIFIED_FROM".into(),
+                    edge_type_code: type_codes::IDENTIFIED_FROM,
+                    properties: HashMap::new(),
+                });
+            }
+        }
+
+        // AuditOpinion → Finding (BASED_ON) via shared engagement_id
+        for op in opinions {
+            for f in findings {
+                if f.engagement_id == op.engagement_id {
+                    self.edges.push(CrossLayerEdge {
+                        source_id: format!("audit_op_{}", op.opinion_id),
+                        source_layer: HypergraphLayer::ProcessEvents,
+                        target_id: format!("audit_find_{}", f.finding_id),
+                        target_layer: HypergraphLayer::ProcessEvents,
+                        edge_type: "OPINION_BASED_ON".into(),
+                        edge_type_code: type_codes::OPINION_BASED_ON,
+                        properties: HashMap::new(),
+                    });
+                }
+            }
         }
     }
 

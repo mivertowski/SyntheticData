@@ -25,8 +25,8 @@ use datasynth_generators::audit::{
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
     subsequent_event_generator::SubsequentEventGenerator,
-    AuditEngagementGenerator, EvidenceGenerator, FindingGenerator, RiskAssessmentGenerator,
-    WorkpaperGenerator,
+    AuditEngagementGenerator, EvidenceGenerator, FindingGenerator, JudgmentGenerator,
+    RiskAssessmentGenerator, WorkpaperGenerator,
 };
 
 use crate::artifact::ArtifactBag;
@@ -51,6 +51,7 @@ pub struct StepDispatcher {
     workpaper_gen: WorkpaperGenerator,
     evidence_gen: EvidenceGenerator,
     finding_gen: FindingGenerator,
+    judgment_gen: JudgmentGenerator,
     sampling_gen: SamplingPlanGenerator,
     analytical_gen: AnalyticalProcedureGenerator,
     gc_gen: GoingConcernGenerator,
@@ -72,6 +73,7 @@ impl StepDispatcher {
             workpaper_gen: WorkpaperGenerator::new(base_seed + 7500),
             evidence_gen: EvidenceGenerator::new(base_seed + 7600),
             finding_gen: FindingGenerator::new(base_seed + 7700),
+            judgment_gen: JudgmentGenerator::new(base_seed + 8400),
             sampling_gen: SamplingPlanGenerator::new(base_seed + 7800),
             analytical_gen: AnalyticalProcedureGenerator::new(base_seed + 7900),
             gc_gen: GoingConcernGenerator::new(base_seed + 8000),
@@ -202,6 +204,120 @@ impl StepDispatcher {
             | "finalize_audit_report"
             | "issue_report" => {
                 self.dispatch_opinion(context, bag);
+            }
+
+            // ----- Judgment / engagement quality (ISA 220) -----
+            "review_engagement_quality"
+            | "exercise_skepticism"
+            | "apply_due_care"
+            | "supervise_engagement_quality"
+            | "conduct_periodic_assessment"
+            | "oversee_qaip"
+            | "evaluate_staff_performance" => {
+                self.dispatch_judgment(context, bag);
+            }
+
+            // ----- Documentation / evidence -----
+            "document_engagement_work"
+            | "archive_engagement_documentation"
+            | "protect_information"
+            | "establish_confidentiality_policies" => {
+                self.dispatch_evidence(context, bag);
+            }
+
+            // ----- Planning / scoping (produces Planning workpapers) -----
+            "define_engagement_scope_detail"
+            | "determine_engagement_timeline"
+            | "draft_annual_plan"
+            | "develop_work_program"
+            | "scope_engagement"
+            | "develop_staffing_plan"
+            | "develop_ia_budget"
+            | "assign_team_members"
+            | "determine_sme_needs"
+            | "confirm_resource_competencies"
+            | "identify_auditable_entities"
+            | "prioritize_audit_entities" => {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Planning,
+                );
+            }
+
+            // ----- Reporting -----
+            "draft_audit_report"
+            | "review_draft_report"
+            | "prepare_draft_report"
+            | "evaluate_management_responses"
+            | "send_report_for_response"
+            | "receive_response"
+            | "distribute_final_report"
+            | "communicate_approved_plan"
+            | "present_plan_to_board"
+            | "communicate_plan_and_results" => {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Reporting,
+                );
+            }
+
+            // ----- Follow-up (produces findings) -----
+            "track_action_plan_status"
+            | "escalate_overdue_actions"
+            | "report_follow_up_status"
+            | "verify_remediation_implementation"
+            | "conclude_on_remediation" => {
+                self.dispatch_findings(context, bag);
+            }
+
+            // ----- Ethics / governance -----
+            "establish_ethics_code"
+            | "conduct_ethics_training"
+            | "monitor_ethics_compliance"
+            | "assess_objectivity_threats"
+            | "implement_objectivity_safeguards"
+            | "disclose_impairments"
+            | "assess_competencies"
+            | "develop_cpd_plans"
+            | "verify_standards_conformance"
+            | "maintain_ethical_standards"
+            | "safeguard_objectivity"
+            | "establish_independence"
+            | "define_ia_mandate"
+            | "establish_board_interaction"
+            | "obtain_board_support"
+            | "assess_technology_capabilities"
+            | "implement_technology"
+            | "manage_technological_resources" => {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Planning,
+                );
+            }
+
+            // ----- Performance / monitoring -----
+            "define_performance_metrics"
+            | "track_performance"
+            | "report_performance_to_board"
+            | "measure_ia_performance"
+            | "perform_ongoing_monitoring"
+            | "monitor_budget_utilization" => {
+                self.dispatch_workpaper_section(
+                    step,
+                    procedure_id,
+                    context,
+                    bag,
+                    WorkpaperSection::Completion,
+                );
             }
 
             // ----- Everything else: generic workpaper fallback -----
@@ -395,6 +511,55 @@ impl StepDispatcher {
             .se_gen
             .generate_for_entity(&ctx.company_code, ctx.report_date);
         bag.subsequent_events.extend(events);
+    }
+
+    /// Generate a `ProfessionalJudgment` record (ISA 200). Requires an
+    /// engagement in the bag.
+    fn dispatch_judgment(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
+        let engagement = match bag.engagements.last() {
+            Some(e) => e,
+            None => return,
+        };
+        let judgment = self
+            .judgment_gen
+            .generate_judgment(engagement, &ctx.team_member_ids);
+        bag.judgments.push(judgment);
+    }
+
+    /// Generate `AuditEvidence` records for the most recent workpaper in the
+    /// bag (ISA 500).
+    fn dispatch_evidence(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
+        if let Some(wp) = bag.workpapers.last() {
+            let evidence = self.evidence_gen.generate_evidence_for_workpaper(
+                wp,
+                &ctx.team_member_ids,
+                ctx.engagement_start,
+            );
+            bag.evidence.extend(evidence);
+        }
+    }
+
+    /// Generate a workpaper in a specific section (ISA 230). Requires an
+    /// engagement in the bag.
+    fn dispatch_workpaper_section(
+        &mut self,
+        _step: &BlueprintStep,
+        _procedure_id: &str,
+        ctx: &EngagementContext,
+        bag: &mut ArtifactBag,
+        section: WorkpaperSection,
+    ) {
+        let engagement = match bag.engagements.last() {
+            Some(e) => e,
+            None => return,
+        };
+        let wp = self.workpaper_gen.generate_workpaper(
+            engagement,
+            section,
+            ctx.engagement_start,
+            &ctx.team_member_ids,
+        );
+        bag.workpapers.push(wp);
     }
 
     /// Generate `AuditFinding` records (ISA 265). Requires an engagement
@@ -975,6 +1140,94 @@ mod tests {
         assert_eq!(
             section_for_command("develop_engagement_conclusions"),
             WorkpaperSection::Completion
+        );
+    }
+
+    #[test]
+    fn test_ia_judgment_dispatch() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap engagement.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        // Dispatch a judgment command.
+        d.dispatch(
+            &step_with_command("j1", "review_engagement_quality"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        assert!(
+            !bag.judgments.is_empty(),
+            "judgment dispatch should produce at least one judgment"
+        );
+    }
+
+    #[test]
+    fn test_ia_evidence_dispatch() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap engagement.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        // Create a workpaper for evidence to attach to.
+        d.dispatch(
+            &step_with_command("w1", "design_work_program"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        // Dispatch a documentation/evidence command.
+        d.dispatch(
+            &step_with_command("d1", "document_engagement_work"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        assert!(
+            !bag.evidence.is_empty(),
+            "evidence dispatch should produce evidence records"
+        );
+    }
+
+    #[test]
+    fn test_ia_planning_workpaper_dispatch() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap engagement.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        let before = bag.workpapers.len();
+        // Dispatch a planning command.
+        d.dispatch(
+            &step_with_command("p1", "draft_annual_plan"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        assert!(
+            bag.workpapers.len() > before,
+            "planning dispatch should produce a workpaper; before={}, after={}",
+            before,
+            bag.workpapers.len()
         );
     }
 }

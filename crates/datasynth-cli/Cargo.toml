@@ -25,6 +25,7 @@ datasynth-eval = { workspace = true }
 datasynth-generators = { workspace = true }
 datasynth-output = { workspace = true }
 datasynth-runtime = { workspace = true }
+datasynth-audit-fsm = { workspace = true }
 datasynth-banking = { workspace = true }
 datasynth-fingerprint = { workspace = true }
 datasynth-graph = { workspace = true }
@@ -39,6 +40,8 @@ serde_yaml = { workspace = true }
 serde_json = { workspace = true }
 itoa = { workspace = true }
 ryu = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
 rayon = { workspace = true }
 num_cpus = { workspace = true }
 reqwest = { workspace = true, optional = true }

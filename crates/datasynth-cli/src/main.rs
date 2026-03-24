@@ -204,6 +204,12 @@ enum Commands {
         #[command(subcommand)]
         command: ScenarioCommands,
     },
+
+    /// Audit FSM blueprint commands
+    Audit {
+        #[command(subcommand)]
+        command: AuditCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -336,6 +342,37 @@ enum FingerprintCommands {
         /// Fidelity threshold (0.0-1.0)
         #[arg(long, default_value = "0.8")]
         threshold: f64,
+    },
+}
+
+#[derive(Subcommand)]
+enum AuditCommands {
+    /// Validate a blueprint YAML file
+    Validate {
+        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        #[arg(long, default_value = "builtin:fsa")]
+        blueprint: String,
+    },
+    /// Display blueprint information
+    Info {
+        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        #[arg(long, default_value = "builtin:fsa")]
+        blueprint: String,
+    },
+    /// Run a standalone FSM engagement
+    Run {
+        /// Blueprint source: builtin:fsa, builtin:ia, or a file path
+        #[arg(long, default_value = "builtin:fsa")]
+        blueprint: String,
+        /// Overlay source: builtin:default, builtin:thorough, builtin:rushed, or a file path
+        #[arg(long, default_value = "builtin:default")]
+        overlay: String,
+        /// Output directory for the event trail
+        #[arg(short, long, default_value = "./audit_output")]
+        output: PathBuf,
+        /// Random seed for deterministic generation
+        #[arg(long, default_value = "42")]
+        seed: u64,
     },
 }
 
@@ -1885,6 +1922,16 @@ fn main() -> Result<()> {
 
         Commands::Fingerprint { command } => handle_fingerprint_command(command),
         Commands::Scenario { command } => handle_scenario_command(command),
+        Commands::Audit { command } => match command {
+            AuditCommands::Validate { blueprint } => handle_audit_validate(&blueprint),
+            AuditCommands::Info { blueprint } => handle_audit_info(&blueprint),
+            AuditCommands::Run {
+                blueprint,
+                overlay,
+                output,
+                seed,
+            } => handle_audit_run(&blueprint, &overlay, &output, seed),
+        },
     }
 }
 
@@ -2438,7 +2485,16 @@ fn create_safe_demo_preset() -> GeneratorConfig {
         intercompany: IntercompanyConfig::default(),
         balance: BalanceConfig::default(),
         ocpm: OcpmConfig::default(),
-        audit: AuditGenerationConfig::default(),
+        audit: AuditGenerationConfig {
+            enabled: true,
+            fsm: Some(AuditFsmConfig {
+                enabled: true,
+                blueprint: "builtin:fsa".into(),
+                overlay: "builtin:default".into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
         banking: datasynth_banking::BankingConfig::small(), // Use small banking config
         data_quality: DataQualitySchemaConfig::default(),
         scenario: datasynth_config::schema::ScenarioConfig::default(),
@@ -2567,6 +2623,209 @@ fn get_safe_memory_limit() -> usize {
 
     // Default to 1GB if detection fails
     1024
+}
+
+// ---------------------------------------------------------------------------
+// Audit FSM helpers
+// ---------------------------------------------------------------------------
+
+/// Resolve a blueprint string to a loaded `BlueprintWithPreconditions`.
+fn resolve_blueprint(s: &str) -> Result<datasynth_audit_fsm::loader::BlueprintWithPreconditions> {
+    use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
+    match s {
+        "builtin:fsa" => {
+            BlueprintWithPreconditions::load_builtin_fsa().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        "builtin:ia" => {
+            BlueprintWithPreconditions::load_builtin_ia().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        path => BlueprintWithPreconditions::load_from_file(PathBuf::from(path))
+            .map_err(|e| anyhow::anyhow!("{e}")),
+    }
+}
+
+/// Resolve an overlay string to a `GenerationOverlay`.
+fn resolve_overlay(s: &str) -> Result<datasynth_audit_fsm::schema::GenerationOverlay> {
+    use datasynth_audit_fsm::loader::{load_overlay, BuiltinOverlay, OverlaySource};
+    let source = match s {
+        "builtin:default" => OverlaySource::Builtin(BuiltinOverlay::Default),
+        "builtin:thorough" => OverlaySource::Builtin(BuiltinOverlay::Thorough),
+        "builtin:rushed" => OverlaySource::Builtin(BuiltinOverlay::Rushed),
+        path => OverlaySource::Custom(PathBuf::from(path)),
+    };
+    load_overlay(&source).map_err(|e| anyhow::anyhow!("{e}"))
+}
+
+/// Handle `audit validate`.
+fn handle_audit_validate(blueprint_str: &str) -> Result<()> {
+    let bwp = resolve_blueprint(blueprint_str)?;
+    let bp = &bwp.blueprint;
+
+    match bwp.validate() {
+        Ok(()) => {
+            let total_procedures: usize = bp.phases.iter().map(|p| p.procedures.len()).sum();
+            let total_steps: usize = bp
+                .phases
+                .iter()
+                .flat_map(|p| &p.procedures)
+                .map(|proc| proc.steps.len())
+                .sum();
+            println!("Blueprint is valid.");
+            println!();
+            println!("  Framework:   {}", bp.methodology.framework);
+            println!("  Phases:      {}", bp.phases.len());
+            println!("  Procedures:  {}", total_procedures);
+            println!("  Steps:       {}", total_steps);
+            println!("  Standards:   {}", bp.standards.len());
+            println!("  Actors:      {}", bp.actors.len());
+            Ok(())
+        }
+        Err(datasynth_audit_fsm::error::AuditFsmError::BlueprintValidation { violations }) => {
+            eprintln!(
+                "Blueprint validation FAILED ({} violation(s)):",
+                violations.len()
+            );
+            for v in &violations {
+                eprintln!("  - {v}");
+            }
+            std::process::exit(1);
+        }
+        Err(e) => Err(anyhow::anyhow!("{e}")),
+    }
+}
+
+/// Handle `audit info`.
+fn handle_audit_info(blueprint_str: &str) -> Result<()> {
+    let bwp = resolve_blueprint(blueprint_str)?;
+    let bp = &bwp.blueprint;
+
+    let total_procedures: usize = bp.phases.iter().map(|p| p.procedures.len()).sum();
+    let total_steps: usize = bp
+        .phases
+        .iter()
+        .flat_map(|p| &p.procedures)
+        .map(|proc| proc.steps.len())
+        .sum();
+
+    // Collect unique evidence types referenced across all procedures
+    let evidence_ids: std::collections::HashSet<&str> = bp
+        .evidence_templates
+        .iter()
+        .map(|e| e.id.as_str())
+        .collect();
+
+    println!("Audit Blueprint Information");
+    println!("===========================");
+    println!();
+    println!("  Name:        {}", bp.name);
+    println!("  Version:     {}", bp.version);
+    println!("  Framework:   {}", bp.methodology.framework);
+    println!("  Phases:      {}", bp.phases.len());
+    println!("  Procedures:  {}", total_procedures);
+    println!("  Steps:       {}", total_steps);
+    println!("  Standards:   {}", bp.standards.len());
+    println!("  Actors:      {}", bp.actors.len());
+    println!("  Evidence:    {} template(s)", evidence_ids.len());
+    println!();
+
+    // Classify phases as continuous (order < 0) vs sequential
+    let continuous: Vec<_> = bp
+        .phases
+        .iter()
+        .filter(|p| p.order.is_some_and(|o| o < 0))
+        .collect();
+    let sequential: Vec<_> = bp
+        .phases
+        .iter()
+        .filter(|p| p.order.is_none_or(|o| o >= 0))
+        .collect();
+
+    if !continuous.is_empty() {
+        println!("  Continuous phases ({}):", continuous.len());
+        for phase in &continuous {
+            let proc_count = phase.procedures.len();
+            let step_count: usize = phase.procedures.iter().map(|p| p.steps.len()).sum();
+            println!(
+                "    - {} ({} procedure(s), {} step(s))",
+                phase.name, proc_count, step_count
+            );
+        }
+        println!();
+    }
+
+    println!("  Sequential phases ({}):", sequential.len());
+    for phase in &sequential {
+        let proc_count = phase.procedures.len();
+        let step_count: usize = phase.procedures.iter().map(|p| p.steps.len()).sum();
+        println!(
+            "    - {} ({} procedure(s), {} step(s))",
+            phase.name, proc_count, step_count
+        );
+    }
+    println!();
+
+    // Actors
+    if !bp.actors.is_empty() {
+        println!("  Actors:");
+        for actor in &bp.actors {
+            println!("    - {} ({})", actor.label, actor.id);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handle `audit run`.
+fn handle_audit_run(
+    blueprint_str: &str,
+    overlay_str: &str,
+    output: &std::path::Path,
+    seed: u64,
+) -> Result<()> {
+    use datasynth_audit_fsm::context::EngagementContext;
+    use datasynth_audit_fsm::engine::AuditFsmEngine;
+    use datasynth_audit_fsm::export::flat_log::export_events_to_file;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
+
+    let bwp = resolve_blueprint(blueprint_str)?;
+    let overlay = resolve_overlay(overlay_str)?;
+
+    // Validate before running
+    bwp.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
+
+    let rng = ChaCha8Rng::seed_from_u64(seed);
+    let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+    let ctx = EngagementContext::test_default();
+
+    let start = std::time::Instant::now();
+    let result = engine
+        .run_engagement(&ctx)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    let elapsed = start.elapsed();
+
+    // Write output
+    std::fs::create_dir_all(output)?;
+    let trail_path = output.join("audit_event_trail.json");
+    export_events_to_file(&result.event_log, &trail_path)
+        .map_err(|e| anyhow::anyhow!("Failed to write event trail: {e}"))?;
+
+    // Summary
+    println!("Audit FSM engagement complete.");
+    println!();
+    println!("  Events:     {}", result.event_log.len());
+    println!("  Artifacts:  {}", result.artifacts.total_artifacts());
+    println!("  Phases:     {}", result.phases_completed.len());
+    println!("  Anomalies:  {}", result.anomalies.len());
+    println!(
+        "  Duration:   {:.1} simulated hours",
+        result.total_duration_hours
+    );
+    println!("  Wall clock: {:.2}s", elapsed.as_secs_f64());
+    println!();
+    println!("  Event trail: {}", trail_path.display());
+
+    Ok(())
 }
 
 /// Handle scenario subcommands.
