@@ -142,6 +142,7 @@ impl AuditFsmEngine {
                 .insert(proc_id.clone(), current_state.clone());
 
             let mut iterations = 0;
+            let mut self_loop_count: usize = 0;
             loop {
                 if iterations >= MAX_ITERATIONS {
                     break;
@@ -161,7 +162,24 @@ impl AuditFsmEngine {
                 }
 
                 // Select transition.
-                let transition = self.select_transition(&outgoing, proc_id);
+                let mut transition = self.select_transition(&outgoing, proc_id);
+
+                // Self-loop detection and bounding.
+                if transition.from_state == transition.to_state {
+                    self_loop_count += 1;
+                    if self_loop_count >= self.overlay.max_self_loop_iterations {
+                        // Force forward: find a non-self-loop transition.
+                        if let Some(forward) = outgoing.iter().find(|t| t.from_state != t.to_state)
+                        {
+                            transition = forward;
+                            self_loop_count = 0;
+                        } else {
+                            break; // No forward transition available.
+                        }
+                    }
+                } else {
+                    self_loop_count = 0;
+                }
 
                 // Determine actor for this transition.
                 let actor_id = self.select_actor_for_transition(transition, &proc);
@@ -190,9 +208,13 @@ impl AuditFsmEngine {
                 acc.procedure_states
                     .insert(proc_id.clone(), current_state.clone());
 
-                // When entering "in_progress" state (from not_started or from
-                // under_review via revision), execute steps.
-                if current_state == "in_progress" && previous_state != "in_progress" {
+                // Execute steps when entering "in_progress" from a different
+                // state, OR on a self-loop (same state -> same state) so that
+                // repeated iterations (e.g. follow_up -> follow_up) re-execute.
+                let is_self_loop = previous_state == current_state;
+                if (current_state == "in_progress" && previous_state != "in_progress")
+                    || is_self_loop
+                {
                     self.execute_steps(&proc, &phase_id, &mut acc);
                 }
 
@@ -633,6 +655,32 @@ mod tests {
                 !result.phases_completed.contains(cid),
                 "Continuous phase '{}' should not be in phases_completed",
                 cid
+            );
+        }
+    }
+
+    #[test]
+    fn test_self_loop_bounded_by_overlay() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let overlay = default_overlay(); // max_self_loop_iterations = 5
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let result = engine.run_engagement(&ctx).unwrap();
+
+        // Count self-loop transitions per procedure.
+        let mut loop_counts: HashMap<String, usize> = HashMap::new();
+        for e in &result.event_log {
+            if e.from_state.as_ref() == e.to_state.as_ref() && e.from_state.is_some() {
+                *loop_counts.entry(e.procedure_id.clone()).or_default() += 1;
+            }
+        }
+
+        for (proc_id, count) in &loop_counts {
+            assert!(
+                *count <= 5,
+                "Procedure '{}' had {} self-loops, max is 5",
+                proc_id, count
             );
         }
     }
