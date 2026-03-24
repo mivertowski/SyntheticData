@@ -149,7 +149,7 @@ mod raw {
         pub id: String,
         pub name: String,
         #[serde(default)]
-        pub order: Option<u32>,
+        pub order: Option<i32>,
         #[serde(default)]
         pub description: Option<String>,
         #[serde(default)]
@@ -297,6 +297,34 @@ fn convert_binding(s: &str) -> BindingLevel {
     }
 }
 
+/// Convert an optional serde_yaml::Value (expected to be a Mapping of string -> sequence)
+/// into a `HashMap<String, Vec<String>>`.
+fn convert_discriminators_value(
+    value: &Option<serde_yaml::Value>,
+) -> HashMap<String, Vec<String>> {
+    let mut result = HashMap::new();
+    if let Some(serde_yaml::Value::Mapping(map)) = value {
+        for (k, v) in map {
+            if let serde_yaml::Value::String(key) = k {
+                if let serde_yaml::Value::Sequence(seq) = v {
+                    let values: Vec<String> = seq
+                        .iter()
+                        .filter_map(|item| {
+                            if let serde_yaml::Value::String(s) = item {
+                                Some(s.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                    result.insert(key.clone(), values);
+                }
+            }
+        }
+    }
+    result
+}
+
 fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
     // Build actors
     let actors: Vec<BlueprintActor> = raw
@@ -376,6 +404,7 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             BlueprintPhase {
                 id: p.id,
                 name: p.name,
+                order: p.order,
                 description: p.description,
                 entry_gate: None,
                 exit_gate,
@@ -383,6 +412,9 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             }
         })
         .collect();
+
+    // Convert top-level discriminators from serde_yaml::Value to HashMap
+    let discriminators = convert_discriminators_value(&raw.discriminators);
 
     AuditBlueprint {
         id: format!(
@@ -401,6 +433,7 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             },
             description: raw.methodology.description,
         },
+        discriminators,
         actors,
         standards,
         evidence_templates,
@@ -434,10 +467,13 @@ fn convert_raw_procedure(proc: raw::RawProcedure) -> BlueprintProcedure {
         .map(|s| convert_raw_step(s, &proc.preconditions))
         .collect();
 
+    let discriminators = convert_discriminators_value(&proc.discriminators);
+
     BlueprintProcedure {
         id: proc.id,
         name: proc.title,
         description: None,
+        discriminators,
         aggregate,
         steps,
     }
@@ -1287,6 +1323,7 @@ mod tests {
         bp.phases.push(BlueprintPhase {
             id: "nonexistent_phase".to_string(),
             name: "Bogus".to_string(),
+            order: None,
             description: None,
             entry_gate: None,
             exit_gate: Some(PhaseGate {

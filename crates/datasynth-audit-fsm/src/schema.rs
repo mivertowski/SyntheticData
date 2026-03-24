@@ -49,6 +49,9 @@ pub struct AuditBlueprint {
     pub version: String,
     /// Methodology metadata.
     pub methodology: BlueprintMethodology,
+    /// Top-level discriminator dimensions (e.g. categories, risk_ratings).
+    #[serde(default)]
+    pub discriminators: HashMap<String, Vec<String>>,
     /// Actor roles defined in this blueprint.
     #[serde(default)]
     pub actors: Vec<BlueprintActor>,
@@ -127,6 +130,9 @@ pub struct BlueprintPhase {
     pub id: String,
     /// Display name.
     pub name: String,
+    /// Ordering key. Negative values indicate continuous/background phases.
+    #[serde(default)]
+    pub order: Option<i32>,
     /// Optional description.
     #[serde(default)]
     pub description: Option<String>,
@@ -176,6 +182,9 @@ pub struct BlueprintProcedure {
     /// Optional description.
     #[serde(default)]
     pub description: Option<String>,
+    /// Discriminator dimensions applicable to this procedure.
+    #[serde(default)]
+    pub discriminators: HashMap<String, Vec<String>>,
     /// FSM aggregate: initial state, valid states, and transitions.
     #[serde(default)]
     pub aggregate: ProcedureAggregate,
@@ -341,7 +350,7 @@ pub struct DecisionBranch {
 /// Overlays are applied on top of a blueprint to tune probabilities, volumes,
 /// timing distributions, and anomaly injection rates without modifying the
 /// canonical blueprint YAML.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerationOverlay {
     /// Id of the blueprint this overlay targets.
     #[serde(default)]
@@ -349,6 +358,9 @@ pub struct GenerationOverlay {
     /// Depth override (overrides `methodology.default_depth`).
     #[serde(default)]
     pub depth: Option<DepthLevel>,
+    /// Maximum number of self-loop iterations (e.g. review/revise cycles).
+    #[serde(default = "default_max_self_loop_iterations")]
+    pub max_self_loop_iterations: usize,
     /// Transition probability and timing configuration.
     #[serde(default)]
     pub transitions: TransitionConfig,
@@ -361,6 +373,24 @@ pub struct GenerationOverlay {
     /// Per-actor behavioural profiles keyed by actor id.
     #[serde(default)]
     pub actor_profiles: HashMap<String, ActorProfile>,
+}
+
+fn default_max_self_loop_iterations() -> usize {
+    5
+}
+
+impl Default for GenerationOverlay {
+    fn default() -> Self {
+        Self {
+            blueprint_id: None,
+            depth: None,
+            max_self_loop_iterations: default_max_self_loop_iterations(),
+            transitions: TransitionConfig::default(),
+            artifacts: ArtifactConfig::default(),
+            anomalies: AnomalyConfig::default(),
+            actor_profiles: HashMap::new(),
+        }
+    }
 }
 
 /// Transition probability and timing overrides.
@@ -630,5 +660,81 @@ decision:
         assert_eq!(decision.branches.len(), 2);
         assert_eq!(decision.branches[1].label, "no");
         assert_eq!(decision.branches[1].target, "step_expand_scope");
+    }
+
+    #[test]
+    fn test_phase_with_order_deserialize() {
+        let yaml = r#"
+id: continuous_phase
+name: Continuous Monitoring
+order: -2
+"#;
+        let phase: BlueprintPhase = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(phase.id, "continuous_phase");
+        assert_eq!(phase.order, Some(-2));
+    }
+
+    #[test]
+    fn test_phase_without_order_defaults_none() {
+        let yaml = r#"
+id: regular_phase
+name: Planning
+"#;
+        let phase: BlueprintPhase = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(phase.id, "regular_phase");
+        assert_eq!(phase.order, None);
+    }
+
+    #[test]
+    fn test_overlay_max_self_loop_iterations_default() {
+        let overlay = GenerationOverlay::default();
+        assert_eq!(overlay.max_self_loop_iterations, 5);
+    }
+
+    #[test]
+    fn test_overlay_max_self_loop_iterations_from_yaml() {
+        let yaml = r#"
+max_self_loop_iterations: 10
+"#;
+        let overlay: GenerationOverlay = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(overlay.max_self_loop_iterations, 10);
+    }
+
+    #[test]
+    fn test_blueprint_discriminators_deserialize() {
+        let yaml = r#"
+id: test-bp
+name: Test
+version: "1.0"
+methodology:
+  framework: TEST
+discriminators:
+  categories: [financial, operational]
+  risk_ratings: [high, medium, low]
+phases: []
+"#;
+        let bp: AuditBlueprint = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(bp.discriminators.len(), 2);
+        assert_eq!(
+            bp.discriminators.get("categories").unwrap(),
+            &vec!["financial".to_string(), "operational".to_string()]
+        );
+        assert_eq!(bp.discriminators.get("risk_ratings").unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_procedure_discriminators_deserialize() {
+        let yaml = r#"
+id: test_proc
+name: Test Procedure
+discriminators:
+  engagement_types: [assurance, advisory]
+"#;
+        let proc: BlueprintProcedure = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(proc.discriminators.len(), 1);
+        assert_eq!(
+            proc.discriminators.get("engagement_types").unwrap(),
+            &vec!["assurance".to_string(), "advisory".to_string()]
+        );
     }
 }
