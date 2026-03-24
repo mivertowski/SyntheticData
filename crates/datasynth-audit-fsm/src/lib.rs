@@ -7,5 +7,6 @@ pub mod context;
 pub mod engine;
 pub mod error;
 pub mod event;
+pub mod export;
 pub mod loader;
 pub mod schema;
