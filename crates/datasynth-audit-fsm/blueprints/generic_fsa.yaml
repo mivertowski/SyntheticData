@@ -183,6 +183,8 @@ procedures:
   - id: accept_engagement
     phase: planning
     title: "Accept and Continue Engagement"
+    base_hours: 4.0
+    required_roles: [engagement_partner]
     discriminators:
       tiers: [core]
     aggregate:
@@ -245,6 +247,8 @@ procedures:
   - id: planning_materiality
     phase: planning
     title: "Determine Materiality"
+    base_hours: 8.0
+    required_roles: [audit_manager]
     discriminators:
       tiers: [core]
     aggregate:
@@ -328,6 +332,8 @@ procedures:
   - id: risk_identification
     phase: planning
     title: "Identify and Assess Risks of Material Misstatement"
+    base_hours: 16.0
+    required_roles: [audit_senior]
     discriminators:
       tiers: [core]
     aggregate:
@@ -432,6 +438,8 @@ procedures:
   - id: test_of_controls
     phase: execution
     title: "Test Operating Effectiveness of Controls"
+    base_hours: 24.0
+    required_roles: [audit_senior]
     discriminators:
       tiers: [core]
     aggregate:
@@ -516,6 +524,8 @@ procedures:
   - id: substantive_testing
     phase: execution
     title: "Perform Substantive Audit Procedures"
+    base_hours: 32.0
+    required_roles: [audit_senior, audit_staff]
     discriminators:
       tiers: [core]
     aggregate:
@@ -589,6 +599,8 @@ procedures:
   - id: analytical_procedures
     phase: execution
     title: "Perform Analytical Procedures"
+    base_hours: 12.0
+    required_roles: [audit_senior]
     discriminators:
       tiers: [core]
     aggregate:
@@ -654,6 +666,8 @@ procedures:
   - id: going_concern
     phase: completion
     title: "Evaluate Going Concern"
+    base_hours: 8.0
+    required_roles: [audit_manager]
     discriminators:
       tiers: [core]
     aggregate:
@@ -736,6 +750,8 @@ procedures:
   - id: subsequent_events
     phase: completion
     title: "Evaluate Subsequent Events"
+    base_hours: 6.0
+    required_roles: [audit_senior]
     discriminators:
       tiers: [core]
     aggregate:
@@ -802,6 +818,8 @@ procedures:
   - id: form_opinion
     phase: completion
     title: "Form and Issue Audit Opinion"
+    base_hours: 12.0
+    required_roles: [engagement_partner]
     discriminators:
       tiers: [core]
     aggregate:

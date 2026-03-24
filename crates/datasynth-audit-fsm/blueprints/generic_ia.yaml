@@ -786,6 +786,8 @@ procedures:
 - id: maintain_audit_universe
   phase: strategic_planning
   title: Maintain Audit Universe
+  base_hours: 8.0
+  required_roles: [cae]
   discriminators:
     categories:
     - financial
@@ -885,6 +887,8 @@ procedures:
 - id: develop_annual_plan
   phase: strategic_planning
   title: Develop Annual Audit Plan
+  base_hours: 8.0
+  required_roles: [cae]
   discriminators:
     categories:
     - financial
@@ -997,6 +1001,8 @@ procedures:
 - id: scope_engagement
   phase: engagement_planning
   title: Scope Engagement
+  base_hours: 6.0
+  required_roles: [audit_manager]
   discriminators:
     engagement_types:
     - assurance
@@ -1082,6 +1088,8 @@ procedures:
 - id: assess_engagement_risks
   phase: engagement_planning
   title: Assess Engagement Risks
+  base_hours: 8.0
+  required_roles: [senior_auditor]
   discriminators:
     risk_ratings:
     - high
@@ -1159,6 +1167,8 @@ procedures:
 - id: allocate_resources
   phase: engagement_planning
   title: Allocate Resources
+  base_hours: 4.0
+  required_roles: [audit_manager]
   aggregate:
     initial_state: not_started
     states:
@@ -1237,6 +1247,8 @@ procedures:
 - id: conduct_opening_meeting
   phase: engagement_planning
   title: Conduct Opening Meeting
+  base_hours: 4.0
+  required_roles: [audit_manager]
   aggregate:
     initial_state: not_started
     states:
@@ -1276,6 +1288,8 @@ procedures:
 - id: execute_testing
   phase: fieldwork
   title: Execute Testing Procedures
+  base_hours: 32.0
+  required_roles: [senior_auditor]
   discriminators:
     categories:
     - financial
@@ -1390,6 +1404,8 @@ procedures:
 - id: evaluate_controls
   phase: fieldwork
   title: Evaluate Internal Controls
+  base_hours: 24.0
+  required_roles: [senior_auditor]
   discriminators:
     categories:
     - financial
@@ -1475,6 +1491,8 @@ procedures:
 - id: develop_findings
   phase: fieldwork
   title: Develop Findings
+  base_hours: 16.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -1601,6 +1619,8 @@ procedures:
 - id: discuss_findings
   phase: fieldwork
   title: Discuss Findings with Auditee
+  base_hours: 4.0
+  required_roles: [audit_manager]
   aggregate:
     initial_state: not_started
     states:
@@ -1644,6 +1664,8 @@ procedures:
 - id: prepare_draft_report
   phase: reporting
   title: Prepare Draft Report
+  base_hours: 12.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -1728,6 +1750,8 @@ procedures:
 - id: obtain_management_response
   phase: reporting
   title: Obtain Management Response
+  base_hours: 8.0
+  required_roles: [audit_manager]
   aggregate:
     initial_state: not_started
     states:
@@ -1801,6 +1825,8 @@ procedures:
 - id: issue_final_report
   phase: reporting
   title: Issue Final Report
+  base_hours: 8.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -1881,6 +1907,8 @@ procedures:
 - id: monitor_action_plans
   phase: follow_up
   title: Monitor Action Plans
+  base_hours: 8.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -1989,6 +2017,8 @@ procedures:
 - id: verify_remediation
   phase: follow_up
   title: Verify Remediation
+  base_hours: 10.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -2064,6 +2094,8 @@ procedures:
 - id: maintain_ethical_standards
   phase: ethics_and_professionalism
   title: Maintain Ethical Standards
+  base_hours: 4.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2163,6 +2195,8 @@ procedures:
 - id: safeguard_objectivity
   phase: ethics_and_professionalism
   title: Safeguard Objectivity
+  base_hours: 4.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2266,6 +2300,8 @@ procedures:
 - id: maintain_competency
   phase: ethics_and_professionalism
   title: Maintain Competency
+  base_hours: 6.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -2348,6 +2384,8 @@ procedures:
 - id: exercise_due_care
   phase: ethics_and_professionalism
   title: Exercise Due Professional Care
+  base_hours: 4.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -2438,6 +2476,8 @@ procedures:
 - id: protect_confidential_information
   phase: ethics_and_professionalism
   title: Protect Confidential Information
+  base_hours: 4.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -2515,6 +2555,8 @@ procedures:
 - id: establish_ia_mandate
   phase: governance_establishment
   title: Establish Internal Audit Mandate
+  base_hours: 6.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2621,6 +2663,8 @@ procedures:
 - id: establish_organizational_independence
   phase: governance_establishment
   title: Establish Organizational Independence
+  base_hours: 6.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2694,6 +2738,8 @@ procedures:
 - id: establish_board_oversight
   phase: governance_establishment
   title: Establish Board Oversight
+  base_hours: 8.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2812,6 +2858,8 @@ procedures:
 - id: manage_financial_resources
   phase: resource_management
   title: Manage Financial Resources
+  base_hours: 6.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -2884,6 +2932,8 @@ procedures:
 - id: manage_human_resources
   phase: resource_management
   title: Manage Human Resources
+  base_hours: 8.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -2970,6 +3020,8 @@ procedures:
 - id: manage_technological_resources
   phase: resource_management
   title: Manage Technological Resources
+  base_hours: 6.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -3043,6 +3095,8 @@ procedures:
 - id: communicate_ia_strategy_results
   phase: resource_management
   title: Communicate IA Strategy & Results
+  base_hours: 6.0
+  required_roles: [cae]
   aggregate:
     initial_state: not_started
     states:
@@ -3147,6 +3201,8 @@ procedures:
 - id: conduct_internal_qa
   phase: quality_assurance
   title: Conduct Internal Quality Assessments
+  base_hours: 8.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -3219,6 +3275,8 @@ procedures:
 - id: measure_ia_performance
   phase: quality_assurance
   title: Measure IA Performance
+  base_hours: 6.0
+  required_roles: [audit_director]
   aggregate:
     initial_state: not_started
     states:
@@ -3304,6 +3362,8 @@ procedures:
 - id: oversee_engagement_performance
   phase: quality_assurance
   title: Oversee Engagement Performance
+  base_hours: 8.0
+  required_roles: [audit_manager]
   aggregate:
     initial_state: not_started
     states:
@@ -3372,6 +3432,8 @@ procedures:
 - id: develop_work_program
   phase: engagement_planning
   title: Develop Work Program
+  base_hours: 6.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -3443,6 +3505,8 @@ procedures:
 - id: evaluate_findings
   phase: fieldwork
   title: Evaluate Findings & Conclusions
+  base_hours: 12.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -3528,6 +3592,8 @@ procedures:
 - id: develop_recommendations
   phase: fieldwork
   title: Develop Recommendations
+  base_hours: 8.0
+  required_roles: [senior_auditor]
   aggregate:
     initial_state: not_started
     states:
@@ -3597,6 +3663,8 @@ procedures:
 - id: document_engagement_work
   phase: fieldwork
   title: Document Engagement Work
+  base_hours: 12.0
+  required_roles: [staff_auditor]
   aggregate:
     initial_state: not_started
     states:

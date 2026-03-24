@@ -191,6 +191,12 @@ pub struct BlueprintProcedure {
     /// Ordered steps within this procedure.
     #[serde(default)]
     pub steps: Vec<BlueprintStep>,
+    /// Estimated base hours for the procedure (used in cost modelling).
+    #[serde(default)]
+    pub base_hours: Option<f64>,
+    /// Roles required to execute this procedure (e.g. `["audit_senior"]`).
+    #[serde(default)]
+    pub required_roles: Vec<String>,
 }
 
 /// Per-procedure FSM aggregate: defines the states and transitions of the
@@ -342,6 +348,99 @@ pub struct DecisionBranch {
 }
 
 // ---------------------------------------------------------------------------
+// Iteration limits
+// ---------------------------------------------------------------------------
+
+/// Per-procedure iteration limits for the FSM engine.
+///
+/// Replaces the former global `MAX_ITERATIONS` constant with a configurable
+/// default and optional per-procedure overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IterationLimits {
+    /// Default maximum iterations for any procedure.
+    #[serde(default = "default_iteration_limit")]
+    pub default: usize,
+    /// Per-procedure overrides keyed by procedure id.
+    #[serde(default)]
+    pub per_procedure: HashMap<String, usize>,
+}
+
+fn default_iteration_limit() -> usize {
+    30
+}
+
+impl Default for IterationLimits {
+    fn default() -> Self {
+        Self {
+            default: 30,
+            per_procedure: HashMap::new(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Resource costs
+// ---------------------------------------------------------------------------
+
+/// Cost model configuration applied via overlays to compute resource estimates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceCosts {
+    /// Global multiplier applied to all base hours (e.g. 1.5 for thorough).
+    #[serde(default = "default_cost_multiplier")]
+    pub cost_multiplier: f64,
+    /// Hourly billing rates keyed by role id (e.g. `"engagement_partner": 500`).
+    #[serde(default)]
+    pub role_hourly_rates: HashMap<String, f64>,
+    /// Per-procedure multipliers keyed by procedure id.
+    #[serde(default)]
+    pub per_procedure_multipliers: HashMap<String, f64>,
+}
+
+fn default_cost_multiplier() -> f64 {
+    1.0
+}
+
+impl Default for ResourceCosts {
+    fn default() -> Self {
+        Self {
+            cost_multiplier: 1.0,
+            role_hourly_rates: HashMap::new(),
+            per_procedure_multipliers: HashMap::new(),
+        }
+    }
+}
+
+impl ResourceCosts {
+    /// Compute the effective hours for a procedure after applying multipliers.
+    ///
+    /// Falls back to 8.0 if the procedure has no `base_hours` set.
+    pub fn effective_hours(&self, proc: &BlueprintProcedure) -> f64 {
+        let base = proc.base_hours.unwrap_or(8.0);
+        let proc_mult = self
+            .per_procedure_multipliers
+            .get(&proc.id)
+            .copied()
+            .unwrap_or(1.0);
+        base * self.cost_multiplier * proc_mult
+    }
+
+    /// Compute the monetary cost for a procedure.
+    ///
+    /// Uses the first entry in `required_roles` to look up the hourly rate;
+    /// falls back to `"audit_staff"` and then to a default rate of 200.0.
+    pub fn procedure_cost(&self, proc: &BlueprintProcedure) -> f64 {
+        let hours = self.effective_hours(proc);
+        let role = proc
+            .required_roles
+            .first()
+            .map(|r| r.as_str())
+            .unwrap_or("audit_staff");
+        let rate = self.role_hourly_rates.get(role).copied().unwrap_or(200.0);
+        hours * rate
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Overlay types
 // ---------------------------------------------------------------------------
 
@@ -377,6 +476,12 @@ pub struct GenerationOverlay {
     /// value in each specified category will execute. `None` means no filter.
     #[serde(default)]
     pub discriminators: Option<HashMap<String, Vec<String>>>,
+    /// Per-procedure iteration limits (replaces global MAX_ITERATIONS).
+    #[serde(default)]
+    pub iteration_limits: IterationLimits,
+    /// Resource cost configuration for budget estimation.
+    #[serde(default)]
+    pub resource_costs: ResourceCosts,
 }
 
 fn default_max_self_loop_iterations() -> usize {
@@ -394,6 +499,8 @@ impl Default for GenerationOverlay {
             anomalies: AnomalyConfig::default(),
             actor_profiles: HashMap::new(),
             discriminators: None,
+            iteration_limits: IterationLimits::default(),
+            resource_costs: ResourceCosts::default(),
         }
     }
 }
@@ -741,5 +848,175 @@ discriminators:
             proc.discriminators.get("engagement_types").unwrap(),
             &vec!["assurance".to_string(), "advisory".to_string()]
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Cost model tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_resource_costs_default() {
+        let costs = ResourceCosts::default();
+        assert!((costs.cost_multiplier - 1.0).abs() < f64::EPSILON);
+        assert!(costs.role_hourly_rates.is_empty());
+        assert!(costs.per_procedure_multipliers.is_empty());
+    }
+
+    #[test]
+    fn test_effective_hours_default() {
+        let costs = ResourceCosts::default();
+        let proc = BlueprintProcedure {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            description: None,
+            discriminators: HashMap::new(),
+            aggregate: ProcedureAggregate::default(),
+            steps: vec![],
+            base_hours: None,
+            required_roles: vec![],
+        };
+        // base=8.0 (default), multiplier=1.0, no proc override -> 8.0
+        assert!((costs.effective_hours(&proc) - 8.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_effective_hours_with_base() {
+        let costs = ResourceCosts::default();
+        let proc = BlueprintProcedure {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            description: None,
+            discriminators: HashMap::new(),
+            aggregate: ProcedureAggregate::default(),
+            steps: vec![],
+            base_hours: Some(16.0),
+            required_roles: vec![],
+        };
+        assert!((costs.effective_hours(&proc) - 16.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_effective_hours_with_multipliers() {
+        let mut costs = ResourceCosts {
+            cost_multiplier: 1.5,
+            ..Default::default()
+        };
+        costs
+            .per_procedure_multipliers
+            .insert("test_proc".into(), 1.3);
+        let proc = BlueprintProcedure {
+            id: "test_proc".to_string(),
+            name: "Test".to_string(),
+            description: None,
+            discriminators: HashMap::new(),
+            aggregate: ProcedureAggregate::default(),
+            steps: vec![],
+            base_hours: Some(10.0),
+            required_roles: vec![],
+        };
+        // 10.0 * 1.5 * 1.3 = 19.5
+        assert!((costs.effective_hours(&proc) - 19.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_procedure_cost_with_role() {
+        let mut costs = ResourceCosts::default();
+        costs
+            .role_hourly_rates
+            .insert("engagement_partner".into(), 500.0);
+        let proc = BlueprintProcedure {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            description: None,
+            discriminators: HashMap::new(),
+            aggregate: ProcedureAggregate::default(),
+            steps: vec![],
+            base_hours: Some(4.0),
+            required_roles: vec!["engagement_partner".to_string()],
+        };
+        // 4.0 * 1.0 * 500.0 = 2000.0
+        assert!((costs.procedure_cost(&proc) - 2000.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_procedure_cost_fallback_role() {
+        let costs = ResourceCosts::default();
+        let proc = BlueprintProcedure {
+            id: "test".to_string(),
+            name: "Test".to_string(),
+            description: None,
+            discriminators: HashMap::new(),
+            aggregate: ProcedureAggregate::default(),
+            steps: vec![],
+            base_hours: Some(10.0),
+            required_roles: vec![],
+        };
+        // No role -> fallback to audit_staff -> no rate -> fallback 200.0
+        // 10.0 * 1.0 * 200.0 = 2000.0
+        assert!((costs.procedure_cost(&proc) - 2000.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_resource_costs_yaml_roundtrip() {
+        let yaml = r#"
+cost_multiplier: 1.5
+role_hourly_rates:
+  engagement_partner: 500.0
+  audit_staff: 120.0
+per_procedure_multipliers:
+  risk_identification: 1.2
+"#;
+        let costs: ResourceCosts = serde_yaml::from_str(yaml).unwrap();
+        assert!((costs.cost_multiplier - 1.5).abs() < f64::EPSILON);
+        assert_eq!(costs.role_hourly_rates.len(), 2);
+        assert!(
+            (costs.role_hourly_rates.get("engagement_partner").unwrap() - 500.0).abs()
+                < f64::EPSILON
+        );
+        assert_eq!(costs.per_procedure_multipliers.len(), 1);
+    }
+
+    #[test]
+    fn test_overlay_resource_costs_default() {
+        let overlay = GenerationOverlay::default();
+        assert!((overlay.resource_costs.cost_multiplier - 1.0).abs() < f64::EPSILON);
+        assert!(overlay.resource_costs.role_hourly_rates.is_empty());
+    }
+
+    #[test]
+    fn test_overlay_resource_costs_from_yaml() {
+        let yaml = r#"
+resource_costs:
+  cost_multiplier: 1.5
+  role_hourly_rates:
+    audit_manager: 300.0
+"#;
+        let overlay: GenerationOverlay = serde_yaml::from_str(yaml).unwrap();
+        assert!((overlay.resource_costs.cost_multiplier - 1.5).abs() < f64::EPSILON);
+        assert_eq!(overlay.resource_costs.role_hourly_rates.len(), 1);
+    }
+
+    #[test]
+    fn test_procedure_base_hours_deserialize() {
+        let yaml = r#"
+id: test_proc
+name: Test Procedure
+base_hours: 12.5
+required_roles: [audit_senior, audit_staff]
+"#;
+        let proc: BlueprintProcedure = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(proc.base_hours, Some(12.5));
+        assert_eq!(proc.required_roles, vec!["audit_senior", "audit_staff"]);
+    }
+
+    #[test]
+    fn test_procedure_base_hours_defaults_none() {
+        let yaml = r#"
+id: test_proc
+name: Test Procedure
+"#;
+        let proc: BlueprintProcedure = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(proc.base_hours, None);
+        assert!(proc.required_roles.is_empty());
     }
 }

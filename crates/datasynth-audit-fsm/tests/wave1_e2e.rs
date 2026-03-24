@@ -82,14 +82,30 @@ fn test_ia_produces_diverse_artifact_types() {
 
     // Should produce at least 5 different artifact types
     let mut types_present = 0u32;
-    if !bag.engagements.is_empty() { types_present += 1; }
-    if !bag.workpapers.is_empty() { types_present += 1; }
-    if !bag.risk_assessments.is_empty() { types_present += 1; }
-    if !bag.findings.is_empty() { types_present += 1; }
-    if !bag.judgments.is_empty() { types_present += 1; }
-    if !bag.evidence.is_empty() { types_present += 1; }
-    if !bag.sampling_plans.is_empty() { types_present += 1; }
-    if !bag.combined_risk_assessments.is_empty() { types_present += 1; }
+    if !bag.engagements.is_empty() {
+        types_present += 1;
+    }
+    if !bag.workpapers.is_empty() {
+        types_present += 1;
+    }
+    if !bag.risk_assessments.is_empty() {
+        types_present += 1;
+    }
+    if !bag.findings.is_empty() {
+        types_present += 1;
+    }
+    if !bag.judgments.is_empty() {
+        types_present += 1;
+    }
+    if !bag.evidence.is_empty() {
+        types_present += 1;
+    }
+    if !bag.sampling_plans.is_empty() {
+        types_present += 1;
+    }
+    if !bag.combined_risk_assessments.is_empty() {
+        types_present += 1;
+    }
 
     assert!(
         types_present >= 5,
@@ -125,16 +141,25 @@ fn test_fsa_full_pipeline_events_and_artifacts() {
     // Artifacts — key types must be present
     let bag = &result.artifacts;
     assert!(!bag.engagements.is_empty(), "Missing engagements");
-    assert!(!bag.materiality_calculations.is_empty(), "Missing materiality");
+    assert!(
+        !bag.materiality_calculations.is_empty(),
+        "Missing materiality"
+    );
     assert!(!bag.risk_assessments.is_empty(), "Missing risk assessments");
     assert!(!bag.workpapers.is_empty(), "Missing workpapers");
     assert!(!bag.audit_opinions.is_empty(), "Missing audit opinions");
-    assert!(!bag.going_concern_assessments.is_empty(), "Missing going concern");
-    assert!(!bag.subsequent_events.is_empty(), "Missing subsequent events");
+    assert!(
+        !bag.going_concern_assessments.is_empty(),
+        "Missing going concern"
+    );
+    assert!(
+        !bag.subsequent_events.is_empty(),
+        "Missing subsequent events"
+    );
 
     // Export roundtrip
-    let json = datasynth_audit_fsm::export::flat_log::export_events_to_json(&result.event_log)
-        .unwrap();
+    let json =
+        datasynth_audit_fsm::export::flat_log::export_events_to_json(&result.event_log).unwrap();
     let parsed: Vec<serde_json::Value> = serde_json::from_str(&json).unwrap();
     assert_eq!(parsed.len(), result.event_log.len());
 
@@ -166,21 +191,24 @@ fn test_overlay_presets_differ() {
     assert!(
         dur_thorough > dur_default,
         "Thorough ({:.0}h) should take longer than default ({:.0}h)",
-        dur_thorough, dur_default
+        dur_thorough,
+        dur_default
     );
 
     // Rushed should be faster than default
     assert!(
         dur_rushed < dur_default,
         "Rushed ({:.0}h) should be faster than default ({:.0}h)",
-        dur_rushed, dur_default
+        dur_rushed,
+        dur_default
     );
 
     // Rushed should have more anomalies than default
     assert!(
         anom_rushed >= anom_default,
         "Rushed ({}) should have >= anomalies than default ({})",
-        anom_rushed, anom_default
+        anom_rushed,
+        anom_default
     );
 }
 
@@ -249,8 +277,16 @@ fn test_determinism_fsa_and_ia() {
         );
 
         for (a, b) in r1.event_log.iter().zip(r2.event_log.iter()) {
-            assert_eq!(a.event_id, b.event_id, "{}: event_id mismatch", blueprint_name);
-            assert_eq!(a.timestamp, b.timestamp, "{}: timestamp mismatch", blueprint_name);
+            assert_eq!(
+                a.event_id, b.event_id,
+                "{}: event_id mismatch",
+                blueprint_name
+            );
+            assert_eq!(
+                a.timestamp, b.timestamp,
+                "{}: timestamp mismatch",
+                blueprint_name
+            );
         }
     }
 }

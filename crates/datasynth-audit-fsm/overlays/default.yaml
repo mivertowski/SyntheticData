@@ -11,9 +11,22 @@ artifacts:
   evidence_items_per_workpaper:
     min: 2
     max: 5
+iteration_limits:
+  default: 30
 anomalies:
   skipped_approval: 0.02
   late_posting: 0.05
   max_delay_hours: 72.0
   missing_evidence: 0.03
   out_of_sequence: 0.01
+resource_costs:
+  cost_multiplier: 1.0
+  role_hourly_rates:
+    engagement_partner: 500
+    audit_manager: 300
+    audit_senior: 200
+    audit_staff: 120
+    cae: 400
+    audit_director: 350
+    senior_auditor: 200
+    staff_auditor: 120
