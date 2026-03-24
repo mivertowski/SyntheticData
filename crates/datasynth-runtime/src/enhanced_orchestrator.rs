@@ -11102,9 +11102,7 @@ impl EnhancedOrchestrator {
         use datasynth_audit_fsm::{
             context::EngagementContext,
             engine::AuditFsmEngine,
-            loader::{
-                load_overlay, BlueprintWithPreconditions, BuiltinOverlay, OverlaySource,
-            },
+            loader::{load_overlay, BlueprintWithPreconditions, BuiltinOverlay, OverlaySource},
         };
         use rand::SeedableRng;
         use rand_chacha::ChaCha8Rng;
@@ -11134,15 +11132,9 @@ impl EnhancedOrchestrator {
 
         // 2. Load overlay from config string.
         let overlay = match fsm_config.overlay.as_str() {
-            "builtin:default" => {
-                load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default))
-            }
-            "builtin:thorough" => {
-                load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough))
-            }
-            "builtin:rushed" => {
-                load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed))
-            }
+            "builtin:default" => load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)),
+            "builtin:thorough" => load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough)),
+            "builtin:rushed" => load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed)),
             _ => {
                 warn!(
                     "Unknown FSM overlay '{}', falling back to builtin:default",
@@ -11154,11 +11146,9 @@ impl EnhancedOrchestrator {
         .map_err(|e| SynthError::generation(format!("FSM overlay load failed: {e}")))?;
 
         // 3. Build EngagementContext from orchestrator state.
-        let start_date =
-            NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
-                .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
-        let period_end =
-            start_date + chrono::Months::new(self.config.global.period_months);
+        let start_date = NaiveDate::parse_from_str(&self.config.global.start_date, "%Y-%m-%d")
+            .map_err(|e| SynthError::config(format!("Invalid start_date: {e}")))?;
+        let period_end = start_date + chrono::Months::new(self.config.global.period_months);
 
         // Financial aggregates from journal entries.
         let total_revenue: rust_decimal::Decimal = entries

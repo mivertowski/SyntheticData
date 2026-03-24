@@ -6,9 +6,7 @@ use datasynth_audit_fsm::context::EngagementContext;
 use datasynth_audit_fsm::engine::AuditFsmEngine;
 use datasynth_audit_fsm::export::flat_log::export_events_to_json;
 use datasynth_audit_fsm::export::ocel::{export_ocel_to_json, project_to_ocel};
-use datasynth_audit_fsm::loader::{
-    default_overlay, BlueprintWithPreconditions,
-};
+use datasynth_audit_fsm::loader::{default_overlay, BlueprintWithPreconditions};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
@@ -57,10 +55,16 @@ fn evaluate_fsa_event_trail_structure() {
     // Verify event ordering invariants
     let mut last_ts = result.event_log.first().unwrap().timestamp;
     for event in &result.event_log {
-        assert!(event.timestamp >= last_ts, "Events must be timestamp-ordered");
+        assert!(
+            event.timestamp >= last_ts,
+            "Events must be timestamp-ordered"
+        );
         last_ts = event.timestamp;
     }
-    println!("\n  ✓ All {} events are timestamp-ordered", result.event_log.len());
+    println!(
+        "\n  ✓ All {} events are timestamp-ordered",
+        result.event_log.len()
+    );
 
     // Verify procedure completion order respects preconditions
     let mut first_event_by_proc: HashMap<String, usize> = HashMap::new();
@@ -69,7 +73,10 @@ fn evaluate_fsa_event_trail_structure() {
             .entry(event.procedure_id.clone())
             .or_insert(i);
     }
-    println!("  ✓ All {} procedures reached 'completed' state", result.procedure_states.len());
+    println!(
+        "  ✓ All {} procedures reached 'completed' state",
+        result.procedure_states.len()
+    );
     println!("  ✓ {} phases completed", result.phases_completed.len());
 }
 
@@ -90,7 +97,10 @@ fn evaluate_ia_c2ce_lifecycle() {
         .filter(|e| e.procedure_id == "develop_findings")
         .collect();
 
-    println!("  develop_findings procedure ({} events):", finding_events.len());
+    println!(
+        "  develop_findings procedure ({} events):",
+        finding_events.len()
+    );
     let c2ce_states = [
         "not_started",
         "condition_identified",
@@ -109,12 +119,7 @@ fn evaluate_ia_c2ce_lifecycle() {
                 visited_states.push(to.clone());
             }
             if let Some(ref from) = event.from_state {
-                println!(
-                    "    {} → {} (cmd: {})",
-                    from,
-                    to,
-                    event.command
-                );
+                println!("    {} → {} (cmd: {})", from, to, event.command);
             }
         }
     }
@@ -178,8 +183,11 @@ fn evaluate_discriminator_filtering() {
     let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
 
     // Run unfiltered
-    let mut engine_full =
-        AuditFsmEngine::new(bwp.clone(), default_overlay(), ChaCha8Rng::seed_from_u64(42));
+    let mut engine_full = AuditFsmEngine::new(
+        bwp.clone(),
+        default_overlay(),
+        ChaCha8Rng::seed_from_u64(42),
+    );
     let full = engine_full.run_engagement(&ctx()).unwrap();
 
     // Run with financial-only filter
@@ -198,8 +206,7 @@ fn evaluate_discriminator_filtering() {
     disc_it.insert("categories".to_string(), vec!["it".to_string()]);
     overlay_it.discriminators = Some(disc_it);
 
-    let mut engine_it =
-        AuditFsmEngine::new(bwp, overlay_it, ChaCha8Rng::seed_from_u64(42));
+    let mut engine_it = AuditFsmEngine::new(bwp, overlay_it, ChaCha8Rng::seed_from_u64(42));
     let it = engine_it.run_engagement(&ctx()).unwrap();
 
     println!("  Comparison:");
@@ -260,10 +267,21 @@ fn evaluate_overlay_presets() {
     let result_r = engine_r.run_engagement(&ctx()).unwrap();
 
     println!("  FSA engagement comparison:");
-    println!("  {:15} {:>8} {:>12} {:>10} {:>10}", "Overlay", "Events", "Duration(h)", "Anomalies", "Steps");
+    println!(
+        "  {:15} {:>8} {:>12} {:>10} {:>10}",
+        "Overlay", "Events", "Duration(h)", "Anomalies", "Steps"
+    );
 
-    for (name, result) in [("Default", &result_d), ("Thorough", &result_t), ("Rushed", &result_r)] {
-        let steps = result.event_log.iter().filter(|e| e.step_id.is_some()).count();
+    for (name, result) in [
+        ("Default", &result_d),
+        ("Thorough", &result_t),
+        ("Rushed", &result_r),
+    ] {
+        let steps = result
+            .event_log
+            .iter()
+            .filter(|e| e.step_id.is_some())
+            .count();
         println!(
             "  {:15} {:>8} {:>12.1} {:>10} {:>10}",
             name,
@@ -332,11 +350,15 @@ fn evaluate_determinism() {
     let mut results = Vec::new();
     for i in 0..3 {
         let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
-        let mut engine =
-            AuditFsmEngine::new(bwp, default_overlay(), ChaCha8Rng::seed_from_u64(42));
+        let mut engine = AuditFsmEngine::new(bwp, default_overlay(), ChaCha8Rng::seed_from_u64(42));
         let result = engine.run_engagement(&ctx()).unwrap();
         results.push(result);
-        println!("    Run {}: {} events, {:.1}h", i + 1, results[i].event_log.len(), results[i].total_duration_hours);
+        println!(
+            "    Run {}: {} events, {:.1}h",
+            i + 1,
+            results[i].event_log.len(),
+            results[i].total_duration_hours
+        );
     }
 
     // All runs must be identical

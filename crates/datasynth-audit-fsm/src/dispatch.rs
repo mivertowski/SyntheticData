@@ -121,7 +121,9 @@ impl StepDispatcher {
 
         match cmd {
             // ----- Engagement generation (FSA + IA) -----
-            "evaluate_client_acceptance" | "conduct_opening_meeting" | "conduct_meeting"
+            "evaluate_client_acceptance"
+            | "conduct_opening_meeting"
+            | "conduct_meeting"
             | "define_engagement_scope" => self.dispatch_engagement(context, bag),
 
             // ----- Engagement letter / charter (IA uses charter) -----
@@ -133,7 +135,9 @@ impl StepDispatcher {
             "determine_overall_materiality" => self.dispatch_materiality(context, bag),
 
             // ----- Risk assessment (ISA 315/330) -----
-            "identify_engagement_risks" | "assess_engagement_risks" | "assess_universe_risks"
+            "identify_engagement_risks"
+            | "assess_engagement_risks"
+            | "assess_universe_risks"
             | "identify_risks" => {
                 self.dispatch_risk_assessment(context, bag);
             }
@@ -144,8 +148,11 @@ impl StepDispatcher {
             }
 
             // ----- Workpaper generation (design steps) -----
-            "design_test_procedures" | "design_work_program" | "design_controls_tests"
-            | "design_substantive_procedures" | "design_analytical_procedures" => {
+            "design_test_procedures"
+            | "design_work_program"
+            | "design_controls_tests"
+            | "design_substantive_procedures"
+            | "design_analytical_procedures" => {
                 self.dispatch_workpaper(step, procedure_id, context, bag);
             }
 
@@ -175,15 +182,24 @@ impl StepDispatcher {
             }
 
             // ----- Finding development (C2CE model) -----
-            "identify_condition" | "map_criteria" | "analyze_cause" | "assess_effect"
-            | "draft_finding" | "identify_finding_condition" | "map_finding_criteria"
-            | "analyze_cause_and_effect" | "evaluate_finding_significance"
-            | "evaluate_findings" | "evaluate_misstatements" => {
+            "identify_condition"
+            | "map_criteria"
+            | "analyze_cause"
+            | "assess_effect"
+            | "draft_finding"
+            | "identify_finding_condition"
+            | "map_finding_criteria"
+            | "analyze_cause_and_effect"
+            | "evaluate_finding_significance"
+            | "evaluate_findings"
+            | "evaluate_misstatements" => {
                 self.dispatch_findings(context, bag);
             }
 
             // ----- Opinion / reporting -----
-            "form_audit_opinion" | "develop_engagement_conclusions" | "finalize_audit_report"
+            "form_audit_opinion"
+            | "develop_engagement_conclusions"
+            | "finalize_audit_report"
             | "issue_report" => {
                 self.dispatch_opinion(context, bag);
             }
@@ -331,11 +347,7 @@ impl StepDispatcher {
     }
 
     /// Generate `AnalyticalProcedureResult` records (ISA 520).
-    fn dispatch_analytical_procedures(
-        &mut self,
-        ctx: &EngagementContext,
-        bag: &mut ArtifactBag,
-    ) {
+    fn dispatch_analytical_procedures(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
         let engagement = match bag.engagements.last() {
             Some(e) => e,
             None => {
@@ -615,8 +627,16 @@ mod tests {
         let step = step_with_command("s1", "agree_engagement_terms");
         dispatcher.dispatch(&step, "engagement_terms", &ctx, &mut bag);
 
-        assert_eq!(bag.engagements.len(), 1, "auto-bootstrap should create an engagement");
-        assert_eq!(bag.engagement_letters.len(), 1, "letter should be generated after bootstrap");
+        assert_eq!(
+            bag.engagements.len(),
+            1,
+            "auto-bootstrap should create an engagement"
+        );
+        assert_eq!(
+            bag.engagement_letters.len(),
+            1,
+            "letter should be generated after bootstrap"
+        );
     }
 
     #[test]
