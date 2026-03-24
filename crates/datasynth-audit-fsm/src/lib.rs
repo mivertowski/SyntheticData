@@ -24,6 +24,7 @@
 //! ```
 
 pub mod artifact;
+pub mod benchmark;
 pub mod context;
 pub mod dispatch;
 pub mod engine;

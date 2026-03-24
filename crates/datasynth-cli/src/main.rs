@@ -374,6 +374,21 @@ enum AuditCommands {
         #[arg(long, default_value = "42")]
         seed: u64,
     },
+    /// Generate a benchmark audit event log
+    Benchmark {
+        /// Complexity level: simple, medium, complex
+        #[arg(long, default_value = "simple")]
+        complexity: String,
+        /// Override anomaly rate (0.0 to 1.0)
+        #[arg(long)]
+        anomaly_rate: Option<f64>,
+        /// Output directory for benchmark files
+        #[arg(short, long, default_value = "./audit_benchmark")]
+        output: PathBuf,
+        /// Random seed for deterministic generation
+        #[arg(long, default_value = "42")]
+        seed: u64,
+    },
 }
 
 fn main() -> Result<()> {
@@ -1931,6 +1946,12 @@ fn main() -> Result<()> {
                 output,
                 seed,
             } => handle_audit_run(&blueprint, &overlay, &output, seed),
+            AuditCommands::Benchmark {
+                complexity,
+                anomaly_rate,
+                output,
+                seed,
+            } => handle_audit_benchmark(&complexity, anomaly_rate, &output, seed),
         },
     }
 }
@@ -2824,6 +2845,65 @@ fn handle_audit_run(
     println!("  Wall clock: {:.2}s", elapsed.as_secs_f64());
     println!();
     println!("  Event trail: {}", trail_path.display());
+
+    Ok(())
+}
+
+/// Handle `audit benchmark`.
+fn handle_audit_benchmark(
+    complexity_str: &str,
+    anomaly_rate: Option<f64>,
+    output: &std::path::Path,
+    seed: u64,
+) -> Result<()> {
+    use datasynth_audit_fsm::benchmark::{
+        export_benchmark, generate_benchmark, BenchmarkComplexity, BenchmarkConfig,
+    };
+
+    let complexity = match complexity_str.to_lowercase().as_str() {
+        "simple" => BenchmarkComplexity::Simple,
+        "medium" => BenchmarkComplexity::Medium,
+        "complex" => BenchmarkComplexity::Complex,
+        other => {
+            anyhow::bail!(
+                "Unknown complexity '{}'. Use: simple, medium, complex",
+                other
+            );
+        }
+    };
+
+    let config = BenchmarkConfig {
+        complexity,
+        anomaly_rate,
+        seed,
+    };
+
+    let start = std::time::Instant::now();
+    let dataset = generate_benchmark(&config).map_err(|e| anyhow::anyhow!("{e}"))?;
+    let elapsed = start.elapsed();
+
+    export_benchmark(&dataset, output)
+        .map_err(|e| anyhow::anyhow!("Failed to export benchmark: {e}"))?;
+
+    println!("Benchmark dataset generated.");
+    println!();
+    println!("  Complexity:  {}", dataset.metadata.complexity);
+    println!("  Blueprint:   {}", dataset.metadata.blueprint);
+    println!("  Overlay:     {}", dataset.metadata.overlay);
+    println!("  Events:      {}", dataset.metadata.event_count);
+    println!("  Anomalies:   {}", dataset.metadata.anomaly_count);
+    println!("  Anomaly rate: {:.4}", dataset.metadata.anomaly_rate);
+    println!("  Procedures:  {}", dataset.metadata.procedure_count);
+    println!("  Artifacts:   {}", dataset.metadata.artifact_count);
+    println!("  Seed:        {}", dataset.metadata.seed);
+    println!("  Wall clock:  {:.2}s", elapsed.as_secs_f64());
+    println!();
+    println!("  Output: {}", output.display());
+    println!("    - event_trail.json");
+    println!("    - event_trail.csv");
+    println!("    - event_trail_ocel.json");
+    println!("    - anomaly_labels.json");
+    println!("    - metadata.json");
 
     Ok(())
 }
