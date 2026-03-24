@@ -159,7 +159,11 @@ impl StepDispatcher {
             }
 
             // ----- Sampling / test execution -----
-            "perform_test_procedures" | "perform_controls_tests" | "perform_tests_of_details" => {
+            "perform_test_procedures"
+            | "perform_controls_tests"
+            | "perform_tests_of_details"
+            | "review_test_results"
+            | "request_additional_testing" => {
                 self.dispatch_sampling(context, bag);
             }
 
@@ -189,12 +193,18 @@ impl StepDispatcher {
             | "analyze_cause"
             | "assess_effect"
             | "draft_finding"
+            | "close_finding"
+            | "obtain_response"
             | "identify_finding_condition"
             | "map_finding_criteria"
             | "analyze_cause_and_effect"
             | "evaluate_finding_significance"
             | "evaluate_findings"
-            | "evaluate_misstatements" => {
+            | "evaluate_misstatements"
+            | "discuss_findings"
+            | "discuss_preliminary_findings"
+            | "agree_action_plans"
+            | "develop_recommendations" => {
                 self.dispatch_findings(context, bag);
             }
 
@@ -206,26 +216,47 @@ impl StepDispatcher {
                 self.dispatch_opinion(context, bag);
             }
 
-            // ----- Judgment / engagement quality (ISA 220) -----
+            // ----- Judgment / engagement quality / approvals (ISA 220) -----
             "review_engagement_quality"
             | "exercise_skepticism"
             | "apply_due_care"
             | "supervise_engagement_quality"
             | "conduct_periodic_assessment"
             | "oversee_qaip"
-            | "evaluate_staff_performance" => {
+            | "evaluate_staff_performance"
+            | "commission_external_qa"
+            | "confirm_cae_qualifications"
+            | "document_risk_acceptance"
+            | "disclose_errors_omissions"
+            | "approve_charter"
+            | "approve_control_evaluation"
+            | "approve_draft_report"
+            | "approve_plan"
+            | "approve_procedure"
+            | "approve_risk_assessment"
+            | "approve_scope"
+            | "approve_testing"
+            | "approve_work_program" => {
                 self.dispatch_judgment(context, bag);
             }
 
-            // ----- Documentation / evidence -----
+            // ----- Documentation / evidence / submissions -----
             "document_engagement_work"
             | "archive_engagement_documentation"
             | "protect_information"
-            | "establish_confidentiality_policies" => {
+            | "establish_confidentiality_policies"
+            | "submit_charter"
+            | "submit_control_evaluation"
+            | "submit_draft_report"
+            | "submit_final_report"
+            | "submit_plan"
+            | "submit_risk_assessment"
+            | "submit_scope"
+            | "submit_testing" => {
                 self.dispatch_evidence(context, bag);
             }
 
-            // ----- Planning / scoping (produces Planning workpapers) -----
+            // ----- Planning / scoping / initialization (produces Planning workpapers) -----
             "define_engagement_scope_detail"
             | "determine_engagement_timeline"
             | "draft_annual_plan"
@@ -237,7 +268,26 @@ impl StepDispatcher {
             | "determine_sme_needs"
             | "confirm_resource_competencies"
             | "identify_auditable_entities"
-            | "prioritize_audit_entities" => {
+            | "prioritize_audit_entities"
+            | "identify_stakeholders"
+            | "recruit_and_develop_staff"
+            | "start_allocation"
+            | "start_control_evaluation"
+            | "start_draft_report"
+            | "start_final_report"
+            | "start_mandate_development"
+            | "start_monitoring"
+            | "start_plan_development"
+            | "start_procedure"
+            | "start_risk_assessment"
+            | "start_scoping"
+            | "start_testing"
+            | "start_verification"
+            | "finalize_allocation"
+            | "finalize_plan"
+            | "revise_charter"
+            | "revise_draft_report"
+            | "revise_plan" => {
                 self.dispatch_workpaper_section(
                     step,
                     procedure_id,
@@ -254,9 +304,11 @@ impl StepDispatcher {
             | "evaluate_management_responses"
             | "send_report_for_response"
             | "receive_response"
+            | "request_response"
             | "distribute_final_report"
             | "communicate_approved_plan"
             | "present_plan_to_board"
+            | "present_resource_requirements"
             | "communicate_plan_and_results" => {
                 self.dispatch_workpaper_section(
                     step,
@@ -267,12 +319,16 @@ impl StepDispatcher {
                 );
             }
 
-            // ----- Follow-up (produces findings) -----
+            // ----- Follow-up / monitoring (produces findings) -----
             "track_action_plan_status"
             | "escalate_overdue_actions"
             | "report_follow_up_status"
             | "verify_remediation_implementation"
-            | "conclude_on_remediation" => {
+            | "conclude_on_remediation"
+            | "close_monitoring"
+            | "initiate_follow_up"
+            | "re_verify_action"
+            | "complete_verification" => {
                 self.dispatch_findings(context, bag);
             }
 
