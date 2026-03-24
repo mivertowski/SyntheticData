@@ -71,10 +71,7 @@ pub struct ProcedureConformance {
 ///   `anomaly_type`.
 ///
 /// - **Per-procedure**: Computes fitness for each procedure independently.
-pub fn analyze_conformance(
-    events: &[AuditEvent],
-    blueprint: &AuditBlueprint,
-) -> ConformanceReport {
+pub fn analyze_conformance(events: &[AuditEvent], blueprint: &AuditBlueprint) -> ConformanceReport {
     // Build a lookup: procedure_id -> set of (from_state, to_state).
     let mut defined_transitions: HashMap<String, HashSet<(String, String)>> = HashMap::new();
     let mut total_defined = 0usize;
@@ -133,11 +130,7 @@ pub fn analyze_conformance(
             }
 
             // Track observed triple for precision.
-            observed_triples.insert((
-                event.procedure_id.clone(),
-                from.clone(),
-                to.clone(),
-            ));
+            observed_triples.insert((event.procedure_id.clone(), from.clone(), to.clone()));
         }
     }
 
@@ -171,10 +164,7 @@ pub fn analyze_conformance(
     // Include all procedures from the blueprint, even if they had no events.
     for phase in &blueprint.phases {
         for proc in &phase.procedures {
-            let (valid, total) = proc_accum
-                .get(&proc.id)
-                .copied()
-                .unwrap_or((0, 0));
+            let (valid, total) = proc_accum.get(&proc.id).copied().unwrap_or((0, 0));
             let proc_fitness = if total > 0 {
                 valid as f64 / total as f64
             } else {
@@ -269,10 +259,7 @@ mod tests {
         );
         // With rushed overlay, the anomaly_rate should be captured.
         // (We check the stats are computed, not the exact value.)
-        assert!(
-            report.anomaly_stats.total_events > 0,
-            "Should have events"
-        );
+        assert!(report.anomaly_stats.total_events > 0, "Should have events");
     }
 
     #[test]

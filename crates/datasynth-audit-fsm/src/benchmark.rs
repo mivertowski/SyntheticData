@@ -85,12 +85,16 @@ pub fn generate_benchmark(config: &BenchmarkConfig) -> Result<BenchmarkDataset, 
             overlay.anomalies.missing_evidence = 0.0;
             overlay.anomalies.out_of_sequence = 0.0;
             overlay.anomalies.rules.clear();
-            (bwp, overlay, "FSA".to_string(), "default (zeroed anomalies)".to_string())
+            (
+                bwp,
+                overlay,
+                "FSA".to_string(),
+                "default (zeroed anomalies)".to_string(),
+            )
         }
         BenchmarkComplexity::Medium => {
             let bwp = BlueprintWithPreconditions::load_builtin_fsa()?;
-            let overlay =
-                load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed))?;
+            let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed))?;
             (bwp, overlay, "FSA".to_string(), "rushed".to_string())
         }
         BenchmarkComplexity::Complex => {
@@ -112,8 +116,7 @@ pub fn generate_benchmark(config: &BenchmarkConfig) -> Result<BenchmarkDataset, 
             let scale = target_rate / current_sum;
             overlay.anomalies.skipped_approval =
                 (overlay.anomalies.skipped_approval * scale).min(1.0);
-            overlay.anomalies.late_posting =
-                (overlay.anomalies.late_posting * scale).min(1.0);
+            overlay.anomalies.late_posting = (overlay.anomalies.late_posting * scale).min(1.0);
             overlay.anomalies.missing_evidence =
                 (overlay.anomalies.missing_evidence * scale).min(1.0);
             overlay.anomalies.out_of_sequence =
@@ -196,14 +199,11 @@ pub fn export_benchmark(dataset: &BenchmarkDataset, output_dir: &Path) -> std::i
     )?;
 
     // event_trail.csv
-    crate::export::csv::export_events_to_csv(
-        &dataset.events,
-        &output_dir.join("event_trail.csv"),
-    )?;
+    crate::export::csv::export_events_to_csv(&dataset.events, &output_dir.join("event_trail.csv"))?;
 
     // event_trail_ocel.json
-    let ocel_json = crate::export::ocel::export_ocel_to_json(&dataset.events)
-        .map_err(std::io::Error::other)?;
+    let ocel_json =
+        crate::export::ocel::export_ocel_to_json(&dataset.events).map_err(std::io::Error::other)?;
     let mut ocel_file = std::fs::File::create(output_dir.join("event_trail_ocel.json"))?;
     ocel_file.write_all(ocel_json.as_bytes())?;
 

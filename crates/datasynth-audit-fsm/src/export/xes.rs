@@ -29,9 +29,7 @@ fn event_to_xes(event: &AuditEvent) -> String {
         "        <string key=\"org:resource\" value=\"{}\"/>",
         xml_escape(&event.actor_id)
     ));
-    lines.push(
-        "        <string key=\"lifecycle:transition\" value=\"complete\"/>".to_string(),
-    );
+    lines.push("        <string key=\"lifecycle:transition\" value=\"complete\"/>".to_string());
     lines.push(format!(
         "        <string key=\"procedure_id\" value=\"{}\"/>",
         xml_escape(&event.procedure_id)
