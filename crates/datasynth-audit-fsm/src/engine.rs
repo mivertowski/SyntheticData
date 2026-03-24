@@ -236,13 +236,19 @@ impl AuditFsmEngine {
                 acc.procedure_states
                     .insert(proc_id.clone(), current_state.clone());
 
-                // Execute steps when entering "in_progress" from a different
-                // state, OR on a self-loop (same state -> same state) so that
-                // repeated iterations (e.g. follow_up -> follow_up) re-execute.
+                // Execute steps when entering the "work" state — the state
+                // immediately after the initial state.  FSA uses "in_progress",
+                // IA continuous phases use "active".  We detect it as the
+                // second state in the aggregate's state list, or fall back to
+                // matching "in_progress"/"active" by name.
+                let work_state = agg
+                    .states
+                    .get(1)
+                    .map(|s| s.as_str())
+                    .unwrap_or("in_progress");
                 let is_self_loop = previous_state == current_state;
-                if (current_state == "in_progress" && previous_state != "in_progress")
-                    || is_self_loop
-                {
+                let entering_work = current_state == work_state && previous_state != work_state;
+                if entering_work || is_self_loop {
                     self.execute_steps(&proc, &phase_id, &mut acc, context);
                 }
 
@@ -285,23 +291,34 @@ impl AuditFsmEngine {
             return outgoing[0];
         }
 
-        // Separate forward (to more advanced state) from backward (revision).
-        // Heuristic: backward transitions go to "in_progress" from "under_review".
+        // Separate forward from backward (revision) transitions.
+        // A revision transition goes to an earlier state in the aggregate
+        // (e.g. under_review → in_progress, or under_review → active).
+        // Heuristic: the backward transition targets a state that also
+        // appears as the source of another outgoing transition from an
+        // earlier state.  Simpler: if one outgoing goes to "completed"
+        // (or the last state) and another doesn't, the non-terminal one
+        // is the revision.
         let revision_prob = self.overlay.transitions.defaults.revision_probability;
         let roll: f64 = self.rng.random();
 
+        // Find which transition is "forward" (toward terminal) vs "backward"
+        let terminal_targets = ["completed", "closed"];
+        let forward = outgoing
+            .iter()
+            .find(|t| terminal_targets.contains(&t.to_state.as_str()));
+        let backward = outgoing
+            .iter()
+            .find(|t| !terminal_targets.contains(&t.to_state.as_str()));
+
         if roll < revision_prob {
-            // Try to pick a backward/revision transition.
-            if let Some(rev) = outgoing.iter().find(|t| t.to_state == "in_progress") {
+            if let Some(rev) = backward {
                 return rev;
             }
         }
 
-        // Pick the forward transition (the one that is not a revision).
-        outgoing
-            .iter()
-            .find(|t| t.to_state != "in_progress")
-            .unwrap_or(&outgoing[0])
+        // Pick the forward transition.
+        forward.unwrap_or(&outgoing[0])
     }
 
     /// Determine the actor for a transition. Approval commands get a senior

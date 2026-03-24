@@ -12,7 +12,20 @@ artifacts:
     min: 2
     max: 5
 iteration_limits:
-  default: 30
+  default: 50
+  per_procedure:
+    maintain_competency: 80
+    maintain_ethical_standards: 80
+    safeguard_objectivity: 80
+    exercise_due_care: 80
+    protect_confidential_information: 80
+    establish_ia_mandate: 80
+    manage_human_resources: 80
+    manage_financial_resources: 80
+    manage_technological_resources: 80
+    oversee_engagement_performance: 80
+    conduct_internal_qa: 80
+    measure_ia_performance: 80
 anomalies:
   skipped_approval: 0.02
   late_posting: 0.05

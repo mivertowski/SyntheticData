@@ -612,7 +612,9 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
 
 /// Returns a default `GenerationOverlay` with balanced settings.
 pub fn default_overlay() -> GenerationOverlay {
-    GenerationOverlay::default()
+    // Load from the builtin YAML rather than Rust defaults, so that
+    // overlay YAML changes (e.g. iteration_limits, resource_costs) take effect.
+    parse_overlay(BUILTIN_OVERLAY_DEFAULT).unwrap_or_default()
 }
 
 /// Load an overlay from the given source.
