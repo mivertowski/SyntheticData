@@ -63,9 +63,6 @@ struct RunAccum {
 // Engine
 // ---------------------------------------------------------------------------
 
-/// Maximum FSM iterations per procedure (guards against infinite loops).
-const MAX_ITERATIONS: usize = 20;
-
 /// The FSM execution engine.
 ///
 /// Given a validated [`AuditBlueprint`], a [`GenerationOverlay`], and an
@@ -164,10 +161,18 @@ impl AuditFsmEngine {
             acc.procedure_states
                 .insert(proc_id.clone(), current_state.clone());
 
+            let max_iter = self
+                .overlay
+                .iteration_limits
+                .per_procedure
+                .get(proc_id)
+                .copied()
+                .unwrap_or(self.overlay.iteration_limits.default);
+
             let mut iterations = 0;
             let mut self_loop_count: usize = 0;
             loop {
-                if iterations >= MAX_ITERATIONS {
+                if iterations >= max_iter {
                     break;
                 }
                 iterations += 1;
@@ -787,6 +792,79 @@ mod tests {
         assert!(
             !result.artifacts.materiality_calculations.is_empty(),
             "Expected materiality calculations"
+        );
+    }
+
+    #[test]
+    fn test_ia_improved_completion_with_higher_limit() {
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let overlay = default_overlay(); // iteration_limits.default = 30
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let result = engine.run_engagement(&ctx).unwrap();
+
+        let completed = result
+            .procedure_states
+            .values()
+            .filter(|s| s.as_str() == "completed" || s.as_str() == "closed")
+            .count();
+        let total = result.procedure_states.len();
+        // With limit=30 (up from 20), IA procedures with revision loops
+        // get more headroom. Expect at least 20 of 34 to complete.
+        assert!(
+            completed >= 20,
+            "Expected >= 20/{} completed with limit=30, got {}",
+            total,
+            completed
+        );
+    }
+
+    #[test]
+    fn test_per_procedure_iteration_limit_override() {
+        use crate::schema::IterationLimits;
+
+        let bwp = BlueprintWithPreconditions::load_builtin_ia().unwrap();
+        let mut overlay = default_overlay();
+        // Set a very low default but high limit for one specific procedure
+        overlay.iteration_limits = IterationLimits {
+            default: 3,
+            per_procedure: {
+                let mut m = HashMap::new();
+                // develop_findings has a long C2CE lifecycle
+                m.insert("develop_findings".to_string(), 50);
+                m
+            },
+        };
+        let rng = ChaCha8Rng::seed_from_u64(42);
+        let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
+        let ctx = EngagementContext::test_default();
+        let result = engine.run_engagement(&ctx).unwrap();
+
+        // develop_findings should reach "closed" with its generous per-procedure limit
+        let df_state = result
+            .procedure_states
+            .get("develop_findings")
+            .expect("develop_findings should be in procedure_states");
+        assert_eq!(
+            df_state, "closed",
+            "develop_findings should reach 'closed' with per-procedure limit=50, got '{}'",
+            df_state
+        );
+
+        // Most other procedures should be stuck (low default=3 iterations)
+        let non_completed = result
+            .procedure_states
+            .iter()
+            .filter(|(id, state)| {
+                id.as_str() != "develop_findings"
+                    && state.as_str() != "completed"
+                    && state.as_str() != "closed"
+            })
+            .count();
+        assert!(
+            non_completed > 0,
+            "With default limit=3, some procedures should not complete"
         );
     }
 }

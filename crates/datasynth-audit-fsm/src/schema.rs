@@ -342,6 +342,37 @@ pub struct DecisionBranch {
 }
 
 // ---------------------------------------------------------------------------
+// Iteration limits
+// ---------------------------------------------------------------------------
+
+/// Per-procedure iteration limits for the FSM engine.
+///
+/// Replaces the former global `MAX_ITERATIONS` constant with a configurable
+/// default and optional per-procedure overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IterationLimits {
+    /// Default maximum iterations for any procedure.
+    #[serde(default = "default_iteration_limit")]
+    pub default: usize,
+    /// Per-procedure overrides keyed by procedure id.
+    #[serde(default)]
+    pub per_procedure: HashMap<String, usize>,
+}
+
+fn default_iteration_limit() -> usize {
+    30
+}
+
+impl Default for IterationLimits {
+    fn default() -> Self {
+        Self {
+            default: 30,
+            per_procedure: HashMap::new(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Overlay types
 // ---------------------------------------------------------------------------
 
@@ -377,6 +408,9 @@ pub struct GenerationOverlay {
     /// value in each specified category will execute. `None` means no filter.
     #[serde(default)]
     pub discriminators: Option<HashMap<String, Vec<String>>>,
+    /// Per-procedure iteration limits (replaces global MAX_ITERATIONS).
+    #[serde(default)]
+    pub iteration_limits: IterationLimits,
 }
 
 fn default_max_self_loop_iterations() -> usize {
@@ -394,6 +428,7 @@ impl Default for GenerationOverlay {
             anomalies: AnomalyConfig::default(),
             actor_profiles: HashMap::new(),
             discriminators: None,
+            iteration_limits: IterationLimits::default(),
         }
     }
 }

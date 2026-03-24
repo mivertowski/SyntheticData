@@ -11,6 +11,8 @@ artifacts:
   evidence_items_per_workpaper:
     min: 2
     max: 5
+iteration_limits:
+  default: 30
 anomalies:
   skipped_approval: 0.02
   late_posting: 0.05
