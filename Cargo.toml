@@ -13,6 +13,7 @@ members = [
     "crates/datasynth-test-utils",
     "crates/datasynth-eval",
     "crates/datasynth-ocpm",
+    "crates/datasynth-audit-fsm",
     "crates/datasynth-banking",
     "crates/datasynth-fingerprint",
     "crates/datasynth-standards",
