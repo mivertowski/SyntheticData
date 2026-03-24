@@ -1,0 +1,22 @@
+[package]
+name = "datasynth-audit-optimizer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Graph analysis and Monte Carlo simulation for audit FSM blueprints"
+keywords = ["audit", "optimizer", "petgraph", "monte-carlo", "synthetic-data"]
+categories.workspace = true
+
+[dependencies]
+datasynth-audit-fsm = { path = "../datasynth-audit-fsm" }
+petgraph = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
