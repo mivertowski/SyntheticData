@@ -19,10 +19,11 @@
 #   Tier 2 (core only):       datasynth-banking, datasynth-ocpm, datasynth-output, datasynth-standards
 #   Tier 3 (core+banking):    datasynth-config
 #   Tier 4 (config+standards):datasynth-generators, datasynth-fingerprint
-#   Tier 5 (generators+ocpm): datasynth-graph, datasynth-test-utils
-#   Tier 6 (generators):      datasynth-eval
-#   Tier 7 (runtime):         datasynth-runtime
-#   Tier 8 (apps):            datasynth-server, datasynth-cli
+#   Tier 5 (generators+ocpm): datasynth-graph, datasynth-test-utils, datasynth-audit-fsm
+#   Tier 6 (audit-fsm):       datasynth-audit-optimizer
+#   Tier 7 (generators):      datasynth-eval
+#   Tier 8 (runtime):         datasynth-runtime
+#   Tier 9 (apps):            datasynth-server, datasynth-cli
 #   Excluded: datasynth-ui (Tauri app), datasynth-graph-export (local-only dep)
 #
 
@@ -37,7 +38,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-PUBLISH_DELAY=60  # Seconds to wait between publishes for crates.io sparse index propagation
+PUBLISH_DELAY=90  # Seconds to wait between publishes for crates.io sparse index propagation
 DRY_RUN=false
 SKIP_VERIFY=false
 FORCE_ALL=false   # If true, don't skip already published crates
@@ -119,14 +120,18 @@ CRATES=(
     # Tier 5: Depends on generators + ocpm + banking
     "datasynth-graph"        # depends on: core, banking, generators, ocpm
     "datasynth-test-utils"   # depends on: core, config, banking
+    "datasynth-audit-fsm"   # depends on: core, standards, generators
 
-    # Tier 6: Depends on generators + test-utils (dev)
+    # Tier 6: Depends on audit-fsm
+    "datasynth-audit-optimizer" # depends on: audit-fsm
+
+    # Tier 7: Depends on generators + test-utils (dev)
     "datasynth-eval"         # depends on: core, config, generators; dev-dep: test-utils
 
-    # Tier 7: Runtime (orchestration layer)
+    # Tier 8: Runtime (orchestration layer)
     "datasynth-runtime"      # depends on: core, config, eval, generators, standards, ocpm, output, banking, fingerprint, graph
 
-    # Tier 8: Applications
+    # Tier 9: Applications
     "datasynth-server"       # depends on: core, config, generators, runtime, output
     "datasynth-cli"          # depends on: core, config, eval, generators, output, runtime, banking, fingerprint, graph
 )
@@ -276,14 +281,31 @@ wait_for_index() {
 
     while [ $waited -lt $max_wait ]; do
         if check_crate_published "$crate" "$version"; then
-            print_success "$crate@$version is now available on crates.io"
+            print_success "$crate@$version is now available on crates.io API"
             # Force cargo to update its local sparse index so the next
             # `cargo publish` verification step can find this version.
             # The API may confirm availability before the sparse index propagates.
-            sleep 5
             echo "  Updating cargo sparse index..."
-            cargo update --dry-run "$crate" >/dev/null 2>&1 || true
-            sleep 5
+            cargo update -p "$crate" >/dev/null 2>&1 || true
+            # Poll until cargo can actually resolve the new version from the sparse index
+            local index_wait=0
+            local index_max=60
+            while [ $index_wait -lt $index_max ]; do
+                # Try to check if cargo's index has the version by looking at cargo metadata
+                if cargo search "$crate" --limit 1 2>/dev/null | grep -q "$version"; then
+                    print_success "$crate@$version confirmed in cargo index"
+                    sleep 5
+                    return 0
+                fi
+                echo -ne "\r  Waiting for sparse index propagation... [$index_wait/${index_max}s]"
+                sleep 5
+                index_wait=$((index_wait + 5))
+                cargo update -p "$crate" >/dev/null 2>&1 || true
+            done
+            echo ""
+            print_warning "Sparse index may not have $crate@$version yet, adding extra delay..."
+            sleep 15
+            cargo update -p "$crate" >/dev/null 2>&1 || true
             return 0
         fi
         echo -ne "\r  Waiting... [$waited/$max_wait seconds]"

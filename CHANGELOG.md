@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-24
+
+### Added
+
+- **YAML-driven audit FSM engine** (`datasynth-audit-fsm` crate): loads ISA and IIA-GIAS methodology blueprints as event-sourced state machines for realistic audit trail and artifact generation
+  - Financial Statement Audit (FSA) blueprint: 7 procedures, 3 phases, 14 ISA standards
+  - Internal Audit (IA) blueprint: 34 procedures, 9 phases, 82 steps, 52 GIAS standards
+  - Supports 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
+  - Self-loop handling with configurable max iterations for follow-up procedures
+  - Continuous phase support (parallel execution for ethics, governance, quality phases)
+  - Discriminator-based procedure filtering (categories, risk ratings, engagement types)
+  - Generation overlay presets: default, thorough, rushed (controls revision probability, timing, anomaly injection)
+  - Flat JSON audit event trail export
+  - OCEL 2.0 projection export for process mining integration
+  - Custom YAML blueprint support for user-defined methodologies
+- **Audit FSM optimizer** (`datasynth-audit-optimizer` crate): graph analysis and simulation
+  - Blueprint to petgraph directed graph conversion
+  - Shortest path analysis (BFS per procedure)
+  - Constraint-based path optimization with transitive precondition expansion
+  - Monte Carlo simulation for outcome distribution analysis (bottleneck detection, revision hotspots, happy path identification)
+- **Configuration**: `audit.fsm` section in config YAML for FSM-driven generation
+- **Blueprint repository**: methodology blueprints available at https://github.com/mivertowski/SyntheticDataBlueprints
+
+### Changed
+
+- Workspace now includes 19 crates (added datasynth-audit-fsm and datasynth-audit-optimizer)
+
 ## [1.4.0] - 2026-03-21
 
 ### Added

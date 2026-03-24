@@ -149,6 +149,39 @@ Every process chain generates its own master data, documents, and journal entrie
 - **Going Concern (ISA 570)** — Financial indicator derivation, management mitigation plans
 - **Subsequent Events (ISA 560 / IAS 10)** — Adjusting and non-adjusting events
 
+### YAML-Driven Audit FSM Engine
+
+The `datasynth-audit-fsm` crate provides a methodology-agnostic state machine engine that loads audit methodology blueprints from YAML files and generates realistic, event-sourced audit trails.
+
+**Blueprints** define procedures, phases, transitions, and artifact requirements. Two built-in blueprints are included:
+
+| Blueprint | Procedures | Phases | Standards | Use Case |
+|-----------|-----------|--------|-----------|----------|
+| Financial Statement Audit (FSA) | 7 | 3 | 14 ISA | External audit simulation |
+| Internal Audit (IA) | 34 | 9 | 52 IIA-GIAS | Internal audit simulation |
+
+Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
+
+**Key features:**
+- 8-state C2CE (Condition-Criteria-Cause-Effect) lifecycle for finding development
+- Self-loop handling with configurable max iterations for follow-up procedures
+- Continuous phase support for parallel execution (ethics, governance, quality)
+- Discriminator-based procedure filtering (categories, risk ratings, engagement types)
+- Generation overlay presets: `default`, `thorough`, `rushed`
+- Flat JSON audit event trail and OCEL 2.0 projection exports
+
+```yaml
+# Enable FSM-driven audit generation
+audit:
+  enabled: true
+  fsm:
+    enabled: true
+    blueprint: fsa             # fsa, ia, or path to custom YAML
+    overlay: default           # default, thorough, rushed
+```
+
+The companion `datasynth-audit-optimizer` crate converts blueprints into petgraph directed graphs for shortest-path analysis, constraint-based path optimization, and Monte Carlo simulation (bottleneck detection, revision hotspots, happy path identification).
+
 ### Interconnectivity & Relationships
 
 - **Multi-tier vendor networks** — Tier 1/2/3 supply chain with behavioral clusters (Strategic, Operational, Transactional, Problematic)
@@ -238,7 +271,7 @@ Every process chain generates its own master data, documents, and journal entrie
 
 ## Architecture
 
-DataSynth is a Rust workspace organized into 16 modular crates:
+DataSynth is a Rust workspace organized into 18 modular crates:
 
 ```
 datasynth-cli            CLI binary (generate, validate, init, info, fingerprint, scenario)
@@ -252,6 +285,8 @@ datasynth-banking        KYC / AML banking transaction generator
 datasynth-ocpm           OCEL 2.0 / XES 2.0 process mining
 datasynth-fingerprint    Privacy-preserving fingerprint extraction and synthesis
 datasynth-standards      Accounting and audit standards (IFRS, US GAAP, ISA, SOX, PCAOB)
+datasynth-audit-fsm      YAML-driven audit FSM engine (ISA, IIA-GIAS blueprints)
+datasynth-audit-optimizer Audit path optimization and Monte Carlo simulation
                 │
 datasynth-graph          Graph export (PyTorch Geometric, Neo4j, DGL, RustGraph, Hypergraph)
 datasynth-graph-export   Unified graph export pipeline with 78 entity types
