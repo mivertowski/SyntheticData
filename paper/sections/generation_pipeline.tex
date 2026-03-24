@@ -40,6 +40,16 @@ The \texttt{GenerationOrchestrator} executes the following stages:
     impairment tests) and audit standards artifacts (ISA mappings,
     confirmations, audit opinions, SOX assessments).
 
+  \item \textbf{Audit methodology execution.}  When FSM-driven audit
+    generation is enabled, the orchestrator loads the configured
+    methodology blueprint and generation overlay, constructs an
+    engagement context from the generated financial data, and runs the
+    finite state machine engine.  The engine walks procedures in
+    precondition DAG order, executing each procedure's state machine and
+    dispatching step commands to the appropriate generators.  The
+    resulting event trail and artifact bag are integrated into the
+    standard output pipeline.
+
   \item \textbf{Anomaly injection.}  Apply configured anomalies with
     ground-truth labels across all five knowledge dimensions.
 

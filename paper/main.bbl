@@ -1,4 +1,4 @@
-\begin{thebibliography}{31}
+\begin{thebibliography}{32}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -88,6 +88,12 @@ Yuji Ijiri.
 \newblock \emph{Journal of the Society for Industrial and Applied Mathematics},
   13:\penalty0 827--836, 1965.
 \newblock \doi{10.1137/0113053}.
+
+\bibitem[{Institute of Internal Auditors}(2024)]{iia2024gias}
+{Institute of Internal Auditors}.
+\newblock Global internal audit standards.
+\newblock Technical report, The Institute of Internal Auditors, 2024.
+\newblock URL \url{https://www.theiia.org/en/standards/}.
 
 \bibitem[{International Organization for Standardization}(2019)]{iso21378}
 {International Organization for Standardization}.

@@ -2,7 +2,7 @@
 \section{System Architecture}
 \label{sec:architecture}
 
-\system{} is implemented as a Rust workspace comprising 16 crates
+\system{} is implemented as a Rust workspace comprising 18 crates
 organized into five architectural layers (\Cref{fig:architecture}).  The
 layered design enforces separation of concerns and maps directly onto
 the three-layer knowledge model (\Cref{def:three_layers}): domain models
@@ -29,7 +29,8 @@ Layer 4  Analytics & Export
 
 Layer 3  Domain Generators
          datasynth-generators | datasynth-banking | datasynth-ocpm
-         datasynth-standards
+         datasynth-standards | datasynth-audit-fsm
+         datasynth-audit-optimizer
 
 Layer 2  Orchestration & Output
          datasynth-runtime | datasynth-output | datasynth-config
@@ -39,7 +40,7 @@ Layer 1  Foundation
          datasynth-test-utils
 \end{verbatim}
 }}
-\caption{Layered crate architecture of \system{} (16 crates).
+\caption{Layered crate architecture of \system{} (18 crates).
   Dependency arrows point downward; each layer depends only on layers
   below it.}
 \label{fig:architecture}
@@ -88,6 +89,24 @@ money laundering typologies.
 (US~GAAP, IFRS, French GAAP/PCG, German GAAP/HGB, and dual-reporting)
 together with ISA, SOX, and PCAOB audit standard models.
 
+\paragraph{Audit Methodology Engine.}
+The \texttt{datasynth-audit-fsm} crate introduces a methodology-driven
+approach to audit data generation.  Rather than producing audit artifacts
+through independent, stateless generators, it loads audit methodology
+blueprints---encoded as YAML-defined finite state machines conforming to
+ISA or IIA-GIAS standards~\citep{iia2024gias}---and walks each
+procedure's state machine in topological (precondition-respecting) order.
+Each step transition emits a deterministic audit event and dispatches to
+the appropriate artifact generator (materiality calculation, risk
+assessment, workpaper, etc.), producing both an event-sourced audit trail
+and the concrete typed artifacts.  A generation overlay mechanism
+separates the methodology definition (``what happens'') from the
+simulation parameters (``how it generates''), enabling the same blueprint
+to produce engagements of varying thoroughness and anomaly profiles.  The
+companion \texttt{datasynth-audit-optimizer} crate converts blueprints
+into directed graphs (via \texttt{petgraph}) for shortest-path analysis
+and Monte Carlo simulation of engagement outcome distributions.
+
 \paragraph{Layer 4: Analytics.}
 \texttt{datasynth-eval} provides the evaluation framework (15+
 coherence validators, statistical tests, ML-readiness metrics,
@@ -126,8 +145,8 @@ Statistical ($\mathcal{K}_\Sigma$) &
   core (distributions), eval &
   Amount distributions, correlations, temporal \\
 Normative ($\mathcal{K}_N$) &
-  standards, generators (controls) &
-  GAAP/IFRS rules, ISA/SOX, COSO \\
+  standards, generators (controls), audit-fsm &
+  GAAP/IFRS rules, ISA/SOX, COSO, audit trails \\
 \bottomrule
 \end{tabular}
 \end{center}
