@@ -198,8 +198,7 @@ pub fn impact_of_removing(
     let mut dependent_procedures_affected: Vec<String> = preconditions
         .iter()
         .filter(|(proc_id, deps)| {
-            current_plan.contains(proc_id)
-                && deps.iter().any(|d| d == remove_procedure)
+            current_plan.contains(proc_id) && deps.iter().any(|d| d == remove_procedure)
         })
         .map(|(proc_id, _)| proc_id.clone())
         .collect();

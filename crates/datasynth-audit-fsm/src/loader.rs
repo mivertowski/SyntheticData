@@ -1592,8 +1592,7 @@ mod tests {
 
     #[test]
     fn test_overlay_default_has_resource_costs() {
-        let overlay =
-            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Default)).unwrap();
         assert!(
             (overlay.resource_costs.cost_multiplier - 1.0).abs() < f64::EPSILON,
             "default overlay cost_multiplier should be 1.0"
@@ -1606,8 +1605,7 @@ mod tests {
 
     #[test]
     fn test_overlay_thorough_cost_multiplier() {
-        let overlay =
-            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough)).unwrap();
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Thorough)).unwrap();
         assert!(
             (overlay.resource_costs.cost_multiplier - 1.5).abs() < f64::EPSILON,
             "thorough overlay cost_multiplier should be 1.5"
@@ -1616,8 +1614,7 @@ mod tests {
 
     #[test]
     fn test_overlay_rushed_cost_multiplier() {
-        let overlay =
-            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed)).unwrap();
+        let overlay = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed)).unwrap();
         assert!(
             (overlay.resource_costs.cost_multiplier - 0.6).abs() < f64::EPSILON,
             "rushed overlay cost_multiplier should be 0.6"

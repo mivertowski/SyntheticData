@@ -83,10 +83,8 @@ pub fn optimize_plan(
     // ------------------------------------------------------------------
     // 2. Build procedure lookup.
     // ------------------------------------------------------------------
-    let proc_map: HashMap<&str, &BlueprintProcedure> = all_procs
-        .iter()
-        .map(|p| (p.id.as_str(), *p))
-        .collect();
+    let proc_map: HashMap<&str, &BlueprintProcedure> =
+        all_procs.iter().map(|p| (p.id.as_str(), *p)).collect();
 
     let all_ids: HashSet<&str> = proc_map.keys().copied().collect();
 
@@ -180,8 +178,7 @@ pub fn optimize_plan(
         .sum();
 
     // Standards coverage.
-    let (included_standards, total_standards) =
-        compute_standards_sets(blueprint, &included);
+    let (included_standards, total_standards) = compute_standards_sets(blueprint, &included);
     let standards_coverage = if total_standards.is_empty() {
         1.0
     } else {
@@ -377,15 +374,11 @@ mod tests {
             must_exclude: vec![],
         };
 
-        let plan = optimize_plan(
-            &bwp.blueprint,
-            &overlay,
-            &bwp.preconditions,
-            &constraints,
-        );
+        let plan = optimize_plan(&bwp.blueprint, &overlay, &bwp.preconditions, &constraints);
 
         assert!(
-            plan.included_procedures.contains(&"form_opinion".to_string()),
+            plan.included_procedures
+                .contains(&"form_opinion".to_string()),
             "form_opinion must be included"
         );
         // Transitive preconditions must also be included.
@@ -414,12 +407,7 @@ mod tests {
             must_exclude: vec![],
         };
 
-        let plan = optimize_plan(
-            &bwp.blueprint,
-            &overlay,
-            &bwp.preconditions,
-            &constraints,
-        );
+        let plan = optimize_plan(&bwp.blueprint, &overlay, &bwp.preconditions, &constraints);
 
         assert!(
             plan.total_hours <= 5.0,
@@ -450,12 +438,7 @@ mod tests {
             must_exclude: vec!["analytical_procedures".to_string()],
         };
 
-        let plan = optimize_plan(
-            &bwp.blueprint,
-            &overlay,
-            &bwp.preconditions,
-            &constraints,
-        );
+        let plan = optimize_plan(&bwp.blueprint, &overlay, &bwp.preconditions, &constraints);
 
         assert!(
             !plan
@@ -481,12 +464,7 @@ mod tests {
             must_exclude: vec![],
         };
 
-        let plan = optimize_plan(
-            &bwp.blueprint,
-            &overlay,
-            &bwp.preconditions,
-            &constraints,
-        );
+        let plan = optimize_plan(&bwp.blueprint, &overlay, &bwp.preconditions, &constraints);
 
         assert!(
             plan.critical_path_hours > 0.0,
@@ -511,12 +489,7 @@ mod tests {
             must_exclude: vec![],
         };
 
-        let plan = optimize_plan(
-            &bwp.blueprint,
-            &overlay,
-            &bwp.preconditions,
-            &constraints,
-        );
+        let plan = optimize_plan(&bwp.blueprint, &overlay, &bwp.preconditions, &constraints);
 
         let json = serde_json::to_string(&plan).expect("should serialize to JSON");
         assert!(json.contains("included_procedures"));
