@@ -11911,6 +11911,9 @@ impl EnhancedOrchestrator {
             &audit.evidence,
             &audit.risk_assessments,
             &audit.judgments,
+            &audit.materiality_calculations,
+            &audit.audit_opinions,
+            &audit.going_concern_assessments,
         );
         builder.add_bank_recon_documents(&financial_reporting.bank_reconciliations);
 

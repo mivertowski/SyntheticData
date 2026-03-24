@@ -1562,6 +1562,7 @@ dependencies = [
  "datasynth-core",
  "datasynth-generators",
  "datasynth-ocpm",
+ "datasynth-standards",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",

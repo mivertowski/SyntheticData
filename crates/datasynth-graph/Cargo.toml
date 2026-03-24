@@ -21,6 +21,7 @@ datasynth-core = { workspace = true }
 datasynth-banking = { workspace = true }
 datasynth-generators = { workspace = true }
 datasynth-ocpm = { workspace = true }
+datasynth-standards = { workspace = true }
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true }
