@@ -3840,6 +3840,10 @@ pub struct AuditGenerationConfig {
     /// Currently, review workflow is determined by the audit generator's internal defaults.
     #[serde(default)]
     pub review: ReviewWorkflowConfig,
+
+    /// FSM-driven audit generation configuration.
+    #[serde(default)]
+    pub fsm: Option<AuditFsmConfig>,
 }
 
 impl Default for AuditGenerationConfig {
@@ -3851,6 +3855,81 @@ impl Default for AuditGenerationConfig {
             workpapers: WorkpaperConfig::default(),
             team: AuditTeamConfig::default(),
             review: ReviewWorkflowConfig::default(),
+            fsm: None,
+        }
+    }
+}
+
+/// FSM-driven audit generation configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuditFsmConfig {
+    /// Enable FSM-driven audit generation.
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// Blueprint source: "builtin:fsa", "builtin:ia", or a file path.
+    #[serde(default = "default_audit_fsm_blueprint")]
+    pub blueprint: String,
+
+    /// Overlay source: "builtin:default", "builtin:thorough", "builtin:rushed", or a file path.
+    #[serde(default = "default_audit_fsm_overlay")]
+    pub overlay: String,
+
+    /// Depth level override.
+    #[serde(default)]
+    pub depth: Option<String>,
+
+    /// Discriminator filter.
+    #[serde(default)]
+    pub discriminators: std::collections::HashMap<String, Vec<String>>,
+
+    /// Event trail output config.
+    #[serde(default)]
+    pub event_trail: AuditEventTrailConfig,
+
+    /// RNG seed override.
+    #[serde(default)]
+    pub seed: Option<u64>,
+}
+
+impl Default for AuditFsmConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            blueprint: default_audit_fsm_blueprint(),
+            overlay: default_audit_fsm_overlay(),
+            depth: None,
+            discriminators: std::collections::HashMap::new(),
+            event_trail: AuditEventTrailConfig::default(),
+            seed: None,
+        }
+    }
+}
+
+fn default_audit_fsm_blueprint() -> String {
+    "builtin:fsa".to_string()
+}
+
+fn default_audit_fsm_overlay() -> String {
+    "builtin:default".to_string()
+}
+
+/// Event trail output configuration for FSM-driven audit generation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuditEventTrailConfig {
+    /// Emit a flat event log.
+    #[serde(default = "default_true")]
+    pub flat_log: bool,
+    /// Project events to OCEL 2.0 format.
+    #[serde(default)]
+    pub ocel_projection: bool,
+}
+
+impl Default for AuditEventTrailConfig {
+    fn default() -> Self {
+        Self {
+            flat_log: true,
+            ocel_projection: false,
         }
     }
 }

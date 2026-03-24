@@ -1,0 +1,3672 @@
+schema_version: '1.0'
+depth: standard
+methodology:
+  name: Generic Internal Audit Methodology
+  version: '2025.1'
+  framework: IIA-GIAS
+  description: 'A generic internal audit methodology based on the IIA Global Internal Audit Standards (GIAS) 2024. Covers
+    the full internal audit lifecycle from strategic planning through follow-up, modeled as an event-sourced state machine.
+
+    '
+discriminators:
+  categories:
+  - financial
+  - operational
+  - compliance
+  - it
+  - fraud
+  - esg
+  risk_ratings:
+  - high
+  - medium
+  - low
+  engagement_types:
+  - assurance
+  - advisory
+actors:
+- id: cae
+  name: Chief Audit Executive
+  responsibilities:
+  - Overall internal audit strategy and direction
+  - Reporting to the board audit committee
+  - Approving the annual audit plan
+- id: audit_director
+  name: Audit Director
+  responsibilities:
+  - Overseeing multiple audit engagements
+  - Quality assurance review
+  - Resource allocation decisions
+- id: audit_manager
+  name: Audit Manager
+  responsibilities:
+  - Day-to-day engagement management
+  - Reviewing workpapers and findings
+  - Ensuring engagement milestones are met
+- id: senior_auditor
+  name: Senior Auditor
+  responsibilities:
+  - Leading fieldwork execution
+  - Drafting findings and recommendations
+  - Supervising staff auditors
+- id: staff_auditor
+  name: Staff Auditor
+  responsibilities:
+  - Performing detailed testing procedures
+  - Documenting test results
+  - Gathering evidence
+- id: sme
+  name: Subject Matter Expert
+  responsibilities:
+  - Providing specialized domain knowledge
+  - Reviewing technical findings
+- id: auditee
+  name: Auditee
+  responsibilities:
+  - Providing information and access
+  - Responding to findings with action plans
+- id: board_audit_committee
+  name: Board Audit Committee
+  responsibilities:
+  - Approving the annual internal audit plan
+  - Receiving and acting on audit reports
+  - Overseeing CAE independence
+standards_catalog:
+- ref: GIAS-9.1
+  title: Internal Audit Mandate
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-9.2
+  title: Organizational Independence
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-9.3
+  title: Board Oversight
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-9.4
+  title: Resource Management
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-9.5
+  title: Quality Assurance and Improvement
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-11.1
+  title: Planning — Strategic Plan
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-11.2
+  title: Planning — Risk-Based Plan
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-11.3
+  title: Planning — Engagement Planning
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.1
+  title: Performing — Engagement Supervision
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.2
+  title: Performing — Analysis and Evaluation
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.3
+  title: Performing — Documenting
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.4
+  title: Performing — Developing Findings and Conclusions
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.1
+  title: Communicating — Engagement Communication
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.2
+  title: Communicating — Final Communication
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-15.1
+  title: Monitoring — Follow-Up Process
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-15.2
+  title: Monitoring — Acceptance of Residual Risk
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-1.1
+  title: Integrity
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-1.2
+  title: Maintaining Trust
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-1.3
+  title: Legal and Regulatory Compliance
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-2.1
+  title: Objectivity
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-2.2
+  title: Safeguarding Objectivity
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-2.3
+  title: Disclosing Impairments
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-3.1
+  title: Competency
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-3.2
+  title: Continuing Professional Development
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-4.1
+  title: Conformance with Standards
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-4.2
+  title: Due Professional Care
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-4.3
+  title: Professional Skepticism
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-5.1
+  title: Use of Information
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-5.2
+  title: Protecting Information
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-6.1
+  title: Internal Audit Mandate
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-6.2
+  title: Internal Audit Charter
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-6.3
+  title: Board Support for Internal Audit
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-7.1
+  title: Organizational Independence
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-7.2
+  title: CAE Qualifications and Accountability
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-8.1
+  title: Board Interaction
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-8.2
+  title: Board Oversight of Resources
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-8.3
+  title: QAIP Oversight
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-8.4
+  title: External Quality Assessment
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-10.1
+  title: Financial Resource Management
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-10.2
+  title: Human Resource Management
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-10.3
+  title: Technological Resource Management
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-11.4
+  title: Communicating the Internal Audit Plan
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-11.5
+  title: Communicating Errors or Omissions
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-12.1
+  title: Internal Quality Assessments
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-12.2
+  title: Performance Measurement
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-12.3
+  title: Engagement Quality
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.5
+  title: Allocating Engagement Resources
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-13.6
+  title: Developing Work Programs
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.3
+  title: Evaluating Findings
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.4
+  title: Developing Recommendations
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.5
+  title: Engagement Conclusions
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+- ref: GIAS-14.6
+  title: Documenting Engagement Work
+  binding: requirement
+  isa_group: ''
+  requirement_count: 0
+  application_count: 0
+  paragraphs: []
+  dependencies: []
+evidence_catalog:
+- id: audit_universe
+  name: Audit Universe
+  type: assessment
+  lifecycle:
+  - draft
+  - updated
+  - finalized
+- id: annual_plan
+  name: Annual Audit Plan
+  type: document
+  lifecycle:
+  - draft
+  - board_approved
+- id: engagement_plan
+  name: Engagement Plan
+  type: document
+  lifecycle:
+  - draft
+  - approved
+- id: risk_control_matrix
+  name: Risk and Control Matrix
+  type: workpaper
+  lifecycle:
+  - draft
+  - updated
+  - finalized
+- id: workpapers
+  name: Audit Workpapers
+  type: workpaper
+  lifecycle:
+  - draft
+  - reviewed
+  - finalized
+- id: test_results
+  name: Test Results
+  type: workpaper
+  lifecycle:
+  - draft
+  - reviewed
+- id: finding_report
+  name: Finding Report
+  type: report
+  lifecycle:
+  - draft
+  - discussed
+  - finalized
+- id: action_plan
+  name: Management Action Plan
+  type: document
+  lifecycle:
+  - draft
+  - agreed
+- id: draft_report
+  name: Draft Audit Report
+  type: report
+  lifecycle:
+  - draft
+  - reviewed
+- id: final_report
+  name: Final Audit Report
+  type: report
+  lifecycle:
+  - issued
+  - distributed
+- id: follow_up_tracker
+  name: Follow-Up Tracker
+  type: workpaper
+  lifecycle:
+  - active
+  - updated
+  - closed
+- id: remediation_evidence
+  name: Remediation Evidence
+  type: workpaper
+  lifecycle:
+  - collected
+  - verified
+- id: ethics_policy
+  name: Code of Ethics Policy
+  type: document
+  lifecycle:
+  - draft
+  - approved
+  - updated
+- id: ethics_training_records
+  name: Ethics Training Records
+  type: workpaper
+  lifecycle:
+  - collected
+  - verified
+- id: objectivity_declaration
+  name: Objectivity & Independence Declaration
+  type: document
+  lifecycle:
+  - draft
+  - signed
+- id: confidentiality_policy
+  name: Confidentiality & Information Protection Policy
+  type: document
+  lifecycle:
+  - draft
+  - approved
+- id: competency_assessment
+  name: Competency Assessment
+  type: assessment
+  lifecycle:
+  - draft
+  - completed
+- id: cpd_plan
+  name: Continuing Professional Development Plan
+  type: document
+  lifecycle:
+  - draft
+  - active
+  - reviewed
+- id: governance_assessment
+  name: IA Governance Assessment
+  type: assessment
+  lifecycle:
+  - draft
+  - finalized
+- id: ia_charter
+  name: Internal Audit Charter
+  type: document
+  lifecycle:
+  - draft
+  - board_approved
+  - updated
+- id: independence_confirmation
+  name: Independence Confirmation
+  type: document
+  lifecycle:
+  - draft
+  - signed
+- id: qaip_framework
+  name: Quality Assurance & Improvement Program
+  type: document
+  lifecycle:
+  - draft
+  - approved
+  - updated
+- id: ia_budget
+  name: Internal Audit Budget
+  type: document
+  lifecycle:
+  - draft
+  - approved
+- id: staffing_plan
+  name: IA Staffing Plan
+  type: document
+  lifecycle:
+  - draft
+  - approved
+  - updated
+- id: technology_inventory
+  name: IA Technology Inventory
+  type: workpaper
+  lifecycle:
+  - draft
+  - updated
+- id: internal_qa_report
+  name: Internal QA Assessment Report
+  type: report
+  lifecycle:
+  - draft
+  - reviewed
+  - finalized
+- id: performance_dashboard
+  name: IA Performance Dashboard
+  type: report
+  lifecycle:
+  - draft
+  - active
+  - updated
+- id: work_program
+  name: Engagement Work Program
+  type: workpaper
+  lifecycle:
+  - draft
+  - approved
+  - updated
+forms_catalog: []
+phases:
+- id: ethics_and_professionalism
+  name: Ethics & Professionalism
+  order: -2
+  description: Continuous domain ensuring all internal audit personnel maintain integrity, objectivity, competency, due professional
+    care, and confidentiality in accordance with GIAS Domain II (Principles 1-5).
+- id: governance_establishment
+  name: Governance Establishment
+  order: -1
+  description: Establish and maintain the internal audit mandate, organizational independence, and board oversight mechanisms
+    as required by GIAS Domain III (Principles 6-8). Reviewed annually.
+  gate:
+    all_of:
+    - procedure: establish_ia_mandate
+      state: completed
+    - procedure: establish_organizational_independence
+      state: completed
+    - procedure: establish_board_oversight
+      state: completed
+- id: resource_management
+  name: Resource Management
+  order: 0
+  description: Manage financial, human, and technological resources to ensure the internal audit function can deliver on its
+    mandate. Covers GIAS Principle 10 and Principle 11 communication standards.
+- id: strategic_planning
+  name: Strategic Planning
+  order: 1
+  description: 'Maintain the audit universe, assess organizational risks, and develop the risk-based annual audit plan for
+    board approval.
+
+    '
+  gate:
+    all_of:
+    - procedure: maintain_audit_universe
+      state: completed
+    - procedure: develop_annual_plan
+      state: completed
+- id: engagement_planning
+  name: Engagement Planning
+  order: 2
+  description: 'Scope and plan individual audit engagements, assess engagement-level risks, allocate resources, and conduct
+    the opening meeting with auditees.
+
+    '
+  gate:
+    all_of:
+    - procedure: scope_engagement
+      state: completed
+    - procedure: assess_engagement_risks
+      state: completed
+    - procedure: allocate_resources
+      state: completed
+    - procedure: conduct_opening_meeting
+      state: completed
+    - procedure: develop_work_program
+      state: completed
+- id: fieldwork
+  name: Fieldwork
+  order: 3
+  description: 'Execute testing procedures, evaluate controls, develop findings using the C2CE framework, and discuss preliminary
+    results with auditees.
+
+    '
+  gate:
+    all_of:
+    - procedure: execute_testing
+      state: completed
+    - procedure: evaluate_controls
+      state: completed
+    - procedure: develop_findings
+      state: completed
+    - procedure: discuss_findings
+      state: completed
+    - procedure: evaluate_findings
+      state: completed
+    - procedure: develop_recommendations
+      state: completed
+    - procedure: document_engagement_work
+      state: completed
+- id: reporting
+  name: Reporting
+  order: 4
+  description: 'Draft the audit report, obtain management responses, and issue the final audit report for distribution to
+    stakeholders.
+
+    '
+  gate:
+    all_of:
+    - procedure: prepare_draft_report
+      state: completed
+    - procedure: obtain_management_response
+      state: completed
+    - procedure: issue_final_report
+      state: completed
+- id: follow_up
+  name: Follow-Up
+  order: 5
+  description: 'Monitor implementation of agreed management action plans, verify remediation effectiveness, and escalate overdue
+    items.
+
+    '
+  gate:
+    all_of:
+    - procedure: monitor_action_plans
+      state: completed
+    - procedure: verify_remediation
+      state: completed
+- id: quality_assurance
+  name: Quality Assurance
+  order: 6
+  description: Continuous quality assurance and improvement activities including internal QA assessments, performance measurement,
+    and engagement quality oversight. Covers GIAS Principle 12.
+procedures:
+- id: maintain_audit_universe
+  phase: strategic_planning
+  title: Maintain Audit Universe
+  discriminators:
+    categories:
+    - financial
+    - operational
+    - compliance
+    - it
+    - fraud
+    - esg
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_universe_update
+      emits: UniverseUpdateStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_universe
+      emits: UniverseSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_universe
+      emits: UniverseApproved
+      guards:
+      - cae_approved
+  steps:
+  - id: universe_step_1
+    order: 1
+    action: identify
+    actor: audit_director
+    description: 'Identify all auditable entities, processes, and risk areas across the organization, updating the audit universe
+      inventory.
+
+      '
+    binding: requirement
+    command: identify_auditable_entities
+    emits: AuditableEntitiesIdentified
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: audit_universe
+        type: assessment
+    standards:
+    - ref: GIAS-11.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: universe_step_2
+    order: 2
+    action: assess
+    actor: audit_director
+    description: 'Assess inherent and residual risk for each auditable entity using a consistent risk scoring methodology
+      aligned with organizational risk appetite.
+
+      '
+    binding: requirement
+    command: assess_universe_risks
+    emits: UniverseRisksAssessed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-11.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: universe_step_3
+    order: 3
+    action: prioritize
+    actor: cae
+    description: 'Prioritize auditable entities based on risk scores, strategic importance, time since last audit, and stakeholder
+      requests.
+
+      '
+    binding: requirement
+    command: prioritize_audit_entities
+    emits: AuditEntitiesPrioritized
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: develop_annual_plan
+  phase: strategic_planning
+  title: Develop Annual Audit Plan
+  discriminators:
+    categories:
+    - financial
+    - operational
+    - compliance
+    - it
+    - fraud
+    - esg
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - board_approved
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_plan_development
+      emits: PlanDevelopmentStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_plan
+      emits: PlanSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_plan
+      emits: PlanRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: board_approved
+      command: approve_plan
+      emits: PlanBoardApproved
+      guards:
+      - board_approval_obtained
+    - from_state: board_approved
+      to_state: completed
+      command: finalize_plan
+      emits: PlanFinalized
+      guards: []
+  steps:
+  - id: plan_step_1
+    order: 1
+    action: draft
+    actor: cae
+    description: 'Draft the risk-based annual internal audit plan, selecting engagements from the prioritized audit universe
+      considering available resources and organizational objectives.
+
+      '
+    binding: requirement
+    command: draft_annual_plan
+    emits: AnnualPlanDrafted
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: audit_universe
+        type: assessment
+      outputs:
+      - ref: annual_plan
+        type: document
+    standards:
+    - ref: GIAS-11.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: plan_step_2
+    order: 2
+    action: present
+    actor: cae
+    description: 'Present the draft annual audit plan to the board audit committee for review, discussion, and approval.
+
+      '
+    binding: requirement
+    command: present_plan_to_board
+    emits: PlanPresentedToBoard
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-9.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: plan_step_3
+    order: 3
+    action: communicate
+    actor: cae
+    description: 'Communicate the approved annual audit plan to relevant stakeholders including senior management and engagement
+      teams.
+
+      '
+    binding: requirement
+    command: communicate_approved_plan
+    emits: ApprovedPlanCommunicated
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions:
+  - maintain_audit_universe
+  knowledge_refs: []
+- id: scope_engagement
+  phase: engagement_planning
+  title: Scope Engagement
+  discriminators:
+    engagement_types:
+    - assurance
+    - advisory
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_scoping
+      emits: ScopingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_scope
+      emits: ScopeSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_scope
+      emits: ScopeApproved
+      guards:
+      - manager_approved
+  steps:
+  - id: scope_step_1
+    order: 1
+    action: define
+    actor: audit_manager
+    description: 'Define the engagement objectives, scope boundaries, and audit criteria. Determine whether the engagement
+      is assurance or advisory in nature.
+
+      '
+    binding: requirement
+    command: define_engagement_scope
+    emits: EngagementScopeDefined
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: annual_plan
+        type: document
+      outputs:
+      - ref: engagement_plan
+        type: document
+    standards:
+    - ref: GIAS-11.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions:
+    - condition: Is this an assurance or advisory engagement?
+      branches:
+      - label: Assurance
+        description: Objective evaluation with formal opinion on governance, risk, or control processes
+        next_step: scope_step_2
+      - label: Advisory
+        description: Consulting activity to add value without formal assurance opinion
+        next_step: scope_step_2
+  - id: scope_step_2
+    order: 2
+    action: determine
+    actor: audit_manager
+    description: 'Determine the time budget, key milestones, and deliverables for the engagement based on scope and complexity.
+
+      '
+    binding: requirement
+    command: determine_engagement_timeline
+    emits: EngagementTimelineDetermined
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions:
+  - develop_annual_plan
+  knowledge_refs: []
+- id: assess_engagement_risks
+  phase: engagement_planning
+  title: Assess Engagement Risks
+  discriminators:
+    risk_ratings:
+    - high
+    - medium
+    - low
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_risk_assessment
+      emits: RiskAssessmentStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_risk_assessment
+      emits: RiskAssessmentSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_risk_assessment
+      emits: RiskAssessmentApproved
+      guards:
+      - manager_approved
+  steps:
+  - id: risk_step_1
+    order: 1
+    action: identify
+    actor: senior_auditor
+    description: 'Identify engagement-level risks by reviewing prior audit findings, industry developments, regulatory changes,
+      and process documentation.
+
+      '
+    binding: requirement
+    command: identify_engagement_risks
+    emits: EngagementRisksIdentified
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-11.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: risk_step_2
+    order: 2
+    action: assess
+    actor: senior_auditor
+    description: 'Assess the likelihood and impact of identified risks and develop a risk and control matrix mapping risks
+      to key controls.
+
+      '
+    binding: requirement
+    command: assess_engagement_risks
+    emits: EngagementRisksAssessed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: risk_control_matrix
+        type: workpaper
+    standards: []
+    decisions: []
+  preconditions:
+  - scope_engagement
+  knowledge_refs: []
+- id: allocate_resources
+  phase: engagement_planning
+  title: Allocate Resources
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_allocation
+      emits: AllocationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: completed
+      command: finalize_allocation
+      emits: AllocationFinalized
+      guards:
+      - all_steps_complete
+  steps:
+  - id: resource_step_1
+    order: 1
+    action: assign
+    actor: audit_director
+    description: 'Assign team members to the engagement based on competency requirements, subject matter expertise needed,
+      and availability.
+
+      '
+    binding: requirement
+    command: assign_team_members
+    emits: TeamMembersAssigned
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-9.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: resource_step_2
+    order: 2
+    action: determine
+    actor: audit_manager
+    description: 'Determine whether subject matter experts are needed and arrange their involvement in the engagement.
+
+      '
+    binding: guidance
+    command: determine_sme_needs
+    emits: SMENeedsDetermined
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  - id: resource_step_3
+    order: 3
+    action: confirm
+    actor: audit_manager
+    description: Confirm that allocated resources have the collective knowledge, skills, and competencies required to perform
+      the engagement effectively.
+    binding: requirement
+    command: confirm_resource_competencies
+    emits: ResourceCompetenciesConfirmed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-13.5
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - scope_engagement
+  knowledge_refs:
+  - assess_engagement_risks
+- id: conduct_opening_meeting
+  phase: engagement_planning
+  title: Conduct Opening Meeting
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: completed
+      command: conduct_meeting
+      emits: OpeningMeetingConducted
+      guards: []
+  steps:
+  - id: opening_step_1
+    order: 1
+    action: conduct
+    actor: audit_manager
+    description: 'Conduct the opening meeting with the auditee to communicate the audit objectives, scope, timeline, and logistical
+      requirements. Confirm key contacts and access arrangements.
+
+      '
+    binding: requirement
+    command: conduct_opening_meeting
+    emits: OpeningMeetingCompleted
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-14.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - scope_engagement
+  - allocate_resources
+  knowledge_refs: []
+- id: execute_testing
+  phase: fieldwork
+  title: Execute Testing Procedures
+  discriminators:
+    categories:
+    - financial
+    - operational
+    - compliance
+    - it
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_testing
+      emits: TestingStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_testing
+      emits: TestingSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: request_additional_testing
+      emits: AdditionalTestingRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_testing
+      emits: TestingApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: test_step_1
+    order: 1
+    action: design
+    actor: senior_auditor
+    description: 'Design detailed test procedures responsive to the identified risks, determining appropriate sample sizes,
+      testing methods (inquiry, observation, inspection, reperformance), and data sources.
+
+      '
+    binding: requirement
+    command: design_test_procedures
+    emits: TestProceduresDesigned
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: risk_control_matrix
+        type: workpaper
+      outputs: []
+    standards:
+    - ref: GIAS-13.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: test_step_2
+    order: 2
+    action: perform
+    actor: staff_auditor
+    description: 'Perform the designed test procedures, documenting results, exceptions, and observations in the audit workpapers.
+
+      '
+    binding: requirement
+    command: perform_test_procedures
+    emits: TestProceduresPerformed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: workpapers
+        type: workpaper
+      - ref: test_results
+        type: workpaper
+    standards:
+    - ref: GIAS-13.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: test_step_3
+    order: 3
+    action: review
+    actor: audit_manager
+    description: 'Review test results and workpapers for completeness, accuracy, and adequate support for conclusions drawn.
+
+      '
+    binding: requirement
+    command: review_test_results
+    emits: TestResultsReviewed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-13.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - conduct_opening_meeting
+  - assess_engagement_risks
+  knowledge_refs: []
+- id: evaluate_controls
+  phase: fieldwork
+  title: Evaluate Internal Controls
+  discriminators:
+    categories:
+    - financial
+    - operational
+    - compliance
+    - it
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_control_evaluation
+      emits: ControlEvaluationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_control_evaluation
+      emits: ControlEvaluationSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_control_evaluation
+      emits: ControlEvaluationApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: ctrl_eval_step_1
+    order: 1
+    action: assess
+    actor: senior_auditor
+    description: 'Assess the design adequacy and implementation effectiveness of key controls identified in the risk and control
+      matrix.
+
+      '
+    binding: requirement
+    command: assess_control_design
+    emits: ControlDesignAssessed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: risk_control_matrix
+        type: workpaper
+      outputs: []
+    standards:
+    - ref: GIAS-13.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: ctrl_eval_step_2
+    order: 2
+    action: evaluate
+    actor: senior_auditor
+    description: 'Evaluate the operating effectiveness of key controls through walkthroughs, reperformance, or other testing
+      techniques.
+
+      '
+    binding: requirement
+    command: evaluate_control_effectiveness
+    emits: ControlEffectivenessEvaluated
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: test_results
+        type: workpaper
+    standards: []
+    decisions: []
+  preconditions:
+  - conduct_opening_meeting
+  - assess_engagement_risks
+  knowledge_refs:
+  - execute_testing
+- id: develop_findings
+  phase: fieldwork
+  title: Develop Findings
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - condition_identified
+    - criteria_mapped
+    - cause_analyzed
+    - effect_assessed
+    - finding_drafted
+    - management_responded
+    - closed
+    transitions:
+    - from_state: not_started
+      to_state: condition_identified
+      command: identify_condition
+      emits: ConditionIdentified
+      guards: []
+    - from_state: condition_identified
+      to_state: criteria_mapped
+      command: map_criteria
+      emits: CriteriaMapped
+      guards: []
+    - from_state: criteria_mapped
+      to_state: cause_analyzed
+      command: analyze_cause
+      emits: CauseAnalyzed
+      guards: []
+    - from_state: cause_analyzed
+      to_state: effect_assessed
+      command: assess_effect
+      emits: EffectAssessed
+      guards: []
+    - from_state: effect_assessed
+      to_state: finding_drafted
+      command: draft_finding
+      emits: FindingDrafted
+      guards: []
+    - from_state: finding_drafted
+      to_state: management_responded
+      command: obtain_response
+      emits: ManagementResponded
+      guards: []
+    - from_state: management_responded
+      to_state: closed
+      command: close_finding
+      emits: FindingClosed
+      guards:
+      - action_plan_agreed
+  steps:
+  - id: finding_step_1
+    order: 1
+    action: identify
+    actor: senior_auditor
+    description: 'Identify the condition — the factual situation observed through testing that differs from the established
+      criteria.
+
+      '
+    binding: requirement
+    command: identify_finding_condition
+    emits: FindingConditionIdentified
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: test_results
+        type: workpaper
+      outputs: []
+    standards:
+    - ref: GIAS-13.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: finding_step_2
+    order: 2
+    action: map
+    actor: senior_auditor
+    description: 'Map the criteria — the standard, policy, regulation, or expectation against which the condition is measured.
+
+      '
+    binding: requirement
+    command: map_finding_criteria
+    emits: FindingCriteriaMapped
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  - id: finding_step_3
+    order: 3
+    action: analyze
+    actor: senior_auditor
+    description: 'Analyze the root cause of the condition and assess the effect or potential impact on the organization''s
+      objectives.
+
+      '
+    binding: requirement
+    command: analyze_cause_and_effect
+    emits: CauseAndEffectAnalyzed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: finding_report
+        type: report
+    standards: []
+    decisions:
+    - condition: What is the finding risk rating?
+      branches:
+      - label: High
+        description: Significant control deficiency requiring immediate management attention
+        next_step: ''
+      - label: Medium
+        description: Moderate control weakness needing timely remediation
+        next_step: ''
+      - label: Low
+        description: Minor observation for process improvement
+        next_step: ''
+  preconditions:
+  - execute_testing
+  knowledge_refs:
+  - evaluate_controls
+- id: discuss_findings
+  phase: fieldwork
+  title: Discuss Findings with Auditee
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: completed
+      command: discuss_findings
+      emits: FindingsDiscussed
+      guards: []
+  steps:
+  - id: discuss_step_1
+    order: 1
+    action: discuss
+    actor: audit_manager
+    description: 'Discuss preliminary findings and recommendations with the auditee to validate factual accuracy, confirm
+      root causes, and begin developing agreed-upon management action plans.
+
+      '
+    binding: requirement
+    command: discuss_preliminary_findings
+    emits: PreliminaryFindingsDiscussed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: finding_report
+        type: report
+      outputs: []
+    standards:
+    - ref: GIAS-14.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - develop_findings
+  knowledge_refs: []
+- id: prepare_draft_report
+  phase: reporting
+  title: Prepare Draft Report
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_draft_report
+      emits: DraftReportStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_draft_report
+      emits: DraftReportSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: in_progress
+      command: revise_draft_report
+      emits: DraftReportRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: approve_draft_report
+      emits: DraftReportApproved
+      guards:
+      - director_approved
+  steps:
+  - id: draft_step_1
+    order: 1
+    action: draft
+    actor: senior_auditor
+    description: 'Draft the audit report including executive summary, scope, methodology, detailed findings with risk ratings,
+      and recommendations.
+
+      '
+    binding: requirement
+    command: draft_audit_report
+    emits: AuditReportDrafted
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: finding_report
+        type: report
+      outputs:
+      - ref: draft_report
+        type: report
+    standards:
+    - ref: GIAS-14.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: draft_step_2
+    order: 2
+    action: review
+    actor: audit_director
+    description: 'Review the draft report for quality, clarity, accuracy of findings, and appropriateness of recommendations
+      and risk ratings.
+
+      '
+    binding: requirement
+    command: review_draft_report
+    emits: DraftReportReviewed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-9.5
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - discuss_findings
+  knowledge_refs: []
+- id: obtain_management_response
+  phase: reporting
+  title: Obtain Management Response
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: request_response
+      emits: ResponseRequested
+      guards: []
+    - from_state: in_progress
+      to_state: completed
+      command: receive_response
+      emits: ResponseReceived
+      guards:
+      - all_steps_complete
+  steps:
+  - id: response_step_1
+    order: 1
+    action: send
+    actor: audit_manager
+    description: 'Send the draft report to management for review and request formal responses including action plans, responsible
+      owners, and target implementation dates for each finding.
+
+      '
+    binding: requirement
+    command: send_report_for_response
+    emits: ReportSentForResponse
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: draft_report
+        type: report
+      outputs: []
+    standards: []
+    decisions: []
+  - id: response_step_2
+    order: 2
+    action: evaluate
+    actor: audit_manager
+    description: 'Evaluate management responses for adequacy, ensuring action plans appropriately address the root causes
+      and risks identified.
+
+      '
+    binding: requirement
+    command: evaluate_management_responses
+    emits: ManagementResponsesEvaluated
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: action_plan
+        type: document
+    standards: []
+    decisions:
+    - condition: Are management responses adequate?
+      branches:
+      - label: 'Yes'
+        description: Accept responses and incorporate into final report
+        next_step: ''
+      - label: 'No'
+        description: Request revised responses or escalate to senior management
+        next_step: ''
+  preconditions:
+  - prepare_draft_report
+  knowledge_refs: []
+- id: issue_final_report
+  phase: reporting
+  title: Issue Final Report
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_final_report
+      emits: FinalReportStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_final_report
+      emits: FinalReportSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: issue_report
+      emits: ReportIssued
+      guards:
+      - cae_approved
+  steps:
+  - id: final_step_1
+    order: 1
+    action: finalize
+    actor: audit_manager
+    description: 'Finalize the audit report incorporating management responses, final risk ratings, and an overall opinion
+      or conclusion on the area audited.
+
+      '
+    binding: requirement
+    command: finalize_audit_report
+    emits: AuditReportFinalized
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: draft_report
+        type: report
+      - ref: action_plan
+        type: document
+      outputs:
+      - ref: final_report
+        type: report
+    standards:
+    - ref: GIAS-14.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: final_step_2
+    order: 2
+    action: distribute
+    actor: cae
+    description: 'Distribute the final audit report to the auditee, senior management, and the board audit committee as appropriate.
+
+      '
+    binding: requirement
+    command: distribute_final_report
+    emits: FinalReportDistributed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-14.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - obtain_management_response
+  knowledge_refs: []
+- id: monitor_action_plans
+  phase: follow_up
+  title: Monitor Action Plans
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - monitoring
+    - follow_up
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: monitoring
+      command: start_monitoring
+      emits: MonitoringStarted
+      guards: []
+    - from_state: monitoring
+      to_state: follow_up
+      command: initiate_follow_up
+      emits: FollowUpInitiated
+      guards:
+      - target_date_reached
+    - from_state: follow_up
+      to_state: follow_up
+      command: re_verify_action
+      emits: ActionReverified
+      guards:
+      - remediation_incomplete
+    - from_state: follow_up
+      to_state: completed
+      command: close_monitoring
+      emits: MonitoringClosed
+      guards:
+      - all_actions_resolved
+  steps:
+  - id: monitor_step_1
+    order: 1
+    action: track
+    actor: senior_auditor
+    description: 'Track the status of all open management action plans, monitoring progress against agreed target implementation
+      dates.
+
+      '
+    binding: requirement
+    command: track_action_plan_status
+    emits: ActionPlanStatusTracked
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: action_plan
+        type: document
+      outputs:
+      - ref: follow_up_tracker
+        type: workpaper
+    standards:
+    - ref: GIAS-15.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: monitor_step_2
+    order: 2
+    action: escalate
+    actor: audit_manager
+    description: 'Escalate overdue action plans to senior management and, where appropriate, report to the board audit committee
+      on significant unresolved findings.
+
+      '
+    binding: requirement
+    command: escalate_overdue_actions
+    emits: OverdueActionsEscalated
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions:
+    - condition: Are there overdue high-risk findings?
+      branches:
+      - label: 'Yes'
+        description: Escalate to board audit committee
+        next_step: ''
+      - label: 'No'
+        description: Continue routine monitoring
+        next_step: ''
+  - id: monitor_step_3
+    order: 3
+    action: report
+    actor: cae
+    description: 'Report periodically to the board audit committee on the overall status of management action plan implementation
+      and any accepted residual risks.
+
+      '
+    binding: requirement
+    command: report_follow_up_status
+    emits: FollowUpStatusReported
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-15.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - issue_final_report
+  knowledge_refs: []
+- id: verify_remediation
+  phase: follow_up
+  title: Verify Remediation
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_verification
+      emits: VerificationStarted
+      guards: []
+    - from_state: in_progress
+      to_state: completed
+      command: complete_verification
+      emits: VerificationCompleted
+      guards:
+      - all_steps_complete
+  steps:
+  - id: verify_step_1
+    order: 1
+    action: verify
+    actor: senior_auditor
+    description: 'Verify that management has effectively implemented the agreed action plans by examining remediation evidence
+      and testing corrective controls.
+
+      '
+    binding: requirement
+    command: verify_remediation_implementation
+    emits: RemediationImplementationVerified
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: action_plan
+        type: document
+      outputs:
+      - ref: remediation_evidence
+        type: workpaper
+    standards:
+    - ref: GIAS-15.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: verify_step_2
+    order: 2
+    action: conclude
+    actor: audit_manager
+    description: 'Conclude on the effectiveness of remediation efforts and determine whether findings can be closed or require
+      further action.
+
+      '
+    binding: requirement
+    command: conclude_on_remediation
+    emits: RemediationConcluded
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions:
+    - condition: Is remediation effective?
+      branches:
+      - label: 'Yes'
+        description: Close the finding and update tracker
+        next_step: ''
+      - label: 'No'
+        description: Re-open finding or accept residual risk with management acknowledgment
+        next_step: ''
+  preconditions:
+  - monitor_action_plans
+  knowledge_refs: []
+- id: maintain_ethical_standards
+  phase: ethics_and_professionalism
+  title: Maintain Ethical Standards
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: ethics_step_1
+    order: 1
+    action: establish
+    actor: cae
+    description: Establish and communicate the code of ethics for the internal audit function, aligned with the IIA Code of
+      Ethics and organizational values.
+    binding: requirement
+    command: establish_ethics_code
+    emits: EthicsCodeEstablished
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: ethics_policy
+        type: document
+    standards:
+    - ref: GIAS-1.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    - ref: GIAS-1.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: ethics_step_2
+    order: 2
+    action: conduct
+    actor: audit_manager
+    description: Conduct periodic ethics training for all internal audit personnel, covering integrity, professional courage,
+      and legal/regulatory compliance obligations.
+    binding: requirement
+    command: conduct_ethics_training
+    emits: EthicsTrainingConducted
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: ethics_training_records
+        type: workpaper
+    standards:
+    - ref: GIAS-1.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: ethics_step_3
+    order: 3
+    action: monitor
+    actor: cae
+    description: Monitor compliance with ethical standards and address any breaches through appropriate remedial actions.
+    binding: requirement
+    command: monitor_ethics_compliance
+    emits: EthicsComplianceMonitored
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: safeguard_objectivity
+  phase: ethics_and_professionalism
+  title: Safeguard Objectivity
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: objectivity_step_1
+    order: 1
+    action: assess
+    actor: cae
+    description: Assess threats to objectivity for all internal audit personnel, including conflicts of interest, self-review
+      threats, and familiarity threats.
+    binding: requirement
+    command: assess_objectivity_threats
+    emits: ObjectivityThreatsAssessed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-2.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: objectivity_step_2
+    order: 2
+    action: implement
+    actor: cae
+    description: Implement safeguards to mitigate identified threats to objectivity, such as rotation of assignments, supervisory
+      review, and disclosure requirements.
+    binding: requirement
+    command: implement_objectivity_safeguards
+    emits: ObjectivitySafeguardsImplemented
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: objectivity_declaration
+        type: document
+    standards:
+    - ref: GIAS-2.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: objectivity_step_3
+    order: 3
+    action: disclose
+    actor: senior_auditor
+    description: Disclose any actual or potential impairments to objectivity to the CAE and appropriate parties before accepting
+      or continuing an engagement.
+    binding: requirement
+    command: disclose_impairments
+    emits: ImpairmentsDisclosed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-2.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions:
+    - condition: Is there an impairment to objectivity?
+      branches:
+      - label: 'Yes'
+        description: Disclose and reassign or implement additional safeguards
+        next_step: ''
+      - label: 'No'
+        description: Document assessment and proceed
+        next_step: ''
+  preconditions: []
+  knowledge_refs: []
+- id: maintain_competency
+  phase: ethics_and_professionalism
+  title: Maintain Competency
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: competency_step_1
+    order: 1
+    action: assess
+    actor: audit_director
+    description: Assess the collective competencies of the internal audit function against the requirements of the audit plan,
+      identifying any skill gaps.
+    binding: requirement
+    command: assess_competencies
+    emits: CompetenciesAssessed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: competency_assessment
+        type: assessment
+    standards:
+    - ref: GIAS-3.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: competency_step_2
+    order: 2
+    action: develop
+    actor: audit_director
+    description: Develop and maintain continuing professional development plans for all audit personnel, ensuring skills remain
+      current with evolving risks and audit techniques.
+    binding: requirement
+    command: develop_cpd_plans
+    emits: CPDPlansDeveloped
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: cpd_plan
+        type: document
+    standards:
+    - ref: GIAS-3.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: exercise_due_care
+  phase: ethics_and_professionalism
+  title: Exercise Due Professional Care
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: due_care_step_1
+    order: 1
+    action: verify
+    actor: cae
+    description: Verify that internal audit work conforms with the Global Internal Audit Standards and report any non-conformance
+      to the board.
+    binding: requirement
+    command: verify_standards_conformance
+    emits: StandardsConformanceVerified
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-4.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: due_care_step_2
+    order: 2
+    action: apply
+    actor: senior_auditor
+    description: Apply due professional care in planning and performing audit work, considering the complexity, materiality,
+      and significance of matters being examined.
+    binding: requirement
+    command: apply_due_care
+    emits: DueCareApplied
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-4.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: due_care_step_3
+    order: 3
+    action: exercise
+    actor: senior_auditor
+    description: Exercise professional skepticism throughout the engagement, maintaining a questioning mind and critically
+      assessing audit evidence.
+    binding: requirement
+    command: exercise_skepticism
+    emits: SkepticismExercised
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-4.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: protect_confidential_information
+  phase: ethics_and_professionalism
+  title: Protect Confidential Information
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: confidentiality_step_1
+    order: 1
+    action: establish
+    actor: cae
+    description: Establish policies governing the appropriate use and protection of information obtained during internal audit
+      engagements.
+    binding: requirement
+    command: establish_confidentiality_policies
+    emits: ConfidentialityPoliciesEstablished
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: confidentiality_policy
+        type: document
+    standards:
+    - ref: GIAS-5.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: confidentiality_step_2
+    order: 2
+    action: protect
+    actor: audit_manager
+    description: Ensure all audit personnel protect confidential information and do not use it for personal advantage or in
+      any manner contrary to law or organizational policy.
+    binding: requirement
+    command: protect_information
+    emits: InformationProtected
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-5.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: establish_ia_mandate
+  phase: governance_establishment
+  title: Establish Internal Audit Mandate
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - drafting
+    - under_review
+    - board_approved
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: drafting
+      command: start_mandate_development
+      emits: MandateDevelopmentStarted
+      guards: []
+    - from_state: drafting
+      to_state: under_review
+      command: submit_charter
+      emits: CharterSubmitted
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: drafting
+      command: revise_charter
+      emits: CharterRevisionRequested
+      guards: []
+    - from_state: under_review
+      to_state: board_approved
+      command: approve_charter
+      emits: CharterBoardApproved
+      guards:
+      - board_approval_obtained
+    - from_state: board_approved
+      to_state: completed
+      command: finalize_mandate
+      emits: MandateFinalized
+      guards: []
+  steps:
+  - id: mandate_step_1
+    order: 1
+    action: define
+    actor: cae
+    description: Define the purpose, authority, and responsibility of the internal audit function, ensuring organizational
+      recognition through a formal mandate.
+    binding: requirement
+    command: define_ia_mandate
+    emits: IAMandateDefined
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: governance_assessment
+        type: assessment
+    standards:
+    - ref: GIAS-6.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: mandate_step_2
+    order: 2
+    action: draft
+    actor: cae
+    description: Draft the internal audit charter defining scope, authority, access rights, and reporting relationships. Submit
+      for board approval.
+    binding: requirement
+    command: draft_ia_charter
+    emits: IACharterDrafted
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: ia_charter
+        type: document
+    standards:
+    - ref: GIAS-6.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: mandate_step_3
+    order: 3
+    action: obtain
+    actor: cae
+    description: Obtain board support for the internal audit function, including endorsement of the charter, adequate resources,
+      and direct reporting access.
+    binding: requirement
+    command: obtain_board_support
+    emits: BoardSupportObtained
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-6.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: establish_organizational_independence
+  phase: governance_establishment
+  title: Establish Organizational Independence
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: independence_step_1
+    order: 1
+    action: establish
+    actor: cae
+    description: Establish organizational independence by ensuring the CAE reports functionally to the board and administratively
+      to senior management at a level enabling unrestricted access.
+    binding: requirement
+    command: establish_independence
+    emits: IndependenceEstablished
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: independence_confirmation
+        type: document
+    standards:
+    - ref: GIAS-7.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: independence_step_2
+    order: 2
+    action: confirm
+    actor: board_audit_committee
+    description: Confirm the CAE has the appropriate qualifications, experience, and accountability mechanisms to lead the
+      internal audit function independently.
+    binding: requirement
+    command: confirm_cae_qualifications
+    emits: CAEQualificationsConfirmed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-7.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - establish_ia_mandate
+  knowledge_refs: []
+- id: establish_board_oversight
+  phase: governance_establishment
+  title: Establish Board Oversight
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: board_oversight_step_1
+    order: 1
+    action: establish
+    actor: cae
+    description: Establish regular interaction with the board, including private meetings, to discuss internal audit strategy,
+      significant findings, and emerging risks.
+    binding: requirement
+    command: establish_board_interaction
+    emits: BoardInteractionEstablished
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-8.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: board_oversight_step_2
+    order: 2
+    action: present
+    actor: cae
+    description: Present resource requirements to the board for approval, ensuring the internal audit function has adequate
+      staffing, budget, and technology.
+    binding: requirement
+    command: present_resource_requirements
+    emits: ResourceRequirementsPresented
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-8.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: board_oversight_step_3
+    order: 3
+    action: oversee
+    actor: board_audit_committee
+    description: Oversee the quality assurance and improvement program (QAIP), reviewing results and ensuring appropriate
+      corrective actions are implemented.
+    binding: requirement
+    command: oversee_qaip
+    emits: QAIPOverseen
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: qaip_framework
+        type: document
+    standards:
+    - ref: GIAS-8.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: board_oversight_step_4
+    order: 4
+    action: commission
+    actor: board_audit_committee
+    description: Commission an external quality assessment at least once every five years, review results, and ensure the
+      CAE develops action plans for improvements.
+    binding: requirement
+    command: commission_external_qa
+    emits: ExternalQACommissioned
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-8.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions:
+    - condition: Is an external quality assessment due (5-year cycle)?
+      branches:
+      - label: 'Yes'
+        description: Commission independent external assessment
+        next_step: ''
+      - label: 'No'
+        description: Continue relying on internal QAIP results
+        next_step: ''
+  preconditions:
+  - establish_ia_mandate
+  knowledge_refs:
+  - establish_organizational_independence
+- id: manage_financial_resources
+  phase: resource_management
+  title: Manage Financial Resources
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: finance_step_1
+    order: 1
+    action: develop
+    actor: cae
+    description: Develop the internal audit budget, justifying resource requirements based on the approved audit plan, risk
+      assessments, and organizational expectations.
+    binding: requirement
+    command: develop_ia_budget
+    emits: IABudgetDeveloped
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: ia_budget
+        type: document
+    standards:
+    - ref: GIAS-10.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: finance_step_2
+    order: 2
+    action: monitor
+    actor: audit_director
+    description: Monitor budget utilization and report variances to the CAE, recommending adjustments as needed to deliver
+      on the audit plan.
+    binding: requirement
+    command: monitor_budget_utilization
+    emits: BudgetUtilizationMonitored
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: manage_human_resources
+  phase: resource_management
+  title: Manage Human Resources
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: hr_step_1
+    order: 1
+    action: develop
+    actor: cae
+    description: Develop a staffing plan aligned with the internal audit mandate, ensuring adequate numbers of qualified personnel
+      with appropriate competencies.
+    binding: requirement
+    command: develop_staffing_plan
+    emits: StaffingPlanDeveloped
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: staffing_plan
+        type: document
+    standards:
+    - ref: GIAS-10.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: hr_step_2
+    order: 2
+    action: recruit
+    actor: audit_director
+    description: Recruit, develop, and retain internal audit professionals, addressing identified competency gaps and succession
+      planning needs.
+    binding: requirement
+    command: recruit_and_develop_staff
+    emits: StaffRecruitedDeveloped
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  - id: hr_step_3
+    order: 3
+    action: evaluate
+    actor: audit_director
+    description: Evaluate staff performance against engagement objectives and professional development goals, providing constructive
+      feedback and coaching.
+    binding: guidance
+    command: evaluate_staff_performance
+    emits: StaffPerformanceEvaluated
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs:
+  - manage_financial_resources
+- id: manage_technological_resources
+  phase: resource_management
+  title: Manage Technological Resources
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: tech_step_1
+    order: 1
+    action: assess
+    actor: audit_director
+    description: Assess current and emerging technology capabilities for internal audit, including data analytics, continuous
+      monitoring, and audit management tools.
+    binding: requirement
+    command: assess_technology_capabilities
+    emits: TechnologyCapabilitiesAssessed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: technology_inventory
+        type: workpaper
+    standards:
+    - ref: GIAS-10.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: tech_step_2
+    order: 2
+    action: implement
+    actor: audit_director
+    description: Implement and maintain technology solutions that enhance audit efficiency and effectiveness, ensuring staff
+      are adequately trained in their use.
+    binding: requirement
+    command: implement_technology
+    emits: TechnologyImplemented
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs:
+  - manage_financial_resources
+- id: communicate_ia_strategy_results
+  phase: resource_management
+  title: Communicate IA Strategy & Results
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: comm_step_1
+    order: 1
+    action: identify
+    actor: cae
+    description: Identify key stakeholders for internal audit communications including the board, senior management, regulators,
+      and external auditors.
+    binding: requirement
+    command: identify_stakeholders
+    emits: StakeholdersIdentified
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-11.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: comm_step_2
+    order: 2
+    action: communicate
+    actor: cae
+    description: Communicate the internal audit plan, significant changes to the plan, and overall audit results to the board
+      and senior management.
+    binding: requirement
+    command: communicate_plan_and_results
+    emits: PlanAndResultsCommunicated
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-11.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: comm_step_3
+    order: 3
+    action: disclose
+    actor: cae
+    description: Disclose any errors or omissions identified in previously communicated engagement results, including corrective
+      actions taken.
+    binding: requirement
+    command: disclose_errors_omissions
+    emits: ErrorsOmissionsDisclosed
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-11.5
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: comm_step_4
+    order: 4
+    action: document
+    actor: cae
+    description: Document instances where management accepts a level of risk that the CAE considers unacceptable, and report
+      this to the board.
+    binding: requirement
+    command: document_risk_acceptance
+    emits: RiskAcceptanceDocumented
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-15.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - develop_annual_plan
+  knowledge_refs: []
+- id: conduct_internal_qa
+  phase: quality_assurance
+  title: Conduct Internal Quality Assessments
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: qa_step_1
+    order: 1
+    action: perform
+    actor: audit_director
+    description: Perform ongoing monitoring of internal audit quality through supervisory review of engagements, workpaper
+      review, and real-time feedback.
+    binding: requirement
+    command: perform_ongoing_monitoring
+    emits: OngoingMonitoringPerformed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: internal_qa_report
+        type: report
+    standards:
+    - ref: GIAS-12.1
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: qa_step_2
+    order: 2
+    action: conduct
+    actor: audit_director
+    description: Conduct periodic internal quality assessments through self-assessments or reviews by qualified individuals
+      within the organization.
+    binding: requirement
+    command: conduct_periodic_assessment
+    emits: PeriodicAssessmentConducted
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs: []
+- id: measure_ia_performance
+  phase: quality_assurance
+  title: Measure IA Performance
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: perf_step_1
+    order: 1
+    action: define
+    actor: cae
+    description: Define key performance indicators (KPIs) and metrics for the internal audit function aligned with the audit
+      plan and stakeholder expectations.
+    binding: requirement
+    command: define_performance_metrics
+    emits: PerformanceMetricsDefined
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: performance_dashboard
+        type: report
+    standards:
+    - ref: GIAS-12.2
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: perf_step_2
+    order: 2
+    action: track
+    actor: audit_director
+    description: Track performance against defined KPIs and report results to the CAE and board periodically.
+    binding: requirement
+    command: track_performance
+    emits: PerformanceTracked
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  - id: perf_step_3
+    order: 3
+    action: report
+    actor: cae
+    description: Report internal audit performance metrics and trends to the board, including plan completion rates, resource
+      utilization, and stakeholder satisfaction.
+    binding: requirement
+    command: report_performance_to_board
+    emits: PerformanceReportedToBoard
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs:
+  - conduct_internal_qa
+- id: oversee_engagement_performance
+  phase: quality_assurance
+  title: Oversee Engagement Performance
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - active
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: active
+      command: activate
+      emits: Activated
+      guards: []
+    - from_state: active
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: active
+      command: cycle_back
+      emits: CycledBack
+      guards: []
+    - from_state: under_review
+      to_state: completed
+      command: complete_cycle
+      emits: CycleCompleted
+      guards:
+      - reviewer_approved
+  steps:
+  - id: engage_perf_step_1
+    order: 1
+    action: supervise
+    actor: audit_manager
+    description: Supervise engagement performance to ensure audit objectives are achieved, quality standards are met, and
+      staff are developed.
+    binding: requirement
+    command: supervise_engagement_quality
+    emits: EngagementQualitySupervised
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-12.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: engage_perf_step_2
+    order: 2
+    action: review
+    actor: audit_director
+    description: Review completed engagements for quality, including compliance with standards, adequacy of evidence, and
+      soundness of conclusions.
+    binding: requirement
+    command: review_engagement_quality
+    emits: EngagementQualityReviewed
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions: []
+  knowledge_refs:
+  - conduct_internal_qa
+- id: develop_work_program
+  phase: engagement_planning
+  title: Develop Work Program
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: wp_step_1
+    order: 1
+    action: design
+    actor: senior_auditor
+    description: Design the engagement work program detailing the nature, timing, and extent of audit procedures to address
+      engagement objectives and identified risks.
+    binding: requirement
+    command: design_work_program
+    emits: WorkProgramDesigned
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: risk_control_matrix
+        type: workpaper
+      outputs:
+      - ref: work_program
+        type: workpaper
+    standards:
+    - ref: GIAS-13.6
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: wp_step_2
+    order: 2
+    action: approve
+    actor: audit_manager
+    description: Review and approve the work program, ensuring it provides sufficient coverage of engagement risks and aligns
+      with engagement objectives.
+    binding: requirement
+    command: approve_work_program
+    emits: WorkProgramApproved
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions:
+  - assess_engagement_risks
+  knowledge_refs:
+  - scope_engagement
+- id: evaluate_findings
+  phase: fieldwork
+  title: Evaluate Findings & Conclusions
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: eval_step_1
+    order: 1
+    action: evaluate
+    actor: senior_auditor
+    description: Evaluate the significance of findings, considering the criteria, condition, cause, and consequence (C2CE)
+      framework to determine overall impact.
+    binding: requirement
+    command: evaluate_finding_significance
+    emits: FindingSignificanceEvaluated
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs:
+      - ref: finding_report
+        type: report
+      outputs: []
+    standards:
+    - ref: GIAS-14.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions:
+    - condition: What is the significance level of the finding?
+      branches:
+      - label: Significant
+        description: Requires immediate management attention and board reporting
+        next_step: ''
+      - label: Moderate
+        description: Requires management action within agreed timeline
+        next_step: ''
+      - label: Low
+        description: Observation for management consideration
+        next_step: ''
+  - id: eval_step_2
+    order: 2
+    action: conclude
+    actor: audit_manager
+    description: Develop engagement conclusions based on the aggregate findings, forming an overall opinion on the adequacy
+      and effectiveness of the area under review.
+    binding: requirement
+    command: develop_engagement_conclusions
+    emits: EngagementConclusionsDeveloped
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-14.5
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  preconditions:
+  - develop_findings
+  knowledge_refs:
+  - evaluate_controls
+- id: develop_recommendations
+  phase: fieldwork
+  title: Develop Recommendations
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: rec_step_1
+    order: 1
+    action: develop
+    actor: senior_auditor
+    description: Develop practical, actionable recommendations that address the root cause of each finding and are proportionate
+      to the risk involved.
+    binding: requirement
+    command: develop_recommendations
+    emits: RecommendationsDeveloped
+    isa_mandate: ''
+    guards: []
+    standards:
+    - ref: GIAS-14.4
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: rec_step_2
+    order: 2
+    action: agree
+    actor: audit_manager
+    description: Discuss recommendations with management and agree on action plans with responsible owners and implementation
+      target dates.
+    binding: requirement
+    command: agree_action_plans
+    emits: ActionPlansAgreed
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: action_plan
+        type: document
+    standards: []
+    decisions: []
+  preconditions:
+  - develop_findings
+  knowledge_refs:
+  - evaluate_findings
+- id: document_engagement_work
+  phase: fieldwork
+  title: Document Engagement Work
+  aggregate:
+    initial_state: not_started
+    states:
+    - not_started
+    - in_progress
+    - under_review
+    - completed
+    transitions:
+    - from_state: not_started
+      to_state: in_progress
+      command: start_procedure
+      emits: ProcedureStarted
+      guards: []
+    - from_state: in_progress
+      to_state: under_review
+      command: submit_for_review
+      emits: SubmittedForReview
+      guards:
+      - all_steps_complete
+    - from_state: under_review
+      to_state: completed
+      command: approve_procedure
+      emits: ProcedureApproved
+      guards:
+      - reviewer_approved
+  steps:
+  - id: doc_step_1
+    order: 1
+    action: document
+    actor: staff_auditor
+    description: Document sufficient, reliable, and relevant information to support engagement findings and conclusions in
+      accordance with organizational policies.
+    binding: requirement
+    command: document_engagement_work
+    emits: EngagementWorkDocumented
+    isa_mandate: ''
+    guards: []
+    evidence:
+      inputs: []
+      outputs:
+      - ref: workpapers
+        type: workpaper
+    standards:
+    - ref: GIAS-14.6
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    - ref: GIAS-13.3
+      paragraphs: []
+      binding: requirement
+      is_requirement: false
+      text_hint: ''
+    decisions: []
+  - id: doc_step_2
+    order: 2
+    action: archive
+    actor: audit_manager
+    description: Ensure engagement documentation is properly archived, indexed, and retained in accordance with organizational
+      and regulatory requirements.
+    binding: requirement
+    command: archive_engagement_documentation
+    emits: EngagementDocumentationArchived
+    isa_mandate: ''
+    guards: []
+    standards: []
+    decisions: []
+  preconditions:
+  - execute_testing
+  knowledge_refs: []
+projections: []
+reports: []
+standard_dependencies: []

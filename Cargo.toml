@@ -13,6 +13,8 @@ members = [
     "crates/datasynth-test-utils",
     "crates/datasynth-eval",
     "crates/datasynth-ocpm",
+    "crates/datasynth-audit-fsm",
+    "crates/datasynth-audit-optimizer",
     "crates/datasynth-banking",
     "crates/datasynth-fingerprint",
     "crates/datasynth-standards",
@@ -153,6 +155,7 @@ zstd = "0.13"
 
 # Data structures
 smallvec = { version = "1.13", features = ["serde"] }
+petgraph = "0.7"
 
 # Parallel processing
 rayon = "1.10"

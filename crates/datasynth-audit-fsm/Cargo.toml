@@ -1,0 +1,30 @@
+[package]
+name = "datasynth-audit-fsm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "YAML-driven audit FSM engine for methodology-based audit artifact generation"
+keywords = ["audit", "fsm", "isa", "methodology", "synthetic-data"]
+categories.workspace = true
+
+[dependencies]
+datasynth-core = { workspace = true }
+datasynth-standards = { workspace = true }
+datasynth-generators = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+rand_distr = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
