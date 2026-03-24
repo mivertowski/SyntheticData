@@ -125,7 +125,8 @@ pub fn run_monte_carlo(
         .iter()
         .map(|(id, &count)| (id.clone(), count as f64 / n))
         .collect();
-    bottleneck_procedures.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    bottleneck_procedures
+        .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     bottleneck_procedures.truncate(5);
 
     // Revision hotspots: top-5 by average revision count.
@@ -160,8 +161,7 @@ fn build_happy_path(event_log: &[datasynth_audit_fsm::event::AuditEvent]) -> Vec
     let mut path: Vec<String> = Vec::new();
 
     for event in event_log {
-        if event.to_state.as_deref() == Some("completed")
-            && seen.insert(event.procedure_id.clone())
+        if event.to_state.as_deref() == Some("completed") && seen.insert(event.procedure_id.clone())
         {
             path.push(event.procedure_id.clone());
         }
@@ -179,8 +179,7 @@ mod tests {
     use super::*;
 
     fn load_fsa() -> BlueprintWithPreconditions {
-        BlueprintWithPreconditions::load_builtin_fsa()
-            .expect("builtin FSA blueprint should load")
+        BlueprintWithPreconditions::load_builtin_fsa().expect("builtin FSA blueprint should load")
     }
 
     #[test]

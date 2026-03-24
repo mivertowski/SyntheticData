@@ -75,10 +75,7 @@ pub fn analyze_shortest_paths(blueprint: &AuditBlueprint) -> ShortestPathReport 
                 adj.entry(transition.from_state.as_str()).or_default();
                 adj.entry(transition.to_state.as_str()).or_default();
 
-                let cmd = transition
-                    .command
-                    .as_deref()
-                    .unwrap_or("");
+                let cmd = transition.command.as_deref().unwrap_or("");
                 adj.entry(transition.from_state.as_str())
                     .or_default()
                     .push((transition.to_state.as_str(), cmd));
@@ -150,10 +147,7 @@ pub fn analyze_shortest_paths(blueprint: &AuditBlueprint) -> ShortestPathReport 
         }
     }
 
-    let total_minimum_transitions = procedure_paths
-        .values()
-        .map(|p| p.transition_count)
-        .sum();
+    let total_minimum_transitions = procedure_paths.values().map(|p| p.transition_count).sum();
 
     ShortestPathReport {
         procedure_paths,
