@@ -621,6 +621,17 @@ pub fn write_all_output(
                 "ISA standard reference mappings",
             );
         }
+
+        // FSM event trail (when audit.fsm.enabled: true)
+        if let Some(ref event_trail) = result.audit.fsm_event_trail {
+            if !event_trail.is_empty() {
+                write_json_safe(
+                    event_trail,
+                    &audit_dir.join("fsm_event_trail.json"),
+                    "FSM audit event trail",
+                );
+            }
+        }
     }
 
     // ========================================================================

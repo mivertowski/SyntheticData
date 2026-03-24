@@ -1634,6 +1634,7 @@ dependencies = [
  "chrono",
  "crossbeam-channel",
  "csv",
+ "datasynth-audit-fsm",
  "datasynth-banking",
  "datasynth-config",
  "datasynth-core",
