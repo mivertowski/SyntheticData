@@ -28,7 +28,9 @@ pub enum AuditFsmError {
         reason: String,
     },
 
-    #[error("Precondition not met for '{procedure_id}': requires '{required}' but was '{actual_state}'")]
+    #[error(
+        "Precondition not met for '{procedure_id}': requires '{required}' but was '{actual_state}'"
+    )]
     PreconditionNotMet {
         procedure_id: String,
         required: String,

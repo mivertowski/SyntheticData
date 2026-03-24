@@ -20,8 +20,8 @@ use rand_chacha::ChaCha8Rng;
 // ---------------------------------------------------------------------------
 
 fn build_engine(seed: u64) -> AuditFsmEngine {
-    let bwp = BlueprintWithPreconditions::load_builtin_fsa()
-        .expect("builtin FSA blueprint must load");
+    let bwp =
+        BlueprintWithPreconditions::load_builtin_fsa().expect("builtin FSA blueprint must load");
     let overlay = default_overlay();
     let rng = ChaCha8Rng::seed_from_u64(seed);
     AuditFsmEngine::new(bwp, overlay, rng)
@@ -33,8 +33,8 @@ fn build_engine(seed: u64) -> AuditFsmEngine {
 
 #[test]
 fn test_fsa_full_engagement() {
-    let bwp = BlueprintWithPreconditions::load_builtin_fsa()
-        .expect("builtin FSA blueprint must load");
+    let bwp =
+        BlueprintWithPreconditions::load_builtin_fsa().expect("builtin FSA blueprint must load");
 
     // Blueprint must pass validation.
     bwp.validate().expect("FSA blueprint must be valid");
@@ -68,10 +68,7 @@ fn test_fsa_full_engagement() {
     }
 
     // (c) Events must be non-empty and ordered by timestamp.
-    assert!(
-        !result.event_log.is_empty(),
-        "event_log must be non-empty"
-    );
+    assert!(!result.event_log.is_empty(), "event_log must be non-empty");
     for window in result.event_log.windows(2) {
         assert!(
             window[0].timestamp <= window[1].timestamp,
@@ -91,8 +88,7 @@ fn test_fsa_full_engagement() {
     }
 
     // (e) JSON export round-trips correctly.
-    let json = export_events_to_json(&result.event_log)
-        .expect("JSON serialisation must succeed");
+    let json = export_events_to_json(&result.event_log).expect("JSON serialisation must succeed");
     let parsed: Vec<serde_json::Value> =
         serde_json::from_str(&json).expect("JSON deserialisation must succeed");
     assert_eq!(
@@ -148,11 +144,7 @@ fn test_fsa_determinism_across_runs() {
         .zip(result2.event_log.iter())
         .enumerate()
     {
-        assert_eq!(
-            e1.event_id, e2.event_id,
-            "event_id mismatch at index {}",
-            i
-        );
+        assert_eq!(e1.event_id, e2.event_id, "event_id mismatch at index {}", i);
         assert_eq!(
             e1.event_type, e2.event_type,
             "event_type mismatch at index {}",
@@ -163,11 +155,7 @@ fn test_fsa_determinism_across_runs() {
             "timestamp mismatch at index {}",
             i
         );
-        assert_eq!(
-            e1.command, e2.command,
-            "command mismatch at index {}",
-            i
-        );
+        assert_eq!(e1.command, e2.command, "command mismatch at index {}", i);
     }
 
     // Procedure final states must match.
@@ -196,8 +184,8 @@ transitions:
 
     let overlay = parse_overlay(overlay_yaml).expect("custom overlay YAML must parse");
 
-    let bwp = BlueprintWithPreconditions::load_builtin_fsa()
-        .expect("builtin FSA blueprint must load");
+    let bwp =
+        BlueprintWithPreconditions::load_builtin_fsa().expect("builtin FSA blueprint must load");
     let rng = ChaCha8Rng::seed_from_u64(7);
     let mut engine = AuditFsmEngine::new(bwp, overlay, rng);
 
@@ -210,10 +198,14 @@ transitions:
     // near-certain that at least one "in_progress" event was a revision loop.
     // We detect a revision by looking for a state_transition event where
     // from_state is "under_review" and to_state is "in_progress".
-    let revision_count = result.event_log.iter().filter(|e| {
-        e.from_state.as_deref() == Some("under_review")
-            && e.to_state.as_deref() == Some("in_progress")
-    }).count();
+    let revision_count = result
+        .event_log
+        .iter()
+        .filter(|e| {
+            e.from_state.as_deref() == Some("under_review")
+                && e.to_state.as_deref() == Some("in_progress")
+        })
+        .count();
 
     assert!(
         revision_count > 0,
@@ -245,8 +237,7 @@ fn test_fsa_export_to_temp_file() {
         .expect("export_events_to_file must succeed");
 
     // Read the file back and verify the JSON array length.
-    let contents =
-        std::fs::read_to_string(&tmp_path).expect("written file must be readable");
+    let contents = std::fs::read_to_string(&tmp_path).expect("written file must be readable");
     let parsed: Vec<serde_json::Value> =
         serde_json::from_str(&contents).expect("file contents must be valid JSON");
 

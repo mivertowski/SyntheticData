@@ -306,10 +306,19 @@ mod tests {
 
     #[test]
     fn test_anomaly_type_display() {
-        assert_eq!(AuditAnomalyType::SkippedApproval.to_string(), "skipped_approval");
+        assert_eq!(
+            AuditAnomalyType::SkippedApproval.to_string(),
+            "skipped_approval"
+        );
         assert_eq!(AuditAnomalyType::LatePosting.to_string(), "late_posting");
-        assert_eq!(AuditAnomalyType::MissingEvidence.to_string(), "missing_evidence");
-        assert_eq!(AuditAnomalyType::OutOfSequence.to_string(), "out_of_sequence");
+        assert_eq!(
+            AuditAnomalyType::MissingEvidence.to_string(),
+            "missing_evidence"
+        );
+        assert_eq!(
+            AuditAnomalyType::OutOfSequence.to_string(),
+            "out_of_sequence"
+        );
         assert_eq!(
             AuditAnomalyType::InsufficientDocumentation.to_string(),
             "insufficient_documentation"
