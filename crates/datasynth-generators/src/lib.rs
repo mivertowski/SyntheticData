@@ -44,6 +44,8 @@ pub mod governance_generator;
 pub mod organizational_profile_generator;
 // IT controls generator — access logs and change management (WI-4)
 pub mod it_controls_generator;
+// Management report generator (WI-7)
+pub mod management_report_generator;
 
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
@@ -146,6 +148,9 @@ pub use organizational_profile_generator::*;
 
 // IT controls generator (WI-4)
 pub use it_controls_generator::*;
+
+// Management report generator (WI-7)
+pub use management_report_generator::*;
 
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:

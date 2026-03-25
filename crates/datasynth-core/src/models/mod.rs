@@ -141,6 +141,9 @@ mod organizational_profile;
 // IT controls models — access logs and change management (WI-4)
 mod it_controls;
 
+// Management report models (WI-7)
+// Note: ManagementReport, KpiSummaryLine, BudgetVarianceLine live in financial_statements
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;

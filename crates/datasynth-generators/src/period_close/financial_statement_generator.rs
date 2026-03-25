@@ -235,6 +235,8 @@ impl FinancialStatementGenerator {
                 indent_level: *indent,
                 is_total: *is_total,
                 gl_accounts: Vec::new(),
+                prior_year_amount: None,
+                assumptions: None,
             });
         }
 
@@ -364,6 +366,8 @@ impl FinancialStatementGenerator {
                 indent_level: *indent,
                 is_total: *is_total,
                 gl_accounts: Vec::new(),
+                prior_year_amount: None,
+                assumptions: None,
             });
         }
 
@@ -475,6 +479,8 @@ impl FinancialStatementGenerator {
                 indent_level: 0,
                 is_total: *is_total,
                 gl_accounts: Vec::new(),
+                prior_year_amount: None,
+                assumptions: None,
             });
         }
 
