@@ -65,10 +65,7 @@ impl EngagementContext {
     /// Create a test context with anomaly references for finding linkage testing.
     pub fn test_with_anomalies() -> Self {
         let mut ctx = Self::test_default();
-        ctx.anomaly_refs = vec![
-            "ANOM-001".into(),
-            "ANOM-002".into(),
-        ];
+        ctx.anomaly_refs = vec!["ANOM-001".into(), "ANOM-002".into()];
         ctx
     }
 

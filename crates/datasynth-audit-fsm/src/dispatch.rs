@@ -25,12 +25,14 @@ use datasynth_generators::audit::{
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
     subsequent_event_generator::SubsequentEventGenerator,
-    AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceGenerator,
-    FindingGenerator, JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
+    AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceGenerator, FindingGenerator,
+    JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
 };
 
 use crate::artifact::ArtifactBag;
-use crate::content::{ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext};
+use crate::content::{
+    ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext,
+};
 use crate::context::EngagementContext;
 use crate::schema::BlueprintStep;
 
@@ -73,10 +75,7 @@ impl StepDispatcher {
 
     /// Create a dispatcher with a custom [`ContentGenerator`] for narrative
     /// enrichment of findings and workpapers.
-    pub fn new_with_content(
-        base_seed: u64,
-        content_gen: Box<dyn ContentGenerator>,
-    ) -> Self {
+    pub fn new_with_content(base_seed: u64, content_gen: Box<dyn ContentGenerator>) -> Self {
         Self {
             engagement_gen: AuditEngagementGenerator::new(base_seed + 7000),
             letter_gen: EngagementLetterGenerator::new(base_seed + 7100),
@@ -501,22 +500,20 @@ impl StepDispatcher {
         );
 
         // Enrich workpaper objective with content generator narrative.
-        let standards_refs: Vec<String> = step
-            .standards
-            .iter()
-            .map(|s| s.ref_id.clone())
-            .collect();
+        let standards_refs: Vec<String> = step.standards.iter().map(|s| s.ref_id.clone()).collect();
         let actor = step.actor.as_deref().unwrap_or("audit_team");
-        wp.objective = self.content_gen.generate_workpaper_narrative(&WorkpaperContext {
-            procedure_id: procedure_id.to_string(),
-            section: format!("{:?}", section),
-            actor: actor.to_string(),
-            standards_refs: if standards_refs.is_empty() {
-                vec!["ISA 230".to_string()]
-            } else {
-                standards_refs
-            },
-        });
+        wp.objective = self
+            .content_gen
+            .generate_workpaper_narrative(&WorkpaperContext {
+                procedure_id: procedure_id.to_string(),
+                section: format!("{:?}", section),
+                actor: actor.to_string(),
+                standards_refs: if standards_refs.is_empty() {
+                    vec!["ISA 230".to_string()]
+                } else {
+                    standards_refs
+                },
+            });
 
         // Also generate evidence for this workpaper.
         let evidence = self.evidence_gen.generate_evidence_for_workpaper(
@@ -649,22 +646,20 @@ impl StepDispatcher {
         );
 
         // Enrich workpaper objective with content generator narrative.
-        let standards_refs: Vec<String> = step
-            .standards
-            .iter()
-            .map(|s| s.ref_id.clone())
-            .collect();
+        let standards_refs: Vec<String> = step.standards.iter().map(|s| s.ref_id.clone()).collect();
         let actor = step.actor.as_deref().unwrap_or("audit_team");
-        wp.objective = self.content_gen.generate_workpaper_narrative(&WorkpaperContext {
-            procedure_id: procedure_id.to_string(),
-            section: format!("{:?}", section),
-            actor: actor.to_string(),
-            standards_refs: if standards_refs.is_empty() {
-                vec!["ISA 230".to_string()]
-            } else {
-                standards_refs
-            },
-        });
+        wp.objective = self
+            .content_gen
+            .generate_workpaper_narrative(&WorkpaperContext {
+                procedure_id: procedure_id.to_string(),
+                section: format!("{:?}", section),
+                actor: actor.to_string(),
+                standards_refs: if standards_refs.is_empty() {
+                    vec!["ISA 230".to_string()]
+                } else {
+                    standards_refs
+                },
+            });
 
         bag.workpapers.push(wp);
     }
@@ -736,10 +731,8 @@ impl StepDispatcher {
                 // Round-robin assign anomaly refs so each finding links to at least one.
                 let anomaly_ref = &ctx.anomaly_refs[i % ctx.anomaly_refs.len()];
                 if !finding.condition.is_empty() {
-                    finding.condition = format!(
-                        "{} [Linked anomaly: {}]",
-                        finding.condition, anomaly_ref
-                    );
+                    finding.condition =
+                        format!("{} [Linked anomaly: {}]", finding.condition, anomaly_ref);
                 }
             }
         }
@@ -749,33 +742,30 @@ impl StepDispatcher {
             for (i, finding) in findings.iter_mut().enumerate() {
                 let je_ref = &ctx.journal_entry_ids[i % ctx.journal_entry_ids.len()];
                 if !finding.effect.is_empty() {
-                    finding.effect =
-                        format!("{} [Supporting JE: {}]", finding.effect, je_ref);
+                    finding.effect = format!("{} [Supporting JE: {}]", finding.effect, je_ref);
                 }
             }
         }
 
         // Standards refs from the step (for narrative context).
-        let standards_refs: Vec<String> = step
-            .standards
-            .iter()
-            .map(|s| s.ref_id.clone())
-            .collect();
+        let standards_refs: Vec<String> = step.standards.iter().map(|s| s.ref_id.clone()).collect();
 
         // Use content generator to enrich finding narratives.
         for finding in &mut findings {
-            let narrative = self.content_gen.generate_finding_narrative(&FindingContext {
-                procedure_id: procedure_id.to_string(),
-                step_id: step.id.clone(),
-                standards_refs: if standards_refs.is_empty() {
-                    vec![finding.finding_type.isa_reference().to_string()]
-                } else {
-                    standards_refs.clone()
-                },
-                finding_type: format!("{:?}", finding.finding_type),
-                condition: finding.condition.clone(),
-                criteria: finding.criteria.clone(),
-            });
+            let narrative = self
+                .content_gen
+                .generate_finding_narrative(&FindingContext {
+                    procedure_id: procedure_id.to_string(),
+                    step_id: step.id.clone(),
+                    standards_refs: if standards_refs.is_empty() {
+                        vec![finding.finding_type.isa_reference().to_string()]
+                    } else {
+                        standards_refs.clone()
+                    },
+                    finding_type: format!("{:?}", finding.finding_type),
+                    condition: finding.condition.clone(),
+                    criteria: finding.criteria.clone(),
+                });
             finding.condition = narrative;
         }
 
@@ -1465,7 +1455,10 @@ mod tests {
             &mut bag,
         );
 
-        assert!(!bag.findings.is_empty(), "should produce at least one finding");
+        assert!(
+            !bag.findings.is_empty(),
+            "should produce at least one finding"
+        );
 
         // The TemplateContentGenerator produces narratives containing "During the"
         // which is its distinctive format.
@@ -1616,7 +1609,10 @@ mod tests {
             &mut bag,
         );
 
-        assert!(!bag.workpapers.is_empty(), "should produce at least one workpaper");
+        assert!(
+            !bag.workpapers.is_empty(),
+            "should produce at least one workpaper"
+        );
 
         // The TemplateContentGenerator produces objectives containing "Workpaper for".
         let first_wp = &bag.workpapers[0];
@@ -1629,9 +1625,7 @@ mod tests {
 
     #[test]
     fn test_new_with_content_uses_custom_generator() {
-        use crate::content::{
-            ContentGenerator, FindingContext, ResponseContext, WorkpaperContext,
-        };
+        use crate::content::{ContentGenerator, FindingContext, ResponseContext, WorkpaperContext};
 
         /// A test content generator that prefixes all output with "CUSTOM:".
         struct CustomGen;

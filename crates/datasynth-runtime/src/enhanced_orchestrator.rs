@@ -11235,10 +11235,8 @@ impl EnhancedOrchestrator {
         let mut account_balances = std::collections::HashMap::<String, f64>::new();
         for entry in entries {
             for line in &entry.lines {
-                let debit_f64: f64 =
-                    line.debit_amount.to_string().parse().unwrap_or(0.0);
-                let credit_f64: f64 =
-                    line.credit_amount.to_string().parse().unwrap_or(0.0);
+                let debit_f64: f64 = line.debit_amount.to_string().parse().unwrap_or(0.0);
+                let credit_f64: f64 = line.credit_amount.to_string().parse().unwrap_or(0.0);
                 *account_balances
                     .entry(line.account_code.clone())
                     .or_insert(0.0) += debit_f64 - credit_f64;
