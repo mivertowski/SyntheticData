@@ -1,0 +1,3138 @@
+[
+  {
+    "step_id": "accept_step_1",
+    "procedure_id": "accept_engagement",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Client acceptance/continuance documentation",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "industry",
+          "ownership_structure",
+          "prior_auditor",
+          "risk_factors"
+        ],
+        "source_system": "Firm client database",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "financial_statements",
+        "name": "Prior year financial statements",
+        "scope": "",
+        "fields": [
+          "total_assets",
+          "revenue",
+          "net_income",
+          "total_equity"
+        ],
+        "source_system": "",
+        "format": "PDF/annual report",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "accept_step_2",
+    "procedure_id": "accept_engagement",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Client acceptance/continuance documentation",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "industry",
+          "ownership_structure",
+          "prior_auditor",
+          "risk_factors"
+        ],
+        "source_system": "Firm client database",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "financial_statements",
+        "name": "Prior year financial statements",
+        "scope": "",
+        "fields": [
+          "total_assets",
+          "revenue",
+          "net_income",
+          "total_equity"
+        ],
+        "source_system": "",
+        "format": "PDF/annual report",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "mat_step_1",
+    "procedure_id": "planning_materiality",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Draft/prior year financial statements",
+        "scope": "Full year, consolidated",
+        "fields": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "total_equity",
+          "gross_profit"
+        ],
+        "source_system": "",
+        "format": "Trial balance export",
+        "frequency": "",
+        "assertion": "All assertions"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry benchmarks for materiality",
+        "scope": "",
+        "fields": [
+          "industry_median_revenue",
+          "peer_group_metrics"
+        ],
+        "source_system": "Industry databases/publications",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Materiality benchmark analysis",
+        "description": "Compare materiality percentages across benchmarks (revenue, assets, equity, profit)",
+        "input_data": [
+          "Draft/prior year financial statements"
+        ],
+        "data_features": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "equity"
+        ],
+        "graph_features": [],
+        "expected_output": "Materiality amount and benchmark selected with rationale",
+        "threshold": "",
+        "tool_hint": "pandas: calculate % of each benchmark, select most appropriate"
+      }
+    ]
+  },
+  {
+    "step_id": "mat_step_2",
+    "procedure_id": "planning_materiality",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Draft/prior year financial statements",
+        "scope": "Full year, consolidated",
+        "fields": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "total_equity",
+          "gross_profit"
+        ],
+        "source_system": "",
+        "format": "Trial balance export",
+        "frequency": "",
+        "assertion": "All assertions"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry benchmarks for materiality",
+        "scope": "",
+        "fields": [
+          "industry_median_revenue",
+          "peer_group_metrics"
+        ],
+        "source_system": "Industry databases/publications",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Materiality benchmark analysis",
+        "description": "Compare materiality percentages across benchmarks (revenue, assets, equity, profit)",
+        "input_data": [
+          "Draft/prior year financial statements"
+        ],
+        "data_features": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "equity"
+        ],
+        "graph_features": [],
+        "expected_output": "Materiality amount and benchmark selected with rationale",
+        "threshold": "",
+        "tool_hint": "pandas: calculate % of each benchmark, select most appropriate"
+      }
+    ]
+  },
+  {
+    "step_id": "mat_step_3",
+    "procedure_id": "planning_materiality",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Draft/prior year financial statements",
+        "scope": "Full year, consolidated",
+        "fields": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "total_equity",
+          "gross_profit"
+        ],
+        "source_system": "",
+        "format": "Trial balance export",
+        "frequency": "",
+        "assertion": "All assertions"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry benchmarks for materiality",
+        "scope": "",
+        "fields": [
+          "industry_median_revenue",
+          "peer_group_metrics"
+        ],
+        "source_system": "Industry databases/publications",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Materiality benchmark analysis",
+        "description": "Compare materiality percentages across benchmarks (revenue, assets, equity, profit)",
+        "input_data": [
+          "Draft/prior year financial statements"
+        ],
+        "data_features": [
+          "revenue",
+          "total_assets",
+          "net_income",
+          "equity"
+        ],
+        "graph_features": [],
+        "expected_output": "Materiality amount and benchmark selected with rationale",
+        "threshold": "",
+        "tool_hint": "pandas: calculate % of each benchmark, select most appropriate"
+      }
+    ]
+  },
+  {
+    "step_id": "risk_step_1",
+    "procedure_id": "risk_identification",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Comparative financial statements (2+ years)",
+        "scope": "Full year, all entities, 2-3 year history",
+        "fields": [
+          "all_account_balances",
+          "period",
+          "entity"
+        ],
+        "source_system": "",
+        "format": "Trial balance export with prior periods",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "organizational",
+        "name": "Entity structure and environment information",
+        "scope": "",
+        "fields": [
+          "org_chart",
+          "business_segments",
+          "geographic_locations",
+          "key_personnel",
+          "regulatory_environment",
+          "it_systems"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Management reports and KPIs",
+        "scope": "",
+        "fields": [
+          "monthly_reports",
+          "budget_vs_actual",
+          "kpi_dashboard"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "Monthly/quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "board_minutes",
+        "name": "Board and audit committee minutes",
+        "scope": "Current and prior year",
+        "fields": [
+          "meeting_date",
+          "attendees",
+          "key_decisions",
+          "risk_discussions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Multi-year financial trend analysis",
+        "description": "Analyze trends in key financial metrics to identify unusual patterns",
+        "input_data": [
+          "Comparative financial statements (2+ years)"
+        ],
+        "data_features": [
+          "revenue",
+          "gross_margin",
+          "operating_expenses",
+          "working_capital"
+        ],
+        "graph_features": [
+          "time_series_trend",
+          "growth_rate_changes"
+        ],
+        "expected_output": "Identified areas with significant changes requiring audit attention",
+        "threshold": "",
+        "tool_hint": "pandas time series + matplotlib line charts"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Key ratio analysis for risk indicators",
+        "description": "Calculate and compare financial ratios to identify risk areas",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "debt_equity",
+          "gross_margin_pct",
+          "days_receivable",
+          "days_payable",
+          "inventory_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratios outside expected ranges flagged as risk indicators",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison to prior year + industry"
+      }
+    ]
+  },
+  {
+    "step_id": "risk_step_2",
+    "procedure_id": "risk_identification",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Comparative financial statements (2+ years)",
+        "scope": "Full year, all entities, 2-3 year history",
+        "fields": [
+          "all_account_balances",
+          "period",
+          "entity"
+        ],
+        "source_system": "",
+        "format": "Trial balance export with prior periods",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "organizational",
+        "name": "Entity structure and environment information",
+        "scope": "",
+        "fields": [
+          "org_chart",
+          "business_segments",
+          "geographic_locations",
+          "key_personnel",
+          "regulatory_environment",
+          "it_systems"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Management reports and KPIs",
+        "scope": "",
+        "fields": [
+          "monthly_reports",
+          "budget_vs_actual",
+          "kpi_dashboard"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "Monthly/quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "board_minutes",
+        "name": "Board and audit committee minutes",
+        "scope": "Current and prior year",
+        "fields": [
+          "meeting_date",
+          "attendees",
+          "key_decisions",
+          "risk_discussions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Multi-year financial trend analysis",
+        "description": "Analyze trends in key financial metrics to identify unusual patterns",
+        "input_data": [
+          "Comparative financial statements (2+ years)"
+        ],
+        "data_features": [
+          "revenue",
+          "gross_margin",
+          "operating_expenses",
+          "working_capital"
+        ],
+        "graph_features": [
+          "time_series_trend",
+          "growth_rate_changes"
+        ],
+        "expected_output": "Identified areas with significant changes requiring audit attention",
+        "threshold": "",
+        "tool_hint": "pandas time series + matplotlib line charts"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Key ratio analysis for risk indicators",
+        "description": "Calculate and compare financial ratios to identify risk areas",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "debt_equity",
+          "gross_margin_pct",
+          "days_receivable",
+          "days_payable",
+          "inventory_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratios outside expected ranges flagged as risk indicators",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison to prior year + industry"
+      }
+    ]
+  },
+  {
+    "step_id": "risk_step_3",
+    "procedure_id": "risk_identification",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Comparative financial statements (2+ years)",
+        "scope": "Full year, all entities, 2-3 year history",
+        "fields": [
+          "all_account_balances",
+          "period",
+          "entity"
+        ],
+        "source_system": "",
+        "format": "Trial balance export with prior periods",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "organizational",
+        "name": "Entity structure and environment information",
+        "scope": "",
+        "fields": [
+          "org_chart",
+          "business_segments",
+          "geographic_locations",
+          "key_personnel",
+          "regulatory_environment",
+          "it_systems"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Management reports and KPIs",
+        "scope": "",
+        "fields": [
+          "monthly_reports",
+          "budget_vs_actual",
+          "kpi_dashboard"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "Monthly/quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "board_minutes",
+        "name": "Board and audit committee minutes",
+        "scope": "Current and prior year",
+        "fields": [
+          "meeting_date",
+          "attendees",
+          "key_decisions",
+          "risk_discussions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Multi-year financial trend analysis",
+        "description": "Analyze trends in key financial metrics to identify unusual patterns",
+        "input_data": [
+          "Comparative financial statements (2+ years)"
+        ],
+        "data_features": [
+          "revenue",
+          "gross_margin",
+          "operating_expenses",
+          "working_capital"
+        ],
+        "graph_features": [
+          "time_series_trend",
+          "growth_rate_changes"
+        ],
+        "expected_output": "Identified areas with significant changes requiring audit attention",
+        "threshold": "",
+        "tool_hint": "pandas time series + matplotlib line charts"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Key ratio analysis for risk indicators",
+        "description": "Calculate and compare financial ratios to identify risk areas",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "debt_equity",
+          "gross_margin_pct",
+          "days_receivable",
+          "days_payable",
+          "inventory_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratios outside expected ranges flagged as risk indicators",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison to prior year + industry"
+      }
+    ]
+  },
+  {
+    "step_id": "risk_step_4",
+    "procedure_id": "risk_identification",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Comparative financial statements (2+ years)",
+        "scope": "Full year, all entities, 2-3 year history",
+        "fields": [
+          "all_account_balances",
+          "period",
+          "entity"
+        ],
+        "source_system": "",
+        "format": "Trial balance export with prior periods",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "organizational",
+        "name": "Entity structure and environment information",
+        "scope": "",
+        "fields": [
+          "org_chart",
+          "business_segments",
+          "geographic_locations",
+          "key_personnel",
+          "regulatory_environment",
+          "it_systems"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Management reports and KPIs",
+        "scope": "",
+        "fields": [
+          "monthly_reports",
+          "budget_vs_actual",
+          "kpi_dashboard"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "Monthly/quarterly",
+        "assertion": ""
+      },
+      {
+        "data_type": "board_minutes",
+        "name": "Board and audit committee minutes",
+        "scope": "Current and prior year",
+        "fields": [
+          "meeting_date",
+          "attendees",
+          "key_decisions",
+          "risk_discussions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Multi-year financial trend analysis",
+        "description": "Analyze trends in key financial metrics to identify unusual patterns",
+        "input_data": [
+          "Comparative financial statements (2+ years)"
+        ],
+        "data_features": [
+          "revenue",
+          "gross_margin",
+          "operating_expenses",
+          "working_capital"
+        ],
+        "graph_features": [
+          "time_series_trend",
+          "growth_rate_changes"
+        ],
+        "expected_output": "Identified areas with significant changes requiring audit attention",
+        "threshold": "",
+        "tool_hint": "pandas time series + matplotlib line charts"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Key ratio analysis for risk indicators",
+        "description": "Calculate and compare financial ratios to identify risk areas",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "debt_equity",
+          "gross_margin_pct",
+          "days_receivable",
+          "days_payable",
+          "inventory_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratios outside expected ranges flagged as risk indicators",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison to prior year + industry"
+      }
+    ]
+  },
+  {
+    "step_id": "ctrl_step_1",
+    "procedure_id": "test_of_controls",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "system_reports",
+        "name": "Control execution evidence",
+        "scope": "Selected controls for testing period",
+        "fields": [
+          "control_id",
+          "execution_date",
+          "performer",
+          "evidence_type",
+          "result"
+        ],
+        "source_system": "GRC system or manual evidence",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "system_reports",
+        "name": "IT general controls evidence",
+        "scope": "",
+        "fields": [
+          "access_logs",
+          "change_management_logs",
+          "backup_logs",
+          "segregation_of_duties_matrix"
+        ],
+        "source_system": "IT systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Control execution completeness test",
+        "description": "Verify all expected control executions occurred during the period",
+        "input_data": [
+          "Control execution evidence"
+        ],
+        "data_features": [
+          "control_id",
+          "execution_date",
+          "expected_frequency"
+        ],
+        "graph_features": [],
+        "expected_output": "Missing control executions identified",
+        "threshold": "",
+        "tool_hint": "pandas: date range generation vs actual executions, gap detection"
+      },
+      {
+        "procedure_type": "sampling",
+        "name": "Control testing sample selection",
+        "description": "Select representative sample of control executions for detailed testing",
+        "input_data": [],
+        "data_features": [
+          "population_size",
+          "expected_deviation_rate",
+          "confidence_level"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample selected per ISA 530 requirements",
+        "threshold": "",
+        "tool_hint": "scipy.stats: sample size calculation; random.sample for selection"
+      }
+    ]
+  },
+  {
+    "step_id": "ctrl_step_2",
+    "procedure_id": "test_of_controls",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "system_reports",
+        "name": "Control execution evidence",
+        "scope": "Selected controls for testing period",
+        "fields": [
+          "control_id",
+          "execution_date",
+          "performer",
+          "evidence_type",
+          "result"
+        ],
+        "source_system": "GRC system or manual evidence",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "system_reports",
+        "name": "IT general controls evidence",
+        "scope": "",
+        "fields": [
+          "access_logs",
+          "change_management_logs",
+          "backup_logs",
+          "segregation_of_duties_matrix"
+        ],
+        "source_system": "IT systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Control execution completeness test",
+        "description": "Verify all expected control executions occurred during the period",
+        "input_data": [
+          "Control execution evidence"
+        ],
+        "data_features": [
+          "control_id",
+          "execution_date",
+          "expected_frequency"
+        ],
+        "graph_features": [],
+        "expected_output": "Missing control executions identified",
+        "threshold": "",
+        "tool_hint": "pandas: date range generation vs actual executions, gap detection"
+      },
+      {
+        "procedure_type": "sampling",
+        "name": "Control testing sample selection",
+        "description": "Select representative sample of control executions for detailed testing",
+        "input_data": [],
+        "data_features": [
+          "population_size",
+          "expected_deviation_rate",
+          "confidence_level"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample selected per ISA 530 requirements",
+        "threshold": "",
+        "tool_hint": "scipy.stats: sample size calculation; random.sample for selection"
+      }
+    ]
+  },
+  {
+    "step_id": "ctrl_step_3",
+    "procedure_id": "test_of_controls",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "system_reports",
+        "name": "Control execution evidence",
+        "scope": "Selected controls for testing period",
+        "fields": [
+          "control_id",
+          "execution_date",
+          "performer",
+          "evidence_type",
+          "result"
+        ],
+        "source_system": "GRC system or manual evidence",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "system_reports",
+        "name": "IT general controls evidence",
+        "scope": "",
+        "fields": [
+          "access_logs",
+          "change_management_logs",
+          "backup_logs",
+          "segregation_of_duties_matrix"
+        ],
+        "source_system": "IT systems",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "completeness_check",
+        "name": "Control execution completeness test",
+        "description": "Verify all expected control executions occurred during the period",
+        "input_data": [
+          "Control execution evidence"
+        ],
+        "data_features": [
+          "control_id",
+          "execution_date",
+          "expected_frequency"
+        ],
+        "graph_features": [],
+        "expected_output": "Missing control executions identified",
+        "threshold": "",
+        "tool_hint": "pandas: date range generation vs actual executions, gap detection"
+      },
+      {
+        "procedure_type": "sampling",
+        "name": "Control testing sample selection",
+        "description": "Select representative sample of control executions for detailed testing",
+        "input_data": [],
+        "data_features": [
+          "population_size",
+          "expected_deviation_rate",
+          "confidence_level"
+        ],
+        "graph_features": [],
+        "expected_output": "Sample selected per ISA 530 requirements",
+        "threshold": "",
+        "tool_hint": "scipy.stats: sample size calculation; random.sample for selection"
+      }
+    ]
+  },
+  {
+    "step_id": "sub_step_1",
+    "procedure_id": "substantive_testing",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "general_ledger",
+        "name": "General ledger detail for substantive testing",
+        "scope": "Full year, all accounts in scope",
+        "fields": [
+          "account",
+          "date",
+          "amount",
+          "description",
+          "entity",
+          "counterparty",
+          "document_ref",
+          "posting_user"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract",
+        "frequency": "",
+        "assertion": "Existence, completeness, accuracy, valuation, classification"
+      },
+      {
+        "data_type": "sub_ledger",
+        "name": "Accounts receivable sub-ledger",
+        "scope": "",
+        "fields": [
+          "customer",
+          "invoice_date",
+          "due_date",
+          "amount",
+          "payment_date",
+          "aging_bucket",
+          "provision_amount"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, valuation (provisioning)"
+      },
+      {
+        "data_type": "sub_ledger",
+        "name": "Accounts payable sub-ledger",
+        "scope": "",
+        "fields": [
+          "vendor",
+          "invoice_date",
+          "due_date",
+          "amount",
+          "payment_date",
+          "po_number",
+          "grn_number"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Completeness, cutoff"
+      },
+      {
+        "data_type": "bank_statements",
+        "name": "Bank statements and reconciliations",
+        "scope": "",
+        "fields": [
+          "bank_name",
+          "account_number",
+          "date",
+          "amount",
+          "description",
+          "gl_balance",
+          "bank_balance",
+          "reconciling_items"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, completeness"
+      },
+      {
+        "data_type": "confirmations",
+        "name": "External confirmation responses",
+        "scope": "",
+        "fields": [
+          "entity",
+          "confirmation_type",
+          "sent_date",
+          "response_date",
+          "confirmed_amount",
+          "book_amount",
+          "difference"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, accuracy"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "three_way_match",
+        "name": "Three-way match (PO/GRN/Invoice)",
+        "description": "Match purchase orders to goods receipt notes and vendor invoices to identify unmatched items",
+        "input_data": [
+          "Accounts payable sub-ledger"
+        ],
+        "data_features": [
+          "po_number",
+          "grn_number",
+          "invoice_number",
+          "amount",
+          "vendor"
+        ],
+        "graph_features": [],
+        "expected_output": "Unmatched items flagged for investigation",
+        "threshold": "",
+        "tool_hint": "pandas: multi-key merge/join, identify unmatched records"
+      },
+      {
+        "procedure_type": "stratification",
+        "name": "Receivables aging stratification",
+        "description": "Stratify receivables by aging bucket and analyze provisioning adequacy",
+        "input_data": [
+          "Accounts receivable sub-ledger"
+        ],
+        "data_features": [
+          "amount",
+          "aging_bucket",
+          "customer",
+          "provision_amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Provision adequacy by aging bucket, under/over-provisioned amounts",
+        "threshold": "",
+        "tool_hint": "pandas: groupby aging bucket, calculate provision rates vs historical loss rates"
+      },
+      {
+        "procedure_type": "sampling",
+        "name": "Substantive test sample selection",
+        "description": "Select samples for tests of details using monetary unit sampling (MUS)",
+        "input_data": [],
+        "data_features": [
+          "population_amount",
+          "materiality",
+          "expected_misstatement"
+        ],
+        "graph_features": [],
+        "expected_output": "MUS sample with items selected proportional to monetary value",
+        "threshold": "",
+        "tool_hint": "custom MUS implementation: cumulative amounts, systematic selection"
+      },
+      {
+        "procedure_type": "cutoff_test",
+        "name": "Revenue/purchase cutoff testing",
+        "description": "Test transactions around period-end for proper cutoff",
+        "input_data": [
+          "General ledger detail for substantive testing"
+        ],
+        "data_features": [
+          "transaction_date",
+          "posting_date",
+          "delivery_date",
+          "amount",
+          "account"
+        ],
+        "graph_features": [],
+        "expected_output": "Transactions with cutoff issues (recorded in wrong period)",
+        "threshold": "Transactions within +/- 5 days of period end",
+        "tool_hint": "pandas: filter transactions near period boundaries, compare dates"
+      }
+    ]
+  },
+  {
+    "step_id": "sub_step_2",
+    "procedure_id": "substantive_testing",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "general_ledger",
+        "name": "General ledger detail for substantive testing",
+        "scope": "Full year, all accounts in scope",
+        "fields": [
+          "account",
+          "date",
+          "amount",
+          "description",
+          "entity",
+          "counterparty",
+          "document_ref",
+          "posting_user"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract",
+        "frequency": "",
+        "assertion": "Existence, completeness, accuracy, valuation, classification"
+      },
+      {
+        "data_type": "sub_ledger",
+        "name": "Accounts receivable sub-ledger",
+        "scope": "",
+        "fields": [
+          "customer",
+          "invoice_date",
+          "due_date",
+          "amount",
+          "payment_date",
+          "aging_bucket",
+          "provision_amount"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, valuation (provisioning)"
+      },
+      {
+        "data_type": "sub_ledger",
+        "name": "Accounts payable sub-ledger",
+        "scope": "",
+        "fields": [
+          "vendor",
+          "invoice_date",
+          "due_date",
+          "amount",
+          "payment_date",
+          "po_number",
+          "grn_number"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Completeness, cutoff"
+      },
+      {
+        "data_type": "bank_statements",
+        "name": "Bank statements and reconciliations",
+        "scope": "",
+        "fields": [
+          "bank_name",
+          "account_number",
+          "date",
+          "amount",
+          "description",
+          "gl_balance",
+          "bank_balance",
+          "reconciling_items"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, completeness"
+      },
+      {
+        "data_type": "confirmations",
+        "name": "External confirmation responses",
+        "scope": "",
+        "fields": [
+          "entity",
+          "confirmation_type",
+          "sent_date",
+          "response_date",
+          "confirmed_amount",
+          "book_amount",
+          "difference"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, accuracy"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "three_way_match",
+        "name": "Three-way match (PO/GRN/Invoice)",
+        "description": "Match purchase orders to goods receipt notes and vendor invoices to identify unmatched items",
+        "input_data": [
+          "Accounts payable sub-ledger"
+        ],
+        "data_features": [
+          "po_number",
+          "grn_number",
+          "invoice_number",
+          "amount",
+          "vendor"
+        ],
+        "graph_features": [],
+        "expected_output": "Unmatched items flagged for investigation",
+        "threshold": "",
+        "tool_hint": "pandas: multi-key merge/join, identify unmatched records"
+      },
+      {
+        "procedure_type": "stratification",
+        "name": "Receivables aging stratification",
+        "description": "Stratify receivables by aging bucket and analyze provisioning adequacy",
+        "input_data": [
+          "Accounts receivable sub-ledger"
+        ],
+        "data_features": [
+          "amount",
+          "aging_bucket",
+          "customer",
+          "provision_amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Provision adequacy by aging bucket, under/over-provisioned amounts",
+        "threshold": "",
+        "tool_hint": "pandas: groupby aging bucket, calculate provision rates vs historical loss rates"
+      },
+      {
+        "procedure_type": "sampling",
+        "name": "Substantive test sample selection",
+        "description": "Select samples for tests of details using monetary unit sampling (MUS)",
+        "input_data": [],
+        "data_features": [
+          "population_amount",
+          "materiality",
+          "expected_misstatement"
+        ],
+        "graph_features": [],
+        "expected_output": "MUS sample with items selected proportional to monetary value",
+        "threshold": "",
+        "tool_hint": "custom MUS implementation: cumulative amounts, systematic selection"
+      },
+      {
+        "procedure_type": "cutoff_test",
+        "name": "Revenue/purchase cutoff testing",
+        "description": "Test transactions around period-end for proper cutoff",
+        "input_data": [
+          "General ledger detail for substantive testing"
+        ],
+        "data_features": [
+          "transaction_date",
+          "posting_date",
+          "delivery_date",
+          "amount",
+          "account"
+        ],
+        "graph_features": [],
+        "expected_output": "Transactions with cutoff issues (recorded in wrong period)",
+        "threshold": "Transactions within +/- 5 days of period end",
+        "tool_hint": "pandas: filter transactions near period boundaries, compare dates"
+      }
+    ]
+  },
+  {
+    "step_id": "anl_step_1",
+    "procedure_id": "analytical_procedures",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Monthly/quarterly financial data",
+        "scope": "Full year by month, with prior year comparatives",
+        "fields": [
+          "account",
+          "period",
+          "amount",
+          "budget_amount",
+          "prior_year_amount"
+        ],
+        "source_system": "",
+        "format": "Monthly trial balances",
+        "frequency": "",
+        "assertion": "All assertions \u2014 analytical evidence"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry and economic data for expectations",
+        "scope": "",
+        "fields": [
+          "industry_growth_rate",
+          "market_indices",
+          "commodity_prices",
+          "interest_rates",
+          "inflation_rate"
+        ],
+        "source_system": "External data providers",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Non-financial data for corroboration",
+        "scope": "",
+        "fields": [
+          "headcount",
+          "production_volumes",
+          "units_sold",
+          "square_footage",
+          "customer_count"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "expectation_model",
+        "name": "Revenue expectation model",
+        "description": "Build independent expectation of revenue using non-financial drivers (units, prices, customers) and compare to recorded revenue",
+        "input_data": [
+          "Monthly/quarterly financial data",
+          "Non-financial data for corroboration"
+        ],
+        "data_features": [
+          "revenue",
+          "units_sold",
+          "price_per_unit",
+          "customer_count"
+        ],
+        "graph_features": [
+          "revenue_vs_driver_correlation",
+          "monthly_pattern"
+        ],
+        "expected_output": "Expected revenue vs actual, variance explained",
+        "threshold": "Investigate variances > performance materiality",
+        "tool_hint": "sklearn: linear regression; pandas: monthly comparison plots"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Expense trend analysis by account",
+        "description": "Analyze monthly expense patterns, compare to prior year and budget",
+        "input_data": [
+          "Monthly/quarterly financial data"
+        ],
+        "data_features": [
+          "account",
+          "period",
+          "amount",
+          "budget_amount",
+          "prior_year_amount"
+        ],
+        "graph_features": [
+          "time_series_by_account",
+          "yoy_growth_heatmap"
+        ],
+        "expected_output": "Accounts with unusual trends flagged for investigation",
+        "threshold": "",
+        "tool_hint": "pandas: pivot_table by account/month, seaborn heatmap"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Final analytical review ratios",
+        "description": "Calculate key ratios at year-end and compare to expectations, prior year, industry",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "quick_ratio",
+          "debt_to_equity",
+          "return_on_assets",
+          "gross_margin",
+          "operating_margin",
+          "receivables_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratio comparison table with explanations for significant changes",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison matrix"
+      },
+      {
+        "procedure_type": "regression",
+        "name": "Payroll analytical (headcount \u00d7 avg salary)",
+        "description": "Build regression model: payroll = f(headcount, avg salary, months)",
+        "input_data": [
+          "Monthly/quarterly financial data",
+          "Non-financial data for corroboration"
+        ],
+        "data_features": [
+          "payroll_expense",
+          "headcount",
+          "avg_salary",
+          "period"
+        ],
+        "graph_features": [],
+        "expected_output": "Predicted payroll vs actual, R\u00b2 and residual analysis",
+        "threshold": "",
+        "tool_hint": "sklearn.linear_model: LinearRegression, plot residuals"
+      }
+    ]
+  },
+  {
+    "step_id": "anl_step_2",
+    "procedure_id": "analytical_procedures",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Monthly/quarterly financial data",
+        "scope": "Full year by month, with prior year comparatives",
+        "fields": [
+          "account",
+          "period",
+          "amount",
+          "budget_amount",
+          "prior_year_amount"
+        ],
+        "source_system": "",
+        "format": "Monthly trial balances",
+        "frequency": "",
+        "assertion": "All assertions \u2014 analytical evidence"
+      },
+      {
+        "data_type": "industry_data",
+        "name": "Industry and economic data for expectations",
+        "scope": "",
+        "fields": [
+          "industry_growth_rate",
+          "market_indices",
+          "commodity_prices",
+          "interest_rates",
+          "inflation_rate"
+        ],
+        "source_system": "External data providers",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Non-financial data for corroboration",
+        "scope": "",
+        "fields": [
+          "headcount",
+          "production_volumes",
+          "units_sold",
+          "square_footage",
+          "customer_count"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "expectation_model",
+        "name": "Revenue expectation model",
+        "description": "Build independent expectation of revenue using non-financial drivers (units, prices, customers) and compare to recorded revenue",
+        "input_data": [
+          "Monthly/quarterly financial data",
+          "Non-financial data for corroboration"
+        ],
+        "data_features": [
+          "revenue",
+          "units_sold",
+          "price_per_unit",
+          "customer_count"
+        ],
+        "graph_features": [
+          "revenue_vs_driver_correlation",
+          "monthly_pattern"
+        ],
+        "expected_output": "Expected revenue vs actual, variance explained",
+        "threshold": "Investigate variances > performance materiality",
+        "tool_hint": "sklearn: linear regression; pandas: monthly comparison plots"
+      },
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Expense trend analysis by account",
+        "description": "Analyze monthly expense patterns, compare to prior year and budget",
+        "input_data": [
+          "Monthly/quarterly financial data"
+        ],
+        "data_features": [
+          "account",
+          "period",
+          "amount",
+          "budget_amount",
+          "prior_year_amount"
+        ],
+        "graph_features": [
+          "time_series_by_account",
+          "yoy_growth_heatmap"
+        ],
+        "expected_output": "Accounts with unusual trends flagged for investigation",
+        "threshold": "",
+        "tool_hint": "pandas: pivot_table by account/month, seaborn heatmap"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Final analytical review ratios",
+        "description": "Calculate key ratios at year-end and compare to expectations, prior year, industry",
+        "input_data": [],
+        "data_features": [
+          "current_ratio",
+          "quick_ratio",
+          "debt_to_equity",
+          "return_on_assets",
+          "gross_margin",
+          "operating_margin",
+          "receivables_turnover"
+        ],
+        "graph_features": [],
+        "expected_output": "Ratio comparison table with explanations for significant changes",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, comparison matrix"
+      },
+      {
+        "procedure_type": "regression",
+        "name": "Payroll analytical (headcount \u00d7 avg salary)",
+        "description": "Build regression model: payroll = f(headcount, avg salary, months)",
+        "input_data": [
+          "Monthly/quarterly financial data",
+          "Non-financial data for corroboration"
+        ],
+        "data_features": [
+          "payroll_expense",
+          "headcount",
+          "avg_salary",
+          "period"
+        ],
+        "graph_features": [],
+        "expected_output": "Predicted payroll vs actual, R\u00b2 and residual analysis",
+        "threshold": "",
+        "tool_hint": "sklearn.linear_model: LinearRegression, plot residuals"
+      }
+    ]
+  },
+  {
+    "step_id": "gc_step_1",
+    "procedure_id": "going_concern",
+    "phase": "completion",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Cash flow forecasts/projections",
+        "scope": "At least 12 months from balance sheet date",
+        "fields": [
+          "period",
+          "operating_cf",
+          "investing_cf",
+          "financing_cf",
+          "opening_cash",
+          "closing_cash",
+          "assumptions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "contracts",
+        "name": "Loan agreements and covenants",
+        "scope": "",
+        "fields": [
+          "lender",
+          "facility_amount",
+          "maturity_date",
+          "covenant_type",
+          "covenant_threshold",
+          "actual_metric",
+          "compliance_status"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Cash flow trend and runway analysis",
+        "description": "Analyze historical and projected cash flows to assess going concern",
+        "input_data": [
+          "Cash flow forecasts/projections"
+        ],
+        "data_features": [
+          "monthly_cash_flow",
+          "cash_balance",
+          "burn_rate"
+        ],
+        "graph_features": [
+          "cash_runway_projection",
+          "scenario_analysis"
+        ],
+        "expected_output": "Months of runway, break-even point, stress test results",
+        "threshold": "",
+        "tool_hint": "pandas: cumulative cash flow, numpy: scenario modeling"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Financial distress indicators",
+        "description": "Calculate Altman Z-score and other distress prediction models",
+        "input_data": [],
+        "data_features": [
+          "working_capital",
+          "retained_earnings",
+          "ebit",
+          "market_cap",
+          "total_liabilities",
+          "total_assets",
+          "revenue"
+        ],
+        "graph_features": [],
+        "expected_output": "Z-score classification (safe/grey/distress zone)",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, Altman Z-score formula"
+      }
+    ]
+  },
+  {
+    "step_id": "gc_step_2",
+    "procedure_id": "going_concern",
+    "phase": "completion",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Cash flow forecasts/projections",
+        "scope": "At least 12 months from balance sheet date",
+        "fields": [
+          "period",
+          "operating_cf",
+          "investing_cf",
+          "financing_cf",
+          "opening_cash",
+          "closing_cash",
+          "assumptions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "contracts",
+        "name": "Loan agreements and covenants",
+        "scope": "",
+        "fields": [
+          "lender",
+          "facility_amount",
+          "maturity_date",
+          "covenant_type",
+          "covenant_threshold",
+          "actual_metric",
+          "compliance_status"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Cash flow trend and runway analysis",
+        "description": "Analyze historical and projected cash flows to assess going concern",
+        "input_data": [
+          "Cash flow forecasts/projections"
+        ],
+        "data_features": [
+          "monthly_cash_flow",
+          "cash_balance",
+          "burn_rate"
+        ],
+        "graph_features": [
+          "cash_runway_projection",
+          "scenario_analysis"
+        ],
+        "expected_output": "Months of runway, break-even point, stress test results",
+        "threshold": "",
+        "tool_hint": "pandas: cumulative cash flow, numpy: scenario modeling"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Financial distress indicators",
+        "description": "Calculate Altman Z-score and other distress prediction models",
+        "input_data": [],
+        "data_features": [
+          "working_capital",
+          "retained_earnings",
+          "ebit",
+          "market_cap",
+          "total_liabilities",
+          "total_assets",
+          "revenue"
+        ],
+        "graph_features": [],
+        "expected_output": "Z-score classification (safe/grey/distress zone)",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, Altman Z-score formula"
+      }
+    ]
+  },
+  {
+    "step_id": "gc_step_3",
+    "procedure_id": "going_concern",
+    "phase": "completion",
+    "data_requirements": [
+      {
+        "data_type": "financial_statements",
+        "name": "Cash flow forecasts/projections",
+        "scope": "At least 12 months from balance sheet date",
+        "fields": [
+          "period",
+          "operating_cf",
+          "investing_cf",
+          "financing_cf",
+          "opening_cash",
+          "closing_cash",
+          "assumptions"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "contracts",
+        "name": "Loan agreements and covenants",
+        "scope": "",
+        "fields": [
+          "lender",
+          "facility_amount",
+          "maturity_date",
+          "covenant_type",
+          "covenant_threshold",
+          "actual_metric",
+          "compliance_status"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "trend_analysis",
+        "name": "Cash flow trend and runway analysis",
+        "description": "Analyze historical and projected cash flows to assess going concern",
+        "input_data": [
+          "Cash flow forecasts/projections"
+        ],
+        "data_features": [
+          "monthly_cash_flow",
+          "cash_balance",
+          "burn_rate"
+        ],
+        "graph_features": [
+          "cash_runway_projection",
+          "scenario_analysis"
+        ],
+        "expected_output": "Months of runway, break-even point, stress test results",
+        "threshold": "",
+        "tool_hint": "pandas: cumulative cash flow, numpy: scenario modeling"
+      },
+      {
+        "procedure_type": "ratio_analysis",
+        "name": "Financial distress indicators",
+        "description": "Calculate Altman Z-score and other distress prediction models",
+        "input_data": [],
+        "data_features": [
+          "working_capital",
+          "retained_earnings",
+          "ebit",
+          "market_cap",
+          "total_liabilities",
+          "total_assets",
+          "revenue"
+        ],
+        "graph_features": [],
+        "expected_output": "Z-score classification (safe/grey/distress zone)",
+        "threshold": "",
+        "tool_hint": "pandas: ratio calculation, Altman Z-score formula"
+      }
+    ]
+  },
+  {
+    "step_id": "strategy_step_1",
+    "procedure_id": "develop_audit_strategy",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Prior year audit file and findings",
+        "scope": "",
+        "fields": [
+          "prior_findings",
+          "prior_approach",
+          "prior_hours",
+          "prior_issues"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "strategy_step_2",
+    "procedure_id": "develop_audit_strategy",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Prior year audit file and findings",
+        "scope": "",
+        "fields": [
+          "prior_findings",
+          "prior_approach",
+          "prior_hours",
+          "prior_issues"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "strategy_step_3",
+    "procedure_id": "develop_audit_strategy",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Prior year audit file and findings",
+        "scope": "",
+        "fields": [
+          "prior_findings",
+          "prior_approach",
+          "prior_hours",
+          "prior_issues"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": []
+  },
+  {
+    "step_id": "fraud_step_1",
+    "procedure_id": "assess_fraud_risks",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "journal_entries",
+        "name": "Complete journal entry population",
+        "scope": "Full year, all entities, all users",
+        "fields": [
+          "entry_id",
+          "date",
+          "user_id",
+          "account",
+          "amount",
+          "description",
+          "posting_date",
+          "created_date",
+          "source",
+          "is_manual",
+          "is_post_close"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract (CSV/database)",
+        "frequency": "",
+        "assertion": "All assertions \u2014 fraud focus"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Revenue recognition data",
+        "scope": "Full year with detail by transaction",
+        "fields": [
+          "transaction_date",
+          "customer",
+          "amount",
+          "revenue_type",
+          "delivery_date",
+          "invoice_date",
+          "payment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Occurrence, cutoff"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Unusual journal entry identification",
+        "description": "Identify journal entries with fraud risk indicators: posted by unusual users, at unusual times, round amounts, unusual accounts, post-close entries",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "user_id",
+          "posting_time",
+          "amount",
+          "account",
+          "description",
+          "is_manual",
+          "is_post_close",
+          "created_date"
+        ],
+        "graph_features": [
+          "user_posting_patterns",
+          "account_combination_network"
+        ],
+        "expected_output": "Flagged entries for investigation",
+        "threshold": "Based on materiality and risk assessment",
+        "tool_hint": "pandas: filter criteria + benford analysis on amounts; networkx: unusual account combos"
+      },
+      {
+        "procedure_type": "benford_law",
+        "name": "Benford's law analysis on journal entries",
+        "description": "Test first-digit distribution of journal entry amounts against Benford's expected distribution",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Chi-square test result, digits deviating from expected distribution",
+        "threshold": "",
+        "tool_hint": "scipy.stats chi-square test on first digit frequencies"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Revenue transaction outlier analysis",
+        "description": "Identify revenue transactions that deviate significantly from normal patterns",
+        "input_data": [
+          "Revenue recognition data"
+        ],
+        "data_features": [
+          "amount",
+          "customer",
+          "date",
+          "revenue_type"
+        ],
+        "graph_features": [
+          "customer_revenue_time_series",
+          "seasonal_patterns"
+        ],
+        "expected_output": "Transactions outside expected range flagged for testing",
+        "threshold": "",
+        "tool_hint": "pandas: z-score/IQR outlier detection; sklearn: isolation forest"
+      }
+    ]
+  },
+  {
+    "step_id": "fraud_step_2",
+    "procedure_id": "assess_fraud_risks",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "journal_entries",
+        "name": "Complete journal entry population",
+        "scope": "Full year, all entities, all users",
+        "fields": [
+          "entry_id",
+          "date",
+          "user_id",
+          "account",
+          "amount",
+          "description",
+          "posting_date",
+          "created_date",
+          "source",
+          "is_manual",
+          "is_post_close"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract (CSV/database)",
+        "frequency": "",
+        "assertion": "All assertions \u2014 fraud focus"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Revenue recognition data",
+        "scope": "Full year with detail by transaction",
+        "fields": [
+          "transaction_date",
+          "customer",
+          "amount",
+          "revenue_type",
+          "delivery_date",
+          "invoice_date",
+          "payment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Occurrence, cutoff"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Unusual journal entry identification",
+        "description": "Identify journal entries with fraud risk indicators: posted by unusual users, at unusual times, round amounts, unusual accounts, post-close entries",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "user_id",
+          "posting_time",
+          "amount",
+          "account",
+          "description",
+          "is_manual",
+          "is_post_close",
+          "created_date"
+        ],
+        "graph_features": [
+          "user_posting_patterns",
+          "account_combination_network"
+        ],
+        "expected_output": "Flagged entries for investigation",
+        "threshold": "Based on materiality and risk assessment",
+        "tool_hint": "pandas: filter criteria + benford analysis on amounts; networkx: unusual account combos"
+      },
+      {
+        "procedure_type": "benford_law",
+        "name": "Benford's law analysis on journal entries",
+        "description": "Test first-digit distribution of journal entry amounts against Benford's expected distribution",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Chi-square test result, digits deviating from expected distribution",
+        "threshold": "",
+        "tool_hint": "scipy.stats chi-square test on first digit frequencies"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Revenue transaction outlier analysis",
+        "description": "Identify revenue transactions that deviate significantly from normal patterns",
+        "input_data": [
+          "Revenue recognition data"
+        ],
+        "data_features": [
+          "amount",
+          "customer",
+          "date",
+          "revenue_type"
+        ],
+        "graph_features": [
+          "customer_revenue_time_series",
+          "seasonal_patterns"
+        ],
+        "expected_output": "Transactions outside expected range flagged for testing",
+        "threshold": "",
+        "tool_hint": "pandas: z-score/IQR outlier detection; sklearn: isolation forest"
+      }
+    ]
+  },
+  {
+    "step_id": "fraud_step_3",
+    "procedure_id": "assess_fraud_risks",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "journal_entries",
+        "name": "Complete journal entry population",
+        "scope": "Full year, all entities, all users",
+        "fields": [
+          "entry_id",
+          "date",
+          "user_id",
+          "account",
+          "amount",
+          "description",
+          "posting_date",
+          "created_date",
+          "source",
+          "is_manual",
+          "is_post_close"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract (CSV/database)",
+        "frequency": "",
+        "assertion": "All assertions \u2014 fraud focus"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Revenue recognition data",
+        "scope": "Full year with detail by transaction",
+        "fields": [
+          "transaction_date",
+          "customer",
+          "amount",
+          "revenue_type",
+          "delivery_date",
+          "invoice_date",
+          "payment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Occurrence, cutoff"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Unusual journal entry identification",
+        "description": "Identify journal entries with fraud risk indicators: posted by unusual users, at unusual times, round amounts, unusual accounts, post-close entries",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "user_id",
+          "posting_time",
+          "amount",
+          "account",
+          "description",
+          "is_manual",
+          "is_post_close",
+          "created_date"
+        ],
+        "graph_features": [
+          "user_posting_patterns",
+          "account_combination_network"
+        ],
+        "expected_output": "Flagged entries for investigation",
+        "threshold": "Based on materiality and risk assessment",
+        "tool_hint": "pandas: filter criteria + benford analysis on amounts; networkx: unusual account combos"
+      },
+      {
+        "procedure_type": "benford_law",
+        "name": "Benford's law analysis on journal entries",
+        "description": "Test first-digit distribution of journal entry amounts against Benford's expected distribution",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Chi-square test result, digits deviating from expected distribution",
+        "threshold": "",
+        "tool_hint": "scipy.stats chi-square test on first digit frequencies"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Revenue transaction outlier analysis",
+        "description": "Identify revenue transactions that deviate significantly from normal patterns",
+        "input_data": [
+          "Revenue recognition data"
+        ],
+        "data_features": [
+          "amount",
+          "customer",
+          "date",
+          "revenue_type"
+        ],
+        "graph_features": [
+          "customer_revenue_time_series",
+          "seasonal_patterns"
+        ],
+        "expected_output": "Transactions outside expected range flagged for testing",
+        "threshold": "",
+        "tool_hint": "pandas: z-score/IQR outlier detection; sklearn: isolation forest"
+      }
+    ]
+  },
+  {
+    "step_id": "fraud_step_4",
+    "procedure_id": "assess_fraud_risks",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "journal_entries",
+        "name": "Complete journal entry population",
+        "scope": "Full year, all entities, all users",
+        "fields": [
+          "entry_id",
+          "date",
+          "user_id",
+          "account",
+          "amount",
+          "description",
+          "posting_date",
+          "created_date",
+          "source",
+          "is_manual",
+          "is_post_close"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract (CSV/database)",
+        "frequency": "",
+        "assertion": "All assertions \u2014 fraud focus"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Revenue recognition data",
+        "scope": "Full year with detail by transaction",
+        "fields": [
+          "transaction_date",
+          "customer",
+          "amount",
+          "revenue_type",
+          "delivery_date",
+          "invoice_date",
+          "payment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Occurrence, cutoff"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Unusual journal entry identification",
+        "description": "Identify journal entries with fraud risk indicators: posted by unusual users, at unusual times, round amounts, unusual accounts, post-close entries",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "user_id",
+          "posting_time",
+          "amount",
+          "account",
+          "description",
+          "is_manual",
+          "is_post_close",
+          "created_date"
+        ],
+        "graph_features": [
+          "user_posting_patterns",
+          "account_combination_network"
+        ],
+        "expected_output": "Flagged entries for investigation",
+        "threshold": "Based on materiality and risk assessment",
+        "tool_hint": "pandas: filter criteria + benford analysis on amounts; networkx: unusual account combos"
+      },
+      {
+        "procedure_type": "benford_law",
+        "name": "Benford's law analysis on journal entries",
+        "description": "Test first-digit distribution of journal entry amounts against Benford's expected distribution",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Chi-square test result, digits deviating from expected distribution",
+        "threshold": "",
+        "tool_hint": "scipy.stats chi-square test on first digit frequencies"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Revenue transaction outlier analysis",
+        "description": "Identify revenue transactions that deviate significantly from normal patterns",
+        "input_data": [
+          "Revenue recognition data"
+        ],
+        "data_features": [
+          "amount",
+          "customer",
+          "date",
+          "revenue_type"
+        ],
+        "graph_features": [
+          "customer_revenue_time_series",
+          "seasonal_patterns"
+        ],
+        "expected_output": "Transactions outside expected range flagged for testing",
+        "threshold": "",
+        "tool_hint": "pandas: z-score/IQR outlier detection; sklearn: isolation forest"
+      }
+    ]
+  },
+  {
+    "step_id": "fraud_step_5",
+    "procedure_id": "assess_fraud_risks",
+    "phase": "planning",
+    "data_requirements": [
+      {
+        "data_type": "journal_entries",
+        "name": "Complete journal entry population",
+        "scope": "Full year, all entities, all users",
+        "fields": [
+          "entry_id",
+          "date",
+          "user_id",
+          "account",
+          "amount",
+          "description",
+          "posting_date",
+          "created_date",
+          "source",
+          "is_manual",
+          "is_post_close"
+        ],
+        "source_system": "ERP/GL module",
+        "format": "Full data extract (CSV/database)",
+        "frequency": "",
+        "assertion": "All assertions \u2014 fraud focus"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Revenue recognition data",
+        "scope": "Full year with detail by transaction",
+        "fields": [
+          "transaction_date",
+          "customer",
+          "amount",
+          "revenue_type",
+          "delivery_date",
+          "invoice_date",
+          "payment_date"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Occurrence, cutoff"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "journal_entry_testing",
+        "name": "Unusual journal entry identification",
+        "description": "Identify journal entries with fraud risk indicators: posted by unusual users, at unusual times, round amounts, unusual accounts, post-close entries",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "user_id",
+          "posting_time",
+          "amount",
+          "account",
+          "description",
+          "is_manual",
+          "is_post_close",
+          "created_date"
+        ],
+        "graph_features": [
+          "user_posting_patterns",
+          "account_combination_network"
+        ],
+        "expected_output": "Flagged entries for investigation",
+        "threshold": "Based on materiality and risk assessment",
+        "tool_hint": "pandas: filter criteria + benford analysis on amounts; networkx: unusual account combos"
+      },
+      {
+        "procedure_type": "benford_law",
+        "name": "Benford's law analysis on journal entries",
+        "description": "Test first-digit distribution of journal entry amounts against Benford's expected distribution",
+        "input_data": [
+          "Complete journal entry population"
+        ],
+        "data_features": [
+          "amount"
+        ],
+        "graph_features": [],
+        "expected_output": "Chi-square test result, digits deviating from expected distribution",
+        "threshold": "",
+        "tool_hint": "scipy.stats chi-square test on first digit frequencies"
+      },
+      {
+        "procedure_type": "outlier_detection",
+        "name": "Revenue transaction outlier analysis",
+        "description": "Identify revenue transactions that deviate significantly from normal patterns",
+        "input_data": [
+          "Revenue recognition data"
+        ],
+        "data_features": [
+          "amount",
+          "customer",
+          "date",
+          "revenue_type"
+        ],
+        "graph_features": [
+          "customer_revenue_time_series",
+          "seasonal_patterns"
+        ],
+        "expected_output": "Transactions outside expected range flagged for testing",
+        "threshold": "",
+        "tool_hint": "pandas: z-score/IQR outlier detection; sklearn: isolation forest"
+      }
+    ]
+  },
+  {
+    "step_id": "confirm_step_1",
+    "procedure_id": "obtain_external_confirmations",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "confirmations",
+        "name": "Confirmation population",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "address",
+          "balance_per_books",
+          "confirmation_type"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, accuracy"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Confirmation sample selection",
+        "description": "Select confirmation recipients using stratified monetary selection",
+        "input_data": [],
+        "data_features": [
+          "balance",
+          "risk_level",
+          "prior_exceptions"
+        ],
+        "graph_features": [],
+        "expected_output": "Selected items for confirmation with coverage statistics",
+        "threshold": "",
+        "tool_hint": "pandas: stratify by size, systematic selection within strata"
+      }
+    ]
+  },
+  {
+    "step_id": "confirm_step_2",
+    "procedure_id": "obtain_external_confirmations",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "confirmations",
+        "name": "Confirmation population",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "address",
+          "balance_per_books",
+          "confirmation_type"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, accuracy"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Confirmation sample selection",
+        "description": "Select confirmation recipients using stratified monetary selection",
+        "input_data": [],
+        "data_features": [
+          "balance",
+          "risk_level",
+          "prior_exceptions"
+        ],
+        "graph_features": [],
+        "expected_output": "Selected items for confirmation with coverage statistics",
+        "threshold": "",
+        "tool_hint": "pandas: stratify by size, systematic selection within strata"
+      }
+    ]
+  },
+  {
+    "step_id": "confirm_step_3",
+    "procedure_id": "obtain_external_confirmations",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "confirmations",
+        "name": "Confirmation population",
+        "scope": "",
+        "fields": [
+          "entity_name",
+          "address",
+          "balance_per_books",
+          "confirmation_type"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Existence, accuracy"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "sampling",
+        "name": "Confirmation sample selection",
+        "description": "Select confirmation recipients using stratified monetary selection",
+        "input_data": [],
+        "data_features": [
+          "balance",
+          "risk_level",
+          "prior_exceptions"
+        ],
+        "graph_features": [],
+        "expected_output": "Selected items for confirmation with coverage statistics",
+        "threshold": "",
+        "tool_hint": "pandas: stratify by size, systematic selection within strata"
+      }
+    ]
+  },
+  {
+    "step_id": "estimate_step_1",
+    "procedure_id": "audit_accounting_estimates",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "estimates",
+        "name": "Management's accounting estimates",
+        "scope": "",
+        "fields": [
+          "estimate_type",
+          "amount",
+          "method",
+          "key_assumptions",
+          "sensitivity_range",
+          "prior_year_estimate",
+          "actual_outcome"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Valuation, accuracy"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Supporting data for estimates",
+        "scope": "",
+        "fields": [
+          "market_data",
+          "historical_loss_data",
+          "cash_flow_projections",
+          "discount_rates",
+          "useful_lives"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "recalculation",
+        "name": "Independent recalculation of estimates",
+        "description": "Recalculate accounting estimates using management's or alternative methods",
+        "input_data": [
+          "Management's accounting estimates",
+          "Supporting data for estimates"
+        ],
+        "data_features": [
+          "assumptions",
+          "calculation_model",
+          "input_data"
+        ],
+        "graph_features": [],
+        "expected_output": "Independently calculated estimate vs management's, difference analysis",
+        "threshold": "",
+        "tool_hint": "numpy: DCF models, provision calculations; scipy: statistical models"
+      },
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Estimate vs outcome (hindsight review)",
+        "description": "Compare prior year estimates to actual outcomes to assess management bias",
+        "input_data": [],
+        "data_features": [
+          "prior_estimate",
+          "actual_outcome",
+          "variance",
+          "direction_of_bias"
+        ],
+        "graph_features": [],
+        "expected_output": "Pattern analysis of estimation bias over multiple years",
+        "threshold": "",
+        "tool_hint": "pandas: multi-year comparison, bias direction tracking"
+      }
+    ]
+  },
+  {
+    "step_id": "estimate_step_2",
+    "procedure_id": "audit_accounting_estimates",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "estimates",
+        "name": "Management's accounting estimates",
+        "scope": "",
+        "fields": [
+          "estimate_type",
+          "amount",
+          "method",
+          "key_assumptions",
+          "sensitivity_range",
+          "prior_year_estimate",
+          "actual_outcome"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Valuation, accuracy"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Supporting data for estimates",
+        "scope": "",
+        "fields": [
+          "market_data",
+          "historical_loss_data",
+          "cash_flow_projections",
+          "discount_rates",
+          "useful_lives"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "recalculation",
+        "name": "Independent recalculation of estimates",
+        "description": "Recalculate accounting estimates using management's or alternative methods",
+        "input_data": [
+          "Management's accounting estimates",
+          "Supporting data for estimates"
+        ],
+        "data_features": [
+          "assumptions",
+          "calculation_model",
+          "input_data"
+        ],
+        "graph_features": [],
+        "expected_output": "Independently calculated estimate vs management's, difference analysis",
+        "threshold": "",
+        "tool_hint": "numpy: DCF models, provision calculations; scipy: statistical models"
+      },
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Estimate vs outcome (hindsight review)",
+        "description": "Compare prior year estimates to actual outcomes to assess management bias",
+        "input_data": [],
+        "data_features": [
+          "prior_estimate",
+          "actual_outcome",
+          "variance",
+          "direction_of_bias"
+        ],
+        "graph_features": [],
+        "expected_output": "Pattern analysis of estimation bias over multiple years",
+        "threshold": "",
+        "tool_hint": "pandas: multi-year comparison, bias direction tracking"
+      }
+    ]
+  },
+  {
+    "step_id": "estimate_step_3",
+    "procedure_id": "audit_accounting_estimates",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "estimates",
+        "name": "Management's accounting estimates",
+        "scope": "",
+        "fields": [
+          "estimate_type",
+          "amount",
+          "method",
+          "key_assumptions",
+          "sensitivity_range",
+          "prior_year_estimate",
+          "actual_outcome"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Valuation, accuracy"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Supporting data for estimates",
+        "scope": "",
+        "fields": [
+          "market_data",
+          "historical_loss_data",
+          "cash_flow_projections",
+          "discount_rates",
+          "useful_lives"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "recalculation",
+        "name": "Independent recalculation of estimates",
+        "description": "Recalculate accounting estimates using management's or alternative methods",
+        "input_data": [
+          "Management's accounting estimates",
+          "Supporting data for estimates"
+        ],
+        "data_features": [
+          "assumptions",
+          "calculation_model",
+          "input_data"
+        ],
+        "graph_features": [],
+        "expected_output": "Independently calculated estimate vs management's, difference analysis",
+        "threshold": "",
+        "tool_hint": "numpy: DCF models, provision calculations; scipy: statistical models"
+      },
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Estimate vs outcome (hindsight review)",
+        "description": "Compare prior year estimates to actual outcomes to assess management bias",
+        "input_data": [],
+        "data_features": [
+          "prior_estimate",
+          "actual_outcome",
+          "variance",
+          "direction_of_bias"
+        ],
+        "graph_features": [],
+        "expected_output": "Pattern analysis of estimation bias over multiple years",
+        "threshold": "",
+        "tool_hint": "pandas: multi-year comparison, bias direction tracking"
+      }
+    ]
+  },
+  {
+    "step_id": "estimate_step_4",
+    "procedure_id": "audit_accounting_estimates",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "estimates",
+        "name": "Management's accounting estimates",
+        "scope": "",
+        "fields": [
+          "estimate_type",
+          "amount",
+          "method",
+          "key_assumptions",
+          "sensitivity_range",
+          "prior_year_estimate",
+          "actual_outcome"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Valuation, accuracy"
+      },
+      {
+        "data_type": "management_reports",
+        "name": "Supporting data for estimates",
+        "scope": "",
+        "fields": [
+          "market_data",
+          "historical_loss_data",
+          "cash_flow_projections",
+          "discount_rates",
+          "useful_lives"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "recalculation",
+        "name": "Independent recalculation of estimates",
+        "description": "Recalculate accounting estimates using management's or alternative methods",
+        "input_data": [
+          "Management's accounting estimates",
+          "Supporting data for estimates"
+        ],
+        "data_features": [
+          "assumptions",
+          "calculation_model",
+          "input_data"
+        ],
+        "graph_features": [],
+        "expected_output": "Independently calculated estimate vs management's, difference analysis",
+        "threshold": "",
+        "tool_hint": "numpy: DCF models, provision calculations; scipy: statistical models"
+      },
+      {
+        "procedure_type": "variance_analysis",
+        "name": "Estimate vs outcome (hindsight review)",
+        "description": "Compare prior year estimates to actual outcomes to assess management bias",
+        "input_data": [],
+        "data_features": [
+          "prior_estimate",
+          "actual_outcome",
+          "variance",
+          "direction_of_bias"
+        ],
+        "graph_features": [],
+        "expected_output": "Pattern analysis of estimation bias over multiple years",
+        "threshold": "",
+        "tool_hint": "pandas: multi-year comparison, bias direction tracking"
+      }
+    ]
+  },
+  {
+    "step_id": "rp_step_1",
+    "procedure_id": "identify_related_parties",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Related party registry",
+        "scope": "",
+        "fields": [
+          "party_name",
+          "relationship_type",
+          "ownership_pct",
+          "key_management",
+          "transactions_in_period"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "general_ledger",
+        "name": "Intercompany/related party transactions",
+        "scope": "",
+        "fields": [
+          "counterparty",
+          "date",
+          "amount",
+          "account",
+          "description",
+          "terms"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Disclosure, valuation (arm's length)"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "visualization",
+        "name": "Related party transaction network",
+        "description": "Visualize related party relationships and transaction flows as a network graph",
+        "input_data": [
+          "Related party registry",
+          "Intercompany/related party transactions"
+        ],
+        "data_features": [
+          "party_name",
+          "transaction_amount",
+          "direction"
+        ],
+        "graph_features": [
+          "entity_relationship_graph",
+          "transaction_flow_amounts",
+          "unusual_patterns",
+          "circular_transactions"
+        ],
+        "expected_output": "Network visualization, unusual patterns flagged",
+        "threshold": "",
+        "tool_hint": "networkx: directed graph, edge weights=amounts; pyvis: interactive viz"
+      }
+    ]
+  },
+  {
+    "step_id": "rp_step_2",
+    "procedure_id": "identify_related_parties",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Related party registry",
+        "scope": "",
+        "fields": [
+          "party_name",
+          "relationship_type",
+          "ownership_pct",
+          "key_management",
+          "transactions_in_period"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "general_ledger",
+        "name": "Intercompany/related party transactions",
+        "scope": "",
+        "fields": [
+          "counterparty",
+          "date",
+          "amount",
+          "account",
+          "description",
+          "terms"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Disclosure, valuation (arm's length)"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "visualization",
+        "name": "Related party transaction network",
+        "description": "Visualize related party relationships and transaction flows as a network graph",
+        "input_data": [
+          "Related party registry",
+          "Intercompany/related party transactions"
+        ],
+        "data_features": [
+          "party_name",
+          "transaction_amount",
+          "direction"
+        ],
+        "graph_features": [
+          "entity_relationship_graph",
+          "transaction_flow_amounts",
+          "unusual_patterns",
+          "circular_transactions"
+        ],
+        "expected_output": "Network visualization, unusual patterns flagged",
+        "threshold": "",
+        "tool_hint": "networkx: directed graph, edge weights=amounts; pyvis: interactive viz"
+      }
+    ]
+  },
+  {
+    "step_id": "rp_step_3",
+    "procedure_id": "identify_related_parties",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "organizational",
+        "name": "Related party registry",
+        "scope": "",
+        "fields": [
+          "party_name",
+          "relationship_type",
+          "ownership_pct",
+          "key_management",
+          "transactions_in_period"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      },
+      {
+        "data_type": "general_ledger",
+        "name": "Intercompany/related party transactions",
+        "scope": "",
+        "fields": [
+          "counterparty",
+          "date",
+          "amount",
+          "account",
+          "description",
+          "terms"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": "Disclosure, valuation (arm's length)"
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "visualization",
+        "name": "Related party transaction network",
+        "description": "Visualize related party relationships and transaction flows as a network graph",
+        "input_data": [
+          "Related party registry",
+          "Intercompany/related party transactions"
+        ],
+        "data_features": [
+          "party_name",
+          "transaction_amount",
+          "direction"
+        ],
+        "graph_features": [
+          "entity_relationship_graph",
+          "transaction_flow_amounts",
+          "unusual_patterns",
+          "circular_transactions"
+        ],
+        "expected_output": "Network visualization, unusual patterns flagged",
+        "threshold": "",
+        "tool_hint": "networkx: directed graph, edge weights=amounts; pyvis: interactive viz"
+      }
+    ]
+  },
+  {
+    "step_id": "misstate_step_1",
+    "procedure_id": "evaluate_misstatements",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Summary of audit misstatements",
+        "scope": "",
+        "fields": [
+          "misstatement_id",
+          "account",
+          "amount",
+          "type",
+          "nature",
+          "corrected",
+          "prior_year_amount"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Misstatement aggregation and projection",
+        "description": "Aggregate misstatements by type/account, project factual misstatements to population",
+        "input_data": [],
+        "data_features": [
+          "misstatement_amount",
+          "population_amount",
+          "sample_size",
+          "account"
+        ],
+        "graph_features": [],
+        "expected_output": "Total projected misstatement vs materiality comparison",
+        "threshold": "",
+        "tool_hint": "pandas: groupby account, projection = (misstatement/sample) \u00d7 population"
+      }
+    ]
+  },
+  {
+    "step_id": "misstate_step_2",
+    "procedure_id": "evaluate_misstatements",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Summary of audit misstatements",
+        "scope": "",
+        "fields": [
+          "misstatement_id",
+          "account",
+          "amount",
+          "type",
+          "nature",
+          "corrected",
+          "prior_year_amount"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Misstatement aggregation and projection",
+        "description": "Aggregate misstatements by type/account, project factual misstatements to population",
+        "input_data": [],
+        "data_features": [
+          "misstatement_amount",
+          "population_amount",
+          "sample_size",
+          "account"
+        ],
+        "graph_features": [],
+        "expected_output": "Total projected misstatement vs materiality comparison",
+        "threshold": "",
+        "tool_hint": "pandas: groupby account, projection = (misstatement/sample) \u00d7 population"
+      }
+    ]
+  },
+  {
+    "step_id": "misstate_step_3",
+    "procedure_id": "evaluate_misstatements",
+    "phase": "execution",
+    "data_requirements": [
+      {
+        "data_type": "prior_year",
+        "name": "Summary of audit misstatements",
+        "scope": "",
+        "fields": [
+          "misstatement_id",
+          "account",
+          "amount",
+          "type",
+          "nature",
+          "corrected",
+          "prior_year_amount"
+        ],
+        "source_system": "",
+        "format": "",
+        "frequency": "",
+        "assertion": ""
+      }
+    ],
+    "analytical_procedures": [
+      {
+        "procedure_type": "stratification",
+        "name": "Misstatement aggregation and projection",
+        "description": "Aggregate misstatements by type/account, project factual misstatements to population",
+        "input_data": [],
+        "data_features": [
+          "misstatement_amount",
+          "population_amount",
+          "sample_size",
+          "account"
+        ],
+        "graph_features": [],
+        "expected_output": "Total projected misstatement vs materiality comparison",
+        "threshold": "",
+        "tool_hint": "pandas: groupby account, projection = (misstatement/sample) \u00d7 population"
+      }
+    ]
+  }
+]
