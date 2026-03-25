@@ -25,6 +25,7 @@
 
 pub mod artifact;
 pub mod benchmark;
+pub mod content;
 pub mod context;
 pub mod dispatch;
 pub mod engine;
