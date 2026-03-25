@@ -98,8 +98,7 @@ pub fn calibrate_anomaly_rates(
     let mut best_distance = f64::MAX;
 
     for iter in 0..target.max_iterations {
-        let achieved =
-            mean_anomaly_rate(bwp, &overlay, SAMPLES_PER_ITER, base_seed, iter as u64);
+        let achieved = mean_anomaly_rate(bwp, &overlay, SAMPLES_PER_ITER, base_seed, iter as u64);
 
         let distance = (achieved - target.target_anomaly_rate).abs();
         if distance < best_distance {
@@ -153,9 +152,7 @@ fn mean_anomaly_rate(
     let mut successful = 0usize;
 
     for i in 0..samples {
-        let iter_seed = base_seed
-            .wrapping_add(seed_offset)
-            .wrapping_add(i as u64);
+        let iter_seed = base_seed.wrapping_add(seed_offset).wrapping_add(i as u64);
         let rng = ChaCha8Rng::seed_from_u64(iter_seed);
         let mut engine = AuditFsmEngine::new(bwp.clone(), overlay.clone(), rng);
 
@@ -181,12 +178,7 @@ fn mean_anomaly_rate(
 }
 
 /// Multiply each anomaly probability field by `scale`, clamping to `[min, max]`.
-fn scale_anomaly_probs(
-    overlay: &mut GenerationOverlay,
-    scale: f64,
-    min: f64,
-    max: f64,
-) {
+fn scale_anomaly_probs(overlay: &mut GenerationOverlay, scale: f64, min: f64, max: f64) {
     let a = &mut overlay.anomalies;
     a.skipped_approval = (a.skipped_approval * scale).clamp(min, max);
     a.late_posting = (a.late_posting * scale).clamp(min, max);
@@ -238,7 +230,10 @@ mod tests {
             max_iterations: 10,
         };
         let result = calibrate_anomaly_rates(&bwp, &target, 7).unwrap();
-        assert!(result.converged, "should converge immediately for zero target");
+        assert!(
+            result.converged,
+            "should converge immediately for zero target"
+        );
         assert_eq!(result.overlay.anomalies.skipped_approval, 0.0);
         assert_eq!(result.overlay.anomalies.late_posting, 0.0);
         assert_eq!(result.overlay.anomalies.missing_evidence, 0.0);

@@ -295,30 +295,38 @@ fn adjust_overlay(
     let eps = 1e-6;
 
     // --- Duration: adjust timing.mu_hours ---
-    let duration_ratio = clamp_ratio(
-        profile.target_duration_hours / metrics.avg_duration_hours.max(eps),
-    );
+    let duration_ratio =
+        clamp_ratio(profile.target_duration_hours / metrics.avg_duration_hours.max(eps));
     overlay.transitions.defaults.timing.mu_hours *= duration_ratio;
     // Also adjust sigma proportionally to keep the distribution shape.
     overlay.transitions.defaults.timing.sigma_hours *= duration_ratio;
     // Clamp mu_hours to [0.5, 5000.0] hours.
-    overlay.transitions.defaults.timing.mu_hours =
-        overlay.transitions.defaults.timing.mu_hours.clamp(0.5, 5000.0);
-    overlay.transitions.defaults.timing.sigma_hours =
-        overlay.transitions.defaults.timing.sigma_hours.clamp(0.1, 2000.0);
+    overlay.transitions.defaults.timing.mu_hours = overlay
+        .transitions
+        .defaults
+        .timing
+        .mu_hours
+        .clamp(0.5, 5000.0);
+    overlay.transitions.defaults.timing.sigma_hours = overlay
+        .transitions
+        .defaults
+        .timing
+        .sigma_hours
+        .clamp(0.1, 2000.0);
 
     // --- Revision rate: adjust revision_probability ---
-    let revision_ratio = clamp_ratio(
-        profile.target_revision_rate / metrics.avg_revision_rate.max(eps),
-    );
+    let revision_ratio =
+        clamp_ratio(profile.target_revision_rate / metrics.avg_revision_rate.max(eps));
     overlay.transitions.defaults.revision_probability *= revision_ratio;
-    overlay.transitions.defaults.revision_probability =
-        overlay.transitions.defaults.revision_probability.clamp(0.01, 0.5);
+    overlay.transitions.defaults.revision_probability = overlay
+        .transitions
+        .defaults
+        .revision_probability
+        .clamp(0.01, 0.5);
 
     // --- Anomaly rates: scale all anomaly probabilities ---
-    let anomaly_ratio = clamp_ratio(
-        profile.target_anomaly_rate / metrics.avg_anomaly_rate.max(eps),
-    );
+    let anomaly_ratio =
+        clamp_ratio(profile.target_anomaly_rate / metrics.avg_anomaly_rate.max(eps));
     overlay.anomalies.skipped_approval =
         (overlay.anomalies.skipped_approval * anomaly_ratio).clamp(0.0, 0.5);
     overlay.anomalies.late_posting =

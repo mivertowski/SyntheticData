@@ -124,7 +124,11 @@ pub fn discover_blueprint(events: &[AuditEvent]) -> DiscoveredBlueprint {
         let evts = &proc_events[id];
 
         // Phase: from the first event in the group.
-        let phase = evts.first().map(|e| e.phase_id.as_str()).unwrap_or("").to_string();
+        let phase = evts
+            .first()
+            .map(|e| e.phase_id.as_str())
+            .unwrap_or("")
+            .to_string();
         let event_count = evts.len();
 
         // Only consider transition events (both from_state and to_state present).
@@ -256,16 +260,12 @@ pub fn compare_blueprints(
         .collect();
     matching_procedures.sort();
 
-    let mut missing_procedures: Vec<String> = reference_ids
-        .difference(&discovered_ids)
-        .cloned()
-        .collect();
+    let mut missing_procedures: Vec<String> =
+        reference_ids.difference(&discovered_ids).cloned().collect();
     missing_procedures.sort();
 
-    let mut extra_procedures: Vec<String> = discovered_ids
-        .difference(&reference_ids)
-        .cloned()
-        .collect();
+    let mut extra_procedures: Vec<String> =
+        discovered_ids.difference(&reference_ids).cloned().collect();
     extra_procedures.sort();
 
     // -----------------------------------------------------------------------
@@ -307,8 +307,7 @@ pub fn compare_blueprints(
             None => continue,
         };
 
-        let disc_set: HashSet<(String, String)> =
-            disc_proc.transitions.iter().cloned().collect();
+        let disc_set: HashSet<(String, String)> = disc_proc.transitions.iter().cloned().collect();
 
         // Transitions in reference but not discovered → "missing"
         let mut missing_trans: Vec<&(String, String)> =
@@ -344,7 +343,11 @@ pub fn compare_blueprints(
     let mi = missing_procedures.len() as f64;
     let ex = extra_procedures.len() as f64;
     let denominator = m + mi + ex;
-    let conformance_score = if denominator > 0.0 { m / denominator } else { 1.0 };
+    let conformance_score = if denominator > 0.0 {
+        m / denominator
+    } else {
+        1.0
+    };
 
     BlueprintDiff {
         matching_procedures,
@@ -362,7 +365,9 @@ pub fn compare_blueprints(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use datasynth_audit_fsm::benchmark::{generate_benchmark, BenchmarkComplexity, BenchmarkConfig};
+    use datasynth_audit_fsm::benchmark::{
+        generate_benchmark, BenchmarkComplexity, BenchmarkConfig,
+    };
     use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
 
     // -----------------------------------------------------------------------
@@ -450,15 +455,10 @@ mod tests {
             .find(|p| p.id == "accept_engagement")
             .expect("accept_engagement should be discovered");
 
-        let expected: HashSet<&str> = [
-            "not_started",
-            "in_progress",
-            "under_review",
-            "completed",
-        ]
-        .iter()
-        .copied()
-        .collect();
+        let expected: HashSet<&str> = ["not_started", "in_progress", "under_review", "completed"]
+            .iter()
+            .copied()
+            .collect();
 
         let found: HashSet<&str> = proc.states.iter().map(|s| s.as_str()).collect();
 
