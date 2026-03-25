@@ -1432,4 +1432,258 @@ mod tests {
             bag.workpapers.len()
         );
     }
+
+    // -------------------------------------------------------------------
+    // ContentGenerator wiring tests
+    // -------------------------------------------------------------------
+
+    #[test]
+    fn test_findings_have_content_generator_narrative() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap engagement + workpapers.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+
+        // Generate findings via dispatch.
+        d.dispatch(
+            &step_with_command("f1", "evaluate_findings"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.findings.is_empty(), "should produce at least one finding");
+
+        // The TemplateContentGenerator produces narratives containing "During the"
+        // which is its distinctive format.
+        let first_finding = &bag.findings[0];
+        assert!(
+            first_finding.condition.contains("During the"),
+            "finding condition should contain content-generator narrative; got: {}",
+            first_finding.condition,
+        );
+    }
+
+    #[test]
+    fn test_findings_with_anomaly_refs() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_with_anomalies();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("f1", "evaluate_findings"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.findings.is_empty(), "should produce findings");
+
+        // Anomaly refs should be threaded into finding conditions.
+        let has_anomaly_ref = bag.findings.iter().any(|f| {
+            f.condition.contains("Linked anomaly: ANOM-001")
+                || f.condition.contains("Linked anomaly: ANOM-002")
+        });
+        assert!(
+            has_anomaly_ref,
+            "at least one finding should reference an anomaly"
+        );
+    }
+
+    #[test]
+    fn test_findings_with_je_evidence_refs() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("f1", "evaluate_findings"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.findings.is_empty(), "should produce findings");
+
+        // JE refs should be threaded into finding effects.
+        let has_je_ref = bag
+            .findings
+            .iter()
+            .any(|f| f.effect.contains("Supporting JE: JE-2025-"));
+        assert!(has_je_ref, "at least one finding should reference a JE");
+    }
+
+    #[test]
+    fn test_findings_linked_to_controls() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Bootstrap with engagement + risk assessments.
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("r1", "identify_risks"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("f1", "evaluate_findings"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.findings.is_empty(), "should produce findings");
+
+        // At least some findings should have control linkage (since context has control_ids).
+        let has_control_link = bag
+            .findings
+            .iter()
+            .any(|f| !f.related_control_ids.is_empty());
+        assert!(
+            has_control_link,
+            "at least one finding should be linked to controls"
+        );
+    }
+
+    #[test]
+    fn test_workpaper_objectives_enriched() {
+        let mut d = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.workpapers.is_empty(), "should produce at least one workpaper");
+
+        // The TemplateContentGenerator produces objectives containing "Workpaper for".
+        let first_wp = &bag.workpapers[0];
+        assert!(
+            first_wp.objective.contains("Workpaper for"),
+            "workpaper objective should contain content-generator narrative; got: {}",
+            first_wp.objective,
+        );
+    }
+
+    #[test]
+    fn test_new_with_content_uses_custom_generator() {
+        use crate::content::{
+            ContentGenerator, FindingContext, ResponseContext, WorkpaperContext,
+        };
+
+        /// A test content generator that prefixes all output with "CUSTOM:".
+        struct CustomGen;
+        impl ContentGenerator for CustomGen {
+            fn generate_finding_narrative(&self, _ctx: &FindingContext) -> String {
+                "CUSTOM: finding narrative".to_string()
+            }
+            fn generate_workpaper_narrative(&self, _ctx: &WorkpaperContext) -> String {
+                "CUSTOM: workpaper objective".to_string()
+            }
+            fn generate_management_response(&self, _ctx: &ResponseContext) -> String {
+                "CUSTOM: management response".to_string()
+            }
+        }
+
+        let mut d = StepDispatcher::new_with_content(42, Box::new(CustomGen));
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        d.dispatch(
+            &step_with_command("e1", "evaluate_client_acceptance"),
+            "p",
+            &ctx,
+            &mut bag,
+        );
+        d.dispatch(
+            &step_with_command("w1", "design_test_procedures"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.workpapers.is_empty());
+        assert!(
+            bag.workpapers[0].objective.contains("CUSTOM:"),
+            "custom content generator should be used; got: {}",
+            bag.workpapers[0].objective,
+        );
+
+        // Now test findings.
+        d.dispatch(
+            &step_with_command("f1", "evaluate_findings"),
+            "test_proc",
+            &ctx,
+            &mut bag,
+        );
+
+        assert!(!bag.findings.is_empty());
+        assert!(
+            bag.findings[0].condition.contains("CUSTOM:"),
+            "custom content generator should be used for findings; got: {}",
+            bag.findings[0].condition,
+        );
+    }
 }

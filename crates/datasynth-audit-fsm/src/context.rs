@@ -62,6 +62,16 @@ pub struct EngagementContext {
 }
 
 impl EngagementContext {
+    /// Create a test context with anomaly references for finding linkage testing.
+    pub fn test_with_anomalies() -> Self {
+        let mut ctx = Self::test_default();
+        ctx.anomaly_refs = vec![
+            "ANOM-001".into(),
+            "ANOM-002".into(),
+        ];
+        ctx
+    }
+
     /// Create a minimal test context with sensible defaults.
     pub fn test_default() -> Self {
         Self {
@@ -123,5 +133,50 @@ impl EngagementContext {
             is_us_listed: false,
             entity_codes: vec!["TEST01".into()],
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_has_journal_entry_ids() {
+        let ctx = EngagementContext::test_default();
+        assert_eq!(ctx.journal_entry_ids.len(), 4);
+        assert!(ctx.journal_entry_ids[0].starts_with("JE-"));
+    }
+
+    #[test]
+    fn test_default_has_account_balances() {
+        let ctx = EngagementContext::test_default();
+        assert_eq!(ctx.account_balances.len(), 4);
+        assert!(ctx.account_balances.contains_key("1100"));
+        assert!(ctx.account_balances.contains_key("4000"));
+        assert!(*ctx.account_balances.get("4000").unwrap() > 0.0);
+    }
+
+    #[test]
+    fn test_default_has_control_ids() {
+        let ctx = EngagementContext::test_default();
+        assert_eq!(ctx.control_ids.len(), 3);
+        assert!(ctx.control_ids.contains(&"C001".to_string()));
+    }
+
+    #[test]
+    fn test_default_anomaly_refs_empty() {
+        let ctx = EngagementContext::test_default();
+        assert!(ctx.anomaly_refs.is_empty());
+    }
+
+    #[test]
+    fn test_with_anomalies_has_refs() {
+        let ctx = EngagementContext::test_with_anomalies();
+        assert_eq!(ctx.anomaly_refs.len(), 2);
+        assert_eq!(ctx.anomaly_refs[0], "ANOM-001");
     }
 }
