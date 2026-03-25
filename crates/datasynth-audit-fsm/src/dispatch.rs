@@ -25,11 +25,12 @@ use datasynth_generators::audit::{
     materiality_generator::{MaterialityGenerator, MaterialityInput},
     sampling_plan_generator::SamplingPlanGenerator,
     subsequent_event_generator::SubsequentEventGenerator,
-    AuditEngagementGenerator, EvidenceGenerator, FindingGenerator, JudgmentGenerator,
-    RiskAssessmentGenerator, WorkpaperGenerator,
+    AuditEngagementGenerator, AvailableControl, AvailableRisk, EvidenceGenerator,
+    FindingGenerator, JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
 };
 
 use crate::artifact::ArtifactBag;
+use crate::content::{ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext};
 use crate::context::EngagementContext;
 use crate::schema::BlueprintStep;
 
@@ -58,12 +59,24 @@ pub struct StepDispatcher {
     se_gen: SubsequentEventGenerator,
     opinion_gen: AuditOpinionGenerator,
     confirmation_gen: ConfirmationGenerator,
+    content_gen: Box<dyn ContentGenerator>,
 }
 
 impl StepDispatcher {
     /// Create a new dispatcher, initialising each generator with a
     /// discriminated seed derived from `base_seed`.
+    ///
+    /// Uses the default [`TemplateContentGenerator`] for narrative generation.
     pub fn new(base_seed: u64) -> Self {
+        Self::new_with_content(base_seed, Box::new(TemplateContentGenerator))
+    }
+
+    /// Create a dispatcher with a custom [`ContentGenerator`] for narrative
+    /// enrichment of findings and workpapers.
+    pub fn new_with_content(
+        base_seed: u64,
+        content_gen: Box<dyn ContentGenerator>,
+    ) -> Self {
         Self {
             engagement_gen: AuditEngagementGenerator::new(base_seed + 7000),
             letter_gen: EngagementLetterGenerator::new(base_seed + 7100),
@@ -80,6 +93,7 @@ impl StepDispatcher {
             se_gen: SubsequentEventGenerator::new(base_seed + 8100),
             opinion_gen: AuditOpinionGenerator::new(base_seed + 8200),
             confirmation_gen: ConfirmationGenerator::new(base_seed + 8300),
+            content_gen,
         }
     }
 
@@ -205,7 +219,7 @@ impl StepDispatcher {
             | "discuss_preliminary_findings"
             | "agree_action_plans"
             | "develop_recommendations" => {
-                self.dispatch_findings(context, bag);
+                self.dispatch_findings(step, procedure_id, context, bag);
             }
 
             // ----- Opinion / reporting -----
@@ -329,7 +343,7 @@ impl StepDispatcher {
             | "initiate_follow_up"
             | "re_verify_action"
             | "complete_verification" => {
-                self.dispatch_findings(context, bag);
+                self.dispatch_findings(step, procedure_id, context, bag);
             }
 
             // ----- Ethics / governance -----
@@ -466,7 +480,7 @@ impl StepDispatcher {
     fn dispatch_workpaper(
         &mut self,
         step: &BlueprintStep,
-        _procedure_id: &str,
+        procedure_id: &str,
         ctx: &EngagementContext,
         bag: &mut ArtifactBag,
     ) {
@@ -479,12 +493,30 @@ impl StepDispatcher {
         };
 
         let section = section_for_command(step.command.as_deref().unwrap_or(""));
-        let wp = self.workpaper_gen.generate_workpaper(
+        let mut wp = self.workpaper_gen.generate_workpaper(
             engagement,
             section,
             ctx.engagement_start,
             &ctx.team_member_ids,
         );
+
+        // Enrich workpaper objective with content generator narrative.
+        let standards_refs: Vec<String> = step
+            .standards
+            .iter()
+            .map(|s| s.ref_id.clone())
+            .collect();
+        let actor = step.actor.as_deref().unwrap_or("audit_team");
+        wp.objective = self.content_gen.generate_workpaper_narrative(&WorkpaperContext {
+            procedure_id: procedure_id.to_string(),
+            section: format!("{:?}", section),
+            actor: actor.to_string(),
+            standards_refs: if standards_refs.is_empty() {
+                vec!["ISA 230".to_string()]
+            } else {
+                standards_refs
+            },
+        });
 
         // Also generate evidence for this workpaper.
         let evidence = self.evidence_gen.generate_evidence_for_workpaper(
@@ -599,8 +631,8 @@ impl StepDispatcher {
     /// engagement in the bag.
     fn dispatch_workpaper_section(
         &mut self,
-        _step: &BlueprintStep,
-        _procedure_id: &str,
+        step: &BlueprintStep,
+        procedure_id: &str,
         ctx: &EngagementContext,
         bag: &mut ArtifactBag,
         section: WorkpaperSection,
@@ -609,18 +641,48 @@ impl StepDispatcher {
             Some(e) => e,
             None => return,
         };
-        let wp = self.workpaper_gen.generate_workpaper(
+        let mut wp = self.workpaper_gen.generate_workpaper(
             engagement,
             section,
             ctx.engagement_start,
             &ctx.team_member_ids,
         );
+
+        // Enrich workpaper objective with content generator narrative.
+        let standards_refs: Vec<String> = step
+            .standards
+            .iter()
+            .map(|s| s.ref_id.clone())
+            .collect();
+        let actor = step.actor.as_deref().unwrap_or("audit_team");
+        wp.objective = self.content_gen.generate_workpaper_narrative(&WorkpaperContext {
+            procedure_id: procedure_id.to_string(),
+            section: format!("{:?}", section),
+            actor: actor.to_string(),
+            standards_refs: if standards_refs.is_empty() {
+                vec!["ISA 230".to_string()]
+            } else {
+                standards_refs
+            },
+        });
+
         bag.workpapers.push(wp);
     }
 
     /// Generate `AuditFinding` records (ISA 265). Requires an engagement
     /// and workpapers in the bag.
-    fn dispatch_findings(&mut self, ctx: &EngagementContext, bag: &mut ArtifactBag) {
+    ///
+    /// When the engagement context provides control IDs or anomaly
+    /// references, findings are linked to controls and enriched with
+    /// anomaly cross-references.  The active [`ContentGenerator`] is used
+    /// to produce finding narratives.
+    fn dispatch_findings(
+        &mut self,
+        step: &BlueprintStep,
+        procedure_id: &str,
+        ctx: &EngagementContext,
+        bag: &mut ArtifactBag,
+    ) {
         let engagement = match bag.engagements.last() {
             Some(e) => e,
             None => {
@@ -628,11 +690,95 @@ impl StepDispatcher {
                 return;
             }
         };
-        let findings = self.finding_gen.generate_findings_for_engagement(
-            engagement,
-            &bag.workpapers,
-            &ctx.team_member_ids,
-        );
+
+        // Build AvailableControl list from context control_ids.
+        let controls: Vec<AvailableControl> = ctx
+            .control_ids
+            .iter()
+            .map(|id| AvailableControl {
+                control_id: id.clone(),
+                assertions: Vec::new(),
+                process_areas: Vec::new(),
+            })
+            .collect();
+
+        // Build AvailableRisk list from risk assessments already in the bag.
+        let risks: Vec<AvailableRisk> = bag
+            .risk_assessments
+            .iter()
+            .map(|r| AvailableRisk {
+                risk_id: r.risk_id.to_string(),
+                engagement_id: r.engagement_id,
+                account_or_process: r.account_or_process.clone(),
+            })
+            .collect();
+
+        // Use context-aware generation when controls or risks are available.
+        let mut findings = if controls.is_empty() && risks.is_empty() {
+            self.finding_gen.generate_findings_for_engagement(
+                engagement,
+                &bag.workpapers,
+                &ctx.team_member_ids,
+            )
+        } else {
+            self.finding_gen.generate_findings_with_context(
+                engagement,
+                &bag.workpapers,
+                &ctx.team_member_ids,
+                &controls,
+                &risks,
+            )
+        };
+
+        // Enrich findings with anomaly cross-references.
+        if !ctx.anomaly_refs.is_empty() {
+            for (i, finding) in findings.iter_mut().enumerate() {
+                // Round-robin assign anomaly refs so each finding links to at least one.
+                let anomaly_ref = &ctx.anomaly_refs[i % ctx.anomaly_refs.len()];
+                if !finding.condition.is_empty() {
+                    finding.condition = format!(
+                        "{} [Linked anomaly: {}]",
+                        finding.condition, anomaly_ref
+                    );
+                }
+            }
+        }
+
+        // Enrich findings with journal entry evidence references.
+        if !ctx.journal_entry_ids.is_empty() {
+            for (i, finding) in findings.iter_mut().enumerate() {
+                let je_ref = &ctx.journal_entry_ids[i % ctx.journal_entry_ids.len()];
+                if !finding.effect.is_empty() {
+                    finding.effect =
+                        format!("{} [Supporting JE: {}]", finding.effect, je_ref);
+                }
+            }
+        }
+
+        // Standards refs from the step (for narrative context).
+        let standards_refs: Vec<String> = step
+            .standards
+            .iter()
+            .map(|s| s.ref_id.clone())
+            .collect();
+
+        // Use content generator to enrich finding narratives.
+        for finding in &mut findings {
+            let narrative = self.content_gen.generate_finding_narrative(&FindingContext {
+                procedure_id: procedure_id.to_string(),
+                step_id: step.id.clone(),
+                standards_refs: if standards_refs.is_empty() {
+                    vec![finding.finding_type.isa_reference().to_string()]
+                } else {
+                    standards_refs.clone()
+                },
+                finding_type: format!("{:?}", finding.finding_type),
+                condition: finding.condition.clone(),
+                criteria: finding.criteria.clone(),
+            });
+            finding.condition = narrative;
+        }
+
         bag.findings.extend(findings);
     }
 
