@@ -36,6 +36,9 @@ pub mod subledger;
 pub mod temporal;
 pub mod user_generator;
 
+// Industry benchmark generator (WI-3)
+pub mod industry_benchmark_generator;
+
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
 pub mod budget_generator;
@@ -125,6 +128,9 @@ pub use tax::*;
 
 // Control generator
 pub use control_generator::{ControlGenerator, ControlGeneratorConfig};
+
+// Industry benchmark generator (WI-3)
+pub use industry_benchmark_generator::*;
 
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:

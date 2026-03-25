@@ -129,6 +129,9 @@ pub mod generation_session;
 // Compliance & Regulations Framework models
 pub mod compliance;
 
+// Industry benchmark models (WI-3)
+mod industry_benchmark;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -220,3 +223,6 @@ pub use stock_compensation::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;
+
+// Industry benchmark exports (WI-3)
+pub use industry_benchmark::*;
