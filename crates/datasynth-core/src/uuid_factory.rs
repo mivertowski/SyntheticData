@@ -140,6 +140,8 @@ pub enum GeneratorType {
     IndustryBenchmark = 0x49,
     /// Governance / board minutes generator (WI-5)
     Governance = 0x4A,
+    /// Organizational profile generator (WI-6)
+    OrganizationalProfile = 0x4B,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

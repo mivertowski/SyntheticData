@@ -135,6 +135,9 @@ mod industry_benchmark;
 // Governance models — board minutes (WI-5)
 mod governance;
 
+// Organizational profile models (WI-6)
+mod organizational_profile;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -232,3 +235,6 @@ pub use industry_benchmark::*;
 
 // Governance exports (WI-5)
 pub use governance::*;
+
+// Organizational profile exports (WI-6)
+pub use organizational_profile::*;

@@ -40,6 +40,8 @@ pub mod user_generator;
 pub mod industry_benchmark_generator;
 // Governance generator — board minutes (WI-5)
 pub mod governance_generator;
+// Organizational profile generator (WI-6)
+pub mod organizational_profile_generator;
 
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
@@ -136,6 +138,9 @@ pub use industry_benchmark_generator::*;
 
 // Governance generator (WI-5)
 pub use governance_generator::*;
+
+// Organizational profile generator (WI-6)
+pub use organizational_profile_generator::*;
 
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:
