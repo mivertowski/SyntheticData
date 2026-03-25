@@ -7,7 +7,7 @@
 //! If the CLI is unavailable or returns an error, a fallback message is used
 //! so that generation never panics.
 
-use crate::content::{ContentGenerator, FindingContext, ResponseContext, WorkpaperContext};
+use crate::content::{AnalyticalContext, ContentGenerator, FindingContext, ResponseContext, WorkpaperContext};
 use std::process::Command;
 
 /// Content generator that calls the Claude CLI for high-quality narratives.
@@ -116,6 +116,26 @@ impl ContentGenerator for ClaudeContentGenerator {
              Write management's response acknowledging the finding and \
              outlining remediation.",
             ctx.finding_type, ctx.condition, ctx.recommendation,
+        );
+        self.call_claude(&prompt)
+    }
+
+    fn generate_analytical_narrative(&self, ctx: &AnalyticalContext) -> String {
+        let prompt = format!(
+            "You are an audit data analyst writing a narrative for an analytical \
+             procedure performed during an ISA-compliant audit. Write a concise \
+             (2-3 sentences) description of the procedure and its results.\n\n\
+             Procedure: {} ({})\nStep: {}\nType: {}\nDescription: {}\n\
+             Data features: {}\nExpected output: {}\nThreshold: {}\n\n\
+             Write the analytical procedure narrative in professional audit language.",
+            ctx.procedure_id,
+            ctx.name,
+            ctx.step_id,
+            ctx.procedure_type,
+            ctx.description,
+            ctx.data_features.join(", "),
+            ctx.expected_output,
+            if ctx.threshold.is_empty() { "N/A" } else { &ctx.threshold },
         );
         self.call_claude(&prompt)
     }
