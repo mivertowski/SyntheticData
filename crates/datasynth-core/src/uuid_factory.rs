@@ -142,6 +142,8 @@ pub enum GeneratorType {
     Governance = 0x4A,
     /// Organizational profile generator (WI-6)
     OrganizationalProfile = 0x4B,
+    /// IT controls generator — access logs and change management (WI-4)
+    ItControls = 0x4C,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

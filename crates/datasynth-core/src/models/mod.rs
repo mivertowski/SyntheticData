@@ -138,6 +138,9 @@ mod governance;
 // Organizational profile models (WI-6)
 mod organizational_profile;
 
+// IT controls models — access logs and change management (WI-4)
+mod it_controls;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -238,3 +241,6 @@ pub use governance::*;
 
 // Organizational profile exports (WI-6)
 pub use organizational_profile::*;
+
+// IT controls exports (WI-4)
+pub use it_controls::*;
