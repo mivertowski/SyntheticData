@@ -1,6 +1,6 @@
 //! Journal Entry generator with statistical distributions.
 
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, NaiveDate, Timelike};
 use datasynth_core::utils::seeded_rng;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -927,6 +927,60 @@ impl JournalEntryGenerator {
         header.is_fraud = is_fraud;
         header.fraud_type = fraud_type;
 
+        // --- ISA 240 audit flags ---
+        let is_manual = matches!(source, TransactionSource::Manual);
+        header.is_manual = is_manual;
+
+        // Determine source_system based on manual vs automated
+        header.source_system = if is_manual {
+            if self.rng.random::<f64>() < 0.70 {
+                "manual".to_string()
+            } else {
+                "spreadsheet".to_string()
+            }
+        } else {
+            let roll: f64 = self.rng.random();
+            if roll < 0.40 {
+                "SAP-FI".to_string()
+            } else if roll < 0.60 {
+                "SAP-MM".to_string()
+            } else if roll < 0.80 {
+                "SAP-SD".to_string()
+            } else if roll < 0.95 {
+                "interface".to_string()
+            } else {
+                "SAP-HR".to_string()
+            }
+        };
+
+        // is_post_close: entry is in the last month of the configured period
+        // and the posting date falls after the 25th (simulating close cutoff)
+        let is_post_close = posting_date.month() == self.end_date.month()
+            && posting_date.year() == self.end_date.year()
+            && posting_date.day() > 25;
+        header.is_post_close = is_post_close;
+
+        // created_date: for manual entries, same day as posting; for automated,
+        // 0-3 days before posting_date
+        let created_date = if is_manual {
+            posting_date.and_hms_opt(
+                time.hour().min(23),
+                time.minute(),
+                time.second(),
+            )
+        } else {
+            let lag_days = self.rng.random_range(0i64..=3);
+            let created_naive_date = posting_date
+                .checked_sub_signed(chrono::Duration::days(lag_days))
+                .unwrap_or(posting_date);
+            created_naive_date.and_hms_opt(
+                self.rng.random_range(8u32..=17),
+                self.rng.random_range(0u32..=59),
+                self.rng.random_range(0u32..=59),
+            )
+        };
+        header.created_date = created_date;
+
         // Generate description context
         let mut context =
             DescriptionContext::with_period(posting_date.month(), posting_date.year());
@@ -1219,6 +1273,22 @@ impl JournalEntryGenerator {
 
         // Batched manual entries have Manual source document
         header.source_document = Some(DocumentRef::Manual);
+
+        // ISA 240 audit flags for batched entries (always manual)
+        header.is_manual = true;
+        header.source_system = if self.rng.random::<f64>() < 0.70 {
+            "manual".to_string()
+        } else {
+            "spreadsheet".to_string()
+        };
+        header.is_post_close = posting_date.month() == self.end_date.month()
+            && posting_date.year() == self.end_date.year()
+            && posting_date.day() > 25;
+        header.created_date = posting_date.and_hms_opt(
+            time.hour().min(23),
+            time.minute(),
+            time.second(),
+        );
 
         // Generate similar amount (within ±15% of base)
         let variation = self.rng.random_range(-0.15..0.15);
@@ -2730,5 +2800,160 @@ mod tests {
             with_text,
             total_lines,
         );
+    }
+
+    // --- ISA 240 audit flag tests ---
+
+    #[test]
+    fn test_je_has_audit_flags() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        for _ in 0..100 {
+            let entry = je_gen.generate();
+
+            // source_system should always be non-empty
+            assert!(
+                !entry.header.source_system.is_empty(),
+                "source_system should be populated, got empty string"
+            );
+
+            // created_by should always be non-empty (already tested elsewhere, but confirm)
+            assert!(
+                !entry.header.created_by.is_empty(),
+                "created_by should be populated"
+            );
+
+            // created_date should always be populated
+            assert!(
+                entry.header.created_date.is_some(),
+                "created_date should be populated"
+            );
+        }
+    }
+
+    #[test]
+    fn test_manual_entry_rate() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false)
+        .with_batching(false);
+
+        let total = 1000;
+        let entries: Vec<JournalEntry> = (0..total).map(|_| je_gen.generate()).collect();
+
+        let manual_count = entries.iter().filter(|e| e.header.is_manual).count();
+        let manual_rate = manual_count as f64 / total as f64;
+
+        // Default source_distribution.manual is typically around 0.05-0.15
+        // Allow a wide tolerance for statistical variation
+        assert!(
+            manual_rate > 0.01 && manual_rate < 0.50,
+            "Manual entry rate should be reasonable (1%-50%), got {:.1}% ({}/{})",
+            manual_rate * 100.0,
+            manual_count,
+            total,
+        );
+
+        // is_manual should match TransactionSource::Manual
+        for entry in &entries {
+            let source_is_manual = entry.header.source == TransactionSource::Manual;
+            assert_eq!(
+                entry.header.is_manual, source_is_manual,
+                "is_manual should match source == Manual"
+            );
+        }
+    }
+
+    #[test]
+    fn test_manual_source_consistency() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false)
+        .with_batching(false);
+
+        for _ in 0..500 {
+            let entry = je_gen.generate();
+
+            if entry.header.is_manual {
+                // Manual entries must have source_system "manual" or "spreadsheet"
+                assert!(
+                    entry.header.source_system == "manual"
+                        || entry.header.source_system == "spreadsheet",
+                    "Manual entry should have source_system 'manual' or 'spreadsheet', got '{}'",
+                    entry.header.source_system,
+                );
+            } else {
+                // Non-manual entries must NOT have source_system "manual" or "spreadsheet"
+                assert!(
+                    entry.header.source_system != "manual"
+                        && entry.header.source_system != "spreadsheet",
+                    "Non-manual entry should not have source_system 'manual' or 'spreadsheet', got '{}'",
+                    entry.header.source_system,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_created_date_before_posting() {
+        let mut coa_gen =
+            ChartOfAccountsGenerator::new(CoAComplexity::Small, IndustrySector::Manufacturing, 42);
+        let coa = Arc::new(coa_gen.generate());
+
+        let mut je_gen = JournalEntryGenerator::new_with_params(
+            TransactionConfig::default(),
+            coa,
+            vec!["1000".to_string()],
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 12, 31).unwrap(),
+            42,
+        )
+        .with_persona_errors(false);
+
+        for _ in 0..500 {
+            let entry = je_gen.generate();
+
+            if let Some(created_date) = entry.header.created_date {
+                let created_naive_date = created_date.date();
+                assert!(
+                    created_naive_date <= entry.header.posting_date,
+                    "created_date ({}) should be <= posting_date ({})",
+                    created_naive_date,
+                    entry.header.posting_date,
+                );
+            }
+        }
     }
 }
