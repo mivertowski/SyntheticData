@@ -7,7 +7,9 @@
 //! If the CLI is unavailable or returns an error, a fallback message is used
 //! so that generation never panics.
 
-use crate::content::{AnalyticalContext, ContentGenerator, FindingContext, ResponseContext, WorkpaperContext};
+use crate::content::{
+    AnalyticalContext, ContentGenerator, FindingContext, ResponseContext, WorkpaperContext,
+};
 use std::process::Command;
 
 /// Content generator that calls the Claude CLI for high-quality narratives.
@@ -135,7 +137,11 @@ impl ContentGenerator for ClaudeContentGenerator {
             ctx.description,
             ctx.data_features.join(", "),
             ctx.expected_output,
-            if ctx.threshold.is_empty() { "N/A" } else { &ctx.threshold },
+            if ctx.threshold.is_empty() {
+                "N/A"
+            } else {
+                &ctx.threshold
+            },
         );
         self.call_claude(&prompt)
     }

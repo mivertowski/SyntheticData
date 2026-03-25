@@ -13,6 +13,7 @@ use std::collections::HashMap;
 
 const FSA_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_fsa.json");
 const IA_INVENTORY: &str = include_str!("../inventories/data_analytics_inventory_ia.json");
+const FORM_ONTOLOGY: &str = include_str!("../inventories/form_ontology.json");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,6 +126,28 @@ pub fn lookup_step<'a>(
 }
 
 // ---------------------------------------------------------------------------
+// Form ontology
+// ---------------------------------------------------------------------------
+
+/// Load the form ontology as a `HashMap` mapping form category names to
+/// their expected field labels.
+///
+/// The ontology defines the expected fields for each audit form/workpaper
+/// category, enabling evidence generation to include structured field
+/// information.
+pub fn load_form_ontology() -> HashMap<String, Vec<String>> {
+    serde_json::from_str(FORM_ONTOLOGY).unwrap_or_default()
+}
+
+/// Look up the expected fields for a form category.
+pub fn lookup_form_fields<'a>(
+    ontology: &'a HashMap<String, Vec<String>>,
+    category: &str,
+) -> Option<&'a Vec<String>> {
+    ontology.get(category)
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -156,7 +179,10 @@ mod tests {
             .data_requirements
             .iter()
             .any(|r| r.data_type == "financial_statements");
-        assert!(has_financial, "mat_step_1 should require financial_statements");
+        assert!(
+            has_financial,
+            "mat_step_1 should require financial_statements"
+        );
     }
 
     #[test]
@@ -225,6 +251,53 @@ mod tests {
     fn test_ia_inventory_has_procedures() {
         let inv = load_ia_inventory();
         let has_procedures = inv.values().any(|s| !s.analytical_procedures.is_empty());
-        assert!(has_procedures, "IA inventory should have at least one step with procedures");
+        assert!(
+            has_procedures,
+            "IA inventory should have at least one step with procedures"
+        );
+    }
+
+    #[test]
+    fn test_form_ontology_loads() {
+        let ontology = load_form_ontology();
+        assert!(
+            !ontology.is_empty(),
+            "form ontology should load successfully"
+        );
+    }
+
+    #[test]
+    fn test_form_ontology_has_entries() {
+        let ontology = load_form_ontology();
+        assert!(
+            ontology.len() > 100,
+            "form ontology should have many categories; got {}",
+            ontology.len(),
+        );
+    }
+
+    #[test]
+    fn test_form_ontology_lookup() {
+        let ontology = load_form_ontology();
+        // "Identified fraud risks" is a category in the ontology with known fields.
+        let fields = lookup_form_fields(&ontology, "Identified fraud risks");
+        assert!(
+            fields.is_some(),
+            "should find 'Identified fraud risks' category in form ontology"
+        );
+        let fields = fields.unwrap();
+        assert!(
+            !fields.is_empty(),
+            "fraud risks category should have fields"
+        );
+    }
+
+    #[test]
+    fn test_form_ontology_lookup_nonexistent() {
+        let ontology = load_form_ontology();
+        assert!(
+            lookup_form_fields(&ontology, "nonexistent_category_xyz").is_none(),
+            "nonexistent category should return None"
+        );
     }
 }

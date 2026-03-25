@@ -270,7 +270,10 @@ mod tests {
         let gen = TemplateContentGenerator;
         let ctx = make_analytical_ctx();
         let narrative = gen.generate_analytical_narrative(&ctx);
-        assert!(!narrative.is_empty(), "analytical narrative must not be empty");
+        assert!(
+            !narrative.is_empty(),
+            "analytical narrative must not be empty"
+        );
         assert!(
             narrative.contains(&ctx.name),
             "narrative must contain procedure name"

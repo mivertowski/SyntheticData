@@ -31,7 +31,9 @@ use datasynth_generators::audit::{
 
 use std::collections::HashMap;
 
-use crate::analytics_inventory::{load_fsa_inventory, AnalyticalProcedure, StepInventory};
+use crate::analytics_inventory::{
+    load_form_ontology, load_fsa_inventory, AnalyticalProcedure, StepInventory,
+};
 use crate::artifact::ArtifactBag;
 use crate::content::{
     AnalyticalContext, ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext,
@@ -66,6 +68,7 @@ pub struct StepDispatcher {
     confirmation_gen: ConfirmationGenerator,
     content_gen: Box<dyn ContentGenerator>,
     analytics_inventory: HashMap<String, StepInventory>,
+    form_ontology: HashMap<String, Vec<String>>,
 }
 
 impl StepDispatcher {
@@ -110,6 +113,7 @@ impl StepDispatcher {
             confirmation_gen: ConfirmationGenerator::new(base_seed + 8300),
             content_gen,
             analytics_inventory,
+            form_ontology: load_form_ontology(),
         }
     }
 
@@ -453,17 +457,25 @@ impl StepDispatcher {
 
             // Append data requirements to the most recent workpaper objective.
             if let Some(wp) = bag.workpapers.last_mut() {
-                wp.objective = format!(
-                    "{} | Data requirements: {}",
-                    wp.objective, req_summary
-                );
+                wp.objective = format!("{} | Data requirements: {}", wp.objective, req_summary);
+            }
+        }
+
+        // Enrich the most recent evidence with form ontology field templates.
+        if !self.form_ontology.is_empty() {
+            let form_fields = self.collect_form_fields_for_step(inv);
+            if !form_fields.is_empty() {
+                if let Some(ev) = bag.evidence.last_mut() {
+                    let fields_str = form_fields.join(", ");
+                    ev.description =
+                        format!("{} | Expected form fields: {}", ev.description, fields_str);
+                }
             }
         }
 
         // Generate analytical narratives for each procedure in the inventory.
         for ap in &inv.analytical_procedures {
-            let narrative =
-                self.generate_analytical_narrative_for(procedure_id, step_id, ap);
+            let narrative = self.generate_analytical_narrative_for(procedure_id, step_id, ap);
 
             // Create an evidence artifact with the analytical narrative.
             if let Some(wp) = bag.workpapers.last() {
@@ -480,6 +492,42 @@ impl StepDispatcher {
                 bag.evidence.extend(enriched);
             }
         }
+    }
+
+    /// Collect form ontology fields relevant to a step's data requirements.
+    ///
+    /// Matches data requirement `data_type` and `name` fragments against
+    /// form ontology category names to find relevant field templates.
+    fn collect_form_fields_for_step(&self, inv: &StepInventory) -> Vec<String> {
+        let mut fields = Vec::new();
+        for req in &inv.data_requirements {
+            // Try matching by data_type and name keywords against form categories.
+            for (category, cat_fields) in &self.form_ontology {
+                let cat_lower = category.to_lowercase();
+                let matches = cat_lower.contains(&req.data_type.to_lowercase())
+                    || req
+                        .name
+                        .split_whitespace()
+                        .filter(|w| w.len() > 3)
+                        .any(|word| cat_lower.contains(&word.to_lowercase()));
+                if matches {
+                    for f in cat_fields {
+                        if !fields.contains(f) && f.len() < 200 {
+                            fields.push(f.clone());
+                        }
+                    }
+                    // Limit per-category to keep output manageable.
+                    if fields.len() >= 20 {
+                        break;
+                    }
+                }
+            }
+            if fields.len() >= 20 {
+                break;
+            }
+        }
+        fields.truncate(20);
+        fields
     }
 
     /// Generate an analytical narrative from an inventory procedure entry.
@@ -1831,7 +1879,9 @@ mod tests {
         let analytical_evidence: Vec<_> = bag
             .evidence
             .iter()
-            .filter(|e| e.description.contains("trend_analysis") || e.description.contains("ratio_analysis"))
+            .filter(|e| {
+                e.description.contains("trend_analysis") || e.description.contains("ratio_analysis")
+            })
             .collect();
         assert!(
             !analytical_evidence.is_empty(),
