@@ -138,6 +138,8 @@ pub enum GeneratorType {
     StockCompensation = 0x48,
     /// Industry benchmark generator (WI-3)
     IndustryBenchmark = 0x49,
+    /// Governance / board minutes generator (WI-5)
+    Governance = 0x4A,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

@@ -132,6 +132,9 @@ pub mod compliance;
 // Industry benchmark models (WI-3)
 mod industry_benchmark;
 
+// Governance models — board minutes (WI-5)
+mod governance;
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -226,3 +229,6 @@ pub use generation_session::*;
 
 // Industry benchmark exports (WI-3)
 pub use industry_benchmark::*;
+
+// Governance exports (WI-5)
+pub use governance::*;
