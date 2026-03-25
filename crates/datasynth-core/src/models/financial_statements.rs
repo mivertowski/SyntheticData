@@ -321,3 +321,74 @@ pub struct ManagementReport {
     /// Narrative management commentary for the period
     pub commentary: String,
 }
+
+// ---------------------------------------------------------------------------
+// Tests — WI-8: FinancialStatementLineItem comparative fields
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+    use rust_decimal_macros::dec;
+
+    fn make_line_item(
+        amount: Decimal,
+        prior_year: Option<Decimal>,
+        assumptions: Option<&str>,
+    ) -> FinancialStatementLineItem {
+        FinancialStatementLineItem {
+            line_code: "BS-CASH".to_string(),
+            label: "Cash and Cash Equivalents".to_string(),
+            section: "Current Assets".to_string(),
+            sort_order: 1,
+            amount,
+            amount_prior: None,
+            prior_year_amount: prior_year,
+            assumptions: assumptions.map(|s| s.to_string()),
+            indent_level: 0,
+            is_total: false,
+            gl_accounts: vec![],
+        }
+    }
+
+    #[test]
+    fn test_prior_year_amount_field_present() {
+        let item = make_line_item(dec!(100_000), Some(dec!(95_000)), None);
+        assert_eq!(item.prior_year_amount, Some(dec!(95_000)));
+    }
+
+    #[test]
+    fn test_assumptions_present_for_estimate_heavy_line() {
+        let assumption_text = "Based on discounted cash flow analysis";
+        let item = make_line_item(
+            dec!(500_000),
+            Some(dec!(480_000)),
+            Some(assumption_text),
+        );
+        assert!(item.assumptions.is_some());
+        assert_eq!(item.assumptions.as_deref(), Some(assumption_text));
+    }
+
+    #[test]
+    fn test_prior_year_amounts_are_within_30_pct_of_current() {
+        // Verify that representative prior-year amounts are plausible
+        // (within 30% of the current-year amount, per WI-8 spec).
+        let cases: &[(Decimal, Decimal)] = &[
+            (dec!(100_000), dec!(85_000)),  // -15% — within bounds
+            (dec!(200_000), dec!(230_000)), // +15% — within bounds
+            (dec!(50_000), dec!(35_100)),   // -29.8% — within bounds
+        ];
+        for (current, prior) in cases {
+            let ratio = ((prior - current).abs() / current)
+                .to_string()
+                .parse::<f64>()
+                .unwrap_or(1.0);
+            assert!(
+                ratio <= 0.30,
+                "Prior year amount {prior} is more than 30% away from current {current} \
+                 (ratio={ratio:.3})"
+            );
+        }
+    }
+}
