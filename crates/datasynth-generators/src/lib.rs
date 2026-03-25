@@ -46,6 +46,8 @@ pub mod organizational_profile_generator;
 pub mod it_controls_generator;
 // Management report generator (WI-7)
 pub mod management_report_generator;
+// Prior-year comparative data generator (WI-2)
+pub mod prior_year_generator;
 
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
@@ -151,6 +153,9 @@ pub use it_controls_generator::*;
 
 // Management report generator (WI-7)
 pub use management_report_generator::*;
+
+// Prior-year comparative data generator (WI-2)
+pub use prior_year_generator::*;
 
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:

@@ -146,6 +146,8 @@ pub enum GeneratorType {
     ItControls = 0x4C,
     /// Management report generator (WI-7)
     ManagementReport = 0x4D,
+    /// Prior-year comparative data generator (WI-2)
+    PriorYear = 0x4E,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

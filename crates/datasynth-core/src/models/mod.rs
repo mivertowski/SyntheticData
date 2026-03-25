@@ -141,6 +141,9 @@ mod organizational_profile;
 // IT controls models — access logs and change management (WI-4)
 mod it_controls;
 
+// Prior-year comparative data models (WI-2)
+mod prior_year;
+
 // Management report models (WI-7)
 // Note: ManagementReport, KpiSummaryLine, BudgetVarianceLine live in financial_statements
 
@@ -247,3 +250,6 @@ pub use organizational_profile::*;
 
 // IT controls exports (WI-4)
 pub use it_controls::*;
+
+// Prior-year comparative data exports (WI-2)
+pub use prior_year::*;
