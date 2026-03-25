@@ -136,6 +136,18 @@ pub enum GeneratorType {
     Provision = 0x47,
     /// Stock-based compensation generator (ASC 718 / IFRS 2)
     StockCompensation = 0x48,
+    /// Industry benchmark generator (WI-3)
+    IndustryBenchmark = 0x49,
+    /// Governance / board minutes generator (WI-5)
+    Governance = 0x4A,
+    /// Organizational profile generator (WI-6)
+    OrganizationalProfile = 0x4B,
+    /// IT controls generator — access logs and change management (WI-4)
+    ItControls = 0x4C,
+    /// Management report generator (WI-7)
+    ManagementReport = 0x4D,
+    /// Prior-year comparative data generator (WI-2)
+    PriorYear = 0x4E,
 }
 
 /// A factory for generating deterministic UUIDs that are guaranteed unique

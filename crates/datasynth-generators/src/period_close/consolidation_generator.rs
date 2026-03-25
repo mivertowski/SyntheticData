@@ -138,6 +138,8 @@ impl ConsolidationGenerator {
                     indent_level: 0,
                     is_total: false,
                     gl_accounts: Vec::new(),
+                    prior_year_amount: None,
+                    assumptions: None,
                 });
             } else if IS_CATEGORIES.contains(&category.as_str()) {
                 is_sort += 1;
@@ -151,6 +153,8 @@ impl ConsolidationGenerator {
                     indent_level: 0,
                     is_total: false,
                     gl_accounts: Vec::new(),
+                    prior_year_amount: None,
+                    assumptions: None,
                 });
             }
             // Categories that don't fit either statement are omitted from the

@@ -36,6 +36,19 @@ pub mod subledger;
 pub mod temporal;
 pub mod user_generator;
 
+// Industry benchmark generator (WI-3)
+pub mod industry_benchmark_generator;
+// Governance generator — board minutes (WI-5)
+pub mod governance_generator;
+// Organizational profile generator (WI-6)
+pub mod organizational_profile_generator;
+// IT controls generator — access logs and change management (WI-4)
+pub mod it_controls_generator;
+// Management report generator (WI-7)
+pub mod management_report_generator;
+// Prior-year comparative data generator (WI-2)
+pub mod prior_year_generator;
+
 // Enterprise process chain generators
 pub mod bank_reconciliation_generator;
 pub mod budget_generator;
@@ -125,6 +138,24 @@ pub use tax::*;
 
 // Control generator
 pub use control_generator::{ControlGenerator, ControlGeneratorConfig};
+
+// Industry benchmark generator (WI-3)
+pub use industry_benchmark_generator::*;
+
+// Governance generator (WI-5)
+pub use governance_generator::*;
+
+// Organizational profile generator (WI-6)
+pub use organizational_profile_generator::*;
+
+// IT controls generator (WI-4)
+pub use it_controls_generator::*;
+
+// Management report generator (WI-7)
+pub use management_report_generator::*;
+
+// Prior-year comparative data generator (WI-2)
+pub use prior_year_generator::*;
 
 // ---------------------------------------------------------------------------
 // Modules below are accessible via qualified paths only:

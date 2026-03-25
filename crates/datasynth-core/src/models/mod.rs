@@ -129,6 +129,24 @@ pub mod generation_session;
 // Compliance & Regulations Framework models
 pub mod compliance;
 
+// Industry benchmark models (WI-3)
+mod industry_benchmark;
+
+// Governance models — board minutes (WI-5)
+mod governance;
+
+// Organizational profile models (WI-6)
+mod organizational_profile;
+
+// IT controls models — access logs and change management (WI-4)
+mod it_controls;
+
+// Prior-year comparative data models (WI-2)
+mod prior_year;
+
+// Management report models (WI-7)
+// Note: ManagementReport, KpiSummaryLine, BudgetVarianceLine live in financial_statements
+
 pub use acdoca::*;
 pub use anomaly::*;
 pub use approval::*;
@@ -220,3 +238,18 @@ pub use stock_compensation::*;
 
 // Unified generation pipeline session exports
 pub use generation_session::*;
+
+// Industry benchmark exports (WI-3)
+pub use industry_benchmark::*;
+
+// Governance exports (WI-5)
+pub use governance::*;
+
+// Organizational profile exports (WI-6)
+pub use organizational_profile::*;
+
+// IT controls exports (WI-4)
+pub use it_controls::*;
+
+// Prior-year comparative data exports (WI-2)
+pub use prior_year::*;

@@ -4,7 +4,7 @@
 //! of double-entry bookkeeping. Each journal entry consists of a header and
 //! one or more line items that must balance (total debits = total credits).
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
@@ -306,6 +306,28 @@ pub struct JournalEntryHeader {
     /// Simulation batch ID for traceability
     pub batch_id: Option<Uuid>,
 
+    // --- ISA 240 Audit Flags ---
+    /// Whether this is a manual journal entry (vs automated/system-generated).
+    /// Manual entries are higher fraud risk per ISA 240.32(a).
+    #[serde(default)]
+    pub is_manual: bool,
+
+    /// Whether this entry was posted after the period-end close date.
+    /// Post-closing entries require additional scrutiny per ISA 240.
+    #[serde(default)]
+    pub is_post_close: bool,
+
+    /// Source system/module that originated this entry.
+    /// Examples: "SAP-FI", "SAP-MM", "SAP-SD", "manual", "interface", "spreadsheet"
+    #[serde(default)]
+    pub source_system: String,
+
+    /// Timestamp when the entry was created (may differ from posting_date).
+    /// For automated entries this is typically before posting_date; for manual
+    /// entries created_date and posting_date are often on the same day.
+    #[serde(default)]
+    pub created_date: Option<NaiveDateTime>,
+
     // --- Internal Controls / SOX Compliance Fields ---
     /// Internal control IDs that apply to this transaction
     #[serde(default)]
@@ -389,6 +411,11 @@ impl JournalEntryHeader {
             anomaly_id: None,
             anomaly_type: None,
             batch_id: None,
+            // ISA 240 audit flags
+            is_manual: false,
+            is_post_close: false,
+            source_system: String::new(),
+            created_date: None,
             // Internal Controls / SOX fields
             control_ids: Vec::new(),
             sox_relevant: false,
@@ -444,6 +471,11 @@ impl JournalEntryHeader {
             anomaly_id: None,
             anomaly_type: None,
             batch_id: None,
+            // ISA 240 audit flags
+            is_manual: false,
+            is_post_close: false,
+            source_system: String::new(),
+            created_date: None,
             // Internal Controls / SOX fields
             control_ids: Vec::new(),
             sox_relevant: false,
