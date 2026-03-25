@@ -1,5 +1,7 @@
 //! Engagement context for FSM engine.
 
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
@@ -41,6 +43,16 @@ pub struct EngagementContext {
     pub vendor_names: Vec<String>,
     /// Customer names for AR-related procedures.
     pub customer_names: Vec<String>,
+
+    // Cross-referencing data (for artifact coherence)
+    /// Sample journal entry IDs for evidence tracing (not full JEs -- just IDs and amounts).
+    pub journal_entry_ids: Vec<String>,
+    /// Account balances for risk weighting.
+    pub account_balances: HashMap<String, f64>,
+    /// Internal control IDs for finding-to-control linking.
+    pub control_ids: Vec<String>,
+    /// Injected anomaly references for finding-to-anomaly linking.
+    pub anomaly_refs: Vec<String>,
 
     // Configuration flags
     /// Whether the entity is listed on a US exchange (triggers PCAOB/SOX paths).
@@ -86,6 +98,26 @@ impl EngagementContext {
             ],
             vendor_names: Vec::new(),
             customer_names: Vec::new(),
+
+            // Cross-referencing data
+            journal_entry_ids: vec![
+                "JE-2025-0001".into(),
+                "JE-2025-0002".into(),
+                "JE-2025-0003".into(),
+                "JE-2025-0004".into(),
+            ],
+            account_balances: HashMap::from([
+                ("1100".into(), 1_250_000.0), // AR Control
+                ("2000".into(), 875_000.0),   // AP Control
+                ("4000".into(), 5_000_000.0), // Revenue
+                ("5000".into(), 3_200_000.0), // COGS
+            ]),
+            control_ids: vec![
+                "C001".into(), // Three-way match
+                "C010".into(), // JE approval
+                "C020".into(), // Bank reconciliation
+            ],
+            anomaly_refs: Vec::new(),
 
             // Flags
             is_us_listed: false,

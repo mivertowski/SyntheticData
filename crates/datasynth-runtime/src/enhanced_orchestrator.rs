@@ -11224,6 +11224,34 @@ impl EnhancedOrchestrator {
             .map(|c| c.currency.clone())
             .unwrap_or_else(|| "USD".to_string());
 
+        // Journal entry IDs for evidence tracing (sample up to 50).
+        let journal_entry_ids: Vec<String> = entries
+            .iter()
+            .take(50)
+            .map(|e| e.header.document_id.to_string())
+            .collect();
+
+        // Account balances for risk weighting (aggregate debit - credit per account).
+        let mut account_balances = std::collections::HashMap::<String, f64>::new();
+        for entry in entries {
+            for line in &entry.lines {
+                let debit_f64: f64 =
+                    line.debit_amount.to_string().parse().unwrap_or(0.0);
+                let credit_f64: f64 =
+                    line.credit_amount.to_string().parse().unwrap_or(0.0);
+                *account_balances
+                    .entry(line.account_code.clone())
+                    .or_insert(0.0) += debit_f64 - credit_f64;
+            }
+        }
+
+        // Internal control IDs and anomaly refs are populated by the
+        // caller when available; here we default to empty because the
+        // orchestrator state may not have generated controls/anomalies
+        // yet at this point in the pipeline.
+        let control_ids: Vec<String> = Vec::new();
+        let anomaly_refs: Vec<String> = Vec::new();
+
         let context = EngagementContext {
             company_code,
             company_name,
@@ -11244,6 +11272,10 @@ impl EnhancedOrchestrator {
             accounts,
             vendor_names,
             customer_names,
+            journal_entry_ids,
+            account_balances,
+            control_ids,
+            anomaly_refs,
             is_us_listed: false,
             entity_codes,
         };
