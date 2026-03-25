@@ -198,8 +198,7 @@ impl ItControlsGenerator {
                     // Insert failed login cluster if applicable
                     if has_failed_cluster && i == 0 {
                         let cluster_size = self.rng.random_range(3u32..=5);
-                        let Some(cluster_date) =
-                            NaiveDate::from_ymd_opt(year, month, cluster_day)
+                        let Some(cluster_date) = NaiveDate::from_ymd_opt(year, month, cluster_day)
                         else {
                             continue;
                         };
@@ -317,8 +316,8 @@ impl ItControlsGenerator {
 
                 let test_evidence = if tested {
                     let evidence_num = self.rng.random_range(1u32..=9999);
-                    let template =
-                        TEST_EVIDENCE_TEMPLATES[self.rng.random_range(0..TEST_EVIDENCE_TEMPLATES.len())];
+                    let template = TEST_EVIDENCE_TEMPLATES
+                        [self.rng.random_range(0..TEST_EVIDENCE_TEMPLATES.len())];
                     Some(template.replace("{:04}", &format!("{:04}", evidence_num)))
                 } else {
                     None
@@ -640,12 +639,11 @@ mod tests {
             let emergency_approval_rate =
                 emergency.iter().filter(|r| r.approved_by.is_some()).count() as f64
                     / emergency.len() as f64;
-            let non_emergency_approval_rate =
-                non_emergency
-                    .iter()
-                    .filter(|r| r.approved_by.is_some())
-                    .count() as f64
-                    / non_emergency.len() as f64;
+            let non_emergency_approval_rate = non_emergency
+                .iter()
+                .filter(|r| r.approved_by.is_some())
+                .count() as f64
+                / non_emergency.len() as f64;
 
             assert!(
                 emergency_approval_rate < non_emergency_approval_rate,

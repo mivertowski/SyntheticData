@@ -361,11 +361,7 @@ mod tests {
     #[test]
     fn test_assumptions_present_for_estimate_heavy_line() {
         let assumption_text = "Based on discounted cash flow analysis";
-        let item = make_line_item(
-            dec!(500_000),
-            Some(dec!(480_000)),
-            Some(assumption_text),
-        );
+        let item = make_line_item(dec!(500_000), Some(dec!(480_000)), Some(assumption_text));
         assert!(item.assumptions.is_some());
         assert_eq!(item.assumptions.as_deref(), Some(assumption_text));
     }

@@ -175,8 +175,9 @@ impl ManagementReportGenerator {
         let report_id = self.uuid_factory.next();
 
         let kpi_count = self.rng.random_range(*kpi_range.start()..=*kpi_range.end());
-        let variance_count =
-            self.rng.random_range(*variance_range.start()..=*variance_range.end());
+        let variance_count = self
+            .rng
+            .random_range(*variance_range.start()..=*variance_range.end());
 
         let kpi_summary = self.generate_kpi_summary(kpi_count);
         let budget_variances = self.generate_budget_variances(variance_count);
@@ -384,9 +385,18 @@ mod tests {
         assert!(types.contains("board_report"), "Missing board_report");
 
         // Counts
-        let flash_count = reports.iter().filter(|r| r.report_type == "flash_report").count();
-        let pack_count = reports.iter().filter(|r| r.report_type == "monthly_pack").count();
-        let board_count = reports.iter().filter(|r| r.report_type == "board_report").count();
+        let flash_count = reports
+            .iter()
+            .filter(|r| r.report_type == "flash_report")
+            .count();
+        let pack_count = reports
+            .iter()
+            .filter(|r| r.report_type == "monthly_pack")
+            .count();
+        let board_count = reports
+            .iter()
+            .filter(|r| r.report_type == "board_report")
+            .count();
         assert_eq!(flash_count, 12);
         assert_eq!(pack_count, 12);
         assert_eq!(board_count, 4);

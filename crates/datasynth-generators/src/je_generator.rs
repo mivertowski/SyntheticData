@@ -963,11 +963,7 @@ impl JournalEntryGenerator {
         // created_date: for manual entries, same day as posting; for automated,
         // 0-3 days before posting_date
         let created_date = if is_manual {
-            posting_date.and_hms_opt(
-                time.hour().min(23),
-                time.minute(),
-                time.second(),
-            )
+            posting_date.and_hms_opt(time.hour().min(23), time.minute(), time.second())
         } else {
             let lag_days = self.rng.random_range(0i64..=3);
             let created_naive_date = posting_date
@@ -1284,11 +1280,8 @@ impl JournalEntryGenerator {
         header.is_post_close = posting_date.month() == self.end_date.month()
             && posting_date.year() == self.end_date.year()
             && posting_date.day() > 25;
-        header.created_date = posting_date.and_hms_opt(
-            time.hour().min(23),
-            time.minute(),
-            time.second(),
-        );
+        header.created_date =
+            posting_date.and_hms_opt(time.hour().min(23), time.minute(), time.second());
 
         // Generate similar amount (within ±15% of base)
         let variation = self.rng.random_range(-0.15..0.15);
