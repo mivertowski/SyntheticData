@@ -29,9 +29,14 @@ use datasynth_generators::audit::{
     JudgmentGenerator, RiskAssessmentGenerator, WorkpaperGenerator,
 };
 
+use std::collections::HashMap;
+
+use crate::analytics_inventory::{
+    load_form_ontology, load_fsa_inventory, AnalyticalProcedure, StepInventory,
+};
 use crate::artifact::ArtifactBag;
 use crate::content::{
-    ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext,
+    AnalyticalContext, ContentGenerator, FindingContext, TemplateContentGenerator, WorkpaperContext,
 };
 use crate::context::EngagementContext;
 use crate::schema::BlueprintStep;
@@ -62,6 +67,8 @@ pub struct StepDispatcher {
     opinion_gen: AuditOpinionGenerator,
     confirmation_gen: ConfirmationGenerator,
     content_gen: Box<dyn ContentGenerator>,
+    analytics_inventory: HashMap<String, StepInventory>,
+    form_ontology: HashMap<String, Vec<String>>,
 }
 
 impl StepDispatcher {
@@ -75,7 +82,19 @@ impl StepDispatcher {
 
     /// Create a dispatcher with a custom [`ContentGenerator`] for narrative
     /// enrichment of findings and workpapers.
+    ///
+    /// Uses the FSA analytics inventory by default.
     pub fn new_with_content(base_seed: u64, content_gen: Box<dyn ContentGenerator>) -> Self {
+        Self::new_with_inventory(base_seed, content_gen, load_fsa_inventory())
+    }
+
+    /// Create a dispatcher with a custom [`ContentGenerator`] and an explicit
+    /// analytics inventory (e.g. IA inventory for internal audit blueprints).
+    pub fn new_with_inventory(
+        base_seed: u64,
+        content_gen: Box<dyn ContentGenerator>,
+        analytics_inventory: HashMap<String, StepInventory>,
+    ) -> Self {
         Self {
             engagement_gen: AuditEngagementGenerator::new(base_seed + 7000),
             letter_gen: EngagementLetterGenerator::new(base_seed + 7100),
@@ -93,6 +112,8 @@ impl StepDispatcher {
             opinion_gen: AuditOpinionGenerator::new(base_seed + 8200),
             confirmation_gen: ConfirmationGenerator::new(base_seed + 8300),
             content_gen,
+            analytics_inventory,
+            form_ontology: load_form_ontology(),
         }
     }
 
@@ -394,6 +415,139 @@ impl StepDispatcher {
                 self.dispatch_generic_workpaper(step, procedure_id, context, bag);
             }
         }
+
+        // Post-dispatch: enrich artifacts with analytics inventory data.
+        self.enrich_from_inventory(&step.id, procedure_id, context, bag);
+    }
+
+    // -----------------------------------------------------------------------
+    // Analytics inventory enrichment
+    // -----------------------------------------------------------------------
+
+    /// After each step dispatch, look up the step's analytics inventory entry
+    /// and generate additional evidence/workpaper artifacts with analytical
+    /// narratives.
+    fn enrich_from_inventory(
+        &mut self,
+        step_id: &str,
+        procedure_id: &str,
+        ctx: &EngagementContext,
+        bag: &mut ArtifactBag,
+    ) {
+        let inv = match self.analytics_inventory.get(step_id) {
+            Some(inv) => inv,
+            None => return,
+        };
+
+        // Build a data requirements summary for workpaper enrichment.
+        if !inv.data_requirements.is_empty() {
+            let req_summary: String = inv
+                .data_requirements
+                .iter()
+                .map(|r| {
+                    let fields_str = if r.fields.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" [fields: {}]", r.fields.join(", "))
+                    };
+                    format!("{} ({}){}", r.name, r.data_type, fields_str)
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+
+            // Append data requirements to the most recent workpaper objective.
+            if let Some(wp) = bag.workpapers.last_mut() {
+                wp.objective = format!("{} | Data requirements: {}", wp.objective, req_summary);
+            }
+        }
+
+        // Enrich the most recent evidence with form ontology field templates.
+        if !self.form_ontology.is_empty() {
+            let form_fields = self.collect_form_fields_for_step(inv);
+            if !form_fields.is_empty() {
+                if let Some(ev) = bag.evidence.last_mut() {
+                    let fields_str = form_fields.join(", ");
+                    ev.description =
+                        format!("{} | Expected form fields: {}", ev.description, fields_str);
+                }
+            }
+        }
+
+        // Generate analytical narratives for each procedure in the inventory.
+        for ap in &inv.analytical_procedures {
+            let narrative = self.generate_analytical_narrative_for(procedure_id, step_id, ap);
+
+            // Create an evidence artifact with the analytical narrative.
+            if let Some(wp) = bag.workpapers.last() {
+                let evidence = self.evidence_gen.generate_evidence_for_workpaper(
+                    wp,
+                    &ctx.team_member_ids,
+                    ctx.engagement_start,
+                );
+                // Enrich the first evidence item with the analytical narrative.
+                let mut enriched: Vec<_> = evidence.into_iter().collect();
+                if let Some(ev) = enriched.first_mut() {
+                    ev.description = narrative;
+                }
+                bag.evidence.extend(enriched);
+            }
+        }
+    }
+
+    /// Collect form ontology fields relevant to a step's data requirements.
+    ///
+    /// Matches data requirement `data_type` and `name` fragments against
+    /// form ontology category names to find relevant field templates.
+    fn collect_form_fields_for_step(&self, inv: &StepInventory) -> Vec<String> {
+        let mut fields = Vec::new();
+        for req in &inv.data_requirements {
+            // Try matching by data_type and name keywords against form categories.
+            for (category, cat_fields) in &self.form_ontology {
+                let cat_lower = category.to_lowercase();
+                let matches = cat_lower.contains(&req.data_type.to_lowercase())
+                    || req
+                        .name
+                        .split_whitespace()
+                        .filter(|w| w.len() > 3)
+                        .any(|word| cat_lower.contains(&word.to_lowercase()));
+                if matches {
+                    for f in cat_fields {
+                        if !fields.contains(f) && f.len() < 200 {
+                            fields.push(f.clone());
+                        }
+                    }
+                    // Limit per-category to keep output manageable.
+                    if fields.len() >= 20 {
+                        break;
+                    }
+                }
+            }
+            if fields.len() >= 20 {
+                break;
+            }
+        }
+        fields.truncate(20);
+        fields
+    }
+
+    /// Generate an analytical narrative from an inventory procedure entry.
+    fn generate_analytical_narrative_for(
+        &self,
+        procedure_id: &str,
+        step_id: &str,
+        ap: &AnalyticalProcedure,
+    ) -> String {
+        self.content_gen
+            .generate_analytical_narrative(&AnalyticalContext {
+                procedure_id: procedure_id.to_string(),
+                step_id: step_id.to_string(),
+                procedure_type: ap.procedure_type.clone(),
+                name: ap.name.clone(),
+                description: ap.description.clone(),
+                data_features: ap.data_features.clone(),
+                threshold: ap.threshold.clone(),
+                expected_output: ap.expected_output.clone(),
+            })
     }
 
     // -----------------------------------------------------------------------
@@ -1625,7 +1779,9 @@ mod tests {
 
     #[test]
     fn test_new_with_content_uses_custom_generator() {
-        use crate::content::{ContentGenerator, FindingContext, ResponseContext, WorkpaperContext};
+        use crate::content::{
+            AnalyticalContext, ContentGenerator, FindingContext, ResponseContext, WorkpaperContext,
+        };
 
         /// A test content generator that prefixes all output with "CUSTOM:".
         struct CustomGen;
@@ -1638,6 +1794,9 @@ mod tests {
             }
             fn generate_management_response(&self, _ctx: &ResponseContext) -> String {
                 "CUSTOM: management response".to_string()
+            }
+            fn generate_analytical_narrative(&self, _ctx: &AnalyticalContext) -> String {
+                "CUSTOM: analytical narrative".to_string()
             }
         }
 
@@ -1678,6 +1837,55 @@ mod tests {
             bag.findings[0].condition.contains("CUSTOM:"),
             "custom content generator should be used for findings; got: {}",
             bag.findings[0].condition,
+        );
+    }
+
+    #[test]
+    fn test_dispatch_enriches_with_analytics() {
+        // Use a step_id that matches an entry in the FSA analytics inventory.
+        // "risk_step_1" has 4 data requirements and 2 analytical procedures.
+        let mut dispatcher = StepDispatcher::new(42);
+        let ctx = EngagementContext::test_default();
+        let mut bag = ArtifactBag::default();
+
+        // Create an engagement first.
+        let eng_step = step_with_command("s0", "evaluate_client_acceptance");
+        dispatcher.dispatch(&eng_step, "client_acceptance", &ctx, &mut bag);
+
+        let evidence_before = bag.evidence.len();
+
+        // Dispatch a workpaper step with a step_id that exists in the inventory.
+        let mut step = step_with_command("risk_step_1", "design_test_procedures");
+        step.id = "risk_step_1".to_string();
+        dispatcher.dispatch(&step, "risk_identification", &ctx, &mut bag);
+
+        // The workpaper objective should be enriched with data requirements.
+        let wp = bag.workpapers.last().expect("should have a workpaper");
+        assert!(
+            wp.objective.contains("Data requirements:"),
+            "workpaper objective should be enriched with data requirements; got: {}",
+            wp.objective,
+        );
+
+        // Analytical procedures should have generated additional evidence.
+        assert!(
+            bag.evidence.len() > evidence_before,
+            "analytics enrichment should generate additional evidence; before={}, after={}",
+            evidence_before,
+            bag.evidence.len(),
+        );
+
+        // Evidence descriptions should contain analytical narrative content.
+        let analytical_evidence: Vec<_> = bag
+            .evidence
+            .iter()
+            .filter(|e| {
+                e.description.contains("trend_analysis") || e.description.contains("ratio_analysis")
+            })
+            .collect();
+        assert!(
+            !analytical_evidence.is_empty(),
+            "at least one evidence item should contain analytical procedure narrative"
         );
     }
 }

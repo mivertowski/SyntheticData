@@ -23,6 +23,7 @@
 //! let json = export_events_to_json(&result.event_log).unwrap();
 //! ```
 
+pub mod analytics_inventory;
 pub mod artifact;
 pub mod benchmark;
 pub mod content;

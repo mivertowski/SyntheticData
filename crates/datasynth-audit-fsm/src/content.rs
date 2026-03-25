@@ -47,6 +47,27 @@ pub struct ResponseContext {
     pub recommendation: String,
 }
 
+/// Context for generating analytical procedure narratives, populated from
+/// the analytics inventory.
+pub struct AnalyticalContext {
+    /// Parent procedure identifier.
+    pub procedure_id: String,
+    /// Step identifier within the procedure.
+    pub step_id: String,
+    /// Type of analytical procedure (e.g. `"ratio_analysis"`, `"trend_analysis"`).
+    pub procedure_type: String,
+    /// Human-readable procedure name.
+    pub name: String,
+    /// Description of the analytical procedure.
+    pub description: String,
+    /// Data features analysed by this procedure.
+    pub data_features: Vec<String>,
+    /// Threshold or tolerance applied.
+    pub threshold: String,
+    /// Expected output of the procedure.
+    pub expected_output: String,
+}
+
 // ---------------------------------------------------------------------------
 // Trait
 // ---------------------------------------------------------------------------
@@ -70,6 +91,10 @@ pub trait ContentGenerator: Send + Sync {
 
     /// Generate a management response to an audit finding.
     fn generate_management_response(&self, context: &ResponseContext) -> String;
+
+    /// Generate a narrative for an analytical procedure derived from the
+    /// analytics inventory.
+    fn generate_analytical_narrative(&self, context: &AnalyticalContext) -> String;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +138,22 @@ impl ContentGenerator for TemplateContentGenerator {
              In response to the recommendation to {}, management will \
              implement corrective action within 90 days.",
             ctx.finding_type, ctx.condition, ctx.recommendation,
+        )
+    }
+
+    fn generate_analytical_narrative(&self, ctx: &AnalyticalContext) -> String {
+        format!(
+            "{} — {}: {}. Data features analyzed: {}. {}{}",
+            ctx.name,
+            ctx.procedure_type,
+            ctx.description,
+            ctx.data_features.join(", "),
+            ctx.expected_output,
+            if ctx.threshold.is_empty() {
+                String::new()
+            } else {
+                format!(" Threshold: {}.", ctx.threshold)
+            },
         )
     }
 }
@@ -209,5 +250,69 @@ mod tests {
     fn test_template_generator_is_send_sync() {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<TemplateContentGenerator>();
+    }
+
+    fn make_analytical_ctx() -> AnalyticalContext {
+        AnalyticalContext {
+            procedure_id: "risk_assessment".into(),
+            step_id: "risk_step_1".into(),
+            procedure_type: "trend_analysis".into(),
+            name: "Revenue trend analysis".into(),
+            description: "Analyze revenue trends over periods".into(),
+            data_features: vec!["revenue".into(), "period".into(), "growth_rate".into()],
+            threshold: "5% deviation".into(),
+            expected_output: "Trend line with variance flags".into(),
+        }
+    }
+
+    #[test]
+    fn test_analytical_narrative_template() {
+        let gen = TemplateContentGenerator;
+        let ctx = make_analytical_ctx();
+        let narrative = gen.generate_analytical_narrative(&ctx);
+        assert!(
+            !narrative.is_empty(),
+            "analytical narrative must not be empty"
+        );
+        assert!(
+            narrative.contains(&ctx.name),
+            "narrative must contain procedure name"
+        );
+        assert!(
+            narrative.contains(&ctx.procedure_type),
+            "narrative must contain procedure type"
+        );
+        assert!(
+            narrative.contains("revenue"),
+            "narrative must contain data features"
+        );
+        assert!(
+            narrative.contains(&ctx.expected_output),
+            "narrative must contain expected output"
+        );
+        assert!(
+            narrative.contains("Threshold: 5% deviation"),
+            "narrative must contain threshold"
+        );
+    }
+
+    #[test]
+    fn test_analytical_narrative_empty_threshold() {
+        let gen = TemplateContentGenerator;
+        let ctx = AnalyticalContext {
+            procedure_id: "p1".into(),
+            step_id: "s1".into(),
+            procedure_type: "ratio_analysis".into(),
+            name: "Test ratio".into(),
+            description: "Test desc".into(),
+            data_features: vec!["f1".into()],
+            threshold: String::new(),
+            expected_output: "Expected output".into(),
+        };
+        let narrative = gen.generate_analytical_narrative(&ctx);
+        assert!(
+            !narrative.contains("Threshold"),
+            "empty threshold should not appear in narrative"
+        );
     }
 }
