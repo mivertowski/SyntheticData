@@ -26,6 +26,8 @@
 pub mod artifact;
 pub mod benchmark;
 pub mod content;
+#[cfg(feature = "claude-content")]
+pub mod content_claude;
 pub mod context;
 pub mod dispatch;
 pub mod engine;
