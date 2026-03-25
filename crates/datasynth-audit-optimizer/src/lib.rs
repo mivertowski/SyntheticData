@@ -2,6 +2,7 @@
 
 pub mod conformance;
 pub mod constrained;
+pub mod discovery;
 pub mod graph;
 pub mod monte_carlo;
 pub mod overlay_fitting;
