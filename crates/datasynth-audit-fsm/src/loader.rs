@@ -35,6 +35,9 @@ const BUILTIN_EY_GAM_LITE: &str = include_str!("../blueprints/ey_gam_lite.yaml")
 /// The built-in SOC 2 Type II (AICPA Trust Services Criteria) blueprint.
 const BUILTIN_SOC2: &str = include_str!("../blueprints/soc2_type2.yaml");
 
+/// The built-in PCAOB Integrated Audit (AS 2201 + Financial Statements) blueprint.
+const BUILTIN_PCAOB: &str = include_str!("../blueprints/pcaob_integrated.yaml");
+
 // ---------------------------------------------------------------------------
 // Built-in overlay YAML
 // ---------------------------------------------------------------------------
@@ -91,6 +94,8 @@ pub enum BuiltinBlueprint {
     EyGamLite,
     /// SOC 2 Type II (AICPA Trust Services Criteria) Service Organization Audit.
     Soc2,
+    /// PCAOB Integrated Audit (Financial Statements + ICFR).
+    Pcaob,
 }
 
 /// Identifies the source of a generation overlay.
@@ -730,6 +735,7 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
                 BuiltinBlueprint::Deloitte => BUILTIN_DELOITTE,
                 BuiltinBlueprint::EyGamLite => BUILTIN_EY_GAM_LITE,
                 BuiltinBlueprint::Soc2 => BUILTIN_SOC2,
+                BuiltinBlueprint::Pcaob => BUILTIN_PCAOB,
             };
             parse_blueprint(yaml)
         }
@@ -1090,6 +1096,7 @@ fn extract_preconditions_from_builtin(
     let yaml = match bp.methodology.framework.as_str() {
         "IIA-GIAS" => BUILTIN_IA,
         "AICPA-TSC" => BUILTIN_SOC2,
+        "PCAOB" => BUILTIN_PCAOB,
         "ISA" if name.contains("KPMG") => BUILTIN_KPMG,
         "ISA" if name.contains("PwC") => BUILTIN_PWC,
         "ISA" if name.contains("Deloitte") => BUILTIN_DELOITTE,
@@ -1180,6 +1187,16 @@ impl BlueprintWithPreconditions {
     /// Load from the builtin SOC 2 Type II (AICPA Trust Services Criteria) blueprint.
     pub fn load_builtin_soc2() -> Result<Self, AuditFsmError> {
         let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Soc2))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin PCAOB Integrated Audit blueprint.
+    pub fn load_builtin_pcaob() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Pcaob))?;
         let preconditions = extract_preconditions_from_builtin(&bp)?;
         Ok(Self {
             blueprint: bp,

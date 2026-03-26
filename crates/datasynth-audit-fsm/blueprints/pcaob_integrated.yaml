@@ -1,0 +1,1639 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "PCAOB Integrated Audit (Financial Statements + ICFR)"
+  version: "2025.1"
+  framework: "PCAOB"
+  description: >
+    US public company integrated audit following PCAOB Auditing Standards.
+    Combines the audit of financial statements with the audit of internal
+    control over financial reporting (ICFR) per AS 2201. Addresses
+    PCAOB-specific requirements including fraud assessment (AS 2401),
+    risk assessment (AS 2110), and critical audit matters (AS 3101).
+
+discriminators:
+  tiers:
+    - core
+  scopes:
+    - financial_statements
+    - icfr
+    - integrated
+
+actors:
+  - id: engagement_partner
+    name: "Engagement Partner"
+    responsibilities:
+      - Overall engagement quality and supervision
+      - Signing the integrated audit report
+      - CAM determination and communication
+  - id: audit_manager
+    name: "Audit Manager"
+    responsibilities:
+      - Day-to-day engagement management
+      - Reviewing workpapers and team work
+      - Coordinating with specialists
+  - id: audit_senior
+    name: "Audit Senior"
+    responsibilities:
+      - Executing audit procedures and walkthroughs
+      - Preparing workpapers and test documentation
+      - Supervising staff on detailed testing
+  - id: audit_staff
+    name: "Audit Staff"
+    responsibilities:
+      - Performing detailed testing of controls and balances
+      - Documenting test results and exceptions
+  - id: it_specialist
+    name: "IT Audit Specialist"
+    responsibilities:
+      - Evaluating IT general and application controls
+      - Testing automated controls and system interfaces
+
+standards_catalog:
+  - ref: "AS 1101"
+    title: "Audit Risk"
+    binding: requirement
+  - ref: "AS 1105"
+    title: "Audit Evidence"
+    binding: requirement
+  - ref: "AS 1201"
+    title: "Supervision of the Audit Engagement"
+    binding: requirement
+  - ref: "AS 1301"
+    title: "Communications with Audit Committees"
+    binding: requirement
+  - ref: "AS 2101"
+    title: "Audit Planning"
+    binding: requirement
+  - ref: "AS 2110"
+    title: "Identifying and Assessing Risks of Material Misstatement"
+    binding: requirement
+  - ref: "AS 2201"
+    title: "An Audit of Internal Control Over Financial Reporting"
+    binding: requirement
+  - ref: "AS 2301"
+    title: "The Auditor's Responses to the Risks of Material Misstatement"
+    binding: requirement
+  - ref: "AS 2401"
+    title: "Consideration of Fraud in a Financial Statement Audit"
+    binding: requirement
+  - ref: "AS 2415"
+    title: "Consideration of an Entity's Ability to Continue as a Going Concern"
+    binding: requirement
+  - ref: "AS 2501"
+    title: "Auditing Accounting Estimates"
+    binding: requirement
+  - ref: "AS 2502"
+    title: "Auditing Fair Value Measurements and Disclosures"
+    binding: requirement
+  - ref: "AS 2505"
+    title: "Inquiry of a Client's Lawyer"
+    binding: requirement
+  - ref: "AS 2601"
+    title: "Consideration of an Entity's Use of a Service Organization"
+    binding: requirement
+  - ref: "AS 2810"
+    title: "Evaluating Audit Results"
+    binding: requirement
+  - ref: "AS 3101"
+    title: "The Auditor's Report on an Audit of Financial Statements"
+    binding: requirement
+  - ref: "COSO-2013"
+    title: "COSO 2013 Internal Control-Integrated Framework"
+    binding: guidance
+
+evidence_catalog:
+  - id: engagement_letter_pcaob
+    name: "Engagement Letter (Integrated Audit)"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: overall_audit_strategy
+    name: "Overall Audit Strategy"
+    type: document
+    lifecycle: [draft, under_review, finalized]
+  - id: materiality_workpaper
+    name: "Materiality Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: risk_assessment_summary
+    name: "Risk Assessment Summary"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: fraud_risk_assessment
+    name: "Fraud Risk Assessment (AS 2401)"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: significant_accounts_memo
+    name: "Significant Accounts and Relevant Assertions"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: entity_level_controls_wp
+    name: "Entity-Level Controls Evaluation"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: walkthrough_documentation
+    name: "Walkthrough Documentation"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: controls_test_results
+    name: "Controls Testing Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: deficiency_evaluation
+    name: "Control Deficiency Evaluation"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: substantive_test_results
+    name: "Substantive Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: misstatement_summary
+    name: "Summary of Misstatements (AS 2810)"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: going_concern_assessment
+    name: "Going Concern Assessment (AS 2415)"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: cam_documentation
+    name: "Critical Audit Matters Documentation"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: icfr_opinion
+    name: "Opinion on ICFR"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+  - id: fs_opinion
+    name: "Opinion on Financial Statements"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+
+phases:
+  - id: engagement_acceptance
+    name: "Engagement Acceptance & Planning"
+    order: 1
+    description: >
+      Accept the integrated audit engagement, determine materiality, plan
+      the audit strategy for both financial statements and ICFR, and
+      perform initial risk assessment including fraud risk factors.
+    gate:
+      all_of:
+        - procedure: pcaob_engagement_acceptance
+          state: completed
+        - procedure: icfr_planning
+          state: completed
+        - procedure: identify_significant_accounts
+          state: completed
+
+  - id: risk_assessment
+    name: "Risk Assessment & Entity Understanding"
+    order: 2
+    description: >
+      Perform the top-down risk assessment, evaluate entity-level controls
+      using the COSO framework, and perform walkthroughs of significant
+      processes to identify likely sources of misstatement.
+    gate:
+      all_of:
+        - procedure: evaluate_entity_level_controls
+          state: completed
+        - procedure: walkthroughs
+          state: completed
+
+  - id: testing
+    name: "Controls Testing & Substantive Procedures"
+    order: 3
+    description: >
+      Test the design and operating effectiveness of controls for both
+      ICFR and financial statement audit purposes. Perform substantive
+      procedures responsive to assessed risks.
+    gate:
+      all_of:
+        - procedure: test_controls_design_and_effectiveness
+          state: completed
+        - procedure: substantive_procedures
+          state: completed
+
+  - id: evaluation
+    name: "Evaluation of Results"
+    order: 4
+    description: >
+      Evaluate control deficiencies for ICFR classification, aggregate
+      and evaluate misstatements, assess going concern, and evaluate
+      sufficiency of audit evidence obtained.
+    gate:
+      all_of:
+        - procedure: evaluate_control_deficiencies
+          state: completed
+        - procedure: evaluate_misstatements
+          state: completed
+        - procedure: going_concern_evaluation
+          state: completed
+        - procedure: evaluate_audit_evidence
+          state: completed
+
+  - id: reporting
+    name: "Reporting"
+    order: 5
+    description: >
+      Identify critical audit matters, form opinions on both ICFR and
+      financial statements, and issue the integrated audit report.
+    gate:
+      all_of:
+        - procedure: critical_audit_matters
+          state: completed
+        - procedure: icfr_opinion_formation
+          state: completed
+        - procedure: financial_statement_opinion
+          state: completed
+
+procedures:
+  # ---- ENGAGEMENT ACCEPTANCE & PLANNING PHASE ----
+
+  - id: pcaob_engagement_acceptance
+    phase: engagement_acceptance
+    title: "Accept Integrated Audit Engagement"
+    base_hours: 8.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_pcaob_acceptance
+          emits: PcaobAcceptanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_pcaob_acceptance
+          emits: PcaobAcceptanceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_pcaob_acceptance
+          emits: PcaobAcceptanceApproved
+          guards: [partner_approved]
+    steps:
+      - id: pcaob_accept_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate independence requirements under PCAOB Rule 3520 and
+          SEC independence rules, including non-audit services, partner
+          rotation, and fee arrangements. Document the independence
+          evaluation for the integrated audit engagement.
+        binding: requirement
+        command: evaluate_pcaob_independence
+        emits: PcaobIndependenceEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AS 1201"
+            paragraphs: ["3", "5"]
+            binding: requirement
+      - id: pcaob_accept_2
+        order: 2
+        action: agree
+        actor: engagement_partner
+        description: >
+          Agree the terms of the integrated audit engagement with the
+          audit committee, including the scope covering both the
+          financial statement audit and the audit of ICFR, and obtain
+          the engagement letter.
+        binding: requirement
+        command: agree_integrated_terms
+        emits: IntegratedTermsAgreed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: engagement_letter_pcaob
+              type: document
+        standards:
+          - ref: "AS 2101"
+            paragraphs: ["4", "5"]
+            binding: requirement
+          - ref: "AS 1301"
+            paragraphs: ["4"]
+            binding: requirement
+      - id: pcaob_accept_3
+        order: 3
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine overall materiality for the financial statements
+          and for ICFR purposes, selecting appropriate benchmarks
+          and percentages. Establish performance materiality and the
+          threshold for clearly trivial amounts.
+        binding: requirement
+        command: determine_pcaob_materiality
+        emits: PcaobMaterialityDetermined
+        evidence:
+          inputs: []
+          outputs:
+            - ref: materiality_workpaper
+              type: workpaper
+        standards:
+          - ref: "AS 2105"
+            paragraphs: []
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  - id: icfr_planning
+    phase: engagement_acceptance
+    title: "Plan Integrated Audit (AS 2201)"
+    base_hours: 16.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_icfr_planning
+          emits: IcfrPlanningStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_icfr_planning
+          emits: IcfrPlanningSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_icfr_planning
+          emits: IcfrPlanningRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_icfr_planning
+          emits: IcfrPlanningApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: icfr_plan_1
+        order: 1
+        action: develop
+        actor: audit_manager
+        description: >
+          Develop the overall audit strategy for the integrated audit,
+          identifying the scope, timing, and direction of the engagement
+          including coordination between the financial statement audit
+          and the ICFR audit.
+        binding: requirement
+        command: develop_integrated_strategy
+        emits: IntegratedStrategyDeveloped
+        evidence:
+          inputs: []
+          outputs:
+            - ref: overall_audit_strategy
+              type: document
+        standards:
+          - ref: "AS 2101"
+            paragraphs: ["5", "6"]
+            binding: requirement
+      - id: icfr_plan_2
+        order: 2
+        action: assess
+        actor: audit_manager
+        description: >
+          Perform fraud risk assessment per AS 2401, including
+          brainstorming sessions, inquiry of management about fraud
+          risks, evaluation of fraud risk factors, and identification
+          of presumed risks (revenue recognition fraud, management
+          override of controls).
+        binding: requirement
+        command: assess_fraud_risks
+        emits: FraudRisksAssessed
+        judgment_level: high
+        evidence:
+          inputs: []
+          outputs:
+            - ref: fraud_risk_assessment
+              type: assessment
+        standards:
+          - ref: "AS 2401"
+            paragraphs: ["14", "15", "16", "26"]
+            binding: requirement
+      - id: icfr_plan_3
+        order: 3
+        action: plan
+        actor: audit_manager
+        description: >
+          Plan the top-down approach for the ICFR audit, beginning with
+          the overall financial reporting objectives and working down
+          to individual significant accounts and relevant assertions,
+          identifying the controls to test at each level.
+        binding: requirement
+        command: plan_top_down_approach
+        emits: TopDownApproachPlanned
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["21", "22"]
+            binding: requirement
+      - id: icfr_plan_4
+        order: 4
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the nature, timing, and extent of testing required
+          for both the financial statement audit and the ICFR audit,
+          identifying dual-purpose tests that serve both objectives
+          and coordinating the testing timeline.
+        binding: requirement
+        command: determine_testing_plan
+        emits: TestingPlanDetermined
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["45", "46"]
+            binding: requirement
+          - ref: "AS 2301"
+            paragraphs: ["5", "6"]
+            binding: requirement
+    preconditions:
+      - pcaob_engagement_acceptance
+    knowledge_refs: []
+
+  - id: identify_significant_accounts
+    phase: engagement_acceptance
+    title: "Identify Significant Accounts and Relevant Assertions"
+    base_hours: 12.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_sig_accounts
+          emits: SigAccountsStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_sig_accounts
+          emits: SigAccountsSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_sig_accounts
+          emits: SigAccountsApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: sig_acct_1
+        order: 1
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify significant accounts by evaluating account size,
+          composition, susceptibility to misstatement, volume of
+          activity, accounting complexity, and exposure to losses.
+          Include both quantitative and qualitative factors.
+        binding: requirement
+        command: identify_significant_accts
+        emits: SignificantAcctsIdentified
+        standards:
+          - ref: "AS 2110"
+            paragraphs: ["41", "42"]
+            binding: requirement
+          - ref: "AS 2201"
+            paragraphs: ["29", "30"]
+            binding: requirement
+      - id: sig_acct_2
+        order: 2
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify the relevant financial statement assertions for each
+          significant account and the likely sources of potential
+          misstatements, considering the risk of material misstatement
+          at the assertion level.
+        binding: requirement
+        command: identify_relevant_assertions
+        emits: RelevantAssertionsIdentified
+        standards:
+          - ref: "AS 2110"
+            paragraphs: ["43", "44"]
+            binding: requirement
+      - id: sig_acct_3
+        order: 3
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify the significant processes and major classes of
+          transactions associated with each significant account,
+          mapping the transaction flow from initiation through
+          recording in the financial statements.
+        binding: requirement
+        command: identify_significant_processes
+        emits: SignificantProcessesIdentified
+        evidence:
+          inputs: []
+          outputs:
+            - ref: significant_accounts_memo
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["34", "35"]
+            binding: requirement
+    preconditions:
+      - pcaob_engagement_acceptance
+    knowledge_refs:
+      - icfr_planning
+
+  # ---- RISK ASSESSMENT & ENTITY UNDERSTANDING PHASE ----
+
+  - id: evaluate_entity_level_controls
+    phase: risk_assessment
+    title: "Evaluate Entity-Level Controls (COSO)"
+    base_hours: 16.0
+    required_roles: [audit_manager, it_specialist]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_elc_eval
+          emits: ElcEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_elc_eval
+          emits: ElcEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_elc_eval
+          emits: ElcEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: elc_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate entity-level controls using the COSO 2013 framework,
+          covering all five components: control environment, risk
+          assessment, control activities, information and communication,
+          and monitoring activities. Assess the tone at the top and
+          management's commitment to competence and integrity.
+        binding: requirement
+        command: evaluate_coso_components
+        emits: CosoComponentsEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["22", "23", "24"]
+            binding: requirement
+          - ref: "COSO-2013"
+            paragraphs: []
+            binding: guidance
+      - id: elc_2
+        order: 2
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate IT general controls including access security,
+          change management, computer operations, and program
+          development. Determine the impact of IT controls on the
+          reliability of financial reporting.
+        binding: requirement
+        command: evaluate_it_general_controls
+        emits: ItGeneralControlsEvaluated
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["36", "37"]
+            binding: requirement
+      - id: elc_3
+        order: 3
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate the period-end financial reporting process controls,
+          including those over journal entries and adjustments,
+          management estimates, and non-routine and non-systematic
+          transactions.
+        binding: requirement
+        command: evaluate_period_end_controls
+        emits: PeriodEndControlsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: entity_level_controls_wp
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["26", "27"]
+            binding: requirement
+      - id: elc_4
+        order: 4
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the effect of entity-level controls on the
+          nature, timing, and extent of testing of other controls.
+          Assess whether entity-level controls are sufficiently
+          precise to prevent or detect material misstatement.
+        binding: requirement
+        command: determine_elc_effect
+        emits: ElcEffectDetermined
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["25"]
+            binding: requirement
+        decisions:
+          - condition: "Do entity-level controls reduce testing at lower levels?"
+            branches:
+              - label: "Yes"
+                description: "Reduce extent of process-level controls testing"
+              - label: "No"
+                description: "Full process-level testing required"
+    preconditions:
+      - identify_significant_accounts
+    knowledge_refs:
+      - icfr_planning
+
+  - id: walkthroughs
+    phase: risk_assessment
+    title: "Perform PCAOB-Required Walkthroughs"
+    base_hours: 20.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_walkthroughs
+          emits: WalkthroughsStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_walkthroughs
+          emits: WalkthroughsSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_walkthroughs
+          emits: WalkthroughsApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: walk_1
+        order: 1
+        action: plan
+        actor: audit_senior
+        description: >
+          Plan walkthroughs for each significant process, identifying
+          the key control points, the personnel involved, the
+          documents and records to trace, and the IT systems used
+          in processing transactions.
+        binding: requirement
+        command: plan_walkthroughs
+        emits: WalkthroughsPlanned
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["37", "38"]
+            binding: requirement
+      - id: walk_2
+        order: 2
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform walkthroughs by tracing transactions from initiation
+          through the financial statements, making inquiries of
+          personnel, observing controls being performed, and
+          inspecting relevant documents and reports at each point
+          in the process.
+        binding: requirement
+        command: perform_walkthroughs
+        emits: WalkthroughsPerformed
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["39", "40"]
+            binding: requirement
+      - id: walk_3
+        order: 3
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify points within the process where a misstatement
+          could occur, evaluating the design of controls at each
+          point and determining whether controls are properly
+          implemented at the time of the walkthrough.
+        binding: requirement
+        command: identify_misstatement_points
+        emits: MisstatementPointsIdentified
+        judgment_level: medium
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["41", "42"]
+            binding: requirement
+      - id: walk_4
+        order: 4
+        action: document
+        actor: audit_senior
+        description: >
+          Document the walkthrough results including the understanding
+          obtained of each significant process, the controls identified,
+          and the points at which misstatements could occur. Confirm
+          that the auditor's understanding is complete and accurate.
+        binding: requirement
+        command: document_walkthroughs
+        emits: WalkthroughsDocumented
+        evidence:
+          inputs: []
+          outputs:
+            - ref: walkthrough_documentation
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["43", "44"]
+            binding: requirement
+    preconditions:
+      - identify_significant_accounts
+    knowledge_refs:
+      - evaluate_entity_level_controls
+
+  # ---- CONTROLS TESTING & SUBSTANTIVE PROCEDURES PHASE ----
+
+  - id: test_controls_design_and_effectiveness
+    phase: testing
+    title: "Test Controls Design and Operating Effectiveness"
+    base_hours: 40.0
+    required_roles: [audit_senior, audit_staff, it_specialist]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_controls_testing
+          emits: ControlsTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_controls_testing
+          emits: ControlsTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_controls_testing
+          emits: ControlsTestingRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_controls_testing
+          emits: ControlsTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: ctrl_test_1
+        order: 1
+        action: select
+        actor: audit_senior
+        description: >
+          Select controls to test for each significant process,
+          considering the risk associated with the relevant assertion,
+          whether the control addresses a fraud risk, and the nature
+          of the control (manual vs. automated, preventive vs.
+          detective).
+        binding: requirement
+        command: select_controls_to_test
+        emits: ControlsToTestSelected
+        evidence:
+          inputs:
+            - ref: walkthrough_documentation
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["46", "47"]
+            binding: requirement
+      - id: ctrl_test_2
+        order: 2
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform dual-purpose tests that address both the design and
+          operating effectiveness of selected controls, using a
+          combination of inquiry, observation, inspection of evidence,
+          and re-performance to obtain sufficient evidence.
+        binding: requirement
+        command: perform_dual_purpose_tests
+        emits: DualPurposeTestsPerformed
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["48", "49", "50"]
+            binding: requirement
+      - id: ctrl_test_3
+        order: 3
+        action: perform
+        actor: it_specialist
+        description: >
+          Test IT application controls and automated controls, including
+          system-enforced segregation of duties, automated calculations,
+          interface controls, and report generation accuracy.
+        binding: requirement
+        command: test_automated_controls
+        emits: AutomatedControlsTested
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["36", "37"]
+            binding: requirement
+      - id: ctrl_test_4
+        order: 4
+        action: evaluate
+        actor: audit_senior
+        description: >
+          Evaluate controls test results, identifying any deviations
+          and assessing whether the controls operated effectively
+          throughout the period. Determine the impact of deviations
+          on the planned nature, timing, and extent of substantive
+          procedures.
+        binding: requirement
+        command: evaluate_controls_test_results
+        emits: ControlsTestResultsEvaluated
+        judgment_level: medium
+        evidence:
+          inputs: []
+          outputs:
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["51", "52"]
+            binding: requirement
+      - id: ctrl_test_5
+        order: 5
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the sufficiency of evidence obtained about
+          operating effectiveness and whether additional testing is
+          needed based on the nature and frequency of identified
+          deviations.
+        binding: requirement
+        command: determine_controls_sufficiency
+        emits: ControlsSufficiencyDetermined
+        decisions:
+          - condition: "Are identified deviations significant?"
+            branches:
+              - label: "Yes"
+                description: "Expand testing and evaluate deficiency severity"
+              - label: "No"
+                description: "Conclude on controls operating effectiveness"
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["53"]
+            binding: requirement
+    preconditions:
+      - walkthroughs
+    knowledge_refs:
+      - evaluate_entity_level_controls
+
+  - id: substantive_procedures
+    phase: testing
+    title: "Perform Substantive Audit Procedures"
+    base_hours: 48.0
+    required_roles: [audit_senior, audit_staff]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_substantive_procedures
+          emits: SubstantiveProceduresStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_substantive_procedures
+          emits: SubstantiveProceduresSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_substantive_procedures
+          emits: SubstantiveProceduresApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: sub_proc_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design substantive procedures responsive to the assessed
+          risks of material misstatement at the assertion level,
+          including tests of details and substantive analytical
+          procedures. Address all relevant assertions for each
+          significant account.
+        binding: requirement
+        command: design_substantive_procedures
+        emits: SubstantiveProceduresDesigned
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "AS 2301"
+            paragraphs: ["5", "6"]
+            binding: requirement
+      - id: sub_proc_2
+        order: 2
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform tests of details on material classes of transactions,
+          account balances, and disclosures, including confirmation
+          procedures, physical examination, inspection of documents,
+          and recalculation.
+        binding: requirement
+        command: perform_tests_of_details
+        emits: TestsOfDetailsPerformed
+        standards:
+          - ref: "AS 1105"
+            paragraphs: ["4", "5"]
+            binding: requirement
+      - id: sub_proc_3
+        order: 3
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform substantive analytical procedures by developing
+          expectations using financial and non-financial data,
+          comparing expectations to recorded amounts, and
+          investigating significant differences.
+        binding: requirement
+        command: perform_analytical_procedures
+        emits: AnalyticalProceduresPerformed
+        standards:
+          - ref: "AS 2301"
+            paragraphs: ["13"]
+            binding: requirement
+      - id: sub_proc_4
+        order: 4
+        action: perform
+        actor: audit_senior
+        description: >
+          Address fraud risks through targeted substantive procedures,
+          including unpredictable audit procedures, testing journal
+          entries for evidence of management override, and reviewing
+          accounting estimates for bias per AS 2401.
+        binding: requirement
+        command: perform_fraud_procedures
+        emits: FraudProceduresPerformed
+        evidence:
+          inputs:
+            - ref: fraud_risk_assessment
+              type: assessment
+        standards:
+          - ref: "AS 2401"
+            paragraphs: ["52", "55", "58", "61"]
+            binding: requirement
+      - id: sub_proc_5
+        order: 5
+        action: evaluate
+        actor: audit_senior
+        description: >
+          Evaluate results of substantive procedures, identify
+          misstatements, and determine whether the nature and extent
+          of the misstatements indicate a deficiency in ICFR.
+        binding: requirement
+        command: evaluate_substantive_results
+        emits: SubstantiveResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: substantive_test_results
+              type: workpaper
+        standards:
+          - ref: "AS 2301"
+            paragraphs: ["18"]
+            binding: requirement
+    preconditions:
+      - walkthroughs
+    knowledge_refs:
+      - test_controls_design_and_effectiveness
+
+  # ---- EVALUATION PHASE ----
+
+  - id: evaluate_control_deficiencies
+    phase: evaluation
+    title: "Evaluate Control Deficiencies (ICFR)"
+    base_hours: 12.0
+    required_roles: [audit_manager, engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_deficiency_eval
+          emits: DeficiencyEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_deficiency_eval
+          emits: DeficiencyEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_deficiency_eval
+          emits: DeficiencyEvalRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_deficiency_eval
+          emits: DeficiencyEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: def_eval_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate each identified control deficiency by assessing
+          the magnitude of the potential misstatement and the
+          likelihood of occurrence, considering compensating controls
+          and the nature of the relevant account or disclosure.
+        binding: requirement
+        command: evaluate_deficiency_severity
+        emits: DeficiencySeverityEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["62", "63", "64"]
+            binding: requirement
+      - id: def_eval_2
+        order: 2
+        action: classify
+        actor: audit_manager
+        description: >
+          Classify each deficiency as a control deficiency, significant
+          deficiency, or material weakness based on the severity
+          assessment. Determine whether individually insignificant
+          deficiencies aggregate to a significant deficiency or
+          material weakness.
+        binding: requirement
+        command: classify_deficiencies
+        emits: DeficienciesClassified
+        evidence:
+          inputs: []
+          outputs:
+            - ref: deficiency_evaluation
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["65", "66", "67"]
+            binding: requirement
+        decisions:
+          - condition: "Are material weaknesses identified?"
+            branches:
+              - label: "Yes"
+                description: "Adverse ICFR opinion required"
+              - label: "No"
+                description: "Evaluate for significant deficiencies"
+      - id: def_eval_3
+        order: 3
+        action: communicate
+        actor: engagement_partner
+        description: >
+          Communicate identified material weaknesses and significant
+          deficiencies to management and the audit committee in
+          writing per AS 1305. Discuss remediation plans and
+          management responses.
+        binding: requirement
+        command: communicate_deficiencies
+        emits: DeficienciesCommunicated
+        standards:
+          - ref: "AS 1301"
+            paragraphs: ["10", "12"]
+            binding: requirement
+    preconditions:
+      - test_controls_design_and_effectiveness
+    knowledge_refs: []
+
+  - id: evaluate_misstatements
+    phase: evaluation
+    title: "Aggregate and Evaluate Misstatements (AS 2810)"
+    base_hours: 10.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_misstatement_eval
+          emits: MisstatementEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_misstatement_eval
+          emits: MisstatementEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_misstatement_eval
+          emits: MisstatementEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: misstate_1
+        order: 1
+        action: aggregate
+        actor: audit_manager
+        description: >
+          Accumulate all identified misstatements, including known
+          misstatements, likely misstatements (projected from sampling),
+          and further possible misstatements, distinguishing between
+          factual, judgmental, and projected misstatements.
+        binding: requirement
+        command: aggregate_misstatements
+        emits: MisstatementsAggregated
+        standards:
+          - ref: "AS 2810"
+            paragraphs: ["12", "13"]
+            binding: requirement
+      - id: misstate_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate whether uncorrected misstatements are material,
+          individually or in the aggregate, by comparing the aggregate
+          of uncorrected misstatements to materiality and considering
+          qualitative factors that may cause misstatements of lesser
+          amounts to be material.
+        binding: requirement
+        command: evaluate_misstatement_materiality
+        emits: MisstatementMaterialityEvaluated
+        judgment_level: high
+        evidence:
+          inputs:
+            - ref: materiality_workpaper
+              type: workpaper
+          outputs:
+            - ref: misstatement_summary
+              type: workpaper
+        standards:
+          - ref: "AS 2810"
+            paragraphs: ["14", "17"]
+            binding: requirement
+        decisions:
+          - condition: "Are uncorrected misstatements material?"
+            branches:
+              - label: "Yes"
+                description: "Modified opinion required if not corrected"
+              - label: "No"
+                description: "Request management representation on uncorrected items"
+    preconditions:
+      - substantive_procedures
+    knowledge_refs: []
+
+  - id: going_concern_evaluation
+    phase: evaluation
+    title: "Going Concern Evaluation (AS 2415)"
+    base_hours: 8.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_going_concern
+          emits: GoingConcernStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_going_concern
+          emits: GoingConcernSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_going_concern
+          emits: GoingConcernApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: gc_pcaob_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate whether there is substantial doubt about the
+          entity's ability to continue as a going concern for a
+          reasonable period of time, considering conditions and
+          events identified during the audit.
+        binding: requirement
+        command: evaluate_going_concern_conditions
+        emits: GoingConcernConditionsEvaluated
+        standards:
+          - ref: "AS 2415"
+            paragraphs: ["2", "3"]
+            binding: requirement
+      - id: gc_pcaob_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          If substantial doubt exists, evaluate management's plans
+          to mitigate the conditions, obtain sufficient appropriate
+          evidence about the feasibility of management's plans,
+          and assess the adequacy of disclosures.
+        binding: requirement
+        command: evaluate_gc_mitigation_plans
+        emits: GcMitigationPlansEvaluated
+        judgment_level: high
+        evidence:
+          inputs: []
+          outputs:
+            - ref: going_concern_assessment
+              type: assessment
+        standards:
+          - ref: "AS 2415"
+            paragraphs: ["4", "5", "6"]
+            binding: requirement
+        decisions:
+          - condition: "Is substantial doubt alleviated by management's plans?"
+            branches:
+              - label: "Yes"
+                description: "Consider need for disclosure; no report modification"
+              - label: "No"
+                description: "Include explanatory paragraph in audit report"
+    preconditions:
+      - substantive_procedures
+    knowledge_refs: []
+
+  - id: evaluate_audit_evidence
+    phase: evaluation
+    title: "Evaluate Sufficiency and Appropriateness of Audit Evidence"
+    base_hours: 8.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_evidence_eval
+          emits: EvidenceEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_evidence_eval
+          emits: EvidenceEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_evidence_eval
+          emits: EvidenceEvalApproved
+          guards: [partner_approved]
+    steps:
+      - id: ev_eval_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate whether sufficient appropriate audit evidence has
+          been obtained to reduce audit risk to an appropriately
+          low level for both the financial statement audit and the
+          ICFR audit, considering the results of all procedures
+          performed.
+        binding: requirement
+        command: evaluate_evidence_sufficiency
+        emits: EvidenceSufficiencyEvaluated
+        judgment_level: high
+        evidence:
+          inputs:
+            - ref: substantive_test_results
+              type: workpaper
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "AS 1105"
+            paragraphs: ["2", "3"]
+            binding: requirement
+      - id: ev_eval_2
+        order: 2
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Perform an overall review of the financial statements,
+          including reading the financial statements and related
+          disclosures and performing final analytical procedures
+          to evaluate whether the financial statements are consistent
+          with the auditor's understanding of the entity.
+        binding: requirement
+        command: perform_overall_review
+        emits: OverallReviewPerformed
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "AS 2810"
+            paragraphs: ["30", "31"]
+            binding: requirement
+    preconditions:
+      - evaluate_control_deficiencies
+      - evaluate_misstatements
+      - going_concern_evaluation
+    knowledge_refs: []
+
+  # ---- REPORTING PHASE ----
+
+  - id: critical_audit_matters
+    phase: reporting
+    title: "Identify and Communicate Critical Audit Matters (AS 3101)"
+    base_hours: 10.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_cam_identification
+          emits: CamIdentificationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_cam_identification
+          emits: CamIdentificationSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_cam_identification
+          emits: CamIdentificationRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_cam_identification
+          emits: CamIdentificationApproved
+          guards: [partner_approved]
+    steps:
+      - id: cam_1
+        order: 1
+        action: identify
+        actor: engagement_partner
+        description: >
+          Identify matters communicated or required to be communicated
+          to the audit committee that relate to accounts or disclosures
+          that are material to the financial statements and involved
+          especially challenging, subjective, or complex auditor
+          judgment.
+        binding: requirement
+        command: identify_cam_candidates
+        emits: CamCandidatesIdentified
+        judgment_level: high
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["11", "12"]
+            binding: requirement
+      - id: cam_2
+        order: 2
+        action: determine
+        actor: engagement_partner
+        description: >
+          Determine which matters rise to the level of critical audit
+          matters based on the degree of auditor judgment required,
+          the nature and extent of audit effort, and the degree of
+          difficulty in obtaining sufficient appropriate audit evidence.
+        binding: requirement
+        command: determine_cams
+        emits: CamsDetermined
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["14", "15"]
+            binding: requirement
+      - id: cam_3
+        order: 3
+        action: document
+        actor: engagement_partner
+        description: >
+          Draft the CAM communication for the audit report, describing
+          each CAM including the principal considerations that led
+          to the determination, how the CAM was addressed in the
+          audit, and relevant financial statement accounts or
+          disclosures.
+        binding: requirement
+        command: draft_cam_communication
+        emits: CamCommunicationDrafted
+        evidence:
+          inputs: []
+          outputs:
+            - ref: cam_documentation
+              type: workpaper
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["13", "14"]
+            binding: requirement
+    preconditions:
+      - evaluate_audit_evidence
+    knowledge_refs: []
+
+  - id: icfr_opinion_formation
+    phase: reporting
+    title: "Form Opinion on ICFR Effectiveness"
+    base_hours: 10.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_icfr_opinion
+          emits: IcfrOpinionStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_icfr_opinion
+          emits: IcfrOpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_icfr_opinion
+          emits: IcfrOpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_icfr_opinion
+          emits: IcfrOpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: icfr_op_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate the overall results of ICFR testing, including
+          the severity of identified deficiencies, the existence
+          of any material weaknesses, and whether management's
+          assessment of ICFR effectiveness is supportable.
+        binding: requirement
+        command: evaluate_icfr_results
+        emits: IcfrResultsEvaluated
+        judgment_level: high
+        evidence:
+          inputs:
+            - ref: deficiency_evaluation
+              type: workpaper
+            - ref: entity_level_controls_wp
+              type: workpaper
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["68", "69"]
+            binding: requirement
+      - id: icfr_op_2
+        order: 2
+        action: determine
+        actor: engagement_partner
+        description: >
+          Form the opinion on the effectiveness of ICFR as of the
+          assessment date. An adverse opinion is required if one
+          or more material weaknesses exist. Consider the scope
+          limitation implications if applicable.
+        binding: requirement
+        command: form_icfr_opinion
+        emits: IcfrOpinionFormed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: icfr_opinion
+              type: report
+        standards:
+          - ref: "AS 2201"
+            paragraphs: ["70", "71", "72"]
+            binding: requirement
+        decisions:
+          - condition: "What type of ICFR opinion is appropriate?"
+            branches:
+              - label: "Unqualified"
+                description: "ICFR is effective in all material respects"
+              - label: "Adverse"
+                description: "Material weakness(es) exist — ICFR is not effective"
+              - label: "Disclaimer"
+                description: "Scope limitation prevents opinion on ICFR"
+    preconditions:
+      - evaluate_audit_evidence
+    knowledge_refs:
+      - evaluate_control_deficiencies
+
+  - id: financial_statement_opinion
+    phase: reporting
+    title: "Form and Issue Financial Statement Opinion"
+    base_hours: 12.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_fs_opinion
+          emits: FsOpinionStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_fs_opinion
+          emits: FsOpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_fs_opinion
+          emits: FsOpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_fs_opinion
+          emits: FsOpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: fs_op_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate whether the financial statements as a whole are
+          free from material misstatement, whether due to fraud or
+          error, considering the aggregate effect of uncorrected
+          misstatements and the results of all audit procedures.
+        binding: requirement
+        command: evaluate_fs_presentation
+        emits: FsPresentationEvaluated
+        judgment_level: high
+        evidence:
+          inputs:
+            - ref: misstatement_summary
+              type: workpaper
+            - ref: going_concern_assessment
+              type: assessment
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["3", "4"]
+            binding: requirement
+      - id: fs_op_2
+        order: 2
+        action: determine
+        actor: engagement_partner
+        description: >
+          Form the opinion on the financial statements, considering
+          whether the financial statements are presented fairly,
+          in all material respects, in conformity with the applicable
+          financial reporting framework (US GAAP).
+        binding: requirement
+        command: form_fs_opinion
+        emits: FsOpinionFormed
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["5", "6"]
+            binding: requirement
+        decisions:
+          - condition: "What type of financial statement opinion is appropriate?"
+            branches:
+              - label: "Unqualified"
+                description: "Financial statements fairly presented"
+              - label: "Qualified"
+                description: "Misstatements are material but not pervasive"
+              - label: "Adverse"
+                description: "Misstatements are material and pervasive"
+              - label: "Disclaimer"
+                description: "Scope limitation prevents expression of opinion"
+      - id: fs_op_3
+        order: 3
+        action: issue
+        actor: engagement_partner
+        description: >
+          Issue the integrated audit report containing the opinion
+          on the financial statements, the opinion on ICFR, any
+          critical audit matters, and other required elements per
+          AS 3101, including the auditor tenure disclosure.
+        binding: requirement
+        command: issue_integrated_report
+        emits: IntegratedReportIssued
+        evidence:
+          inputs:
+            - ref: cam_documentation
+              type: workpaper
+            - ref: icfr_opinion
+              type: report
+          outputs:
+            - ref: fs_opinion
+              type: report
+        standards:
+          - ref: "AS 3101"
+            paragraphs: ["8", "9", "10"]
+            binding: requirement
+    preconditions:
+      - critical_audit_matters
+      - icfr_opinion_formation
+    knowledge_refs:
+      - evaluate_misstatements
+      - going_concern_evaluation
