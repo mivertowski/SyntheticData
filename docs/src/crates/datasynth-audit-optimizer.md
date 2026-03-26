@@ -4,9 +4,9 @@ Graph analysis and Monte Carlo simulation for audit FSM blueprints.
 
 ## Overview
 
-`datasynth-audit-optimizer` converts audit methodology blueprints into petgraph directed graphs and provides three analysis modes: shortest-path analysis (BFS per procedure), constrained-path optimization (must-visit procedures with transitive precondition expansion), and Monte Carlo simulation (N stochastic walks for bottleneck detection, revision hotspots, and happy path identification).
+`datasynth-audit-optimizer` converts audit methodology blueprints into petgraph directed graphs and provides analysis, simulation, and planning capabilities across 16 modules: graph conversion, shortest-path analysis (BFS per procedure), constrained-path optimization (must-visit procedures with transitive precondition expansion), Monte Carlo simulation (N stochastic walks for bottleneck detection, revision hotspots, and happy path identification), year-over-year engagement chains, ISA 600 group audit simulation, blueprint testing, benchmark comparison, overlay fitting, anomaly calibration, resource optimization, risk-based scoping, portfolio simulation, conformance checking, and process discovery.
 
-The crate operates on `AuditBlueprint` types from `datasynth-audit-fsm` and produces serializable report structures suitable for JSON export.
+The crate operates on `AuditBlueprint` types from `datasynth-audit-fsm` and produces serializable report structures suitable for JSON export. Functions that execute the FSM engine (Monte Carlo, calibration, overlay fitting, benchmark comparison) accept an `&EngagementContext` parameter; pure graph-analysis functions (shortest path, constrained path) do not.
 
 ## Graph Conversion
 
@@ -64,7 +64,7 @@ For example, constraining to `["form_opinion"]` in the FSA blueprint expands to 
 
 ## Monte Carlo Simulation
 
-`run_monte_carlo()` executes N stochastic walks through the `AuditFsmEngine`, each with a deterministically-derived seed (`seed.wrapping_add(i)`). The simulation collects:
+`run_monte_carlo()` executes N stochastic walks through the `AuditFsmEngine`, each with a deterministically-derived seed (`seed.wrapping_add(i)`). It accepts an `&EngagementContext` to provide financial data and team information to the engine, and returns `Result<MonteCarloReport, String>`. The simulation collects:
 
 - **Bottleneck procedures** -- top 5 by average event count
 - **Revision hotspots** -- top 5 by average `under_review -> in_progress` transition count
@@ -88,6 +88,7 @@ Both `ShortestPathReport` and `MonteCarloReport` have human-readable formatters 
 ## Usage
 
 ```rust
+use datasynth_audit_fsm::context::EngagementContext;
 use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
 use datasynth_audit_optimizer::{
     graph::blueprint_to_graph,
@@ -98,8 +99,9 @@ use datasynth_audit_optimizer::{
 };
 
 let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+let ctx = EngagementContext::demo();
 
-// Shortest paths
+// Shortest paths (pure graph analysis — no EngagementContext needed)
 let sp = analyze_shortest_paths(&bwp.blueprint);
 println!("{}", format_shortest_path_report(&sp));
 
@@ -107,8 +109,8 @@ println!("{}", format_shortest_path_report(&sp));
 let must_visit = vec!["form_opinion".to_string()];
 let cp = constrained_path(&bwp.blueprint, &must_visit, &bwp.preconditions);
 
-// Monte Carlo (100 iterations)
-let mc = run_monte_carlo(&bwp, 100, 42);
+// Monte Carlo (100 iterations — requires &EngagementContext, returns Result)
+let mc = run_monte_carlo(&bwp, 100, 42, &ctx).unwrap();
 println!("{}", format_monte_carlo_report(&mc));
 ```
 
@@ -122,6 +124,13 @@ println!("{}", format_monte_carlo_report(&mc));
 | `ProcedurePath` | `shortest_path` | Single procedure's minimum-transition path |
 | `ConstrainedPathResult` | `constrained` | Must-visit expansion + filtered paths |
 | `MonteCarloReport` | `monte_carlo` | N-iteration simulation statistics |
+| `YoyChainConfig` / `YoyChainReport` | `yoy_chain` | Year-over-year engagement chains with finding carry-forward |
+| `GroupAuditConfig` / `GroupAuditReport` | `group_audit` | ISA 600 group audit with component-level FSM execution |
+| `BlueprintTestSuite` / `BlueprintTestResult` | `blueprint_testing` | Automated blueprint validation against expected metrics |
+| `ComparisonReport` | `benchmark_comparison` | Side-by-side blueprint comparison statistics |
+| `PortfolioConfig` / `PortfolioReport` | `portfolio` | Multi-engagement portfolio simulation |
+| `ConformanceReport` | `conformance` | Fitness, precision, and generalization metrics |
+| `DiscoveredBlueprint` | `discovery` | Blueprint inferred from event logs |
 
 ## See Also
 

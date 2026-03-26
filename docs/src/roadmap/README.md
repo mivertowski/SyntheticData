@@ -147,7 +147,7 @@ This roadmap documents the completed feature waves and outlines the direction fo
 
 ---
 
-## Process Coverage (v1.5.0)
+## Process Coverage (v2.0.0)
 
 | Process Chain | Coverage | Key Capabilities |
 |---------------|----------|------------------|
@@ -159,7 +159,7 @@ This roadmap documents the completed feature waves and outlines the direction fo
 | **BANK** | 90% | KYC/AML + reconciliation + cash positioning + forecasting |
 | **H2R** (Hire-to-Retire) | 75% | Payroll + time + expenses + benefits |
 | **MFG** (Manufacturing) | 60% | Production orders + BOM + routing + WIP + quality |
-| **AUDIT** (Audit Methodology) | 90% | FSA + IA blueprints, 1,900+ artifacts, event trail, OCEL 2.0 |
+| **AUDIT** (Audit Methodology) | 95% | 9 blueprints (ISA, IIA-GIAS, Big 4, PCAOB, SOC 2, Regulatory), streaming, live injection, YoY chains, group audit |
 
 ---
 
@@ -184,9 +184,11 @@ This roadmap documents the completed feature waves and outlines the direction fo
 
 ## Strategic Roadmap
 
-### Wave 1: Consolidation (v1.6.0)
+Waves 1 through 5 are complete as of v2.0.0. Wave 6 represents the research frontier.
 
-Near-term work to make v1.5.0 features production-ready.
+### v1.6.0 — Wave 1: Consolidation
+
+Production-ready FSM pipeline.
 
 #### End-to-End CLI Integration
 
@@ -219,9 +221,9 @@ Near-term work to make v1.5.0 features production-ready.
 
 ---
 
-### Wave 2: Audit Planning Optimization (v1.7.0)
+### v1.7.0 — Wave 2: Audit Planning Optimization
 
-The optimizer crate evolves from an analytical tool into a planning tool.
+The optimizer crate as a planning tool.
 
 #### Resource-Constrained Optimization
 
@@ -244,9 +246,9 @@ The optimizer crate evolves from an analytical tool into a planning tool.
 
 ---
 
-### Wave 3: Process Mining & Benchmarks (v1.8.0)
+### v1.8.0 — Wave 3: Process Mining & Benchmarks
 
-Leverage the OCEL 2.0 projection for process mining research.
+OCEL 2.0 projection for process mining research.
 
 #### Reference Audit Event Logs
 
@@ -270,9 +272,9 @@ Leverage the OCEL 2.0 projection for process mining research.
 
 ---
 
-### Wave 4: Learned & Adaptive Generation (v2.0.0)
+### v1.9.0 — Wave 4: Learned & Adaptive Generation
 
-Combine the deterministic FSM framework with learned components.
+Deterministic FSM framework combined with learned components.
 
 #### Learned Overlay Parameters
 
@@ -301,38 +303,36 @@ Combine the deterministic FSM framework with learned components.
 
 ---
 
-### Wave 5: Enterprise Platform (v2.x)
+### v2.0.0 — Wave 5: Enterprise Platform
 
-Platform-level capabilities for production deployment.
+Platform-level capabilities, now completed.
 
 #### Continuous Audit Simulation
 
-- **Streaming engagement execution**: FSM engine emits events in real-time via WebSocket/Kafka, simulating a continuous audit monitoring environment
-- **Live anomaly injection**: Anomalies injected at runtime, not just at generation time — simulates emerging risks
-- **Dashboard integration**: Event stream compatible with Grafana, Splunk, or custom audit dashboards
-- **Alert correlation**: Cross-reference audit events with transactional anomalies (fraud labels) for holistic monitoring simulation
+- **Streaming engagement execution**: FSM engine emits events via callback or mpsc channel, enabling WebSocket/Kafka/dashboard integration
+- **Live anomaly injection**: `inject_live_anomalies()` marks existing events with anomaly flags after generation, simulating emerging risks
+- **Dashboard integration**: Event stream compatible with Grafana, Splunk, or custom audit dashboards via the streaming API
 
 #### Multi-Engagement Correlation
 
-- **Systemic issue propagation**: A new IFRS standard causes clustered findings across multiple clients in the same industry
-- **Peer comparison**: Generate engagement pairs (similar industry, different entity) for benchmarking analytics
-- **Group audit coordination**: ISA 600 group audit with component auditors, each running their own FSM engagement, consolidated at group level
-- **Year-over-year engagement chains**: Sequential engagements for the same entity with carry-forward of prior-year findings, risk assessments, and control evaluations
+- **Group audit coordination**: ISA 600 group audit (`group_audit` module) with component auditors, each running their own FSM engagement, consolidated at group level
+- **Year-over-year engagement chains**: `yoy_chain` module simulates sequential engagements with configurable finding carry-forward rates and trend tracking
+- **Portfolio simulation**: `portfolio` module generates N engagements with correlated parameters and resource pooling
+- **Benchmark comparison**: `benchmark_comparison` module runs side-by-side blueprint comparisons
 
 #### Custom Blueprint Ecosystem
 
-- **Blueprint marketplace**: Community-contributed methodology blueprints (ISA, PCAOB, IIA-GIAS, firm-specific shells) in the [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints) repository
-- **Blueprint versioning**: Semantic versioning for blueprints with backward compatibility guarantees
-- **Visual blueprint editor**: Browser-based tool for creating and editing YAML blueprints with state machine visualization
-- **Blueprint testing framework**: Automated validation that a blueprint produces expected artifact types, event counts, and phase progression
+- **9 built-in blueprints**: FSA, IA, KPMG, PwC, Deloitte, EY GAM Lite, SOC 2 Type II, PCAOB Integrated, Regulatory Exam
+- **Blueprint testing framework**: `test_blueprint()` and `test_all_builtins()` in `datasynth-audit-optimizer` validate blueprints against expected metrics
+- **Blueprint repository**: Community-contributed blueprints at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints)
 
 #### Additional Audit Frameworks
 
-- **PCAOB AS blueprint**: US public company audit methodology with PCAOB-specific procedures
-- **EY GAM shell**: Ernst & Young Global Audit Methodology structure (non-proprietary)
-- **KPMG AAER shell**: KPMG audit methodology structure
-- **Regulatory exam blueprints**: Banking supervision exam workflows (OCC, Fed, FDIC)
-- **SOC 2 Type II blueprint**: Service organization audit with trust services criteria procedures
+- **PCAOB AS blueprint**: US public company integrated audit with PCAOB-specific procedures and critical audit matters
+- **SOC 2 Type II blueprint**: Service organization audit with AICPA Trust Services Criteria across 5 categories
+- **Regulatory exam blueprint**: Banking supervision examination (OCC, Fed, FDIC, EBA) with CAMELS rating and BSA/AML review
+- **Big 4 methodology blueprints**: KPMG, PwC, Deloitte, and EY GAM Lite ISA-aligned blueprints (non-proprietary structures)
+- **Analytics inventories**: Data requirement and analytical procedure mappings for FSA, IA, SOC 2, PCAOB, and Regulatory frameworks
 
 ---
 
@@ -366,16 +366,16 @@ Long-term research directions.
 
 ---
 
-### Implementation Priority Matrix
+### Implementation Status
 
-| Wave | Horizon | Key Deliverable | Strategic Value |
-|------|---------|-----------------|-----------------|
-| 1 — Consolidation | 1-2 months | Production-ready FSM pipeline | Usability |
-| 2 — Audit Planning | 3-4 months | Resource-constrained audit optimization | Commercial |
-| 3 — Process Mining | 4-6 months | Reference OCEL benchmark datasets | Research/Citations |
-| 4 — Learned Generation | 6-12 months | LLM-augmented artifacts, learned overlays | Differentiation |
-| 5 — Enterprise Platform | 12-18 months | Continuous audit, multi-engagement, marketplace | Platform |
-| 6 — Research Frontier | 18-36 months | TGN, causal inference, federated simulation | Academic impact |
+| Wave | Status | Key Deliverable | Strategic Value |
+|------|--------|-----------------|-----------------|
+| 1 — Consolidation | Complete (v1.6.0) | Production-ready FSM pipeline | Usability |
+| 2 — Audit Planning | Complete (v1.7.0) | Resource-constrained audit optimization | Commercial |
+| 3 — Process Mining | Complete (v1.8.0) | Reference OCEL benchmark datasets | Research/Citations |
+| 4 — Learned Generation | Complete (v1.9.0) | LLM-augmented artifacts, learned overlays | Differentiation |
+| 5 — Enterprise Platform | Complete (v2.0.0) | Continuous audit, multi-engagement, 9 blueprints | Platform |
+| 6 — Research Frontier | Future (v3.x) | TGN, causal inference, federated simulation | Academic impact |
 
 ---
 

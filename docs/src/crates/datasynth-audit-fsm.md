@@ -8,7 +8,9 @@ YAML-driven audit FSM engine for methodology-based audit trail and artifact gene
 
 The engine walks each procedure's finite state machine in topological (DAG) order, emitting a deterministic, event-sourced audit trail. Every event carries a UUID generated from a ChaCha8 RNG seed, so identical inputs always produce identical outputs. Alongside the event trail, the engine dispatches step commands to 14 concrete audit generators via the `StepDispatcher`, producing typed artifacts (engagements, materiality calculations, risk assessments, workpapers, findings, opinions, and more).
 
-Two built-in blueprints ship with the crate: a Financial Statement Audit (FSA) aligned to ISA standards and an Internal Audit (IA) aligned to IIA-GIAS. Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
+Nine built-in blueprints ship with the crate, covering ISA, IIA-GIAS, Big 4 firm methodologies, PCAOB, SOC 2, and regulatory examination workflows. Additional methodology blueprints are available at [SyntheticDataBlueprints](https://github.com/mivertowski/SyntheticDataBlueprints).
+
+The crate also provides streaming execution (event-by-event emission via callbacks or channels), live anomaly injection into already-generated event logs, and analytics inventories that map audit steps to data requirements and analytical procedures.
 
 ## Architecture
 
@@ -22,7 +24,7 @@ Blueprint YAML ──► Loader ──► Validation ──► Topological Sort
                                      ┌──────────────┼──────────────┐
                                      ▼              ▼              ▼
                               FSM Walk       StepDispatcher    Anomaly Injection
-                            (per procedure)   (14 generators)
+                            (per procedure)   (14 generators)   (build-time + live)
                                      │              │              │
                                      ▼              ▼              ▼
                               AuditEvent[]    ArtifactBag    AnomalyRecord[]
@@ -31,16 +33,29 @@ Blueprint YAML ──► Loader ──► Validation ──► Topological Sort
                             ▼                 ▼     ▼
                        Flat JSON         OCEL 2.0   Orchestrator
                        Event Trail      Projection  AuditSnapshot
+                            │
+                            ▼
+                     Streaming / Channel
+                     (callback or mpsc)
 ```
 
 ## Blueprints
 
-Two built-in blueprints are included:
+Nine built-in blueprints are included:
 
-| Blueprint | Procedures | Phases | Steps | Standards | Events (default) | Artifacts (default) |
-|-----------|-----------|--------|-------|-----------|------------------|---------------------|
-| Financial Statement Audit (FSA) | 9 | 3 | 24 | 14 ISA | 51 | 1,916 |
-| Internal Audit (IA) | 34 | 9 | 82 | 52 IIA-GIAS | 368 | 1,891 |
+| Blueprint | Framework | Procedures | Phases | Standards |
+|-----------|-----------|-----------|--------|-----------|
+| Financial Statement Audit (FSA) | ISA | 9 | 3 | 14 ISA |
+| Internal Audit (IA) | IIA-GIAS | 34 | 9 | 52 IIA-GIAS |
+| KPMG ISA Complete | ISA | 44 | 7 | 37 ISA |
+| PwC ISA Complete | ISA | 44 | 7 | 37 ISA |
+| Deloitte ISA Complete | ISA | 46 | 7 | 37 ISA |
+| EY GAM Lite | ISA | 52 | 7 | 37 ISA |
+| SOC 2 Type II | AICPA-TSC | 12 | 3 | 17 AICPA |
+| PCAOB Integrated | PCAOB | 14 | 5 | 17 PCAOB AS |
+| Regulatory Exam | Regulatory | 15 | 6 | 10 FFIEC/OCC |
+
+Blueprints are loaded via `builtin:fsa`, `builtin:ia`, `builtin:kpmg`, `builtin:pwc`, `builtin:deloitte`, `builtin:ey_gam_lite`, `builtin:soc2`, `builtin:pcaob`, `builtin:regulatory`, or from custom YAML paths.
 
 A blueprint YAML defines:
 
@@ -130,6 +145,65 @@ Key command-to-generator mappings:
 
 For IA blueprints (which lack `evaluate_client_acceptance`), the dispatcher auto-bootstraps an engagement the first time a substantive command runs.
 
+## Streaming Execution
+
+The `streaming` module enables event-by-event emission during engagement execution, rather than collecting the full event log in memory. Two modes are provided:
+
+- **Callback mode** (`run_engagement_streaming`): accepts an `EventCallback` closure invoked for each `AuditEvent` as it is produced.
+- **Channel mode** (`run_engagement_to_channel`): spawns the engine on a background thread and returns an `mpsc::Receiver<AuditEvent>` plus a `JoinHandle` for the full `EngagementResult`.
+
+Both modes accept a `BlueprintWithPreconditions`, a `GenerationOverlay`, an `EngagementContext`, and a seed.
+
+```rust
+use datasynth_audit_fsm::streaming::run_engagement_streaming;
+use datasynth_audit_fsm::loader::{BlueprintWithPreconditions, default_overlay};
+use datasynth_audit_fsm::context::EngagementContext;
+
+let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+let overlay = default_overlay();
+let ctx = EngagementContext::demo();
+
+let result = run_engagement_streaming(
+    &bwp, &overlay, &ctx, 42,
+    Box::new(|event| { /* forward to WebSocket, dashboard, etc. */ }),
+).unwrap();
+```
+
+## Live Anomaly Injection
+
+The `live_injection` module injects anomalies into an already-generated event log, simulating emerging risks at runtime rather than only at generation time. Each `LiveInjectionConfig` specifies an anomaly type, an optional target procedure filter, an injection probability, and a severity level.
+
+```rust
+use datasynth_audit_fsm::live_injection::{inject_live_anomalies, LiveInjectionConfig};
+use datasynth_audit_fsm::event::{AuditAnomalyType, AnomalySeverity};
+
+let configs = vec![LiveInjectionConfig {
+    anomaly_type: AuditAnomalyType::LatePosting,
+    target_procedure: Some("substantive_testing".into()),
+    injection_probability: 0.10,
+    severity: AnomalySeverity::Medium,
+}];
+
+// `result` is an EngagementResult from a prior engine run
+let injected = inject_live_anomalies(&mut result.event_log, &configs, 99);
+```
+
+Events already flagged as anomalous by the engine's build-time injection are skipped to avoid double-labeling.
+
+## Analytics Inventory
+
+The `analytics_inventory` module provides data requirement and analytical procedure mappings for each audit step. Five inventories are embedded at compile time:
+
+| Inventory | Framework | Loader Function |
+|-----------|-----------|-----------------|
+| FSA | ISA | `load_fsa_inventory()` |
+| IA | IIA-GIAS | `load_ia_inventory()` |
+| SOC 2 | AICPA-TSC | `load_soc2_inventory()` |
+| PCAOB | PCAOB AS | `load_pcaob_inventory()` |
+| Regulatory | FFIEC/OCC | `load_regulatory_inventory()` |
+
+Each step entry (`StepInventory`) contains data requirements (input data sources, fields, scope) and analytical procedures (technique, data points, thresholds). A convenience function `load_inventory_for_framework(framework)` dispatches to the appropriate loader based on the blueprint's framework string.
+
 ## Event Trail
 
 Each event in the trail captures a state transition or procedure step:
@@ -162,7 +236,9 @@ audit:
   enabled: true
   fsm:
     enabled: true
-    blueprint: builtin:fsa    # builtin:fsa, builtin:ia, or path to custom YAML
+    blueprint: builtin:fsa    # builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc,
+                               # builtin:deloitte, builtin:ey_gam_lite, builtin:soc2,
+                               # builtin:pcaob, builtin:regulatory, or path to custom YAML
     overlay: builtin:default   # builtin:default, builtin:thorough, builtin:rushed
 ```
 
@@ -200,7 +276,7 @@ Sample events from an FSA engagement event trail:
 ]
 ```
 
-With the default overlay, the FSA blueprint produces 51 events and 1,916 artifacts. The IA blueprint produces 368 events and 1,891 artifacts.
+With the default overlay, the FSA blueprint produces 51 events and 1,916 artifacts. The IA blueprint produces 368 events and 1,891 artifacts. The Big 4 and domain-specific blueprints produce correspondingly larger event trails and artifact sets.
 
 ## Key Types
 

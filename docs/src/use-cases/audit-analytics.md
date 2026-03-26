@@ -585,6 +585,103 @@ print(comparison.to_string())
 
 For full details on the FSM engine, blueprints, and overlays, see the [Audit FSM Engine deep dive](../advanced/audit-fsm-engine.md).
 
+## Year-over-Year Engagement Chains (v2.0.0)
+
+The `yoy_chain` module in `datasynth-audit-optimizer` simulates sequential audit engagements for the same entity across multiple fiscal years. A configurable fraction of prior-year findings carries forward, and the report tracks duration and finding-count trends.
+
+```rust
+use datasynth_audit_optimizer::yoy_chain::{YoyChainConfig, run_yoy_chain};
+
+let config = YoyChainConfig {
+    entity_id: "CORP01".into(),
+    blueprint: "fsa".into(),
+    overlay: "default".into(),
+    years: 5,
+    base_seed: 42,
+    finding_carry_rate: 0.3,
+};
+
+let report = run_yoy_chain(&config).unwrap();
+for year in &report.years {
+    println!("FY{}: {} findings, {:.0}h duration",
+        year.fiscal_year, year.findings_count, year.duration_hours);
+}
+```
+
+This enables analysis of audit efficiency trends, finding remediation rates, and the impact of prior-year risk profiles on subsequent engagement scoping.
+
+## Group Audit — ISA 600 (v2.0.0)
+
+The `group_audit` module simulates an ISA 600 group audit where a group engagement team coordinates with component auditors. Each component entity runs its own FSM engagement, and findings, coverage metrics, and misstatement amounts are consolidated at the group level.
+
+Components are classified by scope type:
+
+| Component Type | Behavior |
+|---------------|----------|
+| `FullScope` | Full FSM engagement execution |
+| `SpecificProcedures` | Targeted procedure subset |
+| `AnalyticalOnly` | Analytical procedures only |
+| `NotInScope` | Skipped entirely |
+
+```rust
+use datasynth_audit_optimizer::group_audit::{GroupAuditConfig, ComponentConfig, ComponentType, run_group_audit};
+
+let config = GroupAuditConfig {
+    group_entity: "GROUP01".into(),
+    components: vec![
+        ComponentConfig {
+            entity_id: "SUB01".into(),
+            component_type: ComponentType::FullScope,
+            materiality_allocation: 0.60,
+            ..Default::default()
+        },
+        ComponentConfig {
+            entity_id: "SUB02".into(),
+            component_type: ComponentType::SpecificProcedures,
+            materiality_allocation: 0.30,
+            ..Default::default()
+        },
+    ],
+    group_blueprint: "fsa".into(),
+    overlay: "default".into(),
+    group_materiality: 500_000.0,
+    base_seed: 42,
+};
+
+let report = run_group_audit(&config).unwrap();
+println!("Group findings: {}", report.consolidated_findings_count);
+```
+
+## SOC 2 Type II Audit (v2.0.0)
+
+The `builtin:soc2` blueprint models a service organization controls audit following AICPA Trust Services Criteria. It covers five trust services categories: Security, Availability, Processing Integrity, Confidentiality, and Privacy.
+
+```yaml
+audit:
+  enabled: true
+  fsm:
+    enabled: true
+    blueprint: builtin:soc2
+    overlay: builtin:default
+```
+
+The SOC 2 blueprint defines 12 procedures across 3 phases (Engagement Setup & Scoping, Controls Testing, Evaluation & Reporting) with 17 AICPA/AT-C standards references. A dedicated analytics inventory (`load_soc2_inventory()`) maps each audit step to its data requirements and analytical procedures.
+
+## PCAOB Integrated Audit (v2.0.0)
+
+The `builtin:pcaob` blueprint models a US public company integrated audit (financial statements plus ICFR) following PCAOB Auditing Standards. It addresses PCAOB-specific requirements including fraud assessment (AS 2401), risk assessment (AS 2110), and critical audit matters (AS 3101).
+
+```yaml
+audit:
+  enabled: true
+  fsm:
+    enabled: true
+    blueprint: builtin:pcaob
+    overlay: builtin:default
+```
+
+The PCAOB blueprint defines 14 procedures across 5 phases with 17 PCAOB AS references. A dedicated analytics inventory (`load_pcaob_inventory()`) maps audit steps to data requirements.
+
 ## See Also
 
 - [Anomaly Injection](../advanced/anomaly-injection.md)

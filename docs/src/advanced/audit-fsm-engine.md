@@ -10,6 +10,8 @@ All output is event-sourced. Each state transition and procedure step emits an `
 
 The engine also produces concrete typed artifacts (engagements, materiality calculations, risk assessments, workpapers, sampling plans, findings, opinions, and more) via the `StepDispatcher`, which maps step commands to the 14 generators in `datasynth-generators`.
 
+In addition to batch execution, the engine supports streaming execution (event-by-event emission via callbacks or mpsc channels) and live anomaly injection into already-generated event logs. A blueprint testing framework provides automated validation that blueprints produce expected artifact types and event counts.
+
 ## Blueprint YAML Structure
 
 A blueprint defines an audit methodology as a collection of phased procedures, each with its own embedded finite state machine.
@@ -117,7 +119,21 @@ phases:
 
 ### 1. Loading and Validation
 
-Blueprints are loaded via `BlueprintWithPreconditions::load_builtin_fsa()`, `load_builtin_ia()`, or from custom YAML files/strings. The loader:
+Nine built-in blueprints are available:
+
+| Blueprint | Loader | Framework | Procedures | Phases |
+|-----------|--------|-----------|-----------|--------|
+| Financial Statement Audit (FSA) | `load_builtin_fsa()` | ISA | 9 | 3 |
+| Internal Audit (IA) | `load_builtin_ia()` | IIA-GIAS | 34 | 9 |
+| KPMG ISA Complete | `load_builtin_kpmg()` | ISA | 44 | 7 |
+| PwC ISA Complete | `load_builtin_pwc()` | ISA | 44 | 7 |
+| Deloitte ISA Complete | `load_builtin_deloitte()` | ISA | 46 | 7 |
+| EY GAM Lite | `load_builtin_ey_gam_lite()` | ISA | 52 | 7 |
+| SOC 2 Type II | `load_builtin_soc2()` | AICPA-TSC | 12 | 3 |
+| PCAOB Integrated | `load_builtin_pcaob()` | PCAOB | 14 | 5 |
+| Regulatory Exam | `load_builtin_regulatory()` | Regulatory | 15 | 6 |
+
+All loaders are methods on `BlueprintWithPreconditions`. Custom YAML files are loaded via `BlueprintSource::Custom(path)` or `BlueprintSource::Raw(yaml_string)`. The loader:
 
 1. Deserializes the raw YAML into intermediate types
 2. Converts to the canonical `AuditBlueprint` schema
@@ -364,15 +380,64 @@ When `audit.fsm.enabled: true` in the DataSynth configuration:
 
 The FSM engine operates alongside the existing audit generators. When FSM mode is enabled, it replaces the procedural audit generation path with the blueprint-driven approach.
 
+## Streaming Execution
+
+The `streaming` module provides two modes for event-by-event emission:
+
+**Callback mode** — `run_engagement_streaming()` accepts a closure invoked for each `AuditEvent`:
+
+```rust
+use datasynth_audit_fsm::streaming::run_engagement_streaming;
+use datasynth_audit_fsm::loader::{BlueprintWithPreconditions, default_overlay};
+use datasynth_audit_fsm::context::EngagementContext;
+
+let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
+let overlay = default_overlay();
+let ctx = EngagementContext::demo();
+
+let result = run_engagement_streaming(
+    &bwp, &overlay, &ctx, 42,
+    Box::new(|event| {
+        // Forward to WebSocket, Kafka, Grafana, etc.
+    }),
+).unwrap();
+```
+
+**Channel mode** — `run_engagement_to_channel()` spawns the engine on a background thread and returns an `mpsc::Receiver<AuditEvent>` for consumption by a separate reader thread, plus a `JoinHandle` for the full `EngagementResult`.
+
+Both modes produce the same deterministic output as the batch API. The streaming API enables integration with continuous audit dashboards and real-time monitoring systems.
+
+## Live Anomaly Injection
+
+The `live_injection` module injects anomalies into an already-generated event log, simulating emerging risks after the initial generation. Each `LiveInjectionConfig` specifies:
+
+- **anomaly_type** — the type of anomaly (`SkippedApproval`, `LatePosting`, `MissingEvidence`, `OutOfSequence`)
+- **target_procedure** — optional filter to restrict injection to a specific procedure
+- **injection_probability** — per-event probability (0.0–1.0)
+- **severity** — `Low`, `Medium`, or `High`
+
+Events already marked anomalous by the engine's build-time injection are skipped. The function returns a `Vec<AuditAnomalyRecord>` of the newly injected anomalies.
+
+This enables scenarios such as: generate a clean engagement, then progressively inject anomalies at different rates to produce training data with calibrated difficulty levels.
+
+## Blueprint Testing Framework
+
+The `blueprint_testing` module in `datasynth-audit-optimizer` provides automated validation that a blueprint produces expected output. A `BlueprintTestSuite` specifies:
+
+- Blueprint and overlay selectors
+- `BlueprintExpectations` — minimum events, minimum artifacts, minimum completed procedures, and optional timing bounds
+
+`test_blueprint()` runs a single suite and returns a `BlueprintTestResult` with pass/fail status and observed metrics. `test_all_builtins()` exercises every built-in blueprint against reasonable default expectations and returns results for each.
+
 ## Optimizer Integration
 
-The companion `datasynth-audit-optimizer` crate provides three analysis modes on top of the blueprint:
+The companion `datasynth-audit-optimizer` crate provides analysis, simulation, and planning capabilities across 16 modules:
 
 **Shortest path analysis**: BFS per procedure finds the minimum transitions from initial to terminal state. FSA requires 27 minimum transitions across 9 procedures; IA requires 101 across 34 procedures.
 
 **Constrained path optimization**: given a set of must-visit procedures, expands the required set via transitive preconditions and returns filtered shortest paths. Useful for planning minimum-effort audit scopes.
 
-**Monte Carlo simulation**: N stochastic walks through the FSM engine, collecting:
+**Monte Carlo simulation**: N stochastic walks through the FSM engine (requires `&EngagementContext`, returns `Result`), collecting:
 - Bottleneck procedures (highest average event counts)
 - Revision hotspots (most `under_review -> in_progress` loops)
 - Happy path (procedure completion order)
@@ -381,12 +446,20 @@ The companion `datasynth-audit-optimizer` crate provides three analysis modes on
 ```rust
 use datasynth_audit_optimizer::monte_carlo::run_monte_carlo;
 use datasynth_audit_fsm::loader::BlueprintWithPreconditions;
+use datasynth_audit_fsm::context::EngagementContext;
 
 let bwp = BlueprintWithPreconditions::load_builtin_fsa().unwrap();
-let report = run_monte_carlo(&bwp, 1000, 42);
+let ctx = EngagementContext::demo();
+let report = run_monte_carlo(&bwp, 1000, 42, &ctx).unwrap();
 println!("Avg duration: {:.0}h", report.avg_duration_hours);
 println!("Bottlenecks: {:?}", report.bottleneck_procedures);
 ```
+
+**Year-over-year chains** (`yoy_chain`): simulate sequential engagements for the same entity across multiple fiscal years, with configurable finding carry-forward rates and trend tracking.
+
+**Group audit** (`group_audit`): ISA 600 group audit simulation where each component entity runs its own FSM engagement, with findings and misstatement amounts consolidated at the group level. Components can be scoped as full, specific, analytical, or not-in-scope.
+
+**Blueprint testing** (`blueprint_testing`): automated validation of blueprints against expected artifact counts, event thresholds, and phase progression. `test_all_builtins()` exercises every built-in blueprint.
 
 ## See Also
 
