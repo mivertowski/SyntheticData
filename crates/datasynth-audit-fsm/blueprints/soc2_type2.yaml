@@ -1,0 +1,1381 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "SOC 2 Type II Service Organization Audit"
+  version: "2025.1"
+  framework: "AICPA-TSC"
+  description: >
+    Service organization controls audit following AICPA Trust Services Criteria.
+    Evaluates design suitability and operating effectiveness of controls over a
+    reporting period. Covers Security, Availability, Processing Integrity,
+    Confidentiality, and Privacy trust services categories.
+
+discriminators:
+  tiers:
+    - core
+  categories:
+    - security
+    - availability
+    - processing_integrity
+    - confidentiality
+    - privacy
+
+actors:
+  - id: service_auditor
+    name: "Service Auditor"
+    responsibilities:
+      - Overall audit quality
+      - Forming the SOC 2 opinion
+      - Signing the service auditor's report
+  - id: audit_manager
+    name: "Audit Manager"
+    responsibilities:
+      - Day-to-day engagement management
+      - Reviewing workpapers and test results
+      - Supervising audit staff
+  - id: it_specialist
+    name: "IT Specialist"
+    responsibilities:
+      - Technical controls testing
+      - Infrastructure and application review
+      - Penetration test evaluation
+  - id: audit_staff
+    name: "Audit Staff"
+    responsibilities:
+      - Performing control tests
+      - Documenting test results and exceptions
+      - Gathering evidence
+
+standards_catalog:
+  - ref: "AT-C 205"
+    title: "Examination Engagements"
+    binding: requirement
+  - ref: "AT-C 105"
+    title: "Concepts Common to All Attestation Engagements"
+    binding: requirement
+  - ref: "AT-C 320"
+    title: "Reporting on an Examination of Controls — SOC 2"
+    binding: requirement
+  - ref: "TSC-CC1"
+    title: "Control Environment (CC1)"
+    binding: requirement
+  - ref: "TSC-CC2"
+    title: "Communication and Information (CC2)"
+    binding: requirement
+  - ref: "TSC-CC3"
+    title: "Risk Assessment (CC3)"
+    binding: requirement
+  - ref: "TSC-CC4"
+    title: "Monitoring Activities (CC4)"
+    binding: requirement
+  - ref: "TSC-CC5"
+    title: "Control Activities (CC5)"
+    binding: requirement
+  - ref: "TSC-CC6"
+    title: "Logical and Physical Access Controls (CC6)"
+    binding: requirement
+  - ref: "TSC-CC7"
+    title: "System Operations (CC7)"
+    binding: requirement
+  - ref: "TSC-CC8"
+    title: "Change Management (CC8)"
+    binding: requirement
+  - ref: "TSC-CC9"
+    title: "Risk Mitigation (CC9)"
+    binding: requirement
+  - ref: "TSC-A1"
+    title: "Availability Criteria (A1)"
+    binding: requirement
+  - ref: "TSC-PI1"
+    title: "Processing Integrity Criteria (PI1)"
+    binding: requirement
+  - ref: "TSC-C1"
+    title: "Confidentiality Criteria (C1)"
+    binding: requirement
+  - ref: "TSC-P1"
+    title: "Privacy Criteria (P1)"
+    binding: requirement
+  - ref: "COSO-2013"
+    title: "COSO 2013 Internal Control-Integrated Framework"
+    binding: guidance
+
+evidence_catalog:
+  - id: engagement_letter_soc
+    name: "SOC 2 Engagement Letter"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: system_description
+    name: "Management's System Description"
+    type: document
+    lifecycle: [draft, under_review, finalized]
+  - id: management_assertion
+    name: "Management Assertion"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: control_matrix
+    name: "Control Matrix (Trust Services Criteria Mapping)"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: security_test_results
+    name: "Security Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: availability_test_results
+    name: "Availability Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: processing_integrity_test_results
+    name: "Processing Integrity Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: confidentiality_test_results
+    name: "Confidentiality Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: privacy_test_results
+    name: "Privacy Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: exception_log
+    name: "Exception Log"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: cuec_evaluation
+    name: "Complementary User Entity Controls Evaluation"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: soc2_opinion
+    name: "SOC 2 Type II Service Auditor's Report"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+
+phases:
+  - id: engagement_setup
+    name: "Engagement Setup & Scoping"
+    order: 1
+    description: >
+      Accept the SOC 2 engagement, determine scope including in-scope
+      systems and applicable trust services categories, and evaluate
+      management's system description and assertion.
+    gate:
+      all_of:
+        - procedure: engagement_acceptance
+          state: completed
+        - procedure: scope_determination
+          state: completed
+        - procedure: description_evaluation
+          state: completed
+
+  - id: controls_testing
+    name: "Controls Testing"
+    order: 2
+    description: >
+      Test the design suitability and operating effectiveness of controls
+      mapped to each applicable trust services category over the
+      reporting period.
+    gate:
+      all_of:
+        - procedure: security_controls_testing
+          state: completed
+        - procedure: availability_controls_testing
+          state: completed
+        - procedure: processing_integrity_testing
+          state: completed
+        - procedure: confidentiality_testing
+          state: completed
+        - procedure: privacy_testing
+          state: completed
+
+  - id: evaluation_and_reporting
+    name: "Evaluation & Reporting"
+    order: 3
+    description: >
+      Evaluate complementary user entity controls, assess identified
+      exceptions, review management's assertion, and form the SOC 2
+      Type II opinion.
+    gate:
+      all_of:
+        - procedure: complementary_user_controls
+          state: completed
+        - procedure: exception_evaluation
+          state: completed
+        - procedure: management_assertion_review
+          state: completed
+        - procedure: form_soc_opinion
+          state: completed
+
+procedures:
+  # ---- ENGAGEMENT SETUP PHASE ----
+
+  - id: engagement_acceptance
+    phase: engagement_setup
+    title: "Accept SOC 2 Engagement"
+    base_hours: 6.0
+    required_roles: [service_auditor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_soc_acceptance
+          emits: SocAcceptanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_soc_acceptance
+          emits: SocAcceptanceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_soc_acceptance
+          emits: SocAcceptanceApproved
+          guards: [partner_approved]
+    steps:
+      - id: soc_accept_1
+        order: 1
+        action: evaluate
+        actor: service_auditor
+        description: >
+          Evaluate whether to accept the SOC 2 engagement, considering
+          the service auditor's independence, competence to perform the
+          engagement, and ethical requirements under AT-C 105.
+        binding: requirement
+        command: evaluate_soc_acceptance
+        emits: SocAcceptanceEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AT-C 105"
+            paragraphs: ["21", "22"]
+            binding: requirement
+      - id: soc_accept_2
+        order: 2
+        action: agree
+        actor: service_auditor
+        description: >
+          Agree the terms of the SOC 2 engagement with the service
+          organization, including the scope, applicable trust services
+          categories, reporting period, and intended use of the report.
+        binding: requirement
+        command: agree_soc_terms
+        emits: SocTermsAgreed
+        evidence:
+          inputs: []
+          outputs:
+            - ref: engagement_letter_soc
+              type: document
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["17", "18"]
+            binding: requirement
+      - id: soc_accept_3
+        order: 3
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Assess the service organization's ability to provide a
+          system description that meets the description criteria and
+          a written assertion from management.
+        binding: requirement
+        command: assess_service_org_readiness
+        emits: ServiceOrgReadinessAssessed
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["8", "9"]
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  - id: scope_determination
+    phase: engagement_setup
+    title: "Determine SOC 2 Scope"
+    base_hours: 10.0
+    required_roles: [audit_manager, it_specialist]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_scope_determination
+          emits: ScopeDeterminationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_scope_determination
+          emits: ScopeDeterminationSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_scope
+          emits: ScopeApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: scope_1
+        order: 1
+        action: identify
+        actor: audit_manager
+        description: >
+          Identify the in-scope systems, infrastructure components,
+          software, people, procedures, and data that comprise the
+          service organization's system relevant to the engagement.
+        binding: requirement
+        command: identify_in_scope_systems
+        emits: InScopeSystemsIdentified
+        judgment_level: high
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: scope_2
+        order: 2
+        action: determine
+        actor: it_specialist
+        description: >
+          Determine the applicable trust services categories (Security,
+          Availability, Processing Integrity, Confidentiality, Privacy)
+          and map them to the service organization's control objectives.
+        binding: requirement
+        command: determine_trust_categories
+        emits: TrustCategoriesDetermined
+        standards:
+          - ref: "TSC-CC1"
+            paragraphs: []
+            binding: requirement
+      - id: scope_3
+        order: 3
+        action: identify
+        actor: it_specialist
+        description: >
+          Identify specific controls implemented by the service
+          organization to meet each applicable trust services criterion
+          and map controls to criteria in the control matrix.
+        binding: requirement
+        command: identify_controls_to_criteria
+        emits: ControlsCriteriaMapped
+        evidence:
+          inputs: []
+          outputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["14"]
+            binding: requirement
+      - id: scope_4
+        order: 4
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the reporting period for the Type II engagement
+          and plan the testing timeline to cover the entire period
+          for operating effectiveness evaluation.
+        binding: requirement
+        command: determine_reporting_period
+        emits: ReportingPeriodDetermined
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["30"]
+            binding: requirement
+    preconditions:
+      - engagement_acceptance
+    knowledge_refs: []
+
+  - id: description_evaluation
+    phase: engagement_setup
+    title: "Evaluate System Description"
+    base_hours: 12.0
+    required_roles: [audit_manager, it_specialist]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_description_eval
+          emits: DescriptionEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_description_eval
+          emits: DescriptionEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_description_eval
+          emits: DescriptionEvalRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_description_eval
+          emits: DescriptionEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: desc_eval_1
+        order: 1
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate whether management's system description is presented
+          in accordance with the description criteria, including
+          completeness, accuracy, and whether it covers the entire
+          reporting period.
+        binding: requirement
+        command: evaluate_description_criteria
+        emits: DescriptionCriteriaEvaluated
+        evidence:
+          inputs:
+            - ref: system_description
+              type: document
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["16", "17"]
+            binding: requirement
+      - id: desc_eval_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate whether the system description accurately describes
+          the principal service commitments and system requirements,
+          the components of the system, and the boundaries of the
+          system.
+        binding: requirement
+        command: evaluate_description_accuracy
+        emits: DescriptionAccuracyEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["18", "19"]
+            binding: requirement
+      - id: desc_eval_3
+        order: 3
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate whether the system description identifies controls
+          relevant to the applicable trust services criteria and
+          whether complementary user entity controls and subservice
+          organization controls are appropriately described.
+        binding: requirement
+        command: evaluate_description_controls
+        emits: DescriptionControlsEvaluated
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+          outputs:
+            - ref: system_description
+              type: document
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["20"]
+            binding: requirement
+        decisions:
+          - condition: "Does the description meet all description criteria?"
+            branches:
+              - label: "Yes"
+                description: "Proceed to controls testing"
+              - label: "No"
+                description: "Request management to revise the description"
+    preconditions:
+      - scope_determination
+    knowledge_refs: []
+
+  # ---- CONTROLS TESTING PHASE ----
+
+  - id: security_controls_testing
+    phase: controls_testing
+    title: "Test Security Controls (CC1-CC9)"
+    base_hours: 40.0
+    required_roles: [it_specialist, audit_staff]
+    discriminators:
+      tiers: [core]
+      categories: [security]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_security_testing
+          emits: SecurityTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_security_testing
+          emits: SecurityTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_security_testing
+          emits: SecurityTestingRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_security_testing
+          emits: SecurityTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: sec_test_1
+        order: 1
+        action: select
+        actor: it_specialist
+        description: >
+          Select controls for testing from the control matrix that
+          address common criteria CC1 through CC9, covering the
+          control environment, communication, risk assessment,
+          monitoring, control activities, logical/physical access,
+          system operations, change management, and risk mitigation.
+        binding: requirement
+        command: select_security_controls
+        emits: SecurityControlsSelected
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "TSC-CC1"
+            paragraphs: []
+            binding: requirement
+          - ref: "TSC-CC5"
+            paragraphs: []
+            binding: requirement
+          - ref: "TSC-CC6"
+            paragraphs: []
+            binding: requirement
+      - id: sec_test_2
+        order: 2
+        action: determine
+        actor: it_specialist
+        description: >
+          Determine the testing approach for each selected control,
+          including the nature (inquiry, observation, inspection,
+          re-performance), timing, and extent of testing based on
+          risk assessment and control type.
+        binding: requirement
+        command: determine_security_test_approach
+        emits: SecurityTestApproachDetermined
+        judgment_level: medium
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["25", "26"]
+            binding: requirement
+      - id: sec_test_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Execute tests of security controls over the reporting
+          period, including access controls, authentication mechanisms,
+          encryption configurations, change management procedures,
+          and monitoring/alerting capabilities.
+        binding: requirement
+        command: execute_security_tests
+        emits: SecurityTestsExecuted
+        standards:
+          - ref: "TSC-CC7"
+            paragraphs: []
+            binding: requirement
+          - ref: "TSC-CC8"
+            paragraphs: []
+            binding: requirement
+      - id: sec_test_4
+        order: 4
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate the results of security controls testing, identify
+          any exceptions or deviations, and assess whether controls
+          operated effectively throughout the reporting period.
+        binding: requirement
+        command: evaluate_security_results
+        emits: SecurityResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: security_test_results
+              type: workpaper
+        standards:
+          - ref: "TSC-CC9"
+            paragraphs: []
+            binding: requirement
+      - id: sec_test_5
+        order: 5
+        action: document
+        actor: audit_staff
+        description: >
+          Document all security test exceptions in the exception log,
+          including the nature of the deviation, the affected criterion,
+          the period during which the exception occurred, and
+          management's response.
+        binding: requirement
+        command: document_security_exceptions
+        emits: SecurityExceptionsDocumented
+        evidence:
+          inputs: []
+          outputs:
+            - ref: exception_log
+              type: workpaper
+    preconditions:
+      - description_evaluation
+    knowledge_refs:
+      - scope_determination
+
+  - id: availability_controls_testing
+    phase: controls_testing
+    title: "Test Availability Controls (A1)"
+    base_hours: 16.0
+    required_roles: [it_specialist, audit_staff]
+    discriminators:
+      tiers: [core]
+      categories: [availability]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_availability_testing
+          emits: AvailabilityTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_availability_testing
+          emits: AvailabilityTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_availability_testing
+          emits: AvailabilityTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: avail_test_1
+        order: 1
+        action: select
+        actor: it_specialist
+        description: >
+          Select controls for testing that address the A1 availability
+          criteria, including capacity management, disaster recovery,
+          backup, and incident response controls.
+        binding: requirement
+        command: select_availability_controls
+        emits: AvailabilityControlsSelected
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "TSC-A1"
+            paragraphs: []
+            binding: requirement
+      - id: avail_test_2
+        order: 2
+        action: determine
+        actor: it_specialist
+        description: >
+          Determine the testing approach for availability controls,
+          considering uptime SLAs, failover procedures, and the
+          criticality of system components.
+        binding: requirement
+        command: determine_availability_test_approach
+        emits: AvailabilityTestApproachDetermined
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["25"]
+            binding: requirement
+      - id: avail_test_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Execute tests of availability controls including review of
+          disaster recovery test results, backup restoration tests,
+          capacity monitoring alerts, and incident response procedures
+          over the reporting period.
+        binding: requirement
+        command: execute_availability_tests
+        emits: AvailabilityTestsExecuted
+      - id: avail_test_4
+        order: 4
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate availability controls test results and document
+          any exceptions related to uptime, recovery, or capacity
+          management during the reporting period.
+        binding: requirement
+        command: evaluate_availability_results
+        emits: AvailabilityResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: availability_test_results
+              type: workpaper
+        standards:
+          - ref: "TSC-A1"
+            paragraphs: []
+            binding: requirement
+    preconditions:
+      - description_evaluation
+    knowledge_refs:
+      - scope_determination
+
+  - id: processing_integrity_testing
+    phase: controls_testing
+    title: "Test Processing Integrity Controls (PI1)"
+    base_hours: 16.0
+    required_roles: [it_specialist, audit_staff]
+    discriminators:
+      tiers: [core]
+      categories: [processing_integrity]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_pi_testing
+          emits: ProcessingIntegrityTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_pi_testing
+          emits: ProcessingIntegrityTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_pi_testing
+          emits: ProcessingIntegrityTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: pi_test_1
+        order: 1
+        action: select
+        actor: it_specialist
+        description: >
+          Select controls for testing that address the PI1 processing
+          integrity criteria, including input validation, processing
+          accuracy, output completeness, and error handling controls.
+        binding: requirement
+        command: select_pi_controls
+        emits: PiControlsSelected
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "TSC-PI1"
+            paragraphs: []
+            binding: requirement
+      - id: pi_test_2
+        order: 2
+        action: determine
+        actor: it_specialist
+        description: >
+          Determine the testing approach for processing integrity
+          controls, considering data flow complexity, transaction
+          volume, and automated vs. manual control characteristics.
+        binding: requirement
+        command: determine_pi_test_approach
+        emits: PiTestApproachDetermined
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["25"]
+            binding: requirement
+      - id: pi_test_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Execute tests of processing integrity controls including
+          data validation checks, reconciliation procedures, error
+          detection and correction mechanisms, and completeness
+          controls over the reporting period.
+        binding: requirement
+        command: execute_pi_tests
+        emits: PiTestsExecuted
+      - id: pi_test_4
+        order: 4
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate processing integrity controls test results and
+          document any exceptions related to data accuracy, completeness,
+          timeliness, or authorization during the reporting period.
+        binding: requirement
+        command: evaluate_pi_results
+        emits: PiResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: processing_integrity_test_results
+              type: workpaper
+        standards:
+          - ref: "TSC-PI1"
+            paragraphs: []
+            binding: requirement
+    preconditions:
+      - description_evaluation
+    knowledge_refs:
+      - scope_determination
+
+  - id: confidentiality_testing
+    phase: controls_testing
+    title: "Test Confidentiality Controls (C1)"
+    base_hours: 12.0
+    required_roles: [it_specialist, audit_staff]
+    discriminators:
+      tiers: [core]
+      categories: [confidentiality]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_confidentiality_testing
+          emits: ConfidentialityTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_confidentiality_testing
+          emits: ConfidentialityTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_confidentiality_testing
+          emits: ConfidentialityTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: conf_test_1
+        order: 1
+        action: select
+        actor: it_specialist
+        description: >
+          Select controls for testing that address the C1 confidentiality
+          criteria, including data classification, encryption at rest
+          and in transit, and access restriction controls.
+        binding: requirement
+        command: select_confidentiality_controls
+        emits: ConfidentialityControlsSelected
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "TSC-C1"
+            paragraphs: []
+            binding: requirement
+      - id: conf_test_2
+        order: 2
+        action: determine
+        actor: it_specialist
+        description: >
+          Determine the testing approach for confidentiality controls,
+          considering data sensitivity classification levels, encryption
+          standards, and data lifecycle management practices.
+        binding: requirement
+        command: determine_conf_test_approach
+        emits: ConfTestApproachDetermined
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["25"]
+            binding: requirement
+      - id: conf_test_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Execute tests of confidentiality controls including data
+          encryption configurations, DLP policies, secure disposal
+          procedures, and confidentiality agreement compliance
+          over the reporting period.
+        binding: requirement
+        command: execute_conf_tests
+        emits: ConfTestsExecuted
+      - id: conf_test_4
+        order: 4
+        action: evaluate
+        actor: it_specialist
+        description: >
+          Evaluate confidentiality controls test results and document
+          any exceptions related to unauthorized access, data leakage,
+          or encryption failures during the reporting period.
+        binding: requirement
+        command: evaluate_conf_results
+        emits: ConfResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: confidentiality_test_results
+              type: workpaper
+        standards:
+          - ref: "TSC-C1"
+            paragraphs: []
+            binding: requirement
+    preconditions:
+      - description_evaluation
+    knowledge_refs:
+      - scope_determination
+
+  - id: privacy_testing
+    phase: controls_testing
+    title: "Test Privacy Controls (P1)"
+    base_hours: 14.0
+    required_roles: [audit_manager, audit_staff]
+    discriminators:
+      tiers: [core]
+      categories: [privacy]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_privacy_testing
+          emits: PrivacyTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_privacy_testing
+          emits: PrivacyTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_privacy_testing
+          emits: PrivacyTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: priv_test_1
+        order: 1
+        action: select
+        actor: audit_manager
+        description: >
+          Select controls for testing that address the P1 privacy
+          criteria, including notice, choice and consent, collection,
+          use and retention, access, disclosure, and quality of
+          personal information.
+        binding: requirement
+        command: select_privacy_controls
+        emits: PrivacyControlsSelected
+        evidence:
+          inputs:
+            - ref: control_matrix
+              type: workpaper
+        standards:
+          - ref: "TSC-P1"
+            paragraphs: []
+            binding: requirement
+      - id: priv_test_2
+        order: 2
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine the testing approach for privacy controls,
+          considering applicable privacy regulations, the volume
+          and sensitivity of personal information, and data
+          subject rights management processes.
+        binding: requirement
+        command: determine_priv_test_approach
+        emits: PrivTestApproachDetermined
+        judgment_level: high
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["25"]
+            binding: requirement
+      - id: priv_test_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Execute tests of privacy controls including privacy notice
+          effectiveness, consent mechanisms, data retention enforcement,
+          data subject access request handling, and privacy incident
+          response procedures over the reporting period.
+        binding: requirement
+        command: execute_privacy_tests
+        emits: PrivacyTestsExecuted
+      - id: priv_test_4
+        order: 4
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate privacy controls test results and document any
+          exceptions related to personal information handling, consent
+          management, or data subject rights during the reporting period.
+        binding: requirement
+        command: evaluate_privacy_results
+        emits: PrivacyResultsEvaluated
+        evidence:
+          inputs: []
+          outputs:
+            - ref: privacy_test_results
+              type: workpaper
+        standards:
+          - ref: "TSC-P1"
+            paragraphs: []
+            binding: requirement
+    preconditions:
+      - description_evaluation
+    knowledge_refs:
+      - scope_determination
+
+  # ---- EVALUATION & REPORTING PHASE ----
+
+  - id: complementary_user_controls
+    phase: evaluation_and_reporting
+    title: "Evaluate Complementary User Entity Controls"
+    base_hours: 8.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_cuec_eval
+          emits: CuecEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_cuec_eval
+          emits: CuecEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_cuec_eval
+          emits: CuecEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: cuec_1
+        order: 1
+        action: identify
+        actor: audit_manager
+        description: >
+          Identify the complementary user entity controls (CUECs) that
+          the service organization has specified as necessary for user
+          entities to implement to achieve the applicable trust services
+          criteria.
+        binding: requirement
+        command: identify_cuecs
+        emits: CuecsIdentified
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["29"]
+            binding: requirement
+      - id: cuec_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate the design suitability of the identified CUECs and
+          determine whether they are appropriately described in the
+          system description. Note that operating effectiveness of
+          CUECs is not tested in a SOC 2 engagement.
+        binding: requirement
+        command: evaluate_cuec_design
+        emits: CuecDesignEvaluated
+        evidence:
+          inputs:
+            - ref: system_description
+              type: document
+          outputs:
+            - ref: cuec_evaluation
+              type: workpaper
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["30", "31"]
+            binding: requirement
+        decisions:
+          - condition: "Are CUECs adequately described in the system description?"
+            branches:
+              - label: "Yes"
+                description: "CUECs are suitable as designed and described"
+              - label: "No"
+                description: "Request management update the description"
+    preconditions:
+      - security_controls_testing
+      - availability_controls_testing
+      - processing_integrity_testing
+      - confidentiality_testing
+      - privacy_testing
+    knowledge_refs: []
+
+  - id: exception_evaluation
+    phase: evaluation_and_reporting
+    title: "Evaluate Identified Exceptions"
+    base_hours: 10.0
+    required_roles: [audit_manager, service_auditor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_exception_eval
+          emits: ExceptionEvalStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_exception_eval
+          emits: ExceptionEvalSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_exception_eval
+          emits: ExceptionEvalRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_exception_eval
+          emits: ExceptionEvalApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: except_eval_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Aggregate all exceptions identified across trust services
+          categories and evaluate whether they represent isolated
+          incidents or systemic control failures.
+        binding: requirement
+        command: aggregate_exceptions
+        emits: ExceptionsAggregated
+        evidence:
+          inputs:
+            - ref: exception_log
+              type: workpaper
+            - ref: security_test_results
+              type: workpaper
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["35"]
+            binding: requirement
+      - id: except_eval_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate the severity and root cause of each exception,
+          considering the nature and frequency of the deviation,
+          compensating controls, and the impact on the applicable
+          trust services criteria.
+        binding: requirement
+        command: evaluate_exception_severity
+        emits: ExceptionSeverityEvaluated
+        judgment_level: high
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["33"]
+            binding: requirement
+      - id: except_eval_3
+        order: 3
+        action: determine
+        actor: service_auditor
+        description: >
+          Determine whether identified exceptions result in a modified
+          opinion for any trust services category and whether they
+          need to be described in the service auditor's report.
+        binding: requirement
+        command: determine_exception_impact
+        emits: ExceptionImpactDetermined
+        judgment_level: high
+        decisions:
+          - condition: "Do exceptions warrant a modified opinion?"
+            branches:
+              - label: "Yes"
+                description: "Modify opinion for affected criteria"
+              - label: "No"
+                description: "Include exceptions in report without modification"
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["34", "35"]
+            binding: requirement
+    preconditions:
+      - security_controls_testing
+      - availability_controls_testing
+      - processing_integrity_testing
+      - confidentiality_testing
+      - privacy_testing
+    knowledge_refs: []
+
+  - id: management_assertion_review
+    phase: evaluation_and_reporting
+    title: "Review Management Assertion"
+    base_hours: 6.0
+    required_roles: [service_auditor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_assertion_review
+          emits: AssertionReviewStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_assertion_review
+          emits: AssertionReviewSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_assertion_review
+          emits: AssertionReviewApproved
+          guards: [partner_approved]
+    steps:
+      - id: assert_rev_1
+        order: 1
+        action: evaluate
+        actor: service_auditor
+        description: >
+          Review management's written assertion that the system
+          description is presented in accordance with the description
+          criteria and that controls were suitably designed and
+          operated effectively throughout the reporting period.
+        binding: requirement
+        command: review_management_assertion
+        emits: ManagementAssertionReviewed
+        evidence:
+          inputs:
+            - ref: management_assertion
+              type: document
+            - ref: system_description
+              type: document
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["12", "13"]
+            binding: requirement
+      - id: assert_rev_2
+        order: 2
+        action: evaluate
+        actor: service_auditor
+        description: >
+          Evaluate whether management's assertion is consistent with
+          the service auditor's findings, including any identified
+          exceptions, and whether the assertion is appropriately
+          dated and signed.
+        binding: requirement
+        command: evaluate_assertion_consistency
+        emits: AssertionConsistencyEvaluated
+        judgment_level: high
+        evidence:
+          inputs:
+            - ref: exception_log
+              type: workpaper
+          outputs:
+            - ref: management_assertion
+              type: document
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["32", "33"]
+            binding: requirement
+    preconditions:
+      - exception_evaluation
+    knowledge_refs: []
+
+  - id: form_soc_opinion
+    phase: evaluation_and_reporting
+    title: "Form and Issue SOC 2 Type II Opinion"
+    base_hours: 12.0
+    required_roles: [service_auditor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_soc_opinion
+          emits: SocOpinionStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_soc_opinion
+          emits: SocOpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_soc_opinion
+          emits: SocOpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_soc_opinion
+          emits: SocOpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: soc_opinion_1
+        order: 1
+        action: evaluate
+        actor: service_auditor
+        description: >
+          Evaluate whether sufficient appropriate evidence has been
+          obtained to support the opinion on the description, design
+          suitability, and operating effectiveness of controls for
+          each applicable trust services category.
+        binding: requirement
+        command: evaluate_soc_evidence_sufficiency
+        emits: SocEvidenceSufficiencyEvaluated
+        evidence:
+          inputs:
+            - ref: security_test_results
+              type: workpaper
+            - ref: cuec_evaluation
+              type: workpaper
+        standards:
+          - ref: "AT-C 205"
+            paragraphs: ["37", "38"]
+            binding: requirement
+      - id: soc_opinion_2
+        order: 2
+        action: determine
+        actor: service_auditor
+        description: >
+          Form the service auditor's opinion covering three elements:
+          (1) the description is fairly presented in accordance with
+          the description criteria, (2) controls were suitably designed,
+          and (3) controls operated effectively over the reporting period.
+        binding: requirement
+        command: form_soc2_opinion
+        emits: Soc2OpinionFormed
+        judgment_level: high
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["36", "37"]
+            binding: requirement
+        decisions:
+          - condition: "What type of SOC 2 opinion is appropriate?"
+            branches:
+              - label: "Unqualified"
+                description: "Controls suitably designed and operated effectively"
+              - label: "Qualified"
+                description: "Exceptions exist but are not pervasive"
+              - label: "Adverse"
+                description: "Pervasive control failures identified"
+      - id: soc_opinion_3
+        order: 3
+        action: issue
+        actor: service_auditor
+        description: >
+          Issue the SOC 2 Type II report including the service auditor's
+          opinion, management's system description, management's
+          assertion, the description of tests and results, and any
+          other information provided by the service organization.
+        binding: requirement
+        command: issue_soc2_report
+        emits: Soc2ReportIssued
+        evidence:
+          inputs: []
+          outputs:
+            - ref: soc2_opinion
+              type: report
+        standards:
+          - ref: "AT-C 320"
+            paragraphs: ["38", "39", "40"]
+            binding: requirement
+    preconditions:
+      - management_assertion_review
+      - complementary_user_controls
+    knowledge_refs:
+      - exception_evaluation

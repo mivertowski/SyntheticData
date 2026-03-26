@@ -2686,6 +2686,12 @@ fn resolve_blueprint(s: &str) -> Result<datasynth_audit_fsm::loader::BlueprintWi
             BlueprintWithPreconditions::load_builtin_ey_gam_lite()
                 .map_err(|e| anyhow::anyhow!("{e}"))
         }
+        "builtin:soc2" => {
+            BlueprintWithPreconditions::load_builtin_soc2().map_err(|e| anyhow::anyhow!("{e}"))
+        }
+        "builtin:pcaob" => {
+            BlueprintWithPreconditions::load_builtin_pcaob().map_err(|e| anyhow::anyhow!("{e}"))
+        }
         path => BlueprintWithPreconditions::load_from_file(PathBuf::from(path))
             .map_err(|e| anyhow::anyhow!("{e}")),
     }
