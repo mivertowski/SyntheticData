@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### GAM Blueprint Integration
+- **EY Global Audit Methodology (GAM)**: 1,182 procedures, 3,035 steps, 518 standards, 1,702 evidence templates — the full EY methodology runs end-to-end
+- **100% command dispatch coverage** across all three blueprints (FSA 24/24, IA 82/82, GAM 3,035/3,035) via 60 verb prefix patterns
+- **GAM results**: 7,731 events, 367,090 artifacts, 8/8 phases completed in 6.4 seconds
+- **Feature-gated filesystem loading**: GAM blueprint (13MB) loaded from disk, not embedded (`gam-blueprint` feature flag)
+- **GAM-specific schema fields**: `isa_mandate`, `form_refs`, `deliverable_fields`, `standard_field_trace` on steps; `forms_catalog`, `standard_dependencies`, `coverage`, `form_enrichment` on blueprint
+- **LegalDocument model + generator**: engagement letters, management representations, legal opinions, regulatory filings (5-9 per engagement, used by 686 GAM steps)
+- **AuditMethodology repo alignment**: procedure phase IDs normalized (1,182/1,182), preconditions synthesized from phase ordering (1,181/1,182)
+
+#### Analytics Inventory Integration
+- **Data analytics inventories** from AuditMethodology repo: FSA (40 steps, 87 data requirements, 71 analytical procedures) and IA (20 steps, 29 data requirements, 20 analytical procedures)
+- **Form ontology**: 4,437 canonical field categories for evidence template enrichment
+- **ContentGenerator extended** with `generate_analytical_narrative()` for data-driven workpaper content
+- **StepDispatcher enrichment**: artifacts annotated with data requirement summaries and analytical procedure narratives
+
+#### Audit Data Completeness (14/14 data types, 14/14 analytical procedures)
+- **JE audit flags** (WI-1): `is_manual`, `is_post_close`, `source_system`, `created_date` for ISA 240 fraud testing — 5% manual rate with period-end spike
+- **Prior-year data** (WI-2): `PriorYearComparative` with Benford-compliant prior amounts, `PriorYearFinding` with status tracking, `PriorYearSummary` with opinion/materiality/KAMs
+- **Industry benchmarks** (WI-3): 10 metrics per industry preset (retail, manufacturing, financial_services)
+- **IT system reports** (WI-4): `AccessLog` with business-hour weighting and failed-login clustering, `ChangeManagementRecord` with approval gaps for ITGC testing
+- **Board minutes** (WI-5): quarterly board + monthly audit committee meetings with decisions, risk discussions, attendees
+- **Organizational profile** (WI-6): IT systems per industry, regulatory environment, prior auditor
+- **Management reports** (WI-7): flash reports, monthly packs, board reports with KPI/RAG status and budget variances
+- **FS comparative fields** (WI-8): `prior_year_amount` and `assumptions` on FinancialStatementLineItem
+
 #### Wave 1: Consolidation
 - **CLI `audit` subcommand**: `datasynth-data audit validate|info|run` for blueprint inspection, validation, and standalone FSM execution
 - **Demo mode FSM**: `--demo` now exercises the FSM engine with FSA blueprint
