@@ -37,3 +37,4 @@ pub mod event;
 pub mod export;
 pub mod loader;
 pub mod schema;
+pub mod streaming;
