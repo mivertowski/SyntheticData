@@ -35,6 +35,7 @@ pub mod engine;
 pub mod error;
 pub mod event;
 pub mod export;
+pub mod live_injection;
 pub mod loader;
 pub mod schema;
 pub mod streaming;
