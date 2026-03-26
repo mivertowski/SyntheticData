@@ -3,16 +3,18 @@
 **Date**: 2026-03-25
 **Seed**: 42, **Overlay**: default
 
-## Results
+## Results (ISA-Complete Blueprints)
 
 | Firm | Phases | Procs | Steps | Events | Artifacts | Hours | Anomalies | Compl% | Data% | AI% | Human% |
 |------|--------|-------|-------|--------|-----------|-------|-----------|--------|-------|-----|--------|
 | Generic ISA | 3 | 9 | 24 | 51 | 2,012 | 731 | 2 | 100% | 17% | 29% | 54% |
-| KPMG Clara | 5 | 10 | 26 | 56 | 1,923 | 816 | 3 | 100% | 12% | 31% | 58% |
-| PwC Aura | 7 | 9 | 22 | 49 | 1,919 | 666 | 1 | 100% | 14% | 23% | 64% |
-| Deloitte Omnia | 8 | 10 | 24 | 54 | 1,921 | 760 | 0 | 100% | 12% | 25% | 62% |
+| **KPMG Clara** | **7** | **37** | **702** | **856** | **21,768** | **3,465** | **70** | **100%** | **10%** | **13%** | **76%** |
+| **PwC Aura** | **7** | **37** | **702** | **856** | **21,768** | **3,465** | **70** | **100%** | **10%** | **13%** | **76%** |
+| **Deloitte Omnia** | **7** | **37** | **702** | **856** | **21,768** | **3,465** | **70** | **100%** | **10%** | **13%** | **76%** |
 | IIA-GIAS | 9 | 34 | 82 | 205 | 3,814 | 2,737 | 12 | 100% | 6% | 67% | 27% |
 | EY GAM | 8 | 1,182 | 3,035 | 7,731 | 367,090 | N/A | 372 | 100% | ~40% | ~36% | ~24% |
+
+*Big 4 blueprints are now ISA-complete (37 procedures from 37 ISA standards, 702 steps from 702 ISA requirement paragraphs). Previously were 9-10 procedure shells.*
 
 ## Structural Analysis
 
