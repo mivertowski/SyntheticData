@@ -1,0 +1,1149 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "Deloitte Omnia Financial Statement Audit"
+  version: "2025.1"
+  framework: "ISA"
+  description: >
+    An ISA-based financial statement audit methodology styled after Deloitte
+    Omnia workflow with cognitive technology integration. This is synthetic,
+    ISA-derived content and contains no proprietary Deloitte methodology.
+    Suitable for generating realistic Big 4 style audit engagement data with
+    judgment-level annotations.
+
+discriminators:
+  tiers:
+    - core
+
+actors:
+  - id: lead_audit_partner
+    name: "Lead Audit Partner"
+    responsibilities:
+      - Overall engagement quality and direction
+      - Signing the audit report
+  - id: audit_director
+    name: "Audit Director"
+    responsibilities:
+      - Engagement oversight and strategic direction
+      - Reviewing key judgments
+  - id: audit_manager
+    name: "Audit Manager"
+    responsibilities:
+      - Day-to-day engagement management
+      - Supervising execution and reviewing workpapers
+  - id: audit_senior
+    name: "Audit Senior"
+    responsibilities:
+      - Executing audit procedures
+      - Preparing workpapers and analytics
+  - id: audit_staff
+    name: "Audit Staff"
+    responsibilities:
+      - Performing detailed testing
+      - Documenting results
+
+standards_catalog:
+  - ref: "ISA 200"
+    title: "Overall Objectives of the Independent Auditor"
+    binding: requirement
+  - ref: "ISA 210"
+    title: "Agreeing the Terms of Audit Engagements"
+    binding: requirement
+  - ref: "ISA 220"
+    title: "Quality Management for an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 240"
+    title: "The Auditor's Responsibilities Relating to Fraud"
+    binding: requirement
+  - ref: "ISA 300"
+    title: "Planning an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 315"
+    title: "Identifying and Assessing the Risks of Material Misstatement"
+    binding: requirement
+  - ref: "ISA 320"
+    title: "Materiality in Planning and Performing an Audit"
+    binding: requirement
+  - ref: "ISA 330"
+    title: "The Auditor's Responses to Assessed Risks"
+    binding: requirement
+  - ref: "ISA 500"
+    title: "Audit Evidence"
+    binding: requirement
+  - ref: "ISA 520"
+    title: "Analytical Procedures"
+    binding: requirement
+  - ref: "ISA 530"
+    title: "Audit Sampling"
+    binding: requirement
+  - ref: "ISA 560"
+    title: "Subsequent Events"
+    binding: requirement
+  - ref: "ISA 570"
+    title: "Going Concern"
+    binding: requirement
+  - ref: "ISA 700"
+    title: "Forming an Opinion and Reporting on Financial Statements"
+    binding: requirement
+
+evidence_catalog:
+  - id: engagement_letter
+    name: "Engagement Letter"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: overall_audit_strategy
+    name: "Overall Audit Strategy"
+    type: document
+    lifecycle: [draft, under_review, finalized]
+  - id: materiality_workpaper
+    name: "Materiality Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: risk_assessment_summary
+    name: "Risk Assessment Summary"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: controls_test_results
+    name: "Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: substantive_test_results
+    name: "Substantive Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: analytical_procedures_memo
+    name: "Analytical Procedures Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: going_concern_assessment
+    name: "Going Concern Assessment"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: subsequent_events_memo
+    name: "Subsequent Events Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: audit_opinion
+    name: "Audit Opinion"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+
+phases:
+  - id: engagement_setup
+    name: "Engagement Setup"
+    order: 1
+    description: >
+      Establish engagement terms, evaluate acceptance and continuance,
+      and confirm team composition.
+    gate:
+      all_of:
+        - procedure: establish_engagement_terms
+          state: completed
+
+  - id: planning
+    name: "Planning"
+    order: 2
+    description: >
+      Develop the overall audit strategy including materiality
+      determination and resource planning.
+    gate:
+      all_of:
+        - procedure: develop_audit_strategy
+          state: completed
+
+  - id: risk_assessment
+    name: "Risk Assessment"
+    order: 3
+    description: >
+      Understand the entity and its environment, and assess inherent
+      and control risks at the assertion level.
+    gate:
+      all_of:
+        - procedure: assess_inherent_and_control_risk
+          state: completed
+
+  - id: response_design
+    name: "Response Design"
+    order: 4
+    description: >
+      Design overall and detailed responses to the assessed risks,
+      including controls testing approach.
+    gate:
+      all_of:
+        - procedure: design_risk_responses
+          state: completed
+
+  - id: testing
+    name: "Testing"
+    order: 5
+    description: >
+      Execute substantive procedures and cognitive technology-powered
+      analytical procedures.
+    gate:
+      all_of:
+        - procedure: execute_substantive_procedures
+          state: completed
+        - procedure: cognitive_analytical_procedures
+          state: completed
+
+  - id: completion
+    name: "Completion"
+    order: 6
+    description: >
+      Address going concern, subsequent events, and evaluate overall
+      audit evidence sufficiency.
+    gate:
+      all_of:
+        - procedure: evaluate_going_concern
+          state: completed
+        - procedure: review_subsequent_events
+          state: completed
+
+  - id: opinion
+    name: "Opinion"
+    order: 7
+    description: >
+      Form the audit opinion with embedded engagement quality review
+      and real-time Omnia collaboration checkpoints.
+    gate:
+      all_of:
+        - procedure: form_audit_opinion
+          state: completed
+
+  - id: communication
+    name: "Communication"
+    order: 8
+    description: >
+      Issue the auditor's report and communicate significant matters
+      to those charged with governance.
+    gate:
+      all_of:
+        - procedure: issue_audit_report
+          state: completed
+
+procedures:
+  # ---- ENGAGEMENT SETUP PHASE ----
+
+  - id: establish_engagement_terms
+    phase: engagement_setup
+    title: "Establish Engagement Terms"
+    base_hours: 5.0
+    required_roles: [lead_audit_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_acceptance
+          emits: AcceptanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_acceptance
+          emits: AcceptanceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_acceptance
+          emits: AcceptanceApproved
+          guards: [partner_approved]
+    steps:
+      - id: dtt_setup_1
+        order: 1
+        action: evaluate
+        actor: lead_audit_partner
+        description: >
+          Evaluate whether to accept or continue the client relationship,
+          considering independence, ethical requirements, and the firm's
+          risk management framework.
+        binding: requirement
+        command: evaluate_client_acceptance
+        emits: ClientAcceptanceEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - independence_verification
+          - client_risk_profiling
+        human_responsibilities:
+          - Exercise professional judgment on client integrity
+          - Assess ethical threats and safeguards
+        standards:
+          - ref: "ISA 220"
+            paragraphs: ["12", "13"]
+            binding: requirement
+      - id: dtt_setup_2
+        order: 2
+        action: agree
+        actor: lead_audit_partner
+        description: >
+          Agree the terms of the audit engagement with management and
+          obtain a signed engagement letter.
+        binding: requirement
+        command: agree_engagement_terms
+        emits: EngagementTermsAgreed
+        judgment_level: human_required
+        ai_capabilities:
+          - engagement_letter_generation
+        human_responsibilities:
+          - Negotiate engagement terms
+          - Approve final letter content
+        evidence:
+          inputs: []
+          outputs:
+            - ref: engagement_letter
+              type: document
+        standards:
+          - ref: "ISA 210"
+            paragraphs: ["9", "10"]
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  # ---- PLANNING PHASE ----
+
+  - id: develop_audit_strategy
+    phase: planning
+    title: "Develop Audit Strategy & Materiality"
+    base_hours: 10.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_materiality
+          emits: MaterialityStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_materiality
+          emits: MaterialitySubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_materiality
+          emits: MaterialityRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_materiality
+          emits: MaterialityApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_plan_1
+        order: 1
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine overall materiality for the financial statements,
+          selecting an appropriate benchmark and percentage based on
+          entity-specific factors and industry norms.
+        binding: requirement
+        command: determine_overall_materiality
+        emits: OverallMaterialityDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - benchmark_computation
+          - industry_materiality_comparison
+          - historical_trend_analysis
+        human_responsibilities:
+          - Select appropriate benchmark
+          - Apply professional judgment to percentage
+        guards:
+          - type: field_required
+            fields: [materiality_amount, benchmark, percentage]
+        evidence:
+          inputs: []
+          outputs:
+            - ref: materiality_workpaper
+              type: workpaper
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["10"]
+            binding: requirement
+      - id: dtt_plan_2
+        order: 2
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine performance materiality and the clearly trivial
+          misstatement threshold.
+        binding: requirement
+        command: determine_performance_materiality
+        emits: PerformanceMaterialityDetermined
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - performance_materiality_calculation
+        human_responsibilities:
+          - Approve performance materiality level
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["11"]
+            binding: requirement
+    preconditions:
+      - establish_engagement_terms
+    knowledge_refs: []
+
+  # ---- RISK ASSESSMENT PHASE ----
+
+  - id: assess_inherent_and_control_risk
+    phase: risk_assessment
+    title: "Assess Inherent and Control Risk"
+    base_hours: 18.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_risk_assessment
+          emits: RiskAssessmentStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_risk_assessment
+          emits: RiskAssessmentSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_risk_assessment
+          emits: RiskAssessmentApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_risk_1
+        order: 1
+        action: understand
+        actor: audit_senior
+        description: >
+          Obtain an understanding of the entity and its environment,
+          including the applicable financial reporting framework, the
+          entity's internal control system, and its operations.
+        binding: requirement
+        command: understand_entity
+        emits: EntityUnderstood
+        judgment_level: human_required
+        ai_capabilities:
+          - industry_research_automation
+          - entity_profile_analysis
+          - cognitive_document_review
+        human_responsibilities:
+          - Conduct management inquiries
+          - Exercise professional skepticism
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["19", "20", "21"]
+            binding: requirement
+      - id: dtt_risk_2
+        order: 2
+        action: identify
+        actor: audit_senior
+        description: >
+          Identify risks of material misstatement at the financial
+          statement level and at the assertion level for transaction
+          classes, account balances, and disclosures.
+        binding: requirement
+        command: identify_risks
+        emits: RisksIdentified
+        judgment_level: human_required
+        ai_capabilities:
+          - cognitive_risk_screening
+          - anomaly_pattern_detection
+          - fraud_indicator_analysis
+        human_responsibilities:
+          - Apply professional judgment to risk identification
+          - Consider fraud risk factors per ISA 240
+        evidence:
+          inputs: []
+          outputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26"]
+            binding: requirement
+      - id: dtt_risk_3
+        order: 3
+        action: assess
+        actor: audit_senior
+        description: >
+          Assess the identified risks, evaluating inherent risk factors
+          and the adequacy of the entity's control environment, and
+          determine significant risks.
+        binding: requirement
+        command: assess_risks
+        emits: RisksAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - risk_scoring_model
+          - control_environment_analysis
+        human_responsibilities:
+          - Determine significance of identified risks
+          - Conclude on combined risk assessment
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["28", "29"]
+            binding: requirement
+        decisions:
+          - condition: "Are there significant risks identified?"
+            branches:
+              - label: "Yes"
+                description: "Design specific responses to significant risks"
+              - label: "No"
+                description: "Proceed with standard risk responses"
+    preconditions:
+      - develop_audit_strategy
+    knowledge_refs: []
+
+  # ---- RESPONSE DESIGN PHASE ----
+
+  - id: design_risk_responses
+    phase: response_design
+    title: "Design Risk Responses & Test Controls"
+    base_hours: 22.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_controls_testing
+          emits: ControlsTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_controls_testing
+          emits: ControlsTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_controls_testing
+          emits: ControlsTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_ctrl_1
+        order: 1
+        action: evaluate
+        actor: audit_senior
+        description: >
+          Evaluate the design and implementation of relevant controls,
+          including entity-level controls and IT general controls.
+        binding: requirement
+        command: evaluate_controls
+        emits: ControlsEvaluated
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - control_design_assessment
+          - it_control_mapping
+          - cognitive_control_analysis
+        human_responsibilities:
+          - Conclude on control design adequacy
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26a"]
+            binding: requirement
+      - id: dtt_ctrl_2
+        order: 2
+        action: design
+        actor: audit_senior
+        description: >
+          Design tests of controls and substantive procedures responsive
+          to the assessed risks at the assertion level.
+        binding: requirement
+        command: design_controls_tests
+        emits: ControlsTestsDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - test_procedure_generation
+          - sample_size_optimization
+        human_responsibilities:
+          - Approve test design and sampling approach
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["8"]
+            binding: requirement
+      - id: dtt_ctrl_3
+        order: 3
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform tests of controls to obtain evidence about the
+          operating effectiveness of relevant controls throughout
+          the period of reliance.
+        binding: requirement
+        command: perform_controls_tests
+        emits: ControlsTestsPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_control_reperformance
+          - exception_flagging
+        human_responsibilities:
+          - Investigate flagged exceptions
+        evidence:
+          inputs: []
+          outputs:
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["10", "11"]
+            binding: requirement
+    preconditions:
+      - assess_inherent_and_control_risk
+    knowledge_refs: []
+
+  # ---- TESTING PHASE ----
+
+  - id: execute_substantive_procedures
+    phase: testing
+    title: "Execute Substantive Procedures"
+    base_hours: 34.0
+    required_roles: [audit_senior, audit_staff]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_substantive_testing
+          emits: SubstantiveTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_substantive_testing
+          emits: SubstantiveTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_substantive_testing
+          emits: SubstantiveTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_sub_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design substantive procedures responsive to assessed risks,
+          determining the mix of tests of details and substantive
+          analytical procedures.
+        binding: requirement
+        command: design_substantive_procedures
+        emits: SubstantiveProceduresDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - procedure_design_recommendation
+          - risk_response_optimization
+        human_responsibilities:
+          - Approve substantive test design
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["18"]
+            binding: requirement
+      - id: dtt_sub_2
+        order: 2
+        action: perform
+        actor: audit_staff
+        description: >
+          Perform tests of details on material transaction classes,
+          account balances, and disclosures, using appropriate sampling
+          methods and cognitive technology tools.
+        binding: requirement
+        command: perform_tests_of_details
+        emits: TestsOfDetailsPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_vouching
+          - cognitive_document_matching
+          - sample_selection
+        human_responsibilities:
+          - Investigate identified exceptions
+          - Evaluate misstatement implications
+        evidence:
+          inputs: []
+          outputs:
+            - ref: substantive_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 500"
+            paragraphs: ["6"]
+            binding: requirement
+          - ref: "ISA 530"
+            paragraphs: ["6"]
+            binding: requirement
+    preconditions:
+      - assess_inherent_and_control_risk
+    knowledge_refs:
+      - design_risk_responses
+
+  - id: cognitive_analytical_procedures
+    phase: testing
+    title: "Cognitive Technology Analytical Procedures"
+    base_hours: 14.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_analytical_procedures
+          emits: AnalyticalProceduresStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_analytical_procedures
+          emits: AnalyticalProceduresSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_analytical_procedures
+          emits: AnalyticalProceduresApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_anl_1
+        order: 1
+        action: design
+        actor: audit_senior
+        description: >
+          Design substantive analytical procedures using cognitive
+          technology to develop expectations and identify patterns
+          across financial data sets.
+        binding: requirement
+        command: design_analytical_procedures
+        emits: AnalyticalProceduresDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - cognitive_expectation_modelling
+          - journal_entry_pattern_analysis
+          - data_driven_trend_detection
+        human_responsibilities:
+          - Validate analytical model assumptions
+          - Approve expectation parameters
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5"]
+            binding: requirement
+      - id: dtt_anl_2
+        order: 2
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform analytical procedures and investigate significant
+          fluctuations or relationships inconsistent with expectations.
+        binding: requirement
+        command: perform_analytical_procedures
+        emits: AnalyticalProceduresPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_variance_analysis
+          - cognitive_outlier_detection
+          - visualization_generation
+        human_responsibilities:
+          - Investigate significant variances
+          - Document conclusions on fluctuations
+        evidence:
+          inputs: []
+          outputs:
+            - ref: analytical_procedures_memo
+              type: memo
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5", "7"]
+            binding: requirement
+    preconditions:
+      - develop_audit_strategy
+    knowledge_refs: []
+
+  # ---- COMPLETION PHASE ----
+
+  - id: evaluate_going_concern
+    phase: completion
+    title: "Evaluate Going Concern"
+    base_hours: 8.0
+    required_roles: [audit_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_going_concern
+          emits: GoingConcernStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_going_concern
+          emits: GoingConcernSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_going_concern
+          emits: GoingConcernApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_gc_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate management's assessment of the entity's ability to
+          continue as a going concern for at least twelve months from
+          the financial statement date.
+        binding: requirement
+        command: evaluate_management_assessment
+        emits: ManagementAssessmentEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - financial_ratio_trend_analysis
+          - cash_flow_projection_validation
+        human_responsibilities:
+          - Exercise professional skepticism
+          - Consider contradictory evidence
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["12"]
+            binding: requirement
+      - id: dtt_gc_2
+        order: 2
+        action: determine
+        actor: audit_manager
+        description: >
+          Determine whether material uncertainty exists related to the
+          entity's ability to continue as a going concern.
+        binding: requirement
+        command: determine_going_concern_doubt
+        emits: GoingConcernDoubtDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - going_concern_indicator_screening
+        human_responsibilities:
+          - Conclude on material uncertainty existence
+        evidence:
+          inputs: []
+          outputs:
+            - ref: going_concern_assessment
+              type: assessment
+        decisions:
+          - condition: "Does material uncertainty exist?"
+            branches:
+              - label: "Yes"
+                description: "Evaluate disclosure adequacy and report impact"
+                next_step: dtt_gc_3
+              - label: "No"
+                description: "Document conclusion and proceed"
+      - id: dtt_gc_3
+        order: 3
+        action: evaluate
+        actor: lead_audit_partner
+        description: >
+          If material uncertainty exists, evaluate the adequacy of
+          financial statement disclosures and determine the impact
+          on the auditor's report.
+        binding: requirement
+        command: evaluate_gc_disclosures
+        emits: GoingConcernDisclosuresEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - disclosure_completeness_analysis
+        human_responsibilities:
+          - Determine report impact of going concern uncertainty
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["18", "19"]
+            binding: requirement
+    preconditions:
+      - execute_substantive_procedures
+    knowledge_refs: []
+
+  - id: review_subsequent_events
+    phase: completion
+    title: "Review Subsequent Events"
+    base_hours: 6.0
+    required_roles: [audit_senior]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_subsequent_events
+          emits: SubsequentEventsStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_subsequent_events
+          emits: SubsequentEventsSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_subsequent_events
+          emits: SubsequentEventsApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: dtt_se_1
+        order: 1
+        action: perform
+        actor: audit_senior
+        description: >
+          Perform procedures to identify events between the financial
+          statement date and the auditor's report date that require
+          adjustment or disclosure.
+        binding: requirement
+        command: perform_subsequent_events_review
+        emits: SubsequentEventsReviewed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - cognitive_news_monitoring
+          - regulatory_filing_screening
+        human_responsibilities:
+          - Inquire of management about subsequent events
+          - Review board and committee minutes
+        evidence:
+          inputs: []
+          outputs:
+            - ref: subsequent_events_memo
+              type: memo
+        standards:
+          - ref: "ISA 560"
+            paragraphs: ["6", "7"]
+            binding: requirement
+      - id: dtt_se_2
+        order: 2
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate identified subsequent events and classify them as
+          adjusting or non-adjusting, ensuring proper financial
+          statement treatment.
+        binding: requirement
+        command: evaluate_subsequent_events
+        emits: SubsequentEventsEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - event_classification_suggestion
+        human_responsibilities:
+          - Classify subsequent events
+          - Determine disclosure adequacy
+        decisions:
+          - condition: "Are adjusting events identified?"
+            branches:
+              - label: "Yes"
+                description: "Ensure financial statements are adjusted"
+              - label: "No"
+                description: "Evaluate non-adjusting event disclosures"
+    preconditions:
+      - execute_substantive_procedures
+    knowledge_refs: []
+
+  # ---- OPINION PHASE ----
+
+  - id: form_audit_opinion
+    phase: opinion
+    title: "Form Audit Opinion"
+    base_hours: 12.0
+    required_roles: [lead_audit_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_opinion_formation
+          emits: OpinionFormationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_opinion
+          emits: OpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_opinion
+          emits: OpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_opinion
+          emits: OpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: dtt_opinion_1
+        order: 1
+        action: evaluate
+        actor: audit_manager
+        description: >
+          Evaluate whether sufficient appropriate audit evidence has been
+          obtained and assess the aggregate impact of uncorrected
+          misstatements.
+        binding: requirement
+        command: evaluate_evidence_sufficiency
+        emits: EvidenceSufficiencyEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - misstatement_aggregation
+          - evidence_completeness_analysis
+        human_responsibilities:
+          - Conclude on evidence sufficiency and appropriateness
+        evidence:
+          inputs:
+            - ref: substantive_test_results
+              type: workpaper
+            - ref: going_concern_assessment
+              type: assessment
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: dtt_opinion_2
+        order: 2
+        action: review
+        actor: audit_director
+        description: >
+          Conduct Omnia collaboration checkpoint review, evaluating
+          significant judgments made by the engagement team and
+          the conclusions reached.
+        binding: requirement
+        command: review_engagement_quality
+        emits: EngagementQualityReviewed
+        judgment_level: human_required
+        ai_capabilities:
+          - judgment_consistency_analysis
+          - workpaper_completeness_check
+        human_responsibilities:
+          - Exercise independent professional judgment
+          - Evaluate significant audit conclusions
+      - id: dtt_opinion_3
+        order: 3
+        action: determine
+        actor: lead_audit_partner
+        description: >
+          Form an opinion on whether the financial statements are
+          prepared, in all material respects, in accordance with the
+          applicable financial reporting framework.
+        binding: requirement
+        command: form_audit_opinion
+        emits: AuditOpinionFormed
+        judgment_level: human_required
+        ai_capabilities:
+          - opinion_type_recommendation
+        human_responsibilities:
+          - Form the audit opinion
+          - Exercise final professional judgment
+        evidence:
+          inputs: []
+          outputs:
+            - ref: audit_opinion
+              type: report
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+        decisions:
+          - condition: "What type of opinion is appropriate?"
+            branches:
+              - label: "Unmodified"
+                description: "Financial statements fairly presented"
+              - label: "Qualified"
+                description: "Material but not pervasive misstatements"
+              - label: "Adverse"
+                description: "Material and pervasive misstatements"
+              - label: "Disclaimer"
+                description: "Unable to obtain sufficient evidence"
+    preconditions:
+      - evaluate_going_concern
+      - review_subsequent_events
+    knowledge_refs:
+      - cognitive_analytical_procedures
+
+  # ---- COMMUNICATION PHASE ----
+
+  - id: issue_audit_report
+    phase: communication
+    title: "Issue Audit Report & Communicate"
+    base_hours: 6.0
+    required_roles: [lead_audit_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_report_issuance
+          emits: ReportIssuanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_report
+          emits: ReportSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: finalize_report
+          emits: ReportFinalized
+          guards: [partner_approved]
+    steps:
+      - id: dtt_report_1
+        order: 1
+        action: issue
+        actor: lead_audit_partner
+        description: >
+          Issue the auditor's report, including the opinion, basis for
+          opinion, key audit matters, and any additional reporting
+          requirements.
+        binding: requirement
+        command: issue_audit_report
+        emits: AuditReportIssued
+        judgment_level: human_required
+        ai_capabilities:
+          - report_drafting
+          - disclosure_cross_referencing
+        human_responsibilities:
+          - Sign the audit report
+          - Approve final report content
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["20", "21", "22"]
+            binding: requirement
+      - id: dtt_report_2
+        order: 2
+        action: communicate
+        actor: lead_audit_partner
+        description: >
+          Communicate significant audit matters, including key audit
+          matters and deficiencies in internal control, to those charged
+          with governance.
+        binding: requirement
+        command: communicate_approved_plan
+        emits: GovernanceCommunicationCompleted
+        judgment_level: human_required
+        ai_capabilities:
+          - communication_drafting
+          - deficiency_summarization
+        human_responsibilities:
+          - Present findings to governance
+          - Discuss significant matters
+    preconditions:
+      - form_audit_opinion
+    knowledge_refs: []

@@ -1,0 +1,1179 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "KPMG Clara Financial Statement Audit"
+  version: "2025.1"
+  framework: "ISA"
+  description: >
+    An ISA-based financial statement audit methodology styled after KPMG Clara
+    workflow (KCw). This is synthetic, ISA-derived content and contains no
+    proprietary KPMG methodology. Suitable for generating realistic Big 4 style
+    audit engagement data with judgment-level annotations.
+
+discriminators:
+  tiers:
+    - core
+
+actors:
+  - id: engagement_partner
+    name: "Engagement Partner"
+    responsibilities:
+      - Overall engagement quality
+      - Signing the audit report
+  - id: engagement_manager
+    name: "Engagement Manager"
+    responsibilities:
+      - Day-to-day management
+      - Reviewing workpapers
+  - id: senior_associate
+    name: "Senior Associate"
+    responsibilities:
+      - Executing procedures
+      - Preparing workpapers
+  - id: associate
+    name: "Associate"
+    responsibilities:
+      - Performing testing
+      - Documenting results
+  - id: eqr
+    name: "Engagement Quality Reviewer"
+    responsibilities:
+      - Independent quality review
+      - Concurring on significant judgments
+
+standards_catalog:
+  - ref: "ISA 200"
+    title: "Overall Objectives of the Independent Auditor"
+    binding: requirement
+  - ref: "ISA 210"
+    title: "Agreeing the Terms of Audit Engagements"
+    binding: requirement
+  - ref: "ISA 220"
+    title: "Quality Management for an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 240"
+    title: "The Auditor's Responsibilities Relating to Fraud"
+    binding: requirement
+  - ref: "ISA 300"
+    title: "Planning an Audit of Financial Statements"
+    binding: requirement
+  - ref: "ISA 315"
+    title: "Identifying and Assessing the Risks of Material Misstatement"
+    binding: requirement
+  - ref: "ISA 320"
+    title: "Materiality in Planning and Performing an Audit"
+    binding: requirement
+  - ref: "ISA 330"
+    title: "The Auditor's Responses to Assessed Risks"
+    binding: requirement
+  - ref: "ISA 500"
+    title: "Audit Evidence"
+    binding: requirement
+  - ref: "ISA 520"
+    title: "Analytical Procedures"
+    binding: requirement
+  - ref: "ISA 530"
+    title: "Audit Sampling"
+    binding: requirement
+  - ref: "ISA 560"
+    title: "Subsequent Events"
+    binding: requirement
+  - ref: "ISA 570"
+    title: "Going Concern"
+    binding: requirement
+  - ref: "ISA 700"
+    title: "Forming an Opinion and Reporting on Financial Statements"
+    binding: requirement
+
+evidence_catalog:
+  - id: engagement_letter
+    name: "Engagement Letter"
+    type: document
+    lifecycle: [draft, finalized]
+  - id: overall_audit_strategy
+    name: "Overall Audit Strategy"
+    type: document
+    lifecycle: [draft, under_review, finalized]
+  - id: materiality_workpaper
+    name: "Materiality Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: risk_assessment_summary
+    name: "Risk Assessment Summary"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: controls_test_results
+    name: "Controls Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: substantive_test_results
+    name: "Substantive Test Results"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: analytical_procedures_memo
+    name: "Analytical Procedures Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: going_concern_assessment
+    name: "Going Concern Assessment"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: subsequent_events_memo
+    name: "Subsequent Events Memorandum"
+    type: memo
+    lifecycle: [draft, finalized]
+  - id: audit_opinion
+    name: "Audit Opinion"
+    type: report
+    lifecycle: [draft, under_review, finalized]
+  - id: eqr_workpaper
+    name: "Engagement Quality Review Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+
+phases:
+  - id: client_acceptance
+    name: "Client Acceptance & Continuance"
+    order: 1
+    description: >
+      Evaluate whether to accept or continue the client relationship and
+      establish the terms of the audit engagement.
+    gate:
+      all_of:
+        - procedure: client_acceptance_evaluation
+          state: completed
+
+  - id: planning_and_risk
+    name: "Planning & Risk Assessment"
+    order: 2
+    description: >
+      Establish the audit strategy, determine materiality, and identify and
+      assess risks of material misstatement through understanding the entity.
+    gate:
+      all_of:
+        - procedure: determine_materiality
+          state: completed
+        - procedure: understand_entity_and_assess_risks
+          state: completed
+
+  - id: design_responses
+    name: "Design Audit Responses"
+    order: 3
+    description: >
+      Design overall and specific responses to the assessed risks of
+      material misstatement.
+    gate:
+      all_of:
+        - procedure: test_operating_effectiveness
+          state: completed
+
+  - id: execute_procedures
+    name: "Execute Audit Procedures"
+    order: 4
+    description: >
+      Execute substantive audit procedures and analytical procedures to
+      obtain sufficient appropriate audit evidence.
+    gate:
+      all_of:
+        - procedure: substantive_audit_procedures
+          state: completed
+        - procedure: perform_analytical_procedures
+          state: completed
+
+  - id: evaluate_and_conclude
+    name: "Evaluate Results & Form Opinion"
+    order: 5
+    description: >
+      Evaluate evidence obtained, address going concern and subsequent events,
+      perform engagement quality review, and form the audit opinion.
+    gate:
+      all_of:
+        - procedure: evaluate_going_concern
+          state: completed
+        - procedure: review_subsequent_events
+          state: completed
+        - procedure: form_audit_opinion
+          state: completed
+        - procedure: engagement_quality_review
+          state: completed
+
+procedures:
+  # ---- CLIENT ACCEPTANCE PHASE ----
+
+  - id: client_acceptance_evaluation
+    phase: client_acceptance
+    title: "Client Acceptance & Continuance Evaluation"
+    base_hours: 4.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_acceptance
+          emits: AcceptanceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_acceptance
+          emits: AcceptanceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_acceptance
+          emits: AcceptanceApproved
+          guards: [partner_approved]
+    steps:
+      - id: kpmg_accept_1
+        order: 1
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          Evaluate whether to accept or continue the client relationship
+          and the specific audit engagement, considering ethical requirements,
+          independence, and the firm's quality management policies.
+        binding: requirement
+        command: evaluate_client_acceptance
+        emits: ClientAcceptanceEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - independence_check_automation
+          - client_background_screening
+        human_responsibilities:
+          - Exercise professional judgment on client integrity
+          - Assess ethical threats and safeguards
+        standards:
+          - ref: "ISA 220"
+            paragraphs: ["12", "13"]
+            binding: requirement
+      - id: kpmg_accept_2
+        order: 2
+        action: agree
+        actor: engagement_partner
+        description: >
+          Agree the terms of the audit engagement with management and
+          obtain a signed engagement letter.
+        binding: requirement
+        command: agree_engagement_terms
+        emits: EngagementTermsAgreed
+        judgment_level: human_required
+        ai_capabilities:
+          - engagement_letter_drafting
+        human_responsibilities:
+          - Negotiate engagement terms with management
+          - Approve final engagement letter content
+        evidence:
+          inputs: []
+          outputs:
+            - ref: engagement_letter
+              type: document
+        standards:
+          - ref: "ISA 210"
+            paragraphs: ["9", "10"]
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  # ---- PLANNING & RISK ASSESSMENT PHASE ----
+
+  - id: determine_materiality
+    phase: planning_and_risk
+    title: "Determine Materiality"
+    base_hours: 8.0
+    required_roles: [engagement_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_materiality
+          emits: MaterialityStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_materiality
+          emits: MaterialitySubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_materiality
+          emits: MaterialityRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_materiality
+          emits: MaterialityApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_mat_1
+        order: 1
+        action: determine
+        actor: engagement_manager
+        description: >
+          Determine overall materiality for the financial statements as a
+          whole, selecting an appropriate benchmark and percentage based on
+          entity-specific factors and industry norms.
+        binding: requirement
+        command: determine_overall_materiality
+        emits: OverallMaterialityDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - benchmark_computation
+          - industry_comparison
+          - historical_materiality_trending
+        human_responsibilities:
+          - Select appropriate benchmark
+          - Apply professional judgment to percentage selection
+          - Consider qualitative factors
+        guards:
+          - type: field_required
+            fields: [materiality_amount, benchmark, percentage]
+        evidence:
+          inputs: []
+          outputs:
+            - ref: materiality_workpaper
+              type: workpaper
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["10"]
+            binding: requirement
+      - id: kpmg_mat_2
+        order: 2
+        action: determine
+        actor: engagement_manager
+        description: >
+          Determine performance materiality to reduce the probability that
+          the aggregate of uncorrected and undetected misstatements exceeds
+          overall materiality.
+        binding: requirement
+        command: determine_performance_materiality
+        emits: PerformanceMaterialityDetermined
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - performance_materiality_calculation
+          - prior_year_misstatement_analysis
+        human_responsibilities:
+          - Approve performance materiality level
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["11"]
+            binding: requirement
+      - id: kpmg_mat_3
+        order: 3
+        action: determine
+        actor: engagement_manager
+        description: >
+          Determine the threshold for clearly trivial misstatements, below
+          which misstatements need not be accumulated.
+        binding: guidance
+        command: determine_trivial_threshold
+        emits: TrivialThresholdDetermined
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - threshold_computation
+        human_responsibilities:
+          - Approve trivial threshold
+        standards:
+          - ref: "ISA 320"
+            paragraphs: ["A10"]
+            binding: guidance
+    preconditions:
+      - client_acceptance_evaluation
+    knowledge_refs: []
+
+  - id: understand_entity_and_assess_risks
+    phase: planning_and_risk
+    title: "Understand Entity & Assess Risks"
+    base_hours: 16.0
+    required_roles: [senior_associate]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_risk_assessment
+          emits: RiskAssessmentStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_risk_assessment
+          emits: RiskAssessmentSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_risk_assessment
+          emits: RiskAssessmentApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_risk_1
+        order: 1
+        action: understand
+        actor: senior_associate
+        description: >
+          Obtain an understanding of the entity and its environment, the
+          applicable financial reporting framework, and the entity's system
+          of internal control.
+        binding: requirement
+        command: understand_entity
+        emits: EntityUnderstood
+        judgment_level: human_required
+        ai_capabilities:
+          - industry_research
+          - financial_data_analysis
+          - regulatory_landscape_summary
+        human_responsibilities:
+          - Exercise professional skepticism in understanding the entity
+          - Conduct management inquiries
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["19", "20", "21"]
+            binding: requirement
+      - id: kpmg_risk_2
+        order: 2
+        action: identify
+        actor: senior_associate
+        description: >
+          Identify risks of material misstatement at the financial statement
+          level and the assertion level for classes of transactions, account
+          balances, and disclosures.
+        binding: requirement
+        command: identify_risks
+        emits: RisksIdentified
+        judgment_level: human_required
+        ai_capabilities:
+          - risk_factor_screening
+          - anomaly_detection
+          - peer_comparison
+        human_responsibilities:
+          - Apply professional judgment to risk identification
+          - Consider fraud risk factors
+        evidence:
+          inputs: []
+          outputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26"]
+            binding: requirement
+      - id: kpmg_risk_3
+        order: 3
+        action: assess
+        actor: senior_associate
+        description: >
+          Assess the identified risks by evaluating inherent risk factors
+          and determining whether they are significant risks requiring
+          special audit consideration.
+        binding: requirement
+        command: assess_risks
+        emits: RisksAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - risk_scoring_model
+          - inherent_risk_factor_analysis
+        human_responsibilities:
+          - Determine significance of identified risks
+          - Apply professional judgment to risk assessment
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["28", "29"]
+            binding: requirement
+        decisions:
+          - condition: "Are there significant risks identified?"
+            branches:
+              - label: "Yes"
+                description: "Design specific responses to significant risks"
+                next_step: kpmg_risk_4
+              - label: "No"
+                description: "Proceed with standard risk responses"
+      - id: kpmg_risk_4
+        order: 4
+        action: evaluate
+        actor: engagement_manager
+        description: >
+          Evaluate the design and implementation of relevant controls,
+          including entity-level controls and information technology
+          general controls.
+        binding: requirement
+        command: evaluate_controls
+        emits: ControlsEvaluated
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - control_design_evaluation
+          - it_control_assessment
+        human_responsibilities:
+          - Conclude on control design adequacy
+        standards:
+          - ref: "ISA 315"
+            paragraphs: ["26a"]
+            binding: requirement
+    preconditions:
+      - client_acceptance_evaluation
+    knowledge_refs:
+      - determine_materiality
+
+  # ---- DESIGN RESPONSES PHASE ----
+
+  - id: test_operating_effectiveness
+    phase: design_responses
+    title: "Test Operating Effectiveness of Controls"
+    base_hours: 24.0
+    required_roles: [senior_associate]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_controls_testing
+          emits: ControlsTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_controls_testing
+          emits: ControlsTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_controls_testing
+          emits: ControlsTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_ctrl_1
+        order: 1
+        action: design
+        actor: senior_associate
+        description: >
+          Design tests of controls that provide sufficient appropriate
+          evidence about the operating effectiveness of relevant controls.
+        binding: requirement
+        command: design_controls_tests
+        emits: ControlsTestsDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - test_procedure_suggestion
+          - sample_size_computation
+        human_responsibilities:
+          - Approve test design appropriateness
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["8"]
+            binding: requirement
+      - id: kpmg_ctrl_2
+        order: 2
+        action: perform
+        actor: associate
+        description: >
+          Perform tests of controls to obtain audit evidence about the
+          operating effectiveness of controls throughout the period of
+          reliance.
+        binding: requirement
+        command: perform_controls_tests
+        emits: ControlsTestsPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_control_reperformance
+          - exception_flagging
+        human_responsibilities:
+          - Investigate flagged exceptions
+        evidence:
+          inputs: []
+          outputs:
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: kpmg_ctrl_3
+        order: 3
+        action: evaluate
+        actor: senior_associate
+        description: >
+          Evaluate the results of controls testing, including any
+          identified deviations, and determine the impact on the nature,
+          timing, and extent of substantive procedures.
+        binding: requirement
+        command: evaluate_controls_results
+        emits: ControlsResultsEvaluated
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - deviation_rate_analysis
+          - substantive_impact_modelling
+        human_responsibilities:
+          - Conclude on control reliance
+          - Determine impact on substantive procedures
+        decisions:
+          - condition: "Are control deviations identified?"
+            branches:
+              - label: "Yes"
+                description: "Expand substantive testing for affected assertions"
+              - label: "No"
+                description: "Proceed with planned substantive procedures"
+    preconditions:
+      - understand_entity_and_assess_risks
+    knowledge_refs: []
+
+  # ---- EXECUTE PROCEDURES PHASE ----
+
+  - id: substantive_audit_procedures
+    phase: execute_procedures
+    title: "Substantive Audit Procedures"
+    base_hours: 32.0
+    required_roles: [senior_associate, associate]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_substantive_testing
+          emits: SubstantiveTestingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_substantive_testing
+          emits: SubstantiveTestingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_substantive_testing
+          emits: SubstantiveTestingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_sub_1
+        order: 1
+        action: design
+        actor: senior_associate
+        description: >
+          Design substantive procedures responsive to assessed risks at the
+          assertion level, including tests of details and substantive
+          analytical procedures.
+        binding: requirement
+        command: design_substantive_procedures
+        emits: SubstantiveProceduresDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - procedure_design_suggestion
+          - risk_response_mapping
+        human_responsibilities:
+          - Approve substantive procedure design
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+            - ref: controls_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 330"
+            paragraphs: ["18"]
+            binding: requirement
+      - id: kpmg_sub_2
+        order: 2
+        action: perform
+        actor: associate
+        description: >
+          Perform tests of details on material classes of transactions,
+          account balances, and disclosures, selecting appropriate
+          sample sizes based on assessed risk.
+        binding: requirement
+        command: perform_tests_of_details
+        emits: TestsOfDetailsPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_vouching
+          - sample_selection
+          - data_extraction
+        human_responsibilities:
+          - Investigate identified exceptions
+        evidence:
+          inputs: []
+          outputs:
+            - ref: substantive_test_results
+              type: workpaper
+        standards:
+          - ref: "ISA 500"
+            paragraphs: ["6"]
+            binding: requirement
+          - ref: "ISA 530"
+            paragraphs: ["6"]
+            binding: requirement
+    preconditions:
+      - understand_entity_and_assess_risks
+    knowledge_refs:
+      - test_operating_effectiveness
+
+  - id: perform_analytical_procedures
+    phase: execute_procedures
+    title: "Perform Analytical Procedures"
+    base_hours: 12.0
+    required_roles: [senior_associate]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_analytical_procedures
+          emits: AnalyticalProceduresStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_analytical_procedures
+          emits: AnalyticalProceduresSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_analytical_procedures
+          emits: AnalyticalProceduresApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_anl_1
+        order: 1
+        action: design
+        actor: senior_associate
+        description: >
+          Design substantive analytical procedures for significant
+          relationships, developing expectations based on financial
+          and non-financial data.
+        binding: requirement
+        command: design_analytical_procedures
+        emits: AnalyticalProceduresDesigned
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - expectation_modelling
+          - trend_analysis_design
+        human_responsibilities:
+          - Validate expectation reasonableness
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5"]
+            binding: requirement
+      - id: kpmg_anl_2
+        order: 2
+        action: perform
+        actor: senior_associate
+        description: >
+          Perform the analytical procedures and investigate significant
+          fluctuations or relationships that are inconsistent with
+          expectations or other relevant information.
+        binding: requirement
+        command: perform_analytical_procedures
+        emits: AnalyticalProceduresPerformed
+        judgment_level: data_only
+        ai_capabilities:
+          - automated_variance_analysis
+          - outlier_detection
+          - visualization_generation
+        human_responsibilities:
+          - Investigate significant variances
+          - Document conclusions on fluctuations
+        evidence:
+          inputs: []
+          outputs:
+            - ref: analytical_procedures_memo
+              type: memo
+        standards:
+          - ref: "ISA 520"
+            paragraphs: ["5", "7"]
+            binding: requirement
+    preconditions:
+      - determine_materiality
+    knowledge_refs: []
+
+  # ---- EVALUATE & CONCLUDE PHASE ----
+
+  - id: evaluate_going_concern
+    phase: evaluate_and_conclude
+    title: "Evaluate Going Concern"
+    base_hours: 8.0
+    required_roles: [engagement_manager]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_going_concern
+          emits: GoingConcernStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_going_concern
+          emits: GoingConcernSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_going_concern
+          emits: GoingConcernApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_gc_1
+        order: 1
+        action: evaluate
+        actor: engagement_manager
+        description: >
+          Evaluate management's assessment of the entity's ability to
+          continue as a going concern, covering at least twelve months
+          from the date of the financial statements.
+        binding: requirement
+        command: evaluate_management_assessment
+        emits: ManagementAssessmentEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - financial_ratio_analysis
+          - cash_flow_projection_validation
+        human_responsibilities:
+          - Exercise professional skepticism on management's assessment
+          - Consider contradictory evidence
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["12"]
+            binding: requirement
+      - id: kpmg_gc_2
+        order: 2
+        action: determine
+        actor: engagement_manager
+        description: >
+          Determine whether events or conditions exist that may cast
+          significant doubt on the entity's ability to continue as
+          a going concern.
+        binding: requirement
+        command: determine_going_concern_doubt
+        emits: GoingConcernDoubtDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - going_concern_indicator_screening
+        human_responsibilities:
+          - Conclude on existence of material uncertainty
+        evidence:
+          inputs: []
+          outputs:
+            - ref: going_concern_assessment
+              type: assessment
+        decisions:
+          - condition: "Does material uncertainty exist?"
+            branches:
+              - label: "Yes"
+                description: "Evaluate adequacy of disclosures and consider report impact"
+                next_step: kpmg_gc_3
+              - label: "No"
+                description: "Document conclusion and proceed"
+      - id: kpmg_gc_3
+        order: 3
+        action: evaluate
+        actor: engagement_partner
+        description: >
+          If material uncertainty exists, evaluate whether the financial
+          statements adequately disclose the conditions and events, and
+          consider the impact on the auditor's report.
+        binding: requirement
+        command: evaluate_gc_disclosures
+        emits: GoingConcernDisclosuresEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - disclosure_completeness_check
+        human_responsibilities:
+          - Determine report impact of going concern uncertainty
+        standards:
+          - ref: "ISA 570"
+            paragraphs: ["18", "19"]
+            binding: requirement
+    preconditions:
+      - substantive_audit_procedures
+    knowledge_refs: []
+
+  - id: review_subsequent_events
+    phase: evaluate_and_conclude
+    title: "Review Subsequent Events"
+    base_hours: 6.0
+    required_roles: [senior_associate]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_subsequent_events
+          emits: SubsequentEventsStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_subsequent_events
+          emits: SubsequentEventsSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_subsequent_events
+          emits: SubsequentEventsApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_se_1
+        order: 1
+        action: perform
+        actor: senior_associate
+        description: >
+          Perform audit procedures to identify events occurring between
+          the date of the financial statements and the date of the
+          auditor's report that require adjustment or disclosure.
+        binding: requirement
+        command: perform_subsequent_events_review
+        emits: SubsequentEventsReviewed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - news_monitoring
+          - regulatory_filing_screening
+          - minutes_review_automation
+        human_responsibilities:
+          - Inquire of management about subsequent events
+        evidence:
+          inputs: []
+          outputs:
+            - ref: subsequent_events_memo
+              type: memo
+        standards:
+          - ref: "ISA 560"
+            paragraphs: ["6", "7"]
+            binding: requirement
+      - id: kpmg_se_2
+        order: 2
+        action: evaluate
+        actor: engagement_manager
+        description: >
+          Evaluate identified subsequent events and determine whether
+          they are adjusting or non-adjusting events, ensuring proper
+          treatment in the financial statements.
+        binding: requirement
+        command: evaluate_subsequent_events
+        emits: SubsequentEventsEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - event_classification_suggestion
+        human_responsibilities:
+          - Classify events as adjusting or non-adjusting
+          - Determine disclosure adequacy
+        decisions:
+          - condition: "Are adjusting events identified?"
+            branches:
+              - label: "Yes"
+                description: "Ensure financial statements are adjusted accordingly"
+              - label: "No"
+                description: "Evaluate adequacy of non-adjusting event disclosures"
+    preconditions:
+      - substantive_audit_procedures
+    knowledge_refs: []
+
+  - id: form_audit_opinion
+    phase: evaluate_and_conclude
+    title: "Form and Issue Audit Opinion"
+    base_hours: 12.0
+    required_roles: [engagement_partner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_opinion_formation
+          emits: OpinionFormationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_opinion
+          emits: OpinionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_opinion
+          emits: OpinionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: issue_opinion
+          emits: OpinionIssued
+          guards: [partner_approved]
+    steps:
+      - id: kpmg_opinion_1
+        order: 1
+        action: evaluate
+        actor: engagement_manager
+        description: >
+          Evaluate whether sufficient appropriate audit evidence has been
+          obtained and whether uncorrected misstatements are material,
+          individually or in aggregate.
+        binding: requirement
+        command: evaluate_evidence_sufficiency
+        emits: EvidenceSufficiencyEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - misstatement_aggregation
+          - evidence_completeness_analysis
+        human_responsibilities:
+          - Conclude on sufficiency and appropriateness of evidence
+        evidence:
+          inputs:
+            - ref: substantive_test_results
+              type: workpaper
+            - ref: going_concern_assessment
+              type: assessment
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+      - id: kpmg_opinion_2
+        order: 2
+        action: determine
+        actor: engagement_partner
+        description: >
+          Form an opinion on whether the financial statements are prepared,
+          in all material respects, in accordance with the applicable
+          financial reporting framework.
+        binding: requirement
+        command: form_audit_opinion
+        emits: AuditOpinionFormed
+        judgment_level: human_required
+        ai_capabilities:
+          - opinion_type_recommendation
+        human_responsibilities:
+          - Form the audit opinion
+          - Exercise final professional judgment
+        evidence:
+          inputs: []
+          outputs:
+            - ref: audit_opinion
+              type: report
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["10", "11"]
+            binding: requirement
+        decisions:
+          - condition: "What type of opinion is appropriate?"
+            branches:
+              - label: "Unmodified"
+                description: "Financial statements fairly presented in all material respects"
+              - label: "Qualified"
+                description: "Misstatements are material but not pervasive"
+              - label: "Adverse"
+                description: "Misstatements are both material and pervasive"
+              - label: "Disclaimer"
+                description: "Unable to obtain sufficient appropriate evidence"
+      - id: kpmg_opinion_3
+        order: 3
+        action: issue
+        actor: engagement_partner
+        description: >
+          Issue the auditor's report, including the opinion, basis for
+          opinion, and any other reporting requirements.
+        binding: requirement
+        command: issue_audit_report
+        emits: AuditReportIssued
+        judgment_level: human_required
+        ai_capabilities:
+          - report_drafting
+          - disclosure_cross_referencing
+        human_responsibilities:
+          - Sign the audit report
+          - Approve final report content
+        standards:
+          - ref: "ISA 700"
+            paragraphs: ["20", "21", "22"]
+            binding: requirement
+    preconditions:
+      - evaluate_going_concern
+      - review_subsequent_events
+    knowledge_refs:
+      - perform_analytical_procedures
+
+  - id: engagement_quality_review
+    phase: evaluate_and_conclude
+    title: "Engagement Quality Review"
+    base_hours: 6.0
+    required_roles: [eqr]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_eqr
+          emits: EqrStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_eqr
+          emits: EqrSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_eqr
+          emits: EqrApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: kpmg_eqr_1
+        order: 1
+        action: review
+        actor: eqr
+        description: >
+          Perform an independent evaluation of the significant judgments
+          made by the engagement team and the conclusions reached in
+          formulating the audit opinion.
+        binding: requirement
+        command: review_engagement_quality
+        emits: EngagementQualityReviewed
+        judgment_level: human_required
+        ai_capabilities:
+          - judgment_consistency_analysis
+          - workpaper_completeness_check
+        human_responsibilities:
+          - Exercise independent professional judgment
+          - Evaluate significant judgments and conclusions
+        evidence:
+          inputs:
+            - ref: audit_opinion
+              type: report
+            - ref: materiality_workpaper
+              type: workpaper
+          outputs:
+            - ref: eqr_workpaper
+              type: workpaper
+        standards:
+          - ref: "ISA 220"
+            paragraphs: ["12"]
+            binding: requirement
+      - id: kpmg_eqr_2
+        order: 2
+        action: evaluate
+        actor: eqr
+        description: >
+          Evaluate the engagement team's assessment of independence and
+          the appropriateness of the audit approach, including responses
+          to significant risks.
+        binding: requirement
+        command: evaluate_engagement_independence
+        emits: IndependenceEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - independence_verification
+        human_responsibilities:
+          - Concur on significant matters
+          - Provide independent perspective on audit approach
+    preconditions:
+      - substantive_audit_procedures
+    knowledge_refs:
+      - form_audit_opinion

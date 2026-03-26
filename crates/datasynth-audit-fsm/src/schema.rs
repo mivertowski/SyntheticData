@@ -333,6 +333,21 @@ pub struct BlueprintStep {
     #[serde(default)]
     pub decision: Option<StepDecision>,
 
+    // ----- Judgment / AI interaction fields -----
+    /// Judgment level classification for LLM interaction.
+    /// `data_only`: fully automatable, `ai_assistable`: AI drafts / human reviews,
+    /// `human_required`: professional skepticism / judgment needed.
+    #[serde(default)]
+    pub judgment_level: Option<String>,
+
+    /// AI capabilities applicable to this step (e.g. `benchmark_computation`).
+    #[serde(default)]
+    pub ai_capabilities: Vec<String>,
+
+    /// Human responsibilities that cannot be delegated to AI.
+    #[serde(default)]
+    pub human_responsibilities: Vec<String>,
+
     // ----- GAM-specific step fields -----
     /// Whether this step is ISA-mandated (vs advisory). GAM-specific.
     #[serde(default)]

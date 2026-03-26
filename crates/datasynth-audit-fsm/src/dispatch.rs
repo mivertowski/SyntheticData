@@ -1200,6 +1200,60 @@ fn section_for_command(cmd: &str) -> WorkpaperSection {
 }
 
 // ---------------------------------------------------------------------------
+// Judgment level inference
+// ---------------------------------------------------------------------------
+
+/// Infer judgment level from a command verb when not explicitly set in the
+/// blueprint step.
+///
+/// Returns one of:
+/// - `"data_only"` — fully automatable, no human judgment needed
+/// - `"human_required"` — professional skepticism / judgment needed
+/// - `"ai_assistable"` — AI can draft, human reviews
+pub fn infer_judgment_level(command: &str) -> &'static str {
+    const DATA_ONLY_PREFIXES: &[&str] = &[
+        "perform_",
+        "calculate_",
+        "compute_",
+        "verify_",
+        "reperform_",
+        "check_",
+        "analyze_",
+        "test_",
+        "execute_",
+    ];
+    const HUMAN_REQUIRED_PREFIXES: &[&str] = &[
+        "evaluate_",
+        "assess_",
+        "consider_",
+        "determine_",
+        "exercise_",
+        "discuss_",
+        "approve_",
+        "identify_",
+        "review_",
+        "sign_",
+        "authorize_",
+        "observe_",
+        "inquire_",
+    ];
+
+    if DATA_ONLY_PREFIXES
+        .iter()
+        .any(|prefix| command.starts_with(prefix))
+    {
+        "data_only"
+    } else if HUMAN_REQUIRED_PREFIXES
+        .iter()
+        .any(|prefix| command.starts_with(prefix))
+    {
+        "human_required"
+    } else {
+        "ai_assistable"
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -1222,6 +1276,9 @@ mod tests {
             evidence: Vec::new(),
             standards: Vec::new(),
             decision: None,
+            judgment_level: None,
+            ai_capabilities: Vec::new(),
+            human_responsibilities: Vec::new(),
             isa_mandate: None,
             form_refs: Vec::new(),
             deliverable_fields: Vec::new(),
