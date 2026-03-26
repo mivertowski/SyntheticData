@@ -200,6 +200,7 @@ fn default_pool() -> ResourcePool {
         ResourceSlot {
             count: 2,
             hours_per_person: 2000.0,
+            unavailable_periods: vec![],
         },
     );
     roles.insert(
@@ -207,6 +208,7 @@ fn default_pool() -> ResourcePool {
         ResourceSlot {
             count: 3,
             hours_per_person: 1800.0,
+            unavailable_periods: vec![],
         },
     );
     roles.insert(
@@ -214,6 +216,7 @@ fn default_pool() -> ResourcePool {
         ResourceSlot {
             count: 5,
             hours_per_person: 1600.0,
+            unavailable_periods: vec![],
         },
     );
     roles.insert(
@@ -221,6 +224,7 @@ fn default_pool() -> ResourcePool {
         ResourceSlot {
             count: 8,
             hours_per_person: 1600.0,
+            unavailable_periods: vec![],
         },
     );
     ResourcePool { roles }
@@ -355,6 +359,7 @@ fn test_portfolio_resource_conflict_with_tiny_pool() {
         ResourceSlot {
             count: 1,
             hours_per_person: 10.0,
+            unavailable_periods: vec![],
         }, // only 10 hours!
     );
 

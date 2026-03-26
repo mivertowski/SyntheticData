@@ -179,6 +179,78 @@ pub fn generate_benchmark(config: &BenchmarkConfig) -> Result<BenchmarkDataset, 
 }
 
 // ---------------------------------------------------------------------------
+// Curriculum
+// ---------------------------------------------------------------------------
+
+/// Metadata for a single level in a curriculum sequence.
+#[derive(Debug, Clone, Serialize)]
+pub struct CurriculumLevel {
+    /// Level number (1-based).
+    pub level: usize,
+    /// Human-readable label.
+    pub label: String,
+    /// Target anomaly rate for this level.
+    pub anomaly_rate: f64,
+    /// Overlay name used.
+    pub overlay: String,
+}
+
+/// A curriculum dataset: a sequence of datasets with increasing difficulty.
+pub struct CurriculumDataset {
+    /// One dataset per difficulty level (ordered by increasing difficulty).
+    pub levels: Vec<(CurriculumLevel, BenchmarkDataset)>,
+}
+
+/// Generate a progressive difficulty curriculum: 5 levels with increasing
+/// anomaly rates and overlay complexity.
+///
+/// | Level | Anomaly Rate | Overlay       |
+/// |-------|-------------|---------------|
+/// | 1     | 0%          | default       |
+/// | 2     | 5%          | default       |
+/// | 3     | 10%         | default       |
+/// | 4     | 20%         | rushed        |
+/// | 5     | 30%         | rushed        |
+pub fn generate_curriculum(seed: u64) -> Result<CurriculumDataset, AuditFsmError> {
+    let level_specs: Vec<(usize, &str, f64, BenchmarkComplexity)> = vec![
+        (1, "clean_baseline", 0.0, BenchmarkComplexity::Simple),
+        (2, "low_anomaly", 0.05, BenchmarkComplexity::Simple),
+        (3, "moderate_anomaly", 0.10, BenchmarkComplexity::Medium),
+        (4, "high_anomaly", 0.20, BenchmarkComplexity::Medium),
+        (5, "extreme_anomaly", 0.30, BenchmarkComplexity::Medium),
+    ];
+
+    let mut levels = Vec::new();
+
+    for (level_num, label, anomaly_rate, complexity) in &level_specs {
+        let overlay_name = match complexity {
+            BenchmarkComplexity::Simple => "default (zeroed anomalies)",
+            BenchmarkComplexity::Medium => "rushed",
+            BenchmarkComplexity::Complex => "default",
+        };
+
+        let config = BenchmarkConfig {
+            complexity: *complexity,
+            anomaly_rate: Some(*anomaly_rate),
+            seed: seed.wrapping_add(*level_num as u64 * 1000),
+        };
+
+        let dataset = generate_benchmark(&config)?;
+
+        let meta = CurriculumLevel {
+            level: *level_num,
+            label: label.to_string(),
+            anomaly_rate: *anomaly_rate,
+            overlay: overlay_name.to_string(),
+        };
+
+        levels.push((meta, dataset));
+    }
+
+    Ok(CurriculumDataset { levels })
+}
+
+// ---------------------------------------------------------------------------
 // Export
 // ---------------------------------------------------------------------------
 
@@ -341,6 +413,44 @@ mod tests {
                 !content.is_empty(),
                 "Expected file '{}' to be non-empty",
                 filename
+            );
+        }
+    }
+
+    #[test]
+    fn test_curriculum_generates_five_levels() {
+        let curriculum = generate_curriculum(42).unwrap();
+        assert_eq!(
+            curriculum.levels.len(),
+            5,
+            "Curriculum should have 5 levels"
+        );
+
+        for (i, (meta, dataset)) in curriculum.levels.iter().enumerate() {
+            assert_eq!(meta.level, i + 1, "Level number mismatch");
+            assert!(
+                !dataset.events.is_empty(),
+                "Level {} should produce events",
+                meta.level
+            );
+        }
+    }
+
+    #[test]
+    fn test_curriculum_increasing_difficulty() {
+        let curriculum = generate_curriculum(42).unwrap();
+
+        // Anomaly rates should be non-decreasing.
+        for window in curriculum.levels.windows(2) {
+            let (meta_a, _) = &window[0];
+            let (meta_b, _) = &window[1];
+            assert!(
+                meta_b.anomaly_rate >= meta_a.anomaly_rate,
+                "Anomaly rate should be non-decreasing: level {} ({}) vs level {} ({})",
+                meta_a.level,
+                meta_a.anomaly_rate,
+                meta_b.level,
+                meta_b.anomaly_rate,
             );
         }
     }

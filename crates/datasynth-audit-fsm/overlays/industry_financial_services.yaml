@@ -1,0 +1,36 @@
+# Industry overlay: Financial Services
+# Calibrated for heavily-regulated financial services audits.
+# Characteristics: highest evidence requirements, extensive review cycles,
+# stringent anomaly detection, premium billing rates.
+transitions:
+  defaults:
+    revision_probability: 0.28
+    timing:
+      mu_hours: 36.0
+      sigma_hours: 12.0
+artifacts:
+  workpapers_per_step:
+    min: 2
+    max: 5
+  evidence_items_per_workpaper:
+    min: 4
+    max: 8
+iteration_limits:
+  default: 50
+anomalies:
+  skipped_approval: 0.01
+  late_posting: 0.03
+  max_delay_hours: 48.0
+  missing_evidence: 0.015
+  out_of_sequence: 0.005
+resource_costs:
+  cost_multiplier: 1.5
+  role_hourly_rates:
+    engagement_partner: 600
+    audit_manager: 380
+    audit_senior: 250
+    audit_staff: 150
+    cae: 500
+    audit_director: 420
+    senior_auditor: 250
+    staff_auditor: 150

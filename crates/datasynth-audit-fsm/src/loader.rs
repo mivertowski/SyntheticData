@@ -45,6 +45,17 @@ const BUILTIN_OVERLAY_THOROUGH: &str = include_str!("../overlays/thorough.yaml")
 /// Rushed overlay — lower volumes, faster timing, and elevated anomaly rates.
 const BUILTIN_OVERLAY_RUSHED: &str = include_str!("../overlays/rushed.yaml");
 
+/// Industry-calibrated overlay: Retail.
+const BUILTIN_OVERLAY_INDUSTRY_RETAIL: &str = include_str!("../overlays/industry_retail.yaml");
+
+/// Industry-calibrated overlay: Manufacturing.
+const BUILTIN_OVERLAY_INDUSTRY_MANUFACTURING: &str =
+    include_str!("../overlays/industry_manufacturing.yaml");
+
+/// Industry-calibrated overlay: Financial Services.
+const BUILTIN_OVERLAY_INDUSTRY_FINANCIAL_SERVICES: &str =
+    include_str!("../overlays/industry_financial_services.yaml");
+
 // ---------------------------------------------------------------------------
 // Source enums
 // ---------------------------------------------------------------------------
@@ -97,6 +108,12 @@ pub enum BuiltinOverlay {
     Thorough,
     /// Rushed overlay — lower volumes and more anomalies.
     Rushed,
+    /// Industry-calibrated overlay: Retail.
+    IndustryRetail,
+    /// Industry-calibrated overlay: Manufacturing.
+    IndustryManufacturing,
+    /// Industry-calibrated overlay: Financial Services.
+    IndustryFinancialServices,
 }
 
 // ---------------------------------------------------------------------------
@@ -736,6 +753,11 @@ pub fn load_overlay(source: &OverlaySource) -> Result<GenerationOverlay, AuditFs
                 BuiltinOverlay::Default => BUILTIN_OVERLAY_DEFAULT,
                 BuiltinOverlay::Thorough => BUILTIN_OVERLAY_THOROUGH,
                 BuiltinOverlay::Rushed => BUILTIN_OVERLAY_RUSHED,
+                BuiltinOverlay::IndustryRetail => BUILTIN_OVERLAY_INDUSTRY_RETAIL,
+                BuiltinOverlay::IndustryManufacturing => BUILTIN_OVERLAY_INDUSTRY_MANUFACTURING,
+                BuiltinOverlay::IndustryFinancialServices => {
+                    BUILTIN_OVERLAY_INDUSTRY_FINANCIAL_SERVICES
+                }
             };
             parse_overlay(yaml)
         }
@@ -1823,5 +1845,31 @@ mod tests {
             "GAM should have steps with informational binding"
         );
         assert!(has_example, "GAM should have steps with example binding");
+    }
+
+    #[test]
+    fn test_industry_overlays_load() {
+        let retail = load_overlay(&OverlaySource::Builtin(BuiltinOverlay::IndustryRetail)).unwrap();
+        let mfg =
+            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::IndustryManufacturing)).unwrap();
+        let finsvc = load_overlay(&OverlaySource::Builtin(
+            BuiltinOverlay::IndustryFinancialServices,
+        ))
+        .unwrap();
+
+        // Verify they differ: financial services should have the highest cost multiplier.
+        assert!(
+            finsvc.resource_costs.cost_multiplier > retail.resource_costs.cost_multiplier,
+            "Financial services cost multiplier should exceed retail"
+        );
+        assert!(
+            mfg.resource_costs.cost_multiplier > retail.resource_costs.cost_multiplier,
+            "Manufacturing cost multiplier should exceed retail"
+        );
+        // Financial services should have the lowest anomaly rates.
+        assert!(
+            finsvc.anomalies.skipped_approval < retail.anomalies.skipped_approval,
+            "Financial services anomaly rate should be lower than retail"
+        );
     }
 }

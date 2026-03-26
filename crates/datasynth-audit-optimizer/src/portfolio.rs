@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use chrono::Datelike;
 use datasynth_audit_fsm::context::EngagementContext;
 use datasynth_audit_fsm::engine::AuditFsmEngine;
 use datasynth_audit_fsm::error::AuditFsmError;
@@ -76,14 +77,50 @@ pub struct ResourceSlot {
     pub count: usize,
     /// Annual hours available per person.
     pub hours_per_person: f64,
+    /// Unavailable date ranges as `(start_date, end_date)` pairs (ISO 8601 strings).
+    /// Each pair reduces available hours by the number of business days in the range
+    /// multiplied by 8 hours per day per person.
+    #[allow(dead_code)]
+    pub unavailable_periods: Vec<(String, String)>,
+}
+
+impl ResourceSlot {
+    /// Compute effective hours per person after subtracting unavailable periods.
+    pub fn effective_hours_per_person(&self) -> f64 {
+        let unavailable_hours: f64 = self
+            .unavailable_periods
+            .iter()
+            .map(|(start, end)| {
+                let start_date = chrono::NaiveDate::parse_from_str(start, "%Y-%m-%d");
+                let end_date = chrono::NaiveDate::parse_from_str(end, "%Y-%m-%d");
+                match (start_date, end_date) {
+                    (Ok(s), Ok(e)) => {
+                        // Count business days in range.
+                        let mut days = 0;
+                        let mut d = s;
+                        while d <= e {
+                            let wd = d.weekday();
+                            if wd != chrono::Weekday::Sat && wd != chrono::Weekday::Sun {
+                                days += 1;
+                            }
+                            d += chrono::Duration::days(1);
+                        }
+                        days as f64 * 8.0 // 8 hours per business day
+                    }
+                    _ => 0.0,
+                }
+            })
+            .sum();
+        (self.hours_per_person - unavailable_hours).max(0.0)
+    }
 }
 
 impl ResourcePool {
-    /// Total hours available for a given role.
+    /// Total hours available for a given role (accounting for unavailable periods).
     pub fn total_hours(&self, role: &str) -> f64 {
         self.roles
             .get(role)
-            .map(|s| s.count as f64 * s.hours_per_person)
+            .map(|s| s.count as f64 * s.effective_hours_per_person())
             .unwrap_or(0.0)
     }
 }
@@ -209,6 +246,15 @@ fn resolve_overlay(name: &str) -> Result<GenerationOverlay, AuditFsmError> {
         "rushed" | "builtin:rushed" => {
             load_overlay(&OverlaySource::Builtin(BuiltinOverlay::Rushed))
         }
+        "retail" | "builtin:retail" => {
+            load_overlay(&OverlaySource::Builtin(BuiltinOverlay::IndustryRetail))
+        }
+        "manufacturing" | "builtin:manufacturing" => load_overlay(&OverlaySource::Builtin(
+            BuiltinOverlay::IndustryManufacturing,
+        )),
+        "financial_services" | "builtin:financial_services" => load_overlay(
+            &OverlaySource::Builtin(BuiltinOverlay::IndustryFinancialServices),
+        ),
         path => load_overlay(&OverlaySource::Custom(PathBuf::from(path))),
     }
 }
@@ -383,6 +429,7 @@ mod tests {
             ResourceSlot {
                 count: 2,
                 hours_per_person: 2000.0,
+                unavailable_periods: vec![],
             },
         );
         roles.insert(
@@ -390,6 +437,7 @@ mod tests {
             ResourceSlot {
                 count: 3,
                 hours_per_person: 1800.0,
+                unavailable_periods: vec![],
             },
         );
         roles.insert(
@@ -397,6 +445,7 @@ mod tests {
             ResourceSlot {
                 count: 5,
                 hours_per_person: 1600.0,
+                unavailable_periods: vec![],
             },
         );
         roles.insert(
@@ -404,6 +453,7 @@ mod tests {
             ResourceSlot {
                 count: 8,
                 hours_per_person: 1600.0,
+                unavailable_periods: vec![],
             },
         );
         ResourcePool { roles }
@@ -570,5 +620,59 @@ mod tests {
         assert!(json.contains("risk_heatmap"));
         // Roundtrip: deserialize back.
         let _parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+    }
+
+    #[test]
+    fn test_unavailable_periods_reduce_hours() {
+        let slot = ResourceSlot {
+            count: 1,
+            hours_per_person: 2000.0,
+            // 5 business days (Mon-Fri) of unavailability = 40 hours.
+            unavailable_periods: vec![("2025-01-06".to_string(), "2025-01-10".to_string())],
+        };
+        let effective = slot.effective_hours_per_person();
+        assert!(
+            (effective - 1960.0).abs() < 0.01,
+            "Expected 1960.0 effective hours (2000 - 5*8), got {}",
+            effective
+        );
+    }
+
+    #[test]
+    fn test_unavailable_periods_weekend_excluded() {
+        let slot = ResourceSlot {
+            count: 1,
+            hours_per_person: 2000.0,
+            // Range includes weekend: 2025-01-10 (Fri) through 2025-01-12 (Sun) = 1 business day
+            unavailable_periods: vec![("2025-01-10".to_string(), "2025-01-12".to_string())],
+        };
+        let effective = slot.effective_hours_per_person();
+        assert!(
+            (effective - 1992.0).abs() < 0.01,
+            "Expected 1992.0 effective hours (2000 - 1*8), got {}",
+            effective
+        );
+    }
+
+    #[test]
+    fn test_pool_total_hours_with_unavailability() {
+        let mut roles = HashMap::new();
+        roles.insert(
+            "audit_staff".into(),
+            ResourceSlot {
+                count: 2,
+                hours_per_person: 1600.0,
+                // 10 business days per person
+                unavailable_periods: vec![("2025-01-06".to_string(), "2025-01-17".to_string())],
+            },
+        );
+        let pool = ResourcePool { roles };
+        // 10 business days * 8h = 80h subtracted per person; 2 people.
+        let total = pool.total_hours("audit_staff");
+        let expected = 2.0 * (1600.0 - 80.0);
+        assert!(
+            (total - expected).abs() < 0.01,
+            "Expected {expected}, got {total}"
+        );
     }
 }

@@ -15,6 +15,7 @@ datasynth-audit-fsm = { workspace = true }
 petgraph = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+chrono = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 

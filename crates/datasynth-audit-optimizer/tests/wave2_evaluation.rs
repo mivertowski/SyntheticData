@@ -222,6 +222,7 @@ fn evaluate_wave2_features() {
         ResourceSlot {
             count: 2,
             hours_per_person: 2000.0,
+            unavailable_periods: vec![],
         },
     );
     pool_roles.insert(
@@ -229,6 +230,7 @@ fn evaluate_wave2_features() {
         ResourceSlot {
             count: 4,
             hours_per_person: 1800.0,
+            unavailable_periods: vec![],
         },
     );
     pool_roles.insert(
@@ -236,6 +238,7 @@ fn evaluate_wave2_features() {
         ResourceSlot {
             count: 6,
             hours_per_person: 1600.0,
+            unavailable_periods: vec![],
         },
     );
     pool_roles.insert(
@@ -243,6 +246,7 @@ fn evaluate_wave2_features() {
         ResourceSlot {
             count: 10,
             hours_per_person: 1600.0,
+            unavailable_periods: vec![],
         },
     );
 

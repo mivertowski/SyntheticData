@@ -1,0 +1,36 @@
+# Industry overlay: Retail
+# Calibrated for high-volume, low-complexity retail audits.
+# Characteristics: shorter procedures, higher transaction volume scrutiny,
+# moderate anomaly rates due to seasonal patterns.
+transitions:
+  defaults:
+    revision_probability: 0.12
+    timing:
+      mu_hours: 18.0
+      sigma_hours: 6.0
+artifacts:
+  workpapers_per_step:
+    min: 1
+    max: 3
+  evidence_items_per_workpaper:
+    min: 2
+    max: 4
+iteration_limits:
+  default: 40
+anomalies:
+  skipped_approval: 0.03
+  late_posting: 0.06
+  max_delay_hours: 48.0
+  missing_evidence: 0.04
+  out_of_sequence: 0.015
+resource_costs:
+  cost_multiplier: 0.9
+  role_hourly_rates:
+    engagement_partner: 450
+    audit_manager: 280
+    audit_senior: 180
+    audit_staff: 110
+    cae: 400
+    audit_director: 350
+    senior_auditor: 180
+    staff_auditor: 110
