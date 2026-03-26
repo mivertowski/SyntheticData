@@ -34,48 +34,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Management reports** (WI-7): flash reports, monthly packs, board reports with KPI/RAG status and budget variances
 - **FS comparative fields** (WI-8): `prior_year_amount` and `assumptions` on FinancialStatementLineItem
 
-#### Wave 1: Consolidation
-- **CLI `audit` subcommand**: `datasynth-data audit validate|info|run` for blueprint inspection, validation, and standalone FSM execution
-- **Demo mode FSM**: `--demo` now exercises the FSM engine with FSA blueprint
-- **IA dispatch 100% coverage**: all 140 IA step commands mapped to generators (was 43)
-- **Graph evidence-chain edges**: 3 new audit node types (MaterialityCalculation, AuditOpinion, GoingConcernAssessment) and 6 edge types (DOCUMENTED_BY, IDENTIFIED_FROM, OPINION_BASED_ON, OPINION_FOR_ENGAGEMENT, MATERIALITY_FOR_ENGAGEMENT, GC_FOR_ENGAGEMENT)
+#### Wave 1: Consolidation (32/32 items complete)
+- **CLI `audit` subcommand**: `validate|info|run|benchmark|diff` for full blueprint management
+- **Demo mode FSM**: `--demo` exercises FSM engine with FSA blueprint
+- **IA dispatch 100% coverage**: all 140 IA step commands mapped to generators
+- **Graph evidence-chain edges**: 3 node types + 6 edge types (DOCUMENTED_BY, IDENTIFIED_FROM, OPINION_BASED_ON, etc.)
 
 #### Wave 2: Audit Planning Optimization
-- **Per-procedure iteration limits**: configurable via overlay (default 50), IA completion 22/34 → 34/34 (100%)
-- **Cost model**: blueprint `base_hours` on all 43 procedures + overlay `cost_multiplier` + `role_hourly_rates` for 8 roles
-- **Resource-constrained optimization**: greedy knapsack with precondition expansion, budget/coverage/critical-path reporting
+- **Per-procedure iteration limits**: configurable via overlay (default 50), IA completion → 34/34 (100%)
+- **Cost model**: blueprint `base_hours` on all 43+ procedures + `cost_multiplier` + `role_hourly_rates` for 8 roles
+- **Resource-constrained optimization**: greedy knapsack with precondition expansion, budget/coverage/critical-path
 - **Risk-based scoping**: standards and risk coverage analysis, what-if procedure removal impact
-- **Multi-engagement portfolio simulation**: shared resource pools, scheduling conflict detection, systemic finding propagation, risk heatmap
+- **Multi-engagement portfolio**: shared resources, staff calendar scheduling with unavailable periods, scheduling conflicts, systemic findings, risk heatmap
 
 #### Wave 3: Process Mining Benchmarks
-- **CSV export**: flat event log for Disco, Celonis, Minit (`export/csv.rs`)
-- **XES 2.0 export**: IEEE-standard XML for ProM, pm4py (`export/xes.rs`)
-- **Benchmark dataset generator**: simple (FSA, no anomalies), medium (FSA, rushed), complex (IA) with configurable anomaly rates
-- **CLI `audit benchmark`**: generate benchmark datasets with `--complexity simple|medium|complex`
-- **Conformance metrics**: fitness (FSA=1.00, IA=1.00), precision (FSA=0.93, IA=0.89), per-procedure breakdown, anomaly statistics
+- **Export formats**: CSV (Disco/Minit), Celonis IBC (with metadata sidecar), XES 2.0 (ProM/pm4py), Parquet (feature-gated), OCEL 2.0
+- **Benchmark dataset generator**: simple/medium/complex with configurable anomaly rates
+- **Curriculum generation**: 5-level progressive difficulty (0%→5%→10%→20%→30% anomaly rates)
+- **Conformance metrics**: fitness, precision, generalization (multi-seed variance), per-procedure breakdown
+- **Anomaly detection F1**: `evaluate_detector()` compares external predictions against ground truth labels
 
 #### Wave 4: Learned & Adaptive Generation
-- **Overlay parameter fitting**: iterative search from target engagement profile (duration, findings, revisions, anomalies) — converges in 5-20 iterations
-- **Blueprint discovery**: infer procedure state machines from event logs (alpha miner variant) — FSA 9/9 and IA 34/34 procedures recovered at conformance=1.00
-- **Adaptive anomaly calibration**: auto-tune injection rates to target difficulty level
-- **ContentGenerator trait**: pluggable interface for LLM-augmented artifact narratives with `TemplateContentGenerator` default
-- **Claude CLI adapter**: `--features claude-content` enables Claude-powered ISA-grounded finding/workpaper/response narratives
+- **Overlay parameter fitting**: iterative search from target engagement profile — converges in 5-20 iterations
+- **Industry-calibrated overlays**: pre-fitted presets for retail, manufacturing, financial_services (`builtin:retail`, etc.)
+- **Blueprint discovery**: alpha miner from event logs — FSA 9/9, IA 34/34 recovered at conformance=1.00
+- **Adaptive anomaly calibration**: auto-tune injection rates to target difficulty
+- **ContentGenerator trait**: pluggable LLM interface with `TemplateContentGenerator` default
+- **Claude CLI adapter**: `--features claude-content` for ISA-grounded narratives
+- **Curriculum generation**: progressive difficulty benchmark suites
 
-#### Artifact Coherence & Analytics Integration
-- **EngagementContext enrichment**: journal entry IDs, account balances, control IDs, anomaly refs for cross-referencing
-- **Analytics inventory integration**: FSA (40 steps, 87 data requirements, 71 analytical procedures) and IA (20 steps, 29 data requirements, 20 analytical procedures) from AuditMethodology repo
-- **Form ontology**: 4,437 canonical field categories for evidence template enrichment
-- **Data-driven content**: StepDispatcher enriches artifacts with data requirement summaries and analytical procedure narratives
-
-#### Audit Data Completeness (14/14 data types, 14/14 analytical procedures)
-- **JE audit flags** (WI-1): `is_manual`, `is_post_close`, `source_system`, `created_date` for ISA 240 fraud testing — 5% manual rate with period-end spike
-- **Prior-year data** (WI-2): `PriorYearComparative` with Benford-compliant prior amounts, `PriorYearFinding` with status tracking, `PriorYearSummary` with opinion/materiality/KAMs
-- **Industry benchmarks** (WI-3): 10 metrics per industry preset (retail, manufacturing, financial_services)
-- **IT system reports** (WI-4): `AccessLog` with business-hour weighting and failed-login clustering, `ChangeManagementRecord` with approval gaps for ITGC testing
-- **Board minutes** (WI-5): quarterly board + monthly audit committee meetings with decisions, risk discussions, attendees
-- **Organizational profile** (WI-6): IT systems per industry, regulatory environment, prior auditor
-- **Management reports** (WI-7): flash reports, monthly packs, board reports with KPI/RAG status and budget variances
-- **FS comparative fields** (WI-8): `prior_year_amount` and `assumptions` on FinancialStatementLineItem
+#### Big 4 Methodology Blueprints
+- **KPMG Clara** (44 procedures, 728 steps): Sentinel independence, MindBridge AI scoring, SoD analysis, forensic analytics, EQCR multi-point review, FRA disclosure
+- **PwC Aura** (44 procedures, 729 steps): FRISK 13-factor assessment, Halo journal/population/3-way/outlier analytics, QRP hot review, ECR
+- **Deloitte Omnia** (46 procedures, 733 steps): Cortex data ingestion, Argus ML extraction, DARTbot research, Spotlight analytics/benchmarking, iConfirm, Trustworthy AI gate
+- **EY GAM Lite** (52 procedures, 757 steps): Canvas risk/materiality, Helix analytics, Atlas methodology, specialist coordination, EQR, digital audit, GAM compliance
+- **judgment_level** on every step: `data_only` / `ai_assistable` / `human_required` with `ai_capabilities` and `human_responsibilities`
+- **Cross-firm benchmark comparison**: `benchmark_comparison.rs` with formatted report output
 
 ### Changed
 - Workspace version bumped to 2.0.0 (19 crates)
