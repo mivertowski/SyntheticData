@@ -118,6 +118,11 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
             BlueprintWithPreconditions::load_builtin_deloitte,
         ),
         (
+            "EY GAM Lite",
+            "ey_gam_lite",
+            BlueprintWithPreconditions::load_builtin_ey_gam_lite,
+        ),
+        (
             "IIA-GIAS",
             "ia",
             BlueprintWithPreconditions::load_builtin_ia,
@@ -279,11 +284,11 @@ mod tests {
     #[test]
     fn test_comparison_runs_all_firms() {
         let report = run_comparison(42);
-        // All 5 blueprints should load; require at least 4 to be tolerant of
+        // All 6 blueprints should load; require at least 5 to be tolerant of
         // potential future blueprint removal.
         assert!(
-            report.benchmarks.len() >= 4,
-            "Expected >= 4 benchmarks, got {}",
+            report.benchmarks.len() >= 5,
+            "Expected >= 5 benchmarks, got {}",
             report.benchmarks.len()
         );
     }

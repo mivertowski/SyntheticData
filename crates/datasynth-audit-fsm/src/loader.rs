@@ -29,6 +29,9 @@ const BUILTIN_PWC: &str = include_str!("../blueprints/pwc_isa_complete.yaml");
 /// The built-in Deloitte-style ISA-complete Financial Statement Audit blueprint.
 const BUILTIN_DELOITTE: &str = include_str!("../blueprints/deloitte_isa_complete.yaml");
 
+/// The built-in EY GAM Lite ISA-based Financial Statement Audit blueprint.
+const BUILTIN_EY_GAM_LITE: &str = include_str!("../blueprints/ey_gam_lite.yaml");
+
 // ---------------------------------------------------------------------------
 // Built-in overlay YAML
 // ---------------------------------------------------------------------------
@@ -70,6 +73,8 @@ pub enum BuiltinBlueprint {
     Pwc,
     /// Deloitte-style ISA Financial Statement Audit.
     Deloitte,
+    /// EY GAM Lite ISA-based Financial Statement Audit.
+    EyGamLite,
 }
 
 /// Identifies the source of a generation overlay.
@@ -701,6 +706,7 @@ pub fn load_blueprint(source: &BlueprintSource) -> Result<AuditBlueprint, AuditF
                 BuiltinBlueprint::Kpmg => BUILTIN_KPMG,
                 BuiltinBlueprint::Pwc => BUILTIN_PWC,
                 BuiltinBlueprint::Deloitte => BUILTIN_DELOITTE,
+                BuiltinBlueprint::EyGamLite => BUILTIN_EY_GAM_LITE,
             };
             parse_blueprint(yaml)
         }
@@ -1058,6 +1064,7 @@ fn extract_preconditions_from_builtin(
         "ISA" if name.contains("KPMG") => BUILTIN_KPMG,
         "ISA" if name.contains("PwC") => BUILTIN_PWC,
         "ISA" if name.contains("Deloitte") => BUILTIN_DELOITTE,
+        "ISA" if name.contains("EY") => BUILTIN_EY_GAM_LITE,
         _ => BUILTIN_FSA,
     };
     extract_preconditions_from_yaml(yaml, bp)
@@ -1124,6 +1131,16 @@ impl BlueprintWithPreconditions {
     /// Load from the builtin Deloitte-style ISA blueprint.
     pub fn load_builtin_deloitte() -> Result<Self, AuditFsmError> {
         let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::Deloitte))?;
+        let preconditions = extract_preconditions_from_builtin(&bp)?;
+        Ok(Self {
+            blueprint: bp,
+            preconditions,
+        })
+    }
+
+    /// Load from the builtin EY GAM Lite ISA blueprint.
+    pub fn load_builtin_ey_gam_lite() -> Result<Self, AuditFsmError> {
+        let bp = load_blueprint(&BlueprintSource::Builtin(BuiltinBlueprint::EyGamLite))?;
         let preconditions = extract_preconditions_from_builtin(&bp)?;
         Ok(Self {
             blueprint: bp,
