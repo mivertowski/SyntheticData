@@ -43,8 +43,7 @@ fn test_load_regulatory_exam_blueprint() {
 
     // Framework must be REGULATORY (not ISA or PCAOB)
     assert_eq!(
-        bwp.blueprint.methodology.framework,
-        "REGULATORY",
+        bwp.blueprint.methodology.framework, "REGULATORY",
         "framework must be REGULATORY"
     );
 
@@ -70,12 +69,7 @@ fn test_regulatory_blueprint_has_expected_actors() {
     let bwp = BlueprintWithPreconditions::load_builtin_regulatory()
         .expect("regulatory exam blueprint must load");
 
-    let actor_ids: Vec<&str> = bwp
-        .blueprint
-        .actors
-        .iter()
-        .map(|a| a.id.as_str())
-        .collect();
+    let actor_ids: Vec<&str> = bwp.blueprint.actors.iter().map(|a| a.id.as_str()).collect();
 
     let expected_actors = [
         "examiner_in_charge",
@@ -106,12 +100,7 @@ fn test_regulatory_blueprint_has_expected_phases() {
     let bwp = BlueprintWithPreconditions::load_builtin_regulatory()
         .expect("regulatory exam blueprint must load");
 
-    let phase_ids: Vec<&str> = bwp
-        .blueprint
-        .phases
-        .iter()
-        .map(|p| p.id.as_str())
-        .collect();
+    let phase_ids: Vec<&str> = bwp.blueprint.phases.iter().map(|p| p.id.as_str()).collect();
 
     let expected_phases = [
         "pre_examination",
@@ -320,8 +309,7 @@ fn test_regulatory_blueprint_enforcement_in_correct_phase() {
         .unwrap();
 
     assert_eq!(
-        enforcement_order,
-        5,
+        enforcement_order, 5,
         "enforcement phase must be last (index 5), was at index {}",
         enforcement_order
     );
@@ -339,11 +327,9 @@ fn test_regulatory_blueprint_standards_catalog_populated() {
     );
 
     // Verify key regulatory standards are present by checking id and title fields
-    let has_occ = bwp
-        .blueprint
-        .standards
-        .iter()
-        .any(|s| s.id.contains("OCC") || s.title.contains("OCC") || s.title.contains("Comptroller"));
+    let has_occ = bwp.blueprint.standards.iter().any(|s| {
+        s.id.contains("OCC") || s.title.contains("OCC") || s.title.contains("Comptroller")
+    });
 
     assert!(has_occ, "standards catalog must reference OCC guidance");
 }
@@ -420,5 +406,8 @@ fn test_regulatory_blueprint_engine_run() {
         || !engagement.artifacts.findings.is_empty()
         || !engagement.artifacts.evidence.is_empty();
 
-    assert!(has_artifacts, "engagement must produce at least one artifact");
+    assert!(
+        has_artifacts,
+        "engagement must produce at least one artifact"
+    );
 }

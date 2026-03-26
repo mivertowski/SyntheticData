@@ -375,10 +375,7 @@ mod tests {
     #[test]
     fn test_regulatory_inventory_loads() {
         let inv = load_regulatory_inventory();
-        assert!(
-            !inv.is_empty(),
-            "Regulatory inventory should not be empty"
-        );
+        assert!(!inv.is_empty(), "Regulatory inventory should not be empty");
         // Should have BSA and capital steps
         assert!(
             inv.contains_key("bsa_step_2"),
