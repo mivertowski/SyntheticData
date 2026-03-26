@@ -75,6 +75,7 @@ datasynth-banking = { version = "2.0.0", path = "crates/datasynth-banking" }
 datasynth-fingerprint = { version = "2.0.0", path = "crates/datasynth-fingerprint" }
 datasynth-standards = { version = "2.0.0", path = "crates/datasynth-standards" }
 datasynth-audit-fsm = { version = "2.0.0", path = "crates/datasynth-audit-fsm" }
+datasynth-audit-optimizer = { version = "2.0.0", path = "crates/datasynth-audit-optimizer" }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

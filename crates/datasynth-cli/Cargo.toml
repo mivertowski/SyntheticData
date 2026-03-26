@@ -26,6 +26,7 @@ datasynth-generators = { workspace = true }
 datasynth-output = { workspace = true }
 datasynth-runtime = { workspace = true }
 datasynth-audit-fsm = { workspace = true }
+datasynth-audit-optimizer = { workspace = true }
 datasynth-banking = { workspace = true }
 datasynth-fingerprint = { workspace = true }
 datasynth-graph = { workspace = true }

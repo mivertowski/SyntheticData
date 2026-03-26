@@ -25,11 +25,14 @@ rand_chacha = { workspace = true }
 rand_distr = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+arrow = { workspace = true, optional = true }
+parquet = { workspace = true, optional = true }
 
 [features]
 default = []
 claude-content = []
 gam-blueprint = []
+parquet-export = ["dep:arrow", "dep:parquet"]
 
 [dev-dependencies]
 proptest = { workspace = true }

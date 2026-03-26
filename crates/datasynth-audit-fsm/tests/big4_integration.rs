@@ -437,8 +437,18 @@ fn test_big4_blueprints_have_distinct_structures() {
     let deloitte = BlueprintWithPreconditions::load_builtin_deloitte().unwrap();
 
     // All ISA-complete blueprints have 7 phases but the 7th phase differs per firm
-    let kpmg_last_phase = kpmg.blueprint.phases.last().map(|p| p.id.as_str()).unwrap_or("");
-    let pwc_last_phase = pwc.blueprint.phases.last().map(|p| p.id.as_str()).unwrap_or("");
+    let kpmg_last_phase = kpmg
+        .blueprint
+        .phases
+        .last()
+        .map(|p| p.id.as_str())
+        .unwrap_or("");
+    let pwc_last_phase = pwc
+        .blueprint
+        .phases
+        .last()
+        .map(|p| p.id.as_str())
+        .unwrap_or("");
     let deloitte_last_phase = deloitte
         .blueprint
         .phases

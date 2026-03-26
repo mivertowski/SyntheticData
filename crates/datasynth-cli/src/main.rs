@@ -374,6 +374,15 @@ enum AuditCommands {
         #[arg(long, default_value = "42")]
         seed: u64,
     },
+    /// Compare two blueprints structurally
+    Diff {
+        /// First blueprint: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, builtin:deloitte, or a file path
+        #[arg(long)]
+        blueprint_a: String,
+        /// Second blueprint: builtin:fsa, builtin:ia, builtin:kpmg, builtin:pwc, builtin:deloitte, or a file path
+        #[arg(long)]
+        blueprint_b: String,
+    },
     /// Generate a benchmark audit event log
     Benchmark {
         /// Complexity level: simple, medium, complex
@@ -1946,6 +1955,10 @@ fn main() -> Result<()> {
                 output,
                 seed,
             } => handle_audit_run(&blueprint, &overlay, &output, seed),
+            AuditCommands::Diff {
+                blueprint_a,
+                blueprint_b,
+            } => handle_audit_diff(&blueprint_a, &blueprint_b),
             AuditCommands::Benchmark {
                 complexity,
                 anomaly_rate,
@@ -2667,8 +2680,7 @@ fn resolve_blueprint(s: &str) -> Result<datasynth_audit_fsm::loader::BlueprintWi
             BlueprintWithPreconditions::load_builtin_pwc().map_err(|e| anyhow::anyhow!("{e}"))
         }
         "builtin:deloitte" => {
-            BlueprintWithPreconditions::load_builtin_deloitte()
-                .map_err(|e| anyhow::anyhow!("{e}"))
+            BlueprintWithPreconditions::load_builtin_deloitte().map_err(|e| anyhow::anyhow!("{e}"))
         }
         "builtin:ey_gam_lite" | "ey_gam_lite" => {
             BlueprintWithPreconditions::load_builtin_ey_gam_lite()
@@ -2686,6 +2698,11 @@ fn resolve_overlay(s: &str) -> Result<datasynth_audit_fsm::schema::GenerationOve
         "builtin:default" => OverlaySource::Builtin(BuiltinOverlay::Default),
         "builtin:thorough" => OverlaySource::Builtin(BuiltinOverlay::Thorough),
         "builtin:rushed" => OverlaySource::Builtin(BuiltinOverlay::Rushed),
+        "builtin:retail" => OverlaySource::Builtin(BuiltinOverlay::IndustryRetail),
+        "builtin:manufacturing" => OverlaySource::Builtin(BuiltinOverlay::IndustryManufacturing),
+        "builtin:financial_services" => {
+            OverlaySource::Builtin(BuiltinOverlay::IndustryFinancialServices)
+        }
         path => OverlaySource::Custom(PathBuf::from(path)),
     };
     load_overlay(&source).map_err(|e| anyhow::anyhow!("{e}"))
@@ -2918,6 +2935,80 @@ fn handle_audit_benchmark(
     println!("    - event_trail_ocel.json");
     println!("    - anomaly_labels.json");
     println!("    - metadata.json");
+
+    Ok(())
+}
+
+/// Handle `audit diff`.
+fn handle_audit_diff(blueprint_a_str: &str, blueprint_b_str: &str) -> Result<()> {
+    let bwp_a = resolve_blueprint(blueprint_a_str)?;
+    let bwp_b = resolve_blueprint(blueprint_b_str)?;
+
+    // Run both blueprints to get events, then discover and compare.
+    use datasynth_audit_fsm::context::EngagementContext;
+    use datasynth_audit_fsm::engine::AuditFsmEngine;
+    use datasynth_audit_fsm::loader::default_overlay;
+    use datasynth_audit_optimizer::discovery::{compare_blueprints, discover_blueprint};
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
+
+    let overlay = default_overlay();
+    let ctx = EngagementContext::test_default();
+
+    // Generate events from blueprint A and discover its structure.
+    let rng_a = ChaCha8Rng::seed_from_u64(42);
+    let mut engine_a = AuditFsmEngine::new(bwp_a, overlay.clone(), rng_a);
+    let result_a = engine_a
+        .run_engagement(&ctx)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    let discovered_a = discover_blueprint(&result_a.event_log);
+
+    // Compare discovered A against reference B.
+    let diff = compare_blueprints(&discovered_a, &bwp_b.blueprint);
+
+    println!("Blueprint Diff: {} vs {}", blueprint_a_str, blueprint_b_str);
+    println!("============================================");
+    println!();
+    println!("Conformance score: {:.2}%", diff.conformance_score * 100.0);
+    println!();
+
+    if !diff.matching_procedures.is_empty() {
+        println!("Matching procedures ({}):", diff.matching_procedures.len());
+        for p in &diff.matching_procedures {
+            println!("  + {}", p);
+        }
+        println!();
+    }
+
+    if !diff.missing_procedures.is_empty() {
+        println!(
+            "Missing from A (in B only) ({}):",
+            diff.missing_procedures.len()
+        );
+        for p in &diff.missing_procedures {
+            println!("  - {}", p);
+        }
+        println!();
+    }
+
+    if !diff.extra_procedures.is_empty() {
+        println!("Extra in A (not in B) ({}):", diff.extra_procedures.len());
+        for p in &diff.extra_procedures {
+            println!("  ~ {}", p);
+        }
+        println!();
+    }
+
+    if !diff.transition_diffs.is_empty() {
+        println!("Transition differences ({}):", diff.transition_diffs.len());
+        for td in &diff.transition_diffs {
+            let marker = if td.diff_type == "missing" { "-" } else { "+" };
+            println!(
+                "  {} [{}] {} -> {}",
+                marker, td.procedure_id, td.from_state, td.to_state
+            );
+        }
+    }
 
     Ok(())
 }
