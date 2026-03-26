@@ -39,14 +39,8 @@ fn test_gam_full_engagement() {
     println!("GAM engagement results:");
     println!("  Events: {}", result.event_log.len());
     println!("  Artifacts: {}", result.artifacts.total_artifacts());
-    println!(
-        "  Procedures: {}",
-        result.procedure_states.len()
-    );
-    println!(
-        "  Phases completed: {}",
-        result.phases_completed.len()
-    );
+    println!("  Procedures: {}", result.procedure_states.len());
+    println!("  Phases completed: {}", result.phases_completed.len());
     println!("  Duration: {:.1}h", result.total_duration_hours);
     println!("  Anomalies: {}", result.anomalies.len());
 
