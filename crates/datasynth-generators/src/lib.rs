@@ -40,6 +40,8 @@ pub mod user_generator;
 pub mod industry_benchmark_generator;
 // Governance generator — board minutes (WI-5)
 pub mod governance_generator;
+// Legal document generator (GAM audit engagement support)
+pub mod legal_document_generator;
 // Organizational profile generator (WI-6)
 pub mod organizational_profile_generator;
 // IT controls generator — access logs and change management (WI-4)

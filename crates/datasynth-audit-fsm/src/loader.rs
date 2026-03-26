@@ -107,6 +107,22 @@ mod raw {
         pub phases: Vec<RawPhase>,
         #[serde(default)]
         pub procedures: Vec<RawProcedure>,
+
+        // ----- GAM-specific top-level fields -----
+        #[serde(default)]
+        pub forms_catalog: Vec<serde_json::Value>,
+        #[serde(default)]
+        pub standard_dependencies: Vec<serde_json::Value>,
+        #[serde(default)]
+        pub coverage: Option<serde_json::Value>,
+        #[serde(default)]
+        pub form_enrichment: Option<serde_json::Value>,
+        /// Projection definitions (GAM-specific, ignored for now).
+        #[serde(default)]
+        pub projections: Option<serde_json::Value>,
+        /// Report definitions (GAM-specific, ignored for now).
+        #[serde(default)]
+        pub reports: Option<serde_json::Value>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -133,6 +149,18 @@ mod raw {
         pub title: String,
         #[serde(default = "default_requirement")]
         pub binding: String,
+
+        // ----- GAM-specific standard fields -----
+        #[serde(default)]
+        pub isa_group: Option<String>,
+        #[serde(default)]
+        pub requirement_count: Option<u32>,
+        #[serde(default)]
+        pub application_count: Option<u32>,
+        #[serde(default)]
+        pub paragraphs: Vec<serde_json::Value>,
+        #[serde(default)]
+        pub dependencies: Vec<serde_json::Value>,
     }
 
     fn default_requirement() -> String {
@@ -147,6 +175,22 @@ mod raw {
         pub evidence_type: String,
         #[serde(default)]
         pub lifecycle: Vec<String>,
+
+        // ----- GAM-specific evidence fields -----
+        #[serde(default)]
+        pub source_forms: Vec<String>,
+        #[serde(default)]
+        pub signoff_required: Vec<String>,
+        #[serde(default)]
+        pub required_fields: Vec<String>,
+        #[serde(default)]
+        pub is_noise: Option<bool>,
+        #[serde(default)]
+        pub source_type: Option<String>,
+        #[serde(default)]
+        pub responsible_actor: Option<String>,
+        #[serde(default)]
+        pub expected_content: Option<String>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -242,6 +286,16 @@ mod raw {
         pub standards: Vec<RawStepStandard>,
         #[serde(default)]
         pub decisions: Vec<RawDecision>,
+
+        // ----- GAM-specific step fields -----
+        #[serde(default)]
+        pub isa_mandate: Option<String>,
+        #[serde(default)]
+        pub form_refs: Vec<serde_json::Value>,
+        #[serde(default)]
+        pub deliverable_fields: Vec<String>,
+        #[serde(default)]
+        pub standard_field_trace: Vec<String>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -302,6 +356,8 @@ mod raw {
 fn convert_binding(s: &str) -> BindingLevel {
     match s.to_lowercase().as_str() {
         "guidance" => BindingLevel::Guidance,
+        "informational" => BindingLevel::Informational,
+        "example" => BindingLevel::Example,
         _ => BindingLevel::Requirement,
     }
 }
@@ -356,6 +412,11 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             id: s.ref_id,
             title: s.title,
             binding: convert_binding(&s.binding),
+            isa_group: s.isa_group,
+            requirement_count: s.requirement_count,
+            application_count: s.application_count,
+            paragraphs: s.paragraphs,
+            dependencies: s.dependencies,
         })
         .collect();
 
@@ -368,6 +429,13 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
             evidence_type: e.evidence_type,
             description: Some(e.name),
             required: false,
+            source_forms: e.source_forms,
+            signoff_required: e.signoff_required,
+            required_fields: e.required_fields,
+            is_noise: e.is_noise,
+            source_type: e.source_type,
+            responsible_actor: e.responsible_actor,
+            expected_content: e.expected_content,
         })
         .collect();
 
@@ -445,6 +513,10 @@ fn convert_raw_to_blueprint(raw: raw::RawBlueprint) -> AuditBlueprint {
         standards,
         evidence_templates,
         phases,
+        forms_catalog: raw.forms_catalog,
+        standard_dependencies: raw.standard_dependencies,
+        coverage: raw.coverage,
+        form_enrichment: raw.form_enrichment,
     }
 }
 
@@ -561,6 +633,10 @@ fn convert_raw_step(step: raw::RawStep, _preconditions: &[String]) -> BlueprintS
         evidence: evidence_items,
         standards: step_standards,
         decision,
+        isa_mandate: step.isa_mandate,
+        form_refs: step.form_refs,
+        deliverable_fields: step.deliverable_fields,
+        standard_field_trace: step.standard_field_trace,
     }
 }
 
@@ -1013,6 +1089,22 @@ impl BlueprintWithPreconditions {
     pub fn topological_sort(&self) -> Result<Vec<String>, AuditFsmError> {
         topological_sort_with_preconditions(&self.blueprint, &self.preconditions)
     }
+}
+
+/// Load the GAM blueprint from a filesystem path.
+///
+/// The GAM blueprint is too large (~13 MB) for `include_str!()` embedding.
+/// Users must provide the path to their local copy of
+/// `gam_blueprint_enriched.yaml`.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read or if the YAML is invalid.
+#[cfg(feature = "gam-blueprint")]
+pub fn load_gam_from_path(
+    path: &std::path::Path,
+) -> Result<BlueprintWithPreconditions, AuditFsmError> {
+    BlueprintWithPreconditions::load_from_file(path.to_path_buf())
 }
 
 /// Validate a blueprint using explicit preconditions (for testing/mutation).
@@ -1485,5 +1577,170 @@ mod tests {
             (overlay.resource_costs.cost_multiplier - 0.6).abs() < f64::EPSILON,
             "rushed overlay cost_multiplier should be 0.6"
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // GAM blueprint loading tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_load_gam_blueprint_from_file() {
+        let path = std::path::Path::new(
+            "/home/michael/DEV/Repos/Methodology/AuditMethodology/data/export/blueprints/gam_blueprint_enriched.yaml",
+        );
+        if !path.exists() {
+            eprintln!(
+                "GAM blueprint not found at {}, skipping test",
+                path.display()
+            );
+            return;
+        }
+
+        let bwp = BlueprintWithPreconditions::load_from_file(path.to_path_buf())
+            .expect("GAM blueprint should load");
+
+        // Should have >= 8 phases
+        assert!(
+            bwp.blueprint.phases.len() >= 8,
+            "GAM should have >= 8 phases, got {}",
+            bwp.blueprint.phases.len()
+        );
+
+        // Should have >= 1000 procedures
+        let total_procs: usize = bwp
+            .blueprint
+            .phases
+            .iter()
+            .map(|p| p.procedures.len())
+            .sum();
+        assert!(
+            total_procs >= 1000,
+            "GAM should have >= 1000 procedures, got {}",
+            total_procs
+        );
+
+        // Should have preconditions
+        assert!(
+            bwp.preconditions.values().any(|v| !v.is_empty()),
+            "GAM should have preconditions"
+        );
+
+        // Should have GAM-specific top-level metadata
+        assert!(
+            !bwp.blueprint.forms_catalog.is_empty(),
+            "GAM should have forms_catalog"
+        );
+        assert!(
+            !bwp.blueprint.standard_dependencies.is_empty(),
+            "GAM should have standard_dependencies"
+        );
+        assert!(bwp.blueprint.coverage.is_some(), "GAM should have coverage");
+
+        // Evidence templates should have GAM-specific fields populated
+        let has_source_forms = bwp
+            .blueprint
+            .evidence_templates
+            .iter()
+            .any(|e| !e.source_forms.is_empty());
+        assert!(
+            has_source_forms,
+            "GAM evidence templates should have source_forms"
+        );
+
+        // Standards should have GAM-specific fields populated
+        let has_isa_group = bwp
+            .blueprint
+            .standards
+            .iter()
+            .any(|s| s.isa_group.is_some());
+        assert!(has_isa_group, "GAM standards should have isa_group");
+
+        // Evidence count should be large (GAM has 1702)
+        assert!(
+            bwp.blueprint.evidence_templates.len() >= 1000,
+            "GAM should have >= 1000 evidence templates, got {}",
+            bwp.blueprint.evidence_templates.len()
+        );
+    }
+
+    #[test]
+    fn test_gam_blueprint_structural_integrity() {
+        let path = std::path::Path::new(
+            "/home/michael/DEV/Repos/Methodology/AuditMethodology/data/export/blueprints/gam_blueprint_enriched.yaml",
+        );
+        if !path.exists() {
+            eprintln!(
+                "GAM blueprint not found at {}, skipping test",
+                path.display()
+            );
+            return;
+        }
+
+        let bwp = BlueprintWithPreconditions::load_from_file(path.to_path_buf())
+            .expect("GAM blueprint should load");
+
+        // The GAM YAML has known data-quality issues (e.g. actor 'we' not in
+        // the actors catalog). We validate structurally — checking that the DAG
+        // is acyclic and the blueprint topology is sound — rather than asserting
+        // zero violations.
+        let topo_result = bwp.topological_sort();
+        assert!(
+            topo_result.is_ok(),
+            "GAM precondition DAG should be acyclic: {:?}",
+            topo_result.err()
+        );
+
+        // Report validation violations for information without failing
+        match bwp.validate() {
+            Ok(()) => eprintln!("GAM validation: clean (no violations)"),
+            Err(crate::error::AuditFsmError::BlueprintValidation { violations }) => {
+                eprintln!(
+                    "GAM validation: {} known violations (actor-ref / evidence-ref mismatches)",
+                    violations.len()
+                );
+            }
+            Err(e) => panic!("GAM validation returned unexpected error: {:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_gam_binding_levels() {
+        let path = std::path::Path::new(
+            "/home/michael/DEV/Repos/Methodology/AuditMethodology/data/export/blueprints/gam_blueprint_enriched.yaml",
+        );
+        if !path.exists() {
+            eprintln!(
+                "GAM blueprint not found at {}, skipping test",
+                path.display()
+            );
+            return;
+        }
+
+        let bwp = BlueprintWithPreconditions::load_from_file(path.to_path_buf())
+            .expect("GAM blueprint should load");
+
+        // GAM uses informational and example binding levels
+        let mut has_informational = false;
+        let mut has_example = false;
+        for phase in &bwp.blueprint.phases {
+            for proc in &phase.procedures {
+                for step in &proc.steps {
+                    match step.binding {
+                        crate::schema::BindingLevel::Informational => {
+                            has_informational = true;
+                        }
+                        crate::schema::BindingLevel::Example => {
+                            has_example = true;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        assert!(
+            has_informational,
+            "GAM should have steps with informational binding"
+        );
+        assert!(has_example, "GAM should have steps with example binding");
     }
 }

@@ -29,6 +29,7 @@ tracing = { workspace = true }
 [features]
 default = []
 claude-content = []
+gam-blueprint = []
 
 [dev-dependencies]
 proptest = { workspace = true }
