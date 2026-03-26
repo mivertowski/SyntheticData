@@ -97,15 +97,31 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
 
     // (display name, short key, loader)
     let loaders: &[(&str, &str, BlueprintLoader)] = &[
-        ("Generic ISA", "fsa", BlueprintWithPreconditions::load_builtin_fsa),
-        ("KPMG Clara", "kpmg", BlueprintWithPreconditions::load_builtin_kpmg),
-        ("PwC Aura", "pwc", BlueprintWithPreconditions::load_builtin_pwc),
+        (
+            "Generic ISA",
+            "fsa",
+            BlueprintWithPreconditions::load_builtin_fsa,
+        ),
+        (
+            "KPMG Clara",
+            "kpmg",
+            BlueprintWithPreconditions::load_builtin_kpmg,
+        ),
+        (
+            "PwC Aura",
+            "pwc",
+            BlueprintWithPreconditions::load_builtin_pwc,
+        ),
         (
             "Deloitte Omnia",
             "deloitte",
             BlueprintWithPreconditions::load_builtin_deloitte,
         ),
-        ("IIA-GIAS", "ia", BlueprintWithPreconditions::load_builtin_ia),
+        (
+            "IIA-GIAS",
+            "ia",
+            BlueprintWithPreconditions::load_builtin_ia,
+        ),
     ];
 
     for (firm_name, bp_name, loader) in loaders {
@@ -118,7 +134,12 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
         // Structural counts
         // ------------------------------------------------------------------
         let phases = bwp.blueprint.phases.len();
-        let procedures: usize = bwp.blueprint.phases.iter().map(|p| p.procedures.len()).sum();
+        let procedures: usize = bwp
+            .blueprint
+            .phases
+            .iter()
+            .map(|p| p.procedures.len())
+            .sum();
         let steps: usize = bwp
             .blueprint
             .phases
@@ -137,12 +158,9 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
         for phase in &bwp.blueprint.phases {
             for proc in &phase.procedures {
                 for step in &proc.steps {
-                    let level = step
-                        .judgment_level
-                        .as_deref()
-                        .unwrap_or_else(|| {
-                            infer_judgment_level(step.command.as_deref().unwrap_or(""))
-                        });
+                    let level = step.judgment_level.as_deref().unwrap_or_else(|| {
+                        infer_judgment_level(step.command.as_deref().unwrap_or(""))
+                    });
                     match level {
                         "data_only" => data_only += 1,
                         "human_required" => human_required += 1,
@@ -182,8 +200,7 @@ pub fn run_comparison(seed: u64) -> ComparisonReport {
             artifacts: result.artifacts.total_artifacts(),
             duration_hours: result.total_duration_hours,
             anomalies: result.anomalies.len(),
-            completion_rate: completed as f64
-                / result.procedure_states.len().max(1) as f64,
+            completion_rate: completed as f64 / result.procedure_states.len().max(1) as f64,
             judgment_distribution: JudgmentDistribution {
                 data_only,
                 ai_assistable,
