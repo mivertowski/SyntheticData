@@ -1,0 +1,1696 @@
+schema_version: "1.0"
+depth: standard
+
+methodology:
+  name: "Banking Regulatory Examination"
+  version: "2025.1"
+  framework: "REGULATORY"
+  description: >
+    Banking supervision examination methodology for regulatory bodies (OCC, Fed, FDIC, EBA).
+    Models the examination lifecycle from pre-examination planning through enforcement actions.
+    Covers CAMELS rating determination, BSA/AML review, capital adequacy assessment, and
+    on-site fieldwork. This blueprint contains no proprietary regulatory content — all
+    procedures are derived from publicly available examination manuals and interagency guidance.
+
+discriminators:
+  tiers:
+    - core
+    - bsa_aml
+    - capital
+    - enforcement
+
+actors:
+  - id: examiner_in_charge
+    name: "Examiner in Charge (EIC)"
+    responsibilities:
+      - Lead the examination team and coordinate with institution management
+      - Determine scope and risk focus of the examination
+      - Issue the Report of Examination and final CAMELS rating
+      - Communicate findings to the board and senior management
+  - id: field_examiner
+    name: "Field Examiner"
+    responsibilities:
+      - Perform on-site fieldwork and loan file reviews
+      - Execute assigned examination modules
+      - Prepare examination workpapers
+      - Document transaction testing results
+  - id: specialist_examiner
+    name: "Specialist Examiner (IT/BSA/Compliance)"
+    responsibilities:
+      - Lead specialized examination areas (IT risk, BSA/AML, consumer compliance)
+      - Evaluate program effectiveness and control design
+      - Document specialist findings and recommendations
+  - id: supervisory_analyst
+    name: "Supervisory Analyst"
+    responsibilities:
+      - Perform off-site surveillance and financial monitoring
+      - Analyze call report data and financial trends
+      - Maintain examination scheduling and risk profiles
+  - id: district_supervisor
+    name: "District Supervisor"
+    responsibilities:
+      - Provide supervisory oversight of the examination
+      - Review and concur on significant findings and ratings
+      - Approve enforcement actions and supervisory strategies
+
+standards_catalog:
+  - ref: "OCC Comptroller's Handbook"
+    title: "OCC Comptroller's Handbook — Core Examination Procedures"
+    binding: requirement
+  - ref: "FFIEC Examination Manual"
+    title: "FFIEC Interagency Examination Procedures and Guidance"
+    binding: requirement
+  - ref: "Basel III Capital Framework"
+    title: "Basel III: A Global Regulatory Framework for More Resilient Banks"
+    binding: requirement
+  - ref: "31 CFR 1020"
+    title: "BSA/AML Regulations — Financial Recordkeeping and Reporting"
+    binding: requirement
+  - ref: "FFIEC BSA/AML Manual"
+    title: "FFIEC Bank Secrecy Act / Anti-Money Laundering Examination Manual"
+    binding: requirement
+  - ref: "SR 12-17"
+    title: "Consolidated Supervision Framework for Large Financial Institutions"
+    binding: requirement
+  - ref: "CAMELS Rating System"
+    title: "Uniform Financial Institutions Rating System (CAMELS)"
+    binding: requirement
+  - ref: "Interagency Capital Guidance"
+    title: "Interagency Guidance on Capital Adequacy and Prompt Corrective Action"
+    binding: requirement
+  - ref: "FFIEC IT Examination Handbook"
+    title: "FFIEC Information Technology Examination Handbook"
+    binding: requirement
+  - ref: "Interagency Consumer Compliance"
+    title: "Interagency Consumer Compliance Examination Procedures"
+    binding: requirement
+
+evidence_catalog:
+  - id: prior_exam_report
+    name: "Prior Report of Examination"
+    type: report
+    lifecycle: [retrieved, reviewed]
+  - id: risk_assessment_summary
+    name: "Examination Risk Assessment Summary"
+    type: assessment
+    lifecycle: [draft, under_review, finalized]
+  - id: document_request_list
+    name: "Document Request List"
+    type: document
+    lifecycle: [draft, issued, fulfilled]
+  - id: loan_review_workpapers
+    name: "Loan Review Workpapers"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: earnings_analysis_workpaper
+    name: "Earnings Analysis Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: liquidity_assessment
+    name: "Liquidity Assessment Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: capital_analysis_workpaper
+    name: "Capital Analysis Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: bsa_review_workpaper
+    name: "BSA/AML Review Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: it_exam_workpaper
+    name: "IT Examination Workpaper"
+    type: workpaper
+    lifecycle: [draft, under_review, finalized]
+  - id: camels_rating_sheet
+    name: "CAMELS Rating Sheet"
+    type: assessment
+    lifecycle: [draft, under_review, approved]
+  - id: report_of_examination
+    name: "Report of Examination (ROE)"
+    type: report
+    lifecycle: [draft, under_review, approved, issued]
+  - id: enforcement_action_memo
+    name: "Enforcement Action Memorandum"
+    type: memo
+    lifecycle: [draft, under_review, approved, issued]
+
+phases:
+  - id: pre_examination
+    name: "Pre-Examination Planning"
+    order: 1
+    description: >
+      Establish the examination scope, review prior examination findings, analyze
+      off-site surveillance data, and prepare the examination plan and document
+      request list before on-site arrival.
+    gate:
+      all_of:
+        - procedure: risk_scoping
+          state: completed
+        - procedure: document_request
+          state: completed
+
+  - id: on_site_examination
+    name: "On-Site Examination"
+    order: 2
+    description: >
+      Conduct on-site fieldwork covering management assessment, asset quality,
+      earnings analysis, and sensitivity to market risk. Execute assigned
+      examination modules and prepare workpapers.
+    gate:
+      all_of:
+        - procedure: management_assessment
+          state: completed
+        - procedure: asset_quality_review
+          state: completed
+        - procedure: earnings_analysis
+          state: completed
+        - procedure: sensitivity_to_market_risk
+          state: completed
+
+  - id: bsa_aml_review
+    name: "BSA/AML Compliance Review"
+    order: 3
+    description: >
+      Evaluate the institution's BSA/AML program effectiveness, including customer
+      due diligence, suspicious activity reporting, currency transaction reporting,
+      and overall compliance with BSA regulatory requirements.
+    gate:
+      all_of:
+        - procedure: bsa_compliance_review
+          state: completed
+
+  - id: capital_adequacy
+    name: "Capital and Liquidity Assessment"
+    order: 4
+    description: >
+      Assess the institution's capital adequacy under Basel III requirements,
+      evaluate liquidity risk management and contingency funding plans, and
+      review interest rate risk and market risk exposures.
+    gate:
+      all_of:
+        - procedure: liquidity_assessment
+          state: completed
+        - procedure: capital_analysis
+          state: completed
+
+  - id: examination_conclusion
+    name: "Examination Conclusion and Rating"
+    order: 5
+    description: >
+      Determine CAMELS composite and component ratings, draft the Report of
+      Examination, conduct the exit meeting with institution management, and
+      communicate findings to the board of directors.
+    gate:
+      all_of:
+        - procedure: it_examination
+          state: completed
+        - procedure: consumer_compliance
+          state: completed
+        - procedure: camels_rating_determination
+          state: completed
+        - procedure: findings_communication
+          state: completed
+        - procedure: exit_meeting
+          state: completed
+
+  - id: enforcement
+    name: "Enforcement Actions"
+    order: 6
+    description: >
+      Issue supervisory actions where warranted, including Matters Requiring
+      Attention (MRA), Matters Requiring Immediate Attention (MRIA), informal
+      actions (commitment letters, board resolutions), or formal enforcement
+      actions (consent orders, cease and desist orders).
+    gate:
+      all_of:
+        - procedure: enforcement_action
+          state: completed
+
+procedures:
+  # ---- PRE-EXAMINATION PHASE ----
+
+  - id: risk_scoping
+    phase: pre_examination
+    title: "Pre-Examination Risk Scoping"
+    base_hours: 16.0
+    required_roles: [examiner_in_charge, supervisory_analyst]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_risk_scoping
+          emits: RiskScopingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_risk_scoping
+          emits: RiskScopingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_risk_scoping
+          emits: RiskScopingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: scope_step_1
+        order: 1
+        action: review
+        actor: supervisory_analyst
+        description: >
+          Review the prior Report of Examination, outstanding MRAs/MRIAs, and
+          supervisory history to identify unresolved issues and areas of elevated
+          supervisory concern.
+        binding: requirement
+        command: review_prior_examination
+        emits: PriorExaminationReviewed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Extract and summarize prior findings and MRA status
+          - Flag recurring issues across examination cycles
+          - Identify trend patterns in financial data
+        human_responsibilities:
+          - Assess significance of unresolved MRAs in current context
+          - Determine whether prior findings indicate systemic weaknesses
+        evidence:
+          inputs:
+            - ref: prior_exam_report
+              type: report
+          outputs: []
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Pre-examination planning"]
+            binding: requirement
+      - id: scope_step_2
+        order: 2
+        action: analyze
+        actor: supervisory_analyst
+        description: >
+          Analyze off-site surveillance data including call report financial
+          ratios, peer comparison data, and CAMELS component trends to identify
+          areas of heightened risk requiring focused examination attention.
+        binding: requirement
+        command: analyze_off_site_data
+        emits: OffSiteDataAnalyzed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Calculate financial ratios and peer comparisons
+          - Identify statistical outliers in call report data
+          - Generate preliminary risk rankings by area
+        human_responsibilities:
+          - Interpret ratio trends in supervisory context
+          - Determine which risk areas warrant expanded scope
+        standards:
+          - ref: "FFIEC Examination Manual"
+            paragraphs: ["Off-site monitoring"]
+            binding: requirement
+      - id: scope_step_3
+        order: 3
+        action: determine
+        actor: examiner_in_charge
+        description: >
+          Determine examination scope and risk focus areas based on the off-site
+          analysis, prior exam findings, and supervisory strategy. Assign
+          examination modules to team members and establish time budgets.
+        binding: requirement
+        command: determine_examination_scope
+        emits: ExaminationScopeDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - Draft preliminary scope memorandum
+          - Suggest module assignments based on risk rankings
+        human_responsibilities:
+          - Make final scope determination and risk prioritization
+          - Assign examiner responsibilities and approve time budgets
+        evidence:
+          inputs: []
+          outputs:
+            - ref: risk_assessment_summary
+              type: assessment
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Examination planning"]
+            binding: requirement
+    preconditions: []
+    knowledge_refs: []
+
+  - id: document_request
+    phase: pre_examination
+    title: "Document Request and Pre-Examination Information Gathering"
+    base_hours: 8.0
+    required_roles: [examiner_in_charge]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_document_request
+          emits: DocumentRequestStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_document_request
+          emits: DocumentRequestSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_document_request
+          emits: DocumentRequestApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: docreq_step_1
+        order: 1
+        action: prepare
+        actor: examiner_in_charge
+        description: >
+          Prepare the pre-examination document request list covering board and
+          committee minutes, management information system (MIS) reports, policies
+          and procedures, internal audit reports, and key financial data schedules.
+        binding: requirement
+        command: prepare_document_request_list
+        emits: DocumentRequestListPrepared
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Generate standard document request templates by examination module
+          - Tailor requests based on identified risk focus areas
+        human_responsibilities:
+          - Review and customize request for institution-specific circumstances
+          - Confirm completeness of the pre-examination package
+        evidence:
+          inputs:
+            - ref: risk_assessment_summary
+              type: assessment
+          outputs:
+            - ref: document_request_list
+              type: document
+        standards:
+          - ref: "FFIEC Examination Manual"
+            paragraphs: ["Pre-examination document request"]
+            binding: requirement
+      - id: docreq_step_2
+        order: 2
+        action: transmit
+        actor: examiner_in_charge
+        description: >
+          Transmit the document request to the institution, establish a pre-examination
+          contact with the institution's examination liaison, and confirm the on-site
+          start date and logistical arrangements.
+        binding: requirement
+        command: transmit_document_request
+        emits: DocumentRequestTransmitted
+        judgment_level: human_required
+        ai_capabilities:
+          - Draft transmittal letter and scheduling communication
+        human_responsibilities:
+          - Approve and sign transmittal correspondence
+          - Coordinate scheduling with institution management
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Examination scheduling"]
+            binding: requirement
+    preconditions:
+      - risk_scoping
+    knowledge_refs: []
+
+  # ---- ON-SITE EXAMINATION PHASE ----
+
+  - id: management_assessment
+    phase: on_site_examination
+    title: "Management Quality and Governance Assessment"
+    base_hours: 20.0
+    required_roles: [examiner_in_charge]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_management_assessment
+          emits: ManagementAssessmentStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_management_assessment
+          emits: ManagementAssessmentSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_management_assessment
+          emits: ManagementAssessmentApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: mgmt_step_1
+        order: 1
+        action: evaluate
+        actor: examiner_in_charge
+        description: >
+          Evaluate the competency and integrity of the board of directors through
+          review of board minutes, attendance records, director qualifications,
+          and board oversight of significant risk decisions.
+        binding: requirement
+        command: evaluate_board_oversight
+        emits: BoardOversightEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Summarize board meeting minutes for key themes and decisions
+          - Flag instances of inadequate follow-up on management recommendations
+        human_responsibilities:
+          - Assess director independence, expertise, and engagement
+          - Evaluate effectiveness of board oversight of risk
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Management component"]
+            binding: requirement
+      - id: mgmt_step_2
+        order: 2
+        action: assess
+        actor: examiner_in_charge
+        description: >
+          Assess the quality of senior management by evaluating strategic planning,
+          risk appetite frameworks, succession planning, and the institution's
+          responsiveness to regulatory guidance and prior supervisory findings.
+        binding: requirement
+        command: assess_senior_management
+        emits: SeniorManagementAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - Extract management response tracking from prior exam materials
+          - Benchmark strategic plan quality against peer disclosures
+        human_responsibilities:
+          - Form professional judgment on management competence
+          - Assess management's ability to identify and address emerging risks
+        decisions:
+          - condition: "Does management demonstrate adequate risk awareness?"
+            branches:
+              - label: "Adequate"
+                description: "Proceed with standard management rating"
+              - label: "Inadequate"
+                description: "Escalate findings and consider expanded scope for M component"
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Management component"]
+            binding: requirement
+      - id: mgmt_step_3
+        order: 3
+        action: evaluate
+        actor: examiner_in_charge
+        description: >
+          Evaluate the internal audit function, including audit independence,
+          scope, staffing, and the resolution of audit findings by management.
+          Assess whether the internal audit program provides adequate coverage.
+        binding: requirement
+        command: evaluate_internal_audit_function
+        emits: InternalAuditFunctionEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Analyze internal audit findings for systemic patterns
+          - Review audit coverage maps against risk profile
+        human_responsibilities:
+          - Assess independence and objectivity of internal audit
+          - Determine adequacy of audit scope and follow-up
+        standards:
+          - ref: "FFIEC Examination Manual"
+            paragraphs: ["Internal audit"]
+            binding: requirement
+    preconditions:
+      - document_request
+    knowledge_refs: []
+
+  - id: asset_quality_review
+    phase: on_site_examination
+    title: "Asset Quality and Loan Portfolio Review"
+    base_hours: 40.0
+    required_roles: [field_examiner, examiner_in_charge]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_asset_quality_review
+          emits: AssetQualityReviewStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_asset_quality_review
+          emits: AssetQualityReviewSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_asset_quality_review
+          emits: AssetQualityReviewApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: aq_step_1
+        order: 1
+        action: select
+        actor: field_examiner
+        description: >
+          Select a sample of loan files for review based on risk-focused criteria
+          including loan size, delinquency status, loan type concentration, and
+          examiner judgment regarding borrower financial condition.
+        binding: requirement
+        command: select_loan_sample
+        emits: LoanSampleSelected
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Apply stratified sampling based on risk tier and loan type
+          - Flag loans with adverse trends in financial data
+          - Identify concentration exposures for targeted review
+        human_responsibilities:
+          - Finalize sample composition with professional judgment
+          - Ensure sample captures identified risk areas
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Loan portfolio management"]
+            binding: requirement
+      - id: aq_step_2
+        order: 2
+        action: review
+        actor: field_examiner
+        description: >
+          Review individual loan files to assess credit quality, underwriting
+          standards, loan administration, borrower financial condition, and
+          the adequacy of collateral and repayment sources.
+        binding: requirement
+        command: review_loan_files
+        emits: LoanFilesReviewed
+        judgment_level: human_required
+        ai_capabilities:
+          - Extract key financial ratios from borrower financial statements
+          - Flag covenant violations or deviations from credit policy
+          - Summarize collateral valuation documentation
+        human_responsibilities:
+          - Assign loan classifications (Pass, Special Mention, Substandard, Doubtful, Loss)
+          - Evaluate adequacy of the ALLL methodology
+          - Document basis for classification decisions
+        evidence:
+          inputs: []
+          outputs:
+            - ref: loan_review_workpapers
+              type: workpaper
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Loan portfolio management", "Loan classifications"]
+            binding: requirement
+      - id: aq_step_3
+        order: 3
+        action: evaluate
+        actor: examiner_in_charge
+        description: >
+          Evaluate the adequacy of the Allowance for Loan and Lease Losses (ALLL)
+          or Current Expected Credit Loss (CECL) reserve by comparing the
+          institution's methodology against examination findings and peer data.
+        binding: requirement
+        command: evaluate_alll_adequacy
+        emits: AllowanceAdequacyEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Compare reserve coverage ratios against peer benchmarks
+          - Model expected credit loss scenarios using portfolio data
+        human_responsibilities:
+          - Determine whether the reserve level is adequate
+          - Document examiner assessment of ALLL/CECL methodology
+        decisions:
+          - condition: "Is the ALLL/CECL reserve adequate?"
+            branches:
+              - label: "Adequate"
+                description: "No reserve deficiency identified"
+              - label: "Deficient"
+                description: "Issue MRA requiring reserve adjustment"
+        standards:
+          - ref: "Interagency Capital Guidance"
+            paragraphs: ["ALLL adequacy"]
+            binding: requirement
+    preconditions:
+      - document_request
+    knowledge_refs: []
+
+  - id: earnings_analysis
+    phase: on_site_examination
+    title: "Earnings Quality and Profitability Analysis"
+    base_hours: 16.0
+    required_roles: [field_examiner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_earnings_analysis
+          emits: EarningsAnalysisStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_earnings_analysis
+          emits: EarningsAnalysisSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_earnings_analysis
+          emits: EarningsAnalysisApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: earn_step_1
+        order: 1
+        action: analyze
+        actor: field_examiner
+        description: >
+          Analyze net interest margin (NIM), fee income, and operating efficiency
+          ratios against peer benchmarks and historical trends. Evaluate the
+          sustainability and quality of reported earnings.
+        binding: requirement
+        command: analyze_earnings_quality
+        emits: EarningsQualityAnalyzed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Calculate NIM, efficiency ratio, and fee income ratios
+          - Compare against peer median and interquartile ranges
+          - Identify unusual or non-recurring earnings components
+        human_responsibilities:
+          - Assess sustainability of earnings given interest rate environment
+          - Evaluate management's earnings strategy and planning
+        evidence:
+          inputs: []
+          outputs:
+            - ref: earnings_analysis_workpaper
+              type: workpaper
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Earnings component"]
+            binding: requirement
+      - id: earn_step_2
+        order: 2
+        action: evaluate
+        actor: field_examiner
+        description: >
+          Evaluate the impact of classified assets and provisioning on earnings,
+          assess the adequacy of budget and forecast accuracy, and review
+          management information systems supporting earnings reporting.
+        binding: requirement
+        command: evaluate_earnings_drivers
+        emits: EarningsDriversEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Model provision impact on net income under stress scenarios
+          - Compare budget variance to actuals across reporting periods
+        human_responsibilities:
+          - Form judgment on earnings component rating
+          - Identify earnings management risks or aggressive accounting
+        decisions:
+          - condition: "Are earnings adequate and of sufficient quality?"
+            branches:
+              - label: "Yes"
+                description: "Proceed with standard earnings rating"
+              - label: "No"
+                description: "Document earnings concerns and consider rating impact"
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Earnings component"]
+            binding: requirement
+    preconditions:
+      - document_request
+    knowledge_refs: []
+
+  - id: sensitivity_to_market_risk
+    phase: on_site_examination
+    title: "Sensitivity to Market Risk Assessment"
+    base_hours: 16.0
+    required_roles: [field_examiner, specialist_examiner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_sensitivity_review
+          emits: SensitivityReviewStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_sensitivity_review
+          emits: SensitivityReviewSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_sensitivity_review
+          emits: SensitivityReviewApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: sens_step_1
+        order: 1
+        action: evaluate
+        actor: field_examiner
+        description: >
+          Evaluate the institution's interest rate risk (IRR) exposure by reviewing
+          IRR measurement models, rate shock scenarios, and the board-approved
+          risk limits. Assess model assumptions and their reasonableness.
+        binding: requirement
+        command: evaluate_interest_rate_risk
+        emits: InterestRateRiskEvaluated
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Extract rate shock scenario results from ALM model outputs
+          - Compare EVE and NII sensitivity against policy limits
+          - Flag model assumptions that deviate from supervisory expectations
+        human_responsibilities:
+          - Evaluate reasonableness of model assumptions
+          - Form judgment on IRR management effectiveness
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Sensitivity component"]
+            binding: requirement
+      - id: sens_step_2
+        order: 2
+        action: assess
+        actor: specialist_examiner
+        description: >
+          Assess market risk management for institutions with trading activities,
+          investment securities, or mortgage banking operations. Review
+          hedging strategies, derivatives usage, and VaR models where applicable.
+        binding: requirement
+        command: assess_market_risk_management
+        emits: MarketRiskManagementAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - Analyze investment portfolio composition and duration
+          - Review hedging effectiveness documentation
+        human_responsibilities:
+          - Evaluate adequacy of market risk oversight
+          - Assess whether risk limits are appropriate for the institution's profile
+        decisions:
+          - condition: "Is market risk management adequate?"
+            branches:
+              - label: "Adequate"
+                description: "Proceed with standard sensitivity rating"
+              - label: "Inadequate"
+                description: "Issue findings and recommend enhanced risk management practices"
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Sensitivity component"]
+            binding: requirement
+    preconditions:
+      - document_request
+    knowledge_refs: []
+
+  # ---- BSA/AML REVIEW PHASE ----
+
+  - id: bsa_compliance_review
+    phase: bsa_aml_review
+    title: "BSA/AML Program Compliance Review"
+    base_hours: 32.0
+    required_roles: [specialist_examiner]
+    discriminators:
+      tiers: [core, bsa_aml]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_bsa_review
+          emits: BsaReviewStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_bsa_review
+          emits: BsaReviewSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_bsa_review
+          emits: BsaReviewApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: bsa_step_1
+        order: 1
+        action: evaluate
+        actor: specialist_examiner
+        description: >
+          Evaluate the institution's BSA/AML program for the five core program
+          elements: a system of internal controls, independent testing, a designated
+          compliance officer, training, and customer due diligence (CDD) procedures.
+        binding: requirement
+        command: evaluate_bsa_program_structure
+        emits: BsaProgramStructureEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Review BSA policy documents for required program elements
+          - Identify gaps in CDD and enhanced due diligence procedures
+        human_responsibilities:
+          - Assess adequacy and effectiveness of each program pillar
+          - Evaluate board and senior management oversight of BSA/AML
+        standards:
+          - ref: "31 CFR 1020"
+            paragraphs: ["1020.210", "1020.220"]
+            binding: requirement
+          - ref: "FFIEC BSA/AML Manual"
+            paragraphs: ["BSA/AML program requirements"]
+            binding: requirement
+      - id: bsa_step_2
+        order: 2
+        action: review
+        actor: specialist_examiner
+        description: >
+          Review Suspicious Activity Report (SAR) and Currency Transaction Report
+          (CTR) filing practices, evaluate the timeliness and accuracy of filings,
+          and assess the quality of the institution's transaction monitoring system.
+        binding: requirement
+        command: review_sar_ctr_practices
+        emits: SarCtrPracticesReviewed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Analyze SAR filing volumes and timeliness statistics
+          - Flag CTR exemptions that may require scrutiny
+          - Identify transaction monitoring alert handling patterns
+        human_responsibilities:
+          - Evaluate quality and completeness of SAR narratives
+          - Assess whether the monitoring system is calibrated appropriately
+        evidence:
+          inputs: []
+          outputs:
+            - ref: bsa_review_workpaper
+              type: workpaper
+        standards:
+          - ref: "31 CFR 1020"
+            paragraphs: ["1020.320", "1020.315"]
+            binding: requirement
+          - ref: "FFIEC BSA/AML Manual"
+            paragraphs: ["SAR monitoring and reporting"]
+            binding: requirement
+      - id: bsa_step_3
+        order: 3
+        action: assess
+        actor: specialist_examiner
+        description: >
+          Assess Customer Due Diligence (CDD) and Beneficial Ownership procedures,
+          evaluate OFAC compliance and sanctions screening, and review the
+          institution's risk-based approach to customer risk rating.
+        binding: requirement
+        command: assess_cdd_ofac_compliance
+        emits: CddOfacComplianceAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - Sample CDD files and assess documentation completeness
+          - Review sanctions screening configuration and alert disposition
+        human_responsibilities:
+          - Form judgment on adequacy of the CDD program
+          - Determine whether OFAC compliance posture is appropriate
+        decisions:
+          - condition: "Does the BSA/AML program meet minimum standards?"
+            branches:
+              - label: "Meets Standards"
+                description: "No significant BSA/AML program deficiencies identified"
+              - label: "Deficient"
+                description: "Issue MRA/MRIA and consider formal enforcement referral"
+        standards:
+          - ref: "31 CFR 1020"
+            paragraphs: ["1020.220"]
+            binding: requirement
+          - ref: "FFIEC BSA/AML Manual"
+            paragraphs: ["Customer due diligence", "OFAC compliance"]
+            binding: requirement
+    preconditions:
+      - management_assessment
+    knowledge_refs: []
+
+  # ---- CAPITAL ADEQUACY PHASE ----
+
+  - id: liquidity_assessment
+    phase: capital_adequacy
+    title: "Liquidity Risk Assessment"
+    base_hours: 16.0
+    required_roles: [field_examiner]
+    discriminators:
+      tiers: [core, capital]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_liquidity_assessment
+          emits: LiquidityAssessmentStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_liquidity_assessment
+          emits: LiquidityAssessmentSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_liquidity_assessment
+          emits: LiquidityAssessmentApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: liq_step_1
+        order: 1
+        action: analyze
+        actor: field_examiner
+        description: >
+          Analyze the institution's funding structure, evaluating the composition
+          of core deposits versus wholesale funding, funding concentration risks,
+          maturity profile, and the availability of contingent liquidity sources.
+        binding: requirement
+        command: analyze_funding_structure
+        emits: FundingStructureAnalyzed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Calculate funding concentration ratios and maturity gap analysis
+          - Benchmark liquidity ratios against peer group and regulatory thresholds
+          - Model liquidity stress scenarios based on funding assumptions
+        human_responsibilities:
+          - Evaluate adequacy of liquidity risk management policies
+          - Assess management's ability to respond to liquidity stress
+        evidence:
+          inputs: []
+          outputs:
+            - ref: liquidity_assessment
+              type: workpaper
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Liquidity component"]
+            binding: requirement
+      - id: liq_step_2
+        order: 2
+        action: review
+        actor: field_examiner
+        description: >
+          Review the Contingency Funding Plan (CFP), evaluate access to emergency
+          liquidity facilities (Federal Reserve discount window, FHLB), and assess
+          the adequacy of the liquidity buffer maintained by the institution.
+        binding: requirement
+        command: review_contingency_funding_plan
+        emits: ContingencyFundingPlanReviewed
+        judgment_level: human_required
+        ai_capabilities:
+          - Review CFP trigger levels and action steps for completeness
+          - Compare liquidity buffer to stress outflow estimates
+        human_responsibilities:
+          - Assess whether the CFP is operationally credible
+          - Evaluate board approval and management testing of the CFP
+        decisions:
+          - condition: "Is the institution's liquidity position and management adequate?"
+            branches:
+              - label: "Adequate"
+                description: "Proceed with standard liquidity rating"
+              - label: "Weak"
+                description: "Document deficiencies and monitor closely"
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Liquidity component"]
+            binding: requirement
+    preconditions:
+      - asset_quality_review
+      - earnings_analysis
+    knowledge_refs: []
+
+  - id: capital_analysis
+    phase: capital_adequacy
+    title: "Capital Adequacy and Stress Testing Analysis"
+    base_hours: 20.0
+    required_roles: [field_examiner, examiner_in_charge]
+    discriminators:
+      tiers: [core, capital]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_capital_analysis
+          emits: CapitalAnalysisStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_capital_analysis
+          emits: CapitalAnalysisSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_capital_analysis
+          emits: CapitalAnalysisApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: cap_step_1
+        order: 1
+        action: calculate
+        actor: field_examiner
+        description: >
+          Calculate the institution's risk-based capital ratios (CET1, Tier 1,
+          Total Risk-Based Capital) and leverage ratio. Verify the risk weighting
+          of asset categories and the composition of regulatory capital elements.
+        binding: requirement
+        command: calculate_capital_ratios
+        emits: CapitalRatiosCalculated
+        judgment_level: data_only
+        ai_capabilities:
+          - Recalculate capital ratios from call report schedules
+          - Verify risk weight assignments for major asset categories
+          - Compare ratios to Well Capitalized thresholds
+        human_responsibilities:
+          - Investigate and resolve any discrepancies with reported ratios
+          - Assess quality of capital components (e.g., goodwill deductions, AOCI)
+        standards:
+          - ref: "Basel III Capital Framework"
+            paragraphs: ["CET1 requirements", "Tier 1 capital"]
+            binding: requirement
+          - ref: "Interagency Capital Guidance"
+            paragraphs: ["Prompt Corrective Action categories"]
+            binding: requirement
+      - id: cap_step_2
+        order: 2
+        action: evaluate
+        actor: examiner_in_charge
+        description: >
+          Evaluate capital adequacy in relation to the institution's risk profile
+          and complexity, including review of capital planning processes, dividend
+          policy, and any stress testing conducted by management.
+        binding: requirement
+        command: evaluate_capital_adequacy
+        emits: CapitalAdequacyEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Project capital ratios under adverse economic scenarios
+          - Identify capital trend deterioration warning signals
+        human_responsibilities:
+          - Assess whether capital levels are adequate for the risk profile
+          - Evaluate the institution's Internal Capital Adequacy Assessment Process
+        evidence:
+          inputs: []
+          outputs:
+            - ref: capital_analysis_workpaper
+              type: workpaper
+        decisions:
+          - condition: "Is capital adequate relative to risk profile?"
+            branches:
+              - label: "Adequate"
+                description: "Proceed with standard capital rating"
+              - label: "Inadequate"
+                description: "Issue MRA and consider capital directive"
+        standards:
+          - ref: "Basel III Capital Framework"
+            paragraphs: ["Capital adequacy assessment"]
+            binding: requirement
+          - ref: "Interagency Capital Guidance"
+            paragraphs: ["Capital planning"]
+            binding: requirement
+    preconditions:
+      - asset_quality_review
+    knowledge_refs: []
+
+  # ---- EXAMINATION CONCLUSION PHASE ----
+
+  - id: it_examination
+    phase: examination_conclusion
+    title: "Information Technology Risk Examination"
+    base_hours: 24.0
+    required_roles: [specialist_examiner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_it_examination
+          emits: ItExaminationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_it_examination
+          emits: ItExaminationSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_it_examination
+          emits: ItExaminationApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: it_step_1
+        order: 1
+        action: assess
+        actor: specialist_examiner
+        description: >
+          Assess IT governance structure, IT strategic planning, and the
+          institution's IT risk management framework. Evaluate whether the
+          board and senior management provide adequate oversight of technology risk.
+        binding: requirement
+        command: assess_it_governance
+        emits: ItGovernanceAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - Review IT policy inventory for completeness against FFIEC standards
+          - Identify gaps in IT governance documentation
+        human_responsibilities:
+          - Evaluate board-level IT oversight and risk appetite
+          - Assess whether IT risk is integrated into enterprise risk management
+        standards:
+          - ref: "FFIEC IT Examination Handbook"
+            paragraphs: ["Management booklet", "IT governance"]
+            binding: requirement
+      - id: it_step_2
+        order: 2
+        action: evaluate
+        actor: specialist_examiner
+        description: >
+          Evaluate cybersecurity controls including network security, access
+          management, vulnerability and patch management, incident response
+          procedures, and third-party risk management for critical vendors.
+        binding: requirement
+        command: evaluate_cybersecurity_controls
+        emits: CybersecurityControlsEvaluated
+        judgment_level: human_required
+        ai_capabilities:
+          - Assess patch management currency against known vulnerability databases
+          - Review third-party vendor risk assessment documentation
+          - Analyze incident response plan for completeness
+        human_responsibilities:
+          - Evaluate overall cybersecurity posture and control effectiveness
+          - Assess incident response capability and testing frequency
+        evidence:
+          inputs: []
+          outputs:
+            - ref: it_exam_workpaper
+              type: workpaper
+        decisions:
+          - condition: "Are cybersecurity controls adequate?"
+            branches:
+              - label: "Adequate"
+                description: "Proceed with standard IT risk rating"
+              - label: "Deficient"
+                description: "Issue MRA/MRIA for cybersecurity deficiencies"
+        standards:
+          - ref: "FFIEC IT Examination Handbook"
+            paragraphs: ["Information security booklet", "Cybersecurity assessment"]
+            binding: requirement
+    preconditions:
+      - management_assessment
+    knowledge_refs: []
+
+  - id: consumer_compliance
+    phase: examination_conclusion
+    title: "Consumer Compliance Examination"
+    base_hours: 20.0
+    required_roles: [specialist_examiner]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_consumer_compliance
+          emits: ConsumerComplianceStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_consumer_compliance
+          emits: ConsumerComplianceSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: completed
+          command: approve_consumer_compliance
+          emits: ConsumerComplianceApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: cc_step_1
+        order: 1
+        action: review
+        actor: specialist_examiner
+        description: >
+          Review the institution's fair lending program, evaluating Home Mortgage
+          Disclosure Act (HMDA) data accuracy, underwriting consistency across
+          demographic groups, and compliance with the Equal Credit Opportunity Act.
+        binding: requirement
+        command: review_fair_lending
+        emits: FairLendingReviewed
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Run statistical analysis on HMDA data for disparate treatment indicators
+          - Compare loan approval rates and pricing across protected class groups
+          - Flag geographic or demographic lending gaps for investigation
+        human_responsibilities:
+          - Evaluate whether identified disparities warrant further investigation
+          - Determine if referral to DOJ or enforcement action is warranted
+        standards:
+          - ref: "Interagency Consumer Compliance"
+            paragraphs: ["Fair lending", "HMDA"]
+            binding: requirement
+      - id: cc_step_2
+        order: 2
+        action: assess
+        actor: specialist_examiner
+        description: >
+          Assess compliance with TILA/Regulation Z (Truth in Lending), RESPA
+          (Real Estate Settlement Procedures Act), and other applicable consumer
+          protection regulations through file review and testing.
+        binding: requirement
+        command: assess_consumer_regulatory_compliance
+        emits: ConsumerRegulatoryComplianceAssessed
+        judgment_level: human_required
+        ai_capabilities:
+          - Sample loan disclosures and check for accuracy and timeliness
+          - Verify APR calculations and fee disclosures
+        human_responsibilities:
+          - Assess severity and scope of any compliance violations
+          - Determine remediation requirements and restitution needs
+        decisions:
+          - condition: "Are consumer compliance violations identified?"
+            branches:
+              - label: "No violations"
+                description: "Proceed with satisfactory compliance rating"
+              - label: "Violations identified"
+                description: "Document violations and assess need for restitution or enforcement"
+        standards:
+          - ref: "Interagency Consumer Compliance"
+            paragraphs: ["TILA", "RESPA", "Consumer protection"]
+            binding: requirement
+    preconditions:
+      - management_assessment
+    knowledge_refs: []
+
+  - id: camels_rating_determination
+    phase: examination_conclusion
+    title: "CAMELS Rating Determination"
+    base_hours: 16.0
+    required_roles: [examiner_in_charge, district_supervisor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_camels_rating
+          emits: CamelsRatingStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_camels_rating
+          emits: CamelsRatingSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_camels_rating
+          emits: CamelsRatingRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_camels_rating
+          emits: CamelsRatingApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: cam_step_1
+        order: 1
+        action: determine
+        actor: examiner_in_charge
+        description: >
+          Determine component ratings for each CAMELS dimension (Capital Adequacy,
+          Asset Quality, Management, Earnings, Liquidity, Sensitivity to Market Risk)
+          based on examination findings. Each component is rated 1 (Strong) to 5 (Critical).
+        binding: requirement
+        command: determine_component_ratings
+        emits: ComponentRatingsDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - Synthesize findings across examination areas into rating summaries
+          - Compare proposed ratings against historical peer distributions
+        human_responsibilities:
+          - Make all final component rating determinations
+          - Ensure ratings are consistent with examination findings and supervisory standards
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Component rating criteria"]
+            binding: requirement
+      - id: cam_step_2
+        order: 2
+        action: determine
+        actor: examiner_in_charge
+        description: >
+          Determine the composite CAMELS rating, which reflects the overall condition
+          of the institution. The composite rating is not an arithmetic average but
+          reflects the examiner's overall assessment of institutional soundness.
+        binding: requirement
+        command: determine_composite_rating
+        emits: CompositeRatingDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - Draft rating rationale narrative based on component findings
+          - Flag inconsistencies between composite and component rating proposals
+        human_responsibilities:
+          - Make the final composite rating determination
+          - Document the basis for any composite rating divergence from components
+        evidence:
+          inputs:
+            - ref: loan_review_workpapers
+              type: workpaper
+            - ref: capital_analysis_workpaper
+              type: workpaper
+            - ref: earnings_analysis_workpaper
+              type: workpaper
+            - ref: liquidity_assessment
+              type: workpaper
+            - ref: bsa_review_workpaper
+              type: workpaper
+            - ref: it_exam_workpaper
+              type: workpaper
+          outputs:
+            - ref: camels_rating_sheet
+              type: assessment
+        decisions:
+          - condition: "What is the composite CAMELS rating?"
+            branches:
+              - label: "1 or 2"
+                description: "Institution is sound; routine supervisory follow-up"
+              - label: "3"
+                description: "Institution has supervisory concerns; increased monitoring"
+              - label: "4 or 5"
+                description: "Institution is unsound or in danger of failure; enforcement required"
+        standards:
+          - ref: "CAMELS Rating System"
+            paragraphs: ["Composite rating criteria"]
+            binding: requirement
+      - id: cam_step_3
+        order: 3
+        action: review
+        actor: district_supervisor
+        description: >
+          Review the proposed CAMELS ratings and examination conclusions for
+          consistency with supervisory policy, rating comparability with peer
+          institutions, and adequacy of examiner documentation.
+        binding: requirement
+        command: review_proposed_ratings
+        emits: ProposedRatingsReviewed
+        judgment_level: human_required
+        ai_capabilities:
+          - Compare proposed ratings against similar-profile institution ratings
+          - Identify documentation gaps in rating rationale
+        human_responsibilities:
+          - Concur or request revision of proposed ratings
+          - Ensure supervisory consistency and appropriate escalation
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Rating consistency", "Supervisory review"]
+            binding: requirement
+    preconditions:
+      - asset_quality_review
+      - earnings_analysis
+      - liquidity_assessment
+      - capital_analysis
+      - bsa_compliance_review
+      - sensitivity_to_market_risk
+    knowledge_refs: []
+
+  - id: findings_communication
+    phase: examination_conclusion
+    title: "Report of Examination Drafting and Findings Communication"
+    base_hours: 24.0
+    required_roles: [examiner_in_charge]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_findings_communication
+          emits: FindingsCommunicationStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_roe_draft
+          emits: RoeDraftSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_roe
+          emits: RoeRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_roe
+          emits: RoeApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: find_step_1
+        order: 1
+        action: draft
+        actor: examiner_in_charge
+        description: >
+          Draft Matters Requiring Attention (MRA) and Matters Requiring Immediate
+          Attention (MRIA) items, clearly describing each finding, the applicable
+          standard violated, and the required corrective action.
+        binding: requirement
+        command: draft_mra_mria_findings
+        emits: MraMriaFindingsDrafted
+        judgment_level: human_required
+        ai_capabilities:
+          - Draft initial MRA narratives from examination workpaper findings
+          - Check MRA language against regulatory style guides
+        human_responsibilities:
+          - Review and finalize all MRA/MRIA language
+          - Ensure findings are sufficiently supported by workpaper evidence
+        standards:
+          - ref: "FFIEC Examination Manual"
+            paragraphs: ["MRA/MRIA communication standards"]
+            binding: requirement
+      - id: find_step_2
+        order: 2
+        action: prepare
+        actor: examiner_in_charge
+        description: >
+          Prepare the Report of Examination (ROE), integrating CAMELS ratings,
+          MRA/MRIA findings, examination narrative, and required disclosures.
+          The ROE is the primary supervisory document conveying the examination results.
+        binding: requirement
+        command: prepare_report_of_examination
+        emits: ReportOfExaminationPrepared
+        judgment_level: human_required
+        ai_capabilities:
+          - Compile examination findings into ROE template structure
+          - Ensure all required ROE sections are populated
+          - Check cross-references between findings and supporting workpapers
+        human_responsibilities:
+          - Review and approve all ROE content
+          - Ensure the ROE accurately reflects examination conclusions
+        evidence:
+          inputs:
+            - ref: camels_rating_sheet
+              type: assessment
+          outputs:
+            - ref: report_of_examination
+              type: report
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Report of Examination preparation"]
+            binding: requirement
+    preconditions:
+      - camels_rating_determination
+      - it_examination
+      - consumer_compliance
+    knowledge_refs: []
+
+  - id: exit_meeting
+    phase: examination_conclusion
+    title: "Exit Meeting with Institution Management"
+    base_hours: 4.0
+    required_roles: [examiner_in_charge, district_supervisor]
+    discriminators:
+      tiers: [core]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_exit_meeting
+          emits: ExitMeetingStarted
+        - from_state: in_progress
+          to_state: completed
+          command: complete_exit_meeting
+          emits: ExitMeetingCompleted
+    steps:
+      - id: exit_step_1
+        order: 1
+        action: communicate
+        actor: examiner_in_charge
+        description: >
+          Conduct the exit meeting with the institution's senior management and board
+          representatives. Present examination findings, CAMELS rating changes (if any),
+          MRA/MRIA items, and supervisory expectations for corrective action.
+        binding: requirement
+        command: conduct_exit_meeting
+        emits: ExitMeetingConducted
+        judgment_level: human_required
+        ai_capabilities:
+          - Prepare exit meeting talking points and presentation materials
+          - Summarize key findings for management briefing
+        human_responsibilities:
+          - Lead the exit meeting discussion
+          - Respond to management questions and document management responses
+          - Communicate supervisory expectations clearly
+        evidence:
+          inputs:
+            - ref: report_of_examination
+              type: report
+          outputs: []
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["Exit meeting requirements"]
+            binding: requirement
+      - id: exit_step_2
+        order: 2
+        action: document
+        actor: examiner_in_charge
+        description: >
+          Document management's responses and commitments made during the exit
+          meeting. Confirm timeframes for corrective action on each MRA/MRIA item.
+          Transmit the final ROE to the institution's board of directors.
+        binding: requirement
+        command: document_management_responses
+        emits: ManagementResponsesDocumented
+        judgment_level: ai_assistable
+        ai_capabilities:
+          - Transcribe and organize management commitments from meeting notes
+          - Track corrective action due dates against each MRA/MRIA item
+        human_responsibilities:
+          - Review accuracy of documented management commitments
+          - Authorize transmission of the ROE to the board
+        standards:
+          - ref: "OCC Comptroller's Handbook"
+            paragraphs: ["ROE transmittal"]
+            binding: requirement
+    preconditions:
+      - findings_communication
+    knowledge_refs: []
+
+  # ---- ENFORCEMENT PHASE ----
+
+  - id: enforcement_action
+    phase: enforcement
+    title: "Supervisory and Enforcement Actions"
+    base_hours: 20.0
+    required_roles: [examiner_in_charge, district_supervisor]
+    discriminators:
+      tiers: [core, enforcement]
+    aggregate:
+      initial_state: not_started
+      states: [not_started, in_progress, under_review, completed]
+      transitions:
+        - from_state: not_started
+          to_state: in_progress
+          command: start_enforcement_action
+          emits: EnforcementActionStarted
+        - from_state: in_progress
+          to_state: under_review
+          command: submit_enforcement_action
+          emits: EnforcementActionSubmitted
+          guards: [all_steps_complete]
+        - from_state: under_review
+          to_state: in_progress
+          command: revise_enforcement_action
+          emits: EnforcementActionRevisionRequested
+        - from_state: under_review
+          to_state: completed
+          command: approve_enforcement_action
+          emits: EnforcementActionApproved
+          guards: [reviewer_approved]
+    steps:
+      - id: enf_step_1
+        order: 1
+        action: determine
+        actor: examiner_in_charge
+        description: >
+          Determine whether formal or informal supervisory actions are warranted
+          based on CAMELS ratings and the severity of examination findings.
+          Informal actions include commitment letters, memoranda of understanding,
+          and board resolutions. Formal actions include consent orders, cease and
+          desist orders, and civil money penalties.
+        binding: requirement
+        command: determine_enforcement_type
+        emits: EnforcementTypeDetermined
+        judgment_level: human_required
+        ai_capabilities:
+          - Research precedent enforcement actions for comparable findings
+          - Draft preliminary enforcement action justification memoranda
+        human_responsibilities:
+          - Make all enforcement action recommendations
+          - Ensure enforcement is proportionate and legally supportable
+        decisions:
+          - condition: "What type of supervisory action is warranted?"
+            branches:
+              - label: "No formal action"
+                description: "MRA/MRIA monitoring through normal supervisory process"
+              - label: "Informal action"
+                description: "Commitment letter, MOU, or board resolution"
+              - label: "Formal action"
+                description: "Consent order, cease and desist, or civil money penalty"
+        standards:
+          - ref: "SR 12-17"
+            paragraphs: ["Supervisory action standards"]
+            binding: requirement
+      - id: enf_step_2
+        order: 2
+        action: prepare
+        actor: examiner_in_charge
+        description: >
+          Prepare the enforcement action documentation, including the enforcement
+          action memorandum, proposed order or agreement terms, and the factual
+          basis supporting each provision. Coordinate with legal counsel as needed.
+        binding: requirement
+        command: prepare_enforcement_documentation
+        emits: EnforcementDocumentationPrepared
+        judgment_level: human_required
+        ai_capabilities:
+          - Draft enforcement action provisions from finding descriptions
+          - Compare proposed terms against prior similar enforcement actions
+        human_responsibilities:
+          - Review all enforcement documentation for legal sufficiency
+          - Ensure enforcement provisions are specific and measurable
+        evidence:
+          inputs:
+            - ref: report_of_examination
+              type: report
+            - ref: camels_rating_sheet
+              type: assessment
+          outputs:
+            - ref: enforcement_action_memo
+              type: memo
+        standards:
+          - ref: "SR 12-17"
+            paragraphs: ["Enforcement action procedures"]
+            binding: requirement
+      - id: enf_step_3
+        order: 3
+        action: approve
+        actor: district_supervisor
+        description: >
+          Review and approve the recommended enforcement action, confirm that
+          the action is consistent with agency enforcement policy and similar
+          cases, and initiate the formal issuance process including institution
+          notification and public disclosure requirements.
+        binding: requirement
+        command: approve_and_issue_enforcement
+        emits: EnforcementActionIssued
+        judgment_level: human_required
+        ai_capabilities:
+          - Verify enforcement consistency against agency action database
+          - Prepare public disclosure notifications where required
+        human_responsibilities:
+          - Make final enforcement approval decision
+          - Ensure appropriate escalation to senior agency leadership if required
+          - Oversee institution notification and any required public disclosure
+        standards:
+          - ref: "SR 12-17"
+            paragraphs: ["Enforcement approval", "Public disclosure"]
+            binding: requirement
+    preconditions:
+      - exit_meeting
+    knowledge_refs:
+      - camels_rating_determination
+      - findings_communication
