@@ -13,3 +13,4 @@ pub mod report;
 pub mod resource_optimizer;
 pub mod risk_scoping;
 pub mod shortest_path;
+pub mod yoy_chain;
