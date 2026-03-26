@@ -184,9 +184,9 @@ impl AuditEventBuilder {
 
         let timestamp = self.timestamp.unwrap_or_else(|| {
             chrono::NaiveDate::from_ymd_opt(2025, 1, 1)
-                .unwrap()
+                .unwrap_or_default()
                 .and_hms_opt(0, 0, 0)
-                .unwrap()
+                .unwrap_or_default()
         });
 
         AuditEvent {

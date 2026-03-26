@@ -78,8 +78,8 @@ impl EngagementContext {
             currency: "USD".into(),
             total_revenue: Decimal::new(10_000_000, 0),
             total_assets: Decimal::new(50_000_000, 0),
-            engagement_start: NaiveDate::from_ymd_opt(2025, 1, 15).unwrap(),
-            report_date: NaiveDate::from_ymd_opt(2025, 6, 30).unwrap(),
+            engagement_start: NaiveDate::from_ymd_opt(2025, 1, 15).unwrap_or_default(),
+            report_date: NaiveDate::from_ymd_opt(2025, 6, 30).unwrap_or_default(),
 
             // Financial data
             pretax_income: Decimal::ZERO,

@@ -76,8 +76,15 @@ fn event_to_xes(event: &AuditEvent) -> String {
     lines.join("\n")
 }
 
-/// Export audit events to an XES 2.0 XML string.
-pub fn export_events_to_xes_string(events: &[AuditEvent]) -> String {
+/// Export audit events to an XES 2.0 XML string with an explicit engagement ID.
+///
+/// The `engagement_id` parameter is used as the trace `concept:name`.
+/// If `None`, defaults to `"engagement_1"`.
+pub fn export_events_to_xes_string_with_id(
+    events: &[AuditEvent],
+    engagement_id: Option<&str>,
+) -> String {
+    let case_id = engagement_id.unwrap_or("engagement_1");
     let mut parts = vec![
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string(),
         "<log xes.version=\"2.0\" xes.features=\"\">".to_string(),
@@ -91,7 +98,7 @@ pub fn export_events_to_xes_string(events: &[AuditEvent]) -> String {
         "  </global>".to_string(),
         "  <classifier name=\"Activity\" keys=\"concept:name\"/>".to_string(),
         "  <trace>".to_string(),
-        "    <string key=\"concept:name\" value=\"engagement_1\"/>".to_string(),
+        format!("    <string key=\"concept:name\" value=\"{}\"/>", xml_escape(case_id)),
     ];
 
     for event in events {
@@ -104,9 +111,27 @@ pub fn export_events_to_xes_string(events: &[AuditEvent]) -> String {
     parts.join("\n")
 }
 
+/// Export audit events to an XES 2.0 XML string.
+///
+/// Uses `"engagement_1"` as the default trace name for backward compatibility.
+pub fn export_events_to_xes_string(events: &[AuditEvent]) -> String {
+    export_events_to_xes_string_with_id(events, None)
+}
+
 /// Export audit events to an XES 2.0 XML file.
+///
+/// Uses `"engagement_1"` as the default trace name for backward compatibility.
 pub fn export_events_to_xes(events: &[AuditEvent], path: &Path) -> std::io::Result<()> {
-    let xes = export_events_to_xes_string(events);
+    export_events_to_xes_with_id(events, path, None)
+}
+
+/// Export audit events to an XES 2.0 XML file with an explicit engagement ID.
+pub fn export_events_to_xes_with_id(
+    events: &[AuditEvent],
+    path: &Path,
+    engagement_id: Option<&str>,
+) -> std::io::Result<()> {
+    let xes = export_events_to_xes_string_with_id(events, engagement_id);
     let mut file = std::fs::File::create(path)?;
     file.write_all(xes.as_bytes())?;
     Ok(())

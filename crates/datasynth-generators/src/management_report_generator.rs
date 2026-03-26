@@ -213,17 +213,13 @@ impl ManagementReportGenerator {
 
                 // Target in a realistic range (10–100)
                 let target_raw: f64 = self.rng.random_range(10.0..100.0);
-                let target = Decimal::from_f64_retain(target_raw)
-                    .unwrap_or(Decimal::ZERO)
-                    .round_dp(2);
+                let target = safe_decimal(target_raw, 2);
 
                 // Actual = target * (1 + variance)
                 // Distribution: 60% small (<5%), 30% medium (<10%), 10% large (>=10%)
                 let variance_pct = self.sample_variance_pct();
                 let actual_raw = target_raw * (1.0 + variance_pct / 100.0);
-                let actual = Decimal::from_f64_retain(actual_raw)
-                    .unwrap_or(Decimal::ZERO)
-                    .round_dp(2);
+                let actual = safe_decimal(actual_raw, 2);
 
                 let rag_status = rag_from_variance(variance_pct);
 
@@ -251,15 +247,11 @@ impl ManagementReportGenerator {
                 let (label, min_k, max_k) = BUDGET_ACCOUNTS[i];
 
                 let budget_raw: f64 = self.rng.random_range(min_k..max_k) * 1_000.0;
-                let budget_amount = Decimal::from_f64_retain(budget_raw)
-                    .unwrap_or(Decimal::ZERO)
-                    .round_dp(2);
+                let budget_amount = safe_decimal(budget_raw, 2);
 
                 let variance_pct = self.sample_variance_pct();
                 let actual_raw = budget_raw * (1.0 + variance_pct / 100.0);
-                let actual_amount = Decimal::from_f64_retain(actual_raw)
-                    .unwrap_or(Decimal::ZERO)
-                    .round_dp(2);
+                let actual_amount = safe_decimal(actual_raw, 2);
 
                 let variance = actual_amount - budget_amount;
 
@@ -343,6 +335,17 @@ fn next_month_day(fiscal_year: u32, month: u32, day: u32) -> NaiveDate {
     NaiveDate::from_ymd_opt(y, m, day)
         .or_else(|| NaiveDate::from_ymd_opt(y, m, 28))
         .unwrap_or_else(|| NaiveDate::from_ymd_opt(y, m, 1).unwrap_or_default())
+}
+
+/// Convert an f64 to Decimal with NaN/Inf safety, rounded to `dp` decimal places.
+fn safe_decimal(raw: f64, dp: u32) -> Decimal {
+    if raw.is_finite() {
+        Decimal::from_f64_retain(raw)
+            .unwrap_or(Decimal::ZERO)
+            .round_dp(dp)
+    } else {
+        Decimal::ZERO
+    }
 }
 
 // ---------------------------------------------------------------------------

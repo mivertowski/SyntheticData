@@ -148,8 +148,14 @@ pub fn discover_blueprint(events: &[AuditEvent]) -> DiscoveredBlueprint {
         let mut from_states_set: HashSet<String> = HashSet::new();
 
         for evt in &transition_evts {
-            let from = evt.from_state.as_ref().unwrap().clone();
-            let to = evt.to_state.as_ref().unwrap().clone();
+            let from = match evt.from_state.as_ref() {
+                Some(s) => s.clone(),
+                None => continue,
+            };
+            let to = match evt.to_state.as_ref() {
+                Some(s) => s.clone(),
+                None => continue,
+            };
 
             if states_seen.insert(from.clone()) {
                 states_ordered.push(from.clone());

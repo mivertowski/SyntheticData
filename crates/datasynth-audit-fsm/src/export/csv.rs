@@ -20,8 +20,8 @@ fn csv_escape(value: &str) -> String {
     }
 }
 
-fn event_to_csv_row(event: &AuditEvent) -> String {
-    let case_id = "engagement_1";
+fn event_to_csv_row(event: &AuditEvent, case_id: &str) -> String {
+    let case_id = csv_escape(case_id);
     let activity = csv_escape(&event.command);
     let timestamp = event.timestamp.format("%Y-%m-%dT%H:%M:%S").to_string();
     let resource = csv_escape(&event.actor_id);
@@ -51,19 +51,62 @@ fn event_to_csv_row(event: &AuditEvent) -> String {
     )
 }
 
+/// Derive a case ID from the first event's procedure_id, or fall back to a
+/// default when the event list is empty.
+fn derive_case_id(events: &[AuditEvent]) -> String {
+    events
+        .first()
+        .map(|e| {
+            // Use the phase_id of the first event as a stable case identifier.
+            if e.phase_id.is_empty() {
+                "engagement_1".to_string()
+            } else {
+                format!("engagement_{}", e.phase_id)
+            }
+        })
+        .unwrap_or_else(|| "engagement_1".to_string())
+}
+
 /// Export audit events to a CSV string suitable for Disco/Celonis/Minit.
-pub fn export_events_to_csv_string(events: &[AuditEvent]) -> String {
+///
+/// The `engagement_id` parameter is used as the `case_id` column value.
+/// If `None`, a case ID is derived from the first event.
+pub fn export_events_to_csv_string_with_id(
+    events: &[AuditEvent],
+    engagement_id: Option<&str>,
+) -> String {
+    let case_id = engagement_id
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| derive_case_id(events));
     let mut lines = Vec::with_capacity(events.len() + 1);
     lines.push(HEADER.to_string());
     for event in events {
-        lines.push(event_to_csv_row(event));
+        lines.push(event_to_csv_row(event, &case_id));
     }
     lines.join("\n")
 }
 
+/// Export audit events to a CSV string suitable for Disco/Celonis/Minit.
+///
+/// Uses `"engagement_1"` as the default case ID for backward compatibility.
+pub fn export_events_to_csv_string(events: &[AuditEvent]) -> String {
+    export_events_to_csv_string_with_id(events, Some("engagement_1"))
+}
+
 /// Export audit events to a CSV file.
+///
+/// Uses `"engagement_1"` as the default case ID for backward compatibility.
 pub fn export_events_to_csv(events: &[AuditEvent], path: &Path) -> std::io::Result<()> {
-    let csv = export_events_to_csv_string(events);
+    export_events_to_csv_with_id(events, path, Some("engagement_1"))
+}
+
+/// Export audit events to a CSV file with an explicit engagement ID.
+pub fn export_events_to_csv_with_id(
+    events: &[AuditEvent],
+    path: &Path,
+    engagement_id: Option<&str>,
+) -> std::io::Result<()> {
+    let csv = export_events_to_csv_string_with_id(events, engagement_id);
     let mut file = std::fs::File::create(path)?;
     file.write_all(csv.as_bytes())?;
     Ok(())

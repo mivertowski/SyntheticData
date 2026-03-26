@@ -13,19 +13,29 @@ pub struct OcelProjection {
     pub objects: Vec<OcelObject>,
 }
 
+/// A single event in the OCEL 2.0 projection.
 #[derive(Debug, Clone, Serialize)]
 pub struct OcelEvent {
+    /// Unique event identifier.
     pub id: String,
+    /// Activity name (derived from the command).
     pub activity: String,
+    /// ISO 8601 timestamp string.
     pub timestamp: String,
+    /// Object IDs related to this event.
     pub omap: Vec<String>,
+    /// Value map of event-level attributes.
     pub vmap: HashMap<String, String>,
 }
 
+/// An object in the OCEL 2.0 projection (e.g. a procedure or evidence item).
 #[derive(Debug, Clone, Serialize)]
 pub struct OcelObject {
+    /// Unique object identifier.
     pub id: String,
+    /// Object type classification (e.g. procedure id, `"evidence"`).
     pub object_type: String,
+    /// Key-value attributes associated with this object.
     pub attributes: HashMap<String, String>,
 }
 

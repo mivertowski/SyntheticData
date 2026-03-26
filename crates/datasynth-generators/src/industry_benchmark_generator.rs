@@ -258,9 +258,13 @@ impl IndustryBenchmarkGenerator {
                 let raw = def.base * (1.0 + noise);
                 // Clamp to non-negative
                 let raw = if raw < 0.0 { 0.0 } else { raw };
-                let value = Decimal::from_f64_retain(raw)
-                    .unwrap_or(Decimal::ZERO)
-                    .round_dp(4);
+                let value = if raw.is_finite() {
+                    Decimal::from_f64_retain(raw)
+                        .unwrap_or(Decimal::ZERO)
+                        .round_dp(4)
+                } else {
+                    Decimal::ZERO
+                };
 
                 IndustryBenchmark {
                     industry: industry.to_string(),

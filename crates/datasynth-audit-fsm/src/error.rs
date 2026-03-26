@@ -2,6 +2,7 @@
 
 use thiserror::Error;
 
+/// Errors that can occur during blueprint loading, validation, or FSM execution.
 #[derive(Debug, Error)]
 pub enum AuditFsmError {
     #[error("Blueprint parse error ({path}): {source}")]
@@ -44,9 +45,12 @@ pub enum AuditFsmError {
     DagCycle { procedures: Vec<String> },
 }
 
+/// A single validation violation found during blueprint validation.
 #[derive(Debug, Clone)]
 pub struct ValidationViolation {
+    /// Location of the violation (e.g. `"procedure.accept_engagement.step.step_1"`).
     pub location: String,
+    /// Human-readable description of the issue.
     pub message: String,
 }
 

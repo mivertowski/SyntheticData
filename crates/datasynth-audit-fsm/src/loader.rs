@@ -649,9 +649,31 @@ pub fn load_overlay(source: &OverlaySource) -> Result<GenerationOverlay, AuditFs
 /// standards, transition states, phase gate procedures) are valid, and that
 /// the precondition DAG is acyclic.
 pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
+    // Run the shared structural checks.
+    let violations = collect_structural_violations(bp, None);
+
+    // Check: no cycles in precondition DAG
+    // topological_sort_procedures will return an error if a cycle exists
+    topological_sort_procedures(bp)?;
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(AuditFsmError::BlueprintValidation { violations })
+    }
+}
+
+/// Collect structural validation violations shared by both `validate_blueprint`
+/// and `validate_blueprint_with_preconditions`.
+///
+/// When `preconditions` is provided, precondition-reference checks are included.
+fn collect_structural_violations(
+    bp: &AuditBlueprint,
+    preconditions: Option<&HashMap<String, Vec<String>>>,
+) -> Vec<ValidationViolation> {
     let mut violations = Vec::new();
 
-    // Build lookup sets
+    // Build lookup sets.
     let actor_ids: HashSet<&str> = bp.actors.iter().map(|a| a.id.as_str()).collect();
     let evidence_ids: HashSet<&str> = bp
         .evidence_templates
@@ -660,28 +682,28 @@ pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
         .collect();
     let standard_ids: HashSet<&str> = bp.standards.iter().map(|s| s.id.as_str()).collect();
 
-    // Collect all procedure ids and build procedure-to-phase mapping
     let mut procedure_ids: HashSet<String> = HashSet::new();
-    let mut procedure_map: HashMap<&str, &BlueprintProcedure> = HashMap::new();
     for phase in &bp.phases {
         for proc in &phase.procedures {
             procedure_ids.insert(proc.id.clone());
-            procedure_map.insert(&proc.id, proc);
         }
     }
 
-    // We need the preconditions from the raw YAML. Since we don't store them
-    // in the schema type, we need to re-extract them from the builtin YAML or
-    // pass them through. For now, we'll re-parse the YAML to get preconditions.
-    // However, for a cleaner design, we should store preconditions in the schema.
-    //
-    // For validation, we rely on topological_sort_procedures which already
-    // handles DAG cycle detection. The other checks are done below.
+    // Check precondition references (when supplied).
+    if let Some(preconds) = preconditions {
+        for (proc_id, deps) in preconds {
+            for dep in deps {
+                if !procedure_ids.contains(dep.as_str()) {
+                    violations.push(ValidationViolation {
+                        location: format!("procedure.{}", proc_id),
+                        message: format!("precondition '{}' not found in procedures", dep),
+                    });
+                }
+            }
+        }
+    }
 
-    // Check: all procedure.phase references exist (implicitly valid since
-    // we nest procedures under phases during conversion)
-
-    // Check: all step.actor references exist in actors
+    // Check: all step.actor references exist in actors.
     for phase in &bp.phases {
         for proc in &phase.procedures {
             for step in &proc.steps {
@@ -697,7 +719,7 @@ pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
         }
     }
 
-    // Check: all step.evidence input/output template refs exist in evidence_catalog
+    // Check: all step.evidence input/output template refs exist in evidence_catalog.
     for phase in &bp.phases {
         for proc in &phase.procedures {
             for step in &proc.steps {
@@ -718,7 +740,7 @@ pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
         }
     }
 
-    // Check: all step.standards references exist in standards_catalog
+    // Check: all step.standards references exist in standards_catalog.
     for phase in &bp.phases {
         for proc in &phase.procedures {
             for step in &proc.steps {
@@ -737,62 +759,14 @@ pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
         }
     }
 
-    // Check: all transition from/to states exist in aggregate.states
-    // We need to get the aggregate states from the raw YAML since we only
-    // stored transitions in the schema. We'll re-parse for this.
-    // (This is validated during the raw->schema conversion implicitly,
-    // but for a standalone validate we re-parse the builtin.)
-
-    // Check: all phase gate procedure references exist
+    // Check: all phase gate procedure references exist.
     for phase in &bp.phases {
-        if let Some(ref gate) = phase.exit_gate {
-            for cond in &gate.all_of {
-                // Gate predicates have format "procedure.<id>.<state>"
+        for gate in [&phase.entry_gate, &phase.exit_gate].into_iter().flatten() {
+            for cond in gate.all_of.iter().chain(gate.any_of.iter()) {
                 if let Some(proc_id) = extract_procedure_id_from_predicate(&cond.predicate) {
                     if !procedure_ids.contains(proc_id) {
                         violations.push(ValidationViolation {
-                            location: format!("phase.{}.exit_gate", phase.id),
-                            message: format!(
-                                "gate references procedure '{}' not found in procedures",
-                                proc_id
-                            ),
-                        });
-                    }
-                }
-            }
-            for cond in &gate.any_of {
-                if let Some(proc_id) = extract_procedure_id_from_predicate(&cond.predicate) {
-                    if !procedure_ids.contains(proc_id) {
-                        violations.push(ValidationViolation {
-                            location: format!("phase.{}.exit_gate", phase.id),
-                            message: format!(
-                                "gate references procedure '{}' not found in procedures",
-                                proc_id
-                            ),
-                        });
-                    }
-                }
-            }
-        }
-        if let Some(ref gate) = phase.entry_gate {
-            for cond in &gate.all_of {
-                if let Some(proc_id) = extract_procedure_id_from_predicate(&cond.predicate) {
-                    if !procedure_ids.contains(proc_id) {
-                        violations.push(ValidationViolation {
-                            location: format!("phase.{}.entry_gate", phase.id),
-                            message: format!(
-                                "gate references procedure '{}' not found in procedures",
-                                proc_id
-                            ),
-                        });
-                    }
-                }
-            }
-            for cond in &gate.any_of {
-                if let Some(proc_id) = extract_procedure_id_from_predicate(&cond.predicate) {
-                    if !procedure_ids.contains(proc_id) {
-                        violations.push(ValidationViolation {
-                            location: format!("phase.{}.entry_gate", phase.id),
+                            location: format!("phase.{}.gate", phase.id),
                             message: format!(
                                 "gate references procedure '{}' not found in procedures",
                                 proc_id
@@ -804,22 +778,14 @@ pub fn validate_blueprint(bp: &AuditBlueprint) -> Result<(), AuditFsmError> {
         }
     }
 
-    // Check: no cycles in precondition DAG
-    // topological_sort_procedures will return an error if a cycle exists
-    topological_sort_procedures(bp)?;
-
-    if violations.is_empty() {
-        Ok(())
-    } else {
-        Err(AuditFsmError::BlueprintValidation { violations })
-    }
+    violations
 }
 
 /// Extract a procedure id from a gate predicate of the form `procedure.<id>.<state>`.
 fn extract_procedure_id_from_predicate(predicate: &str) -> Option<&str> {
     let parts: Vec<&str> = predicate.splitn(3, '.').collect();
-    if parts.len() >= 2 && parts[0] == "procedure" {
-        Some(parts[1])
+    if parts.len() >= 2 && parts.first().copied() == Some("procedure") {
+        parts.get(1).copied()
     } else {
         None
     }
@@ -1054,112 +1020,10 @@ pub fn validate_blueprint_with_preconditions(
     bp: &AuditBlueprint,
     preconditions: &HashMap<String, Vec<String>>,
 ) -> Result<(), AuditFsmError> {
-    let mut violations = Vec::new();
+    // Run the shared structural checks, including precondition-reference checks.
+    let violations = collect_structural_violations(bp, Some(preconditions));
 
-    // Build lookup sets
-    let actor_ids: HashSet<&str> = bp.actors.iter().map(|a| a.id.as_str()).collect();
-    let evidence_ids: HashSet<&str> = bp
-        .evidence_templates
-        .iter()
-        .map(|e| e.id.as_str())
-        .collect();
-    let standard_ids: HashSet<&str> = bp.standards.iter().map(|s| s.id.as_str()).collect();
-
-    let mut procedure_ids: HashSet<String> = HashSet::new();
-    for phase in &bp.phases {
-        for proc in &phase.procedures {
-            procedure_ids.insert(proc.id.clone());
-        }
-    }
-
-    // Check precondition references
-    for (proc_id, deps) in preconditions {
-        for dep in deps {
-            if !procedure_ids.contains(dep.as_str()) {
-                violations.push(ValidationViolation {
-                    location: format!("procedure.{}", proc_id),
-                    message: format!("precondition '{}' not found in procedures", dep),
-                });
-            }
-        }
-    }
-
-    // Check actor references
-    for phase in &bp.phases {
-        for proc in &phase.procedures {
-            for step in &proc.steps {
-                if let Some(ref actor) = step.actor {
-                    if !actor_ids.contains(actor.as_str()) {
-                        violations.push(ValidationViolation {
-                            location: format!("procedure.{}.step.{}", proc.id, step.id),
-                            message: format!("actor '{}' not found in actors list", actor),
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    // Check evidence references
-    for phase in &bp.phases {
-        for proc in &phase.procedures {
-            for step in &proc.steps {
-                for ev in &step.evidence {
-                    if let Some(ref tpl_ref) = ev.template_ref {
-                        if !evidence_ids.contains(tpl_ref.ref_id.as_str()) {
-                            violations.push(ValidationViolation {
-                                location: format!("procedure.{}.step.{}", proc.id, step.id),
-                                message: format!(
-                                    "evidence ref '{}' not found in evidence_catalog",
-                                    tpl_ref.ref_id
-                                ),
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Check standards references
-    for phase in &bp.phases {
-        for proc in &phase.procedures {
-            for step in &proc.steps {
-                for std_ref in &step.standards {
-                    if !standard_ids.contains(std_ref.ref_id.as_str()) {
-                        violations.push(ValidationViolation {
-                            location: format!("procedure.{}.step.{}", proc.id, step.id),
-                            message: format!(
-                                "standards ref '{}' not found in standards_catalog",
-                                std_ref.ref_id
-                            ),
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    // Check phase gate references
-    for phase in &bp.phases {
-        for gate in [&phase.entry_gate, &phase.exit_gate].into_iter().flatten() {
-            for cond in gate.all_of.iter().chain(gate.any_of.iter()) {
-                if let Some(proc_id) = extract_procedure_id_from_predicate(&cond.predicate) {
-                    if !procedure_ids.contains(proc_id) {
-                        violations.push(ValidationViolation {
-                            location: format!("phase.{}.gate", phase.id),
-                            message: format!(
-                                "gate references procedure '{}' not found in procedures",
-                                proc_id
-                            ),
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    // Check for DAG cycles
+    // Check for DAG cycles.
     topological_sort_with_preconditions(bp, preconditions)?;
 
     if violations.is_empty() {

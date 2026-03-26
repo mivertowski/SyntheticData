@@ -9,7 +9,7 @@ use std::path::Path;
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::context::EngagementContext;
 use crate::engine::EngagementResult;
@@ -22,7 +22,8 @@ use crate::loader::*;
 // ---------------------------------------------------------------------------
 
 /// Complexity level for benchmark generation.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum BenchmarkComplexity {
     /// FSA blueprint, default overlay, anomalies zeroed out.
     Simple,

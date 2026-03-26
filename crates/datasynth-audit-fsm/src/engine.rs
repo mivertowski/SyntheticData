@@ -127,7 +127,7 @@ impl AuditFsmEngine {
         let start_ts = context
             .engagement_start
             .and_hms_opt(9, 0, 0)
-            .expect("valid time");
+            .unwrap_or_default();
 
         let mut acc = RunAccum {
             event_log: Vec::new(),
@@ -498,14 +498,27 @@ impl AuditFsmEngine {
         current + Duration::minutes((delay_hours * 60.0) as i64)
     }
 
-    /// Sample from a log-normal distribution. If the parameters would produce
-    /// an invalid distribution, fall back to the mu value.
+    /// Sample from a log-normal distribution parameterized by the desired
+    /// mean (`mu`) and standard deviation (`sigma`) in hours.
+    ///
+    /// Converts from the natural-scale `(mu, sigma)` to the log-space
+    /// parameters `(mu_ln, sigma_ln)` that `LogNormal::new` expects:
+    /// ```text
+    /// sigma_ln = sqrt(ln(1 + variance / mu^2))
+    /// mu_ln    = ln(mu / sqrt(1 + variance / mu^2))
+    /// ```
+    /// Falls back to `mu` if the parameters would produce an invalid
+    /// distribution.
     fn sample_lognormal_hours(&mut self, mu: f64, sigma: f64) -> f64 {
-        // LogNormal::new expects the mean and std dev of the underlying
-        // normal distribution (i.e., ln(X) ~ Normal(mu, sigma)).
-        // We use mu_hours and sigma_hours as the log-space parameters.
-        let sigma_clamped = sigma.max(0.01);
-        match LogNormal::new(mu.ln().max(0.01), sigma_clamped / mu.max(0.01)) {
+        let mu = mu.max(0.01);
+        let sigma = sigma.max(0.01);
+        let variance = sigma * sigma;
+        let sigma_ln = (1.0 + variance / (mu * mu)).ln().sqrt();
+        let mu_ln = (mu * mu / (mu * mu + variance).sqrt()).ln();
+        // Ensure log-space parameters are valid (positive sigma, finite mu).
+        let sigma_ln = sigma_ln.max(0.01);
+        let mu_ln = if mu_ln.is_finite() { mu_ln } else { 0.01 };
+        match LogNormal::new(mu_ln, sigma_ln) {
             Ok(dist) => {
                 let sample: f64 = dist.sample(&mut self.rng);
                 // Clamp to reasonable range: 0.1 .. 200 hours.
@@ -553,14 +566,13 @@ impl AuditFsmEngine {
                 let all_met = gate.all_of.iter().all(|cond| {
                     // Gate predicate format: "procedure.<id>.<state>"
                     let parts: Vec<&str> = cond.predicate.splitn(3, '.').collect();
-                    if parts.len() == 3 && parts[0] == "procedure" {
-                        let proc_id = parts[1];
-                        let required_state = parts[2];
-                        procedure_states
-                            .get(proc_id)
-                            .is_some_and(|s| s == required_state)
-                    } else {
-                        false
+                    match (parts.first(), parts.get(1), parts.get(2)) {
+                        (Some(&"procedure"), Some(proc_id), Some(required_state)) => {
+                            procedure_states
+                                .get(*proc_id)
+                                .is_some_and(|s| s == *required_state)
+                        }
+                        _ => false,
                     }
                 });
                 if all_met {

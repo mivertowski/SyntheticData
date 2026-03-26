@@ -473,13 +473,7 @@ fn decimal_to_f64(d: Decimal) -> f64 {
 
 fn f64_to_decimal(v: f64) -> Decimal {
     use rust_decimal::prelude::FromPrimitive;
-    Decimal::from_f64(v.round() * 0.01)
-        .map(|d| (d * Decimal::from(100)).round_dp(2))
-        .unwrap_or_else(|| {
-            // Fallback: parse from string
-            use std::str::FromStr;
-            Decimal::from_str(&format!("{:.2}", v)).unwrap_or(Decimal::ZERO)
-        })
+    Decimal::from_f64(v).unwrap_or(Decimal::ZERO).round_dp(2)
 }
 
 // ---------------------------------------------------------------------------

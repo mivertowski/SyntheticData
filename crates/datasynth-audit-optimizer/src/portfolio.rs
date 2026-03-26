@@ -261,10 +261,20 @@ pub fn simulate_portfolio(config: &PortfolioConfig) -> Result<PortfolioReport, A
         // Track findings for cross-engagement correlation.
         let findings_count = result.artifacts.findings.len();
         if findings_count > 0 {
-            findings_by_industry
-                .entry(spec.industry.clone())
-                .or_default()
-                .push((spec.entity_id.clone(), "control_deficiency".to_string()));
+            // Extract actual finding types from the generated findings,
+            // deduplicating per-entity to avoid inflating the count.
+            let mut seen_types = std::collections::HashSet::new();
+            for finding in &result.artifacts.findings {
+                let finding_type = format!("{:?}", finding.finding_type)
+                    .to_lowercase()
+                    .replace(' ', "_");
+                if seen_types.insert(finding_type.clone()) {
+                    findings_by_industry
+                        .entry(spec.industry.clone())
+                        .or_default()
+                        .push((spec.entity_id.clone(), finding_type));
+                }
+            }
         }
 
         let completed = result

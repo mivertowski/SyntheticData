@@ -576,10 +576,27 @@ impl Default for ArtifactConfig {
 }
 
 /// An inclusive integer range [min, max].
+///
+/// When `max < min`, sampling methods clamp `max` to `min` to avoid panics.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct VolumeRange {
+    /// Minimum value (inclusive).
     pub min: u32,
+    /// Maximum value (inclusive). Must be >= min; clamped if not.
     pub max: u32,
+}
+
+impl VolumeRange {
+    /// Sample a random value in `[min, max]` (inclusive).
+    ///
+    /// If `max < min`, uses `min` as the result.
+    pub fn sample(&self, rng: &mut impl rand::Rng) -> u32 {
+        let effective_max = self.max.max(self.min);
+        if effective_max == self.min {
+            return self.min;
+        }
+        rng.random_range(self.min..=effective_max)
+    }
 }
 
 /// Anomaly injection configuration.
