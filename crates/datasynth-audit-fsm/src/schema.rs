@@ -4,6 +4,7 @@
 //! and generation overlay YAML files.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
@@ -32,6 +33,10 @@ pub enum BindingLevel {
     Requirement,
     /// Advisory — may be skipped based on actor profile or risk.
     Guidance,
+    /// Informational — context only, no compliance obligation. GAM-specific.
+    Informational,
+    /// Example — illustrative guidance. GAM-specific.
+    Example,
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +69,23 @@ pub struct AuditBlueprint {
     /// Ordered list of audit phases.
     #[serde(default)]
     pub phases: Vec<BlueprintPhase>,
+
+    // ----- GAM-specific metadata (preserved as opaque JSON for export) -----
+    /// GAM forms catalog (e.g. EY form templates).
+    #[serde(default)]
+    pub forms_catalog: Vec<JsonValue>,
+
+    /// ISA cross-reference dependency graph.
+    #[serde(default)]
+    pub standard_dependencies: Vec<JsonValue>,
+
+    /// ISA coverage statistics.
+    #[serde(default)]
+    pub coverage: Option<JsonValue>,
+
+    /// Form enrichment data.
+    #[serde(default)]
+    pub form_enrichment: Option<JsonValue>,
 }
 
 /// High-level metadata about the audit methodology.
@@ -101,6 +123,23 @@ pub struct BlueprintStandard {
     /// Whether compliance is mandatory or advisory.
     #[serde(default)]
     pub binding: BindingLevel,
+
+    // ----- GAM-specific standard fields (preserved for round-trip) -----
+    /// ISA grouping category (e.g. `General Principles and Responsibilities`).
+    #[serde(default)]
+    pub isa_group: Option<String>,
+    /// Number of requirement paragraphs in this standard.
+    #[serde(default)]
+    pub requirement_count: Option<u32>,
+    /// Number of application paragraphs in this standard.
+    #[serde(default)]
+    pub application_count: Option<u32>,
+    /// Detailed paragraph entries (opaque JSON for now).
+    #[serde(default)]
+    pub paragraphs: Vec<JsonValue>,
+    /// Dependency references to other standards.
+    #[serde(default)]
+    pub dependencies: Vec<JsonValue>,
 }
 
 /// A reusable evidence template that steps may reference by id.
@@ -117,6 +156,29 @@ pub struct BlueprintEvidence {
     /// Whether this evidence item is mandatory.
     #[serde(default)]
     pub required: bool,
+
+    // ----- GAM-specific evidence fields (preserved for round-trip) -----
+    /// EY form references that source this evidence.
+    #[serde(default)]
+    pub source_forms: Vec<String>,
+    /// Whether sign-off is required for this evidence item.
+    #[serde(default)]
+    pub signoff_required: Vec<String>,
+    /// Expected data fields within this evidence artifact.
+    #[serde(default)]
+    pub required_fields: Vec<String>,
+    /// Whether this evidence entry is noise / non-essential.
+    #[serde(default)]
+    pub is_noise: Option<bool>,
+    /// Source type classification (e.g. `ey_form`, `system`, `manual`).
+    #[serde(default)]
+    pub source_type: Option<String>,
+    /// Actor responsible for producing this evidence.
+    #[serde(default)]
+    pub responsible_actor: Option<String>,
+    /// Free-text description of expected content.
+    #[serde(default)]
+    pub expected_content: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -270,6 +332,23 @@ pub struct BlueprintStep {
     /// Optional decision branch emitted after the step completes.
     #[serde(default)]
     pub decision: Option<StepDecision>,
+
+    // ----- GAM-specific step fields -----
+    /// Whether this step is ISA-mandated (vs advisory). GAM-specific.
+    #[serde(default)]
+    pub isa_mandate: Option<String>,
+
+    /// References to EY form templates. GAM-specific.
+    #[serde(default)]
+    pub form_refs: Vec<JsonValue>,
+
+    /// Expected deliverable fields for this step. GAM-specific.
+    #[serde(default)]
+    pub deliverable_fields: Vec<String>,
+
+    /// ISA paragraph tracing for standard fields. GAM-specific.
+    #[serde(default)]
+    pub standard_field_trace: Vec<String>,
 }
 
 /// A guard predicate that blocks step execution until satisfied.

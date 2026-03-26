@@ -1081,6 +1081,10 @@ mod tests {
             evidence: Vec::new(),
             standards: Vec::new(),
             decision: None,
+            isa_mandate: None,
+            form_refs: Vec::new(),
+            deliverable_fields: Vec::new(),
+            standard_field_trace: Vec::new(),
         }
     }
 
